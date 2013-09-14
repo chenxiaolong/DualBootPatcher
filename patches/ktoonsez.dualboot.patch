@@ -1,0 +1,62 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -1,16 +1,22 @@
+-ui_print("mounting system");
+-run_program("/sbin/busybox", "mount", "/system");
++mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++unmount("/system");
++ui_print("Installing kernel for secondary ROM");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++
+ ui_print("copying modules");
+ ui_print("");
+ package_extract_dir("system", "/system");
+ 
+ ui_print("unmounting system");
+ ui_print("");
+-unmount("/system");
++run_program("/tmp/dualboot.sh", "unmount-system");
+ 
+ ui_print("Flashing Kernel");
+ ui_print("");
+ 
+ package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
+ show_progress(0.100000, 0);
+ 
+--- a/dualboot.sh
++++ b/dualboot.sh
+@@ -0,0 +1,31 @@
++#!/sbin/sh
++
++set_secondary_kernel() {
++  dd if=/dev/block/platform/msm_sdcc.1/by-name/boot of=/raw-system/dual-kernels/secondary.img
++}
++
++mount_system() {
++  mkdir -p /raw-system /system
++  chmod 0755 /raw-system
++  chown 0:0 /raw-system
++  mount -t $1 $2 /raw-system
++  mkdir -p /raw-system/dual
++  mount -o bind /raw-system/dual /system
++}
++
++unmount_system() {
++  umount /system
++  umount /raw-system
++}
++
++case "$1" in
++  set-secondary-kernel)
++    set_secondary_kernel
++    ;;
++  mount-system)
++    mount_system $2 $3
++    ;;
++  unmount-system)
++    unmount_system
++    ;;
++esac
