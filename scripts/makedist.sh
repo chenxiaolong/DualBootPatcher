@@ -128,10 +128,16 @@ build_windows() {
   strip "${TARGETDIR}"/binaries/{mkbootimg,unpackbootimg}.exe
   popd
 
-  wget 'https://downloads.sourceforge.net/project/gnuwin32/patch/2.5.9-7/patch-2.5.9-7-bin.zip'
-  unzip -p patch-2.5.9-7-bin.zip bin/patch.exe > \
-    "${TARGETDIR}/binaries/patch.exe"
-  rm -v patch-2.5.9-7-bin.zip
+  wget 'http://downloads.sourceforge.net/project/mingw/MSYS/Extension/patch/patch-2.6.1-1/patch-2.6.1-1-msys-1.0.13-bin.tar.lzma'
+  wget 'http://downloads.sourceforge.net/project/mingw/MSYS/Base/msys-core/msys-1.0.18-1/msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma'
+  tar Jxvf patch-2.6.1-1-msys-1.0.13-bin.tar.lzma bin/patch.exe \
+    --to-stdout > "${TARGETDIR}/binaries/hctap.exe"
+  tar Jxvf msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma bin/msys-1.0.dll \
+    --to-stdout > "${TARGETDIR}/binaries/msys-1.0.dll"
+  chmod +x "${TARGETDIR}/binaries/hctap.exe" \
+           "${TARGETDIR}/binaries/msys-1.0.dll"
+  rm -v patch-2.6.1-1-msys-1.0.13-bin.tar.lzma \
+        msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma
 }
 
 build_linux() {
