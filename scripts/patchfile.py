@@ -10,13 +10,19 @@ import sys
 import tempfile
 import zipfile
 
-ramdisk_offset = "0x02000000"
-rootdir        = os.path.dirname(os.path.realpath(__file__))
-rootdir        = os.path.join(rootdir, "..")
-ramdiskdir     = os.path.join(rootdir, "ramdisks")
-patchdir       = os.path.join(rootdir, "patches")
-binariesdir    = os.path.join(rootdir, "binaries")
-remove_dirs    = []
+ramdisk_offset  = "0x02000000"
+rootdir         = os.path.dirname(os.path.realpath(__file__))
+rootdir         = os.path.join(rootdir, "..")
+ramdiskdir      = os.path.join(rootdir, "ramdisks")
+patchdir        = os.path.join(rootdir, "patches")
+binariesdir     = os.path.join(rootdir, "binaries")
+remove_dirs     = []
+
+mkbootimg       = "mkbootimg"
+unpackbootimg   = "unpackbootimg"
+if os.name == "nt":
+  mkbootimg     = "mkbootimg.exe"
+  unpackbootimg = "unpackbootimg.exe"
 
 def clean_up_and_exit(exit_status):
   for d in remove_dirs:
@@ -46,7 +52,8 @@ def run_command(command):
 def apply_patch_file(patchfile, directory):
   patch = "patch"
   if os.name == "nt":
-    patch = os.path.join(binariesdir, "patch.exe")
+    # Windows wants anything named patch.exe to run as Administrator
+    patch = os.path.join(binariesdir, "hctap.exe")
 
   exit_status, output = run_command(
     [ patch,
@@ -63,7 +70,7 @@ def patch_boot_image(boot_image, vendor):
   remove_dirs.append(tempdir)
 
   exit_status, output = run_command(
-    [ os.path.join(binariesdir, "unpackbootimg"),
+    [ os.path.join(binariesdir, unpackbootimg),
       '-i', boot_image,
       '-o', tempdir]
   )
@@ -92,7 +99,7 @@ def patch_boot_image(boot_image, vendor):
   shutil.copyfile(ramdisk, os.path.join(tempdir, "ramdisk.cpio.gz"))
 
   exit_status, output = run_command(
-    [ os.path.join(binariesdir, "mkbootimg"),
+    [ os.path.join(binariesdir, mkbootimg),
       '--kernel',         os.path.join(tempdir, "kernel.img"),
       '--ramdisk',        os.path.join(tempdir, "ramdisk.cpio.gz"),
       '--cmdline',        cmdline,
