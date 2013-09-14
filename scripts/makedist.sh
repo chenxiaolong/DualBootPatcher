@@ -116,8 +116,11 @@ create_portable_python() {
 
 build_windows() {
   pushd "${ANDROID_DIR}"
+  cp mkbootimg/mkbootimg.c mkbootimg/mkbootimg.windows.c
+  patch -p1 -i "${CURDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
+
   ${MINGW_PREFIX}gcc -static -Iinclude \
-    mkbootimg/mkbootimg.c \
+    mkbootimg/mkbootimg.windows.c \
     libmincrypt/sha.c \
     -o "${TARGETDIR}/binaries/mkbootimg.exe"
 
@@ -126,6 +129,7 @@ build_windows() {
     -o "${TARGETDIR}/binaries/unpackbootimg.exe"
 
   strip "${TARGETDIR}"/binaries/{mkbootimg,unpackbootimg}.exe
+  rm mkbootimg/mkbootimg.windows.c
   popd
 
   wget 'http://downloads.sourceforge.net/project/mingw/MSYS/Extension/patch/patch-2.6.1-1/patch-2.6.1-1-msys-1.0.13-bin.tar.lzma'
@@ -182,6 +186,7 @@ cp -rt "${TARGETDIR}" \
 
 # Remove unneeded files
 rm -r pythonportable/
+rm "${TARGETDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
 find "${TARGETDIR}/ramdisks/" -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
 
 # Create zip
