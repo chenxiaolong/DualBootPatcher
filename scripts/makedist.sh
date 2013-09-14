@@ -14,6 +14,106 @@ ANDROID_DIR="${1}/system/core/"
 CURDIR="$(cd "$(dirname "${0}")" && cd ..  && pwd)"
 cd "${CURDIR}"
 
+create_portable_python() {
+  local URL="http://ftp.osuosl.org/pub/portablepython/v3.2/PortablePython_3.2.5.1.exe"
+  local MD5SUM="5ba055a057ce4fe1950a0f1f7ebae323"
+  if [ ! -f pythonportable.exe ] || \
+    ! md5sum pythonportable.exe | grep -q ${MD5SUM}; then
+    if which axel >/dev/null; then
+      axel -an10 "${URL}" -o pythonportable.exe
+    else
+      wget "${URL}" -O pythonportable.exe
+    fi
+  fi
+
+  rm -rf pythonportable/
+
+  local TEMPDIR="$(mktemp -d --tmpdir="$(pwd)")"
+  pushd "${TEMPDIR}"
+  7z x ../pythonportable.exe \*/App
+
+  # Weird filename encoding in NSIS installer
+  COUNTER=0
+  for i in *; do
+    mv "${i}" ${COUNTER}
+    let COUNTER+=1
+  done
+
+  FOUND=""
+  for i in *; do
+    if [ -f "${i}/App/python.exe" ]; then
+      FOUND="${i}"
+      break
+    fi
+  done
+  if [ -z "${FOUND}" ]; then
+    echo "No python.exe found"
+    exit 1
+  fi
+  find . -mindepth 1 -maxdepth 1 ! -name "${FOUND}" | xargs rm -rf
+
+  mv "${FOUND}/App/" ../pythonportable/
+
+  popd
+
+  rm -rf "${TEMPDIR}"
+
+  pushd pythonportable/
+
+  # Don't add unneeded files to the zip
+  rm -r DLLs
+  rm -r Doc
+  rm -r include
+  rm -r libs
+  rm -r locale
+  rm -r Scripts
+  rm -r tcl
+  rm -r Tools
+  rm NEWS.txt
+  rm PyScripter.*
+  rm python-3.2.5.msi
+  rm README.txt
+  rm remserver.py
+  rm -rf Lib/__pycache__
+  rm -r Lib/{concurrent,ctypes,curses}
+  rm -r Lib/{dbm,distutils}
+  rm -r Lib/email
+  rm -r Lib/{html,http}
+  rm -r Lib/{idlelib,importlib}
+  rm -r Lib/json
+  rm -r Lib/{lib2to3,logging}
+  rm -r Lib/{msilib,multiprocessing}
+  rm -r Lib/pydoc_data
+  rm -r Lib/{site-packages,sqlite3}
+  rm -r Lib/{test,tkinter,turtledemo}
+  rm -r Lib/wsgiref
+  rm -r Lib/{unittest,urllib}
+  rm -r Lib/{xml,xmlrpc}
+
+  rm Lib/{__future__.py,__phello__.foo.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
+  rm Lib/{aifc.py,antigravity.py,argparse.py,ast.py}
+  rm Lib/{base64.py,bdb.py,binhex.py}
+  rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,configparser.py,contextlib.py,cProfile.py,csv.py}
+  rm Lib/{datetime.py,decimal.py,difflib.py,dis.py,doctest.py,dummy_threading.py}
+  rm Lib/{filecmp.py,fileinput.py,formatter.py,fractions.py,ftplib.py}
+  rm Lib/{getopt.py,getpass.py,gettext.py,glob.py,gzip.py}
+  rm Lib/hmac.py
+  rm Lib/{imaplib.py,imghdr.py,inspect.py}
+  rm Lib/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,mimetypes.py,modulefinder.py}
+  rm Lib/{netrc.py,nntplib.py,nturl2path.py,numbers.py}
+  rm Lib/{opcode.py,optparse.py,os2emxpath.py}
+  rm Lib/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,platform.py,plistlib.py,poplib.py,ppp.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
+  rm Lib/{queue.py,quopri.py}
+  rm Lib/{rlcompleter.py,runpy.py}
+  rm Lib/{sched.py,shelve.py,shlex.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,socketserver.py,ssl.py,string.py,stringprep.py,sunau.py,symbol.py,symtable.py}
+  rm Lib/{tabnanny.py,telnetlib.py,textwrap.py,this.py,timeit.py,tty.py,turtle.py}
+  rm Lib/{uu.py,uuid.py}
+  rm Lib/{wave.py,webbrowser.py,wsgiref.egg-info}
+  rm Lib/xdrlib.py
+
+  popd
+}
+
 build_windows() {
   pushd "${ANDROID_DIR}"
   ${MINGW_PREFIX}gcc -static -Iinclude \
@@ -66,14 +166,16 @@ rm -rf "${TARGETDIR}" "${TARGETNAME}.zip"
 mkdir -p "${TARGETDIR}/binaries" "${TARGETDIR}/ramdisks"
 
 # Build and copy stuff into target directory
+create_portable_python
 build_windows
 build_linux
 compress_ramdisks
 
 cp -rt "${TARGETDIR}" \
-  $(git ls-tree --name-only --full-tree HEAD | grep -v .gitignore)
+  $(git ls-tree --name-only --full-tree HEAD | grep -v .gitignore) pythonportable
 
 # Remove unneeded files
+rm -r pythonportable/
 find "${TARGETDIR}/ramdisks/" -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
 
 # Create zip
