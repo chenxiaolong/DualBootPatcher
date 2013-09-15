@@ -1,1 +1,5 @@
-TODO
+@echo off
+cd %~dp0
+pythonportable\python.exe scripts\patchfile.py %*
+echo.
+pause
