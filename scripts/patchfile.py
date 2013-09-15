@@ -122,6 +122,8 @@ def patch_boot_image(boot_image, vendor):
   return os.path.join(tempdir, "complete.img")
 
 def patch_zip(zip_file, vendor):
+  print("--- Please wait. This may take a while ---")
+
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
@@ -135,10 +137,17 @@ def patch_zip(zip_file, vendor):
   os.remove(boot_image)
   shutil.move(new_boot_image, boot_image)
 
+  shutil.copy(os.path.join(patchdir, "dualboot.sh"), tempdir)
+
   if vendor == "ktoonsez":
     apply_patch_file("ktoonsez.dualboot.patch", tempdir)
   elif vendor == "faux":
     apply_patch_file("faux.dualboot.patch", tempdir)
+  elif vendor == "cyanogenmod":
+    if '-jflteatt' in zip_file or '-jfltevzw' in zip_file:
+      apply_patch_file("cyanogenmod.loki.dualboot.patch", tempdir)
+    else:
+      apply_patch_file("cyanogenmod.dualboot.patch", tempdir)
 
   new_zip_file = os.path.join(tempdir, "complete.zip")
   z = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
@@ -152,13 +161,17 @@ def patch_zip(zip_file, vendor):
 
   return new_zip_file
 
-def detect_kernel_vendor(path):
-  if re.search(r"KT-SGS4-JB4.3-AOSP-.*.zip", path):
+def detect_vendor(path):
+  filename = os.path.split(path)[1]
+  if re.search(r"^KT-SGS4-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ktoonsez kernel zip")
     return "ktoonsez"
-  elif re.search(r"jflte[a-z]+-aosp-faux123-.*.zip", path):
+  elif re.search(r"^jflte[a-z]+-aosp-faux123-.*.zip$", filename):
     print("Detected faux kernel zip")
     return "faux"
+  elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
+    print("Detected official Cyanogenmod nightly ROM zip")
+    return "cyanogenmod"
   else:
     return "UNKNOWN"
 
@@ -182,25 +195,25 @@ if not os.path.exists(filename):
 
 filename = os.path.abspath(filename)
 filetype = detect_file_type(filename)
-kernel_vendor = detect_kernel_vendor(filename)
+filevendor = detect_vendor(filename)
 
 if filetype == "UNKNOWN":
   print("Unsupported file")
   clean_up_and_exit(1)
 
 if filetype == "zip":
-  if kernel_vendor == "UNKNOWN":
+  if filevendor == "UNKNOWN":
     print("Unsupported kernel zip")
     clean_up_and_exit(1)
 
-  newfile = patch_zip(filename, kernel_vendor)
-  print("Successfully patched kernel zip")
+  newfile = patch_zip(filename, filevendor)
+  print("Successfully patched zip")
   newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
   shutil.move(newfile, newpath)
   print("Path: " + newpath)
 
 elif filetype == "img":
-  newfile = patch_boot_image(filename, kernel_vendor)
+  newfile = patch_boot_image(filename, filevendor)
   print("Successfully patched boot image")
   newpath = re.sub(r"\.img$", "_dualboot.img", filename)
   shutil.move(newfile, newpath)
