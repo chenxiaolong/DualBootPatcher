@@ -143,10 +143,7 @@ def patch_zip(zip_file, vendor):
     patch_file = "faux.dualboot.patch"
 
   elif vendor == "cyanogenmod":
-    if '-jflteatt' in zip_file or '-jfltevzw' in zip_file:
-      patch_file = "cyanogenmod.loki.dualboot.patch"
-    else:
-      patch_file = "cyanogenmod.dualboot.patch"
+    patch_file = "cyanogenmod.dualboot.patch"
 
   elif vendor == "cyanogenmod-gapps":
     patch_file = "cyanogenmod-gapps.dualboot.patch"
