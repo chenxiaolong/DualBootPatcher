@@ -91,9 +91,11 @@ def patch_boot_image(boot_image, vendor):
   if vendor == "ktoonsez":
     print("Using patched ktoonsez ramdisk")
     ramdisk = "ktoonsez.dualboot.cpio.gz"
+
   elif vendor == "faux":
     print("Using patched Cyanogenmod ramdisk (compatible with faux)")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
+
   else:
     print("Using patched Cyanogenmod ramdisk")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
@@ -131,23 +133,38 @@ def patch_zip(zip_file, vendor):
   z.extractall(tempdir)
   z.close()
 
-  boot_image = os.path.join(tempdir, "boot.img")
-  new_boot_image = patch_boot_image(boot_image, vendor)
+  patch_file = ""
+  has_boot_image = True
 
-  os.remove(boot_image)
-  shutil.move(new_boot_image, boot_image)
+  if vendor == "ktoonsez":
+    patch_file = "ktoonsez.dualboot.patch"
+
+  elif vendor == "faux":
+    patch_file = "faux.dualboot.patch"
+
+  elif vendor == "cyanogenmod":
+    if '-jflteatt' in zip_file or '-jfltevzw' in zip_file:
+      patch_file = "cyanogenmod.loki.dualboot.patch"
+    else:
+      patch_file = "cyanogenmod.dualboot.patch"
+
+  elif vendor == "cyanogenmod-gapps":
+    patch_file = "cyanogenmod-gapps.dualboot.patch"
+    has_boot_image = False
+
+  if has_boot_image:
+    boot_image = os.path.join(tempdir, "boot.img")
+    new_boot_image = patch_boot_image(boot_image, vendor)
+
+    os.remove(boot_image)
+    shutil.move(new_boot_image, boot_image)
+  else:
+    print("No boot image to patch")
 
   shutil.copy(os.path.join(patchdir, "dualboot.sh"), tempdir)
 
-  if vendor == "ktoonsez":
-    apply_patch_file("ktoonsez.dualboot.patch", tempdir)
-  elif vendor == "faux":
-    apply_patch_file("faux.dualboot.patch", tempdir)
-  elif vendor == "cyanogenmod":
-    if '-jflteatt' in zip_file or '-jfltevzw' in zip_file:
-      apply_patch_file("cyanogenmod.loki.dualboot.patch", tempdir)
-    else:
-      apply_patch_file("cyanogenmod.dualboot.patch", tempdir)
+  if patch_file != "":
+    apply_patch_file(patch_file, tempdir)
 
   new_zip_file = os.path.join(tempdir, "complete.zip")
   z = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
@@ -166,12 +183,20 @@ def detect_vendor(path):
   if re.search(r"^KT-SGS4-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ktoonsez kernel zip")
     return "ktoonsez"
+
   elif re.search(r"^jflte[a-z]+-aosp-faux123-.*.zip$", filename):
     print("Detected faux kernel zip")
     return "faux"
+
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")
     return "cyanogenmod"
+
+  # Google Apps
+  elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip", filename):
+    print("Detected Cyanogenmod Google Apps zip")
+    return "cyanogenmod-gapps"
+
   else:
     return "UNKNOWN"
 
