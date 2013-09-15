@@ -91,6 +91,9 @@ def patch_boot_image(boot_image, vendor):
   if vendor == "ktoonsez":
     print("Using patched ktoonsez ramdisk")
     ramdisk = "ktoonsez.dualboot.cpio.gz"
+  elif vendor == "faux":
+    print("Using patched Cyanogenmod ramdisk (compatible with faux)")
+    ramdisk = "cyanogenmod.dualboot.cpio.gz"
   else:
     print("Using patched Cyanogenmod ramdisk")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
@@ -134,6 +137,8 @@ def patch_zip(zip_file, vendor):
 
   if vendor == "ktoonsez":
     apply_patch_file("ktoonsez.dualboot.patch", tempdir)
+  elif vendor == "faux":
+    apply_patch_file("faux.dualboot.patch", tempdir)
 
   new_zip_file = os.path.join(tempdir, "complete.zip")
   z = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
@@ -151,6 +156,9 @@ def detect_kernel_vendor(path):
   if re.search(r"KT-SGS4-JB4.3-AOSP-.*.zip", path):
     print("Detected ktoonsez kernel zip")
     return "ktoonsez"
+  elif re.search(r"jflte[a-z]+-aosp-faux123-.*.zip", path):
+    print("Detected faux kernel zip")
+    return "faux"
   else:
     return "UNKNOWN"
 

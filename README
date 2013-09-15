@@ -1,4 +1,5 @@
-Supported files:
+Supported files (for the Samsung Galaxy S4):
 
-  * ktoonsez's AOSP 4.3 kernels (for the Samsung Galaxy S4)
+  * ktoonsez's AOSP 4.3 kernels
+  * faux123's jf43 kernels
   * Plain boot.img files (ramdisk will be replaced with Cyanogenmod ramdisk)
