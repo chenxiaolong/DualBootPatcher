@@ -117,6 +117,7 @@ create_portable_python() {
 build_windows() {
   pushd "${ANDROID_DIR}"
   cp mkbootimg/mkbootimg.c mkbootimg/mkbootimg.windows.c
+  cp mkbootimg/unpackbootimg.c mkbootimg/unpackbootimg.windows.c
   patch -p1 -i "${CURDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
 
   ${MINGW_PREFIX}gcc -static -Iinclude \
@@ -125,11 +126,11 @@ build_windows() {
     -o "${TARGETDIR}/binaries/mkbootimg.exe"
 
   ${MINGW_PREFIX}gcc -static -Iinclude \
-    mkbootimg/unpackbootimg.c \
+    mkbootimg/unpackbootimg.windows.c \
     -o "${TARGETDIR}/binaries/unpackbootimg.exe"
 
   strip "${TARGETDIR}"/binaries/{mkbootimg,unpackbootimg}.exe
-  rm mkbootimg/mkbootimg.windows.c
+  rm mkbootimg/mkbootimg.windows.c mkbootimg/unpackbootimg.windows.c
   popd
 
   wget 'http://downloads.sourceforge.net/project/mingw/MSYS/Extension/patch/patch-2.6.1-1/patch-2.6.1-1-msys-1.0.13-bin.tar.lzma'

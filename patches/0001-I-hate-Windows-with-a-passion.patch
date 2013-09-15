@@ -1,14 +1,15 @@
-From 1485ab781e27d164e2902e6b9d073e89a3169466 Mon Sep 17 00:00:00 2001
+From 3b6f828c4a73414df424707dea2c142e0d1b45a3 Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Sat, 14 Sep 2013 15:36:43 -0400
 Subject: [PATCH] I hate Windows with a passion
 
 ---
- mkbootimg/mkbootimg.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ mkbootimg/mkbootimg.windows.c     | 12 ++++++++++--
+ mkbootimg/unpackbootimg.windows.c |  4 ++--
+ 2 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/mkbootimg/mkbootimg.c b/mkbootimg/mkbootimg.c
-index e7c2918..235a190 100644
+diff --git a/mkbootimg/mkbootimg.windows.c b/mkbootimg/mkbootimg.windows.c
+index e7c2918..85d4caa 100644
 --- a/mkbootimg/mkbootimg.windows.c
 +++ b/mkbootimg/mkbootimg.windows.c
 @@ -15,6 +15,14 @@
@@ -35,6 +36,35 @@ index e7c2918..235a190 100644
      if(fd < 0) return 0;
  
      sz = lseek(fd, 0, SEEK_END);
+@@ -237,7 +245,7 @@ int main(int argc, char **argv)
+     memcpy(hdr.id, sha,
+            SHA_DIGEST_SIZE > sizeof(hdr.id) ? sizeof(hdr.id) : SHA_DIGEST_SIZE);
+ 
+-    fd = open(bootimg, O_CREAT | O_TRUNC | O_WRONLY, 0644);
++    fd = open(bootimg, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0644);
+     if(fd < 0) {
+         fprintf(stderr,"error: could not create '%s'\n", bootimg);
+         return 1;
+diff --git a/mkbootimg/unpackbootimg.windows.c b/mkbootimg/unpackbootimg.windows.c
+index 14721a9..bcf54c5 100644
+--- a/mkbootimg/unpackbootimg.windows.c
++++ b/mkbootimg/unpackbootimg.windows.c
+@@ -32,7 +32,7 @@ int read_padding(FILE* f, unsigned itemsize, int pagesize)
+ 
+ void write_string_to_file(char* file, char* string)
+ {
+-    FILE* f = fopen(file, "w");
++    FILE* f = fopen(file, "wb");
+     fwrite(string, strlen(string), 1, f);
+     fwrite("\n", 1, 1, f);
+     fclose(f);
+@@ -154,4 +154,4 @@ int main(int argc, char** argv)
+     
+     //printf("Total Read: %d\n", total_read);
+     return 0;
+-}
+\ No newline at end of file
++}
 -- 
 1.8.1.2
 
