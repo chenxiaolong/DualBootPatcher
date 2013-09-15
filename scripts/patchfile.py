@@ -182,6 +182,8 @@ def patch_zip(zip_file, vendor):
 
 def detect_vendor(path):
   filename = os.path.split(path)[1]
+
+  # Custom kernels
   if re.search(r"^KT-SGS4-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ktoonsez kernel zip")
     return "ktoonsez"
@@ -190,12 +192,18 @@ def detect_vendor(path):
     print("Detected faux kernel zip")
     return "faux"
 
+  # Cyanogenmod ROMs
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")
     return "cyanogenmod"
 
+  # PAC-Man ROMs
   elif re.search(r"^pac_[a-z0-9]+_.*.zip$", filename):
     print("Detected PAC-Man ROM zip")
+    return "pacman"
+
+  elif re.search(r"^pac_[a-z0-9]+-nightly-[0-9]+.zip$", filename):
+    print("Detected PAC-Man nightly ROM zip")
     return "pacman"
 
   # Google Apps
