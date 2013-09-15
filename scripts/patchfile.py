@@ -100,6 +100,10 @@ def patch_boot_image(boot_image, vendor):
     print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
 
+  elif vendor == "chronickernel":
+    print("Using patched ChronicKernel ramdisk")
+    ramdisk = "chronickernel.dualboot.cpio.gz"
+
   else:
     print("Using patched Cyanogenmod ramdisk")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
@@ -145,6 +149,9 @@ def patch_zip(zip_file, vendor):
 
   elif vendor == "faux":
     patch_file = "faux.dualboot.patch"
+
+  elif vendor == "chronickernel":
+    patch_file = "chronickernel.dualboot.patch"
 
   elif vendor == "cyanogenmod" or \
        vendor == "pacman":
@@ -192,9 +199,22 @@ def detect_vendor(path):
     print("Detected faux kernel zip")
     return "faux"
 
+  elif re.search(r"^ChronicKernel-JB4.3-AOSP-.*.zip$", filename):
+    print("Detected ChronicKernel kernel zip")
+    return "chronickernel"
+
   # Cyanogenmod ROMs
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")
+    return "cyanogenmod"
+
+  elif re.search(r"^cm-[0-9\.]+-[0-9]+-.*.zip$", filename):
+    # ROMs that have built in dual-boot support
+    if "noobdev" in filename:
+      print("ROM has built in dual boot support")
+      clean_up_and_exit(1)
+
+    print("Detected Cyanogenmod based ROM zip")
     return "cyanogenmod"
 
   # PAC-Man ROMs
