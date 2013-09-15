@@ -141,7 +141,7 @@ def patch_zip(zip_file, vendor):
     for f in files:
       if f == "complete.zip":
         continue
-      arcdir = re.sub(tempdir, "", root)
+      arcdir = os.path.relpath(root, start = tempdir)
       z.write(os.path.join(root, f), arcname = os.path.join(arcdir, f))
   z.close()
 
