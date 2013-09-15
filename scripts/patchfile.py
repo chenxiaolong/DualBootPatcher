@@ -96,6 +96,10 @@ def patch_boot_image(boot_image, vendor):
     print("Using patched Cyanogenmod ramdisk (compatible with faux)")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
 
+  elif vendor == "pacman":
+    print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
+    ramdisk = "cyanogenmod.dualboot.cpio.gz"
+
   else:
     print("Using patched Cyanogenmod ramdisk")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
@@ -142,7 +146,8 @@ def patch_zip(zip_file, vendor):
   elif vendor == "faux":
     patch_file = "faux.dualboot.patch"
 
-  elif vendor == "cyanogenmod":
+  elif vendor == "cyanogenmod" or \
+       vendor == "pacman":
     patch_file = "cyanogenmod.dualboot.patch"
 
   elif vendor == "cyanogenmod-gapps":
@@ -188,6 +193,10 @@ def detect_vendor(path):
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")
     return "cyanogenmod"
+
+  elif re.search(r"^pac_[a-z0-9]+_.*.zip$", filename):
+    print("Detected PAC-Man ROM zip")
+    return "pacman"
 
   # Google Apps
   elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip", filename):
