@@ -172,6 +172,10 @@ def patch_zip(zip_file, vendor):
     patch_file = "gapps-task650.dualboot.patch"
     has_boot_image = False
 
+  elif vendor == "supersu":
+    patch_file = "supersu.dualboot.patch"
+    has_boot_image = False
+
   if has_boot_image:
     boot_image = os.path.join(tempdir, "boot.img")
     new_boot_image = patch_boot_image(boot_image, vendor)
@@ -250,6 +254,11 @@ def detect_vendor(path):
   elif re.search(r"^gapps-jb\([0-9\.]+\)-[0-9\.]+.zip$", filename):
     print("Detected Task650's Google Apps zip")
     return "gapps-task650"
+
+  # SuperSU
+  elif re.search(r"^UPDATE-SuperSU-v[0-9\.]+.zip$", filename):
+    print("Detected Chainfire's SuperSU zip")
+    return "supersu"
 
   else:
     return "UNKNOWN"
