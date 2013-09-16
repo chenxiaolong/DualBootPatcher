@@ -100,6 +100,10 @@ def patch_boot_image(boot_image, vendor):
     print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
 
+  elif vendor == "aokp-task650":
+    print("Using patched Task650's AOKP ramdisk")
+    ramdisk = "aokp-task650.dualboot.cpio.gz"
+
   elif vendor == "chronickernel":
     print("Using patched ChronicKernel ramdisk")
     ramdisk = "chronickernel.dualboot.cpio.gz"
@@ -157,8 +161,15 @@ def patch_zip(zip_file, vendor):
        vendor == "pacman":
     patch_file = "cyanogenmod.dualboot.patch"
 
+  elif vendor == "aokp-task650":
+    patch_file = "aokp-task650.dualboot.patch"
+
   elif vendor == "cyanogenmod-gapps":
     patch_file = "cyanogenmod-gapps.dualboot.patch"
+    has_boot_image = False
+
+  elif vendor == "gapps-task650":
+    patch_file = "gapps-task650.dualboot.patch"
     has_boot_image = False
 
   if has_boot_image:
@@ -217,6 +228,11 @@ def detect_vendor(path):
     print("Detected Cyanogenmod based ROM zip")
     return "cyanogenmod"
 
+  # AOKP ROMs
+  elif re.search(r"^aokp_[0-9\.]+_[a-z0-9]+_task650_[0-9\.]+.zip$", filename):
+    print("Detected Task650's AOKP ROM zip")
+    return "aokp-task650"
+
   # PAC-Man ROMs
   elif re.search(r"^pac_[a-z0-9]+_.*.zip$", filename):
     print("Detected PAC-Man ROM zip")
@@ -227,9 +243,13 @@ def detect_vendor(path):
     return "pacman"
 
   # Google Apps
-  elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip", filename):
+  elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip$", filename):
     print("Detected Cyanogenmod Google Apps zip")
     return "cyanogenmod-gapps"
+
+  elif re.search(r"^gapps-jb\([0-9\.]+\)-[0-9\.]+.zip$", filename):
+    print("Detected Task650's Google Apps zip")
+    return "gapps-task650"
 
   else:
     return "UNKNOWN"

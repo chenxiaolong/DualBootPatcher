@@ -18,6 +18,20 @@ unmount_system() {
   umount /raw-system
 }
 
+mount_data() {
+  mkdir -p /raw-data /data
+  chmod 0755 /raw-data
+  chown 0:0 /raw-data
+  mount -t $1 $2 /raw-data
+  mkdir -p /raw-data/dual
+  mount -o bind /raw-data/dual /data
+}
+
+unmount_data() {
+  umount /data
+  umount /raw-data
+}
+
 case "$1" in
   set-secondary-kernel)
     set_secondary_kernel
@@ -27,5 +41,11 @@ case "$1" in
     ;;
   unmount-system)
     unmount_system
+    ;;
+  mount-data)
+    mount_data $2 $3
+    ;;
+  unmount-data)
+    unmount_data
     ;;
 esac

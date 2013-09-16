@@ -1,0 +1,20 @@
+# AOKP Extras
+
+on boot
+    # Run sysinit
+    start sysinit
+
+# adb over network
+on property:service.adb.tcp.port=5555
+    stop adbd
+    start adbd
+on property:service.adb.tcp.port=-1
+    stop adbd
+    start adbd
+
+# sysinit (/system/etc/init.d)
+service sysinit /system/bin/sysinit
+    user root
+    oneshot
+
+import /init.superuser.rc
