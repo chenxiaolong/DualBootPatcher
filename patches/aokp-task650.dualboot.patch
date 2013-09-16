@@ -18,4 +18,4 @@
 @@ -162 +168,2 @@
 -unmount("/system");
 +run_program("/tmp/dualboot.sh", "set-secondary-kernel");
-++run_program("/tmp/dualboot.sh", "unmount-system");
++run_program("/tmp/dualboot.sh", "unmount-system");
