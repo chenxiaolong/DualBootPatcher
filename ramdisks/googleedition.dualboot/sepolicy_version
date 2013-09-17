@@ -1,0 +1,6 @@
+ATT-XXXX-TTTT-SSSS-0001
+sepolicy	e56f9eb98a7b48a88aa76cb6b0346f42
+mac_permissions.xml	d17c7bc486c47e880a04f7b505116132
+property_contexts	891b49f3c89abb8aabee0e50c05a7f89
+file_contexts	cd86689b5c2ae017cc1a78a491e5b5b8
+seapp_contexts	c38794701e7fd160829bc2d293ee62e1
