@@ -5,6 +5,7 @@ ROMs:
   * Task650's AOKP
   * PAC-Man
   * Google Edition (MaKTaiL)
+  * ParanoidAndroid (Vertigo, most likely other versions too)
 
 Kernels:
   * ktoonsez's AOSP 4.3

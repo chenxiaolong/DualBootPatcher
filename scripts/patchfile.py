@@ -112,9 +112,13 @@ def patch_boot_image(boot_image, vendor):
     print("Using patched ChronicKernel ramdisk")
     ramdisk = "chronickernel.dualboot.cpio.gz"
 
+  elif vendor == "paranoidandroid":
+    print("using patched ParanoidAndroid ramdisk")
+    ramdisk = "paranoidandroid.dualboot.cpio.gz"
+
   # All Google Edition ROMs can use this ramdisk
   elif vendor == "ge-MaKTaiL":
-    print("Use patched Google Edition ramdisk")
+    print("Using patched Google Edition ramdisk")
     ramdisk = "googleedition.dualboot.cpio.gz"
 
   else:
@@ -175,6 +179,9 @@ def patch_zip(zip_file, vendor):
 
   elif vendor == "aokp-task650":
     patch_file = "aokp-task650.dualboot.patch"
+
+  elif vendor == "paranoidandroid":
+    patch_file = "paranoidandroid.dualboot.patch"
 
   elif vendor == "ge-MaKTaiL":
     patch_file = "ge-MaKTaiL.dualboot.patch"
@@ -264,6 +271,11 @@ def detect_vendor(path):
   elif re.search(r"^pac_[a-z0-9]+-nightly-[0-9]+.zip$", filename):
     print("Detected PAC-Man nightly ROM zip")
     return "pacman"
+
+  # ParanoidAndroid ROMs
+  elif re.search(r"^pa_[a-z0-9]+-.*-[0-9]+.zip$", filename):
+    print("Detected ParanoidAndroid ROM zip")
+    return "paranoidandroid"
 
   # Google Edition ROMs
   elif re.search(r"^i9505-ge-untouched-4.3-.*.zip$", filename):
