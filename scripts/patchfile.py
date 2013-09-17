@@ -96,6 +96,10 @@ def patch_boot_image(boot_image, vendor):
     print("Using patched Cyanogenmod ramdisk (compatible with faux)")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
 
+  elif vendor == "infamouskernel":
+    print("Using patched Infamous kernel ramdisk")
+    ramdisk = "infamouskernel.dualboot.cpio.gz"
+
   elif vendor == "pacman":
     print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
     ramdisk = "cyanogenmod.dualboot.cpio.gz"
@@ -162,6 +166,9 @@ def patch_zip(zip_file, vendor):
   elif vendor == "chronickernel":
     patch_file = "chronickernel.dualboot.patch"
 
+  elif vendor == "infamouskernel":
+    patch_file = "infamouskernel.dualboot.patch"
+
   elif vendor == "cyanogenmod" or \
        vendor == "pacman":
     patch_file = "cyanogenmod.dualboot.patch"
@@ -225,6 +232,10 @@ def detect_vendor(path):
   elif re.search(r"^ChronicKernel-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ChronicKernel kernel zip")
     return "chronickernel"
+
+  elif re.search(r"^Infamous_S4_Kernel.v.*.zip$", filename):
+    print("Detected Infamous kernel zip")
+    return "infamouskernel"
 
   # Cyanogenmod ROMs
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
