@@ -24,6 +24,12 @@ if os.name == "nt":
   mkbootimg     = "mkbootimg.exe"
   unpackbootimg = "unpackbootimg.exe"
 
+class FileInfo:
+  def __init__(self):
+    self.patch = ""
+    self.ramdisk = ""
+    self.has_boot_image = True
+
 def clean_up_and_exit(exit_status):
   for d in remove_dirs:
     shutil.rmtree(d)
@@ -65,7 +71,7 @@ def apply_patch_file(patchfile, directory):
     print("Failed to apply patch")
     clean_up_and_exit(1)
 
-def patch_boot_image(boot_image, vendor):
+def patch_boot_image(boot_image, file_info):
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
@@ -88,50 +94,11 @@ def patch_boot_image(boot_image, vendor):
   os.remove(prefix + "-ramdisk.gz")
   shutil.move(prefix + "-zImage", os.path.join(tempdir, "kernel.img"))
 
-  if vendor == "ktoonsez":
-    print("Using patched ktoonsez ramdisk")
-    ramdisk = "ktoonsez.dualboot.cpio.gz"
+  if not file_info.ramdisk:
+    print("No ramdisk specified")
+    return None
 
-  elif vendor == "faux":
-    print("Using patched Cyanogenmod ramdisk (compatible with faux)")
-    ramdisk = "cyanogenmod.dualboot.cpio.gz"
-
-  elif vendor == "infamouskernel":
-    print("Using patched Infamous kernel ramdisk")
-    ramdisk = "infamouskernel.dualboot.cpio.gz"
-
-  elif vendor == "pacman":
-    print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
-    ramdisk = "cyanogenmod.dualboot.cpio.gz"
-
-  elif vendor == "aokp-task650":
-    print("Using patched Task650's AOKP ramdisk")
-    ramdisk = "aokp-task650.dualboot.cpio.gz"
-
-  elif vendor == "miui":
-    #print("Using patched Cyanogenmod ramdisk (compatible with MIUI)")
-    #ramdisk = "cyanogenmod.dualboot.cpio.gz"
-    print("Using patched MIUI ramdisk")
-    ramdisk = "miui.dualboot.cpio.gz"
-
-  elif vendor == "chronickernel":
-    print("Using patched ChronicKernel ramdisk")
-    ramdisk = "chronickernel.dualboot.cpio.gz"
-
-  elif vendor == "paranoidandroid":
-    print("using patched ParanoidAndroid ramdisk")
-    ramdisk = "paranoidandroid.dualboot.cpio.gz"
-
-  # All Google Edition ROMs can use this ramdisk
-  elif vendor == "ge-MaKTaiL":
-    print("Using patched Google Edition ramdisk")
-    ramdisk = "googleedition.dualboot.cpio.gz"
-
-  else:
-    print("Using patched Cyanogenmod ramdisk")
-    ramdisk = "cyanogenmod.dualboot.cpio.gz"
-
-  ramdisk = os.path.join(ramdiskdir, ramdisk)
+  ramdisk = os.path.join(ramdiskdir, file_info.ramdisk)
   shutil.copyfile(ramdisk, os.path.join(tempdir, "ramdisk.cpio.gz"))
 
   exit_status, output = run_command(
@@ -154,7 +121,7 @@ def patch_boot_image(boot_image, vendor):
 
   return os.path.join(tempdir, "complete.img")
 
-def patch_zip(zip_file, vendor):
+def patch_zip(zip_file, file_info):
   print("--- Please wait. This may take a while ---")
 
   tempdir = tempfile.mkdtemp()
@@ -164,56 +131,9 @@ def patch_zip(zip_file, vendor):
   z.extractall(tempdir)
   z.close()
 
-  patch_file = ""
-  has_boot_image = True
-
-  if vendor == "ktoonsez":
-    patch_file = "ktoonsez.dualboot.patch"
-
-  elif vendor == "faux":
-    patch_file = "faux.dualboot.patch"
-
-  elif vendor == "chronickernel":
-    patch_file = "chronickernel.dualboot.patch"
-
-  elif vendor == "infamouskernel":
-    patch_file = "infamouskernel.dualboot.patch"
-
-  elif vendor == "cyanogenmod" or \
-       vendor == "pacman":
-    patch_file = "cyanogenmod.dualboot.patch"
-
-  elif vendor == "aokp-task650":
-    patch_file = "aokp-task650.dualboot.patch"
-
-  elif vendor == "miui":
-    patch_file = "miui.dualboot.patch"
-
-  elif vendor == "paranoidandroid":
-    patch_file = "paranoidandroid.dualboot.patch"
-
-  elif vendor == "ge-MaKTaiL":
-    patch_file = "ge-MaKTaiL.dualboot.patch"
-
-  elif vendor == "cyanogenmod-gapps":
-    patch_file = "cyanogenmod-gapps.dualboot.patch"
-    has_boot_image = False
-
-  elif vendor == "gapps-task650":
-    patch_file = "gapps-task650.dualboot.patch"
-    has_boot_image = False
-
-  elif vendor == "gapps-miui":
-    patch_file = "gapps-miui.dualboot.patch"
-    has_boot_image = False
-
-  elif vendor == "supersu":
-    patch_file = "supersu.dualboot.patch"
-    has_boot_image = False
-
-  if has_boot_image:
+  if file_info.has_boot_image:
     boot_image = os.path.join(tempdir, "boot.img")
-    new_boot_image = patch_boot_image(boot_image, vendor)
+    new_boot_image = patch_boot_image(boot_image, file_info)
 
     os.remove(boot_image)
     shutil.move(new_boot_image, boot_image)
@@ -222,8 +142,8 @@ def patch_zip(zip_file, vendor):
 
   shutil.copy(os.path.join(patchdir, "dualboot.sh"), tempdir)
 
-  if patch_file != "":
-    apply_patch_file(patch_file, tempdir)
+  if file_info.patch != "":
+    apply_patch_file(file_info.patch, tempdir)
 
   new_zip_file = os.path.join(tempdir, "complete.zip")
   z = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
@@ -237,30 +157,46 @@ def patch_zip(zip_file, vendor):
 
   return new_zip_file
 
-def detect_vendor(path):
+def get_file_info(path):
   filename = os.path.split(path)[1]
+  file_info = FileInfo()
 
   # Custom kernels
-  if re.search(r"^KT-SGS4-JB4.3-AOSP-.*.zip$", filename):
+  if re.search(r"^.*\.img$", filename):
+    print("Detected boot.img file")
+    print("WILL USE CYANOGENMOD RAMDISK. USE replaceramdisk SCRIPT TO CHOOSE ANOTHER RAMDISK")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+
+  elif re.search(r"^KT-SGS4-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ktoonsez kernel zip")
-    return "ktoonsez"
+    print("Using patched ktoonsez ramdisk")
+    file_info.ramdisk = "ktoonsez.dualboot.cpio.gz"
+    file_info.patch   = "ktoonsez.dualboot.patch"
 
   elif re.search(r"^jflte[a-z]+-aosp-faux123-.*.zip$", filename):
     print("Detected faux kernel zip")
-    return "faux"
+    print("Using patched Cyanogenmod ramdisk (compatible with faux)")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.patch   = "faux.dualboot.patch"
 
   elif re.search(r"^ChronicKernel-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ChronicKernel kernel zip")
-    return "chronickernel"
+    print("Using patched ChronicKernel ramdisk")
+    file_info.ramdisk = "chronickernel.dualboot.cpio.gz"
+    file_info.patch   = "chronickernel.dualboot.patch"
 
   elif re.search(r"^Infamous_S4_Kernel.v.*.zip$", filename):
     print("Detected Infamous kernel zip")
-    return "infamouskernel"
+    print("Using patched Infamous kernel ramdisk")
+    file_info.ramdisk = "infamouskernel.dualboot.cpio.gz"
+    file_info.patch   = "infamouskernel.dualboot.patch"
 
   # Cyanogenmod ROMs
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")
-    return "cyanogenmod"
+    print("Using patched Cyanogenmod ramdisk")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.patch   = "cyanogenmod.dualboot.patch"
 
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-.*.zip$", filename):
     # ROMs that have built in dual-boot support
@@ -269,57 +205,77 @@ def detect_vendor(path):
       clean_up_and_exit(1)
 
     print("Detected Cyanogenmod based ROM zip")
-    return "cyanogenmod"
+    print("Using patched Cyanogenmod ramdisk")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.patch   = "cyanogenmod.dualboot.patch"
 
   # AOKP ROMs
   elif re.search(r"^aokp_[0-9\.]+_[a-z0-9]+_task650_[0-9\.]+.zip$", filename):
     print("Detected Task650's AOKP ROM zip")
-    return "aokp-task650"
+    print("Using patched Task650's AOKP ramdisk")
+    file_info.ramdisk = "aokp-task650.dualboot.cpio.gz"
+    file_info.patch   = "aokp-task650.dualboot.patch"
 
   # PAC-Man ROMs
   elif re.search(r"^pac_[a-z0-9]+_.*.zip$", filename):
     print("Detected PAC-Man ROM zip")
-    return "pacman"
+    print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.patch   = "cyanogenmod.dualboot.patch"
 
   elif re.search(r"^pac_[a-z0-9]+-nightly-[0-9]+.zip$", filename):
     print("Detected PAC-Man nightly ROM zip")
-    return "pacman"
+    print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.patch   = "cyanogenmod.dualboot.patch"
 
   # ParanoidAndroid ROMs
   elif re.search(r"^pa_[a-z0-9]+-.*-[0-9]+.zip$", filename):
     print("Detected ParanoidAndroid ROM zip")
-    return "paranoidandroid"
+    print("using patched ParanoidAndroid ramdisk")
+    file_info.ramdisk = "paranoidandroid.dualboot.cpio.gz"
+    file_info.patch   = "paranoidandroid.dualboot.patch"
 
   # Google Edition ROMs
   elif re.search(r"^i9505-ge-untouched-4.3-.*.zip$", filename):
     print("Detected MaKTaiL's Google Edition ROM zip")
-    return "ge-MaKTaiL"
+    print("Using patched Google Edition ramdisk")
+    file_info.ramdisk = "googleedition.dualboot.cpio.gz"
+    file_info.patch   = "ge-MaKTaiL.dualboot.patch"
 
   # MIUI ROMs
   elif re.search(r"^miuiandroid_.*.zip$", filename):
     if "gapps" in filename:
       print("Detected MIUI Google Apps zip")
-      return "gapps-miui"
+      file_info.patch = "gapps-miui.dualboot.patch"
+      file_info.has_boot_image = False
     else:
       print("Detected MIUI ROM zip")
-      return "miui"
+      print("Using patched MIUI ramdisk")
+      file_info.ramdisk = "miui.dualboot.cpio.gz"
+      file_info.patch   = "miui.dualboot.patch"
 
   # Google Apps
   elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip$", filename):
     print("Detected Cyanogenmod Google Apps zip")
-    return "cyanogenmod-gapps"
+    file_info.patch = "cyanogenmod-gapps.dualboot.patch"
+    file_info.has_boot_image = False
 
   elif re.search(r"^gapps-jb\([0-9\.]+\)-[0-9\.]+.zip$", filename):
     print("Detected Task650's Google Apps zip")
-    return "gapps-task650"
+    file_info.patch = "gapps-task650.dualboot.patch"
+    file_info.has_boot_image = False
 
   # SuperSU
   elif re.search(r"^UPDATE-SuperSU-v[0-9\.]+.zip$", filename):
     print("Detected Chainfire's SuperSU zip")
-    return "supersu"
+    file_info.patch = "supersu.dualboot.patch"
+    file_info.has_boot_image = False
 
   else:
-    return "UNKNOWN"
+    return None
+
+  return file_info
 
 def detect_file_type(path):
   if path.endswith(".zip"):
@@ -329,40 +285,41 @@ def detect_file_type(path):
   else:
     return "UNKNOWN"
 
-if len(sys.argv) < 2:
-  print("Usage: %s [zip file or boot.img]" % sys.argv[0])
-  clean_up_and_exit(1)
-
-filename = sys.argv[1]
-
-if not os.path.exists(filename):
-  print("%s does not exist!" % filename)
-  clean_up_and_exit(1)
-
-filename = os.path.abspath(filename)
-filetype = detect_file_type(filename)
-filevendor = detect_vendor(filename)
-
-if filetype == "UNKNOWN":
-  print("Unsupported file")
-  clean_up_and_exit(1)
-
-if filetype == "zip":
-  if filevendor == "UNKNOWN":
-    print("Unsupported zip")
+if __name__ == "__main__":
+  if len(sys.argv) < 2:
+    print("Usage: %s [zip file or boot.img]" % sys.argv[0])
     clean_up_and_exit(1)
 
-  newfile = patch_zip(filename, filevendor)
-  print("Successfully patched zip")
-  newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
-  shutil.move(newfile, newpath)
-  print("Path: " + newpath)
+  filename = sys.argv[1]
 
-elif filetype == "img":
-  newfile = patch_boot_image(filename, filevendor)
-  print("Successfully patched boot image")
-  newpath = re.sub(r"\.img$", "_dualboot.img", filename)
-  shutil.move(newfile, newpath)
-  print("Path: " + newpath)
+  if not os.path.exists(filename):
+    print("%s does not exist!" % filename)
+    clean_up_and_exit(1)
 
-clean_up_and_exit(0)
+  filename = os.path.abspath(filename)
+  filetype = detect_file_type(filename)
+  fileinfo = get_file_info(filename)
+
+  if filetype == "UNKNOWN":
+    print("Unsupported file")
+    clean_up_and_exit(1)
+
+  if filetype == "zip":
+    if not fileinfo:
+      print("Unsupported zip")
+      clean_up_and_exit(1)
+
+    newfile = patch_zip(filename, fileinfo)
+    print("Successfully patched zip")
+    newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
+    shutil.move(newfile, newpath)
+    print("Path: " + newpath)
+
+  elif filetype == "img":
+    newfile = patch_boot_image(filename, fileinfo)
+    print("Successfully patched boot image")
+    newpath = re.sub(r"\.img$", "_dualboot.img", filename)
+    shutil.move(newfile, newpath)
+    print("Path: " + newpath)
+
+  clean_up_and_exit(0)
