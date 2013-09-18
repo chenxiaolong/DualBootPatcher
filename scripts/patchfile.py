@@ -108,6 +108,12 @@ def patch_boot_image(boot_image, vendor):
     print("Using patched Task650's AOKP ramdisk")
     ramdisk = "aokp-task650.dualboot.cpio.gz"
 
+  elif vendor == "miui":
+    #print("Using patched Cyanogenmod ramdisk (compatible with MIUI)")
+    #ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    print("Using patched MIUI ramdisk")
+    ramdisk = "miui.dualboot.cpio.gz"
+
   elif vendor == "chronickernel":
     print("Using patched ChronicKernel ramdisk")
     ramdisk = "chronickernel.dualboot.cpio.gz"
@@ -180,6 +186,9 @@ def patch_zip(zip_file, vendor):
   elif vendor == "aokp-task650":
     patch_file = "aokp-task650.dualboot.patch"
 
+  elif vendor == "miui":
+    patch_file = "miui.dualboot.patch"
+
   elif vendor == "paranoidandroid":
     patch_file = "paranoidandroid.dualboot.patch"
 
@@ -192,6 +201,10 @@ def patch_zip(zip_file, vendor):
 
   elif vendor == "gapps-task650":
     patch_file = "gapps-task650.dualboot.patch"
+    has_boot_image = False
+
+  elif vendor == "gapps-miui":
+    patch_file = "gapps-miui.dualboot.patch"
     has_boot_image = False
 
   elif vendor == "supersu":
@@ -279,8 +292,17 @@ def detect_vendor(path):
 
   # Google Edition ROMs
   elif re.search(r"^i9505-ge-untouched-4.3-.*.zip$", filename):
-    print("Detected MaKTaiL's Google Edition ROM")
+    print("Detected MaKTaiL's Google Edition ROM zip")
     return "ge-MaKTaiL"
+
+  # MIUI ROMs
+  elif re.search(r"^miuiandroid_.*.zip$", filename):
+    if "gapps" in filename:
+      print("Detected MIUI Google Apps zip")
+      return "gapps-miui"
+    else:
+      print("Detected MIUI ROM zip")
+      return "miui"
 
   # Google Apps
   elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip$", filename):
@@ -308,7 +330,7 @@ def detect_file_type(path):
     return "UNKNOWN"
 
 if len(sys.argv) < 2:
-  print("Usage: %s [kernel file]" % sys.argv[0])
+  print("Usage: %s [zip file or boot.img]" % sys.argv[0])
   clean_up_and_exit(1)
 
 filename = sys.argv[1]
@@ -327,7 +349,7 @@ if filetype == "UNKNOWN":
 
 if filetype == "zip":
   if filevendor == "UNKNOWN":
-    print("Unsupported kernel zip")
+    print("Unsupported zip")
     clean_up_and_exit(1)
 
   newfile = patch_zip(filename, filevendor)

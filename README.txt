@@ -6,6 +6,7 @@ ROMs:
   * PAC-Man
   * Google Edition (MaKTaiL)
   * ParanoidAndroid (Vertigo, most likely other versions too)
+  * MIUI
 
 Kernels:
   * ktoonsez's AOSP 4.3
