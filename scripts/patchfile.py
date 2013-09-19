@@ -199,7 +199,7 @@ def get_file_info(path):
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-.*.zip$", filename):
-    # ROMs that have built in dual-boot support
+    # My ROM has built in dual-boot support
     if "noobdev" in filename:
       print("ROM has built in dual boot support")
       clean_up_and_exit(1)
@@ -208,6 +208,12 @@ def get_file_info(path):
     print("Using patched Cyanogenmod ramdisk")
     file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
     file_info.patch   = "cyanogenmod.dualboot.patch"
+
+  elif re.search(r"^Slim-.*.zip$", filename):
+    print("Detected Slim Bean ROM zip")
+    print("Using patched Cyanogenmod ramdisk (compatible with Slim Bean)")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.patch   = "slim.dualboot.patch"
 
   # AOKP ROMs
   elif re.search(r"^aokp_[0-9\.]+_[a-z0-9]+_task650_[0-9\.]+.zip$", filename):
@@ -264,6 +270,11 @@ def get_file_info(path):
   elif re.search(r"^gapps-jb\([0-9\.]+\)-[0-9\.]+.zip$", filename):
     print("Detected Task650's Google Apps zip")
     file_info.patch = "gapps-task650.dualboot.patch"
+    file_info.has_boot_image = False
+
+  elif re.search(r"^Slim_AIO_gapps.*.zip$", filename):
+    print("Detected Slim Bean Google Apps zip")
+    file_info.patch = "gapps-slim.dualboot.patch"
     file_info.has_boot_image = False
 
   # SuperSU
