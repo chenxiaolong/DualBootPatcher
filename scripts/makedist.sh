@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.6.3"
+VERSION="1.7"
 MINGW_PREFIX=i486-mingw32-
 
 set -e
@@ -17,12 +17,13 @@ cd "${CURDIR}"
 create_portable_python() {
   local URL="http://ftp.osuosl.org/pub/portablepython/v3.2/PortablePython_3.2.5.1.exe"
   local MD5SUM="5ba055a057ce4fe1950a0f1f7ebae323"
-  if [ ! -f pythonportable.exe ] || \
-    ! md5sum pythonportable.exe | grep -q ${MD5SUM}; then
+  if [ ! -f windowsbinaries/pythonportable.exe ] || \
+    ! md5sum windowsbinaries/pythonportable.exe | grep -q ${MD5SUM}; then
+    mkdir -p windowsbinaries
     if which axel >/dev/null; then
-      axel -an10 "${URL}" -o pythonportable.exe
+      axel -an10 "${URL}" -o windowsbinaries/pythonportable.exe
     else
-      wget "${URL}" -O pythonportable.exe
+      wget "${URL}" -O windowsbinaries/pythonportable.exe
     fi
   fi
 
@@ -96,7 +97,7 @@ create_portable_python() {
   rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,configparser.py,contextlib.py,cProfile.py,csv.py}
   rm Lib/{datetime.py,decimal.py,difflib.py,dis.py,doctest.py,dummy_threading.py}
   rm Lib/{filecmp.py,fileinput.py,formatter.py,fractions.py,ftplib.py}
-  rm Lib/{getopt.py,getpass.py,gettext.py,glob.py,gzip.py}
+  rm Lib/{getopt.py,getpass.py,gettext.py,glob.py}
   rm Lib/hmac.py
   rm Lib/{imaplib.py,imghdr.py,inspect.py}
   rm Lib/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,mimetypes.py,modulefinder.py}
@@ -133,16 +134,50 @@ build_windows() {
   rm mkbootimg/mkbootimg.windows.c mkbootimg/unpackbootimg.windows.c
   popd
 
-  wget 'http://downloads.sourceforge.net/project/mingw/MSYS/Extension/patch/patch-2.6.1-1/patch-2.6.1-1-msys-1.0.13-bin.tar.lzma'
-  wget 'http://downloads.sourceforge.net/project/mingw/MSYS/Base/msys-core/msys-1.0.18-1/msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma'
+  mkdir -p windowsbinaries
+  pushd windowsbinaries
+
+  local URLBASE="http://downloads.sourceforge.net/project/mingw/MSYS"
+
+  if [ ! -f patch-2.6.1-1-msys-1.0.13-bin.tar.lzma ]; then
+    wget "${URLBASE}/Extension/patch/patch-2.6.1-1/patch-2.6.1-1-msys-1.0.13-bin.tar.lzma"
+  fi
+
+  if [ ! -f msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma ]; then
+    wget "${URLBASE}/Base/msys-core/msys-1.0.18-1/msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma"
+  fi
+
+  if [ ! -f libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma ]; then
+    wget "${URLBASE}/Base/gettext/gettext-0.18.1.1-1/libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma"
+  fi
+
+  if [ ! -f libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma ]; then
+    wget "${URLBASE}/Base/libiconv/libiconv-1.14-1/libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma"
+  fi
+
+  if [ ! -f liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma ]; then
+    wget "${URLBASE}/Base/xz/xz-5.0.3-1/liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma"
+  fi
+
+  if [ ! -f xz-5.0.3-1-msys-1.0.17-bin.tar.lzma ]; then
+    wget "${URLBASE}/Base/xz/xz-5.0.3-1/xz-5.0.3-1-msys-1.0.17-bin.tar.lzma"
+  fi
+
   tar Jxvf patch-2.6.1-1-msys-1.0.13-bin.tar.lzma bin/patch.exe \
     --to-stdout > "${TARGETDIR}/binaries/hctap.exe"
   tar Jxvf msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma bin/msys-1.0.dll \
     --to-stdout > "${TARGETDIR}/binaries/msys-1.0.dll"
-  chmod +x "${TARGETDIR}/binaries/hctap.exe" \
-           "${TARGETDIR}/binaries/msys-1.0.dll"
-  rm -v patch-2.6.1-1-msys-1.0.13-bin.tar.lzma \
-        msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma
+  tar Jxvf libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma bin/msys-intl-8.dll \
+    --to-stdout > "${TARGETDIR}/binaries/msys-intl-8.dll"
+  tar Jxvf libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma bin/msys-iconv-2.dll \
+    --to-stdout > "${TARGETDIR}/binaries/msys-iconv-2.dll"
+  tar Jxvf liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma bin/msys-lzma-5.dll \
+    --to-stdout > "${TARGETDIR}/binaries/msys-lzma-5.dll"
+  tar Jxvf xz-5.0.3-1-msys-1.0.17-bin.tar.lzma bin/xz.exe \
+    --to-stdout > "${TARGETDIR}/binaries/xz.exe"
+
+  chmod +x "${TARGETDIR}"/binaries/*.{exe,dll}
+  popd
 }
 
 build_linux() {
@@ -164,11 +199,16 @@ compress_ramdisks() {
   for i in ramdisks/*; do
     if [ -d "${i}" ]; then
       pushd "${i}"
-      find . | cpio -o -H newc | gzip > \
-        "${TARGETDIR}/ramdisks/$(basename "${i}").cpio.gz"
+      find . | cpio -o -H newc > \
+        "${TARGETDIR}/ramdisks/$(basename "${i}").cpio"
       popd
     fi
   done
+
+  pushd "${TARGETDIR}/ramdisks/"
+  tar cvf - *.cpio | xz -9 > ramdisks.tar.xz
+  rm *.cpio
+  popd
 }
 
 TARGETNAME="DualBootPatcher-${VERSION}"

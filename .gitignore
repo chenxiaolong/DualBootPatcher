@@ -1,4 +1,4 @@
 *.swp
 DualBootPatcher-*.zip
 DualBootPatcher-*/
-pythonportable.exe
+windowsbinaries/

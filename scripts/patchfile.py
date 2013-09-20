@@ -2,11 +2,13 @@
 
 # For Qualcomm based Samsung Galaxy S4 only!
 
+import gzip
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import zipfile
 
@@ -99,8 +101,38 @@ def patch_boot_image(boot_image, file_info):
     print("No ramdisk specified")
     return None
 
+  # Extract ramdisk from tar.xz
+  if sys.hexversion >= 50528256: # Python 3.3
+    with tarfile.open(os.path.join(ramdiskdir, "ramdisks.tar.xz")) as f:
+      f.extract(file_info.ramdisk, path = ramdiskdir)
+  else:
+    xz = "xz"
+    if os.name == "nt":
+      xz = os.path.join(binariesdir, "xz.exe")
+
+    run_command(
+      [ xz, '-d', '-k', '-f', os.path.join(ramdiskdir, "ramdisks.tar.xz") ]
+    )
+
+    with tarfile.open(os.path.join(ramdiskdir, "ramdisks.tar")) as f:
+      f.extract(file_info.ramdisk, path = ramdiskdir)
+
+    os.remove(os.path.join(ramdiskdir, "ramdisks.tar"))
+
   ramdisk = os.path.join(ramdiskdir, file_info.ramdisk)
+
+  # Compress ramdisk with gzip if it isn't already
+  if not file_info.ramdisk.endswith(".gz"):
+    with open(ramdisk, 'rb') as f_in:
+      with gzip.open(ramdisk + ".gz", 'wb') as f_out:
+        f_out.writelines(f_in)
+
+    os.remove(os.path.join(ramdiskdir, file_info.ramdisk))
+    ramdisk = ramdisk + ".gz"
+
   shutil.copyfile(ramdisk, os.path.join(tempdir, "ramdisk.cpio.gz"))
+
+  os.remove(os.path.join(ramdiskdir, file_info.ramdisk + ".gz"))
 
   exit_status, output = run_command(
     [ os.path.join(binariesdir, mkbootimg),
@@ -166,43 +198,43 @@ def get_file_info(path):
   if re.search(r"^.*\.img$", filename):
     print("Detected boot.img file")
     print("WILL USE CYANOGENMOD RAMDISK. USE replaceramdisk SCRIPT TO CHOOSE ANOTHER RAMDISK")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
 
   elif re.search(r"^KT-SGS4-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ktoonsez kernel zip")
     print("Using patched ktoonsez ramdisk")
-    file_info.ramdisk = "ktoonsez.dualboot.cpio.gz"
+    file_info.ramdisk = "ktoonsez.dualboot.cpio"
     file_info.patch   = "ktoonsez.dualboot.patch"
 
   elif re.search(r"^jflte[a-z]+-aosp-faux123-.*.zip$", filename):
     print("Detected faux kernel zip")
     print("Using patched Cyanogenmod ramdisk (compatible with faux)")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "faux.dualboot.patch"
 
   elif re.search(r"^ChronicKernel-JB4.3-AOSP-.*.zip$", filename):
     print("Detected ChronicKernel kernel zip")
     print("Using patched ChronicKernel ramdisk")
-    file_info.ramdisk = "chronickernel.dualboot.cpio.gz"
+    file_info.ramdisk = "chronickernel.dualboot.cpio"
     file_info.patch   = "chronickernel.dualboot.patch"
 
   elif re.search(r"^Infamous_S4_Kernel.v.*.zip$", filename):
     print("Detected Infamous kernel zip")
     print("Using patched Infamous kernel ramdisk")
-    file_info.ramdisk = "infamouskernel.dualboot.cpio.gz"
+    file_info.ramdisk = "infamouskernel.dualboot.cpio"
     file_info.patch   = "infamouskernel.dualboot.patch"
 
   elif re.search(r"^v[0-9]+-Google-edition-ausdim-Kernel-.*.zip$", filename):
     print("Detected Ausdim kernel zip")
     print("Using patched Ausdim kernel ramdisk")
     print("NOTE: The ramdisk is based on Ausdim v17. If a newer version has ramdisk changes, let me know")
-    file_info.ramdisk = "ausdim.dualboot.cpio.gz"
+    file_info.ramdisk = "ausdim.dualboot.cpio"
     file_info.patch   = "ausdim.dualboot.patch"
 
   elif re.search(r"^.*_AdamKernel.V[0-9\.]+\.CWM\.zip$", filename):
     print("Detected Adam kernel zip")
     print("Using patched Adam kernel zip")
-    file_info.ramdisk = "adam.dualboot.cpio.gz"
+    file_info.ramdisk = "adam.dualboot.cpio"
     file_info.patch   = "adam.dualboot.patch"
     file_info.bootimg = "wanam/boot.img"
 
@@ -210,7 +242,7 @@ def get_file_info(path):
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")
     print("Using patched Cyanogenmod ramdisk")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-.*.zip$", filename):
@@ -221,47 +253,47 @@ def get_file_info(path):
 
     print("Detected Cyanogenmod based ROM zip")
     print("Using patched Cyanogenmod ramdisk")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
   elif re.search(r"^Slim-.*.zip$", filename):
     print("Detected Slim Bean ROM zip")
     print("Using patched Cyanogenmod ramdisk (compatible with Slim Bean)")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "slim.dualboot.patch"
 
   # AOKP ROMs
   elif re.search(r"^aokp_[0-9\.]+_[a-z0-9]+_task650_[0-9\.]+.zip$", filename):
     print("Detected Task650's AOKP ROM zip")
     print("Using patched Task650's AOKP ramdisk")
-    file_info.ramdisk = "aokp-task650.dualboot.cpio.gz"
+    file_info.ramdisk = "aokp-task650.dualboot.cpio"
     file_info.patch   = "aokp-task650.dualboot.patch"
 
   # PAC-Man ROMs
   elif re.search(r"^pac_[a-z0-9]+_.*.zip$", filename):
     print("Detected PAC-Man ROM zip")
     print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
   elif re.search(r"^pac_[a-z0-9]+-nightly-[0-9]+.zip$", filename):
     print("Detected PAC-Man nightly ROM zip")
     print("Using patched Cyanogenmod ramdisk (compatible with PAC-Man)")
-    file_info.ramdisk = "cyanogenmod.dualboot.cpio.gz"
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
   # ParanoidAndroid ROMs
   elif re.search(r"^pa_[a-z0-9]+-.*-[0-9]+.zip$", filename):
     print("Detected ParanoidAndroid ROM zip")
     print("using patched ParanoidAndroid ramdisk")
-    file_info.ramdisk = "paranoidandroid.dualboot.cpio.gz"
+    file_info.ramdisk = "paranoidandroid.dualboot.cpio"
     file_info.patch   = "paranoidandroid.dualboot.patch"
 
   # Google Edition ROMs
   elif re.search(r"^i9505-ge-untouched-4.3-.*.zip$", filename):
     print("Detected MaKTaiL's Google Edition ROM zip")
     print("Using patched Google Edition ramdisk")
-    file_info.ramdisk = "googleedition.dualboot.cpio.gz"
+    file_info.ramdisk = "googleedition.dualboot.cpio"
     file_info.patch   = "ge-MaKTaiL.dualboot.patch"
 
   # MIUI ROMs
@@ -273,7 +305,7 @@ def get_file_info(path):
     else:
       print("Detected MIUI ROM zip")
       print("Using patched MIUI ramdisk")
-      file_info.ramdisk = "miui.dualboot.cpio.gz"
+      file_info.ramdisk = "miui.dualboot.cpio"
       file_info.patch   = "miui.dualboot.patch"
 
   # Google Apps
