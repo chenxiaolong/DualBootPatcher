@@ -31,7 +31,7 @@ create_portable_python() {
 
   local TEMPDIR="$(mktemp -d --tmpdir="$(pwd)")"
   pushd "${TEMPDIR}"
-  7z x ../pythonportable.exe \*/App
+  7z x ../windowsbinaries/pythonportable.exe \*/App
 
   # Weird filename encoding in NSIS installer
   COUNTER=0
