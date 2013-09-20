@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#LED speed
+#Speed of notification LED
+#1x (stock)
+
+echo "1" > /sys/class/sec/led/led_speed

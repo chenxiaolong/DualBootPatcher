@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Android Logger
+#Switch android logger:
+#on
+
+echo 1 > /sys/kernel/logger_mode/logger_mode

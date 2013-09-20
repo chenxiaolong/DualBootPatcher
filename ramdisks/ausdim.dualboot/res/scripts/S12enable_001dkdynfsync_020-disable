@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Dynamic Fsync
+#Dynamic Fsync switch:
+#off
+
+echo "0" > /sys/kernel/dyn_fsync/Dyn_fsync_active

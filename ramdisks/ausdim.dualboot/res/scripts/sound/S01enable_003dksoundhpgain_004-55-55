@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Sound control headphone gain
+#Headphone gain:
+#55
+
+echo "55 55" > /sys/kernel/sound_control/gpl_headphone_gain

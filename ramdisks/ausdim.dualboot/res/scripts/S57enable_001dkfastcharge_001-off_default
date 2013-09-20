@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Fast charge
+#Disable fast charge:
+#Off (default)
+
+echo "0" > /sys/kernel/fast_charge/force_fast_charge

@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Sound control camera mic gain
+#Camera mic gain:
+#50
+
+echo "50" > /sys/kernel/sound_control/gpl_cam_mic_gain

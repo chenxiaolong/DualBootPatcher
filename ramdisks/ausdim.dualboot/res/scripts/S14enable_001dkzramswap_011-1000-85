@@ -1,0 +1,13 @@
+#!/system/bin/sh
+#Zram size and swappines
+#Change zram disksize-swappines:
+#Zram: 1gb Swappines: 85percent
+
+sleep 5
+swapoff /dev/block/zram0
+echo 1 > /sys/block/zram0/reset
+SIZE="1000"
+echo $(( $SIZE * 1024 * 1024 )) > /sys/block/zram0/disksize
+mkswap /dev/block/zram0
+swapon /dev/block/zram0
+echo 85 > /proc/sys/vm/swappiness

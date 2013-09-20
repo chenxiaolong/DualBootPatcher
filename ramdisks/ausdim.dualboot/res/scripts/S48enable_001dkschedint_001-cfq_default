@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Scheduler (int SD)
+#Change I/O scheduler for internal SD memory:
+#CFQ (default)
+
+echo "cfq" > /sys/block/mmcblk0/queue/scheduler

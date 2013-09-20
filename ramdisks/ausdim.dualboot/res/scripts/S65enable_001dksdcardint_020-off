@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#SD-Card Tweaks (int)
+#Increase read ahead buffer for internal SD memory:
+#Off - 128 kb
+
+echo "128" > /sys/block/mmcblk0/bdi/read_ahead_kb

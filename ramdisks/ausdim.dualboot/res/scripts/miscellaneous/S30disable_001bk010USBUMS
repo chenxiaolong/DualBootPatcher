@@ -1,0 +1,7 @@
+#!/system/bin/sh
+#USB: UMS mode
+#Toggle between UMS and MTP mode for USB port
+
+/sbin/busybox echo "" > /sys/devices/platform/s3c-usbgadget/gadget/lun0/file
+/system/bin/vold
+/system/bin/setprop persist.sys.usb.config mtp,adb

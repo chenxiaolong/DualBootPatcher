@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#GPU Frequencies
+#Change GPU clock speeds:
+#320 mhz
+
+echo "320000000" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk

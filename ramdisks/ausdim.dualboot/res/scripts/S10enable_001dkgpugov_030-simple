@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#GPU Governors
+#Change GPU governor:
+#simple
+
+echo "simple" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/pwrscale/trustzone/governor

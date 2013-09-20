@@ -1,0 +1,52 @@
+#!/system/bin/sh
+#Settings: Restore settings
+#Restore settings from previous backup
+
+TITLE="Restore settings"
+STYLE="Ok"
+
+SETTINGSFILE="/sdcard/ausdim-kernel-data/settingsbackup"
+
+# Ask for confirmation
+rm /sdcard/ausdim_twk_dlg_helper
+am start -a android.intent.action.MAIN -e message "Do you really want to restore settings from your last backup?" -e title "$TITLE" -e button1 "Yes" -e button2 "No" -e toasty "Restoring settings now!" -e toastn "Restoring settings aborted!" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+do
+  /sbin/busybox sleep 1
+done
+
+RESULT=`cat /sdcard/ausdim_twk_dlg_helper`
+
+if [ "$RESULT" = "yes" ]; then
+
+	if [ -f $SETTINGSFILE ]; then
+
+		# Restore previous settings
+		. /res/scripts/miscellaneous/loadsettings.inc
+
+		# Display confirmation window
+		rm /sdcard/ausdim_twk_dlg_helper
+		am start -a android.intent.action.MAIN -e message "Your settings have been restored. For safety reasons you should reboot now." -e title "$TITLE" -e okstyle "$STYLE" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+		while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+		do
+		  /sbin/busybox sleep 1
+		done
+
+	else
+	
+		# Display error message
+		rm /sdcard/ausdim_twk_dlg_helper
+		am start -a android.intent.action.MAIN -e message "No previously stored settings found. Aborting now." -e title "$TITLE" -e okstyle "$STYLE" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+		while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+		do
+		  /sbin/busybox sleep 1
+		done
+
+	fi
+
+fi
+
+rm /sdcard/ausdim_twk_dlg_helper

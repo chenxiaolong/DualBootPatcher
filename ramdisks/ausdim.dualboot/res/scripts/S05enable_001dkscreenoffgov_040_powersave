@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Screen off cpu governor
+#Change screen off cpu governor:
+#powersave
+
+echo "powersave" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor_screen_off

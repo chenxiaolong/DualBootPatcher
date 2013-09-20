@@ -1,0 +1,23 @@
+#!/system/bin/sh
+#GPU Frequencies
+#Change GPU clock speeds:
+#600 mhz
+
+echo "600000000" > /sys/devices/platform/kgsl-3d0.0/kgsl/kgsl-3d0/max_gpuclk
+
+# Display dialog window
+
+if [ ! -f /system/etc/init.d/*dkgpufreq_050-600 ]; then
+
+	rm /sdcard/ausdim_twk_dlg_helper
+
+	am start -a android.intent.action.MAIN -e message "You are overclocking your GPU, so your device maybe isn't stable." -e title "GPU Frequency warning" -e okstyle "Ok" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+	while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+	do
+		/sbin/busybox sleep 1
+	done
+
+	rm /sdcard/ausdim_twk_dlg_helper
+
+fi

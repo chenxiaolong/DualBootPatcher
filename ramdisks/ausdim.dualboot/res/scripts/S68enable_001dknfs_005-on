@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#NTFS support
+#NTFS support:
+#On
+
+insmod /lib/modules/ntfs.ko

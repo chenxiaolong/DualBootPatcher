@@ -1,0 +1,162 @@
+on early-init
+    start ueventd
+
+on init
+
+sysclktz 0
+
+loglevel 3
+
+on fs_selinux
+    mount_all fstab.qcom
+
+on fs
+    mount_all fstab.qcom
+
+# setup the global environment
+    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
+    export LD_LIBRARY_PATH /vendor/lib:/system/lib
+    export ANDROID_BOOTLOGO 1
+    export ANDROID_ROOT /system
+    export ANDROID_ASSETS /system/app
+    export ANDROID_DATA /data
+    
+    export EXTERNAL_STORAGE /mnt/sdcard
+    export EXTERNAL_STORAGE2 /mnt/sdcard/external_sd
+    export USBHOST_STORAGE /mnt/sdcard/usbStorage
+    
+    export ASEC_MOUNTPOINT /mnt/asec
+    export LOOP_MOUNTPOINT /mnt/obb
+    export BOOTCLASSPATH /system/framework/core.jar:/system/framework/bouncycastle.jar:/system/framework/ext.jar:/system/framework/framework.jar:/system/framework/android.policy.jar:/system/framework/services.jar:/system/framework/core-junit.jar
+
+# Backward compatibility
+    symlink /system/etc /etc
+    symlink /sys/kernel/debug /d
+
+# Right now vendor lives on the same filesystem as system,
+# but someday that may change.
+    symlink /system/vendor /vendor
+
+# create mountpoints
+    mkdir /mnt 0775 root system
+    mkdir /mnt/sdcard 0000 system system
+
+# Create cgroup mount point for cpu accounting
+    mkdir /acct
+    mount cgroup none /acct cpuacct
+    mkdir /acct/uid
+
+# Backwards Compat - XXX: Going away in G*
+    symlink /mnt/sdcard /sdcard
+
+    mkdir /system
+    mkdir /data 0771 system system
+    mkdir /cache 0770 system cache
+    mkdir /efs 0771 system radio
+
+    # Directory for putting things only root should see.
+    mkdir /mnt/secure 0700 root root
+
+    # Directory for staging bindmounts
+    mkdir /mnt/secure/staging 0700 root root
+
+    # Directory-target for where the secure container
+    # imagefile directory will be bind-mounted
+    mkdir /mnt/secure/asec  0700 root root
+
+    # Secure container public mount points.
+    mkdir /mnt/asec  0700 root system
+    mount tmpfs tmpfs /mnt/asec mode=0755,gid=1000
+
+    # Filesystem image public mount points.
+    mkdir /mnt/obb 0700 root system
+    mount tmpfs tmpfs /mnt/obb mode=0755,gid=1000
+
+    # usb public mount points.
+    mkdir /mnt/usb 0700 root system
+    mount tmpfs tmpfs /mnt/usb mode=0755,gid=1000
+
+    write /proc/sys/kernel/panic_on_oops 1
+    write /proc/sys/kernel/hung_task_timeout_secs 0
+    write /proc/cpu/alignment 4
+    write /proc/sys/kernel/sched_latency_ns 10000000
+    write /proc/sys/kernel/sched_wakeup_granularity_ns 2000000
+    write /proc/sys/kernel/sched_compat_yield 1
+    write /proc/sys/kernel/sched_child_runs_first 0
+
+# Create cgroup mount points for process groups
+    mkdir /dev/cpuctl
+    mount cgroup none /dev/cpuctl cpu
+    chown system system /dev/cpuctl
+    chown system system /dev/cpuctl/tasks
+    chmod 0777 /dev/cpuctl/tasks
+    write /dev/cpuctl/cpu.shares 1024
+
+    mkdir /dev/cpuctl/fg_boost
+    chown system system /dev/cpuctl/fg_boost/tasks
+    chmod 0777 /dev/cpuctl/fg_boost/tasks
+    write /dev/cpuctl/fg_boost/cpu.shares 1024
+
+    mkdir /dev/cpuctl/bg_non_interactive
+    chown system system /dev/cpuctl/bg_non_interactive/tasks
+    chmod 0777 /dev/cpuctl/bg_non_interactive/tasks
+    # 5.0 %
+    write /dev/cpuctl/bg_non_interactive/cpu.shares 52
+
+# insmod the modules
+
+on emmc-fs
+# mount mmc partitions
+    wait /dev/block/mmcblk0p14
+    mount ext4 /dev/block/mmcblk0p14 /system ro barrier=1
+    wait /dev/block/mmcblk0p15
+    exec /system/bin/e2fsck -p /dev/block/mmcblk0p15
+    mount ext4 /dev/block/mmcblk0p15 /data nosuid nodev barrier=1 noauto_da_alloc
+    # mount ext4 /dev/block/mmcblk0p16 /persist nosuid nodev barrier=1
+    # mount ext4 /dev/block/mmcblk0p17 /cache nosuid nodev barrier=1
+    #Setting permissons for misc partition
+    chmod 0666 /dev/block/mmcblk0p19
+
+# mount efs partition
+    mount ext4 /dev/block/mmcblk0p11 /efs nosuid nodev barrier=1
+    chown system radio /efs
+    chmod 0771 /efs
+
+on boot
+
+# disabled the cpu1
+    exec /system/bin/sh /init.qcom.lpm_boot.sh
+
+    class_start default
+
+# service mpdecision /system/bin/mpdecision --no_sleep --avg_comp
+#    user root
+
+service ueventd /sbin/ueventd
+    critical
+
+# 1293840000 represents seconds for 2011/1/1 0:0:0 GMT since epoch
+# service time_reset /system/bin/date 1293840000
+#	oneshot
+
+service console /system/bin/sh
+    console
+service playlpm /system/bin/playlpm
+   	user root
+service lpmkey /system/bin/lpmkey
+   	user root
+
+# adbd is controlled by the persist.service.adb.enable system property
+service adbd /sbin/adbd
+    disabled
+
+# adbd on at boot in emulator
+on property:ro.kernel.qemu=1
+    start adbd
+
+on property:persist.service.adb.enable=1
+    start adbd
+
+on property:persist.service.adb.enable=0
+    stop adbd
+

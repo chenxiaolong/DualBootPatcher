@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#CIFS support
+#CIFS network protocol support:
+#On
+
+insmod /lib/modules/cifs.ko

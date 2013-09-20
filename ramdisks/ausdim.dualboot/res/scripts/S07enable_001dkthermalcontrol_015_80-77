@@ -1,0 +1,7 @@
+#!/system/bin/sh
+#Thermal control degC
+#Change thermal control degC:
+#Start 80degC Stop 77degC
+
+echo "80" > /sys/devices/system/cpu/cpufreq/kthermal/temp_limit_degC_start
+echo "77" > /sys/devices/system/cpu/cpufreq/kthermal/temp_limit_degC_stop

@@ -1,0 +1,17 @@
+#!/system/bin/sh
+#CPU Min Frequency
+#Change CPU minimun scaling:
+#1674 MHz
+
+    sleep 3
+    chmod 644 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+    echo "1674000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+
+    chmod 644 /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+    echo "1674000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+
+    chmod 644 /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
+    echo "1674000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
+
+    chmod 644 /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
+    echo "1674000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq

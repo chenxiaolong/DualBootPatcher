@@ -1,0 +1,27 @@
+#!/system/bin/sh
+#Wipe clipboard cache
+#Wipes clipboard cache
+
+TITLE="Wipe clipboard cache"
+STYLE="Ok"
+
+rm /sdcard/ausdim_twk_dlg_helper
+
+am start -a android.intent.action.MAIN -e message "Do you really want to wipe the clipboard cache? (you should reboot afterwards)" -e title "$TITLE" -e button1 "Yes" -e button2 "No" -e toasty "Wipe clipboard cache done! You should reboot now." -e toastn "Wipe clipboard cache aborted!" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+do
+  /sbin/busybox sleep 1
+done
+
+RESULT=`cat /sdcard/ausdim_twk_dlg_helper`
+
+rm /sdcard/ausdim_twk_dlg_helper
+
+if [ "$RESULT" = "yes" ]; then
+
+	/sbin/busybox rm -rf /data/clipboard/*
+	/sbin/busybox sync
+	/sbin/busybox sleep 2s
+
+fi

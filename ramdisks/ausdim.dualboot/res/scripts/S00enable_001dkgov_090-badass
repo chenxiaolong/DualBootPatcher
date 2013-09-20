@@ -1,0 +1,26 @@
+#!/system/bin/sh
+#CPU Governor
+#Change CPU governor:
+#badass
+sleep 3
+chmod 666 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 
+echo "badass" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+chmod 444 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+chmod 666 /sys/devices/system/cpu/cpu1/online
+echo "1" > /sys/devices/system/cpu/cpu1/online
+chmod 444 /sys/devices/system/cpu/cpu1/online
+chmod 666 /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor 
+echo "badass" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+chmod 444 /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+chmod 666 /sys/devices/system/cpu/cpu2/online
+echo "1" > /sys/devices/system/cpu/cpu2/online
+chmod 444 /sys/devices/system/cpu/cpu2/online
+chmod 666 /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor 
+echo "badass" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+chmod 444 /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+chmod 666 /sys/devices/system/cpu/cpu3/online
+echo "1" > /sys/devices/system/cpu/cpu3/online
+chmod 444 /sys/devices/system/cpu/cpu3/online
+chmod 666 /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor 
+echo "badass" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+chmod 444 /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor

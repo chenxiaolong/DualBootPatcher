@@ -1,0 +1,36 @@
+#!/system/bin/sh
+#Config: Delete ausdim-kernel folder
+#Deletes the ausdim-kernel folder on your sdcard completely
+
+TITLE="Config: Delete ausdim-kernel folder"
+STYLE="Ok"
+
+if [ -f /sdcard/ausdim_twk_dlg_helper ]; then
+  rm /sdcard/ausdim_twk_dlg_helper
+fi;
+
+am start -a android.intent.action.MAIN -e message "Do you really want to delete the ausdim-kernel folder?" -e title "$TITLE" -e button1 "Yes" -e button2 "No" -e toasty "Delete ausdim-kernel folder now!" -e toastn "Delete of ausdim-kernel folder aborted!" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+do
+  /sbin/busybox sleep 1
+done
+
+RESULT=`cat /sdcard/ausdim_twk_dlg_helper`
+
+if [ "$RESULT" = "yes" ]; then
+
+  if [ -f /sdcard/ausdim_twk_dlg_helper ]; then
+    rm /sdcard/ausdim_twk_dlg_helper
+  fi;
+
+  /sbin/busybox rm -r -f /data/media/0/ausdim-kernel
+
+am start -a android.intent.action.MAIN -e message "Delete of ausdim-kernel folder done!" -e title "$TITLE" -e okstyle "$STYLE" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+else
+  if [ -f /sdcard/ausdim_twk_dlg_helper ]; then
+    rm /sdcard/ausdim_twk_dlg_helper
+  fi;
+  exit 0
+fi;

@@ -1,0 +1,31 @@
+#!/system/bin/sh
+#Run fix permissions
+#Run script to fix app permissions - NOTE: This may take a very long time!!!
+
+TITLE="Fix permissions"
+STYLE="Ok"
+
+rm /sdcard/ausdim_twk_dlg_helper
+
+am start -a android.intent.action.MAIN -e message "Do you really want to fix permissions? (NOTE: This may take a very long time!!!)" -e title "$TITLE" -e button1 "Yes" -e button2 "No" -e toasty "Fix permissions started." -e toastn "Fix permissions aborted!" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+do
+  /sbin/busybox sleep 1
+done
+
+RESULT=`cat /sdcard/ausdim_twk_dlg_helper`
+
+rm /sdcard/ausdim_twk_dlg_helper
+
+if [ "$RESULT" = "yes" ]; then
+
+	LOGFILE="/sdcard/ausdim-kernel-data/fix_permissions_log-$(date +%d.%m.%Y-%H.%M.%S-GMT).txt"
+	
+	/sbin/busybox sh /sbin/fix_permissions > $LOGFILE
+	/sbin/busybox sync
+
+	mv /sdcard/fix_permissions.log $LOGFILE
+
+	am start -a android.intent.action.MAIN -e message "Fix permissions completed. Logfile $LOGFILE created." -e title "$TITLE" -e okstyle "$STYLE" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+fi

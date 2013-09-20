@@ -1,0 +1,35 @@
+#!/system/bin/sh
+#Reboot: Download mode
+#Reboot into download mode
+
+TITLE="Reboot: Download mode"
+
+if [ -f /sdcard/ausdim_twk_dlg_helper ]; then
+  rm /sdcard/ausdim_twk_dlg_helper
+fi;
+
+am start -a android.intent.action.MAIN -e message "Do you want to reboot into download mode now?" -e title "$TITLE" -e button1 "Yes" -e button2 "No" -e toastn "Reboot into download mode aborted!" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+do
+  /sbin/busybox sleep 1
+done
+
+RESULT=`cat /sdcard/ausdim_twk_dlg_helper`
+
+if [ "$RESULT" = "yes" ]; then
+
+  if [ -f /sdcard/ausdim_twk_dlg_helper ]; then
+    rm /sdcard/ausdim_twk_dlg_helper
+  fi;
+
+  /sbin/busybox sync
+  /sbin/busybox sleep 2s
+  /system/bin/reboot download
+
+else
+  if [ -f /sdcard/ausdim_twk_dlg_helper ]; then
+    rm /sdcard/ausdim_twk_dlg_helper
+  fi;
+  exit 0
+fi;

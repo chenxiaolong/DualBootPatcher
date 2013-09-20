@@ -1,0 +1,23 @@
+#!/system/bin/sh
+#Sound control headset mic gain
+#Headset mic gain:
+#60
+
+echo "60" > /sys/kernel/sound_control/gpl_headsetmic_gain
+
+# Display dialog window
+
+if [ ! -f /system/etc/init.d/*dksounhsmicgain_005-60 ]; then
+
+	rm /sdcard/ausdim_twk_dlg_helper
+
+	am start -a android.intent.action.MAIN -e message "Warning maybe you damage your headset mic." -e title "Sound control headset mic gain warning" -e okstyle "Ok" -n dk.ausdim.tweaks.dialog.helper/.AusdimTweaksDialogActivity
+
+	while [ ! -f /sdcard/ausdim_twk_dlg_helper ]
+	do
+		/sbin/busybox sleep 1
+	done
+
+	rm /sdcard/ausdim_twk_dlg_helper
+
+fi

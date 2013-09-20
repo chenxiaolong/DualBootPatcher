@@ -1,0 +1,6 @@
+#!/system/bin/sh
+#Sound control mic gain
+#Mic gain:
+#40 (default)
+
+echo "40" > /sys/kernel/sound_control/gpl_mic_gain

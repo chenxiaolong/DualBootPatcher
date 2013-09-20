@@ -1,0 +1,14 @@
+#!/sbin/busybox sh
+
+if [ -f /system/bin/reboot ];
+then
+  REBIN=/system/bin/reboot
+else
+  REBIN=/sbin/sysreboot
+fi
+
+if test "$1" = ''; then
+  $REBIN
+else
+  $REBIN $*
+fi;

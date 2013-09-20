@@ -1,0 +1,7 @@
+#!/system/bin/sh
+#Scheduler (ext SD)
+#Change I/O scheduler for external SD memory:
+#Noop
+
+echo "noop" > /sys/block/mmcblk1/queue/scheduler
+

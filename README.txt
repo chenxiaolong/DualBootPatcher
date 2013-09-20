@@ -7,12 +7,14 @@ ROMs:
   * Google Edition (MaKTaiL)
   * ParanoidAndroid (Vertigo, most likely other versions too)
   * MIUI
+  * Slim Bean
 
 Kernels:
   * ktoonsez's AOSP 4.3
   * faux123's jb43
   * ChronicKernel jb43 AOSP
   * Infamous Kernel (UNTESTED)
+  * Ausdim kernel (UNTESTED)
   * Plain boot.img files (ramdisk will be replaced with Cyanogenmod ramdisk)
 
 Other:

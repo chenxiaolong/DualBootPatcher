@@ -1,0 +1,7 @@
+#!/system/bin/sh
+#LED fading
+#Notification LED fading
+#Blink (dark)
+
+echo "0" > /sys/class/sec/led/led_fade
+echo "15" > /sys/class/sec/led/led_intensity

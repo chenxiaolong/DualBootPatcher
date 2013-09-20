@@ -1,0 +1,12 @@
+#!/system/bin/sh
+#Ext4 Tweaks
+#Optimized mounting of /data and /cache:
+#On (default)
+
+sync
+/sbin/busybox mount -o remount,commit=20,noatime $CACHE_DEVICE /cache
+
+sync
+/sbin/busybox mount -o remount,commit=20,noatime $DATA_DEVICE /data
+
+sync

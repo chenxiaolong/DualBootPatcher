@@ -1,0 +1,27 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -1,17 +1,16 @@
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++ui_print("Installing kernel for secondary ROM");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++
+ ui_print("ausdim GT-i9505 Kernel...");
+-ui_print("Mount /System Folder...");
+-run_program("/sbin/busybox", "mount", "/system");
+ ui_print("Extracting System Files...");
+ package_extract_dir("system", "/system");
+ set_perm_recursive(0, 0, 0755, 0644, "/system/lib/modules");
+ ui_print("Extracting Kernel files...");
+ package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
+-ui_print("Deleting cache...");
+-mount("ext4", "EMMC", "/dev/block/mmcblk0p18", "/cache");
+-delete_recursive("/cache");
+-unmount("/system");
+-unmount("/data");
+-unmount("/cache");
++run_program("/tmp/dualboot.sh", "unmount-system");
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
+ ui_print("***********************************");
+ ui_print("* Kernel Installation Completed!  *");
+ ui_print("***********************************");
