@@ -1,0 +1,39 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -1,9 +1,15 @@
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++ui_print("Installing kernel for secondary ROM");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++
+ set_progress(1.000000);
+ ui_print("Flashing Adam Kernel ...");
+-mount("ext4", "EMMC", "/dev/block/mmcblk0p16", "/system");
+ assert(package_extract_file("wanam/boot.img", "/tmp/boot.img"),
+        write_raw_image("/tmp/boot.img", "/dev/block/mmcblk0p20"),
+        delete("/tmp/boot.img"));
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
+ run_program("/sbin/rm", "-rf", "/system/lib/modules");
+ package_extract_dir("system", "/system");
+ set_perm_recursive(0, 0, 0755, 0644, "/system/lib/modules");
+@@ -11,15 +17,11 @@
+ delete("/system/app/KNOXAgent.odex");
+ delete("/system/app/KNOXStore.apk");
+ delete("/system/app/KNOXStore.odex");
+-mount("ext4", "EMMC", "/dev/block/mmcblk0p29", "/data");
+ run_program("/sbin/rm", "-rf", "/data/data/com.sec.knox.seandroid");
+ run_program("/sbin/rm", "-rf", "/data/data/com.sec.knox.store");
+ run_program("/sbin/rm", "-rf", "/data/data/com.sec.knox.containeragent");
+ delete_recursive("/data/dalvik-cache");
+-mount("ext4", "EMMC", "/dev/block/mmcblk0p18", "/cache");
+-delete_recursive("/cache");
+-unmount("/system");
+-unmount("/data");
+-unmount("/cache");
++run_program("/tmp/dualboot.sh", "unmount-system");
++run_program("/tmp/dualboot.sh", "unmount-data");
+ ui_print(" ");
+-ui_print("Done, please reboot");
+\ No newline at end of file
++ui_print("Done, please reboot");

@@ -1,0 +1,109 @@
+#!/sbin/busybox sh
+
+XML=$CONFIG_XML
+
+echo "" > $XML
+
+echo '
+<settingsRoot>' >> $XML
+
+echo '
+  <settingsTab name="CPU scaling">
+    <settingsPane description="ondemand is the default governor for daily running and complete power management schemes. The performance governor is purely for synthetic uses, locking frequency at maximum with all cores online." 
+                  name="Active governor choice">' >> $XML
+echo "
+      <spinner description=\"Set active governor. Default: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`\" 
+               name=\"Current governor\" 
+               action=\"generic /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor\">" >> $XML
+
+for GOVERNOR in `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors`; do
+  echo "
+        <spinnerItem name=\"$GOVERNOR\" value=\"$GOVERNOR\"/>" >> $XML
+done
+
+echo '
+      </spinner>
+    </settingsPane>
+    <settingsPane description="Parameters governing the dynamic voltage frequency scaling policy on the CPU." 
+                  name="DVFS tuneables">' >> $XML
+
+echo "
+      <seekBar description=\"The sampling period size in which the governor polls CPU load and triggers its decision making. Default: `cat /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate` µS.\" 
+               name=\"Sampling rate\" 
+               action=\"generic /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate\"
+               unit=\"µS\" min=\"80000\" reversed=\"false\" step=\"1000\" max=\"200000\"/>
+
+      <seekBar description=\"If we scale up to the maximum policy frequency, extend the next sample period by a factor of so much. Default: `cat /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor` samples.\" 
+               name=\"Sampling down factor\" 
+               action=\"generic /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor\"
+               unit=\"samples\" min=\"1\" reversed=\"false\" step=\"1\" max=\"10\"/>" >> $XML
+
+echo '
+
+    </settingsPane>
+  </settingsTab>
+  
+  <settingsTab name="Android Logger">
+
+	<settingsPane name="Android Logger" 
+                  description="Android Logger is a useful tool for developers to test and debug their Applications, but it can be disabled on normal use, this may give you better performance.">
+
+      <checkbox description="It is recommended to disable Android Logger if you do not need it" 
+                name="Enable/Disable Android Logger" 
+                action="generic01 /sys/kernel/logger_mode/logger_mode" 
+                label="Enable Android logger"/>
+
+    </settingsPane>
+
+  </settingsTab>
+
+  <settingsTab name="I/O">
+    <settingsPane description="Set the active I/O elevator algorithm. The scheduler decides how to handle I/O requests and how to handle them. FIOPS is the everyday recommended default scheduler."  
+                  name="I/O schedulers">' >> $XML
+
+echo "
+      <spinner name=\"Current internal storage scheduler\"
+               action=\"iosched internal /sys/block/mmcblk0/queue/scheduler\">" >> $XML
+
+for IOSCHED in `cat /sys/block/mmcblk0/queue/scheduler | sed -e 's/\]//;s/\[//'`; do
+  echo "
+        <spinnerItem name=\"$IOSCHED\" value=\"$IOSCHED\"/>" >> $XML
+done
+
+echo '
+      </spinner>' >> $XML
+
+echo "
+      <spinner name=\"Current SD card scheduler\"
+               action=\"iosched sd /sys/block/mmcblk1/queue/scheduler\">" >> $XML
+
+for IOSCHED in `cat /sys/block/mmcblk1/queue/scheduler | sed -e 's/\]//;s/\[//'`; do
+  echo "
+        <spinnerItem name=\"$IOSCHED\" value=\"$IOSCHED\"/>" >> $XML
+done
+
+echo '
+      </spinner>
+    </settingsPane>
+
+    <settingsPane name="I/O read-ahead" 
+                  description="The readahead value is the requested block size the host controller reads into memory on any given I/O read request. Increasing the read-ahead on cards with high latency and lower IOPS will increase the raw thoroughput.">
+
+      <seekBar  description="The read-ahead value on the internal phone memory." 
+                name="Internal storage read-ahead" 
+                action="generictag internal /sys/block/mmcblk0/queue/read_ahead_kb"
+                unit="kB" min="128" reversed="false" step="128" max="2048"/>
+
+      <seekBar  description="The read-ahead value on the external SD card." 
+                name="SD card read-ahead" 
+                action="generictag sd /sys/block/mmcblk1/queue/read_ahead_kb"
+                unit="kB" min="128" reversed="false" step="128" max="2048"/>
+
+    </settingsPane>
+
+  </settingsTab>
+
+</settingsRoot>' >> $XML
+
+chmod 777 $XML
+

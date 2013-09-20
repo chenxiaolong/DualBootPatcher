@@ -28,6 +28,7 @@ class FileInfo:
   def __init__(self):
     self.patch = ""
     self.ramdisk = ""
+    self.bootimg = "boot.img"
     self.has_boot_image = True
 
 def clean_up_and_exit(exit_status):
@@ -132,7 +133,7 @@ def patch_zip(zip_file, file_info):
   z.close()
 
   if file_info.has_boot_image:
-    boot_image = os.path.join(tempdir, "boot.img")
+    boot_image = os.path.join(tempdir, file_info.bootimg)
     new_boot_image = patch_boot_image(boot_image, file_info)
 
     os.remove(boot_image)
@@ -197,6 +198,13 @@ def get_file_info(path):
     print("NOTE: The ramdisk is based on Ausdim v17. If a newer version has ramdisk changes, let me know")
     file_info.ramdisk = "ausdim.dualboot.cpio.gz"
     file_info.patch   = "ausdim.dualboot.patch"
+
+  elif re.search(r"^.*_AdamKernel.V[0-9\.]+\.CWM\.zip$", filename):
+    print("Detected Adam kernel zip")
+    print("Using patched Adam kernel zip")
+    file_info.ramdisk = "adam.dualboot.cpio.gz"
+    file_info.patch   = "adam.dualboot.patch"
+    file_info.bootimg = "wanam/boot.img"
 
   # Cyanogenmod ROMs
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):

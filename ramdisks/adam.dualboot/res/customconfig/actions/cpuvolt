@@ -1,0 +1,27 @@
+#!/sbin/busybox sh
+
+STEP=CPU_VOLT_`echo $2`
+
+if [ -z $3 ]; then
+	evalcmd='eval echo \$$STEP'
+	if [ "a`eval $evalcmd`" == "a" ]; then
+		while read FREQ UVOLT; do
+			eval "CPU_VOLT_$FREQ=$UVOLT"
+			echo "CPU_VOLT_$FREQ=$UVOLT" >> $DEFAULT_PROFILE
+		done < /sys/devices/system/cpu/cpu0/cpufreq/UV_uV_table
+	fi
+else
+	eval $STEP=$3
+
+	if [ "$CONTROLSWITCH_CPU" == "on" -o "$CONFIG_BOOTED" == true ]; then
+		VOLTAGES=""
+		while read FREQ UVOLT; do
+			evalcmd='eval echo \$CPU_VOLT_$FREQ'
+			VOLTAGES="$VOLTAGES `eval $evalcmd`"
+		done < /sys/devices/system/cpu/cpu0/cpufreq/UV_uV_table
+
+		echo $VOLTAGES > /sys/devices/system/cpu/cpu0/cpufreq/UV_uV_table
+	fi
+fi
+
+eval echo \$$STEP

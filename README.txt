@@ -15,6 +15,7 @@ Kernels:
   * ChronicKernel jb43 AOSP
   * Infamous Kernel (UNTESTED)
   * Ausdim kernel (UNTESTED)
+  * Adam kernel (UNTESTED)
   * Plain boot.img files (ramdisk will be replaced with Cyanogenmod ramdisk)
 
 Other:
