@@ -32,6 +32,20 @@ unmount_data() {
   umount /raw-data
 }
 
+mount_cache() {
+  mkdir -p /raw-cache /cache
+  chmod 0755 /raw-cache
+  chown 0:0 /raw-cache
+  mount -t $1 $2 /raw-cache
+  mkdir -p /raw-cache/dual
+  mount -o bind /raw-cache/dual /cache
+}
+
+unmount_cache() {
+  umount /cache
+  umount /raw-cache
+}
+
 case "$1" in
   set-secondary-kernel)
     set_secondary_kernel
@@ -47,5 +61,11 @@ case "$1" in
     ;;
   unmount-data)
     unmount_data
+    ;;
+  mount-cache)
+    mount_cache $2 $3
+    ;;
+  unmount-cache)
+    unmount_cache
     ;;
 esac
