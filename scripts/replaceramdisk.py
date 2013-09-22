@@ -4,13 +4,14 @@ import os
 import re
 import shutil
 import sys
+import tarfile
 
 sys.dont_write_bytecode = True
 
 import patchfile
 
 ramdisks = []
-suffix = r"\.dualboot\.cpio\.gz$"
+suffix = r"\.dualboot\.cpio$"
 
 if len(sys.argv) < 2:
   print("Usage: %s [zip file or boot.img]" % sys.argv[0])
@@ -23,11 +24,22 @@ if filetype == "UNKNOWN":
   print("Unsupported file")
   sys.exit(1)
 
-for root, dirs, files in os.walk(patchfile.ramdiskdir):
-  for f in files:
-    if re.search(suffix, f):
-      ramdisks.append(f)
-  break
+if sys.hexversion >= 50528256: # Python 3.3
+  with tarfile.open(os.path.join(patchfile.ramdiskdir, "ramdisks.tar.xz")) as f:
+    ramdisks = f.getnames()
+else:
+  xz = "xz"
+  if os.name == "nt":
+    xz = os.path.join(binariesdir, "xz.exe")
+
+  patchfile.run_command(
+    [ xz, '-d', '-k', '-f', os.path.join(patchfile.ramdiskdir, "ramdisks.tar.xz") ]
+  )
+
+  with tarfile.open(os.path.join(patchfile.ramdiskdir, "ramdisks.tar")) as f:
+    ramdisks = f.getnames()
+
+  os.remove(os.path.join(patchfile.ramdiskdir, "ramdisks.tar"))
 
 if not ramdisks:
   print("No ramdisks found")
