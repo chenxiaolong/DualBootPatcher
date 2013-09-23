@@ -16,6 +16,7 @@ ROMs:
   * PAC-Man
   * Google Edition (MaKTaiL)
   * ParanoidAndroid (Vertigo, most likely other versions too)
+  * AOSPA
   * MIUI
   * Slim Bean
   * TouchWiz ROMs
