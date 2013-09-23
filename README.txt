@@ -19,6 +19,7 @@ ROMs:
   * AOSPA
   * MIUI
   * Slim Bean
+  * Carbon
   * TouchWiz ROMs
     - FoxHound
 

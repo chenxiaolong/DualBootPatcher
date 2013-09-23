@@ -285,9 +285,19 @@ def get_file_info(path):
   # ParanoidAndroid ROMs
   elif re.search(r"^pa_[a-z0-9]+-.*-[0-9]+.zip$", filename):
     print("Detected ParanoidAndroid ROM zip")
-    print("using patched ParanoidAndroid ramdisk")
+    print("Using patched ParanoidAndroid ramdisk")
     file_info.ramdisk = "paranoidandroid.dualboot.cpio"
     file_info.patch   = "paranoidandroid.dualboot.patch"
+
+  # Carbon ROMs
+  elif re.search(r"CARBON-JB-.*-[a-z0-9]+\.zip", filename):
+    if 'NIGHTLY' in filename:
+      print("Detected Carbon Nightly ROM zip")
+    else:
+      print("Detected Carbon ROM zip")
+    print("Using patched Carbon ramdisk")
+    file_info.ramdisk = "carbon.dualboot.cpio"
+    file_info.patch   = "carbon.dualboot.patch"
 
   # Google Edition ROMs
   elif re.search(r"^i9505-ge-untouched-4.3-.*.zip$", filename):
