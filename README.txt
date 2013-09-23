@@ -1,3 +1,7 @@
+Important: Make sure you have enough disk space before trying to patch. The
+free space needed is the size of the original file + the extracted size of the
+file. For Windows, this is the amount of space you need on the C: drive.
+
 What's supported?
 
 ROMs:
@@ -8,6 +12,8 @@ ROMs:
   * ParanoidAndroid (Vertigo, most likely other versions too)
   * MIUI
   * Slim Bean
+  * TouchWiz ROMs
+    - FoxHound
 
 Kernels:
   * ktoonsez's AOSP 4.3

@@ -308,6 +308,14 @@ def get_file_info(path):
       file_info.ramdisk = "miui.dualboot.cpio"
       file_info.patch   = "miui.dualboot.patch"
 
+  # TouchWiz ROMs
+  elif re.search(r"^FoxHound_.*\.zip$", filename):
+    print("Detected FoxHound ROM zip")
+    print("Using patched TouchWiz kernel zip")
+    file_info.ramdisk = "touchwiz.dualboot.cpio"
+    file_info.patch   = "foxhound.dualboot.patch"
+    file_info.bootimg = "snakes/Kernels/Stock/boot.img"
+
   # Google Apps
   elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip$", filename):
     print("Detected Cyanogenmod Google Apps zip")
