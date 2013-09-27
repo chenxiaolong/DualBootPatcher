@@ -362,6 +362,12 @@ def get_file_info(path):
     file_info.ramdisk = "googleedition.dualboot.cpio"
     file_info.patch   = "ge-jamal2367.dualboot.patch"
 
+  elif re.search(r"^Evil_UnWizzed_v[0-9]+\.zip$", filename):
+    print("Detected Evil UnWizzed ROM zip")
+    print("Using patched Ausdim ramdisk (compatible with UnWizzed)")
+    file_info.ramdisk = "ausdim.dualboot.cpio"
+    file_info.patch   = "unwizzed.dualboot.patch"
+
   # MIUI ROMs
   elif re.search(r"^miuiandroid_.*.zip$", filename):
     if "gapps" in filename:

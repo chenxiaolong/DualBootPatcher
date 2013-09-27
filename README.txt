@@ -23,6 +23,7 @@ ROMs:
   * Carbon
   * TouchWiz ROMs
     - FoxHound
+    - Evil UnWizzed
 
 Kernels:
   * ktoonsez's AOSP 4.3
