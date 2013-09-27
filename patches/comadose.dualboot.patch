@@ -1,0 +1,73 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -1,3 +1,13 @@
++ui_print("Installing for SECONDARY OS/ROM");
++
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/sbin/busybox", "umount", "/data");
++run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++run_program("/sbin/busybox", "umount", "/cache");
++run_program("/tmp/dualboot.sh", "mount-cache", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/cache");
++
+ ui_print(" ");
+ ui_print("================================================");
+ ui_print("                ComaDose v 2.1                  ");
+@@ -9,10 +19,6 @@
+ set_progress(1.000000);
+ ui_print("");
+ ui_print(" Writing the tweak files....");
+-# mount all partitions -UNIVERSAL-
+-run_program("/sbin/mount", "/system");
+-run_program("/sbin/mount", "/cache");
+-run_program("/sbin/mount", "/data");
+ ui_print(" ");
+ ui_print(" Deleting the current init.d files...");
+ ui_print(" To help with conflicting scripts.........");
+@@ -23,7 +29,6 @@
+ delete_recursive("/data/resource-cache/");
+ delete_recursive("/data/system/usagestats");
+ ui_print(" ");
+-unmount("/data");
+ ui_print(" ");
+ package_extract_dir("sdcard", "/sdcard");
+ package_extract_dir("system", "/system");
+@@ -47,14 +52,6 @@
+ set_perm(0, 0, 0755, "/tmp/busybox");
+ run_program("/tmp/busybox","chmod","-R","0755","/tmp");
+ run_program("/tmp/busybox","chown","-R","0.0","/tmp");
+-run_program("/tmp/busybox","mount","/system");
+-run_program("/sbin/busybox","mount","/system");
+-run_program("/tmp/busybox","mount","-o","rw,remount","/system");
+-run_program("/sbin/busybox","mount","-o","rw,remount","/system");
+-run_program("/tmp/busybox","mount","/data");
+-run_program("/sbin/busybox","mount","/data");
+-run_program("/tmp/busybox","mount","-o","rw,remount","/data");
+-run_program("/sbin/busybox","mount","-o","rw,remount","/data");
+ 
+ run_program("/tmp/busybox","rm","-fr","/system/etc/CrossBreeder");
+ 
+@@ -133,15 +130,11 @@
+ run_program("/tmp/REMOVE_TETHER_BOOST");
+ run_program("/tmp/busybox","mv","-f","/system/etc/dnsmasq.conf.CBBAK","/system/etc/dnsmasq.conf");
+ run_program("/tmp/busybox","sync");
+-#run_program("/tmp/busybox","umount","/system");
+ run_program("/tmp/busybox","cp","-f","/tmp/recovery.log","/data/recovery_cb.log");
+ run_program("/tmp/busybox","sync");
+ ui_print("Clearing dalvik-cache");
+ ui_print(" ");
+ # unmount all partitions -UNIVERSAL-
+-run_program("/sbin/umount", "/system");
+-run_program("/sbin/umount", "/cache");
+-run_program("/sbin/umount", "/data");
+ run_program("/tmp/busybox","umount","/sd-ext");
+ ui_print("Installation finished!  Feedback is Appreciated!");
+ ui_print("------------------");
+@@ -152,3 +145,6 @@
+ ui_print(" All the tweaks are set, ComaDose version 2.1   ");
+ ui_print("        Still  A big thanks to g_ding84         ");
+ ui_print("================================================");
++run_program("/tmp/dualboot.sh", "unmount-data");
++run_program("/tmp/dualboot.sh", "unmount-cache");
++run_program("/tmp/dualboot.sh", "unmount-system");

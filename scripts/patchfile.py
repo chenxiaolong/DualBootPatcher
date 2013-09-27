@@ -402,6 +402,12 @@ def get_file_info(path):
     file_info.patch = "supersu.dualboot.patch"
     file_info.has_boot_image = False
 
+  # ComaDose
+  elif re.search(r"^ComaDose_V[0-9\.]+_Cossbreeder_[0-9\.]+\.zip", filename):
+    print("Detected ComaDose zip")
+    file_info.patch = "comadose.dualboot.patch"
+    file_info.has_boot_image = False
+
   else:
     return None
 
