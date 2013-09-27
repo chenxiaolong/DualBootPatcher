@@ -282,6 +282,13 @@ def get_file_info(path):
     file_info.patch   = "adam.dualboot.patch"
     file_info.bootimg = "wanam/boot.img"
 
+  # AOSP ROMs
+  elif re.search(r"^aosp43-i9505-Final-R1\.zip$", filename):
+    print("Detected Broodplank's AOSP ROM zip")
+    print("Using patched AOSP ramdisk")
+    file_info.ramdisk = "aosp.dualboot.cpio"
+    file_info.patch   = "aosp.dualboot.patch"
+
   # Cyanogenmod ROMs
   elif re.search(r"^cm-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+.zip$", filename):
     print("Detected official Cyanogenmod nightly ROM zip")

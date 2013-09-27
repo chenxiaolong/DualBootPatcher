@@ -1,0 +1,54 @@
+#line 1 "external/sepolicy/property_contexts"
+##########################
+# property service keys
+#
+#
+net.rmnet0              u:object_r:radio_prop:s0
+net.gprs                u:object_r:radio_prop:s0
+net.ppp                 u:object_r:radio_prop:s0
+net.qmi                 u:object_r:radio_prop:s0
+net.lte                 u:object_r:radio_prop:s0
+net.cdma                u:object_r:radio_prop:s0
+gsm.                    u:object_r:radio_prop:s0
+persist.radio           u:object_r:radio_prop:s0
+net.dns                 u:object_r:radio_prop:s0
+sys.usb.config          u:object_r:radio_prop:s0
+
+ril.                    u:object_r:rild_prop:s0
+
+net.                    u:object_r:system_prop:s0
+dev.                    u:object_r:system_prop:s0
+runtime.                u:object_r:system_prop:s0
+hw.                     u:object_r:system_prop:s0
+sys.                    u:object_r:system_prop:s0
+service.                u:object_r:system_prop:s0
+wlan.                   u:object_r:system_prop:s0
+dhcp.                   u:object_r:system_prop:s0
+
+debug.                  u:object_r:shell_prop:s0
+log.                    u:object_r:shell_prop:s0
+service.adb.root        u:object_r:shell_prop:s0
+service.adb.tcp.port    u:object_r:shell_prop:s0
+
+persist.audio.          u:object_r:audio_prop:s0
+persist.sys.            u:object_r:system_prop:s0
+persist.service.        u:object_r:system_prop:s0
+persist.security.       u:object_r:system_prop:s0
+
+# mmac persistent properties
+persist.mmac.			u:object_r:security_prop:s0
+
+# selinux non-persistent properties
+selinux.                u:object_r:security_prop:s0
+
+# default property context
+*                       u:object_r:default_prop:s0
+
+# data partition encryption properties
+vold.                   u:object_r:vold_prop:s0
+crypto.                 u:object_r:vold_prop:s0
+
+# ctl properties
+ctl.dumpstate           u:object_r:ctl_dumpstate_prop:s0
+ctl.ril-daemon          u:object_r:ctl_rildaemon_prop:s0
+ctl.                    u:object_r:ctl_default_prop:s0

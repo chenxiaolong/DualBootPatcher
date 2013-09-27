@@ -21,6 +21,7 @@ ROMs:
   * Slim Bean
   * JellyBeer
   * Carbon
+  * AOSP (Broodplank)
   * TouchWiz ROMs
     - FoxHound
     - Evil UnWizzed
