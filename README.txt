@@ -14,7 +14,7 @@ ROMs:
   * CyanogenMod and CyanogenMod-based ROMs
   * Task650's AOKP
   * PAC-Man
-  * Google Edition (MaKTaiL)
+  * Google Edition (MaKTaiL, jamal2367)
   * ParanoidAndroid (Vertigo, most likely other versions too)
   * AOSPA
   * MIUI

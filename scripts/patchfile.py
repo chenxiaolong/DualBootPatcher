@@ -356,6 +356,12 @@ def get_file_info(path):
     file_info.ramdisk = "googleedition.dualboot.cpio"
     file_info.patch   = "ge-MaKTaiL.dualboot.patch"
 
+  elif re.search(r"^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$", filename):
+    print("Detected jamal2367's Google Edition ROM zip")
+    print("Using patched Google Edition ramdisk")
+    file_info.ramdisk = "googleedition.dualboot.cpio"
+    file_info.patch   = "ge-jamal2367.dualboot.patch"
+
   # MIUI ROMs
   elif re.search(r"^miuiandroid_.*.zip$", filename):
     if "gapps" in filename:
