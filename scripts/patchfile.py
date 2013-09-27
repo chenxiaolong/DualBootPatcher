@@ -421,6 +421,11 @@ def get_file_info(path):
     file_info.patch = "gapps-banks.dualboot.patch"
     file_info.has_boot_image = False
 
+  elif re.search(r"^gapps-jb43-[0-9]+-dmd151\.zip$", filename):
+    print("Detected doomed151's Google Apps zip")
+    file_info.patch = "gapps-doomed151.dualboot.patch"
+    file_info.has_boot_image = False
+
   # SuperSU
   elif re.search(r"^UPDATE-SuperSU-v[0-9\.]+.zip$", filename):
     print("Detected Chainfire's SuperSU zip")
