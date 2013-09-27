@@ -216,6 +216,9 @@ def patch_zip(zip_file, file_info):
     # Skip patched files
     if i.filename in files_to_patch:
       continue
+    # Boot image too
+    elif i.filename == file_info.bootimg:
+      continue
     z_output.writestr(i.filename, z_input.read(i.filename))
 
   z_input.close()
