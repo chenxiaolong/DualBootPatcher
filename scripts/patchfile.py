@@ -74,6 +74,30 @@ def apply_patch_file(patchfile, directory):
     print("Failed to apply patch")
     clean_up_and_exit(1)
 
+def files_in_patch(patch_file):
+  files = []
+
+  f = open(os.path.join(patchdir, patch_file))
+  lines = f.readlines()
+  f.close()
+
+  counter = 0
+  while counter < len(lines):
+    if re.search(r"^---",    lines[counter])     and \
+       re.search(r"^\+\+\+", lines[counter + 1]) and \
+       re.search(r"^@",      lines[counter + 2]):
+      temp = re.search(r"^--- .*?/(.*)$", lines[counter])
+      files.append(temp.group(1))
+      counter += 3
+    else:
+      counter += 1
+
+  if not files:
+    print("Failed to read list of files in patch.")
+    clean_up_and_exit(1)
+
+  return files
+
 def patch_boot_image(boot_image, file_info):
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
@@ -157,11 +181,16 @@ def patch_boot_image(boot_image, file_info):
 def patch_zip(zip_file, file_info):
   print("--- Please wait. This may take a while ---")
 
+  files_to_patch = files_in_patch(file_info.patch)
+
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
   z = zipfile.ZipFile(zip_file, "r")
-  z.extractall(tempdir)
+  for f in files_to_patch:
+    z.extract(f, path = tempdir)
+  if file_info.has_boot_image:
+    z.extract(file_info.bootimg, path = tempdir)
   z.close()
 
   if file_info.has_boot_image:
@@ -178,15 +207,27 @@ def patch_zip(zip_file, file_info):
   if file_info.patch != "":
     apply_patch_file(file_info.patch, tempdir)
 
+  # We can't avoid recompression, unfortunately
   new_zip_file = os.path.join(tempdir, "complete.zip")
-  z = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
+  z_input = zipfile.ZipFile(zip_file, 'r')
+  z_output = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
+
+  for i in z_input.infolist():
+    # Skip patched files
+    if i.filename in files_to_patch:
+      continue
+    z_output.writestr(i.filename, z_input.read(i.filename))
+
+  z_input.close()
+
   for root, dirs, files in os.walk(tempdir):
     for f in files:
       if f == "complete.zip":
         continue
       arcdir = os.path.relpath(root, start = tempdir)
-      z.write(os.path.join(root, f), arcname = os.path.join(arcdir, f))
-  z.close()
+      z_output.write(os.path.join(root, f), arcname = os.path.join(arcdir, f))
+
+  z_output.close()
 
   return new_zip_file
 

@@ -1,5 +1,0 @@
-Many Linux distributions mount a tmpfs over /tmp/. The space available on that
-filesystem is too small for patching large ROMs. The temporary directory used
-by the patcher can be changed with the TMPDIR environment variable.
-
-  TMPDIR=/home/user/ ./patch-file.sh /path/to/file.zip
