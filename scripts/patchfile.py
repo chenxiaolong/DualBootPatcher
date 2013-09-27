@@ -383,6 +383,11 @@ def get_file_info(path):
     file_info.patch = "gapps-slim.dualboot.patch"
     file_info.has_boot_image = False
 
+  elif re.search(r"^Slim_aroma_selectable_gapps.*\.zip$", filename):
+    print("Detected Slim Bean AROMA Google Apps zip")
+    file_info.patch = "gapps-slim-aroma.dualboot.patch"
+    file_info.has_boot_image = False
+
   elif re.search(r"^[0-9]+-[0-9]+_GApps_Core_[0-9\.]+_signed.zip$", filename):
     print("Detected BaNks's Core Google Apps zip")
     file_info.patch = "gapps-banks.dualboot.patch"

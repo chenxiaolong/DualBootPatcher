@@ -36,4 +36,5 @@ Other:
   * SuperSU
   * Google Apps for Task650's AOKP
   * Google Apps for CyanogenMod and PAC-Man
+  * Google Apps for Slim Bean (standard and AROMA)
   * Google Apps from BaNks
