@@ -15,12 +15,12 @@ echo 60000 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate;
 /system/bin/setprop ro.telephony.call_ring.delay 1000
 
 #Enable and set zram and swappines
-insmod /system/lib/modules/zram.ko num_devices=1;
-echo 1 > /sys/block/zram0/reset
-echo 524288000 > /sys/block/zram0/disksize
-mkswap /dev/block/zram0
-swapon /dev/block/zram0
-echo 70 > /proc/sys/vm/swappiness
+#insmod /system/lib/modules/zram.ko num_devices=4;
+#echo 1 > /sys/block/zram0/reset
+#echo 524288000 > /sys/block/zram0/disksize
+#mkswap /dev/block/zram0
+#swapon /dev/block/zram0
+#echo 70 > /proc/sys/vm/swappiness
 
 #Disable knox
 pm disable com.sec.knox.seandroid

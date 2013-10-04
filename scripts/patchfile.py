@@ -271,10 +271,10 @@ def get_file_info(path):
     file_info.ramdisk = "infamouskernel.dualboot.cpio"
     file_info.patch   = "infamouskernel.dualboot.patch"
 
-  elif re.search(r"^v[0-9]+-Google-edition-ausdim-Kernel-.*.zip$", filename):
+  elif re.search(r"^v[0-9\.]+-Google-edition-ausdim-Kernel-.*.zip$", filename):
     print("Detected Ausdim kernel zip")
     print("Using patched Ausdim kernel ramdisk")
-    print("NOTE: The ramdisk is based on Ausdim v17. If a newer version has ramdisk changes, let me know")
+    print("NOTE: The ramdisk is based on Ausdim v18.1. If a newer version has ramdisk changes, let me know")
     file_info.ramdisk = "ausdim.dualboot.cpio"
     file_info.patch   = "ausdim.dualboot.patch"
 

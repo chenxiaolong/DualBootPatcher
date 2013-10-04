@@ -3,4 +3,4 @@
 #Change CPU voltage:
 #-50 mV
 
-echo "1287 1262 1237 1212 1187 1162 1112 1062 1025 1000 962 937 925 900 875 862 850 850 850 850 800 800 800 " > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
+echo "1250 1225 1200 1175 1150 1125 1087 1037 1000 975 950 925 912 887 860 850 850 825 825 825 800 800 800 " > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table

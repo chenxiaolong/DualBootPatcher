@@ -39,8 +39,6 @@ service ril-qmi /system/bin/sh /init.qcom.ril.sh
 
 on fs
     mount_all fstab.qcom
-    # UNTESTED: Either needs to be here or in "on fs_selinux"
-    #exec /sbin/busybox-static sh /init.dualboot.mounting.sh
     setprop ro.crypto.fuse_sdcard true
 
     # Keeping following partitions outside fstab file. As user may not have

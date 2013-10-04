@@ -1,9 +1,9 @@
 #!/system/bin/sh
 #Zram size and swappines
 #Change zram disksize-swappines:
-#Zram: 250mb Swappines: 100percent
+#Zram: 1gb Swappines: 100percent
 
-SIZE="62"
+SIZE="250"
 sleep 5
 #Disk 1
 swapoff /dev/block/zram0
