@@ -1,0 +1,19 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -10,0 +11,2 @@
++ui_print("#      Installing for SECONDARY OS/ROM      #");
++ui_print("#############################################");
+@@ -13,0 +16,3 @@
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
+@@ -15,3 +19,0 @@
+-ui_print("Mounting system...");
+-run_program("/sbin/busybox", "mount", "/system");
+-ui_print(" ");
+@@ -34 +36 @@
+-		run_program("/sbin/busybox", "umount", "/system");
++		run_program("/tmp/dualboot.sh", "unmount-system");
+@@ -76 +78 @@
+-run_program("/sbin/busybox", "umount", "/system");
++run_program("/tmp/dualboot.sh", "unmount-system");
