@@ -15,6 +15,7 @@ ROMs:
   * Task650's AOKP
   * PAC-Man
   * Google Edition (MaKTaiL, jamal2367)
+  * Kangabean (MUST install custom kernel)
   * ParanoidAndroid (Vertigo, most likely other versions too)
   * AOSPA
   * MIUI
@@ -40,6 +41,7 @@ Other:
   * Google Apps for Task650's AOKP
   * Google Apps for CyanogenMod and PAC-Man
   * Google Apps for Slim Bean (standard and AROMA)
+  * Google Apps for Paranoid Android
   * Google Apps from BaNks
   * Google Apps from doomed151 for AOSP
   * ComaDose

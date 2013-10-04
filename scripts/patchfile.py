@@ -28,6 +28,7 @@ if os.name == "nt":
 
 class FileInfo:
   def __init__(self):
+    self.loki = False
     self.patch = ""
     self.ramdisk = ""
     self.bootimg = "boot.img"
@@ -199,6 +200,8 @@ def patch_zip(zip_file, file_info):
 
     os.remove(boot_image)
     shutil.move(new_boot_image, boot_image)
+  elif file_info.loki:
+    print("*** IMPORTANT: This zip contains a loki'd kernel which canoot be patched. You MUST patch and flash a custom kernel to boot ***")
   else:
     print("No boot image to patch")
 
@@ -368,6 +371,15 @@ def get_file_info(path):
     print("Using patched Google Edition ramdisk")
     file_info.ramdisk = "googleedition.dualboot.cpio"
     file_info.patch   = "ge-jamal2367.dualboot.patch"
+
+  elif re.search(r"KB-.*\.zip$", filename):
+    print("Detected Kangabean ROM zip")
+    print("Using patched Google Edition ramdisk")
+    file_info.loki    = True
+    #file_info.ramdisk = "googleedition.dualboot.cpio"
+    file_info.patch   = "kangabean.dualboot.patch"
+    #file_info.bootimg = "boot.lok"
+    file_info.has_boot_image = False
 
   elif re.search(r"^Evil_UnWizzed_v[0-9]+\.zip$", filename):
     print("Detected Evil UnWizzed ROM zip")
