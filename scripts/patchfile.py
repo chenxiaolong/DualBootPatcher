@@ -399,10 +399,18 @@ def get_file_info(path):
       file_info.ramdisk = "miui.dualboot.cpio"
       file_info.patch   = "miui.dualboot.patch"
 
+  # Sense ROMs
+  elif filename.lower() == "sense5port.zip" or \
+       filename         == "4.3 official port.zip":
+    print("Detected geiti94's HTC Sense 5 port zip")
+    print("Using patched Sense ramdisk")
+    file_info.ramdisk = "sense.dualboot.cpio"
+    file_info.patch   = "sense-geiti94.dualboot.patch"
+
   # TouchWiz ROMs
   elif re.search(r"^FoxHound_.*\.zip$", filename):
     print("Detected FoxHound ROM zip")
-    print("Using patched TouchWiz kernel zip")
+    print("Using patched TouchWiz ramdisk")
     file_info.ramdisk = "touchwiz.dualboot.cpio"
     file_info.patch   = "foxhound.dualboot.patch"
     file_info.bootimg = "snakes/Kernels/Stock/boot.img"

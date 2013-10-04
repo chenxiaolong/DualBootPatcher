@@ -23,7 +23,7 @@ mount_data() {
   chmod 0755 /raw-data
   chown 0:0 /raw-data
   mount -t $1 $2 /raw-data
-  mkdir -p /raw-data/dual /raw-data/media
+  mkdir -p /raw-data/dual /raw-data/media /raw-data/dual/media
   mount -o bind /raw-data/dual /data
   mount -o bind /raw-data/media /data/media
 }

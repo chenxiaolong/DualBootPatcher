@@ -1,0 +1,555 @@
+# Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#     * Neither the name of Code Aurora Forum, Inc. nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+on early-init
+    mkdir /firmware 0771 system system
+    mkdir /firmware-mdm 0771 system system
+    symlink /data/tombstones /tombstones
+    mkdir efs 0771 system system
+
+service ril-qmi /system/bin/sh /init.qcom.ril.sh
+    class main
+    user root
+    oneshot
+
+on fs
+    mount_all fstab.qcom
+    exec /sbin/busybox-static sh /init.dualboot.mounting.sh
+    setprop ro.crypto.fuse_sdcard true
+
+    # Keeping following partitions outside fstab file. As user may not have
+    # these partition flashed on the device. Failure to mount any partition in fstab file
+    # results in failure to launch late-start class.
+    #wait /dev/block/platform/msm_sdcc.1/by-name/cache
+    #check_fs /dev/block/platform/msm_sdcc.1/by-name/cache ext4
+    #mount ext4 /dev/block/platform/msm_sdcc.1/by-name/cache /cache nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
+
+    #wait /dev/block/platform/msm_sdcc.1/by-name/persist
+    #check_fs /dev/block/platform/msm_sdcc.1/by-name/persist ext4
+    #mount ext4 /dev/block/platform/msm_sdcc.1/by-name/persist /persist nosuid nodev barrier=1
+
+    wait /dev/block/platform/msm_sdcc.1/by-name/apnhlos
+    mount vfat /dev/block/platform/msm_sdcc.1/by-name/apnhlos /firmware ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337
+
+    wait /dev/block/platform/msm_sdcc.1/by-name/mdm
+    mount vfat /dev/block/platform/msm_sdcc.1/by-name/mdm /firmware-mdm ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337
+
+    wait /dev/block/platform/msm_sdcc.1/by-name/efs
+    check_fs /dev/block/platform/msm_sdcc.1/by-name/efs ext4
+    mount ext4 /dev/block/platform/msm_sdcc.1/by-name/efs /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
+    chown system radio /efs
+    chmod 0771 /efs
+
+    chown system radio /dev/block/platform/msm_sdcc.1/by-name
+    chmod 0775 /dev/block/platform/msm_sdcc.1/by-name
+
+on fs_selinux
+    mount_all fstab.qcom
+    setprop ro.crypto.fuse_sdcard true
+    # SEPolicy Reload check should be done after mount data partition
+    setprop selinux.reload_policy 1
+
+    # Keeping following partitions outside fstab file. As user may not have
+    # these partition flashed on the device. Failure to mount any partition in fstab file
+    # results in failure to launch late-start class.
+
+    #wait /dev/block/platform/msm_sdcc.1/by-name/persist
+    #check_fs /dev/block/platform/msm_sdcc.1/by-name/persist ext4
+    #mount ext4 /dev/block/platform/msm_sdcc.1/by-name/persist /persist nosuid nodev barrier=1
+
+    wait /dev/block/platform/msm_sdcc.1/by-name/apnhlos
+    mount vfat /dev/block/platform/msm_sdcc.1/by-name/apnhlos /firmware ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337
+
+    wait /dev/block/platform/msm_sdcc.1/by-name/mdm
+    mount vfat /dev/block/platform/msm_sdcc.1/by-name/mdm /firmware-mdm ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337
+
+    wait /dev/block/platform/msm_sdcc.1/by-name/efs
+    check_fs /dev/block/platform/msm_sdcc.1/by-name/efs ext4
+    mount ext4 /dev/block/platform/msm_sdcc.1/by-name/efs /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
+    chown system radio /efs
+    chmod 0771 /efs
+    restorecon -R /efs
+
+    chown system radio /dev/block/platform/msm_sdcc.1/by-name
+    chmod 0775 /dev/block/platform/msm_sdcc.1/by-name
+
+on boot
+    write /sys/devices/i2c-3/3-0024/cyttsp_update_fw 1
+    write /sys/devices/i2c-3/3-005b/update_fw 1
+    start qcamerasvr
+
+on post-fs-data
+    mkdir /data/tombstones 0771 system system
+    mkdir /tombstones/modem 0771 system system
+    mkdir /tombstones/lpass 0771 system system
+    mkdir /tombstones/wcnss 0771 system system
+    mkdir /tombstones/dsps 0771 system system
+    mkdir /tombstones/mdm 0771 system system
+
+    # create directory for ril data
+    mkdir /data/misc/radio 0775 radio radio
+    mkdir /data/misc/radio/hatp 0775 radio system
+
+    #HDCP2.X : The directory permission is temporary.
+    mkdir /efs/drm 0775  system system
+    mkdir /efs/drm/dxhdcp2 0774  system system
+
+    # permission for TZIC
+    chown system system /dev/tzic
+
+    # sensor
+    chown system radio /sys/class/sensors/barometer_sensor/sea_level_pressure
+    chown system radio /sys/class/sensors/barometer_sensor/eeprom_check
+    chown system radio /sys/class/sensors/barometer_sensor/calibration
+    chown system radio /sys/class/sensors/accelerometer_sensor/calibration
+    chown system radio /sys/class/sensors/accelerometer_sensor/reactive_alert
+    chown system radio /sys/class/sensors/proximity_sensor/enable
+    chown system radio /sys/class/sensors/proximity_sensor/prox_avg
+    chown system radio /sys/class/sensors/proximity_sensor/prox_cal
+    chown system radio /sys/class/sensors/light_sensor/enable
+
+    # sensor
+    chown system radio /sys/class/sensors/barometer_sensor/sea_level_pressure
+    chown system radio /sys/class/sensors/barometer_sensor/eeprom_check
+    chown system radio /sys/class/sensors/barometer_sensor/calibration
+    chown system radio /sys/class/sensors/accelerometer_sensor/calibration
+    chown system radio /sys/class/sensors/accelerometer_sensor/reactive_alert
+    chown system radio /sys/class/sensors/proximity_sensor/enable
+    chown system radio /sys/class/sensors/proximity_sensor/prox_avg
+    chown system radio /sys/class/sensors/proximity_sensor/prox_cal
+    chown system radio /sys/class/sensors/light_sensor/enable
+
+    #earjack
+    chown system radio /sys/class/audio/earjack/select_jack
+    chown media system /sys/class/audio/earjack/reselect_jack
+    chown system radio /sys/class/audio/earjack/key_state
+    chown system radio /sys/class/audio/earjack/state
+
+    #OTG Test
+    chown system radio /sys/class/host_notify/usb_otg/booster
+    chmod 0660 /sys/class/host_notify/usb_otg/booster
+
+    #Essential node for usbservice
+    mkdir /dev/bus/ 755 root root
+    mkdir /dev/bus/usb 755 root root
+
+    # wifi
+    mkdir /efs/wifi 0775 system system
+
+    # Permission for fast dormacy for RIL
+    chown system radio /sys/devices/virtual/sec/bamdmux/waketime
+
+    # for TRP/TIS
+    write /data/.psm.info 1
+    chown system root /data/.psm.info
+    chmod 0660 /data/.psm.info
+
+    # icd
+    exec icd_check
+    chown system system /dev/icd
+    chmod 0644 /dev/icd
+    write /dev/icdr 0
+    chown system system /dev/icdr
+    chmod 0644 /dev/icdr
+    chown system system /dev/tzic
+
+    # h2k permission
+    chmod 0644 /efs/redata.bin
+
+    # Permissions for Camera
+    chown system radio /sys/class/camera/rear/rear_camfw
+    chown system radio /sys/class/camera/rear/rear_camtype
+    chown system radio /sys/class/camera/rear/rear_flash
+    chown system radio /sys/class/camera/front/front_camfw
+    chown system radio /sys/class/camera/front/front_camtype
+    chown system camera /sys/class/flash/flash/flash_power
+    chmod 660 /sys/class/flash/flash/flash_power
+
+    # Permissions for NCM
+    chmod 0660 /sys/class/android_usb/android0/terminal_version
+    chown system system /sys/class/android_usb/android0/terminal_version
+
+    # SEC DVFS sysfs node
+    chown radio system /sys/power/cpufreq_max_limit
+    chown radio system /sys/power/cpufreq_min_limit
+    chown radio system /sys/power/cpufreq_table
+    chown radio system /sys/class/kgsl/kgsl-3d0/max_pwrlevel
+    chmod 664 /sys/power/cpufreq_max_limit
+    chmod 664 /sys/power/cpufreq_min_limit
+    chmod 664 /sys/power/cpufreq_table
+    chmod 664 /sys/class/kgsl/kgsl-3d0/max_pwrlevel
+
+    chown radio system /sys/class/sec/sec_touchkey/touch_sensitivity
+    chown radio system /sys/class/sec/sec_touchkey/touchkey_firm_update
+    chown radio system /sys/class/sec/sec_touchscreen/set_tsp_for_inputmethod
+    chown system radio /sys/class/sec/tsp_noise_test/disp_all_deltadata
+    chown system radio /sys/class/sec/tsp_noise_test/disp_all_refdata
+    chown system radio /sys/class/sec/tsp/cmd
+    chown radio system /sys/class/lcd/panel/power_reduce
+    chown radio system /sys/class/lcd/panel/gamma_mode
+    chown system radio /sys/class/sec/switch/reset_switch
+    chown system radio /sys/class/sec/sec_touchkey/glove_mode
+    chown system radio /sys/class/sec/sec_touchkey/flip_mode
+
+    #For hover control from secureinput
+    chown system radio /sys/class/input/input3/proximity_enables
+
+    # MDNIE
+    chown system system  /sys/class/mdnie/mdnie/lcdtype
+    chown system system  /sys/class/mdnie/mdnie/lcd_power
+    chown system media_rw /sys/class/mdnie/mdnie/scenario
+    chown system system /sys/class/mdnie/mdnie/tuning
+    chown system media_rw /sys/class/mdnie/mdnie/outdoor
+    chown system system  /sys/class/mdnie/mdnie/mdnie_temp
+    chown system system /sys/class/mdnie/mdnie/mode
+    chown system system /sys/class/mdnie/mdnie/negative
+    chown system media_rw /sys/class/mdnie/mdnie/playspeed
+    chown system system /sys/class/lcd/panel/window_type
+    chown radio system /sys/class/lcd/panel/power_reduce
+    chown system media_rw /sys/class/mdnie/mdnie/accessibility
+    chown radio system /sys/class/lcd/panel/siop_enable
+    chown radio system /sys/class/lcd/panel/temperature
+
+    # Adjust YUV to RGB Conversion
+    chown system media_rw /sys/class/graphics/fb0/csc_cfg
+    chmod 0660 /sys/class/graphics/fb0/csc_cfg
+
+    # Dynamic FPS
+    chown radio system  /sys/class/lcd/panel/fps_change
+    chmod 0664 /sys/class/lcd/panel/fps_change
+
+    # Auto Brightness
+    chown system system  /sys/class/backlight/panel/auto_brightness
+    chmod 0660 /sys/class/backlight/panel/auto_brightness
+
+    # Ap thermister permission
+    chown system radio /sys/bus/platform/devices/apq8064-tmu/curr_temp
+    chmod 664 /sys/bus/platform/devices/apq8064-tmu/curr_temp
+
+    # volume up/down key
+    chown radio system /sys/class/sec/sec_key/wakeup_keys
+
+    # permission for CHARGING
+    chown system radio /sys/class/power_supply/battery/batt_reset_soc
+    chown system radio /sys/class/power_supply/battery/batt_slate_mode
+    chown system radio /sys/class/power_supply/battery/update
+    chown system radio /sys/class/power_supply/battery/factory_mode
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/call
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/video
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/music
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/browser
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/hotspot
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/camera
+    chown system radio /sys/class/power_supply/battery/talk_wcdma
+    chown system radio /sys/class/power_supply/battery/talk_gsm
+    chown system radio /sys/class/power_supply/battery/call
+    chown system radio /sys/class/power_supply/battery/data_call
+    chown system radio /sys/class/power_supply/battery/gps
+    chown system radio /sys/class/power_supply/battery/wifi
+    chown system radio /sys/class/power_supply/battery/lte
+    chown system radio /sys/class/power_supply/battery/wc_enable
+
+    #OTG Test
+    chown system radio /sys/class/host_notify/usb_otg/booster
+    chmod 0660 /sys/class/host_notify/usb_otg/booster
+
+    # Permissions for Led
+    chown system system /sys/class/sec/led/led_r
+    chown system system /sys/class/sec/led/led_g
+    chown system system /sys/class/sec/led/led_b
+    chown system system /sys/class/sec/led/led_pattern
+    chown system system /sys/class/sec/led/led_blink
+    chown system system /sys/class/sec/led/led_lowpower
+
+# <Sensors & NFC>
+# Accelerometer_sensor
+    chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
+    chown system radio /sys/class/sensors/accelerometer_sensor/calibration
+    chown system radio /sys/class/sensors/accelerometer_sensor/reactive_alert
+    chown system radio /sys/class/sensors/accelerometer_sensor/vendor
+    chown system radio /sys/class/sensors/accelerometer_sensor/name
+# Proximity_sensor
+    chown system radio /sys/class/sensors/proximity_sensor/state
+    chown system radio /sys/class/sensors/proximity_sensor/raw_data
+    chown system radio /sys/class/sensors/proximity_sensor/prox_avg
+    chown system radio /sys/class/sensors/proximity_sensor/prox_cal
+    chown system radio /sys/class/sensors/proximity_sensor/vendor
+    chown system radio /sys/class/sensors/proximity_sensor/name
+    chown system radio /sys/class/sensors/proximity_sensor/thresh_high
+    chown system radio /sys/class/sensors/proximity_sensor/thresh_low
+    chown system radio /sys/class/sensors/proximity_sensor/barcode_emul_en
+# Light_sensor
+    chown system radio /sys/class/sensors/light_sensor/lux
+    chown system radio /sys/class/sensors/light_sensor/raw_data
+    chown system radio /sys/class/sensors/light_sensor/vendor
+    chown system radio /sys/class/sensors/light_sensor/name
+# Gyro_sensor
+    chown system radio /sys/class/sensors/gyro_sensor/power_on
+    chown system radio /sys/class/sensors/gyro_sensor/power_off
+    chown system radio /sys/class/sensors/gyro_sensor/temperature
+    chown system radio /sys/class/sensors/gyro_sensor/selftest
+    chown system radio /sys/class/sensors/gyro_sensor/selftest_dps
+    chown system radio /sys/class/sensors/gyro_sensor/vendor
+    chown system radio /sys/class/sensors/gyro_sensor/name
+# Barometer_sensor
+    chown system radio /sys/class/sensors/barometer_sensor/sea_level_pressure
+    chown system radio /sys/class/sensors/barometer_sensor/vendor
+    chown system radio /sys/class/sensors/barometer_sensor/name
+    chown system radio /sys/class/sensors/barometer_sensor/calibration
+# Magnetic_sensor
+#    chown system radio /dev/akm8963
+    chown system radio /sys/class/sensors/magnetic_sensor/raw_data
+    chown system radio /sys/class/sensors/magnetic_sensor/vendor
+    chown system radio /sys/class/sensors/magnetic_sensor/name
+# uv_sensor
+    chown system radio /sys/class/sensors/uv_sensor/vendor
+    chown system radio /sys/class/sensors/uv_sensor/name
+    chown system radio /sys/class/sensors/uv_sensor/raw_data
+    chown system radio /sys/class/sensors/uv_sensor/power_on
+    chown system radio /sys/class/sensors/uv_sensor/power_off
+# Temphumidity_sensor
+    chown system radio /sys/class/sensors/temphumidity_sensor/vendor
+    chown system radio /sys/class/sensors/temphumidity_sensor/name
+    chown system radio /sys/class/sensors/temphumidity_sensor/engine_ver
+    chown system radio /sys/class/sensors/temphumidity_sensor/cp_thm
+    chown system radio /sys/class/sensors/temphumidity_sensor/send_accuracy
+# SensorHub
+    chown system radio /sys/class/sensors/ssp_sensor/enable
+    chown system radio /sys/class/sensors/ssp_sensor/enable_irq
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_rev
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_name
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_test
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_reset
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_update
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_sleep_test
+    chown system radio /sys/class/sensors/ssp_sensor/ori_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/mag_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/temp_humi_poll_delay
+# Gesture_sensor
+    chown system radio /sys/class/sensors/gesture_sensor/ir_current
+    chown system radio /sys/class/sensors/gesture_sensor/selftest
+
+# NFC_NXP
+    setprop ro.nfc.port "I2C"
+    chmod 0600 /dev/pn544
+    chown nfc nfc /dev/pn544
+
+# NFC_BROADCOM
+    chmod 0600 /dev/bcm2079x
+    chown nfc nfc /dev/bcm2079x
+    mkdir /data/nfc
+    mkdir /data/nfc/param
+    chmod 0700 /data/nfc
+    chmod 0700 /data/nfc/param
+    chown nfc nfc /data/nfc
+    chown nfc nfc /data/nfc/param
+
+# Permissions for Barcode Emul
+    chown system radio /sys/class/sec/sec_barcode_emul/barcode_send
+    chown system radio /sys/class/sec/sec_barcode_emul/barcode_ver_check
+    chown system radio /sys/class/sec/sec_barcode_emul/barcode_led_status
+
+# Permissions for qup block
+    chmod 0660 /sys/devices/platform/qup_i2c.3/qup_block
+    chown system radio /sys/devices/platform/qup_i2c.3/qup_block
+
+# Permissions for SSRM
+    chmod 0664 /sys/devices/platform/sec-thermistor/temperature
+    chmod 0664 /sys/class/power_supply/battery/siop_level
+    chmod 0664 /sys/class/power_supply/battery/test_charge_current
+    chown radio system /sys/devices/platform/sec-thermistor/temperature
+    chown radio system /sys/class/power_supply/battery/siop_level
+    chown radio system /sys/class/power_supply/battery/test_charge_current
+
+# IR_LED
+    chown system radio /sys/class/sec/sec_ir/ir_send
+    chown system radio /sys/class/sec/sec_ir/ir_send_result
+# Permission for HALL IC
+    chown system radio /sys/class/sec/sec_key/hall_detect
+# Define TCP buffer sizes for various networks
+#   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
+    setprop net.tcp.buffersize.default 4096,87380,704512,4096,16384,110208
+    setprop net.tcp.buffersize.wifi    524288,1048576,2560000,524288,1048576,2560000
+    setprop net.tcp.buffersize.lte     524288,1048576,2560000,524288,1048576,2560000
+    setprop net.tcp.buffersize.umts    4094,87380,704512,4096,16384,110208
+    setprop net.tcp.buffersize.hspa    4092,87380,704512,4096,16384,262144
+    setprop net.tcp.buffersize.hsupa   4092,87380,704512,4096,16384,262144
+    setprop net.tcp.buffersize.hsdpa   4092,87380,704512,4096,16384,110208
+    setprop net.tcp.buffersize.hspap   4092,87380,704512,4096,16384,262144
+    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
+    setprop net.tcp.buffersize.gprs    4096,30000,30000,4096,8760,11680
+    setprop net.tcp.buffersize.evdo    4094,87380,262144,4096,16384,262144
+
+#wifi display
+    write /proc/sys/net/core/rmem_max   1048576
+    write /proc/sys/net/core/wmem_max   2097152
+
+# HDCP 2.x
+    mkdir /data/system/hdcp2 0775 system system
+
+# h2k permission
+    chown radio system /efs/redata.bin
+    chmod 0644 /efs/h2k.dat
+    mkdir /data/misc/radio/hatp 0775 radio system
+
+    # Vibetonz
+    chmod 0660 /dev/tspdrv
+    chown root shell /dev/tspdrv
+	chown system system /sys/class/timed_output/vibrator/pwm_value
+	chmod 0660 /sys/class/timed_output/vibrator/pwm_value
+    chown system system /sys/class/timed_output/vibrator/pwm_max
+	chmod 0660 /sys/class/timed_output/vibrator/pwm_max
+	chown system system /sys/class/timed_output/vibrator/pwm_min
+	chmod 0660 /sys/class/timed_output/vibrator/pwm_min
+	chown system system /sys/class/timed_output/vibrator/pwm_default
+	chmod 0660 /sys/class/timed_output/vibrator/pwm_default
+	chown system system /sys/class/timed_output/vibrator/pwm_threshold
+	chmod 0660 /sys/class/timed_output/vibrator/pwm_threshold
+    
+    # Panel color temperature
+    chmod 0660 /sys/class/lcd/panel/panel_colors
+    chown system system /sys/class/lcd/panel/panel_colors
+
+service prepare_param /system/bin/prepare_param.sh /dev/block/platform/msm_sdcc.1/by-name/param
+    class main
+    user root
+    group root
+    oneshot
+
+#start camera server as daemon
+service qcamerasvr /system/bin/mm-qcamera-daemon
+    class late_start
+    user media
+    group system camera inet input graphics
+
+#service thermald /system/bin/thermald
+#    class main
+#    user root
+#    group root
+
+#service mpdecision /system/bin/mpdecision --no_sleep --avg_comp
+#    user root
+#    disabled
+
+service kickstart /system/bin/qcks -i /firmware-mdm/image/
+    user root
+    group radio cache inet misc audio sdcard_rw log
+    oneshot
+    disabled
+
+service mdm_helper /system/bin/mdm_helper
+    class main
+    onrestart setprop ro.service.mdm_helper_restarted "true"
+    disabled
+
+service qrngd /system/bin/qrngd -f
+    class main
+    user root
+    group root
+
+service qseecomd /system/bin/qseecomd
+   class late_start
+   user system
+   group system
+
+service efsrestorecon /system/bin/restorecon -R /efs
+    class late_start
+    user root
+    group root
+    disabled
+    oneshot
+
+# Start kickstart if mdm is detected
+on property:ro.baseband=mdm
+    mkdir /data/qcks 0770 system system
+    start kickstart
+
+# Start up mdm_helper if sglte detected
+on property:ro.baseband=sglte
+    mkdir /data/misc/mdmhelperdata 0700
+    start mdm_helper
+
+service usf_tester /system/bin/usf_tester
+    user system
+    group system inet
+    disabled
+
+service usf_epos /system/bin/usf_epos
+    user system
+    group system inet
+    disabled
+
+service usf_gesture /system/bin/usf_gesture
+    user system
+    group system inet
+    disabled
+
+service usf_p2p /system/bin/usf_p2p
+    user system
+    group system inet
+    disabled
+
+service usf_hovering /system/bin/usf_hovering
+    user system
+    group system inet
+    disabled
+
+service usf-post-boot /system/bin/sh /system/etc/usf_post_boot.sh
+    class late_start
+    user root
+    disabled
+    oneshot
+
+on property:init.svc.bootanim=stopped
+    start usf-post-boot
+    start run-mobicore
+    start efsrestorecon
+
+service time_daemon /system/bin/time_daemon
+   class late_start
+   user root
+   group root
+
+# service for TZPR provisioning version check app
+service scranton_RD /system/bin/scranton_RD
+    class main
+    user root
+    disabled
+    oneshot
+
+# start for TZPR provisioning version check app
+on property:sys.qseecomd.enable=true
+    start scranton_RD
+
+# bugreport is triggered by holding down volume down, volume up and power
+service bugreport /system/bin/dumpstate -d -p -B \
+        -o /data/data/com.android.shell/files/bugreports/bugreport
+    class main
+    disabled
+    oneshot
+    keycodes 114 115 116

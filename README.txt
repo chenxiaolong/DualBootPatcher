@@ -26,6 +26,7 @@ ROMs:
   * TouchWiz ROMs
     - FoxHound
     - Evil UnWizzed
+  * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
   * ktoonsez's AOSP 4.3
