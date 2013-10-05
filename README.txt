@@ -7,6 +7,9 @@ Donators:
 Thanks to all the donators for supporting this project!
 
   * Christopher Edwards
+  * Dang Lee
+  * pikatchu
+  * Gerard Worster
 
 What's supported?
 
