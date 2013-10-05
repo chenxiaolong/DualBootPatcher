@@ -1,6 +1,7 @@
 #!/sbin/sh
 
 set_secondary_kernel() {
+  mkdir -p /raw-system/dual-kernels
   dd if=/dev/block/platform/msm_sdcc.1/by-name/boot of=/raw-system/dual-kernels/secondary.img
 }
 
