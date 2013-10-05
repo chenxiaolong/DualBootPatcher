@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.16.1"
+VERSION="1.16.2"
 MINGW_PREFIX=i486-mingw32-
 
 set -e

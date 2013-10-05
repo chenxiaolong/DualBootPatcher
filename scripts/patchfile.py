@@ -428,6 +428,20 @@ def get_file_info(path):
     file_info.ramdisk = "touchwiz.dualboot.cpio"
     file_info.patch   = "intrinsic-20130806.dualboot.patch"
 
+  elif re.search(r"^TriForceROM[0-9\.]+\.zip$", filename):
+    print("Detected TriForceROM zip")
+    print("Using patched TouchWiz ramdisk")
+    file_info.ramdisk = "touchwiz.dualboot.cpio"
+    file_info.patch   = "triforce.dualboot.patch"
+    file_info.bootimg = "aroma/kernels/stock/boot.img"
+
+  elif re.search(r"^TriForceROM[0-9\.]+Update\.zip$", filename):
+    print("Detected TriForceROM Update zip")
+    print("Using patched TouchWiz ramdisk")
+    file_info.ramdisk = "touchwiz.dualboot.cpio"
+    file_info.patch   = "triforce-update.dualboot.patch"
+    file_info.bootimg = "aroma/kernels/stock/boot.img"
+
   # Google Apps
   elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip$", filename):
     print("Detected Cyanogenmod Google Apps zip")

@@ -31,6 +31,7 @@ ROMs:
     - Evil UnWizzed
     - Negalite
     - iNTriNsiC (20130806 version)
+    - TriForceROM
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
