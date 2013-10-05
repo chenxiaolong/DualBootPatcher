@@ -26,6 +26,7 @@ ROMs:
   * TouchWiz ROMs
     - FoxHound
     - Evil UnWizzed
+    - Negalite
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:

@@ -415,6 +415,13 @@ def get_file_info(path):
     file_info.patch   = "foxhound.dualboot.patch"
     file_info.bootimg = "snakes/Kernels/Stock/boot.img"
 
+  elif re.search(r"^negalite-wonderom-r[0-9]+\.zip", filename):
+    print("Detected Negalite ROM zip")
+    print("Using patched TouchWiz ramdisk")
+    file_info.ramdisk = "touchwiz.dualboot.cpio"
+    file_info.patch   = "negalite.dualboot.patch"
+    file_info.bootimg = "kernel/stock_kernel/kernel/boot.img"
+
   # Google Apps
   elif re.search(r"^gapps-jb-[0-9]{8}-signed.zip$", filename):
     print("Detected Cyanogenmod Google Apps zip")
