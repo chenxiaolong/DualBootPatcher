@@ -15,7 +15,7 @@ What's supported?
 
 ROMs:
   * CyanogenMod and CyanogenMod-based ROMs
-  * Task650's AOKP
+  * AOKP (Task650, Vertigo)
   * PAC-Man
   * Google Edition (MaKTaiL, jamal2367)
   * Kangabean (MUST install custom kernel)

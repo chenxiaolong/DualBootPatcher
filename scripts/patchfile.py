@@ -327,7 +327,13 @@ def get_file_info(path):
     print("Detected Task650's AOKP ROM zip")
     print("Using patched Task650's AOKP ramdisk")
     file_info.ramdisk = "aokp-task650.dualboot.cpio"
-    file_info.patch   = "aokp-task650.dualboot.patch"
+    file_info.patch   = "aokp.dualboot.patch"
+
+  elif re.search(r"^aokp_ICJ.*\.zip$", filename):
+    print("Detected Vertigo's AOKP ROM zip")
+    print("Using patched AOKP ramdisk")
+    file_info.ramdisk = "aokp.dualboot.cpio"
+    file_info.patch   = "aokp.dualboot.patch"
 
   # PAC-Man ROMs
   elif re.search(r"^pac_[a-z0-9]+_.*.zip$", filename):
