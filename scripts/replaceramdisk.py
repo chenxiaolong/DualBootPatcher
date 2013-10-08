@@ -30,7 +30,7 @@ if sys.hexversion >= 50528256: # Python 3.3
 else:
   xz = "xz"
   if os.name == "nt":
-    xz = os.path.join(binariesdir, "xz.exe")
+    xz = os.path.join(patchfile.binariesdir, "xz.exe")
 
   patchfile.run_command(
     [ xz, '-d', '-k', '-f', os.path.join(patchfile.ramdiskdir, "ramdisks.tar.xz") ]
