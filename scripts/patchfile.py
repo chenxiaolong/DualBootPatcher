@@ -354,6 +354,12 @@ def get_file_info(path):
     file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
+  elif re.search(r"^probam.*\.zip$", filename):
+    print("Detected ProBAM ROM zip")
+    print("Using patched Cyanogenmod ramdisk (compatible with ProBAM)")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
+    file_info.patch   = "cyanogenmod.dualboot.patch"
+
   # ParanoidAndroid ROMs
   elif re.search(r"^pa_[a-z0-9]+-.*-[0-9]+.zip$", filename):
     print("Detected ParanoidAndroid ROM zip")

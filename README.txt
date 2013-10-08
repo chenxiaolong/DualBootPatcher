@@ -14,17 +14,27 @@ Thanks to all the donators for supporting this project!
 What's supported?
 
 ROMs:
-  * CyanogenMod and CyanogenMod-based ROMs
-  * AOKP (Task650, Vertigo)
-  * PAC-Man
-  * Google Edition (MaKTaiL, jamal2367)
-  * Kangabean (MUST install custom kernel)
-  * ParanoidAndroid (Vertigo, most likely other versions too)
-  * AOSPA
+  * CyanogenMod ROMs
+    - Official CyanogenMod nightlies
+    - CyanogenMod-based ROMs
+    - Hellybean
+    - JellyBeer
+  * AOKP ROMs
+    - Task650
+    - IceColdJelly (Vertigo)
+  * PAC-Man ROMS
+    - Official PAC-Man
+    - ProBAM
+  * Google Edition ROMs
+    - MaKTaiL
+    - jamal2367
+    - Kangabean (MUST install custom kernel)
+  * ParanoidAndroid ROMs
+    - Vertigo
+    - (most likely other versions too)
+    - AOSPA
   * MIUI
   * Slim Bean
-  * JellyBeer
-  * Hellybean
   * Carbon
   * AOSP (Broodplank)
   * TouchWiz ROMs
