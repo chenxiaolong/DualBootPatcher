@@ -1,5 +1,4 @@
 @echo off
-cd %~dp0
-pythonportable\python.exe scripts\patchfile.py %*
+"%~dp0\pythonportable\python.exe" "%~dp0\scripts\patchfile.py" %*
 echo.
 pause
