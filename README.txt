@@ -24,6 +24,7 @@ ROMs:
   * MIUI
   * Slim Bean
   * JellyBeer
+  * Hellybean
   * Carbon
   * AOSP (Broodplank)
   * TouchWiz ROMs

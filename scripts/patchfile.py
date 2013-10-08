@@ -322,6 +322,12 @@ def get_file_info(path):
     file_info.ramdisk = "jellybeer.dualboot.cpio"
     file_info.patch   = "jellybeer.dualboot.patch"
 
+  elif re.search(r"^Hellybean-20131003-jfltetmo.zip$", filename):
+    print("Detected HellyBean ROM zip")
+    print("Using patched Cyanogenmod ramdisk")
+    file_info.ramdisk = "cyanogenmod.dualboot.cpio"
+    file_info.patch   = "cyanogenmod.dualboot.patch"
+
   # AOKP ROMs
   elif re.search(r"^aokp_[0-9\.]+_[a-z0-9]+_task650_[0-9\.]+.zip$", filename):
     print("Detected Task650's AOKP ROM zip")
