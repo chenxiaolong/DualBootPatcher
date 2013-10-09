@@ -182,7 +182,9 @@ def patch_boot_image(boot_image, file_info):
 def patch_zip(zip_file, file_info):
   print("--- Please wait. This may take a while ---")
 
-  files_to_patch = files_in_patch(file_info.patch)
+  files_to_patch = ""
+  if file_info.patch != "":
+    files_to_patch = files_in_patch(file_info.patch)
 
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)

@@ -69,6 +69,7 @@ try:
 
   file_info = patchfile.FileInfo()
   file_info.ramdisk = ramdisks[choice]
+  file_info.bootimg = "boot.img"
 
   print("")
   print("Replacing ramdisk with " + file_info.ramdisk)
