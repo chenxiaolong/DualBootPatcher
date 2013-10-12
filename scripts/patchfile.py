@@ -399,6 +399,13 @@ def get_file_info(path):
     file_info.ramdisk = "carbon.dualboot.cpio"
     file_info.patch   = "carbon.dualboot.patch"
 
+  # Liquid Smooth
+  elif re.search(r"^Liquid-JB-v[0-9\.]+-OFFICIAL-.*\.zip$", filename):
+    print("Detected Official LiquidSmooth ROM zip")
+    print("Using patched LiquidSmooth ramdisk")
+    file_info.ramdisk = "liquidsmooth.dualboot.cpio"
+    file_info.patch   = "liquidsmooth.dualboot.patch"
+
   # Google Edition ROMs
   elif re.search(r"^i9505-ge-untouched-4.3-.*.zip$", filename):
     print("Detected MaKTaiL's Google Edition ROM zip")

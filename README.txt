@@ -37,6 +37,7 @@ ROMs:
   * MIUI
   * Slim Bean
   * Carbon
+  * LiquidSmooth
   * AOSP (Broodplank)
   * TouchWiz ROMs
     - FoxHound
