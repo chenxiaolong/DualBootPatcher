@@ -1,0 +1,31 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -8 +8,4 @@
+-mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++ui_print("Installing ROM as secondary");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
+@@ -14 +17 @@
+-unmount("/system");
++run_program("/tmp/dualboot.sh", "unmount-system");
+@@ -35 +38 @@
+-format("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "0", "/system");
++ui_print("Formatting /system/dual for dual boot");
+@@ -36,0 +40,3 @@
++delete_recursive("/system/dual");
++unmount("/system");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
+@@ -39,2 +45,2 @@
+-delete_recursive("/cache");
+-delete_recursive("/data/dalvik-cache");package_extract_dir("system", "/system");
++delete_recursive("/cache/dual");
++delete_recursive("/data/dual/dalvik-cache");package_extract_dir("system", "/system");
+@@ -191 +197 @@
+-package_extract_dir("data", "/data");
++package_extract_dir("data", "/data/dual");
+@@ -196 +201,0 @@
+-run_program("/sbin/busybox", "umount", "/system");
+@@ -197,0 +203,2 @@
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "unmount-system");

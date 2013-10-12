@@ -25,6 +25,7 @@ ROMs:
   * PAC-Man ROMS
     - Official PAC-Man
     - ProBAM
+    - Metaiiica
   * Google Edition ROMs
     - MaKTaiL
     - jamal2367

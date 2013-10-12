@@ -362,6 +362,12 @@ def get_file_info(path):
     file_info.ramdisk = "cyanogenmod.dualboot.cpio"
     file_info.patch   = "cyanogenmod.dualboot.patch"
 
+  elif re.search(r"^pac_.*-Black-Power-Edition_[0-9]+\.zip$", filename):
+    print("Detected Metaiiica's PAC-Man ROM zip")
+    print("Using patched KToonsez ramdisk (identical to PAC-Man's ramdisk)")
+    file_info.ramdisk = "ktoonsez.dualboot.cpio"
+    file_info.patch   = "pacman-metaiiica.dualboot.patch"
+
   # ParanoidAndroid ROMs
   elif re.search(r"^pa_[a-z0-9]+-.*-[0-9]+.zip$", filename):
     print("Detected ParanoidAndroid ROM zip")
