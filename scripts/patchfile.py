@@ -4,6 +4,7 @@
 
 import gzip
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -20,11 +21,33 @@ patchdir        = os.path.join(rootdir, "patches")
 binariesdir     = os.path.join(rootdir, "binaries")
 remove_dirs     = []
 
-mkbootimg       = "mkbootimg"
-unpackbootimg   = "unpackbootimg"
-if os.name == "nt":
-  mkbootimg     = "mkbootimg.exe"
-  unpackbootimg = "unpackbootimg.exe"
+if os.name == "posix":
+  if platform.system() == "Linux":
+    binariesdir   = os.path.join(binariesdir, "linux")
+    mkbootimg     = os.path.join(binariesdir, "mkbootimg")
+    unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
+    xz            = "xz"
+    patch         = "patch"
+  elif platform.system() == "Darwin":
+    binariesdir   = os.path.join(binariesdir, "osx")
+    mkbootimg     = os.path.join(binariesdir, "mkbootimg")
+    unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
+    xz            = os.path.join(binariesdir, "bin/xz")
+    patch         = "patch"
+  else:
+    print("Unsupported posix system")
+    sys.exit(1)
+elif os.name == "nt":
+  binariesdir   = os.path.join(binariesdir, "windows")
+  mkbootimg     = os.path.join(binariesdir, "mkbootimg.exe")
+  unpackbootimg = os.path.join(binariesdir, "unpackbootimg.exe")
+  xz            = os.path.join(binariesdir, "xz.exe")
+  # Windows wants anything named patch.exe to run as Administrator
+  patch         = os.path.join(binariesdir, "hctap.exe")
+
+else:
+  print("Unsupported operating system")
+  sys.exit(1)
 
 class FileInfo:
   def __init__(self):
@@ -60,11 +83,6 @@ def run_command(command):
     clean_up_and_exit(1)
 
 def apply_patch_file(patchfile, directory):
-  patch = "patch"
-  if os.name == "nt":
-    # Windows wants anything named patch.exe to run as Administrator
-    patch = os.path.join(binariesdir, "hctap.exe")
-
   exit_status, output = run_command(
     [ patch,
       '-p', '1',
@@ -104,7 +122,7 @@ def patch_boot_image(boot_image, file_info):
   remove_dirs.append(tempdir)
 
   exit_status, output = run_command(
-    [ os.path.join(binariesdir, unpackbootimg),
+    [ unpackbootimg,
       '-i', boot_image,
       '-o', tempdir]
   )
@@ -131,10 +149,6 @@ def patch_boot_image(boot_image, file_info):
     with tarfile.open(os.path.join(ramdiskdir, "ramdisks.tar.xz")) as f:
       f.extract(file_info.ramdisk, path = ramdiskdir)
   else:
-    xz = "xz"
-    if os.name == "nt":
-      xz = os.path.join(binariesdir, "xz.exe")
-
     run_command(
       [ xz, '-d', '-k', '-f', os.path.join(ramdiskdir, "ramdisks.tar.xz") ]
     )
@@ -160,7 +174,7 @@ def patch_boot_image(boot_image, file_info):
   os.remove(os.path.join(ramdiskdir, file_info.ramdisk + ".gz"))
 
   exit_status, output = run_command(
-    [ os.path.join(binariesdir, mkbootimg),
+    [ mkbootimg,
       '--kernel',         os.path.join(tempdir, "kernel.img"),
       '--ramdisk',        os.path.join(tempdir, "ramdisk.cpio.gz"),
       '--cmdline',        cmdline,

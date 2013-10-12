@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.17.5"
+VERSION="1.18"
 MINGW_PREFIX=i486-mingw32-
 
 set -e
@@ -103,7 +103,7 @@ create_portable_python() {
   rm Lib/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,mimetypes.py,modulefinder.py}
   rm Lib/{netrc.py,nntplib.py,nturl2path.py,numbers.py}
   rm Lib/{opcode.py,optparse.py,os2emxpath.py}
-  rm Lib/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,platform.py,plistlib.py,poplib.py,ppp.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
+  rm Lib/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,plistlib.py,poplib.py,ppp.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
   rm Lib/{queue.py,quopri.py}
   rm Lib/{rlcompleter.py,runpy.py}
   rm Lib/{sched.py,shelve.py,shlex.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,socketserver.py,ssl.py,string.py,stringprep.py,sunau.py,symbol.py,symtable.py}
@@ -116,6 +116,9 @@ create_portable_python() {
 }
 
 build_windows() {
+  local TD="${TARGETDIR}/binaries/windows/"
+  mkdir -p "${TD}"
+
   pushd "${ANDROID_DIR}"
   cp mkbootimg/mkbootimg.c mkbootimg/mkbootimg.windows.c
   cp mkbootimg/unpackbootimg.c mkbootimg/unpackbootimg.windows.c
@@ -124,13 +127,13 @@ build_windows() {
   ${MINGW_PREFIX}gcc -static -Iinclude \
     mkbootimg/mkbootimg.windows.c \
     libmincrypt/sha.c \
-    -o "${TARGETDIR}/binaries/mkbootimg.exe"
+    -o "${TD}/mkbootimg.exe"
 
   ${MINGW_PREFIX}gcc -static -Iinclude \
     mkbootimg/unpackbootimg.windows.c \
-    -o "${TARGETDIR}/binaries/unpackbootimg.exe"
+    -o "${TD}/unpackbootimg.exe"
 
-  strip "${TARGETDIR}"/binaries/{mkbootimg,unpackbootimg}.exe
+  strip "${TD}"/{mkbootimg,unpackbootimg}.exe
   rm mkbootimg/mkbootimg.windows.c mkbootimg/unpackbootimg.windows.c
   popd
 
@@ -164,34 +167,65 @@ build_windows() {
   fi
 
   tar Jxvf patch-2.6.1-1-msys-1.0.13-bin.tar.lzma bin/patch.exe \
-    --to-stdout > "${TARGETDIR}/binaries/hctap.exe"
+    --to-stdout > "${TD}/hctap.exe"
   tar Jxvf msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma bin/msys-1.0.dll \
-    --to-stdout > "${TARGETDIR}/binaries/msys-1.0.dll"
+    --to-stdout > "${TD}/msys-1.0.dll"
   tar Jxvf libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma bin/msys-intl-8.dll \
-    --to-stdout > "${TARGETDIR}/binaries/msys-intl-8.dll"
+    --to-stdout > "${TD}/msys-intl-8.dll"
   tar Jxvf libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma bin/msys-iconv-2.dll \
-    --to-stdout > "${TARGETDIR}/binaries/msys-iconv-2.dll"
+    --to-stdout > "${TD}/msys-iconv-2.dll"
   tar Jxvf liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma bin/msys-lzma-5.dll \
-    --to-stdout > "${TARGETDIR}/binaries/msys-lzma-5.dll"
+    --to-stdout > "${TD}/msys-lzma-5.dll"
   tar Jxvf xz-5.0.3-1-msys-1.0.17-bin.tar.lzma bin/xz.exe \
-    --to-stdout > "${TARGETDIR}/binaries/xz.exe"
+    --to-stdout > "${TD}/xz.exe"
 
-  chmod +x "${TARGETDIR}"/binaries/*.{exe,dll}
+  chmod +x "${TD}"/*.{exe,dll}
   popd
 }
 
+build_mac() {
+  local TD="${TARGETDIR}/binaries/osx/"
+  mkdir -p "${TD}"
+
+  mkdir -p macbinaries
+  pushd macbinaries
+
+  # Can't cross compile from Linux, unfortunately
+  # Thanks to munchy_cool for the binaries!
+  if [ ! -f bootimg_osx.tar.gz ]; then
+    wget 'http://fs1.d-h.st/download/00076/dBZ/bootimg_osx.tar.gz'
+  fi
+  tar zxvf bootimg_osx.tar.gz -C "${TD}"
+
+  if [ ! -f XZ.pkg ]; then
+    wget 'https://downloads.sourceforge.net/project/macpkg/XZ/5.0.5/XZ.pkg'
+  fi
+  xar -x -f XZ.pkg local.pkg/Payload
+  zcat local.pkg/Payload | cpio -idmv ./lib/liblzma.5.dylib ./bin/xz
+  # Must keep bin/ and lib/ structure due to rpath in binaries
+  mv bin/ lib/ "${TD}"
+  rm -r local.pkg
+
+  popd
+
+  find "${TD}" -type f -exec chmod +x {} \+
+}
+
 build_linux() {
+  local TD="${TARGETDIR}/binaries/linux/"
+  mkdir -p "${TD}"
+
   pushd "${ANDROID_DIR}"
   gcc -m32 -static -Iinclude \
     mkbootimg/mkbootimg.c \
     libmincrypt/sha.c \
-    -o "${TARGETDIR}/binaries/mkbootimg"
+    -o "${TD}/mkbootimg"
 
   gcc -m32 -static -Iinclude \
     mkbootimg/unpackbootimg.c \
-    -o "${TARGETDIR}/binaries/unpackbootimg"
+    -o "${TD}/unpackbootimg"
 
-  strip "${TARGETDIR}"/binaries/{mkbootimg,unpackbootimg}
+  strip "${TD}"/{mkbootimg,unpackbootimg}
   popd
 }
 
@@ -219,6 +253,7 @@ mkdir -p "${TARGETDIR}/binaries" "${TARGETDIR}/ramdisks"
 # Build and copy stuff into target directory
 create_portable_python
 build_windows
+build_mac
 build_linux
 compress_ramdisks
 
