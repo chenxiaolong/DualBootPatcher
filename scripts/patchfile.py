@@ -288,7 +288,7 @@ def get_file_info(path):
     file_info.bootimg = "wanam/boot.img"
 
   # AOSP ROMs
-  elif re.search(r"^aosp43-i9505-Final-R1\.zip$", filename):
+  elif re.search(r"^aosp43-i9505-.*\.zip$", filename):
     print("Detected Broodplank's AOSP ROM zip")
     print("Using patched AOSP ramdisk")
     file_info.ramdisk = "aosp.dualboot.cpio"
@@ -324,7 +324,7 @@ def get_file_info(path):
     file_info.ramdisk = "jellybeer.dualboot.cpio"
     file_info.patch   = "jellybeer.dualboot.patch"
 
-  elif re.search(r"^Hellybean-20131003-jfltetmo.zip$", filename):
+  elif re.search(r"^Hellybean-.*.zip$", filename):
     print("Detected HellyBean ROM zip")
     print("Using patched Cyanogenmod ramdisk")
     file_info.ramdisk = "cyanogenmod.dualboot.cpio"
