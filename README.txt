@@ -11,6 +11,8 @@ Thanks to all the donators for supporting this project!
   * pikatchu
   * Gerard Worster
   * Matthew Smith
+  * Shahzain Badruddin
+  * John Nguyen
 
 What's supported?
 
