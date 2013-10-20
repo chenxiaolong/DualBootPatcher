@@ -53,7 +53,7 @@ ramdisks.sort()
 
 if list_ramdisks:
   for i in ramdisks:
-    print(i[2:])
+    print(i)
   sys.exit(0)
 
 print("Replacing ramdisk in: " + filename)
