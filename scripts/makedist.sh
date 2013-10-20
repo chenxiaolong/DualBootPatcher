@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.18.1"
+VERSION="2.0beta1"
 MINGW_PREFIX=i486-mingw32-
 
 set -e
@@ -230,18 +230,20 @@ build_linux() {
 }
 
 compress_ramdisks() {
-  for i in ramdisks/*; do
+  for i in $(find ramdisks -type d -name '*.dualboot'); do
     if [ -d "${i}" ]; then
       pushd "${i}"
+      mkdir -p "${TARGETDIR}/$(dirname "${i}")"
       find . | cpio -o -H newc > \
-        "${TARGETDIR}/ramdisks/$(basename "${i}").cpio"
+        "${TARGETDIR}/${i}.cpio"
       popd
     fi
   done
 
   pushd "${TARGETDIR}/ramdisks/"
-  tar cvf - *.cpio | xz -9 > ramdisks.tar.xz
-  rm *.cpio
+  local CPIOS=$(find -type f -name '*.cpio')
+  tar cvf - ${CPIOS} | xz -9 > ramdisks.tar.xz
+  rm ${CPIOS}
   popd
 }
 
