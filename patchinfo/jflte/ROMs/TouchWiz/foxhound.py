@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^FoxHound_.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'touchwiz.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'TouchWiz', 'foxhound.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/touchwiz.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/TouchWiz/foxhound.dualboot.patch'
 file_info.bootimg        = "snakes/Kernels/Stock/boot.img"
 
 def matches(filename):

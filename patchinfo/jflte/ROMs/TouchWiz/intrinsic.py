@@ -1,10 +1,9 @@
 from fileinfo import FileInfo
-import os
 
 file_info = FileInfo()
 
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'touchwiz.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'TouchWiz', 'intrinsic-20130806.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/touchwiz.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/TouchWiz/intrinsic-20130806.dualboot.patch'
 
 def matches(filename):
   if filename == "iNTriNsiC 8-6-13.zip":

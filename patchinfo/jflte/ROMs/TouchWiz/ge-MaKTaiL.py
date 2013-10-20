@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^i9505-ge-untouched-4.3-.*.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'googleedition.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'TouchWiz', 'ge-MaKTaiL.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/googleedition.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/TouchWiz/ge-MaKTaiL.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

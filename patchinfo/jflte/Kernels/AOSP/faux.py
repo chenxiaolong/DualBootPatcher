@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^jflte[a-z]+-aosp-faux123-.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'AOSP', 'cyanogenmod.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'Kernels', 'AOSP', 'faux.dualboot.patch')
+file_info.ramdisk        = 'jflte/AOSP/cyanogenmod.dualboot.cpio'
+file_info.patch          = 'jflte/Kernels/AOSP/faux.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

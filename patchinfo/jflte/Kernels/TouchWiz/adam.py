@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^.*_AdamKernel.V[0-9\.]+\.CWM\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'adam.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'Kernels', 'TouchWiz', 'adam.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/adam.dualboot.cpio'
+file_info.patch          = 'jflte/Kernels/TouchWiz/adam.dualboot.patch'
 file_info.bootimg        = "wanam/boot.img"
 
 def matches(filename):

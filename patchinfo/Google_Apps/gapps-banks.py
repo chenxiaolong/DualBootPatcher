@@ -1,10 +1,10 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^[0-9]+-[0-9]+_GApps_Core_[0-9\.]+_signed\.zip$"
-file_info.patch          = os.path.join('Google_Apps', 'gapps-banks.dualboot.patch')
+file_info.patch          = 'Google_Apps/gapps-banks.dualboot.patch'
 file_info.has_boot_image = False
 
 def matches(filename):

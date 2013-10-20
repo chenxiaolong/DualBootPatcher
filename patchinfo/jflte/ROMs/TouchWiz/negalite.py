@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^negalite-wonderom-r[0-9]+\.zip"
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'touchwiz.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'TouchWiz', 'negalite.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/touchwiz.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/TouchWiz/negalite.dualboot.patch'
 file_info.bootimg        = "kernel/stock_kernel/kernel/boot.img"
 
 def matches(filename):

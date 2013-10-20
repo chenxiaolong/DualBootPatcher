@@ -1,10 +1,9 @@
 from fileinfo import FileInfo
-import os
 
 file_info = FileInfo()
 
-file_info.ramdisk        = os.path.join('jflte', 'Other', 'sense.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'Other', 'sense-geiti94.dualboot.patch')
+file_info.ramdisk        = 'jflte/Other/sense.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/Other/sense-geiti94.dualboot.patch'
 
 def matches(filename):
   if filename.lower() == "sense5port.zip" or \

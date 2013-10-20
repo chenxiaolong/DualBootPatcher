@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^Infamous_S4_Kernel.v.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'infamouskernel.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'Kernels', 'TouchWiz', 'infamouskernel.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/infamouskernel.dualboot.cpio'
+file_info.patch          = 'jflte/Kernels/TouchWiz/infamouskernel.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^aosp43-i9505-.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'AOSP', 'aosp.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'AOSP', 'aosp.dualboot.patch')
+file_info.ramdisk        = 'jflte/AOSP/aosp.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/AOSP/aosp.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

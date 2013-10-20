@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^miuiandroid_jflte.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'Other', 'miui.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'Other', 'miui.dualboot.patch')
+file_info.ramdisk        = 'jflte/Other/miui.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/Other/miui.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

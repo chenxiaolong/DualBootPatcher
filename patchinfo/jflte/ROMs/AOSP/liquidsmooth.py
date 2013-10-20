@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^Liquid-JB-v[0-9\.]+-OFFICIAL-.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'AOSP', 'liquidsmooth.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'ROMs', 'AOSP', 'liquidsmooth.dualboot.patch')
+file_info.ramdisk        = 'jflte/AOSP/liquidsmooth.dualboot.cpio'
+file_info.patch          = 'jflte/ROMs/AOSP/liquidsmooth.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

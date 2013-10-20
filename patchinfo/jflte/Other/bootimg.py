@@ -1,10 +1,10 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^.*\.img$"
-file_info.ramdisk        = os.path.join('jflte', 'AOSP', 'cyanogenmod.dualboot.cpio')
+file_info.ramdisk        = 'jflte/AOSP/cyanogenmod.dualboot.cpio'
 
 def matches(filename):
   if re.search(filename_regex, filename):

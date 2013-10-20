@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^v[0-9\.]+-Google-edition-ausdim-Kernel-.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'TouchWiz', 'ausdim.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'Kernels', 'TouchWiz', 'ausdim.dualboot.patch')
+file_info.ramdisk        = 'jflte/TouchWiz/ausdim.dualboot.cpio'
+file_info.patch          = 'jflte/Kernels/TouchWiz/ausdim.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):

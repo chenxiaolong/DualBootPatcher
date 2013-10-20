@@ -1,11 +1,11 @@
 from fileinfo import FileInfo
-import os, re
+import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^ChronicKernel-JB4.3-AOSP-.*\.zip$"
-file_info.ramdisk        = os.path.join('jflte', 'AOSP', 'chronickernel.dualboot.cpio')
-file_info.patch          = os.path.join('jflte', 'Kernels', 'AOSP', 'chronickernel.dualboot.patch')
+file_info.ramdisk        = 'jflte/AOSP/chronickernel.dualboot.cpio'
+file_info.patch          = 'jflte/Kernels/AOSP/chronickernel.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):
