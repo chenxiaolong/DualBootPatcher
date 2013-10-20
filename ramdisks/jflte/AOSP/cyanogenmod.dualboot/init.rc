@@ -287,55 +287,6 @@ on post-fs-data
     import /init.cm.rc
 
 on boot
-    # interactive governor
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/timer_rate
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/timer_rate
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/boost
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/boost
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/boostpulse
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/input_boost
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/input_boost
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/boostpulse_duration
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/boostpulse_duration
-    chown system system /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
-    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
-
-    # ondemand governor
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/boostfreq
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/boostfreq
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/boostpulse
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/boostpulse
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/boosttime
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/down_differential
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/down_differential
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/powersave_bias
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
-    chown system system /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
-    chmod 0660 /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
-
-    # Assume SMP uses shared cpufreq policy for all CPUs
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-
 # basic network init
     ifup lo
     hostname localhost
@@ -436,28 +387,25 @@ on boot
     chown system system /sys/fs/selinux/load
     chown system system /sys/fs/selinux/enforce
 
-    # allow system to modify cpufreq control files
-    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    chown root system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-    chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-
 # Define TCP buffer sizes for various networks
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
     setprop net.tcp.buffersize.default 4096,87380,704512,4096,16384,110208
     setprop net.tcp.buffersize.wifi    524288,1048576,2097152,262144,524288,1048576
-    setprop net.tcp.buffersize.lte     4096,87380,1220608,4096,16384,563200
-    setprop net.tcp.buffersize.umts    4096,87380,563200,4096,16384,110208
-    setprop net.tcp.buffersize.hspa    4096,87380,704512,4096,16384,110208
-    setprop net.tcp.buffersize.hsupa   4096,87380,704512,4096,16384,262144
-    setprop net.tcp.buffersize.hsdpa   4096,87380,704512,4096,16384,262144
-    setprop net.tcp.buffersize.hspap   4096,87380,1220608,4096,16384,393216
-    setprop net.tcp.buffersize.edge    4096,26280,35040,4096,16384,35040
-    setprop net.tcp.buffersize.gprs    4096,8760,11680,4096,8760,11680
-    setprop net.tcp.buffersize.evdo    4096,87380,563200,4096,16384,262144
+    setprop net.tcp.buffersize.lte     524288,1048576,2097152,262144,524288,1048576
+    setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
+    setprop net.tcp.buffersize.hspa    4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hsupa   4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hsdpa   4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.hspap   4094,87380,1220608,4096,16384,1220608
+    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
+    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
+    setprop net.tcp.buffersize.evdo    4094,87380,262144,4096,16384,262144
     setprop net.tcp.buffersize.evdo_b  4096,87380,704512,4096,16384,262144
+
+# Assign TCP buffer thresholds to be ceiling value of technology maximums
+# Increased technology maximums should be reflected here.
+    write /proc/sys/net/core/rmem_max  2097152
+    write /proc/sys/net/core/wmem_max  2097152
 
 # Set this property so surfaceflinger is not started by system_init
     setprop system_init.startsurfaceflinger 0
