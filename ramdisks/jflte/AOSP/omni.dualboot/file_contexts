@@ -1,0 +1,217 @@
+#line 1 "external/sepolicy/file_contexts"
+###########################################
+# Root
+/			u:object_r:rootfs:s0
+
+# Data files
+/adb_keys		u:object_r:rootfs:s0
+/default.prop		u:object_r:rootfs:s0
+/fstab\..*		u:object_r:rootfs:s0
+/init\..*		u:object_r:rootfs:s0
+/res(/.*)?		u:object_r:rootfs:s0
+/ueventd\..*		u:object_r:rootfs:s0
+
+# Executables
+/charger		u:object_r:rootfs:s0
+/init			u:object_r:rootfs:s0
+/sbin(/.*)?		u:object_r:rootfs:s0
+
+# Empty directories
+/lost\+found		u:object_r:rootfs:s0
+/proc			u:object_r:rootfs:s0
+/sys			u:object_r:rootfs:s0
+
+# SELinux policy files
+/file_contexts		u:object_r:rootfs:s0
+/property_contexts	u:object_r:rootfs:s0
+/seapp_contexts		u:object_r:rootfs:s0
+/sepolicy		u:object_r:rootfs:s0
+
+##########################
+# Devices
+#
+/dev(/.*)?		u:object_r:device:s0
+/dev/akm8973.*		u:object_r:akm_device:s0
+/dev/accelerometer	u:object_r:accelerometer_device:s0
+/dev/alarm		u:object_r:alarm_device:s0
+/dev/android_adb.*	u:object_r:adb_device:s0
+/dev/ashmem		u:object_r:ashmem_device:s0
+/dev/audio.*		u:object_r:audio_device:s0
+/dev/binder		u:object_r:binder_device:s0
+/dev/block(/.*)?	u:object_r:block_device:s0
+/dev/block/loop[0-9]*	u:object_r:loop_device:s0
+/dev/block/ram[0-9]*	u:object_r:ram_device:s0
+/dev/block/mtdblock5	u:object_r:radio_device:s0
+/dev/bus/usb(.*)?       u:object_r:usb_device:s0
+/dev/cam		u:object_r:camera_device:s0
+/dev/console		u:object_r:console_device:s0
+/dev/cpuctl(/.*)?	u:object_r:cpuctl_device:s0
+/dev/device-mapper	u:object_r:dm_device:s0
+/dev/eac		u:object_r:audio_device:s0
+/dev/full		u:object_r:full_device:s0
+/dev/fuse		u:object_r:fuse_device:s0
+/dev/graphics(/.*)?	u:object_r:graphics_device:s0
+/dev/input(/.*)		u:object_r:input_device:s0
+/dev/iio:device[0-9]+   u:object_r:iio_device:s0
+/dev/ion		u:object_r:ion_device:s0
+/dev/kmem		u:object_r:kmem_device:s0
+/dev/log(/.*)?		u:object_r:log_device:s0
+/dev/mem		u:object_r:kmem_device:s0
+/dev/modem.*		u:object_r:radio_device:s0
+/dev/mpu		u:object_r:gps_device:s0
+/dev/mpuirq		u:object_r:gps_device:s0
+/dev/mtd(/.*)?		u:object_r:mtd_device:s0
+/dev/mtd/mtd5		u:object_r:radio_device:s0
+/dev/mtd/mtd5ro		u:object_r:radio_device:s0
+/dev/mtp_usb		u:object_r:mtp_device:s0
+/dev/pn544		u:object_r:nfc_device:s0
+/dev/ppp		u:object_r:ppp_device:s0
+/dev/ptmx		u:object_r:ptmx_device:s0
+/dev/pvrsrvkm		u:object_r:powervr_device:s0
+/dev/qemu_.*		u:object_r:qemu_device:s0
+/dev/kmsg		u:object_r:kmsg_device:s0
+/dev/null		u:object_r:null_device:s0
+/dev/nvhdcp1		u:object_r:video_device:s0
+/dev/nvmap		u:object_r:nv_device:s0
+/dev/nvhost-.*		u:object_r:nv_device:s0
+/dev/random		u:object_r:random_device:s0
+/dev/rpmsg-omx[0-9]	u:object_r:rpmsg_device:s0
+/dev/rproc_user	u:object_r:rpmsg_device:s0
+/dev/s3c-jpg		u:object_r:camera_device:s0
+/dev/s3c-mem		u:object_r:camera_device:s0
+/dev/s3c-mfc		u:object_r:graphics_device:s0
+/dev/snd(/.*)?		u:object_r:audio_device:s0
+/dev/socket		u:object_r:socket_device:s0
+/dev/socket/adbd	u:object_r:adbd_socket:s0
+/dev/socket/bluetooth	u:object_r:bluetooth_socket:s0
+/dev/socket/dbus_bluetooth	u:object_r:bluetooth_socket:s0
+/dev/socket/dbus	u:object_r:dbus_socket:s0
+/dev/socket/dnsproxyd	u:object_r:dnsproxyd_socket:s0
+/dev/socket/installd	u:object_r:installd_socket:s0
+/dev/socket/keystore	u:object_r:keystore_socket:s0
+/dev/socket/netd	u:object_r:netd_socket:s0
+/dev/socket/property_service	u:object_r:property_socket:s0
+/dev/socket/qemud	u:object_r:qemud_socket:s0
+/dev/socket/racoon	u:object_r:racoon_socket:s0
+/dev/socket/rild	u:object_r:rild_socket:s0
+/dev/socket/rild-debug	u:object_r:rild_debug_socket:s0
+/dev/socket/vold	u:object_r:vold_socket:s0
+/dev/socket/wpa_eth[0-9] u:object_r:wpa_socket:s0
+/dev/socket/wpa_wlan[0-9] u:object_r:wpa_socket:s0
+/dev/socket/zygote	u:object_r:zygote_socket:s0
+/dev/spdif_out.*	u:object_r:audio_device:s0
+/dev/tegra.*		u:object_r:video_device:s0
+/dev/tf_driver		u:object_r:tee_device:s0
+/dev/tty		u:object_r:owntty_device:s0
+/dev/tty[0-9]*		u:object_r:tty_device:s0
+/dev/ttyS[0-9]*		u:object_r:serial_device:s0
+/dev/tun		u:object_r:tun_device:s0
+/dev/uhid		u:object_r:uhid_device:s0
+/dev/uinput		u:object_r:input_device:s0
+/dev/urandom		u:object_r:urandom_device:s0
+/dev/usb_accessory	u:object_r:usbaccessory_device:s0
+/dev/vcs[0-9a-z]*	u:object_r:vcs_device:s0
+/dev/video[0-9]*	u:object_r:video_device:s0
+/dev/watchdog		u:object_r:watchdog_device:s0
+/dev/xt_qtaguid	u:object_r:qtaguid_device:s0
+/dev/zero		u:object_r:zero_device:s0
+/dev/__kmsg__		u:object_r:klog_device:s0
+/dev/__properties__ u:object_r:properties_device:s0
+#############################
+# System files
+#
+/system(/.*)?		u:object_r:system_file:s0
+/system/bin/ash		u:object_r:shell_exec:s0
+/system/bin/mksh	u:object_r:shell_exec:s0
+/system/bin/sh		--	u:object_r:shell_exec:s0
+/system/bin/run-as	--	u:object_r:runas_exec:s0
+/system/bin/app_process	u:object_r:zygote_exec:s0
+/system/bin/servicemanager	u:object_r:servicemanager_exec:s0
+/system/bin/surfaceflinger	u:object_r:surfaceflinger_exec:s0
+/system/bin/drmserver	u:object_r:drmserver_exec:s0
+/system/bin/vold	u:object_r:vold_exec:s0
+/system/bin/netd	u:object_r:netd_exec:s0
+/system/bin/rild	u:object_r:rild_exec:s0
+/system/bin/mediaserver	u:object_r:mediaserver_exec:s0
+/system/bin/dbus-daemon	u:object_r:dbusd_exec:s0
+/system/bin/installd	u:object_r:installd_exec:s0
+/system/bin/keystore	u:object_r:keystore_exec:s0
+/system/bin/debuggerd	u:object_r:debuggerd_exec:s0
+/system/bin/bluetoothd	u:object_r:bluetoothd_exec:s0
+/system/bin/wpa_supplicant	u:object_r:wpa_exec:s0
+/system/bin/qemud	u:object_r:qemud_exec:s0
+/system/bin/sdcard      u:object_r:sdcardd_exec:s0
+/system/bin/dhcpcd      u:object_r:dhcp_exec:s0
+/system/bin/mtpd	u:object_r:mtp_exec:s0
+/system/bin/pppd	u:object_r:ppp_exec:s0
+/system/bin/tf_daemon	u:object_r:tee_exec:s0
+/system/bin/racoon	u:object_r:racoon_exec:s0
+/system/etc/ppp(/.*)?	u:object_r:ppp_system_file:s0
+/system/etc/dhcpcd(/.*)? u:object_r:dhcp_system_file:s0
+/system/xbin/su		u:object_r:su_exec:s0
+/system/vendor/bin/gpsd u:object_r:gpsd_exec:s0
+/system/bin/ping    u:object_r:ping_exec:s0
+#############################
+# Vendor files
+#
+/vendor(/.*)?		u:object_r:system_file:s0
+/vendor/bin/gpsd	u:object_r:gpsd_exec:s0
+#############################
+# Data files
+#
+/data(/.*)?		u:object_r:system_data_file:s0
+/data/backup(/.*)?		u:object_r:backup_data_file:s0
+/data/secure/backup(/.*)?	u:object_r:backup_data_file:s0
+/data/security(/.*)?	u:object_r:security_file:s0
+/data/drm(/.*)?		u:object_r:drm_data_file:s0
+/data/gps(/.*)?		u:object_r:gps_data_file:s0
+/data/dalvik-cache(/.*)? u:object_r:dalvikcache_data_file:s0
+/data/anr(/.*)?		u:object_r:anr_data_file:s0
+/data/app(/.*)?		u:object_r:apk_data_file:s0
+/data/app/vmdl.*\.tmp	u:object_r:apk_tmp_file:s0
+/data/app-private(/.*)?		u:object_r:apk_private_data_file:s0
+/data/app-private/vmdl.*\.tmp	u:object_r:apk_private_tmp_file:s0
+/data/tombstones(/.*)?	u:object_r:tombstone_data_file:s0
+/data/local/tmp(/.*)?	u:object_r:shell_data_file:s0
+/data/local/tmp/selinux(/.*)?   u:object_r:tombstone_data_file:s0
+# Misc data
+/data/misc/bluetoothd(/.*)?	u:object_r:bluetoothd_data_file:s0
+/data/misc/bluetooth(/.*)?	u:object_r:bluetooth_data_file:s0
+/data/misc/bluedroid(/.*)?	u:object_r:bluetooth_data_file:s0
+/data/misc/keystore(/.*)?	u:object_r:keystore_data_file:s0
+/data/misc/vpn(/.*)?		u:object_r:vpn_data_file:s0
+/data/misc/systemkeys(/.*)?	u:object_r:systemkeys_data_file:s0
+/data/misc/wifi(/.*)?		u:object_r:wifi_data_file:s0
+/data/misc/camera(/.*)?	u:object_r:camera_calibration_file:s0
+/data/misc/dhcp(/.*)?           u:object_r:dhcp_data_file:s0
+# App sandboxes
+/data/data/.*		u:object_r:app_data_file:s0
+# Wallpaper file.
+/data/data/com.android.settings/files/wallpaper	u:object_r:wallpaper_file:s0
+# Wallpaper file for other users
+/data/system/users/[0-9]+/wallpaper		u:object_r:wallpaper_file:s0
+# Downloaded files
+/data/data/com.android.providers.downloads/cache u:object_r:download_file:s0
+#############################
+# efs files
+#
+/efs(/.*)?		u:object_r:efs_file:s0
+#############################
+# Cache files
+#
+/cache(/.*)?		u:object_r:cache_file:s0
+/cache/.*\.data	u:object_r:cache_backup_file:s0
+/cache/.*\.restore	u:object_r:cache_backup_file:s0
+# LocalTransport (backup) uses this directory
+/cache/backup(/.*)?	u:object_r:cache_backup_file:s0
+#############################
+# sysfs files
+#
+/sys/qemu_trace/process_name	--	u:object_r:sysfs_writable:s0
+/sys/devices/platform/nfc-power/nfc_power -- u:object_r:sysfs_nfc_power_writable:s0
+/sys/class/rfkill/rfkill[0-9]*/state -- u:object_r:sysfs_bluetooth_writable:s0
+/sys/class/rfkill/rfkill[0-9]*/type -- u:object_r:sysfs_bluetooth_writable:s0
+#############################
+# asec containers
+/mnt/asec(/.*)?         u:object_r:asec_apk_file:s0
+/data/app-asec(/.*)?    u:object_r:asec_image_file:s0

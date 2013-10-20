@@ -1,0 +1,23 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -3 +3,4 @@
+-mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++ui_print("Installing ROM as secondary");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
+@@ -9 +12 @@
+-unmount("/system");
++run_program("/tmp/dualboot.sh", "unmount-system");
+@@ -11 +14 @@
+-format("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "0", "/system");
++ui_print("Formatting /system/dual for dual boot");
+@@ -12,0 +16,3 @@
++delete_recursive("/system/dual");
++unmount("/system");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
+@@ -149,0 +156 @@
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
+@@ -151 +158 @@
+-unmount("/system");
++run_program("/tmp/dualboot.sh", "unmount-system");
