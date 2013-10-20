@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0beta1"
+VERSION="2.0beta2"
 MINGW_PREFIX=i486-mingw32-
 
 set -e
@@ -241,7 +241,7 @@ compress_ramdisks() {
   done
 
   pushd "${TARGETDIR}/ramdisks/"
-  local CPIOS=$(find -type f -name '*.cpio')
+  local CPIOS=$(find -type f -name '*.cpio' | sed 's/^.\///g')
   tar cvf - ${CPIOS} | xz -9 > ramdisks.tar.xz
   rm ${CPIOS}
   popd
