@@ -8,6 +8,7 @@ import tarfile
 
 sys.dont_write_bytecode = True
 
+import fileinfo
 import patchfile
 
 ramdisks = []
@@ -76,7 +77,7 @@ try:
     print("Invalid choice")
     sys.exit(1)
 
-  file_info = patchfile.FileInfo()
+  file_info = fileinfo.FileInfo()
   file_info.ramdisk = ramdisks[choice]
   file_info.bootimg = "boot.img"
 
