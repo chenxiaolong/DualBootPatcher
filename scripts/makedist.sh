@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0beta2"
+VERSION="2.0beta3"
 MINGW_PREFIX=i486-mingw32-
 
 set -e
