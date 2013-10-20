@@ -10,6 +10,7 @@ Thanks to all the donators for supporting this project!
   * Dang Lee
   * pikatchu
   * Gerard Worster
+  * Matthew Smith
 
 What's supported?
 

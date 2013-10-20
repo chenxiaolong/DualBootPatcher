@@ -8,4 +8,4 @@ else
   PYTHON=python
 fi
 
-"${PYTHON}" "$(cd "$(dirname "${0}")" && pwd)/scripts/patchfile.py" "$@"
+"${PYTHON}" -B "$(cd "$(dirname "${0}")" && pwd)/scripts/patchfile.py" "$@"
