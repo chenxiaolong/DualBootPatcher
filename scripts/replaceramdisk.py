@@ -12,17 +12,21 @@ import patchfile
 
 ramdisks = []
 suffix = r"\.dualboot\.cpio$"
+list_ramdisks = False
 
 if len(sys.argv) < 2:
   print("Usage: %s [zip file or boot.img]" % sys.argv[0])
   sys.exit(1)
 
-filename = sys.argv[1]
+if sys.argv[1] == "--list":
+  list_ramdisks = True
+else:
+  filename = sys.argv[1]
 
-filetype = patchfile.detect_file_type(filename)
-if filetype == "UNKNOWN":
-  print("Unsupported file")
-  sys.exit(1)
+  filetype = patchfile.detect_file_type(filename)
+  if filetype == "UNKNOWN":
+    print("Unsupported file")
+    sys.exit(1)
 
 if sys.hexversion >= 50528256: # Python 3.3
   with tarfile.open(os.path.join(patchfile.ramdiskdir, "ramdisks.tar.xz")) as f:
@@ -46,6 +50,11 @@ if not ramdisks:
   sys.exit(1)
 
 ramdisks.sort()
+
+if list_ramdisks:
+  for i in ramdisks:
+    print(i[2:])
+  sys.exit(0)
 
 print("Replacing ramdisk in: " + filename)
 print("")
