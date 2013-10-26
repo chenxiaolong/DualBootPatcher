@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#Thermal control throttle mhz
-#Thermal control minimum mhz:
-#2160 mhz
-
-echo "2160000" > /sys/devices/system/cpu/cpufreq/kthermal/minimum_throttle_mhz

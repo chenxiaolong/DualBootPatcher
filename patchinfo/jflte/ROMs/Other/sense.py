@@ -2,7 +2,7 @@ from fileinfo import FileInfo
 
 file_info = FileInfo()
 
-file_info.ramdisk        = 'jflte/Other/sense.dualboot.cpio'
+file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = 'jflte/ROMs/Other/sense-geiti94.dualboot.patch'
 
 def matches(filename):
@@ -14,7 +14,6 @@ def matches(filename):
 
 def print_message():
   print("Detected geiti94's HTC Sense 5 port zip")
-  print("Using patched Sense ramdisk")
 
 def get_file_info():
   return file_info

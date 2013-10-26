@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#NTFS support
-#NTFS support:
-#Off (default)
-
-rmmod /lib/modules/ntfs.ko

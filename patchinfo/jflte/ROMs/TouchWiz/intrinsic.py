@@ -2,7 +2,7 @@ from fileinfo import FileInfo
 
 file_info = FileInfo()
 
-file_info.ramdisk        = 'jflte/TouchWiz/touchwiz.dualboot.cpio'
+file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = 'jflte/ROMs/TouchWiz/intrinsic-20130806.dualboot.patch'
 
 def matches(filename):
@@ -13,7 +13,6 @@ def matches(filename):
 
 def print_message():
   print("Detected iNTriNsiC 20130806 ROM zip")
-  print("Using patched TouchWiz ramdisk")
 
 def get_file_info():
   return file_info

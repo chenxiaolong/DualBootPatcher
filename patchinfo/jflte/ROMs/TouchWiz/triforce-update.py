@@ -4,7 +4,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^TriForceROM[0-9\.]+Update\.zip$"
-file_info.ramdisk        = 'jflte/TouchWiz/touchwiz.dualboot.cpio'
+file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = 'jflte/ROMs/TouchWiz/triforce-update.dualboot.patch'
 file_info.bootimg        = "aroma/kernels/stock/boot.img"
 
@@ -16,7 +16,6 @@ def matches(filename):
 
 def print_message():
   print("Detected TriForceROM Update zip")
-  print("Using patched TouchWiz ramdisk")
 
 def get_file_info():
   return file_info

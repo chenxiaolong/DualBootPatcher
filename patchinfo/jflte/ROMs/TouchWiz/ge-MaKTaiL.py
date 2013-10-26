@@ -4,7 +4,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^i9505-ge-untouched-4.3-.*.zip$"
-file_info.ramdisk        = 'jflte/TouchWiz/googleedition.dualboot.cpio'
+file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
 file_info.patch          = 'jflte/ROMs/TouchWiz/ge-MaKTaiL.dualboot.patch'
 
 def matches(filename):
@@ -15,7 +15,6 @@ def matches(filename):
 
 def print_message():
   print("Detected MaKTaiL's Google Edition ROM zip")
-  print("Using patched Google Edition ramdisk")
 
 def get_file_info():
   return file_info

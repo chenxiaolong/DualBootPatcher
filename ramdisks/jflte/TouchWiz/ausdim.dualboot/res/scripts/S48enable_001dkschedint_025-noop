@@ -1,7 +1,0 @@
-#!/system/bin/sh
-#Scheduler (int SD)
-#Change I/O scheduler for internal SD memory:
-#Noop
-
-echo "noop" > /sys/block/mmcblk0/queue/scheduler
-

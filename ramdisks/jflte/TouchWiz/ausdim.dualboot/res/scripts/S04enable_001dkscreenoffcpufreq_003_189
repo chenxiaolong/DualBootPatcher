@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#Screen off cpu frequency
-#Change screen off cpu frequency:
-#189 mhz
-
-echo "189000" > /sys/devices/system/cpu/cpu0/cpufreq/screen_off_scaling_mhz

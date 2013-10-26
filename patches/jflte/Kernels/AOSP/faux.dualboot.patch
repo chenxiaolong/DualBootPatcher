@@ -1,6 +1,6 @@
 --- a/META-INF/com/google/android/updater-script
 +++ b/META-INF/com/google/android/updater-script
-@@ -1,11 +1,16 @@
+@@ -1,6 +1,9 @@
 +package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
 +set_perm(0, 0, 0777, "/tmp/dualboot.sh");
 +ui_print("Installing kernel for secondary ROM");
@@ -12,10 +12,10 @@
  ui_print("Extracting System Files...");
  package_extract_dir("system", "/system");
  set_perm_recursive(0, 0, 0755, 0644, "/system/lib/modules");
-+run_program("/tmp/dualboot.sh", "unmount-system");
- ui_print("Extracting Kernel files...");
- package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
-+run_program("/tmp/dualboot.sh", "set-secondary-kernel");
+@@ -24,3 +27,6 @@
+ ui_print("* to continue create/hax kernels! *");
  ui_print("***********************************");
- ui_print("* Kernel Installation Completed!  *");
- ui_print("* Every Donation is Greatly       *");
+ show_progress(0.100000, 0);
++
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "unmount-system");

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0beta4"
+VERSION="2.0betaXX"
 MINGW_PREFIX=i486-mingw32-
 
 set -e
@@ -140,44 +140,72 @@ build_windows() {
   mkdir -p windowsbinaries
   pushd windowsbinaries
 
-  local URLBASE="http://downloads.sourceforge.net/project/mingw/MSYS"
+  # Our mini-Cygwin :)
+  local URLBASE="http://mirrors.kernel.org/sourceware/cygwin/x86/release"
 
-  if [ ! -f patch-2.6.1-1-msys-1.0.13-bin.tar.lzma ]; then
-    wget "${URLBASE}/Extension/patch/patch-2.6.1-1/patch-2.6.1-1-msys-1.0.13-bin.tar.lzma"
+  # cygwin library
+  if [ ! -f cygwin-1.7.25-1.tar.bz2 ]; then
+    wget "${URLBASE}/cygwin/cygwin-1.7.25-1.tar.bz2"
   fi
 
-  if [ ! -f msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma ]; then
-    wget "${URLBASE}/Base/msys-core/msys-1.0.18-1/msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma"
+  # libintl
+  if [ ! -f libintl8-0.18.1.1-2.tar.bz2 ]; then
+    wget "${URLBASE}/gettext/libintl8/libintl8-0.18.1.1-2.tar.bz2"
   fi
 
-  if [ ! -f libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma ]; then
-    wget "${URLBASE}/Base/gettext/gettext-0.18.1.1-1/libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma"
+  # libiconv
+  if [ ! -f libiconv2-1.14-2.tar.bz2 ]; then
+    wget "${URLBASE}/libiconv/libiconv2/libiconv2-1.14-2.tar.bz2"
   fi
 
-  if [ ! -f libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma ]; then
-    wget "${URLBASE}/Base/libiconv/libiconv-1.14-1/libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma"
+  # libreadline
+  if [ ! -f libreadline7-6.1.2-3.tar.bz2 ]; then
+    wget "${URLBASE}/readline/libreadline7/libreadline7-6.1.2-3.tar.bz2"
   fi
 
-  if [ ! -f liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma ]; then
-    wget "${URLBASE}/Base/xz/xz-5.0.3-1/liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma"
+  # libgcc
+  if [ ! -f libgcc1-4.7.3-1.tar.bz2 ]; then
+    wget "${URLBASE}/gcc/libgcc1/libgcc1-4.7.3-1.tar.bz2"
   fi
 
-  if [ ! -f xz-5.0.3-1-msys-1.0.17-bin.tar.lzma ]; then
-    wget "${URLBASE}/Base/xz/xz-5.0.3-1/xz-5.0.3-1-msys-1.0.17-bin.tar.lzma"
+  # libncursesw
+  if [ ! -f libncursesw10-5.7-18.tar.bz2 ]; then
+    wget "${URLBASE}/ncursesw/libncursesw10/libncursesw10-5.7-18.tar.bz2"
   fi
 
-  tar Jxvf patch-2.6.1-1-msys-1.0.13-bin.tar.lzma bin/patch.exe \
+  # cpio
+  if [ ! -f cpio-2.11-2.tar.bz2 ]; then
+    wget "${URLBASE}/cpio/cpio-2.11-2.tar.bz2"
+  fi
+
+  # patch
+  if [ ! -f patch-2.7.1-1.tar.bz2 ]; then
+    wget "${URLBASE}/patch/patch-2.7.1-1.tar.bz2"
+  fi
+
+  # bash
+  if [ ! -f bash-4.1.10-4.tar.bz2 ]; then
+    wget "${URLBASE}/bash/bash-4.1.10-4.tar.bz2"
+  fi
+
+  tar jxvf cygwin-1.7.25-1.tar.bz2 usr/bin/cygwin1.dll \
+    --to-stdout > "${TD}/cygwin1.dll"
+  tar jxvf libintl8-0.18.1.1-2.tar.bz2 usr/bin/cygintl-8.dll \
+    --to-stdout > "${TD}/cygintl-8.dll"
+  tar jxvf libiconv2-1.14-2.tar.bz2 usr/bin/cygiconv-2.dll \
+    --to-stdout > "${TD}/cygiconv-2.dll"
+  tar jxvf libreadline7-6.1.2-3.tar.bz2 usr/bin/cygreadline7.dll \
+    --to-stdout > "${TD}/cygreadline7.dll"
+  tar jxvf libgcc1-4.7.3-1.tar.bz2 usr/bin/cyggcc_s-1.dll \
+    --to-stdout > "${TD}/cyggcc_s-1.dll"
+  tar jxvf libncursesw10-5.7-18.tar.bz2 usr/bin/cygncursesw-10.dll \
+    --to-stdout > "${TD}/cygncursesw-10.dll"
+  tar jxvf cpio-2.11-2.tar.bz2 usr/bin/cpio.exe \
+    --to-stdout > "${TD}/cpio.exe"
+  tar jxvf patch-2.7.1-1.tar.bz2 usr/bin/patch.exe \
     --to-stdout > "${TD}/hctap.exe"
-  tar Jxvf msysCORE-1.0.18-1-msys-1.0.18-bin.tar.lzma bin/msys-1.0.dll \
-    --to-stdout > "${TD}/msys-1.0.dll"
-  tar Jxvf libintl-0.18.1.1-1-msys-1.0.17-dll-8.tar.lzma bin/msys-intl-8.dll \
-    --to-stdout > "${TD}/msys-intl-8.dll"
-  tar Jxvf libiconv-1.14-1-msys-1.0.17-dll-2.tar.lzma bin/msys-iconv-2.dll \
-    --to-stdout > "${TD}/msys-iconv-2.dll"
-  tar Jxvf liblzma-5.0.3-1-msys-1.0.17-dll-5.tar.lzma bin/msys-lzma-5.dll \
-    --to-stdout > "${TD}/msys-lzma-5.dll"
-  tar Jxvf xz-5.0.3-1-msys-1.0.17-bin.tar.lzma bin/xz.exe \
-    --to-stdout > "${TD}/xz.exe"
+  tar jxvf bash-4.1.10-4.tar.bz2 usr/bin/bash.exe \
+    --to-stdout > "${TD}/bash.exe"
 
   chmod +x "${TD}"/*.{exe,dll}
   popd
@@ -196,15 +224,6 @@ build_mac() {
     wget 'http://fs1.d-h.st/download/00076/dBZ/bootimg_osx.tar.gz'
   fi
   tar zxvf bootimg_osx.tar.gz -C "${TD}"
-
-  if [ ! -f XZ.pkg ]; then
-    wget 'https://downloads.sourceforge.net/project/macpkg/XZ/5.0.5/XZ.pkg'
-  fi
-  xar -x -f XZ.pkg local.pkg/Payload
-  zcat local.pkg/Payload | cpio -idmv ./lib/liblzma.5.dylib ./bin/xz
-  # Must keep bin/ and lib/ structure due to rpath in binaries
-  mv bin/ lib/ "${TD}"
-  rm -r local.pkg
 
   popd
 
@@ -239,12 +258,6 @@ compress_ramdisks() {
       popd
     fi
   done
-
-  pushd "${TARGETDIR}/ramdisks/"
-  local CPIOS=$(find -type f -name '*.cpio' | sed 's/^.\///g')
-  tar cvf - ${CPIOS} | xz -9 > ramdisks.tar.xz
-  rm ${CPIOS}
-  popd
 }
 
 TARGETNAME="DualBootPatcher-${VERSION}"
@@ -265,7 +278,6 @@ cp -rt "${TARGETDIR}" \
 # Remove unneeded files
 rm -r pythonportable/
 rm "${TARGETDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
-find "${TARGETDIR}/ramdisks/" -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
 
 # Create zip
 zip -r ${TARGETNAME}.zip ${TARGETNAME}/

@@ -1,5 +1,4 @@
 @echo off
-cd %~dp0
-..\pythonportable\python.exe ..\scripts\replaceramdisk.py --list
+"%~dp0\..\pythonportable\python.exe" "%~dp0\..\scripts\patchramdisk.py" --list
 echo.
 pause

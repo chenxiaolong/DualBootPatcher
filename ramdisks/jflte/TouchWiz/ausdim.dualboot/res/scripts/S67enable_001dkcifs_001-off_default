@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#CIFS support
-#CIFS network protocol support:
-#Off (default)
-
-rmmod /lib/modules/cifs.ko

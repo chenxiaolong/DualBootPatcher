@@ -4,7 +4,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^pa_[a-z0-9]+-.*-[0-9]+.zip$"
-file_info.ramdisk        = 'jflte/AOSP/paranoidandroid.dualboot.cpio'
+file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = 'jflte/ROMs/AOSP/paranoidandroid.dualboot.patch'
 
 def matches(filename):
@@ -15,7 +15,6 @@ def matches(filename):
 
 def print_message():
   print("Detected ParanoidAndroid ROM zip")
-  print("Using patched ParanoidAndroid ramdisk")
 
 def get_file_info():
   return file_info

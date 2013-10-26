@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#Gentle fair sleepers
-#Gentle fair sleepers switch:
-#on (default)
-
-echo "1" > /sys/kernel/sched/gentle_fair_sleepers

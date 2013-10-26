@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#Sound control headset mic gain
-#Headset mic gain:
-#55
-
-echo "55" > /sys/kernel/sound_control/gpl_headsetmic_gain

@@ -4,7 +4,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^v[0-9\.]+-Google-edition-ausdim-Kernel-.*\.zip$"
-file_info.ramdisk        = 'jflte/TouchWiz/ausdim.dualboot.cpio'
+file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = 'jflte/Kernels/TouchWiz/ausdim.dualboot.patch'
 
 def matches(filename):
@@ -15,8 +15,6 @@ def matches(filename):
 
 def print_message():
   print("Detected Ausdim kernel zip")
-  print("Using patched Ausdim kernel ramdisk")
-  print("NOTE: The ramdisk is based on Ausdim v18.1. If a newer version has ramdisk changes, let me know")
 
 def get_file_info():
   return file_info

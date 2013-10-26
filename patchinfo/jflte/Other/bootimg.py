@@ -4,7 +4,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^.*\.img$"
-file_info.ramdisk        = 'jflte/AOSP/cyanogenmod.dualboot.cpio'
+file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 
 def matches(filename):
   if re.search(filename_regex, filename):
@@ -14,7 +14,7 @@ def matches(filename):
 
 def print_message():
   print("Detected boot.img file")
-  print("WILL USE CYANOGENMOD RAMDISK. USE replaceramdisk SCRIPT TO CHOOSE ANOTHER RAMDISK")
+  print("ASSUMING RAMDISK IS FOR AOSP. USE patchramdisk SCRIPT IF IT'S FOR TOUCHWIZ")
 
 def get_file_info():
   return file_info

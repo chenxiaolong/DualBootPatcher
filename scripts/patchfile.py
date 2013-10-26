@@ -28,14 +28,14 @@ if os.name == "posix":
     binariesdir   = os.path.join(binariesdir, "linux")
     mkbootimg     = os.path.join(binariesdir, "mkbootimg")
     unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
-    xz            = "xz"
     patch         = "patch"
+    cpio          = "cpio"
   elif platform.system() == "Darwin":
     binariesdir   = os.path.join(binariesdir, "osx")
     mkbootimg     = os.path.join(binariesdir, "mkbootimg")
     unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
-    xz            = os.path.join(binariesdir, "bin/xz")
     patch         = "patch"
+    cpio          = "cpio"
   else:
     print("Unsupported posix system")
     sys.exit(1)
@@ -43,9 +43,11 @@ elif os.name == "nt":
   binariesdir   = os.path.join(binariesdir, "windows")
   mkbootimg     = os.path.join(binariesdir, "mkbootimg.exe")
   unpackbootimg = os.path.join(binariesdir, "unpackbootimg.exe")
-  xz            = os.path.join(binariesdir, "xz.exe")
   # Windows wants anything named patch.exe to run as Administrator
   patch         = os.path.join(binariesdir, "hctap.exe")
+  cpio          = os.path.join(binariesdir, "cpio.exe")
+  # Windows really sucks
+  bash          = os.path.join(binariesdir, "bash.exe")
 
 else:
   print("Unsupported operating system")
@@ -62,30 +64,80 @@ def read_file_one_line(filepath):
   f.close()
   return line.strip('\n')
 
-def run_command(command):
+last_line_length = 0
+
+def print_same_line(line):
+  global last_line_length
+  print('\r' + (' ' * last_line_length), end="")
+  last_line_length = len(line)
+  print('\r' + line, end="")
+
+def print_error(output = "", error = ""):
+  print("--- ERROR BEGIN ---")
+  if (output):
+    print("--- STDOUT BEGIN ---")
+    print(output)
+    print("--- STDOUT END ---")
+  else:
+    print("No stdout output")
+  if (error):
+    print("--- STDERR BEGIN ---")
+    print(error)
+    print("--- STDERR END ---")
+  else:
+    print("No stderr output")
+  print("--- ERROR END ---")
+
+def run_command(command, \
+                stdin_data = None, \
+                cwd = None,
+                universal_newlines = True):
   try:
     process = subprocess.Popen(
       command,
+      stdin = subprocess.PIPE,
       stdout = subprocess.PIPE,
-      universal_newlines = True
+      stderr = subprocess.PIPE,
+      cwd = cwd,
+      universal_newlines = universal_newlines
     )
-    output = process.communicate()[0]
+    output, error = process.communicate(input = stdin_data)
+
     exit_status = process.returncode
-    return (exit_status, output)
+    return (exit_status, output, error)
   except:
     print("Failed to run command: \"%s\"" % ' '.join(command))
     clean_up_and_exit(1)
 
 def apply_patch_file(patchfile, directory):
-  exit_status, output = run_command(
+  exit_status, output, error = run_command(
     [ patch,
+      '--no-backup-if-mismatch',
       '-p', '1',
       '-d', directory,
       '-i', os.path.join(patchdir, patchfile)]
   )
   if exit_status != 0:
+    print_error(output = output, error = error)
     print("Failed to apply patch")
     clean_up_and_exit(1)
+
+def process_ramdisk_def(patch_file, directory):
+  with open(patch_file) as f:
+    for line in f.readlines():
+      if line.startswith("pyscript"):
+        path = os.path.join(ramdiskdir, \
+                            re.search(r"^pyscript\s*=\s*\"?(.*)\"?\s*$", line).group(1))
+
+        plugin = imp.load_source(os.path.basename(path)[:-3], \
+                                 os.path.join(ramdiskdir, path))
+
+        plugin.patch_ramdisk(directory)
+
+      elif line.startswith("patch"):
+        path = os.path.join(ramdiskdir, \
+                            re.search(r"^patch\s*=\s*\"?(.*)\"?\s*$", line).group(1))
+        apply_patch_file(path, directory)
 
 def files_in_patch(patch_file):
   files = []
@@ -115,12 +167,13 @@ def patch_boot_image(boot_image, file_info):
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
-  exit_status, output = run_command(
+  exit_status, output, error = run_command(
     [ unpackbootimg,
       '-i', boot_image,
       '-o', tempdir]
   )
   if exit_status != 0:
+    print_error(output = output, error = error)
     print("Failed to extract boot image")
     clean_up_and_exit(1)
 
@@ -131,46 +184,165 @@ def patch_boot_image(boot_image, file_info):
   os.remove(prefix + "-base")
   os.remove(prefix + "-cmdline")
   os.remove(prefix + "-pagesize")
-  os.remove(prefix + "-ramdisk.gz")
-  shutil.move(prefix + "-zImage", os.path.join(tempdir, "kernel.img"))
 
+  ramdisk = os.path.join(tempdir, "ramdisk.cpio")
+  kernel = os.path.join(tempdir, "kernel.img")
+
+  shutil.move(prefix + "-zImage", kernel)
+
+  extracted = os.path.join(tempdir, "extracted")
+  os.mkdir(extracted)
+
+  # Decompress ramdisk
+  with gzip.open(prefix + "-ramdisk.gz", 'rb') as f_in:
+    exit_status, output, error = run_command(
+      [ cpio, '-i', '-d', '-m', '-v' ],
+      stdin_data = f_in.read(),
+      cwd = extracted,
+      universal_newlines = False
+    )
+    if exit_status != 0:
+      print_error(output = output, error = error)
+      print("Failed to extract ramdisk using cpio")
+      clean_up_and_exit(1)
+
+  os.remove(prefix + "-ramdisk.gz")
+
+  # Patch ramdisk
   if not file_info.ramdisk:
-    print("No ramdisk specified")
+    print("No ramdisk patch specified")
     return None
 
-  # Extract ramdisk from tar.xz
-  if sys.hexversion >= 50528256: # Python 3.3
-    with tarfile.open(os.path.join(ramdiskdir, "ramdisks.tar.xz")) as f:
-      f.extract(file_info.ramdisk, path = ramdiskdir)
-  else:
-    run_command(
-      [ xz, '-d', '-k', '-f', os.path.join(ramdiskdir, "ramdisks.tar.xz") ]
+  process_ramdisk_def(
+    os.path.join(ramdiskdir, file_info.ramdisk),
+    extracted
+  )
+
+  # Copy init.dualboot.mounting.sh
+  shutil.copy(
+    os.path.join(ramdiskdir, "init.dualboot.mounting.sh"),
+    extracted
+  )
+
+  # Copy busybox
+  shutil.copy(
+    os.path.join(ramdiskdir, "busybox-static"),
+    os.path.join(extracted, "sbin")
+  )
+
+  # Copy new init if needed
+  if file_info.need_new_init:
+    shutil.copy(
+      os.path.join(ramdiskdir, "init"),
+      extracted
     )
 
-    with tarfile.open(os.path.join(ramdiskdir, "ramdisks.tar")) as f:
-      f.extract(file_info.ramdisk, path = ramdiskdir)
+  # Create gzip compressed ramdisk
+  ramdisk_files = []
+  for root, dirs, files in os.walk(extracted):
+    for d in dirs:
+      if os.path.samefile(root, extracted):
+        # cpio, for whatever reason, creates a directory called '.'
 
-    os.remove(os.path.join(ramdiskdir, "ramdisks.tar"))
+        # Windows sucks
+        if os.name == "nt":
+          ramdisk_files.append(d.replace('\\', '/'))
+        else:
+          ramdisk_files.append(d)
 
-  ramdisk = os.path.join(ramdiskdir, file_info.ramdisk)
+        print_same_line("Adding directory to ramdisk: %s" % d)
+      else:
+        relative_dir = os.path.relpath(root, extracted)
 
-  # Compress ramdisk with gzip if it isn't already
-  if not file_info.ramdisk.endswith(".gz"):
-    with open(ramdisk, 'rb') as f_in:
-      with gzip.open(ramdisk + ".gz", 'wb') as f_out:
-        f_out.writelines(f_in)
+        # Windows sucks
+        if os.name == "nt":
+          ramdisk_files.append(os.path.join(relative_dir, d).replace('\\', '/'))
+        else:
+          ramdisk_files.append(os.path.join(relative_dir, d))
 
-    os.remove(os.path.join(ramdiskdir, file_info.ramdisk))
-    ramdisk = ramdisk + ".gz"
+        print_same_line("Adding directory to ramdisk: %s" % os.path.join(relative_dir, d))
 
-  shutil.copyfile(ramdisk, os.path.join(tempdir, "ramdisk.cpio.gz"))
+    for f in files:
+      if os.path.samefile(root, extracted):
+        # cpio, for whatever reason, creates a directory called '.'
 
-  os.remove(os.path.join(ramdiskdir, file_info.ramdisk + ".gz"))
+        # Windows sucks
+        if os.name == "nt":
+          ramdisk_files.append(f.replace('\\', '/'))
+        else:
+          ramdisk_files.append(f)
 
-  exit_status, output = run_command(
+        print_same_line("Adding file to ramdisk: %s" % f)
+      else:
+        relative_dir = os.path.relpath(root, extracted)
+
+        # Windows sucks
+        if os.name == "nt":
+          ramdisk_files.append(os.path.join(relative_dir, f).replace('\\', '/'))
+        else:
+          ramdisk_files.append(os.path.join(relative_dir, f))
+
+        print_same_line("Adding file to ramdisk: %s" % os.path.join(relative_dir, f))
+  print_same_line("")
+
+  ramdisk = ramdisk + ".gz"
+
+  with gzip.open(ramdisk, 'wb') as f_out:
+    if os.name == "nt":
+      # We need the /cygdrive/c/Users/.../ path instead of C:\Users\...\ because
+      # a backslash is a valid character in a Unix path. When the list of files
+      # is passed to cpio, sbin/adbd, for example, would be included as a file
+      # named 'sbin\adbd'
+      stdin = "cd '%s' && pwd\n" % binariesdir
+
+      exit_status, output, error = run_command(
+        [ bash ],
+        stdin_data = stdin.encode("UTF-8"),
+        cwd = extracted,
+        universal_newlines = False
+      )
+      if exit_status != 0:
+        print_error(output = output, error = error)
+        print("Failed to get Cygwin drive path")
+        clean_up_and_exit(1)
+
+      cpio_cygpath = output.decode("UTF-8").strip('\n') + '/cpio.exe'
+
+      stdin = output.decode("UTF-8").strip('\n') + '/cpio.exe' + \
+              " -o -H newc <<EOF\n"                            + \
+              '\n'.join(ramdisk_files) + "\n"                  + \
+              "EOF\n"
+
+      # We cannot use "bash -c '...'" because the /cygdrive/ mountpoints are
+      # created only in an interactive shell. We'll launch bash first and then
+      # run cpio.
+      exit_status, output, error = run_command(
+        [ bash ],
+        stdin_data = stdin.encode("UTF-8"),
+        cwd = extracted,
+        universal_newlines = False
+      )
+
+    else:
+      # So much easier than in Windows...
+      exit_status, output, error = run_command(
+        [ cpio, '-o', '-H', 'newc' ],
+        stdin_data = '\n'.join(ramdisk_files).encode("UTF-8"),
+        cwd = extracted,
+        universal_newlines = False
+      )
+
+    if exit_status != 0:
+      print_error(output = output, error = error)
+      print("Failed to create gzip compressed ramdisk")
+      clean_up_and_exit(1)
+
+    f_out.write(output)
+
+  exit_status, output, error = run_command(
     [ mkbootimg,
-      '--kernel',         os.path.join(tempdir, "kernel.img"),
-      '--ramdisk',        os.path.join(tempdir, "ramdisk.cpio.gz"),
+      '--kernel',         kernel,
+      '--ramdisk',        ramdisk,
       '--cmdline',        cmdline,
       '--base',           base,
       '--pagesize',       pagesize,
@@ -178,10 +350,11 @@ def patch_boot_image(boot_image, file_info):
       '--output',         os.path.join(tempdir, "complete.img")]
   )
 
-  os.remove(os.path.join(tempdir, "kernel.img"))
-  os.remove(os.path.join(tempdir, "ramdisk.cpio.gz"))
+  os.remove(kernel)
+  os.remove(ramdisk)
 
   if exit_status != 0:
+    print_error(output = output, error = error)
     print("Failed to create boot image")
     clean_up_and_exit(1)
 
@@ -199,10 +372,13 @@ def patch_zip(zip_file, file_info):
 
   z = zipfile.ZipFile(zip_file, "r")
   for f in files_to_patch:
+    print_same_line("Extracting file to be patched: %s" % f)
     z.extract(f, path = tempdir)
   if file_info.has_boot_image:
+    print_same_line("Extracting boot image: %s" % file_info.bootimg)
     z.extract(file_info.bootimg, path = tempdir)
   z.close()
+  print_same_line("")
 
   if file_info.has_boot_image:
     boot_image = os.path.join(tempdir, file_info.bootimg)
@@ -232,7 +408,10 @@ def patch_zip(zip_file, file_info):
     # Boot image too
     elif i.filename == file_info.bootimg:
       continue
+
+    print_same_line("Adding file to zip: %s" % i.filename)
     z_output.writestr(i.filename, z_input.read(i.filename))
+  print_same_line("")
 
   z_input.close()
 
@@ -240,8 +419,10 @@ def patch_zip(zip_file, file_info):
     for f in files:
       if f == "complete.zip":
         continue
+      print_same_line("Adding file to zip: %s" % f)
       arcdir = os.path.relpath(root, start = tempdir)
       z_output.write(os.path.join(root, f), arcname = os.path.join(arcdir, f))
+  print_same_line("")
 
   z_output.close()
 

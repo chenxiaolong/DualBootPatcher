@@ -4,7 +4,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^.*_AdamKernel.V[0-9\.]+\.CWM\.zip$"
-file_info.ramdisk        = 'jflte/TouchWiz/adam.dualboot.cpio'
+file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = 'jflte/Kernels/TouchWiz/adam.dualboot.patch'
 file_info.bootimg        = "wanam/boot.img"
 
@@ -16,7 +16,6 @@ def matches(filename):
 
 def print_message():
   print("Detected Adam kernel zip")
-  print("Using patched Adam kernel ramdisk")
 
 def get_file_info():
   return file_info

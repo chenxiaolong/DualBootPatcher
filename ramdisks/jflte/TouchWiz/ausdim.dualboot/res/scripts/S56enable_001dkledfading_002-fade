@@ -1,7 +1,0 @@
-#!/system/bin/sh
-#LED fading
-#Notification LED fading
-#Fade (normal)
-
-echo "1" > /sys/class/sec/led/led_fade
-echo "40" > /sys/class/sec/led/led_intensity

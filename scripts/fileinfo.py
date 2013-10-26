@@ -5,3 +5,4 @@ class FileInfo:
     self.ramdisk = ""
     self.bootimg = "boot.img"
     self.has_boot_image = True
+    self.need_new_init = False

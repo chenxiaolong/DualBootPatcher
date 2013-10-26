@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#Sound control speaker gain
-#Speaker gain:
-#50
-
-echo "50" > /sys/kernel/sound_control/gpl_speaker_gain

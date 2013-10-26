@@ -1,6 +1,0 @@
-#!/system/bin/sh
-#CPU Max Frequency
-#Change CPU maximun scaling:
-#378 MHz
-
-echo "378000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
