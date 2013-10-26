@@ -188,6 +188,11 @@ build_windows() {
     wget "${URLBASE}/bash/bash-4.1.10-4.tar.bz2"
   fi
 
+  # diff
+  if [ ! -f diffutils-3.2-1.tar.bz2 ]; then
+    wget "${URLBASE}/diffutils/diffutils-3.2-1.tar.bz2"
+  fi
+
   tar jxvf cygwin-1.7.25-1.tar.bz2 usr/bin/cygwin1.dll \
     --to-stdout > "${TD}/cygwin1.dll"
   tar jxvf libintl8-0.18.1.1-2.tar.bz2 usr/bin/cygintl-8.dll \
@@ -206,6 +211,8 @@ build_windows() {
     --to-stdout > "${TD}/hctap.exe"
   tar jxvf bash-4.1.10-4.tar.bz2 usr/bin/bash.exe \
     --to-stdout > "${TD}/bash.exe"
+  tar jxvf diffutils-3.2-1.tar.bz2 usr/bin/diff.exe \
+    --to-stdout > "${TD}/diff.exe"
 
   chmod +x "${TD}"/*.{exe,dll}
   popd
