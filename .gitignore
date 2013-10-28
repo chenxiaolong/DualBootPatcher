@@ -1,5 +1,9 @@
 *.swp
 DualBootPatcher-*.zip
 DualBootPatcher-*/
+DualBootPatcherAndroid-*.zip
+DualBootPatcherAndroid-*.tar.xz
+DualBootPatcherAndroid-*/
 windowsbinaries/
 macbinaries/
+androidbinaries/

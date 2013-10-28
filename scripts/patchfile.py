@@ -2,6 +2,9 @@
 
 # For Qualcomm based Samsung Galaxy S4 only!
 
+# Python 2 compatibility
+from __future__ import print_function
+
 import gzip
 import imp
 import os
@@ -25,11 +28,20 @@ remove_dirs     = []
 
 if os.name == "posix":
   if platform.system() == "Linux":
-    binariesdir   = os.path.join(binariesdir, "linux")
-    mkbootimg     = os.path.join(binariesdir, "mkbootimg")
-    unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
-    patch         = "patch"
-    cpio          = "cpio"
+    # Android
+    if 'BOOTCLASSPATH' in os.environ:
+      binariesdir   = os.path.join(binariesdir, "android")
+      mkbootimg     = os.path.join(binariesdir, "mkbootimg")
+      unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
+      patch         = os.path.join(binariesdir, "patch")
+      cpio          = os.path.join(binariesdir, "cpio")
+    # Desktop Linux
+    else:
+      binariesdir   = os.path.join(binariesdir, "linux")
+      mkbootimg     = os.path.join(binariesdir, "mkbootimg")
+      unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
+      patch         = "patch"
+      cpio          = "cpio"
   elif platform.system() == "Darwin":
     binariesdir   = os.path.join(binariesdir, "osx")
     mkbootimg     = os.path.join(binariesdir, "mkbootimg")
@@ -68,9 +80,14 @@ last_line_length = 0
 
 def print_same_line(line):
   global last_line_length
-  print('\r' + (' ' * last_line_length), end="")
-  last_line_length = len(line)
-  print('\r' + line, end="")
+  # On Android, we're reading the output from a GUI and carriage returns mess
+  # that up
+  if 'BOOTCLASSPATH' in os.environ:
+    print(line)
+  else:
+    print('\r' + (' ' * last_line_length), end="")
+    last_line_length = len(line)
+    print('\r' + line, end="")
 
 def print_error(output = "", error = ""):
   print("--- ERROR BEGIN ---")
@@ -110,13 +127,23 @@ def run_command(command, \
     clean_up_and_exit(1)
 
 def apply_patch_file(patchfile, directory):
-  exit_status, output, error = run_command(
-    [ patch,
-      '--no-backup-if-mismatch',
-      '-p', '1',
-      '-d', directory,
-      '-i', os.path.join(patchdir, patchfile)]
+  # Busybox doesn't implement '--no-backup-if-mismatch' nor '-d'
+  if 'BOOTCLASSPATH' in os.environ:
+    exit_status, output, error = run_command(
+      [ patch,
+        '-p', '1',
+        '-i', os.path.join(patchdir, patchfile)],
+      cwd = directory
+    )
+  else:
+    exit_status, output, error = run_command(
+      [ patch,
+        '--no-backup-if-mismatch',
+        '-p', '1',
+        '-d', directory,
+        '-i', os.path.join(patchdir, patchfile)]
   )
+
   if exit_status != 0:
     print_error(output = output, error = error)
     print("Failed to apply patch")
@@ -479,14 +506,16 @@ if __name__ == "__main__":
     newfile = patch_zip(filename, fileinfo)
     print("Successfully patched zip")
     newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
-    shutil.move(newfile, newpath)
+    shutil.copyfile(newfile, newpath)
+    os.remove(newfile)
     print("Path: " + newpath)
 
   elif filetype == "img":
     newfile = patch_boot_image(filename, fileinfo)
     print("Successfully patched boot image")
     newpath = re.sub(r"\.img$", "_dualboot.img", filename)
-    shutil.move(newfile, newpath)
+    shutil.copyfile(newfile, newpath)
+    os.remove(newfile)
     print("Path: " + newpath)
 
   clean_up_and_exit(0)
