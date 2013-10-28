@@ -1,0 +1,65 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.5.+'
+    }
+}
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 18
+    buildToolsVersion "18.1.0"
+
+    defaultConfig {
+        minSdkVersion 17
+        targetSdkVersion 18
+    }
+
+    signingConfigs {
+        release
+
+//        debug {
+//            storeFile file("debug.keystore")
+//        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    def propSigning = new File('signing.properties')
+
+    if (propSigning.canRead()) {
+        def Properties props = new Properties()
+        props.load(new FileInputStream(propSigning))
+
+        if (props != null && props.containsKey('storeFile')) {
+            android.signingConfigs.release.storeFile = file(props['storeFile'])
+            android.signingConfigs.release.storePassword = System.console().readLine("Enter keystore password: ")
+            android.signingConfigs.release.keyAlias = System.console().readLine("Enter alias key: ")
+            android.signingConfigs.release.keyPassword = System.console().readLine("Enter key password: ")
+        }
+        else {
+            buildTypes.release.signingConfig = null
+        }
+    }
+    else {
+        buildTypes.release.signingConfig = null
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+        }
+    }
+}

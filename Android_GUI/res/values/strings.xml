@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Dual Boot Patcher</string>
+    <string name="choose_file">Choose file to patch</string>
+    
+    <string name="dialog_patch_zip_title">Patch zip file</string>
+    <string name="dialog_patch_zip_title_success">Successfully patched zip file</string>
+    <string name="dialog_patch_zip_title_failed">Failed to patch zip file</string>
+    <string name="dialog_patch_zip_msg">Press Continue to patch:</string>
+    <string name="dialog_text_new_file">New file:\n\n</string>
+    <string name="dialog_text_file">File:\n\n</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_continue">Continue</string>
+    <string name="dialog_finish">Finish</string>
+    
+    <string name="progress_title_patching_files">Patching file &#8230;</string>
+    <string name="progress_title_removing_temp">Removing old temporary files &#8230;</string>
+    <string name="progress_title_updating_files">Updating patcher &#8230;</string>
+    
+    <string name="progress_text">Waiting for command output &#8230;</string>
+</resources>

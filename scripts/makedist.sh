@@ -363,6 +363,17 @@ build_android() {
   ln -s busybox-static "${TD}/cpio"
 }
 
+build_android_app() {
+  pushd "${ANDROIDGUI}"
+  ./gradlew build
+  if [ -f build/apk/Android_GUI-release.apk ]; then
+    mv build/apk/Android_GUI-release.apk "${CURDIR}/${ANDROIDTARGETNAME}-signed.apk"
+  else
+    mv build/apk/Android_GUI-release-unsigned.apk "${CURDIR}/${ANDROIDTARGETNAME}.apk"
+  fi
+  popd
+}
+
 compress_ramdisks() {
   for i in $(find ramdisks -type d -name '*.dualboot'); do
     if [ -d "${i}" ]; then
@@ -417,6 +428,12 @@ zip -r ${TARGETNAME}.zip ${TARGETNAME}/
 #zip -r ${ANDROIDTARGETNAME}.zip ${ANDROIDTARGETNAME}/
 tar Jcvf ${ANDROIDTARGETNAME}.tar.xz ${ANDROIDTARGETNAME}/
 
-echo "Successfully created: ${CURDIR}/${TARGETNAME}.zip"
-#echo "Successfully created: ${CURDIR}/${ANDROIDTARGETNAME}.zip"
-echo "Successfully created: ${CURDIR}/${ANDROIDTARGETNAME}.tar.xz"
+# Android app
+ANDROIDGUI=${CURDIR}/Android_GUI/
+rm -r "${ANDROIDGUI}/assets/"
+mkdir "${ANDROIDGUI}/assets/"
+cp ${ANDROIDTARGETNAME}.tar.xz "${ANDROIDGUI}/assets/"
+build_android_app
+
+echo
+echo "Done."
