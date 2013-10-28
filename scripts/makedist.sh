@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.2"
+VERSION="2.3"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
@@ -365,6 +365,7 @@ build_android() {
 
 build_android_app() {
   pushd "${ANDROIDGUI}"
+  sed "s/@VERSION@/${VERSION}/g" < AndroidManifest.xml.in > AndroidManifest.xml
   ./gradlew build
   if [ -f build/apk/Android_GUI-release.apk ]; then
     mv build/apk/Android_GUI-release.apk "${CURDIR}/${ANDROIDTARGETNAME}-signed.apk"
