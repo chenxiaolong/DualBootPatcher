@@ -388,7 +388,7 @@ build_android
 
 mv pythonportable/ "${TARGETDIR}"
 cp -rt "${TARGETDIR}" \
-  $(git ls-tree --name-only --full-tree HEAD | grep -v .gitignore)
+  $(git ls-tree --name-only --full-tree HEAD | grep -v -e .gitignore -e Android_GUI)
 
 # Remove unneeded files
 rm "${TARGETDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
@@ -399,6 +399,10 @@ ANDROIDTARGETDIR="${CURDIR}/${ANDROIDTARGETNAME}"
 rm -rf "${ANDROIDTARGETDIR}" "${ANDROIDTARGETNAME}.zip"
 cp -r ${TARGETNAME}/ ${ANDROIDTARGETNAME}/
 
+# Remove Android stuff from PC zip
+rm -r "${TARGETDIR}/binaries/android/"
+
+# Remove PC stuff from Android tar
 pushd "${ANDROIDTARGETNAME}"
 
 rm -r binaries/{linux,osx,windows}
@@ -419,7 +423,8 @@ tar Jcvf ${ANDROIDTARGETNAME}.tar.xz ${ANDROIDTARGETNAME}/
 ANDROIDGUI=${CURDIR}/Android_GUI/
 rm -r "${ANDROIDGUI}/assets/"
 mkdir "${ANDROIDGUI}/assets/"
-cp ${ANDROIDTARGETNAME}.tar.xz "${ANDROIDGUI}/assets/"
+mv ${ANDROIDTARGETNAME}.tar.xz "${ANDROIDGUI}/assets/"
+rm -f ${ANDROIDTARGETNAME}-*.apk
 build_android_app
 
 echo
