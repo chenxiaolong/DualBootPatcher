@@ -374,18 +374,6 @@ build_android_app() {
   popd
 }
 
-compress_ramdisks() {
-  for i in $(find ramdisks -type d -name '*.dualboot'); do
-    if [ -d "${i}" ]; then
-      pushd "${i}"
-      mkdir -p "${TARGETDIR}/$(dirname "${i}")"
-      find . | cpio -o -H newc > \
-        "${TARGETDIR}/${i}.cpio"
-      popd
-    fi
-  done
-}
-
 TARGETNAME="DualBootPatcher-${VERSION}"
 TARGETDIR="${CURDIR}/${TARGETNAME}"
 rm -rf "${TARGETDIR}" "${TARGETNAME}.zip"
@@ -397,7 +385,6 @@ build_windows
 build_mac
 build_linux
 build_android
-compress_ramdisks
 
 mv pythonportable/ "${TARGETDIR}"
 cp -rt "${TARGETDIR}" \
