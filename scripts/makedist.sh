@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.3"
+VERSION="2.4"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
@@ -339,6 +339,22 @@ build_android() {
     --ndk-dir=${ANDROID_NDK} \
     --system=linux-x86_64
 
+  pushd androidbinaries
+
+  if [ ! -f patch-2.7.tar.xz ]; then
+    wget 'ftp://ftp.gnu.org/gnu/patch/patch-2.7.tar.xz'
+  fi
+
+  tar Jxvf patch-2.7.tar.xz
+  cd patch-2.7
+  PATH="${TEMPDIR}/bin:${PATH}" ./configure --host=arm-linux-androideabi
+  PATH="${TEMPDIR}/bin:${PATH}" make
+  cp src/patch "${TD}"
+  cd ..
+  rm -r patch-2.7
+
+  popd
+
   pushd "${ANDROID_DIR}"
   ${TEMPDIR}/bin/arm-linux-androideabi-gcc \
     -static -Iinclude \
@@ -353,13 +369,12 @@ build_android() {
     mkbootimg/unpackbootimg.c \
     -o "${TD}/unpackbootimg"
 
-  ${TEMPDIR}/arm-linux-androideabi/bin/strip "${TD}"/{mkbootimg,unpackbootimg}
+  ${TEMPDIR}/arm-linux-androideabi/bin/strip "${TD}"/{mkbootimg,unpackbootimg,patch}
   popd
 
   rm -r ${TEMPDIR}
 
   cp "${CURDIR}/ramdisks/busybox-static" "${TD}/"
-  ln -s busybox-static "${TD}/patch"
   ln -s busybox-static "${TD}/cpio"
 }
 

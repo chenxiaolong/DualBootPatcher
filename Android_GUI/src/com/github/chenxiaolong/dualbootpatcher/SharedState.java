@@ -166,7 +166,8 @@ public class SharedState {
 					
 					int exit_code = run_command(command,
 							new String[] { "LD_LIBRARY_PATH=pythonportable/lib",
-							               "PYTHONUNBUFFERED=true" },
+							               "PYTHONUNBUFFERED=true",
+                                                                       "TMPDIR=" + mActivity.get().getCacheDir() },
 							targetDir);
 					
 					mHandler.obtainMessage(EVENT_CLOSE_PROGRESS_DIALOG).sendToTarget();
