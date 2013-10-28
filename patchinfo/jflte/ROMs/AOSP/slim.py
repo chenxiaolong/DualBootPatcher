@@ -9,6 +9,8 @@ file_info.patch          = 'jflte/ROMs/AOSP/slim.dualboot.patch'
 
 def matches(filename):
   if re.search(filename_regex, filename):
+    if 'jfltevzw' in filename or 'jflteatt' in filename:
+      file_info.patch    = 'jflte/ROMs/AOSP/slim_loki.dualboot.patch'
     return True
   else:
     return False

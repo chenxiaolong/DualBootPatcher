@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.4"
+VERSION="2.4.1"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
