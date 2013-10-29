@@ -25,6 +25,7 @@ ROMs:
   * AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
+    - IOKP
   * PAC-Man ROMS
     - Official PAC-Man
     - ProBAM
