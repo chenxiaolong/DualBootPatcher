@@ -44,6 +44,7 @@ ROMs:
   * AOSP (Broodplank)
   * TouchWiz ROMs
     - FoxHound
+    - GoldenEye (T-Mobile)
     - Evil UnWizzed
     - Negalite
     - iNTriNsiC (20130806 version)
