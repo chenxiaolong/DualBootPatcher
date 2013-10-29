@@ -40,6 +40,9 @@ def modify_init_rc(directory):
     elif 'yaffs2' in line:
       write(f, re.sub(r"^", "#", line))
 
+    elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
+      write(f, re.sub(r"^", "#", line))
+
     else:
       write(f, line)
 
@@ -63,10 +66,30 @@ def modify_init_qcom_rc(directory):
 
 def modify_fstab(directory):
   # Ignore all contents for TouchWiz
+  f = open(os.path.join(directory, 'fstab.qcom'))
+  lines = f.readlines()
+  f.close()
+
+  has_cache_line = False
+
   f = open(os.path.join(directory, 'fstab.qcom'), 'wb')
-  write(f, "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n")
-  write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n")
-  write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+  for line in lines:
+    if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
+      write(f, "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n")
+
+    elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
+      write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+      has_cache_line = True
+
+    elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
+      write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n")
+
+    else:
+      write(f, line)
+
+  if not has_cache_line:
+    write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+
   f.close()
 
 def modify_init_target_rc(directory):
@@ -91,6 +114,9 @@ def modify_init_target_rc(directory):
         re.search(r"^on\s+fs_selinux.*$", previous_line):
       write(f, line)
       write(f, whitespace(line) + "exec /sbin/busybox-static sh /init.dualboot.mounting.sh\n")
+
+    elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
+      write(f, re.sub(r"^", "#", line))
 
     else:
       write(f, line)
