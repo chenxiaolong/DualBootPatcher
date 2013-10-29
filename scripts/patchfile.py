@@ -25,16 +25,19 @@ patchdir        = os.path.join(rootdir, "patches")
 binariesdir     = os.path.join(rootdir, "binaries")
 patchinfodir    = os.path.join(rootdir, "patchinfo")
 remove_dirs     = []
+android         = False
 
 if os.name == "posix":
   if platform.system() == "Linux":
     # Android
     if 'BOOTCLASSPATH' in os.environ:
+      android       = True
       binariesdir   = os.path.join(binariesdir, "android")
       mkbootimg     = os.path.join(binariesdir, "mkbootimg")
       unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
       patch         = os.path.join(binariesdir, "patch")
       cpio          = os.path.join(binariesdir, "cpio")
+      patch         = os.path.realpath(patch)
     # Desktop Linux
     else:
       binariesdir   = os.path.join(binariesdir, "linux")
@@ -65,6 +68,67 @@ else:
   print("Unsupported operating system")
   sys.exit(1)
 
+## Print functions ##
+
+# Information
+def print_i(msg):
+  print(msg)
+
+# Errors
+def print_e(msg):
+  print(msg, file = sys.stderr)
+
+# Debug
+def print_d(msg):
+  # Send to stderr on Android, don't show on PC
+  if android:
+    print(msg, file = sys.stderr)
+
+def print_same_line(line):
+  global last_line_length
+  print('\r' + (' ' * last_line_length), end="")
+  last_line_length = len(line)
+  print('\r' + line, end="")
+
+def exit_with(line, fail = False):
+  if android:
+    if fail:
+      print_e("EXITFAIL:" + line)
+    else:
+      print_e("EXITSUCCESS:" + line)
+  else:
+    print_e(line)
+
+def status(line):
+  # On Android, we're reading the output from a GUI and carriage returns mess
+  # that up
+  if android:
+    print(line)
+  else:
+    print_same_line(line)
+
+# Print command output
+def print_error(output = "", error = ""):
+  print("--- ERROR BEGIN ---")
+
+  if (output):
+    print("--- STDOUT BEGIN ---")
+    print(output)
+    print("--- STDOUT END ---")
+  else:
+    print("No stdout output")
+
+  if (error):
+    print("--- STDERR BEGIN ---")
+    print(error)
+    print("--- STDERR END ---")
+  else:
+    print("No stderr output")
+
+  print("--- ERROR END ---")
+
+## Miscellaneous ##
+
 def clean_up_and_exit(exit_status):
   for d in remove_dirs:
     shutil.rmtree(d)
@@ -78,37 +142,14 @@ def read_file_one_line(filepath):
 
 last_line_length = 0
 
-def print_same_line(line):
-  global last_line_length
-  # On Android, we're reading the output from a GUI and carriage returns mess
-  # that up
-  if 'BOOTCLASSPATH' in os.environ:
-    print(line)
-  else:
-    print('\r' + (' ' * last_line_length), end="")
-    last_line_length = len(line)
-    print('\r' + line, end="")
-
-def print_error(output = "", error = ""):
-  print("--- ERROR BEGIN ---")
-  if (output):
-    print("--- STDOUT BEGIN ---")
-    print(output)
-    print("--- STDOUT END ---")
-  else:
-    print("No stdout output")
-  if (error):
-    print("--- STDERR BEGIN ---")
-    print(error)
-    print("--- STDERR END ---")
-  else:
-    print("No stderr output")
-  print("--- ERROR END ---")
+## Actions ##
 
 def run_command(command, \
                 stdin_data = None, \
                 cwd = None,
                 universal_newlines = True):
+  print_d("Running command: " + str(command))
+
   try:
     process = subprocess.Popen(
       command,
@@ -123,38 +164,34 @@ def run_command(command, \
     exit_status = process.returncode
     return (exit_status, output, error)
   except:
-    print("Failed to run command: \"%s\"" % ' '.join(command))
+    exit_with("Failed to run command: \"%s\"" % ' '.join(command), fail = True)
     clean_up_and_exit(1)
 
 def apply_patch_file(patchfile, directory):
-  # Busybox doesn't implement '--no-backup-if-mismatch' nor '-d'
-  if 'BOOTCLASSPATH' in os.environ:
-    exit_status, output, error = run_command(
-      [ patch,
-        '-p', '1',
-        '-i', os.path.join(patchdir, patchfile)],
-      cwd = directory
-    )
-  else:
-    exit_status, output, error = run_command(
-      [ patch,
-        '--no-backup-if-mismatch',
-        '-p', '1',
-        '-d', directory,
-        '-i', os.path.join(patchdir, patchfile)]
+  print_d("Applying patch: %s in directory %s" % (patchfile, directory))
+
+  exit_status, output, error = run_command(
+    [ patch,
+      '--no-backup-if-mismatch',
+      '-p', '1',
+      '-d', directory,
+      '-i', os.path.join(patchdir, patchfile)]
   )
 
   if exit_status != 0:
     print_error(output = output, error = error)
-    print("Failed to apply patch")
+    exit_with("Failed to apply patch", fail = True)
     clean_up_and_exit(1)
 
 def process_ramdisk_def(patch_file, directory):
+  print_d("Loading ramdisk definition %s in directory %s" % (patch_file, directory))
   with open(patch_file) as f:
     for line in f.readlines():
       if line.startswith("pyscript"):
         path = os.path.join(ramdiskdir, \
                             re.search(r"^pyscript\s*=\s*\"?(.*)\"?\s*$", line).group(1))
+
+        print_d("Loading pyscript " + path)
 
         plugin = imp.load_source(os.path.basename(path)[:-3], \
                                  os.path.join(ramdiskdir, path))
@@ -179,13 +216,14 @@ def files_in_patch(patch_file):
        re.search(r"^\+\+\+", lines[counter + 1]) and \
        re.search(r"^@",      lines[counter + 2]):
       temp = re.search(r"^--- .*?/(.*)$", lines[counter])
+      print_d("Found in patch %s: %s" % (patch_file, temp.group(1)))
       files.append(temp.group(1))
       counter += 3
     else:
       counter += 1
 
   if not files:
-    print("Failed to read list of files in patch.")
+    exit_with("Failed to read list of files in patch", fail = True)
     clean_up_and_exit(1)
 
   return files
@@ -201,7 +239,7 @@ def patch_boot_image(boot_image, file_info):
   )
   if exit_status != 0:
     print_error(output = output, error = error)
-    print("Failed to extract boot image")
+    exit_with("Failed to extract boot image", fail = True)
     clean_up_and_exit(1)
 
   prefix   = os.path.join(tempdir, os.path.split(boot_image)[1])
@@ -221,6 +259,8 @@ def patch_boot_image(boot_image, file_info):
   os.mkdir(extracted)
 
   # Decompress ramdisk
+  status("Extracting ramdisk")
+
   with gzip.open(prefix + "-ramdisk.gz", 'rb') as f_in:
     exit_status, output, error = run_command(
       [ cpio, '-i', '-d', '-m', '-v' ],
@@ -230,14 +270,14 @@ def patch_boot_image(boot_image, file_info):
     )
     if exit_status != 0:
       print_error(output = output, error = error)
-      print("Failed to extract ramdisk using cpio")
+      exit_with("Failed to extract ramdisk using cpio", fail = True)
       clean_up_and_exit(1)
 
   os.remove(prefix + "-ramdisk.gz")
 
   # Patch ramdisk
   if not file_info.ramdisk:
-    print("No ramdisk patch specified")
+    print_i("No ramdisk patch specified")
     return None
 
   process_ramdisk_def(
@@ -277,7 +317,7 @@ def patch_boot_image(boot_image, file_info):
         else:
           ramdisk_files.append(d)
 
-        print_same_line("Adding directory to ramdisk: %s" % d)
+        status("Adding directory to ramdisk: %s" % d)
       else:
         relative_dir = os.path.relpath(root, extracted)
 
@@ -287,7 +327,7 @@ def patch_boot_image(boot_image, file_info):
         else:
           ramdisk_files.append(os.path.join(relative_dir, d))
 
-        print_same_line("Adding directory to ramdisk: %s" % os.path.join(relative_dir, d))
+        status("Adding directory to ramdisk: %s" % os.path.join(relative_dir, d))
 
     for f in files:
       if os.path.samefile(root, extracted):
@@ -299,7 +339,7 @@ def patch_boot_image(boot_image, file_info):
         else:
           ramdisk_files.append(f)
 
-        print_same_line("Adding file to ramdisk: %s" % f)
+        status("Adding file to ramdisk: %s" % f)
       else:
         relative_dir = os.path.relpath(root, extracted)
 
@@ -309,8 +349,9 @@ def patch_boot_image(boot_image, file_info):
         else:
           ramdisk_files.append(os.path.join(relative_dir, f))
 
-        print_same_line("Adding file to ramdisk: %s" % os.path.join(relative_dir, f))
-  print_same_line("")
+        status("Adding file to ramdisk: %s" % os.path.join(relative_dir, f))
+
+  status("Creating gzip compressed ramdisk with cpio")
 
   ramdisk = ramdisk + ".gz"
 
@@ -330,7 +371,7 @@ def patch_boot_image(boot_image, file_info):
       )
       if exit_status != 0:
         print_error(output = output, error = error)
-        print("Failed to get Cygwin drive path")
+        exit_with("Failed to get Cygwin drive path", fail = True)
         clean_up_and_exit(1)
 
       cpio_cygpath = output.decode("UTF-8").strip('\n') + '/cpio.exe'
@@ -361,10 +402,12 @@ def patch_boot_image(boot_image, file_info):
 
     if exit_status != 0:
       print_error(output = output, error = error)
-      print("Failed to create gzip compressed ramdisk")
+      exit_with("Failed to create gzip compressed ramdisk", fail = True)
       clean_up_and_exit(1)
 
     f_out.write(output)
+
+  status("Creating boot image")
 
   exit_status, output, error = run_command(
     [ mkbootimg,
@@ -382,13 +425,14 @@ def patch_boot_image(boot_image, file_info):
 
   if exit_status != 0:
     print_error(output = output, error = error)
-    print("Failed to create boot image")
+    exit_with("Failed to create boot image", fail = True)
     clean_up_and_exit(1)
 
   return os.path.join(tempdir, "complete.img")
 
 def patch_zip(zip_file, file_info):
-  print("--- Please wait. This may take a while ---")
+  if not android:
+    print_i("--- Please wait. This may take a while ---")
 
   files_to_patch = ""
   if file_info.patch != "":
@@ -397,15 +441,18 @@ def patch_zip(zip_file, file_info):
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
+  status("Loading zip file")
   z = zipfile.ZipFile(zip_file, "r")
   for f in files_to_patch:
-    print_same_line("Extracting file to be patched: %s" % f)
+    status("Extracting file to be patched: %s" % f)
     z.extract(f, path = tempdir)
   if file_info.has_boot_image:
-    print_same_line("Extracting boot image: %s" % file_info.bootimg)
+    status("Extracting boot image: %s" % file_info.bootimg)
     z.extract(file_info.bootimg, path = tempdir)
   z.close()
-  print_same_line("")
+
+  if not android:
+    status("")
 
   if file_info.has_boot_image:
     boot_image = os.path.join(tempdir, file_info.bootimg)
@@ -414,9 +461,9 @@ def patch_zip(zip_file, file_info):
     os.remove(boot_image)
     shutil.move(new_boot_image, boot_image)
   elif file_info.loki:
-    print("*** IMPORTANT: This zip contains a loki'd kernel which canoot be patched. You MUST patch and flash a custom kernel to boot ***")
+    print_i("*** IMPORTANT: This zip contains a loki'd kernel which canoot be patched. You MUST patch and flash a custom kernel to boot ***")
   else:
-    print("No boot image to patch")
+    print_i("No boot image to patch")
 
   shutil.copy(os.path.join(patchdir, "dualboot.sh"), tempdir)
 
@@ -436,9 +483,11 @@ def patch_zip(zip_file, file_info):
     elif i.filename == file_info.bootimg:
       continue
 
-    print_same_line("Adding file to zip: %s" % i.filename)
+    status("Adding file to zip: %s" % i.filename)
     z_output.writestr(i.filename, z_input.read(i.filename))
-  print_same_line("")
+
+  if not android:
+    status("")
 
   z_input.close()
 
@@ -446,10 +495,12 @@ def patch_zip(zip_file, file_info):
     for f in files:
       if f == "complete.zip":
         continue
-      print_same_line("Adding file to zip: %s" % f)
+      status("Adding file to zip: %s" % f)
       arcdir = os.path.relpath(root, start = tempdir)
       z_output.write(os.path.join(root, f), arcname = os.path.join(arcdir, f))
-  print_same_line("")
+
+  if not android:
+    status("")
 
   z_output.close()
 
@@ -466,6 +517,7 @@ def get_file_info(path):
           plugin = imp.load_source(os.path.basename(f)[:-3], \
                                    os.path.join(root, f))
           if plugin.matches(filename):
+            print_d("Loading patchinfo plugin: " + filename)
             plugin.print_message()
             return plugin.get_file_info()
 
@@ -481,13 +533,13 @@ def detect_file_type(path):
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
-    print("Usage: %s [zip file or boot.img]" % sys.argv[0])
+    print_i("Usage: %s [zip file or boot.img]" % sys.argv[0])
     clean_up_and_exit(1)
 
   filename = sys.argv[1]
 
   if not os.path.exists(filename):
-    print("%s does not exist!" % filename)
+    print_i("%s does not exist!" % filename)
     clean_up_and_exit(1)
 
   filename = os.path.abspath(filename)
@@ -495,27 +547,36 @@ if __name__ == "__main__":
   fileinfo = get_file_info(filename)
 
   if filetype == "UNKNOWN":
-    print("Unsupported file")
+    exit_with("Unsupported file", fail = True)
     clean_up_and_exit(1)
 
   if filetype == "zip":
     if not fileinfo:
-      print("Unsupported zip")
+      exit_with("Unsupported zip", fail = True)
       clean_up_and_exit(1)
 
+    # Patch zip and get path to patched zip
     newfile = patch_zip(filename, fileinfo)
-    print("Successfully patched zip")
+
+    exit_with("Successfully patched zip")
+
     newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
     shutil.copyfile(newfile, newpath)
     os.remove(newfile)
-    print("Path: " + newpath)
+
+    if not android:
+      print_i("Path: " + newpath)
 
   elif filetype == "img":
     newfile = patch_boot_image(filename, fileinfo)
-    print("Successfully patched boot image")
+
+    exit_with("Successfully patched boot image")
+
     newpath = re.sub(r"\.img$", "_dualboot.img", filename)
     shutil.copyfile(newfile, newpath)
     os.remove(newfile)
-    print("Path: " + newpath)
+
+    if not android:
+      print_i("Path: " + newpath)
 
   clean_up_and_exit(0)

@@ -33,3 +33,4 @@ signing.properties
 build/
 .gradle/
 AndroidManifest.xml
+assets/

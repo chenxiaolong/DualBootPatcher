@@ -2,12 +2,12 @@ package com.github.chenxiaolong.dualbootpatcher;
 
 import java.lang.ref.WeakReference;
 
-import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -17,18 +17,19 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
+
         SharedState.mActivity = new WeakReference<MainActivity>(this);
-        
+
         Button chooseFileButton = (Button)findViewById(R.id.choose_file);
         chooseFileButton.setOnClickListener(new OnClickListener() {
-        	public void onClick(View v) {
+        	@Override
+            public void onClick(View v) {
         		Intent fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
         		fileIntent.setType("file/*");
         		startActivityForResult(fileIntent, SharedState.REQUEST_FILE);
         	}
         });
-        
+
         if (SharedState.mPatcherFileVer.equals("")) {
         	try {
 				SharedState.mPatcherFileVer =
@@ -41,12 +42,15 @@ public class MainActivity extends Activity {
 				e.printStackTrace();
 			}
         }
-        
+
+        /* Include version in action bar */
+        setTitle(getTitle() + " (v" + SharedState.mPatcherFileVer + ")");
+
         SharedState.mProgressDialog = new ProgressDialog(this);
         SharedState.mProgressDialog.setCancelable(false);
         SharedState.mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         SharedState.mProgressDialog.setIcon(0);
-    	
+
 		SharedState.mConfirmDialogBuilder = new AlertDialog.Builder(this);
 		SharedState.mConfirmDialogBuilder.setNegativeButton(
 				SharedState.mConfirmDialogNegativeText,
@@ -54,10 +58,10 @@ public class MainActivity extends Activity {
 		SharedState.mConfirmDialogBuilder.setPositiveButton(
 				SharedState.mConfirmDialogPositiveText,
 				SharedState.mConfirmDialogPositive);
-		
+
 		tryShowDialogs();
     }
-    
+
     @Override
     protected void onDestroy() {
     	super.onDestroy();
@@ -74,13 +78,14 @@ public class MainActivity extends Activity {
     	}
     	SharedState.mActivity = null;
     }
-    
+
+    @Override
     protected void onActivityResult(int request, int result, Intent data) {
     	switch (request) {
     	case SharedState.REQUEST_FILE:
             if (data != null && result == RESULT_OK) {
                 SharedState.zipFile = data.getData();
-                
+
                 SharedState.mConfirmDialogNegative = new SharedState.ConfirmDialogNegative();
     			SharedState.mConfirmDialogPositive = new SharedState.ConfirmDialogPositive();
     			SharedState.mConfirmDialogNegativeText = getString(R.string.dialog_cancel);
@@ -92,7 +97,7 @@ public class MainActivity extends Activity {
         				SharedState.mConfirmDialogPositiveText,
         				SharedState.mConfirmDialogPositive);
 
-            	SharedState.mConfirmDialogTitle = 
+            	SharedState.mConfirmDialogTitle =
             			getString(R.string.dialog_patch_zip_title);
             	SharedState.mConfirmDialogText =
             			getString(R.string.dialog_patch_zip_msg)
@@ -101,7 +106,7 @@ public class MainActivity extends Activity {
         		tryShowDialogs();
             }
             break;
-            
+
     	case SharedState.REQUEST_WINDOW_HANDLE:
     		if (data != null && result == RESULT_OK) {
     			SharedState.mHandle =
@@ -109,10 +114,10 @@ public class MainActivity extends Activity {
     		}
     		break;
     	}
-    	
+
     	super.onActivityResult(request, result, data);
     }
-    
+
     private void tryShowDialogs() {
     	if (SharedState.mProgressDialogVisible) {
             SharedState.mProgressDialog.setMessage(SharedState.mProgressDialogText);

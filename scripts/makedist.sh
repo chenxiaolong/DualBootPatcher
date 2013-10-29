@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.4.1"
+VERSION="2.4.2beta2_status"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
@@ -440,6 +440,7 @@ ANDROIDGUI=${CURDIR}/Android_GUI/
 rm -r "${ANDROIDGUI}/assets/"
 mkdir "${ANDROIDGUI}/assets/"
 mv ${ANDROIDTARGETNAME}.tar.xz "${ANDROIDGUI}/assets/"
+cp ramdisks/busybox-static "${ANDROIDGUI}/assets/tar"
 rm -f ${ANDROIDTARGETNAME}-*.apk
 build_android_app
 

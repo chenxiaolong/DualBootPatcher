@@ -40,8 +40,13 @@ android {
         if (props != null && props.containsKey('storeFile')) {
             android.signingConfigs.release.storeFile = file(props['storeFile'])
             android.signingConfigs.release.storePassword = System.console().readLine("Enter keystore password: ")
-            android.signingConfigs.release.keyAlias = System.console().readLine("Enter alias key: ")
-            android.signingConfigs.release.keyPassword = System.console().readLine("Enter key password: ")
+            if (!android.signingConfigs.release.storePassword.equals("")) {
+                android.signingConfigs.release.keyAlias = System.console().readLine("Enter alias key: ")
+                android.signingConfigs.release.keyPassword = System.console().readLine("Enter key password: ")
+            }
+            else {
+                buildTypes.release.signingConfig = null
+            }
         }
         else {
             buildTypes.release.signingConfig = null
