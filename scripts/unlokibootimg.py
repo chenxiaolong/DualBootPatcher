@@ -49,9 +49,7 @@ class loki_hdr:
 
 def to_int(data):
   # int.from_bytes() is available in Python >= 3.2
-  if sys.hexversion < 0x03020000 and sys.hexversion >= 0x03000000:
-    pass
-  elif sys.hexversion < 0x03000000:
+  if sys.hexversion < 0x03020000:
     import struct
     return struct.unpack("<L", data)[0]
   else:
