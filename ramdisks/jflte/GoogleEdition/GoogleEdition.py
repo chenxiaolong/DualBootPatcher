@@ -6,7 +6,7 @@ import shutil
 import sys
 
 def write(f, line):
-  if sys.hexversion < 0x03030000:
+  if sys.hexversion < 0x03000000:
     f.write(line)
   else:
     f.write(line.encode("UTF-8"))
