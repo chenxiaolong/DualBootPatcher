@@ -33,7 +33,7 @@ ROMs:
   * Google Edition ROMs
     - MaKTaiL
     - jamal2367
-    - Kangabean (MUST install custom kernel)
+    - Kangabean
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
