@@ -77,11 +77,11 @@ for line in output.split('\n'):
     # Regex's from http://mail.kde.org/pipermail/kompare-devel/2006-August/000148.html
     if re.search(r"--- ([^\t]+)(?:\t([^\t]+)(?:\t?)(.*))?", line):
       m = re.search(r"--- ([^\t]+)(?:\t([^\t]+)(?:\t?)(.*))?", line)
-      filtered.append("--- %s" % os.path.relpath(m.group(1), parentdir))
+      filtered.append("--- %s" % os.path.relpath(m.group(1), parentdir).replace("\\", "/")
 
     elif re.search(r"\+\+\+ ([^\t]+)(?:\t([^\t]+)(?:\t?)(.*))?", line):
       m = re.search(r"\+\+\+ ([^\t]+)(?:\t([^\t]+)(?:\t?)(.*))?", line)
-      filtered.append("+++ %s" % os.path.relpath(m.group(1), parentdir))
+      filtered.append("+++ %s" % os.path.relpath(m.group(1), parentdir).replace("\\", "/")
 
     elif line[:1] == '+' or line[:1] == '-' or line[:1] == '@' or line[:1] == ' ':
       filtered.append(line)
