@@ -3,9 +3,13 @@
 import os
 import re
 import shutil
+import sys
 
 def write(f, line):
-  f.write(line.encode("UTF-8"))
+  if sys.hexversion < 0x03030000:
+    f.write(line)
+  else:
+    f.write(line.encode("UTF-8"))
 
 def whitespace(line):
   m = re.search(r"^(\s+).*$", line)
