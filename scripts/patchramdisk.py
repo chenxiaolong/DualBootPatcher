@@ -14,6 +14,7 @@ import patchfile
 ramdisks = []
 suffix = r"\.def$"
 list_ramdisks = False
+loki = False
 
 if len(sys.argv) < 2:
   print("Usage: %s [zip file or boot.img]" % sys.argv[0])
@@ -21,9 +22,13 @@ if len(sys.argv) < 2:
 
 if sys.argv[1] == "--list":
   list_ramdisks = True
+elif sys.argv[1] == "--loki":
+  loki = True
+  filename = sys.argv[2]
 else:
   filename = sys.argv[1]
 
+if not list_ramdisks:
   filetype = patchfile.detect_file_type(filename)
   if filetype == "UNKNOWN":
     print("Unsupported file")
@@ -69,6 +74,9 @@ try:
   file_info = fileinfo.FileInfo()
   file_info.ramdisk = ramdisks[choice]
   file_info.bootimg = "boot.img"
+  if loki:
+    file_info.loki  = True
+    file_info.bootimg = "boot.lok"
 
   print("")
   print("Replacing ramdisk with " + file_info.ramdisk)
