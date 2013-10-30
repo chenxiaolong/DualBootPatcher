@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import unlokibootimg
 import zipfile
 
 ramdisk_offset  = "0x02000000"
@@ -81,7 +82,8 @@ def print_e(msg):
 # Debug
 def print_d(msg):
   # Send to stderr on Android, don't show on PC
-  if android:
+  if android or ( 'PATCHER_DEBUG' in os.environ and \
+      os.environ['PATCHER_DEBUG'] == 'true'):
     print(msg, file = sys.stderr)
 
 def print_same_line(line):
@@ -232,15 +234,23 @@ def patch_boot_image(boot_image, file_info):
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
-  exit_status, output, error = run_command(
-    [ unpackbootimg,
-      '-i', boot_image,
-      '-o', tempdir]
-  )
-  if exit_status != 0:
-    print_error(output = output, error = error)
-    exit_with("Failed to extract boot image", fail = True)
-    clean_up_and_exit(1)
+  if file_info.loki:
+    try:
+      unlokibootimg.extract(boot_image, tempdir)
+    except Exception as e:
+      exit_with(str(e), fail = True)
+      clean_up_and_exit(1)
+
+  else:
+    exit_status, output, error = run_command(
+      [ unpackbootimg,
+        '-i', boot_image,
+        '-o', tempdir]
+    )
+    if exit_status != 0:
+      print_error(output = output, error = error)
+      exit_with("Failed to extract boot image", fail = True)
+      clean_up_and_exit(1)
 
   prefix   = os.path.join(tempdir, os.path.split(boot_image)[1])
   base     = "0x" + read_file_one_line(prefix + "-base")
@@ -460,8 +470,6 @@ def patch_zip(zip_file, file_info):
 
     os.remove(boot_image)
     shutil.move(new_boot_image, boot_image)
-  elif file_info.loki:
-    print_i("*** IMPORTANT: This zip contains a loki'd kernel which canoot be patched. You MUST patch and flash a custom kernel to boot ***")
   else:
     print_i("No boot image to patch")
 
@@ -546,6 +554,8 @@ if __name__ == "__main__":
   filetype = detect_file_type(filename)
   fileinfo = get_file_info(filename)
 
+  loki_msg = "The boot image was unloki'd in order to be patched. *** Remember to flash loki-doki if you have a locked bootloader ***"
+
   if filetype == "UNKNOWN":
     exit_with("Unsupported file", fail = True)
     clean_up_and_exit(1)
@@ -558,7 +568,10 @@ if __name__ == "__main__":
     # Patch zip and get path to patched zip
     newfile = patch_zip(filename, fileinfo)
 
-    exit_with("Successfully patched zip")
+    if fileinfo.loki:
+      exit_with("Successfully patched zip. " + loki_msg)
+    else:
+      exit_with("Successfully patched zip")
 
     newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
     shutil.copyfile(newfile, newpath)
@@ -570,7 +583,10 @@ if __name__ == "__main__":
   elif filetype == "img":
     newfile = patch_boot_image(filename, fileinfo)
 
-    exit_with("Successfully patched boot image")
+    if fileinfo.loki:
+      exit_with("Successfully patched boot image. " + loki_msg)
+    else:
+      exit_with("Successfully patched boot image")
 
     newpath = re.sub(r"\.img$", "_dualboot.img", filename)
     shutil.copyfile(newfile, newpath)
