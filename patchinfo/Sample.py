@@ -43,6 +43,9 @@ file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 # If the zip file you're patching does not have a kernel, set this to false.
 file_info.has_boot_image = True
 
+# If the boot image has a different name or is in a subfolder, change this.
+file_info.bootimg        = 'boot.img'
+
 # This is the patch file you generated. Just copy the patch into a subfolder in
 # patches/ and put the path here.
 file_info.patch          = 'jflte/AOSP/YourROM.patch'
