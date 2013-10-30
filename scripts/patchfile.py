@@ -92,6 +92,9 @@ def print_same_line(line):
   last_line_length = len(line)
   print('\r' + line, end="")
 
+  # For Python 2
+  sys.stdout.flush()
+
 def exit_with(line, fail = False):
   if android:
     if fail:
