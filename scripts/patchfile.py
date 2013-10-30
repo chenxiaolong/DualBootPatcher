@@ -71,6 +71,10 @@ else:
 
 ## Print functions ##
 
+debug = False
+if 'PATCHER_DEBUG' in os.environ and os.environ['PATCHER_DEBUG'] == 'true':
+  debug = True
+
 # Information
 def print_i(msg):
   print(msg)
@@ -82,8 +86,7 @@ def print_e(msg):
 # Debug
 def print_d(msg):
   # Send to stderr on Android, don't show on PC
-  if android or ( 'PATCHER_DEBUG' in os.environ and \
-      os.environ['PATCHER_DEBUG'] == 'true'):
+  if android or debug:
     print(msg, file = sys.stderr)
 
 def print_same_line(line):
@@ -107,7 +110,7 @@ def exit_with(line, fail = False):
 def status(line):
   # On Android, we're reading the output from a GUI and carriage returns mess
   # that up
-  if android:
+  if android or debug:
     print(line)
   else:
     print_same_line(line)
@@ -239,6 +242,8 @@ def patch_boot_image(boot_image, file_info):
 
   if file_info.loki:
     try:
+      if not android and not debug:
+        unlokibootimg.show_output = False
       unlokibootimg.extract(boot_image, tempdir)
     except Exception as e:
       exit_with(str(e), fail = True)

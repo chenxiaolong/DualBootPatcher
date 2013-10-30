@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Python 2 compatibility
+from __future__ import print_function
+
 import binascii
 import gzip
 import os
@@ -58,6 +61,15 @@ def bytes_to_str(data):
   temp = binascii.hexlify(data).decode("utf-8")
   return "\\x" + "\\x".join(a + b for a, b in zip(temp[::2], temp[1::2]))
 
+show_output = True
+use_stdout = False
+def print_i(line):
+  if show_output:
+    if use_stdout:
+      print(line)
+    else:
+      print(line, file = sys.stderr)
+
 def extract(filename, directory):
   basename = os.path.split(filename)[1]
   f = open(filename, 'rb')
@@ -67,7 +79,7 @@ def extract(filename, directory):
     f.seek(i, os.SEEK_SET)
     temp = f.read(BOOT_MAGIC_SIZE)
     if temp == BOOT_MAGIC.encode("ASCII"):
-      print("Found Android header")
+      print_i("Found Android header")
       break;
     i += 1
 
@@ -91,27 +103,27 @@ def extract(filename, directory):
   a_hdr.name         = f.read(BOOT_NAME_SIZE)
   a_hdr.cmdline      = f.read(BOOT_ARGS_SIZE)
   a_hdr.id           = f.read(8)
-  print("- magic:        " + a_hdr.magic.decode('ascii'))
-  print("- kernel_size:  " + str(a_hdr.kernel_size))
-  print("- kernel_addr:  " + hex(a_hdr.kernel_addr))
-  print("- ramdisk_size: " + str(a_hdr.ramdisk_size))
-  print("- ramdisk_addr: " + hex(a_hdr.ramdisk_addr))
-  print("- second_size:  " + str(a_hdr.second_size))
-  print("- second_addr:  " + hex(a_hdr.second_addr))
-  print("- tags_addr:    " + hex(a_hdr.tags_addr))
-  print("- page_size:    " + str(a_hdr.page_size))
-  print("- unused:       " + bytes_to_str(a_hdr.unused))
-  print("- name:         " + a_hdr.name.decode('ascii'))
-  print("- cmdline:      " + a_hdr.cmdline.decode('ascii'))
-  print("- id:           " + bytes_to_str(a_hdr.id))
+  print_i("- magic:        " + a_hdr.magic.decode('ascii'))
+  print_i("- kernel_size:  " + str(a_hdr.kernel_size))
+  print_i("- kernel_addr:  " + hex(a_hdr.kernel_addr))
+  print_i("- ramdisk_size: " + str(a_hdr.ramdisk_size))
+  print_i("- ramdisk_addr: " + hex(a_hdr.ramdisk_addr))
+  print_i("- second_size:  " + str(a_hdr.second_size))
+  print_i("- second_addr:  " + hex(a_hdr.second_addr))
+  print_i("- tags_addr:    " + hex(a_hdr.tags_addr))
+  print_i("- page_size:    " + str(a_hdr.page_size))
+  print_i("- unused:       " + bytes_to_str(a_hdr.unused))
+  print_i("- name:         " + a_hdr.name.decode('ascii'))
+  print_i("- cmdline:      " + a_hdr.cmdline.decode('ascii'))
+  print_i("- id:           " + bytes_to_str(a_hdr.id))
 
-  print("")
+  print_i("")
 
   # Look for loki header
   f.seek(0x400, os.SEEK_SET)
   temp = f.read(4)
   if temp == "LOKI".encode("ASCII"):
-    print("Found Loki header")
+    print_i("Found Loki header")
   else:
     raise Exception("Could not find Loki header")
 
@@ -125,14 +137,14 @@ def extract(filename, directory):
   l_hdr.orig_kernel_size  = to_int(f.read(4))
   l_hdr.orig_ramdisk_size = to_int(f.read(4))
   l_hdr.ramdisk_addr      = to_int(f.read(4))
-  print("- magic:             " + l_hdr.magic.decode('ascii'))
-  print("- recovery:          " + str(l_hdr.recovery))
-  print("- build:             " + l_hdr.build.decode('ascii'))
-  print("- orig_kernel_size:  " + str(l_hdr.orig_kernel_size))
-  print("- orig_ramdisk_size: " + str(l_hdr.orig_ramdisk_size))
-  print("- ramdisk_addr:      " + hex(l_hdr.ramdisk_addr))
+  print_i("- magic:             " + l_hdr.magic.decode('ascii'))
+  print_i("- recovery:          " + str(l_hdr.recovery))
+  print_i("- build:             " + l_hdr.build.decode('ascii'))
+  print_i("- orig_kernel_size:  " + str(l_hdr.orig_kernel_size))
+  print_i("- orig_ramdisk_size: " + str(l_hdr.orig_ramdisk_size))
+  print_i("- ramdisk_addr:      " + hex(l_hdr.ramdisk_addr))
 
-  print("")
+  print_i("")
 
   # Get total size
   f.seek(0, os.SEEK_END)
@@ -144,7 +156,7 @@ def extract(filename, directory):
     f.seek(gzip_offset, os.SEEK_SET)
     temp = f.read(4)
     if temp == b"\x1F\x8B\x08\x00":
-      print("Found gzip header at: " + hex(gzip_offset))
+      print_i("Found gzip header at: " + hex(gzip_offset))
       break
     gzip_offset += 4
 
@@ -155,7 +167,7 @@ def extract(filename, directory):
   # The line above is for Samsung kernels only. Uncomment this one for use on
   # LG kernels:
   #gzip_size = total_size - gzip_offset - a_hdr.page_size
-  print("Ramdisk size: %i (may include some padding)" % gzip_size)
+  print_i("Ramdisk size: %i (may include some padding)" % gzip_size)
 
   # Get kernel size
   # Unfortunately, the original size is not stored in the Loki header on
@@ -166,27 +178,27 @@ def extract(filename, directory):
   # there. (http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309)
   f.seek(a_hdr.page_size + 0x2c, os.SEEK_SET)
   kernel_size = to_int(f.read(4))
-  print("Kernel size: " + str(kernel_size))
+  print_i("Kernel size: " + str(kernel_size))
 
-  print("")
+  print_i("")
 
-  print("Writing kernel command line to %s-cmdline ..." % basename)
+  print_i("Writing kernel command line to %s-cmdline ..." % basename)
   out = open(os.path.join(directory, basename + "-cmdline"), 'wb')
   out.write((a_hdr.cmdline.decode("ascii").rstrip('\0') + "\n").encode("ascii"))
   out.close()
 
-  print("Writing base address to %s-base ..." % basename)
+  print_i("Writing base address to %s-base ..." % basename)
   out = open(os.path.join(directory, basename + "-base"), 'wb')
   # 0x00008000 is the same constant used in unpackbootimg.c
   out.write((hex(a_hdr.kernel_addr - 0x00008000).lstrip("0x") + "\n").encode("ascii"))
   out.close()
 
-  print("Writing page size to %s-pagesize ..." % basename)
+  print_i("Writing page size to %s-pagesize ..." % basename)
   out = open(os.path.join(directory, basename + "-pagesize"), 'wb')
   out.write((str(a_hdr.page_size) + "\n").encode("ascii"))
   out.close()
 
-  print("Writing kernel to %s-zImage ..." % basename)
+  print_i("Writing kernel to %s-zImage ..." % basename)
   f.seek(a_hdr.page_size, os.SEEK_SET)
   kernel_data = f.read(kernel_size)
   out = open(os.path.join(directory, basename + "-zImage"), 'wb')
@@ -195,7 +207,7 @@ def extract(filename, directory):
 
   # Truncate padding by recompression. Due to a bug in Python's gzip module, we
   # can't use it (see this question: http://stackoverflow.com/questions/4928560/how-can-i-work-with-gzip-files-which-contain-extra-data)
-  print("Writing ramdisk to %s-ramdisk.gz ..." % basename)
+  print_i("Writing ramdisk to %s-ramdisk.gz ..." % basename)
   f.seek(gzip_offset, os.SEEK_SET)
   ramdisk_data = f.read(gzip_size)
   out = gzip.open(os.path.join(directory, basename + "-ramdisk.gz"), 'wb')
@@ -204,12 +216,12 @@ def extract(filename, directory):
 
   f.close()
 
-  print("")
-  print("Successfully unloki'd " + filename)
+  print_i("")
+  print_i("Successfully unloki'd " + filename)
 
 if __name__ == "__main__":
   if len(sys.argv) < 3:
-    print("Usage: %s -i boot.img [-o output_directory]" % sys.argv[0])
+    print_i("Usage: %s -i boot.img [-o output_directory]" % sys.argv[0])
     sys.exit(1)
 
   filename = ""
@@ -224,15 +236,15 @@ if __name__ == "__main__":
       directory = sys.argv[counter + 1]
       counter += 2
     else:
-      print("Unrecognized argument " + sys.argv[counter])
+      print_i("Unrecognized argument " + sys.argv[counter])
       sys.exit(1)
 
   if filename == "":
-    print("No loki image specified")
+    print_i("No loki image specified")
     sys.exit(1)
 
   if not os.path.exists(filename):
-    print(filename + " does not exist")
+    print_i(filename + " does not exist")
     sys.exit(1)
 
   if directory == "":
@@ -241,6 +253,8 @@ if __name__ == "__main__":
     os.makedirs(directory)
 
   try:
+    use_stdout = True
     extract(filename, directory)
   except Exception as e:
-    print("Failed: " + str(e))
+    use_stdout = False
+    print_i("Failed: " + str(e))
