@@ -13,6 +13,7 @@ Thanks to all the donators for supporting this project!
   * Matthew Smith
   * Shahzain Badruddin
   * John Nguyen
+  * Marcos Shrem
 
 What's supported?
 
