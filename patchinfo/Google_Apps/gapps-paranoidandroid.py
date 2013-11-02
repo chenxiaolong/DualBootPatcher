@@ -3,7 +3,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^pa_gapps-full-4\.3-[0-9]+-signed\.zip$"
+filename_regex           = r"^pa_gapps-full-4\.[34]-[0-9]+-signed\.zip$"
 file_info.patch          = 'Google_Apps/gapps-paranoidandroid.patch'
 file_info.has_boot_image = False
 
