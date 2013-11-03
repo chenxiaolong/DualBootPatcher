@@ -105,6 +105,7 @@ def exit_with(line, fail = False):
     else:
       print_e("EXITSUCCESS:" + line)
   else:
+    status("")
     print_e(line)
 
 def status(line):
@@ -461,12 +462,23 @@ def patch_zip(zip_file, file_info):
 
   status("Loading zip file")
   z = zipfile.ZipFile(zip_file, "r")
+
   for f in files_to_patch:
     status("Extracting file to be patched: %s" % f)
-    z.extract(f, path = tempdir)
+    try:
+      z.extract(f, path = tempdir)
+    except:
+      exit_with("Failed to extract file: %s" % f, fail = True)
+      clean_up_and_exit(1)
+
   if file_info.has_boot_image:
     status("Extracting boot image: %s" % file_info.bootimg)
-    z.extract(file_info.bootimg, path = tempdir)
+    try:
+      z.extract(file_info.bootimg, path = tempdir)
+    except:
+      exit_with("Failed to extract file: %s" % file_info.bootimg, fail = True)
+      clean_up_and_exit(1)
+
   z.close()
 
   if not android:
