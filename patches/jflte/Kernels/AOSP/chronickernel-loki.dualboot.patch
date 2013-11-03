@@ -1,0 +1,23 @@
+--- a/META-INF/com/google/android/updater-script
++++ b/META-INF/com/google/android/updater-script
+@@ -1,13 +1,18 @@
++package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
++set_perm(0, 0, 0777, "/tmp/dualboot.sh");
++ui_print("Installing kernel for secondary ROM");
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++
+ ui_print("ChronicKernel...");
+-ui_print("Mount /System Folder...");
+-run_program("/sbin/busybox", "mount", "/system");
+ ui_print("Removing old modules");
+ run_program("/sbin/busybox", "rm", "-f", "/system/lib/modules");
+ ui_print("Extracting System Files...");
+ package_extract_dir("system", "/system");
+ set_perm_recursive(0, 0, 0755, 0644, "/system/lib/modules");
+ ui_print("Extracting Kernel files...");
+ package_extract_file("boot.lok", "/dev/block/platform/msm_sdcc.1/by-name/boot");
++run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "unmount-system");
+ ui_print("***********************************");
+ ui_print("*    Welcome to ChronicKernel!    *");
+ ui_print("***********************************");
