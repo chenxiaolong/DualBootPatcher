@@ -267,7 +267,7 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
 
     // Skip "/devices/platform/<driver>"
     parent = strchr(uevent->path + pdev->path_len, '/');
-    if (!*parent) {
+    if (!parent) {
         return std::vector<std::string>();
     }
 
