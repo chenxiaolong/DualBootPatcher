@@ -1,2 +1,2 @@
 pyscript = jflte/AOSP/AOSP.py
-patch = jflte/AOSP/AOSP.patch
+#patch = jflte/AOSP/AOSP.patch
