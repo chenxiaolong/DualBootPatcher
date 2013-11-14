@@ -46,7 +46,8 @@ def insert_line(index, line, lines):
 def insert_dual_boot_sh(lines):
   insert_line(0, 'package_extract_file("dualboot.sh", "/tmp/dualboot.sh");', lines)
   insert_line(1, 'set_perm(0, 0, 0777, "/tmp/dualboot.sh");', lines)
-  return 2
+  insert_line(2, 'ui_print("INSTALLING AS SECONDARY");', lines)
+  return 3
 
 def insert_write_kernel(bootimg, lines):
   # Look for last line containing the boot image string and insert after that
@@ -96,8 +97,8 @@ def insert_format_data(index, lines):
 def replace_mount_lines(lines):
   i = 0
   while i < len(lines):
-    # Edify lines
-    if re.search(r"^\s*mount\s*\(.*$", lines[i]):
+    if re.search(r"^\s*mount\s*\(.*$", lines[i]) or \
+       re.search(r"^run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"mount\".*$", lines[i]):
       # Mount /system as dual boot
       if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
         del lines[i]
@@ -116,16 +117,14 @@ def replace_mount_lines(lines):
       else:
         i += 1
 
-    # Busybox lines
-
     else:
       i += 1
 
 def replace_unmount_lines(lines):
   i = 0
   while i < len(lines):
-    # Edify lines
-    if re.search(r"^\s*unmount\s*\(.*$", lines[i]):
+    if re.search(r"^\s*unmount\s*\(.*$", lines[i]) or \
+       re.search(r"^run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"umount\".*$", lines[i]):
       # Mount /system as dual boot
       if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
         del lines[i]
@@ -144,15 +143,12 @@ def replace_unmount_lines(lines):
       else:
         i += 1
 
-    # Busybox lines
-
     else:
       i += 1
 
 def replace_format_lines(lines):
   i = 0
   while i < len(lines):
-    # Edify lines
     if re.search(r"^\s*format\s*\(.*$", lines[i]):
       # Mount /system as dual boot
       if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
@@ -171,8 +167,6 @@ def replace_format_lines(lines):
 
       else:
         i += 1
-
-    # Busybox lines
 
     else:
       i += 1
