@@ -171,6 +171,12 @@ def replace_format_lines(lines):
     else:
       i += 1
 
+def unmount_everything(lines):
+  i = len(lines)
+  i += insert_unmount_system(i, lines)
+  i += insert_unmount_cache(i, lines)
+  i += insert_unmount_data(i, lines)
+
 def attempt_auto_patch(lines, bootimg = None):
   insert_dual_boot_sh(lines)
   replace_mount_lines(lines)
@@ -178,3 +184,5 @@ def attempt_auto_patch(lines, bootimg = None):
   replace_format_lines(lines)
   if bootimg:
     insert_write_kernel(bootimg, lines)
+  # Too many ROMs don't unmount partitions after installation
+  unmount_everything(lines)
