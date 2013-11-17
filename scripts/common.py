@@ -181,11 +181,11 @@ def remove_device_checks(lines):
   i = 0
   while i < len(lines):
     if re.search(r"^\s*assert\s*\(.*getprop\s*\(.*(ro.product.device|ro.build.product)", lines[i]):
-      lines[i] = re.sub(r"^(\s*assert\s*\()", r"""\1"true" == "true" && """, lines[i])
+      lines[i] = re.sub(r"^(\s*assert\s*\()", r"""\1"true" == "true" || """, lines[i])
 
     i += 1
 
-def attempt_auto_patch(lines, bootimg = None, devicecheck = True):
+def attempt_auto_patch(lines, bootimg = None, device_check = True):
   insert_dual_boot_sh(lines)
   replace_mount_lines(lines)
   replace_unmount_lines(lines)
@@ -195,5 +195,15 @@ def attempt_auto_patch(lines, bootimg = None, devicecheck = True):
   # Too many ROMs don't unmount partitions after installation
   unmount_everything(lines)
   # Remove device checks
-  if not devicecheck:
+  if not device_check:
     remove_device_checks(lines)
+
+# Functions to assign to FileInfo.patch
+def auto_patch(directory, bootimg = None, device_check = True):
+  lines = get_lines_from_file(directory, 'META-INF/com/google/android/updater-script')
+  attempt_auto_patch(lines, bootimg = bootimg, device_check = device_check)
+  write_lines_to_file(directory, 'META-INF/com/google/android/updater-script', lines)
+
+# Functions to assign to FileInfo.extract
+def files_to_auto_patch():
+  return [ 'META-INF/com/google/android/updater-script' ]

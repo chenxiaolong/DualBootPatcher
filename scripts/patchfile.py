@@ -450,21 +450,20 @@ def patch_boot_image(boot_image, file_info):
   return os.path.join(tempdir, "complete.img")
 
 def patch_zip(zip_file, file_info):
-  # We need the patchinfo filename
-  patchinfo = file_info[0]
-  file_info = file_info[1]
-  plugin = imp.load_source(os.path.basename(patchinfo)[:-3], patchinfo)
-
   if not android:
     print_i("--- Please wait. This may take a while ---")
 
   files_to_patch = []
-  if file_info.patch != "":
+  if type(file_info.patch) == str and file_info.patch != "":
     files_to_patch = files_in_patch(file_info.patch)
 
-  if 'extract_files' in dir(plugin):
-    for i in plugin.extract_files():
-      files_to_patch.append(i)
+  if file_info.extract:
+    if callable(file_info.extract):
+      for i in file_info.extract():
+        files_to_patch.append(i)
+    else:
+      for i in file_info.extract:
+        files_to_patch.append(i)
 
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
@@ -504,11 +503,13 @@ def patch_zip(zip_file, file_info):
 
   shutil.copy(os.path.join(patchdir, "dualboot.sh"), tempdir)
 
-  if file_info.patch != "":
-    apply_patch_file(file_info.patch, tempdir)
-
-  if 'patch_files' in dir(plugin):
-    plugin.patch_files(tempdir)
+  if file_info.patch:
+    if callable(file_info.patch):
+      file_info.patch(tempdir,
+                      bootimg = file_info.bootimg,
+                      device_check = file_info.device_check)
+    else:
+      apply_patch_file(file_info.patch, tempdir)
 
   # We can't avoid recompression, unfortunately
   new_zip_file = os.path.join(tempdir, "complete.zip")
@@ -565,7 +566,7 @@ def get_file_info(path):
             if file_info:
               print_d("Loading patchinfo plugin: " + filename)
               plugin.print_message()
-              return (os.path.join(root, f), file_info)
+              return file_info
 
   return None
 
@@ -606,7 +607,7 @@ if __name__ == "__main__":
     # Patch zip and get path to patched zip
     newfile = patch_zip(filename, fileinfo)
 
-    if fileinfo[1].loki:
+    if fileinfo.loki:
       exit_with("Successfully patched zip. " + loki_msg)
     else:
       exit_with("Successfully patched zip")
@@ -619,9 +620,9 @@ if __name__ == "__main__":
       print_i("Path: " + newpath)
 
   elif filetype == "img":
-    newfile = patch_boot_image(filename, fileinfo[1])
+    newfile = patch_boot_image(filename, fileinfo)
 
-    if fileinfo[1].loki:
+    if fileinfo.loki:
       exit_with("Successfully patched boot image. " + loki_msg)
     else:
       exit_with("Successfully patched boot image")
