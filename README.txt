@@ -44,6 +44,7 @@ ROMs:
   * Slim Bean
   * Carbon
   * LiquidSmooth
+  * Vanir
   * AOSP (Broodplank)
   * TouchWiz ROMs
     - FoxHound
