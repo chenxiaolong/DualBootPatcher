@@ -168,6 +168,10 @@ def replace_format_lines(lines):
       else:
         i += 1
 
+    elif re.search(r'delete_recursive\s*\([^\)]*"/cache"', lines[i]):
+      del lines[i]
+      i += insert_format_cache(i, lines)
+
     else:
       i += 1
 
