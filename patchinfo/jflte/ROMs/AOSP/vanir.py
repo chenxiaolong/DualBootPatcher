@@ -11,8 +11,6 @@ file_info.extract        = c.files_to_auto_patch
 
 def matches(filename):
   if re.search(filename_regex, filename):
-    if 'vzw' in filename or 'att' in filename:
-      file_info.loki     = True
     return True
   else:
     return False
