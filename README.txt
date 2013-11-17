@@ -23,6 +23,7 @@ ROMs:
     - CyanogenMod-based ROMs
     - Hellybean
     - JellyBeer
+    - Gummy
   * AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
