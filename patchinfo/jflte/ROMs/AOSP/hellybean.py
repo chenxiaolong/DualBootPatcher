@@ -25,6 +25,6 @@ def extract_files():
 def patch_files(directory):
   lines = c.get_lines_from_file(directory, 'META-INF/com/google/android/updater-script')
 
-  c.attempt_auto_patch(lines, bootimg = file_info.bootimg)
+  c.attempt_auto_patch(lines, bootimg = file_info.bootimg, devicecheck = False)
 
   c.write_lines_to_file(directory, 'META-INF/com/google/android/updater-script', lines)
