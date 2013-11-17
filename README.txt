@@ -14,6 +14,7 @@ Thanks to all the donators for supporting this project!
   * Shahzain Badruddin
   * John Nguyen
   * Marcos Shrem
+  * John West
 
 What's supported?
 
