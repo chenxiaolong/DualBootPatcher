@@ -28,6 +28,7 @@ ROMs:
     - Task650
     - IceColdJelly (Vertigo)
     - IOKP
+    - Dirty Unicorns
   * PAC-Man ROMS
     - Official PAC-Man
     - ProBAM
