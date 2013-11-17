@@ -177,7 +177,15 @@ def unmount_everything(lines):
   i += insert_unmount_cache(i, lines)
   i += insert_unmount_data(i, lines)
 
-def attempt_auto_patch(lines, bootimg = None):
+def remove_device_checks(lines):
+  i = 0
+  while i < len(lines):
+    if re.search(r"^\s*assert\s*\(.*getprop\s*\(.*(ro.product.device|ro.build.product)", lines[i]):
+      lines[i] = re.sub(r"^(\s*assert\s*\()", r"""\1"true" == "true" && """, lines[i])
+
+    i += 1
+
+def attempt_auto_patch(lines, bootimg = None, devicecheck = True):
   insert_dual_boot_sh(lines)
   replace_mount_lines(lines)
   replace_unmount_lines(lines)
@@ -186,3 +194,6 @@ def attempt_auto_patch(lines, bootimg = None):
     insert_write_kernel(bootimg, lines)
   # Too many ROMs don't unmount partitions after installation
   unmount_everything(lines)
+  # Remove device checks
+  if not devicecheck:
+    remove_device_checks(lines)
