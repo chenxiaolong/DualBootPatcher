@@ -18,125 +18,37 @@
  set_progress(0.00);
  
  ###############################
-@@ -6,9 +9,12 @@
- ui_print("@!!!Negalite Blurom updater-script!!!");
+@@ -6,9 +9,9 @@
+ ui_print("@!!!Negalite WondeROM updater-script!!!");
  ui_print(" ");
  
--ifelse(is_mounted("/system") == "/system", unmount("/system"));
- ifelse(is_mounted("/cache") == "/cache", unmount("/cache"));
- ifelse(is_mounted("/data") == "/data", unmount("/data"));
-+
+-mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/cache", "/cache");
+-mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/userdata", "/data");
+-mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
 +run_program("/tmp/dualboot.sh", "mount-cache", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/cache");
 +run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
-+
- set_progress(0.012);
++run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
  
  package_extract_dir("setup", "/tmp");
-@@ -36,40 +42,21 @@
- file_getprop("/tmp/aroma-data/wipe.prop","selected.0") == "1"
- then
- ui_print("@-Formatting Ext4 Data Partition Including Internal SD");
--format("ext4", "EMMC", "/dev/block/mmcblk0p29", "0", "/data");
--delete_recursive("/external_sd/LOST.DIR");
--delete_recursive("/external_sd/.android_secure");
--ifelse(is_mounted("/system") == "/system", unmount("/system"));
--ui_print("@-Checking Data For Errors");
--run_program("/sbin/e2fsck", "-p", "/dev/block/mmcblk0p29");
--ui_print("@-Optimizing Data");
--run_program("/tmp/mkfs.ext4", "-O", "^ext_attr,^has_journal,^huge_file", "-L", "DATA", "-b", "4096", "-m", "0", "-F", "/dev/block/mmcblk0p29");
--run_program("/tmp/tune2fs.ext4", "-c", "1", "-m", "0", "-o", "journal_data_writeback", "/dev/block/mmcblk0p29");
--run_program("/tmp/fsck.ext4", "-Dfy", "/dev/block/mmcblk0p29");
--run_program("/sbin/sleep", "1");
-+ui_print("DISABLED FOR DUAL BOOT SETUP");
- set_progress(0.050);
- endif;
- if
- file_getprop("/tmp/aroma-data/wipe.prop","selected.0") == "2"
- then
- ui_print("@-Formatting Ext4 Data Partition Excluding Internal SD");
--mount("ext4", "EMMC", "/dev/block/mmcblk0p29", "/data");
--run_program("/tmp/wipedata.sh");
--delete_recursive("/sdcard/Android");
--delete_recursive("/sdcard/.face");
--delete_recursive("/external_sd/LOST.DIR");
--delete_recursive("/external_sd/.android_secure");
--run_program("/sbin/sleep", "1");
--ifelse(is_mounted("/data") == "/data", unmount("/data"));
-+ui_print("DISABLED FOR DUAL BOOT SETUP");
- set_progress(0.050);
- endif;
- if
- file_getprop("/tmp/aroma-data/wipe.prop","selected.0") == "3"
- then
- ui_print("@-Skipping Ext4 Data Partition Wipe");
--mount("ext4", "EMMC", "/dev/block/mmcblk0p29", "/data");
- delete_recursive("/data/dalvik-cache");
--ifelse(is_mounted("/data") == "/data", unmount("/data"));
- set_progress(0.050);
- endif;
- 
-@@ -81,22 +68,14 @@
- # System Format And Install
- ###############################
- 
--ui_print("@-Formatting Ext4 System Partition");
--format("ext4", "EMMC", "/dev/block/mmcblk0p16", "0", "/system");
--ui_print("@-Checking System For Errors");
--ifelse(is_mounted("/system") == "/system", unmount("/system"));
--run_program("/sbin/e2fsck", "-p", "/dev/block/mmcblk0p16");
--ui_print("@-Optimizing System");
--run_program("/tmp/mkfs.ext4", "-O", "^ext_attr,^has_journal,^huge_file", "-L", "SYSTEM", "-b", "4096", "-m", "0", "-F", "/dev/block/mmcblk0p16");
--run_program("/tmp/tune2fs.ext4", "-c", "1", "-m", "0", "-o", "journal_data_writeback", "/dev/block/mmcblk0p16");
--run_program("/tmp/fsck.ext4", "-Dfy", "/dev/block/mmcblk0p16");
--run_program("/sbin/sleep", "1");
--ui_print("Done");
-+mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
-+delete_recursive("/system/dual");
-+unmount("/system");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
- set_progress(0.100);
- 
- ui_print(" ");
- ui_print("@Installing To System");
--mount("ext4", "EMMC", "/dev/block/mmcblk0p16", "/system");
- package_extract_dir("system", "/system");
- ui_print("Done");
- run_program("/sbin/sleep", "1");
-@@ -110,7 +89,6 @@
- # Make Data
- ###############################
- 
--mount("ext4", "EMMC", "/dev/block/mmcblk0p29", "/data");
- run_program("/tmp/makedata.sh");
- 
- ###############################
-@@ -882,12 +860,11 @@
- 
- ui_print(" ");
- ui_print("@Cleaning Cache");
--format("ext4", "EMMC", "/dev/block/mmcblk0p18", "0", "/cache");
--ifelse(is_mounted("/cache") == "/cache", unmount("/cache"));
--run_program("/tmp/fsck.ext4", "-fy", "/dev/block/mmcblk0p18");
--run_program("/tmp/mkfs.ext4", "-O", "^ext_attr,^has_journal,^huge_file", "-L", "CACHE", "-b", "4096", "-m", "0", "-F", "/dev/block/mmcblk0p18");
--run_program("/tmp/tune2fs.ext4", "-c", "1", "-m", "0", "-o", "journal_data_writeback", "/dev/block/mmcblk0p18");
--run_program("/tmp/fsck.ext4", "-Dfy", "/dev/block/mmcblk0p18");
-+run_program("/tmp/dualboot.sh", "unmount-cache");
-+mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/cache", "/cache");
-+delete_recursive("/cache/dual");
-+unmount("/cache");
-+run_program("/tmp/dualboot.sh", "mount-cache", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/cache");
- ui_print("@Clearing Dalvik");
- delete_recursive("/data/dalvik-cache");
- ui_print("Done");
-@@ -903,10 +880,11 @@
+ set_perm(0, 0, 0777, "/tmp/backup.sh");
+@@ -30,7 +33,7 @@
+ ui_print("@Wiping Partitions");
+ if file_getprop("/tmp/aroma-data/wipe.prop","selected.0") == "1" then
+ 	ui_print("@-Erasing Data Partition Excluding Internal SD");
+-	run_program("/tmp/wipedata.sh");
++	delete_recursive("/raw-data/dual")
+ 	delete_recursive("/sd-ext");
+ 	delete_recursive("/sdcard/Android");
+ 	delete_recursive("/sdcard/.face");
+@@ -616,10 +619,11 @@
  ###############################
  
  ui_print(" ");
 +run_program("/tmp/dualboot.sh", "set-secondary-kernel");
  ui_print("@Unmounting Partitions");
--ifelse(is_mounted("/system") == "/system", unmount("/system"));
--ifelse(is_mounted("/data") == "/data", unmount("/data"));
--ifelse(is_mounted("/cache") == "/cache", unmount("/cache"));
+-unmount("/system");
+-unmount("/cache");
+-unmount("/data");
 +run_program("/tmp/dualboot.sh", "unmount-system");
 +run_program("/tmp/dualboot.sh", "unmount-cache");
 +run_program("/tmp/dualboot.sh", "unmount-data");
