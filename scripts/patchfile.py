@@ -502,13 +502,30 @@ def patch_zip(zip_file, file_info, partition_config):
   files_to_patch = []
   if type(file_info.patch) == str and file_info.patch != "":
     files_to_patch = files_in_patch(file_info.patch)
+  elif type(file_info.patch) == list:
+    for i in file_info.patch:
+      if type(i) == str and i != "":
+        files_to_patch.extend(files_in_patch(i))
 
   if file_info.extract:
-    if callable(file_info.extract):
-      for i in file_info.extract():
-        files_to_patch.append(i)
-    else:
-      for i in file_info.extract:
+    temp = file_info.extract
+    if type(temp) == str or callable(temp):
+      temp = [ temp ]
+
+    for i in temp:
+      if callable(i):
+        output = i()
+
+        if type(output) == list:
+          files_to_patch.extend(output)
+
+        elif type(output) == str:
+          files_to_patch.append(output)
+
+      elif type(i) == list:
+        files_to_patch.extend(i)
+
+      elif type(i) == str:
         files_to_patch.append(i)
 
   tempdir = tempfile.mkdtemp()
@@ -551,12 +568,22 @@ def patch_zip(zip_file, file_info, partition_config):
   insert_partition_info(tempdir, "dualboot.sh", partition_config)
 
   if file_info.patch:
-    if callable(file_info.patch):
-      file_info.patch(tempdir,
-                      bootimg = file_info.bootimg,
-                      device_check = file_info.device_check)
-    else:
-      apply_patch_file(file_info.patch, tempdir)
+    temp = file_info.patch
+    if type(temp) == str or callable(temp):
+      temp = [ temp ]
+
+    for i in temp:
+      if callable(i):
+        i(tempdir,
+          bootimg = file_info.bootimg,
+          device_check = file_info.device_check)
+
+      elif type(i) == list:
+        for j in i:
+          apply_patch_file(j, tempdir)
+
+      elif type(i) == str:
+        apply_patch_file(i, tempdir)
 
   # We can't avoid recompression, unfortunately
   new_zip_file = os.path.join(tempdir, "complete.zip")
