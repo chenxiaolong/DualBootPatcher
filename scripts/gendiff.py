@@ -90,6 +90,7 @@ patch = os.path.join(parentdir, 'NewFilePatch.patch')
 
 f = open(patch, 'wb')
 f.write('\n'.join(filtered).encode("UTF-8"))
+f.write('\n'.encode("UTF-8"))
 f.close()
 
 print("The patch was created as:")
