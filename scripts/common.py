@@ -193,7 +193,8 @@ def remove_device_checks(lines):
 
     i += 1
 
-def attempt_auto_patch(lines, bootimg = None, device_check = True):
+def attempt_auto_patch(lines, bootimg = None, device_check = True,
+                       partition_config = None):
   insert_dual_boot_sh(lines)
   replace_mount_lines(lines)
   replace_unmount_lines(lines)
@@ -207,9 +208,11 @@ def attempt_auto_patch(lines, bootimg = None, device_check = True):
     remove_device_checks(lines)
 
 # Functions to assign to FileInfo.patch
-def auto_patch(directory, bootimg = None, device_check = True):
+def auto_patch(directory, bootimg = None, device_check = True,
+               partition_config = None):
   lines = get_lines_from_file(directory, 'META-INF/com/google/android/updater-script')
-  attempt_auto_patch(lines, bootimg = bootimg, device_check = device_check)
+  attempt_auto_patch(lines, bootimg = bootimg, device_check = device_check,
+                     partition_config = partition_config)
   write_lines_to_file(directory, 'META-INF/com/google/android/updater-script', lines)
 
 # Functions to assign to FileInfo.extract

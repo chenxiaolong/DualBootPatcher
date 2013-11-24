@@ -576,7 +576,8 @@ def patch_zip(zip_file, file_info, partition_config):
       if callable(i):
         i(tempdir,
           bootimg = file_info.bootimg,
-          device_check = file_info.device_check)
+          device_check = file_info.device_check,
+          partition_config = partition_config)
 
       elif type(i) == list:
         for j in i:

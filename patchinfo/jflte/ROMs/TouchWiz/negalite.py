@@ -24,7 +24,8 @@ def print_message():
 def get_file_info():
   return file_info
 
-def dont_wipe_data(directory, bootimg = None, device_check = True):
+def dont_wipe_data(directory, bootimg = None, device_check = True,
+                   partition_config = None):
   lines = c.get_lines_from_file(directory, 'META-INF/com/google/android/updater-script')
 
   i = 0
