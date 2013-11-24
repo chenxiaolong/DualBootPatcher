@@ -55,12 +55,20 @@ def insert_dual_boot_sh(lines):
 
 def insert_write_kernel(bootimg, lines):
   # Look for last line containing the boot image string and insert after that
-  i = 0
-  while i < len(lines):
+  i = len(lines) - 1
+  while i > 0:
     if bootimg in lines[i]:
-      insert_line(i + 1, 'run_program("/tmp/dualboot.sh", "set-multi-kernel");', lines)
+      # Statements can be on multiple lines, so insert after a semicolon is found
+      while i < len(lines):
+        if ';' in lines[i]:
+          insert_line(i + 1, 'run_program("/tmp/dualboot.sh", "set-multi-kernel");', lines)
+          break
+
+        else:
+          i += 1
+
       break
-    i += 1
+    i -= 1
 
 def insert_mount_system(index, lines):
   return insert_line(index, 'run_program("/tmp/dualboot.sh", "mount-system");', lines)
