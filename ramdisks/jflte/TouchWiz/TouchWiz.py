@@ -56,38 +56,54 @@ def modify_fstab(directory, partition_config):
   # Ignore all contents for TouchWiz
   lines = c.get_lines_from_file(directory, 'fstab.qcom')
 
-  fourth = 'rw,barrier=1,errors=panic'
-  fifth = 'wait'
+  system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n"
+  cache = "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n"
+  data = "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n"
+
+  system_fourth = 'ro,barrier=1,errors=panic'
+  system_fifth = 'wait'
+  cache_fourth = 'nosuid,nodev,barrier=1'
+  cache_fifth = 'wait,check'
+
+  # Target cache on /system partition
+  target_cache_on_system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 %s %s\n" % (cache_fourth, cache_fifth)
+  # Target system on /cache partition
+  target_system_on_cache = "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 %s %s\n" % (system_fourth, system_fifth)
+  # Target system on /data partition
+  target_system_on_data = "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 %s %s\n" % (system_fourth, system_fifth)
 
   has_cache_line = False
 
   f = c.open_file(directory, 'fstab.qcom', c.WRITE)
   for line in lines:
     if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
-      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n")
+      if '/raw-system' in partition_config.target_cache:
+        c.write(f, target_cache_on_system)
+      else:
+        c.write(f, system)
 
     elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
       if '/raw-cache' in partition_config.target_system:
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 %s %s\n" % (fourth, fifth))
+        c.write(f, target_system_on_cache)
       else:
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+        c.write(f, cache)
 
       has_cache_line = True
 
     elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
-      if '/raw-cache' in partition_config.target_system:
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 %s %s\n" % (fourth, fifth))
+      if '/raw-data' in partition_config.target_system:
+        c.write(f, target_system_on_data)
       else:
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n")
+        c.write(f, data)
 
     else:
       c.write(f, line)
 
   if not has_cache_line:
     if '/raw-cache' in partition_config.target_system:
-      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 %s %s\n" % (fourth, fifth))
+      c.write(f, target_system_on_cache)
     else:
-      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+      c.write(f, cache)
 
   f.close()
 
