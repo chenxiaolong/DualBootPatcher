@@ -8,7 +8,7 @@
 +set_perm(0, 0, 0777, "/tmp/dualboot.sh");
 +unmount("/system");
 +ui_print("Installing kernel for secondary ROM");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/tmp/dualboot.sh", "mount-system");
 +
  ui_print("copying modules");
  ui_print("");
@@ -22,7 +22,7 @@
  ui_print("");
  
  package_extract_file("boot.lok", "/dev/block/platform/msm_sdcc.1/by-name/boot");
-+run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "set-multi-kernel");
 +run_program("/tmp/dualboot.sh", "unmount-system");
  show_progress(0.100000, 0);
  

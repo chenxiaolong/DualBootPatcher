@@ -17,9 +17,9 @@
 +unmount("/system");
 +unmount("/cache");
 +unmount("/data");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
-+run_program("/tmp/dualboot.sh", "mount-cache", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/cache");
-+run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++run_program("/tmp/dualboot.sh", "mount-system");
++run_program("/tmp/dualboot.sh", "mount-cache");
++run_program("/tmp/dualboot.sh", "mount-data");
 +
  ui_print("");
  ui_print("");	   
@@ -40,7 +40,7 @@
        assert(package_extract_file("snakes/Kernels/Stock/boot.img", "/tmp/boot.img"),
        write_raw_image("/tmp/boot.img", "/dev/block/mmcblk0p20"),
        delete("/tmp/boot.img"));
-+      run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++      run_program("/tmp/dualboot.sh", "set-multi-kernel");
  	endif;
  	
  # Faux kernel
@@ -63,8 +63,8 @@
        ui_print("@  Stock dialer are installed");
 -	  run_program("/sbin/busybox", "mount", "/system");
 -	  run_program("/sbin/busybox", "mount", "/data");
-+          run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
-+          run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++          run_program("/tmp/dualboot.sh", "mount-system");
++          run_program("/tmp/dualboot.sh", "mount-data");
  	  package_extract_dir("snakes/Aosp/Contacts/Samsung/system", "/system");
  	  package_extract_dir("snakes/Theme/Dialer/Stock/vrtheme", "/data/media/vrtheme");
  	  set_perm(0, 0, 0777, "/data/media/vrtheme/installtheme.sh");
@@ -84,8 +84,8 @@
        ui_print("@  Installing FoxHound Dialer Blacked");
 -	  run_program("/sbin/busybox", "mount", "/system");
 -	  run_program("/sbin/busybox", "mount", "/data");
-+          run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
-+          run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++          run_program("/tmp/dualboot.sh", "mount-system");
++          run_program("/tmp/dualboot.sh", "mount-data");
  	  package_extract_dir("snakes/Aosp/Contacts/Samsung/system", "/system");
  	  package_extract_dir("snakes/Theme/Dialer/Fox/vrtheme", "/data/media/vrtheme");
  	  set_perm(0, 0, 0777, "/data/media/vrtheme/installtheme.sh");
@@ -106,8 +106,8 @@
        ui_print("@  Installing FoxHound Blacked");
 -	  run_program("/sbin/busybox", "mount", "/system");
 -	  run_program("/sbin/busybox", "mount", "/data");
-+          run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
-+          run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++          run_program("/tmp/dualboot.sh", "mount-system");
++          run_program("/tmp/dualboot.sh", "mount-data");
  	  package_extract_dir("snakes/Theme/FoxHound_Blacked/vrtheme", "/data/media/vrtheme");
  	  set_perm(0, 0, 0777, "/data/media/vrtheme/installtheme.sh");
  	  set_perm(0, 0, 0777, "/data/media/vrtheme/zip");

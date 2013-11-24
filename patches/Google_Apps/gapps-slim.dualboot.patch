@@ -9,10 +9,10 @@
 +
 +package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
 +set_perm(0, 0, 0777, "/tmp/dualboot.sh");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/tmp/dualboot.sh", "mount-system");
 +
 +run_program("/sbin/busybox", "umount", "/data");
-+run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++run_program("/tmp/dualboot.sh", "mount-data");
 +
  show_progress(1, 15);
  delete("/system/app/Provision.apk", "/system/app/CalendarGoogle.apk", "/system/app/Phonesky.apk", "/system/app/GoogleBookmarksSyncAdapter.apk");

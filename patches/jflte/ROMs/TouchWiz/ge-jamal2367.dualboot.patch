@@ -15,7 +15,7 @@
 -delete_recursive("/cache");
 -mount("ext4", "EMMC", "/dev/block/mmcblk0p29", "/data");
 -delete_recursive("/data/dalvik-cache");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/tmp/dualboot.sh", "mount-system");
 +
 +show_progress(0.500000, 0);
  show_progress(0.500000, 80);
@@ -47,7 +47,7 @@
  show_progress(0.2, 0);
 -package_extract_file("boot.img", "/dev/block/mmcblk0p20");
 +package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
-+run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "set-multi-kernel");
  show_progress(0.2, 10);
  delete("/system/bin/chattr");
 -unmount("/system");

@@ -29,7 +29,7 @@
 +mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
 +delete_recursive("/system/dual");
 +unmount("/system");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/tmp/dualboot.sh", "mount-system");
 +ui_print("--------------------------");
 +ui_print("  Wiping Secondary Cache  ");
 +ui_print("--------------------------");
@@ -60,7 +60,7 @@
  ui_print(" ");
 -package_extract_file("boot.img", "/dev/block/mmcblk0p20");
 +package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
-+run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "set-multi-kernel");
  unmount("/data");
  unmount("/cache");
 -unmount("/system");

@@ -4,8 +4,8 @@
 +package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
 +set_perm(0, 0, 0777, "/tmp/dualboot.sh");
 +ui_print("Installing kernel for secondary ROM");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
-+run_program("/tmp/dualboot.sh", "mount-data", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/userdata");
++run_program("/tmp/dualboot.sh", "mount-system");
++run_program("/tmp/dualboot.sh", "mount-data");
 +
  set_progress(1.000000);
  ui_print("Flashing Adam Kernel ...");
@@ -13,7 +13,7 @@
  assert(package_extract_file("wanam/boot.img", "/tmp/boot.img"),
         write_raw_image("/tmp/boot.img", "/dev/block/mmcblk0p20"),
         delete("/tmp/boot.img"));
-+run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "set-multi-kernel");
  run_program("/sbin/rm", "-rf", "/system/lib/modules");
  package_extract_dir("system", "/system");
  set_perm_recursive(0, 0, 0755, 0644, "/system/lib/modules");

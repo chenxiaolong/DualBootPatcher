@@ -4,7 +4,7 @@
 +package_extract_file("dualboot.sh", "/tmp/dualboot.sh");
 +set_perm(0, 0, 0777, "/tmp/dualboot.sh");
 +ui_print("Installing kernel for secondary ROM");
-+run_program("/tmp/dualboot.sh", "mount-system", "ext4", "/dev/block/platform/msm_sdcc.1/by-name/system");
++run_program("/tmp/dualboot.sh", "mount-system");
 +
  ui_print("faux123 SGS4 CM Kernel...");
 -ui_print("Mount /System Folder...");
@@ -17,5 +17,5 @@
  ui_print("***********************************");
  show_progress(0.100000, 0);
 +
-+run_program("/tmp/dualboot.sh", "set-secondary-kernel");
++run_program("/tmp/dualboot.sh", "set-multi-kernel");
 +run_program("/tmp/dualboot.sh", "unmount-system");
