@@ -50,30 +50,59 @@ def modify_init_qcom_rc(directory):
 
     f.close()
 
-def modify_fstab(directory):
+def modify_fstab(directory, partition_config):
   # Ignore all contents for Google Edition
   for i in [ 'fstab.qcom', 'fstab.jgedlte' ]:
     lines = c.get_lines_from_file(directory, i)
+
+    system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n"
+    cache = "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n"
+    data = "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n"
+
+    system_fourth = 'ro,barrier=1,errors=panic'
+    system_fifth = 'wait'
+    cache_fourth = 'nosuid,nodev,barrier=1'
+    cache_fifth = 'wait,check'
+
+    # Target cache on /system partition
+    target_cache_on_system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 %s %s\n" % (cache_fourth, cache_fifth)
+    # Target system on /cache partition
+    target_system_on_cache = "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 %s %s\n" % (system_fourth, system_fifth)
+    # Target system on /data partition
+    target_system_on_data = "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 %s %s\n" % (system_fourth, system_fifth)
 
     has_cache_line = False
 
     f = c.open_file(directory, i, c.WRITE)
     for line in lines:
       if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n")
+        if '/raw-system' in partition_config.target_cache:
+          c.write(f, target_cache_on_system)
+        else:
+          c.write(f, system)
 
       elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+        if '/raw-cache' in partition_config.target_system:
+          c.write(f, target_system_on_cache)
+        else:
+          c.write(f, cache)
+
         has_cache_line = True
 
       elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
-        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n")
+        if '/raw-data' in partition_config.target_system:
+          c.write(f, target_system_on_data)
+        else:
+          c.write(f, data)
 
       else:
         c.write(f, line)
 
     if not has_cache_line:
-      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+      if '/raw-cache' in partition_config.target_system:
+        c.write(f, target_system_on_cache)
+      else:
+        c.write(f, cache)
 
     f.close()
 
@@ -96,7 +125,7 @@ def modify_init_target_rc(directory):
     elif re.search(r"^\s+mount_all\s+fstab.jgedlte.*$", line) and \
         re.search(r"^on\s+fs_selinux.*$", previous_line):
       c.write(f, line)
-      c.write(f, c.whitespace(line) + "exec /sbin/busybox-static sh /init.dualboot.mounting.sh\n")
+      c.write(f, c.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
     else:
       c.write(f, line)
@@ -118,9 +147,14 @@ def modify_MSM8960_lpm_rc(directory):
 
   f.close()
 
-def patch_ramdisk(directory):
+def patch_ramdisk(directory, partition_config):
   modify_init_rc(directory)
   modify_init_qcom_rc(directory)
-  modify_fstab(directory)
+  modify_fstab(directory, partition_config)
   modify_init_target_rc(directory)
   modify_MSM8960_lpm_rc(directory)
+  # SELinux hates having a directory on /cache bind-mounted to /system
+#  if '/raw-cache' in partition_config.target_system:
+#    path = os.path.join(directory, 'sepolicy')
+#    if os.path.exists(path):
+#      os.remove(path)

@@ -3,11 +3,13 @@
 # Standard Linux commands are not available until /system is mounted, so we'll
 # just use busybox for everything
 
-/sbin/busybox-static mkdir -p /raw-system/dual /raw-cache/dual /raw-data/dual
+# PATCHER REPLACE ME - DO NOT REMOVE
 
-/sbin/busybox-static mount -o bind /raw-system/dual /system
-/sbin/busybox-static mount -o bind /raw-data/dual /data
-/sbin/busybox-static mount -o bind /raw-cache/dual /cache
+/sbin/busybox-static mkdir -p $TARGET_SYSTEM $TARGET_CACHE $TARGET_DATA
+
+/sbin/busybox-static mount -o bind $TARGET_SYSTEM /system
+/sbin/busybox-static mount -o bind $TARGET_CACHE /cache
+/sbin/busybox-static mount -o bind $TARGET_DATA /data
 
 # Eventually, maybe share /data/app
 #/sbin/busybox-static mkdir -p /raw-data/app

@@ -10,6 +10,7 @@ sys.dont_write_bytecode = True
 
 import fileinfo
 import patchfile
+import partitionconfigs
 
 ramdisks = []
 suffix = r"\.def$"
@@ -71,6 +72,12 @@ try:
     print("Invalid choice")
     sys.exit(1)
 
+  partition_configs = partitionconfigs.get_partition_configs()
+  partition_config = None
+  for i in partition_configs:
+    if i.id == 'dualboot':
+      partition_config = i
+
   file_info = fileinfo.FileInfo()
   file_info.ramdisk = ramdisks[choice]
   file_info.bootimg = "boot.img"
@@ -82,10 +89,10 @@ try:
   print("Replacing ramdisk with " + file_info.ramdisk)
 
   if filetype == "img":
-    new_file = patchfile.patch_boot_image(filename, file_info)
+    new_file = patchfile.patch_boot_image(filename, file_info, partition_config)
     new_path = re.sub(r"\.img$", "_dualboot.img", filename)
   elif filetype == "zip":
-    new_file = patchfile.patch_zip(filename, file_info)
+    new_file = patchfile.patch_zip(filename, file_info, partition_config)
     new_path = re.sub(r"\.zip$", "_dualboot.zip", filename)
 
   shutil.move(new_file, new_path)

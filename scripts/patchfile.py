@@ -5,9 +5,12 @@
 # Python 2 compatibility
 from __future__ import print_function
 
+import common as c
+
 import gzip
 import imp
 import os
+import partitionconfigs
 import platform
 import re
 import shutil
@@ -192,7 +195,7 @@ def apply_patch_file(patchfile, directory):
     exit_with("Failed to apply patch", fail = True)
     clean_up_and_exit(1)
 
-def process_ramdisk_def(patch_file, directory):
+def process_ramdisk_def(patch_file, directory, partition_config):
   print_d("Loading ramdisk definition %s in directory %s" % (patch_file, directory))
   with open(patch_file) as f:
     for line in f.readlines():
@@ -205,7 +208,7 @@ def process_ramdisk_def(patch_file, directory):
         plugin = imp.load_source(os.path.basename(path)[:-3], \
                                  os.path.join(ramdiskdir, path))
 
-        plugin.patch_ramdisk(directory)
+        plugin.patch_ramdisk(directory, partition_config)
 
       elif line.startswith("patch"):
         path = os.path.join(ramdiskdir, \
@@ -237,7 +240,47 @@ def files_in_patch(patch_file):
 
   return files
 
-def patch_boot_image(boot_image, file_info):
+def insert_partition_info(directory, f, config, target_path_only = False):
+  magic = '# PATCHER REPLACE ME - DO NOT REMOVE\n'
+  lines = c.get_lines_from_file(directory, f)
+
+  i = 0
+  while i < len(lines):
+    if magic in lines[i]:
+      del lines[i]
+
+      if not target_path_only:
+        i += c.insert_line(i, 'KERNEL_NAME=\"%s\"' \
+                           % config.kernel, lines)
+
+        i += c.insert_line(i, 'DEV_SYSTEM=\"%s\"' \
+                           % config.dev_system, lines)
+        i += c.insert_line(i, 'DEV_CACHE=\"%s\"' \
+                           % config.dev_cache, lines)
+        i += c.insert_line(i, 'DEV_DATA=\"%s\"' \
+                           % config.dev_data, lines)
+
+        i += c.insert_line(i, 'TARGET_SYSTEM_PARTITION=\"%s\"' \
+                           % config.target_system_partition, lines)
+        i += c.insert_line(i, 'TARGET_CACHE_PARTITION=\"%s\"' \
+                           % config.target_cache_partition, lines)
+        i += c.insert_line(i, 'TARGET_DATA_PARTITION=\"%s\"' \
+                           % config.target_data_partition, lines)
+
+      i += c.insert_line(i, 'TARGET_SYSTEM=\"%s\"' \
+                         % config.target_system, lines)
+      i += c.insert_line(i, 'TARGET_CACHE=\"%s\"' \
+                         % config.target_cache, lines)
+      i += c.insert_line(i, 'TARGET_DATA=\"%s\"' \
+                         % config.target_data, lines)
+
+      break
+
+    i += 1
+
+  c.write_lines_to_file(directory, f, lines)
+
+def patch_boot_image(boot_image, file_info, partition_config):
   tempdir = tempfile.mkdtemp()
   remove_dirs.append(tempdir)
 
@@ -301,14 +344,17 @@ def patch_boot_image(boot_image, file_info):
 
   process_ramdisk_def(
     os.path.join(ramdiskdir, file_info.ramdisk),
-    extracted
+    extracted,
+    partition_config
   )
 
-  # Copy init.dualboot.mounting.sh
+  # Copy init.multiboot.mounting.sh
   shutil.copy(
-    os.path.join(ramdiskdir, "init.dualboot.mounting.sh"),
+    os.path.join(ramdiskdir, "init.multiboot.mounting.sh"),
     extracted
   )
+  insert_partition_info(extracted, "init.multiboot.mounting.sh",
+                        partition_config, target_path_only = True)
 
   # Copy busybox
   shutil.copy(
@@ -449,7 +495,7 @@ def patch_boot_image(boot_image, file_info):
 
   return os.path.join(tempdir, "complete.img")
 
-def patch_zip(zip_file, file_info):
+def patch_zip(zip_file, file_info, partition_config):
   if not android:
     print_i("--- Please wait. This may take a while ---")
 
@@ -494,7 +540,7 @@ def patch_zip(zip_file, file_info):
 
   if file_info.has_boot_image:
     boot_image = os.path.join(tempdir, file_info.bootimg)
-    new_boot_image = patch_boot_image(boot_image, file_info)
+    new_boot_image = patch_boot_image(boot_image, file_info, partition_config)
 
     os.remove(boot_image)
     shutil.move(new_boot_image, boot_image)
@@ -502,6 +548,7 @@ def patch_zip(zip_file, file_info):
     print_i("No boot image to patch")
 
   shutil.copy(os.path.join(patchdir, "dualboot.sh"), tempdir)
+  insert_partition_info(tempdir, "dualboot.sh", partition_config)
 
   if file_info.patch:
     if callable(file_info.patch):
@@ -580,10 +627,24 @@ def detect_file_type(path):
 
 if __name__ == "__main__":
   if len(sys.argv) < 2:
-    print_i("Usage: %s [zip file or boot.img]" % sys.argv[0])
+    print_i("Usage: %s [zip file or boot.img] [multiboot type]" % sys.argv[0])
     clean_up_and_exit(1)
 
   filename = sys.argv[1]
+  if len(sys.argv) == 2:
+    config_name = 'dualboot'
+  else:
+    config_name = sys.argv[2]
+
+  partition_configs = partitionconfigs.get_partition_configs()
+  partition_config = None
+  for i in partition_configs:
+    if i.id == config_name:
+      partition_config = i
+
+  if not partition_config:
+    print_i("Multiboot config %s does not exist!" % config_name)
+    clean_up_and_exit(1)
 
   if not os.path.exists(filename):
     print_i("%s does not exist!" % filename)
@@ -605,14 +666,14 @@ if __name__ == "__main__":
       clean_up_and_exit(1)
 
     # Patch zip and get path to patched zip
-    newfile = patch_zip(filename, fileinfo)
+    newfile = patch_zip(filename, fileinfo, partition_config)
 
     if fileinfo.loki:
       exit_with("Successfully patched zip. " + loki_msg)
     else:
       exit_with("Successfully patched zip")
 
-    newpath = re.sub(r"\.zip$", "_dualboot.zip", filename)
+    newpath = re.sub(r"\.zip$", "_%s.zip" % partition_config.id, filename)
     shutil.copyfile(newfile, newpath)
     os.remove(newfile)
 
@@ -620,14 +681,14 @@ if __name__ == "__main__":
       print_i("Path: " + newpath)
 
   elif filetype == "img":
-    newfile = patch_boot_image(filename, fileinfo)
+    newfile = patch_boot_image(filename, fileinfo, partition_config)
 
     if fileinfo.loki:
       exit_with("Successfully patched boot image. " + loki_msg)
     else:
       exit_with("Successfully patched boot image")
 
-    newpath = re.sub(r"\.img$", "_dualboot.img", filename)
+    newpath = re.sub(r"\.img$", "_%s.img" % partition_config.id, filename)
     shutil.copyfile(newfile, newpath)
     os.remove(newfile)
 

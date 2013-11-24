@@ -52,9 +52,12 @@ def modify_init_qcom_rc(directory):
 
   f.close()
 
-def modify_fstab(directory):
+def modify_fstab(directory, partition_config):
   # Ignore all contents for TouchWiz
   lines = c.get_lines_from_file(directory, 'fstab.qcom')
+
+  fourth = 'rw,barrier=1,errors=panic'
+  fifth = 'wait'
 
   has_cache_line = False
 
@@ -64,17 +67,27 @@ def modify_fstab(directory):
       c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n")
 
     elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
-      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+      if '/raw-cache' in partition_config.target_system:
+        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 %s %s\n" % (fourth, fifth))
+      else:
+        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+
       has_cache_line = True
 
     elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
-      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n")
+      if '/raw-cache' in partition_config.target_system:
+        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 %s %s\n" % (fourth, fifth))
+      else:
+        c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/userdata /raw-data ext4 nosuid,nodev,noatime,noauto_da_alloc,discard,journal_async_commit,errors=panic wait,check,encryptable=footer\n")
 
     else:
       c.write(f, line)
 
   if not has_cache_line:
-    c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
+    if '/raw-cache' in partition_config.target_system:
+      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 %s %s\n" % (fourth, fifth))
+    else:
+      c.write(f, "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n")
 
   f.close()
 
@@ -97,7 +110,7 @@ def modify_init_target_rc(directory):
     elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line) and \
         re.search(r"^on\s+fs_selinux.*$", previous_line):
       c.write(f, line)
-      c.write(f, c.whitespace(line) + "exec /sbin/busybox-static sh /init.dualboot.mounting.sh\n")
+      c.write(f, c.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
     elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
       c.write(f, re.sub(r"^", "#", line))
@@ -122,9 +135,9 @@ def modify_MSM8960_lpm_rc(directory):
 
   f.close()
 
-def patch_ramdisk(directory):
+def patch_ramdisk(directory, partition_config):
   modify_init_rc(directory)
   modify_init_qcom_rc(directory)
-  modify_fstab(directory)
+  modify_fstab(directory, partition_config)
   modify_init_target_rc(directory)
   modify_MSM8960_lpm_rc(directory)
