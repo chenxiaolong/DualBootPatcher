@@ -116,7 +116,7 @@ def replace_mount_lines(lines):
         i += insert_mount_cache(i, lines)
 
       # Mount /data as dual boot
-      elif 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
+      elif '"/data' in lines[i] or 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
         del lines[i]
         i += insert_mount_data(i, lines)
 
@@ -142,7 +142,7 @@ def replace_unmount_lines(lines):
         i += insert_unmount_cache(i, lines)
 
       # Mount /data as dual boot
-      elif 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
+      elif '"/data' in lines[i] or 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
         del lines[i]
         i += insert_unmount_data(i, lines)
 
