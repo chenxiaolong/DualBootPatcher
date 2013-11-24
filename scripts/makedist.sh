@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="3.0.0Beta1"
+VERSION="3.0.0Beta2"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
@@ -12,6 +12,12 @@ if [ "${#}" -lt 1 ]; then
 fi
 
 ANDROID_DIR="${1}/system/core/"
+
+RELEASE=false
+if [ "x${2}" = "xrelease" ]; then
+  RELEASE=true
+fi
+
 CURDIR="$(cd "$(dirname "${0}")" && cd ..  && pwd)"
 cd "${CURDIR}"
 
@@ -380,13 +386,19 @@ build_android() {
 
 build_android_app() {
   pushd "${ANDROIDGUI}"
+
   sed "s/@VERSION@/${VERSION}/g" < AndroidManifest.xml.in > AndroidManifest.xml
-  ./gradlew build
-  if [ -f build/apk/Android_GUI-release.apk ]; then
-    mv build/apk/Android_GUI-release.apk "${CURDIR}/${ANDROIDTARGETNAME}-signed.apk"
+
+  if [ "x${1}" = "xrelease" ]; then
+    ./gradlew assembleRelease
+    mv build/apk/Android_GUI-release-unsigned.apk \
+      "${CURDIR}/${ANDROIDTARGETNAME}-signed.apk"
   else
-    mv build/apk/Android_GUI-release-unsigned.apk "${CURDIR}/${ANDROIDTARGETNAME}.apk"
+    ./gradlew assembleDebug
+    mv build/apk/Android_GUI-debug-unaligned.apk \
+      "${CURDIR}/${ANDROIDTARGETNAME}-debug.apk"
   fi
+
   popd
 }
 
@@ -442,7 +454,11 @@ mkdir "${ANDROIDGUI}/assets/"
 mv ${ANDROIDTARGETNAME}.tar.xz "${ANDROIDGUI}/assets/"
 cp ramdisks/busybox-static "${ANDROIDGUI}/assets/tar"
 rm -f ${ANDROIDTARGETNAME}-*.apk
-build_android_app
+if [ "x${RELEASE}" = "xtrue" ]; then
+  build_android_app release
+else
+  build_android_app
+fi
 
 echo
 echo "Done."

@@ -20,40 +20,42 @@ android {
     signingConfigs {
         release
 
-//        debug {
-//            storeFile file("debug.keystore")
-//        }
+        debug
     }
 
     buildTypes {
         release {
             signingConfig signingConfigs.release
         }
+
+        debug {
+            packageNameSuffix ".debug"
+            versionNameSuffix "-DEBUG"
+        }
     }
 
-    def propSigning = new File('signing.properties')
+    gradle.taskGraph.whenReady { taskGraph ->
+        if (taskGraph.hasTask(assembleRelease)) {
+            def propSigning = new File('signing.properties')
 
-    if (propSigning.canRead()) {
-        def Properties props = new Properties()
-        props.load(new FileInputStream(propSigning))
+            if (propSigning.canRead()) {
+                def Properties props = new Properties()
+                props.load(new FileInputStream(propSigning))
 
-        if (props != null && props.containsKey('storeFile')) {
-            android.signingConfigs.release.storeFile = file(props['storeFile'])
-            android.signingConfigs.release.storePassword = System.console().readLine("Enter keystore password: ")
-            if (!android.signingConfigs.release.storePassword.equals("")) {
-                android.signingConfigs.release.keyAlias = System.console().readLine("Enter alias key: ")
-                android.signingConfigs.release.keyPassword = System.console().readLine("Enter key password: ")
+                if (props != null && props.containsKey('storeFile')) {
+                    signingConfigs.release.storeFile = file(props['storeFile'])
+                    signingConfigs.release.storePassword = new String(System.console().readPassword("Enter keystore password: "))
+                    signingConfigs.release.keyAlias = System.console().readLine("Enter alias key: ")
+                    signingConfigs.release.keyPassword = new String(System.console().readPassword("Enter key password: "))
+                }
+                else {
+                    buildTypes.release.signingConfig = null
+                }
             }
             else {
                 buildTypes.release.signingConfig = null
             }
         }
-        else {
-            buildTypes.release.signingConfig = null
-        }
-    }
-    else {
-        buildTypes.release.signingConfig = null
     }
 
     sourceSets {

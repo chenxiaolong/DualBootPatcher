@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
 						getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
 				SharedState.mPatcherFileName =
 						SharedState.mPatcherFileBase +
-						SharedState.mPatcherFileVer +
+						SharedState.mPatcherFileVer.replace("-DEBUG", "") +
 						SharedState.mPatcherFileExt;
 			} catch (NameNotFoundException e) {
 				e.printStackTrace();

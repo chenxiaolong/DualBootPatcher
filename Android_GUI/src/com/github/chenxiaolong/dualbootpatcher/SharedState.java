@@ -88,7 +88,7 @@ public class SharedState {
 					File tar = new File(mActivity.get().getCacheDir() + "/tar");
 					File target = new File(mActivity.get().getCacheDir() + "/" + mPatcherFileName);
 					File targetDir = new File(mActivity.get().getFilesDir() + "/" +
-							mPatcherFileBase + mPatcherFileVer);
+							mPatcherFileBase + mPatcherFileVer.replace("-DEBUG", ""));
 
 					/* Remove temporary files in case the script crashes and
 					 * doesn't clean itself up properly */
