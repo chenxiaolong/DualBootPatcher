@@ -104,7 +104,7 @@ def replace_mount_lines(lines):
   i = 0
   while i < len(lines):
     if re.search(r"^\s*mount\s*\(.*$", lines[i]) or \
-       re.search(r"^run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"mount\".*$", lines[i]):
+       re.search(r"^\s*run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"mount\".*$", lines[i]):
       # Mount /system as dual boot
       if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
         del lines[i]
@@ -130,7 +130,7 @@ def replace_unmount_lines(lines):
   i = 0
   while i < len(lines):
     if re.search(r"^\s*unmount\s*\(.*$", lines[i]) or \
-       re.search(r"^run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"umount\".*$", lines[i]):
+       re.search(r"^\s*run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"umount\".*$", lines[i]):
       # Mount /system as dual boot
       if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
         del lines[i]
