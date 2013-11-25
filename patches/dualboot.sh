@@ -261,5 +261,5 @@ case "$1" in
   format-system)        format_system        ;;
   format-cache)         format_cache         ;;
   format-data)          format_data          ;;
-  set-multi-kernel) set_multi_kernel ;;
+  set-multi-kernel)     set_multi_kernel     ;;
 esac
