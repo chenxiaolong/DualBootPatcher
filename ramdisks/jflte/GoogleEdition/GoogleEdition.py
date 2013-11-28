@@ -135,6 +135,9 @@ def modify_init_target_rc(directory):
   f.close()
 
 def modify_MSM8960_lpm_rc(directory):
+  if not os.path.exists(os.path.join(directory, 'MSM8960_lpm.rc')):
+    return
+
   lines = c.get_lines_from_file(directory, 'MSM8960_lpm.rc')
 
   f = c.open_file(directory, 'MSM8960_lpm.rc', c.WRITE)
