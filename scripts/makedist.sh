@@ -6,20 +6,39 @@ ANDROID_NDK=/opt/android-ndk
 
 set -e
 
-if [ "${#}" -lt 1 ]; then
-  echo "Usage: ${0} [path to Android source code]"
-  exit 1
-fi
-
-ANDROID_DIR="${1}/system/core/"
-
 RELEASE=false
-if [ "x${2}" = "xrelease" ]; then
+if [ "x${1}" = "xrelease" ]; then
   RELEASE=true
 fi
 
 CURDIR="$(cd "$(dirname "${0}")" && cd ..  && pwd)"
 cd "${CURDIR}"
+
+download_mkbootimg() {
+  rm -rf sources/mkbootimg
+  mkdir -p sources/mkbootimg
+  pushd sources/mkbootimg
+
+  mkdir mkbootimg
+  pushd mkbootimg
+  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/mkbootimg/mkbootimg.c
+  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/mkbootimg/unpackbootimg.c
+  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/mkbootimg/bootimg.h
+  popd
+
+  mkdir libmincrypt
+  pushd libmincrypt
+  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/libmincrypt/sha.c
+  popd
+
+  mkdir -p include/mincrypt
+  pushd include/mincrypt
+  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/include/mincrypt/sha.h
+  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/include/mincrypt/hash-internal.h
+  popd
+
+  popd
+}
 
 create_portable_python() {
   local URL="http://ftp.osuosl.org/pub/portablepython/v3.2/PortablePython_3.2.5.1.exe"
@@ -197,7 +216,7 @@ build_windows() {
   local TD="${TARGETDIR}/binaries/windows/"
   mkdir -p "${TD}"
 
-  pushd "${ANDROID_DIR}"
+  pushd sources/mkbootimg
   cp mkbootimg/mkbootimg.c mkbootimg/mkbootimg.windows.c
   cp mkbootimg/unpackbootimg.c mkbootimg/unpackbootimg.windows.c
   patch -p1 -i "${CURDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
@@ -319,7 +338,7 @@ build_linux() {
   local TD="${TARGETDIR}/binaries/linux/"
   mkdir -p "${TD}"
 
-  pushd "${ANDROID_DIR}"
+  pushd sources/mkbootimg
   gcc -m32 -static -Iinclude \
     mkbootimg/mkbootimg.c \
     libmincrypt/sha.c \
@@ -361,7 +380,7 @@ build_android() {
 
   popd
 
-  pushd "${ANDROID_DIR}"
+  pushd sources/mkbootimg
   ${TEMPDIR}/bin/arm-linux-androideabi-gcc \
     -static -Iinclude \
     --sysroot=${TEMPDIR}/sysroot \
@@ -408,6 +427,7 @@ rm -rf "${TARGETDIR}" "${TARGETNAME}.zip"
 mkdir -p "${TARGETDIR}/binaries" "${TARGETDIR}/ramdisks"
 
 # Build and copy stuff into target directory
+download_mkbootimg
 create_portable_python
 build_windows
 build_mac
