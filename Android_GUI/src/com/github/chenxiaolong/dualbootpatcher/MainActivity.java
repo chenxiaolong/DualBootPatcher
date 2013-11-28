@@ -1,13 +1,18 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import java.lang.ref.WeakReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -22,12 +27,16 @@ public class MainActivity extends Activity {
 
         Button chooseFileButton = (Button)findViewById(R.id.choose_file);
         chooseFileButton.setOnClickListener(new OnClickListener() {
-        	@Override
+            @Override
             public void onClick(View v) {
-        		Intent fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        		fileIntent.setType("file/*");
-        		startActivityForResult(fileIntent, SharedState.REQUEST_FILE);
-        	}
+                Intent fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                if (Build.VERSION.SDK_INT < 19) {
+                    //Intent fileIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
+                }
+        	fileIntent.setType("application/zip");
+        	startActivityForResult(fileIntent, SharedState.REQUEST_FILE);
+            }
         });
 
         if (SharedState.mPatcherFileVer.equals("")) {
@@ -84,7 +93,7 @@ public class MainActivity extends Activity {
     	switch (request) {
     	case SharedState.REQUEST_FILE:
             if (data != null && result == RESULT_OK) {
-                SharedState.zipFile = data.getData();
+                SharedState.zipFile = getPathFromUri(data.getData());
 
                 SharedState.mConfirmDialogNegative = new SharedState.ConfirmDialogNegative();
     			SharedState.mConfirmDialogPositive = new SharedState.ConfirmDialogPositive();
@@ -101,21 +110,30 @@ public class MainActivity extends Activity {
             			getString(R.string.dialog_patch_zip_title);
             	SharedState.mConfirmDialogText =
             			getString(R.string.dialog_patch_zip_msg)
-            			+ "\n\n" + SharedState.zipFile.getPath();
+            			+ "\n\n" + SharedState.zipFile;
         		SharedState.mConfirmDialogVisible = true;
         		tryShowDialogs();
             }
             break;
-
-    	case SharedState.REQUEST_WINDOW_HANDLE:
-    		if (data != null && result == RESULT_OK) {
-    			SharedState.mHandle =
-    					data.getStringExtra("jackpal.androidterm.window_handle");
-    		}
-    		break;
     	}
 
     	super.onActivityResult(request, result, data);
+    }
+
+    private String getPathFromUri(Uri uri) {
+        // Incredibly ugly hack to get full path
+        Pattern p = Pattern.compile("^(.*):(.*)$");
+        Matcher m = p.matcher(uri.getPath());
+        if (m.find()) {
+          String dir = m.group(1);
+          String file = m.group(2);
+          if (dir.equals("/document/primary")) {
+              dir = Environment.getExternalStorageDirectory().getPath();
+          }
+          return dir + "/" + file;
+        } else {
+          return uri.getPath();
+        }
     }
 
     private void tryShowDialogs() {

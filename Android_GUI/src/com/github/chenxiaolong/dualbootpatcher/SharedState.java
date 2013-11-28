@@ -12,7 +12,6 @@ import java.util.Arrays;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -22,7 +21,6 @@ import android.widget.Button;
 public class SharedState {
 	public static WeakReference<MainActivity> mActivity = null;
 
-	public static final int REQUEST_WINDOW_HANDLE = 1;
 	public static final int REQUEST_FILE = 1234;
 	public static String mHandle;
 
@@ -33,7 +31,7 @@ public class SharedState {
 	public static boolean mPatchFileVisible = false;
 
 	// File
-	public static Uri zipFile = null;
+	public static String zipFile = "";
 
 	public static String mPatcherFileBase = "DualBootPatcherAndroid-";
 	public static String mPatcherFileName = "";
@@ -146,7 +144,7 @@ public class SharedState {
 
 					int exit_code = run_command(new String[] {
 							"pythonportable/bin/python", "-B",
-							"scripts/patchfile.py", SharedState.zipFile.getPath()
+							"scripts/patchfile.py", SharedState.zipFile
 					}, new String[] {
 					        "LD_LIBRARY_PATH=pythonportable/lib",
                             "PYTHONUNBUFFERED=true",
@@ -158,7 +156,7 @@ public class SharedState {
 
 					if (exit_code == 0 && !mPatcherFailed) {
 						// TODO: Don't hardcode this
-						String newFile = zipFile.getPath().replace(".zip", "_dualboot.zip");
+						String newFile = zipFile.replace(".zip", "_dualboot.zip");
 
 						String msg = mActivity.get().getString(R.string.dialog_text_new_file) +
 						        newFile;
@@ -171,7 +169,7 @@ public class SharedState {
 					}
 					else {
 					    String msg = mActivity.get().getString(R.string.dialog_text_file) +
-					            zipFile.getPath();
+					            zipFile;
 
 					    if (!mPatcherExitMsg.equals("")) {
 					        msg = msg + "\n\nError: " + mPatcherExitMsg;
