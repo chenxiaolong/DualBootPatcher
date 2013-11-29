@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^KT-SGS4-JB4.3-TWGE-.*\.zip$"
+filename_regex           = r"^KT-SGS4-(JB4.3|KK4.4)-TWGE-.*\.zip$"
 file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
 file_info.patch          = c.auto_patch
 file_info.extract        = c.files_to_auto_patch
