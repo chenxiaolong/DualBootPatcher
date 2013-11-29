@@ -17,6 +17,7 @@
     <string name="progress_title_patching_files">Patching file &#8230;</string>
     <string name="progress_title_removing_temp">Removing old temporary files &#8230;</string>
     <string name="progress_title_updating_files">Updating patcher &#8230;</string>
+    <string name="progress_getting_partition_configs">Getting partition configurations &#8230;</string>
     
     <string name="progress_text">Waiting for command output &#8230;</string>
 </resources>

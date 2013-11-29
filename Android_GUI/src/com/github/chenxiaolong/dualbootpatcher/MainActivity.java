@@ -16,6 +16,8 @@ import android.os.Environment;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
     @Override
@@ -24,6 +26,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         SharedState.mActivity = new WeakReference<MainActivity>(this);
+
+        SharedState.mPartitionConfigSpinner = new WeakReference<Spinner>(
+                (Spinner) findViewById(R.id.choose_partition_config));
 
         Button chooseFileButton = (Button) findViewById(R.id.choose_file);
         chooseFileButton.setOnClickListener(new OnClickListener() {
@@ -69,7 +74,12 @@ public class MainActivity extends Activity {
                 SharedState.mConfirmDialogPositiveText,
                 SharedState.mConfirmDialogPositive);
 
+        updatePatcher();
         tryShowDialogs();
+
+        TextView partitionConfigDesc =
+                (TextView) findViewById(R.id.partition_config_desc);
+        partitionConfigDesc.setText(SharedState.mPartitionConfigText);
     }
 
     @Override
@@ -86,6 +96,7 @@ public class MainActivity extends Activity {
         if (SharedState.mConfirmDialogBuilder != null) {
             SharedState.mConfirmDialogBuilder = null;
         }
+        SharedState.mPartitionConfigSpinner = null;
         SharedState.mActivity = null;
     }
 
@@ -133,6 +144,55 @@ public class MainActivity extends Activity {
         } else {
             return uri.getPath();
         }
+    }
+
+    private synchronized void updatePatcher() {
+        // Thread needs this
+        final boolean updatedPatcher = SharedState.updatedPatcher;
+
+        if (!updatedPatcher) {
+            findViewById(R.id.choose_file).setEnabled(false);
+            SharedState.mPartitionConfigSpinner.get().setEnabled(false);
+
+            /* Show progress dialog */
+            SharedState.mProgressDialogTitle =
+                    getString(R.string.progress_title_patching_files);
+            SharedState.mProgressDialogText =
+                    getString(R.string.progress_text);
+            SharedState.mProgressDialog
+                    .setTitle(SharedState.mProgressDialogTitle);
+            SharedState.mProgressDialog
+                    .setMessage(SharedState.mProgressDialogText);
+            SharedState.mProgressDialog.show();
+            SharedState.mProgressDialogVisible = true;
+        }
+
+        new Thread() {
+            @Override
+            public void run() {
+                if (!updatedPatcher) {
+                    SharedState.extract_patcher();
+                }
+
+                SharedState.get_partition_configs();
+
+                SharedState.mHandler.obtainMessage(
+                        SharedState.EVENT_POPULATE_PARTITION_CONFIG_SPINNER)
+                        .sendToTarget();
+
+                if (!updatedPatcher) {
+                    SharedState.mHandler.obtainMessage(
+                            SharedState.EVENT_CLOSE_PROGRESS_DIALOG)
+                            .sendToTarget();
+
+                    SharedState.mHandler.obtainMessage(
+                            SharedState.EVENT_ENABLE_GUI_WIDGETS)
+                            .sendToTarget();
+                }
+            }
+        }.start();
+
+        SharedState.updatedPatcher = true;
     }
 
     private void tryShowDialogs() {

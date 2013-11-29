@@ -20,6 +20,16 @@
 	        android:layout_height="wrap_content"
 	        android:text="@string/choose_file" />
         
+        <Spinner
+            android:id="@+id/choose_partition_config"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/partition_config_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
     </LinearLayout>
 
 </RelativeLayout>
