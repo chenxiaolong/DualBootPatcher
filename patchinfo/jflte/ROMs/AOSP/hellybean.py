@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^Hellybean-.*\.zip$"
+filename_regex           = r"^Helly?(bean|kat)-.*\.zip$"
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = c.auto_patch
 file_info.extract        = c.files_to_auto_patch
@@ -17,7 +17,7 @@ def matches(filename):
     return False
 
 def print_message():
-  print("Detected HellyBean ROM zip")
+  print("Detected HellyBean/Hellkat ROM zip")
 
 def get_file_info():
   return file_info
