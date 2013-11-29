@@ -77,8 +77,7 @@ public class MainActivity extends Activity {
         updatePatcher();
         tryShowDialogs();
 
-        TextView partitionConfigDesc =
-                (TextView) findViewById(R.id.partition_config_desc);
+        TextView partitionConfigDesc = (TextView) findViewById(R.id.partition_config_desc);
         partitionConfigDesc.setText(SharedState.mPartitionConfigText);
     }
 
@@ -155,10 +154,8 @@ public class MainActivity extends Activity {
             SharedState.mPartitionConfigSpinner.get().setEnabled(false);
 
             /* Show progress dialog */
-            SharedState.mProgressDialogTitle =
-                    getString(R.string.progress_title_patching_files);
-            SharedState.mProgressDialogText =
-                    getString(R.string.progress_text);
+            SharedState.mProgressDialogTitle = getString(R.string.progress_title_patching_files);
+            SharedState.mProgressDialogText = getString(R.string.progress_text);
             SharedState.mProgressDialog
                     .setTitle(SharedState.mProgressDialogTitle);
             SharedState.mProgressDialog

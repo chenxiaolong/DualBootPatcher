@@ -118,8 +118,11 @@ public class SharedState {
                             .sendToTarget();
 
                     int exit_code = run_command(
-                            new String[] { "pythonportable/bin/python", "-B",
-                                    "scripts/patchfile.py", SharedState.zipFile,
+                            new String[] {
+                                    "pythonportable/bin/python",
+                                    "-B",
+                                    "scripts/patchfile.py",
+                                    SharedState.zipFile,
                                     mPartitionConfigs[mPartitionConfigSpinnerPos] },
                             new String[] {
                                     "LD_LIBRARY_PATH=pythonportable/lib",
@@ -134,8 +137,9 @@ public class SharedState {
 
                     if (exit_code == 0 && !mPatcherFailed) {
                         // TODO: Don't hardcode this
-                        String newFile = zipFile.replace(".zip",
-                                "_" + mPartitionConfigs[mPartitionConfigSpinnerPos] + ".zip");
+                        String newFile = zipFile.replace(".zip", "_"
+                                + mPartitionConfigs[mPartitionConfigSpinnerPos]
+                                + ".zip");
 
                         String msg = mActivity.get().getString(
                                 R.string.dialog_text_new_file)
@@ -168,27 +172,24 @@ public class SharedState {
         File tar = new File(mActivity.get().getCacheDir() + "/tar");
         File target = new File(mActivity.get().getCacheDir() + "/"
                 + mPatcherFileName);
-        File targetDir = new File(mActivity.get().getFilesDir()
-                + "/" + mPatcherFileBase
-                + mPatcherFileVer.replace("-DEBUG", ""));
+        File targetDir = new File(mActivity.get().getFilesDir() + "/"
+                + mPatcherFileBase + mPatcherFileVer.replace("-DEBUG", ""));
 
         /*
-         * Remove temporary files in case the script crashes and
-         * doesn't clean itself up properly
+         * Remove temporary files in case the script crashes and doesn't clean
+         * itself up properly
          */
         mHandler.obtainMessage(
                 EVENT_UPDATE_PROGRESS_TITLE,
-                mActivity.get().getString(
-                        R.string.progress_title_removing_temp))
+                mActivity.get()
+                        .getString(R.string.progress_title_removing_temp))
                 .sendToTarget();
 
         run_command(new String[] {
                 "sh",
                 "-c",
-                "rm -rf " + mActivity.get().getFilesDir()
-                        + "/*/tmp*" + " "
-                        + mActivity.get().getCacheDir() + "/*" },
-                null, null);
+                "rm -rf " + mActivity.get().getFilesDir() + "/*/tmp*" + " "
+                        + mActivity.get().getCacheDir() + "/*" }, null, null);
 
         if (!targetDir.exists()) {
             mHandler.obtainMessage(
@@ -201,19 +202,15 @@ public class SharedState {
             extract_asset(mPatcherFileName, target);
 
             /* Remove all previous files */
-            run_command(new String[] {
-                    "sh",
-                    "-c",
-                    "rm -rf " + mActivity.get().getFilesDir()
-                            + "/*" }, null, null);
+            run_command(new String[] { "sh", "-c",
+                    "rm -rf " + mActivity.get().getFilesDir() + "/*" }, null,
+                    null);
 
-            run_command(
-                    new String[] { "chmod", "755", tar.getPath() },
-                    null, null);
+            run_command(new String[] { "chmod", "755", tar.getPath() }, null,
+                    null);
 
-            run_command(new String[] { tar.getPath(), "-J", "-x",
-                    "-v", "-f", target.getPath() }, null, mActivity
-                    .get().getFilesDir());
+            run_command(new String[] { tar.getPath(), "-J", "-x", "-v", "-f",
+                    target.getPath() }, null, mActivity.get().getFilesDir());
 
             run_command(new String[] { "chmod", "755",
                     "pythonportable/bin/python" }, null, targetDir);
@@ -225,15 +222,13 @@ public class SharedState {
     }
 
     public static synchronized void get_partition_configs() {
-        File targetDir = new File(mActivity.get().getFilesDir()
-                + "/" + mPatcherFileBase
-                + mPatcherFileVer.replace("-DEBUG", ""));
+        File targetDir = new File(mActivity.get().getFilesDir() + "/"
+                + mPatcherFileBase + mPatcherFileVer.replace("-DEBUG", ""));
 
         String[] command = { "pythonportable/bin/python", "-B",
                 "scripts/listpartitionconfigs.py" };
 
-        String[] environment = {
-                "LD_LIBRARY_PATH=pythonportable/lib",
+        String[] environment = { "LD_LIBRARY_PATH=pythonportable/lib",
                 "PYTHONUNBUFFERED=true" };
 
         try {
@@ -247,12 +242,13 @@ public class SharedState {
             pb.directory(targetDir);
             Process p = pb.start();
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader br = new BufferedReader(new InputStreamReader(
+                    p.getInputStream()));
             StringBuilder builder = new StringBuilder();
             String line = null;
-            while ( (line = br.readLine()) != null) {
-               builder.append(line);
-               builder.append(System.getProperty("line.separator"));
+            while ((line = br.readLine()) != null) {
+                builder.append(line);
+                builder.append(System.getProperty("line.separator"));
             }
             String result = builder.toString();
 
@@ -267,14 +263,15 @@ public class SharedState {
             mPartitionConfigNames = new String[mPartitionConfigs.length];
             mPartitionConfigDescriptions = new String[mPartitionConfigs.length];
             for (int i = 0; i < mPartitionConfigs.length; i++) {
-                mPartitionConfigNames[i] = prop.getProperty(
-                        mPartitionConfigs[i] + ".name");
-                mPartitionConfigDescriptions[i] = prop.getProperty(
-                        mPartitionConfigs[i] + ".description");
+                mPartitionConfigNames[i] = prop
+                        .getProperty(mPartitionConfigs[i] + ".name");
+                mPartitionConfigDescriptions[i] = prop
+                        .getProperty(mPartitionConfigs[i] + ".description");
 
                 Log.i("DualBootPatcher", mPartitionConfigs[i]);
                 Log.i("DualBootPatcher", " --> " + mPartitionConfigNames[i]);
-                Log.i("DualBootPatcher", " --> " + mPartitionConfigDescriptions[i]);
+                Log.i("DualBootPatcher", " --> "
+                        + mPartitionConfigDescriptions[i]);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -379,10 +376,9 @@ public class SharedState {
                 break;
 
             case EVENT_POPULATE_PARTITION_CONFIG_SPINNER:
-                ArrayAdapter<String> sa =
-                        new ArrayAdapter<String>(mActivity.get(),
-                                android.R.layout.simple_spinner_item,
-                                android.R.id.text1);
+                ArrayAdapter<String> sa = new ArrayAdapter<String>(
+                        mActivity.get(), android.R.layout.simple_spinner_item,
+                        android.R.id.text1);
                 sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 mPartitionConfigSpinner.get().setAdapter(sa);
 
@@ -390,24 +386,26 @@ public class SharedState {
                     sa.add(mPartitionConfigNames[i]);
                 }
                 sa.notifyDataSetChanged();
-                mPartitionConfigSpinner.get().setSelection(mPartitionConfigSpinnerPos);
+                mPartitionConfigSpinner.get().setSelection(
+                        mPartitionConfigSpinnerPos);
 
-                mPartitionConfigSpinner.get().setOnItemSelectedListener(new OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view,
-                            int position, long id) {
-                        SharedState.mPartitionConfigSpinnerPos = position;
-                        SharedState.mPartitionConfigText =
-                                mPartitionConfigDescriptions[position];
-                        TextView t = (TextView) mActivity.get().findViewById(
-                                R.id.partition_config_desc);
-                        t.setText(SharedState.mPartitionConfigText);
-                    }
+                mPartitionConfigSpinner.get().setOnItemSelectedListener(
+                        new OnItemSelectedListener() {
+                            @Override
+                            public void onItemSelected(AdapterView<?> parent,
+                                    View view, int position, long id) {
+                                SharedState.mPartitionConfigSpinnerPos = position;
+                                SharedState.mPartitionConfigText = mPartitionConfigDescriptions[position];
+                                TextView t = (TextView) mActivity.get()
+                                        .findViewById(
+                                                R.id.partition_config_desc);
+                                t.setText(SharedState.mPartitionConfigText);
+                            }
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                    }
-                });
+                            @Override
+                            public void onNothingSelected(AdapterView<?> parent) {
+                            }
+                        });
 
                 break;
 
