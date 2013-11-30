@@ -682,6 +682,11 @@ if __name__ == "__main__":
   filetype = detect_file_type(filename)
   fileinfo = get_file_info(filename)
 
+  if ('all' not in fileinfo.configs and partition_config not in fileinfo.configs) \
+      or '!' + partition_config in fileinfo.configs:
+    fileinfo = None
+    print_i("The %s partition configuration is not supported for this file" % partition_config.id)
+
   loki_msg = "The boot image was unloki'd in order to be patched. *** Remember to flash loki-doki if you have a locked bootloader ***"
 
   if filetype == "UNKNOWN":

@@ -9,3 +9,5 @@ class FileInfo:
     self.need_new_init = False
     self.loki = False
     self.device_check = True
+    # Supported partition configurations
+    self.configs = [ 'all' ]

@@ -21,10 +21,24 @@ if filetype == "UNKNOWN":
   print("Unsupported file")
   sys.exit(1)
 
-partition_configs = partitionconfigs.get_partition_configs()
+file_info = patchfile.get_file_info(filename)
+if not file_info:
+  print("Unsupported file")
+  sys.exit(1)
+
+unsupported_configs = []
+partition_configs = []
+partition_configs_raw = partitionconfigs.get_partition_configs()
+
+for i in partition_configs_raw:
+  if (i.id in file_info.configs or 'all' in file_info.configs) and \
+      '!' + i.id not in file_info.configs:
+    partition_configs.append(i)
+  else:
+    unsupported_configs.append(i)
 
 if not partition_configs:
-  print("No partition configurations found")
+  print("No usable partition configurations found")
   sys.exit(1)
 
 print("Choose a partition configuration to use:")
@@ -35,6 +49,10 @@ for i in partition_configs:
   print("%i: %s" % (counter + 1, i.name))
   print("\t- %s" % i.description)
   counter += 1
+
+for i in unsupported_configs:
+  print("*: %s (UNSUPPORTED)" % i.name)
+  print("\t- %s" % i.description)
 
 print("")
 choice = input("Choice: ")
@@ -47,8 +65,6 @@ try:
     sys.exit(1)
 
   partition_config = partition_configs[choice]
-
-  file_info = patchfile.get_file_info(filename)
 
   if filetype == "img":
     new_file = patchfile.patch_boot_image(filename, file_info, partition_config)
