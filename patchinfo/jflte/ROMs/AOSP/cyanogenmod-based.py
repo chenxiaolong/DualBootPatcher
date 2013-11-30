@@ -11,6 +11,8 @@ file_info.extract        = c.files_to_auto_patch
 
 def matches(filename):
   if re.search(filename_regex, filename):
+    if 'noobdev' in filename:
+      return False
     return True
   else:
     return False
@@ -19,9 +21,4 @@ def print_message():
   print("Detected Cyanogenmod based ROM zip")
 
 def get_file_info(filename = ""):
-  # My ROM has built in dual-boot support
-  if "noobdev" in filename:
-    print("ROM has built in dual boot support")
-    return None
-
   return file_info
