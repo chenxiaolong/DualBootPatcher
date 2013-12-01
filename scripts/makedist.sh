@@ -290,6 +290,11 @@ build_windows() {
     wget "${URLBASE}/diffutils/diffutils-3.2-1.tar.bz2"
   fi
 
+  # coreutils (for chmod)
+  if [ ! -f coreutils-8.15-1.tar.bz2 ]; then
+    wget "${URLBASE}/coreutils/coreutils-8.15-1.tar.bz2"
+  fi
+
   tar jxvf cygwin-1.7.25-1.tar.bz2 usr/bin/cygwin1.dll \
     --to-stdout > "${TD}/cygwin1.dll"
   tar jxvf libintl8-0.18.1.1-2.tar.bz2 usr/bin/cygintl-8.dll \
@@ -310,6 +315,8 @@ build_windows() {
     --to-stdout > "${TD}/bash.exe"
   tar jxvf diffutils-3.2-1.tar.bz2 usr/bin/diff.exe \
     --to-stdout > "${TD}/diff.exe"
+  tar jxvf coreutils-8.15-1.tar.bz2 usr/bin/chmod.exe \
+    --to-stdout > "${TD}/chmod.exe"
 
   chmod +x "${TD}"/*.{exe,dll}
   popd
