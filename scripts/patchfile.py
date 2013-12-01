@@ -312,6 +312,9 @@ def patch_boot_image(boot_image, file_info, partition_config):
   os.remove(prefix + "-cmdline")
   os.remove(prefix + "-pagesize")
 
+  if not file_info.selinux:
+    cmdline += " androidboot.selinux=permissive"
+
   ramdisk = os.path.join(tempdir, "ramdisk.cpio")
   kernel = os.path.join(tempdir, "kernel.img")
 

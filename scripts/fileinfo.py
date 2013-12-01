@@ -11,3 +11,4 @@ class FileInfo:
     self.device_check = True
     # Supported partition configurations
     self.configs = [ 'all' ]
+    self.selinux = True
