@@ -39,6 +39,7 @@ ROMs:
     - MaKTaiL
     - jamal2367
     - Kangabean
+    - VirginROM
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
