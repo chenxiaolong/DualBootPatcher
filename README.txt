@@ -40,6 +40,7 @@ ROMs:
     - jamal2367
     - Kangabean
     - VirginROM
+    - Dandroid
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
