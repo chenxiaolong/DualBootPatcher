@@ -75,6 +75,7 @@ Other:
   * Google Apps for CyanogenMod and PAC-Man
   * Google Apps for Slim Bean (standard and AROMA)
   * Google Apps for Paranoid Android
+  * Google Apps for Gummy
   * Google Apps from BaNks
   * Google Apps from doomed151 for AOSP
   * ComaDose
