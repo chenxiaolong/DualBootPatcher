@@ -61,8 +61,8 @@ ROMs:
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
-  * ktoonsez
-  * faux123's jb43
+  * ktoonsez (AOSP, Google Edition, & TouchWiz)
+  * faux123's (AOSP & Google Edition)
   * ChronicKernel jb43 AOSP
   * Infamous Kernel
   * Ausdim kernel
