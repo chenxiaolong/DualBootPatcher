@@ -25,6 +25,7 @@ ROMs:
     - Hellybean
     - JellyBeer
     - Gummy
+    - OSE
   * AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
