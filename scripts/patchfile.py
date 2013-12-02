@@ -685,7 +685,8 @@ if __name__ == "__main__":
   filetype = detect_file_type(filename)
   fileinfo = get_file_info(filename)
 
-  if ('all' not in fileinfo.configs and partition_config not in fileinfo.configs) \
+  if fileinfo and \
+      ('all' not in fileinfo.configs and partition_config not in fileinfo.configs) \
       or '!' + partition_config.id in fileinfo.configs:
     fileinfo = None
     print_i("The %s partition configuration is not supported for this file" % partition_config.id)
