@@ -22,7 +22,7 @@ ROMs:
   * CyanogenMod ROMs
     - Official CyanogenMod nightlies
     - CyanogenMod-based ROMs
-    - Hellybean
+    - Hellybean / HellKat
     - JellyBeer
     - Gummy
     - OSE
@@ -53,7 +53,7 @@ ROMs:
   * AOSP (Broodplank)
   * TouchWiz ROMs
     - FoxHound
-    - GoldenEye (T-Mobile)
+    - GoldenEye
     - Evil UnWizzed
     - Negalite
     - iNTriNsiC (20130806 version)
@@ -62,12 +62,12 @@ ROMs:
 
 Kernels:
   * ktoonsez (AOSP, Google Edition, & TouchWiz)
-  * faux123's (AOSP & Google Edition)
+  * faux123 (AOSP & Google Edition)
   * ChronicKernel jb43 AOSP
   * Infamous Kernel
   * Ausdim kernel
   * Adam kernel
-  * Plain boot.img files (ramdisk will be replaced with Cyanogenmod ramdisk)
+  * Plain boot.img files (use useful/patch-ramdisk.bat script)
 
 Other:
   * SuperSU
