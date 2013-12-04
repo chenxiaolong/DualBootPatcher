@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"CARBON-JB-.*-[a-z0-9]+\.zip"
+filename_regex           = r"CARBON-(JB|KK)-.*-[a-z0-9]+\.zip"
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = c.auto_patch
 file_info.extract        = c.files_to_auto_patch
