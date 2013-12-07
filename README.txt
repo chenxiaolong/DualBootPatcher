@@ -43,6 +43,7 @@ ROMs:
     - VirginROM
     - Dandroid
     - Echoe
+    - Infamous
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
