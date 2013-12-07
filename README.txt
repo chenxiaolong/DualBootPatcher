@@ -15,6 +15,7 @@ Thanks to all the donators for supporting this project!
   * John Nguyen
   * Marcos Shrem
   * John West
+  * @Bejda
 
 What's supported?
 
