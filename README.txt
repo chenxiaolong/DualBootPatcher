@@ -48,7 +48,7 @@ ROMs:
     - Vertigo
     - (most likely other versions too)
     - AOSPA
-  * MIUI
+  * MIUI (official and unofficial)
   * Slim Bean
   * Carbon
   * LiquidSmooth
