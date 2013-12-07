@@ -62,6 +62,7 @@ ROMs:
     - iNTriNsiC (20130806 version)
     - TriForceROM
     - Omnifarious
+    - Echoe
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
