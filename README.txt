@@ -38,7 +38,7 @@ ROMs:
   * Google Edition ROMs
     - MaKTaiL
     - jamal2367
-    - Kangabean
+    - Kangabean/Kangakat
     - VirginROM
     - Dandroid
   * ParanoidAndroid ROMs
