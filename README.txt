@@ -26,6 +26,7 @@ ROMs:
     - JellyBeer
     - Gummy
     - OSE
+    - BAM Android
   * AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
@@ -41,6 +42,7 @@ ROMs:
     - Kangabean/Kangakat
     - VirginROM
     - Dandroid
+    - Echoe
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
