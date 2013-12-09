@@ -1,5 +1,6 @@
 from fileinfo import FileInfo
 import common as c
+import os
 import re
 
 file_info = FileInfo()
@@ -7,7 +8,7 @@ file_info = FileInfo()
 filename_regex           = r"^cm-.*noobdev.*.zip$"
 file_info.ramdisk        = 'jflte/AOSP/cxl.def'
 file_info.patch          = [ c.auto_patch ]
-file_info.extract        = [ c.files_to_auto_patch ]
+file_info.extract        = [ c.files_to_auto_patch, 'system/build.prop' ]
 # ROM has built in dual boot support
 file_info.configs        = [ 'all', '!dualboot' ]
 
@@ -58,3 +59,14 @@ def multi_boot(directory, bootimg = None, device_check = True,
   c.write_lines_to_file(directory, 'dualboot.sh', lines)
 
 file_info.patch.insert(0, multi_boot)
+
+# The auto-updater in my ROM needs to know if the ROM has been patched
+def system_prop(directory, bootimg = None, device_check = True,
+                partition_config = None):
+  lines = c.get_lines_from_file(directory, os.path.join('system', 'build.prop'))
+
+  lines.append('ro.chenxiaolong.patched=true\n')
+
+  c.write_lines_to_file(directory, os.path.join('system', 'build.prop'), lines)
+
+file_info.patch.append(system_prop)
