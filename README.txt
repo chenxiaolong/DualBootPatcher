@@ -85,3 +85,4 @@ Other:
   * Google Apps from BaNks
   * Google Apps from doomed151 for AOSP
   * ComaDose
+  * Xposed disabler zip
