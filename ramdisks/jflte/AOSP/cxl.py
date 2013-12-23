@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 
-import common as c
+import multiboot.fileio as fileio
+
 import os
 import re
 import shutil
 import sys
 
 def modify_fstab(directory, partition_config):
-  lines = c.get_lines_from_file(directory, 'fstab.qcom')
+  lines = fileio.all_lines('fstab.qcom', directory = directory)
 
   system_fourth = 'ro,barrier=1,errors=panic'
   system_fifth = 'wait'
-  cache_fourth = 'nosuid,nodev,barrier=1'
+  cache_fourth = 'noatime,nosuid,nodev,journal_async_commit'
   cache_fifth = 'wait,check'
 
-  f = c.open_file(directory, 'fstab.qcom', c.WRITE)
+  f = fileio.open_file('fstab.qcom', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/raw-system\s+.*$", line):
       if '/raw-system' in partition_config.target_cache:
@@ -22,7 +23,7 @@ def modify_fstab(directory, partition_config):
         line = "%s %s %s %s %s\n" % (r.groups()[0], r.groups()[1], r.groups()[2],
                                      cache_fourth, cache_fifth)
 
-      c.write(f, line)
+      fileio.write(f, line)
 
     elif re.search(r"^/dev[^\s]+\s+/raw-cache\s+.*$", line):
       if '/raw-cache' in partition_config.target_system:
@@ -30,7 +31,7 @@ def modify_fstab(directory, partition_config):
         line = "%s %s %s %s %s\n" % (r.groups()[0], r.groups()[1], r.groups()[2],
                                      system_fourth, system_fifth)
 
-      c.write(f, line)
+      fileio.write(f, line)
 
     elif re.search(r"^/dev[^\s]+\s+/raw-data\s+.*$", line):
       if '/raw-data' in partition_config.target_system:
@@ -38,23 +39,23 @@ def modify_fstab(directory, partition_config):
         line = "%s %s %s %s %s\n" % (r.groups()[0], r.groups()[1], r.groups()[2],
                                      system_fourth, system_fifth)
 
-      c.write(f, line)
+      fileio.write(f, line)
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   f.close()
 
 def modify_init_target_rc(directory):
-  lines = c.get_lines_from_file(directory, 'init.target.rc')
+  lines = fileio.all_lines('init.target.rc', directory = directory)
 
-  f = c.open_file(directory, 'init.target.rc', c.WRITE)
+  f = fileio.open_file('init.target.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if 'init.dualboot.mounting.sh' in line:
-      c.write(f, re.sub('init.dualboot.mounting.sh', 'init.multiboot.mounting.sh', line))
+      fileio.write(f, re.sub('init.dualboot.mounting.sh', 'init.multiboot.mounting.sh', line))
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   f.close()
 

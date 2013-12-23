@@ -1,9 +1,6 @@
-from partitionconfig import PartitionConfig as PartitionConfig
+from multiboot.partitionconfig import PartitionConfig
 
 configs = []
-
-def get_partition_configs():
-  return configs
 
 ################################################################
 
@@ -82,3 +79,7 @@ multislot3.target_data_partition   = PartitionConfig.DATA
 configs.append(multislot3)
 
 ################################################################
+
+
+def get():
+    return configs

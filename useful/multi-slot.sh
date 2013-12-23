@@ -8,4 +8,4 @@ else
   PYTHON=python
 fi
 
-"${PYTHON}" -B "$(cd "$(dirname "${0}")" && pwd)/../scripts/multiboot.py" ${@}
+"${PYTHON}" -B "$(cd "$(dirname "${0}")" && pwd)/../scripts/multislot.py" ${@}

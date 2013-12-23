@@ -1,49 +1,51 @@
 #!/usr/bin/env python3
 
-import common as c
-import patchfile
+import multiboot.cmd as cmd
+import multiboot.exit as exit
+import multiboot.fileio as fileio
+import multiboot.operatingsystem as OS
+
 import os
 import re
 import shutil
-import sys
 
 # jb43, kk44
 version = None
 
 def modify_init_rc(directory):
-  lines = c.get_lines_from_file(directory, 'init.rc')
+  lines = fileio.all_lines('init.rc', directory = directory)
 
   previous_line = ""
 
-  f = c.open_file(directory, 'init.rc', c.WRITE)
+  f = fileio.open_file('init.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if 'export ANDROID_ROOT' in line:
-      c.write(f, line)
-      c.write(f, c.whitespace(line) + "export ANDROID_CACHE /cache\n")
+      fileio.write(f, line)
+      fileio.write(f, fileio.whitespace(line) + "export ANDROID_CACHE /cache\n")
 
     elif re.search(r"mkdir /system(\s|$)", line):
-      c.write(f, line)
-      c.write(f, re.sub("/system", "/raw-system", line))
+      fileio.write(f, line)
+      fileio.write(f, re.sub("/system", "/raw-system", line))
 
     elif re.search(r"mkdir /data(\s|$)", line):
-      c.write(f, line)
-      c.write(f, re.sub("/data", "/raw-data", line))
+      fileio.write(f, line)
+      fileio.write(f, re.sub("/data", "/raw-data", line))
 
     elif re.search(r"mkdir /cache(\s|$)", line):
-      c.write(f, line)
-      c.write(f, re.sub("/cache", "/raw-cache", line))
+      fileio.write(f, line)
+      fileio.write(f, re.sub("/cache", "/raw-cache", line))
 
     elif 'yaffs2' in line:
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif version == 'kk44' \
         and re.search(r"mount.*/system", line) \
         and re.search(r"on\s+charger", previous_line):
-      c.write(f, "    mount_all fstab.jgedlte\n")
-      c.write(f, "    exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
+      fileio.write(f, "    mount_all fstab.jgedlte\n")
+      fileio.write(f, "    exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
     previous_line = line
 
@@ -51,23 +53,23 @@ def modify_init_rc(directory):
 
 def modify_init_qcom_rc(directory):
   for i in [ 'init.qcom.rc', 'init.jgedlte.rc' ]:
-    lines = c.get_lines_from_file(directory, i)
+    lines = fileio.all_lines(i, directory = directory)
 
-    f = c.open_file(directory, i, c.WRITE)
+    f = fileio.open_file(i, fileio.WRITE, directory = directory)
     for line in lines:
       # Change /data/media to /raw-data/media
       if re.search(r"/data/media(\s|$)", line):
-        c.write(f, re.sub('/data/media', '/raw-data/media', line))
+        fileio.write(f, re.sub('/data/media', '/raw-data/media', line))
 
       else:
-        c.write(f, line)
+        fileio.write(f, line)
 
     f.close()
 
 def modify_fstab(directory, partition_config):
   # Ignore all contents for Google Edition
   for i in [ 'fstab.qcom', 'fstab.jgedlte' ]:
-    lines = c.get_lines_from_file(directory, i)
+    lines = fileio.all_lines(i, directory = directory)
 
     if version == 'kk44':
       system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,barrier=1 wait\n"
@@ -98,62 +100,62 @@ def modify_fstab(directory, partition_config):
 
     has_cache_line = False
 
-    f = c.open_file(directory, i, c.WRITE)
+    f = fileio.open_file(i, fileio.WRITE, directory = directory)
     for line in lines:
       if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
         if '/raw-system' in partition_config.target_cache:
-          c.write(f, target_cache_on_system)
+          fileio.write(f, target_cache_on_system)
         else:
-          c.write(f, system)
+          fileio.write(f, system)
 
       elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
         if '/raw-cache' in partition_config.target_system:
-          c.write(f, target_system_on_cache)
+          fileio.write(f, target_system_on_cache)
         else:
-          c.write(f, cache)
+          fileio.write(f, cache)
 
         has_cache_line = True
 
       elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
         if '/raw-data' in partition_config.target_system:
-          c.write(f, target_system_on_data)
+          fileio.write(f, target_system_on_data)
         else:
-          c.write(f, data)
+          fileio.write(f, data)
 
       else:
-        c.write(f, line)
+        fileio.write(f, line)
 
     if not has_cache_line:
       if '/raw-cache' in partition_config.target_system:
-        c.write(f, target_system_on_cache)
+        fileio.write(f, target_system_on_cache)
       else:
-        c.write(f, cache)
+        fileio.write(f, cache)
 
     f.close()
 
 def modify_init_target_rc(directory):
-  lines = c.get_lines_from_file(directory, 'init.target.rc')
+  lines = fileio.all_lines('init.target.rc', directory = directory)
 
   previous_line = ""
 
-  f = c.open_file(directory, 'init.target.rc', c.WRITE)
+  f = fileio.open_file('init.target.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^\s+wait\s+/dev/.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+check_fs\s+/dev/.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount\s+ext4\s+/dev/.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount_all\s+fstab.jgedlte.*$", line) and \
         re.search(r"^on\s+fs(_selinux)?.*$", previous_line):
-      c.write(f, line)
-      c.write(f, c.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
+      fileio.write(f, line)
+      fileio.write(f, fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
     previous_line = line
 
@@ -163,19 +165,21 @@ def modify_MSM8960_lpm_rc(directory):
   if version == 'kk44':
     return
 
-  lines = c.get_lines_from_file(directory, 'MSM8960_lpm.rc')
+  lines = fileio.all_lines('MSM8960_lpm.rc', directory = directory)
 
-  f = c.open_file(directory, 'MSM8960_lpm.rc', c.WRITE)
+  f = fileio.open_file('MSM8960_lpm.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^\s+mount.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   f.close()
 
 def patch_ramdisk(directory, partition_config):
+  ui = OS.ui
+
   global version
 
   if os.path.exists(os.path.join(directory, 'MSM8960_lpm.rc')):
@@ -194,19 +198,19 @@ def patch_ramdisk(directory, partition_config):
     init = os.path.join(directory, 'init')
 
     os.remove(init)
-    shutil.copyfile(os.path.join(patchfile.ramdiskdir, 'init-kk44'), init)
+    shutil.copyfile(os.path.join(OS.ramdiskdir, 'init-kk44'), init)
 
     # chmod 755
-    if os.name == "nt":
-      chmod = os.path.join(patchfile.binariesdir, "chmod.exe")
-      exit_status, output, error = patchfile.run_command(
+    if OS.is_windows():
+      chmod = os.path.join(OS.binariesdir, "chmod.exe")
+      exit_status, output, error = cmd.run_command(
         [ chmod, '0755', init ]
       )
 
       if exit_status != 0:
-        patchfile.print_error(output = output, error = error)
-        patchfile.exit_with("Failed to chmod init (WINDOWS)", fail = True)
-        patchfile.clean_up_and_exit(1)
+        ui.command_error(output = output, error = error)
+        ui.failed("Failed to chmod init (WINDOWS)")
+        exit.exit(1)
 
     else:
       import stat

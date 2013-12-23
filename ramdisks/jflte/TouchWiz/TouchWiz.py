@@ -1,60 +1,61 @@
 #!/usr/bin/env python3
 
-import common as c
+import multiboot.fileio as fileio
+
 import os
 import re
 import shutil
 import sys
 
 def modify_init_rc(directory):
-  lines = c.get_lines_from_file(directory, 'init.rc')
+  lines = fileio.all_lines('init.rc', directory = directory)
 
-  f = c.open_file(directory, 'init.rc', c.WRITE)
+  f = fileio.open_file('init.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if 'export ANDROID_ROOT' in line:
-      c.write(f, line)
-      c.write(f, c.whitespace(line) + "export ANDROID_CACHE /cache\n")
+      fileio.write(f, line)
+      fileio.write(f, fileio.whitespace(line) + "export ANDROID_CACHE /cache\n")
 
     elif re.search(r"mkdir /system(\s|$)", line):
-      c.write(f, line)
-      c.write(f, re.sub("/system", "/raw-system", line))
+      fileio.write(f, line)
+      fileio.write(f, re.sub("/system", "/raw-system", line))
 
     elif re.search(r"mkdir /data(\s|$)", line):
-      c.write(f, line)
-      c.write(f, re.sub("/data", "/raw-data", line))
+      fileio.write(f, line)
+      fileio.write(f, re.sub("/data", "/raw-data", line))
 
     elif re.search(r"mkdir /cache(\s|$)", line):
-      c.write(f, line)
-      c.write(f, re.sub("/cache", "/raw-cache", line))
+      fileio.write(f, line)
+      fileio.write(f, re.sub("/cache", "/raw-cache", line))
 
     elif 'yaffs2' in line:
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   f.close()
 
 def modify_init_qcom_rc(directory):
-  lines = c.get_lines_from_file(directory, 'init.qcom.rc')
+  lines = fileio.all_lines('init.qcom.rc', directory = directory)
 
-  f = c.open_file(directory, 'init.qcom.rc', c.WRITE)
+  f = fileio.open_file('init.qcom.rc', fileio.WRITE, directory = directory)
   for line in lines:
     # Change /data/media to /raw-data/media
     if re.search(r"/data/media(\s|$)", line):
-      c.write(f, re.sub('/data/media', '/raw-data/media', line))
+      fileio.write(f, re.sub('/data/media', '/raw-data/media', line))
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   f.close()
 
 def modify_fstab(directory, partition_config):
   # Ignore all contents for TouchWiz
-  lines = c.get_lines_from_file(directory, 'fstab.qcom')
+  lines = fileio.all_lines('fstab.qcom', directory = directory)
 
   system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n"
   cache = "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n"
@@ -74,80 +75,80 @@ def modify_fstab(directory, partition_config):
 
   has_cache_line = False
 
-  f = c.open_file(directory, 'fstab.qcom', c.WRITE)
+  f = fileio.open_file('fstab.qcom', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
       if '/raw-system' in partition_config.target_cache:
-        c.write(f, target_cache_on_system)
+        fileio.write(f, target_cache_on_system)
       else:
-        c.write(f, system)
+        fileio.write(f, system)
 
     elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
       if '/raw-cache' in partition_config.target_system:
-        c.write(f, target_system_on_cache)
+        fileio.write(f, target_system_on_cache)
       else:
-        c.write(f, cache)
+        fileio.write(f, cache)
 
       has_cache_line = True
 
     elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
       if '/raw-data' in partition_config.target_system:
-        c.write(f, target_system_on_data)
+        fileio.write(f, target_system_on_data)
       else:
-        c.write(f, data)
+        fileio.write(f, data)
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   if not has_cache_line:
     if '/raw-cache' in partition_config.target_system:
-      c.write(f, target_system_on_cache)
+      fileio.write(f, target_system_on_cache)
     else:
-      c.write(f, cache)
+      fileio.write(f, cache)
 
   f.close()
 
 def modify_init_target_rc(directory):
-  lines = c.get_lines_from_file(directory, 'init.target.rc')
+  lines = fileio.all_lines('init.target.rc', directory = directory)
 
   previous_line = ""
 
-  f = c.open_file(directory, 'init.target.rc', c.WRITE)
+  f = fileio.open_file('init.target.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^\s+wait\s+/dev/.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+check_fs\s+/dev/.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount\s+ext4\s+/dev/.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line) and \
         re.search(r"^on\s+fs_selinux.*$", previous_line):
-      c.write(f, line)
-      c.write(f, c.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
+      fileio.write(f, line)
+      fileio.write(f, fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
     elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
     previous_line = line
 
   f.close()
 
 def modify_MSM8960_lpm_rc(directory):
-  lines = c.get_lines_from_file(directory, 'MSM8960_lpm.rc')
+  lines = fileio.all_lines('MSM8960_lpm.rc', directory = directory)
 
-  f = c.open_file(directory, 'MSM8960_lpm.rc', c.WRITE)
+  f = fileio.open_file('MSM8960_lpm.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^\s+mount.*/cache.*$", line):
-      c.write(f, re.sub(r"^", "#", line))
+      fileio.write(f, re.sub(r"^", "#", line))
 
     else:
-      c.write(f, line)
+      fileio.write(f, line)
 
   f.close()
 
