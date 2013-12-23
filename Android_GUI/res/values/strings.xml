@@ -2,8 +2,22 @@
 <resources>
 
     <string name="app_name">Dual Boot Patcher</string>
+
+    <string name="overall_progress">Overall progress:</string>
+    <string name="overall_progress_files">%1$s/%2$s files</string>
+
+    <string name="current_task">Current task:</string>
+    <string name="details">Details:</string>
+
+    <string name="task_done">Done</string>
+    <string name="task_updating_patcher">Updating internal patcher files &#8230;</string>
+    <string name="task_patching_files">Patching files &#8230;</string>
+
+    <string name="details_done">Done</string>
+    <string name="details_deteting">Deleting %s &#8230;</string>
+
     <string name="choose_file">Choose file to patch</string>
-    
+
     <string name="dialog_patch_zip_title">Patch zip file</string>
     <string name="dialog_patch_zip_title_success">Successfully patched zip file</string>
     <string name="dialog_patch_zip_title_failed">Failed to patch zip file</string>
@@ -13,11 +27,5 @@
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_continue">Continue</string>
     <string name="dialog_finish">Finish</string>
-    
-    <string name="progress_title_patching_files">Patching file &#8230;</string>
-    <string name="progress_title_removing_temp">Removing old temporary files &#8230;</string>
-    <string name="progress_title_updating_files">Updating patcher &#8230;</string>
-    <string name="progress_getting_partition_configs">Getting partition configurations &#8230;</string>
-    
-    <string name="progress_text">Waiting for command output &#8230;</string>
+
 </resources>

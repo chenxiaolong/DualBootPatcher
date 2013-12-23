@@ -1,25 +1,25 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
     tools:context=".MainActivity" >
-    
+
     <LinearLayout
-        android:id="@+id/linear_layout"
+        android:id="@+id/part_config_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/cardui_padding_top"
+        android:paddingBottom="@dimen/cardui_padding_bottom_small"
+        android:paddingLeft="@dimen/cardui_padding_left"
+        android:paddingRight="@dimen/cardui_padding_right"
         android:orientation="vertical">
-        
-        <Button
-	        android:id="@+id/choose_file"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:text="@string/choose_file" />
-        
+
         <Spinner
             android:id="@+id/choose_partition_config"
             android:layout_width="match_parent"
@@ -28,8 +28,38 @@
         <TextView
             android:id="@+id/partition_config_desc"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:textSize="16sp" />
+
+        <ProgressBar
+	        android:id="@+id/extracting_progress"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center"
+	        android:indeterminate="true" />
 
     </LinearLayout>
 
-</RelativeLayout>
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/cardui_padding_top_small"
+        android:paddingBottom="@dimen/cardui_padding_bottom"
+        android:paddingLeft="@dimen/cardui_padding_left"
+        android:paddingRight="@dimen/cardui_padding_right"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/choose_file"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/choose_file" />
+
+    </LinearLayout>
+
+</LinearLayout>
