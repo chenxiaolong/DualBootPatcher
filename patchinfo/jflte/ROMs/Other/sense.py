@@ -1,11 +1,11 @@
-from fileinfo import FileInfo
-import common as c
+from multiboot.fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
 
 file_info = FileInfo()
 
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
-file_info.patch          = c.auto_patch
-file_info.extract        = c.files_to_auto_patch
+file_info.patch          = autopatcher.auto_patch
+file_info.extract        = autopatcher.files_to_auto_patch
 
 def matches(filename):
   if filename.lower() == "sense5port.zip" or \

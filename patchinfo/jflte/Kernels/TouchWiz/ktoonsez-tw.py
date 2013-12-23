@@ -1,5 +1,5 @@
-from fileinfo import FileInfo
-import common as c
+from multiboot.fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
 import re
 
 file_info = FileInfo()
@@ -7,8 +7,8 @@ file_info = FileInfo()
 filename_regex_42        = r"^KT-SGS4-JB4.2-TW-.*\.zip$"
 filename_regex_43        = r"^KT-SGS4-JB4.3-TW-.*\.zip$"
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = c.auto_patch
-file_info.extract        = c.files_to_auto_patch
+file_info.patch          = autopatcher.auto_patch
+file_info.extract        = autopatcher.files_to_auto_patch
 
 def matches(filename):
   if re.search(filename_regex_42, filename) or \

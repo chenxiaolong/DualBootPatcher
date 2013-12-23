@@ -1,5 +1,5 @@
-from fileinfo import FileInfo
-import common as c
+from multiboot.fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
 import re
 
 file_info = FileInfo()
@@ -10,8 +10,8 @@ file_info = FileInfo()
 #   AT&T_Echoe_Illusion_Rom_v7_09Nov.zip
 filename_regex           = r"^Echoe[ _]?(Rom|SLIM).*\.zip$"
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = c.auto_patch
-file_info.extract        = c.files_to_auto_patch
+file_info.patch          = autopatcher.auto_patch
+file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'boot.img'
 
 def print_message():

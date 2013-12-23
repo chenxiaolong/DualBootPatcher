@@ -1,12 +1,13 @@
-from fileinfo import FileInfo
-import common as c
+from multiboot.fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
+import multiboot.fileio as fileio
 import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^Slim_aroma_selectable_gapps.*\.zip$"
-file_info.patch          = [ c.auto_patch ]
-file_info.extract        = c.files_to_auto_patch
+file_info.patch          = [ autopatcher.auto_patch ]
+file_info.extract        = autopatcher.files_to_auto_patch
 file_info.has_boot_image = False
 
 def matches(filename):
@@ -23,25 +24,26 @@ def get_file_info():
 
 def handle_bundled_mount(directory, bootimg = None, device_check = True,
                          partition_config = None):
-  lines = c.get_lines_from_file(directory, 'META-INF/com/google/android/updater-script')
+  updater_script = 'META-INF/com/google/android/updater-script'
+  lines = fileio.all_lines(updater_script, directory = directory)
 
   i = 0
   while i < len(lines):
     if re.search('/tmp/mount.*/system', lines[i]):
       del lines[i]
-      i += c.insert_mount_system(i, lines)
+      i += autopatcher.insert_mount_system(i, lines)
 
     elif re.search('/tmp/mount.*/cache', lines[i]):
       del lines[i]
-      i += c.insert_mount_cache(i, lines)
+      i += autopatcher.insert_mount_cache(i, lines)
 
     elif re.search('/tmp/mount.*/data', lines[i]):
       del lines[i]
-      i += c.insert_mount_data(i, lines)
+      i += autopatcher.insert_mount_data(i, lines)
 
     else:
       i += 1
 
-  c.write_lines_to_file(directory, 'META-INF/com/google/android/updater-script', lines)
+  fileio.write_lines(updater_script, lines, directory = directory)
 
 file_info.patch.append(handle_bundled_mount)

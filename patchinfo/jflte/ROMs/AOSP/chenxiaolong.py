@@ -1,14 +1,14 @@
-from fileinfo import FileInfo
-import common as c
-import os
+from multiboot.fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
+import multiboot.fileio as fileio
 import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^cm-.*noobdev.*.zip$"
 file_info.ramdisk        = 'jflte/AOSP/cxl.def'
-file_info.patch          = [ c.auto_patch ]
-file_info.extract        = [ c.files_to_auto_patch, 'system/build.prop' ]
+file_info.patch          = [ autopatcher.auto_patch ]
+file_info.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
 # ROM has built in dual boot support
 file_info.configs        = [ 'all', '!dualboot' ]
 
@@ -28,7 +28,8 @@ def get_file_info(filename = ""):
 # triple, quadruple, ... boot
 def multi_boot(directory, bootimg = None, device_check = True,
                partition_config = None):
-  lines = c.get_lines_from_file(directory, 'META-INF/com/google/android/updater-script')
+  updater_script = 'META-INF/com/google/android/updater-script'
+  lines = fileio.all_lines(updater_script, directory = directory)
 
   i = 0
   while i < len(lines):
@@ -49,24 +50,24 @@ def multi_boot(directory, bootimg = None, device_check = True,
     else:
       i += 1
 
-  c.write_lines_to_file(directory, 'META-INF/com/google/android/updater-script', lines)
+  fileio.write_lines(updater_script, lines, directory = directory)
 
   # Create /tmp/dualboot.prop
-  lines = c.get_lines_from_file(directory, 'dualboot.sh')
+  lines = fileio.all_lines('dualboot.sh', directory = directory)
 
   lines.append("echo 'ro.dualboot=0' > /tmp/dualboot.prop")
 
-  c.write_lines_to_file(directory, 'dualboot.sh', lines)
+  fileio.write_lines('dualboot.sh', lines, directory = directory)
 
 file_info.patch.insert(0, multi_boot)
 
 # The auto-updater in my ROM needs to know if the ROM has been patched
 def system_prop(directory, bootimg = None, device_check = True,
                 partition_config = None):
-  lines = c.get_lines_from_file(directory, os.path.join('system', 'build.prop'))
+  lines = fileio.all_lines('system/build.prop', directory = directory)
 
-  lines.append('ro.chenxiaolong.patched=true\n')
+  lines.append('ro.chenxiaolong.patched=%s\n' % partition_config.id)
 
-  c.write_lines_to_file(directory, os.path.join('system', 'build.prop'), lines)
+  fileio.write_lines('system/build.prop', lines, directory = directory)
 
 file_info.patch.append(system_prop)

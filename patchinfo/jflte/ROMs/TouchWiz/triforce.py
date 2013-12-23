@@ -1,13 +1,14 @@
-from fileinfo import FileInfo
-import common as c
+from multiboot.fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
+import multiboot.fileio as fileio
 import re
 
 file_info = FileInfo()
 
 filename_regex           = r"^TriForceROM[0-9\.]+\.zip$"
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = [ c.auto_patch ]
-file_info.extract        = [ c.files_to_auto_patch,
+file_info.patch          = [ autopatcher.auto_patch ]
+file_info.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
 file_info.bootimg        = "aroma/kernels/stock/boot.img"
 
@@ -25,7 +26,8 @@ def get_file_info():
 
 def fix_aroma(directory, bootimg = None, device_check = True,
               partition_config = None):
-  lines = c.get_lines_from_file(directory, 'META-INF/com/google/android/aroma-config')
+  aroma_config = 'META-INF/com/google/android/aroma-config'
+  lines = fileio.all_lines(aroma_config, directory = directory)
 
   i = 0
   while i < len(lines):
@@ -35,14 +37,14 @@ def fix_aroma(directory, bootimg = None, device_check = True,
       lines[i] = re.sub('/system', target_dir, lines[i])
 
     elif re.search(r"/sbin/mount.*/system", lines[i]):
-      i += c.insert_line(i + 1, re.sub('/system', '/cache', lines[i]), lines)
-      i += c.insert_line(i + 1, re.sub('/system', '/data', lines[i]), lines)
+      i += autopatcher.insert_line(i + 1, re.sub('/system', '/cache', lines[i]), lines)
+      i += autopatcher.insert_line(i + 1, re.sub('/system', '/data', lines[i]), lines)
 
     elif '~welcome.title' in lines[i]:
-      i += c.insert_line(i + 1, '"***IMPORTANT***: You MUST choose the stock kernel for dual booting to work. If you want to use a custom kernel, you can patch and flash it afterwards.\\n\\n" +', lines)
+      i += autopatcher.insert_line(i + 1, '"***IMPORTANT***: You MUST choose the stock kernel for dual booting to work. If you want to use a custom kernel, you can patch and flash it afterwards.\\n\\n" +', lines)
 
     i += 1
 
-  c.write_lines_to_file(directory, 'META-INF/com/google/android/aroma-config', lines)
+  fileio.write_lines(aroma_config, lines, directory = directory)
 
 file_info.patch.append(fix_aroma)

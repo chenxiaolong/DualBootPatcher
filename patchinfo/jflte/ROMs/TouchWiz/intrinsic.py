@@ -1,4 +1,4 @@
-from fileinfo import FileInfo
+from multiboot.fileinfo import FileInfo
 
 file_info = FileInfo()
 
