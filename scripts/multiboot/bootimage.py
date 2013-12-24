@@ -2,7 +2,7 @@ import multiboot.cmd as cmd
 import multiboot.debug as debug
 import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
-import multiboot.standalone.unlokibootimg
+import multiboot.standalone.unlokibootimg as unlokibootimg
 
 import os
 
