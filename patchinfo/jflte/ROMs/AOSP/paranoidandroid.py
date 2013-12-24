@@ -11,6 +11,8 @@ file_info.extract        = autopatcher.files_to_auto_patch
 
 def matches(filename):
   if re.search(filename_regex, filename):
+    if 'gapps' in filename:
+      return False
     return True
   else:
     return False
