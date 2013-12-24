@@ -28,6 +28,7 @@ ROMs:
     - Gummy
     - OSE
     - BAM Android
+    - CyanFox
   * AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
