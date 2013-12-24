@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-file_info.patch          = 'patches/Other/xposed.dualboot.patch'
+file_info.patch          = 'Other/xposed.dualboot.patch'
 file_info.has_boot_image = False
 
 def matches(filename):
