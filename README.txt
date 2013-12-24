@@ -45,6 +45,7 @@ ROMs:
     - Dandroid
     - Echoe
     - Infamous
+    - BlackBox
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
@@ -64,6 +65,7 @@ ROMs:
     - TriForceROM
     - Omnifarious
     - Echoe
+    - BlackBox
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
