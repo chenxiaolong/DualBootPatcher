@@ -12,7 +12,7 @@
 /sbin/busybox-static mount -o bind $TARGET_DATA /data
 
 # Eventually, maybe share /data/app
-#/sbin/busybox-static mkdir -p /raw-data/app
+#/sbin/busybox-static mkdir -p /raw-data/app /data/app
 #/sbin/busybox-static chmod 0771 /data/app
 #/sbin/busybox-static chmod system:system /data/app
 #/sbin/busybox-static mount -o bind /raw-data/app /data/app
