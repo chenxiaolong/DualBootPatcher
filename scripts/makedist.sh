@@ -1,13 +1,20 @@
 #!/bin/bash
 
-VERSION="3.2.2"
+VERSION="4.0.0beta3"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
 set -e
 
+if [ "${#}" -lt 1 ]; then
+  echo "Usage: ${0} [device] [release]"
+  exit
+fi
+
+DEFAULT_DEVICE=${1}
+
 RELEASE=false
-if [ "x${1}" = "xrelease" ]; then
+if [ "x${2}" = "xrelease" ]; then
   RELEASE=true
 fi
 
@@ -120,7 +127,7 @@ create_portable_python() {
   rm Lib/{__phello__.foo.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
   rm Lib/{aifc.py,antigravity.py,argparse.py,ast.py}
   rm Lib/{base64.py,bdb.py,binhex.py}
-  rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,configparser.py,contextlib.py,cProfile.py,csv.py}
+  rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,contextlib.py,cProfile.py,csv.py}
   rm Lib/{datetime.py,decimal.py,difflib.py,dis.py,doctest.py,dummy_threading.py}
   rm Lib/{filecmp.py,fileinput.py,formatter.py,fractions.py,ftplib.py}
   rm Lib/{getopt.py,getpass.py,gettext.py,glob.py}
@@ -428,7 +435,7 @@ build_android_app() {
   popd
 }
 
-TARGETNAME="DualBootPatcher-${VERSION}"
+TARGETNAME="DualBootPatcher-${VERSION}-${DEFAULT_DEVICE}"
 TARGETDIR="${CURDIR}/${TARGETNAME}"
 rm -rf "${TARGETDIR}" "${TARGETNAME}.zip"
 mkdir -p "${TARGETDIR}/binaries" "${TARGETDIR}/ramdisks"
@@ -449,7 +456,7 @@ cp -rt "${TARGETDIR}" \
 rm "${TARGETDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
 
 # Android stuff
-ANDROIDTARGETNAME="DualBootPatcherAndroid-${VERSION}"
+ANDROIDTARGETNAME="DualBootPatcherAndroid-${VERSION}-${DEFAULT_DEVICE}"
 ANDROIDTARGETDIR="${CURDIR}/${ANDROIDTARGETNAME}"
 rm -rf "${ANDROIDTARGETDIR}" "${ANDROIDTARGETNAME}.zip"
 cp -r ${TARGETNAME}/ ${ANDROIDTARGETNAME}/
@@ -469,9 +476,12 @@ popd
 create_portable_android
 mv pythonportable/ "${ANDROIDTARGETDIR}"
 
+# Set default device
+sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" \
+  {${TARGETNAME},${ANDROIDTARGETDIR}}/defaults.conf
+
 # Create zip
 zip -r ${TARGETNAME}.zip ${TARGETNAME}/
-#zip -r ${ANDROIDTARGETNAME}.zip ${ANDROIDTARGETNAME}/
 tar Jcvf ${ANDROIDTARGETNAME}.tar.xz ${ANDROIDTARGETNAME}/
 
 # Android app

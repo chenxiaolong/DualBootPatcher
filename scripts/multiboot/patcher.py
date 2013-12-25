@@ -1,6 +1,7 @@
 import multiboot.ui.dummyui as dummyui
 import multiboot.autopatcher as autopatcher
 import multiboot.bootimage as bootimage
+import multiboot.config as config
 import multiboot.cpio as cpio
 import multiboot.exit as exit
 import multiboot.fileio as fileio
@@ -72,8 +73,9 @@ def patch_boot_image(boot_image, file_info, partition_config):
         ui.failed(bootimage.error_msg)
         exit.exit(1)
 
-    if not file_info.selinux:
-        bootimageinfo.cmdline += ' androidboot.selinux=permissive'
+    selinux = config.get_selinux()
+    if selinux is not None:
+        bootimageinfo.cmdline += ' androidboot.selinux=' + selinux
 
     target_ramdisk = os.path.join(tempdir, 'ramdisk.cpio')
     target_kernel = os.path.join(tempdir, 'kernel.img')

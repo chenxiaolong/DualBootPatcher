@@ -18,8 +18,6 @@ class FileInfo:
         self.device_check = True
         # Supported partition configurations
         self.configs = ['all']
-        # Disable SELinux by default
-        self.selinux = False
 
 
 def get_info(path, device):

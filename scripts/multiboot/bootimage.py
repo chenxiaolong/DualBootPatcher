@@ -1,3 +1,4 @@
+import multiboot.config as config
 import multiboot.cmd as cmd
 import multiboot.debug as debug
 import multiboot.fileio as fileio
@@ -16,12 +17,11 @@ class BootImageInfo:
         self.base           = None
         self.cmdline        = None
         self.pagesize       = None
-        # FIXME: For Galaxy S4 only
-        self.ramdisk_offset = "0x02000000"
 
         # Paths
         self.kernel         = None
         self.ramdisk        = None
+        self.dt             = None
 
 
 def create(info, output_file):
@@ -37,6 +37,10 @@ def create(info, output_file):
         command.append('--ramdisk')
         command.append(info.ramdisk)
 
+    if info.dt is not None:
+        command.append('--dt')
+        command.append(info.dt)
+
     if info.cmdline is not None:
         command.append('--cmdline')
         command.append(info.cmdline)
@@ -49,9 +53,15 @@ def create(info, output_file):
         command.append('--pagesize')
         command.append(info.pagesize)
 
-    if info.ramdisk_offset is not None:
+    ramdisk_offset = config.get_ramdisk_offset()
+    if ramdisk_offset is not None:
         command.append('--ramdisk_offset')
-        command.append(info.ramdisk_offset)
+        command.append(ramdisk_offset)
+
+    tags_offset = config.get_tags_offset()
+    if tags_offset is not None:
+        command.append('--tags_offset')
+        command.append(tags_offset)
 
     command.append('--output')
     command.append(output_file)
@@ -101,5 +111,7 @@ def extract(boot_image, output_dir, loki):
 
     info.kernel   = prefix + '-zImage'
     info.ramdisk  = prefix + '-ramdisk.gz'
+    if os.path.exists(prefix + '-dt.img'):
+        info.dt   = prefix + '-dt.img'
 
     return info

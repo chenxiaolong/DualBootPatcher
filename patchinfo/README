@@ -5,4 +5,5 @@ To add support for a new device, create a new folder with the device name.
 
 Currently supported devices:
 
-  jflte -- Qualcomm Samsung Galaxy S4
+  jflte      -- Qualcomm Samsung Galaxy S4
+  hammerhead -- Google/LG Nexus 5

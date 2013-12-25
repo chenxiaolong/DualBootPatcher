@@ -7,6 +7,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
+import multiboot.config as config
 import multiboot.exit as exit
 import multiboot.fileinfo as fileinfo
 import multiboot.operatingsystem as OS
@@ -32,7 +33,7 @@ if filetype == "UNKNOWN":
     print("Unsupported file")
     sys.exit(1)
 
-file_info = fileinfo.get_info(filename, 'jflte')
+file_info = fileinfo.get_info(filename, config.get_device())
 if not file_info:
     print("Unsupported file")
     sys.exit(1)

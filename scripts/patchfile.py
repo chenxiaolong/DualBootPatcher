@@ -5,6 +5,7 @@
 # Python 2 compatibility
 from __future__ import print_function
 
+import multiboot.config as config
 import multiboot.exit as exit
 import multiboot.fileinfo as fileinfo
 import multiboot.operatingsystem as OS
@@ -62,7 +63,7 @@ if __name__ == "__main__":
 
     filename = os.path.abspath(filename)
     filetype = detect_file_type(filename)
-    file_info = fileinfo.get_info(filename, 'jflte')
+    file_info = fileinfo.get_info(filename, config.get_device())
 
     if file_info and \
             (('all' not in file_info.configs
