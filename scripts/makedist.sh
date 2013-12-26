@@ -483,6 +483,7 @@ sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" \
 # Create zip
 zip -r ${TARGETNAME}.zip ${TARGETNAME}/
 tar Jcvf ${ANDROIDTARGETNAME}.tar.xz ${ANDROIDTARGETNAME}/
+mv ${ANDROIDTARGETNAME} ${ANDROIDTARGETNAME}-${DEFAULT_DEVICE}
 
 # Android app
 ANDROIDGUI=${CURDIR}/Android_GUI/
@@ -490,7 +491,7 @@ rm -r "${ANDROIDGUI}/assets/"
 mkdir "${ANDROIDGUI}/assets/"
 mv ${ANDROIDTARGETNAME}.tar.xz "${ANDROIDGUI}/assets/"
 cp ramdisks/busybox-static "${ANDROIDGUI}/assets/tar"
-rm -f ${ANDROIDTARGETNAME}-*.apk
+rm -f ${ANDROIDTARGETNAME}-${DEFAULT_DEVICE}*.apk
 if [ "x${RELEASE}" = "xtrue" ]; then
   build_android_app release
 else
