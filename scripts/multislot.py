@@ -41,7 +41,6 @@ if not file_info:
 unsupported_configs = []
 partition_configs = []
 partition_configs_raw = partitionconfigs.get()
-print(partition_configs_raw)
 
 for i in partition_configs_raw:
     if (i.id in file_info.configs or 'all' in file_info.configs) \
