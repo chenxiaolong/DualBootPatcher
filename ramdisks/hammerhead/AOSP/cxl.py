@@ -27,9 +27,17 @@ def modify_fstab(directory, partition_config):
 
     elif re.search(r"^/dev[^\s]+\s+/raw-cache\s+.*$", line):
       if '/raw-cache' in partition_config.target_system:
+        # /raw-cache needs to always be mounted rw so OpenDelta can write to
+        # /cache/recovery
+        args = system_fourth
+        if 'ro' in args:
+            args = re.sub('ro', 'rw', args)
+        else:
+            args = 'rw,' + args
+
         r = re.search(r"^([^\ ]+)\s+([^\ ]+)\s+([^\ ]+)\s+([^\ ]+)\s+([^\ ]+)", line)
         line = "%s %s %s %s %s\n" % (r.groups()[0], r.groups()[1], r.groups()[2],
-                                     system_fourth, system_fifth)
+                                     args, system_fifth)
 
       fileio.write(f, line)
 
