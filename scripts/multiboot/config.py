@@ -2,29 +2,49 @@
 
 import multiboot.operatingsystem as OS
 
-import configparser
 import os
+import sys
 
-config = configparser.ConfigParser()
+if sys.hexversion < 0x03000000:
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
+    py3 = False
+else:
+    import configparser
+    config = configparser.ConfigParser()
+    py3 = True
+
 config.read(os.path.join(OS.rootdir, 'defaults.conf'))
 
+def get(section, option):
+    if py3:
+        return config[section][option]
+    else:
+        return config.get(section, option)
+
+def has(section, option):
+    if py3:
+        return option in config[section]
+    else:
+        return config.has_option(section, option)
+
 def get_device():
-    return config['Defaults']['device']
+    return get('Defaults', 'device')
 
 def get_ramdisk_offset():
-    if 'ramdisk_offset' in config[get_device()]:
-        return config[get_device()]['ramdisk_offset']
+    if has(get_device(), 'ramdisk_offset'):
+        return get(get_device(), 'ramdisk_offset')
     else:
         return None
 
 def get_tags_offset():
-    if 'tags_offset' in config[get_device()]:
-        return config[get_device()]['tags_offset']
+    if has(get_device(), 'tags_offset'):
+        return get(get_device(), 'tags_offset')
     else:
         return None
 
 def get_selinux():
-    if 'selinux' in config[get_device()]:
-        return config[get_device()]['selinux']
+    if has(get_device(), 'selinux'):
+        return get(get_device(), 'selinux')
     else:
         return None
