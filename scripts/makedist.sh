@@ -425,11 +425,11 @@ build_android_app() {
   if [ "x${1}" = "xrelease" ]; then
     ./gradlew assembleRelease
     mv build/apk/Android_GUI-release-unsigned.apk \
-      "${CURDIR}/${ANDROIDTARGETNAME}-signed.apk"
+      "${CURDIR}/${ANDROIDTARGETNAME}-${DEFAULT_DEVICE}-signed.apk"
   else
     ./gradlew assembleDebug
     mv build/apk/Android_GUI-debug-unaligned.apk \
-      "${CURDIR}/${ANDROIDTARGETNAME}-debug.apk"
+      "${CURDIR}/${ANDROIDTARGETNAME}-${DEFAULT_DEVICE}-debug.apk"
   fi
 
   popd
@@ -456,9 +456,9 @@ cp -rt "${TARGETDIR}" \
 rm "${TARGETDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
 
 # Android stuff
-ANDROIDTARGETNAME="DualBootPatcherAndroid-${VERSION}-${DEFAULT_DEVICE}"
+ANDROIDTARGETNAME="DualBootPatcherAndroid-${VERSION}"
 ANDROIDTARGETDIR="${CURDIR}/${ANDROIDTARGETNAME}"
-rm -rf "${ANDROIDTARGETDIR}" "${ANDROIDTARGETNAME}.zip"
+rm -rf "${ANDROIDTARGETDIR}" "${ANDROIDTARGETNAME}-${DEFAULT_DEVICE}.zip"
 cp -r ${TARGETNAME}/ ${ANDROIDTARGETNAME}/
 
 # Remove Android stuff from PC zip
