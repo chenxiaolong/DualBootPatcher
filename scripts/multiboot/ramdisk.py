@@ -1,3 +1,4 @@
+import multiboot.config as config
 import multiboot.debug as debug
 import multiboot.fileio as fileio
 import multiboot.patch as patch
@@ -8,6 +9,7 @@ import os
 import re
 
 error_msg = None
+suffix = re.compile(r"\.def$")
 
 
 def process_def(def_file, directory, partition_config):
@@ -33,3 +35,17 @@ def process_def(def_file, directory, partition_config):
                 return False
 
     return True
+
+
+def list_ramdisks():
+    deviceramdiskdir = os.path.join(OS.ramdiskdir, config.get_device())
+
+    ramdisks = []
+
+    for root, dirs, files in os.walk(deviceramdiskdir):
+        relative_path = os.path.relpath(root, OS.ramdiskdir)
+        for f in files:
+            if suffix.search(f):
+                ramdisks.append(os.path.join(relative_path, f))
+
+    return ramdisks

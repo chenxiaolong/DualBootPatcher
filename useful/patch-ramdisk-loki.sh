@@ -8,4 +8,4 @@ else
   PYTHON=python
 fi
 
-"${PYTHON}" -B "$(cd "$(dirname "${0}")" && pwd)/../scripts/patchramdisk.py" --loki ${@}
+"${PYTHON}" -B "$(cd "$(dirname "${0}")" && pwd)/../scripts/advancedpatch.py" --askramdisk --loki ${@}
