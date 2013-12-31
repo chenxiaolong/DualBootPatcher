@@ -3,7 +3,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^ChronicKernel-JB4.3-AOSP-.*\.zip$"
+filename_regex           = r"^ChronicKernel-(JB4.3|KK4.4)-AOSP-.*\.zip$"
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = 'jflte/Kernels/AOSP/chronickernel.dualboot.patch'
 
