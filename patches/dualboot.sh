@@ -45,7 +45,7 @@ TARGET_SYSTEM_PARTITION=$DEV_SYSTEM
 TARGET_CACHE_PARTITION=$DEV_CACHE
 TARGET_DATA_PARTITION=$DEV_DATA
 
-# Name of kernel image in /raw-system/dual-kernels/
+# Name of kernel image in /data/media/0/MultiKernels/
 KERNEL_NAME="secondary"
 
 ################################################################
@@ -226,7 +226,7 @@ format_data() {
 ################################################################
 
 set_multi_kernel() {
-  local MNT=$(echo $DEV_SYSTEM | awk -F:: '{print $3}')
+  local MNT=$(echo $DEV_DATA | awk -F:: '{print $3}')
 
   local MOUNT=false
   if ! mount | grep -q $MNT; then
@@ -234,17 +234,16 @@ set_multi_kernel() {
   fi
 
   if [ "x${MOUNT}" = "xtrue" ]; then
-    mount_raw_partition $DEV_SYSTEM
+    mount_raw_partition $DEV_DATA
   fi
 
-  # Should probably be named multi-kernels
-  local KERNELS_DIR=$MNT/dual-kernels
+  local KERNELS_DIR=$MNT/media/0/MultiKernels/
   local DEV_BOOT="/dev/block/platform/msm_sdcc.1/by-name/boot"
   mkdir -p $KERNELS_DIR
   dd if=$DEV_BOOT of=$KERNELS_DIR/$KERNEL_NAME.img
 
   if [ "x${MOUNT}" = "xtrue" ]; then
-    unmount_raw_partition $DEV_SYSTEM
+    unmount_raw_partition $DEV_DATA
   fi
 }
 
