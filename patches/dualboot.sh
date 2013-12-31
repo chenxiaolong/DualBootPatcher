@@ -241,6 +241,7 @@ set_multi_kernel() {
   local DEV_BOOT="/dev/block/platform/msm_sdcc.1/by-name/boot"
   mkdir -p $KERNELS_DIR
   dd if=$DEV_BOOT of=$KERNELS_DIR/$KERNEL_NAME.img
+  chmod 775 $KERNELS_DIR/$KERNEL_NAME.img
 
   if [ "x${MOUNT}" = "xtrue" ]; then
     unmount_raw_partition $DEV_DATA
