@@ -1,21 +1,26 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.File;
+import java.lang.reflect.Method;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.storage.StorageManager;
+import android.provider.DocumentsContract;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -304,19 +309,96 @@ public class MainActivity extends Activity {
     }
 
     private String getPathFromUri(Uri uri) {
-        // Incredibly ugly hack to get full path
-        Pattern p = Pattern.compile("^(.*):(.*)$");
-        Matcher m = p.matcher(uri.getPath());
-        if (m.find()) {
-            String dir = m.group(1);
-            String file = m.group(2);
-            if (dir.equals("/document/primary")) {
-                dir = Environment.getExternalStorageDirectory().getPath();
-            }
-            return dir + "/" + file;
+        if (Build.VERSION.SDK_INT >= 19
+                && "com.android.externalstorage.documents".equals(uri
+                        .getAuthority())) {
+            return getPathFromDocumentsUri(uri);
+        } else if (Build.VERSION.SDK_INT >= 19
+                && "com.android.providers.downloads.documents".equals(uri
+                        .getAuthority())) {
+            return getPathFromDownloadsUri(uri);
         } else {
             return uri.getPath();
         }
+    }
+
+    @SuppressLint("NewApi")
+    private String getPathFromDocumentsUri(Uri uri) {
+        // Based on
+        // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
+        StorageManager sm = (StorageManager) getSystemService(Context.STORAGE_SERVICE);
+
+        try {
+            Class StorageManager = sm.getClass();
+            Method getVolumeList = StorageManager
+                    .getDeclaredMethod("getVolumeList");
+            Object[] vols = (Object[]) getVolumeList
+                    .invoke(sm, new Object[] {});
+
+            Class StorageVolume = Class
+                    .forName("android.os.storage.StorageVolume");
+            Method isPrimary = StorageVolume.getDeclaredMethod("isPrimary");
+            Method isEmulated = StorageVolume.getDeclaredMethod("isEmulated");
+            Method getUuid = StorageVolume.getDeclaredMethod("getUuid");
+            Method getPath = StorageVolume.getDeclaredMethod("getPath");
+
+            // As of AOSP 4.4.2 in ExternalStorageProvider.java
+            final String ROOT_ID_PRIMARY_EMULATED = "primary";
+
+            String[] split = DocumentsContract.getDocumentId(uri).split(":");
+
+            String volId;
+            for (Object vol : vols) {
+                if ((Boolean) isPrimary.invoke(vol, new Object[] {})
+                        && (Boolean) isEmulated.invoke(vol, new Object[] {})) {
+                    volId = ROOT_ID_PRIMARY_EMULATED;
+                } else if (getUuid.invoke(vol, new Object[] {}) != null) {
+                    volId = (String) getUuid.invoke(vol, new Object[] {});
+                } else {
+                    Log.e("DualBootPatcher",
+                            "Missing UUID for "
+                                    + getPath.invoke(vol, new Object[] {}));
+                    continue;
+                }
+
+                if (volId.equals(split[0])) {
+                    return getPath.invoke(vol, new Object[] {})
+                            + File.separator + split[1];
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            Log.e("DualBootPatcher", "Java reflection failure: " + e);
+            return null;
+        }
+    }
+
+    @SuppressLint("NewApi")
+    private String getPathFromDownloadsUri(Uri uri) {
+        // Based on
+        // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
+        String id = DocumentsContract.getDocumentId(uri);
+        Uri contentUri = ContentUris.withAppendedId(
+                Uri.parse("content://downloads/public_downloads"),
+                Long.valueOf(id));
+
+        Cursor cursor = null;
+        String[] projection = { "_data" };
+
+        try {
+            cursor = getContentResolver().query(contentUri, projection, null,
+                    null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow("_data"));
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return null;
     }
 
     public class CancelDialog implements DialogInterface.OnClickListener {
