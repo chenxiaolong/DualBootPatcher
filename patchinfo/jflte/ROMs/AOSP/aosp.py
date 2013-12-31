@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^aosp4[34]-i9505-.*\.zip$"
+filename_regex           = r"^aosp[0-9]+-i9505-.*\.zip$"
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
