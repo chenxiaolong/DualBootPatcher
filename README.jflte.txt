@@ -67,6 +67,7 @@ ROMs:
     - Omnifarious
     - Echoe
     - BlackBox
+    - TouchliteGE
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
