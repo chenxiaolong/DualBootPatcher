@@ -4,14 +4,13 @@ import os
 import re
 import sys
 
-import multiboot.cmd as cmd
-import multiboot.operatingsystem as OS
-
 try:
-    OS.detect()
+    import multiboot.operatingsystem as OS
 except Exception as e:
     print(str(e))
     sys.exit(1)
+
+import multiboot.cmd as cmd
 
 if len(sys.argv) < 3:
     print("Not enough arguments")

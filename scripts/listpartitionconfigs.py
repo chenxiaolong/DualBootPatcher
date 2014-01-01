@@ -4,14 +4,13 @@ import sys
 
 sys.dont_write_bytecode = True
 
-import multiboot.operatingsystem as OS
-import multiboot.partitionconfigs as partitionconfigs
-
 try:
-    OS.detect()
+    import multiboot.operatingsystem as OS
 except Exception as e:
     print(str(e))
     sys.exit(1)
+
+import multiboot.partitionconfigs as partitionconfigs
 
 to_file = False
 if len(sys.argv) == 2:

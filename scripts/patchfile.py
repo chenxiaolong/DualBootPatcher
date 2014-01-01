@@ -5,10 +5,15 @@
 # Python 2 compatibility
 from __future__ import print_function
 
+try:
+    import multiboot.operatingsystem as OS
+except Exception as e:
+    print(str(e))
+    sys.exit(1)
+
 import multiboot.config as config
 import multiboot.exit as exit
 import multiboot.fileinfo as fileinfo
-import multiboot.operatingsystem as OS
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patcher as patcher
 
@@ -17,11 +22,6 @@ import re
 import shutil
 import sys
 
-try:
-    OS.detect()
-except Exception as e:
-    print(str(e))
-    sys.exit(1)
 
 ui = OS.ui
 

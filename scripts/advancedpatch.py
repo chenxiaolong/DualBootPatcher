@@ -7,22 +7,21 @@ import sys
 
 sys.dont_write_bytecode = True
 
+try:
+    import multiboot.operatingsystem as OS
+except Exception as e:
+    print(str(e))
+    sys.exit(1)
+
 import multiboot.autopatcher as autopatcher
 import multiboot.config as config
 import multiboot.exit as exit
 import multiboot.fileinfo as fileinfo
-import multiboot.operatingsystem as OS
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patcher as patcher
 import multiboot.ramdisk as ramdisk
 import common
 import patchfile
-
-try:
-    OS.detect()
-except Exception as e:
-    print(str(e))
-    sys.exit(1)
 
 # Choices: list, patch
 action = 'patch'

@@ -23,11 +23,10 @@ patch          = ""
 cpio           = ""
 bash           = ""
 
+runonce        = False
 
-def detect():
-    global ui, android
-    global rootdir, ramdiskdir, patchdir, binariesdir, patchinfodir
-    global mkbootimg, unpackbootimg, patch, cpio, bash
+if not runonce:
+    runonce = True
 
     rootdir      = os.path.dirname(os.path.realpath(__file__))
     rootdir      = os.path.join(rootdir, "..", "..")
