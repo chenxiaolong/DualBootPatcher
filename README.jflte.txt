@@ -29,6 +29,7 @@ ROMs:
     - OSE
     - BAM Android
     - CyanFox
+    - Smasher X
   * AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
