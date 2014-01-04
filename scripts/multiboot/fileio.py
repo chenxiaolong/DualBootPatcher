@@ -23,7 +23,7 @@ def first_line(f, directory=""):
     f = open_file(f, READ, directory=directory)
     line = f.readline()
     f.close()
-    return line.strip('\n')
+    return line.rstrip('\n')
 
 
 def all_lines(f, directory=""):

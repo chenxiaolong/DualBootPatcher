@@ -16,11 +16,13 @@ else:
 
 config.read(os.path.join(OS.rootdir, 'defaults.conf'))
 
+
 def get(section, option):
     if py3:
         return config[section][option]
     else:
         return config.get(section, option)
+
 
 def has(section, option):
     if py3:
@@ -28,23 +30,20 @@ def has(section, option):
     else:
         return config.has_option(section, option)
 
+
 def get_device():
     return get('Defaults', 'device')
 
-def get_ramdisk_offset():
-    if has(get_device(), 'ramdisk_offset'):
-        return get(get_device(), 'ramdisk_offset')
-    else:
-        return None
-
-def get_tags_offset():
-    if has(get_device(), 'tags_offset'):
-        return get(get_device(), 'tags_offset')
-    else:
-        return None
 
 def get_selinux():
     if has(get_device(), 'selinux'):
         return get(get_device(), 'selinux')
+    else:
+        return None
+
+
+def get_ramdisk_offset():
+    if has(get_device(), 'ramdisk_offset'):
+        return get(get_device(), 'ramdisk_offset')
     else:
         return None

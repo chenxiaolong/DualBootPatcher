@@ -6,6 +6,7 @@ from __future__ import print_function
 import binascii
 import gzip
 import os
+import struct
 import sys
 import zlib
 
@@ -15,53 +16,10 @@ BOOT_NAME_SIZE = 16
 BOOT_ARGS_SIZE = 512
 
 
-class boot_img_hdr:
-    def __init__(self):
-        self.magic        = None
-
-        self.kernel_size  = None  # size in bytes
-        self.kernel_addr  = None  # physical load addr
-
-        self.ramdisk_size = None  # size in bytes
-        self.ramdisk_addr = None  # physical load addr
-
-        self.second_size  = None  # size in bytes
-        self.second_addr  = None  # physical load addr
-
-        self.tags_addr    = None  # physical addr for kernel tags
-        self.page_size    = None  # flash page size we assume
-        self.unused       = None  # future expansion: should be 0
-
-        self.name         = None  # asciiz product name
-
-        self.cmdline      = None
-
-        self.id           = None  # timestamp / checksum / sha1 / etc
-
-
-class loki_hdr:
-    def __init__(self):
-        self.magic = None         # 0x494b4f4c
-        self.recovery = 0         # 0 = boot.img, 1 = recovery.img
-        self.build = None         # Build number
-
-        self.orig_kernel_size = 0
-        self.orig_ramdisk_size = 0
-        self.ramdisk_addr = 0
-
-
-def to_int(data):
-    # int.from_bytes() is available in Python >= 3.2
-    if sys.hexversion < 0x03020000:
-        import struct
-        return struct.unpack("<L", data)[0]
-    else:
-        return int.from_bytes(data, byteorder='little', signed=False)
-
-
 def bytes_to_str(data):
     temp = binascii.hexlify(data).decode("utf-8")
-    return "\\x" + "\\x".join(a + b for a, b in zip(temp[::2], temp[1::2]))
+    #return "\\x" + "\\x".join(a + b for a, b in zip(temp[::2], temp[1::2]))
+    return "".join(a + b for a, b in zip(temp[::2], temp[1::2]))
 
 
 show_output = True
@@ -94,61 +52,72 @@ def extract(filename, directory):
 
     # Read Android header
     f.seek(0, os.SEEK_SET)
-    a_hdr = boot_img_hdr()
 
-    a_hdr.magic        = f.read(BOOT_MAGIC_SIZE)
-    a_hdr.kernel_size  = to_int(f.read(4))
-    a_hdr.kernel_addr  = to_int(f.read(4))
-    a_hdr.ramdisk_size = to_int(f.read(4))
-    a_hdr.ramdisk_addr = to_int(f.read(4))
-    a_hdr.second_size  = to_int(f.read(4))
-    a_hdr.second_addr  = to_int(f.read(4))
-    a_hdr.tags_addr    = to_int(f.read(4))
-    a_hdr.page_size    = to_int(f.read(4))
-    a_hdr.unused       = f.read(8)
-    a_hdr.name         = f.read(BOOT_NAME_SIZE)
-    a_hdr.cmdline      = f.read(BOOT_ARGS_SIZE)
-    a_hdr.id           = f.read(8)
-    print_i("- magic:        " + a_hdr.magic.decode('ascii'))
-    print_i("- kernel_size:  " + str(a_hdr.kernel_size))
-    print_i("- kernel_addr:  " + hex(a_hdr.kernel_addr))
-    print_i("- ramdisk_size: " + str(a_hdr.ramdisk_size))
-    print_i("- ramdisk_addr: " + hex(a_hdr.ramdisk_addr))
-    print_i("- second_size:  " + str(a_hdr.second_size))
-    print_i("- second_addr:  " + hex(a_hdr.second_addr))
-    print_i("- tags_addr:    " + hex(a_hdr.tags_addr))
-    print_i("- page_size:    " + str(a_hdr.page_size))
-    print_i("- unused:       " + bytes_to_str(a_hdr.unused))
-    print_i("- name:         " + a_hdr.name.decode('ascii'))
-    print_i("- cmdline:      " + a_hdr.cmdline.decode('ascii'))
-    print_i("- id:           " + bytes_to_str(a_hdr.id))
+    sformat = '<'
+    sformat += str(BOOT_MAGIC_SIZE) + 's'  # magic
+    sformat += '10I'                       # kernel_size, kernel_addr,
+                                           # ramdisk_size, ramdisk_addr,
+                                           # second_size, second_addr,
+                                           # tags_addr, page_size,
+                                           # dt_size, unused
+    sformat += str(BOOT_NAME_SIZE) + 's'   # name
+    sformat += str(BOOT_ARGS_SIZE) + 's'   # cmdline
+    sformat += str(8 * 4) + 's'            # id (unsigned[8])
+
+    header_size = struct.calcsize(sformat)
+    header = f.read(header_size)
+
+    magic, kernel_size, kernel_addr, \
+        ramdisk_size, ramdisk_addr, \
+        second_size, second_addr, \
+        tags_addr, page_size, \
+        dt_size, unused, \
+        board, cmdline, ident = struct.unpack(sformat, header)
+
+    print_i("- magic:        " + magic.decode('ASCII'))
+    print_i("- kernel_size:  " + str(kernel_size))
+    print_i("- kernel_addr:  " + hex(kernel_addr))
+    print_i("- ramdisk_size: " + str(ramdisk_size))
+    print_i("- ramdisk_addr: " + hex(ramdisk_addr))
+    print_i("- second_size:  " + str(second_size))
+    print_i("- second_addr:  " + hex(second_addr))
+    print_i("- tags_addr:    " + hex(tags_addr))
+    print_i("- page_size:    " + str(page_size))
+    print_i("- dt_size:      " + str(dt_size))
+    print_i("- unused:       " + hex(unused))
+    print_i("- name:         " + board.decode('ASCII'))
+    print_i("- cmdline:      " + cmdline.decode('ASCII'))
+    print_i("- id:           " + bytes_to_str(ident)[:40])  # SHA1 is 40 chars
 
     print_i("")
 
     # Look for loki header
     f.seek(0x400, os.SEEK_SET)
-    temp = f.read(4)
-    if temp == "LOKI".encode("ASCII"):
+
+    lokformat = '<'
+    lokformat += '4s'    # magic (0x494b4f4c)
+    lokformat += 'I'     # recovery (0 = boot.img, 1 = recovery.img)
+    lokformat += '128s'  # build number
+    lokformat += '3I'    # orig_kernel_size, orig_ramdisk_size, ramdisk_addr
+
+    lok_header_size = struct.calcsize(lokformat)
+    lok_header = f.read(lok_header_size)
+
+    lok_magic, lok_recovery, lok_build, \
+        lok_orig_kernel_size, lok_orig_ramdisk_size, \
+        lok_ramdisk_addr, = struct.unpack(lokformat, lok_header)
+
+    if lok_magic == "LOKI".encode("ASCII"):
         print_i("Found Loki header")
     else:
         raise Exception("Could not find Loki header")
 
-    # Read Loki header
-    f.seek(0x400, os.SEEK_SET)
-    l_hdr = loki_hdr()
-
-    l_hdr.magic             = f.read(4)
-    l_hdr.recovery          = to_int(f.read(4))
-    l_hdr.build             = f.read(128)
-    l_hdr.orig_kernel_size  = to_int(f.read(4))
-    l_hdr.orig_ramdisk_size = to_int(f.read(4))
-    l_hdr.ramdisk_addr      = to_int(f.read(4))
-    print_i("- magic:             " + l_hdr.magic.decode('ascii'))
-    print_i("- recovery:          " + str(l_hdr.recovery))
-    print_i("- build:             " + l_hdr.build.decode('ascii'))
-    print_i("- orig_kernel_size:  " + str(l_hdr.orig_kernel_size))
-    print_i("- orig_ramdisk_size: " + str(l_hdr.orig_ramdisk_size))
-    print_i("- ramdisk_addr:      " + hex(l_hdr.ramdisk_addr))
+    print_i("- magic:             " + lok_magic.decode('ascii'))
+    print_i("- recovery:          " + str(lok_recovery))
+    print_i("- build:             " + lok_build.decode('ascii'))
+    print_i("- orig_kernel_size:  " + str(lok_orig_kernel_size))
+    print_i("- orig_ramdisk_size: " + str(lok_orig_ramdisk_size))
+    print_i("- ramdisk_addr:      " + hex(lok_ramdisk_addr))
 
     print_i("")
 
@@ -172,7 +141,7 @@ def extract(filename, directory):
     gzip_size = total_size - gzip_offset - 0x200
     # The line above is for Samsung kernels only. Uncomment this one for use on
     # LG kernels:
-    #gzip_size = total_size - gzip_offset - a_hdr.page_size
+    #gzip_size = total_size - gzip_offset - page_size
     print_i("Ramdisk size: %i (may include some padding)" % gzip_size)
 
     # Get kernel size
@@ -183,30 +152,30 @@ def extract(filename, directory):
     # Luckily, the zimage headers stores the size at 0x2c, so we can get it
     # from there.
     # http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
-    f.seek(a_hdr.page_size + 0x2c, os.SEEK_SET)
-    kernel_size = to_int(f.read(4))
+    f.seek(page_size + 0x2c, os.SEEK_SET)
+    kernel_size = struct.unpack('<I', f.read(4))[0]
     print_i("Kernel size: " + str(kernel_size))
 
     print_i("")
 
     print_i("Writing kernel command line to %s-cmdline ..." % basename)
     out = open(os.path.join(directory, basename + "-cmdline"), 'wb')
-    out.write((a_hdr.cmdline.decode("ascii").rstrip('\0') + "\n").encode("ascii"))
+    out.write((cmdline.decode("ascii").rstrip('\0') + "\n").encode("ascii"))
     out.close()
 
     print_i("Writing base address to %s-base ..." % basename)
     out = open(os.path.join(directory, basename + "-base"), 'wb')
     # 0x00008000 is the same constant used in unpackbootimg.c
-    out.write((hex(a_hdr.kernel_addr - 0x00008000).lstrip("0x") + "\n").encode("ascii"))
+    out.write((hex(kernel_addr - 0x00008000).lstrip("0x") + "\n").encode("ascii"))
     out.close()
 
     print_i("Writing page size to %s-pagesize ..." % basename)
     out = open(os.path.join(directory, basename + "-pagesize"), 'wb')
-    out.write((str(a_hdr.page_size) + "\n").encode("ascii"))
+    out.write((str(page_size) + "\n").encode("ascii"))
     out.close()
 
     print_i("Writing kernel to %s-zImage ..." % basename)
-    f.seek(a_hdr.page_size, os.SEEK_SET)
+    f.seek(page_size, os.SEEK_SET)
     kernel_data = f.read(kernel_size)
     out = open(os.path.join(directory, basename + "-zImage"), 'wb')
     out.write(kernel_data)

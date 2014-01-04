@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="4.0.0beta5"
+VERSION="4.0.0beta8"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
@@ -20,32 +20,6 @@ fi
 
 CURDIR="$(cd "$(dirname "${0}")" && cd ..  && pwd)"
 cd "${CURDIR}"
-
-download_mkbootimg() {
-  rm -rf sources/mkbootimg
-  mkdir -p sources/mkbootimg
-  pushd sources/mkbootimg
-
-  mkdir mkbootimg
-  pushd mkbootimg
-  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/mkbootimg/mkbootimg.c
-  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/mkbootimg/unpackbootimg.c
-  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/mkbootimg/bootimg.h
-  popd
-
-  mkdir libmincrypt
-  pushd libmincrypt
-  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/libmincrypt/sha.c
-  popd
-
-  mkdir -p include/mincrypt
-  pushd include/mincrypt
-  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/include/mincrypt/sha.h
-  wget https://github.com/CyanogenMod/android_system_core/raw/cm-11.0/include/mincrypt/hash-internal.h
-  popd
-
-  popd
-}
 
 create_portable_python() {
   local URL="http://ftp.osuosl.org/pub/portablepython/v3.2/PortablePython_3.2.5.1.exe"
@@ -223,24 +197,6 @@ build_windows() {
   local TD="${TARGETDIR}/binaries/windows/"
   mkdir -p "${TD}"
 
-  pushd sources/mkbootimg
-  cp mkbootimg/mkbootimg.c mkbootimg/mkbootimg.windows.c
-  cp mkbootimg/unpackbootimg.c mkbootimg/unpackbootimg.windows.c
-  patch -p1 -i "${CURDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
-
-  ${MINGW_PREFIX}gcc -static -Iinclude \
-    mkbootimg/mkbootimg.windows.c \
-    libmincrypt/sha.c \
-    -o "${TD}/mkbootimg.exe"
-
-  ${MINGW_PREFIX}gcc -static -Iinclude \
-    mkbootimg/unpackbootimg.windows.c \
-    -o "${TD}/unpackbootimg.exe"
-
-  strip "${TD}"/{mkbootimg,unpackbootimg}.exe
-  rm mkbootimg/mkbootimg.windows.c mkbootimg/unpackbootimg.windows.c
-  popd
-
   mkdir -p windowsbinaries
   pushd windowsbinaries
 
@@ -329,43 +285,6 @@ build_windows() {
   popd
 }
 
-build_mac() {
-  local TD="${TARGETDIR}/binaries/osx/"
-  mkdir -p "${TD}"
-
-  mkdir -p macbinaries
-  pushd macbinaries
-
-  # Can't cross compile from Linux, unfortunately
-  # Thanks to munchy_cool for the binaries!
-  if [ ! -f bootimg_osx.tar.gz ]; then
-    wget 'http://fs1.d-h.st/download/00076/dBZ/bootimg_osx.tar.gz'
-  fi
-  tar zxvf bootimg_osx.tar.gz -C "${TD}"
-
-  popd
-
-  find "${TD}" -type f -exec chmod +x {} \+
-}
-
-build_linux() {
-  local TD="${TARGETDIR}/binaries/linux/"
-  mkdir -p "${TD}"
-
-  pushd sources/mkbootimg
-  gcc -m32 -static -Iinclude \
-    mkbootimg/mkbootimg.c \
-    libmincrypt/sha.c \
-    -o "${TD}/mkbootimg"
-
-  gcc -m32 -static -Iinclude \
-    mkbootimg/unpackbootimg.c \
-    -o "${TD}/unpackbootimg"
-
-  strip "${TD}"/{mkbootimg,unpackbootimg}
-  popd
-}
-
 build_android() {
   local TD="${TARGETDIR}/binaries/android/"
   mkdir -p "${TD}"
@@ -392,23 +311,6 @@ build_android() {
   cd ..
   rm -r patch-2.7
 
-  popd
-
-  pushd sources/mkbootimg
-  ${TEMPDIR}/bin/arm-linux-androideabi-gcc \
-    -static -Iinclude \
-    --sysroot=${TEMPDIR}/sysroot \
-    mkbootimg/mkbootimg.c \
-    libmincrypt/sha.c \
-    -o "${TD}/mkbootimg"
-
-  ${TEMPDIR}/bin/arm-linux-androideabi-gcc \
-    -static -Iinclude \
-    --sysroot=${TEMPDIR}/sysroot \
-    mkbootimg/unpackbootimg.c \
-    -o "${TD}/unpackbootimg"
-
-  ${TEMPDIR}/arm-linux-androideabi/bin/strip "${TD}"/{mkbootimg,unpackbootimg,patch}
   popd
 
   rm -r ${TEMPDIR}
@@ -441,19 +343,13 @@ rm -rf "${TARGETDIR}" "${TARGETNAME}.zip"
 mkdir -p "${TARGETDIR}/binaries" "${TARGETDIR}/ramdisks"
 
 # Build and copy stuff into target directory
-download_mkbootimg
 create_portable_python
 build_windows
-build_mac
-build_linux
 build_android
 
 mv pythonportable/ "${TARGETDIR}"
 cp -rt "${TARGETDIR}" \
   $(git ls-tree --name-only --full-tree HEAD | grep -v -e .gitignore -e Android_GUI)
-
-# Remove unneeded files
-rm "${TARGETDIR}/patches/0001-I-hate-Windows-with-a-passion.patch"
 
 # Android stuff
 ANDROIDTARGETNAME="DualBootPatcherAndroid-${VERSION}"
@@ -467,7 +363,7 @@ rm -r "${TARGETDIR}/binaries/android/"
 # Remove PC stuff from Android tar
 pushd "${ANDROIDTARGETNAME}"
 
-rm -r binaries/{linux,osx,windows}
+rm -r binaries/windows
 rm -r pythonportable
 find -name '*.bat' -delete
 

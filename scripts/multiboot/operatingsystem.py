@@ -7,23 +7,21 @@ import multiboot.ui.dummyui as dummyui
 import os
 import platform
 
-ui             = dummyui
+ui           = dummyui
 
-android        = False
+android      = False
 
-rootdir        = ""
-ramdiskdir     = ""
-patchdir       = ""
-binariesdir    = ""
-patchinfodir   = ""
+rootdir      = ""
+ramdiskdir   = ""
+patchdir     = ""
+binariesdir  = ""
+patchinfodir = ""
 
-mkbootimg      = ""
-unpackbootimg  = ""
-patch          = ""
-cpio           = ""
-bash           = ""
+patch        = ""
+cpio         = ""
+bash         = ""
 
-runonce        = False
+runonce      = False
 
 if not runonce:
     runonce = True
@@ -39,45 +37,37 @@ if not runonce:
         if platform.system() == "Linux":
             # Android
             if 'BOOTCLASSPATH' in os.environ:
-                ui            = androidui
-                android       = True
-                binariesdir   = os.path.join(binariesdir, "android")
-                mkbootimg     = os.path.join(binariesdir, "mkbootimg")
-                unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
-                patch         = os.path.join(binariesdir, "patch")
-                cpio          = os.path.join(binariesdir, "cpio")
-                patch         = os.path.realpath(patch)
+                ui          = androidui
+                android     = True
+                binariesdir = os.path.join(binariesdir, "android")
+                patch       = os.path.join(binariesdir, "patch")
+                cpio        = os.path.join(binariesdir, "cpio")
+                patch       = os.path.realpath(patch)
 
             # Desktop Linux
             else:
-                ui            = commandlineui
-                binariesdir   = os.path.join(binariesdir, "linux")
-                mkbootimg     = os.path.join(binariesdir, "mkbootimg")
-                unpackbootimg = os.path.join(binariesdir, "unpackbootimg")
-                patch         = "patch"
-                cpio          = "cpio"
+                ui          = commandlineui
+                binariesdir = os.path.join(binariesdir, "linux")
+                patch       = "patch"
+                cpio        = "cpio"
 
         elif platform.system() == "Darwin":
-            ui                = commandlineui
-            binariesdir       = os.path.join(binariesdir, "osx")
-            mkbootimg         = os.path.join(binariesdir, "mkbootimg")
-            unpackbootimg     = os.path.join(binariesdir, "unpackbootimg")
-            patch             = "patch"
-            cpio              = "cpio"
+            ui              = commandlineui
+            binariesdir     = os.path.join(binariesdir, "osx")
+            patch           = "patch"
+            cpio            = "cpio"
 
         else:
             raise Exception("Unsupported posix system")
 
     elif os.name == "nt":
-        ui                    = commandlineui
-        binariesdir           = os.path.join(binariesdir, "windows")
-        mkbootimg             = os.path.join(binariesdir, "mkbootimg.exe")
-        unpackbootimg         = os.path.join(binariesdir, "unpackbootimg.exe")
+        ui                  = commandlineui
+        binariesdir         = os.path.join(binariesdir, "windows")
         # Windows wants anything named patch.exe to run as Administrator
-        patch                 = os.path.join(binariesdir, "hctap.exe")
-        cpio                  = os.path.join(binariesdir, "cpio.exe")
+        patch               = os.path.join(binariesdir, "hctap.exe")
+        cpio                = os.path.join(binariesdir, "cpio.exe")
         # Windows really sucks
-        bash                  = os.path.join(binariesdir, "bash.exe")
+        bash                = os.path.join(binariesdir, "bash.exe")
 
     else:
         raise Exception("Unsupported operating system")

@@ -3,12 +3,12 @@ import multiboot.cmd as cmd
 import multiboot.debug as debug
 import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
+import multiboot.standalone.mkbootimg as mkbootimg
 import multiboot.standalone.unlokibootimg as unlokibootimg
+import multiboot.standalone.unpackbootimg as unpackbootimg
 
 import os
 
-output         = None
-error          = None
 error_msg      = None
 
 
@@ -18,100 +18,92 @@ class BootImageInfo:
         self.cmdline        = None
         self.pagesize       = None
 
+        # Offset
+        self.ramdisk_offset = None
+        self.second_offset  = None
+        self.tags_offset    = None
+
         # Paths
         self.kernel         = None
         self.ramdisk        = None
+        self.second         = None
         self.dt             = None
 
 
 def create(info, output_file):
     global output, error, error_msg
 
-    command = [OS.mkbootimg]
-
-    if info.kernel is not None:
-        command.append('--kernel')
-        command.append(info.kernel)
-
-    if info.ramdisk is not None:
-        command.append('--ramdisk')
-        command.append(info.ramdisk)
-
-    if info.dt is not None:
-        command.append('--dt')
-        command.append(info.dt)
-
-    if info.cmdline is not None:
-        command.append('--cmdline')
-        command.append(info.cmdline)
-
-    if info.base is not None:
-        command.append('--base')
-        command.append(info.base)
-
-    if info.pagesize is not None:
-        command.append('--pagesize')
-        command.append(info.pagesize)
-
-    ramdisk_offset = config.get_ramdisk_offset()
-    if ramdisk_offset is not None:
-        command.append('--ramdisk_offset')
-        command.append(ramdisk_offset)
-
-    tags_offset = config.get_tags_offset()
-    if tags_offset is not None:
-        command.append('--tags_offset')
-        command.append(tags_offset)
-
-    command.append('--output')
-    command.append(output_file)
-
-    exit_code, output, error = cmd.run_command(
-        command
-    )
-
-    if exit_code != 0:
-        return False
-    else:
+    try:
+        mkbootimg.build(
+            output_file,
+            board=None,
+            base=info.base,
+            cmdline=info.cmdline,
+            page_size=info.pagesize,
+            kernel_offset=None,
+            ramdisk_offset=info.ramdisk_offset,
+            second_offset=info.second_offset,
+            tags_offset=info.tags_offset,
+            kernel=info.kernel,
+            ramdisk=info.ramdisk,
+            second=info.second,
+            dt=info.dt
+        )
         return True
+    except Exception as e:
+        error_msg = 'Failed to create boot image: ' + str(e)
+        return False
 
 
 def extract(boot_image, output_dir, loki):
     global output, error, error_msg
 
-    if loki:
-        try:
-            if not OS.is_android() and not debug.is_debug():
-                unlokibootimg.show_output = False
+    try:
+        if not OS.is_android() and not debug.is_debug():
+            unlokibootimg.show_output = False
+            unpackbootimg.show_output = False
+
+        if loki:
             unlokibootimg.extract(boot_image, output_dir)
-        except Exception as e:
-            error_msg = str(e)
-            return False
-
-    else:
-        exit_code, output, error = cmd.run_command(
-            [OS.unpackbootimg,
-             '-i', boot_image,
-             '-o', output_dir]
-        )
-
-        if exit_code != 0:
-            error_msg = 'Failed to extract boot image'
-            return None
+        else:
+            unpackbootimg.extract(boot_image, output_dir)
+    except Exception as e:
+        error_msg = 'Failed to extract boot image'
+        return None
 
     info = BootImageInfo()
 
     prefix        = os.path.join(output_dir, os.path.split(boot_image)[1])
-    info.base     = '0x' + fileio.first_line(prefix + '-base')
-    info.cmdline  =        fileio.first_line(prefix + '-cmdline')
-    info.pagesize =        fileio.first_line(prefix + '-pagesize')
+    info.base     = int(fileio.first_line(prefix + '-base'), 16)
+    info.cmdline  = fileio.first_line(prefix + '-cmdline')
+    info.pagesize = int(fileio.first_line(prefix + '-pagesize'))
     os.remove(prefix + '-base')
     os.remove(prefix + '-cmdline')
     os.remove(prefix + '-pagesize')
 
-    info.kernel   = prefix + '-zImage'
-    info.ramdisk  = prefix + '-ramdisk.gz'
-    if os.path.exists(prefix + '-dt.img'):
-        info.dt   = prefix + '-dt.img'
+    if os.path.exists(prefix + '-ramdisk_offset'):
+        info.ramdisk_offset = int(fileio.first_line(prefix + '-ramdisk_offset'), 16)
+        os.remove(prefix + '-ramdisk_offset')
+    elif config.get_ramdisk_offset() is not None:
+        # We need this for Loki'd boot images
+        info.ramdisk_offset = int(config.get_ramdisk_offset(), 16)
+
+    if os.path.exists(prefix + '-second_offset'):
+        info.second_offset  = int(fileio.first_line(prefix + '-second_offset'), 16)
+        os.remove(prefix + '-second_offset')
+
+    if os.path.exists(prefix + '-tags_offset'):
+        info.tags_offset    = int(fileio.first_line(prefix + '-tags_offset'), 16)
+        os.remove(prefix + '-tags_offset')
+
+    info.kernel      = prefix + '-zImage'
+    if os.path.exists(prefix + '-ramdisk.gz'):
+        info.ramdisk = prefix + '-ramdisk.gz'
+    elif os.path.exists(prefix + '-ramdisk.lz4'):
+        info.ramdisk = prefix + '-ramdisk.lz4'
+    if os.path.exists(prefix + '-second'):
+        info.second  = prefix + '-second'
+    if os.path.exists(prefix + '-dt'):
+        info.dt      = prefix + '-dt'
 
     return info

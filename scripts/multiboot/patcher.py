@@ -69,7 +69,6 @@ def patch_boot_image(boot_image, file_info, partition_config):
 
     bootimageinfo = bootimage.extract(boot_image, tempdir, file_info.loki)
     if not bootimageinfo:
-        #ui.command_error(output = bootimage.output, error = bootimage.error)
         ui.failed(bootimage.error_msg)
         exit.exit(1)
 
@@ -189,8 +188,7 @@ def patch_boot_image(boot_image, file_info, partition_config):
 
     if not bootimage.create(bootimageinfo,
                             os.path.join(tempdir, 'complete.img')):
-        ui.command_error(output=bootimage.output, error=bootimage.error)
-        ui.failed('Failed to create boot image')
+        ui.failed('Failed to create boot image: ' + bootimage.error_msg)
         exit.exit(1)
 
     os.remove(target_kernel)
