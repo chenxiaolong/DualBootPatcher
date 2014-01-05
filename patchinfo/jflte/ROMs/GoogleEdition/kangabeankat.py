@@ -6,7 +6,7 @@ import re
 file_info = FileInfo()
 
 # Kangabean/Kangakat
-filename_regex           = r"K[BK]-.*\.zip$"
+filename_regex           = r"^K[BK]-.*\.zip$"
 file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
 file_info.loki           = True
 
