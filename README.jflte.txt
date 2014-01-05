@@ -31,6 +31,7 @@ ROMs:
     - CyanFox
     - Smasher X
   * AOKP ROMs
+    - Official AOKP ROMs
     - Task650
     - IceColdJelly (Vertigo)
     - IOKP
