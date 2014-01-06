@@ -160,18 +160,17 @@ def extract(filename, directory):
 
     print_i("Writing kernel command line to %s-cmdline ..." % basename)
     out = open(os.path.join(directory, basename + "-cmdline"), 'wb')
-    out.write((cmdline.decode("ascii").rstrip('\0') + "\n").encode("ascii"))
+    out.write((cmdline.decode("ascii").rstrip('\0') + '\n').encode("ascii"))
     out.close()
 
     print_i("Writing base address to %s-base ..." % basename)
     out = open(os.path.join(directory, basename + "-base"), 'wb')
-    # 0x00008000 is the same constant used in unpackbootimg.c
-    out.write((hex(kernel_addr - 0x00008000).lstrip("0x") + "\n").encode("ascii"))
+    out.write(('%08x\n' % (kernel_addr - 0x00008000)).encode('ASCII'))
     out.close()
 
     print_i("Writing page size to %s-pagesize ..." % basename)
     out = open(os.path.join(directory, basename + "-pagesize"), 'wb')
-    out.write((str(page_size) + "\n").encode("ascii"))
+    out.write(('%d\n' % page_size).encode('ASCII'))
     out.close()
 
     print_i("Writing kernel to %s-zImage ..." % basename)
