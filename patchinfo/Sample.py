@@ -7,6 +7,7 @@
 # Please copy this file to a new one before editing.
 
 from fileinfo import FileInfo
+import multiboot.autopatcher as autopatcher
 import re
 
 file_info = FileInfo()
@@ -46,9 +47,12 @@ file_info.has_boot_image = True
 # If the boot image has a different name or is in a subfolder, change this.
 file_info.bootimg        = 'boot.img'
 
-# This is the patch file you generated. Just copy the patch into a subfolder in
-# patches/ and put the path here.
-file_info.patch          = 'jflte/AOSP/YourROM.patch'
+# These two lines enable the autopatcher. In most cases, this is sufficient.
+file_info.patch          = autopatcher.auto_patch
+file_info.extract        = autopatcher.files_to_auto_patch
+# If, for whatever reason, the autopatcher doesn't work, uncomment this line,
+# copy your patch to patches/ and put the patch here.
+#file_info.patch          = 'jflte/AOSP/YourROM.patch'
 
 def print_message():
   # This is the message that is shown if the file to be patched is this one.
