@@ -80,6 +80,7 @@ Kernels:
   * Infamous Kernel
   * Ausdim kernel
   * Adam kernel
+  * Alucard kernel (AOSP & Google Edition)
   * Plain boot.img files (use useful/patch-ramdisk.bat script)
 
 Other:
