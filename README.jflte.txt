@@ -30,6 +30,7 @@ ROMs:
     - BAM Android
     - CyanFox
     - Smasher X
+    - Mahdi
   * AOKP ROMs
     - Official AOKP ROMs
     - Task650
