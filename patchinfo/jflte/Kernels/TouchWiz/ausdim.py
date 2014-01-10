@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^v[0-9\.]+-Google-edition-ausdim-Kernel-.*\.zip$"
+filename_regex           = r"^v[0-9\.]+-(TW|Google)-[Ee]dition-ausdim-Kernel-.*\.zip$"
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
