@@ -114,7 +114,7 @@ def patch_boot_image(boot_image, file_info, partition_config):
     cf.add_file(
         os.path.join(tempdir, 'init.multiboot.mounting.sh'),
         name='init.multiboot.mounting.sh',
-        perms=0o666
+        perms=0o750
     )
     os.remove(os.path.join(tempdir, 'init.multiboot.mounting.sh'))
 
@@ -122,7 +122,7 @@ def patch_boot_image(boot_image, file_info, partition_config):
     cf.add_file(
         os.path.join(OS.ramdiskdir, 'busybox-static'),
         name='sbin/busybox-static',
-        perms=0o755
+        perms=0o750
     )
 
     # Copy new init if needed
