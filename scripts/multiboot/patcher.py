@@ -2,9 +2,9 @@ import multiboot.ui.dummyui as dummyui
 import multiboot.autopatcher as autopatcher
 import multiboot.bootimage as bootimage
 import multiboot.config as config
-import multiboot.cpio as cpio
 import multiboot.exit as exit
 import multiboot.fileio as fileio
+import multiboot.minicpio.minicpio as minicpio
 import multiboot.operatingsystem as OS
 import multiboot.patch as patch
 import multiboot.ramdisk as ramdisk
@@ -81,16 +81,11 @@ def patch_boot_image(boot_image, file_info, partition_config):
 
     shutil.move(bootimageinfo.kernel, target_kernel)
 
-    extracted = os.path.join(tempdir, 'extracted')
-    os.mkdir(extracted)
-
-    # Decompress ramdisk
-    ui.details('Extracting ramdisk using cpio ...')
-    with gzip.open(bootimageinfo.ramdisk, 'rb') as f_in:
-        if not cpio.extract(extracted, data=f_in.read()):
-            ui.command_error(output=cpio.output, error=cpio.error)
-            ui.failed('Failed to extract ramdisk using cpio')
-            exit.exit(1)
+    # Minicpio
+    ui.details('Loading ramdisk with minicpio ...')
+    cf = minicpio.CpioFile()
+    with gzip.open(bootimageinfo.ramdisk, 'rb') as f:
+        cf.load(f.read())
 
     os.remove(bootimageinfo.ramdisk)
 
@@ -103,80 +98,53 @@ def patch_boot_image(boot_image, file_info, partition_config):
 
     ramdisk.process_def(
         os.path.join(OS.ramdiskdir, file_info.ramdisk),
-        extracted,
+        cf,
         partition_config
     )
 
     # Copy init.multiboot.mounting.sh
     shutil.copy(
         os.path.join(OS.ramdiskdir, 'init.multiboot.mounting.sh'),
-        extracted
+        tempdir
     )
     autopatcher.insert_partition_info(
-        extracted, 'init.multiboot.mounting.sh',
+        tempdir, 'init.multiboot.mounting.sh',
         partition_config, target_path_only=True
     )
+    cf.add_file(
+        os.path.join(tempdir, 'init.multiboot.mounting.sh'),
+        name='init.multiboot.mounting.sh',
+        perms=0o666
+    )
+    os.remove(os.path.join(tempdir, 'init.multiboot.mounting.sh'))
 
     # Copy busybox
-    shutil.copy(
+    cf.add_file(
         os.path.join(OS.ramdiskdir, 'busybox-static'),
-        os.path.join(extracted, 'sbin')
+        name='sbin/busybox-static',
+        perms=0o755
     )
 
     # Copy new init if needed
     if file_info.need_new_init:
-        shutil.copy(
+        cf.add_file(
             os.path.join(OS.ramdiskdir, 'init'),
-            extracted
+            name='init',
+            perms=0o755
         )
 
     # Create gzip compressed ramdisk
     set_task('COMPRESSING_RAMDISK')
-    ramdisk_files = []
-    for root, dirs, files in os.walk(extracted):
-        for d in dirs:
-            if os.path.samefile(root, extracted):
-                # cpio, for whatever reason, creates a directory called '.'
-
-                ramdisk_files.append(fileio.unix_path(d))
-
-                ui.details('Adding directory to ramdisk: %s' % d)
-            else:
-                relative_dir = os.path.relpath(root, extracted)
-
-                ramdisk_files.append(fileio.unix_path(
-                    os.path.join(relative_dir, d)))
-
-                ui.details('Adding directory to ramdisk: %s'
-                           % os.path.join(relative_dir, d))
-
-        for f in files:
-            if os.path.samefile(root, extracted):
-                # cpio, for whatever reason, creates a directory called '.'
-
-                ramdisk_files.append(fileio.unix_path(f))
-
-                ui.details('Adding file to ramdisk: %s' % f)
-            else:
-                relative_dir = os.path.relpath(root, extracted)
-
-                ramdisk_files.append(fileio.unix_path(
-                    os.path.join(relative_dir, f)))
-
-                ui.details('Adding file to ramdisk: %s'
-                           % os.path.join(relative_dir, f))
-
-    ui.details('Creating gzip compressed ramdisk with cpio ...')
+    ui.details('Creating gzip compressed ramdisk with minicpio ...')
 
     target_ramdisk = target_ramdisk + ".gz"
 
     with gzip.open(target_ramdisk, 'wb') as f_out:
-        data = cpio.create(extracted, ramdisk_files)
+        data = cf.create()
 
         if data is not None:
             f_out.write(data)
         else:
-            ui.command_error(output=cpio.output, error=cpio.error)
             ui.failed('Failed to create gzip compressed ramdisk')
             exit.exit(1)
 

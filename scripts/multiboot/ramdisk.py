@@ -12,8 +12,8 @@ error_msg = None
 suffix = re.compile(r"\.def$")
 
 
-def process_def(def_file, directory, partition_config):
-    debug.debug("Loading ramdisk definition %s in directory %s" % (def_file, directory))
+def process_def(def_file, cpiofile, partition_config):
+    debug.debug("Loading ramdisk definition %s" % def_file)
 
     for line in fileio.all_lines(def_file):
         if line.startswith("pyscript"):
@@ -25,14 +25,7 @@ def process_def(def_file, directory, partition_config):
             plugin = imp.load_source(os.path.basename(path)[:-3],
                                      os.path.join(OS.ramdiskdir, path))
 
-            plugin.patch_ramdisk(directory, partition_config)
-
-        elif line.startswith("patch"):
-            path = os.path.join(OS.ramdiskdir,
-                                re.search(r"^patch\s*=\s*\"?(.*)\"?\s*$", line).group(1))
-            if not patch.apply_patch(path, directory):
-                error_msg = patch.error_msg
-                return False
+            plugin.patch_ramdisk(cpiofile, partition_config)
 
     return True
 

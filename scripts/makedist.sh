@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="4.0.0beta8"
+VERSION="4.0.0beta12"
 MINGW_PREFIX=i486-mingw32-
 ANDROID_NDK=/opt/android-ndk
 
@@ -218,44 +218,14 @@ build_windows() {
     wget "${URLBASE}/libiconv/libiconv2/libiconv2-1.14-2.tar.bz2"
   fi
 
-  # libreadline
-  if [ ! -f libreadline7-6.1.2-3.tar.bz2 ]; then
-    wget "${URLBASE}/readline/libreadline7/libreadline7-6.1.2-3.tar.bz2"
-  fi
-
-  # libgcc
-  if [ ! -f libgcc1-4.7.3-1.tar.bz2 ]; then
-    wget "${URLBASE}/gcc/libgcc1/libgcc1-4.7.3-1.tar.bz2"
-  fi
-
-  # libncursesw
-  if [ ! -f libncursesw10-5.7-18.tar.bz2 ]; then
-    wget "${URLBASE}/ncursesw/libncursesw10/libncursesw10-5.7-18.tar.bz2"
-  fi
-
-  # cpio
-  if [ ! -f cpio-2.11-2.tar.bz2 ]; then
-    wget "${URLBASE}/cpio/cpio-2.11-2.tar.bz2"
-  fi
-
   # patch
   if [ ! -f patch-2.7.1-1.tar.bz2 ]; then
     wget "${URLBASE}/patch/patch-2.7.1-1.tar.bz2"
   fi
 
-  # bash
-  if [ ! -f bash-4.1.10-4.tar.bz2 ]; then
-    wget "${URLBASE}/bash/bash-4.1.10-4.tar.bz2"
-  fi
-
   # diff
   if [ ! -f diffutils-3.2-1.tar.bz2 ]; then
     wget "${URLBASE}/diffutils/diffutils-3.2-1.tar.bz2"
-  fi
-
-  # coreutils (for chmod)
-  if [ ! -f coreutils-8.15-1.tar.bz2 ]; then
-    wget "${URLBASE}/coreutils/coreutils-8.15-1.tar.bz2"
   fi
 
   tar jxvf cygwin-1.7.25-1.tar.bz2 usr/bin/cygwin1.dll \
@@ -264,22 +234,10 @@ build_windows() {
     --to-stdout > "${TD}/cygintl-8.dll"
   tar jxvf libiconv2-1.14-2.tar.bz2 usr/bin/cygiconv-2.dll \
     --to-stdout > "${TD}/cygiconv-2.dll"
-  tar jxvf libreadline7-6.1.2-3.tar.bz2 usr/bin/cygreadline7.dll \
-    --to-stdout > "${TD}/cygreadline7.dll"
-  tar jxvf libgcc1-4.7.3-1.tar.bz2 usr/bin/cyggcc_s-1.dll \
-    --to-stdout > "${TD}/cyggcc_s-1.dll"
-  tar jxvf libncursesw10-5.7-18.tar.bz2 usr/bin/cygncursesw-10.dll \
-    --to-stdout > "${TD}/cygncursesw-10.dll"
-  tar jxvf cpio-2.11-2.tar.bz2 usr/bin/cpio.exe \
-    --to-stdout > "${TD}/cpio.exe"
   tar jxvf patch-2.7.1-1.tar.bz2 usr/bin/patch.exe \
     --to-stdout > "${TD}/hctap.exe"
-  tar jxvf bash-4.1.10-4.tar.bz2 usr/bin/bash.exe \
-    --to-stdout > "${TD}/bash.exe"
   tar jxvf diffutils-3.2-1.tar.bz2 usr/bin/diff.exe \
     --to-stdout > "${TD}/diff.exe"
-  tar jxvf coreutils-8.15-1.tar.bz2 usr/bin/chmod.exe \
-    --to-stdout > "${TD}/chmod.exe"
 
   chmod +x "${TD}"/*.{exe,dll}
   popd
@@ -316,7 +274,6 @@ build_android() {
   rm -r ${TEMPDIR}
 
   cp "${CURDIR}/ramdisks/busybox-static" "${TD}/"
-  ln -s busybox-static "${TD}/cpio"
 }
 
 build_android_app() {

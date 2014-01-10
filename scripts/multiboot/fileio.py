@@ -12,7 +12,7 @@ def write(f, line):
     if sys.hexversion < 0x03000000:
         f.write(line)
     else:
-        f.write(line.encode("UTF-8"))
+        f.write(line.encode('UTF-8'))
 
 
 def open_file(f, flags, directory=""):
@@ -56,3 +56,25 @@ def unix_path(path):
         return path.replace('\\', '/')
     else:
         return path
+
+
+def bytes_to_lines(data):
+    string = data.decode('UTF-8')
+    lines = []
+    pos = 0
+
+    while pos < len(string):
+        index = string.find('\n', pos)
+
+        if index != -1:
+            lines.append(string[pos:index + 1])
+            pos = index + 1
+        else:
+            lines.append(string[pos:])
+            break
+
+    return lines
+
+
+def encode(data):
+    return data.encode('UTF-8')

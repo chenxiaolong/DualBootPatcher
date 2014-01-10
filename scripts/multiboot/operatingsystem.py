@@ -18,8 +18,6 @@ binariesdir  = ""
 patchinfodir = ""
 
 patch        = ""
-cpio         = ""
-bash         = ""
 
 runonce      = False
 
@@ -41,21 +39,16 @@ if not runonce:
                 android     = True
                 binariesdir = os.path.join(binariesdir, "android")
                 patch       = os.path.join(binariesdir, "patch")
-                cpio        = os.path.join(binariesdir, "cpio")
                 patch       = os.path.realpath(patch)
 
             # Desktop Linux
             else:
                 ui          = commandlineui
-                binariesdir = os.path.join(binariesdir, "linux")
                 patch       = "patch"
-                cpio        = "cpio"
 
         elif platform.system() == "Darwin":
             ui              = commandlineui
-            binariesdir     = os.path.join(binariesdir, "osx")
             patch           = "patch"
-            cpio            = "cpio"
 
         else:
             raise Exception("Unsupported posix system")
@@ -65,9 +58,6 @@ if not runonce:
         binariesdir         = os.path.join(binariesdir, "windows")
         # Windows wants anything named patch.exe to run as Administrator
         patch               = os.path.join(binariesdir, "hctap.exe")
-        cpio                = os.path.join(binariesdir, "cpio.exe")
-        # Windows really sucks
-        bash                = os.path.join(binariesdir, "bash.exe")
 
     else:
         raise Exception("Unsupported operating system")
@@ -79,6 +69,20 @@ if not runonce:
 
 def is_windows():
     if os.name == "nt":
+        return True
+    else:
+        return False
+
+
+def is_linux():
+    if os.name == "posix" and platform.system() == "Linux":
+        return True
+    else:
+        return False
+
+
+def is_darwin():
+    if os.name == "posix" and platform.system() == "Linux":
         return True
     else:
         return False

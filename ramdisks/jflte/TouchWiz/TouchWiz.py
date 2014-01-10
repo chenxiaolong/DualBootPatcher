@@ -7,55 +7,59 @@ import re
 import shutil
 import sys
 
-def modify_init_rc(directory):
-  lines = fileio.all_lines('init.rc', directory = directory)
+def modify_init_rc(cpiofile):
+  cpioentry = cpiofile.get_file('init.rc')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
 
-  f = fileio.open_file('init.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if 'export ANDROID_ROOT' in line:
-      fileio.write(f, line)
-      fileio.write(f, fileio.whitespace(line) + "export ANDROID_CACHE /cache\n")
+      buf += fileio.encode(line)
+      buf += fileio.encode(fileio.whitespace(line) + "export ANDROID_CACHE /cache\n")
 
     elif re.search(r"mkdir /system(\s|$)", line):
-      fileio.write(f, line)
-      fileio.write(f, re.sub("/system", "/raw-system", line))
+      buf += fileio.encode(line)
+      buf += fileio.encode(re.sub("/system", "/raw-system", line))
 
     elif re.search(r"mkdir /data(\s|$)", line):
-      fileio.write(f, line)
-      fileio.write(f, re.sub("/data", "/raw-data", line))
+      buf += fileio.encode(line)
+      buf += fileio.encode(re.sub("/data", "/raw-data", line))
 
     elif re.search(r"mkdir /cache(\s|$)", line):
-      fileio.write(f, line)
-      fileio.write(f, re.sub("/cache", "/raw-cache", line))
+      buf += fileio.encode(line)
+      buf += fileio.encode(re.sub("/cache", "/raw-cache", line))
 
     elif 'yaffs2' in line:
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     else:
-      fileio.write(f, line)
+      buf += fileio.encode(line)
 
-  f.close()
+  cpioentry.set_content(buf)
 
-def modify_init_qcom_rc(directory):
-  lines = fileio.all_lines('init.qcom.rc', directory = directory)
+def modify_init_qcom_rc(cpiofile):
+  cpioentry = cpiofile.get_file('init.qcom.rc')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
 
-  f = fileio.open_file('init.qcom.rc', fileio.WRITE, directory = directory)
   for line in lines:
     # Change /data/media to /raw-data/media
     if re.search(r"/data/media(\s|$)", line):
-      fileio.write(f, re.sub('/data/media', '/raw-data/media', line))
+      buf += fileio.encode(re.sub('/data/media', '/raw-data/media', line))
 
     else:
-      fileio.write(f, line)
+      buf += fileio.encode(line)
 
-  f.close()
+  cpioentry.set_content(buf)
 
-def modify_fstab(directory, partition_config):
+def modify_fstab(cpiofile, partition_config):
   # Ignore all contents for TouchWiz
-  lines = fileio.all_lines('fstab.qcom', directory = directory)
+  cpioentry = cpiofile.get_file('fstab.qcom')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
 
   system = "/dev/block/platform/msm_sdcc.1/by-name/system /raw-system ext4 ro,errors=panic wait\n"
   cache = "/dev/block/platform/msm_sdcc.1/by-name/cache /raw-cache ext4 nosuid,nodev,barrier=1 wait,check\n"
@@ -75,86 +79,87 @@ def modify_fstab(directory, partition_config):
 
   has_cache_line = False
 
-  f = fileio.open_file('fstab.qcom', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
       if '/raw-system' in partition_config.target_cache:
-        fileio.write(f, target_cache_on_system)
+        buf += fileio.encode(target_cache_on_system)
       else:
-        fileio.write(f, system)
+        buf += fileio.encode(system)
 
     elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
       if '/raw-cache' in partition_config.target_system:
-        fileio.write(f, target_system_on_cache)
+        buf += fileio.encode(target_system_on_cache)
       else:
-        fileio.write(f, cache)
+        buf += fileio.encode(cache)
 
       has_cache_line = True
 
     elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
       if '/raw-data' in partition_config.target_system:
-        fileio.write(f, target_system_on_data)
+        buf += fileio.encode(target_system_on_data)
       else:
-        fileio.write(f, data)
+        buf += fileio.encode(data)
 
     else:
-      fileio.write(f, line)
+      buf += fileio.encode(line)
 
   if not has_cache_line:
     if '/raw-cache' in partition_config.target_system:
-      fileio.write(f, target_system_on_cache)
+      buf += fileio.encode(target_system_on_cache)
     else:
-      fileio.write(f, cache)
+      buf += fileio.encode(cache)
 
-  f.close()
+  cpioentry.set_content(buf)
 
-def modify_init_target_rc(directory):
-  lines = fileio.all_lines('init.target.rc', directory = directory)
+def modify_init_target_rc(cpiofile):
+  cpioentry = cpiofile.get_file('init.target.rc')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
 
   previous_line = ""
 
-  f = fileio.open_file('init.target.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^\s+wait\s+/dev/.*/cache.*$", line):
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+check_fs\s+/dev/.*/cache.*$", line):
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount\s+ext4\s+/dev/.*/cache.*$", line):
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line) and \
         re.search(r"^on\s+fs_selinux.*$", previous_line):
-      fileio.write(f, line)
-      fileio.write(f, fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
+      buf += fileio.encode(line)
+      buf += fileio.encode(fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
     elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     else:
-      fileio.write(f, line)
+      buf += fileio.encode(line)
 
     previous_line = line
 
-  f.close()
+  cpioentry.set_content(buf)
 
-def modify_MSM8960_lpm_rc(directory):
-  lines = fileio.all_lines('MSM8960_lpm.rc', directory = directory)
+def modify_MSM8960_lpm_rc(cpiofile):
+  cpioentry = cpiofile.get_file('MSM8960_lpm.rc')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
 
-  f = fileio.open_file('MSM8960_lpm.rc', fileio.WRITE, directory = directory)
   for line in lines:
     if re.search(r"^\s+mount.*/cache.*$", line):
-      fileio.write(f, re.sub(r"^", "#", line))
+      buf += fileio.encode(re.sub(r"^", "#", line))
 
     else:
-      fileio.write(f, line)
+      buf += fileio.encode(line)
 
-  f.close()
+  cpioentry.set_content(buf)
 
-def patch_ramdisk(directory, partition_config):
-  modify_init_rc(directory)
-  modify_init_qcom_rc(directory)
-  modify_fstab(directory, partition_config)
-  modify_init_target_rc(directory)
-  modify_MSM8960_lpm_rc(directory)
+def patch_ramdisk(cpiofile, partition_config):
+  modify_init_rc(cpiofile)
+  modify_init_qcom_rc(cpiofile)
+  modify_fstab(cpiofile, partition_config)
+  modify_init_target_rc(cpiofile)
+  modify_MSM8960_lpm_rc(cpiofile)
