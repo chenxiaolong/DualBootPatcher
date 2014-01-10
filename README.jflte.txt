@@ -72,6 +72,7 @@ ROMs:
     - Echoe
     - BlackBox
     - TouchliteGE
+    - Phoenix
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
