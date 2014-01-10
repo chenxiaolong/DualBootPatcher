@@ -254,14 +254,23 @@ class CpioFile:
         buf = bytes()
 
         # Uniquify inodes
-        cur_inode = 10000
+        cur_inode = 300000
 
+        # The kernel wants directories to come first
+        temp = []
+
+        # Assign inodes
         for inode in self.inodemap:
             for i in self.inodemap[inode]:
                 i.ino = cur_inode
-                buf = i.pack(buf)
+                temp.append(i)
 
             cur_inode += 1
+
+        temp = sorted(temp, key=lambda x: x.name)
+
+        for i in temp:
+            buf = i.pack(buf)
 
         member = CpioEntryNew()
         member.magic = MAGIC_NEW
@@ -300,8 +309,10 @@ class CpioFile:
                     # hard link
                     raise Exception("Trying to replace hard link with data")
 
-                self.inodemap[i.ino].remove(i)
                 self.members.remove(i)
+                self.inodemap[i.ino].remove(i)
+                if len(self.inodemap[i.ino]) == 0:
+                    del self.inodemap[i.ino]
                 break
 
         member = CpioEntryNew()
