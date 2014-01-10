@@ -31,6 +31,7 @@ ROMs:
     - CyanFox
     - Smasher X
     - Mahdi
+    - BeanStalk
   * AOKP ROMs
     - Official AOKP ROMs
     - Task650
