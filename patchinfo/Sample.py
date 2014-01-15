@@ -37,6 +37,9 @@ file_info = FileInfo()
 # would work just as well.
 filename_regex           = r"^.*SuperSU.*\.zip$"
 
+# This is the name of the ROM, kernel, or other zip file.
+file_info.name           = 'Name goes here'
+
 # This is the type of ramdisk. Run the 'list-ramdisks' file in the useful/
 # folder to see what choices are available. (It's pretty obvious, you'll see)
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
@@ -53,10 +56,6 @@ file_info.extract        = autopatcher.files_to_auto_patch
 # If, for whatever reason, the autopatcher doesn't work, uncomment this line,
 # copy your patch to patches/ and put the patch here.
 #file_info.patch          = 'jflte/AOSP/YourROM.patch'
-
-def print_message():
-  # This is the message that is shown if the file to be patched is this one.
-  print("Detected The Name of Some ROM")
 
 ###
 

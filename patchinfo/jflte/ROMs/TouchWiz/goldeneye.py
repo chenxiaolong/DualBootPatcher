@@ -9,13 +9,11 @@ att_filenames = [
 ]
 
 filename_regex           = r"^GE.*\.zip$"
+file_info.name           = 'GoldenEye'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'kernel/boot.img'
-
-def print_message():
-  print("Detected GoldenEye")
 
 def matches(filename):
   if re.search(filename_regex, filename):

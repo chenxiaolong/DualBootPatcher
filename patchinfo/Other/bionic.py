@@ -4,6 +4,7 @@ import re
 
 file_info = FileInfo()
 
+file_info.name           = "Moto X's Qualcomm-optimized Dalvik and Bionic libraries"
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.has_boot_image = False
@@ -15,9 +16,6 @@ def matches(filename):
     return True
   else:
     return False
-
-def print_message():
-  print("Detected Moto X's Qualcomm-optimized Dalvik and Bionic libraries zip")
 
 def get_file_info():
   return file_info

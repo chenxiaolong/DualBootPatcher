@@ -7,6 +7,7 @@ import os
 
 class FileInfo:
     def __init__(self):
+        self.name = ''
         self.loki = False
         self.patch = None
         self.extract = None
@@ -37,7 +38,7 @@ def get_info(path, device):
 
                         if file_info:
                             debug.debug("Loading patchinfo plugin: " + filename)
-                            plugin.print_message()
+                            print('Detected ' + file_info.name)
                             return file_info
 
     return None

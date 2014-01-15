@@ -5,13 +5,11 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^touchliteGE.*\.zip$"
+file_info.name           = 'TouchliteGE TouchWiz'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'boot.img'
-
-def print_message():
-  print("Detected TouchliteGE TouchWiz ROM")
 
 def matches(filename):
   if re.search(filename_regex, filename):

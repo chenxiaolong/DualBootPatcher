@@ -10,13 +10,11 @@ file_info = FileInfo()
 #   AT&T_Echoe_Illusion_Rom_v7_09Nov.zip
 filename_regex           = [ r"^Echoe[ _]?(Rom|SLIM).*\.zip$",
                              r"^S4_Echoe.*\.zip" ]
+file_info.name           = 'Echoe TouchWiz'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'boot.img'
-
-def print_message():
-  print("Detected Echoe TouchWiz ROM zip")
 
 def matches(filename):
   for regex in filename_regex:

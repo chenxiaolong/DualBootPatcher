@@ -4,6 +4,7 @@ import re
 
 file_info = FileInfo()
 
+file_info.name           = 'Xposed Framework Disabler'
 file_info.patch          = 'Other/xposed.dualboot.patch'
 file_info.has_boot_image = False
 
@@ -12,9 +13,6 @@ def matches(filename):
     return True
   else:
     return False
-
-def print_message():
-  print("Detected Xposed disabler zip")
 
 def get_file_info():
   return file_info

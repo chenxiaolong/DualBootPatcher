@@ -5,6 +5,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^cm-[0-9\.]+-[0-9]+-.*.zip$"
+file_info.name           = 'CyanogenMod-based ROM'
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
@@ -16,9 +17,6 @@ def matches(filename):
     return True
   else:
     return False
-
-def print_message():
-  print("Detected Cyanogenmod based ROM zip")
 
 def get_file_info(filename = ""):
   return file_info

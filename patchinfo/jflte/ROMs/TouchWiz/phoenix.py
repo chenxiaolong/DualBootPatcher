@@ -5,6 +5,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^PhoeniX.ROM.*\.zip$"
+file_info.name           = 'PhoeniX'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
@@ -15,9 +16,6 @@ def matches(filename):
     return True
   else:
     return False
-
-def print_message():
-  print("Detected PhoeniX ROM")
 
 def get_file_info():
   return file_info

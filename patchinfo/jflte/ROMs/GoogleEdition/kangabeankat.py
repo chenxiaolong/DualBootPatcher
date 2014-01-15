@@ -7,11 +7,9 @@ file_info = FileInfo()
 
 # Kangabean/Kangakat
 filename_regex           = r"^K[BK]-.*\.zip$"
+file_info.name           = 'Kangabean/Kangakat'
 file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
 file_info.loki           = True
-
-def print_message():
-  print("Detected Kangabean/Kangakat ROM zip")
 
 def get_file_info():
   return file_info

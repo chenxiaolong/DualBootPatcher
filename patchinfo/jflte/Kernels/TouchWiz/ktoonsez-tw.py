@@ -6,6 +6,7 @@ file_info = FileInfo()
 
 filename_regex_42        = r"^KT-SGS4-JB4.2-TW-.*\.zip$"
 filename_regex_43        = r"^KT-SGS4-JB4.3-TW-.*\.zip$"
+file_info.name           = 'Ktoonsez TouchWiz kernel'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
@@ -19,9 +20,6 @@ def matches(filename):
     return True
   else:
     return False
-
-def print_message():
-  print("Detected ktoonsez kernel zip")
 
 def get_file_info():
   return file_info

@@ -5,6 +5,7 @@ import re
 file_info = FileInfo()
 
 filename_regex           = r"^FoxHound_.*\.zip$"
+file_info.name           = 'FoxHound'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.bootimg        = "snakes/Kernels/Stock/boot.img"
 file_info.patch          = [ autopatcher.auto_patch,
@@ -17,9 +18,6 @@ def matches(filename):
     return True
   else:
     return False
-
-def print_message():
-  print("Detected FoxHound ROM zip")
 
 def get_file_info():
   return file_info
