@@ -297,7 +297,7 @@ def patch_zip(zip_file, file_info, partition_config):
     z_output = zipfile.ZipFile(new_zip_file[1], 'w', zipfile.ZIP_DEFLATED)
 
     progress_current = 0
-    progress_total = len(z_input.infolist()) - len(files_to_patch) - 1
+    progress_total = len(z_input.infolist()) - len(files_to_patch)
     if file_info.has_boot_image:
         progress_total -= 1
     for root, dirs, files in os.walk(tempdir):
