@@ -1,5 +1,8 @@
+import multiboot.autopatchers as autopatchers
 import multiboot.fileio as fileio
 
+import imp
+import os
 import re
 
 
@@ -244,3 +247,33 @@ def insert_partition_info(directory, f, config, target_path_only=False):
         i += 1
 
     fileio.write_lines(f, lines, directory=directory)
+
+
+class AutoPatcher:
+    def __init__(self):
+        self.name = ''
+        self.patcher = None
+        self.extractor = None
+
+
+def get_auto_patchers():
+    aps = list()
+
+    mainautopatcher = AutoPatcher()
+    mainautopatcher.name = 'Standard'
+    mainautopatcher.patcher = [ auto_patch ]
+    mainautopatcher.extractor = [ files_to_auto_patch ]
+    aps.append(mainautopatcher)
+
+    for root, dirs, files in os.walk(autopatchers.__path__[0]):
+        for f in files:
+            if f.endswith(".py") and not f == '__init__.py':
+                plugin = imp.load_source(os.path.basename(f)[:-3],
+                                          os.path.join(root, f))
+                moreaps = plugin.get_auto_patchers()
+                if type(moreaps) == list:
+                    aps.extend(moreaps)
+                elif type(moreaps) == AutoPatcher:
+                    aps.append(moreaps)
+
+    return aps

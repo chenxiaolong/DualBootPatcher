@@ -15,7 +15,6 @@ except Exception as e:
 
 import multiboot.autopatcher as autopatcher
 import multiboot.config as config
-import multiboot.exit as exit
 import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patcher as patcher
@@ -105,4 +104,4 @@ elif filetype == "zip":
 shutil.copyfile(new_file, new_path)
 os.remove(new_file)
 print("Path: " + new_path)
-exit.exit(0)
+sys.exit(0)

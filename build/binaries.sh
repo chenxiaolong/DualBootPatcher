@@ -1,4 +1,4 @@
-build_windows() {
+create_binaries_windows() {
     local TD="${TARGETDIR}/binaries/windows/"
     mkdir -p "${TD}"
 
@@ -35,10 +35,14 @@ build_windows() {
         --to-stdout > "${TD}/diff.exe"
 
     chmod +x "${TD}"/*.{exe,dll}
+
+    # Compress binaries and libraries
+    upx -v -9 "${TD}"/*.{exe,dll} || :
+
     popd
 }
 
-build_android() {
+create_binaries_android() {
     local TD="${TARGETDIR}/binaries/android/"
     mkdir -p "${TD}"
 

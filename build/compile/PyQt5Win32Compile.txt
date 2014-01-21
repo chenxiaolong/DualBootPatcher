@@ -1,0 +1,34 @@
+Note: PyQt cannot be compiled under Wine!
+
+1. Download and install Python 3.3 (x86):
+     http://python.org/download/
+2. Download and install Visual Studio 2010 Express Edition:
+     http://www.visualstudio.com/downloads/download-visual-studio-vs#DownloadFamilies_4
+3. Download sip source:
+     http://www.riverbankcomputing.com/software/sip/download
+4: Download PyQt5 source:
+     http://www.riverbankcomputing.com/software/pyqt/download5
+5: Download QtBase 5.2.0 source:
+     http://download.qt-project.org/official_releases/qt/5.2/5.2.0/submodules/
+
+6. Open Visual Studio Command Prompt (2010)
+
+7. Change to sip source directory
+8. $ C:\Python33\python.exe configure.py -p win32-msvc2010
+9. $ nmake
+10. $ nmake install
+
+11. Change to the Qt source directory
+12. $ configure -release -opensource -platform win32-msvc2010 -shared -nomake tests -nomake examples -no-icu -strip -mp -opengl desktop -prefix C:\QtCoreMinimal\5.2.0
+13. $ nmake
+14. $ nmake install
+
+15. Change to the PyQt5 source directory
+16. $ set QT5DIR=C:\QtCoreMinimal\5.2.0
+17. $ set PATH=%PATH%;C:\QtCoreMinimal\5.2.0\bin;C:\Python33
+18. $ C:\Python33\python.exe configure.py --verbose --concatenate --enable QtCore --enable QtGui --enable QtWidgets --no-designer-plugin --no-docstrings --no-qml-plugin --no-qsci-api --no-sip-files
+19. $ nmake
+20. $ nmake install
+
+21. Copy all the DLLs in C:\QtCoreMinimal\5.2.0\bin and the C:\QtCoreStatic\5.2.0\plugins folder to C:\Python33\Lib\site-packages\PyQt5
+22. Zip up sip.pyd and PyQt5/ in C:\Python33\Lib\site-packages

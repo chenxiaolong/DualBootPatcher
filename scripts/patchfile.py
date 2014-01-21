@@ -12,7 +12,6 @@ except Exception as e:
     sys.exit(1)
 
 import multiboot.config as config
-import multiboot.exit as exit
 import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patcher as patcher
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         ui.info("Usage: %s [zip file or boot.img] [multiboot type]"
                 % sys.argv[0])
-        exit.exit(1)
+        sys.exit(1)
 
     filename = sys.argv[1]
     if len(sys.argv) == 2:
@@ -55,11 +54,11 @@ if __name__ == "__main__":
 
     if not partition_config:
         ui.info("Multiboot config %s does not exist!" % config_name)
-        exit.exit(1)
+        sys.exit(1)
 
     if not os.path.exists(filename):
         ui.info("%s does not exist!" % filename)
-        exit.exit(1)
+        sys.exit(1)
 
     filename = os.path.abspath(filename)
     filetype = detect_file_type(filename)
@@ -67,7 +66,7 @@ if __name__ == "__main__":
 
     if file_info and \
             (('all' not in file_info.configs
-              and partition_config not in file_info.configs)
+              and partition_config.id not in file_info.configs)
              or '!' + partition_config.id in file_info.configs):
         file_info = None
         ui.info("The %s partition configuration is not supported for this file"
@@ -79,12 +78,12 @@ if __name__ == "__main__":
 
     if filetype == "UNKNOWN":
         ui.failed("Unsupported file")
-        exit.exit(1)
+        sys.exit(1)
 
     if filetype == "zip":
         if not file_info:
             ui.failed("Unsupported zip")
-            exit.exit(1)
+            sys.exit(1)
 
         # Patch zip and get path to patched zip
         patcher.add_tasks(file_info)
@@ -119,4 +118,4 @@ if __name__ == "__main__":
         if not OS.is_android():
             ui.info("Path: " + newpath)
 
-    exit.exit(0)
+    sys.exit(0)

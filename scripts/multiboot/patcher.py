@@ -2,7 +2,6 @@ import multiboot.ui.dummyui as dummyui
 import multiboot.autopatcher as autopatcher
 import multiboot.bootimage as bootimage
 import multiboot.config as config
-import multiboot.exit as exit
 import multiboot.fileio as fileio
 import multiboot.minicpio.minicpio as minicpio
 import multiboot.operatingsystem as OS
@@ -52,6 +51,8 @@ def set_task(task):
 
 
 def patch_boot_image(boot_image, file_info, partition_config):
+    tempdirs = list()
+
     if new_ui:
         ui = new_ui
     else:
@@ -60,7 +61,7 @@ def patch_boot_image(boot_image, file_info, partition_config):
     set_task('PATCHING_RAMDISK')
 
     tempdir = tempfile.mkdtemp()
-    exit.remove_on_exit(tempdir)
+    tempdirs.append(tempdir)
 
     if file_info.loki:
         ui.details('Unpacking loki boot image ...')
@@ -70,7 +71,8 @@ def patch_boot_image(boot_image, file_info, partition_config):
     bootimageinfo = bootimage.extract(boot_image, tempdir, file_info.loki)
     if not bootimageinfo:
         ui.failed(bootimage.error_msg)
-        exit.exit(1)
+        cleanup(tempdirs)
+        return None
 
     selinux = config.get_selinux()
     if selinux is not None:
@@ -146,7 +148,8 @@ def patch_boot_image(boot_image, file_info, partition_config):
             f_out.write(data)
         else:
             ui.failed('Failed to create gzip compressed ramdisk')
-            exit.exit(1)
+            cleanup(tempdirs)
+            return None
 
     set_task('CREATING_BOOT_IMAGE')
     ui.details('Running mkbootimg ...')
@@ -154,18 +157,26 @@ def patch_boot_image(boot_image, file_info, partition_config):
     bootimageinfo.kernel = target_kernel
     bootimageinfo.ramdisk = target_ramdisk
 
-    if not bootimage.create(bootimageinfo,
-                            os.path.join(tempdir, 'complete.img')):
+    new_boot_image = tempfile.mkstemp()
+
+    if not bootimage.create(bootimageinfo, new_boot_image[1]):
         ui.failed('Failed to create boot image: ' + bootimage.error_msg)
-        exit.exit(1)
+        cleanup(tempdirs)
+        os.close(new_boot_image[0])
+        os.remove(new_boot_image[1])
+        return None
 
     os.remove(target_kernel)
     os.remove(target_ramdisk)
 
-    return os.path.join(tempdir, 'complete.img')
+    cleanup(tempdirs)
+    os.close(new_boot_image[0])
+    return new_boot_image[1]
 
 
 def patch_zip(zip_file, file_info, partition_config):
+    tempdirs = list()
+
     if new_ui:
         ui = new_ui
     else:
@@ -204,7 +215,7 @@ def patch_zip(zip_file, file_info, partition_config):
                 files_to_patch.append(i)
 
     tempdir = tempfile.mkdtemp()
-    exit.remove_on_exit(tempdir)
+    tempdirs.append(tempdir)
 
     set_task('EXTRACTING_ZIP')
 
@@ -217,7 +228,8 @@ def patch_zip(zip_file, file_info, partition_config):
             z.extract(f, path=tempdir)
         except:
             ui.failed('Failed to extract file: %s' % f)
-            exit.exit(1)
+            cleanup(tempdirs)
+            return None
 
     if file_info.has_boot_image:
         ui.details("Extracting boot image: %s" % file_info.bootimg)
@@ -225,7 +237,8 @@ def patch_zip(zip_file, file_info, partition_config):
             z.extract(file_info.bootimg, path=tempdir)
         except:
             ui.failed('Failed to extract file: %s' % file_info.bootimg)
-            exit.exit(1)
+            cleanup(tempdirs)
+            return None
 
     z.close()
 
@@ -264,12 +277,14 @@ def patch_zip(zip_file, file_info, partition_config):
                 for j in i:
                     if not patch.apply_patch(j, tempdir):
                         ui.failed(patch.error_msg)
-                        exit.exit(1)
+                        cleanup(tempdirs)
+                        return None
 
             elif type(i) == str:
                 if not patch.apply_patch(i, tempdir):
                     ui.failed(patch.error_msg)
-                    exit.exit(1)
+                    cleanup(tempdirs)
+                    return None
 
     set_task('COMPRESSING_ZIP_FILE')
     ui.details('Opening input and output zip files ...')
@@ -277,9 +292,9 @@ def patch_zip(zip_file, file_info, partition_config):
     # We can't avoid recompression, unfortunately
     # Only show progress for this stage on Android, since it's, by far, the
     # most time consuming part of the process
-    new_zip_file = os.path.join(tempdir, 'complete.zip')
+    new_zip_file = tempfile.mkstemp()
     z_input = zipfile.ZipFile(zip_file, 'r')
-    z_output = zipfile.ZipFile(new_zip_file, 'w', zipfile.ZIP_DEFLATED)
+    z_output = zipfile.ZipFile(new_zip_file[1], 'w', zipfile.ZIP_DEFLATED)
 
     progress_current = 0
     progress_total = len(z_input.infolist()) - len(files_to_patch) - 1
@@ -308,8 +323,6 @@ def patch_zip(zip_file, file_info, partition_config):
 
     for root, dirs, files in os.walk(tempdir):
         for f in files:
-            if f == 'complete.zip':
-                continue
             ui.details('Adding file to zip: %s' % f)
             ui.progress()
             arcdir = os.path.relpath(root, start=tempdir)
@@ -320,11 +333,19 @@ def patch_zip(zip_file, file_info, partition_config):
 
     z_output.close()
 
-    return new_zip_file
+    cleanup(tempdirs)
+    os.close(new_zip_file[0])
+    return new_zip_file[1]
 
 
 def set_ui(ui):
+    global new_ui
     if not ui:
         new_ui = dummyui
     else:
         new_ui = ui
+
+
+def cleanup(dirs):
+    for d in dirs:
+        shutil.rmtree(d)

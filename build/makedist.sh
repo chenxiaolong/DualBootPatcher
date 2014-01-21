@@ -25,6 +25,19 @@ cd "${CURDIR}"
 . "${BUILDDIR}/binaries.sh"
 . "${BUILDDIR}/android-gui.sh"
 . "${BUILDDIR}/qt-gui.sh"
+. "${BUILDDIR}/shortcuts.sh"
+
+
+COPY=(
+  'README.jflte.txt'
+  'defaults.conf'
+  'patch-file.sh'
+  'patches/'
+  'patchinfo/'
+  'ramdisks/'
+  'scripts/'
+  'useful/'
+)
 
 
 # Build PC version
@@ -36,10 +49,14 @@ mkdir -p "${TARGETDIR}"
 
 # Build and copy stuff into target directory
 create_python_windows
-build_windows
+create_pyqt_windows
+create_binaries_windows
+create_shortcuts_windows
+create_shortcuts_linux
 
-cp -rt "${TARGETDIR}" \
-  $(git ls-tree --name-only --full-tree HEAD | grep -v -e .gitignore -e Android_GUI)
+cp -rt "${TARGETDIR}" ${COPY[@]}
+
+cp Android_GUI/ic_launcher-web.png "${TARGETDIR}/scripts/icon.png"
 
 # Set default device
 sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" "${TARGETDIR}/defaults.conf"
@@ -59,10 +76,9 @@ rm -rf "${TARGETDIR}" "${TARGETFILE}"
 mkdir -p "${TARGETDIR}"
 
 create_python_android
-build_android
+create_binaries_android
 
-cp -rt "${TARGETDIR}" \
-  $(git ls-tree --name-only --full-tree HEAD | grep -v -e .gitignore -e Android_GUI)
+cp -rt "${TARGETDIR}" ${COPY[@]}
 
 # Set default device
 sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" "${TARGETDIR}/defaults.conf"

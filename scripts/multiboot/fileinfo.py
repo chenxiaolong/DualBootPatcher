@@ -8,7 +8,6 @@ import os
 class FileInfo:
     def __init__(self):
         self.name = ''
-        self.loki = False
         self.patch = None
         self.extract = None
         self.ramdisk = ""
@@ -42,3 +41,25 @@ def get_info(path, device):
                             return file_info
 
     return None
+
+
+def get_infos(path, device):
+    filename = os.path.split(path)[1]
+
+    infos = list()
+
+    for i in ['Google_Apps', 'Other', device]:
+        for root, dirs, files in os.walk(os.path.join(OS.patchinfodir, i)):
+            for f in files:
+                if f.endswith(".py"):
+                    relpath = os.path.relpath(os.path.join(root, f), OS.patchinfodir)
+                    plugin = imp.load_source(os.path.basename(f)[:-3],
+                                             os.path.join(root, f))
+                    try:
+                        file_info = plugin.get_file_info(filename=filename)
+                    except:
+                        file_info = plugin.get_file_info()
+
+                    infos.append((relpath, file_info))
+
+    return infos

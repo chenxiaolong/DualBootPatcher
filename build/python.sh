@@ -1,52 +1,34 @@
 create_python_windows() {
-    local URL="http://ftp.osuosl.org/pub/portablepython/v3.2/PortablePython_3.2.5.1.exe"
-    local MD5="5ba055a057ce4fe1950a0f1f7ebae323"
-    download_md5 "${URL}" "${MD5}" "${BUILDDIR}/windowsbinaries" pythonportable.exe
+    local URL="http://python.org/ftp/python/3.3.3/python-3.3.3.msi"
+    local MD5="ab6a031aeca66507e4c8697ff93a0007"
+    download_md5 "${URL}" "${MD5}" "${BUILDDIR}/windowsbinaries"
 
     rm -rf "${TARGETDIR}/pythonportable/"
 
-    local TEMPDIR="$(mktemp -d --tmpdir="$(pwd)")"
-    pushd "${TEMPDIR}"
-    7z x "${BUILDDIR}/windowsbinaries/pythonportable.exe" \*/App
-
-    for i in *; do
-        if [ -f "${i}/App/python.exe" ]; then
-            mv "${i}/App/" "${TARGETDIR}/pythonportable/"
-            break
-        fi
-    done
-
-    if ! [ -d "${TARGETDIR}/pythonportable/" ]; then
-        echo "No python.exe found"
-        exit 1
-    fi
-
-    popd
-
-    rm -rf "${TEMPDIR}"
+    DISPLAY= wine msiexec \
+        /a \
+        $(winepath -w "${BUILDDIR}/windowsbinaries/python-3.3.3.msi") \
+        /qb \
+        TARGETDIR=$(winepath -w "${TARGETDIR}/pythonportable/")
 
     pushd "${TARGETDIR}/pythonportable/"
 
     # Don't add unneeded files to the zip
+    find -name __pycache__ -delete
+
     rm -r DLLs
     rm -r Doc
     rm -r include
     rm -r libs
-    rm -r locale
-    rm -r Scripts
     rm -r tcl
     rm -r Tools
     rm NEWS.txt
-    rm PyScripter.*
-    rm python-3.2.5.msi
     rm README.txt
-    rm remserver.py
-    rm -rf Lib/__pycache__
     rm -r Lib/{concurrent,ctypes,curses}
     rm -r Lib/{dbm,distutils}
     rm -r Lib/email
     rm -r Lib/{html,http}
-    rm -r Lib/{idlelib,importlib}
+    rm -r Lib/idlelib
     rm -r Lib/json
     rm -r Lib/{lib2to3,logging}
     rm -r Lib/{msilib,multiprocessing}
@@ -55,27 +37,29 @@ create_python_windows() {
     rm -r Lib/{test,tkinter,turtledemo}
     rm -r Lib/wsgiref
     rm -r Lib/{unittest,urllib}
+    rm -r Lib/venv
     rm -r Lib/{xml,xmlrpc}
 
     rm Lib/{__phello__.foo.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
     rm Lib/{aifc.py,antigravity.py,argparse.py,ast.py}
-    rm Lib/{base64.py,bdb.py,binhex.py}
-    rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,contextlib.py,cProfile.py,csv.py}
+    rm Lib/{base64.py,bdb.py,binhex.py,bz2.py}
+    rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,contextlib.py,cProfile.py,crypt.py,csv.py}
     rm Lib/{datetime.py,decimal.py,difflib.py,dis.py,doctest.py,dummy_threading.py}
     rm Lib/{filecmp.py,fileinput.py,formatter.py,fractions.py,ftplib.py}
     rm Lib/{getopt.py,getpass.py,gettext.py,glob.py}
     rm Lib/hmac.py
-    rm Lib/{imaplib.py,imghdr.py,inspect.py}
+    rm Lib/{imaplib.py,imghdr.py,inspect.py,ipaddress.py}
+    rm Lib/lzma.py
     rm Lib/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,mimetypes.py,modulefinder.py}
     rm Lib/{netrc.py,nntplib.py,nturl2path.py,numbers.py}
     rm Lib/{opcode.py,optparse.py,os2emxpath.py}
-    rm Lib/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,plistlib.py,poplib.py,ppp.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
+    rm Lib/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,plistlib.py,poplib.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
     rm Lib/{queue.py,quopri.py}
     rm Lib/{rlcompleter.py,runpy.py}
     rm Lib/{sched.py,shelve.py,shlex.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,socketserver.py,ssl.py,string.py,stringprep.py,sunau.py,symbol.py,symtable.py}
     rm Lib/{tabnanny.py,telnetlib.py,textwrap.py,this.py,timeit.py,tty.py,turtle.py}
     rm Lib/{uu.py,uuid.py}
-    rm Lib/{wave.py,webbrowser.py,wsgiref.egg-info}
+    rm Lib/{wave.py,webbrowser.py}
     rm Lib/xdrlib.py
 
     popd
@@ -140,6 +124,9 @@ create_python_android() {
     rm ${LIB}/{urllib.py,urllib2.py,urlparse.py,user.py,UserList.py,UserString.py,uu.py,uuid.py}
     rm ${LIB}/{wave.py,webbrowser.py,whichdb.py,wsgiref.egg-info}
     rm ${LIB}/{xdrlib.py,xmllib.py,xmlrpclib.py}
+
+    # Compress executables and libraries
+    upx -v --lzma *.exe *.dll || :
 
     popd
 }
