@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import multiboot.cmd as cmd
-import multiboot.exit as exit
 import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
 
