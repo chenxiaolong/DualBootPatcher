@@ -90,7 +90,7 @@ def quicksort(l):
         return left + [pivot] + right
 
 
-files = os.listdir(distdir)
+files = os.listdir(outdir)
 
 versions = list()
 for i in files:
