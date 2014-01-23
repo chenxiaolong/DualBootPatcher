@@ -93,7 +93,7 @@ popd
 # Android app
 ANDROIDGUI=${CURDIR}/Android_GUI/
 
-rm -r "${ANDROIDGUI}/assets/"
+rm -rf "${ANDROIDGUI}/assets/"
 mkdir "${ANDROIDGUI}/assets/"
 mv "${TARGETFILE}" "${ANDROIDGUI}/assets/"
 cp "${CURDIR}/ramdisks/busybox-static" "${ANDROIDGUI}/assets/tar"
