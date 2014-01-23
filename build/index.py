@@ -6,13 +6,13 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 
 name = 'Dual Boot Patcher'
 github = 'https://github.com/chenxiaolong/DualBootPatcher'
 download = 'http://dl.dropbox.com/u/486665/Snapshots/DualBootPatcher/'
 outdir = '/var/lib/jenkins/Dropbox/Public/Snapshots/DualBootPatcher'
 html = os.path.join(outdir, 'index.html')
+distdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'dist')
 
 
 class Version():
@@ -91,7 +91,6 @@ def quicksort(l):
         return left + [pivot] + right
 
 
-distdir = sys.argv[1]
 files = os.listdir(distdir)
 
 versions = list()
