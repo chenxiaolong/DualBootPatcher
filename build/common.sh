@@ -12,7 +12,7 @@ download_md5() {
 
     if ! [ -f "${DIR}/${FILENAME}" ]; then
         if which axel >/dev/null && ! grep -q ftp <<< "${URL}"; then
-            axel -an10 "${URL}" -o "${DIR}/${FILENAME}"
+            axel -n10 "${URL}" -o "${DIR}/${FILENAME}"
         else
             wget "${URL}" -O "${DIR}/${FILENAME}"
         fi
