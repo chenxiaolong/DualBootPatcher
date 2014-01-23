@@ -146,11 +146,6 @@ for i in range(0, len(versions)):
 
     for f in files:
         if version.ver in f:
-            shutil.copy(
-                os.path.join(distdir, f),
-                os.path.join(outdir, f)
-            )
-
             if f.endswith('apk'):
                 filetype = 'apk'
             elif f.endswith('zip'):
