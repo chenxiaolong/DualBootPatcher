@@ -113,10 +113,10 @@ def write_html(string):
 html_header = """
 <html>
   <head>
-    <title>%s builds</title>
+    <title>%s snapshots</title>
   </head>
   <body>
-    <h1>%s builds</h1>
+    <h1>%s Snapshots (Unstable Builds)</h1>
 """ % (name, name)
 
 html_footer = """
