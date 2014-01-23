@@ -9,7 +9,6 @@ import subprocess
 
 name = 'Dual Boot Patcher'
 github = 'https://github.com/chenxiaolong/DualBootPatcher'
-download = 'http://dl.dropbox.com/u/486665/Snapshots/DualBootPatcher/'
 outdir = '/var/lib/jenkins/Dropbox/Public/Snapshots/DualBootPatcher'
 html = os.path.join(outdir, 'index.html')
 distdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'dist')
@@ -151,14 +150,13 @@ for i in range(0, len(versions)):
                 os.path.join(distdir, f),
                 os.path.join(outdir, f)
             )
-            link = download + f
 
             if f.endswith('apk'):
                 filetype = 'apk'
             elif f.endswith('zip'):
                 filetype = 'zip'
 
-            write_html('%s: <a href="%s">%s</a><br />' % (filetype, link, f))
+            write_html('%s: <a href="%s">%s</a><br />' % (filetype, f, f))
 
     write_html('</p>')
 
