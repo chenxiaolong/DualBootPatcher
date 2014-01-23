@@ -13,11 +13,11 @@ class FileInfo:
         self.ramdisk = ""
         self.bootimg = "boot.img"
         self.has_boot_image = True
-        self.need_new_init = False
         self.loki = False
         self.device_check = True
         # Supported partition configurations
         self.configs = ['all']
+        self.patched_init = None
 
 
 def get_info(path, device):
@@ -63,3 +63,18 @@ def get_infos(path, device):
                     infos.append((relpath, file_info))
 
     return infos
+
+
+def get_inits():
+    initdir = os.path.join(OS.ramdiskdir, 'init')
+    inits = list()
+
+    for root, dirs, files in os.walk(initdir):
+        for f in files:
+            inits.append(os.path.relpath(os.path.join(root, f), initdir))
+
+    # Newest first
+    inits.sort()
+    inits.reverse()
+
+    return inits

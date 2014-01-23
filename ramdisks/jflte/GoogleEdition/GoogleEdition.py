@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import multiboot.cmd as cmd
 import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
 
@@ -182,8 +181,6 @@ def modify_MSM8960_lpm_rc(cpiofile):
   cpioentry.set_content(buf)
 
 def patch_ramdisk(cpiofile, partition_config):
-  ui = OS.ui
-
   global version
 
   if cpiofile.get_file('MSM8960_lpm.rc') is not None:
@@ -199,5 +196,5 @@ def patch_ramdisk(cpiofile, partition_config):
 
   # Samsung's init binary is pretty screwed up
   if version == 'kk44':
-    newinit = os.path.join(OS.ramdiskdir, 'init-kk44')
+    newinit = os.path.join(OS.ramdiskdir, 'init', 'init-kk44')
     cpiofile.add_file(newinit, name='init', perms=0o755)

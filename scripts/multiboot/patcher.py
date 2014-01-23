@@ -31,6 +31,7 @@ def add_tasks(file_info):
     else:
         ui = OS.ui
 
+    # TODO: Only if file is zip
     ui.add_task(tasks['EXTRACTING_ZIP'])
 
     if file_info.has_boot_image:
@@ -38,6 +39,7 @@ def add_tasks(file_info):
         ui.add_task(tasks['COMPRESSING_RAMDISK'])
         ui.add_task(tasks['CREATING_BOOT_IMAGE'])
 
+    # TODO: Only if file is zip
     ui.add_task(tasks['PATCHING_FILES'])
     ui.add_task(tasks['COMPRESSING_ZIP_FILE'])
 
@@ -127,10 +129,10 @@ def patch_boot_image(boot_image, file_info, partition_config):
         perms=0o750
     )
 
-    # Copy new init if needed
-    if file_info.need_new_init:
+    # Copy patched init if needed
+    if file_info.patched_init is not None:
         cf.add_file(
-            os.path.join(OS.ramdiskdir, 'init'),
+            os.path.join(OS.ramdiskdir, 'init', file_info.patched_init),
             name='init',
             perms=0o755
         )

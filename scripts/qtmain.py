@@ -307,6 +307,8 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
         self.setWindowTitle('Unsupported File')
 
+        self.bootimgwidgets = list()
+
         optslayout = QtWidgets.QGridLayout(self)
 
         # Message
@@ -402,6 +404,16 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         optslayout.addWidget(self.lbhasbootimg, 8, 0, 1, 1)
         optslayout.addWidget(self.cbhasbootimg, 8, 1, 1, 1)
 
+        # Boot image
+        self.lebootimg = QtWidgets.QLineEdit()
+        self.lbbootimg = QtWidgets.QLabel()
+        self.lbbootimg.setText('Boot image')
+
+        optslayout.addWidget(self.lbbootimg, 8, 3, 1, 1)
+        optslayout.addWidget(self.lebootimg, 8, 4, 1, -1)
+        self.bootimgwidgets.append(self.lbbootimg)
+        self.bootimgwidgets.append(self.lebootimg)
+
         # Horizontal separator
         hline = QtWidgets.QFrame()
         hline.setFrameShape(QtWidgets.QFrame.HLine)
@@ -411,21 +423,34 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
         optslayout.addWidget(hline, 9, 0, 1, -1)
 
+        # Needs patched init
+        self.cbpatchedinit = QtWidgets.QCheckBox()
+        self.lbpatchedinit = QtWidgets.QLabel()
+        self.lbpatchedinit.setText('Needs patched init')
+
+        optslayout.addWidget(self.lbpatchedinit, 10, 0, 1, 1)
+        optslayout.addWidget(self.cbpatchedinit, 10, 1, 1, 1)
+        self.bootimgwidgets.append(self.cbpatchedinit)
+        self.bootimgwidgets.append(self.lbpatchedinit)
+
+        self.cmbinitfile = QtWidgets.QComboBox()
+        self.lbinitfile = QtWidgets.QLabel()
+        self.lbinitfile.setText('Init file')
+
+        optslayout.addWidget(self.lbinitfile, 10, 3, 1, 1)
+        optslayout.addWidget(self.cmbinitfile, 10, 4, 1, -1)
+        self.bootimgwidgets.append(self.cmbinitfile)
+        self.bootimgwidgets.append(self.lbinitfile)
+
         # Loki
         self.cbloki = QtWidgets.QCheckBox()
         self.lbloki = QtWidgets.QLabel()
         self.lbloki.setText('Loki')
 
-        optslayout.addWidget(self.lbloki, 10, 0, 1, 1)
-        optslayout.addWidget(self.cbloki, 10, 1, 1, 1)
-
-        # Needs new init
-        self.cbnewinit = QtWidgets.QCheckBox()
-        self.lbnewinit = QtWidgets.QLabel()
-        self.lbnewinit.setText('Needs new init (AOSP 4.2 only)')
-
-        optslayout.addWidget(self.lbnewinit, 11, 0, 1, 1)
-        optslayout.addWidget(self.cbnewinit, 11, 1, 1, 1)
+        optslayout.addWidget(self.lbloki, 11, 0, 1, 1)
+        optslayout.addWidget(self.cbloki, 11, 1, 1, 1)
+        self.bootimgwidgets.append(self.lbloki)
+        self.bootimgwidgets.append(self.cbloki)
 
         # Vertical separator
         vline = QtWidgets.QFrame()
@@ -434,15 +459,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         vline.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
                             QtWidgets.QSizePolicy.Expanding)
 
-        optslayout.addWidget(vline, 10, 2, 2, 1)
-
-        # Boot image
-        self.lebootimg = QtWidgets.QLineEdit()
-        self.lbbootimg = QtWidgets.QLabel()
-        self.lbbootimg.setText('Boot image')
-
-        optslayout.addWidget(self.lbbootimg, 10, 3, 1, 1)
-        optslayout.addWidget(self.lebootimg, 10, 4, 1, -1)
+        optslayout.addWidget(vline, 11, 2, 1, 1)
 
         # Ramdisk
         self.cmbramdisk = QtWidgets.QComboBox()
@@ -451,6 +468,8 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
         optslayout.addWidget(self.lbramdisk, 11, 3, 1, 1)
         optslayout.addWidget(self.cmbramdisk, 11, 4, 1, -1)
+        self.bootimgwidgets.append(self.lbramdisk)
+        self.bootimgwidgets.append(self.cmbramdisk)
 
         # Horizontal separator
         hline = QtWidgets.QFrame()
@@ -495,15 +514,18 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
         # Boot image exists
         self.cbhasbootimg.setChecked(True)
+        self.hasbootimagetoggled()
 
         # No loki
         self.cbloki.setChecked(False)
 
-        # No new init
-        self.cbnewinit.setChecked(False)
+        # No patched init
+        self.cbpatchedinit.setChecked(False)
+        self.patchedinittoggled()
 
         # 'boot.img'
         self.lebootimg.setText('boot.img')
+        self.enablebootimgcombobox(True)
 
         if not self.addonce:
             self.addonce = True
@@ -512,6 +534,9 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             self.cmbpreset.addItem('Custom')
             for i in self.presets:
                 self.cmbpreset.addItem(i[0][:-3])
+
+            for i in fileinfo.get_inits():
+                self.cmbinitfile.addItem(i)
 
             for i in ramdisk.list_ramdisks():
                 self.cmbramdisk.addItem(i[:-4])
@@ -533,6 +558,9 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
         # Has boot image checkbox
         self.cbhasbootimg.toggled.connect(self.hasbootimagetoggled)
+
+        # Needs patched init checkbox
+        self.cbpatchedinit.toggled.connect(self.patchedinittoggled)
 
         # Standard buttons
         self.stdbuttons.button(QtWidgets.QDialogButtonBox.Ok) \
@@ -562,14 +590,16 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         self.lbdevicecheck.setEnabled(onoff)
         self.cbhasbootimg.setEnabled(onoff)
         self.lbhasbootimg.setEnabled(onoff)
-        self.cbloki.setEnabled(onoff)
-        self.lbloki.setEnabled(onoff)
-        self.cbnewinit.setEnabled(onoff)
-        self.lbnewinit.setEnabled(onoff)
-        self.lebootimg.setEnabled(onoff)
-        self.lbbootimg.setEnabled(onoff)
-        self.cmbramdisk.setEnabled(onoff)
-        self.lbramdisk.setEnabled(onoff)
+        for widget in self.bootimgwidgets:
+            widget.setEnabled(onoff)
+
+    def enablebootimgcombobox(self, onoff):
+        if self.filename.endswith('.zip'):
+            self.lebootimg.setEnabled(onoff)
+            self.lbbootimg.setEnabled(onoff)
+        else:
+            self.lebootimg.setEnabled(False)
+            self.lbbootimg.setEnabled(False)
 
     @QtCore.pyqtSlot()
     def patchtypetoggled(self):
@@ -592,24 +622,23 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
     @QtCore.pyqtSlot()
     def hasbootimagetoggled(self):
         if self.cbhasbootimg.isChecked():
-            self.cbloki.setEnabled(True)
-            self.lbloki.setEnabled(True)
-            self.cbnewinit.setEnabled(True)
-            self.lbnewinit.setEnabled(True)
-            self.lebootimg.setEnabled(True)
-            self.lbbootimg.setEnabled(True)
-            self.cmbramdisk.setEnabled(True)
-            self.lbramdisk.setEnabled(True)
+            for widget in self.bootimgwidgets:
+                widget.setEnabled(True)
+            self.patchedinittoggled()
+            self.enablebootimgcombobox(True)
 
         else:
-            self.cbloki.setEnabled(False)
-            self.lbloki.setEnabled(False)
-            self.cbnewinit.setEnabled(False)
-            self.lbnewinit.setEnabled(False)
-            self.lebootimg.setEnabled(False)
-            self.lbbootimg.setEnabled(False)
-            self.cmbramdisk.setEnabled(False)
-            self.lbramdisk.setEnabled(False)
+            for widget in self.bootimgwidgets:
+                widget.setEnabled(False)
+
+    @QtCore.pyqtSlot()
+    def patchedinittoggled(self):
+        if self.cbpatchedinit.isChecked():
+            self.cmbinitfile.setEnabled(True)
+            self.lbinitfile.setEnabled(True)
+        else:
+            self.cmbinitfile.setEnabled(False)
+            self.lbinitfile.setEnabled(False)
 
     @QtCore.pyqtSlot()
     def choosefile(self):
@@ -640,7 +669,10 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
                 file_info.bootimg = self.lebootimg.text()
                 file_info.loki = self.cbloki.isChecked()
 
-            file_info.need_new_init = self.cbnewinit.isChecked()
+            if self.cbpatchedinit.isChecked():
+                file_info.patched_init = self.cmbinitfile.currentText()
+            else:
+                file_info.patched_init = None
 
             file_info.device_check = not self.cbdevicecheck.isChecked()
 

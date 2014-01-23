@@ -9,7 +9,7 @@ file_info.name           = 'MIUI'
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
-file_info.need_new_init  = True
+file_info.patched_init   = 'init-jb42'
 
 def matches(filename):
   if re.search(filename_regex, filename):

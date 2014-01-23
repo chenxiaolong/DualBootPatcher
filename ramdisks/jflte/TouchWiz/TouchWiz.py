@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import multiboot.fileio as fileio
+import multiboot.operatingsystem as OS
 
 import os
 import re
 import shutil
 import sys
+
+version = None
 
 def modify_init_rc(cpiofile):
   cpioentry = cpiofile.get_file('init.rc')
@@ -129,7 +132,7 @@ def modify_init_target_rc(cpiofile):
       buf += fileio.encode(re.sub(r"^", "#", line))
 
     elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line) and \
-        re.search(r"^on\s+fs_selinux.*$", previous_line):
+        re.search(r"^on\s+fs(_selinux)?.*$", previous_line):
       buf += fileio.encode(line)
       buf += fileio.encode(fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
@@ -144,6 +147,9 @@ def modify_init_target_rc(cpiofile):
   cpioentry.set_content(buf)
 
 def modify_MSM8960_lpm_rc(cpiofile):
+  if version == 'kk44':
+    return
+
   cpioentry = cpiofile.get_file('MSM8960_lpm.rc')
   lines = fileio.bytes_to_lines(cpioentry.content)
   buf = bytes()
@@ -158,8 +164,20 @@ def modify_MSM8960_lpm_rc(cpiofile):
   cpioentry.set_content(buf)
 
 def patch_ramdisk(cpiofile, partition_config):
+  global version
+
+  if cpiofile.get_file('MSM8960_lpm.rc') is not None:
+    version = 'jb43'
+  else:
+    version = 'kk44'
+
   modify_init_rc(cpiofile)
   modify_init_qcom_rc(cpiofile)
   modify_fstab(cpiofile, partition_config)
   modify_init_target_rc(cpiofile)
   modify_MSM8960_lpm_rc(cpiofile)
+
+  # Samsung's init binary is pretty screwed up
+  if version == 'kk44':
+    newinit = os.path.join(OS.ramdiskdir, 'init', 'init-kk44')
+    cpiofile.add_file(newinit, name='init', perms=0o755)
