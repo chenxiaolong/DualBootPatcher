@@ -94,7 +94,7 @@ files = os.listdir(outdir)
 
 versions = list()
 for i in files:
-    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)\.SNAPSHOT.*\.(apk|zip)', i)
+    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)\.SNAPSHOT.*\.(apk|zip|7z)', i)
     if not r:
         print('Skipping %s ...' % i)
         continue
@@ -147,9 +147,9 @@ for i in range(0, len(versions)):
     for f in files:
         if version.ver in f:
             if f.endswith('apk'):
-                filetype = 'apk'
-            elif f.endswith('zip'):
-                filetype = 'zip'
+                filetype = 'Android'
+            elif f.endswith('zip') or f.endswith('7z'):
+                filetype = 'PC'
 
             write_html('%s: <a href="%s">%s</a><br />' % (filetype, f, f))
 
