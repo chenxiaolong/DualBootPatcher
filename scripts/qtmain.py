@@ -22,57 +22,21 @@ import multiboot.ui.qtui as qtui
 class PatcherTask(QtCore.QObject):
     finished = QtCore.pyqtSignal(bool, str)
 
-    def __init__(self, filename, partconfig, file_info):
+    def __init__(self, file_info):
         super().__init__()
-        self.filename = filename
-        self.partconfig = partconfig
-        self.fileinfo = file_info
-        self.ui = qtui
+        self.file_info = file_info
         patcher.set_ui(qtui)
 
-        self.failed = True
-        self.newfile = None
-
     def patch(self):
-        loki_msg = ("The boot image was unloki'd in order to be patched. "
-                    "*** Remember to flash loki-doki "
-                    "if you have a locked bootloader ***")
+        output = patcher.patch_file(self.file_info)
+        failed = True
 
-        patcher.add_tasks(self.fileinfo)
+        if output:
+            failed = False
 
-        if self.filename.endswith('.zip'):
-            output = patcher.patch_zip(self.filename, self.fileinfo, self.partconfig)
+            self.file_info.move_to_target(output, move=True)
 
-            if output:
-                self.newfile = re.sub(r'\.zip$', '_%s.zip' % self.partconfig.id, self.filename)
-                shutil.move(output, self.newfile)
-                if self.fileinfo.loki:
-                    self.ui.succeeded('Successfully patched zip. ' + loki_msg)
-                else:
-                    self.ui.succeeded(loki_msg)
-                self.failed = False
-
-        elif self.filename.endswith('.img'):
-            output = patcher.patch_boot_image(self.filename, self.fileinfo, self.partconfig)
-
-            if output:
-                self.newfile = re.sub(r'\.img$', '_%s.img' % self.partconfig.id, self.filename)
-                shutil.move(output, self.newfile)
-
-                self.ui.succeeded('Successfully boot image')
-                self.failed = False
-
-        elif self.filename.endswith('.lok'):
-            output = patcher.patch_boot_image(self.filename, self.fileinfo, self.partconfig)
-
-            if output:
-                self.newfile = re.sub(r'\.lok$', '_%s.lok' % self.partconfig.id, self.filename)
-                shutil.move(output, self.newfile)
-
-                self.ui.succeeded('Successfully patched Loki\'d boot image. ' + loki_msg)
-                self.failed = False
-
-        self.finished.emit(self.failed, self.newfile)
+        self.finished.emit(failed, self.file_info.get_new_filename())
 
 
 class Task(QtWidgets.QWidget):
@@ -88,7 +52,7 @@ class Task(QtWidgets.QWidget):
         layout.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
 
         self.status.setFixedWidth(self.status.sizeHint().width())
-        self.label.setText("A task")
+        self.label.setText('A task')
 
         layout.addWidget(self.status)
         layout.addWidget(self.label)
@@ -299,11 +263,11 @@ class ProgressDialog(QtWidgets.QDialog):
 
 
 class UnsupportedFileDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, filename='<NO FILENAME>'):
+    def __init__(self, parent=None, file_info=None):
         super().__init__(parent)
 
         self.addonce = False
-        self.filename = filename
+        self.file_info = file_info
 
         self.setWindowTitle('Unsupported File')
 
@@ -316,7 +280,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         maintext.setText(
             'File: %s<br /><br />The file you have selected is not supported.'
             ' You can attempt to patch the file anyway using the options below.'
-            % filename)
+            % self.file_info._filename)
 
         optslayout.addWidget(maintext, 0, 0, 1, -1)
 
@@ -530,7 +494,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         if not self.addonce:
             self.addonce = True
 
-            self.presets = fileinfo.get_infos(self.filename, config.get_device())
+            self.presets = fileinfo.get_infos(config.get_device())
             self.cmbpreset.addItem('Custom')
             for i in self.presets:
                 self.cmbpreset.addItem(i[0][:-3])
@@ -594,7 +558,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             widget.setEnabled(onoff)
 
     def enablebootimgcombobox(self, onoff):
-        if self.filename.endswith('.zip'):
+        if self.file_info._filetype == fileinfo.ZIP_FILE:
             self.lebootimg.setEnabled(onoff)
             self.lbbootimg.setEnabled(onoff)
         else:
@@ -652,50 +616,43 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
     @QtCore.pyqtSlot()
     def startpatching(self):
         if self.cmbpreset.currentText() == 'Custom':
-            # Create fileinfo
-            file_info = fileinfo.FileInfo()
-            file_info.name = 'Unsupported file (with custom patcher options)'
+            self.file_info.name = 'Unsupported file (with custom patcher options)'
 
             if self.rbautopatch.isChecked():
                 ap = self.autopatchers[self.cmbautopatchsel.currentIndex()]
-                file_info.patch = ap.patcher
-                file_info.extract = ap.extractor
+                self.file_info.patch = ap.patcher
+                self.file_info.extract = ap.extractor
             elif self.rbpatch.isChecked():
-                file_info.patch = self.lepatchinput.text()
+                self.file_info.patch = self.lepatchinput.text()
 
-            file_info.has_boot_image = self.cbhasbootimg.isChecked()
-            if file_info.has_boot_image:
-                file_info.ramdisk = self.cmbramdisk.currentText() + '.def'
-                file_info.bootimg = self.lebootimg.text()
-                file_info.loki = self.cbloki.isChecked()
+            self.file_info.has_boot_image = self.cbhasbootimg.isChecked()
+            if self.file_info.has_boot_image:
+                self.file_info.ramdisk = self.cmbramdisk.currentText() + '.def'
+                self.file_info.bootimg = self.lebootimg.text()
+                self.file_info.loki = self.cbloki.isChecked()
 
             if self.cbpatchedinit.isChecked():
-                file_info.patched_init = self.cmbinitfile.currentText()
+                self.file_info.patched_init = self.cmbinitfile.currentText()
             else:
-                file_info.patched_init = None
+                self.file_info.patched_init = None
 
-            file_info.device_check = not self.cbdevicecheck.isChecked()
-
-            self.file_info = file_info
+            self.file_info.device_check = not self.cbdevicecheck.isChecked()
 
         else:
             orig_file_info = self.presets[self.cmbpreset.currentIndex() - 1][1]
 
-            file_info = fileinfo.FileInfo()
-            file_info.name = 'Unsupported file (manually set to: %s)' % orig_file_info.name
-            file_info.patch = orig_file_info.patch
-            file_info.extract = orig_file_info.extract
-            file_info.ramdisk = orig_file_info.ramdisk
-            file_info.bootimg = orig_file_info.bootimg
-            file_info.has_boot_image = orig_file_info.has_boot_image
-            file_info.need_new_init = orig_file_info.need_new_init
-            file_info.loki = orig_file_info.loki
-            file_info.device_check = orig_file_info.device_check
-            file_info.configs = orig_file_info.configs
+            self.file_info.name = 'Unsupported file (manually set to: %s)' % orig_file_info.name
+            self.file_info.patch = orig_file_info.patch
+            self.file_info.extract = orig_file_info.extract
+            self.file_info.ramdisk = orig_file_info.ramdisk
+            self.file_info.bootimg = orig_file_info.bootimg
+            self.file_info.has_boot_image = orig_file_info.has_boot_image
+            self.file_info.patched_init = orig_file_info.patched_init
+            self.file_info.loki = orig_file_info.loki
+            self.file_info.device_check = orig_file_info.device_check
+            self.file_info.configs = orig_file_info.configs
             # Possibly override?
-            #file_info.configs = ['all']
-
-            self.file_info = file_info
+            #self.file_info.configs = ['all']
 
         self.accept()
 
@@ -809,19 +766,29 @@ class Patcher(QtWidgets.QWidget):
 
         self.hidewidgets()
 
-        file_info = fileinfo.get_info(self.filename, config.get_device())
+        file_info = fileinfo.FileInfo()
+        file_info.set_filename(self.filename)
+        file_info.set_device(config.get_device())
 
-        if not file_info:
-            msgbox = UnsupportedFileDialog(self, filename=self.filename)
+        if self.automode and not file_info.is_filetype_supported():
+            ext = os.path.splitext(self.filename)[1]
+            msgbox.setText('The \'%s\' file extension is not supported.' % ext)
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            self.close()
+            return
+
+        if not file_info.find_and_merge_patchinfo():
+            msgbox = UnsupportedFileDialog(self, file_info=file_info)
             ret = msgbox.exec()
             if ret == QtWidgets.QDialog.Accepted:
-                self.startpatching(msgbox.file_info)
+                self.startpatching(file_info)
             else:
                 self.showwidgets()
 
         else:
             self.startpatching(file_info)
-
 
     def hidewidgets(self):
         self.partconfigcombobox.setEnabled(False)
@@ -839,20 +806,20 @@ class Patcher(QtWidgets.QWidget):
 
         partconfig = self.partconfigs[self.partconfigcombobox.currentIndex()]
 
-        if (('all' not in file_info.configs
-                and partconfig.id not in file_info.configs)
-                or '!' + partconfig.id in file_info.configs):
+        if not file_info.is_partconfig_supported(partconfig):
             msgbox.setText(
                 'The \'%s\' partition configuration is not supported for the file:<br />%s'
-                % (partconfig.name, self.filename))
+                % (partconfig.name, file_info._filename))
             msgbox.setIcon(QtWidgets.QMessageBox.Warning)
             msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msgbox.exec()
             self.showwidgets()
             return
 
+        file_info.set_partconfig(partconfig)
+
         msgbox.setText('Detected: <b>%s</b><br /><br />Click OK to patch:<br />%s'
-            % (file_info.name, self.filename))
+            % (file_info.name, file_info._filename))
         msgbox.setIcon(QtWidgets.QMessageBox.Information)
         msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
@@ -864,7 +831,7 @@ class Patcher(QtWidgets.QWidget):
 
         self.progressdialog.show()
 
-        self.task = PatcherTask(self.filename, partconfig, file_info)
+        self.task = PatcherTask(file_info)
         self.thread = QtCore.QThread(self)
         self.task.moveToThread(self.thread)
         self.thread.started.connect(self.task.patch)

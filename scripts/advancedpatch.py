@@ -55,15 +55,18 @@ if not filename:
     print("No file specified")
     sys.exit(1)
 
-filetype = patchfile.detect_file_type(filename)
-if filetype == "UNKNOWN":
-    print("Unsupported file")
+file_info = fileinfo.FileInfo()
+file_info.set_filename(filename)
+file_info.set_device(config.get_device())
+
+if not file_info.is_filetype_supported():
+    print('Unsupported file type')
     sys.exit(1)
 
-# Ask for ramdisk if it's unsupported
-file_info = fileinfo.get_info(filename, config.get_device())
-if not file_info:
-    print("File not supported! Will attempt auto-patching...")
+supported = file_info.find_and_merge_patchinfo()
+
+if not supported:
+    print("File not supported! Will attempt auto-patching ...")
     print("")
 
 if askramdisk or not file_info:
@@ -73,7 +76,6 @@ if askramdisk or not file_info:
         print(str(e))
         sys.exit(1)
 
-    file_info = fileinfo.FileInfo()
     file_info.ramdisk = ramdisks[choice]
     if loki:
         file_info.loki = True
@@ -92,16 +94,14 @@ except Exception as e:
     print(str(e))
     sys.exit(1)
 
-partition_config = partition_configs[choice]
+file_info.set_partconfig(partition_configs[choice])
 
-if filetype == "img":
-    new_file = patcher.patch_boot_image(filename, file_info, partition_config)
-    new_path = re.sub(r"\.img$", "_%s.img" % partition_config.id, filename)
-elif filetype == "zip":
-    new_file = patcher.patch_zip(filename, file_info, partition_config)
-    new_path = re.sub(r"\.zip$", "_%s.zip" % partition_config.id, filename)
+new_file = patcher.patch_file(file_info)
 
-shutil.copyfile(new_file, new_path)
-os.remove(new_file)
-print("Path: " + new_path)
+if not new_file:
+    sys.exit(1)
+
+file_info.move_to_target(new_file)
+
+print("Path: " + file_info.get_new_filename())
 sys.exit(0)

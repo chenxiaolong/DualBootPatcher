@@ -25,15 +25,6 @@ import sys
 ui = OS.ui
 
 
-def detect_file_type(path):
-    if path.endswith(".zip"):
-        return "zip"
-    elif path.endswith(".img"):
-        return "img"
-    else:
-        return "UNKNOWN"
-
-
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         ui.info("Usage: %s [zip file or boot.img] [multiboot type]"
@@ -61,61 +52,34 @@ if __name__ == "__main__":
         sys.exit(1)
 
     filename = os.path.abspath(filename)
-    filetype = detect_file_type(filename)
-    file_info = fileinfo.get_info(filename, config.get_device())
 
-    if file_info and \
-            (('all' not in file_info.configs
-              and partition_config.id not in file_info.configs)
-             or '!' + partition_config.id in file_info.configs):
-        file_info = None
-        ui.info("The %s partition configuration is not supported for this file"
-                % partition_config.id)
+    file_info = fileinfo.FileInfo()
+    file_info.set_filename(filename)
+    file_info.set_device(config.get_device())
 
-    loki_msg = ("The boot image was unloki'd in order to be patched. "
-                "*** Remember to flash loki-doki "
-                "if you have a locked bootloader ***")
-
-    if filetype == "UNKNOWN":
-        ui.failed("Unsupported file")
+    if not file_info.is_filetype_supported():
+        ui.failed('Unsupported file type')
         sys.exit(1)
 
-    if filetype == "zip":
-        if not file_info:
-            ui.failed("Unsupported zip")
-            sys.exit(1)
+    if not file_info.find_and_merge_patchinfo():
+        ui.failed('Unsupported file')
+        sys.exit(1)
 
-        # Patch zip and get path to patched zip
-        patcher.add_tasks(file_info)
-        newfile = patcher.patch_zip(filename, file_info, partition_config)
+    if not file_info.is_partconfig_supported(partition_config):
+        ui.info("The %s partition configuration is not supported for this file"
+                % partition_config.id)
+        sys.exit(1)
 
-        if file_info.loki:
-            ui.succeeded("Successfully patched zip. " + loki_msg)
-        else:
-            ui.succeeded("Successfully patched zip")
+    file_info.set_partconfig(partition_config)
 
-        newpath = re.sub(r"\.zip$", "_%s.zip" % partition_config.id, filename)
-        shutil.copyfile(newfile, newpath)
-        os.remove(newfile)
+    newfile = patcher.patch_file(file_info)
 
-        if not OS.is_android():
-            ui.info("Path: " + newpath)
+    if not newfile:
+        sys.exit(1)
 
-    elif filetype == "img":
-        patcher.add_tasks(file_info)
-        newfile = patcher.patch_boot_image(filename, file_info,
-                                           partition_config)
+    file_info.move_to_target(newfile)
 
-        if file_info.loki:
-            ui.succeeded("Successfully patched boot image. " + loki_msg)
-        else:
-            ui.succeeded("Successfully patched boot image")
-
-        newpath = re.sub(r"\.img$", "_%s.img" % partition_config.id, filename)
-        shutil.copyfile(newfile, newpath)
-        os.remove(newfile)
-
-        if not OS.is_android():
-            ui.info("Path: " + newpath)
+    if not OS.is_android():
+        ui.info("Path: " + file_info.get_new_filename())
 
     sys.exit(0)

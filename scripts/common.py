@@ -40,8 +40,7 @@ def ask_partconfig(file_info):
     partition_configs_raw = partitionconfigs.get()
 
     for i in partition_configs_raw:
-        if (i.id in file_info.configs or 'all' in file_info.configs) \
-                and '!' + i.id not in file_info.configs:
+        if file_info.is_partconfig_supported(i):
             partition_configs.append(i)
         else:
             unsupported_configs.append(i)

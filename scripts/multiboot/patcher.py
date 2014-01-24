@@ -2,6 +2,7 @@ import multiboot.ui.dummyui as dummyui
 import multiboot.autopatcher as autopatcher
 import multiboot.bootimage as bootimage
 import multiboot.config as config
+import multiboot.fileinfo as fileinfo
 import multiboot.fileio as fileio
 import multiboot.minicpio.minicpio as minicpio
 import multiboot.operatingsystem as OS
@@ -35,7 +36,7 @@ def add_tasks(file_info):
     else:
         ui = OS.ui
 
-    if file_info._filetype == fileinfo.ZIPFILE:
+    if file_info._filetype == fileinfo.ZIP_FILE:
         ui.add_task(tasks['EXTRACTING_ZIP'])
 
     if file_info._filetype == fileinfo.BOOT_IMAGE \
@@ -44,7 +45,7 @@ def add_tasks(file_info):
         ui.add_task(tasks['COMPRESSING_RAMDISK'])
         ui.add_task(tasks['CREATING_BOOT_IMAGE'])
 
-    if file_info._filetype == fileinfo.ZIPFILE:
+    if file_info._filetype == fileinfo.ZIP_FILE:
         ui.add_task(tasks['PATCHING_FILES'])
         ui.add_task(tasks['COMPRESSING_ZIP_FILE'])
 
@@ -57,7 +58,11 @@ def set_task(task):
     ui.set_task(tasks[task])
 
 
-def patch_boot_image(file_info, partition_config):
+def patch_boot_image(file_info, path=None):
+    # If file_info represents a boot image
+    if not path:
+        path = file_info._filename
+
     tempdirs = list()
 
     if new_ui:
@@ -75,7 +80,7 @@ def patch_boot_image(file_info, partition_config):
     else:
         ui.details('Unpacking boot image ...')
 
-    bootimageinfo = bootimage.extract(file_info._filename, tempdir, file_info.loki)
+    bootimageinfo = bootimage.extract(path, tempdir, file_info.loki)
     if not bootimageinfo:
         ui.failed(bootimage.error_msg)
         cleanup(tempdirs)
@@ -108,7 +113,7 @@ def patch_boot_image(file_info, partition_config):
     ramdisk.process_def(
         os.path.join(OS.ramdiskdir, file_info.ramdisk),
         cf,
-        partition_config
+        file_info._partconfig
     )
 
     # Copy init.multiboot.mounting.sh
@@ -118,7 +123,7 @@ def patch_boot_image(file_info, partition_config):
     )
     autopatcher.insert_partition_info(
         tempdir, 'init.multiboot.mounting.sh',
-        partition_config, target_path_only=True
+        file_info._partconfig, target_path_only=True
     )
     cf.add_file(
         os.path.join(tempdir, 'init.multiboot.mounting.sh'),
@@ -181,7 +186,7 @@ def patch_boot_image(file_info, partition_config):
     return new_boot_image[1]
 
 
-def patch_zip(file_info, partition_config):
+def patch_zip(file_info):
     tempdirs = list()
 
     if new_ui:
@@ -253,8 +258,11 @@ def patch_zip(file_info, partition_config):
 
     if file_info.has_boot_image:
         boot_image = os.path.join(tempdir, file_info.bootimg)
-        new_boot_image = patch_boot_image(boot_image, file_info,
-                                          partition_config)
+        new_boot_image = patch_boot_image(file_info, path=boot_image)
+
+        if not new_boot_image:
+            cleanup(tempdirs)
+            return None
 
         os.remove(boot_image)
         shutil.move(new_boot_image, boot_image)
@@ -264,7 +272,7 @@ def patch_zip(file_info, partition_config):
     set_task('PATCHING_FILES')
 
     shutil.copy(os.path.join(OS.patchdir, 'dualboot.sh'), tempdir)
-    autopatcher.insert_partition_info(tempdir, 'dualboot.sh', partition_config)
+    autopatcher.insert_partition_info(tempdir, 'dualboot.sh', file_info._partconfig)
 
     if file_info.patch:
         ui.details('Running patch functions ...')
@@ -278,7 +286,7 @@ def patch_zip(file_info, partition_config):
                 i(tempdir,
                   bootimg=file_info.bootimg,
                   device_check=file_info.device_check,
-                  partition_config=partition_config)
+                  partition_config=file_info._partconfig)
 
             elif type(i) == list:
                 for j in i:
@@ -345,23 +353,35 @@ def patch_zip(file_info, partition_config):
     return new_zip_file[1]
 
 
-def patch_file(file_info, partition_config):
+def patch_file(file_info):
+    # Some sanity checks
+    if not file_info._filename or not os.path.exists(file_info._filename):
+        raise Exception('%s does not exist' % file_info._filename)
+
+    if not file_info._filetype:
+        raise Exception('File type not set')
+
+    if new_ui:
+        ui = new_ui
+    else:
+        ui = OS.ui
+
     add_tasks(file_info)
 
     if file_info._filetype == fileinfo.ZIP_FILE:
-        newfile = patch_zip(file_info, partition_config)
+        newfile = patch_zip(file_info)
         if newfile is not None:
             if file_info.loki:
                 ui.succeeded('Successfully patched zip. ' + loki_msg)
             else:
                 ui.succeeded('Successfully patched zip')
     elif file_info._filetype == fileinfo.BOOT_IMAGE:
-        newfile = patch_boot_image(file_info, partition_config)
+        newfile = patch_boot_image(file_info)
         if newfile is not None:
             if file_info.loki:
-                ui.succeeded("Successfully patched boot image. " + loki_msg)
+                ui.succeeded('Successfully patched Loki\'d boot image. ' + loki_msg)
             else:
-                ui.succeeded("Successfully patched boot image")
+                ui.succeeded('Successfully patched boot image')
     else:
         raise Exception('Unsupported file extension')
 
