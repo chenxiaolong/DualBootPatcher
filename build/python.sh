@@ -125,8 +125,10 @@ create_python_android() {
     rm ${LIB}/{wave.py,webbrowser.py,whichdb.py,wsgiref.egg-info}
     rm ${LIB}/{xdrlib.py,xmllib.py,xmlrpclib.py}
 
-    # Compress executables and libraries
-    upx -v --lzma *.exe *.dll || :
+    if [ "x${BUILDTYPE}" != "xci" ]; then
+        # Compress executables and libraries
+        upx -v --lzma *.exe *.dll || :
+    fi
 
     popd
 }

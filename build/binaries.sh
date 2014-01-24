@@ -36,8 +36,10 @@ create_binaries_windows() {
 
     chmod +x "${TD}"/*.{exe,dll}
 
-    # Compress binaries and libraries
-    upx -v -9 "${TD}"/*.{exe,dll} || :
+    if [ "x${BUILDTYPE}" != "xci" ]; then
+        # Compress binaries and libraries
+        upx -v -9 "${TD}"/*.{exe,dll} || :
+    fi
 
     popd
 }

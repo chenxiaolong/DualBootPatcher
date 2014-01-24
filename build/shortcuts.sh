@@ -42,9 +42,11 @@ create_shortcuts_windows() {
         ${TARGETDIR}/PatchFileWindowsGUI.exe \
         ${TARGETDIR}/PatchFileWindows.exe
 
-    upx -v --lzma \
-        ${TARGETDIR}/PatchFileWindowsGUI.exe \
-        ${TARGETDIR}/PatchFileWindows.exe
+    if [ "x${BUILDTYPE}" != "xci" ]; then
+        upx -v --lzma \
+            ${TARGETDIR}/PatchFileWindowsGUI.exe \
+            ${TARGETDIR}/PatchFileWindows.exe
+    fi
 
     rm -rf "${TEMPDIR}"
 }
@@ -57,7 +59,9 @@ create_shortcuts_linux() {
 
     strip ${TARGETDIR}/PatchFileLinuxGUI
 
-    upx -v --lzma ${TARGETDIR}/PatchFileLinuxGUI
+    if [ "x${BUILDTYPE}" != "xci" ]; then
+        upx -v --lzma ${TARGETDIR}/PatchFileLinuxGUI
+    fi
 
     chmod 755 ${TARGETDIR}/PatchFileLinuxGUI
 

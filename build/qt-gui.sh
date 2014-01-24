@@ -17,8 +17,10 @@ create_pyqt_windows() {
 
     popd
 
-    # Compress executables and libraries
-    upx -v --lzma "${TD}"/PyQt5/*.dll
+    if [ "x${BUILDTYPE}" != "xci" ]; then
+        # Compress executables and libraries
+        upx -v --lzma "${TD}"/PyQt5/*.dll
+    fi
 
     # Create qt.conf
     cat >"${TARGETDIR}/pythonportable/qt.conf" <<EOF
@@ -162,8 +164,10 @@ create_pyqt_windows_official() {
         rm "${TD}"/PyQt5/${i}
     done
 
-    # Compress executables and libraries
-    upx -v --lzma "${TD}"/PyQt5/*.dll
+    if [ "x${BUILDTYPE}" != "xci" ]; then
+        # Compress executables and libraries
+        upx -v --lzma "${TD}"/PyQt5/*.dll
+    fi
 
     # Create qt.conf
     cat >"${TARGETDIR}/pythonportable/qt.conf" <<EOF

@@ -3,15 +3,15 @@
 set -e
 
 if [ "${#}" -lt 1 ]; then
-  echo "Usage: ${0} [device] [release]"
+  echo "Usage: ${0} <device> [release|debug]"
   exit
 fi
 
 DEFAULT_DEVICE=${1}
 
-RELEASE=false
-if [ "x${2}" = "xrelease" ]; then
-  RELEASE=true
+BUILDTYPE="debug"
+if [[ ! -z "${2}" ]]; then
+  BUILDTYPE="${2}"
 fi
 
 CURDIR="$(cd "$(dirname "${0}")" && cd ..  && pwd)"
@@ -43,8 +43,12 @@ COPY=(
 # Build PC version
 TARGETNAME="DualBootPatcher-${VERSION}-${DEFAULT_DEVICE}"
 TARGETDIR="${DISTDIR}/${TARGETNAME}"
-TARGETFILE="${DISTDIR}/${TARGETNAME}.zip"
-rm -rf "${TARGETDIR}" "${TARGETFILE}"
+if [ "x${BUILDTYPE}" = "xci" ]; then
+    TARGETFILE="${DISTDIR}/${TARGETNAME}.7z"
+else
+    TARGETFILE="${DISTDIR}/${TARGETNAME}.zip"
+fi
+rm -rf "${TARGETDIR}" "${DISTDIR}"/${TARGETNAME}.{7z,zip}
 mkdir -p "${TARGETDIR}"
 
 # Build and copy stuff into target directory
@@ -62,7 +66,12 @@ cp Android_GUI/ic_launcher-web.png "${TARGETDIR}/scripts/icon.png"
 sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" "${TARGETDIR}/defaults.conf"
 
 pushd "${DISTDIR}"
-zip -r "${TARGETFILE}" "${TARGETNAME}/"
+if [ "x${BUILDTYPE}" = "xci" ]; then
+    7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on \
+        "${TARGETFILE}" "${TARGETNAME}/"
+else
+    zip -r "${TARGETFILE}" "${TARGETNAME}/"
+fi
 popd
 
 rm -r "${TARGETDIR}"
@@ -99,7 +108,7 @@ mv "${TARGETFILE}" "${ANDROIDGUI}/assets/"
 cp "${CURDIR}/ramdisks/busybox-static" "${ANDROIDGUI}/assets/tar"
 rm -f "${DISTDIR}"/${TARGETNAME}-${DEFAULT_DEVICE}*.apk
 
-if [ "x${RELEASE}" = "xtrue" ]; then
+if [ "x${BUILDTYPE}" = "xrelease" ]; then
   build_android_app release
 else
   build_android_app
