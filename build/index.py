@@ -21,7 +21,7 @@ class Version():
         self.p1 = int(s[0])
         self.p2 = int(s[1])
         self.p3 = int(s[2])
-        self.p4 = s[3]
+        self.p4 = int(s[3][1:])
         self.commit = s[4][1:]
 
     def __lt__(self, other):
