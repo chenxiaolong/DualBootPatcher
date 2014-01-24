@@ -74,9 +74,7 @@ def get_info(path, device):
     return None
 
 
-def get_infos(path, device):
-    filename = os.path.split(path)[1]
-
+def get_infos(device):
     infos = list()
 
     for i in ['Google_Apps', 'Other', device]:
@@ -86,10 +84,7 @@ def get_infos(path, device):
                     relpath = os.path.relpath(os.path.join(root, f), OS.patchinfodir)
                     plugin = imp.load_source(os.path.basename(f)[:-3],
                                              os.path.join(root, f))
-                    try:
-                        file_info = plugin.get_file_info(filename=filename)
-                    except:
-                        file_info = plugin.get_file_info()
+                    file_info = plugin.get_file_info()
 
                     infos.append((relpath, file_info))
 
