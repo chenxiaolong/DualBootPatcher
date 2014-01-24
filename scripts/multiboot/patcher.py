@@ -14,6 +14,10 @@ import shutil
 import tempfile
 import zipfile
 
+loki_msg = ("The boot image was unloki'd in order to be patched. "
+            "*** Remember to flash loki-doki "
+            "if you have a locked bootloader ***")
+
 new_ui = None
 
 tasks = dict()
@@ -31,17 +35,18 @@ def add_tasks(file_info):
     else:
         ui = OS.ui
 
-    # TODO: Only if file is zip
-    ui.add_task(tasks['EXTRACTING_ZIP'])
+    if file_info._filetype == fileinfo.ZIPFILE:
+        ui.add_task(tasks['EXTRACTING_ZIP'])
 
-    if file_info.has_boot_image:
+    if file_info._filetype == fileinfo.BOOT_IMAGE \
+            or file_info.has_boot_image:
         ui.add_task(tasks['PATCHING_RAMDISK'])
         ui.add_task(tasks['COMPRESSING_RAMDISK'])
         ui.add_task(tasks['CREATING_BOOT_IMAGE'])
 
-    # TODO: Only if file is zip
-    ui.add_task(tasks['PATCHING_FILES'])
-    ui.add_task(tasks['COMPRESSING_ZIP_FILE'])
+    if file_info._filetype == fileinfo.ZIPFILE:
+        ui.add_task(tasks['PATCHING_FILES'])
+        ui.add_task(tasks['COMPRESSING_ZIP_FILE'])
 
 
 def set_task(task):
@@ -52,7 +57,7 @@ def set_task(task):
     ui.set_task(tasks[task])
 
 
-def patch_boot_image(boot_image, file_info, partition_config):
+def patch_boot_image(file_info, partition_config):
     tempdirs = list()
 
     if new_ui:
@@ -70,7 +75,7 @@ def patch_boot_image(boot_image, file_info, partition_config):
     else:
         ui.details('Unpacking boot image ...')
 
-    bootimageinfo = bootimage.extract(boot_image, tempdir, file_info.loki)
+    bootimageinfo = bootimage.extract(file_info._filename, tempdir, file_info.loki)
     if not bootimageinfo:
         ui.failed(bootimage.error_msg)
         cleanup(tempdirs)
@@ -176,7 +181,7 @@ def patch_boot_image(boot_image, file_info, partition_config):
     return new_boot_image[1]
 
 
-def patch_zip(zip_file, file_info, partition_config):
+def patch_zip(file_info, partition_config):
     tempdirs = list()
 
     if new_ui:
@@ -222,7 +227,7 @@ def patch_zip(zip_file, file_info, partition_config):
     set_task('EXTRACTING_ZIP')
 
     ui.details('Loading zip file ...')
-    z = zipfile.ZipFile(zip_file, 'r')
+    z = zipfile.ZipFile(file_info._filename, 'r')
 
     for f in files_to_patch:
         ui.details("Extracting file to be patched: %s" % f)
@@ -295,7 +300,7 @@ def patch_zip(zip_file, file_info, partition_config):
     # Only show progress for this stage on Android, since it's, by far, the
     # most time consuming part of the process
     new_zip_file = tempfile.mkstemp()
-    z_input = zipfile.ZipFile(zip_file, 'r')
+    z_input = zipfile.ZipFile(file_info._filename, 'r')
     z_output = zipfile.ZipFile(new_zip_file[1], 'w', zipfile.ZIP_DEFLATED)
 
     progress_current = 0
@@ -338,6 +343,29 @@ def patch_zip(zip_file, file_info, partition_config):
     cleanup(tempdirs)
     os.close(new_zip_file[0])
     return new_zip_file[1]
+
+
+def patch_file(file_info, partition_config):
+    add_tasks(file_info)
+
+    if file_info._filetype == fileinfo.ZIP_FILE:
+        newfile = patch_zip(file_info, partition_config)
+        if newfile is not None:
+            if file_info.loki:
+                ui.succeeded('Successfully patched zip. ' + loki_msg)
+            else:
+                ui.succeeded('Successfully patched zip')
+    elif file_info._filetype == fileinfo.BOOT_IMAGE:
+        newfile = patch_boot_image(file_info, partition_config)
+        if newfile is not None:
+            if file_info.loki:
+                ui.succeeded("Successfully patched boot image. " + loki_msg)
+            else:
+                ui.succeeded("Successfully patched boot image")
+    else:
+        raise Exception('Unsupported file extension')
+
+    return newfile
 
 
 def set_ui(ui):
