@@ -5,8 +5,14 @@ import imp
 import os
 
 
+BOOT_IMAGE = 'img'
+ZIP_FILE = 'zip'
+UNSUPPORTED = None
+
+
 class FileInfo:
     def __init__(self):
+        # Public (to be set by patchfile scripts)
         self.name = ''
         self.patch = None
         self.extract = None
@@ -18,6 +24,30 @@ class FileInfo:
         # Supported partition configurations
         self.configs = ['all']
         self.patched_init = None
+
+        # Private
+        self._filename = None
+        self._filetype = None # zip, img
+
+    def check_extension(self):
+        extension = os.path.splitext(self.filename)[1]
+        if extension == '.zip':
+            self._filetype = ZIP_FILE
+        elif extension == '.img':
+            self._filetype = BOOT_IMAGE
+        elif extension == '.lok':
+            self._filetype = BOOT_IMAGE
+        else:
+            self._filetype = UNSUPPORTED
+
+    def check_partconfig_supported(self, partconfig):
+        if (('all' not in self.configs
+                and partconfig.id not in self.configs)
+                or ('!' + partconfig.id) in self.configs):
+            return False
+        else:
+            return True
+
 
 
 def get_info(path, device):
@@ -36,8 +66,9 @@ def get_info(path, device):
                             file_info = plugin.get_file_info()
 
                         if file_info:
-                            debug.debug("Loading patchinfo plugin: " + filename)
                             print('Detected ' + file_info.name)
+                            file_info._filename = filename
+                            file_info.check_extension()
                             return file_info
 
     return None
