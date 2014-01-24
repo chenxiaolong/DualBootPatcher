@@ -11,7 +11,7 @@ name = 'Dual Boot Patcher'
 github = 'https://github.com/chenxiaolong/DualBootPatcher'
 outdir = '/var/lib/jenkins/Dropbox/Public/Snapshots/DualBootPatcher'
 html = os.path.join(outdir, 'index.html')
-distdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'dist')
+maxbuilds = 5
 
 
 class Version():
@@ -90,6 +90,9 @@ def quicksort(l):
         return left + [pivot] + right
 
 
+if not os.path.exists(outdir):
+    os.makedirs(outdir)
+
 files = os.listdir(outdir)
 
 versions = list()
@@ -101,9 +104,6 @@ for i in files:
     versions.append(Version(r.group(1)))
 
 versions = quicksort(list(set(versions)))
-
-if not os.path.exists(outdir):
-    os.makedirs(outdir)
 
 html_file = open(html, 'w')
 
@@ -126,6 +126,15 @@ html_footer = """
 
 write_html(html_header)
 
+# Remove old builds
+if len(versions) >= maxbuilds:
+    for i in range(maxbuilds, len(versions)):
+        for f in files:
+            if versions[i].ver in f:
+                print("Removing old build %s ..." % f)
+                os.remove(os.path.join(outdir, f))
+    del versions[maxbuilds:]
+
 for i in range(0, len(versions)):
     version = versions[i]
 
@@ -144,14 +153,23 @@ for i in range(0, len(versions)):
 
     write_html('<b>%s<br /><br /></b>' % timestamp)
 
+    android = list()
+    pc = list()
     for f in files:
         if version.ver in f:
             if f.endswith('apk'):
-                filetype = 'Android'
+                android.append(f)
             elif f.endswith('zip') or f.endswith('7z'):
-                filetype = 'PC'
+                pc.append(f)
 
-            write_html('%s: <a href="%s">%s</a><br />' % (filetype, f, f))
+    android.sort()
+    pc.sort()
+
+    for f in android:
+        write_html('Android: <a href="%s">%s</a><br />' % (f, f))
+
+    for f in pc:
+        write_html('PC: <a href="%s">%s</a><br />' % (f, f))
 
     write_html('</p>')
 
