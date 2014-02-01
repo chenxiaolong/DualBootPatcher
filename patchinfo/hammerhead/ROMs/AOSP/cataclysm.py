@@ -9,6 +9,7 @@ file_info.name           = 'Cataclysm'
 file_info.ramdisk        = 'hammerhead/AOSP/AOSP.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
+file_info.patched_init   = 'init-kk44'
 
 def matches(filename):
   if re.search(filename_regex, filename):
