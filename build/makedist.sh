@@ -3,13 +3,13 @@
 set -e
 
 if [ "${#}" -lt 1 ]; then
-  echo "Usage: ${0} <device> [release|debug]"
+  echo "Usage: ${0} <device> [release|debug|none]"
   exit
 fi
 
 DEFAULT_DEVICE=${1}
 
-BUILDTYPE="debug"
+BUILDTYPE="none"
 if [[ ! -z "${2}" ]]; then
   BUILDTYPE="${2}"
 fi
@@ -77,44 +77,46 @@ popd
 rm -r "${TARGETDIR}"
 
 
-# Android version
-TARGETNAME="DualBootPatcherAndroid-${VERSION}"
-TARGETDIR="${DISTDIR}/${TARGETNAME}"
-TARGETFILE="${DISTDIR}/${TARGETNAME}.tar.xz"
-rm -rf "${TARGETDIR}" "${TARGETFILE}"
-mkdir -p "${TARGETDIR}"
+if [ "x${BUILDTYPE}" != "xnone" ]; then
+    # Android version
+    TARGETNAME="DualBootPatcherAndroid-${VERSION}"
+    TARGETDIR="${DISTDIR}/${TARGETNAME}"
+    TARGETFILE="${DISTDIR}/${TARGETNAME}.tar.xz"
+    rm -rf "${TARGETDIR}" "${TARGETFILE}"
+    mkdir -p "${TARGETDIR}"
 
-create_python_android
-create_binaries_android
+    create_python_android
+    create_binaries_android
 
-cp -rt "${TARGETDIR}" ${COPY[@]}
+    cp -rt "${TARGETDIR}" ${COPY[@]}
 
-# Set default device
-sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" "${TARGETDIR}/defaults.conf"
+    # Set default device
+    sed -i "s/@DEFAULT_DEVICE@/${DEFAULT_DEVICE}/g" "${TARGETDIR}/defaults.conf"
 
-# Remove PC stuff from Android tar
-find "${TARGETDIR}" -name '*.bat' -delete
+    # Remove PC stuff from Android tar
+    find "${TARGETDIR}" -name '*.bat' -delete
 
-pushd "${DISTDIR}"
-tar Jcvf ${TARGETFILE} ${TARGETNAME}/
-popd
+    pushd "${DISTDIR}"
+    tar Jcvf ${TARGETFILE} ${TARGETNAME}/
+    popd
 
-# Android app
-ANDROIDGUI=${CURDIR}/Android_GUI/
+    # Android app
+    ANDROIDGUI=${CURDIR}/Android_GUI/
 
-rm -rf "${ANDROIDGUI}/assets/"
-mkdir "${ANDROIDGUI}/assets/"
-mv "${TARGETFILE}" "${ANDROIDGUI}/assets/"
-cp "${CURDIR}/ramdisks/busybox-static" "${ANDROIDGUI}/assets/tar"
-rm -f "${DISTDIR}"/${TARGETNAME}-${DEFAULT_DEVICE}*.apk
+    rm -rf "${ANDROIDGUI}/assets/"
+    mkdir "${ANDROIDGUI}/assets/"
+    mv "${TARGETFILE}" "${ANDROIDGUI}/assets/"
+    cp "${CURDIR}/ramdisks/busybox-static" "${ANDROIDGUI}/assets/tar"
+    rm -f "${DISTDIR}"/${TARGETNAME}-${DEFAULT_DEVICE}*.apk
 
-if [ "x${BUILDTYPE}" = "xrelease" ]; then
-  build_android_app release
-else
-  build_android_app
+    if [ "x${BUILDTYPE}" = "xrelease" ]; then
+        build_android_app release
+    else
+        build_android_app
+    fi
+
+    rm -r "${TARGETDIR}"
 fi
-
-rm -r "${TARGETDIR}"
 
 
 echo
