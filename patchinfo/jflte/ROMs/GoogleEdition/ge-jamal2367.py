@@ -17,5 +17,7 @@ def matches(filename):
   else:
     return False
 
-def get_file_info():
+def get_file_info(filename):
+  if 'Final-R1.1' in filename:
+    file_info.bootimg    = 'kernel/ktoonsez/boot.img'
   return file_info
