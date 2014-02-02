@@ -17,7 +17,7 @@ def matches(filename):
   else:
     return False
 
-def get_file_info(filename):
+def get_file_info(filename = ""):
   if re.search(r"BlackBox22", filename):
     file_info.bootimg    = 'dsa/Kernels/KTSGS4/boot.img'
   return file_info

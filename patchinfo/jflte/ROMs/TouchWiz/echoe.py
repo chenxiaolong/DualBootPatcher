@@ -23,7 +23,7 @@ def matches(filename):
       return True
   return False
 
-def get_file_info(filename):
+def get_file_info(filename = ""):
   if 'Echoe_v14' in filename:
     file_info.patched_init = 'init-kk44'
   return file_info
