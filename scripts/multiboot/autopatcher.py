@@ -22,6 +22,24 @@ def insert_dual_boot_sh(lines):
 
 
 def insert_write_kernel(bootimg, lines):
+    set_kernel_line = 'run_program("/tmp/dualboot.sh", "set-multi-kernel");'
+
+    # Some AOSP ROMs use 'loki.sh' now
+    i = len(lines) - 1
+    while i > 0:
+        if 'loki.sh' in lines[i]:
+            # Statements can be on multiple lines, so insert after a semicolon is found
+            while i < len(lines):
+                if ';' in lines[i]:
+                    insert_line(i + 1, set_kernel_line, lines)
+                    return
+
+                else:
+                    i += 1
+
+            break
+        i -= 1
+
     # Look for last line containing the boot image string and insert after that
     i = len(lines) - 1
     while i > 0:
@@ -29,8 +47,8 @@ def insert_write_kernel(bootimg, lines):
             # Statements can be on multiple lines, so insert after a semicolon is found
             while i < len(lines):
                 if ';' in lines[i]:
-                    insert_line(i + 1, 'run_program("/tmp/dualboot.sh", "set-multi-kernel");', lines)
-                    break
+                    insert_line(i + 1, set_kernel_line, lines)
+                    return
 
                 else:
                     i += 1
