@@ -42,7 +42,7 @@ ROMs:
     - Dirty Unicorns
   * PAC-Man ROMS
     - Official PAC-Man
-    - ProBAM
+    - AOSB/ProBAM
     - Metaiiica
   * Google Edition ROMs
     - MaKTaiL

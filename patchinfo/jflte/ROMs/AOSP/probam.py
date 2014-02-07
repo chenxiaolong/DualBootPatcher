@@ -4,8 +4,8 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^probam.*\.zip$"
-file_info.name           = 'ProBAM'
+filename_regex           = r"^(aosb|probam).*\.zip$"
+file_info.name           = 'AOSB/ProBAM'
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
