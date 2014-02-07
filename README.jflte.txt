@@ -53,6 +53,7 @@ ROMs:
     - Echoe
     - Infamous
     - BlackBox
+    - BoBCaTROM
   * ParanoidAndroid ROMs
     - Vertigo
     - (most likely other versions too)
