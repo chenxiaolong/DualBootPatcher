@@ -16,3 +16,7 @@
 #/sbin/busybox-static chmod 0771 /data/app
 #/sbin/busybox-static chmod system:system /data/app
 #/sbin/busybox-static mount -o bind /raw-data/app /data/app
+
+if [ -f /init.additional.sh ]; then
+  /sbin/busybox-static sh /init.additional.sh
+fi
