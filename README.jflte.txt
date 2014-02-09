@@ -76,6 +76,7 @@ ROMs:
     - BlackBox
     - TouchliteGE
     - Phoenix
+    - SHOstock
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:
