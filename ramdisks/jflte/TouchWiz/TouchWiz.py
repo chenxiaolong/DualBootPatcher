@@ -181,3 +181,6 @@ def patch_ramdisk(cpiofile, partition_config):
   if version == 'kk44':
     newinit = os.path.join(OS.ramdiskdir, 'init', 'init-kk44')
     cpiofile.add_file(newinit, name='init', perms=0o755)
+
+    mountscript = os.path.join(OS.ramdiskdir, 'jflte', 'TouchWiz', 'mount.modem.sh')
+    cpiofile.add_file(mountscript, name='init.additional.sh', perms=0o755)
