@@ -12,6 +12,13 @@ file_info.patch          = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_a
 file_info.extract        = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
 
 def matches(filename):
+  if filename == 'I9505_-_Google_Edition_v6_by_Jamal2367.zip':
+    # A bit hackish, but it works
+    file_info.ramdisk    = 'jflte/AOSP/AOSP.def'
+    file_info.patch      = [ autopatcher.auto_patch ]
+    file_info.extract    = [ autopatcher.files_to_auto_patch ]
+    return True
+
   if re.search(filename_regex, filename):
     return True
   else:
