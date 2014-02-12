@@ -1,5 +1,5 @@
 # Override these variables using config-override.sh
-VERSION="4.0.1"
+VERSION="4.0.2"
 ANDROID_NDK=/opt/android-ndk
 ANDROID_HOME=/opt/android-sdk
 
