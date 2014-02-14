@@ -18,6 +18,7 @@ Thanks to all the donators for supporting this project!
   * Marcos Shrem
   * John West
   * @Bejda
+  * Cody Wells
 
 What's supported?
 
