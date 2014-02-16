@@ -11,7 +11,6 @@ file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'boot.lok'
 file_info.loki           = True
-file_info.patched_init   = 'init-kk44'
 
 def matches(filename):
   if re.search(filename_regex, filename):
