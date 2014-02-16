@@ -131,6 +131,12 @@ def modify_init_target_rc(cpiofile):
     elif re.search(r"^\s+mount\s+ext4\s+/dev/.*/cache.*$", line):
       buf += fileio.encode(re.sub(r"^", "#", line))
 
+    elif version == 'kk44' and \
+        re.search(r"^on\s+fs_selinux\s*$", line):
+      buf += fileio.encode(line)
+      buf += fileio.encode("    mount_all fstab.qcom\n")
+      buf += fileio.encode("    exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
+
     elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line) and \
         re.search(r"^on\s+fs(_selinux)?.*$", previous_line):
       buf += fileio.encode(line)
@@ -179,7 +185,7 @@ def patch_ramdisk(cpiofile, partition_config):
 
   # Samsung's init binary is pretty screwed up
   if version == 'kk44':
-    newinit = os.path.join(OS.ramdiskdir, 'init', 'init-kk44')
+    newinit = os.path.join(OS.ramdiskdir, 'init', 'jflte', 'tw43')
     cpiofile.add_file(newinit, name='init', perms=0o755)
 
     mountscript = os.path.join(OS.ramdiskdir, 'jflte', 'TouchWiz', 'mount.modem.sh')
