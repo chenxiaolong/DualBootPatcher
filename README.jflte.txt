@@ -65,6 +65,7 @@ ROMs:
   * LiquidSmooth
   * Vanir
   * AOSP (Broodplank)
+  * OctOS
   * TouchWiz ROMs
     - FoxHound
     - GoldenEye
