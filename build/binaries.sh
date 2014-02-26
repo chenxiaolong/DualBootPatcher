@@ -9,7 +9,7 @@ create_binaries_windows() {
     local URLBASE="http://mirrors.kernel.org/sourceware/cygwin/x86/release"
 
     # cygwin library
-    download "${URLBASE}/cygwin/cygwin-1.7.25-1.tar.bz2" .
+    download "${URLBASE}/cygwin/cygwin-1.7.28-2.tar.xz" .
 
     # libintl
     download "${URLBASE}/gettext/libintl8/libintl8-0.18.1.1-2.tar.bz2" .
@@ -23,7 +23,7 @@ create_binaries_windows() {
     # diff
     download "${URLBASE}/diffutils/diffutils-3.2-1.tar.bz2" .
 
-    tar jxvf cygwin-1.7.25-1.tar.bz2 usr/bin/cygwin1.dll \
+    tar Jxvf cygwin-1.7.28-2.tar.xz usr/bin/cygwin1.dll \
         --to-stdout > "${TD}/cygwin1.dll"
     tar jxvf libintl8-0.18.1.1-2.tar.bz2 usr/bin/cygintl-8.dll \
         --to-stdout > "${TD}/cygintl-8.dll"
