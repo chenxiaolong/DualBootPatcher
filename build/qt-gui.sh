@@ -9,7 +9,7 @@ create_pyqt_windows() {
     local FILENAME="PyQt5_QtBase5.2.0_Python3.3.3_win32_msvc2010.7z"
 
     download_md5 \
-        http://fs1.d-h.st/download/00095/JJp/${FILENAME} \
+        http://fs1.d-h.st/download/00102/HZd/${FILENAME} \
         66b3ef676f4d09c1042941ea51b57918 \
         .
 
