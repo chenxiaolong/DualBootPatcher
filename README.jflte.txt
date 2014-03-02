@@ -35,6 +35,7 @@ ROMs:
     - Smasher X
     - Mahdi
     - BeanStalk
+    - NamelessROM
   * AOKP ROMs
     - Official AOKP ROMs
     - Task650
