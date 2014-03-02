@@ -38,6 +38,9 @@ def modify_init_rc(cpiofile):
     elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
       buf += fileio.encode(re.sub(r"^", "#", line))
 
+    elif 'check_icd' in line:
+      buf += fileio.encode(re.sub(r"^", "#", line))
+
     else:
       buf += fileio.encode(line)
 
