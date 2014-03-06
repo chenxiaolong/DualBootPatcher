@@ -17,7 +17,7 @@ file_info.bootimg        = 'kernel/boot.img'
 
 def matches(filename):
   if re.search(filename_regex, filename):
-    if 'ATT' in filename or filename in att_filenames:
+    if re.search(r'(ATT|[iI]337)', filename) or filename in att_filenames:
       file_info.loki     = True
       file_info.bootimg  = 'kernel/boot.lok'
     return True
