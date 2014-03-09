@@ -24,8 +24,6 @@ new_ui = None
 tasks = dict()
 tasks['EXTRACTING_ZIP']       = 'Extracting zip file'
 tasks['PATCHING_RAMDISK']     = 'Patching ramdisk'
-tasks['COMPRESSING_RAMDISK']  = 'Compressing ramdisk'
-tasks['CREATING_BOOT_IMAGE']  = 'Creating boot image'
 tasks['PATCHING_FILES']       = 'Patching files'
 tasks['COMPRESSING_ZIP_FILE'] = 'Compressing zip file'
 
@@ -42,8 +40,6 @@ def add_tasks(file_info):
     if file_info._filetype == fileinfo.BOOT_IMAGE \
             or file_info.has_boot_image:
         ui.add_task(tasks['PATCHING_RAMDISK'])
-        ui.add_task(tasks['COMPRESSING_RAMDISK'])
-        ui.add_task(tasks['CREATING_BOOT_IMAGE'])
 
     if file_info._filetype == fileinfo.ZIP_FILE:
         ui.add_task(tasks['PATCHING_FILES'])
@@ -148,7 +144,6 @@ def patch_boot_image(file_info, path=None):
         )
 
     # Create gzip compressed ramdisk
-    set_task('COMPRESSING_RAMDISK')
     ui.details('Creating gzip compressed ramdisk with minicpio ...')
 
     target_ramdisk = target_ramdisk + ".gz"
@@ -163,7 +158,6 @@ def patch_boot_image(file_info, path=None):
             cleanup(tempdirs)
             return None
 
-    set_task('CREATING_BOOT_IMAGE')
     ui.details('Running mkbootimg ...')
 
     bootimageinfo.kernel = target_kernel
@@ -244,30 +238,37 @@ def patch_zip(file_info):
             return None
 
     if file_info.has_boot_image:
-        ui.details("Extracting boot image: %s" % file_info.bootimg)
-        try:
-            z.extract(file_info.bootimg, path=tempdir)
-        except:
-            ui.failed('Failed to extract file: %s' % file_info.bootimg)
-            cleanup(tempdirs)
-            return None
+        if type(file_info.bootimg) == str:
+            bootimages = [file_info.bootimg]
+        else:
+            bootimages = file_info.bootimg
+
+        for bootimage in bootimages:
+            ui.details("Extracting boot image: %s" % bootimage)
+            try:
+                z.extract(bootimage, path=tempdir)
+            except:
+                ui.failed('Failed to extract file: %s' % bootimage)
+                cleanup(tempdirs)
+                return None
 
     z.close()
 
     ui.clear()
 
     if file_info.has_boot_image:
-        boot_image = os.path.join(tempdir, file_info.bootimg)
-        new_boot_image = patch_boot_image(file_info, path=boot_image)
+        for bootimage in bootimages:
+            bootimageold = os.path.join(tempdir, bootimage)
+            bootimagenew = patch_boot_image(file_info, path=bootimageold)
 
-        if not new_boot_image:
-            cleanup(tempdirs)
-            return None
+            if not bootimagenew:
+                cleanup(tempdirs)
+                return None
 
-        os.remove(boot_image)
-        shutil.move(new_boot_image, boot_image)
+            os.remove(bootimageold)
+            shutil.move(bootimagenew, bootimageold)
     else:
-        ui.info('No boot image to patch')
+        ui.info('No boot images to patch')
 
     set_task('PATCHING_FILES')
 
@@ -283,10 +284,11 @@ def patch_zip(file_info):
 
         for i in temp:
             if callable(i):
-                i(tempdir,
-                  bootimg=file_info.bootimg,
-                  device_check=file_info.device_check,
-                  partition_config=file_info._partconfig)
+                for bootimage in bootimages:
+                    i(tempdir,
+                      bootimg=bootimage,
+                      device_check=file_info.device_check,
+                      partition_config=file_info._partconfig)
 
             elif type(i) == list:
                 for j in i:
@@ -314,7 +316,7 @@ def patch_zip(file_info):
     progress_current = 0
     progress_total = len(z_input.infolist()) - len(files_to_patch)
     if file_info.has_boot_image:
-        progress_total -= 1
+        progress_total -= len(bootimages)
     for root, dirs, files in os.walk(tempdir):
         progress_total += len(files)
 
@@ -325,7 +327,7 @@ def patch_zip(file_info):
         if i.filename in files_to_patch:
             continue
         # Boot image too
-        elif i.filename == file_info.bootimg:
+        elif file_info.has_boot_image and i.filename in bootimages:
             continue
 
         ui.details('Adding file to zip: %s' % i.filename)
