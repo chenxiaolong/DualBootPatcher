@@ -10,7 +10,8 @@ file_info = FileInfo()
 #   AT&T_Echoe_Illusion_Rom_v7_09Nov.zip
 filename_regex           = [ r"^Echoe[ _]?(Rom|SLIM).*\.zip$",
                              r"^S4_Echoe.*\.zip",
-                             'Echoe_v14.*\.zip' ]
+                             'Echoe_v14.*\.zip',
+                             'Echoe_v17.*\.zip' ]
 file_info.name           = 'Echoe TouchWiz'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
@@ -24,6 +25,12 @@ def matches(filename):
   return False
 
 def get_file_info(filename = ""):
-  if 'Echoe_v14' in filename:
-    file_info.patched_init = 'init-kk44'
+  if 'Echoe_v17' in filename:
+    file_info.bootimg = [
+      'EchoeExtras/kernel/echoe1/boot.img',
+      'EchoeExtras/kernel/echoe2/boot.img',
+      'EchoeExtras/kernel/KT/boot.img',
+      'EchoeExtras/kernel/stock/boot.img',
+      'EchoeExtras/kernel/talex/boot.img'
+    ]
   return file_info
