@@ -172,6 +172,23 @@ def modify_MSM8960_lpm_rc(cpiofile):
 
   cpioentry.set_content(buf)
 
+def modify_ueventd_rc(cpiofile):
+  if version != 'kk44':
+    return
+
+  cpioentry = cpiofile.get_file('ueventd.rc')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
+
+  for line in lines:
+    if '/dev/snd/*' in line:
+      buf += fileio.encode(re.sub('0660', '0666', line))
+
+    else:
+      buf += fileio.encode(line)
+
+  cpioentry.set_content(buf)
+
 def patch_ramdisk(cpiofile, partition_config):
   global version
 
@@ -185,11 +202,15 @@ def patch_ramdisk(cpiofile, partition_config):
   modify_fstab(cpiofile, partition_config)
   modify_init_target_rc(cpiofile)
   modify_MSM8960_lpm_rc(cpiofile)
+  modify_ueventd_rc(cpiofile)
 
   # Samsung's init binary is pretty screwed up
   if version == 'kk44':
-    newinit = os.path.join(OS.ramdiskdir, 'init', 'jflte', 'tw43')
+    newinit = os.path.join(OS.ramdiskdir, 'init', 'jflte', 'tw44-init')
     cpiofile.add_file(newinit, name='init', perms=0o755)
+
+    newinit = os.path.join(OS.ramdiskdir, 'init', 'jflte', 'tw44-adbd')
+    cpiofile.add_file(newinit, name='sbin/adbd', perms=0o755)
 
     mountscript = os.path.join(OS.ramdiskdir, 'jflte', 'TouchWiz', 'mount.modem.sh')
     cpiofile.add_file(mountscript, name='init.additional.sh', perms=0o755)

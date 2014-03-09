@@ -1,0 +1,23 @@
+Instructions on compiling the init binaries in this directory:
+
+1. Download my ROM source:
+
+   $ repo init -u https://github.com/chenxiaolong/CM_android.git -b cm-11.0
+
+2. Set up the environment for jflte
+
+   $ . build/envsetup.sh
+   $ lunch cm_jflte-userdebug
+
+3. Apply the 0001-Replacement-init-for-TouchWiz-4.4.patch patch
+
+   $ pushd device/samsung/jflte/
+   $ git am /path/to/0001-Replacement-init-for-TouchWiz-4.4.patch
+   $ popd
+
+4. Build the init and adbd binaries
+
+   $ mka init
+   $ mka adbd
+
+5. The resulting binaries will be out/target/product/jflte/root/
