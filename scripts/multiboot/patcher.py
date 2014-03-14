@@ -284,9 +284,13 @@ def patch_zip(file_info):
 
         for i in temp:
             if callable(i):
-                for bootimage in bootimages:
+                if file_info.has_boot_image:
                     i(tempdir,
-                      bootimg=bootimage,
+                      bootimg=bootimages,
+                      device_check=file_info.device_check,
+                      partition_config=file_info._partconfig)
+                else:
+                    i(tempdir,
                       device_check=file_info.device_check,
                       partition_config=file_info._partconfig)
 

@@ -200,7 +200,10 @@ def attempt_auto_patch(lines, bootimg=None, device_check=True,
     replace_mount_lines(lines)
     replace_unmount_lines(lines)
     replace_format_lines(lines)
-    if bootimg:
+    if type(bootimg) == list:
+        for img in bootimg:
+            insert_write_kernel(img, lines)
+    elif type(bootimg) == str:
         insert_write_kernel(bootimg, lines)
     # Too many ROMs don't unmount partitions after installation
     insert_unmount_everything(len(lines), lines)
