@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^OSE-[0-9\.]+-[0-9]+-NIGHTLY-[a-z0-9]+\.zip$"
+filename_regex           = r"^OSE-.+\.zip$"
 file_info.name           = 'OSE nightly'
 file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 file_info.patch          = autopatcher.auto_patch
