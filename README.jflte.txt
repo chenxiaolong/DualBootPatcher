@@ -72,6 +72,7 @@ ROMs:
   * TouchWiz ROMs
     - FoxHound
     - GoldenEye
+    - SkyFall
     - Evil UnWizzed
     - Negalite
     - iNTriNsiC (20130806 version)
