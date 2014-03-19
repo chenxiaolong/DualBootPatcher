@@ -1,0 +1,39 @@
+--- a/Makefile.pre.in
++++ b/Makefile.pre.in
+@@ -733,7 +733,7 @@
+ $(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGENSRCS)
+ 		@$(MKDIR_P) Include
+ 		$(MAKE) $(PGEN)
+-		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
++		$(HOSTPGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
+ $(GRAMMAR_C): $(GRAMMAR_H) $(GRAMMAR_INPUT) $(PGENSRCS)
+ 		$(MAKE) $(GRAMMAR_H)
+ 		touch $(GRAMMAR_C)
+--- a/setup.py
++++ b/setup.py
+@@ -297,6 +297,12 @@
+                 ext.name)
+             return
+ 
++        if cross_compiling:
++            self.announce(
++                'WARNING: skipping import check for cross-compiled: "%s"' %
++                ext.name)
++            return
++
+         if host_platform == 'darwin' and (
+                 sys.maxsize > 2**32 and '-arch' in ext.extra_link_args):
+             # Don't bother doing an import check when an extension was
+@@ -509,6 +509,12 @@
+         else:
+             lib_dirs = self.compiler.library_dirs[:]
+             inc_dirs = self.compiler.include_dirs[:]
++            cflags = os.environ.get('CFLAGS')
++            if cflags:
++                inc_dirs += [x[2:] for x in cflags.split() if x.startswith('-I')]
++            ldflags = os.environ.get('LDFLAGS')
++            if ldflags:
++                lib_dirs += [x[2:] for x in ldflags.split() if x.startswith('-L')]
+         exts = []
+         missing = []
+ 

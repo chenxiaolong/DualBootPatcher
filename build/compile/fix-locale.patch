@@ -1,0 +1,147 @@
+--- a/Modules/_localemodule.c
++++ b/Modules/_localemodule.c
+@@ -141,6 +141,11 @@
+     if (!result)
+         return NULL;
+ 
++#ifdef __ANDROID__
++    /* Don't even try on Android's broken locale.h. */
++    goto failed;
++#else
++
+     /* if LC_NUMERIC is different in the C library, use saved value */
+     l = localeconv();
+ 
+@@ -196,6 +201,8 @@
+     RESULT_INT(n_sign_posn);
+     return result;
+ 
++#endif // __ANDROID__
++
+   failed:
+     Py_XDECREF(result);
+     return NULL;
+--- a/Modules/pwdmodule.c
++++ b/Modules/pwdmodule.c
+@@ -72,7 +72,11 @@
+     SETS(setIndex++, p->pw_passwd);
+     PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromUid(p->pw_uid));
+     PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromGid(p->pw_gid));
++#ifdef __ANDROID__
++    SETS(setIndex++, "");
++#else
+     SETS(setIndex++, p->pw_gecos);
++#endif
+     SETS(setIndex++, p->pw_dir);
+     SETS(setIndex++, p->pw_shell);
+ 
+--- a/Python/formatter_unicode.c
++++ b/Python/formatter_unicode.c
+@@ -665,6 +665,7 @@
+ {
+     switch (type) {
+     case LT_CURRENT_LOCALE: {
++#ifndef __ANDROID__
+         struct lconv *locale_data = localeconv();
+         locale_info->decimal_point = PyUnicode_DecodeLocale(
+                                          locale_data->decimal_point,
+@@ -680,6 +681,7 @@
+         }
+         locale_info->grouping = locale_data->grouping;
+         break;
++#endif // __ANDROID__
+     }
+     case LT_DEFAULT_LOCALE:
+         locale_info->decimal_point = PyUnicode_FromOrdinal('.');
+--- a/Python/pystrtod.c
++++ b/Python/pystrtod.c
+@@ -177,8 +177,12 @@
+ 
+     fail_pos = NULL;
+ 
++#ifdef __ANDROID__
++    decimal_point = "."; 
++#else
+     locale_data = localeconv();
+     decimal_point = locale_data->decimal_point;
++#endif
+     decimal_point_len = strlen(decimal_point);
+ 
+     assert(decimal_point_len != 0);
+@@ -378,8 +382,12 @@
+ Py_LOCAL_INLINE(void)
+ change_decimal_from_locale_to_dot(char* buffer)
+ {
++#ifdef __ANDROID__
++    const char *decimal_point = ".";
++#else
+     struct lconv *locale_data = localeconv();
+     const char *decimal_point = locale_data->decimal_point;
++#endif
+ 
+     if (decimal_point[0] != '.' || decimal_point[1] != 0) {
+         size_t decimal_point_len = strlen(decimal_point);
+--- a/Modules/_decimal/libmpdec/io.c
++++ b/Modules/_decimal/libmpdec/io.c
+@@ -868,10 +868,16 @@
+         }
+         spec->type = *cp++;
+         spec->type = (spec->type == 'N') ? 'G' : 'g';
++#ifdef __ANDROID__
++        spec->dot = ".";
++        spec->sep = ",";
++        spec->grouping = "\3";
++#else
+         lc = localeconv();
+         spec->dot = lc->decimal_point;
+         spec->sep = lc->thousands_sep;
+         spec->grouping = lc->grouping;
++#endif
+         if (mpd_validate_lconv(spec) < 0) {
+             return 0; /* GCOV_NOT_REACHED */
+         }
+--- a/Modules/python.c
++++ a/Modules/python.c
+@@ -22,7 +22,9 @@
+     /* We need a second copy, as Python might modify the first one. */
+     wchar_t **argv_copy2;
+     int i, res;
++#ifndef __ANDROID__
+     char *oldloc;
++#endif
+ #ifdef __FreeBSD__
+     fp_except_t m;
+ #endif
+@@ -44,17 +46,21 @@
+     fpsetmask(m & ~FP_X_OFL);
+ #endif
+ 
++#ifndef __ANDROID__
+     oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
+     if (!oldloc) {
+         fprintf(stderr, "out of memory\n");
+         return 1;
+     }
++#endif
+ 
+     setlocale(LC_ALL, "");
+     for (i = 0; i < argc; i++) {
+         argv_copy[i] = _Py_char2wchar(argv[i], NULL);
+         if (!argv_copy[i]) {
++#ifndef __ANDROID__
+             PyMem_RawFree(oldloc);
++#endif
+             fprintf(stderr, "Fatal Python error: "
+                             "unable to decode the command line argument #%i\n",
+                             i + 1);
+@@ -64,8 +70,10 @@
+     }
+     argv_copy2[argc] = argv_copy[argc] = NULL;
+ 
++#ifndef __ANDROID__
+     setlocale(LC_ALL, oldloc);
+     PyMem_RawFree(oldloc);
++#endif
+     res = Py_Main(argc, argv_copy);
+     for (i = 0; i < argc; i++) {
+         PyMem_RawFree(argv_copy2[i]);

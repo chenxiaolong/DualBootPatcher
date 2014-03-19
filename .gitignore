@@ -4,3 +4,5 @@ build/windowsbinaries/
 build/windowslibraries/
 build/androidbinaries/
 build/config-override.sh
+build/compile/build/
+build/compile/gcc/

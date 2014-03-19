@@ -1,20 +1,20 @@
 create_python_windows() {
-    local URL="http://python.org/ftp/python/3.3.3/python-3.3.3.msi"
-    local MD5="ab6a031aeca66507e4c8697ff93a0007"
+    local URL="http://python.org/ftp/python/3.4.0/python-3.4.0.msi"
+    local MD5="e3be8a63294e42e126493ca96cfe48bd"
     download_md5 "${URL}" "${MD5}" "${BUILDDIR}/windowsbinaries"
 
     rm -rf "${TARGETDIR}/pythonportable/"
 
     DISPLAY= wine msiexec \
         /a \
-        $(winepath -w "${BUILDDIR}/windowsbinaries/python-3.3.3.msi") \
+        $(winepath -w "${BUILDDIR}/windowsbinaries/python-3.4.0.msi") \
         /qb \
         TARGETDIR=$(winepath -w "${TARGETDIR}/pythonportable/")
 
     pushd "${TARGETDIR}/pythonportable/"
 
     # Don't add unneeded files to the zip
-    find -name __pycache__ -delete
+    find -name __pycache__ | xargs rm -rf
 
     rm -r DLLs
     rm -r Doc
@@ -26,7 +26,7 @@ create_python_windows() {
     rm README.txt
     rm -r Lib/{concurrent,ctypes,curses}
     rm -r Lib/{dbm,distutils}
-    rm -r Lib/email
+    rm -r Lib/{email,ensurepip}
     rm -r Lib/{html,http}
     rm -r Lib/idlelib
     rm -r Lib/json
@@ -40,10 +40,10 @@ create_python_windows() {
     rm -r Lib/venv
     rm -r Lib/{xml,xmlrpc}
 
-    rm Lib/{__phello__.foo.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
-    rm Lib/{aifc.py,antigravity.py,argparse.py,ast.py}
-    rm Lib/{base64.py,bdb.py,binhex.py,bz2.py}
-    rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,contextlib.py,cProfile.py,crypt.py,csv.py}
+    rm Lib/{__phello__.foo.py,_bootlocale.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
+    rm Lib/{aifc.py,antigravity.py,argparse.py,ast.py,asynchat.py}
+    rm Lib/{base64.py,bdb.py,binhex.py,bisect.py,bz2.py}
+    rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,cProfile.py,crypt.py,csv.py}
     rm Lib/{datetime.py,decimal.py,difflib.py,dis.py,doctest.py,dummy_threading.py}
     rm Lib/{filecmp.py,fileinput.py,formatter.py,fractions.py,ftplib.py}
     rm Lib/{getopt.py,getpass.py,gettext.py,glob.py}
@@ -52,11 +52,11 @@ create_python_windows() {
     rm Lib/lzma.py
     rm Lib/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,mimetypes.py,modulefinder.py}
     rm Lib/{netrc.py,nntplib.py,nturl2path.py,numbers.py}
-    rm Lib/{opcode.py,optparse.py,os2emxpath.py}
+    rm Lib/{opcode.py,optparse.py}
     rm Lib/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,plistlib.py,poplib.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
     rm Lib/{queue.py,quopri.py}
     rm Lib/{rlcompleter.py,runpy.py}
-    rm Lib/{sched.py,shelve.py,shlex.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,socketserver.py,ssl.py,string.py,stringprep.py,sunau.py,symbol.py,symtable.py}
+    rm Lib/{sched.py,shelve.py,shlex.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,socketserver.py,ssl.py,statistics.py,string.py,stringprep.py,sunau.py,symbol.py,symtable.py}
     rm Lib/{tabnanny.py,telnetlib.py,textwrap.py,this.py,timeit.py,tty.py,turtle.py}
     rm Lib/{uu.py,uuid.py}
     rm Lib/{wave.py,webbrowser.py}
@@ -66,15 +66,15 @@ create_python_windows() {
 }
 
 create_python_android() {
-    local URL="http://fs1.d-h.st/download/00095/lwy/python-install-eeba91c.tar.xz"
-    local MD5SUM="869aacce52cac8febe0533905203b316"
-    download_md5 "${URL}" "${MD5}" "${BUILDDIR}/androidbinaries" python-install.tar.xz
+    local URL="http://fs1.d-h.st/download/00106/puN/python-install-3.4.0.tar.xz"
+    local MD5SUM="1bca2f3af40e4f86665d6c4812318f51"
+    download_md5 "${URL}" "${MD5}" "${BUILDDIR}/androidbinaries"
 
     rm -rf "${TARGETDIR}/pythonportable/"
 
     local TEMPDIR="$(mktemp -d --tmpdir="$(pwd)")"
     pushd "${TEMPDIR}"
-    tar Jxvf "${BUILDDIR}/androidbinaries/python-install.tar.xz"
+    tar Jxvf "${BUILDDIR}/androidbinaries/python-install-3.4.0.tar.xz"
     mv python-install "${TARGETDIR}/pythonportable/"
     popd
 
@@ -83,47 +83,74 @@ create_python_android() {
     pushd "${TARGETDIR}/pythonportable/"
 
     # Don't add unneeded files to the zip
-    find bin -type f ! -name python -delete
 
-    local LIB=lib/python2.7
+    local LIB=lib/python3.4
 
-    rm -r ${LIB}/bsddb
-    rm -r ${LIB}/{compiler,config,ctypes,curses}
-    rm -r ${LIB}/distutils
-    rm -r ${LIB}/email
-    rm -r ${LIB}/hotshot
-    rm -r ${LIB}/{idlelib,importlib}
+    rm -r ${LIB}/{concurrent,config-3.4m,ctypes,curses}
+    rm -r ${LIB}/{dbm,distutils}
+    rm -r ${LIB}/{email,ensurepip}
+    rm -r ${LIB}/{html,http}
+    rm -r ${LIB}/idlelib
     rm -r ${LIB}/json
-    rm -r ${LIB}/{lib-tk,lib2to3,logging}
+    rm -r ${LIB}/{lib2to3,logging}
     rm -r ${LIB}/multiprocessing
-    rm -r ${LIB}/{plat-linux3,pydoc_data}
+    rm -r ${LIB}/{plat-linux,pydoc_data}
     rm -r ${LIB}/{site-packages,sqlite3}
+    rm -r ${LIB}/{tkinter,turtledemo}
     rm -r ${LIB}/wsgiref
-    rm -r ${LIB}/unittest
-    rm -r ${LIB}/xml
+    rm -r ${LIB}/{unittest,urllib}
+    rm -r ${LIB}/{xml,xmlrpc}
 
-    rm ${LIB}/lib-dynload/{_csv.so,_heapq.so,_hotshot.so,_json.so,_lsprof.so,_testcapi.so,audioop.so,grp.so,mmap.so,resource.so,syslog.so,termios.so}
+    rm ${LIB}/lib-dynload/_csv.*
+    rm ${LIB}/lib-dynload/_ctypes.*
+    rm ${LIB}/lib-dynload/_ctypes_test.*
+    rm ${LIB}/lib-dynload/_datetime.*
+    rm ${LIB}/lib-dynload/_elementtree.*
+    rm ${LIB}/lib-dynload/_heapq.*
+    rm ${LIB}/lib-dynload/_json.*
+    rm ${LIB}/lib-dynload/_lsprof.*
+    rm ${LIB}/lib-dynload/_multibytecodec.*
+    rm ${LIB}/lib-dynload/_multiprocessing.*
+    rm ${LIB}/lib-dynload/_opcode.*
+    rm ${LIB}/lib-dynload/_pickle.*
+    rm ${LIB}/lib-dynload/_socket.*
+    rm ${LIB}/lib-dynload/_testbuffer.*
+    rm ${LIB}/lib-dynload/_testcapi.*
+    rm ${LIB}/lib-dynload/_testimportmultiple.*
+    rm ${LIB}/lib-dynload/array.*
+    rm ${LIB}/lib-dynload/audioop.*
+    rm ${LIB}/lib-dynload/cmath.*
+    rm ${LIB}/lib-dynload/fcntl.*
+    rm ${LIB}/lib-dynload/mmap.*
+    rm ${LIB}/lib-dynload/parser.*
+    rm ${LIB}/lib-dynload/pyexpat.*
+    rm ${LIB}/lib-dynload/resource.*
+    rm ${LIB}/lib-dynload/syslog.*
+    rm ${LIB}/lib-dynload/termios.*
+    rm ${LIB}/lib-dynload/unicodedata.*
+    rm ${LIB}/lib-dynload/xxlimited.*
 
-    rm ${LIB}/{__phello__.foo.py,_LWPCookieJar.py,_MozillaCookieJar.py,_pyio.py,_strptime.py,_threading_local.py}
-    rm ${LIB}/{aifc.py,antigravity.py,anydbm.py,argparse.py,ast.py,atexit.py,audiodev.py}
-    rm ${LIB}/{base64.py,BaseHTTPServer.py,Bastion.py,bdb.py,binhex.py}
-    rm ${LIB}/{calendar.py,cgi.py,CGIHTTPServer.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,commands.py,colorsys.py,compileall.py,contextlib.py,Cookie.py,cookielib.py,cProfile.py,csv.py}
-    rm ${LIB}/{dbhash.py,decimal.py,difflib.py,dircache.py,dis.py,doctest.py,DocXMLRPCServer.py,dumbdbm.py,dummy_thread.py,dummy_threading.py}
-    rm ${LIB}/{filecmp.py,fileinput.py,formatter.py,fpformat.py,fractions.py,ftplib.py}
+    rm ${LIB}/{__phello__.foo.py,_bootlocale.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
+    rm ${LIB}/{aifc.py,antigravity.py,argparse.py,ast.py,asynchat.py}
+    rm ${LIB}/{base64.py,bdb.py,binhex.py,bisect.py,bz2.py}
+    rm ${LIB}/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,cProfile.py,crypt.py,csv.py}
+    rm ${LIB}/{datetime.py,decimal.py,difflib.py,dis.py,doctest.py,dummy_threading.py}
+    rm ${LIB}/{filecmp.py,fileinput.py,formatter.py,fractions.py,ftplib.py}
     rm ${LIB}/{getopt.py,getpass.py,gettext.py,glob.py}
-    rm ${LIB}/{hmac.py,htmlentitydefs.py,htmllib.py,HTMLParser.py,httplib.py}
-    rm ${LIB}/{ihooks.py,imaplib.py,imghdr.py,imputil.py,inspect.py}
-    rm ${LIB}/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,markupbase.py,md5.py,mhlib.py,mimetools.py,mimetypes.py,MimeWriter.py,mimify.py,modulefinder.py,multifile.py,mutex.py}
-    rm ${LIB}/{netrc.py,new.py,nntplib.py,nturl2path.py,numbers.py}
-    rm ${LIB}/{opcode.py,optparse.py,os2emxpath.py}
-    rm ${LIB}/{pdb.doc,pdb.py,pickletools.py,pipes.py,pkgutil.py,plistlib.py,popen2.py,poplib.py,posixfile.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
-    rm ${LIB}/{Queue.py,quopri.py}
-    rm ${LIB}/{rexec.py,rfc822.py,rlcompleter.py,robotparser.py,runpy.py}
-    rm ${LIB}/{sched.py,sets.py,sgmllib.py,sha.py,shelve.py,shlex.py,SimpleHTTPServer.py,SimpleXMLRPCServer.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,SocketServer.py,sre.py,ssl.py,statvfs.py,StringIO.py,stringold.py,stringprep.py,sunau.py,sunaudio.py,symbol.py,symtable.py}
-    rm ${LIB}/{tabnanny.py,telnetlib.py,textwrap.py,this.py,timeit.py,toaiff.py,tty.py}
-    rm ${LIB}/{urllib.py,urllib2.py,urlparse.py,user.py,UserList.py,UserString.py,uu.py,uuid.py}
-    rm ${LIB}/{wave.py,webbrowser.py,whichdb.py,wsgiref.egg-info}
-    rm ${LIB}/{xdrlib.py,xmllib.py,xmlrpclib.py}
+    rm ${LIB}/hmac.py
+    rm ${LIB}/{imaplib.py,imghdr.py,inspect.py,ipaddress.py}
+    rm ${LIB}/lzma.py
+    rm ${LIB}/{macpath.py,macurl2path.py,mailbox.py,mailcap.py,mimetypes.py,modulefinder.py}
+    rm ${LIB}/{netrc.py,nntplib.py,nturl2path.py,numbers.py}
+    rm ${LIB}/{opcode.py,optparse.py}
+    rm ${LIB}/{pdb.py,pickle.py,pickletools.py,pipes.py,pkgutil.py,plistlib.py,poplib.py,pprint.py,profile.py,pstats.py,pty.py,py_compile.py,pyclbr.py,pydoc.py}
+    rm ${LIB}/{queue.py,quopri.py}
+    rm ${LIB}/{rlcompleter.py,runpy.py}
+    rm ${LIB}/{sched.py,shelve.py,shlex.py,smtpd.py,smtplib.py,sndhdr.py,socket.py,socketserver.py,ssl.py,statistics.py,string.py,stringprep.py,sunau.py,symbol.py,symtable.py}
+    rm ${LIB}/{tabnanny.py,telnetlib.py,textwrap.py,this.py,timeit.py,tty.py,turtle.py}
+    rm ${LIB}/{uu.py,uuid.py}
+    rm ${LIB}/{wave.py,webbrowser.py}
+    rm ${LIB}/xdrlib.py
 
     if [ "x${BUILDTYPE}" != "xci" ]; then
         # Compress executables and libraries

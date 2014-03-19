@@ -227,10 +227,9 @@ public class PatcherService extends IntentService {
             params.listener = this;
             CommandRunner cmd;
 
-            params.command = new String[] { "pythonportable/bin/python", "-B",
+            params.command = new String[] { "pythonportable/bin/python3", "-B",
                     "scripts/listpartitionconfigs.py" };
             params.environment = new String[] {
-                    "LD_LIBRARY_PATH=pythonportable/lib",
                     "PYTHONUNBUFFERED=true" };
             params.cwd = targetDir;
 
@@ -306,10 +305,9 @@ public class PatcherService extends IntentService {
             CommandRunner cmd;
 
             // Make tar binary executable
-            params.command = new String[] { "pythonportable/bin/python", "-B",
+            params.command = new String[] { "pythonportable/bin/python3", "-B",
                     "scripts/patchfile.py", mZipFile, mPartConfig };
             params.environment = new String[] {
-                    "LD_LIBRARY_PATH=pythonportable/lib",
                     "PYTHONUNBUFFERED=true", "TMPDIR=" + getCacheDir() };
             params.cwd = targetDir;
 
@@ -409,7 +407,7 @@ public class PatcherService extends IntentService {
 
                 // Make Python executable
                 params.command = new String[] { "chmod", "755",
-                        "pythonportable/bin/python" };
+                        "pythonportable/bin/python3" };
                 params.environment = null;
                 params.cwd = targetDir;
 
