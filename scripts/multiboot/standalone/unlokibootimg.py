@@ -130,7 +130,14 @@ def extract(filename, directory):
     while gzip_offset < total_size:
         f.seek(gzip_offset, os.SEEK_SET)
         temp = f.read(4)
-        if temp == b"\x1F\x8B\x08\x00":
+        timestamp = f.read(4)
+        # Searching for 1F8B0800 wasn't enough for some boot images. Specifically,
+        # ktoonsez's 20140319 kernels had another set of those four bytes before
+        # the "real" gzip header. We'll work around that by checking that the
+        # timestamp isn't zero (which is technically allowed, but the boot image
+        # tools don't do that)
+        # http://forum.xda-developers.com/showpost.php?p=51219628&postcount=3767
+        if temp == b"\x1F\x8B\x08\x00" and timestamp != b"\x00\x00\x00\x00":
             print_i("Found gzip header at: " + hex(gzip_offset))
             break
         gzip_offset += 4
