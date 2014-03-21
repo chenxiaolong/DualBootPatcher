@@ -40,7 +40,7 @@ create_python_windows() {
     rm -r Lib/venv
     rm -r Lib/{xml,xmlrpc}
 
-    rm Lib/{__phello__.foo.py,_bootlocale.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
+    rm Lib/{__phello__.foo.py,_compat_pickle.py,_dummy_thread.py,_markupbase.py,_osx_support.py,_pyio.py,_strptime.py,_threading_local.py}
     rm Lib/{aifc.py,antigravity.py,argparse.py,ast.py,asynchat.py}
     rm Lib/{base64.py,bdb.py,binhex.py,bisect.py,bz2.py}
     rm Lib/{calendar.py,cgi.py,cgitb.py,chunk.py,cmd.py,code.py,codeop.py,colorsys.py,compileall.py,cProfile.py,crypt.py,csv.py}
