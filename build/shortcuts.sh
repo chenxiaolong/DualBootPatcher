@@ -21,31 +21,45 @@ create_shortcuts_windows() {
     ${MINGW_PREFIX}windres res.rc res.o
     popd
 
-    local CXXFLAGS_GUI="-static -Wl,-subsystem,windows"
-    local CXXFLAGS_CLI="-static"
+    if [[ "${WIN32_LAUNCHER}" == "C++" ]]; then
+        local CXXFLAGS_GUI="-static -Wl,-subsystem,windows"
+        local CXXFLAGS_CLI="-static"
 
-    ${MINGW_PREFIX}g++ ${CXXFLAGS_GUI} -DGUI \
-        -DSCRIPT='"scripts\\qtmain.py"' \
-        ${BUILDDIR}/shortcuts/windows-exe.cpp \
-        ${TEMPDIR}/res.o \
-        -lshlwapi \
-        -o ${TARGETDIR}/PatchFileWindowsGUI.exe
+        ${MINGW_PREFIX}g++ ${CXXFLAGS_GUI} -DGUI \
+            -DSCRIPT='"scripts\\qtmain.py"' \
+            ${BUILDDIR}/shortcuts/windows-exe.cpp \
+            ${TEMPDIR}/res.o \
+            -lshlwapi \
+            -o ${TARGETDIR}/PatchFileWindowsGUI.exe
 
-    ${MINGW_PREFIX}g++ ${CXXFLAGS_CLI} \
-        -DSCRIPT='"scripts\\patchfile.py"' \
-        ${BUILDDIR}/shortcuts/windows-exe.cpp \
-        ${TEMPDIR}/res.o \
-        -lshlwapi \
-        -o ${TARGETDIR}/PatchFileWindows.exe
+        ${MINGW_PREFIX}g++ ${CXXFLAGS_CLI} \
+            -DSCRIPT='"scripts\\patchfile.py"' \
+            ${BUILDDIR}/shortcuts/windows-exe.cpp \
+            ${TEMPDIR}/res.o \
+            -lshlwapi \
+            -o ${TARGETDIR}/PatchFileWindows.exe
 
-    ${MINGW_PREFIX}strip \
-        ${TARGETDIR}/PatchFileWindowsGUI.exe \
-        ${TARGETDIR}/PatchFileWindows.exe
-
-    if [ "x${BUILDTYPE}" != "xci" ]; then
-        upx -v --lzma \
+        ${MINGW_PREFIX}strip \
             ${TARGETDIR}/PatchFileWindowsGUI.exe \
             ${TARGETDIR}/PatchFileWindows.exe
+
+        if [ "x${BUILDTYPE}" != "xci" ]; then
+            upx -v --lzma \
+                ${TARGETDIR}/PatchFileWindowsGUI.exe \
+                ${TARGETDIR}/PatchFileWindows.exe
+        fi
+    elif [[ "${WIN32_LAUNCHER}" == "C#" ]]; then
+        gmcs \
+            ${BUILDDIR}/shortcuts/windows-exe.cs \
+            -win32icon:${TEMPDIR}/combined.ico \
+            -target:winexe \
+            -define:GUI \
+            -out:${TARGETDIR}/PatchFileWindowsGUI.exe
+
+        gmcs \
+            ${BUILDDIR}/shortcuts/windows-exe.cs \
+            -win32icon:${TEMPDIR}/combined.ico \
+            -out:${TARGETDIR}/PatchFileWindows.exe
     fi
 
     rm -rf "${TEMPDIR}"
