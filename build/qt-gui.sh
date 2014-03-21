@@ -6,11 +6,11 @@ create_pyqt_windows() {
     mkdir -p "${BUILDDIR}/windowslibraries"
     pushd "${BUILDDIR}/windowslibraries"
 
-    local FILENAME="PyQt5_QtBase5.2.0_Python3.3.3_win32_msvc2010.7z"
+    local FILENAME="PyQt5_QtBase5.2.1_Python3.4.0_win32_msvc2010.7z"
 
     download_md5 \
-        http://fs1.d-h.st/download/00102/HZd/${FILENAME} \
-        66b3ef676f4d09c1042941ea51b57918 \
+        http://fs1.d-h.st/download/00106/YXY/${FILENAME} \
+        478a2151c1036e27462e324703ad9287 \
         .
 
     7z x "-o${TD}" ${FILENAME}
