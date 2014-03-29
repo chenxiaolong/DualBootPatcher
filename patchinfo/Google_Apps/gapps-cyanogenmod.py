@@ -4,7 +4,7 @@ import re
 
 file_info = FileInfo()
 
-filename_regex           = r"^gapps-jb-[0-9]{8}-signed\.zip$"
+filename_regex           = r"^gapps-(jb|kk)-[0-9]{8}-signed\.zip$"
 file_info.name           = 'CyanogenMod Google Apps'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
