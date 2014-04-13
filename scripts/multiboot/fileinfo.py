@@ -142,6 +142,7 @@ def get_infos(device):
 
                     infos.append((relpath, file_info))
 
+    infos.sort()
     return infos
 
 

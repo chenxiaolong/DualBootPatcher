@@ -41,4 +41,5 @@ def list_ramdisks():
             if suffix.search(f):
                 ramdisks.append(os.path.join(relative_path, f))
 
+    ramdisks.sort()
     return ramdisks
