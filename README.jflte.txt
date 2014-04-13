@@ -36,6 +36,7 @@ ROMs:
     - Mahdi
     - BeanStalk
     - NamelessROM
+    - EHNDROIX
   * AOKP ROMs
     - Official AOKP ROMs
     - Task650
