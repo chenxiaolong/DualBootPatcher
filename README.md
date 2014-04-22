@@ -26,7 +26,6 @@ Compiling from Source
         git clone https://github.com/chenxiaolong/DualBootPatcher.git
 
 2. Install needed dependencies
-
     - wget (or axel)
     - p7zip
     - patch
