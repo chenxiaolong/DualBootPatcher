@@ -47,3 +47,10 @@ def get_ramdisk_offset():
         return get(get_device(), 'ramdisk_offset')
     else:
         return None
+
+
+def get_partition(partition):
+    if has(get_device(), 'partition.' + partition):
+        return get(get_device(), 'partition.' + partition)
+    else:
+        return None

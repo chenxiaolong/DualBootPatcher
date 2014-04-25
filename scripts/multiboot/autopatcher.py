@@ -1,4 +1,5 @@
 import multiboot.autopatchers as autopatchers
+import multiboot.config as config
 import multiboot.fileio as fileio
 
 import imp
@@ -98,22 +99,26 @@ def insert_format_data(index, lines):
 
 
 def replace_mount_lines(lines):
+    psystem = config.get_partition('system')
+    pcache = config.get_partition('cache')
+    pdata = config.get_partition('data')
+
     i = 0
     while i < len(lines):
         if re.search(r"^\s*mount\s*\(.*$", lines[i]) or \
                 re.search(r"^\s*run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"mount\".*$", lines[i]):
             # Mount /system as dual boot
-            if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
+            if 'system' in lines[i] or (psystem and psystem in lines[i]):
                 del lines[i]
                 i += insert_mount_system(i, lines)
 
             # Mount /cache as dual boot
-            elif 'cache' in lines[i] or 'mmcblk0p18' in lines[i]:
+            elif 'cache' in lines[i] or (pcache and pcache in lines[i]):
                 del lines[i]
                 i += insert_mount_cache(i, lines)
 
             # Mount /data as dual boot
-            elif '"/data' in lines[i] or 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
+            elif '"/data' in lines[i] or 'userdata' in lines[i] or (pdata and pdata in lines[i]):
                 del lines[i]
                 i += insert_mount_data(i, lines)
 
@@ -125,22 +130,26 @@ def replace_mount_lines(lines):
 
 
 def replace_unmount_lines(lines):
+    psystem = config.get_partition('system')
+    pcache = config.get_partition('cache')
+    pdata = config.get_partition('data')
+
     i = 0
     while i < len(lines):
         if re.search(r"^\s*unmount\s*\(.*$", lines[i]) or \
                 re.search(r"^\s*run_program\s*\(\s*\"[^\"]*busybox\"\s*,\s*\"umount\".*$", lines[i]):
             # Mount /system as dual boot
-            if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
+            if 'system' in lines[i] or (psystem and psystem in lines[i]):
                 del lines[i]
                 i += insert_unmount_system(i, lines)
 
             # Mount /cache as dual boot
-            elif 'cache' in lines[i] or 'mmcblk0p18' in lines[i]:
+            elif 'cache' in lines[i] or (pcache and pcache in lines[i]):
                 del lines[i]
                 i += insert_unmount_cache(i, lines)
 
             # Mount /data as dual boot
-            elif '"/data' in lines[i] or 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
+            elif '"/data' in lines[i] or 'userdata' in lines[i] or (pdata and pdata in lines[i]):
                 del lines[i]
                 i += insert_unmount_data(i, lines)
 
@@ -152,21 +161,25 @@ def replace_unmount_lines(lines):
 
 
 def replace_format_lines(lines):
+    psystem = config.get_partition('system')
+    pcache = config.get_partition('cache')
+    pdata = config.get_partition('data')
+
     i = 0
     while i < len(lines):
         if re.search(r"^\s*format\s*\(.*$", lines[i]):
             # Mount /system as dual boot
-            if 'system' in lines[i] or 'mmcblk0p16' in lines[i]:
+            if 'system' in lines[i] or (psystem and psystem in lines[i]):
                 del lines[i]
                 i += insert_format_system(i, lines)
 
             # Mount /cache as dual boot
-            elif 'cache' in lines[i] or 'mmcblk0p18' in lines[i]:
+            elif 'cache' in lines[i] or (pcache and pcache in lines[i]):
                 del lines[i]
                 i += insert_format_cache(i, lines)
 
             # Mount /data as dual boot
-            elif 'userdata' in lines[i] or 'mmcblk0p29' in lines[i]:
+            elif 'userdata' in lines[i] or (pdata and pdata in lines[i]):
                 del lines[i]
                 i += insert_format_data(i, lines)
 
