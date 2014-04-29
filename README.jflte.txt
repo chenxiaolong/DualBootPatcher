@@ -37,6 +37,7 @@ ROMs:
     - BeanStalk
     - NamelessROM
     - EHNDROIX
+    - SOKP
   * AOKP ROMs
     - Official AOKP ROMs
     - Task650
