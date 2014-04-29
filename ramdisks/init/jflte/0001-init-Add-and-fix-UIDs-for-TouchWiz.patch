@@ -1,0 +1,91 @@
+From aec5c63fb4e074d517ab4a39c77da347135ab9cb Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Tue, 29 Apr 2014 13:58:00 -0400
+Subject: [PATCH] init: Add and fix UIDs for TouchWiz
+
+Change-Id: Id590b7137f4f02f77567ca0971d8ee45ecc2ae68
+---
+ include/private/android_filesystem_config.h | 29 +++++++++++++++++++++++------
+ 1 file changed, 23 insertions(+), 6 deletions(-)
+
+diff --git a/include/private/android_filesystem_config.h b/include/private/android_filesystem_config.h
+index 152a0a2..f57ef2e 100644
+--- a/include/private/android_filesystem_config.h
++++ b/include/private/android_filesystem_config.h
+@@ -76,7 +76,10 @@
+ #define AID_SDCARD_PICS   1033  /* external storage photos access */
+ #define AID_SDCARD_AV     1034  /* external storage audio/video access */
+ #define AID_SDCARD_ALL    1035  /* access all users external storage */
+-#define AID_AUDIT         1036  /* audit daemon */
++
++// Samsung Galaxy S4
++#define AID_SMARTCARD     1101  /* smartcard */
++#define AID_AUDIT         1999  /* audit */
+ 
+ #define AID_THEMEMAN      1300  /* theme manager */
+ 
+@@ -94,8 +97,10 @@
+ #define AID_NET_BW_STATS  3006  /* read bandwidth statistics */
+ #define AID_NET_BW_ACCT   3007  /* change bandwidth statistics accounting */
+ #define AID_NET_BT_STACK  3008  /* bluetooth: access config files */
+-#define AID_QCOM_ONCRPC   3009  /* can read/write /dev/oncrpc files */
+-#define AID_QCOM_DIAG     3010  /* can read/write /dev/diag */
++
++// Samsung Galaxy S4
++#define AID_QCOM_DIAG     3009  /* qcom_diag */
++#define AID_SPRINT_EXTENSION 4001 /* sprintextension */
+ 
+ #if defined(MOTOROLA_UIDS)
+ #define AID_MOT_OSH       5000  /* OSH */
+@@ -113,6 +118,9 @@
+ #define AID_MOT_DLNA      9011  /* DLNA native */
+ #endif // MOTOROLA_UIDS
+ 
++// Samsung Galaxy S4
++#define AID_VIBE          9300  /* vibe */
++
+ #define AID_MISC          9998  /* access to misc storage */
+ #define AID_NOBODY        9999
+ 
+@@ -173,6 +181,10 @@ static const struct android_id_info android_ids[] = {
+     { "sdcard_av",     AID_SDCARD_AV, },
+     { "sdcard_all",    AID_SDCARD_ALL, },
+ 
++    // Samsung Galaxy S4
++    { "smartcard",     AID_SMARTCARD, },
++    { "audit",         AID_AUDIT, },
++
+     { "shell",         AID_SHELL, },
+     { "cache",         AID_CACHE, },
+     { "diag",          AID_DIAG, },
+@@ -184,8 +196,11 @@ static const struct android_id_info android_ids[] = {
+     { "net_admin",     AID_NET_ADMIN, },
+     { "net_bw_stats",  AID_NET_BW_STATS, },
+     { "net_bw_acct",   AID_NET_BW_ACCT, },
+-    { "qcom_oncrpc", AID_QCOM_ONCRPC, },
+-    { "qcom_diag", AID_QCOM_DIAG, },
++
++    // Samsung Galaxy S4
++    { "qcom_diag",     AID_QCOM_DIAG, },
++    { "sprintextension", AID_SPRINT_EXTENSION, },
++
+     { "net_bt_stack",  AID_NET_BT_STACK, },
+ 
+ #if defined(MOTOROLA_UIDS)
+@@ -204,10 +219,12 @@ static const struct android_id_info android_ids[] = {
+     { "mot_dlna",  AID_MOT_DLNA, },
+ #endif
+ 
++    // Samsung Galaxy S4
++    { "vibe", AID_VIBE, },
++
+     { "misc",          AID_MISC, },
+     { "nobody",        AID_NOBODY, },
+     { "theme_man", AID_THEMEMAN },
+-    { "audit",      AID_AUDIT, },
+ };
+ 
+ #define android_id_count \
+-- 
+1.9.2
+

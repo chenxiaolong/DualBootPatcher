@@ -1,18 +1,29 @@
 Instructions on compiling the init binaries in this directory:
 
-1. Download my ROM source:
+1. Download the source code for my ROM, SlimRoms, or CyanogenMod:
 
    $ repo init -u https://github.com/chenxiaolong/CM_android.git -b cm-11.0
+   OR
+   $ repo init -u https://github.com/SlimRoms/platform_manifest.git -b kk4.4
+   OR
+   $ repo init -u https://github.com/CyanogenMod/android.git -b cm-11.0
 
 2. Set up the environment for jflte
 
    $ . build/envsetup.sh
    $ lunch cm_jflte-userdebug
+   OR
+   $ lunch slim_jflte-userdebug
 
-3. Apply the 0001-Replacement-init-for-TouchWiz-4.4.patch patch
+3. Apply my patches
 
    $ pushd device/samsung/jflte/
-   $ git am /path/to/0001-Replacement-init-for-TouchWiz-4.4.patch
+   $ git am /path/to/0001-jflte-Remove-carrier-specific-properties-from-init.patch
+   $ git am /path/to/0002-jflte-Add-Touchwiz-property-permissions.patch
+   $ popd
+
+   $ pushd system/core/
+   $ git am /path/to/0001-init-Add-and-fix-UIDs-for-TouchWiz.patch
    $ popd
 
 4. Build the init and adbd binaries
