@@ -37,7 +37,11 @@ def get_device():
 
 def get_selinux():
     if has(get_device(), 'selinux'):
-        return get(get_device(), 'selinux')
+        value = get(get_device(), 'selinux')
+        if value and value == 'unchanged':
+            return None
+        else:
+            return value
     else:
         return None
 
