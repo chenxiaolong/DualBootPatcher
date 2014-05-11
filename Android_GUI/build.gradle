@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.5.+'
+        classpath 'com.android.tools.build:gradle:0.10.+'
     }
 }
 apply plugin: 'android'
@@ -18,7 +18,12 @@ android {
     }
 
     signingConfigs {
-        release
+        release {
+            storeFile file("/dev/null")
+            keyAlias ""
+            storePassword ""
+            keyPassword ""
+        }
 
         debug
     }
@@ -31,6 +36,12 @@ android {
         debug {
             packageNameSuffix ".debug"
             versionNameSuffix "-DEBUG"
+        }
+
+        ci {
+            signingConfig signingConfigs.debug
+            packageNameSuffix ".snapshot"
+            versionNameSuffix "-SNAPSHOT"
         }
     }
 

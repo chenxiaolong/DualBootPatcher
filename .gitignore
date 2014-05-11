@@ -3,6 +3,6 @@ dist/
 build/windowsbinaries/
 build/windowslibraries/
 build/androidbinaries/
-build/config-override.sh
+build/build.custom.conf
 build/compile/build/
 build/compile/gcc/

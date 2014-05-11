@@ -36,6 +36,9 @@ public class ProgressFragment extends Fragment implements
         public int mColor;
     }
 
+    public ProgressFragment() {
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {

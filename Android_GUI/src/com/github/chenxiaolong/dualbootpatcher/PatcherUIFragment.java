@@ -36,6 +36,9 @@ public class PatcherUIFragment extends Fragment {
     private int mCurProgress = 0;
     private int mMaxProgress = 0;
 
+    public PatcherUIFragment() {
+    }
+
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
