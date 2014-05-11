@@ -131,7 +131,20 @@ class FileInfo:
 def get_infos(device):
     infos = list()
 
-    for i in ['Google_Apps', 'Other', device]:
+    directories = ['Google_Apps', 'Other']
+
+    if device:
+        directories.append(device)
+    else:
+        # TODO: Only add directories for supported devices
+        for d in os.listdir(OS.patchinfodir):
+            if d in directories:
+                continue
+
+            if os.path.isdir(os.path.join(OS.patchinfodir, d)):
+                directories.append(d)
+
+    for i in directories:
         for root, dirs, files in os.walk(os.path.join(OS.patchinfodir, i)):
             for f in files:
                 if f.endswith(".py"):
