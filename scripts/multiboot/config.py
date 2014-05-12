@@ -31,13 +31,19 @@ def has(section, option):
         return config.has_option(section, option)
 
 
+def list_devices():
+    sections = config.sections()
+    sections.remove('Defaults')
+    return sections
+
+
 def get_device():
     return get('Defaults', 'device')
 
 
-def get_selinux():
-    if has(get_device(), 'selinux'):
-        value = get(get_device(), 'selinux')
+def get_selinux(device):
+    if has(device, 'selinux'):
+        value = get(device, 'selinux')
         if value and value == 'unchanged':
             return None
         else:
@@ -46,15 +52,15 @@ def get_selinux():
         return None
 
 
-def get_ramdisk_offset():
-    if has(get_device(), 'ramdisk_offset'):
-        return get(get_device(), 'ramdisk_offset')
+def get_ramdisk_offset(device):
+    if has(device, 'ramdisk_offset'):
+        return get(device, 'ramdisk_offset')
     else:
         return None
 
 
-def get_partition(partition):
-    if has(get_device(), 'partition.' + partition):
-        return get(get_device(), 'partition.' + partition)
+def get_partition(device, partition):
+    if has(device, 'partition.' + partition):
+        return get(device, 'partition.' + partition)
     else:
         return None

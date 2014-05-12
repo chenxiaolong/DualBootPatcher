@@ -502,7 +502,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             for i in fileinfo.get_inits():
                 self.cmbinitfile.addItem(i)
 
-            for i in ramdisk.list_ramdisks():
+            for i in ramdisk.list_ramdisks(config.get_device()):
                 self.cmbramdisk.addItem(i[:-4])
 
             self.autopatchers = autopatcher.get_auto_patchers()

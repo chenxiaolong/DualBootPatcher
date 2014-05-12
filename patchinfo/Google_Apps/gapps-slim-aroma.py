@@ -21,7 +21,7 @@ def get_file_info():
   return file_info
 
 def handle_bundled_mount(directory, bootimg = None, device_check = True,
-                         partition_config = None):
+                         partition_config = None, device = True):
   updater_script = 'META-INF/com/google/android/updater-script'
   lines = fileio.all_lines(updater_script, directory = directory)
 

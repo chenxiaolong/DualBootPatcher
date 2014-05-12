@@ -23,7 +23,7 @@ def get_file_info():
   return file_info
 
 def fix_aroma(directory, bootimg = None, device_check = True,
-              partition_config = None):
+              partition_config = None, device = None):
   aroma_config = 'META-INF/com/google/android/aroma-config'
   lines = fileio.all_lines(aroma_config, directory = directory)
 

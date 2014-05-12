@@ -55,7 +55,7 @@ def create(info, output_file):
         return False
 
 
-def extract(boot_image, output_dir, loki):
+def extract(boot_image, output_dir, loki, device=None):
     global output, error, error_msg
 
     try:
@@ -84,9 +84,9 @@ def extract(boot_image, output_dir, loki):
     if os.path.exists(prefix + '-ramdisk_offset'):
         info.ramdisk_offset = int(fileio.first_line(prefix + '-ramdisk_offset'), 16)
         os.remove(prefix + '-ramdisk_offset')
-    elif config.get_ramdisk_offset() is not None:
+    elif device and config.get_ramdisk_offset(device) is not None:
         # We need this for Loki'd boot images
-        info.ramdisk_offset = int(config.get_ramdisk_offset(), 16)
+        info.ramdisk_offset = int(config.get_ramdisk_offset(device), 16)
 
     if os.path.exists(prefix + '-second_offset'):
         info.second_offset  = int(fileio.first_line(prefix + '-second_offset'), 16)

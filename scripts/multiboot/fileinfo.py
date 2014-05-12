@@ -1,3 +1,4 @@
+import multiboot.config as config
 import multiboot.debug as debug
 import multiboot.operatingsystem as OS
 
@@ -56,7 +57,6 @@ class FileInfo:
                                 file_info = plugin.get_file_info()
 
                             if file_info:
-                                print('Detected ' + file_info.name)
                                 return file_info
 
         return None
@@ -136,11 +136,8 @@ def get_infos(device):
     if device:
         directories.append(device)
     else:
-        # TODO: Only add directories for supported devices
-        for d in os.listdir(OS.patchinfodir):
-            if d in directories:
-                continue
-
+        devices = config.list_devices()
+        for d in devices:
             if os.path.isdir(os.path.join(OS.patchinfodir, d)):
                 directories.append(d)
 

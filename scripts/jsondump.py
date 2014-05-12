@@ -151,9 +151,9 @@ j['inits'] = inits
 
 
 # Fill with ramdisks
-ramdisks = ramdisk.list_ramdisks(all_ramdisks=True)
+ramdisks = ramdisk.list_ramdisks(None)
 
-j['ramdisks'] = ramdisks
+j['ramdisks'] = [r[:-4] for r in ramdisks]
 
 
 # Output final JSON

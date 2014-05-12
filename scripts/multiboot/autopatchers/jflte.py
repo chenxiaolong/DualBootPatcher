@@ -7,7 +7,7 @@ class GoogleEditionPatcher:
     # causing the ROM to fail to boot
     @staticmethod
     def qcom_audio_fix(directory, bootimg=None, device_check=True,
-                       partition_config=None):
+                       partition_config=None, device=None):
         lines = fileio.all_lines('system/etc/init.qcom.audio.sh',
                                  directory=directory)
 

@@ -25,7 +25,7 @@ def get_file_info(filename = ""):
 # My ROM has dual-boot support built in, so we'll hack around that to support
 # triple, quadruple, ... boot
 def multi_boot(directory, bootimg = None, device_check = True,
-               partition_config = None):
+               partition_config = None, device = None):
   updater_script = 'META-INF/com/google/android/updater-script'
   lines = fileio.all_lines(updater_script, directory = directory)
 
@@ -61,7 +61,7 @@ file_info.patch.insert(0, multi_boot)
 
 # The auto-updater in my ROM needs to know if the ROM has been patched
 def system_prop(directory, bootimg = None, device_check = True,
-                partition_config = None):
+                partition_config = None, device = None):
   lines = fileio.all_lines('system/build.prop', directory = directory)
 
   lines.append('ro.chenxiaolong.patched=%s\n' % partition_config.id)

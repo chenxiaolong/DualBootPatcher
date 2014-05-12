@@ -76,13 +76,14 @@ def patch_boot_image(file_info, path=None):
     else:
         ui.details('Unpacking boot image ...')
 
-    bootimageinfo = bootimage.extract(path, tempdir, file_info.loki)
+    bootimageinfo = bootimage.extract(path, tempdir, file_info.loki,
+                                      device=file_info._device)
     if not bootimageinfo:
         ui.failed(bootimage.error_msg)
         cleanup(tempdirs)
         return None
 
-    selinux = config.get_selinux()
+    selinux = config.get_selinux(file_info._device)
     if selinux is not None:
         bootimageinfo.cmdline += ' androidboot.selinux=' + selinux
 
@@ -288,11 +289,13 @@ def patch_zip(file_info):
                     i(tempdir,
                       bootimg=bootimages,
                       device_check=file_info.device_check,
-                      partition_config=file_info._partconfig)
+                      partition_config=file_info._partconfig,
+                      device=file_info._device)
                 else:
                     i(tempdir,
                       device_check=file_info.device_check,
-                      partition_config=file_info._partconfig)
+                      partition_config=file_info._partconfig,
+                      device=file_info._device)
 
             elif type(i) == list:
                 for j in i:

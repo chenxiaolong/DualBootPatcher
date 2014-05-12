@@ -98,10 +98,10 @@ def insert_format_data(index, lines):
     return insert_line(index, 'run_program("/tmp/dualboot.sh", "format-data");', lines)
 
 
-def replace_mount_lines(lines):
-    psystem = config.get_partition('system')
-    pcache = config.get_partition('cache')
-    pdata = config.get_partition('data')
+def replace_mount_lines(device, lines):
+    psystem = config.get_partition(device, 'system')
+    pcache = config.get_partition(device, 'cache')
+    pdata = config.get_partition(device, 'data')
 
     i = 0
     while i < len(lines):
@@ -129,10 +129,10 @@ def replace_mount_lines(lines):
             i += 1
 
 
-def replace_unmount_lines(lines):
-    psystem = config.get_partition('system')
-    pcache = config.get_partition('cache')
-    pdata = config.get_partition('data')
+def replace_unmount_lines(device, lines):
+    psystem = config.get_partition(device, 'system')
+    pcache = config.get_partition(device, 'cache')
+    pdata = config.get_partition(device, 'data')
 
     i = 0
     while i < len(lines):
@@ -160,10 +160,10 @@ def replace_unmount_lines(lines):
             i += 1
 
 
-def replace_format_lines(lines):
-    psystem = config.get_partition('system')
-    pcache = config.get_partition('cache')
-    pdata = config.get_partition('data')
+def replace_format_lines(device, lines):
+    psystem = config.get_partition(device, 'system')
+    pcache = config.get_partition(device, 'cache')
+    pdata = config.get_partition(device, 'data')
 
     i = 0
     while i < len(lines):
@@ -208,11 +208,11 @@ def remove_device_checks(lines):
 
 
 def attempt_auto_patch(lines, bootimg=None, device_check=True,
-                       partition_config=None):
+                       partition_config=None, device=None):
     insert_dual_boot_sh(lines)
-    replace_mount_lines(lines)
-    replace_unmount_lines(lines)
-    replace_format_lines(lines)
+    replace_mount_lines(device, lines)
+    replace_unmount_lines(device, lines)
+    replace_format_lines(device, lines)
     if type(bootimg) == list:
         for img in bootimg:
             insert_write_kernel(img, lines)
@@ -227,13 +227,14 @@ def attempt_auto_patch(lines, bootimg=None, device_check=True,
 
 # Functions to assign to FileInfo.patch
 def auto_patch(directory, bootimg=None, device_check=True,
-               partition_config=None):
+               partition_config=None, device=None):
     updater_script = 'META-INF/com/google/android/updater-script'
 
     lines = fileio.all_lines(updater_script, directory=directory)
     attempt_auto_patch(lines, bootimg=bootimg,
                        device_check=device_check,
-                       partition_config=partition_config)
+                       partition_config=partition_config,
+                       device=device)
     fileio.write_lines(updater_script, lines, directory=directory)
 
 

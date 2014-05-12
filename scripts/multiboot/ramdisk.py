@@ -30,16 +30,16 @@ def process_def(def_file, cpiofile, partition_config):
     return True
 
 
-def list_ramdisks(all_ramdisks=False):
+def list_ramdisks(device):
     directories = []
-    if all_ramdisks:
-        # TODO: Get supported devices only
-        for d in os.listdir(OS.ramdiskdir):
+    if not device:
+        devices = config.list_devices()
+        for d in devices:
             directory = os.path.join(OS.ramdiskdir, d)
             if d not in directories and os.path.isdir(directory):
                 directories.append(directory)
     else:
-        directories.append(os.path.join(OS.ramdiskdir, config.get_device()))
+        directories.append(os.path.join(OS.ramdiskdir, device))
 
     ramdisks = []
 
