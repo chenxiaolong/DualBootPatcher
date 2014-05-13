@@ -178,13 +178,13 @@ public class PatcherService extends IntentService {
         }
     }
 
-    private void patchFile(String zipFile, String partConfig) {
+    private void patchFile(String zipFile, String partConfig, String device) {
         try {
             ExtractPatcher extractTask = new ExtractPatcher();
             extractTask.start();
             extractTask.join();
 
-            PatchFile task = new PatchFile(zipFile, partConfig);
+            PatchFile task = new PatchFile(zipFile, partConfig, device);
             task.start();
             task.join();
         } catch (InterruptedException e) {
@@ -202,11 +202,48 @@ public class PatcherService extends IntentService {
             extractPatcher();
             getPatcherInformation();
         } else if (action.equals(ACTION_PATCH_FILE)) {
-            String zipFile = intent.getExtras().getString("zipFile");
-            String partConfig = intent.getExtras().getString("partConfig");
+            String zipFile = intent.getStringExtra("zipFile");
+            String partConfig = intent.getStringExtra("partConfig");
+            String device = intent.getStringExtra("device");
 
             extractPatcher();
-            patchFile(zipFile, partConfig);
+            patchFile(zipFile, partConfig, device);
+        }
+    }
+
+    public static class Device implements Parcelable {
+        public String mCodeName;
+        public String mName;
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(mCodeName);
+            dest.writeString(mName);
+        }
+
+        public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {
+            @Override
+            public Device createFromParcel(Parcel in) {
+                return new Device(in);
+            }
+
+            @Override
+            public Device[] newArray(int size) {
+                return new Device[size];
+            }
+        };
+
+        private Device(Parcel in) {
+            mCodeName = in.readString();
+            mName = in.readString();
+        }
+
+        public Device() {
         }
     }
 
@@ -286,6 +323,7 @@ public class PatcherService extends IntentService {
     }
 
     public static class PatcherInformation implements Parcelable {
+        public Device[] mDevices;
         public FileInfo[] mFileInfos;
         public PartitionConfig[] mPartitionConfigs;
         public String[] mAutopatchers;
@@ -299,6 +337,7 @@ public class PatcherService extends IntentService {
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
+            dest.writeParcelableArray(mDevices, 0);
             dest.writeParcelableArray(mFileInfos, 0);
             dest.writeParcelableArray(mPartitionConfigs, 0);
             dest.writeStringArray(mAutopatchers);
@@ -319,8 +358,10 @@ public class PatcherService extends IntentService {
         };
 
         private PatcherInformation(Parcel in) {
-            Parcelable[] p = in.readParcelableArray(FileInfo.class
+            Parcelable[] p = in.readParcelableArray(Device.class
                     .getClassLoader());
+            mDevices = Arrays.copyOf(p, p.length, Device[].class);
+            p = in.readParcelableArray(FileInfo.class.getClassLoader());
             mFileInfos = Arrays.copyOf(p, p.length, FileInfo[].class);
             p = in.readParcelableArray(PartitionConfig.class.getClassLoader());
             mPartitionConfigs = Arrays.copyOf(p, p.length,
@@ -362,6 +403,16 @@ public class PatcherService extends IntentService {
                 cmd.join();
 
                 JSONObject root = new JSONObject(mOutput.toString());
+
+                JSONArray devices = root.getJSONArray("devices");
+                mInfo.mDevices = new Device[devices.length()];
+                for (int i = 0; i < devices.length(); i++) {
+                    JSONObject deviceInfo = devices.getJSONObject(i);
+                    Device device = new Device();
+                    device.mCodeName = deviceInfo.getString("codename");
+                    device.mName = deviceInfo.getString("name");
+                    mInfo.mDevices[i] = device;
+                }
 
                 JSONArray autopatchers = root.getJSONArray("autopatchers");
                 mInfo.mAutopatchers = new String[autopatchers.length()];
@@ -426,13 +477,15 @@ public class PatcherService extends IntentService {
     }
 
     private class PatchFile extends Thread implements CommandListener {
-        private String mZipFile = "";
-        private String mPartConfig = "";
+        private final String mZipFile;
+        private final String mPartConfig;
+        private final String mDevice;
 
-        public PatchFile(String zipFile, String partConfig) {
+        public PatchFile(String zipFile, String partConfig, String device) {
             super();
             mZipFile = zipFile;
             mPartConfig = partConfig;
+            mDevice = device;
         }
 
         @Override
@@ -447,7 +500,8 @@ public class PatcherService extends IntentService {
 
             // Make tar binary executable
             params.command = new String[] { "pythonportable/bin/python3", "-B",
-                    "scripts/patchfile.py", mZipFile, mPartConfig };
+                    "scripts/patchfile.py", mZipFile, "--device", mDevice,
+                    "--partconfig", mPartConfig };
             params.environment = new String[] { "PYTHONUNBUFFERED=true",
                     "TMPDIR=" + getCacheDir() };
             params.cwd = targetDir;

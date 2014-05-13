@@ -38,8 +38,10 @@ public class MainActivity extends Activity {
 
     private Button mChooseFileButton;
 
+    private Spinner mDeviceSpinner;
+    private int mDeviceIndex = 0;
     private Spinner mPartConfigSpinner;
-    private int mPartConfigSpinnerPos = 0;
+    private int mPartConfigIndex = 0;
     private String mPartConfigText = "";
 
     private PatcherService.PatcherInformation mInfo;
@@ -59,9 +61,11 @@ public class MainActivity extends Activity {
                 if (state.equals(PatcherService.STATE_FETCHED_PATCHER_INFO)) {
                     mInfo = bundle.getParcelable("info");
 
-                    populateSpinner();
+                    populateDevices();
+                    populatePartConfigs();
 
                     mChooseFileButton.setEnabled(true);
+                    mDeviceSpinner.setEnabled(true);
                     mPartConfigSpinner.setEnabled(true);
                     mShowingProgress = false;
                     updateProgress();
@@ -95,6 +99,7 @@ public class MainActivity extends Activity {
         ((LinearLayout) findViewById(R.id.main_layout))
                 .setBackground(backgroundNoCard);
 
+        mDeviceSpinner = (Spinner) findViewById(R.id.choose_device);
         mPartConfigSpinner = (Spinner) findViewById(R.id.choose_partition_config);
 
         // Include version in action bar
@@ -137,6 +142,7 @@ public class MainActivity extends Activity {
             updateProgress();
 
             mChooseFileButton.setEnabled(false);
+            mDeviceSpinner.setEnabled(false);
             mPartConfigSpinner.setEnabled(false);
 
             Intent intent = new Intent(this, PatcherService.class);
@@ -145,15 +151,18 @@ public class MainActivity extends Activity {
             startService(intent);
         } else {
             updateProgress();
-            populateSpinner();
+            populateDevices();
+            populatePartConfigs();
         }
 
-        mPartConfigSpinner.setSelection(mPartConfigSpinnerPos);
+        mDeviceSpinner.setSelection(mDeviceIndex);
+        mPartConfigSpinner.setSelection(mPartConfigIndex);
     }
 
     @Override
     protected void onDestroy() {
         mChooseFileButton = null;
+        mDeviceSpinner = null;
         mPartConfigSpinner = null;
 
         super.onDestroy();
@@ -176,14 +185,16 @@ public class MainActivity extends Activity {
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putParcelable("info", mInfo);
-        savedInstanceState.putInt("partConfigPos", mPartConfigSpinnerPos);
+        savedInstanceState.putInt("devicePos", mDeviceIndex);
+        savedInstanceState.putInt("partConfigPos", mPartConfigIndex);
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mInfo = savedInstanceState.getParcelable("info");
-        mPartConfigSpinnerPos = savedInstanceState.getInt("partConfigPos");
+        mDeviceIndex = savedInstanceState.getInt("devicePos");
+        mPartConfigIndex = savedInstanceState.getInt("partConfigPos");
     }
 
     @Override
@@ -249,6 +260,7 @@ public class MainActivity extends Activity {
                 f.show(ft, AlertDialogFragment.TAG);
 
                 mChooseFileButton.setEnabled(true);
+                mDeviceSpinner.setEnabled(true);
                 mPartConfigSpinner.setEnabled(true);
             }
             break;
@@ -260,10 +272,12 @@ public class MainActivity extends Activity {
     private void updateProgress() {
         if (mShowingProgress) {
             findViewById(R.id.extracting_progress).setVisibility(View.VISIBLE);
+            findViewById(R.id.choose_device).setVisibility(View.GONE);
             findViewById(R.id.choose_partition_config).setVisibility(View.GONE);
             findViewById(R.id.partition_config_desc).setVisibility(View.GONE);
         } else {
             findViewById(R.id.extracting_progress).setVisibility(View.GONE);
+            findViewById(R.id.choose_device).setVisibility(View.VISIBLE);
             findViewById(R.id.choose_partition_config).setVisibility(
                     View.VISIBLE);
             findViewById(R.id.partition_config_desc)
@@ -271,7 +285,34 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void populateSpinner() {
+    private void populateDevices() {
+        ArrayAdapter<String> sa = new ArrayAdapter<String>(MainActivity.this,
+                android.R.layout.simple_spinner_item, android.R.id.text1);
+        sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mDeviceSpinner.setAdapter(sa);
+
+        for (int i = 0; i < mInfo.mDevices.length; i++) {
+            PatcherService.Device device = mInfo.mDevices[i];
+            String text = String.format("%s (%s)", device.mCodeName, device.mName);
+            sa.add(text);
+        }
+        sa.notifyDataSetChanged();
+        mDeviceSpinner.setSelection(mDeviceIndex);
+
+        mDeviceSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view,
+                    int position, long id) {
+                mDeviceIndex = position;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void populatePartConfigs() {
         ArrayAdapter<String> sa = new ArrayAdapter<String>(MainActivity.this,
                 android.R.layout.simple_spinner_item, android.R.id.text1);
         sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -281,14 +322,14 @@ public class MainActivity extends Activity {
             sa.add(mInfo.mPartitionConfigs[i].mName);
         }
         sa.notifyDataSetChanged();
-        mPartConfigSpinner.setSelection(mPartConfigSpinnerPos);
+        mPartConfigSpinner.setSelection(mPartConfigIndex);
 
         mPartConfigSpinner
                 .setOnItemSelectedListener(new OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent,
                             View view, int position, long id) {
-                        mPartConfigSpinnerPos = position;
+                        mPartConfigIndex = position;
                         mPartConfigText = mInfo.mPartitionConfigs[position].mDesc;
                         TextView t = (TextView) findViewById(R.id.partition_config_desc);
                         t.setText(mPartConfigText);
@@ -416,16 +457,20 @@ public class MainActivity extends Activity {
         @Override
         public void onClick(DialogInterface dialog, int which) {
             ((Button) findViewById(R.id.choose_file)).setEnabled(false);
+            ((Spinner) findViewById(R.id.choose_device)).setEnabled(false);
             ((Spinner) findViewById(R.id.choose_partition_config))
                     .setEnabled(false);
             // mChooseFileButton.setEnabled(false);
+            // mDeviceSpinner.setEnabled(false);
             // mPartConfigSpinner.setEnabled(false);
 
-            Intent i = new Intent(PATCH_FILE);
+            //Intent i = new Intent(PATCH_FILE);
+            Intent i = new Intent(MainActivity.this, PatcherActivity.class);
             i.addCategory(Intent.CATEGORY_DEFAULT);
             i.putExtra("zipFile", mZipFile);
             i.putExtra("partConfig",
-                    mInfo.mPartitionConfigs[mPartConfigSpinnerPos].mId);
+                    mInfo.mPartitionConfigs[mPartConfigIndex].mId);
+            i.putExtra("device", mInfo.mDevices[mDeviceIndex].mCodeName);
             startActivityForResult(i, REQUEST_PATCH_FILE);
         }
     }

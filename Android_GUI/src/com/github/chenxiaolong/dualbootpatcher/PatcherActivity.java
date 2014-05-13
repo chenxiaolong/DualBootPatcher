@@ -34,13 +34,13 @@ public class PatcherActivity extends Activity {
         LinearLayout fragmentContainer = (LinearLayout) findViewById(R.id.fragment_container);
         // Immersive mode in Kit Kat
         if (Build.VERSION.SDK_INT >= 19) {
-            fragmentContainer.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+            fragmentContainer
+                    .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
 
         FragmentManager fm = getFragmentManager();
@@ -79,10 +79,10 @@ public class PatcherActivity extends Activity {
             Intent intent = new Intent(this, PatcherService.class);
             intent.putExtra(PatcherService.ACTION,
                     PatcherService.ACTION_PATCH_FILE);
-            intent.putExtra("zipFile",
-                    getIntent().getExtras().getString("zipFile"));
+            intent.putExtra("zipFile", getIntent().getStringExtra("zipFile"));
             intent.putExtra("partConfig",
-                    getIntent().getExtras().getString("partConfig"));
+                    getIntent().getStringExtra("partConfig"));
+            intent.putExtra("device", getIntent().getStringExtra("device"));
             startService(intent);
         }
     }
