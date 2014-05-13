@@ -107,11 +107,16 @@ def patch_boot_image(file_info, path=None):
 
     ui.details('Modifying ramdisk ...')
 
-    ramdisk.process_def(
-        os.path.join(OS.ramdiskdir, file_info.ramdisk),
-        cf,
-        file_info._partconfig
-    )
+    try:
+        ramdisk.process_def(
+            os.path.join(OS.ramdiskdir, file_info.ramdisk),
+            cf,
+            file_info._partconfig
+        )
+    except Exception as e:
+        ui.failed('Failed to patch ramdisk: ' + str(e))
+        cleanup(tempdirs)
+        return None
 
     # Copy init.multiboot.mounting.sh
     shutil.copy(
