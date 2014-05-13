@@ -494,7 +494,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         if not self.addonce:
             self.addonce = True
 
-            self.presets = fileinfo.get_infos(config.get_device())
+            self.presets = fileinfo.get_infos(self.file_info._device)
             self.cmbpreset.addItem('Custom')
             for i in self.presets:
                 self.cmbpreset.addItem(i[0][:-3])
@@ -502,7 +502,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             for i in fileinfo.get_inits():
                 self.cmbinitfile.addItem(i)
 
-            for i in ramdisk.list_ramdisks(config.get_device()):
+            for i in ramdisk.list_ramdisks(self.file_info._device):
                 self.cmbramdisk.addItem(i[:-4])
 
             self.autopatchers = autopatcher.get_auto_patchers()
@@ -703,22 +703,32 @@ class Patcher(QtWidgets.QWidget):
             self.automode = False
 
         self.partconfigs = partitionconfigs.get()
+        self.devices = config.list_devices()
 
         self.setWindowTitle('Dual Boot Patcher')
 
         # Partition configuration selector and file chooser
         self.partconfigdesc = QtWidgets.QLabel(self)
         self.partconfigcombobox = QtWidgets.QComboBox(self)
+        self.devicecombobox = QtWidgets.QComboBox(self)
         self.filechooserbutton = QtWidgets.QPushButton(self)
 
         # A simple vertical layout will do
         layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.devicecombobox)
         layout.addWidget(self.partconfigcombobox)
         layout.addWidget(self.partconfigdesc)
         layout.addStretch(1)
         layout.addWidget(self.filechooserbutton)
 
         self.setLayout(layout)
+
+        # Populate devices
+        for d in self.devices:
+            self.devicecombobox.addItem('%s (%s)' % (d, config.get(d, 'name')))
+
+        self.devicecombobox.currentIndexChanged.connect(self.deviceselected)
+        self.deviceselected(self.devicecombobox.currentIndex())
 
         # Populate partition configs
         for i in self.partconfigs:
@@ -745,6 +755,10 @@ class Patcher(QtWidgets.QWidget):
         self.move(300, 300)
 
     @QtCore.pyqtSlot(int)
+    def deviceselected(self, index):
+        self.device = self.devices[self.devicecombobox.currentIndex()]
+
+    @QtCore.pyqtSlot(int)
     def partconfigselected(self, index):
         self.partconfigdesc.setText(self.partconfigs[index].description)
 
@@ -768,7 +782,7 @@ class Patcher(QtWidgets.QWidget):
 
         file_info = fileinfo.FileInfo()
         file_info.set_filename(self.filename)
-        file_info.set_device(config.get_device())
+        file_info.set_device(self.device)
 
         if self.automode and not file_info.is_filetype_supported():
             ext = os.path.splitext(self.filename)[1]
@@ -791,11 +805,13 @@ class Patcher(QtWidgets.QWidget):
             self.startpatching(file_info)
 
     def hidewidgets(self):
+        self.devicecombobox.setEnabled(False)
         self.partconfigcombobox.setEnabled(False)
         self.partconfigdesc.setEnabled(False)
         self.filechooserbutton.setEnabled(False)
 
     def showwidgets(self):
+        self.devicecombobox.setEnabled(True)
         self.partconfigcombobox.setEnabled(True)
         self.partconfigdesc.setEnabled(True)
         self.filechooserbutton.setEnabled(True)
