@@ -33,27 +33,16 @@ Compiling from Source
     - zip
     - upx (`upx-ucl` package in Ubuntu)
 
-3. Create a configuration file `build/config-override.sh` for your system:
+3. Create a configuration file `build/build.custom.conf` (or copy `build/build.conf`) for your system. Any options set here will override `build.conf`.
 
-        ANDROID_NDK=/path/to/android-ndk
-        ANDROID_HOME=/path/to/android-sdk
-
-        # If you want the C++ Windows launcher instead of the C# one, uncomment:
-        #WIN32_LAUNCHER="C++"
-
-        # Uncomment if you want a custom version number
-        #VERSION="4.0.0.custom"
+        [builder]
+        android-ndk = /opt/android-ndk
+        android-sdk = /opt/android-sdk
 
 4. Compile!
 
     The build script is used like this:
 
-        ./build/makedist.sh [device] [debug|release|none]
+        ./build/makedist.py [--debug] [--release] [--android] [--no-pc]
 
-    The second argument refers to how the Android app should be built. If you don't want to build it, just use `none` or don't specify anything.
-
-    Example: building the PC version of the patcher for the Samsung Galaxy S4
-
-        ./build/makedist.sh jflte
-
-    Building for jflte just means that the default in the `defaults.conf` file will be set to jflte. If you build for, say hammerhead, the build will work for jflte as long as the defaults.conf file is edited.
+    Running the command with no arguments is equivalent to passing `--debug`. If you want to build the Android app, pass `--android`, and if you don't want to build the PC program, pass `--no-pc`. At the moment, the debug and release build types are used for the Android app only. Release mode requires that a signing key is set up.
