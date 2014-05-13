@@ -726,6 +726,7 @@ def build_android_app(targetname):
     output = io.StringIO()
     sdkenv = os.environ.copy()
     sdkenv['ANDROID_HOME'] = android_sdk
+    sdkenv['TERM'] = 'xterm'
     child = pexpect.spawnu(androiddir + '/gradlew', [task],
                            cwd=androiddir, env=sdkenv, timeout=600)
     child.logfile = output
