@@ -97,7 +97,7 @@ files = os.listdir(outdir)
 
 versions = list()
 for i in files:
-    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*-.*\.(apk|zip|7z)', i)
+    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', i)
     if not r:
         print('Skipping %s ...' % i)
         continue

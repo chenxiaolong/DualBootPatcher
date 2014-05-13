@@ -26,7 +26,6 @@ basename_pc = 'DualBootPatcher'
 # ********************************
 
 # Global variables
-device = None
 buildtype = 'debug'
 buildpc = True
 buildandroid = False
@@ -203,7 +202,7 @@ def get_target_info(android=False):
     targetfile = ''
 
     if android:
-        targetname = '%s-%s-%s' % (basename_android, version, device)
+        targetname = '%s-%s' % (basename_android, version)
     else:
         suffix = ''
         if buildtype == 'debug':
@@ -212,7 +211,7 @@ def get_target_info(android=False):
             suffix = '-release'
         elif buildtype == 'ci':
             suffix = '-snapshot'
-        targetname = '%s-%s-%s%s' % (basename_pc, version, device, suffix)
+        targetname = '%s-%s%s' % (basename_pc, version, suffix)
 
     if android:
         fileext = 'tar.xz'
@@ -633,7 +632,6 @@ def create_release(targetdir, targetfile, android=False):
             'patchinfo/README',
             'patchinfo/Sample.py',
             'ramdisks/README',
-            'scripts/advancedpatch.py',
             'scripts/gendiff.py',
             'scripts/qtmain.py',
         ]
@@ -800,7 +798,7 @@ def build_android():
 
 
 def parse_args():
-    global buildtype, device, buildandroid, buildpc
+    global buildtype, buildandroid, buildpc
 
     parser = argparse.ArgumentParser()
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
@@ -809,9 +807,6 @@ def parse_args():
     ------------------------------
     ''')
 
-    parser.add_argument('-d', '--device',
-                        help='Default device for the patcher',
-                        action='store')
     parser.add_argument('-a', '--android',
                         help='Build Android app',
                         action='store_true')
@@ -838,12 +833,6 @@ def parse_args():
 
     args = parser.parse_args()
 
-    if args.device:
-        device = args.device
-    else:
-        print('You must specify a default device')
-        return False
-
     if args.buildtype:
         buildtype = args.buildtype
 
@@ -865,7 +854,6 @@ if not parse_args():
 
 print('Version:        ' + version)
 print('Build type:     ' + buildtype)
-print('Default device: ' + device)
 
 try:
     if buildpc:
