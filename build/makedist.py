@@ -727,7 +727,7 @@ def build_android_app(targetname):
     sdkenv = os.environ.copy()
     sdkenv['ANDROID_HOME'] = android_sdk
     child = pexpect.spawnu(androiddir + '/gradlew', [task],
-                           cwd=androiddir, env=sdkenv)
+                           cwd=androiddir, env=sdkenv, timeout=300)
     child.logfile = output
 
     if buildtype == 'release':
