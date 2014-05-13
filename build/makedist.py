@@ -786,7 +786,8 @@ def build_android():
 
     # Build the app
     assetdir = os.path.join(androiddir, 'assets')
-    shutil.rmtree(assetdir)
+    if os.path.exists(assetdir):
+        shutil.rmtree(assetdir)
     os.makedirs(assetdir)
     shutil.move(targetfile, assetdir)
     shutil.copyfile(os.path.join(topdir, 'ramdisks', 'busybox-static'),
