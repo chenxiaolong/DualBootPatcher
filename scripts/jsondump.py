@@ -31,6 +31,7 @@ jsonarr = list()
 
 for i in partition_configs:
     jsonobj = dict()
+    jsonobj['id'] = i.id
     jsonobj['name'] = i.name
     jsonobj['description'] = i.description
     jsonobj['kernel'] = i.kernel
