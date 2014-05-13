@@ -602,25 +602,13 @@ def create_shortcuts_linux(targetdir):
     os.chmod(bingui, 0o755)
 
 
-def set_default_device(targetdir):
-    print('Setting default device ...')
-
-    f = open(os.path.join(targetdir, 'defaults.conf'))
-    lines = f.readlines()
-    f.close()
-
-    with open(os.path.join(targetdir, 'defaults.conf'), 'w') as f:
-        for line in lines:
-            f.write(re.sub(r'@DEFAULT_DEVICE@', device, line))
-
-
 def create_release(targetdir, targetfile, android=False):
     print('Creating release archive ...')
 
     copy_for_rel = [
         'README.jflte.txt',
-        'defaults.conf',
         'patch-file.sh',
+        'patcher.conf',
         'patches/',
         'patchinfo/',
         'ramdisks/',
@@ -652,8 +640,6 @@ def create_release(targetdir, targetfile, android=False):
 
         for f in remove:
             os.remove(os.path.join(targetdir, f))
-
-    set_default_device(targetdir)
 
     if not android:
         shutil.copyfile(os.path.join(androiddir, 'ic_launcher-web.png'),

@@ -14,7 +14,7 @@ else:
     config = configparser.ConfigParser()
     py3 = True
 
-config.read(os.path.join(OS.rootdir, 'defaults.conf'))
+config.read(os.path.join(OS.rootdir, 'patcher.conf'))
 
 
 def get(section, option):
@@ -35,10 +35,6 @@ def list_devices():
     sections = config.sections()
     sections.remove('Defaults')
     return sections
-
-
-def get_device():
-    return get('Defaults', 'device')
 
 
 def get_selinux(device):
