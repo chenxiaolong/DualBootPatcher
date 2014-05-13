@@ -42,15 +42,13 @@ public class MainActivity extends Activity {
     private int mPartConfigSpinnerPos = 0;
     private String mPartConfigText = "";
 
-    private String[] mPartConfigs = null;
-    private String[] mPartConfigNames = null;
-    private String[] mPartConfigDescs = null;
-    private boolean mGettingPartConfigs = false;
+    private PatcherService.PatcherInformation mInfo;
+    private boolean mGettingPatcherInformation = false;
     private boolean mShowingProgress = false;
 
     private String mZipFile;
 
-    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle bundle = intent.getExtras();
@@ -58,10 +56,8 @@ public class MainActivity extends Activity {
             if (bundle != null) {
                 String state = bundle.getString(PatcherService.STATE);
 
-                if (state.equals(PatcherService.STATE_FETCHED_PART_CONFIGS)) {
-                    mPartConfigs = bundle.getStringArray("configs");
-                    mPartConfigNames = bundle.getStringArray("names");
-                    mPartConfigDescs = bundle.getStringArray("descs");
+                if (state.equals(PatcherService.STATE_FETCHED_PATCHER_INFO)) {
+                    mInfo = bundle.getParcelable("info");
 
                     populateSpinner();
 
@@ -70,7 +66,7 @@ public class MainActivity extends Activity {
                     mShowingProgress = false;
                     updateProgress();
 
-                    mGettingPartConfigs = false;
+                    mGettingPatcherInformation = false;
                 }
             }
         }
@@ -134,8 +130,8 @@ public class MainActivity extends Activity {
         super.onPostCreate(savedInstanceState);
 
         // Update patcher
-        if (!mGettingPartConfigs && mPartConfigs == null) {
-            mGettingPartConfigs = true;
+        if (!mGettingPatcherInformation && mInfo == null) {
+            mGettingPatcherInformation = true;
 
             mShowingProgress = true;
             updateProgress();
@@ -145,7 +141,7 @@ public class MainActivity extends Activity {
 
             Intent intent = new Intent(this, PatcherService.class);
             intent.putExtra(PatcherService.ACTION,
-                    PatcherService.ACTION_FETCH_PART_CONFIGS);
+                    PatcherService.ACTION_GET_PATCHER_INFORMATION);
             startService(intent);
         } else {
             updateProgress();
@@ -179,18 +175,14 @@ public class MainActivity extends Activity {
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState.putStringArray("partConfigs", mPartConfigs);
-        savedInstanceState.putStringArray("partConfigNames", mPartConfigNames);
-        savedInstanceState.putStringArray("partConfigDescs", mPartConfigDescs);
+        savedInstanceState.putParcelable("info", mInfo);
         savedInstanceState.putInt("partConfigPos", mPartConfigSpinnerPos);
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        mPartConfigs = savedInstanceState.getStringArray("partConfigs");
-        mPartConfigNames = savedInstanceState.getStringArray("partConfigNames");
-        mPartConfigDescs = savedInstanceState.getStringArray("partConfigDescs");
+        mInfo = savedInstanceState.getParcelable("info");
         mPartConfigSpinnerPos = savedInstanceState.getInt("partConfigPos");
     }
 
@@ -285,8 +277,8 @@ public class MainActivity extends Activity {
         sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mPartConfigSpinner.setAdapter(sa);
 
-        for (int i = 0; i < mPartConfigs.length; i++) {
-            sa.add(mPartConfigNames[i]);
+        for (int i = 0; i < mInfo.mPartitionConfigs.length; i++) {
+            sa.add(mInfo.mPartitionConfigs[i].mName);
         }
         sa.notifyDataSetChanged();
         mPartConfigSpinner.setSelection(mPartConfigSpinnerPos);
@@ -297,7 +289,7 @@ public class MainActivity extends Activity {
                     public void onItemSelected(AdapterView<?> parent,
                             View view, int position, long id) {
                         mPartConfigSpinnerPos = position;
-                        mPartConfigText = mPartConfigDescs[position];
+                        mPartConfigText = mInfo.mPartitionConfigs[position].mDesc;
                         TextView t = (TextView) findViewById(R.id.partition_config_desc);
                         t.setText(mPartConfigText);
                     }
@@ -432,7 +424,8 @@ public class MainActivity extends Activity {
             Intent i = new Intent(PATCH_FILE);
             i.addCategory(Intent.CATEGORY_DEFAULT);
             i.putExtra("zipFile", mZipFile);
-            i.putExtra("partConfig", mPartConfigs[mPartConfigSpinnerPos]);
+            i.putExtra("partConfig",
+                    mInfo.mPartitionConfigs[mPartConfigSpinnerPos].mId);
             startActivityForResult(i, REQUEST_PATCH_FILE);
         }
     }

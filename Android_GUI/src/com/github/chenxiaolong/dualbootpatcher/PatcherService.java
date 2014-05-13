@@ -6,14 +6,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.util.Arrays;
-import java.util.Properties;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.ConditionVariable;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 public class PatcherService extends IntentService {
@@ -22,7 +26,7 @@ public class PatcherService extends IntentService {
 
     public static final String ACTION = "action";
     public static final String ACTION_PATCH_FILE = "patch_file";
-    public static final String ACTION_FETCH_PART_CONFIGS = "fetch_part_configs";
+    public static final String ACTION_GET_PATCHER_INFORMATION = "get_patcher_information";
     public static final String ACTION_UPDATE_PATCHER = "update_patcher";
 
     public static final String STATE = "state";
@@ -33,7 +37,7 @@ public class PatcherService extends IntentService {
     public static final String STATE_SET_PROGRESS_MAX = "set_progress_max";
     public static final String STATE_SET_PROGRESS = "set_progress";
     public static final String STATE_EXTRACTED_PATCHER = "extracted_patcher";
-    public static final String STATE_FETCHED_PART_CONFIGS = "fetched_part_configs";
+    public static final String STATE_FETCHED_PATCHER_INFO = "fetched_patcher_info";
     public static final String STATE_PATCHED_FILE = "patched_file";
 
     public PatcherService() {
@@ -89,12 +93,10 @@ public class PatcherService extends IntentService {
         sendBroadcast(i);
     }
 
-    private void onFetchedPartConfigs(PartitionConfigInfo info) {
+    private void onFetchedPatcherInformation(PatcherInformation info) {
         Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_FETCHED_PART_CONFIGS);
-        i.putExtra("configs", info.mPartConfigs);
-        i.putExtra("names", info.mPartConfigNames);
-        i.putExtra("descs", info.mPartConfigDescs);
+        i.putExtra(STATE, STATE_FETCHED_PATCHER_INFO);
+        i.putExtra("info", info);
         sendBroadcast(i);
     }
 
@@ -111,7 +113,8 @@ public class PatcherService extends IntentService {
         Log.e(TAG, msg);
     }
 
-    private ConditionVariable mExtractPatcherDone = new ConditionVariable(false);
+    private final ConditionVariable mExtractPatcherDone = new ConditionVariable(
+            false);
 
     private static final String mFileBase = "DualBootPatcherAndroid-";
     private static final String mFileExt = ".tar.xz";
@@ -165,9 +168,9 @@ public class PatcherService extends IntentService {
         }
     }
 
-    private void fetchPartConfigs() {
+    private void getPatcherInformation() {
         try {
-            GetPartitionConfigs task = new GetPartitionConfigs();
+            GetPatcherInformation task = new GetPatcherInformation();
             task.start();
             task.join();
         } catch (InterruptedException e) {
@@ -195,9 +198,9 @@ public class PatcherService extends IntentService {
 
         if (action.equals(ACTION_UPDATE_PATCHER)) {
             extractPatcher();
-        } else if (action.equals(ACTION_FETCH_PART_CONFIGS)) {
+        } else if (action.equals(ACTION_GET_PATCHER_INFORMATION)) {
             extractPatcher();
-            fetchPartConfigs();
+            getPatcherInformation();
         } else if (action.equals(ACTION_PATCH_FILE)) {
             String zipFile = intent.getExtras().getString("zipFile");
             String partConfig = intent.getExtras().getString("partConfig");
@@ -207,15 +210,134 @@ public class PatcherService extends IntentService {
         }
     }
 
-    public class PartitionConfigInfo {
-        public String[] mPartConfigs;
-        public String[] mPartConfigNames;
-        public String[] mPartConfigDescs;
+    public static class FileInfo implements Parcelable {
+        public String mPath;
+        public String mName;
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(mPath);
+            dest.writeString(mName);
+        }
+
+        public static final Parcelable.Creator<FileInfo> CREATOR = new Parcelable.Creator<FileInfo>() {
+            @Override
+            public FileInfo createFromParcel(Parcel in) {
+                return new FileInfo(in);
+            }
+
+            @Override
+            public FileInfo[] newArray(int size) {
+                return new FileInfo[size];
+            }
+        };
+
+        private FileInfo(Parcel in) {
+            mPath = in.readString();
+            mName = in.readString();
+        }
+
+        public FileInfo() {
+        }
     }
 
-    private class GetPartitionConfigs extends Thread implements CommandListener {
-        private PartitionConfigInfo mInfo = new PartitionConfigInfo();
-        private StringBuilder mOutput = new StringBuilder();
+    public static class PartitionConfig implements Parcelable {
+        public String mId;
+        public String mName;
+        public String mDesc;
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(mId);
+            dest.writeString(mName);
+            dest.writeString(mDesc);
+        }
+
+        public static final Parcelable.Creator<PartitionConfig> CREATOR = new Parcelable.Creator<PartitionConfig>() {
+            @Override
+            public PartitionConfig createFromParcel(Parcel in) {
+                return new PartitionConfig(in);
+            }
+
+            @Override
+            public PartitionConfig[] newArray(int size) {
+                return new PartitionConfig[size];
+            }
+        };
+
+        private PartitionConfig(Parcel in) {
+            mId = in.readString();
+            mName = in.readString();
+            mDesc = in.readString();
+        }
+
+        public PartitionConfig() {
+        }
+    }
+
+    public static class PatcherInformation implements Parcelable {
+        public FileInfo[] mFileInfos;
+        public PartitionConfig[] mPartitionConfigs;
+        public String[] mAutopatchers;
+        public String[] mInits;
+        public String[] mRamdisks;
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeParcelableArray(mFileInfos, 0);
+            dest.writeParcelableArray(mPartitionConfigs, 0);
+            dest.writeStringArray(mAutopatchers);
+            dest.writeStringArray(mInits);
+            dest.writeStringArray(mRamdisks);
+        }
+
+        public static final Parcelable.Creator<PatcherInformation> CREATOR = new Parcelable.Creator<PatcherInformation>() {
+            @Override
+            public PatcherInformation createFromParcel(Parcel in) {
+                return new PatcherInformation(in);
+            }
+
+            @Override
+            public PatcherInformation[] newArray(int size) {
+                return new PatcherInformation[size];
+            }
+        };
+
+        private PatcherInformation(Parcel in) {
+            Parcelable[] p = in.readParcelableArray(FileInfo.class
+                    .getClassLoader());
+            mFileInfos = Arrays.copyOf(p, p.length, FileInfo[].class);
+            p = in.readParcelableArray(PartitionConfig.class.getClassLoader());
+            mPartitionConfigs = Arrays.copyOf(p, p.length,
+                    PartitionConfig[].class);
+            mAutopatchers = in.createStringArray();
+            mInits = in.createStringArray();
+            mRamdisks = in.createStringArray();
+        }
+
+        public PatcherInformation() {
+        }
+    }
+
+    private class GetPatcherInformation extends Thread implements
+            CommandListener {
+        private final PatcherInformation mInfo = new PatcherInformation();
+        private final StringBuilder mOutput = new StringBuilder();
 
         @Override
         public void run() {
@@ -228,10 +350,10 @@ public class PatcherService extends IntentService {
             CommandRunner cmd;
 
             params.command = new String[] { "pythonportable/bin/python3", "-B",
-                    "scripts/listpartitionconfigs.py" };
-            params.environment = new String[] {
-                    "PYTHONUNBUFFERED=true" };
+                    "scripts/jsondump.py" };
+            params.environment = new String[] { "PYTHONUNBUFFERED=true" };
             params.cwd = targetDir;
+            params.logOutput = false;
 
             cmd = new CommandRunner(params);
             cmd.start();
@@ -239,34 +361,53 @@ public class PatcherService extends IntentService {
             try {
                 cmd.join();
 
-                Properties prop = new Properties();
+                JSONObject root = new JSONObject(mOutput.toString());
 
-                prop.load(new StringReader(mOutput.toString()));
-
-                Log.i("DualBootPatcher", "Got from listpartitionconfigs.py: "
-                        + prop.stringPropertyNames().toString());
-
-                mInfo.mPartConfigs = prop.getProperty("partitionconfigs")
-                        .split(",");
-                mInfo.mPartConfigNames = new String[mInfo.mPartConfigs.length];
-                mInfo.mPartConfigDescs = new String[mInfo.mPartConfigs.length];
-                for (int i = 0; i < mInfo.mPartConfigs.length; i++) {
-                    mInfo.mPartConfigNames[i] = prop
-                            .getProperty(mInfo.mPartConfigs[i] + ".name");
-                    mInfo.mPartConfigDescs[i] = prop
-                            .getProperty(mInfo.mPartConfigs[i] + ".description");
-
-                    Log.i("DualBootPatcher", mInfo.mPartConfigs[i]);
-                    Log.i("DualBootPatcher", " --> "
-                            + mInfo.mPartConfigNames[i]);
-                    Log.i("DualBootPatcher", " --> "
-                            + mInfo.mPartConfigDescs[i]);
+                JSONArray autopatchers = root.getJSONArray("autopatchers");
+                mInfo.mAutopatchers = new String[autopatchers.length()];
+                for (int i = 0; i < autopatchers.length(); i++) {
+                    JSONObject autopatcher = autopatchers.getJSONObject(i);
+                    mInfo.mAutopatchers[i] = autopatcher.getString("name");
                 }
 
-                onFetchedPartConfigs(mInfo);
+                JSONArray fileinfos = root.getJSONArray("fileinfos");
+                mInfo.mFileInfos = new FileInfo[fileinfos.length()];
+                for (int i = 0; i < fileinfos.length(); i++) {
+                    JSONObject fileinfo = fileinfos.getJSONObject(i);
+                    FileInfo info = new FileInfo();
+                    info.mPath = fileinfo.getString("path");
+                    info.mName = fileinfo.getString("name");
+                    mInfo.mFileInfos[i] = info;
+                }
+
+                JSONArray partconfigs = root.getJSONArray("partitionconfigs");
+                mInfo.mPartitionConfigs = new PartitionConfig[partconfigs
+                        .length()];
+                for (int i = 0; i < partconfigs.length(); i++) {
+                    JSONObject partconfig = partconfigs.getJSONObject(i);
+                    PartitionConfig config = new PartitionConfig();
+                    config.mId = partconfig.getString("id");
+                    config.mName = partconfig.getString("name");
+                    config.mDesc = partconfig.getString("description");
+                    mInfo.mPartitionConfigs[i] = config;
+                }
+
+                JSONArray inits = root.getJSONArray("inits");
+                mInfo.mInits = new String[inits.length()];
+                for (int i = 0; i < inits.length(); i++) {
+                    mInfo.mInits[i] = inits.getString(i);
+                }
+
+                JSONArray ramdisks = root.getJSONArray("ramdisks");
+                mInfo.mRamdisks = new String[ramdisks.length()];
+                for (int i = 0; i < ramdisks.length(); i++) {
+                    mInfo.mRamdisks[i] = ramdisks.getString(i);
+                }
+
+                onFetchedPatcherInformation(mInfo);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            } catch (IOException e) {
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
@@ -307,8 +448,8 @@ public class PatcherService extends IntentService {
             // Make tar binary executable
             params.command = new String[] { "pythonportable/bin/python3", "-B",
                     "scripts/patchfile.py", mZipFile, mPartConfig };
-            params.environment = new String[] {
-                    "PYTHONUNBUFFERED=true", "TMPDIR=" + getCacheDir() };
+            params.environment = new String[] { "PYTHONUNBUFFERED=true",
+                    "TMPDIR=" + getCacheDir() };
             params.cwd = targetDir;
 
             cmd = new CommandRunner(params);
@@ -493,6 +634,7 @@ public class PatcherService extends IntentService {
         public String[] environment;
         public File cwd;
         public CommandListener listener;
+        public boolean logOutput = true;
     }
 
     private class CommandResult {
@@ -505,7 +647,7 @@ public class PatcherService extends IntentService {
         private BufferedReader stdout = null;
         private BufferedReader stderr = null;
 
-        private CommandParams mParams;
+        private final CommandParams mParams;
         private CommandResult mResult;
 
         public CommandRunner(CommandParams params) {
@@ -560,7 +702,9 @@ public class PatcherService extends IntentService {
                         String s;
                         try {
                             while ((s = stdout.readLine()) != null) {
-                                log("Standard output: " + s);
+                                if (mParams.logOutput) {
+                                    log("Standard output: " + s);
+                                }
 
                                 if (mParams.listener != null) {
                                     mParams.listener.onNewOutputLine(s,
