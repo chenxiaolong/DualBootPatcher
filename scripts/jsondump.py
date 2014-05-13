@@ -12,6 +12,7 @@ except Exception as e:
     sys.exit(1)
 
 import multiboot.autopatcher as autopatcher
+import multiboot.config as config
 import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.ramdisk as ramdisk
@@ -38,6 +39,21 @@ for i in partition_configs:
     jsonarr.append(jsonobj)
 
 j['partitionconfigs'] = jsonarr
+
+
+# Fill with devices
+devices = config.list_devices()
+
+jsonarr = list()
+
+for d in devices:
+    jsonobj = dict()
+    jsonobj['codename'] = d
+    jsonobj['name'] = config.get(d, 'name')
+
+    jsonarr.append(jsonobj)
+
+j['devices'] = jsonarr
 
 
 # Fill with patch information
