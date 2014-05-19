@@ -46,3 +46,7 @@ Compiling from Source
         ./build/makedist.py [--debug] [--release] [--android] [--no-pc]
 
     Running the command with no arguments is equivalent to passing `--debug`. If you want to build the Android app, pass `--android`, and if you don't want to build the PC program, pass `--no-pc`. At the moment, the debug and release build types are used for the Android app only. Release mode requires that a signing key is set up.
+
+License
+=======
+The patcher is licensed under GPLv3+ (see the LICENSE file). Third party libraries and programs are used under their respective licenses. Copies of these licenses are in the licenses/ directory of this repository. Patches and other source code modifications to third party software are under the same license as the original software.
