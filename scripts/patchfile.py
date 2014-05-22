@@ -36,6 +36,7 @@ filename = None
 device = None
 partconfig_name = None
 partconfig = None
+noquestions = False
 
 # For unsupported files
 f_preset_name = None
@@ -149,9 +150,9 @@ def clear_screen():
 
 
 def parse_args():
-    global action, filename, device, partconfig_name, f_preset_name
-    global f_hasbootimage, f_bootimage, f_ramdisk, f_autopatcher_name, f_patch
-    global f_loki, f_init, f_devicecheck
+    global action, filename, device, partconfig_name, noquestions
+    global f_preset_name, f_hasbootimage, f_bootimage, f_ramdisk
+    global f_autopatcher_name, f_patch, f_loki, f_init, f_devicecheck
 
     parser = argparse.ArgumentParser()
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
@@ -183,6 +184,9 @@ def parse_args():
     supported_group = group.add_mutually_exclusive_group()
     supported_group.add_argument('--is-supported',
                                  help='Test if a file is supported',
+                                 action='store_true')
+    supported_group.add_argument('--noquestions',
+                                 help='Fail if file is unsupported',
                                  action='store_true')
     supported_group.add_argument('--unsupported',
                                  help='Must be passed if file is unsupported',
@@ -277,6 +281,8 @@ def parse_args():
     filename = args.file
     device = args.device
     partconfig_name = args.partconfig
+
+    noquestions = args.noquestions
 
     if args.is_supported:
         action='testsupported'
@@ -718,13 +724,16 @@ except Exception as e:
 
 if action == 'testsupported':
     if supported:
-        ui.info('supported')
+        print('supported')
     else:
-        ui.info('unsupported')
+        print('unsupported')
 
 elif action == 'patchfile':
     if supported:
         patch_supported(file_info)
+    elif noquestions:
+        ui.failed('The file you have selected is not supported.')
+        sys.exit(1)
     else:
         patch_unsupported(file_info)
 
