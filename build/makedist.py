@@ -631,7 +631,6 @@ def create_release(targetdir, targetfile, android=False):
         remove = [
             'patchinfo/README',
             'patchinfo/Sample.py',
-            'ramdisks/README',
             'scripts/gendiff.py',
             'scripts/qtmain.py',
         ]
