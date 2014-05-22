@@ -270,7 +270,11 @@ def parse_args():
         f_preset_name = args.preset
         f_hasbootimage = args.hasbootimage
         f_bootimage = args.bootimage
+
         f_ramdisk = args.ramdisk
+        if not f_ramdisk.endswith('.def'):
+            f_ramdisk += '.def'
+
         f_autopatcher_name = args.autopatcher
         f_patch = args.patch
         f_loki = args.loki
