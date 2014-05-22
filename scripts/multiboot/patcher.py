@@ -346,11 +346,7 @@ def patch_zip(file_info):
         ui.progress()
 
         in_info = z_input.getinfo(i.filename)
-        out_info = zipfile.ZipInfo(i.filename)
-        # Make sure permissions are set correctly so directories aren't
-        # extracted the unbrowsable 600 permission
-        out_info.external_attr = in_info.external_attr
-        z_output.writestr(out_info, z_input.read(in_info))
+        z_output.writestr(in_info, z_input.read(in_info))
 
     ui.clear()
 
