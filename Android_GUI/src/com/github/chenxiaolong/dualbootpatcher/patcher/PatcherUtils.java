@@ -65,6 +65,8 @@ public class PatcherUtils {
             try {
                 mVersion = context.getPackageManager().getPackageInfo(
                         context.getPackageName(), 0).versionName;
+                mVersion = mVersion.replace("-DEBUG", "");
+                mVersion = mVersion.replace("-SNAPSHOT", "");
             } catch (NameNotFoundException e) {
                 e.printStackTrace();
             }
