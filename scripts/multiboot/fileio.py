@@ -78,3 +78,12 @@ def bytes_to_lines(data):
 
 def encode(data):
     return data.encode('UTF-8')
+
+
+def filename_matches(filename, regex):
+    filename = os.path.split(filename)[1]
+
+    if re.search(regex, filename):
+        return True
+    else:
+        return False

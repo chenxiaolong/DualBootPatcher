@@ -1,6 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
-import re
+import os
 
 file_info = FileInfo()
 
@@ -15,14 +15,12 @@ file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'kernel/boot.img'
 
-def matches(filename):
-  if re.search(filename_regex, filename):
-    if re.search(r'(ATT|[iI]337)', filename) or filename in att_filenames:
-      file_info.loki     = True
-      file_info.bootimg  = 'kernel/boot.lok'
-    return True
-  else:
-    return False
+def get_file_info(filename):
+  if not filename:
+    return file_info
 
-def get_file_info():
+  filename = os.path.split(filename)[1]
+  if re.search(r'(ATT|[iI]337)', filename) or filename in att_filenames:
+    file_info.loki       = True
+    file_info.bootimg    = 'kernel/boot.lok'
   return file_info

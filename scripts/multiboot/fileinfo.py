@@ -1,5 +1,6 @@
 import multiboot.config as config
 import multiboot.debug as debug
+import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
 
 import imp
@@ -37,7 +38,7 @@ class FileInfo:
     # object should not be changed. It should be merged info another FileInfo
     # object that has _filename set.
     def find_patchinfo(self):
-        filename = os.path.split(self._filename)[1]
+        filename = self._filename
 
         searchpath = ['Google_Apps', 'Other']
 
@@ -50,14 +51,23 @@ class FileInfo:
                     if f.endswith(".py"):
                         plugin = imp.load_source(os.path.basename(f)[:-3],
                                                  os.path.join(root, f))
-                        if plugin.matches(filename):
-                            try:
-                                file_info = plugin.get_file_info(filename=filename)
-                            except:
-                                file_info = plugin.get_file_info()
 
-                            if file_info:
-                                return file_info
+                        # If there's a matches() function, use that. Otherwise,
+                        # just check that the regex matches
+                        matches = False
+
+                        if 'matches' in dir(plugin):
+                            if plugin.matches(filename):
+                                matches = True
+                        elif fileio.filename_matches(filename,
+                                                     plugin.filename_regex):
+                            matches = True
+
+                        if matches:
+                            if 'get_file_info' in dir(plugin):
+                                return plugin.get_file_info(filename)
+                            else:
+                                return plugin.file_info
 
         return None
 
@@ -148,7 +158,11 @@ def get_infos(device):
                     relpath = os.path.relpath(os.path.join(root, f), OS.patchinfodir)
                     plugin = imp.load_source(os.path.basename(f)[:-3],
                                              os.path.join(root, f))
-                    file_info = plugin.get_file_info()
+
+                    if 'get_file_info' in dir(plugin):
+                        file_info = plugin.get_file_info(None)
+                    else:
+                        file_info = plugin.file_info
 
                     infos.append((relpath, file_info))
 

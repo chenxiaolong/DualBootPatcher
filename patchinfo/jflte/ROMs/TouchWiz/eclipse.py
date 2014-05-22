@@ -1,6 +1,5 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
-import re
 
 file_info = FileInfo()
 
@@ -14,11 +13,3 @@ file_info.bootimg        = [
   'eclipse/kernels/kt/boot.lok',
   'eclipse/kernels/stock/boot.lok'
 ]
-
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  return False
-
-def get_file_info():
-  return file_info

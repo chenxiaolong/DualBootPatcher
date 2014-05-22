@@ -11,15 +11,6 @@ file_info.patch          = [ autopatcher.auto_patch ]
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.has_boot_image = False
 
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
-
-def get_file_info():
-  return file_info
-
 def handle_bundled_mount(directory, bootimg = None, device_check = True,
                          partition_config = None, device = True):
   updater_script = 'META-INF/com/google/android/updater-script'

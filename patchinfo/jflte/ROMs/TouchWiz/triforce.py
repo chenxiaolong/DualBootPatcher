@@ -13,15 +13,6 @@ file_info.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
 file_info.bootimg        = "aroma/kernels/stock/boot.img"
 
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
-
-def get_file_info():
-  return file_info
-
 def fix_aroma(directory, bootimg = None, device_check = True,
               partition_config = None, device = None):
   aroma_config = 'META-INF/com/google/android/aroma-config'

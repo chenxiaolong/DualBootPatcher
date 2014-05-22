@@ -57,13 +57,26 @@ file_info.extract        = autopatcher.files_to_auto_patch
 # copy your patch to patches/ and put the patch here.
 #file_info.patch          = 'jflte/AOSP/YourROM.patch'
 
-###
+### Advanced stuff ###
 
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
+# If you need to customize how the filename is matched, add a function named
+# matches(filename) that returns true or false. Note that 'filename' contains
+# the path too. For example:
+#
+# def matches(filename):
+#     filename = os.path.split(filename)[1]
+#     if ...:
+#         return True
+#     else:
+#         return False
 
-def get_file_info():
-  return file_info
+# If you need to customize the FileInfo based on the filename (eg. setting
+# the loki parameter based on the filename), add a function named
+# get_file_info(filename) that returns the new file FileInfo object. Like
+# above, the 'filename' variable contains the path as well. For example:
+#
+# def get_file_info(filename):
+#     filename = os.path.split(filename)[1]
+#     if 'ATT' in filename or 'VZW' in filename:
+#         file_info.loki = True
+#     return file_info

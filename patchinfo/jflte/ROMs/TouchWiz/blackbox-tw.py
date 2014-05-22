@@ -1,6 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
-import re
+import multiboot.fileio as fileio
 
 file_info = FileInfo()
 
@@ -11,13 +11,10 @@ file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 file_info.bootimg        = 'dsa/Kernels/Stock/boot.img'
 
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
+def get_file_info(filename):
+  if not filename:
+    return file_info
 
-def get_file_info(filename = ""):
-  if re.search(r"BlackBox22", filename):
+  if fileio.filename_matches(filename, r"BlackBox22"):
     file_info.bootimg    = 'dsa/Kernels/KTSGS4/boot.img'
   return file_info

@@ -1,5 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
+import os
 
 file_info = FileInfo()
 
@@ -9,12 +10,7 @@ file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 
 def matches(filename):
-  if filename.lower() == "sense5port.zip" or \
-     filename         == "4.3 official port.zip" or \
-     filename         == "ALPHA V1.5.zip":
-    return True
-  else:
-    return False
-
-def get_file_info():
-  return file_info
+  filename = os.path.split(filename)[1]
+  return filename.lower() == "sense5port.zip" or \
+         filename         == "4.3 official port.zip" or \
+         filename         == "ALPHA V1.5.zip"

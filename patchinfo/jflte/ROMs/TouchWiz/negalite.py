@@ -1,7 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
-import re
 
 file_info = FileInfo()
 
@@ -13,15 +12,6 @@ file_info.patch          = [ autopatcher.auto_patch,
 file_info.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
 file_info.bootimg        = "kernel/stock_kernel/kernel/boot.img"
-
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
-
-def get_file_info():
-  return file_info
 
 def dont_wipe_data(directory, bootimg = None, device_check = True,
                    partition_config = None, device = None):

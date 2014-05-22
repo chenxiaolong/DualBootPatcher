@@ -1,6 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
-import re
+import multiboot.fileio as fileio
 
 file_info = FileInfo()
 
@@ -11,12 +11,5 @@ file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
 
 def matches(filename):
-  if re.search(filename_regex, filename):
-    if 'gapps' in filename:
-      return False
-    return True
-  else:
-    return False
-
-def get_file_info():
-  return file_info
+  return fileio.filename_matches(filename, filename_regex) \
+    and 'gapps' not in filename

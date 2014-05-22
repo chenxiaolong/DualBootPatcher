@@ -11,15 +11,6 @@ file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = [ autopatcher.auto_patch ]
 file_info.extract        = autopatcher.files_to_auto_patch
 
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
-
-def get_file_info():
-  return file_info
-
 def fix_aroma(directory, bootimg = None, device_check = True,
               partition_config = None, device = None):
   updater_script = 'META-INF/com/google/android/updater-script'

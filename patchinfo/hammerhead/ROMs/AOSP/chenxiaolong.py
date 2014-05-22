@@ -1,7 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
-import re
 
 file_info = FileInfo()
 
@@ -12,15 +11,6 @@ file_info.patch          = [ autopatcher.auto_patch ]
 file_info.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
 # ROM has built in dual boot support
 file_info.configs        = [ 'all', '!dualboot' ]
-
-def matches(filename):
-  if re.search(filename_regex, filename):
-    return True
-  else:
-    return False
-
-def get_file_info(filename = ""):
-  return file_info
 
 # My ROM has dual-boot support built in, so we'll hack around that to support
 # triple, quadruple, ... boot

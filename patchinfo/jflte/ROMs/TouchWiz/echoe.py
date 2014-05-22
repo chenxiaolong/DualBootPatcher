@@ -1,6 +1,7 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
-import re
+import multiboot.fileio as fileio
+import os
 
 file_info = FileInfo()
 
@@ -20,11 +21,16 @@ file_info.bootimg        = 'boot.img'
 
 def matches(filename):
   for regex in filename_regex:
-    if re.search(regex, filename):
+    if fileio.filename_matches(filename, regex):
       return True
   return False
 
-def get_file_info(filename = ""):
+def get_file_info(filename):
+  if not filename:
+    return file_info
+
+  filename = os.path.split(filename)[1]
+
   if 'Echoe_v17' in filename:
     file_info.bootimg = [
       'EchoeExtras/kernel/echoe1/boot.img',
