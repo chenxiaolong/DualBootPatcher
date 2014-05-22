@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
         Base application theme, dependent on API level. This theme is replaced
@@ -15,6 +15,42 @@
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
+
+    <!-- Card styles -->
+    <style name="card_layout">
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:layout_marginLeft">10dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+        <item name="android:layout_marginTop">10dp</item>
+    </style>
+
+    <style name="card_title">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/standardtext</item>
+        <item name="android:layout_marginTop">2dp</item>
+    </style>
+
+    <style name="card_subtitle_dim">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@android:color/darker_gray</item>
+    </style>
+
+    <style name="card_message">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/standardtext</item>
+    </style>
+
+    <style name="card_message_italicized">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/standardtext</item>
+        <item name="android:textStyle">italic</item>
+    </style>
+
+    <style name="card_section_title">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/standardtext</item>
+        <item name="android:layout_marginTop">5dp</item>
     </style>
 
 </resources>

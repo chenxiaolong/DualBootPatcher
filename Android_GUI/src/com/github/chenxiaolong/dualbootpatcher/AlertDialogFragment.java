@@ -3,6 +3,9 @@ package com.github.chenxiaolong.dualbootpatcher;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
@@ -69,12 +72,29 @@ public class AlertDialogFragment extends DialogFragment {
     // Work around bug: http://stackoverflow.com/a/15444485/1064977
     @Override
     public void onDestroyView() {
-        if (getDialog() != null && getRetainInstance())
+        if (getDialog() != null && getRetainInstance()) {
             getDialog().setDismissMessage(null);
+        }
         super.onDestroyView();
     }
 
     public void cancel() {
         getDialog().cancel();
+    }
+
+    public static void showAlert(FragmentManager fm, String title,
+            String message, String negativeText,
+            DialogInterface.OnClickListener negative, String positiveText,
+            DialogInterface.OnClickListener positive) {
+        FragmentTransaction ft = fm.beginTransaction();
+        Fragment prev = fm.findFragmentByTag(TAG);
+
+        if (prev != null) {
+            ft.remove(prev);
+        }
+
+        AlertDialogFragment f = newInstance(title, message, negativeText,
+                negative, positiveText, positive);
+        f.show(ft, TAG);
     }
 }

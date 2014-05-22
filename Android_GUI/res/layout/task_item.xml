@@ -6,9 +6,10 @@
 
     <ImageView
         android:id="@+id/task_icon"
-        android:layout_gravity="center_vertical"
         android:layout_width="24dp"
-        android:layout_height="24dp" />
+        android:layout_height="24dp"
+        android:layout_gravity="center_vertical"
+        android:contentDescription="@string/task_checkbox_image" />
 
     <ProgressBar
         android:id="@+id/task_progress"

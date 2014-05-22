@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <it.gmariotti.cardslib.library.view.CardView
+        android:id="@+id/card_noroot_set_kernel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginTop="12dp"
+        card:card_layout_resourceID="@layout/card_layout" />
+
+    <it.gmariotti.cardslib.library.view.CardListView
+        android:id="@+id/card_list_set_kernel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/card_noroot_set_kernel"
+        card:list_card_layout_resourceID="@layout/cardlistlayout_switcher" />
+
+    <ProgressBar
+        android:id="@+id/card_list_loading_set_kernel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:indeterminate="true" />
+
+</RelativeLayout>

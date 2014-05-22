@@ -1,477 +1,454 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
-import java.io.File;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.BroadcastReceiver;
-import android.content.ContentUris;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.storage.StorageManager;
-import android.provider.DocumentsContract;
-import android.util.Log;
+import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.widget.DrawerLayout;
+import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.Spinner;
-import android.widget.TextView;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 public class MainActivity extends Activity {
-    private static final int REQUEST_FILE = 1234;
-    private static final int REQUEST_PATCH_FILE = 2345;
     private static final String PATCH_FILE = "com.github.chenxiaolong.dualbootpatcher.PATCH_FILE";
 
-    private Button mChooseFileButton;
+    private String[] mNavTitles;
+    private String[] mNavTitles2;
+    private DrawerLayout mDrawerLayout;
+    private RelativeLayout mDrawerView;
+    private ListView mDrawerList;
+    private ListView mDrawerList2;
+    private ArrayList<NavigationDrawerItem> mDrawerItems;
+    private ArrayList<NavigationDrawerItem> mDrawerItems2;
+    private NavigationDrawerAdapter mDrawerAdapter;
+    private NavigationDrawerAdapter mDrawerAdapter2;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private int mTitle;
 
-    private Spinner mDeviceSpinner;
-    private int mDeviceIndex = 0;
-    private Spinner mPartConfigSpinner;
-    private int mPartConfigIndex = 0;
-    private String mPartConfigText = "";
+    private boolean mAutomated;
+    private Bundle mAutomatedData;
 
-    private PatcherService.PatcherInformation mInfo;
-    private boolean mGettingPatcherInformation = false;
-    private boolean mShowingProgress = false;
+    private static final int NAV_CHOOSE_ROM = 0;
+    private static final int NAV_SET_KERNEL = 1;
+    private static final int NAV_PATCH_FILE = 2;
 
-    private String mZipFile;
+    private static final int NAV2_REBOOT = 0;
+    private static final int NAV2_ABOUT = 1;
 
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle bundle = intent.getExtras();
+    public static final int FRAGMENT_CHOOSE_ROM = 1;
+    public static final int FRAGMENT_SET_KERNEL = 2;
+    public static final int FRAGMENT_PATCH_FILE = 3;
+    public static final int FRAGMENT_ABOUT = 4;
 
-            if (bundle != null) {
-                String state = bundle.getString(PatcherService.STATE);
-
-                if (state.equals(PatcherService.STATE_FETCHED_PATCHER_INFO)) {
-                    mInfo = bundle.getParcelable("info");
-
-                    populateDevices();
-                    populatePartConfigs();
-
-                    mChooseFileButton.setEnabled(true);
-                    mDeviceSpinner.setEnabled(true);
-                    mPartConfigSpinner.setEnabled(true);
-                    mShowingProgress = false;
-                    updateProgress();
-
-                    mGettingPatcherInformation = false;
-                }
-            }
-        }
-    };
+    private int mFragment;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.drawer_layout);
 
-        CardBackground backgroundButton = new CardBackground(getResources()
-                .getDisplayMetrics());
-        CardBackground backgroundPartConfig = new CardBackground(getResources()
-                .getDisplayMetrics());
-        CardBackground backgroundNoCard = new CardBackground(getResources()
-                .getDisplayMetrics());
-        backgroundNoCard.setNoCard(true);
-
-        backgroundButton.widgetOnTop();
-        backgroundPartConfig.widgetOnBottom();
-
-        ((LinearLayout) findViewById(R.id.button_container))
-                .setBackground(backgroundButton);
-        ((LinearLayout) findViewById(R.id.part_config_container))
-                .setBackground(backgroundPartConfig);
-        ((LinearLayout) findViewById(R.id.main_layout))
-                .setBackground(backgroundNoCard);
-
-        mDeviceSpinner = (Spinner) findViewById(R.id.choose_device);
-        mPartConfigSpinner = (Spinner) findViewById(R.id.choose_partition_config);
-
-        // Include version in action bar
-        try {
-            String version = getPackageManager().getPackageInfo(
-                    getPackageName(), 0).versionName;
-            setTitle(getTitle() + " (v" + version + ")");
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
+        // Get the intent that started this activity
+        Intent intent = getIntent();
+        if (PATCH_FILE.equals(intent.getAction())) {
+            mAutomated = true;
+            mAutomatedData = intent.getExtras();
         }
 
-        TextView partConfigDesc = (TextView) findViewById(R.id.partition_config_desc);
-        partConfigDesc.setText(mPartConfigText);
+        if (savedInstanceState != null) {
+            mTitle = savedInstanceState.getInt("title");
+        }
 
-        mChooseFileButton = (Button) findViewById(R.id.choose_file);
-        mChooseFileButton.setOnClickListener(new OnClickListener() {
+        mNavTitles = getResources().getStringArray(R.array.nav_titles);
+        mNavTitles2 = getResources().getStringArray(R.array.nav_titles2);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                R.drawable.ic_drawer, R.string.drawer_open,
+                R.string.drawer_close) {
             @Override
-            public void onClick(View v) {
-                Intent fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-                if (Build.VERSION.SDK_INT < 19) {
-                    // Intent fileIntent = new
-                    // Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-                }
-                fileIntent.setType("application/zip");
-                startActivityForResult(fileIntent, REQUEST_FILE);
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                updateTitle();
             }
-        });
-    }
 
-    @Override
-    public void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                updateTitle();
+            }
+        };
 
-        // Update patcher
-        if (!mGettingPatcherInformation && mInfo == null) {
-            mGettingPatcherInformation = true;
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, Gravity.START);
+        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActionBar().setHomeButtonEnabled(true);
 
-            mShowingProgress = true;
-            updateProgress();
+        mDrawerView = (RelativeLayout) findViewById(R.id.left_drawer);
+        mDrawerList = (ListView) findViewById(R.id.drawer_list);
+        mDrawerList2 = (ListView) findViewById(R.id.drawer_list2);
 
-            mChooseFileButton.setEnabled(false);
-            mDeviceSpinner.setEnabled(false);
-            mPartConfigSpinner.setEnabled(false);
+        // Top list
 
-            Intent intent = new Intent(this, PatcherService.class);
-            intent.putExtra(PatcherService.ACTION,
-                    PatcherService.ACTION_GET_PATCHER_INFORMATION);
-            startService(intent);
-        } else {
-            updateProgress();
-            populateDevices();
-            populatePartConfigs();
+        mDrawerItems = new ArrayList<NavigationDrawerItem>();
+
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_CHOOSE_ROM],
+                R.drawable.check));
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_SET_KERNEL],
+                R.drawable.pin));
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_PATCH_FILE],
+                R.drawable.split));
+
+        mDrawerAdapter = new NavigationDrawerAdapter(this,
+                R.layout.drawer_list_item, mDrawerItems);
+        mDrawerList.setAdapter(mDrawerAdapter);
+
+        mDrawerList.setOnItemClickListener(new DrawerItemClickListener(
+                mDrawerList));
+
+        // Bottom list
+
+        mDrawerItems2 = new ArrayList<NavigationDrawerItem>();
+
+        mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_REBOOT],
+                R.drawable.refresh));
+        mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_ABOUT],
+                R.drawable.about));
+
+        mDrawerAdapter2 = new NavigationDrawerAdapter(this,
+                R.layout.drawer_list_item, mDrawerItems2);
+        mDrawerList2.setAdapter(mDrawerAdapter2);
+
+        mDrawerList2.setOnItemClickListener(new DrawerItemClickListener(
+                mDrawerList2));
+
+        if (mAutomated) {
+            // Don't allow navigating to other parts of the app
+            lockNavigation();
+
+            mFragment = FRAGMENT_PATCH_FILE;
+            showFragment();
+            return;
         }
 
-        mDeviceSpinner.setSelection(mDeviceIndex);
-        mPartConfigSpinner.setSelection(mPartConfigIndex);
-    }
+        if (savedInstanceState != null) {
+            mFragment = savedInstanceState.getInt("fragment");
 
-    @Override
-    protected void onDestroy() {
-        mChooseFileButton = null;
-        mDeviceSpinner = null;
-        mPartConfigSpinner = null;
+            showFragment();
 
-        super.onDestroy();
-    }
+            // Progress icons
+            boolean[] progressState = savedInstanceState
+                    .getBooleanArray("progressState");
+            for (int i = 0; i < progressState.length; i++) {
+                mDrawerItems.get(i).setProgressShowing(progressState[i]);
+            }
+            mDrawerAdapter.notifyDataSetChanged();
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        registerReceiver(mReceiver, new IntentFilter(
-                PatcherService.BROADCAST_INTENT));
-    }
+            boolean[] progressState2 = savedInstanceState
+                    .getBooleanArray("progressState2");
+            for (int i = 0; i < progressState2.length; i++) {
+                mDrawerItems2.get(i).setProgressShowing(progressState2[i]);
+            }
+            mDrawerAdapter2.notifyDataSetChanged();
+        } else {
+            // Show about screen by default
+            mDrawerList2.performItemClick(mDrawerList2, NAV2_ABOUT,
+                    mDrawerList2.getItemIdAtPosition(NAV2_ABOUT));
+        }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        unregisterReceiver(mReceiver);
+        // Open drawer on first start
+        new Thread() {
+            @Override
+            public void run() {
+                SharedPreferences sp = getSharedPreferences("settings", 0);
+                boolean isFirstStart = sp.getBoolean("firstStart", true);
+                if (isFirstStart) {
+                    mDrawerLayout.openDrawer(mDrawerView);
+                    Editor e = sp.edit();
+                    e.putBoolean("firstStart", false);
+                    e.commit();
+                }
+            }
+        }.start();
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState.putParcelable("info", mInfo);
-        savedInstanceState.putInt("devicePos", mDeviceIndex);
-        savedInstanceState.putInt("partConfigPos", mPartConfigIndex);
+        savedInstanceState.putInt("fragment", mFragment);
+        savedInstanceState.putInt("title", mTitle);
+
+        // Progress icon state
+        boolean[] progressState = new boolean[mDrawerItems.size()];
+        for (int i = 0; i < progressState.length; i++) {
+            progressState[i] = mDrawerItems.get(i).isProgressShowing();
+        }
+        savedInstanceState.putBooleanArray("progressState", progressState);
+
+        boolean[] progressState2 = new boolean[mDrawerItems2.size()];
+        for (int i = 0; i < progressState2.length; i++) {
+            progressState2[i] = mDrawerItems2.get(i).isProgressShowing();
+        }
+        savedInstanceState.putBooleanArray("progressState2", progressState2);
     }
 
     @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        mInfo = savedInstanceState.getParcelable("info");
-        mDeviceIndex = savedInstanceState.getInt("devicePos");
-        mPartConfigIndex = savedInstanceState.getInt("partConfigPos");
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+
+        updateTitle();
     }
 
     @Override
-    protected void onActivityResult(int request, int result, Intent data) {
-        switch (request) {
-        case REQUEST_FILE:
-            if (data != null && result == RESULT_OK) {
-                mZipFile = getPathFromUri(data.getData());
+    public void onBackPressed() {
+        boolean operationsRunning = false;
 
-                /* Show alert dialog */
-                FragmentTransaction ft = getFragmentManager()
-                        .beginTransaction();
-                Fragment prev = getFragmentManager().findFragmentByTag(
-                        AlertDialogFragment.TAG);
-
-                if (prev != null) {
-                    ft.remove(prev);
-                }
-
-                AlertDialogFragment f = AlertDialogFragment.newInstance(
-                        getString(R.string.dialog_patch_zip_title),
-                        getString(R.string.dialog_patch_zip_msg) + "\n\n"
-                                + mZipFile, getString(R.string.dialog_cancel),
-                        new CancelDialog(),
-                        getString(R.string.dialog_continue),
-                        new ConfirmDialogPositive());
-                f.show(ft, AlertDialogFragment.TAG);
+        for (int i = 0; i < mDrawerItems.size(); i++) {
+            if (mDrawerItems.get(i).isProgressShowing()) {
+                operationsRunning = true;
             }
+        }
+
+        for (int i = 0; i < mDrawerItems2.size(); i++) {
+            if (mDrawerItems2.get(i).isProgressShowing()) {
+                operationsRunning = true;
+            }
+        }
+
+        if (!operationsRunning) {
+            super.onBackPressed();
+            return;
+        }
+
+        Toast.makeText(this, R.string.wait_until_finished, Toast.LENGTH_SHORT)
+                .show();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private class DrawerItemClickListener implements
+            ListView.OnItemClickListener {
+        private final ListView mView;
+
+        public DrawerItemClickListener(ListView view) {
+            mView = view;
+        }
+
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position,
+                long id) {
+            selectItem(mView, position);
+        }
+    }
+
+    private void updateTitle() {
+        if (mDrawerLayout.isDrawerOpen(mDrawerView) || mTitle == 0) {
+            getActionBar().setTitle(R.string.app_name);
+        } else {
+            getActionBar().setTitle(mTitle);
+        }
+    }
+
+    private void selectItem(ListView view, int position) {
+        if (view == mDrawerList) {
+            mDrawerList2.clearChoices();
+            mDrawerAdapter2.notifyDataSetChanged();
+
+            switch (position) {
+            case NAV_CHOOSE_ROM:
+                mFragment = FRAGMENT_CHOOSE_ROM;
+                showFragment();
+                break;
+
+            case NAV_SET_KERNEL:
+                mFragment = FRAGMENT_SET_KERNEL;
+                showFragment();
+                break;
+
+            case NAV_PATCH_FILE:
+                mFragment = FRAGMENT_PATCH_FILE;
+                showFragment();
+                break;
+            }
+        } else if (view == mDrawerList2) {
+            mDrawerList.clearChoices();
+            mDrawerAdapter.notifyDataSetChanged();
+
+            switch (position) {
+            case NAV2_REBOOT:
+                SwitcherUtils.reboot(this, getFragmentManager());
+                break;
+
+            case NAV2_ABOUT:
+                mFragment = FRAGMENT_ABOUT;
+                showFragment();
+                break;
+            }
+        }
+
+        mDrawerLayout.closeDrawer(mDrawerView);
+    }
+
+    private void showFragment() {
+        FragmentManager fm = getFragmentManager();
+
+        Fragment prevChooseRom = fm
+                .findFragmentByTag(SwitcherListFragment.TAG_CHOOSE_ROM);
+        Fragment prevSetKernel = fm
+                .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
+        Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
+        Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
+
+        hideFragment(prevChooseRom);
+        hideFragment(prevSetKernel);
+        hideFragment(prevPatchFile);
+        hideFragment(prevAbout);
+
+        FragmentTransaction ft = fm.beginTransaction();
+
+        switch (mFragment) {
+        case FRAGMENT_CHOOSE_ROM:
+            mTitle = R.string.title_choose_rom;
+            updateTitle();
+
+            if (prevChooseRom == null) {
+                Fragment f = SwitcherListFragment
+                        .newInstance(SwitcherListFragment.ACTION_CHOOSE_ROM);
+                ft.add(R.id.content_frame, f,
+                        SwitcherListFragment.TAG_CHOOSE_ROM);
+            } else {
+                ft.show(prevChooseRom);
+            }
+
+            ft.commit();
+
             break;
 
-        case REQUEST_PATCH_FILE:
-            if (result == RESULT_OK) {
-                boolean failed = data.getExtras().getBoolean("failed");
-                String message = data.getExtras().getString("message");
-                String newZipFile = data.getExtras().getString("newZipFile");
+        case FRAGMENT_SET_KERNEL:
+            mTitle = R.string.title_set_kernel;
+            updateTitle();
 
-                if (!failed) {
-                    message = getString(R.string.dialog_text_new_file)
-                            + newZipFile + "\n\n" + message;
-                }
-
-                /* Show alert dialog */
-                FragmentTransaction ft = getFragmentManager()
-                        .beginTransaction();
-                Fragment prev = getFragmentManager().findFragmentByTag(
-                        AlertDialogFragment.TAG);
-
-                if (prev != null) {
-                    ft.remove(prev);
-                }
-
-                String title = "";
-
-                if (failed) {
-                    title = getString(R.string.dialog_patch_zip_title_failed);
-                } else {
-                    title = getString(R.string.dialog_patch_zip_title_success);
-                }
-
-                AlertDialogFragment f = AlertDialogFragment.newInstance(title,
-                        message, "", null, getString(R.string.dialog_finish),
-                        new DismissDialog());
-                f.show(ft, AlertDialogFragment.TAG);
-
-                mChooseFileButton.setEnabled(true);
-                mDeviceSpinner.setEnabled(true);
-                mPartConfigSpinner.setEnabled(true);
+            if (prevSetKernel == null) {
+                Fragment f = SwitcherListFragment
+                        .newInstance(SwitcherListFragment.ACTION_SET_KERNEL);
+                ft.add(R.id.content_frame, f,
+                        SwitcherListFragment.TAG_SET_KERNEL);
+            } else {
+                ft.show(prevSetKernel);
             }
+
+            ft.commit();
+
+            break;
+
+        case FRAGMENT_PATCH_FILE:
+            mTitle = R.string.title_patch_zip;
+            updateTitle();
+
+            if (prevPatchFile == null) {
+                Fragment f;
+                if (mAutomated) {
+                    f = PatchFileFragment.newAutomatedInstance(mAutomatedData);
+                } else {
+                    f = PatchFileFragment.newInstance();
+                }
+                ft.add(R.id.content_frame, f, PatchFileFragment.TAG);
+            } else {
+                ft.show(prevPatchFile);
+            }
+
+            ft.commit();
+
+            break;
+
+        case FRAGMENT_ABOUT:
+            mTitle = R.string.app_name;
+            updateTitle();
+
+            if (prevAbout == null) {
+                Fragment f = AboutFragment.newInstance();
+                ft.add(R.id.content_frame, f, AboutFragment.TAG);
+            } else {
+                ft.show(prevAbout);
+            }
+
+            ft.commit();
+
             break;
         }
-
-        super.onActivityResult(request, result, data);
     }
 
-    private void updateProgress() {
-        if (mShowingProgress) {
-            findViewById(R.id.extracting_progress).setVisibility(View.VISIBLE);
-            findViewById(R.id.choose_device).setVisibility(View.GONE);
-            findViewById(R.id.choose_partition_config).setVisibility(View.GONE);
-            findViewById(R.id.partition_config_desc).setVisibility(View.GONE);
-        } else {
-            findViewById(R.id.extracting_progress).setVisibility(View.GONE);
-            findViewById(R.id.choose_device).setVisibility(View.VISIBLE);
-            findViewById(R.id.choose_partition_config).setVisibility(
-                    View.VISIBLE);
-            findViewById(R.id.partition_config_desc)
-                    .setVisibility(View.VISIBLE);
+    private void hideFragment(Fragment f) {
+        if (f != null) {
+            FragmentManager fm = getFragmentManager();
+            FragmentTransaction ft = fm.beginTransaction();
+            ft.hide(f);
+            ft.commit();
         }
     }
 
-    private void populateDevices() {
-        ArrayAdapter<String> sa = new ArrayAdapter<String>(MainActivity.this,
-                android.R.layout.simple_spinner_item, android.R.id.text1);
-        sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mDeviceSpinner.setAdapter(sa);
-
-        for (int i = 0; i < mInfo.mDevices.length; i++) {
-            PatcherService.Device device = mInfo.mDevices[i];
-            String text = String.format("%s (%s)", device.mCodeName, device.mName);
-            sa.add(text);
-        }
-        sa.notifyDataSetChanged();
-        mDeviceSpinner.setSelection(mDeviceIndex);
-
-        mDeviceSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view,
-                    int position, long id) {
-                mDeviceIndex = position;
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
+    public void lockNavigation() {
+        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        getActionBar().setDisplayHomeAsUpEnabled(false);
+        getActionBar().setHomeButtonEnabled(false);
     }
 
-    private void populatePartConfigs() {
-        ArrayAdapter<String> sa = new ArrayAdapter<String>(MainActivity.this,
-                android.R.layout.simple_spinner_item, android.R.id.text1);
-        sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mPartConfigSpinner.setAdapter(sa);
-
-        for (int i = 0; i < mInfo.mPartitionConfigs.length; i++) {
-            sa.add(mInfo.mPartitionConfigs[i].mName);
-        }
-        sa.notifyDataSetChanged();
-        mPartConfigSpinner.setSelection(mPartConfigIndex);
-
-        mPartConfigSpinner
-                .setOnItemSelectedListener(new OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent,
-                            View view, int position, long id) {
-                        mPartConfigIndex = position;
-                        mPartConfigText = mInfo.mPartitionConfigs[position].mDesc;
-                        TextView t = (TextView) findViewById(R.id.partition_config_desc);
-                        t.setText(mPartConfigText);
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                    }
-                });
+    public void unlockNavigation() {
+        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActionBar().setHomeButtonEnabled(true);
     }
 
-    private String getPathFromUri(Uri uri) {
-        if (Build.VERSION.SDK_INT >= 19
-                && "com.android.externalstorage.documents".equals(uri
-                        .getAuthority())) {
-            return getPathFromDocumentsUri(uri);
-        } else if (Build.VERSION.SDK_INT >= 19
-                && "com.android.providers.downloads.documents".equals(uri
-                        .getAuthority())) {
-            return getPathFromDownloadsUri(uri);
-        } else {
-            return uri.getPath();
-        }
-    }
+    public void showProgress(int fragment, boolean show) {
+        int index;
 
-    @SuppressLint("NewApi")
-    private String getPathFromDocumentsUri(Uri uri) {
-        // Based on
-        // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
-        StorageManager sm = (StorageManager) getSystemService(Context.STORAGE_SERVICE);
+        switch (fragment) {
+        case FRAGMENT_CHOOSE_ROM:
+            index = NAV_CHOOSE_ROM;
+            break;
 
-        try {
-            Class StorageManager = sm.getClass();
-            Method getVolumeList = StorageManager
-                    .getDeclaredMethod("getVolumeList");
-            Object[] vols = (Object[]) getVolumeList
-                    .invoke(sm, new Object[] {});
+        case FRAGMENT_SET_KERNEL:
+            index = NAV_SET_KERNEL;
+            break;
 
-            Class StorageVolume = Class
-                    .forName("android.os.storage.StorageVolume");
-            Method isPrimary = StorageVolume.getDeclaredMethod("isPrimary");
-            Method isEmulated = StorageVolume.getDeclaredMethod("isEmulated");
-            Method getUuid = StorageVolume.getDeclaredMethod("getUuid");
-            Method getPath = StorageVolume.getDeclaredMethod("getPath");
+        case FRAGMENT_PATCH_FILE:
+            index = NAV_PATCH_FILE;
+            break;
 
-            // As of AOSP 4.4.2 in ExternalStorageProvider.java
-            final String ROOT_ID_PRIMARY_EMULATED = "primary";
-
-            String[] split = DocumentsContract.getDocumentId(uri).split(":");
-
-            String volId;
-            for (Object vol : vols) {
-                if ((Boolean) isPrimary.invoke(vol, new Object[] {})
-                        && (Boolean) isEmulated.invoke(vol, new Object[] {})) {
-                    volId = ROOT_ID_PRIMARY_EMULATED;
-                } else if (getUuid.invoke(vol, new Object[] {}) != null) {
-                    volId = (String) getUuid.invoke(vol, new Object[] {});
-                } else {
-                    Log.e("DualBootPatcher",
-                            "Missing UUID for "
-                                    + getPath.invoke(vol, new Object[] {}));
-                    continue;
-                }
-
-                if (volId.equals(split[0])) {
-                    return getPath.invoke(vol, new Object[] {})
-                            + File.separator + split[1];
-                }
-            }
-
-            return null;
-        } catch (Exception e) {
-            Log.e("DualBootPatcher", "Java reflection failure: " + e);
-            return null;
-        }
-    }
-
-    @SuppressLint("NewApi")
-    private String getPathFromDownloadsUri(Uri uri) {
-        // Based on
-        // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
-        String id = DocumentsContract.getDocumentId(uri);
-        Uri contentUri = ContentUris.withAppendedId(
-                Uri.parse("content://downloads/public_downloads"),
-                Long.valueOf(id));
-
-        Cursor cursor = null;
-        String[] projection = { "_data" };
-
-        try {
-            cursor = getContentResolver().query(contentUri, projection, null,
-                    null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getString(cursor.getColumnIndexOrThrow("_data"));
-            }
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+        default:
+            return;
         }
 
-        return null;
-    }
-
-    public class CancelDialog implements DialogInterface.OnClickListener {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            Fragment prev = getFragmentManager().findFragmentByTag(
-                    AlertDialogFragment.TAG);
-            ((AlertDialogFragment) prev).cancel();
-        }
-    }
-
-    public class DismissDialog implements DialogInterface.OnClickListener {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            Fragment prev = getFragmentManager().findFragmentByTag(
-                    AlertDialogFragment.TAG);
-            ((AlertDialogFragment) prev).dismiss();
-        }
-    }
-
-    public class ConfirmDialogPositive implements
-            DialogInterface.OnClickListener {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            ((Button) findViewById(R.id.choose_file)).setEnabled(false);
-            ((Spinner) findViewById(R.id.choose_device)).setEnabled(false);
-            ((Spinner) findViewById(R.id.choose_partition_config))
-                    .setEnabled(false);
-            // mChooseFileButton.setEnabled(false);
-            // mDeviceSpinner.setEnabled(false);
-            // mPartConfigSpinner.setEnabled(false);
-
-            //Intent i = new Intent(PATCH_FILE);
-            Intent i = new Intent(MainActivity.this, PatcherActivity.class);
-            i.addCategory(Intent.CATEGORY_DEFAULT);
-            i.putExtra("zipFile", mZipFile);
-            i.putExtra("partConfig",
-                    mInfo.mPartitionConfigs[mPartConfigIndex].mId);
-            i.putExtra("device", mInfo.mDevices[mDeviceIndex].mCodeName);
-            startActivityForResult(i, REQUEST_PATCH_FILE);
-        }
+        NavigationDrawerItem item = mDrawerItems.get(index);
+        item.setProgressShowing(show);
+        mDrawerAdapter.notifyDataSetChanged();
     }
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/card_layout"
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    android:gravity="top"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/card_title"
+        style="@style/card_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
+        android:text="@string/preset_title" />
+
+    <Spinner
+        android:id="@+id/spinner_preset"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/preset_name"
+        style="@style/card_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="10dp" />
+
+</LinearLayout>

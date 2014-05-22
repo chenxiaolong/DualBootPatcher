@@ -3,29 +3,134 @@
 
     <string name="app_name">Dual Boot Patcher</string>
 
+    <string name="wait_until_finished">Please wait until all operations are finished.</string>
+
+    <!-- About -->
+    <string name="logo">Dual Boot Patcher Logo</string>
+    <string name="version">Version %s</string>
+    <string name="credits">
+        Special thanks to everyone who helped make this patcher possible!\n\n
+        <a href="https://github.com/chenxiaolong/DualBootPatcher">Source Code</a>\n
+        <a href="http://forum.xda-developers.com/showthread.php?t=2447534">XDA Thread</a>\n
+        <a href="https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses">Licenses</a>
+    </string>
+
+    <!-- Navigation drawer items -->
+    <string name="title_choose_rom">Choose ROM</string>
+    <string name="title_set_kernel">Set Kernel</string>
+    <string name="title_patch_zip">Patch Zip File</string>
+    <string name="title_reboot">Reboot</string>
+    <string name="title_about">About</string>
+
+    <string-array name="nav_titles">
+        <item>@string/title_choose_rom</item>
+        <item>@string/title_set_kernel</item>
+        <item>@string/title_patch_zip</item>
+    </string-array>
+
+    <string-array name="nav_titles2">
+        <item>@string/title_reboot</item>
+        <item>@string/title_about</item>
+    </string-array>
+
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+
+    <!-- Switcher -->
+    <string name="primary">Primary</string>
+    <string name="secondary">Secondary</string>
+    <string name="multislot">Multi Slot %s</string>
+    <string name="couldnt_determine_version">Couldn\'t determine ROM version</string>
+
+    <string name="write_kernel_success">Successfully switched</string>
+    <string name="write_kernel_failure">Failed to write kernel</string>
+    <string name="back_up_kernel_success">Successfully set the kernel</string>
+    <string name="back_up_kernel_failure">Failed to set kernel</string>
+
+    <string name="switcher_rom_image">ROM logo</string>
+
+    <!-- Switcher: No root access card -->
+    <string name="noroot_title">No root access</string>
+    <string name="noroot_desc">
+        The application was unable to obtain root access. Root access is needed for
+        writing to the kernel/boot image partition to switch between firmware.\n\n
+        Tap to try to obtain root access again.
+    </string>
+
+    <!-- Patcher: Device and partition configuration card -->
+    <string name="devpartconfig_title">Device and partition configuration:</string>
+
+    <!-- Patcher: File chooser card -->
+    <string name="filechooser_initial_title">Tap to choose a file to patch</string>
+    <string name="filechooser_initial_desc">
+        Zip files and boot images (boot.img, boot.lok) are supported by the patcher.
+        If an unsupported file is chosen, additional options will appear that allow
+        the patching process to be customized.
+    </string>
+
+    <string name="filechooser_ready_title">Tap to begin patching</string>
+    <string name="filechooser_ready_desc">
+        Selected file: %s\n\n
+        Tap and hold to choose a different file.
+    </string>
+
+    <string name="filechooser_unsupported_title">Tap to begin patching</string>
+    <string name="filechooser_unsupported_desc">
+        Selected file: %s\n\n
+        The file you have selected is not supported. You can attempt to patch the
+        file anyway using the options below.\n\n
+        Tap and hold to choose a different file.
+    </string>
+
+    <string name="filechooser_success_title">Successfully patched file</string>
+    <string name="filechooser_success_desc">
+        New file: %s\n\n
+        Tap to choose another file to patch.
+    </string>
+
+    <string name="filechooser_failure_title">Failed to patch file</string>
+    <string name="filechooser_failure_desc">
+        %s\n\n
+        Tap to choose another file to patch.
+    </string>
+
+    <!-- Patcher: Preset card -->
+    <string name="preset_title">Preset</string>
+    <string name="preset_custom">Custom</string>
+    <string name="preset_custom_desc">
+        Customize the patcher using the options below
+    </string>
+
+    <!-- Patcher: Custom options card -->
+    <string name="customopts_title">Custom options</string>
+    <string name="customopts_autopatcher">Autopatcher</string>
+    <string name="customopts_patchfile">Patch file</string>
+    <string name="customopts_choosepatch">Choose patch file</string>
+    <string name="customopts_devicecheck">Remove device check</string>
+    <string name="customopts_hasbootimage">Has boot image</string>
+    <string name="customopts_loki">Loki</string>
+    <string name="customopts_ramdisk">Ramdisk</string>
+    <string name="customopts_patchedinit">Patched init</string>
+    <string name="customopts_bootimage">Boot image</string>
+    <string name="customopts_bootimage_default" translatable="false">boot.img</string>
+
+    <!-- Patcher: Tasks card -->
+    <string name="task_checkbox_image">Task completion checkbox</string>
+
+    <!-- Patcher: Details card -->
+    <string name="details_title">Details:</string>
+    <string name="details_done">Done</string>
+
+    <!-- Patcher: Progress card -->
     <string name="overall_progress">Overall progress:</string>
     <string name="overall_progress_files">%1$s/%2$s files</string>
 
-    <string name="current_task">Current task:</string>
-    <string name="details">Details:</string>
+    <!-- Miscellaneous -->
+    <string name="none">None</string>
 
-    <string name="task_done">Done</string>
-    <string name="task_updating_patcher">Updating internal patcher files &#8230;</string>
-    <string name="task_patching_files">Patching files &#8230;</string>
-
-    <string name="details_done">Done</string>
-    <string name="details_deteting">Deleting %s &#8230;</string>
-
-    <string name="choose_file">Choose file to patch</string>
-
-    <string name="dialog_patch_zip_title">Patch zip file</string>
-    <string name="dialog_patch_zip_title_success">Successfully patched zip file</string>
-    <string name="dialog_patch_zip_title_failed">Failed to patch zip file</string>
-    <string name="dialog_patch_zip_msg">Press Continue to patch:</string>
-    <string name="dialog_text_new_file">New file:\n\n</string>
-    <string name="dialog_text_file">File:\n\n</string>
-    <string name="dialog_cancel">Cancel</string>
-    <string name="dialog_continue">Continue</string>
-    <string name="dialog_finish">Finish</string>
+    <string-array name="preset_dirs" translatable="false">
+        <item>Google_Apps</item>
+        <item>Other</item>
+    </string-array>
 
 </resources>

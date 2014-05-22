@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/card_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/card_title"
+        style="@style/card_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
+        android:text="@string/customopts_title" />
+
+    <RadioGroup
+        android:id="@+id/customopts_radiogroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/customopts_autopatch_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/customopts_autopatcher" />
+
+        <RadioButton
+            android:id="@+id/customopts_patch_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/customopts_patchfile" />
+    </RadioGroup>
+
+    <Spinner
+        android:id="@+id/spinner_autopatch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/customopts_choosepatch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="middle"
+        android:singleLine="true"
+        android:text="@string/customopts_choosepatch" />
+
+    <CheckBox
+        android:id="@+id/customopts_devicecheck"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/customopts_devicecheck" />
+
+    <CheckBox
+        android:id="@+id/customopts_hasbootimage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="@string/customopts_hasbootimage" />
+
+    <CheckBox
+        android:id="@+id/customopts_loki"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/customopts_loki" />
+
+    <TextView
+        android:id="@+id/customopts_ramdisk"
+        style="@style/card_section_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/customopts_ramdisk" />
+
+    <Spinner
+        android:id="@+id/spinner_ramdisk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/customopts_patchedinit"
+        style="@style/card_section_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/customopts_patchedinit" />
+
+    <Spinner
+        android:id="@+id/spinner_patchedinit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/customopts_bootimage_title"
+        style="@style/card_section_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/customopts_bootimage"
+        android:text="@string/customopts_bootimage" />
+
+    <!-- Prevent EditText from getting focus -->
+
+    <LinearLayout
+        android:id="@+id/customopts_dummylayout"
+        android:layout_width="0px"
+        android:layout_height="0px"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:orientation="horizontal" />
+
+    <EditText
+        android:id="@+id/customopts_bootimage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textNoSuggestions"
+        android:text="@string/customopts_bootimage_default" />
+
+</LinearLayout>
