@@ -87,6 +87,7 @@ ROMs:
     - SHOstock
     - EclipseTW
     - WanamLite
+    - Imperium
   * Sense 5 Port (geiti94) (Version 2)
 
 Kernels:

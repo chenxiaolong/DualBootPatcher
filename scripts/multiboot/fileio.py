@@ -90,7 +90,7 @@ def filename_matches(filename, regex):
         return False
 
 
-def find_boot_image(filename):
+def find_boot_images(filename):
     boot_images = list()
 
     with zipfile.ZipFile(filename, 'r') as z:

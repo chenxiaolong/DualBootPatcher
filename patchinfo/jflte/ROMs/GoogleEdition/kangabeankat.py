@@ -16,7 +16,7 @@ def get_file_info(filename):
   if not filename:
     return file_info
 
-  file_info.bootimg = fileio.find_boot_image(filename)
+  file_info.bootimg = fileio.find_boot_images(filename)
 
   if not file_info.bootimg:
     file_info.bootimg = ['boot.img']
