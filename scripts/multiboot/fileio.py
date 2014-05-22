@@ -3,6 +3,7 @@ import multiboot.operatingsystem as OS
 import os
 import re
 import sys
+import zipfile
 
 READ = 'r'
 WRITE = 'wb'
@@ -87,3 +88,17 @@ def filename_matches(filename, regex):
         return True
     else:
         return False
+
+
+def find_boot_image(filename):
+    boot_images = list()
+
+    with zipfile.ZipFile(filename, 'r') as z:
+        for name in z.namelist():
+            if re.search(r'(^|/)boot.(img|lok)$', name):
+                boot_images.append(name)
+
+    if boot_images:
+        return boot_images
+    else:
+        return None

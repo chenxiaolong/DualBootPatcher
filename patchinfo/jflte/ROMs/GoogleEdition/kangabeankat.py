@@ -1,5 +1,6 @@
 from multiboot.fileinfo import FileInfo
 import multiboot.autopatcher as autopatcher
+import multiboot.fileio as fileio
 from multiboot.autopatchers.jflte import GoogleEditionPatcher
 import re
 import zipfile
@@ -15,17 +16,14 @@ def get_file_info(filename):
   if not filename:
     return file_info
 
-  # Search zip for boot image
-  with zipfile.ZipFile(filename, 'r') as z:
-    for name in z.namelist():
-      if re.search(r'(^|/)boot.(img|lok)$', name):
-        file_info.bootimg = name
+  file_info.bootimg = fileio.find_boot_image(filename)
 
   if not file_info.bootimg:
-    file_info.bootimg = 'boot.img'
+    file_info.bootimg = ['boot.img']
 
-  if file_info.bootimg.endswith('.lok'):
-    file_info.loki       = True
+  for bootimg in file_info.bootimg:
+    if bootimg.endswith('.lok'):
+      file_info.loki     = True
 
   if filename.startswith("KK"):
     file_info.patch      = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
