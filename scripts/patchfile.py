@@ -719,7 +719,8 @@ try:
         load_automated(file_info)
 
     # Needed for the case where partconfig is passed via command-line
-    if not file_info.is_partconfig_supported(partconfig):
+    if action != 'testsupported' and \
+            not file_info.is_partconfig_supported(partconfig):
         raise Exception("The %s partition configuration is not supported for this file"
                 % partconfig.id)
 except Exception as e:
