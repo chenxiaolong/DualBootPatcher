@@ -337,6 +337,14 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
             mPresetCard.setEnabled(false);
             mCustomOptsCard.setEnabled(false);
 
+            if (mFileChooserCard.isSupported()) {
+                mPresetCardView.setVisibility(View.GONE);
+                mCustomOptsCardView.setVisibility(View.GONE);
+            } else {
+                mPresetCardView.setVisibility(View.VISIBLE);
+                mCustomOptsCardView.setVisibility(View.VISIBLE);
+            }
+
             // Show progress cards
             mTasksCardView.setVisibility(View.VISIBLE);
             mDetailsCardView.setVisibility(View.VISIBLE);
