@@ -47,7 +47,6 @@ Lib/_threading_local.py
 
 Lib/aifc.py
 Lib/antigravity.py
-Lib/argparse.py
 Lib/ast.py
 Lib/asynchat.py
 
@@ -85,7 +84,6 @@ Lib/ftplib.py
 
 Lib/getopt.py
 Lib/getpass.py
-Lib/gettext.py
 Lib/glob.py
 
 Lib/hmac.py
@@ -150,7 +148,6 @@ Lib/symtable.py
 
 Lib/tabnanny.py
 Lib/telnetlib.py
-Lib/textwrap.py
 Lib/this.py
 Lib/timeit.py
 Lib/tty.py
