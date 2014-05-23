@@ -292,7 +292,7 @@ def parse_args():
         f_bootimage = args.bootimage
 
         f_ramdisk = args.ramdisk
-        if not f_ramdisk.endswith('.def'):
+        if f_ramdisk and not f_ramdisk.endswith('.def'):
             f_ramdisk += '.def'
 
         f_autopatcher_name = args.autopatcher
