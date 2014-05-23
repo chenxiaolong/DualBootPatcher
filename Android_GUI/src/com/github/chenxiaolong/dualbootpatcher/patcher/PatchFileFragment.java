@@ -406,6 +406,8 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         if (mAutomated) {
             mDevicePartConfigCardView.setVisibility(View.GONE);
             mFileChooserCardView.setVisibility(View.GONE);
+            mPresetCardView.setVisibility(View.GONE);
+            mCustomOptsCardView.setVisibility(View.GONE);
         }
     }
 
