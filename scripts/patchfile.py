@@ -187,6 +187,14 @@ def parse_args():
                         help='Partition configuration to use in the patched file',
                         action='store')
 
+    parser.add_argument('--noquestions',
+                        help=textwrap.dedent('''
+                            Do not ask for device or partition configuration.
+                            The patcher will fail and exit if the file is
+                            unsupported
+                        '''),
+                        action='store_true')
+
     group = parser.add_argument_group('Unsupported files',
                                       description=textwrap.dedent('''
     The parameters below are for patching unsupported files. If they are used,
@@ -199,9 +207,6 @@ def parse_args():
     supported_group = group.add_mutually_exclusive_group()
     supported_group.add_argument('--is-supported',
                                  help='Test if a file is supported',
-                                 action='store_true')
-    supported_group.add_argument('--noquestions',
-                                 help='Fail if file is unsupported',
                                  action='store_true')
     supported_group.add_argument('--unsupported',
                                  help='Must be passed if file is unsupported',
