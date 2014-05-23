@@ -16,7 +16,6 @@
 import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
 
-import aosp
 import imp
 import os
 import re
