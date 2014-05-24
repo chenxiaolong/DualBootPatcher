@@ -44,8 +44,10 @@ def modify_fstab(cpiofile, partition_config):
         # /raw-cache needs to always be mounted rw so OpenDelta can write to
         # /cache/recovery
         args = system_fourth
-        if 'ro' in args:
-            args = re.sub('ro', 'rw', args)
+        if 'ro,' in args:
+            args = re.sub('ro,', 'rw,', args)
+        elif ',ro' in args:
+            args = re.sub(',ro', ',rw', args)
         else:
             args = 'rw,' + args
 
