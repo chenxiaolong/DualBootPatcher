@@ -101,9 +101,25 @@ def modify_fstab_build(cpiofile, partition_config):
 
   cpioentry.set_content(buf)
 
+def add_mount_script(cpiofile):
+  cpioentry = cpiofile.get_file('init.target.rc')
+  lines = fileio.bytes_to_lines(cpioentry.content)
+  buf = bytes()
+
+  for line in lines:
+    if re.search(r"^\s+mount_all\s+fstab.qcom.*$", line):
+      buf += fileio.encode(line)
+      buf += fileio.encode(fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
+
+    else:
+      buf += fileio.encode(line)
+
+  cpioentry.set_content(buf)
+
 def patch_ramdisk(cpiofile, partition_config):
   aosp.modify_init_rc(cpiofile)
   aosp.modify_init_qcom_rc(cpiofile)
   aosp.modify_fstab(cpiofile, partition_config)
   modify_fstab_build(cpiofile, partition_config)
   aosp.modify_init_target_rc(cpiofile)
+  add_mount_script(cpiofile)
