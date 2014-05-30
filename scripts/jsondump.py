@@ -117,7 +117,6 @@ for i in presets:
     if i[1].has_boot_image:
         jsonobj['bootimg'] = i[1].bootimg
         jsonobj['ramdisk'] = i[1].ramdisk
-        jsonobj['loki'] = i[1].loki
 
         if i[1].patched_init:
             jsonobj['patched_init'] = i[1].patched_init
