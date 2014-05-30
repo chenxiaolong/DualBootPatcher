@@ -11,7 +11,6 @@ file_info.patch          = [ autopatcher.auto_patch,
                              'jflte/ROMs/TouchWiz/negalite.dualboot.patch' ]
 file_info.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
-file_info.bootimg        = "kernel/stock_kernel/kernel/boot.img"
 
 def dont_wipe_data(directory, bootimg = None, device_check = True,
                    partition_config = None, device = None):

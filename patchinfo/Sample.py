@@ -47,8 +47,11 @@ file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
 # If the zip file you're patching does not have a kernel, set this to false.
 file_info.has_boot_image = True
 
-# If the boot image has a different name or is in a subfolder, change this.
-file_info.bootimg        = 'boot.img'
+# The zip files are automatically searched for boot images by default and will
+# find all boot.img and boot.lok files. If you would like to specify the boot
+# image manually, change the variable below. If there are multiple boot images,
+# a list can be provided (eg. ['boot1.img', 'boot2.img'])
+#file_info.bootimg        = 'boot.img'
 
 # These two lines enable the autopatcher. In most cases, this is sufficient.
 file_info.patch          = autopatcher.auto_patch

@@ -21,9 +21,7 @@ def get_file_info(filename):
     return file_info
 
   filename = os.path.split(filename)[1]
-  if 'Final-R1.1' in filename:
-    file_info.bootimg    = 'kernel/ktoonsez/boot.img'
-  elif filename == 'I9505_-_Google_Edition_v6_by_Jamal2367.zip':
+  if filename == 'I9505_-_Google_Edition_v6_by_Jamal2367.zip':
     # A bit hackish, but it works
     file_info.ramdisk    = 'jflte/AOSP/AOSP.def'
     file_info.patch      = [ autopatcher.auto_patch ]

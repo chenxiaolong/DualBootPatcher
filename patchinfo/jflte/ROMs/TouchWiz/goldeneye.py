@@ -13,7 +13,6 @@ file_info.name           = 'GoldenEye'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
-file_info.bootimg        = 'kernel/boot.img'
 
 def get_file_info(filename):
   if not filename:
@@ -22,5 +21,4 @@ def get_file_info(filename):
   filename = os.path.split(filename)[1]
   if re.search(r'(ATT|[iI]337)', filename) or filename in att_filenames:
     file_info.loki       = True
-    file_info.bootimg    = 'kernel/boot.lok'
   return file_info

@@ -16,6 +16,5 @@ def get_file_info(filename):
 
   filename = os.path.split(filename)[1]
   if 'vzw' in filename or 'att' in filename:
-    file_info.bootimg    = 'boot.lok'
     file_info.loki       = True
   return file_info

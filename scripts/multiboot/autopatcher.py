@@ -20,6 +20,7 @@ import multiboot.fileio as fileio
 import imp
 import os
 import re
+import zipfile
 
 
 def insert_line(index, line, lines):
@@ -243,6 +244,21 @@ def auto_patch(directory, bootimg=None, device_check=True,
 # Functions to assign to FileInfo.extract
 def files_to_auto_patch():
     return ['META-INF/com/google/android/updater-script']
+
+
+# Functions to assign to FileInfo.bootimg
+def autodetect_boot_images(filename):
+    boot_images = list()
+
+    with zipfile.ZipFile(filename, 'r') as z:
+        for name in z.namelist():
+            if re.search(r'(^|/)boot.(img|lok)$', name):
+                boot_images.append(name)
+
+    if boot_images:
+        return boot_images
+    else:
+        return None
 
 
 def insert_partition_info(directory, f, config, target_path_only=False):

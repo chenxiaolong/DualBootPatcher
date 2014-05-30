@@ -11,7 +11,6 @@ file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = [ autopatcher.auto_patch ]
 file_info.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
-file_info.bootimg        = "aroma/kernels/stock/boot.img"
 
 def fix_aroma(directory, bootimg = None, device_check = True,
               partition_config = None, device = None):

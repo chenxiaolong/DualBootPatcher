@@ -17,45 +17,9 @@ file_info.name           = 'Echoe TouchWiz'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
-file_info.bootimg        = 'boot.img'
 
 def matches(filename):
   for regex in filename_regex:
     if fileio.filename_matches(filename, regex):
       return True
   return False
-
-def get_file_info(filename):
-  if not filename:
-    return file_info
-
-  filename = os.path.split(filename)[1]
-
-  if 'Echoe_v17' in filename:
-    file_info.bootimg = [
-      'EchoeExtras/kernel/echoe1/boot.img',
-      'EchoeExtras/kernel/echoe2/boot.img',
-      'EchoeExtras/kernel/KT/boot.img',
-      'EchoeExtras/kernel/stock/boot.img',
-      'EchoeExtras/kernel/talex/boot.img'
-    ]
-  elif 'Echoe_v18' in filename:
-    file_info.bootimg = [
-      'EchoeExtras/kernel/adam/boot.img',
-      'EchoeExtras/kernel/echoe1/boot.img',
-      'EchoeExtras/kernel/echoe2/boot.img',
-      'EchoeExtras/kernel/KT/boot.img',
-      'EchoeExtras/kernel/stock/boot.img',
-      'EchoeExtras/kernel/talex/boot.img'
-    ]
-  elif 'Echoe_v20' in filename:
-    file_info.bootimg = [
-      'EchoeExtras/kernel/adam/boot.img',
-      'EchoeExtras/kernel/ael/boot.img',
-      'EchoeExtras/kernel/echoe1/boot.img',
-      'EchoeExtras/kernel/echoe2/boot.img',
-      'EchoeExtras/kernel/KT/boot.img',
-      'EchoeExtras/kernel/stock/boot.img',
-      'EchoeExtras/kernel/talex/boot.img'
-    ]
-  return file_info

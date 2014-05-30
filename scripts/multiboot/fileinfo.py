@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import multiboot.autopatcher as autopatcher
 import multiboot.config as config
 import multiboot.debug as debug
 import multiboot.fileio as fileio
@@ -35,7 +36,7 @@ class FileInfo:
         self.patch = None
         self.extract = None
         self.ramdisk = ""
-        self.bootimg = "boot.img"
+        self.bootimg = autopatcher.autodetect_boot_images
         self.has_boot_image = True
         self.loki = False
         self.device_check = True

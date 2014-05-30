@@ -8,5 +8,4 @@ file_info.name           = 'SkyFall'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.patch          = autopatcher.auto_patch
 file_info.extract        = autopatcher.files_to_auto_patch
-file_info.bootimg        = 'kernel/boot.lok'
 file_info.loki           = True

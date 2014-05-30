@@ -9,14 +9,6 @@ file_info.name           = 'Imperium'
 file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
 file_info.extract        = autopatcher.files_to_auto_patch
 
-def get_file_info(filename):
-    if not filename:
-        return file_info
-
-    file_info.bootimg = fileio.find_boot_images(filename)
-
-    return file_info
-
 def auto_patch(directory, bootimg=None, device_check=True,
                partition_config=None, device=None):
     updater_script = 'META-INF/com/google/android/updater-script'

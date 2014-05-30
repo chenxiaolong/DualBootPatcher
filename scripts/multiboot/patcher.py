@@ -259,10 +259,30 @@ def patch_zip(file_info):
             return None
 
     if file_info.has_boot_image:
-        if type(file_info.bootimg) == str:
-            bootimages = [file_info.bootimg]
-        else:
-            bootimages = file_info.bootimg
+        temp = file_info.bootimg
+        if type(temp) == str or callable(temp):
+            temp = [temp]
+
+        bootimages = list()
+
+        for i in temp:
+            if callable(i):
+                output = i(file_info._filename)
+
+                if not output:
+                    continue
+
+                if type(output) == list:
+                    bootimages.extend(output)
+
+                elif type(output) == str:
+                    bootimages.append(output)
+
+            elif type(i) == list:
+                bootimages.extend(i)
+
+            elif type(i) == str:
+                bootimages.append(i)
 
         for bootimage in bootimages:
             ui.details("Extracting boot image: %s" % bootimage)
