@@ -73,13 +73,13 @@ file_info.extract        = autopatcher.files_to_auto_patch
 #     else:
 #         return False
 
-# If you need to customize the FileInfo based on the filename (eg. setting
-# the loki parameter based on the filename), add a function named
-# get_file_info(filename) that returns the new file FileInfo object. Like
+# If you need to customize the FileInfo based on the filename, add a function
+# named get_file_info(filename) that returns the new file FileInfo object. Like
 # above, the 'filename' variable contains the path as well. For example:
 #
 # def get_file_info(filename):
 #     filename = os.path.split(filename)[1]
-#     if 'ATT' in filename or 'VZW' in filename:
-#         file_info.loki = True
+#     if '1.0' in filename:
+#         # do something ...
+#         file_info.bootimg = 'kernel/blah.img'
 #     return file_info

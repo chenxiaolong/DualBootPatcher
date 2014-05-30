@@ -15,12 +15,6 @@ def get_file_info(filename):
   if not filename:
     return file_info
 
-  file_info.bootimg = autopatcher.autodetect_boot_images(filename)
-
-  for bootimg in file_info.bootimg:
-    if bootimg.endswith('.lok'):
-      file_info.loki     = True
-
   if filename.startswith("KK"):
     file_info.patch      = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
     file_info.extract    = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
