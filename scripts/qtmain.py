@@ -421,25 +421,6 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         self.bootimgwidgets.append(self.cmbinitfile)
         self.bootimgwidgets.append(self.lbinitfile)
 
-        # Loki
-        self.cbloki = QtWidgets.QCheckBox()
-        self.lbloki = QtWidgets.QLabel()
-        self.lbloki.setText('Loki')
-
-        optslayout.addWidget(self.lbloki, 11, 0, 1, 1)
-        optslayout.addWidget(self.cbloki, 11, 1, 1, 1)
-        self.bootimgwidgets.append(self.lbloki)
-        self.bootimgwidgets.append(self.cbloki)
-
-        # Vertical separator
-        vline = QtWidgets.QFrame()
-        vline.setFrameShape(QtWidgets.QFrame.VLine)
-        vline.setFrameShadow(QtWidgets.QFrame.Sunken)
-        vline.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                            QtWidgets.QSizePolicy.Expanding)
-
-        optslayout.addWidget(vline, 11, 2, 1, 1)
-
         # Ramdisk
         self.cmbramdisk = QtWidgets.QComboBox()
         self.lbramdisk = QtWidgets.QLabel()
@@ -494,9 +475,6 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         # Boot image exists
         self.cbhasbootimg.setChecked(True)
         self.hasbootimagetoggled()
-
-        # No loki
-        self.cbloki.setChecked(False)
 
         # No patched init
         self.cbpatchedinit.setChecked(False)
@@ -644,7 +622,6 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             if self.file_info.has_boot_image:
                 self.file_info.ramdisk = self.cmbramdisk.currentText() + '.def'
                 self.file_info.bootimg = self.lebootimg.text()
-                self.file_info.loki = self.cbloki.isChecked()
 
             if self.cbpatchedinit.isChecked():
                 self.file_info.patched_init = self.cmbinitfile.currentText()
@@ -663,7 +640,6 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             self.file_info.bootimg = orig_file_info.bootimg
             self.file_info.has_boot_image = orig_file_info.has_boot_image
             self.file_info.patched_init = orig_file_info.patched_init
-            self.file_info.loki = orig_file_info.loki
             self.file_info.device_check = orig_file_info.device_check
             self.file_info.configs = orig_file_info.configs
             # Possibly override?
