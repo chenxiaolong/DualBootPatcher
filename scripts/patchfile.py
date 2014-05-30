@@ -60,7 +60,6 @@ f_bootimage = None
 f_ramdisk = None
 f_autopatcher_name = None
 f_patch = None
-f_loki = None
 f_init = None
 f_devicecheck = None
 
@@ -167,7 +166,7 @@ def clear_screen():
 def parse_args():
     global action, filename, device, partconfig_name, noquestions
     global f_preset_name, f_hasbootimage, f_bootimage, f_ramdisk
-    global f_autopatcher_name, f_patch, f_loki, f_init, f_devicecheck
+    global f_autopatcher_name, f_patch, f_init, f_devicecheck
 
     parser = argparse.ArgumentParser()
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
@@ -245,15 +244,6 @@ def parse_args():
                                  help='Use a patch/diff file instead of an autopatcher',
                                  action='store')
 
-    loki_group = group.add_mutually_exclusive_group()
-    loki_group.add_argument('--loki',
-                            help='File contains loki\'d boot image(s)',
-                            action='store_true')
-    loki_group.add_argument('--no-loki',
-                            help='File contains regular boot image(s) (default)',
-                            action='store_false',
-                            dest='loki')
-
     group.add_argument('--patchedinit',
                        help='Use a patched/prebuilt init binary',
                        action='store')
@@ -297,7 +287,6 @@ def parse_args():
 
         f_autopatcher_name = args.autopatcher
         f_patch = args.patch
-        f_loki = args.loki
         f_init = args.patchedinit
         f_devicecheck = args.devicecheck
 
@@ -441,7 +430,6 @@ def patch_unsupported(file_info):
     f_hasbootimage = True
     f_bootimage = 'boot.img'
     f_ramdisk = ramdisks[0][:-4]
-    f_loki = False
     f_init = None
 
     while True:
@@ -464,7 +452,6 @@ def patch_unsupported(file_info):
             if f_hasbootimage:
                 sld.add_option('Boot image(s)', str(f_bootimage))
                 sld.add_option('Ramdisk', str(f_ramdisk))
-                sld.add_option('Loki', str(f_loki))
                 sld.add_option('Patched init', str(f_init))
 
         choice = sld.get_choice()
@@ -591,20 +578,6 @@ def patch_unsupported(file_info):
             sld = SimpleListDialog()
             sld.hasvalues = False
             sld.allownochoice = False
-            sld.desc = 'The boot image is pre-loki\'d (for Galaxy S4' + \
-                    ' variants locked bootloaders)'
-
-            sld.add_option('True')
-            sld.add_option('False')
-
-            choice = sld.get_choice()
-
-            f_loki = choice == 1
-
-        elif choice == 9:
-            sld = SimpleListDialog()
-            sld.hasvalues = False
-            sld.allownochoice = False
             sld.desc = 'Choose a patched init binary:'
 
             for i in inits:
@@ -633,7 +606,6 @@ def patch_unsupported(file_info):
         if file_info.has_boot_image:
             file_info.ramdisk = f_ramdisk + '.def'
             file_info.bootimg = f_bootimage.split(',')
-            file_info.loki = f_loki
             file_info.patched_init = f_init
 
         file_info.device_check = f_devicecheck
@@ -648,7 +620,6 @@ def patch_unsupported(file_info):
         file_info.bootimg = orig_file_info.bootimg
         file_info.has_boot_image = orig_file_info.has_boot_image
         file_info.patched_init = orig_file_info.patched_init
-        file_info.loki = orig_file_info.loki
         file_info.device_check = orig_file_info.device_check
         file_info.configs = orig_file_info.configs
         # Possibly override?
@@ -688,7 +659,6 @@ def load_automated(file_info):
         if file_info.has_boot_image:
             file_info.ramdisk = f_ramdisk + '.def'
             file_info.bootimg = f_bootimage.split(',')
-            file_info.loki = f_loki
             file_info.patched_init = f_init
 
         file_info.device_check = f_devicecheck
@@ -703,7 +673,6 @@ def load_automated(file_info):
         file_info.bootimg = orig_file_info.bootimg
         file_info.has_boot_image = orig_file_info.has_boot_image
         file_info.patched_init = orig_file_info.patched_init
-        file_info.loki = orig_file_info.loki
         file_info.device_check = orig_file_info.device_check
         file_info.configs = orig_file_info.configs
         # Possibly override?
