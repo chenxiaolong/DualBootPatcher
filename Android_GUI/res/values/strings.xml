@@ -126,7 +126,6 @@
     <string name="customopts_choosepatch">Choose patch file</string>
     <string name="customopts_devicecheck">Remove device check</string>
     <string name="customopts_hasbootimage">Has boot image</string>
-    <string name="customopts_loki">Loki</string>
     <string name="customopts_ramdisk">Ramdisk</string>
     <string name="customopts_patchedinit">Patched init</string>
     <string name="customopts_bootimage">Boot image</string>

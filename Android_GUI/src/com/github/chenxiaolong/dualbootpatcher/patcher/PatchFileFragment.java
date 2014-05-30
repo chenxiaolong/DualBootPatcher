@@ -514,8 +514,6 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
             boolean hasBootImage = mCustomOptsCard.isHasBootImageEnabled();
             intent.putExtra(PatcherUtils.PARAM_HAS_BOOT_IMAGE, hasBootImage);
             if (hasBootImage) {
-                intent.putExtra(PatcherUtils.PARAM_LOKI,
-                        mCustomOptsCard.isLokiEnabled());
                 intent.putExtra(PatcherUtils.PARAM_RAMDISK,
                         mCustomOptsCard.getRamdisk());
 

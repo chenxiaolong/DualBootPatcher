@@ -51,7 +51,6 @@ public class CustomOptsCard extends Card {
     Button mChoosePatchButton;
     private CheckBox mDeviceCheckBox;
     private CheckBox mHasBootImageBox;
-    private CheckBox mLokiBox;
     private TextView mRamdiskTitle;
     private Spinner mRamdiskSpinner;
     private ArrayAdapter<String> mRamdiskAdapter;
@@ -93,7 +92,6 @@ public class CustomOptsCard extends Card {
                     .findViewById(R.id.customopts_devicecheck);
             mHasBootImageBox = (CheckBox) view
                     .findViewById(R.id.customopts_hasbootimage);
-            mLokiBox = (CheckBox) view.findViewById(R.id.customopts_loki);
             mRamdiskTitle = (TextView) view
                     .findViewById(R.id.customopts_ramdisk);
             mRamdiskSpinner = (Spinner) view.findViewById(R.id.spinner_ramdisk);
@@ -230,7 +228,6 @@ public class CustomOptsCard extends Card {
             mChoosePatchButton.setEnabled(false);
             mDeviceCheckBox.setEnabled(false);
             mHasBootImageBox.setEnabled(false);
-            mLokiBox.setEnabled(false);
             mRamdiskTitle.setEnabled(false);
             mRamdiskSpinner.setEnabled(false);
             mInitTitle.setEnabled(false);
@@ -246,7 +243,6 @@ public class CustomOptsCard extends Card {
             mChoosePatchButton.setEnabled(true);
             mDeviceCheckBox.setEnabled(true);
             mHasBootImageBox.setEnabled(true);
-            mLokiBox.setEnabled(true);
             mRamdiskTitle.setEnabled(true);
             mRamdiskSpinner.setEnabled(true);
             mInitTitle.setEnabled(true);
@@ -256,7 +252,6 @@ public class CustomOptsCard extends Card {
         }
 
         if (mHasBootImageBox.isChecked()) {
-            mLokiBox.setEnabled(true);
             mRamdiskTitle.setEnabled(true);
             mRamdiskSpinner.setEnabled(true);
             mInitTitle.setEnabled(true);
@@ -264,7 +259,6 @@ public class CustomOptsCard extends Card {
             mBootImageTitle.setEnabled(true);
             mBootImageText.setEnabled(true);
         } else {
-            mLokiBox.setEnabled(false);
             mRamdiskTitle.setEnabled(false);
             mRamdiskSpinner.setEnabled(false);
             mInitTitle.setEnabled(false);
@@ -329,10 +323,6 @@ public class CustomOptsCard extends Card {
         return mHasBootImageBox.isChecked();
     }
 
-    public boolean isLokiEnabled() {
-        return mLokiBox.isChecked();
-    }
-
     public String getRamdisk() {
         // return mInfo.mRamdisks[mRamdiskSpinner.getSelectedItemPosition()];
         return mRamdiskAdapter.getItem(mRamdiskSpinner
@@ -359,7 +349,6 @@ public class CustomOptsCard extends Card {
         mChoosePatchButton.setText(R.string.customopts_choosepatch);
         mDeviceCheckBox.setChecked(false);
         mHasBootImageBox.setChecked(true);
-        mLokiBox.setChecked(false);
         mRamdiskSpinner.setSelection(0);
         mInitSpinner.setSelection(0);
         mBootImageText.setText(R.string.customopts_bootimage_default);

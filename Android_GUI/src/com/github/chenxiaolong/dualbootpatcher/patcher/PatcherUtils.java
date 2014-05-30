@@ -52,7 +52,6 @@ public class PatcherUtils {
     public static final String PARAM_PATCH = "patch";
     public static final String PARAM_DEVICE_CHECK = "device_check";
     public static final String PARAM_HAS_BOOT_IMAGE = "has_boot_image";
-    public static final String PARAM_LOKI = "loki";
     public static final String PARAM_RAMDISK = "ramdisk";
     public static final String PARAM_PATCHED_INIT = "patched_init";
     public static final String PARAM_BOOT_IMAGE = "boot_image";
@@ -229,13 +228,6 @@ public class PatcherUtils {
                     args.add("--nobootimage");
                 } else {
                     args.add("--hasbootimage");
-
-                    boolean loki = data.getBoolean(PARAM_LOKI);
-                    if (loki) {
-                        args.add("--loki");
-                    } else {
-                        args.add("--no-loki");
-                    }
 
                     String ramdisk = data.getString(PARAM_RAMDISK);
                     args.add("--ramdisk");
