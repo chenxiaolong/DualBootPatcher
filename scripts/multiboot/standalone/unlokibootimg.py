@@ -49,6 +49,20 @@ def print_i(line):
             print(line, file=sys.stderr)
 
 
+def is_loki(filename):
+    with open(filename, 'rb') as f:
+        f.seek(0x400, os.SEEK_SET)
+
+        lokformat = '<4s'
+
+        lok_header_size = struct.calcsize(lokformat)
+        lok_header = f.read(lok_header_size)
+
+        lok_magic, = struct.unpack(lokformat, lok_header)
+
+        return lok_magic == "LOKI".encode("ASCII")
+
+
 def extract(filename, directory):
     basename = os.path.split(filename)[1]
     f = open(filename, 'rb')
