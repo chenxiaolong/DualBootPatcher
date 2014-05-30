@@ -34,7 +34,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.LiveOutputFilter;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.FileInfo;
+import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 
 public class PatcherUtils {
     public static final String TAG = "PatcherUtils";
@@ -202,7 +202,7 @@ public class PatcherUtils {
         if (!supported) {
             args.add("--unsupported");
 
-            FileInfo preset = data.getParcelable(PARAM_PRESET);
+            PatchInfo preset = data.getParcelable(PARAM_PRESET);
             if (preset != null) {
                 args.add("--preset");
                 args.add(preset.mPath);

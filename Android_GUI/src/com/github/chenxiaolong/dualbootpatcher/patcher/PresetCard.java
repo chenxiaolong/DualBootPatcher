@@ -30,7 +30,7 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.Device;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.FileInfo;
+import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class PresetCard extends Card {
@@ -40,7 +40,7 @@ public class PresetCard extends Card {
     private TextView mPresetName;
 
     private PatcherInformation mInfo;
-    private final ArrayList<FileInfo> mPresets = new ArrayList<FileInfo>();
+    private final ArrayList<PatchInfo> mPresets = new ArrayList<PatchInfo>();
 
     public PresetCard(Context context) {
         this(context, R.layout.cardcontent_preset);
@@ -80,8 +80,8 @@ public class PresetCard extends Card {
         String[] dirs = getContext().getResources().getStringArray(
                 R.array.preset_dirs);
 
-        for (int i = 0; i < mInfo.mFileInfos.length; i++) {
-            PatcherInformation.FileInfo info = mInfo.mFileInfos[i];
+        for (int i = 0; i < mInfo.mPatchInfos.length; i++) {
+            PatcherInformation.PatchInfo info = mInfo.mPatchInfos[i];
 
             if (info.mPath.startsWith(device.mCodeName + "/")) {
                 mPresetAdapter.add(info.mPath);
@@ -105,7 +105,7 @@ public class PresetCard extends Card {
             mPresetName.setText(getContext().getString(
                     R.string.preset_custom_desc));
         } else {
-            // mPresetName.setText(mInfo.mFileInfos[position - 1].mName);
+            // mPresetName.setText(mInfo.mPatchInfos[position - 1].mName);
             mPresetName.setText(mPresets.get(position - 1).mName);
         }
     }
@@ -116,14 +116,14 @@ public class PresetCard extends Card {
         populatePresets(device);
     }
 
-    public FileInfo getPreset() {
+    public PatchInfo getPreset() {
         int pos = mPresetSpinner.getSelectedItemPosition();
 
         if (pos == 0) {
             // Custom options
             return null;
         } else {
-            // return mInfo.mFileInfos[pos - 1];
+            // return mInfo.mPatchInfos[pos - 1];
             return mPresets.get(pos - 1);
         }
     }

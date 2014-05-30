@@ -28,7 +28,7 @@ import android.os.Parcelable;
 
 public class PatcherInformation implements Parcelable {
     public Device[] mDevices;
-    public FileInfo[] mFileInfos;
+    public PatchInfo[] mPatchInfos;
     public PartitionConfig[] mPartitionConfigs;
     public String[] mAutopatchers;
     public String[] mInits;
@@ -42,7 +42,7 @@ public class PatcherInformation implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeParcelableArray(mDevices, 0);
-        dest.writeParcelableArray(mFileInfos, 0);
+        dest.writeParcelableArray(mPatchInfos, 0);
         dest.writeParcelableArray(mPartitionConfigs, 0);
         dest.writeStringArray(mAutopatchers);
         dest.writeStringArray(mInits);
@@ -65,8 +65,8 @@ public class PatcherInformation implements Parcelable {
         Parcelable[] p = in.readParcelableArray(Device.class
                 .getClassLoader());
         mDevices = Arrays.copyOf(p, p.length, Device[].class);
-        p = in.readParcelableArray(FileInfo.class.getClassLoader());
-        mFileInfos = Arrays.copyOf(p, p.length, FileInfo[].class);
+        p = in.readParcelableArray(PatchInfo.class.getClassLoader());
+        mPatchInfos = Arrays.copyOf(p, p.length, PatchInfo[].class);
         p = in.readParcelableArray(PartitionConfig.class.getClassLoader());
         mPartitionConfigs = Arrays.copyOf(p, p.length,
                 PartitionConfig[].class);
@@ -98,14 +98,14 @@ public class PatcherInformation implements Parcelable {
             mAutopatchers[i] = autopatcher.getString("name");
         }
 
-        JSONArray fileinfos = root.getJSONArray("fileinfos");
-        mFileInfos = new FileInfo[fileinfos.length()];
-        for (int i = 0; i < fileinfos.length(); i++) {
-            JSONObject fileinfo = fileinfos.getJSONObject(i);
-            FileInfo info = new FileInfo();
-            info.mPath = fileinfo.getString("path");
-            info.mName = fileinfo.getString("name");
-            mFileInfos[i] = info;
+        JSONArray patchinfos = root.getJSONArray("patchinfos");
+        mPatchInfos = new PatchInfo[patchinfos.length()];
+        for (int i = 0; i < patchinfos.length(); i++) {
+            JSONObject patchinfo = patchinfos.getJSONObject(i);
+            PatchInfo info = new PatchInfo();
+            info.mPath = patchinfo.getString("path");
+            info.mName = patchinfo.getString("name");
+            mPatchInfos[i] = info;
         }
 
         JSONArray partconfigs = root.getJSONArray("partitionconfigs");
@@ -169,7 +169,7 @@ public class PatcherInformation implements Parcelable {
         }
     }
 
-    public static class FileInfo implements Parcelable {
+    public static class PatchInfo implements Parcelable {
         public String mPath;
         public String mName;
 
@@ -184,24 +184,24 @@ public class PatcherInformation implements Parcelable {
             dest.writeString(mName);
         }
 
-        public static final Parcelable.Creator<FileInfo> CREATOR = new Parcelable.Creator<FileInfo>() {
+        public static final Parcelable.Creator<PatchInfo> CREATOR = new Parcelable.Creator<PatchInfo>() {
             @Override
-            public FileInfo createFromParcel(Parcel in) {
-                return new FileInfo(in);
+            public PatchInfo createFromParcel(Parcel in) {
+                return new PatchInfo(in);
             }
 
             @Override
-            public FileInfo[] newArray(int size) {
-                return new FileInfo[size];
+            public PatchInfo[] newArray(int size) {
+                return new PatchInfo[size];
             }
         };
 
-        private FileInfo(Parcel in) {
+        private PatchInfo(Parcel in) {
             mPath = in.readString();
             mName = in.readString();
         }
 
-        public FileInfo() {
+        public PatchInfo() {
         }
     }
 

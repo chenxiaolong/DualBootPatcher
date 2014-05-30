@@ -40,7 +40,7 @@ import android.widget.ScrollView;
 
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.FileInfo;
+import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherTaskFragment.PatcherListener;
 
@@ -183,7 +183,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
                 R.id.card_file_chooser);
         mFileChooserCardView.setCard(mFileChooserCard);
 
-        // Card that allows the user to select a preset fileinfo to patch an
+        // Card that allows the user to select a preset patchinfo to patch an
         // unsupported file
         mPresetCard = new PresetCard(getActivity());
 
@@ -489,7 +489,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         intent.putExtra(PatcherUtils.PARAM_SUPPORTED, supported);
 
         if (!supported) {
-            FileInfo preset = mPresetCard.getPreset();
+            PatchInfo preset = mPresetCard.getPreset();
             if (preset != null) {
                 intent.putExtra(PatcherUtils.PARAM_PRESET, preset);
             }
