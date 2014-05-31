@@ -83,7 +83,8 @@ exit_status, output, error = cmd.run_command(
 print("\n")
 
 if len(output) == 0:
-    print("The directories are identical. Did you compare the right directories?")
+    print('The directories are identical. '
+          'Did you compare the right directories?')
     sys.exit(1)
 
 filtered = []
@@ -91,7 +92,8 @@ parentdir = os.path.realpath(os.path.join(original, '..'))
 parentdir2 = os.path.realpath(os.path.join(modified, '..'))
 
 if not os.path.samefile(parentdir, parentdir2):
-    print("WARNING: The two directories do not share the same parent directory")
+    print('WARNING: The two directories do not share the '
+          'same parent directory')
 
 for line in output.split('\n'):
     if line:

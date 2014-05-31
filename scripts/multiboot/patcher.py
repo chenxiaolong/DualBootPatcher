@@ -298,7 +298,8 @@ def patch_zip(file_info):
     set_task('PATCHING_FILES')
 
     shutil.copy(os.path.join(OS.patchdir, 'dualboot.sh'), tempdir)
-    autopatcher.insert_partition_info(tempdir, 'dualboot.sh', file_info.partconfig)
+    autopatcher.insert_partition_info(tempdir, 'dualboot.sh',
+                                      file_info.partconfig)
 
     if file_info.patchinfo.patch:
         ui.details('Running patch functions ...')
@@ -395,16 +396,17 @@ def patch_file(file_info):
     if file_info.filetype == fileinfo.ZIP_FILE:
         newfile = patch_zip(file_info)
         if newfile is not None:
-            #if file_info.loki:
-            #    ui.succeeded('Successfully patched zip. ' + loki_msg)
-            #else:
+            # if file_info.loki:
+            #     ui.succeeded('Successfully patched zip. ' + loki_msg)
+            # else:
             ui.succeeded('Successfully patched zip')
     elif file_info.filetype == fileinfo.BOOT_IMAGE:
         newfile = patch_boot_image(file_info)
         if newfile is not None:
-            #if file_info.loki:
-            #    ui.succeeded('Successfully patched Loki\'d boot image. ' + loki_msg)
-            #else:
+            # if file_info.loki:
+            #     ui.succeeded('Successfully patched Loki\'d boot image. ' +
+            #                  loki_msg)
+            # else:
             ui.succeeded('Successfully patched boot image')
     else:
         raise Exception('Unsupported file extension')

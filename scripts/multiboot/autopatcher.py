@@ -48,7 +48,8 @@ def insert_write_kernel(bootimg, lines):
         i = len(lines) - 1
         while i > 0:
             if search in lines[i]:
-                # Statements can be on multiple lines, so insert after a semicolon is found
+                # Statements can be on multiple lines, so insert after a
+                # semicolon is found
                 while i < len(lines):
                     if ';' in lines[i]:
                         insert_line(i + 1, set_kernel_line, lines)
@@ -121,7 +122,8 @@ def replace_mount_lines(device, lines):
                 i += insert_mount_cache(i, lines)
 
             # Mount /data as dual boot
-            elif '"/data' in lines[i] or 'userdata' in lines[i] or (pdata and pdata in lines[i]):
+            elif '"/data' in lines[i] or 'userdata' in lines[i] or \
+                    (pdata and pdata in lines[i]):
                 del lines[i]
                 i += insert_mount_data(i, lines)
 
@@ -152,7 +154,8 @@ def replace_unmount_lines(device, lines):
                 i += insert_unmount_cache(i, lines)
 
             # Mount /data as dual boot
-            elif '"/data' in lines[i] or 'userdata' in lines[i] or (pdata and pdata in lines[i]):
+            elif '"/data' in lines[i] or 'userdata' in lines[i] or \
+                    (pdata and pdata in lines[i]):
                 del lines[i]
                 i += insert_unmount_data(i, lines)
 
@@ -314,15 +317,15 @@ def get_auto_patchers():
 
     mainautopatcher = AutoPatcher()
     mainautopatcher.name = 'Standard'
-    mainautopatcher.patcher = [ auto_patch ]
-    mainautopatcher.extractor = [ files_to_auto_patch ]
+    mainautopatcher.patcher = [auto_patch]
+    mainautopatcher.extractor = [files_to_auto_patch]
     aps.append(mainautopatcher)
 
     for root, dirs, files in os.walk(autopatchers.__path__[0]):
         for f in files:
             if f.endswith(".py") and not f == '__init__.py':
                 plugin = imp.load_source(os.path.basename(f)[:-3],
-                                          os.path.join(root, f))
+                                         os.path.join(root, f))
                 moreaps = plugin.get_auto_patchers()
                 if type(moreaps) == list:
                     aps.extend(moreaps)

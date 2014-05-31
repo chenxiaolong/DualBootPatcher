@@ -174,7 +174,7 @@ class CpioEntryNew:
         self.filesize = len(content)
 
     def dump(self):
-        #C_ISCTG  = int("0110000", 8)
+        # C_ISCTG  = int("0110000", 8)
         filetype = stat.S_IFMT(self.mode)
 
         if stat.S_ISDIR(self.mode):
@@ -191,8 +191,8 @@ class CpioEntryNew:
             ftypestr = "block device"
         elif stat.S_ISSOCK(self.mode):
             ftypestr = "socket"
-        #elif filetype == C_ISCTG:
-        #    ftypestr = "what is this"
+        # elif filetype == C_ISCTG:
+        #     ftypestr = "what is this"
         else:
             ftypestr = 'unknown (%o)' % filetype
 
@@ -246,7 +246,7 @@ class CpioFile:
             if member.ino in self.inodemap:
                 self.inodemap[member.ino].append(member)
             else:
-                self.inodemap[member.ino] = [ member ]
+                self.inodemap[member.ino] = [member]
 
             self.members.append(member)
 
@@ -328,7 +328,7 @@ class CpioFile:
 
         if member.ino not in self.inodemap:
             # Make sure we only get the file contents once per inode
-            self.inodemap[member.ino] = [ member ]
+            self.inodemap[member.ino] = [member]
 
             with open(filename, 'rb') as f:
                 member.content = f.read()

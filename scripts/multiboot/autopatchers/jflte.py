@@ -47,12 +47,11 @@ def get_auto_patchers():
 
     googleedition = autopatcher.AutoPatcher()
     googleedition.name = 'Standard + Google Edition Fix'
-    googleedition.patcher = [ autopatcher.auto_patch,
-                              GoogleEditionPatcher.qcom_audio_fix ]
-    googleedition.extractor = [ autopatcher.files_to_auto_patch,
-                                GoogleEditionPatcher.files_for_qcom_audio_fix ]
+    googleedition.patcher = [autopatcher.auto_patch,
+                             GoogleEditionPatcher.qcom_audio_fix]
+    googleedition.extractor = [autopatcher.files_to_auto_patch,
+                               GoogleEditionPatcher.files_for_qcom_audio_fix]
 
     autopatchers.append(googleedition)
 
     return autopatchers
-

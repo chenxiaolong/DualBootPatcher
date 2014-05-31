@@ -184,7 +184,8 @@ def parse_args():
                         help='Device the file is being patched for',
                         action='store')
     parser.add_argument('-p', '--partconfig',
-                        help='Partition configuration to use in the patched file',
+                        help='Partition configuration to '
+                             'use in the patched file',
                         action='store')
 
     parser.add_argument('--noquestions',
@@ -242,7 +243,8 @@ def parse_args():
                                  help='Use an autopatcher (default)',
                                  action='store')
     autopatch_group.add_argument('--patch',
-                                 help='Use a patch/diff file instead of an autopatcher',
+                                 help='Use a patch/diff file '
+                                      'instead of an autopatcher',
                                  action='store')
 
     group.add_argument('--patchedinit',
@@ -276,7 +278,8 @@ def parse_args():
                     raise Exception('The --ramdisk parameter must be passed')
 
             if not args.autopatcher and not args.patch:
-                raise Exception('The --autopatcher or --patch parameters must be passed')
+                raise Exception('The --autopatcher or --patch parameters '
+                                'must be passed')
 
         f_preset_name = args.preset
         f_hasbootimage = args.hasbootimage
@@ -291,7 +294,6 @@ def parse_args():
         f_init = args.patchedinit
         f_devicecheck = args.devicecheck
 
-
     filename = args.file
     device = args.device
     partconfig_name = args.partconfig
@@ -299,11 +301,11 @@ def parse_args():
     noquestions = args.noquestions
 
     if args.is_supported:
-        action='testsupported'
+        action = 'testsupported'
     elif args.unsupported:
-        action='automated'
+        action = 'automated'
     else:
-        action='patchfile'
+        action = 'patchfile'
 
 
 def check_parameters():
@@ -365,7 +367,7 @@ def ask_device():
     global device
 
     sld = SimpleListDialog()
-    #sld.hasvalues = False
+    # sld.hasvalues = False
     sld.allownochoice = False
     sld.desc = 'Choose a device:'
 
@@ -393,7 +395,7 @@ def ask_partconfig(file_info):
         supported_configs.extend(partition_configs)
 
     sld = SimpleListDialog()
-    #sld.hasvalues = False
+    # sld.hasvalues = False
     sld.allownochoice = False
     sld.desc = 'Choose a partition configuration:'
 
@@ -438,10 +440,12 @@ def patch_unsupported(file_info):
 
     while True:
         desc = 'File: ' + filename + '\n\n'
-        desc += 'The file you have selected is not supported. You can attempt to\n'
+        desc += 'The file you have selected is not supported. '
+        desc += 'You can attempt to\n'
         desc += 'patch the file anyway using the options below.'
 
-        choicemsg = 'Choose an option to change it or press Enter to start patching'
+        choicemsg = 'Choose an option to change it or ' \
+            'press Enter to start patching'
 
         sld = SimpleListDialog()
         sld.desc = desc
@@ -546,7 +550,8 @@ def patch_unsupported(file_info):
             sld = SimpleListDialog()
             sld.hasvalues = False
             sld.allownochoice = False
-            sld.desc = 'The file contains a boot image (or multiple boot images):'
+            sld.desc = 'The file contains a boot image ' \
+                '(or multiple boot images):'
 
             sld.add_option('True')
             sld.add_option('False')
@@ -557,7 +562,7 @@ def patch_unsupported(file_info):
 
         elif choice == 6:
             clear_screen()
-            ui.info('Enter the path of the boot image. If there are multiple, ' +
+            ui.info('Enter the path of the boot image. If there are multiple, '
                     'separate them with\ncommas. (Leave blank to autodetect)')
             ui.info('')
 
@@ -627,7 +632,7 @@ def patch_unsupported(file_info):
         patch_info = patchinfo.PatchInfo()
 
         patch_info.name = 'Unsupported file (manually set to: %s)' % \
-                orig_patch_info.name
+            orig_patch_info.name
         patch_info.patch = orig_patch_info.patch
         patch_info.extract = orig_patch_info.extract
         patch_info.ramdisk = orig_patch_info.ramdisk
@@ -637,7 +642,7 @@ def patch_unsupported(file_info):
         patch_info.device_check = orig_patch_info.device_check
         patch_info.configs = orig_patch_info.configs
         # Possibly override?
-        #patch_info.configs = ['all']
+        # patch_info.configs = ['all']
 
         file_info.patchinfo = patch_info
 
@@ -688,7 +693,7 @@ def load_automated(file_info):
         patch_info = patchinfo.PatchInfo()
 
         patch_info.name = 'Unsupported file (manually set to: %s)' % \
-                orig_patch_info.name
+            orig_patch_info.name
         patch_info.patch = orig_patch_info.patch
         patch_info.extract = orig_patch_info.extract
         patch_info.ramdisk = orig_patch_info.ramdisk
@@ -698,7 +703,7 @@ def load_automated(file_info):
         patch_info.device_check = orig_patch_info.device_check
         patch_info.configs = orig_patch_info.configs
         # Possibly override?
-        #patch_info.configs = ['all']
+        # patch_info.configs = ['all']
 
         file_info.patchinfo = patch_info
 
@@ -734,8 +739,8 @@ try:
     # Needed for the case where partconfig is passed via command-line
     if action != 'testsupported' and file_info.patchinfo and \
             not file_info.patchinfo.is_partconfig_supported(partconfig):
-        raise Exception("The %s partition configuration is not supported for this file"
-                % partconfig.id)
+        raise Exception('The %s partition configuration is not supported '
+                        'for this file' % partconfig.id)
 except Exception as e:
     ui.failed(str(e))
     sys.exit(1)

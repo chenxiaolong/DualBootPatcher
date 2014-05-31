@@ -33,7 +33,8 @@ def process_def(def_file, cpiofile, partition_config):
     for line in fileio.all_lines(def_file):
         if line.startswith("pyscript"):
             path = os.path.join(OS.ramdiskdir,
-                                re.search(r"^pyscript\s*=\s*\"?(.*)\"?\s*$", line).group(1))
+                                re.search(r"^pyscript\s*=\s*\"?(.*)\"?\s*$",
+                                          line).group(1))
 
             debug.debug("Loading pyscript " + path)
 

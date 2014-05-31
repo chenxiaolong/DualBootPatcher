@@ -77,7 +77,7 @@ class Task(QtWidgets.QWidget):
         self.setLayout(layout)
         self.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
                            QtWidgets.QSizePolicy.Fixed)
-        #self.setFixedHeight(self.sizeHint().height())
+        # self.setFixedHeight(self.sizeHint().height())
 
     def settext(self, msg):
         self.label.setText(msg)
@@ -114,8 +114,8 @@ class ProgressDialog(QtWidgets.QDialog):
 
         self.setWindowTitle('Patching file...')
         self.setFixedSize(550, 250)
-        self.setWindowFlags(self.windowFlags() \
-                            | QtCore.Qt.CustomizeWindowHint \
+        self.setWindowFlags(self.windowFlags()
+                            | QtCore.Qt.CustomizeWindowHint
                             & ~QtCore.Qt.WindowCloseButtonHint)
 
         # Tasks
@@ -264,7 +264,7 @@ class ProgressDialog(QtWidgets.QDialog):
     def finished(self, failed, newfile):
         # Clean up
         for i in range(len(self.tasks) - 1, -1, -1):
-            #self.taskslayout.removeWidget(self.tasks[i])
+            # self.taskslayout.removeWidget(self.tasks[i])
             self.tasks[i].setParent(None)
             del self.tasks[i]
         self.set_progress(0)
@@ -294,8 +294,8 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         # Message
         maintext = QtWidgets.QLabel()
         maintext.setText(
-            'File: %s<br /><br />The file you have selected is not supported.'
-            ' You can attempt to patch the file anyway using the options below.'
+            'File: %s<br /><br />The file you have selected is not supported. '
+            'You can attempt to patch the file anyway using the options below.'
             % self.file_info.filename)
 
         optslayout.addWidget(maintext, 0, 0, 1, -1)
@@ -399,7 +399,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         hline.setFrameShape(QtWidgets.QFrame.HLine)
         hline.setFrameShadow(QtWidgets.QFrame.Sunken)
         hline.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                             QtWidgets.QSizePolicy.Minimum)
+                            QtWidgets.QSizePolicy.Minimum)
 
         optslayout.addWidget(hline, 9, 0, 1, -1)
 
@@ -437,7 +437,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         hline.setFrameShape(QtWidgets.QFrame.HLine)
         hline.setFrameShadow(QtWidgets.QFrame.Sunken)
         hline.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                             QtWidgets.QSizePolicy.Minimum)
+                            QtWidgets.QSizePolicy.Minimum)
 
         optslayout.addWidget(hline, 12, 0, 1, -1)
 
@@ -451,8 +451,8 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         self.setLayout(optslayout)
 
         self.setMinimumWidth(550)
-        #self.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
-        #                   QtWidgets.QSizePolicy.Fixed)
+        # self.setSizePolicy(QtWidgets.QSizePolicy.Fixed,
+        #                    QtWidgets.QSizePolicy.Fixed)
         self.setFixedSize(self.sizeHint())
 
         self.setwidgetactions()
@@ -600,7 +600,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
     @QtCore.pyqtSlot()
     def choosefile(self):
-        supported = [ 'Patch files (*.patch *.diff)' ]
+        supported = ['Patch files (*.patch *.diff)']
 
         filename = QtWidgets.QFileDialog.getOpenFileName(
             self, filter=';;'.join(supported))[0]
@@ -638,11 +638,12 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             self.file_info.patchinfo = patch_info
 
         else:
-            orig_patch_info = self.presets[self.cmbpreset.currentIndex() - 1][1]
+            orig_patch_info = \
+                self.presets[self.cmbpreset.currentIndex() - 1][1]
             patch_info = patchinfo.PatchInfo()
 
             patch_info.name = 'Unsupported file (manually set to: %s)' % \
-                    orig_patch_info.name
+                orig_patch_info.name
             patch_info.patch = orig_patch_info.patch
             patch_info.extract = orig_patch_info.extract
             patch_info.ramdisk = orig_patch_info.ramdisk
@@ -652,7 +653,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             patch_info.device_check = orig_patch_info.device_check
             patch_info.configs = orig_patch_info.configs
             # Possibly override?
-            #patch_info.configs = ['all']
+            # patch_info.configs = ['all']
 
             self.file_info.patchinfo = patch_info
 
@@ -736,7 +737,8 @@ class Patcher(QtWidgets.QWidget):
         for i in self.partconfigs:
             self.partconfigcombobox.addItem(i.name)
 
-        self.partconfigcombobox.currentIndexChanged.connect(self.partconfigselected)
+        self.partconfigcombobox.currentIndexChanged.connect(
+            self.partconfigselected)
         self.partconfigselected(self.partconfigcombobox.currentIndex())
 
         # Choose file button
@@ -826,7 +828,8 @@ class Patcher(QtWidgets.QWidget):
 
         if not file_info.patchinfo.is_partconfig_supported(partconfig):
             msgbox.setText(
-                'The \'%s\' partition configuration is not supported for the file:<br />%s'
+                'The \'%s\' partition configuration is not supported '
+                'for the file:<br />%s'
                 % (partconfig.name, file_info.filename))
             msgbox.setIcon(QtWidgets.QMessageBox.Warning)
             msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
@@ -836,10 +839,12 @@ class Patcher(QtWidgets.QWidget):
 
         file_info.partconfig = partconfig
 
-        msgbox.setText('Detected: <b>%s</b><br /><br />Click OK to patch:<br />%s'
-            % (file_info.patchinfo.name, file_info.filename))
+        msgbox.setText('Detected: <b>%s</b><br /><br />'
+                       'Click OK to patch:<br />%s'
+                       % (file_info.patchinfo.name, file_info.filename))
         msgbox.setIcon(QtWidgets.QMessageBox.Information)
-        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msgbox.setStandardButtons(
+            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
         ret = msgbox.exec()
 

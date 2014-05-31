@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class PartitionConfig:
     # Location, filesystem, and mount point of the raw partitions
     dev_system = "/dev/block/platform/msm_sdcc.1/by-name/system::ext4::/raw-system"

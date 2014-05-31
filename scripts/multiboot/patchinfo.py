@@ -157,7 +157,7 @@ class PatchInfo:
                 partconfig_id = i
 
             if not self._is_valid_partconfig(partconfig_id):
-                raise ValueError('%s is not a supported partition configuration'
+                raise ValueError('%s is not a supported partition config'
                                  % partconfig_id)
 
         self._configs = value
@@ -174,7 +174,7 @@ class PatchInfo:
 
     def is_partconfig_supported(self, partconfig):
         return ('all' in self.configs or partconfig.id in self.configs) \
-                and ('!' + partconfig.id) not in self.configs
+            and ('!' + partconfig.id) not in self.configs
 
     @property
     def patched_init(self):
@@ -256,7 +256,8 @@ def get_all_patchinfos(device):
         for root, dirs, files in os.walk(os.path.join(OS.patchinfodir, d)):
             for f in files:
                 if f.endswith('.py'):
-                    relpath = os.path.relpath(os.path.join(root, f), OS.patchinfodir)
+                    relpath = os.path.relpath(os.path.join(root, f),
+                                              OS.patchinfodir)
                     plugin = imp.load_source(os.path.basename(f)[:-3],
                                              os.path.join(root, f))
 
