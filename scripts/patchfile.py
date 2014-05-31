@@ -229,8 +229,9 @@ def parse_args():
     group.add_argument('--bootimage',
                        help=textwrap.dedent('''
                            Path to boot image in zip. If there are multiple
-                           boot images, separate them with commas.
-                           (Default: boot.img)
+                           boot images, separate them with commas. To
+                           autodetect, use 'auto'.
+                           (Default: auto)
                        '''),
                        action='store')
 
@@ -284,6 +285,9 @@ def parse_args():
         f_preset_name = args.preset
         f_hasbootimage = args.hasbootimage
         f_bootimage = args.bootimage
+
+        if f_bootimage and f_bootimage == 'auto':
+            f_bootimage = None
 
         f_ramdisk = args.ramdisk
         if f_ramdisk and not f_ramdisk.endswith('.def'):
@@ -681,7 +685,8 @@ def load_automated(file_info):
         patch_info.has_boot_image = f_hasbootimage
         if patch_info.has_boot_image:
             patch_info.ramdisk = f_ramdisk + '.def'
-            patch_info.bootimg = f_bootimage.split(',')
+            if f_bootimage and f_bootimage.strip():
+                patch_info.bootimg = f_bootimage.split(',')
             patch_info.patched_init = f_init
 
         patch_info.device_check = f_devicecheck
