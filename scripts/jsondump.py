@@ -115,7 +115,19 @@ for i in presets:
 
     jsonobj['has_boot_image'] = i[1].has_boot_image
     if i[1].has_boot_image:
-        jsonobj['bootimg'] = i[1].bootimg
+        if type(i[1].bootimg) == str:
+            jsonobj['bootimg'] = [i[1].bootimg]
+        elif type(i[1].bootimg) == list:
+            temp = list()
+            for b in i[1].bootimg:
+                if type(b) == str:
+                    temp.append(b)
+                elif callable(b):
+                    temp.append(b.__name__)
+            jsonobj['bootimg'] = temp
+        elif callable(i[1].bootimg):
+            jsonobj['bootimg'] = [i[1].bootimg.__name__]
+
         jsonobj['ramdisk'] = i[1].ramdisk
 
         if i[1].patched_init:
