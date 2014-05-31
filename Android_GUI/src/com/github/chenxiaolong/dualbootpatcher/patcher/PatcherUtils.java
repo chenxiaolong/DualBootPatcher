@@ -229,6 +229,14 @@ public class PatcherUtils {
                 } else {
                     args.add("--hasbootimage");
 
+                    String bootImage = data.getString(PARAM_BOOT_IMAGE);
+                    args.add("--bootimage");
+                    if (bootImage == null) {
+                        args.add("auto");
+                    } else {
+                        args.add(bootImage);
+                    }
+
                     String ramdisk = data.getString(PARAM_RAMDISK);
                     args.add("--ramdisk");
                     args.add(ramdisk);

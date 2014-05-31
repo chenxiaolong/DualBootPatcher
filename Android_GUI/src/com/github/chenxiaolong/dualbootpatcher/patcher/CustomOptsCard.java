@@ -340,7 +340,12 @@ public class CustomOptsCard extends Card {
     }
 
     public String getBootImage() {
-        return mBootImageText.getText().toString();
+        String bootImage = mBootImageText.getText().toString().trim();
+        if (bootImage.isEmpty()) {
+            return null;
+        } else {
+            return bootImage;
+        }
     }
 
     public void reset() {
@@ -351,7 +356,7 @@ public class CustomOptsCard extends Card {
         mHasBootImageBox.setChecked(true);
         mRamdiskSpinner.setSelection(0);
         mInitSpinner.setSelection(0);
-        mBootImageText.setText(R.string.customopts_bootimage_default);
+        mBootImageText.setText("");
 
         mDiffFile = null;
     }

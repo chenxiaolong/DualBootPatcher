@@ -124,6 +124,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="textNoSuggestions"
-        android:text="@string/customopts_bootimage_default" />
+        android:hint="@string/customopts_bootimage_hint" />
 
 </LinearLayout>

@@ -129,7 +129,7 @@
     <string name="customopts_ramdisk">Ramdisk</string>
     <string name="customopts_patchedinit">Patched init</string>
     <string name="customopts_bootimage">Boot image</string>
-    <string name="customopts_bootimage_default" translatable="false">boot.img</string>
+    <string name="customopts_bootimage_hint">Leave blank to autodetect</string>
 
     <!-- Patcher: Tasks card -->
     <string name="task_checkbox_image">Task completion checkbox</string>
