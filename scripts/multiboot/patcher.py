@@ -49,14 +49,14 @@ def add_tasks(file_info):
     else:
         ui = OS.ui
 
-    if file_info._filetype == fileinfo.ZIP_FILE:
+    if file_info.filetype == fileinfo.ZIP_FILE:
         ui.add_task(tasks['EXTRACTING_ZIP'])
 
-    if file_info._filetype == fileinfo.BOOT_IMAGE \
-            or file_info.has_boot_image:
+    if file_info.filetype == fileinfo.BOOT_IMAGE \
+            or file_info.patchinfo.has_boot_image:
         ui.add_task(tasks['PATCHING_RAMDISK'])
 
-    if file_info._filetype == fileinfo.ZIP_FILE:
+    if file_info.filetype == fileinfo.ZIP_FILE:
         ui.add_task(tasks['PATCHING_FILES'])
         ui.add_task(tasks['COMPRESSING_ZIP_FILE'])
 
@@ -72,7 +72,7 @@ def set_task(task):
 def patch_boot_image(file_info, path=None):
     # If file_info represents a boot image
     if not path:
-        path = file_info._filename
+        path = file_info.filename
 
     tempdirs = list()
 
@@ -86,19 +86,15 @@ def patch_boot_image(file_info, path=None):
     tempdir = tempfile.mkdtemp()
     tempdirs.append(tempdir)
 
-    if file_info.loki:
-        ui.details('Unpacking loki boot image ...')
-    else:
-        ui.details('Unpacking boot image ...')
+    ui.details('Unpacking boot image ...')
 
-    bootimageinfo = bootimage.extract(path, tempdir, file_info.loki,
-                                      device=file_info._device)
+    bootimageinfo = bootimage.extract(path, tempdir, device=file_info.device)
     if not bootimageinfo:
         ui.failed(bootimage.error_msg)
         cleanup(tempdirs)
         return None
 
-    selinux = config.get_selinux(file_info._device)
+    selinux = config.get_selinux(file_info.device)
     if selinux is not None:
         bootimageinfo.cmdline += ' androidboot.selinux=' + selinux
 
@@ -116,7 +112,7 @@ def patch_boot_image(file_info, path=None):
     os.remove(bootimageinfo.ramdisk)
 
     # Patch ramdisk
-    if not file_info.ramdisk:
+    if not file_info.patchinfo.ramdisk:
         ui.info('No ramdisk patch specified')
         return None
 
@@ -124,9 +120,9 @@ def patch_boot_image(file_info, path=None):
 
     try:
         ramdisk.process_def(
-            os.path.join(OS.ramdiskdir, file_info.ramdisk),
+            os.path.join(OS.ramdiskdir, file_info.patchinfo.ramdisk),
             cf,
-            file_info._partconfig
+            file_info.partconfig
         )
     except Exception as e:
         ui.failed('Failed to patch ramdisk: ' + str(e))
@@ -140,7 +136,7 @@ def patch_boot_image(file_info, path=None):
     )
     autopatcher.insert_partition_info(
         tempdir, 'init.multiboot.mounting.sh',
-        file_info._partconfig, target_path_only=True
+        file_info.partconfig, target_path_only=True
     )
     cf.add_file(
         os.path.join(tempdir, 'init.multiboot.mounting.sh'),
@@ -157,9 +153,10 @@ def patch_boot_image(file_info, path=None):
     )
 
     # Copy patched init if needed
-    if file_info.patched_init is not None:
+    if file_info.patchinfo.patched_init is not None:
         cf.add_file(
-            os.path.join(OS.ramdiskdir, 'init', file_info.patched_init),
+            os.path.join(OS.ramdiskdir, 'init',
+                         file_info.patchinfo.patched_init),
             name='init',
             perms=0o755
         )
@@ -213,19 +210,16 @@ def patch_zip(file_info):
         ui.info('--- Please wait. This may take a while ---')
 
     files_to_patch = []
-    if type(file_info.patch) == str and file_info.patch != "":
-        files_to_patch = patch.files_in_patch(file_info.patch)
-    elif type(file_info.patch) == list:
-        for i in file_info.patch:
+    if type(file_info.patchinfo.patch) == str and \
+            file_info.patchinfo.patch != "":
+        files_to_patch = patch.files_in_patch(file_info.patchinfo.patch)
+    elif type(file_info.patchinfo.patch) == list:
+        for i in file_info.patchinfo.patch:
             if type(i) == str and i != "":
                 files_to_patch.extend(patch.files_in_patch(i))
 
-    if file_info.extract:
-        temp = file_info.extract
-        if type(temp) == str or callable(temp):
-            temp = [temp]
-
-        for i in temp:
+    if file_info.patchinfo.extract:
+        for i in file_info.patchinfo.extract:
             if callable(i):
                 output = i()
 
@@ -234,9 +228,6 @@ def patch_zip(file_info):
 
                 elif type(output) == str:
                     files_to_patch.append(output)
-
-            elif type(i) == list:
-                files_to_patch.extend(i)
 
             elif type(i) == str:
                 files_to_patch.append(i)
@@ -247,7 +238,7 @@ def patch_zip(file_info):
     set_task('EXTRACTING_ZIP')
 
     ui.details('Loading zip file ...')
-    z = zipfile.ZipFile(file_info._filename, 'r')
+    z = zipfile.ZipFile(file_info.filename, 'r')
 
     for f in files_to_patch:
         ui.details("Extracting file to be patched: %s" % f)
@@ -258,16 +249,12 @@ def patch_zip(file_info):
             cleanup(tempdirs)
             return None
 
-    if file_info.has_boot_image:
-        temp = file_info.bootimg
-        if type(temp) == str or callable(temp):
-            temp = [temp]
-
+    if file_info.patchinfo.has_boot_image:
         bootimages = list()
 
-        for i in temp:
+        for i in file_info.patchinfo.bootimg:
             if callable(i):
-                output = i(file_info._filename)
+                output = i(file_info.filename)
 
                 if not output:
                     continue
@@ -278,10 +265,7 @@ def patch_zip(file_info):
                 elif type(output) == str:
                     bootimages.append(output)
 
-            elif type(i) == list:
-                bootimages.extend(i)
-
-            elif type(i) == str:
+            else:
                 bootimages.append(i)
 
         for bootimage in bootimages:
@@ -297,7 +281,7 @@ def patch_zip(file_info):
 
     ui.clear()
 
-    if file_info.has_boot_image:
+    if file_info.patchinfo.has_boot_image:
         for bootimage in bootimages:
             bootimageold = os.path.join(tempdir, bootimage)
             bootimagenew = patch_boot_image(file_info, path=bootimageold)
@@ -314,35 +298,24 @@ def patch_zip(file_info):
     set_task('PATCHING_FILES')
 
     shutil.copy(os.path.join(OS.patchdir, 'dualboot.sh'), tempdir)
-    autopatcher.insert_partition_info(tempdir, 'dualboot.sh', file_info._partconfig)
+    autopatcher.insert_partition_info(tempdir, 'dualboot.sh', file_info.partconfig)
 
-    if file_info.patch:
+    if file_info.patchinfo.patch:
         ui.details('Running patch functions ...')
 
-        temp = file_info.patch
-        if type(temp) == str or callable(temp):
-            temp = [temp]
-
-        for i in temp:
+        for i in file_info.patchinfo.patch:
             if callable(i):
-                if file_info.has_boot_image:
+                if file_info.patchinfo.has_boot_image:
                     i(tempdir,
                       bootimg=bootimages,
-                      device_check=file_info.device_check,
-                      partition_config=file_info._partconfig,
-                      device=file_info._device)
+                      device_check=file_info.patchinfo.device_check,
+                      partition_config=file_info.partconfig,
+                      device=file_info.device)
                 else:
                     i(tempdir,
-                      device_check=file_info.device_check,
-                      partition_config=file_info._partconfig,
-                      device=file_info._device)
-
-            elif type(i) == list:
-                for j in i:
-                    if not patch.apply_patch(j, tempdir):
-                        ui.failed(patch.error_msg)
-                        cleanup(tempdirs)
-                        return None
+                      device_check=file_info.patchinfo.device_check,
+                      partition_config=file_info.partconfig,
+                      device=file_info.device)
 
             elif type(i) == str:
                 if not patch.apply_patch(i, tempdir):
@@ -357,12 +330,12 @@ def patch_zip(file_info):
     # Only show progress for this stage on Android, since it's, by far, the
     # most time consuming part of the process
     new_zip_file = tempfile.mkstemp()
-    z_input = zipfile.ZipFile(file_info._filename, 'r')
+    z_input = zipfile.ZipFile(file_info.filename, 'r')
     z_output = zipfile.ZipFile(new_zip_file[1], 'w', zipfile.ZIP_DEFLATED)
 
     progress_current = 0
     progress_total = len(z_input.infolist()) - len(files_to_patch)
-    if file_info.has_boot_image:
+    if file_info.patchinfo.has_boot_image:
         progress_total -= len(bootimages)
     for root, dirs, files in os.walk(tempdir):
         progress_total += len(files)
@@ -374,7 +347,7 @@ def patch_zip(file_info):
         if i.filename in files_to_patch:
             continue
         # Boot image too
-        elif file_info.has_boot_image and i.filename in bootimages:
+        elif file_info.patchinfo.has_boot_image and i.filename in bootimages:
             continue
 
         ui.details('Adding file to zip: %s' % i.filename)
@@ -406,10 +379,10 @@ def patch_zip(file_info):
 
 def patch_file(file_info):
     # Some sanity checks
-    if not file_info._filename or not os.path.exists(file_info._filename):
-        raise Exception('%s does not exist' % file_info._filename)
+    if not file_info.filename or not os.path.exists(file_info.filename):
+        raise Exception('%s does not exist' % file_info.filename)
 
-    if not file_info._filetype:
+    if not file_info.filetype:
         raise Exception('File type not set')
 
     if new_ui:
@@ -419,20 +392,20 @@ def patch_file(file_info):
 
     add_tasks(file_info)
 
-    if file_info._filetype == fileinfo.ZIP_FILE:
+    if file_info.filetype == fileinfo.ZIP_FILE:
         newfile = patch_zip(file_info)
         if newfile is not None:
-            if file_info.loki:
-                ui.succeeded('Successfully patched zip. ' + loki_msg)
-            else:
-                ui.succeeded('Successfully patched zip')
-    elif file_info._filetype == fileinfo.BOOT_IMAGE:
+            #if file_info.loki:
+            #    ui.succeeded('Successfully patched zip. ' + loki_msg)
+            #else:
+            ui.succeeded('Successfully patched zip')
+    elif file_info.filetype == fileinfo.BOOT_IMAGE:
         newfile = patch_boot_image(file_info)
         if newfile is not None:
-            if file_info.loki:
-                ui.succeeded('Successfully patched Loki\'d boot image. ' + loki_msg)
-            else:
-                ui.succeeded('Successfully patched boot image')
+            #if file_info.loki:
+            #    ui.succeeded('Successfully patched Loki\'d boot image. ' + loki_msg)
+            #else:
+            ui.succeeded('Successfully patched boot image')
     else:
         raise Exception('Unsupported file extension')
 

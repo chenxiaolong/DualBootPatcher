@@ -70,7 +70,7 @@ def create(info, output_file):
         return False
 
 
-def extract(boot_image, output_dir, loki, device=None):
+def extract(boot_image, output_dir, device=None):
     global output, error, error_msg
 
     try:
@@ -78,7 +78,7 @@ def extract(boot_image, output_dir, loki, device=None):
             unlokibootimg.show_output = False
             unpackbootimg.show_output = False
 
-        if loki:
+        if unlokibootimg.is_loki(boot_image):
             unlokibootimg.extract(boot_image, output_dir)
         else:
             unpackbootimg.extract(boot_image, output_dir)

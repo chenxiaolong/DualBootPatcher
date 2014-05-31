@@ -45,7 +45,7 @@ def process_def(def_file, cpiofile, partition_config):
     return True
 
 
-def list_ramdisks(device):
+def get_all_ramdisks(device):
     directories = []
     if not device:
         devices = config.list_devices()
@@ -67,3 +67,18 @@ def list_ramdisks(device):
 
     ramdisks.sort()
     return ramdisks
+
+
+def get_all_inits():
+    initdir = os.path.join(OS.ramdiskdir, 'init')
+    inits = list()
+
+    for root, dirs, files in os.walk(initdir):
+        for f in files:
+            inits.append(os.path.relpath(os.path.join(root, f), initdir))
+
+    # Newest first
+    inits.sort()
+    inits.reverse()
+
+    return inits

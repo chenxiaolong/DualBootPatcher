@@ -39,6 +39,7 @@ import multiboot.config as config
 import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patcher as patcher
+import multiboot.patchinfo as patchinfo
 import multiboot.ramdisk as ramdisk
 
 
@@ -325,10 +326,10 @@ def check_parameters():
         raise Exception('Partition configuration %s is not supported' %
                         partconfig_name)
 
-    presets = fileinfo.get_infos(device)
+    presets = patchinfo.get_all_patchinfos(device)
     autopatchers = autopatcher.get_auto_patchers()
-    inits = fileinfo.get_inits()
-    ramdisks = ramdisk.list_ramdisks(device)
+    inits = ramdisk.get_all_inits()
+    ramdisks = ramdisk.get_all_ramdisks(device)
 
     if action == 'automated':
         if f_preset_name:
@@ -382,11 +383,14 @@ def ask_partconfig(file_info):
     unsupported_configs = []
     supported_configs = []
 
-    for c in partition_configs:
-        if file_info.is_partconfig_supported(c):
-            supported_configs.append(c)
-        else:
-            unsupported_configs.append(c)
+    if file_info.patchinfo:
+        for c in partition_configs:
+            if file_info.patchinfo.is_partconfig_supported(c):
+                supported_configs.append(c)
+            else:
+                unsupported_configs.append(c)
+    else:
+        supported_configs.extend(partition_configs)
 
     sld = SimpleListDialog()
     #sld.hasvalues = False
@@ -405,9 +409,9 @@ def ask_partconfig(file_info):
 
 
 def patch_supported(file_info):
-    ui.info('Detected ' + file_info.name)
+    ui.info('Detected ' + file_info.patchinfo.name)
 
-    file_info.set_partconfig(partconfig)
+    file_info.partconfig = partconfig
 
     newfile = patcher.patch_file(file_info)
 
@@ -428,7 +432,7 @@ def patch_unsupported(file_info):
     f_patch = None
     f_devicecheck = True
     f_hasbootimage = True
-    f_bootimage = 'boot.img'
+    f_bootimage = None
     f_ramdisk = ramdisks[0][:-4]
     f_init = None
 
@@ -450,7 +454,10 @@ def patch_unsupported(file_info):
             sld.add_option('Remove device checks', str(not f_devicecheck))
             sld.add_option('File has boot image', str(f_hasbootimage))
             if f_hasbootimage:
-                sld.add_option('Boot image(s)', str(f_bootimage))
+                if not f_bootimage:
+                    sld.add_option('Boot image(s)', 'Autodetect')
+                else:
+                    sld.add_option('Boot image(s)', str(f_bootimage))
                 sld.add_option('Ramdisk', str(f_ramdisk))
                 sld.add_option('Patched init', str(f_init))
 
@@ -551,15 +558,15 @@ def patch_unsupported(file_info):
         elif choice == 6:
             clear_screen()
             ui.info('Enter the path of the boot image. If there are multiple, ' +
-                    'separate them with\ncommas. (Leave blank to cancel)')
+                    'separate them with\ncommas. (Leave blank to autodetect)')
             ui.info('')
 
             text = input('Boot images: ')
 
-            if not text:
-                continue
-
-            f_bootimage = text
+            if text and text.strip():
+                f_bootimage = text
+            else:
+                f_bootimage = None
 
         elif choice == 7:
             sld = SimpleListDialog()
@@ -594,36 +601,45 @@ def patch_unsupported(file_info):
                 f_init = inits[choice - 1]
 
     if f_preset_name == 'Custom':
-        file_info.name = 'Unsupported file (with custom patcher options)'
+        patch_info = patchinfo.PatchInfo()
+
+        patch_info.name = 'Unsupported file (with custom patcher options)'
 
         if f_autopatcher:
-            file_info.patch = f_autopatcher.patcher
-            file_info.extract = f_autopatcher.extractor
+            patch_info.patch = f_autopatcher.patcher
+            patch_info.extract = f_autopatcher.extractor
         elif f_patch:
-            file_info.patch = f_patch
+            patch_info.patch = f_patch
 
-        file_info.has_boot_image = f_hasbootimage
-        if file_info.has_boot_image:
-            file_info.ramdisk = f_ramdisk + '.def'
-            file_info.bootimg = f_bootimage.split(',')
-            file_info.patched_init = f_init
+        patch_info.has_boot_image = f_hasbootimage
+        if patch_info.has_boot_image:
+            patch_info.ramdisk = f_ramdisk + '.def'
+            if f_bootimage and f_bootimage.strip():
+                patch_info.bootimg = f_bootimage.split(',')
+            patch_info.patched_init = f_init
 
-        file_info.device_check = f_devicecheck
+        patch_info.device_check = f_devicecheck
+
+        file_info.patchinfo = patch_info
 
     else:
-        orig_file_info = f_preset[1]
+        orig_patch_info = f_preset[1]
+        patch_info = patchinfo.PatchInfo()
 
-        file_info.name = 'Unsupported file (manually set to: %s)' % orig_file_info.name
-        file_info.patch = orig_file_info.patch
-        file_info.extract = orig_file_info.extract
-        file_info.ramdisk = orig_file_info.ramdisk
-        file_info.bootimg = orig_file_info.bootimg
-        file_info.has_boot_image = orig_file_info.has_boot_image
-        file_info.patched_init = orig_file_info.patched_init
-        file_info.device_check = orig_file_info.device_check
-        file_info.configs = orig_file_info.configs
+        patch_info.name = 'Unsupported file (manually set to: %s)' % \
+                orig_patch_info.name
+        patch_info.patch = orig_patch_info.patch
+        patch_info.extract = orig_patch_info.extract
+        patch_info.ramdisk = orig_patch_info.ramdisk
+        patch_info.bootimg = orig_patch_info.bootimg
+        patch_info.has_boot_image = orig_patch_info.has_boot_image
+        patch_info.patched_init = orig_patch_info.patched_init
+        patch_info.device_check = orig_patch_info.device_check
+        patch_info.configs = orig_patch_info.configs
         # Possibly override?
-        #file_info.configs = ['all']
+        #patch_info.configs = ['all']
+
+        file_info.patchinfo = patch_info
 
     patch_supported(file_info)
 
@@ -647,43 +663,51 @@ def load_automated(file_info):
         f_ramdisk = f_ramdisk[:-4]
 
     if not f_preset:
-        file_info.name = 'Unsupported file (with custom parameters)'
+        patch_info = patchinfo.PatchInfo()
+
+        patch_info.name = 'Unsupported file (with custom parameters)'
 
         if f_autopatcher:
-            file_info.patch = f_autopatcher.patcher
-            file_info.extract = f_autopatcher.extractor
+            patch_info.patch = f_autopatcher.patcher
+            patch_info.extract = f_autopatcher.extractor
         elif f_patch:
-            file_info.patch = f_patch
+            patch_info.patch = f_patch
 
-        file_info.has_boot_image = f_hasbootimage
-        if file_info.has_boot_image:
-            file_info.ramdisk = f_ramdisk + '.def'
-            file_info.bootimg = f_bootimage.split(',')
-            file_info.patched_init = f_init
+        patch_info.has_boot_image = f_hasbootimage
+        if patch_info.has_boot_image:
+            patch_info.ramdisk = f_ramdisk + '.def'
+            patch_info.bootimg = f_bootimage.split(',')
+            patch_info.patched_init = f_init
 
-        file_info.device_check = f_devicecheck
+        patch_info.device_check = f_devicecheck
+
+        file_info.patchinfo = patch_info
 
     else:
-        orig_file_info = f_preset[1]
+        orig_patch_info = f_preset[1]
+        patch_info = patchinfo.PatchInfo()
 
-        file_info.name = 'Unsupported file (manually set to: %s)' % orig_file_info.name
-        file_info.patch = orig_file_info.patch
-        file_info.extract = orig_file_info.extract
-        file_info.ramdisk = orig_file_info.ramdisk
-        file_info.bootimg = orig_file_info.bootimg
-        file_info.has_boot_image = orig_file_info.has_boot_image
-        file_info.patched_init = orig_file_info.patched_init
-        file_info.device_check = orig_file_info.device_check
-        file_info.configs = orig_file_info.configs
+        patch_info.name = 'Unsupported file (manually set to: %s)' % \
+                orig_patch_info.name
+        patch_info.patch = orig_patch_info.patch
+        patch_info.extract = orig_patch_info.extract
+        patch_info.ramdisk = orig_patch_info.ramdisk
+        patch_info.bootimg = orig_patch_info.bootimg
+        patch_info.has_boot_image = orig_patch_info.has_boot_image
+        patch_info.patched_init = orig_patch_info.patched_init
+        patch_info.device_check = orig_patch_info.device_check
+        patch_info.configs = orig_patch_info.configs
         # Possibly override?
-        #file_info.configs = ['all']
+        #patch_info.configs = ['all']
+
+        file_info.patchinfo = patch_info
 
 
 try:
     parse_args()
 
     file_info = fileinfo.FileInfo()
-    file_info.set_filename(filename)
+    file_info.filename = filename
 
     if not file_info.is_filetype_supported():
         ui.failed('Unsupported file type')
@@ -695,7 +719,7 @@ try:
     if device not in devices:
         raise Exception('Device %s is not supported' % device)
 
-    file_info.set_device(device)
+    file_info.device = device
 
     supported = file_info.find_and_merge_patchinfo()
 
@@ -708,8 +732,8 @@ try:
         load_automated(file_info)
 
     # Needed for the case where partconfig is passed via command-line
-    if action != 'testsupported' and \
-            not file_info.is_partconfig_supported(partconfig):
+    if action != 'testsupported' and file_info.patchinfo and \
+            not file_info.patchinfo.is_partconfig_supported(partconfig):
         raise Exception("The %s partition configuration is not supported for this file"
                 % partconfig.id)
 except Exception as e:

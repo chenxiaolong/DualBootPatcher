@@ -30,6 +30,7 @@ import multiboot.fileinfo as fileinfo
 import multiboot.operatingsystem as OS
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patcher as patcher
+import multiboot.patchinfo as patchinfo
 import multiboot.ramdisk as ramdisk
 import multiboot.ui.qtui as qtui
 
@@ -295,7 +296,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         maintext.setText(
             'File: %s<br /><br />The file you have selected is not supported.'
             ' You can attempt to patch the file anyway using the options below.'
-            % self.file_info._filename)
+            % self.file_info.filename)
 
         optslayout.addWidget(maintext, 0, 0, 1, -1)
 
@@ -481,21 +482,21 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
         self.patchedinittoggled()
 
         # 'boot.img'
-        self.lebootimg.setText('boot.img')
+        self.lebootimg.setPlaceholderText('Leave blank to autodetect')
         self.enablebootimgcombobox(True)
 
         if not self.addonce:
             self.addonce = True
 
-            self.presets = fileinfo.get_infos(self.file_info._device)
+            self.presets = patchinfo.get_all_patchinfos(self.file_info.device)
             self.cmbpreset.addItem('Custom')
             for i in self.presets:
                 self.cmbpreset.addItem(i[0][:-3])
 
-            for i in fileinfo.get_inits():
+            for i in ramdisk.get_all_inits():
                 self.cmbinitfile.addItem(i)
 
-            for i in ramdisk.list_ramdisks(self.file_info._device):
+            for i in ramdisk.get_all_ramdisks(self.file_info.device):
                 self.cmbramdisk.addItem(i[:-4])
 
             self.autopatchers = autopatcher.get_auto_patchers()
@@ -551,7 +552,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
             widget.setEnabled(onoff)
 
     def enablebootimgcombobox(self, onoff):
-        if self.file_info._filetype == fileinfo.ZIP_FILE:
+        if self.file_info.filetype == fileinfo.ZIP_FILE:
             self.lebootimg.setEnabled(onoff)
             self.lbbootimg.setEnabled(onoff)
         else:
@@ -609,41 +610,51 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
     @QtCore.pyqtSlot()
     def startpatching(self):
         if self.cmbpreset.currentText() == 'Custom':
-            self.file_info.name = 'Unsupported file (with custom patcher options)'
+            patch_info = patchinfo.PatchInfo()
+
+            patch_info.name = 'Unsupported file (with custom patcher options)'
 
             if self.rbautopatch.isChecked():
                 ap = self.autopatchers[self.cmbautopatchsel.currentIndex()]
-                self.file_info.patch = ap.patcher
-                self.file_info.extract = ap.extractor
+                patch_info.patch = ap.patcher
+                patch_info.extract = ap.extractor
             elif self.rbpatch.isChecked():
-                self.file_info.patch = self.lepatchinput.text()
+                patch_info.patch = self.lepatchinput.text()
 
-            self.file_info.has_boot_image = self.cbhasbootimg.isChecked()
-            if self.file_info.has_boot_image:
-                self.file_info.ramdisk = self.cmbramdisk.currentText() + '.def'
-                self.file_info.bootimg = self.lebootimg.text()
+            patch_info.has_boot_image = self.cbhasbootimg.isChecked()
+            if patch_info.has_boot_image:
+                patch_info.ramdisk = self.cmbramdisk.currentText() + '.def'
+                text = self.lebootimg.text()
+                if text and text.strip():
+                    patch_info.bootimg = text
 
             if self.cbpatchedinit.isChecked():
-                self.file_info.patched_init = self.cmbinitfile.currentText()
+                patch_info.patched_init = self.cmbinitfile.currentText()
             else:
-                self.file_info.patched_init = None
+                patch_info.patched_init = None
 
-            self.file_info.device_check = not self.cbdevicecheck.isChecked()
+            patch_info.device_check = not self.cbdevicecheck.isChecked()
+
+            self.file_info.patchinfo = patch_info
 
         else:
-            orig_file_info = self.presets[self.cmbpreset.currentIndex() - 1][1]
+            orig_patch_info = self.presets[self.cmbpreset.currentIndex() - 1][1]
+            patch_info = patchinfo.PatchInfo()
 
-            self.file_info.name = 'Unsupported file (manually set to: %s)' % orig_file_info.name
-            self.file_info.patch = orig_file_info.patch
-            self.file_info.extract = orig_file_info.extract
-            self.file_info.ramdisk = orig_file_info.ramdisk
-            self.file_info.bootimg = orig_file_info.bootimg
-            self.file_info.has_boot_image = orig_file_info.has_boot_image
-            self.file_info.patched_init = orig_file_info.patched_init
-            self.file_info.device_check = orig_file_info.device_check
-            self.file_info.configs = orig_file_info.configs
+            patch_info.name = 'Unsupported file (manually set to: %s)' % \
+                    orig_patch_info.name
+            patch_info.patch = orig_patch_info.patch
+            patch_info.extract = orig_patch_info.extract
+            patch_info.ramdisk = orig_patch_info.ramdisk
+            patch_info.bootimg = orig_patch_info.bootimg
+            patch_info.has_boot_image = orig_patch_info.has_boot_image
+            patch_info.patched_init = orig_patch_info.patched_init
+            patch_info.device_check = orig_patch_info.device_check
+            patch_info.configs = orig_patch_info.configs
             # Possibly override?
-            #self.file_info.configs = ['all']
+            #patch_info.configs = ['all']
+
+            self.file_info.patchinfo = patch_info
 
         self.accept()
 
@@ -772,8 +783,8 @@ class Patcher(QtWidgets.QWidget):
         self.hidewidgets()
 
         file_info = fileinfo.FileInfo()
-        file_info.set_filename(self.filename)
-        file_info.set_device(self.device)
+        file_info.filename = self.filename
+        file_info.device = self.device
 
         if self.automode and not file_info.is_filetype_supported():
             ext = os.path.splitext(self.filename)[1]
@@ -813,20 +824,20 @@ class Patcher(QtWidgets.QWidget):
 
         partconfig = self.partconfigs[self.partconfigcombobox.currentIndex()]
 
-        if not file_info.is_partconfig_supported(partconfig):
+        if not file_info.patchinfo.is_partconfig_supported(partconfig):
             msgbox.setText(
                 'The \'%s\' partition configuration is not supported for the file:<br />%s'
-                % (partconfig.name, file_info._filename))
+                % (partconfig.name, file_info.filename))
             msgbox.setIcon(QtWidgets.QMessageBox.Warning)
             msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msgbox.exec()
             self.showwidgets()
             return
 
-        file_info.set_partconfig(partconfig)
+        file_info.partconfig = partconfig
 
         msgbox.setText('Detected: <b>%s</b><br /><br />Click OK to patch:<br />%s'
-            % (file_info.name, file_info._filename))
+            % (file_info.patchinfo.name, file_info.filename))
         msgbox.setIcon(QtWidgets.QMessageBox.Information)
         msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 

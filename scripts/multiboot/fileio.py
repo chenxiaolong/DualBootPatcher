@@ -95,7 +95,7 @@ def encode(data):
     return data.encode('UTF-8')
 
 
-def filename_matches(filename, regex):
+def filename_matches(regex, filename):
     filename = os.path.split(filename)[1]
 
     if re.search(regex, filename):

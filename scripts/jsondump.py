@@ -28,8 +28,8 @@ except Exception as e:
 
 import multiboot.autopatcher as autopatcher
 import multiboot.config as config
-import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
+import multiboot.patchinfo as patchinfo
 import multiboot.ramdisk as ramdisk
 
 
@@ -72,7 +72,7 @@ j['devices'] = jsonarr
 
 
 # Fill with patch information
-presets = fileinfo.get_infos(None)
+presets = patchinfo.get_all_patchinfos(None)
 
 jsonarr = list()
 
@@ -126,7 +126,7 @@ for i in presets:
 
     jsonarr.append(jsonobj)
 
-j['fileinfos'] = jsonarr
+j['patchinfos'] = jsonarr
 
 
 # Fill with autopatchers
@@ -176,13 +176,13 @@ j['autopatchers'] = jsonarr
 
 
 # Fill with inits
-inits = fileinfo.get_inits()
+inits = ramdisk.get_all_inits()
 
 j['inits'] = inits
 
 
 # Fill with ramdisks
-ramdisks = ramdisk.list_ramdisks(None)
+ramdisks = ramdisk.get_all_ramdisks(None)
 
 j['ramdisks'] = [r[:-4] for r in ramdisks]
 
