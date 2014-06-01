@@ -79,6 +79,9 @@
     <string name="devpartconfig_title">Device and partition configuration:</string>
 
     <!-- Patcher: File chooser card -->
+    <string name="filemanager_missing_title">No file manager</string>
+    <string name="filemanager_missing_desc">There is no suitable file manager installed. Please install a file manager to be able to choose files to patch.</string>
+
     <string name="filechooser_initial_title">Tap to choose a file to patch</string>
     <string name="filechooser_initial_desc">
         Zip files and boot images (boot.img, boot.lok) are supported by the patcher.
@@ -144,6 +147,7 @@
 
     <!-- Miscellaneous -->
     <string name="none">None</string>
+    <string name="ok">OK</string>
 
     <string-array name="preset_dirs" translatable="false">
         <item>Google_Apps</item>

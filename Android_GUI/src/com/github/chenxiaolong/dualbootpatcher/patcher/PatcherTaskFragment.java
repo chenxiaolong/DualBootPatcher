@@ -18,16 +18,21 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Bundle;
 
+import com.github.chenxiaolong.dualbootpatcher.AlertDialogFragment;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -198,6 +203,28 @@ public class PatcherTaskFragment extends Fragment {
             fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
         }
         fileIntent.setType("application/zip");
+
+        Context context = getActivity().getApplicationContext();
+        final PackageManager pm = context.getPackageManager();
+        List<ResolveInfo> list = pm.queryIntentActivities(fileIntent, 0);
+
+        if (list.size() == 0) {
+            FragmentTransaction ft = getFragmentManager().beginTransaction();
+            Fragment prev = getFragmentManager().findFragmentByTag(
+                    AlertDialogFragment.TAG);
+
+            if (prev != null) {
+                ft.remove(prev);
+            }
+
+            AlertDialogFragment f = AlertDialogFragment.newInstance(
+                    context.getString(R.string.filemanager_missing_title),
+                    context.getString(R.string.filemanager_missing_desc), null,
+                    null, context.getString(R.string.ok), null);
+            f.show(ft, AlertDialogFragment.TAG);
+            return;
+        }
+
         startActivityForResult(fileIntent, REQUEST_FILE);
     }
 
