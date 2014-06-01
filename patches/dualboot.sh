@@ -22,7 +22,7 @@ FIELD_FILE=/tmp/fields.sh
 
 get_field() {
   touch $FIELD_FILE
-  unset $1
+  unset "$1"
   . $FIELD_FILE
   set +u
   eval "echo \"\$$1\""
@@ -34,7 +34,7 @@ set_field() {
 }
 
 field_equal() {
-  if [ "x$(get_field $1)" = "x$2" ]; then
+  if [ "x$(get_field "$1")" = "x$2" ]; then
     return 0
   else
     return 1
@@ -73,27 +73,27 @@ KERNEL_NAME="secondary"
 # partition first before doing the bind mount.
 
 mount_raw_partition() {
-  local DEV=$(echo $1 | awk -F:: '{print $1}')
-  local FS=$(echo $1 | awk -F:: '{print $2}')
-  local MNT=$(echo $1 | awk -F:: '{print $3}')
+  local DEV=$(echo "$1" | awk -F:: '{print $1}')
+  local FS=$(echo "$1" | awk -F:: '{print $2}')
+  local MNT=$(echo "$1" | awk -F:: '{print $3}')
 
   # Unique alphanumeric variable name
-  local HASH=ABCD$(echo $MNT | md5sum | awk '{print $1}')
+  local HASH=ABCD$(echo "$MNT" | md5sum | awk '{print $1}')
 
-  local TIMES_MOUNTED=$(get_field $HASH)
-  if [ -z $TIMES_MOUNTED ]; then
+  local TIMES_MOUNTED=$(get_field "$HASH")
+  if [ -z "$TIMES_MOUNTED" ]; then
     TIMES_MOUNTED=0
   fi
 
   if [ $TIMES_MOUNTED -eq 0 ]; then
-    mkdir -p $MNT
-    chmod 0755 $MNT
-    chown 0:0 $MNT
-    mount -t $FS $DEV $MNT
+    mkdir -p "$MNT"
+    chmod 0755 "$MNT"
+    chown 0:0 "$MNT"
+    mount -t "$FS" "$DEV" "$MNT"
   fi
 
   let "TIMES_MOUNTED += 1"
-  set_field $HASH $TIMES_MOUNTED
+  set_field "$HASH" "$TIMES_MOUNTED"
 }
 
 mount_system() {
@@ -126,34 +126,34 @@ mount_data() {
 
     local MNT=$(echo $DEV_DATA | awk -F:: '{print $3}')
 
-    mkdir -p /data $TARGET_DATA $TARGET_DATA/media $MNT/media
+    mkdir -p /data $TARGET_DATA $TARGET_DATA/media "$MNT"/media
     mount -o bind $TARGET_DATA /data
-    mount -o bind $MNT/media /data/media
+    mount -o bind "$MNT"/media /data/media
 
     set_field DATA_MOUNTED true
   fi
 }
 
 unmount_raw_partition() {
-  local DEV=$(echo $1 | awk -F:: '{print $1}')
-  local FS=$(echo $1 | awk -F:: '{print $2}')
-  local MNT=$(echo $1 | awk -F:: '{print $3}')
+  local DEV=$(echo "$1" | awk -F:: '{print $1}')
+  local FS=$(echo "$1" | awk -F:: '{print $2}')
+  local MNT=$(echo "$1" | awk -F:: '{print $3}')
 
   # Unique alphanumeric variable name
-  local HASH=ABCD$(echo $MNT | md5sum | awk '{print $1}')
+  local HASH=ABCD$(echo "$MNT" | md5sum | awk '{print $1}')
 
-  local TIMES_MOUNTED=$(get_field $HASH)
-  if [ -z $TIMES_MOUNTED ]; then
+  local TIMES_MOUNTED=$(get_field "$HASH")
+  if [ -z "$TIMES_MOUNTED" ]; then
     TIMES_MOUNTED=0
   fi
 
   if [ $TIMES_MOUNTED -eq 1 ] || [ "x$2" = "xforce" ]; then
-    umount $MNT
+    umount "$MNT"
   fi
 
   if [ $TIMES_MOUNTED -gt 0 ]; then
     let "TIMES_MOUNTED -= 1"
-    set_field $HASH $TIMES_MOUNTED
+    set_field "$HASH" "$TIMES_MOUNTED"
   fi
 }
 
@@ -191,14 +191,14 @@ format_system() {
   local OLDPWD=$(pwd)
   if [ -d $TARGET_SYSTEM ]; then
     cd $TARGET_SYSTEM
-    rm -rf *
-    cd $OLDPWD
+    rm -rf ./*
+    cd "$OLDPWD"
   else
     mount_system
     if [ -d $TARGET_SYSTEM ]; then
       cd $TARGET_SYSTEM
-      rm -rf *
-      cd $OLDPWD
+      rm -rf ./*
+      cd "$OLDPWD"
     fi
     unmount_system
   fi
@@ -208,14 +208,14 @@ format_cache() {
   local OLDPWD=$(pwd)
   if [ -d $TARGET_CACHE ]; then
     cd $TARGET_CACHE
-    rm -rf *
-    cd $OLDPWD
+    rm -rf ./*
+    cd "$OLDPWD"
   else
     mount_cache
     if [ -d $TARGET_CACHE ]; then
       cd $TARGET_CACHE
-      rm -rf *
-      cd $OLDPWD
+      rm -rf ./*
+      cd "$OLDPWD"
     fi
     unmount_cache
   fi
@@ -225,14 +225,14 @@ format_data() {
   local OLDPWD=$(pwd)
   if [ -d $TARGET_DATA ]; then
     cd $TARGET_DATA
-    rm -rf $(find -maxdepth 1 -mindepth 1 ! -name media)
-    cd $OLDPWD
+    find -maxdepth 1 -mindepth 1 ! -name media -exec rm -rf {} ';'
+    cd "$OLDPWD"
   else
     mount_data
     if [ -d $TARGET_DATA ]; then
       cd $TARGET_DATA
-      rm -rf $(find -maxdepth 1 -mindepth 1 ! -name media)
-      cd $OLDPWD
+      find -maxdepth 1 -mindepth 1 ! -name media -exec rm -rf {} ';'
+      cd "$OLDPWD"
     fi
     unmount_data
   fi
@@ -244,7 +244,7 @@ set_multi_kernel() {
   local MNT=$(echo $DEV_DATA | awk -F:: '{print $3}')
 
   local MOUNT=false
-  if ! mount | grep -q $MNT; then
+  if ! mount | grep -q "$MNT"; then
     MOUNT=true
   fi
 
@@ -254,9 +254,9 @@ set_multi_kernel() {
 
   local KERNELS_DIR=$MNT/media/0/MultiKernels/
   local DEV_BOOT="/dev/block/platform/msm_sdcc.1/by-name/boot"
-  mkdir -p $KERNELS_DIR
-  dd if=$DEV_BOOT of=$KERNELS_DIR/$KERNEL_NAME.img
-  chmod 775 $KERNELS_DIR/$KERNEL_NAME.img
+  mkdir -p "$KERNELS_DIR"
+  dd if=$DEV_BOOT of="$KERNELS_DIR"/$KERNEL_NAME.img
+  chmod 775 "$KERNELS_DIR"/$KERNEL_NAME.img
 
   if [ "x${MOUNT}" = "xtrue" ]; then
     unmount_raw_partition $DEV_DATA
