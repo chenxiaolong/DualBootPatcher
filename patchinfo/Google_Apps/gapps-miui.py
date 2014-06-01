@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^miuiandroid_gapps.*\.zip$"
-file_info.name           = 'MIUI Google Apps'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
-file_info.has_boot_image = False
+patchinfo.matches        = r"^miuiandroid_gapps.*\.zip$"
+patchinfo.name           = 'MIUI Google Apps'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.has_boot_image = False

@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^j(ged|f)lte([a-z]+)?-faux123-GE-.*\.zip$"
-file_info.name           = 'Faux Google Edition kernel'
-file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^j(ged|f)lte([a-z]+)?-faux123-GE-.*\.zip$"
+patchinfo.name           = 'Faux Google Edition kernel'
+patchinfo.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

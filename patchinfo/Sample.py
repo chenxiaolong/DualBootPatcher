@@ -6,11 +6,11 @@
 #
 # Please copy this file to a new one before editing.
 
-from fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import re
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
 # This is the regular expression for detecting a ROM using the filename. Here
 # are some basic rules for how regex's work:
@@ -35,36 +35,36 @@ file_info = FileInfo()
 # followed by 1 or more of either numbers or a period and then ".zip", then we
 # know it's a SuperSU zip. Of course, a simpler pattern like ^.*SuperSU.*\.zip$
 # would work just as well.
-filename_regex           = r"^.*SuperSU.*\.zip$"
+patchinfo.matches        = r"^.*SuperSU.*\.zip$"
 
 # This is the name of the ROM, kernel, or other zip file.
-file_info.name           = 'Name goes here'
+patchinfo.name           = 'Name goes here'
 
 # This is the type of ramdisk. Run the 'list-ramdisks' file in the useful/
 # folder to see what choices are available. (It's pretty obvious, you'll see)
-file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
+patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
 
 # If the zip file you're patching does not have a kernel, set this to false.
-file_info.has_boot_image = True
+patchinfo.has_boot_image = True
 
 # The zip files are automatically searched for boot images by default and will
 # find all boot.img and boot.lok files. If you would like to specify the boot
 # image manually, change the variable below. If there are multiple boot images,
 # a list can be provided (eg. ['boot1.img', 'boot2.img'])
-#file_info.bootimg        = 'boot.img'
+#patchinfo.bootimg        = 'boot.img'
 
 # These two lines enable the autopatcher. In most cases, this is sufficient.
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch
 # If, for whatever reason, the autopatcher doesn't work, uncomment this line,
 # copy your patch to patches/ and put the patch here.
-#file_info.patch          = 'jflte/AOSP/YourROM.patch'
+#patchinfo.patch          = 'jflte/AOSP/YourROM.patch'
 
 ### Advanced stuff ###
 
 # If you need to customize how the filename is matched, add a function named
-# matches(filename) that returns true or false. Note that 'filename' contains
-# the path too. For example:
+# matches(filename) that returns true or false and set patchinfo.matches to it.
+# Note that 'filename' contains the path too. For example:
 #
 # def matches(filename):
 #     filename = os.path.split(filename)[1]
@@ -72,14 +72,17 @@ file_info.extract        = autopatcher.files_to_auto_patch
 #         return True
 #     else:
 #         return False
-
-# If you need to customize the FileInfo based on the filename, add a function
-# named get_file_info(filename) that returns the new file FileInfo object. Like
-# above, the 'filename' variable contains the path as well. For example:
 #
-# def get_file_info(filename):
+# patchinfo.matches = matches
+
+# If you need to customize the PatchInfo based on the filename, add a function
+# with parameters (patchinfo, filename) and set patchinfo.on_filename_set to
+# it. Like above, the 'filename' variable contains the path. For example:
+#
+# def on_filename_set(patchinfo, filename):
 #     filename = os.path.split(filename)[1]
 #     if '1.0' in filename:
 #         # do something ...
-#         file_info.bootimg = 'kernel/blah.img'
-#     return file_info
+#         patchinfo.bootimg = 'kernel/blah.img'
+#
+# patchinfo.on_filename_set = on_filename_set

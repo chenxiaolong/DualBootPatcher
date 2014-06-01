@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^v[0-9\.]+-(TW|Google)-[Ee]dition-ausdim-Kernel-.*\.zip$"
-file_info.name           = 'Ausdim kernel'
-file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^v[0-9\.]+-(TW|Google)-[Ee]dition-ausdim-Kernel-.*\.zip$"
+patchinfo.name           = 'Ausdim kernel'
+patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

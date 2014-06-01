@@ -1,13 +1,13 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import os
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-file_info.name           = "Moto X's Qualcomm-optimized Dalvik and Bionic libraries"
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
-file_info.has_boot_image = False
+patchinfo.name           = "Moto X's Qualcomm-optimized Dalvik and Bionic libraries"
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.has_boot_image = False
 
 def matches(filename):
   filename = os.path.split(filename)[1]
@@ -17,3 +17,5 @@ def matches(filename):
     return True
   else:
     return False
+
+patchinfo.matches        = matches

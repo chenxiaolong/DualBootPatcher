@@ -1,15 +1,15 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^negalite-.*\.zip"
-file_info.name           = 'Negalite'
-file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = [ autopatcher.auto_patch,
+patchinfo.matches        = r"^negalite-.*\.zip"
+patchinfo.name           = 'Negalite'
+patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
+patchinfo.patch          = [ autopatcher.auto_patch,
                              'jflte/ROMs/TouchWiz/negalite.dualboot.patch' ]
-file_info.extract        = [ autopatcher.files_to_auto_patch,
+patchinfo.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
 
 def dont_wipe_data(directory, bootimg = None, device_check = True,
@@ -28,4 +28,4 @@ def dont_wipe_data(directory, bootimg = None, device_check = True,
 
   fileio.write_lines(updater_script, lines, directory = directory)
 
-file_info.patch.append(dont_wipe_data)
+patchinfo.patch.append(dont_wipe_data)

@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^omni-[0-9\.]+-[0-9]+.*\.zip$"
-file_info.name           = 'Official Omni ROM'
-file_info.ramdisk        = 'hammerhead/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^omni-[0-9\.]+-[0-9]+.*\.zip$"
+patchinfo.name           = 'Official Omni ROM'
+patchinfo.ramdisk        = 'hammerhead/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

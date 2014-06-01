@@ -1,8 +1,8 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^Evil_UnWizzed_v[0-9]+\.zip$"
-file_info.name           = 'Evil UnWizzed'
-file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = 'jflte/ROMs/TouchWiz/unwizzed.dualboot.patch'
+patchinfo.matches        = r"^Evil_UnWizzed_v[0-9]+\.zip$"
+patchinfo.name           = 'Evil UnWizzed'
+patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
+patchinfo.patch          = 'jflte/ROMs/TouchWiz/unwizzed.dualboot.patch'

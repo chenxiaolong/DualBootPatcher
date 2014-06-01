@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^pac_.*-Black-Power-Edition(_NG)?[-_][0-9]+\.zip$"
-file_info.name           = "Metaiiica's PAC-Man"
-file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^pac_.*-Black-Power-Edition(_NG)?[-_][0-9]+\.zip$"
+patchinfo.name           = "Metaiiica's PAC-Man"
+patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

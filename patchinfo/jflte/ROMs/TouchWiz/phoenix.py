@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^PhoeniX.ROM.*\.zip$"
-file_info.name           = 'PhoeniX'
-file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^PhoeniX.ROM.*\.zip$"
+patchinfo.name           = 'PhoeniX'
+patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

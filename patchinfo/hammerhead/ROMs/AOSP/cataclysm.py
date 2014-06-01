@@ -1,11 +1,11 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^Cataclysm.*\.zip$"
-file_info.name           = 'Cataclysm'
-file_info.ramdisk        = 'hammerhead/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
-file_info.patched_init   = 'init-kk44'
+patchinfo.matches        = r"^Cataclysm.*\.zip$"
+patchinfo.name           = 'Cataclysm'
+patchinfo.ramdisk        = 'hammerhead/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.patched_init   = 'init-kk44'

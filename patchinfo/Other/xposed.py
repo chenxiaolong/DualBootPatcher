@@ -1,13 +1,15 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import os
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-file_info.name           = 'Xposed Framework Disabler'
-file_info.patch          = 'Other/xposed.dualboot.patch'
-file_info.has_boot_image = False
+patchinfo.name           = 'Xposed Framework Disabler'
+patchinfo.patch          = 'Other/xposed.dualboot.patch'
+patchinfo.has_boot_image = False
 
 def matches(filename):
   filename = os.path.split(filename)[1]
   return filename == 'Xposed-Disabler-Recovery.zip'
+
+patchinfo.matches        = matches

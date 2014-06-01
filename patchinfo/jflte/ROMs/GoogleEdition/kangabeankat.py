@@ -1,25 +1,22 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 from multiboot.autopatchers.jflte import GoogleEditionPatcher
+import os
 import re
-import zipfile
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-# Kangabean/Kangakat
-filename_regex           = r"^K[BK]-.*\.zip$"
-file_info.name           = 'Kangabean/Kangakat'
-file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
+patchinfo.matches        = r"^K[BK]-.*\.zip$"
+patchinfo.name           = 'Kangabean/Kangakat'
+patchinfo.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
 
-def get_file_info(filename):
-  if not filename:
-    return file_info
-
+def on_filename_set(patchinfo, filename):
+  filename = os.path.split(filename)[1]
   if filename.startswith("KK"):
-    file_info.patch      = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
-    file_info.extract    = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
+    patchinfo.patch      = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
+    patchinfo.extract    = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
   elif filename.startswith("KB"):
-    file_info.patch      = [ autopatcher.auto_patch ]
-    file_info.extract    = [ autopatcher.files_to_auto_patch ]
+    patchinfo.patch      = [ autopatcher.auto_patch ]
+    patchinfo.extract    = [ autopatcher.files_to_auto_patch ]
 
-  return file_info
+patchinfo.on_filename_set = on_filename_set

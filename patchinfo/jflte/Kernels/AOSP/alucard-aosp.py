@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^Kernel-Alucard.*AOSP.*\.zip$"
-file_info.name           = 'Alucard AOSP kernel'
-file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^Kernel-Alucard.*AOSP.*\.zip$"
+patchinfo.name           = 'Alucard AOSP kernel'
+patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

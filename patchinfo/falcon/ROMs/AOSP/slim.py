@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^Slim-.*.zip$"
-file_info.name           = 'SlimRoms'
-file_info.ramdisk        = 'falcon/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^Slim-.*.zip$"
+patchinfo.name           = 'SlimRoms'
+patchinfo.ramdisk        = 'falcon/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

@@ -1,15 +1,15 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 import re
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^Slim_aroma_selectable_gapps.*\.zip$"
-file_info.name           = 'SlimRoms AROMA Google Apps'
-file_info.patch          = [ autopatcher.auto_patch ]
-file_info.extract        = autopatcher.files_to_auto_patch
-file_info.has_boot_image = False
+patchinfo.matches        = r"^Slim_aroma_selectable_gapps.*\.zip$"
+patchinfo.name           = 'SlimRoms AROMA Google Apps'
+patchinfo.patch          = [ autopatcher.auto_patch ]
+patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.has_boot_image = False
 
 def handle_bundled_mount(directory, bootimg = None, device_check = True,
                          partition_config = None, device = True):
@@ -35,4 +35,4 @@ def handle_bundled_mount(directory, bootimg = None, device_check = True,
 
   fileio.write_lines(updater_script, lines, directory = directory)
 
-file_info.patch.append(handle_bundled_mount)
+patchinfo.patch.append(handle_bundled_mount)

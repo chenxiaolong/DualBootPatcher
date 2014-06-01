@@ -1,15 +1,15 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 import re
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^TriForceROM[0-9\.]+\.zip$"
-file_info.name           = 'TriForceROM'
-file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.patch          = [ autopatcher.auto_patch ]
-file_info.extract        = [ autopatcher.files_to_auto_patch,
+patchinfo.matches        = r"^TriForceROM[0-9\.]+\.zip$"
+patchinfo.name           = 'TriForceROM'
+patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
+patchinfo.patch          = [ autopatcher.auto_patch ]
+patchinfo.extract        = [ autopatcher.files_to_auto_patch,
                              'META-INF/com/google/android/aroma-config' ]
 
 def fix_aroma(directory, bootimg = None, device_check = True,
@@ -35,4 +35,4 @@ def fix_aroma(directory, bootimg = None, device_check = True,
 
   fileio.write_lines(aroma_config, lines, directory = directory)
 
-file_info.patch.append(fix_aroma)
+patchinfo.patch.append(fix_aroma)

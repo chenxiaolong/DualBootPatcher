@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^Kernel-Alucard.*GE.*\.zip$"
-file_info.name           = 'Alucard Google Edition kernel'
-file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^Kernel-Alucard.*GE.*\.zip$"
+patchinfo.name           = 'Alucard Google Edition kernel'
+patchinfo.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

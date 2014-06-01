@@ -1,8 +1,8 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^ComaDose_V[0-9\.]+_Cossbreeder_[0-9\.]+\.zip"
-file_info.name           = 'ComaDose'
-file_info.patch          = 'jflte/Other/comadose.dualboot.patch'
-file_info.has_boot_image = False
+patchinfo.matches        = r"^ComaDose_V[0-9\.]+_Cossbreeder_[0-9\.]+\.zip"
+patchinfo.name           = 'ComaDose'
+patchinfo.patch          = 'jflte/Other/comadose.dualboot.patch'
+patchinfo.has_boot_image = False

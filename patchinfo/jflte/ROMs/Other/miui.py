@@ -1,11 +1,11 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^miuiandroid_(multi_)?jflte.*\.zip$"
-file_info.name           = 'MIUI'
-file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
-file_info.patched_init   = 'init-jb42'
+patchinfo.matches        = r"^miuiandroid_(multi_)?jflte.*\.zip$"
+patchinfo.name           = 'MIUI'
+patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.patched_init   = 'init-jb42'

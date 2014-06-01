@@ -1,10 +1,10 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^(Liquid|LS)-(JB|KK|Kitkat)-v[0-9\.]+-.*-jflte.*\.zip$"
-file_info.name           = 'LiquidSmooth'
-file_info.ramdisk        = 'jflte/AOSP/AOSP.def'
-file_info.patch          = autopatcher.auto_patch
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r"^(Liquid|LS)-(JB|KK|Kitkat)-v[0-9\.]+-.*-jflte.*\.zip$"
+patchinfo.name           = 'LiquidSmooth'
+patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
+patchinfo.patch          = autopatcher.auto_patch
+patchinfo.extract        = autopatcher.files_to_auto_patch

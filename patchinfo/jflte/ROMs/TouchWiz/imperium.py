@@ -1,13 +1,13 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r'^Imperium_.*\.zip$'
-file_info.name           = 'Imperium'
-file_info.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-file_info.extract        = autopatcher.files_to_auto_patch
+patchinfo.matches        = r'^Imperium_.*\.zip$'
+patchinfo.name           = 'Imperium'
+patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
+patchinfo.extract        = autopatcher.files_to_auto_patch
 
 def auto_patch(directory, bootimg=None, device_check=True,
                partition_config=None, device=None):
@@ -33,4 +33,4 @@ def auto_patch(directory, bootimg=None, device_check=True,
 
     fileio.write_lines(updater_script, lines, directory=directory)
 
-file_info.patch          = auto_patch
+patchinfo.patch          = auto_patch

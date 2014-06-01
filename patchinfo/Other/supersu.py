@@ -1,8 +1,8 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^UPDATE-SuperSU-v[0-9\.]+\.zip$"
-file_info.name           = "Chainfire's SuperSU"
-file_info.patch          = 'Other/supersu.dualboot.patch'
-file_info.has_boot_image = False
+patchinfo.matches        = r"^UPDATE-SuperSU-v[0-9\.]+\.zip$"
+patchinfo.name           = "Chainfire's SuperSU"
+patchinfo.patch          = 'Other/supersu.dualboot.patch'
+patchinfo.has_boot_image = False

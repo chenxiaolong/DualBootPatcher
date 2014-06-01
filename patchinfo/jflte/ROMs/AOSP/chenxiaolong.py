@@ -1,16 +1,16 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^cm-.*noobdev.*.zip$"
-file_info.name           = "chenxiaolong's noobdev CyanogenMod"
-file_info.ramdisk        = 'jflte/AOSP/cxl.def'
-file_info.patch          = [ autopatcher.auto_patch ]
-file_info.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
+patchinfo.matches        = r"^cm-.*noobdev.*.zip$"
+patchinfo.name           = "chenxiaolong's noobdev CyanogenMod"
+patchinfo.ramdisk        = 'jflte/AOSP/cxl.def'
+patchinfo.patch          = [ autopatcher.auto_patch ]
+patchinfo.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
 # ROM has built in dual boot support
-file_info.configs        = [ 'all', '!dualboot' ]
+patchinfo.configs        = [ 'all', '!dualboot' ]
 
 # My ROM has dual-boot support built in, so we'll hack around that to support
 # triple, quadruple, ... boot
@@ -47,7 +47,7 @@ def multi_boot(directory, bootimg = None, device_check = True,
 
   fileio.write_lines('dualboot.sh', lines, directory = directory)
 
-file_info.patch.insert(0, multi_boot)
+patchinfo.patch.insert(0, multi_boot)
 
 # The auto-updater in my ROM needs to know if the ROM has been patched
 def system_prop(directory, bootimg = None, device_check = True,
@@ -58,4 +58,4 @@ def system_prop(directory, bootimg = None, device_check = True,
 
   fileio.write_lines('system/build.prop', lines, directory = directory)
 
-file_info.patch.append(system_prop)
+patchinfo.patch.append(system_prop)

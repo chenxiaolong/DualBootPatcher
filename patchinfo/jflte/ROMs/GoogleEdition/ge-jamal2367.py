@@ -1,29 +1,30 @@
-from multiboot.fileinfo import FileInfo
+from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 from multiboot.autopatchers.jflte import GoogleEditionPatcher
 import os
 
-file_info = FileInfo()
+patchinfo = PatchInfo()
 
-filename_regex           = r"^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$"
-file_info.name           = "jamal2367's Google Edition"
-file_info.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
-file_info.patch          = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
-file_info.extract        = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
+patchinfo.matches        = r"^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$"
+patchinfo.name           = "jamal2367's Google Edition"
+patchinfo.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
+patchinfo.patch          = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
+patchinfo.extract        = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
 
-def matches(filename):
-  return fileio.filename_matches(filename, filename_regex) or \
-    filename == 'I9505_-_Google_Edition_v6_by_Jamal2367.zip'
-
-def get_file_info(filename):
-  if not filename:
-    return file_info
-
+def on_filename_set(patchinfo, filename):
   filename = os.path.split(filename)[1]
   if filename == 'I9505_-_Google_Edition_v6_by_Jamal2367.zip':
     # A bit hackish, but it works
-    file_info.ramdisk    = 'jflte/AOSP/AOSP.def'
-    file_info.patch      = [ autopatcher.auto_patch ]
-    file_info.extract    = [ autopatcher.files_to_auto_patch ]
-  return file_info
+    patchinfo.ramdisk    = 'jflte/AOSP/AOSP.def'
+    patchinfo.patch      = [ autopatcher.auto_patch ]
+    patchinfo.extract    = [ autopatcher.files_to_auto_patch ]
+
+patchinfo.on_filename_set = on_filename_set
+
+def matches(filename):
+  regex = r"^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$"
+  return fileio.filename_matches(regex, filename) or \
+    filename == 'I9505_-_Google_Edition_v6_by_Jamal2367.zip'
+
+patchinfo.matches        = matches
