@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    char *path = getenv("PATH");
+    char *path = strdup(getenv("PATH"));
     char *dir;
 
     char buf[PATH_MAX];
@@ -127,6 +127,8 @@ int main(int argc, char *argv[]) {
         exit(1);
     } else {
         signal(SIGINT, signal_handler);
+
+        free(path);
 
         int status;
         wait(&status);
