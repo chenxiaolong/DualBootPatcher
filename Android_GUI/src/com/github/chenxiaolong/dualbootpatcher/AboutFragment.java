@@ -18,16 +18,23 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.app.Fragment;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class AboutFragment extends Fragment {
     public static final String TAG = "about";
+
+    private ImageView mLogo;
 
     public static AboutFragment newInstance() {
         AboutFragment f = new AboutFragment();
@@ -59,5 +66,26 @@ public class AboutFragment extends Fragment {
         TextView credits = (TextView) getActivity().findViewById(
                 R.id.about_credits);
         credits.setMovementMethod(LinkMovementMethod.getInstance());
+
+        mLogo = (ImageView) getActivity().findViewById(R.id.logo);
+        mLogo.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                Vibrator vb = (Vibrator) getActivity().getSystemService(
+                        Context.VIBRATOR_SERVICE);
+                vb.vibrate(100);
+
+                SharedPreferences sp = getActivity().getSharedPreferences(
+                        "settings", 0);
+                boolean showExit = !sp.getBoolean("showExit", false);
+                Editor e = sp.edit();
+                e.putBoolean("showExit", showExit);
+                e.apply();
+
+                ((MainActivity) getActivity()).showExit();
+
+                return false;
+            }
+        });
     }
 }

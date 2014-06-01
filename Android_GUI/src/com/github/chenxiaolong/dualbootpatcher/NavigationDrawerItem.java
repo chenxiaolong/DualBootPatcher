@@ -21,6 +21,7 @@ public class NavigationDrawerItem {
     private String mText;
     private int mImageResId;
     private boolean mShowProgress;
+    private boolean mVisible = true;
 
     public NavigationDrawerItem(String text, int imageResId) {
         mText = text;
@@ -49,5 +50,13 @@ public class NavigationDrawerItem {
 
     public void setProgressShowing(boolean show) {
         mShowProgress = show;
+    }
+
+    public boolean isVisible() {
+        return mVisible;
+    }
+
+    public void setVisible(boolean visible) {
+        mVisible = visible;
     }
 }

@@ -39,6 +39,7 @@
     <string name="title_patch_zip">Patch Zip File</string>
     <string name="title_reboot">Reboot</string>
     <string name="title_about">About</string>
+    <string name="title_exit">Exit</string>
 
     <string-array name="nav_titles">
         <item>@string/title_choose_rom</item>
@@ -49,6 +50,7 @@
     <string-array name="nav_titles2">
         <item>@string/title_reboot</item>
         <item>@string/title_about</item>
+        <item>@string/title_exit</item>
     </string-array>
 
     <string name="drawer_open">Open navigation drawer</string>

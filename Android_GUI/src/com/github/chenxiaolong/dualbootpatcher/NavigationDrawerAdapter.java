@@ -33,18 +33,27 @@ public class NavigationDrawerAdapter extends ArrayAdapter<NavigationDrawerItem> 
     private final Context mContext;
     private final List<NavigationDrawerItem> mItems;
     private final int mLayoutResId;
+    private final int mEmptyLayoutResId;
 
     public NavigationDrawerAdapter(Context context, int resource,
-            List<NavigationDrawerItem> items) {
+            int resourceEmpty, List<NavigationDrawerItem> items) {
         super(context, resource, items);
         mContext = context;
         mItems = items;
         mLayoutResId = resource;
+        mEmptyLayoutResId = resourceEmpty;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
+
+        NavigationDrawerItem item = mItems.get(position);
+
+        if (!item.isVisible()) {
+            return inflater.inflate(mEmptyLayoutResId, parent, false);
+        }
+
         View rowView = inflater.inflate(mLayoutResId, parent, false);
 
         TextView textView = (TextView) rowView.findViewById(R.id.drawer_text);
@@ -53,7 +62,6 @@ public class NavigationDrawerAdapter extends ArrayAdapter<NavigationDrawerItem> 
         ProgressBar progressBar = (ProgressBar) rowView
                 .findViewById(R.id.drawer_progress);
 
-        NavigationDrawerItem item = mItems.get(position);
         textView.setText(item.getText());
         imageView.setImageResource(item.getImageResourceId());
         // imageView.setImageDrawable(rowView.getResources().getDrawable(

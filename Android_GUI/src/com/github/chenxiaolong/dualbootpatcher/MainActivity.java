@@ -45,6 +45,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 public class MainActivity extends Activity {
     private static final String PATCH_FILE = "com.github.chenxiaolong.dualbootpatcher.PATCH_FILE";
 
+    private SharedPreferences mPrefs;
+
     private String[] mNavTitles;
     private String[] mNavTitles2;
     private DrawerLayout mDrawerLayout;
@@ -67,6 +69,7 @@ public class MainActivity extends Activity {
 
     private static final int NAV2_REBOOT = 0;
     private static final int NAV2_ABOUT = 1;
+    private static final int NAV2_EXIT = 2;
 
     public static final int FRAGMENT_CHOOSE_ROM = 1;
     public static final int FRAGMENT_SET_KERNEL = 2;
@@ -79,6 +82,8 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawer_layout);
+
+        mPrefs = getSharedPreferences("settings", 0);
 
         // Get the intent that started this activity
         Intent intent = getIntent();
@@ -131,7 +136,8 @@ public class MainActivity extends Activity {
                 R.drawable.split));
 
         mDrawerAdapter = new NavigationDrawerAdapter(this,
-                R.layout.drawer_list_item, mDrawerItems);
+                R.layout.drawer_list_item, R.layout.drawer_list_item_hidden,
+                mDrawerItems);
         mDrawerList.setAdapter(mDrawerAdapter);
 
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener(
@@ -145,9 +151,12 @@ public class MainActivity extends Activity {
                 R.drawable.refresh));
         mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_ABOUT],
                 R.drawable.about));
+        mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_EXIT],
+                R.drawable.exit));
 
         mDrawerAdapter2 = new NavigationDrawerAdapter(this,
-                R.layout.drawer_list_item, mDrawerItems2);
+                R.layout.drawer_list_item, R.layout.drawer_list_item_hidden,
+                mDrawerItems2);
         mDrawerList2.setAdapter(mDrawerAdapter2);
 
         mDrawerList2.setOnItemClickListener(new DrawerItemClickListener(
@@ -187,15 +196,17 @@ public class MainActivity extends Activity {
                     mDrawerList2.getItemIdAtPosition(NAV2_ABOUT));
         }
 
+        // Show exit button if user enabled it
+        showExit();
+
         // Open drawer on first start
         new Thread() {
             @Override
             public void run() {
-                SharedPreferences sp = getSharedPreferences("settings", 0);
-                boolean isFirstStart = sp.getBoolean("firstStart", true);
+                boolean isFirstStart = mPrefs.getBoolean("firstStart", true);
                 if (isFirstStart) {
                     mDrawerLayout.openDrawer(mDrawerView);
-                    Editor e = sp.edit();
+                    Editor e = mPrefs.edit();
                     e.putBoolean("firstStart", false);
                     e.commit();
                 }
@@ -327,6 +338,10 @@ public class MainActivity extends Activity {
             case NAV2_ABOUT:
                 mFragment = FRAGMENT_ABOUT;
                 showFragment();
+                break;
+
+            case NAV2_EXIT:
+                finish();
                 break;
             }
         }
@@ -467,5 +482,12 @@ public class MainActivity extends Activity {
         NavigationDrawerItem item = mDrawerItems.get(index);
         item.setProgressShowing(show);
         mDrawerAdapter.notifyDataSetChanged();
+    }
+
+    void showExit() {
+        NavigationDrawerItem item = mDrawerItems2.get(NAV2_EXIT);
+        boolean showExit = mPrefs.getBoolean("showExit", false);
+        item.setVisible(showExit);
+        mDrawerAdapter2.notifyDataSetChanged();
     }
 }
