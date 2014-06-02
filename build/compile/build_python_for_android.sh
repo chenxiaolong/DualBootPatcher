@@ -19,7 +19,7 @@ PYVER=3.4.0
 if [ ! -d gcc ]; then
     ${ANDROIDNDK}/build/tools/make-standalone-toolchain.sh \
         --verbose \
-        --platform=android-19 \
+        --platform=android-18 \
         --install-dir=gcc \
         --ndk-dir="${ANDROIDNDK}" \
         --system=linux-x86_64
