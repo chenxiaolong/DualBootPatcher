@@ -16,6 +16,7 @@
 import multiboot.autopatchers as autopatchers
 import multiboot.config as config
 import multiboot.fileio as fileio
+import multiboot.standalone.unpackbootimg as unpackbootimg
 
 import imp
 import os
@@ -255,13 +256,25 @@ def autodetect_boot_images(filename):
 
     with zipfile.ZipFile(filename, 'r') as z:
         for name in z.namelist():
-            if re.search(r'(^|/)boot.(img|lok)$', name):
-                boot_images.append(name)
+            if name.lower().endswith('.img') or name.lower().endswith('.lok'):
+                # Check to make sure it's actually a kernel image
+                if is_android_boot_image(z.read(name)):
+                    boot_images.append(name)
 
     if boot_images:
         return boot_images
     else:
         return None
+
+
+def is_android_boot_image(data):
+    upper = 512 + unpackbootimg.BOOT_MAGIC_SIZE
+
+    if len(data) < upper:
+        return False
+
+    section = data[0:upper]
+    return section.find(unpackbootimg.BOOT_MAGIC.encode('ASCII')) != -1
 
 
 def insert_partition_info(directory, f, config, target_path_only=False):
