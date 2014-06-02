@@ -14,7 +14,7 @@ export ANDROIDNDK="/opt/android-ndk"
 export ANDROIDNDKVER=r9
 export ANDROIDAPI=18
 
-PYVER=3.4.0
+PYVER=3.4.1
 
 if [ ! -d gcc ]; then
     ${ANDROIDNDK}/build/tools/make-standalone-toolchain.sh \

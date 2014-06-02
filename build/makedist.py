@@ -286,10 +286,10 @@ def create_python_windows(targetdir):
 
 
 def create_python_android(targetdir):
-    pyver = '3.4.0'
+    pyver = '3.4.1'
     filename = 'python-install-%s.tar.xz' % pyver
-    url = 'http://fs1.d-h.st/download/00106/puN/' + filename
-    md5 = '1bca2f3af40e4f86665d6c4812318f51'
+    url = 'http://fs1.d-h.st/download/00122/wHx/' + filename
+    md5 = 'a4c037587da9488d40fc01be4839afc8'
 
     pytar = os.path.join(builddir, 'androidbinaries', filename)
     pyport = os.path.join(targetdir, 'pythonportable')
