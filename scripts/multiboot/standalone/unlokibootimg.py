@@ -156,20 +156,46 @@ def extract(filename, directory):
 
     # Find ramdisk's gzip header
     gzip_offset = 0x400 + 148  # size of Loki header
-    while gzip_offset < total_size:
-        f.seek(gzip_offset, os.SEEK_SET)
-        temp = f.read(4)
-        timestamp = f.read(4)
+
+    offsets = list()
+    timestamps = list()  # True if timestamp is not zero
+
+    f.seek(gzip_offset, os.SEEK_SET)
+    data = f.read(total_size - gzip_offset)
+
+    offset = -1
+    while True:
+        offset = data.find(b"\x1F\x8B\x08\x00", offset + 1)
+        if offset == -1:
+            break
+
+        print_i("Found gzip header at: " + hex(gzip_offset + offset))
+
         # Searching for 1F8B0800 wasn't enough for some boot images. Specifically,
         # ktoonsez's 20140319 kernels had another set of those four bytes before
         # the "real" gzip header. We'll work around that by checking that the
         # timestamp isn't zero (which is technically allowed, but the boot image
         # tools don't do that)
         # http://forum.xda-developers.com/showpost.php?p=51219628&postcount=3767
-        if temp == b"\x1F\x8B\x08\x00" and timestamp != b"\x00\x00\x00\x00":
-            print_i("Found gzip header at: " + hex(gzip_offset))
-            break
-        gzip_offset += 4
+        timestamp = data[offset:offset + 4]
+
+        offsets.append(gzip_offset + offset)
+        timestamps.append(timestamp != b"\x00\x00\x00\x00")
+
+    if not offsets:
+        raise Exception("Could not find gzip header")
+
+    print_i("Found %d gzip headers" % len(offsets))
+
+    # If there's a timestamp that is non-zero, use the offset corresponding to
+    # that. Otherwise, choose the first offset.
+    gzip_offset = 0
+    for i in range(0, len(offsets)):
+        if timestamps[i]:
+            gzip_offset = offsets[i]
+
+    if gzip_offset == 0:
+        gzip_offset = offsets[0]
 
     # The ramdisk is supposed to be from the gzip header to EOF, but loki needs
     # to store a copy of aboot, so it is stored in 0x200 bytes are the end,
