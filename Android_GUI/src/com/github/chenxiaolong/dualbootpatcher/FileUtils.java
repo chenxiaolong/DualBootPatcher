@@ -119,11 +119,11 @@ public class FileUtils {
     }
 
     public static String getPathFromUri(Context context, Uri uri) {
-        if (Build.VERSION.SDK_INT >= 19
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
                 && "com.android.externalstorage.documents".equals(uri
                         .getAuthority())) {
             return getPathFromDocumentsUri(context, uri);
-        } else if (Build.VERSION.SDK_INT >= 19
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
                 && "com.android.providers.downloads.documents".equals(uri
                         .getAuthority())) {
             return getPathFromDownloadsUri(context, uri);
