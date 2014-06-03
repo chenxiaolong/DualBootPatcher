@@ -71,7 +71,6 @@ Lib/csv.py
 
 Lib/datetime.py
 Lib/decimal.py
-Lib/difflib.py
 Lib/dis.py
 Lib/doctest.py
 Lib/dummy_threading.py
