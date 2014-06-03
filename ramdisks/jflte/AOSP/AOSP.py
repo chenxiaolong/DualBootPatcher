@@ -117,6 +117,9 @@ def modify_fstab(cpiofile, partition_config):
             mountargs = m.group(5)
             voldargs = m.group(6)
 
+            if comment is None:
+                comment = ''
+
             if blockdev == SYSTEM_PART:
                 system_mountargs[comment] = mountargs
                 system_voldargs[comment] = voldargs
@@ -145,6 +148,9 @@ def modify_fstab(cpiofile, partition_config):
                 fstype = m.group(4)
                 mountargs = m.group(5)
                 voldargs = m.group(6)
+
+                if comment is None:
+                    comment = ''
 
             if m and blockdev == SYSTEM_PART and mountpoint == '/system':
                 mountpoint = '/raw-system'
