@@ -5,6 +5,6 @@ patchinfo = PatchInfo()
 
 patchinfo.matches        = r"^KT-SGS4-[^-]+-AOSP-.*\.zip$"
 patchinfo.name           = 'Ktoonsez AOSP kernel'
-patchinfo.ramdisk        = 'jflte/AOSP/ktoonsez.def'
+patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
 patchinfo.patch          = autopatcher.auto_patch
 patchinfo.extract        = autopatcher.files_to_auto_patch
