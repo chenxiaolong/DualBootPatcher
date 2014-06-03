@@ -77,6 +77,7 @@ def modify_init_qcom_rc(cpiofile, additional=None):
 
 
 def modify_fstab(cpiofile, partition_config,
+                 additional=None,
                  force_system_rw=False,
                  force_cache_rw=False,
                  force_data_rw=False,
@@ -95,6 +96,9 @@ def modify_fstab(cpiofile, partition_config,
     for m in cpiofile.members:
         if m.name.startswith('fstab.'):
             fstabs.append(m.name)
+
+    if additional:
+        fstabs.extend(additional)
 
     for fstab in fstabs:
         cpioentry = cpiofile.get_file(fstab)
