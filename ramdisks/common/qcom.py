@@ -76,7 +76,11 @@ def modify_init_qcom_rc(cpiofile, additional=None):
         cpioentry.set_content(buf)
 
 
-def modify_fstab(cpiofile, partition_config):
+def modify_fstab(cpiofile, partition_config,
+                 default_system_mountargs='ro,barrier=1,errors=panic',
+                 default_system_voldargs='wait',
+                 default_cache_mountargs='nosuid,nodev,barrier=1',
+                 default_cache_voldargs='wait,check'):
     move_apnhlos_mount = False
     move_mdm_mount = False
 
@@ -128,13 +132,13 @@ def modify_fstab(cpiofile, partition_config):
         # If, for whatever reason, these aren't in the fstab, then choose some
         # sensible defaults
         if not system_mountargs:
-            system_mountargs[''] = 'ro,barrier=1,errors=panic'
+            system_mountargs[''] = default_system_mountargs
         if not system_voldargs:
-            system_voldargs[''] = 'wait'
+            system_voldargs[''] = default_system_voldargs
         if not cache_mountargs:
-            cache_mountargs[''] = 'nosuid,nodev,barrier=1'
+            cache_mountargs[''] = default_cache_mountargs
         if not cache_voldargs:
-            cache_voldargs[''] = 'wait,check'
+            cache_voldargs[''] = default_cache_voldargs
 
         for line in lines:
             m = re.search(common.FSTAB_REGEX, line)
@@ -245,17 +249,17 @@ def modify_init_target_rc(cpiofile, insert_apnhlos=False,
 
             if insert_apnhlos:
                 buf += fileio.encode(fileio.whitespace(line) +
-                                     "wait %s\n" % qcom.APNHLOS_PART)
+                                     "wait %s\n" % APNHLOS_PART)
                 buf += fileio.encode(fileio.whitespace(line) +
                                      "mount vfat %s /firmware ro %s\n" %
-                                     (qcom.APNHLOS_PART, voldargs))
+                                     (APNHLOS_PART, voldargs))
 
             if insert_mdm:
                 buf += fileio.encode(fileio.whitespace(line) +
-                                     "wait %s\n" % qcom.MDM_PART)
+                                     "wait %s\n" % MDM_PART)
                 buf += fileio.encode(fileio.whitespace(line) +
                                      "mount vfat %s /firmware-mdm ro %s\n" %
-                                     (qcom.MDM_PART, voldargs))
+                                     (MDM_PART, voldargs))
 
         else:
             buf += fileio.encode(line)
