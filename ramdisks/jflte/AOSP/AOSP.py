@@ -80,79 +80,85 @@ def modify_init_qcom_rc(cpiofile):
 
 
 def modify_fstab(cpiofile, partition_config):
-    cpioentry = cpiofile.get_file('fstab.qcom')
-    lines = fileio.bytes_to_lines(cpioentry.content)
-    buf = bytes()
+    fstabs = list()
+    for m in cpiofile.members:
+        if m.name.startswith('fstab.'):
+            fstabs.append(m.name)
 
-    system_fourth = 'ro,barrier=1,errors=panic'
-    system_fifth = 'wait'
-    cache_fourth = 'nosuid,nodev,barrier=1'
-    cache_fifth = 'wait,check'
+    for fstab in fstabs:
+        cpioentry = cpiofile.get_file(fstab)
+        lines = fileio.bytes_to_lines(cpioentry.content)
+        buf = bytes()
 
-    # For Android 4.2 ROMs
-    has_cache_line = False
+        system_fourth = 'ro,barrier=1,errors=panic'
+        system_fifth = 'wait'
+        cache_fourth = 'nosuid,nodev,barrier=1'
+        cache_fifth = 'wait,check'
 
-    for line in lines:
-        if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
-            temp = re.sub("\s/system\s", " /raw-system ", line)
+        # For Android 4.2 ROMs
+        has_cache_line = False
 
-            if '/raw-system' in partition_config.target_cache:
-                r = re.search(FSTAB_REGEX, temp)
-                temp = "%s %s %s %s %s\n" % \
-                    (r.groups()[0], r.groups()[1], r.groups()[2],
-                     cache_fourth, cache_fifth)
+        for line in lines:
+            if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
+                temp = re.sub("\s/system\s", " /raw-system ", line)
 
-            buf += fileio.encode(temp)
+                if '/raw-system' in partition_config.target_cache:
+                    r = re.search(FSTAB_REGEX, temp)
+                    temp = "%s %s %s %s %s\n" % \
+                        (r.groups()[0], r.groups()[1], r.groups()[2],
+                        cache_fourth, cache_fifth)
 
-        elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
-            temp = re.sub("\s/cache\s", " /raw-cache ", line)
-            has_cache_line = True
+                buf += fileio.encode(temp)
+
+            elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
+                temp = re.sub("\s/cache\s", " /raw-cache ", line)
+                has_cache_line = True
+
+                if '/raw-cache' in partition_config.target_system:
+                    r = re.search(FSTAB_REGEX, temp)
+                    temp = "%s %s %s %s %s\n" % \
+                        (r.groups()[0], r.groups()[1], r.groups()[2],
+                        system_fourth, system_fifth)
+
+                buf += fileio.encode(temp)
+
+            elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
+                temp = re.sub("\s/data\s", " /raw-data ", line)
+
+                if '/raw-data' in partition_config.target_system:
+                    r = re.search(FSTAB_REGEX, temp)
+                    temp = "%s %s %s %s %s\n" % \
+                        (r.groups()[0], r.groups()[1], r.groups()[2],
+                        system_fourth, system_fifth)
+
+                buf += fileio.encode(temp)
+
+            elif re.search(r"^/dev/[^\s]+apnhlos\s", line):
+                global move_apnhlos_mount
+                move_apnhlos_mount = True
+                continue
+
+            elif re.search(r"^/dev/[^\s]+mdm\s", line):
+                global move_mdm_mount
+                move_mdm_mount = True
+                continue
+
+            else:
+                buf += fileio.encode(line)
+
+        if not has_cache_line:
+            cache_line = '%s /raw-cache ext4 %s %s\n'
 
             if '/raw-cache' in partition_config.target_system:
-                r = re.search(FSTAB_REGEX, temp)
-                temp = "%s %s %s %s %s\n" % \
-                    (r.groups()[0], r.groups()[1], r.groups()[2],
-                     system_fourth, system_fifth)
+                buf += fileio.encode(cache_line %
+                                    (CACHE_PART, system_fourth, system_fifth))
+            else:
+                mount_args = 'nosuid,nodev,barrier=1'
+                vold_args = 'wait,check'
+                buf += fileio.encode(cache_line %
+                                    (CACHE_PART, mount_args, vold_args))
 
-            buf += fileio.encode(temp)
-
-        elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
-            temp = re.sub("\s/data\s", " /raw-data ", line)
-
-            if '/raw-data' in partition_config.target_system:
-                r = re.search(FSTAB_REGEX, temp)
-                temp = "%s %s %s %s %s\n" % \
-                    (r.groups()[0], r.groups()[1], r.groups()[2],
-                     system_fourth, system_fifth)
-
-            buf += fileio.encode(temp)
-
-        elif re.search(r"^/dev/[^\s]+apnhlos\s", line):
-            global move_apnhlos_mount
-            move_apnhlos_mount = True
-            continue
-
-        elif re.search(r"^/dev/[^\s]+mdm\s", line):
-            global move_mdm_mount
-            move_mdm_mount = True
-            continue
-
-        else:
-            buf += fileio.encode(line)
-
-    if not has_cache_line:
-        cache_line = '%s /raw-cache ext4 %s %s\n'
-
-        if '/raw-cache' in partition_config.target_system:
-            buf += fileio.encode(cache_line %
-                                 (CACHE_PART, system_fourth, system_fifth))
-        else:
-            mount_args = 'nosuid,nodev,barrier=1'
-            vold_args = 'wait,check'
-            buf += fileio.encode(cache_line %
-                                 (CACHE_PART, mount_args, vold_args))
-
-    cpioentry.set_content(buf)
+        cpioentry.set_content(buf)
 
 
 def modify_init_target_rc(cpiofile):
