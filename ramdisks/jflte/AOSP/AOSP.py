@@ -20,4 +20,6 @@ def patch_ramdisk(cpiofile, partition_config):
     qcom.modify_init_rc(cpiofile)
     qcom.modify_init_qcom_rc(cpiofile)
     apnhlos, mdm = qcom.modify_fstab(cpiofile, partition_config)
-    qcom.modify_init_target_rc(cpiofile, apnhlos, mdm)
+    qcom.modify_init_target_rc(cpiofile,
+                               insert_apnhlos=apnhlos,
+                               insert_mdm=mdm)

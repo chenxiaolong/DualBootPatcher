@@ -245,9 +245,9 @@ def modify_fstab(cpiofile, partition_config,
     return (move_apnhlos_mount, move_mdm_mount)
 
 
-def modify_init_target_rc(cpiofile, insert_apnhlos=False,
-                          insert_mdm=False):
-    cpioentry = cpiofile.get_file('init.target.rc')
+def modify_init_target_rc(cpiofile, filename='init.target.rc',
+                          insert_apnhlos=False, insert_mdm=False):
+    cpioentry = cpiofile.get_file(filename)
     lines = fileio.bytes_to_lines(cpioentry.content)
     buf = bytes()
 
