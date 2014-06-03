@@ -77,6 +77,10 @@ def modify_init_qcom_rc(cpiofile, additional=None):
 
 
 def modify_fstab(cpiofile, partition_config,
+                 keep_mountpoints=False,
+                 system_mountpoint='/system',
+                 cache_mountpoint='/cache',
+                 data_mountpoint='/data',
                  default_system_mountargs='ro,barrier=1,errors=panic',
                  default_system_voldargs='wait',
                  default_cache_mountargs='nosuid,nodev,barrier=1',
@@ -153,8 +157,10 @@ def modify_fstab(cpiofile, partition_config,
                 if comment is None:
                     comment = ''
 
-            if m and blockdev == SYSTEM_PART and mountpoint == '/system':
-                mountpoint = '/raw-system'
+            if m and blockdev == SYSTEM_PART and \
+                    mountpoint == system_mountpoint:
+                if not keep_mountpoints:
+                    mountpoint = '/raw-system'
 
                 if '/raw-system' in partition_config.target_cache:
                     cache_comment = difflib.get_close_matches(
@@ -166,8 +172,11 @@ def modify_fstab(cpiofile, partition_config,
                                      fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
 
-            elif m and blockdev == CACHE_PART and mountpoint == '/cache':
-                mountpoint = '/raw-cache'
+            elif m and blockdev == CACHE_PART and \
+                    mountpoint == cache_mountpoint:
+                if not keep_mountpoints:
+                    mountpoint = '/raw-cache'
+
                 has_cache_line = True
 
                 if '/raw-cache' in partition_config.target_system:
@@ -180,8 +189,10 @@ def modify_fstab(cpiofile, partition_config,
                                      fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
 
-            elif m and blockdev == DATA_PART and mountpoint == '/data':
-                mountpoint = '/raw-data'
+            elif m and blockdev == DATA_PART and \
+                    mountpoint == data_mountpoint:
+                if not keep_mountpoints:
+                    mountpoint = '/raw-data'
 
                 if '/raw-data' in partition_config.target_system:
                     system_comment = difflib.get_close_matches(
