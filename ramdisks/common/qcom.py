@@ -265,9 +265,13 @@ def modify_init_target_rc(cpiofile, filename='init.target.rc',
         elif re.search(r"^\s+mount\s+ext4\s+/dev/.*/cache.*$", line):
             buf += fileio.encode(re.sub(r"^", "#", line))
 
-        elif re.search(r"^\s+mount_all\s+fstab\..*$", line):
+        elif re.search(r"^\s+mount_all\s+(\./)?fstab\..*$", line):
             buf += fileio.encode(line)
             buf += fileio.encode(fileio.whitespace(line) + common.EXEC_MOUNT)
+
+        elif re.search(r"/data/media(\s|$)", line):
+            buf += fileio.encode(
+                re.sub('/data/media', '/raw-data/media', line))
 
         elif re.search(r"^\s+setprop\s+ro.crypto.fuse_sdcard\s+true", line):
             buf += fileio.encode(line)
