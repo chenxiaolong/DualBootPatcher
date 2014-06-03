@@ -143,8 +143,6 @@ def modify_init_target_rc(cpiofile):
   lines = fileio.bytes_to_lines(cpioentry.content)
   buf = bytes()
 
-  previous_line = ""
-
   for line in lines:
     if re.search(r"^\s+wait\s+/dev/.*/cache.*$", line):
       buf += fileio.encode(re.sub(r"^", "#", line))
@@ -155,8 +153,8 @@ def modify_init_target_rc(cpiofile):
     elif re.search(r"^\s+mount\s+ext4\s+/dev/.*/cache.*$", line):
       buf += fileio.encode(re.sub(r"^", "#", line))
 
-    elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line) and \
-        re.search(r"^on\s+fs\s*$", previous_line):
+    elif re.search(r"^\s+mount_all\s+fstab.qcom.*$", line):
+      mount_inserted = True
       buf += fileio.encode(line)
       buf += fileio.encode(fileio.whitespace(line) + "exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n")
 
@@ -173,8 +171,6 @@ def modify_init_target_rc(cpiofile):
 
     else:
       buf += fileio.encode(line)
-
-    previous_line = line
 
   cpioentry.set_content(buf)
 
