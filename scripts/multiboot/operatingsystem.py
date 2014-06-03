@@ -19,6 +19,7 @@ import multiboot.ui.dummyui as dummyui
 
 import os
 import platform
+import sys
 
 ui           = dummyui
 
@@ -43,6 +44,8 @@ if not runonce:
     patchdir     = os.path.join(rootdir, "patches")
     binariesdir  = os.path.join(rootdir, "binaries")
     patchinfodir = os.path.join(rootdir, "patchinfo")
+
+    sys.path.append(rootdir)
 
     if os.name == "posix":
         if platform.system() == "Linux":
