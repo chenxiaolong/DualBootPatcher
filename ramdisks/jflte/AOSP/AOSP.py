@@ -15,14 +15,17 @@
 
 import multiboot.fileio as fileio
 
+import difflib
 import os
 import re
 import shutil
 import sys
 
-FSTAB_REGEX = r'^([^\ ]+)\s+([^\ ]+)\s+([^\ ]+)\s+([^\ ]+)\s+([^\ ]+)'
+FSTAB_REGEX = r'^(#.+)?(/dev/\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
 EXEC_MOUNT = 'exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n'
+SYSTEM_PART = '/dev/block/platform/msm_sdcc.1/by-name/system'
 CACHE_PART = '/dev/block/platform/msm_sdcc.1/by-name/cache'
+DATA_PART = '/dev/block/platform/msm_sdcc.1/by-name/userdata'
 APNHLOS_PART = '/dev/block/platform/msm_sdcc.1/by-name/apnhlos'
 MDM_PART = '/dev/block/platform/msm_sdcc.1/by-name/mdm'
 
@@ -90,55 +93,105 @@ def modify_fstab(cpiofile, partition_config):
         lines = fileio.bytes_to_lines(cpioentry.content)
         buf = bytes()
 
-        system_fourth = 'ro,barrier=1,errors=panic'
-        system_fifth = 'wait'
-        cache_fourth = 'nosuid,nodev,barrier=1'
-        cache_fifth = 'wait,check'
+        mount_line = '%s%s %s %s %s %s\n'
 
         # For Android 4.2 ROMs
         has_cache_line = False
 
+        # Find mount options and vold options for the system and cache
+        # partitions
+        system_mountargs = dict()
+        system_voldargs = dict()
+        cache_mountargs = dict()
+        cache_voldargs = dict()
+
         for line in lines:
-            if re.search(r"^/dev[a-zA-Z0-9/\._-]+\s+/system\s+.*$", line):
-                temp = re.sub("\s/system\s", " /raw-system ", line)
+            m = re.search(FSTAB_REGEX, line)
+            if not m:
+                continue
+
+            comment = m.group(1)
+            blockdev = m.group(2)
+            mountpoint = m.group(3)
+            fstype = m.group(4)
+            mountargs = m.group(5)
+            voldargs = m.group(6)
+
+            if blockdev == SYSTEM_PART:
+                system_mountargs[comment] = mountargs
+                system_voldargs[comment] = voldargs
+
+            elif blockdev == CACHE_PART:
+                cache_mountargs[comment] = mountargs
+                cache_voldargs[comment] = voldargs
+
+        # If, for whatever reason, these aren't in the fstab, then choose some
+        # sensible defaults
+        if not system_mountargs:
+            system_mountargs[''] = 'ro,barrier=1,errors=panic'
+        if not system_voldargs:
+            system_voldargs[''] = 'wait'
+        if not cache_mountargs:
+            cache_mountargs[''] = 'nosuid,nodev,barrier=1'
+        if not cache_voldargs:
+            cache_voldargs[''] = 'wait,check'
+
+        for line in lines:
+            m = re.search(FSTAB_REGEX, line)
+            if m:
+                comment = m.group(1)
+                blockdev = m.group(2)
+                mountpoint = m.group(3)
+                fstype = m.group(4)
+                mountargs = m.group(5)
+                voldargs = m.group(6)
+
+            if m and blockdev == SYSTEM_PART and mountpoint == '/system':
+                mountpoint = '/raw-system'
 
                 if '/raw-system' in partition_config.target_cache:
-                    r = re.search(FSTAB_REGEX, temp)
-                    temp = "%s %s %s %s %s\n" % \
-                        (r.groups()[0], r.groups()[1], r.groups()[2],
-                        cache_fourth, cache_fifth)
+                    cache_comment = difflib.get_close_matches(
+                        comment, cache_mountargs, 1, 0)[0]
+                    mountargs = cache_mountargs[cache_comment]
+                    voldargs = cache_voldargs[cache_comment]
 
+                temp = mount_line % (comment, blockdev, mountpoint,
+                                     fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
 
-            elif re.search(r"^/dev[^\s]+\s+/cache\s+.*$", line):
-                temp = re.sub("\s/cache\s", " /raw-cache ", line)
+            elif m and blockdev == CACHE_PART and mountpoint == '/cache':
+                mountpoint = '/raw-cache'
                 has_cache_line = True
 
                 if '/raw-cache' in partition_config.target_system:
-                    r = re.search(FSTAB_REGEX, temp)
-                    temp = "%s %s %s %s %s\n" % \
-                        (r.groups()[0], r.groups()[1], r.groups()[2],
-                        system_fourth, system_fifth)
+                    system_comment = difflib.get_close_matches(
+                        comment, system_mountargs, 1, 0)[0]
+                    mountargs = system_mountargs[system_comment]
+                    voldargs = system_voldargs[system_comment]
 
+                temp = mount_line % (comment, blockdev, mountpoint,
+                                     fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
 
-            elif re.search(r"^/dev[^\s]+\s+/data\s+.*$", line):
-                temp = re.sub("\s/data\s", " /raw-data ", line)
+            elif m and blockdev == DATA_PART and mountpoint == '/data':
+                mountpoint = '/raw-data'
 
                 if '/raw-data' in partition_config.target_system:
-                    r = re.search(FSTAB_REGEX, temp)
-                    temp = "%s %s %s %s %s\n" % \
-                        (r.groups()[0], r.groups()[1], r.groups()[2],
-                        system_fourth, system_fifth)
+                    system_comment = difflib.get_close_matches(
+                        comment, system_mountargs, 1, 0)[0]
+                    mountargs = system_mountargs[system_comment]
+                    voldargs = system_voldargs[system_comment]
 
+                temp = mount_line % (comment, blockdev, mountpoint,
+                                     fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
 
-            elif re.search(r"^/dev/[^\s]+apnhlos\s", line):
+            elif m and blockdev == APNHLOS_PART:
                 global move_apnhlos_mount
                 move_apnhlos_mount = True
                 continue
 
-            elif re.search(r"^/dev/[^\s]+mdm\s", line):
+            elif m and blockdev == MDM_PART:
                 global move_mdm_mount
                 move_mdm_mount = True
                 continue
@@ -150,13 +203,14 @@ def modify_fstab(cpiofile, partition_config):
             cache_line = '%s /raw-cache ext4 %s %s\n'
 
             if '/raw-cache' in partition_config.target_system:
-                buf += fileio.encode(cache_line %
-                                    (CACHE_PART, system_fourth, system_fifth))
+                mountargs = system_mountargs['']
+                voldargs = system_voldargs['']
             else:
-                mount_args = 'nosuid,nodev,barrier=1'
-                vold_args = 'wait,check'
-                buf += fileio.encode(cache_line %
-                                    (CACHE_PART, mount_args, vold_args))
+                mountargs = 'nosuid,nodev,barrier=1'
+                voldargs = 'wait,check'
+
+            buf += fileio.encode(cache_line %
+                                 (CACHE_PART, mountargs, voldargs))
 
         cpioentry.set_content(buf)
 
@@ -184,21 +238,21 @@ def modify_init_target_rc(cpiofile):
         elif re.search(r"^\s+setprop\s+ro.crypto.fuse_sdcard\s+true", line):
             buf += fileio.encode(line)
 
-            vold_args = 'shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337'
+            voldargs = 'shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337'
 
             if move_apnhlos_mount:
                 buf += fileio.encode(fileio.whitespace(line) +
                                      "wait %s\n" % APNHLOS_PART)
                 buf += fileio.encode(fileio.whitespace(line) +
                                      "mount vfat %s /firmware ro %s\n" %
-                                     (APNHLOS_PART, vold_args))
+                                     (APNHLOS_PART, voldargs))
 
             if move_mdm_mount:
                 buf += fileio.encode(fileio.whitespace(line) +
                                      "wait %s\n" % MDM_PART)
                 buf += fileio.encode(fileio.whitespace(line) +
                                      "mount vfat %s /firmware-mdm ro %s\n" %
-                                     (MDM_PART, vold_args))
+                                     (MDM_PART, voldargs))
 
         else:
             buf += fileio.encode(line)
