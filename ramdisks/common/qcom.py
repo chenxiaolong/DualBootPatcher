@@ -77,6 +77,9 @@ def modify_init_qcom_rc(cpiofile, additional=None):
 
 
 def modify_fstab(cpiofile, partition_config,
+                 force_system_rw=False,
+                 force_cache_rw=False,
+                 force_data_rw=False,
                  keep_mountpoints=False,
                  system_mountpoint='/system',
                  cache_mountpoint='/cache',
@@ -168,6 +171,9 @@ def modify_fstab(cpiofile, partition_config,
                     mountargs = cache_mountargs[cache_comment]
                     voldargs = cache_voldargs[cache_comment]
 
+                if force_system_rw:
+                    mountargs = _make_writable(mountargs)
+
                 temp = mount_line % (comment, blockdev, mountpoint,
                                      fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
@@ -185,6 +191,9 @@ def modify_fstab(cpiofile, partition_config,
                     mountargs = system_mountargs[system_comment]
                     voldargs = system_voldargs[system_comment]
 
+                if force_cache_rw:
+                    mountargs = _make_writable(mountargs)
+
                 temp = mount_line % (comment, blockdev, mountpoint,
                                      fstype, mountargs, voldargs)
                 buf += fileio.encode(temp)
@@ -199,6 +208,9 @@ def modify_fstab(cpiofile, partition_config,
                         comment, system_mountargs, 1, 0)[0]
                     mountargs = system_mountargs[system_comment]
                     voldargs = system_voldargs[system_comment]
+
+                if force_data_rw:
+                    mountargs = _make_writable(mountargs)
 
                 temp = mount_line % (comment, blockdev, mountpoint,
                                      fstype, mountargs, voldargs)
@@ -276,3 +288,12 @@ def modify_init_target_rc(cpiofile, insert_apnhlos=False,
             buf += fileio.encode(line)
 
     cpioentry.set_content(buf)
+
+
+def _make_writable(mountargs):
+    if 'ro,' in mountargs:
+        return mountargs.replace('ro,', 'rw,')
+    elif ',ro' in mountargs:
+        return mountargs.replace(',ro', ',rw')
+    else:
+        return 'rw,' + mountargs
