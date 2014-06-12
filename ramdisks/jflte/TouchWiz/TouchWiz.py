@@ -47,7 +47,7 @@ def modify_init_target_rc(cpiofile):
     lines = fileio.bytes_to_lines(cpioentry.content)
     buf = bytes()
 
-    previous_line = ""
+    in_qcam = False
 
     for line in lines:
         if version == 'kk44' and \
@@ -59,10 +59,25 @@ def modify_init_target_rc(cpiofile):
         elif re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
             buf += fileio.encode(re.sub(r"^", "#", line))
 
-        else:
+        elif version == 'kk44' and \
+                line.startswith('service'):
+            in_qcam = 'qcamerasvr' in line
             buf += fileio.encode(line)
 
-        previous_line = line
+        # This is not exactly safe, but it's the best we can do. TouchWiz is
+        # doing some funny business where a process running under a certain
+        # user or group (confirmed by /proc/<pid>/status) cannot access files
+        # by that group. Not only that, mm-qcamera-daemon doesn't work if the
+        # process has multiple groups and root is not the primary group. Oh
+        # well, I'm done debugging proprietary binaries.
+        elif in_qcam and re.search(r'^\s*user', line):
+            buf += fileio.encode(fileio.whitespace(line) + 'user root\n')
+
+        elif in_qcam and re.search(r'^\s*group', line):
+            buf += fileio.encode(fileio.whitespace(line) + 'group root\n')
+
+        else:
+            buf += fileio.encode(line)
 
     cpioentry.set_content(buf)
 
@@ -95,10 +110,51 @@ def modify_ueventd_rc(cpiofile):
 
     for line in lines:
         if '/dev/snd/*' in line:
-            buf += fileio.encode(re.sub('0660', '0666', line))
+            buf += fileio.encode(line.replace('0660', '0666'))
 
         else:
             buf += fileio.encode(line)
+
+    cpioentry.set_content(buf)
+
+
+def modify_ueventd_qcom_rc(cpiofile):
+    if version != 'kk44':
+        return
+
+    cpioentry = cpiofile.get_file('ueventd.qcom.rc')
+    lines = fileio.bytes_to_lines(cpioentry.content)
+    buf = bytes()
+
+    for line in lines:
+        # More funny business: even with mm-qcamera-daemon running as root,
+        # the daemon and the default camera application are unable access the
+        # camera hardware unless it's writable to everyone. Baffles me...
+        #
+        # More, more funny business: chmod'ing the /dev/video* devices to
+        # anything while mm-qcamera-daemon is running causes a kernel panic.
+        # **Wonderful** /s
+        if '/dev/video*' in line:
+            buf += fileio.encode(line.replace('0660', '0666'))
+
+        elif '/dev/media*' in line:
+            buf += fileio.encode(line.replace('0660', '0666'))
+
+        elif '/dev/v4l-subdev*' in line:
+            buf += fileio.encode(line.replace('0660', '0666'))
+
+        elif '/dev/msm_camera/*' in line:
+            buf += fileio.encode(line.replace('0660', '0666'))
+
+        # Bah... even with the daemon running as root, it can't access the
+        # hardware encoder
+        elif '/dev/msm_vidc_enc' in line:
+            buf += fileio.encode(line.replace('0660', '0666'))
+
+        else:
+            buf += fileio.encode(line)
+
+    buf += fileio.encode('/dev/ion 0666 system system\n')
 
     cpioentry.set_content(buf)
 
@@ -119,6 +175,7 @@ def patch_ramdisk(cpiofile, partition_config):
     modify_init_target_rc(cpiofile)
     modify_MSM8960_lpm_rc(cpiofile)
     modify_ueventd_rc(cpiofile)
+    modify_ueventd_qcom_rc(cpiofile)
 
     # Samsung's init binary is pretty screwed up
     if version == 'kk44':
