@@ -26,6 +26,7 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaScannerConnection;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -534,6 +535,12 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
     public void finishedPatching(boolean failed, String message, String newFile) {
         mState = STATE_READY;
         updateCardUI();
+
+        // Update MTP cache
+        if (!failed) {
+            MediaScannerConnection.scanFile(getActivity(),
+                    new String[] { newFile }, null, null);
+        }
 
         if (mAutomated) {
             Intent data = new Intent();
