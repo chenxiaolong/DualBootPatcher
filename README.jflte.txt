@@ -98,6 +98,7 @@ Kernels:
   * Ausdim kernel
   * Adam kernel
   * Alucard kernel (AOSP & Google Edition)
+  * Echoe AEL (Google Edition)
   * Plain boot.img files (use useful/patch-ramdisk.bat script)
 
 Other:
