@@ -97,7 +97,7 @@ Kernels:
   * Infamous Kernel
   * Ausdim kernel
   * Adam kernel
-  * Alucard kernel (AOSP & Google Edition)
+  * Alucard kernel (AOSP, Google Edition, & TouchWiz)
   * Echoe AEL (Google Edition)
   * Plain boot.img files (use useful/patch-ramdisk.bat script)
 
