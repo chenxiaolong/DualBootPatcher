@@ -16,9 +16,9 @@
 
 class PartitionConfig:
     # Location, filesystem, and mount point of the raw partitions
-    dev_system = "/dev/block/platform/msm_sdcc.1/by-name/system::ext4::/raw-system"
-    dev_cache = "/dev/block/platform/msm_sdcc.1/by-name/cache::ext4::/raw-cache"
-    dev_data = "/dev/block/platform/msm_sdcc.1/by-name/userdata::ext4::/raw-data"
+    dev_system = "/dev/block/platform/msm_sdcc.1/by-name/system::/raw-system"
+    dev_cache = "/dev/block/platform/msm_sdcc.1/by-name/cache::/raw-cache"
+    dev_data = "/dev/block/platform/msm_sdcc.1/by-name/userdata::/raw-data"
 
     SYSTEM = "$DEV_SYSTEM"
     CACHE = "$DEV_CACHE"

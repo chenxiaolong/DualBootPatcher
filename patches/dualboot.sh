@@ -46,9 +46,9 @@ field_equal() {
 ## The variables below are the defaults. The patcher WILL override them.
 
 # Location, filesystem, and mount point of the raw partitions
-DEV_SYSTEM="/dev/block/platform/msm_sdcc.1/by-name/system::ext4::/raw-system"
-DEV_CACHE="/dev/block/platform/msm_sdcc.1/by-name/cache::ext4::/raw-cache"
-DEV_DATA="/dev/block/platform/msm_sdcc.1/by-name/userdata::ext4::/raw-data"
+DEV_SYSTEM="/dev/block/platform/msm_sdcc.1/by-name/system::/raw-system"
+DEV_CACHE="/dev/block/platform/msm_sdcc.1/by-name/cache::/raw-cache"
+DEV_DATA="/dev/block/platform/msm_sdcc.1/by-name/userdata::/raw-data"
 
 # Where the non-primary ROM is going to be installed
 TARGET_SYSTEM="/raw-system/dual"
@@ -69,13 +69,25 @@ KERNEL_NAME="secondary"
 
 ################################################################
 
+detect_fs() {
+  local PART="$1"
+  local FS=$(blkid "$PART" | awk -F: '{print $2}' | \
+             tr ' ' '\n' | sed -rn 's/TYPE="(.*)"/\1/p')
+  if [ -z "$FS" ]; then
+    # If the filesystem can't be detected, assume ext4
+    echo "ext4"
+  else
+    echo "$FS"
+  fi
+}
+
 # When the target 'partition' needs to be mounted, mount the underlying
 # partition first before doing the bind mount.
 
 mount_raw_partition() {
   local DEV=$(echo "$1" | awk -F:: '{print $1}')
-  local FS=$(echo "$1" | awk -F:: '{print $2}')
-  local MNT=$(echo "$1" | awk -F:: '{print $3}')
+  local MNT=$(echo "$1" | awk -F:: '{print $2}')
+  local FS=$(detect_fs "$DEV")
 
   # Unique alphanumeric variable name
   local HASH=ABCD$(echo "$MNT" | md5sum | awk '{print $1}')
@@ -136,8 +148,8 @@ mount_data() {
 
 unmount_raw_partition() {
   local DEV=$(echo "$1" | awk -F:: '{print $1}')
-  local FS=$(echo "$1" | awk -F:: '{print $2}')
-  local MNT=$(echo "$1" | awk -F:: '{print $3}')
+  local MNT=$(echo "$1" | awk -F:: '{print $2}')
+  local FS=$(detect_fs "$DEV")
 
   # Unique alphanumeric variable name
   local HASH=ABCD$(echo "$MNT" | md5sum | awk '{print $1}')
