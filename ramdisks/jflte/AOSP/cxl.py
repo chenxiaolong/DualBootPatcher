@@ -30,7 +30,7 @@ def modify_init_target_rc(cpiofile):
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def patch_ramdisk(cpiofile, partition_config):

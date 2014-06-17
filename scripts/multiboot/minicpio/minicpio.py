@@ -88,7 +88,7 @@ class CpioEntryNew:
         self.chksum = None
 
         self.name = None
-        self.content = None
+        self._content = None
 
         self.headersize = 110
         self.alignmentBoundary = 4
@@ -121,7 +121,7 @@ class CpioEntryNew:
         datastart = nameend + padding
         dataend = datastart + self.filesize
 
-        self.content = data[datastart:dataend]
+        self._content = data[datastart:dataend]
 
         padding = (4 - (dataend % 4)) % 4
 
@@ -159,7 +159,7 @@ class CpioEntryNew:
         data += b'\x00' * padding
 
         # content
-        data += self.content
+        data += self._content
 
         datastart = nameend + padding
         dataend = datastart + self.filesize
@@ -169,9 +169,14 @@ class CpioEntryNew:
 
         return data
 
-    def set_content(self, content):
-        self.content = content
-        self.filesize = len(content)
+    @property
+    def content(self):
+        return self._content
+
+    @content.setter
+    def content(self, value):
+        self._content = value
+        self.filesize = len(value)
 
     def dump(self):
         # C_ISCTG  = int("0110000", 8)

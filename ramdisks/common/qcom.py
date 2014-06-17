@@ -50,7 +50,7 @@ def modify_init_rc(cpiofile):
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def modify_init_qcom_rc(cpiofile, additional=None):
@@ -73,7 +73,7 @@ def modify_init_qcom_rc(cpiofile, additional=None):
             else:
                 buf += fileio.encode(line)
 
-        cpioentry.set_content(buf)
+        cpioentry.content = buf
 
 
 def modify_fstab(cpiofile, partition_config,
@@ -244,7 +244,7 @@ def modify_fstab(cpiofile, partition_config,
             buf += fileio.encode(cache_line %
                                  (CACHE_PART, mountargs, voldargs))
 
-        cpioentry.set_content(buf)
+        cpioentry.content = buf
 
     return (move_apnhlos_mount, move_mdm_mount)
 
@@ -295,7 +295,7 @@ def modify_init_target_rc(cpiofile, filename='init.target.rc',
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def _make_writable(mountargs):

@@ -39,7 +39,7 @@ def modify_init_rc(cpiofile):
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def modify_init_target_rc(cpiofile):
@@ -79,7 +79,7 @@ def modify_init_target_rc(cpiofile):
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def modify_MSM8960_lpm_rc(cpiofile):
@@ -97,7 +97,7 @@ def modify_MSM8960_lpm_rc(cpiofile):
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def modify_ueventd_rc(cpiofile):
@@ -115,7 +115,7 @@ def modify_ueventd_rc(cpiofile):
         else:
             buf += fileio.encode(line)
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def modify_ueventd_qcom_rc(cpiofile):
@@ -156,7 +156,7 @@ def modify_ueventd_qcom_rc(cpiofile):
 
     buf += fileio.encode('/dev/ion 0666 system system\n')
 
-    cpioentry.set_content(buf)
+    cpioentry.content = buf
 
 
 def patch_ramdisk(cpiofile, partition_config):
