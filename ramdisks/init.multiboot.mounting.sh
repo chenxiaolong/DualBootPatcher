@@ -28,11 +28,38 @@
 /sbin/busybox-static mount -o bind $TARGET_CACHE /cache
 /sbin/busybox-static mount -o bind $TARGET_DATA /data
 
-# Eventually, maybe share /data/app
-#/sbin/busybox-static mkdir -p /raw-data/app /data/app
-#/sbin/busybox-static chmod 0771 /data/app
-#/sbin/busybox-static chmod system:system /data/app
-#/sbin/busybox-static mount -o bind /raw-data/app /data/app
+bind_mount() {
+  local source="$1"
+  local target="$2"
+
+  /sbin/busybox-static mkdir -p "$source" "$target"
+  /sbin/busybox-static chmod 0771 "$target"
+  /sbin/busybox-static chown system:system "$target"
+  /sbin/busybox-static mount -o bind "$source" "$target"
+}
+
+share_app=false
+share_app_asec=false
+
+if [ -f '/data/patcher.share-app' ]; then
+  share_app=true
+fi
+
+if [ -f '/data/patcher.share-app-asec' ]; then
+  share_app_asec=true
+fi
+
+if [ "$share_app" = "true" ] || [ "$share_app_asec" = "true" ]; then
+  bind_mount '/raw-data/app-lib' '/data/app-lib'
+fi
+
+if [ "$share_app" = "true" ]; then
+  bind_mount '/raw-data/app' '/data/app'
+fi
+
+if [ "$share_app_asec" = "true" ]; then
+  bind_mount '/raw-data/app-asec' '/data/app-asec'
+fi
 
 if [ -f /init.additional.sh ]; then
   /sbin/busybox-static sh /init.additional.sh

@@ -39,6 +39,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
+import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
@@ -66,6 +67,7 @@ public class MainActivity extends Activity {
     private static final int NAV_CHOOSE_ROM = 0;
     private static final int NAV_SET_KERNEL = 1;
     private static final int NAV_PATCH_FILE = 2;
+    private static final int NAV_SETTINGS = 3;
 
     private static final int NAV2_REBOOT = 0;
     private static final int NAV2_ABOUT = 1;
@@ -74,7 +76,8 @@ public class MainActivity extends Activity {
     public static final int FRAGMENT_CHOOSE_ROM = 1;
     public static final int FRAGMENT_SET_KERNEL = 2;
     public static final int FRAGMENT_PATCH_FILE = 3;
-    public static final int FRAGMENT_ABOUT = 4;
+    public static final int FRAGMENT_SETTINGS = 4;
+    public static final int FRAGMENT_ABOUT = 5;
 
     private int mFragment;
 
@@ -134,6 +137,8 @@ public class MainActivity extends Activity {
                 R.drawable.pin));
         mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_PATCH_FILE],
                 R.drawable.split));
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_SETTINGS],
+                R.drawable.settings));
 
         mDrawerAdapter = new NavigationDrawerAdapter(this,
                 R.layout.drawer_list_item, R.layout.drawer_list_item_hidden,
@@ -325,6 +330,11 @@ public class MainActivity extends Activity {
                 mFragment = FRAGMENT_PATCH_FILE;
                 showFragment();
                 break;
+
+            case NAV_SETTINGS:
+                mFragment = FRAGMENT_SETTINGS;
+                showFragment();
+                break;
             }
         } else if (view == mDrawerList2) {
             mDrawerList.clearChoices();
@@ -357,11 +367,13 @@ public class MainActivity extends Activity {
         Fragment prevSetKernel = fm
                 .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
+        Fragment prevRomSettings = fm.findFragmentByTag(RomSettingsFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
 
         hideFragment(prevChooseRom);
         hideFragment(prevSetKernel);
         hideFragment(prevPatchFile);
+        hideFragment(prevRomSettings);
         hideFragment(prevAbout);
 
         FragmentTransaction ft = fm.beginTransaction();
@@ -421,6 +433,21 @@ public class MainActivity extends Activity {
 
             break;
 
+        case FRAGMENT_SETTINGS:
+            mTitle = R.string.title_rom_settings;
+            updateTitle();
+
+            if (prevRomSettings == null) {
+                Fragment f = RomSettingsFragment.newInstance();
+                ft.add(R.id.content_frame, f, RomSettingsFragment.TAG);
+            } else {
+                ft.show(prevRomSettings);
+            }
+
+            ft.commit();
+
+            break;
+
         case FRAGMENT_ABOUT:
             mTitle = R.string.app_name;
             updateTitle();
@@ -473,6 +500,10 @@ public class MainActivity extends Activity {
 
         case FRAGMENT_PATCH_FILE:
             index = NAV_PATCH_FILE;
+            break;
+
+        case FRAGMENT_SETTINGS:
+            index = NAV_SETTINGS;
             break;
 
         default:

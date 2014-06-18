@@ -37,6 +37,7 @@
     <string name="title_choose_rom">Choose ROM</string>
     <string name="title_set_kernel">Set Kernel</string>
     <string name="title_patch_zip">Patch Zip File</string>
+    <string name="title_rom_settings">ROM Settings</string>
     <string name="title_reboot">Reboot</string>
     <string name="title_about">About</string>
     <string name="title_exit">Exit</string>
@@ -45,6 +46,7 @@
         <item>@string/title_choose_rom</item>
         <item>@string/title_set_kernel</item>
         <item>@string/title_patch_zip</item>
+        <item>@string/title_rom_settings</item>
     </string-array>
 
     <string-array name="nav_titles2">
@@ -146,6 +148,14 @@
     <!-- Patcher: Progress card -->
     <string name="overall_progress">Overall progress:</string>
     <string name="overall_progress_files">%1$s/%2$s files</string>
+
+    <!-- Settings -->
+    <string name="rom_settings_app_sharing_title">Application sharing (EXPERIMENTAL)</string>
+    <string name="rom_settings_share_apps_title">Share applications</string>
+    <string name="rom_settings_share_apps_desc">Share applications from the primary ROM with the current ROM (requires reboot).</string>
+    <string name="rom_settings_share_paid_apps_title">Share paid applications</string>
+    <string name="rom_settings_share_paid_apps_desc">Share paid applications from the primary ROM with the current ROM (requires reboot).</string>
+    <string name="rom_settings_noroot_desc">Unable to obtain root access. Root access is needed for changing this setting.</string>
 
     <!-- Miscellaneous -->
     <string name="none">None</string>
