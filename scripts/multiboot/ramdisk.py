@@ -18,6 +18,7 @@ import multiboot.debug as debug
 import multiboot.fileio as fileio
 import multiboot.patch as patch
 import multiboot.operatingsystem as OS
+import ramdisks.common.common as common
 
 import imp
 import os
@@ -41,6 +42,7 @@ def process_def(def_file, cpiofile, partition_config):
             plugin = imp.load_source(os.path.basename(path)[:-3],
                                      os.path.join(OS.ramdiskdir, path))
 
+            common.init(cpiofile, partition_config)
             plugin.patch_ramdisk(cpiofile, partition_config)
 
     return True

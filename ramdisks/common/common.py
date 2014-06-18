@@ -13,5 +13,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import multiboot.config as config
+import multiboot.fileio as fileio
+
 FSTAB_REGEX = r'^(#.+)?(/dev/\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
 EXEC_MOUNT = 'exec /sbin/busybox-static sh /init.multiboot.mounting.sh\n'
+
+
+def modify_default_prop(cpiofile, partition_config):
+    cpioentry = cpiofile.get_file('default.prop')
+    if not cpioentry:
+        return
+
+    buf = cpioentry.content
+    buf += fileio.encode('ro.patcher.patched=%s\n' % partition_config.id)
+    buf += fileio.encode('ro.patcher.version=%s\n' % config.get_version())
+
+    cpioentry.content = buf
+
+
+def init(cpiofile, partition_config):
+    modify_default_prop(cpiofile, partition_config)

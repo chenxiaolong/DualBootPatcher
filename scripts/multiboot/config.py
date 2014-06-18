@@ -53,6 +53,10 @@ def has(*args):
     return True
 
 
+def get_version():
+    return config['patcher']['version']
+
+
 def get_selinux(device):
     if has('devices', device, 'selinux'):
         value = config['devices'][device]['selinux']

@@ -171,12 +171,14 @@ def parse_args():
     global f_preset_name, f_hasbootimage, f_bootimage, f_ramdisk
     global f_autopatcher_name, f_patch, f_init, f_devicecheck
 
+    version = config.get_version()
+
     parser = argparse.ArgumentParser()
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = textwrap.dedent('''
-    Dual Boot Patcher
-    -----------------
-    ''')
+    Dual Boot Patcher %s
+    ------------------%s
+    ''' % (version, '-' * len(version)))
 
     parser.add_argument('file',
                         help='The file to patch',
