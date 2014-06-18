@@ -17,7 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-public class NavigationDrawerItem {
+public class NavigationDrawerItem extends DrawerItem {
     private String mText;
     private int mImageResId;
     private boolean mShowProgress;

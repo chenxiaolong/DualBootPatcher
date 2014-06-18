@@ -21,26 +21,23 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:attr/activatedBackgroundIndicator"
-    android:minHeight="48dp" >
+    android:minHeight="@dimen/navigation_item_height" >
 
     <ImageView
         android:id="@+id/drawer_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        style="@style/navigation_image"
         android:layout_centerVertical="true"
-        android:contentDescription="@string/switcher_rom_image"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp" />
+        android:contentDescription="@string/switcher_rom_image" />
 
     <TextView
         android:id="@+id/drawer_text"
+        style="@style/navigation_text"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:layout_toRightOf="@id/drawer_icon"
         android:gravity="center_vertical"
         android:minHeight="?android:attr/listPreferredItemHeightSmall"
         android:textAppearance="?android:attr/textAppearanceListItemSmall"
-        android:textColor="#fff" />
+        android:textColor="@color/navigation_item_text" />
 
     <ProgressBar
         android:id="@+id/drawer_progress"

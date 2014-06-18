@@ -47,9 +47,8 @@
         <item>@string/title_set_kernel</item>
         <item>@string/title_patch_zip</item>
         <item>@string/title_rom_settings</item>
-    </string-array>
-
-    <string-array name="nav_titles2">
+        <!-- Separator -->
+        <item></item>
         <item>@string/title_reboot</item>
         <item>@string/title_about</item>
         <item>@string/title_exit</item>

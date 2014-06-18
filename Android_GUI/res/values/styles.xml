@@ -70,4 +70,24 @@
         <item name="android:layout_marginTop">5dp</item>
     </style>
 
+    <!-- Navigation -->
+    <style name="navigation_image">
+        <item name="android:layout_width">22.0dip</item>
+        <item name="android:layout_height">22.0dip</item>
+        <item name="android:layout_marginLeft">16.0dip</item>
+    </style>
+
+    <style name="navigation_text">
+        <item name="android:textSize">16.0sp</item>
+        <item name="android:paddingLeft">16.0dip</item>
+        <item name="android:paddingRight">8.0dip</item>
+        <item name="android:layout_height">54.0dip</item>
+    </style>
+
+    <style name="navigation_separator">
+        <item name="android:background">@color/navigation_separator</item>
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">1.0dip</item>
+    </style>
+
 </resources>

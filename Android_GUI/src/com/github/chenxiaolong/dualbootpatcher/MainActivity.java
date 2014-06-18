@@ -49,15 +49,11 @@ public class MainActivity extends Activity {
     private SharedPreferences mPrefs;
 
     private String[] mNavTitles;
-    private String[] mNavTitles2;
     private DrawerLayout mDrawerLayout;
     private RelativeLayout mDrawerView;
     private ListView mDrawerList;
-    private ListView mDrawerList2;
-    private ArrayList<NavigationDrawerItem> mDrawerItems;
-    private ArrayList<NavigationDrawerItem> mDrawerItems2;
+    private ArrayList<DrawerItem> mDrawerItems;
     private NavigationDrawerAdapter mDrawerAdapter;
-    private NavigationDrawerAdapter mDrawerAdapter2;
     private ActionBarDrawerToggle mDrawerToggle;
     private int mTitle;
 
@@ -68,10 +64,10 @@ public class MainActivity extends Activity {
     private static final int NAV_SET_KERNEL = 1;
     private static final int NAV_PATCH_FILE = 2;
     private static final int NAV_SETTINGS = 3;
-
-    private static final int NAV2_REBOOT = 0;
-    private static final int NAV2_ABOUT = 1;
-    private static final int NAV2_EXIT = 2;
+    // Separator
+    private static final int NAV_REBOOT = 5;
+    private static final int NAV_ABOUT = 6;
+    private static final int NAV_EXIT = 7;
 
     public static final int FRAGMENT_CHOOSE_ROM = 1;
     public static final int FRAGMENT_SET_KERNEL = 2;
@@ -100,7 +96,6 @@ public class MainActivity extends Activity {
         }
 
         mNavTitles = getResources().getStringArray(R.array.nav_titles);
-        mNavTitles2 = getResources().getStringArray(R.array.nav_titles2);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
                 R.drawable.ic_drawer, R.string.drawer_open,
@@ -125,11 +120,8 @@ public class MainActivity extends Activity {
 
         mDrawerView = (RelativeLayout) findViewById(R.id.left_drawer);
         mDrawerList = (ListView) findViewById(R.id.drawer_list);
-        mDrawerList2 = (ListView) findViewById(R.id.drawer_list2);
 
-        // Top list
-
-        mDrawerItems = new ArrayList<NavigationDrawerItem>();
+        mDrawerItems = new ArrayList<DrawerItem>();
 
         mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_CHOOSE_ROM],
                 R.drawable.check));
@@ -139,6 +131,13 @@ public class MainActivity extends Activity {
                 R.drawable.split));
         mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_SETTINGS],
                 R.drawable.settings));
+        mDrawerItems.add(new NavigationDrawerSeparatorItem());
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_REBOOT],
+                R.drawable.refresh));
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_ABOUT],
+                R.drawable.about));
+        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_EXIT],
+                R.drawable.exit));
 
         mDrawerAdapter = new NavigationDrawerAdapter(this,
                 R.layout.drawer_list_item, R.layout.drawer_list_item_hidden,
@@ -147,25 +146,6 @@ public class MainActivity extends Activity {
 
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener(
                 mDrawerList));
-
-        // Bottom list
-
-        mDrawerItems2 = new ArrayList<NavigationDrawerItem>();
-
-        mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_REBOOT],
-                R.drawable.refresh));
-        mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_ABOUT],
-                R.drawable.about));
-        mDrawerItems2.add(new NavigationDrawerItem(mNavTitles2[NAV2_EXIT],
-                R.drawable.exit));
-
-        mDrawerAdapter2 = new NavigationDrawerAdapter(this,
-                R.layout.drawer_list_item, R.layout.drawer_list_item_hidden,
-                mDrawerItems2);
-        mDrawerList2.setAdapter(mDrawerAdapter2);
-
-        mDrawerList2.setOnItemClickListener(new DrawerItemClickListener(
-                mDrawerList2));
 
         if (mAutomated) {
             // Don't allow navigating to other parts of the app
@@ -185,20 +165,17 @@ public class MainActivity extends Activity {
             boolean[] progressState = savedInstanceState
                     .getBooleanArray("progressState");
             for (int i = 0; i < progressState.length; i++) {
-                mDrawerItems.get(i).setProgressShowing(progressState[i]);
+                DrawerItem item = mDrawerItems.get(i);
+                if (item instanceof NavigationDrawerItem) {
+                    ((NavigationDrawerItem) item)
+                            .setProgressShowing(progressState[i]);
+                }
             }
             mDrawerAdapter.notifyDataSetChanged();
-
-            boolean[] progressState2 = savedInstanceState
-                    .getBooleanArray("progressState2");
-            for (int i = 0; i < progressState2.length; i++) {
-                mDrawerItems2.get(i).setProgressShowing(progressState2[i]);
-            }
-            mDrawerAdapter2.notifyDataSetChanged();
         } else {
             // Show about screen by default
-            mDrawerList2.performItemClick(mDrawerList2, NAV2_ABOUT,
-                    mDrawerList2.getItemIdAtPosition(NAV2_ABOUT));
+            mDrawerList.performItemClick(mDrawerList, NAV_ABOUT,
+                    mDrawerList.getItemIdAtPosition(NAV_ABOUT));
         }
 
         refreshOptionalItems();
@@ -227,15 +204,13 @@ public class MainActivity extends Activity {
         // Progress icon state
         boolean[] progressState = new boolean[mDrawerItems.size()];
         for (int i = 0; i < progressState.length; i++) {
-            progressState[i] = mDrawerItems.get(i).isProgressShowing();
+            DrawerItem item = mDrawerItems.get(i);
+            if (item instanceof NavigationDrawerItem) {
+                progressState[i] = ((NavigationDrawerItem) item)
+                        .isProgressShowing();
+            }
         }
         savedInstanceState.putBooleanArray("progressState", progressState);
-
-        boolean[] progressState2 = new boolean[mDrawerItems2.size()];
-        for (int i = 0; i < progressState2.length; i++) {
-            progressState2[i] = mDrawerItems2.get(i).isProgressShowing();
-        }
-        savedInstanceState.putBooleanArray("progressState2", progressState2);
     }
 
     @Override
@@ -251,14 +226,11 @@ public class MainActivity extends Activity {
         boolean operationsRunning = false;
 
         for (int i = 0; i < mDrawerItems.size(); i++) {
-            if (mDrawerItems.get(i).isProgressShowing()) {
-                operationsRunning = true;
-            }
-        }
-
-        for (int i = 0; i < mDrawerItems2.size(); i++) {
-            if (mDrawerItems2.get(i).isProgressShowing()) {
-                operationsRunning = true;
+            DrawerItem item = mDrawerItems.get(i);
+            if (item instanceof NavigationDrawerItem) {
+                if (((NavigationDrawerItem) item).isProgressShowing()) {
+                    operationsRunning = true;
+                }
             }
         }
 
@@ -311,9 +283,6 @@ public class MainActivity extends Activity {
 
     private void selectItem(ListView view, int position) {
         if (view == mDrawerList) {
-            mDrawerList2.clearChoices();
-            mDrawerAdapter2.notifyDataSetChanged();
-
             switch (position) {
             case NAV_CHOOSE_ROM:
                 mFragment = FRAGMENT_CHOOSE_ROM;
@@ -334,22 +303,17 @@ public class MainActivity extends Activity {
                 mFragment = FRAGMENT_SETTINGS;
                 showFragment();
                 break;
-            }
-        } else if (view == mDrawerList2) {
-            mDrawerList.clearChoices();
-            mDrawerAdapter.notifyDataSetChanged();
 
-            switch (position) {
-            case NAV2_REBOOT:
+            case NAV_REBOOT:
                 SwitcherUtils.reboot(this, getFragmentManager());
                 break;
 
-            case NAV2_ABOUT:
+            case NAV_ABOUT:
                 mFragment = FRAGMENT_ABOUT;
                 showFragment();
                 break;
 
-            case NAV2_EXIT:
+            case NAV_EXIT:
                 finish();
                 break;
             }
@@ -510,9 +474,11 @@ public class MainActivity extends Activity {
             return;
         }
 
-        NavigationDrawerItem item = mDrawerItems.get(index);
-        item.setProgressShowing(show);
-        mDrawerAdapter.notifyDataSetChanged();
+        DrawerItem item = mDrawerItems.get(index);
+        if (item instanceof NavigationDrawerItem) {
+            ((NavigationDrawerItem) item).setProgressShowing(show);
+            mDrawerAdapter.notifyDataSetChanged();
+        }
     }
 
     public void refreshOptionalItems() {
@@ -523,14 +489,16 @@ public class MainActivity extends Activity {
     }
 
     public void showReboot(boolean visible) {
-        NavigationDrawerItem rebootItem = mDrawerItems2.get(NAV2_REBOOT);
+        NavigationDrawerItem rebootItem = (NavigationDrawerItem) mDrawerItems
+                .get(NAV_REBOOT);
         rebootItem.setVisible(visible);
-        mDrawerAdapter2.notifyDataSetChanged();
+        mDrawerAdapter.notifyDataSetChanged();
     }
 
     public void showExit(boolean visible) {
-        NavigationDrawerItem exitItem = mDrawerItems2.get(NAV2_EXIT);
+        NavigationDrawerItem exitItem = (NavigationDrawerItem) mDrawerItems
+                .get(NAV_EXIT);
         exitItem.setVisible(visible);
-        mDrawerAdapter2.notifyDataSetChanged();
+        mDrawerAdapter.notifyDataSetChanged();
     }
 }

@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <!--
    * Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
    *
@@ -17,16 +19,8 @@
 
 <resources>
 
-    <!-- Default screen margins, per the Android Design guidelines. -->
-    <!--
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
-    -->
-    <dimen name="activity_horizontal_margin">0dp</dimen>
-    <dimen name="activity_vertical_margin">0dp</dimen>
-
-    <!-- Navigation Drawer -->
-    <dimen name="navigation_item_height">49.0dip</dimen>
-    <dimen name="navigation_divider_height">1.0dip</dimen>
+    <color name="navigation_background">#ffeeeeee</color>
+    <color name="navigation_separator">#ffdddddd</color>
+    <color name="navigation_item_text">#ff333333</color>
 
 </resources>

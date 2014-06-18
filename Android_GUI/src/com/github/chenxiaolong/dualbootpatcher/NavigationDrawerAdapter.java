@@ -29,14 +29,14 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-public class NavigationDrawerAdapter extends ArrayAdapter<NavigationDrawerItem> {
+public class NavigationDrawerAdapter extends ArrayAdapter<DrawerItem> {
     private final Context mContext;
-    private final List<NavigationDrawerItem> mItems;
+    private final List<DrawerItem> mItems;
     private final int mLayoutResId;
     private final int mEmptyLayoutResId;
 
     public NavigationDrawerAdapter(Context context, int resource,
-            int resourceEmpty, List<NavigationDrawerItem> items) {
+            int resourceEmpty, List<DrawerItem> items) {
         super(context, resource, items);
         mContext = context;
         mItems = items;
@@ -48,31 +48,60 @@ public class NavigationDrawerAdapter extends ArrayAdapter<NavigationDrawerItem> 
     public View getView(int position, View convertView, ViewGroup parent) {
         LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
 
-        NavigationDrawerItem item = mItems.get(position);
+        DrawerItem item = mItems.get(position);
 
-        if (!item.isVisible()) {
-            return inflater.inflate(mEmptyLayoutResId, parent, false);
-        }
+        if (item instanceof NavigationDrawerItem) {
+            NavigationDrawerItem navItem = (NavigationDrawerItem) item;
 
-        View rowView = inflater.inflate(mLayoutResId, parent, false);
+            if (!navItem.isVisible()) {
+                return inflater.inflate(mEmptyLayoutResId, parent, false);
+            }
 
-        TextView textView = (TextView) rowView.findViewById(R.id.drawer_text);
-        ImageView imageView = (ImageView) rowView
-                .findViewById(R.id.drawer_icon);
-        ProgressBar progressBar = (ProgressBar) rowView
-                .findViewById(R.id.drawer_progress);
+            View rowView = inflater.inflate(mLayoutResId, parent, false);
 
-        textView.setText(item.getText());
-        imageView.setImageResource(item.getImageResourceId());
-        // imageView.setImageDrawable(rowView.getResources().getDrawable(
-        // item.getImageResourceId()));
+            TextView textView = (TextView) rowView
+                    .findViewById(R.id.drawer_text);
+            ImageView imageView = (ImageView) rowView
+                    .findViewById(R.id.drawer_icon);
+            ProgressBar progressBar = (ProgressBar) rowView
+                    .findViewById(R.id.drawer_progress);
 
-        if (item.isProgressShowing()) {
-            progressBar.setVisibility(View.VISIBLE);
+            textView.setText(navItem.getText());
+            imageView.setImageResource(navItem.getImageResourceId());
+            // imageView.setImageDrawable(rowView.getResources().getDrawable(
+            // item.getImageResourceId()));
+
+            if (navItem.isProgressShowing()) {
+                progressBar.setVisibility(View.VISIBLE);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+
+            return rowView;
+        } else if (item instanceof NavigationDrawerSeparatorItem) {
+            View rowView = inflater.inflate(
+                    R.layout.drawer_list_separator_item, parent, false);
+            return rowView;
         } else {
-            progressBar.setVisibility(View.GONE);
+            return null;
+        }
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return 2;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        DrawerItem item = mItems.get(position);
+
+        if (item instanceof NavigationDrawerItem) {
+            return 0;
+        } else if (item instanceof NavigationDrawerSeparatorItem) {
+            return 1;
         }
 
-        return rowView;
+        return 0;
     }
 }
