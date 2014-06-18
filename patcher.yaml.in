@@ -1,0 +1,29 @@
+patcher:
+    version:    @VERSION@
+
+devices:
+    jflte:
+      name:     Samsung Galaxy S 4
+      selinux:  permissive
+
+      # This is normally detected automatically, but this address is not stored
+      # in a loki'd boot image
+      ramdisk:
+        offset: 0x02000000
+
+      partitions:
+        system: mmcblk0p16
+        cache:  mmcblk0p18
+        data:   mmcblk0p29
+
+    hammerhead:
+      name:     Google/LG Nexus 5
+      selinux:  unchanged
+
+    d800:
+      name:     LG G2
+      selinux:  unchanged
+
+    falcon:
+      name:     Motorola Moto G
+      selinux:  unchanged

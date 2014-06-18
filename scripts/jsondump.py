@@ -64,7 +64,7 @@ jsonarr = list()
 for d in devices:
     jsonobj = dict()
     jsonobj['codename'] = d
-    jsonobj['name'] = config.get(d, 'name')
+    jsonobj['name'] = config.config['devices'][d]['name']
 
     jsonarr.append(jsonobj)
 

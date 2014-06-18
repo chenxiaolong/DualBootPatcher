@@ -728,7 +728,8 @@ class Patcher(QtWidgets.QWidget):
 
         # Populate devices
         for d in self.devices:
-            self.devicecombobox.addItem('%s (%s)' % (d, config.get(d, 'name')))
+            name = config.config['devices'][d]['name']
+            self.devicecombobox.addItem('%s (%s)' % (d, name))
 
         self.devicecombobox.currentIndexChanged.connect(self.deviceselected)
         self.deviceselected(self.devicecombobox.currentIndex())

@@ -622,7 +622,6 @@ def create_release(targetdir, targetfile, android=False):
     copy_for_rel = [
         'README.jflte.txt',
         'patch-file.sh',
-        'patcher.conf',
         'patches/',
         'patchinfo/',
         'ramdisks/',
@@ -641,6 +640,11 @@ def create_release(targetdir, targetfile, android=False):
                             os.path.join(targetdir, f))
         else:
             shutil.copy2(os.path.join(topdir, f), targetdir)
+
+    with open(os.path.join(topdir, 'patcher.yaml.in')) as f_in:
+        with open(os.path.join(targetdir, 'patcher.yaml'), 'w') as f_out:
+            for line in f_in:
+                f_out.write(line.replace('@VERSION@', version))
 
     if android:
         remove = [

@@ -15,61 +15,55 @@
 
 import multiboot.operatingsystem as OS
 
+from collections import OrderedDict
+
 import os
 import sys
-
-if sys.hexversion < 0x03000000:
-    import ConfigParser
-    config = ConfigParser.ConfigParser()
-    py3 = False
-else:
-    import configparser
-    config = configparser.ConfigParser()
-    py3 = True
-
-config.read(os.path.join(OS.rootdir, 'patcher.conf'))
+import yaml
 
 
-def get(section, option):
-    if py3:
-        return config[section][option]
-    else:
-        return config.get(section, option)
+# http://stackoverflow.com/a/21912744/1064977
+def ordered_load(stream):
+    class OrderedLoader(yaml.Loader):
+        pass
+
+    OrderedLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        lambda loader, node: OrderedDict(loader.construct_pairs(node)))
+
+    return yaml.load(stream, OrderedLoader)
 
 
-def has(section, option):
-    if py3:
-        return option in config[section]
-    else:
-        return config.has_option(section, option)
+with open(os.path.join(OS.rootdir, 'patcher.yaml'), 'r') as f:
+    config = ordered_load(f)
 
 
 def list_devices():
-    sections = config.sections()
-    sections.remove('Defaults')
-    return sections
+    return [x for x in config['devices']]
+
+
+def has(*args):
+    c = config
+    for arg in args:
+        if arg not in c:
+            return False
+
+        c = c[arg]
+
+    return True
 
 
 def get_selinux(device):
-    if has(device, 'selinux'):
-        value = get(device, 'selinux')
-        if value and value == 'unchanged':
-            return None
-        else:
+    if has('devices', device, 'selinux'):
+        value = config['devices'][device]['selinux']
+        if value and value != 'unchanged':
             return value
-    else:
-        return None
 
-
-def get_ramdisk_offset(device):
-    if has(device, 'ramdisk_offset'):
-        return get(device, 'ramdisk_offset')
-    else:
-        return None
+    return None
 
 
 def get_partition(device, partition):
-    if has(device, 'partition.' + partition):
-        return get(device, 'partition.' + partition)
+    if has('devices', device, 'partitions', partition):
+        return config['devices'][device]['partitions'][partition]
     else:
         return None

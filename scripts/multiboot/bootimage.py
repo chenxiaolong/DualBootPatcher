@@ -100,9 +100,10 @@ def extract(boot_image, output_dir, device=None):
         info.ramdisk_offset = \
             int(fileio.first_line(prefix + '-ramdisk_offset'), 16)
         os.remove(prefix + '-ramdisk_offset')
-    elif device and config.get_ramdisk_offset(device) is not None:
+    elif device and config.has('devices', device, 'ramdisk'):
         # We need this for Loki'd boot images
-        info.ramdisk_offset = int(config.get_ramdisk_offset(device), 16)
+        ramdiskopts = config['devices'][device]['ramdisk']
+        info.ramdisk_offset = ramdiskopts['offset']
 
     if os.path.exists(prefix + '-second_offset'):
         info.second_offset = \
