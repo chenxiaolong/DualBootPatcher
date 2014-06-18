@@ -18,8 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -27,11 +25,8 @@ import java.util.regex.Pattern;
 
 import android.content.Context;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandListener;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class RomDetector {
@@ -114,72 +109,7 @@ public class RomDetector {
     }
 
     private static Properties getBuildProp(String rom) {
-        File buildprop = new File(rom + "/build.prop");
-
-        // Make sure build.prop exists
-        if (!buildprop.exists()) {
-            try {
-                RootCommandParams params = new RootCommandParams();
-                params.command = "ls " + buildprop.getPath();
-
-                RootCommandRunner cmd = new RootCommandRunner(params);
-                cmd.start();
-                cmd.join();
-                CommandResult result = cmd.getResult();
-
-                if (result.exitCode != 0) {
-                    return null;
-                }
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        Properties prop = new Properties();
-
-        if (!buildprop.canRead()) {
-            try {
-                RootCommandParams params = new RootCommandParams();
-                params.command = "cat " + buildprop.getPath();
-                params.listener = new FullOutputListener();
-
-                RootCommandRunner cmd = new RootCommandRunner(params);
-                cmd.start();
-                cmd.join();
-                CommandResult result = cmd.getResult();
-
-                if (result.exitCode != 0) {
-                    return null;
-                }
-
-                String output = result.data.getString("output");
-
-                if (output == null) {
-                    return null;
-                }
-
-                prop.load(new StringReader(output));
-            } catch (Exception e) {
-                return null;
-            }
-        } else {
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(buildprop.getPath());
-                prop.load(fis);
-            } catch (Exception e) {
-                return null;
-            } finally {
-                try {
-                    if (fis != null) {
-                        fis.close();
-                    }
-                } catch (Exception e) {
-                }
-            }
-        }
-
-        return prop;
+        return MiscUtils.getProperties(rom + "/build.prop");
     }
 
     public static String getVersion(String rom) {
@@ -219,21 +149,6 @@ public class RomDetector {
             return R.drawable.rom_omnirom;
         } else {
             return R.drawable.rom_android;
-        }
-    }
-
-    private static class FullOutputListener implements RootCommandListener {
-        private final StringBuilder mOutput = new StringBuilder();
-
-        @Override
-        public void onNewOutputLine(String line) {
-            mOutput.append(line);
-            mOutput.append(System.getProperty("line.separator"));
-        }
-
-        @Override
-        public void onCommandCompletion(CommandResult result) {
-            result.data.putString("output", mOutput.toString());
         }
     }
 }

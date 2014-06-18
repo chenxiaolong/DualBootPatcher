@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import org.json.JSONException;
 
 import android.content.Context;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -33,6 +32,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.LiveOutputFilter;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 
@@ -60,8 +60,6 @@ public class PatcherUtils {
     public static final String RESULT_PATCH_FILE_MESSAGE = "message";
     public static final String RESULT_PATCH_FILE_FAILED = "failed";
 
-    private static String mVersion;
-
     private static PatcherInformation mInfo;
 
     /** Filename of the tar.xz archive */
@@ -76,24 +74,9 @@ public class PatcherUtils {
     /** Directory of extracted patcher */
     private static File mTargetDir;
 
-    private static String getVersion(Context context) {
-        if (mVersion == null) {
-            try {
-                mVersion = context.getPackageManager().getPackageInfo(
-                        context.getPackageName(), 0).versionName;
-                mVersion = mVersion.replace("-DEBUG", "");
-                mVersion = mVersion.replace("-SNAPSHOT", "");
-            } catch (NameNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return mVersion;
-    }
-
     private static String getFilename(Context context) {
         if (mFileName == null) {
-            mFileName = String.format(FILENAME, getVersion(context));
+            mFileName = String.format(FILENAME, MiscUtils.getVersion(context));
         }
 
         return mFileName;
@@ -118,7 +101,8 @@ public class PatcherUtils {
 
     static File getTargetDirectory(Context context) {
         if (mTargetDir == null) {
-            String dirName = String.format(DIRNAME, getVersion(context));
+            String dirName = String.format(DIRNAME,
+                    MiscUtils.getVersion(context));
             mTargetDir = new File(context.getFilesDir() + "/" + dirName);
         }
 

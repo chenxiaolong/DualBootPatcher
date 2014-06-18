@@ -25,6 +25,7 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceFragment;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
+import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class RomSettingsFragment extends PreferenceFragment implements
@@ -74,11 +75,25 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mHaveRootAccess = CommandUtils.requestRootAccess();
         }
 
+        String version = MiscUtils.getPatchedByVersion();
+
         if (!mHaveRootAccess) {
             mShareApps.setSummary(R.string.rom_settings_noroot_desc);
             mSharePaidApps.setSummary(R.string.rom_settings_noroot_desc);
             mShareApps.setVisuallyEnabled(false);
             mSharePaidApps.setVisuallyEnabled(false);
+        } else if (MiscUtils.compareVersions(version, "8.0.0") < 0) {
+            mShareApps.setSummary(String.format(
+                    getActivity().getString(R.string.rom_settings_too_old),
+                    "8.0.0"));
+            mSharePaidApps.setSummary(String.format(
+                    getActivity().getString(R.string.rom_settings_too_old),
+                    "8.0.0"));
+            mShareApps.setEnabled(false);
+            mSharePaidApps.setEnabled(false);
+
+            mShareApps.setChecked(SettingsUtils.isShareAppsEnabled());
+            mSharePaidApps.setChecked(SettingsUtils.isSharePaidAppsEnabled());
         } else {
             mShareApps.setSummary(R.string.rom_settings_share_apps_desc);
             mSharePaidApps
