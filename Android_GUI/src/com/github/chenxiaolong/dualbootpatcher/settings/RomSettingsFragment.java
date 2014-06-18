@@ -20,11 +20,13 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceFragment;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
+import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
@@ -34,9 +36,13 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
     private static final String KEY_SHARE_APPS = "share_apps";
     private static final String KEY_SHARE_PAID_APPS = "share_paid_apps";
+    private static final String KEY_SHOW_REBOOT = "show_reboot";
+    private static final String KEY_SHOW_EXIT = "show_exit";
 
     private DisableableCheckBoxPreference mShareApps;
     private DisableableCheckBoxPreference mSharePaidApps;
+    private CheckBoxPreference mShowReboot;
+    private CheckBoxPreference mShowExit;
 
     private boolean mAttemptedRoot;
     private boolean mHaveRootAccess;
@@ -51,6 +57,8 @@ public class RomSettingsFragment extends PreferenceFragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getPreferenceManager().setSharedPreferencesName("settings");
+
         addPreferencesFromResource(R.xml.rom_settings);
 
         mShareApps = (DisableableCheckBoxPreference) findPreference(KEY_SHARE_APPS);
@@ -58,6 +66,12 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         mShareApps.setOnPreferenceChangeListener(this);
         mSharePaidApps.setOnPreferenceChangeListener(this);
+
+        mShowReboot = (CheckBoxPreference) findPreference(KEY_SHOW_REBOOT);
+        mShowExit = (CheckBoxPreference) findPreference(KEY_SHOW_EXIT);
+
+        mShowReboot.setOnPreferenceChangeListener(this);
+        mShowExit.setOnPreferenceChangeListener(this);
     }
 
     @Override
@@ -149,6 +163,10 @@ public class RomSettingsFragment extends PreferenceFragment implements
                 reloadFragment();
                 return false;
             }
+        } else if (KEY_SHOW_REBOOT.equals(key)) {
+            ((MainActivity) getActivity()).showReboot((Boolean) objValue);
+        } else if (KEY_SHOW_EXIT.equals(key)) {
+            ((MainActivity) getActivity()).showExit((Boolean) objValue);
         }
 
         return true;

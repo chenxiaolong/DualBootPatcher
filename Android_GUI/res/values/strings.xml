@@ -158,6 +158,10 @@
     <string name="rom_settings_noroot_desc">Unable to obtain root access. Root access is needed for changing this setting.</string>
     <string name="rom_settings_too_old">This ROM was patched with an old version of the patcher. Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
 
+    <string name="rom_settings_patcher_title">Patcher</string>
+    <string name="rom_settings_show_exit_title">Show Exit button</string>
+    <string name="rom_settings_show_reboot_title">Show Reboot button</string>
+
     <!-- Miscellaneous -->
     <string name="none">None</string>
     <string name="ok">OK</string>

@@ -201,18 +201,17 @@ public class MainActivity extends Activity {
                     mDrawerList2.getItemIdAtPosition(NAV2_ABOUT));
         }
 
-        // Show exit button if user enabled it
-        showExit();
+        refreshOptionalItems();
 
         // Open drawer on first start
         new Thread() {
             @Override
             public void run() {
-                boolean isFirstStart = mPrefs.getBoolean("firstStart", true);
+                boolean isFirstStart = mPrefs.getBoolean("first_start", true);
                 if (isFirstStart) {
                     mDrawerLayout.openDrawer(mDrawerView);
                     Editor e = mPrefs.edit();
-                    e.putBoolean("firstStart", false);
+                    e.putBoolean("first_start", false);
                     e.commit();
                 }
             }
@@ -367,7 +366,8 @@ public class MainActivity extends Activity {
         Fragment prevSetKernel = fm
                 .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
-        Fragment prevRomSettings = fm.findFragmentByTag(RomSettingsFragment.TAG);
+        Fragment prevRomSettings = fm
+                .findFragmentByTag(RomSettingsFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
 
         hideFragment(prevChooseRom);
@@ -515,10 +515,22 @@ public class MainActivity extends Activity {
         mDrawerAdapter.notifyDataSetChanged();
     }
 
-    void showExit() {
-        NavigationDrawerItem item = mDrawerItems2.get(NAV2_EXIT);
-        boolean showExit = mPrefs.getBoolean("showExit", false);
-        item.setVisible(showExit);
+    public void refreshOptionalItems() {
+        boolean reboot = mPrefs.getBoolean("show_reboot", true);
+        boolean exit = mPrefs.getBoolean("show_exit", false);
+        showReboot(reboot);
+        showExit(exit);
+    }
+
+    public void showReboot(boolean visible) {
+        NavigationDrawerItem rebootItem = mDrawerItems2.get(NAV2_REBOOT);
+        rebootItem.setVisible(visible);
+        mDrawerAdapter2.notifyDataSetChanged();
+    }
+
+    public void showExit(boolean visible) {
+        NavigationDrawerItem exitItem = mDrawerItems2.get(NAV2_EXIT);
+        exitItem.setVisible(visible);
         mDrawerAdapter2.notifyDataSetChanged();
     }
 }

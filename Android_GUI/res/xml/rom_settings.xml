@@ -29,5 +29,15 @@
             android:persistent="false"
             android:title="@string/rom_settings_share_paid_apps_title" />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/rom_settings_patcher_title" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="show_reboot"
+            android:title="@string/rom_settings_show_reboot_title" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="show_exit"
+            android:title="@string/rom_settings_show_exit_title" />
+    </PreferenceCategory>
 
 </PreferenceScreen>
