@@ -283,6 +283,21 @@ public class MainActivity extends Activity {
         return type == NAV_SEPARATOR;
     }
 
+    private boolean isItemAFragment(int item) {
+        int type = mDrawerItems.get(item);
+
+        switch (type) {
+        case NAV_CHOOSE_ROM:
+        case NAV_SET_KERNEL:
+        case NAV_PATCH_FILE:
+        case NAV_ABOUT:
+            return true;
+
+        default:
+            return false;
+        }
+    }
+
     private View createDrawerItem(final int type, ViewGroup container) {
         int layout;
 
@@ -323,7 +338,9 @@ public class MainActivity extends Activity {
 
     private void onDrawerItemClicked(final int item) {
         mDrawerLayout.closeDrawer(mDrawerView);
-        mDrawerItemSelected = item;
+        if (isItemAFragment(item)) {
+            mDrawerItemSelected = item;
+        }
 
         for (int i = 0; i < mDrawerItems.size(); i++) {
             int type = mDrawerItems.get(i);
