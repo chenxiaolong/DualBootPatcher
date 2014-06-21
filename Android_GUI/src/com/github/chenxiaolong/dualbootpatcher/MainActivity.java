@@ -27,53 +27,71 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
 import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsFragment;
+import com.github.chenxiaolong.dualbootpatcher.settings.SettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 public class MainActivity extends Activity {
     private static final String PATCH_FILE = "com.github.chenxiaolong.dualbootpatcher.PATCH_FILE";
 
-    private SharedPreferences mPrefs;
+    private static final int[] RES_NAV_TITLES = new int[] {
+            R.string.title_choose_rom, R.string.title_set_kernel,
+            R.string.title_patch_zip, R.string.title_rom_settings,
+            R.string.title_reboot, R.string.title_about, R.string.title_exit };
 
-    private String[] mNavTitles;
-    private DrawerLayout mDrawerLayout;
-    private RelativeLayout mDrawerView;
-    private ListView mDrawerList;
-    private ArrayList<DrawerItem> mDrawerItems;
-    private NavigationDrawerAdapter mDrawerAdapter;
-    private ActionBarDrawerToggle mDrawerToggle;
-    private int mTitle;
+    private static final int[] RES_NAV_ICONS = new int[] { R.drawable.check,
+            R.drawable.pin, R.drawable.split, R.drawable.settings,
+            R.drawable.refresh, R.drawable.about, R.drawable.exit };
 
-    private boolean mAutomated;
-    private Bundle mAutomatedData;
-
+    private static final int NAV_SEPARATOR = -1;
     private static final int NAV_CHOOSE_ROM = 0;
     private static final int NAV_SET_KERNEL = 1;
     private static final int NAV_PATCH_FILE = 2;
     private static final int NAV_SETTINGS = 3;
-    // Separator
-    private static final int NAV_REBOOT = 5;
-    private static final int NAV_ABOUT = 6;
-    private static final int NAV_EXIT = 7;
+    private static final int NAV_REBOOT = 4;
+    private static final int NAV_ABOUT = 5;
+    private static final int NAV_EXIT = 6;
+
+    private SharedPreferences mPrefs;
+
+    private DrawerLayout mDrawerLayout;
+    private RelativeLayout mDrawerView;
+    private ActionBarDrawerToggle mDrawerToggle;
+
+    private final ArrayList<Integer> mDrawerItems = new ArrayList<Integer>();
+    private View[] mDrawerItemViews;
+    private boolean[] mDrawerItemsLoaded;
+    private boolean[] mDrawerItemsProgress;
+    private int mDrawerItemSelected;
+
+    private int mTitle;
+    private Handler mHandler;
+
+    private boolean mAutomated;
+    private Bundle mAutomatedData;
 
     public static final int FRAGMENT_CHOOSE_ROM = 1;
     public static final int FRAGMENT_SET_KERNEL = 2;
     public static final int FRAGMENT_PATCH_FILE = 3;
-    public static final int FRAGMENT_SETTINGS = 4;
-    public static final int FRAGMENT_ABOUT = 5;
+    public static final int FRAGMENT_ABOUT = 4;
 
     private int mFragment;
 
@@ -81,6 +99,8 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawer_layout);
+
+        mHandler = new Handler();
 
         mPrefs = getSharedPreferences("settings", 0);
 
@@ -95,7 +115,6 @@ public class MainActivity extends Activity {
             mTitle = savedInstanceState.getInt("title");
         }
 
-        mNavTitles = getResources().getStringArray(R.array.nav_titles);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
                 R.drawable.ic_drawer, R.string.drawer_open,
@@ -119,33 +138,17 @@ public class MainActivity extends Activity {
         getActionBar().setHomeButtonEnabled(true);
 
         mDrawerView = (RelativeLayout) findViewById(R.id.left_drawer);
-        mDrawerList = (ListView) findViewById(R.id.drawer_list);
 
-        mDrawerItems = new ArrayList<DrawerItem>();
-
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_CHOOSE_ROM],
-                R.drawable.check));
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_SET_KERNEL],
-                R.drawable.pin));
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_PATCH_FILE],
-                R.drawable.split));
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_SETTINGS],
-                R.drawable.settings));
-        mDrawerItems.add(new NavigationDrawerSeparatorItem());
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_REBOOT],
-                R.drawable.refresh));
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_ABOUT],
-                R.drawable.about));
-        mDrawerItems.add(new NavigationDrawerItem(mNavTitles[NAV_EXIT],
-                R.drawable.exit));
-
-        mDrawerAdapter = new NavigationDrawerAdapter(this,
-                R.layout.drawer_list_item, R.layout.drawer_list_item_hidden,
-                mDrawerItems);
-        mDrawerList.setAdapter(mDrawerAdapter);
-
-        mDrawerList.setOnItemClickListener(new DrawerItemClickListener(
-                mDrawerList));
+        mDrawerItems.clear();
+        mDrawerItems.add(NAV_CHOOSE_ROM);
+        mDrawerItems.add(NAV_SET_KERNEL);
+        mDrawerItems.add(NAV_PATCH_FILE);
+        mDrawerItems.add(NAV_SETTINGS);
+        mDrawerItems.add(NAV_SEPARATOR);
+        mDrawerItems.add(NAV_REBOOT);
+        mDrawerItems.add(NAV_ABOUT);
+        mDrawerItems.add(NAV_EXIT);
+        createNavigationViews();
 
         if (mAutomated) {
             // Don't allow navigating to other parts of the app
@@ -162,22 +165,18 @@ public class MainActivity extends Activity {
             showFragment();
 
             // Progress icons
-            boolean[] progressState = savedInstanceState
+            mDrawerItemsProgress = savedInstanceState
                     .getBooleanArray("progressState");
-            for (int i = 0; i < progressState.length; i++) {
-                DrawerItem item = mDrawerItems.get(i);
-                if (item instanceof NavigationDrawerItem) {
-                    ((NavigationDrawerItem) item)
-                            .setProgressShowing(progressState[i]);
-                }
-            }
-            mDrawerAdapter.notifyDataSetChanged();
+
+            mDrawerItemSelected = savedInstanceState.getInt("selectedItem");
         } else {
             // Show about screen by default
-            mDrawerList.performItemClick(mDrawerList, NAV_ABOUT,
-                    mDrawerList.getItemIdAtPosition(NAV_ABOUT));
+            mDrawerItemSelected = getItemForType(NAV_ABOUT);
         }
 
+        onDrawerItemClicked(mDrawerItemSelected);
+
+        refreshProgressBars();
         refreshOptionalItems();
 
         // Open drawer on first start
@@ -200,17 +199,9 @@ public class MainActivity extends Activity {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putInt("fragment", mFragment);
         savedInstanceState.putInt("title", mTitle);
-
-        // Progress icon state
-        boolean[] progressState = new boolean[mDrawerItems.size()];
-        for (int i = 0; i < progressState.length; i++) {
-            DrawerItem item = mDrawerItems.get(i);
-            if (item instanceof NavigationDrawerItem) {
-                progressState[i] = ((NavigationDrawerItem) item)
-                        .isProgressShowing();
-            }
-        }
-        savedInstanceState.putBooleanArray("progressState", progressState);
+        savedInstanceState.putBooleanArray("progressState",
+                mDrawerItemsProgress);
+        savedInstanceState.putInt("selectedItem", mDrawerItemSelected);
     }
 
     @Override
@@ -226,9 +217,10 @@ public class MainActivity extends Activity {
         boolean operationsRunning = false;
 
         for (int i = 0; i < mDrawerItems.size(); i++) {
-            DrawerItem item = mDrawerItems.get(i);
-            if (item instanceof NavigationDrawerItem) {
-                if (((NavigationDrawerItem) item).isProgressShowing()) {
+            int type = mDrawerItems.get(i);
+
+            if (!isSeparator(type)) {
+                if (mDrawerItemsProgress[i]) {
                     operationsRunning = true;
                 }
             }
@@ -258,21 +250,6 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class DrawerItemClickListener implements
-            ListView.OnItemClickListener {
-        private final ListView mView;
-
-        public DrawerItemClickListener(ListView view) {
-            mView = view;
-        }
-
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position,
-                long id) {
-            selectItem(mView, position);
-        }
-    }
-
     private void updateTitle() {
         if (mDrawerLayout.isDrawerOpen(mDrawerView) || mTitle == 0) {
             getActionBar().setTitle(R.string.app_name);
@@ -281,45 +258,155 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void selectItem(ListView view, int position) {
-        if (view == mDrawerList) {
-            switch (position) {
-            case NAV_CHOOSE_ROM:
-                mFragment = FRAGMENT_CHOOSE_ROM;
-                showFragment();
-                break;
+    private void createNavigationViews() {
+        ViewGroup container = (ViewGroup) findViewById(R.id.drawer_list);
+        // container.removeAllViews();
 
-            case NAV_SET_KERNEL:
-                mFragment = FRAGMENT_SET_KERNEL;
-                showFragment();
-                break;
+        mDrawerItemViews = new View[mDrawerItems.size()];
+        mDrawerItemsLoaded = new boolean[mDrawerItems.size()];
+        mDrawerItemsProgress = new boolean[mDrawerItems.size()];
 
-            case NAV_PATCH_FILE:
-                mFragment = FRAGMENT_PATCH_FILE;
-                showFragment();
-                break;
+        for (int i = 0; i < mDrawerItems.size(); i++) {
+            mDrawerItemViews[i] = createDrawerItem(mDrawerItems.get(i),
+                    container);
+            container.addView(mDrawerItemViews[i]);
+        }
+    }
 
-            case NAV_SETTINGS:
-                mFragment = FRAGMENT_SETTINGS;
-                showFragment();
-                break;
+    private boolean isSeparator(int type) {
+        return type == NAV_SEPARATOR;
+    }
 
-            case NAV_REBOOT:
-                SwitcherUtils.reboot(this, getFragmentManager());
-                break;
+    private View createDrawerItem(final int type, ViewGroup container) {
+        int layout;
 
-            case NAV_ABOUT:
-                mFragment = FRAGMENT_ABOUT;
-                showFragment();
-                break;
+        if (isSeparator(type)) {
+            layout = R.layout.drawer_list_separator_item;
+        } else {
+            layout = R.layout.drawer_list_item;
+        }
 
-            case NAV_EXIT:
-                finish();
-                break;
+        View view = getLayoutInflater().inflate(layout, container, false);
+
+        if (isSeparator(type)) {
+            view.setClickable(false);
+            view.setFocusable(false);
+            return view;
+        }
+
+        final TextView textView = (TextView) view
+                .findViewById(R.id.drawer_text);
+        ImageView imageView = (ImageView) view.findViewById(R.id.drawer_icon);
+
+        int titleId = RES_NAV_TITLES[type];
+        int iconId = RES_NAV_ICONS[type];
+
+        textView.setText(titleId);
+        imageView.setImageResource(iconId);
+
+        view.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int item = getItemForType(type);
+                onDrawerItemClicked(item);
+            }
+        });
+
+        return view;
+    }
+
+    private void onDrawerItemClicked(final int item) {
+        mDrawerLayout.closeDrawer(mDrawerView);
+        mDrawerItemSelected = item;
+
+        for (int i = 0; i < mDrawerItems.size(); i++) {
+            int type = mDrawerItems.get(i);
+
+            if (!isSeparator(type)) {
+                showAsSelected(i, mDrawerItemSelected == i);
             }
         }
 
-        mDrawerLayout.closeDrawer(mDrawerView);
+        // Add a small delay so the navigation drawer doesn't stutter
+        if (mDrawerItemsLoaded[item]) {
+            performDrawerItemSelection(item);
+        } else {
+            mDrawerItemsLoaded[item] = true;
+
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    performDrawerItemSelection(item);
+                }
+            }, 200);
+        }
+    }
+
+    private void showAsSelected(int item, boolean selected) {
+        int type = mDrawerItems.get(item);
+
+        switch (type) {
+        case NAV_CHOOSE_ROM:
+        case NAV_SET_KERNEL:
+        case NAV_PATCH_FILE:
+        case NAV_ABOUT:
+            View view = mDrawerItemViews[item];
+            TextView textView = (TextView) view.findViewById(R.id.drawer_text);
+            textView.setTypeface(null, selected ? Typeface.BOLD
+                    : Typeface.NORMAL);
+            break;
+        }
+    }
+
+    private void performDrawerItemSelection(int item) {
+        int type = mDrawerItems.get(item);
+
+        switch (type) {
+        case NAV_CHOOSE_ROM:
+            mFragment = FRAGMENT_CHOOSE_ROM;
+            showFragment();
+            break;
+
+        case NAV_SET_KERNEL:
+            mFragment = FRAGMENT_SET_KERNEL;
+            showFragment();
+            break;
+
+        case NAV_PATCH_FILE:
+            mFragment = FRAGMENT_PATCH_FILE;
+            showFragment();
+            break;
+
+        case NAV_SETTINGS:
+            startActivity(new Intent(this, SettingsActivity.class));
+            break;
+
+        case NAV_REBOOT:
+            SwitcherUtils.reboot(this, getFragmentManager());
+            break;
+
+        case NAV_ABOUT:
+            mFragment = FRAGMENT_ABOUT;
+            showFragment();
+            break;
+
+        case NAV_EXIT:
+            finish();
+            break;
+        }
+    }
+
+    private int getItemForType(int type) {
+        for (int i = 0; i < mDrawerItems.size(); i++) {
+            int curType = mDrawerItems.get(i);
+
+            if (type == curType) {
+                return i;
+            }
+        }
+
+        // We'll never hit this
+        return -1;
     }
 
     private void showFragment() {
@@ -397,21 +484,6 @@ public class MainActivity extends Activity {
 
             break;
 
-        case FRAGMENT_SETTINGS:
-            mTitle = R.string.title_rom_settings;
-            updateTitle();
-
-            if (prevRomSettings == null) {
-                Fragment f = RomSettingsFragment.newInstance();
-                ft.add(R.id.content_frame, f, RomSettingsFragment.TAG);
-            } else {
-                ft.show(prevRomSettings);
-            }
-
-            ft.commit();
-
-            break;
-
         case FRAGMENT_ABOUT:
             mTitle = R.string.app_name;
             updateTitle();
@@ -451,33 +523,51 @@ public class MainActivity extends Activity {
     }
 
     public void showProgress(int fragment, boolean show) {
-        int index;
+        int type;
 
         switch (fragment) {
         case FRAGMENT_CHOOSE_ROM:
-            index = NAV_CHOOSE_ROM;
+            type = NAV_CHOOSE_ROM;
             break;
 
         case FRAGMENT_SET_KERNEL:
-            index = NAV_SET_KERNEL;
+            type = NAV_SET_KERNEL;
             break;
 
         case FRAGMENT_PATCH_FILE:
-            index = NAV_PATCH_FILE;
-            break;
-
-        case FRAGMENT_SETTINGS:
-            index = NAV_SETTINGS;
+            type = NAV_PATCH_FILE;
             break;
 
         default:
             return;
         }
 
-        DrawerItem item = mDrawerItems.get(index);
-        if (item instanceof NavigationDrawerItem) {
-            ((NavigationDrawerItem) item).setProgressShowing(show);
-            mDrawerAdapter.notifyDataSetChanged();
+        int item = getItemForType(type);
+
+        mDrawerItemsProgress[item] = show;
+
+        View view = mDrawerItemViews[item];
+        ProgressBar progressBar = (ProgressBar) view
+                .findViewById(R.id.drawer_progress);
+
+        progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void refreshProgressBars() {
+        for (int i = 0; i < mDrawerItemsProgress.length; i++) {
+            int type = mDrawerItems.get(i);
+
+            if (!isSeparator(type)) {
+                View view = mDrawerItemViews[i];
+                ProgressBar progressBar = (ProgressBar) view
+                        .findViewById(R.id.drawer_progress);
+
+                if (mDrawerItemsProgress[i]) {
+                    progressBar.setVisibility(View.VISIBLE);
+                } else {
+                    progressBar.setVisibility(View.GONE);
+                }
+            }
         }
     }
 
@@ -489,16 +579,14 @@ public class MainActivity extends Activity {
     }
 
     public void showReboot(boolean visible) {
-        NavigationDrawerItem rebootItem = (NavigationDrawerItem) mDrawerItems
-                .get(NAV_REBOOT);
-        rebootItem.setVisible(visible);
-        mDrawerAdapter.notifyDataSetChanged();
+        int item = getItemForType(NAV_REBOOT);
+        View view = mDrawerItemViews[item];
+        view.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     public void showExit(boolean visible) {
-        NavigationDrawerItem exitItem = (NavigationDrawerItem) mDrawerItems
-                .get(NAV_EXIT);
-        exitItem.setVisible(visible);
-        mDrawerAdapter.notifyDataSetChanged();
+        int item = getItemForType(NAV_EXIT);
+        View view = mDrawerItemViews[item];
+        view.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 }

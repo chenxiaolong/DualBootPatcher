@@ -20,7 +20,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/activatedBackgroundIndicator"
+    android:background="?android:attr/selectableItemBackground"
     android:minHeight="@dimen/navigation_item_height" >
 
     <ImageView
