@@ -195,6 +195,12 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        refreshOptionalItems();
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putInt("fragment", mFragment);
