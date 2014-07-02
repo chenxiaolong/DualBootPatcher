@@ -8,72 +8,9 @@
 
 set -e
 
-export HOST_TOOLCHAIN_PREFIX="x86_64-unknown-linux-gnu"
-export ANDROIDSDK="/opt/android-sdk"
-export ANDROIDNDK="/opt/android-ndk"
-export ANDROIDNDKVER=r9
-export ANDROIDAPI=18
+. env.sh
 
 PYVER=3.4.1
-
-if [ ! -d gcc ]; then
-    ${ANDROIDNDK}/build/tools/make-standalone-toolchain.sh \
-        --verbose \
-        --platform=android-18 \
-        --install-dir=gcc \
-        --ndk-dir="${ANDROIDNDK}" \
-        --system=linux-x86_64
-fi
-
-export NDKPLATFORM="$(pwd)/gcc"
-
-push_arm() {
-    export OLD_PATH=$PATH
-    export OLD_CFLAGS=$CFLAGS
-    export OLD_CXXFLAGS=$CXXFLAGS
-    export OLD_LDFLAGS=$LDFLAGS
-    export OLD_CC=$CC
-    export OLD_CXX=$CXX
-    export OLD_AR=$AR
-    export OLD_RANLIB=$RANLIB
-    export OLD_STRIP=$STRIP
-    export OLD_MAKE=$MAKE
-    export OLD_LD=$LD
-
-    export CFLAGS="-DANDROID -mandroid -fomit-frame-pointer --sysroot ${NDKPLATFORM}/sysroot -I${NDKPLATFORM}/sysroot/usr/include"
-    export CXXFLAGS="${CFLAGS}"
-    export LDFLAGS="-L${NDKPLATFORM}/sysroot/usr/lib"
-
-    export TOOLCHAIN_PREFIX=arm-linux-androideabi
-    export TOOLCHAIN_VERSION=4.8
-
-    export PATH="${NDKPLATFORM}/bin:${ANDROIDSDK}/tools:${PATH}"
-
-    export CC="${TOOLCHAIN_PREFIX}-gcc"
-    export CXX="${TOOLCHAIN_PREFIX}-g++"
-    export CPP="${TOOLCHAIN_PREFIX}-cpp"
-    export AR="${TOOLCHAIN_PREFIX}-ar"
-    export AS="${TOOLCHAIN_PREFIX}-as"
-    export LD="${TOOLCHAIN_PREFIX}-ld"
-    export OBJCOPY="${TOOLCHAIN_PREFIX}-objcopy"
-    export OBJDUMP="${TOOLCHAIN_PREFIX}-objdump"
-    export RANLIB="${TOOLCHAIN_PREFIX}-ranlib"
-    export STRIP="${TOOLCHAIN_PREFIX}-strip"
-}
-
-pop_arm() {
-    export PATH=$OLD_PATH
-    export CFLAGS=$OLD_CFLAGS
-    export CXXFLAGS=$OLD_CXXFLAGS
-    export LDFLAGS=$OLD_LDFLAGS
-    export CC=$OLD_CC
-    export CXX=$OLD_CXX
-    export AR=$OLD_AR
-    export LD=$OLD_LD
-    export RANLIB=$OLD_RANLIB
-    export STRIP=$OLD_STRIP
-    export MAKE=$OLD_MAKE
-}
 
 CURDIR="$(cd "$(dirname "${0}")" && pwd)"
 BUILDDIR="${CURDIR}/build/"
@@ -112,7 +49,9 @@ ac_cv_file__dev_ptmx=no
 ac_cv_file__dev_ptc=no
 EOF
 
-push_arm
+setup_toolchain
+export CFLAGS="-DANDROID -mandroid -fomit-frame-pointer"
+export CXXFLAGS="${CFLAGS}"
 
 rm -rf "${BUILDDIR}/python-install"
 
@@ -136,8 +75,6 @@ CONFIG_SITE=config.site \
 
 make install \
   HOSTPGEN=./Parser/hostpgen
-
-pop_arm
 
 popd
 
@@ -165,7 +102,7 @@ rm bin/pyvenv*
 
 for i in $(LANG=C find -type f | xargs file | grep "not stripped" | cut -d: -f1); do
     chmod 755 ${i}
-    ${NDKPLATFORM}/bin/${TOOLCHAIN_PREFIX}-strip ${i}
+    ${STRIP} ${i}
 done
 
 popd
