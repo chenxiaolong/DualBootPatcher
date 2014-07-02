@@ -24,7 +24,7 @@ dual = PartitionConfig()
 dual.name                    = "Dual Boot"
 dual.description             = "Second ROM installed to /system/dual"
 dual.kernel                  = "secondary"
-dual.id                      = "dualboot"
+dual.id                      = "dual"
 
 dual.target_system           = "/raw-system/dual"
 dual.target_cache            = "/raw-cache/dual"
@@ -43,7 +43,7 @@ multislot1 = PartitionConfig()
 multislot1.name                    = "Multi Boot Slot 1"
 multislot1.description             = "ROM installed to /cache/multi-slot-1/system"
 multislot1.kernel                  = "multi-slot-1"
-multislot1.id                      = "multislot1"
+multislot1.id                      = "multi-slot-1"
 
 multislot1.target_system           = "/raw-cache/multi-slot-1/system"
 multislot1.target_cache            = "/raw-system/multi-slot-1/cache"
@@ -62,7 +62,7 @@ multislot2 = PartitionConfig()
 multislot2.name                    = "Multi Boot Slot 2"
 multislot2.description             = "ROM installed to /cache/multi-slot-2/system"
 multislot2.kernel                  = "multi-slot-2"
-multislot2.id                      = "multislot2"
+multislot2.id                      = "multi-slot-2"
 
 multislot2.target_system           = "/raw-cache/multi-slot-2/system"
 multislot2.target_cache            = "/raw-system/multi-slot-2/cache"
@@ -81,7 +81,7 @@ multislot3 = PartitionConfig()
 multislot3.name                    = "Multi Boot Slot 3"
 multislot3.description             = "ROM installed to /cache/multi-slot-3/system"
 multislot3.kernel                  = "multi-slot-3"
-multislot3.id                      = "multislot3"
+multislot3.id                      = "multi-slot-3"
 
 multislot3.target_system           = "/raw-cache/multi-slot-3/system"
 multislot3.target_cache            = "/raw-system/multi-slot-3/cache"
