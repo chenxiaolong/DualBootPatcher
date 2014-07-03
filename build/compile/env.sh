@@ -20,7 +20,7 @@ print(config['$1']['$2'])
 }
 
 setup_toolchain() {
-    export HOST_TOOLCHAIN_PREFIX="$(get_conf builder host_toolchain)"
+    export HOST_TOOLCHAIN_PREFIX="$(get_conf builder host-toolchain)"
     export ANDROIDSDK="$(get_conf builder android-sdk)"
     export ANDROIDNDK="$(get_conf builder android-ndk)"
     export ANDROIDNDKVER="$(get_conf builder android-ndk-ver)"
