@@ -147,7 +147,7 @@ def md5sum(filename):
     return hasher.hexdigest()
 
 
-def extract_tar(filename, destdir, files=None):
+def extract_tar(filename, destdir, files=None, regex=None):
     if not os.path.exists(destdir):
         os.makedirs(destdir)
 
@@ -157,7 +157,8 @@ def extract_tar(filename, destdir, files=None):
     with tarfile.open(filename) as tar:
         if files:
             for member in tar.getmembers():
-                if member.name in files:
+                if (files is not None and member.name in files) or \
+                        (regex is not None and re.search(regex, member.name)):
                     member.name = os.path.basename(member.name)
                     tar.extract(member, path=destdir)
         else:
@@ -310,6 +311,29 @@ def create_python_android(targetdir):
 
     print('Removing unneeded scripts and files ...')
     remove_files(removefiles, pyport)
+
+
+def create_pyyaml(targetdir, pysitelib):
+    yamlver = '3.11'
+    filename = 'PyYAML-%s.tar.gz' % yamlver
+    url = 'http://pyyaml.org/download/pyyaml/' + filename
+    md5 = 'f50e08ef0fe55178479d3a618efe21db'
+
+    tarball = os.path.join(builddir, 'androidbinaries', filename)
+
+    if not os.path.exists(tarball):
+        print('Downloading PyYAML %s ...' % yamlver)
+        download(url, filename=tarball)
+
+    print('Checking MD5 of PyYAML tarball ...')
+    if md5sum(tarball) != md5:
+        raise Exception('MD5 checksum does not match')
+
+    tempdir = tempfile.mkdtemp()
+    extract_tar(tarball, tempdir)
+    shutil.move(os.path.join(tempdir, 'PyYAML-' + yamlver, 'lib3', 'yaml'),
+                os.path.join(pysitelib, 'yaml'))
+    shutil.rmtree(tempdir)
 
 
 def create_pyqt_windows(targetdir):
@@ -699,6 +723,11 @@ def build_pc():
 
     create_python_windows(targetdir)
     create_pyqt_windows(targetdir)
+
+    pyport = os.path.join(targetdir, 'pythonportable')
+    pysitelib = os.path.join(pyport, 'Lib', 'site-packages')
+    create_pyyaml(targetdir, pysitelib)
+
     create_binaries_windows(targetdir)
     create_shortcuts_windows(targetdir)
     create_shortcuts_linux(targetdir)
@@ -782,7 +811,7 @@ def build_android_app(targetname):
     check_if_failed(child.exitstatus, output, None,
                     'Failed to compile Android app')
 
-    shutil.move(os.path.join(androiddir, 'build', 'apk', apkfile),
+    shutil.move(os.path.join(androiddir, 'build', 'outputs', 'apk', apkfile),
                 os.path.join(distdir, apkname))
 
 
@@ -799,6 +828,11 @@ def build_android():
     os.makedirs(targetdir)
 
     create_python_android(targetdir)
+
+    pyport = os.path.join(targetdir, 'pythonportable')
+    pysitelib = os.path.join(pyport, 'lib', 'python3.4', 'site-packages')
+    create_pyyaml(targetdir, pysitelib)
+
     create_binaries_android(targetdir)
 
     create_release(targetdir, targetfile, android=True)
