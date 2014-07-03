@@ -17,20 +17,23 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<resources>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
 
-    <color name="navigation_background">#ffeeeeee</color>
-    <color name="navigation_separator">#ffdddddd</color>
-    <color name="navigation_item_text">#ff333333</color>
+    <ProgressBar
+        android:id="@+id/loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:indeterminate="true" />
 
-    <!-- All caps button -->
-    <!-- <color name="all_caps_button_text_color">#ffffffff</color> -->
-    <color name="all_caps_button_text_color">#ff000000</color>
-    <!-- <color name="all_caps_button_color_default">#ff999999</color> -->
-    <color name="all_caps_button_color_default">#ffffffff</color>
-    <!-- <color name="all_caps_button_color_pressed">#ff808080</color> -->
-    <color name="all_caps_button_color_pressed">#ffcccccc</color>
-    <!-- <color name="all_caps_button_color_selected">#ff808080</color> -->
-    <color name="all_caps_button_color_selected">#ffcccccc</color>
+    <ListView
+        android:id="@+id/apps"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fadingEdge="vertical"
+        android:fastScrollEnabled="true"
+        android:scrollbars="vertical" />
 
-</resources>
+</RelativeLayout>

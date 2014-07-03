@@ -22,6 +22,8 @@ import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
+import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -29,14 +31,21 @@ import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class RomSettingsFragment extends PreferenceFragment implements
-        OnPreferenceChangeListener {
+        OnPreferenceChangeListener, OnPreferenceClickListener {
     public static final String TAG = "rom_settings";
 
+    private static final String KEY_APP_SHARING_CATEGORY = "app_sharing_category";
+    private static final String KEY_NO_ROOT = "no_root";
     private static final String KEY_SHARE_APPS = "share_apps";
     private static final String KEY_SHARE_PAID_APPS = "share_paid_apps";
+    private static final String KEY_SHARE_INDIV_APPS = "share_indiv_apps";
 
+    private PreferenceCategory mAppSharingCategory;
+
+    private Preference mNoRoot;
     private DisableableCheckBoxPreference mShareApps;
     private DisableableCheckBoxPreference mSharePaidApps;
+    private Preference mShareIndivApps;
 
     private boolean mAttemptedRoot;
     private boolean mHaveRootAccess;
@@ -55,11 +64,17 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         addPreferencesFromResource(R.xml.rom_settings);
 
+        mAppSharingCategory = (PreferenceCategory) findPreference(KEY_APP_SHARING_CATEGORY);
+
+        mNoRoot = findPreference(KEY_NO_ROOT);
+        mNoRoot.setOnPreferenceClickListener(this);
+
         mShareApps = (DisableableCheckBoxPreference) findPreference(KEY_SHARE_APPS);
         mSharePaidApps = (DisableableCheckBoxPreference) findPreference(KEY_SHARE_PAID_APPS);
-
         mShareApps.setOnPreferenceChangeListener(this);
         mSharePaidApps.setOnPreferenceChangeListener(this);
+
+        mShareIndivApps = findPreference(KEY_SHARE_INDIV_APPS);
     }
 
     @Override
@@ -79,32 +94,21 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         String version = MiscUtils.getPatchedByVersion();
 
-        if (!mHaveRootAccess) {
-            mShareApps.setSummary(R.string.rom_settings_noroot_desc);
-            mSharePaidApps.setSummary(R.string.rom_settings_noroot_desc);
-            mShareApps.setVisuallyEnabled(false);
-            mSharePaidApps.setVisuallyEnabled(false);
-        } else if (MiscUtils.compareVersions(version, "8.0.0") < 0) {
+        showAppSharingPrefs();
+
+        if (MiscUtils.compareVersions(version, "8.0.0") < 0) {
             mShareApps.setSummary(String.format(
                     getActivity().getString(R.string.rom_settings_too_old),
                     "8.0.0"));
             mSharePaidApps.setSummary(String.format(
                     getActivity().getString(R.string.rom_settings_too_old),
                     "8.0.0"));
+            mShareIndivApps.setSummary(String.format(
+                    getActivity().getString(R.string.rom_settings_too_old),
+                    "8.0.0"));
             mShareApps.setEnabled(false);
             mSharePaidApps.setEnabled(false);
-
-            mShareApps.setChecked(SettingsUtils.isShareAppsEnabled());
-            mSharePaidApps.setChecked(SettingsUtils.isSharePaidAppsEnabled());
-        } else {
-            mShareApps.setSummary(R.string.rom_settings_share_apps_desc);
-            mSharePaidApps
-                    .setSummary(R.string.rom_settings_share_paid_apps_desc);
-            mShareApps.setVisuallyEnabled(true);
-            mSharePaidApps.setVisuallyEnabled(true);
-
-            mShareApps.setChecked(SettingsUtils.isShareAppsEnabled());
-            mSharePaidApps.setChecked(SettingsUtils.isSharePaidAppsEnabled());
+            mShareIndivApps.setEnabled(false);
         }
     }
 
@@ -129,30 +133,44 @@ public class RomSettingsFragment extends PreferenceFragment implements
         final String key = preference.getKey();
 
         if (KEY_SHARE_APPS.equals(key)) {
-            if (((DisableableCheckBoxPreference) preference)
-                    .isVisuallyEnabled()) {
-                // Shouldn't be doing this on the UI thread, but this command
-                // returns very quickly
-                return SettingsUtils.setShareAppsEnabled((Boolean) objValue);
-            } else {
-                mAttemptedRoot = false;
-                reloadFragment();
-                return false;
-            }
+            // Shouldn't be doing this on the UI thread, but this command
+            // returns very quickly
+            return AppSharingUtils.setShareAppsEnabled((Boolean) objValue);
         } else if (KEY_SHARE_PAID_APPS.equals(key)) {
-            if (((DisableableCheckBoxPreference) preference)
-                    .isVisuallyEnabled()) {
-                // Shouldn't be doing this on the UI thread, but this command
-                // returns very quickly
-                return SettingsUtils
-                        .setSharePaidAppsEnabled((Boolean) objValue);
-            } else {
-                mAttemptedRoot = false;
-                reloadFragment();
-                return false;
-            }
+            // Shouldn't be doing this on the UI thread, but this command
+            // returns very quickly
+            return AppSharingUtils.setSharePaidAppsEnabled((Boolean) objValue);
         }
 
         return true;
+    }
+
+    @Override
+    public boolean onPreferenceClick(Preference preference) {
+        final String key = preference.getKey();
+
+        if (KEY_NO_ROOT.equals(key)) {
+            mAttemptedRoot = false;
+            reloadFragment();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void showAppSharingPrefs() {
+        if (!mHaveRootAccess) {
+            mAppSharingCategory.removePreference(mShareApps);
+            mAppSharingCategory.removePreference(mSharePaidApps);
+            mAppSharingCategory.removePreference(mShareIndivApps);
+        } else {
+            mAppSharingCategory.removePreference(mNoRoot);
+            mAppSharingCategory.addPreference(mShareApps);
+            mAppSharingCategory.addPreference(mSharePaidApps);
+            mAppSharingCategory.addPreference(mShareIndivApps);
+
+            mShareApps.setChecked(AppSharingUtils.isShareAppsEnabled());
+            mSharePaidApps.setChecked(AppSharingUtils.isSharePaidAppsEnabled());
+        }
     }
 }

@@ -36,27 +36,27 @@ public class SwitcherService extends IntentService {
         super(TAG);
     }
 
-    private void onChoseRom(boolean failed, String message, String rom) {
+    private void onChoseRom(boolean failed, String message, String kernelId) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_CHOSE_ROM);
         i.putExtra("failed", failed);
         i.putExtra("message", message);
-        i.putExtra("rom", rom);
+        i.putExtra("kernelId", kernelId);
         sendBroadcast(i);
     }
 
-    private void onSetKernel(boolean failed, String message, String rom) {
+    private void onSetKernel(boolean failed, String message, String kernelId) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_SET_KERNEL);
         i.putExtra("failed", failed);
         i.putExtra("message", message);
-        i.putExtra("rom", rom);
+        i.putExtra("kernelId", kernelId);
         sendBroadcast(i);
     }
 
-    private void chooseRom(String rom) {
+    private void chooseRom(String kernelId) {
         try {
-            RestoreKernel task = new RestoreKernel(rom);
+            RestoreKernel task = new RestoreKernel(kernelId);
             task.start();
             task.join();
         } catch (InterruptedException e) {
@@ -64,9 +64,9 @@ public class SwitcherService extends IntentService {
         }
     }
 
-    private void setKernel(String rom) {
+    private void setKernel(String kernelId) {
         try {
-            BackupKernel task = new BackupKernel(rom);
+            BackupKernel task = new BackupKernel(kernelId);
             task.start();
             task.join();
         } catch (InterruptedException e) {
@@ -79,19 +79,19 @@ public class SwitcherService extends IntentService {
         String action = intent.getStringExtra(ACTION);
 
         if (ACTION_CHOOSE_ROM.equals(action)) {
-            String rom = intent.getStringExtra("rom");
-            chooseRom(rom);
+            String kernelId = intent.getStringExtra("kernelId");
+            chooseRom(kernelId);
         } else if (ACTION_SET_KERNEL.equals(action)) {
-            String rom = intent.getStringExtra("rom");
-            setKernel(rom);
+            String kernelId = intent.getStringExtra("kernelId");
+            setKernel(kernelId);
         }
     }
 
     private class RestoreKernel extends Thread {
-        private final String mRom;
+        private final String mKernelId;
 
-        public RestoreKernel(String rom) {
-            mRom = rom;
+        public RestoreKernel(String kernelId) {
+            mKernelId = kernelId;
         }
 
         @Override
@@ -100,22 +100,22 @@ public class SwitcherService extends IntentService {
             String message = "";
 
             try {
-                SwitcherUtils.writeKernel(mRom);
+                SwitcherUtils.writeKernel(mKernelId);
                 failed = false;
             } catch (Exception e) {
                 message = e.getMessage();
                 e.printStackTrace();
             }
 
-            onChoseRom(failed, message, mRom);
+            onChoseRom(failed, message, mKernelId);
         }
     }
 
     private class BackupKernel extends Thread {
-        private final String mRom;
+        private final String mKernelId;
 
-        public BackupKernel(String rom) {
-            mRom = rom;
+        public BackupKernel(String kernelId) {
+            mKernelId = kernelId;
         }
 
         @Override
@@ -124,14 +124,14 @@ public class SwitcherService extends IntentService {
             String message = "";
 
             try {
-                SwitcherUtils.backupKernel(mRom);
+                SwitcherUtils.backupKernel(mKernelId);
                 failed = false;
             } catch (Exception e) {
                 message = e.getMessage();
                 e.printStackTrace();
             }
 
-            onSetKernel(failed, message, mRom);
+            onSetKernel(failed, message, mKernelId);
         }
     }
 }

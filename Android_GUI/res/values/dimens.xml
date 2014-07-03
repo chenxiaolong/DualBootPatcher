@@ -29,4 +29,11 @@
     <dimen name="navigation_item_height">49.0dip</dimen>
     <dimen name="navigation_divider_height">1.0dip</dimen>
 
+    <!-- All caps button -->
+    <dimen name="all_caps_button_width">120dp</dimen>
+    <dimen name="all_caps_button_height">24dp</dimen>
+    <dimen name="all_caps_button_margin">5dp</dimen>
+    <dimen name="all_caps_button_padding">8dp</dimen>
+    <dimen name="all_caps_button_text_size">12sp</dimen>
+
 </resources>

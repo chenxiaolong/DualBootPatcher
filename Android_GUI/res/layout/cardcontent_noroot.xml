@@ -35,6 +35,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="5dp"
-        android:text="@string/noroot_desc" />
+        android:text="@string/noroot_switcher_desc" />
 
 </LinearLayout>

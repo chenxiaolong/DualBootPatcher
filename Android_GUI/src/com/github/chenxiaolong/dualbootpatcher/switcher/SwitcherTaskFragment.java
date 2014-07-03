@@ -34,20 +34,20 @@ public class SwitcherTaskFragment extends Fragment {
 
     private boolean mSaveChoseRomFailed;
     private String mSaveChoseRomMessage;
-    private String mSaveChoseRomRom;
+    private String mSaveChoseRomKernelId;
     private boolean mChoseRom;
 
     private boolean mSaveSetKernelFailed;
     private String mSaveSetKernelMessage;
-    private String mSaveSetKernelRom;
+    private String mSaveSetKernelKernelId;
     private boolean mSetKernel;
 
     public static interface ChoseRomListener {
-        public void onChoseRom(boolean failed, String message, String rom);
+        public void onChoseRom(boolean failed, String message, String kernelId);
     }
 
     public static interface SetKernelListener {
-        public void onSetKernel(boolean failed, String message, String rom);
+        public void onSetKernel(boolean failed, String message, String kernelId);
     }
 
     public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -61,15 +61,15 @@ public class SwitcherTaskFragment extends Fragment {
                 if (SwitcherService.STATE_CHOSE_ROM.equals(state)) {
                     boolean failed = bundle.getBoolean("failed");
                     String message = bundle.getString("message");
-                    String rom = bundle.getString("rom");
+                    String kernelId = bundle.getString("kernelId");
 
-                    onChoseRom(failed, message, rom);
+                    onChoseRom(failed, message, kernelId);
                 } else if (SwitcherService.STATE_SET_KERNEL.equals(state)) {
                     boolean failed = bundle.getBoolean("failed");
                     String message = bundle.getString("message");
-                    String rom = bundle.getString("rom");
+                    String kernelId = bundle.getString("kernelId");
 
-                    onSetKernel(failed, message, rom);
+                    onSetKernel(failed, message, kernelId);
                 }
             }
         }
@@ -106,7 +106,7 @@ public class SwitcherTaskFragment extends Fragment {
         // Process queued events
         if (mChoseRom) {
             mChoseRomListener.onChoseRom(mSaveChoseRomFailed,
-                    mSaveChoseRomMessage, mSaveChoseRomRom);
+                    mSaveChoseRomMessage, mSaveChoseRomKernelId);
             mChoseRom = false;
         }
     }
@@ -117,7 +117,7 @@ public class SwitcherTaskFragment extends Fragment {
         // Process queued events
         if (mSetKernel) {
             mSetKernelListener.onSetKernel(mSaveSetKernelFailed,
-                    mSaveSetKernelMessage, mSaveSetKernelRom);
+                    mSaveSetKernelMessage, mSaveSetKernelKernelId);
             mSetKernel = false;
         }
     }
@@ -131,26 +131,26 @@ public class SwitcherTaskFragment extends Fragment {
     }
 
     private synchronized void onChoseRom(boolean failed, String message,
-            String rom) {
+            String kernelId) {
         if (mChoseRomListener != null) {
-            mChoseRomListener.onChoseRom(failed, message, rom);
+            mChoseRomListener.onChoseRom(failed, message, kernelId);
         } else {
             mChoseRom = true;
             mSaveChoseRomFailed = failed;
             mSaveChoseRomMessage = message;
-            mSaveChoseRomRom = rom;
+            mSaveChoseRomKernelId = kernelId;
         }
     }
 
     private synchronized void onSetKernel(boolean failed, String message,
-            String rom) {
+            String kernelId) {
         if (mSetKernelListener != null) {
-            mSetKernelListener.onSetKernel(failed, message, rom);
+            mSetKernelListener.onSetKernel(failed, message, kernelId);
         } else {
             mSetKernel = true;
             mSaveSetKernelFailed = failed;
             mSaveSetKernelMessage = message;
-            mSaveSetKernelRom = rom;
+            mSaveSetKernelKernelId = kernelId;
         }
     }
 }

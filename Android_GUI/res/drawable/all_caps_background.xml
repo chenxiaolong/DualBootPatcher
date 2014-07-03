@@ -17,20 +17,20 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<resources>
-
-    <color name="navigation_background">#ffeeeeee</color>
-    <color name="navigation_separator">#ffdddddd</color>
-    <color name="navigation_item_text">#ff333333</color>
-
-    <!-- All caps button -->
-    <!-- <color name="all_caps_button_text_color">#ffffffff</color> -->
-    <color name="all_caps_button_text_color">#ff000000</color>
-    <!-- <color name="all_caps_button_color_default">#ff999999</color> -->
-    <color name="all_caps_button_color_default">#ffffffff</color>
-    <!-- <color name="all_caps_button_color_pressed">#ff808080</color> -->
-    <color name="all_caps_button_color_pressed">#ffcccccc</color>
-    <!-- <color name="all_caps_button_color_selected">#ff808080</color> -->
-    <color name="all_caps_button_color_selected">#ffcccccc</color>
-
-</resources>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="false" android:state_selected="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/all_caps_button_color_default" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/all_caps_button_color_pressed" />
+        </shape>
+    </item>
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/all_caps_button_color_selected" />
+        </shape>
+    </item>
+</selector>

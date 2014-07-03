@@ -17,46 +17,36 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
-import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
-import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
+import android.preference.PreferenceActivity;
 import android.view.MenuItem;
 
-public class SettingsActivity extends Activity {
+public class SettingsActivity extends PreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         getActionBar().setDisplayHomeAsUpEnabled(true);
-
-        FragmentManager fm = getFragmentManager();
-        Fragment prev = fm.findFragmentByTag(RomSettingsFragment.TAG);
-        FragmentTransaction ft = fm.beginTransaction();
-
-        if (prev == null) {
-            Fragment f = RomSettingsFragment.newInstance();
-            ft.replace(android.R.id.content, f, RomSettingsFragment.TAG);
-        } else {
-            ft.show(prev);
-        }
-
-        ft.commit();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            Intent intent = NavUtils.getParentActivityIntent(this);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            NavUtils.navigateUpTo(this, intent);
+            finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected boolean isValidFragment(String fragmentName) {
+        if (RomSettingsFragment.class.getName().equals(fragmentName)) {
+            return true;
+        } else if (AppListFragment.class.getName().equals(fragmentName)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

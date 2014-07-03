@@ -307,4 +307,38 @@ public final class CommandUtils {
             e.printStackTrace();
         }
     }
+
+    public static int runRootCommand(String command) {
+        RootCommandParams params = new RootCommandParams();
+        params.command = command;
+
+        RootCommandRunner cmd = new RootCommandRunner(params);
+        cmd.start();
+
+        try {
+            cmd.join();
+            CommandResult result = cmd.getResult();
+
+            return result.exitCode;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
+    public static class FullRootOutputListener implements RootCommandListener {
+        private final StringBuilder mOutput = new StringBuilder();
+
+        @Override
+        public void onNewOutputLine(String line) {
+            mOutput.append(line);
+            mOutput.append(System.getProperty("line.separator"));
+        }
+
+        @Override
+        public void onCommandCompletion(CommandResult result) {
+            result.data.putString("output", mOutput.toString());
+        }
+    }
 }

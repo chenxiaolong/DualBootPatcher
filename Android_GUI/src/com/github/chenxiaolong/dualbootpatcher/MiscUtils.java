@@ -26,7 +26,7 @@ import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandListener;
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils.FullRootOutputListener;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 
@@ -94,35 +94,34 @@ public class MiscUtils {
         }
     }
 
-    public static Properties getProperties(String file) {
-        File propfile = new File(file);
+    public static String getPartitionConfig() {
+        Properties prop = getDefaultProp();
 
-        // Make sure build.prop exists
-        if (!propfile.exists()) {
-            try {
-                RootCommandParams params = new RootCommandParams();
-                params.command = "ls " + propfile.getPath();
-
-                RootCommandRunner cmd = new RootCommandRunner(params);
-                cmd.start();
-                cmd.join();
-                CommandResult result = cmd.getResult();
-
-                if (result.exitCode != 0) {
-                    return null;
-                }
-            } catch (Exception e) {
-                return null;
-            }
+        if (prop == null) {
+            return null;
         }
 
+        if (prop.containsKey("ro.patcher.patched")) {
+            return prop.getProperty("ro.patcher.patched");
+        } else {
+            return null;
+        }
+    }
+
+    public static Properties getProperties(String file) {
+        // Make sure build.prop exists
+        if (!FileUtils.isExistsFile(file)) {
+            return null;
+        }
+
+        File propfile = new File(file);
         Properties prop = new Properties();
 
         if (!propfile.canRead()) {
             try {
                 RootCommandParams params = new RootCommandParams();
                 params.command = "cat " + propfile.getPath();
-                params.listener = new FullOutputListener();
+                params.listener = new FullRootOutputListener();
 
                 RootCommandRunner cmd = new RootCommandRunner(params);
                 cmd.start();
@@ -165,20 +164,5 @@ public class MiscUtils {
 
     public static Properties getDefaultProp() {
         return getProperties("/default.prop");
-    }
-
-    private static class FullOutputListener implements RootCommandListener {
-        private final StringBuilder mOutput = new StringBuilder();
-
-        @Override
-        public void onNewOutputLine(String line) {
-            mOutput.append(line);
-            mOutput.append(System.getProperty("line.separator"));
-        }
-
-        @Override
-        public void onCommandCompletion(CommandResult result) {
-            result.data.putString("output", mOutput.toString());
-        }
     }
 }

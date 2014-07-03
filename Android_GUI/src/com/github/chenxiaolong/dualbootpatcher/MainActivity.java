@@ -30,6 +30,7 @@ import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceActivity;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.view.Gravity;
@@ -401,7 +402,11 @@ public class MainActivity extends Activity {
             break;
 
         case NAV_SETTINGS:
-            startActivity(new Intent(this, SettingsActivity.class));
+            Intent intent = new Intent(this, SettingsActivity.class);
+            intent.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT,
+                    RomSettingsFragment.class.getName());
+            intent.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
+            startActivity(intent);
             break;
 
         case NAV_REBOOT:

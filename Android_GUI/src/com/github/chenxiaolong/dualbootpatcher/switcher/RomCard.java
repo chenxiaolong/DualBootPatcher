@@ -27,6 +27,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class RomCard extends Card {
     private TextView mTitle;
@@ -36,7 +37,7 @@ public class RomCard extends Card {
 
     private boolean mShowProgress;
 
-    private final String mRom;
+    private final RomInformation mRomInfo;
     private final String mName;
     private final String mVersion;
     private final int mImageResId;
@@ -46,10 +47,10 @@ public class RomCard extends Card {
 
     private boolean mEnabled = true;
 
-    public RomCard(Context context, String rom, String name, String version,
+    public RomCard(Context context, RomInformation info, String name, String version,
             int imageResId) {
         super(context, R.layout.cardcontent_switcher);
-        mRom = rom;
+        mRomInfo = info;
         mName = name;
         mVersion = version;
         mImageResId = imageResId;
@@ -129,8 +130,8 @@ public class RomCard extends Card {
         updateMessage();
     }
 
-    public String getRom() {
-        return mRom;
+    public RomInformation getRom() {
+        return mRomInfo;
     }
 
     public void setEnabled(boolean enabled) {
@@ -142,14 +143,14 @@ public class RomCard extends Card {
     }
 
     public void onSaveInstanceState(Bundle outState) {
-        String prefix = "romcard_" + mRom;
+        String prefix = "romcard_" + mRomInfo.kernelId;
         outState.putBoolean(prefix + "_showprogress", mShowProgress);
         outState.putBoolean(prefix + "_showmessage", mShowMessage);
         outState.putInt(prefix + "_messageresid", mStringResId);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
-        String prefix = "romcard_" + mRom;
+        String prefix = "romcard_" + mRomInfo.kernelId;
         mShowProgress = savedInstanceState.getBoolean(prefix + "_showprogress");
         mShowMessage = savedInstanceState.getBoolean(prefix + "_showmessage");
         mStringResId = savedInstanceState.getInt(prefix + "_messageresid");

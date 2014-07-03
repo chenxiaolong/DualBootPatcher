@@ -17,11 +17,17 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
@@ -34,6 +40,7 @@ import android.provider.DocumentsContract;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils.FullRootOutputListener;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 
@@ -42,18 +49,14 @@ public class FileUtils {
     private static String getPathFromDocumentsUri(Context context, Uri uri) {
         // Based on
         // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
-        StorageManager sm = (StorageManager) context
-                .getSystemService(Context.STORAGE_SERVICE);
+        StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
 
         try {
             Class<? extends StorageManager> StorageManager = sm.getClass();
-            Method getVolumeList = StorageManager
-                    .getDeclaredMethod("getVolumeList");
-            Object[] vols = (Object[]) getVolumeList
-                    .invoke(sm, new Object[] {});
+            Method getVolumeList = StorageManager.getDeclaredMethod("getVolumeList");
+            Object[] vols = (Object[]) getVolumeList.invoke(sm, new Object[]{});
 
-            Class<?> StorageVolume = Class
-                    .forName("android.os.storage.StorageVolume");
+            Class<?> StorageVolume = Class.forName("android.os.storage.StorageVolume");
             Method isPrimary = StorageVolume.getDeclaredMethod("isPrimary");
             Method isEmulated = StorageVolume.getDeclaredMethod("isEmulated");
             Method getUuid = StorageVolume.getDeclaredMethod("getUuid");
@@ -66,21 +69,20 @@ public class FileUtils {
 
             String volId;
             for (Object vol : vols) {
-                if ((Boolean) isPrimary.invoke(vol, new Object[] {})
-                        && (Boolean) isEmulated.invoke(vol, new Object[] {})) {
+                if ((Boolean) isPrimary.invoke(vol, new Object[]{}) && (Boolean) isEmulated
+                        .invoke(vol, new Object[]{})) {
                     volId = ROOT_ID_PRIMARY_EMULATED;
-                } else if (getUuid.invoke(vol, new Object[] {}) != null) {
-                    volId = (String) getUuid.invoke(vol, new Object[] {});
+                } else if (getUuid.invoke(vol, new Object[]{}) != null) {
+                    volId = (String) getUuid.invoke(vol, new Object[]{});
                 } else {
-                    Log.e("DualBootPatcher",
-                            "Missing UUID for "
-                                    + getPath.invoke(vol, new Object[] {}));
+                    Log.e("DualBootPatcher", "Missing UUID for " + getPath.invoke(vol,
+                                    new Object[]{})
+                    );
                     continue;
                 }
 
                 if (volId.equals(split[0])) {
-                    return getPath.invoke(vol, new Object[] {})
-                            + File.separator + split[1];
+                    return getPath.invoke(vol, new Object[]{}) + File.separator + split[1];
                 }
             }
 
@@ -96,16 +98,14 @@ public class FileUtils {
         // Based on
         // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
         String id = DocumentsContract.getDocumentId(uri);
-        Uri contentUri = ContentUris.withAppendedId(
-                Uri.parse("content://downloads/public_downloads"),
-                Long.valueOf(id));
+        Uri contentUri = ContentUris.withAppendedId(Uri.parse
+                ("content://downloads/public_downloads"), Long.valueOf(id));
 
         Cursor cursor = null;
-        String[] projection = { "_data" };
+        String[] projection = {"_data"};
 
         try {
-            cursor = context.getContentResolver().query(contentUri, projection,
-                    null, null, null);
+            cursor = context.getContentResolver().query(contentUri, projection, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 return cursor.getString(cursor.getColumnIndexOrThrow("_data"));
             }
@@ -119,13 +119,11 @@ public class FileUtils {
     }
 
     public static String getPathFromUri(Context context, Uri uri) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
-                && "com.android.externalstorage.documents".equals(uri
-                        .getAuthority())) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
+                ("com.android.externalstorage.documents").equals(uri.getAuthority())) {
             return getPathFromDocumentsUri(context, uri);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
-                && "com.android.providers.downloads.documents".equals(uri
-                        .getAuthority())) {
+                && ("com.android.providers.downloads.documents").equals(uri.getAuthority())) {
             return getPathFromDownloadsUri(context, uri);
         } else {
             return uri.getPath();
@@ -167,27 +165,30 @@ public class FileUtils {
         }
     }
 
+    public static void deleteFile(String path) {
+        File file = new File(path);
+        file.delete();
+
+        if (isExistsFile(path)) {
+            CommandUtils.runRootCommand("rm -f " + path);
+        }
+    }
+
     public static boolean isExistsDirectory(String path) {
         File file = new File(path);
         if (file.exists() && file.isDirectory() && file.canRead()) {
             return true;
         } else {
-            RootCommandParams params = new RootCommandParams();
-            params.command = "ls " + path;
+            return CommandUtils.runRootCommand("test -d " + path) == 0;
+        }
+    }
 
-            RootCommandRunner cmd = new RootCommandRunner(params);
-            cmd.start();
-
-            try {
-                cmd.join();
-                CommandResult result = cmd.getResult();
-
-                return result.exitCode == 0;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return false;
+    public static boolean isExistsFile(String path) {
+        File file = new File(path);
+        if (file.exists() && file.isFile() && file.canRead()) {
+            return true;
+        } else {
+            return CommandUtils.runRootCommand("test -f " + path) == 0;
         }
     }
 
@@ -198,18 +199,177 @@ public class FileUtils {
         } else if (file.mkdirs()) {
             return true;
         } else {
+            CommandUtils.runRootCommand("mkdir -p " + directory);
+            return isExistsDirectory(directory);
+        }
+    }
+
+    public static boolean createHardLink(String source, String target) {
+        return CommandUtils.runRootCommand("ln " + source + " " + target) == 0;
+    }
+
+    public static boolean copyFile(String source, String target) {
+        return CommandUtils.runRootCommand("cp " + source + " " + target) == 0;
+    }
+
+    public static String getFileContents(String path) {
+        if (!isExistsFile(path)) {
+            return null;
+        }
+
+        File f = new File(path);
+        if (f.canRead()) {
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(path));
+                StringBuilder sb = new StringBuilder();
+                String line = null;
+
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                    sb.append(System.getProperty("line.separator"));
+                    //sb.append(System.lineSeparator());
+                }
+                return sb.toString();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
+        } else {
+            try {
+                RootCommandParams params = new RootCommandParams();
+                params.command = "cat " + f.getPath();
+                params.listener = new FullRootOutputListener();
+
+                RootCommandRunner cmd = new RootCommandRunner(params);
+                cmd.start();
+                cmd.join();
+                CommandResult result = cmd.getResult();
+
+                if (result.exitCode != 0) {
+                    return null;
+                }
+
+                String output = result.data.getString("output");
+
+                if (output == null) {
+                    return null;
+                }
+
+                return output;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
+    }
+
+    public static void writeFileContents(String path, String contents) {
+        boolean success = false;
+
+        File f = new File(path);
+
+        try {
+            if (!f.exists()) {
+                success = f.createNewFile();
+            } else if (f.canWrite()) {
+                success = true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (success) {
+            BufferedWriter bw = null;
+            try {
+                bw = new BufferedWriter(new FileWriter(path));
+                bw.write(contents);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (bw != null) {
+                    try {
+                        bw.close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
+        } else {
+            CommandUtils.runRootCommand("echo '" + contents + "' > " + path);
+        }
+    }
+
+    public static String[] listdir(String directory) {
+        if (!isExistsDirectory(directory)) {
+            return null;
+        }
+
+        File dir = new File(directory);
+        if (dir.exists() && dir.isDirectory() && dir.canRead()) {
+            return dir.list();
+        }
+
+        try {
             RootCommandParams params = new RootCommandParams();
-            params.command = "mkdir -p " + directory;
+            params.command = "ls " + dir.getPath();
+            params.listener = new FullRootOutputListener();
 
             RootCommandRunner cmd = new RootCommandRunner(params);
             cmd.start();
-            try {
-                cmd.join();
-            } catch (Exception e) {
-                e.printStackTrace();
+            cmd.join();
+            CommandResult result = cmd.getResult();
+
+            if (result.exitCode != 0) {
+                return null;
             }
 
-            return isExistsDirectory(directory);
+            String output = result.data.getString("output");
+
+            if (output == null) {
+                return null;
+            }
+
+            String newline = System.getProperty("line.separator");
+            String[] split = output.split(newline);
+            ArrayList<String> files = new ArrayList<String>();
+
+            for (String s : split) {
+                if (!s.isEmpty()) {
+                    files.add(s);
+                }
+            }
+
+            return files.toArray(new String[0]);
+        } catch (Exception e) {
+            return null;
         }
+    }
+
+    public static boolean isSameInode(String file1, String file2) {
+        if (!isExistsFile(file1) || !isExistsFile(file2)) {
+            return false;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("get_inode() {");
+        sb.append("  ls -id \"${1}\" | awk '{print $1}';");
+        sb.append("};");
+        sb.append("same_inode() {");
+        sb.append("  if test $(get_inode \"${1}\") == $(get_inode \"${2}\"); then");
+        sb.append("    return 0;");
+        sb.append("  else");
+        sb.append("    return 1;");
+        sb.append("  fi;");
+        sb.append("};");
+        sb.append("same_inode " + file1 + " " + file2);
+
+        return CommandUtils.runRootCommand(sb.toString()) == 0;
     }
 }
