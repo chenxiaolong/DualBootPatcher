@@ -53,10 +53,6 @@ public class DetailsCard extends Card {
         mDetails.setText(text);
     }
 
-    public void onDetatchBlahBlah() {
-        mDetails = null;
-    }
-
     public void reset() {
         mText = "";
         mDetails.setText("");

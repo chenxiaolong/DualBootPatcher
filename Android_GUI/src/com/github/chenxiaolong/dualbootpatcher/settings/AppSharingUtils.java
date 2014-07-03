@@ -64,8 +64,8 @@ public class AppSharingUtils {
 
         ArrayList<String> apks = new ArrayList<String>();
 
-        for (int i = 0; i < roms.length; i++) {
-            String[] filenames = FileUtils.listdir(roms[i].data + File.separator + "app");
+        for (RomInformation rom : roms) {
+            String[] filenames = FileUtils.listdir(rom.data + File.separator + "app");
 
             if (filenames == null || filenames.length == 0) {
                 continue;
@@ -73,23 +73,11 @@ public class AppSharingUtils {
 
             for (String filename : filenames) {
                 if (filename.endsWith(".apk")) {
-                    apks.add(roms[i].data + File.separator + "app" + File.separator + filename);
+                    apks.add(rom.data + File.separator + "app" + File.separator + filename);
                 }
             }
         }
 
         return apks.toArray(new String[apks.size()]);
-    }
-
-    public static boolean isAppShared(RomInformation source, RomInformation target, String apk) {
-        return false;
-    }
-
-    public static boolean shareApp(RomInformation source, RomInformation target, String apk) {
-        return true;
-    }
-
-    public static boolean unShareApp(RomInformation source, RomInformation target, String apk) {
-        return true;
     }
 }

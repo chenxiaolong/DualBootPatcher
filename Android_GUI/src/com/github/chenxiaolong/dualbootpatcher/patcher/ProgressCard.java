@@ -85,12 +85,6 @@ public class ProgressCard extends Card {
         updateProgress();
     }
 
-    public void onDetatch() {
-        mPercentage = null;
-        mFiles = null;
-        mProgress = null;
-    }
-
     public void reset() {
         mCurProgress = 0;
         mMaxProgress = 0;

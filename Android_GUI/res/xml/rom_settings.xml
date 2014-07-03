@@ -28,12 +28,12 @@
             android:summary="@string/noroot_settings_desc"
             android:title="@string/noroot_title" />
 
-        <com.github.chenxiaolong.dualbootpatcher.settings.DisableableCheckBoxPreference
+        <CheckBoxPreference
             android:key="share_apps"
             android:persistent="false"
             android:summary="@string/rom_settings_share_apps_desc"
             android:title="@string/rom_settings_share_apps_title" />
-        <com.github.chenxiaolong.dualbootpatcher.settings.DisableableCheckBoxPreference
+        <CheckBoxPreference
             android:key="share_paid_apps"
             android:persistent="false"
             android:summary="@string/rom_settings_share_paid_apps_desc"

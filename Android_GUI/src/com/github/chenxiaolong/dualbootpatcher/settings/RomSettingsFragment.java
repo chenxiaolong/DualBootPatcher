@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
@@ -43,18 +44,12 @@ public class RomSettingsFragment extends PreferenceFragment implements
     private PreferenceCategory mAppSharingCategory;
 
     private Preference mNoRoot;
-    private DisableableCheckBoxPreference mShareApps;
-    private DisableableCheckBoxPreference mSharePaidApps;
+    private CheckBoxPreference mShareApps;
+    private CheckBoxPreference mSharePaidApps;
     private Preference mShareIndivApps;
 
     private boolean mAttemptedRoot;
     private boolean mHaveRootAccess;
-
-    public static RomSettingsFragment newInstance() {
-        RomSettingsFragment f = new RomSettingsFragment();
-
-        return f;
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -69,8 +64,8 @@ public class RomSettingsFragment extends PreferenceFragment implements
         mNoRoot = findPreference(KEY_NO_ROOT);
         mNoRoot.setOnPreferenceClickListener(this);
 
-        mShareApps = (DisableableCheckBoxPreference) findPreference(KEY_SHARE_APPS);
-        mSharePaidApps = (DisableableCheckBoxPreference) findPreference(KEY_SHARE_PAID_APPS);
+        mShareApps = (CheckBoxPreference) findPreference(KEY_SHARE_APPS);
+        mSharePaidApps = (CheckBoxPreference) findPreference(KEY_SHARE_PAID_APPS);
         mShareApps.setOnPreferenceChangeListener(this);
         mSharePaidApps.setOnPreferenceChangeListener(this);
 

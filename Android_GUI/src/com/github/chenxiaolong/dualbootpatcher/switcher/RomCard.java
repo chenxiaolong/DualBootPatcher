@@ -40,7 +40,6 @@ public class RomCard extends Card {
     private final RomInformation mRomInfo;
     private final String mName;
     private final String mVersion;
-    private final int mImageResId;
 
     private int mStringResId;
     private boolean mShowMessage;
@@ -53,10 +52,9 @@ public class RomCard extends Card {
         mRomInfo = info;
         mName = name;
         mVersion = version;
-        mImageResId = imageResId;
 
         CardThumbnail thumb = new CardThumbnail(getContext());
-        thumb.setDrawableResource(mImageResId);
+        thumb.setDrawableResource(imageResId);
         addCardThumbnail(thumb);
     }
 

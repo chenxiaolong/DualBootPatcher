@@ -41,12 +41,7 @@ public class SettingsActivity extends PreferenceActivity {
 
     @Override
     protected boolean isValidFragment(String fragmentName) {
-        if (RomSettingsFragment.class.getName().equals(fragmentName)) {
-            return true;
-        } else if (AppListFragment.class.getName().equals(fragmentName)) {
-            return true;
-        } else {
-            return false;
-        }
+        return RomSettingsFragment.class.getName().equals(fragmentName)
+                || AppListFragment.class.getName().equals(fragmentName);
     }
 }

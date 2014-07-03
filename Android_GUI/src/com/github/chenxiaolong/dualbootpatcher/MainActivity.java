@@ -410,7 +410,7 @@ public class MainActivity extends Activity {
             break;
 
         case NAV_REBOOT:
-            SwitcherUtils.reboot(this, getFragmentManager());
+            SwitcherUtils.reboot();
             break;
 
         case NAV_ABOUT:

@@ -246,7 +246,7 @@ public class PatcherUtils {
         params.filter = new PatcherOutputFilter();
         CommandRunner cmd;
 
-        params.command = args.toArray(new String[0]);
+        params.command = args.toArray(new String[args.size()]);
         params.environment = new String[] { "PYTHONUNBUFFERED=true",
                 "TMPDIR=" + context.getCacheDir() };
         params.cwd = targetDir;
@@ -314,7 +314,7 @@ public class PatcherUtils {
         params.listener = listener;
         CommandRunner cmd;
 
-        params.command = args.toArray(new String[0]);
+        params.command = args.toArray(new String[args.size()]);
         params.environment = new String[] { "PYTHONUNBUFFERED=true" };
         params.cwd = targetDir;
 

@@ -19,9 +19,7 @@ public class AlertDialogFragment extends DialogFragment {
     public DialogInterface.OnClickListener mPositive = null;
 
     public static AlertDialogFragment newInstance() {
-        AlertDialogFragment f = new AlertDialogFragment();
-
-        return f;
+        return new AlertDialogFragment();
     }
 
     public static AlertDialogFragment newInstance(String title, String message,

@@ -92,9 +92,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
     private boolean mDeviceSpinnerChanged;
 
     public static PatchFileFragment newInstance() {
-        PatchFileFragment f = new PatchFileFragment();
-
-        return f;
+        return new PatchFileFragment();
     }
 
     public static PatchFileFragment newAutomatedInstance(Bundle data) {

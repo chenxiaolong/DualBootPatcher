@@ -245,8 +245,8 @@ public class PatcherTaskFragment extends Fragment {
         mListener = listener;
 
         // Process queued events
-        for (int i = 0; i < mQueueAddTask.size(); i++) {
-            mListener.addTask(mQueueAddTask.get(i));
+        for (String task : mQueueAddTask) {
+            mListener.addTask(task);
         }
         mQueueAddTask.clear();
 

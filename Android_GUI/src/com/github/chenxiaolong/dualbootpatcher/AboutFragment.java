@@ -30,9 +30,7 @@ public class AboutFragment extends Fragment {
     public static final String TAG = "about";
 
     public static AboutFragment newInstance() {
-        AboutFragment f = new AboutFragment();
-
-        return f;
+        return new AboutFragment();
     }
 
     @Override

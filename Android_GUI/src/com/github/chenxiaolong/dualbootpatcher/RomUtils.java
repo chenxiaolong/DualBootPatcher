@@ -17,13 +17,13 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
+import android.content.Context;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import android.content.Context;
 
 public class RomUtils {
     private static ArrayList<RomInformation> mRoms;
@@ -68,38 +68,43 @@ public class RomUtils {
     }
 
     public static RomInformation getCurrentRom() {
+        return getCurrentRomViaProp();
+        // return getCurrentRomViaInode();
+    }
+
+    private static RomInformation getCurrentRomViaProp() {
         String curPartConfig = MiscUtils.getPartitionConfig();
         RomInformation[] roms = getRoms();
 
-        for (int i = 0; i < roms.length; i++) {
-            if (roms[i].id.equals(PRIMARY_KERNEL_ID) && curPartConfig == null) {
-                return roms[i];
-            } else if (roms[i].id.equals(curPartConfig)) {
-                return roms[i];
+        for (RomInformation rom : roms) {
+            if (rom.id.equals(PRIMARY_KERNEL_ID) && curPartConfig == null) {
+                return rom;
+            } else if (rom.id.equals(curPartConfig)) {
+                return rom;
             }
         }
 
         return null;
     }
 
-    public static RomInformation getRomFromKernelId(String kernelId) {
-        RomInformation info = null;
-        RomInformation[] roms = RomUtils.getRoms();
+    private static RomInformation getCurrentRomViaInode() {
+        RomInformation[] roms = getRoms();
 
-        for (int i = 0; i < roms.length; i++) {
-            if (roms[i].kernelId.equals(kernelId)) {
-                info = roms[i];
+        for (RomInformation rom : roms) {
+            if (FileUtils.isSameInode(rom.system + File.separator + BUILD_PROP,
+                    SYSTEM + File.separator + BUILD_PROP)) {
+                return rom;
             }
         }
 
-        return info;
+        return null;
     }
 
     public static RomInformation[] getRoms() {
         if (mRoms == null) {
             mRoms = new ArrayList<RomInformation>();
 
-            RomInformation info = null;
+            RomInformation info;
 
             // Check if primary ROM exists
             if (isBootedInPrimary()) {
@@ -199,7 +204,7 @@ public class RomUtils {
         } else if (info.kernelId.startsWith(MULTI_KERNEL_ID_PREFIX)) {
             Pattern p = Pattern.compile("^" + MULTI_KERNEL_ID_PREFIX + "(.+)");
             Matcher m = p.matcher(info.kernelId);
-            String num = null;
+            String num;
             if (m.find()) {
                 num = m.group(1);
                 return String.format(context.getString(R.string.multislot), num);

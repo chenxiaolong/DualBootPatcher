@@ -17,18 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
 import android.content.Context;
@@ -44,6 +32,17 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.FullRootOutputListen
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+
 public class FileUtils {
     @SuppressLint("NewApi")
     private static String getPathFromDocumentsUri(Context context, Uri uri) {
@@ -54,7 +53,7 @@ public class FileUtils {
         try {
             Class<? extends StorageManager> StorageManager = sm.getClass();
             Method getVolumeList = StorageManager.getDeclaredMethod("getVolumeList");
-            Object[] vols = (Object[]) getVolumeList.invoke(sm, new Object[]{});
+            Object[] vols = (Object[]) getVolumeList.invoke(sm);
 
             Class<?> StorageVolume = Class.forName("android.os.storage.StorageVolume");
             Method isPrimary = StorageVolume.getDeclaredMethod("isPrimary");
@@ -69,20 +68,17 @@ public class FileUtils {
 
             String volId;
             for (Object vol : vols) {
-                if ((Boolean) isPrimary.invoke(vol, new Object[]{}) && (Boolean) isEmulated
-                        .invoke(vol, new Object[]{})) {
+                if ((Boolean) isPrimary.invoke(vol) && (Boolean) isEmulated.invoke(vol)) {
                     volId = ROOT_ID_PRIMARY_EMULATED;
-                } else if (getUuid.invoke(vol, new Object[]{}) != null) {
-                    volId = (String) getUuid.invoke(vol, new Object[]{});
+                } else if (getUuid.invoke(vol) != null) {
+                    volId = (String) getUuid.invoke(vol);
                 } else {
-                    Log.e("DualBootPatcher", "Missing UUID for " + getPath.invoke(vol,
-                                    new Object[]{})
-                    );
+                    Log.e("DualBootPatcher", "Missing UUID for " + getPath.invoke(vol));
                     continue;
                 }
 
                 if (volId.equals(split[0])) {
-                    return getPath.invoke(vol, new Object[]{}) + File.separator + split[1];
+                    return getPath.invoke(vol) + File.separator + split[1];
                 }
             }
 
@@ -165,15 +161,6 @@ public class FileUtils {
         }
     }
 
-    public static void deleteFile(String path) {
-        File file = new File(path);
-        file.delete();
-
-        if (isExistsFile(path)) {
-            CommandUtils.runRootCommand("rm -f " + path);
-        }
-    }
-
     public static boolean isExistsDirectory(String path) {
         File file = new File(path);
         if (file.exists() && file.isDirectory() && file.canRead()) {
@@ -204,14 +191,6 @@ public class FileUtils {
         }
     }
 
-    public static boolean createHardLink(String source, String target) {
-        return CommandUtils.runRootCommand("ln " + source + " " + target) == 0;
-    }
-
-    public static boolean copyFile(String source, String target) {
-        return CommandUtils.runRootCommand("cp " + source + " " + target) == 0;
-    }
-
     public static String getFileContents(String path) {
         if (!isExistsFile(path)) {
             return null;
@@ -223,7 +202,7 @@ public class FileUtils {
             try {
                 br = new BufferedReader(new FileReader(path));
                 StringBuilder sb = new StringBuilder();
-                String line = null;
+                String line;
 
                 while ((line = br.readLine()) != null) {
                     sb.append(line);
@@ -238,6 +217,7 @@ public class FileUtils {
                     try {
                         br.close();
                     } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -298,6 +278,7 @@ public class FileUtils {
                     try {
                         bw.close();
                     } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -346,7 +327,7 @@ public class FileUtils {
                 }
             }
 
-            return files.toArray(new String[0]);
+            return files.toArray(new String[files.size()]);
         } catch (Exception e) {
             return null;
         }
@@ -368,7 +349,7 @@ public class FileUtils {
         sb.append("    return 1;");
         sb.append("  fi;");
         sb.append("};");
-        sb.append("same_inode " + file1 + " " + file2);
+        sb.append("same_inode ").append(file1).append(" ").append(file2);
 
         return CommandUtils.runRootCommand(sb.toString()) == 0;
     }

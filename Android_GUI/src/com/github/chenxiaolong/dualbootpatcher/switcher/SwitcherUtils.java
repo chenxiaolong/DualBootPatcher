@@ -17,14 +17,12 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import java.io.File;
-
-import android.app.FragmentManager;
-import android.content.Context;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+
+import java.io.File;
 
 public class SwitcherUtils {
     public static final String TAG = "SwitcherUtils";
@@ -83,7 +81,7 @@ public class SwitcherUtils {
         CommandUtils.runRootCommand("chown -R media_rw:media_rw " + kernel_path);
     }
 
-    public static void reboot(Context context, FragmentManager fm) {
+    public static void reboot() {
         CommandUtils.runRootCommand("reboot");
     }
 }

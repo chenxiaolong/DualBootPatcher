@@ -155,6 +155,7 @@ public class MiscUtils {
                         fis.close();
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }

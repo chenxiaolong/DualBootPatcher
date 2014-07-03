@@ -93,7 +93,6 @@ public class PresetCard extends Card {
                 if (info.mPath.startsWith(dir + "/")) {
                     mPresetAdapter.add(info.mPath);
                     mPresets.add(info);
-                    continue;
                 }
             }
         }

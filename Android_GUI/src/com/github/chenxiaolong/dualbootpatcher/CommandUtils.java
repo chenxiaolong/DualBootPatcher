@@ -213,10 +213,7 @@ public final class CommandUtils {
     }
 
     public static boolean requestRootAccess() {
-        if (!RootTools.isAccessGiven()) {
-            return false;
-        }
-        return true;
+        return RootTools.isAccessGiven();
     }
 
     public static class RootCommandRunner extends Thread {

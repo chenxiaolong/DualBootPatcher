@@ -72,9 +72,7 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     private RomInformation[] mRoms;
 
     private static SwitcherListFragment newInstance() {
-        SwitcherListFragment f = new SwitcherListFragment();
-
-        return f;
+        return new SwitcherListFragment();
     }
 
     public static SwitcherListFragment newInstance(int action) {
@@ -197,8 +195,8 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         // mCards will be null when switching to the SuperUser/SuperSU activity
         // for approving root access
         if (mCards != null) {
-            for (int i = 0; i < mCards.size(); i++) {
-                RomCard card = (RomCard) mCards.get(i);
+            for (Card c : mCards) {
+                RomCard card = (RomCard) c;
                 card.onSaveInstanceState(outState);
             }
         }
@@ -388,8 +386,8 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     }
 
     private RomCard findCard(RomInformation info) {
-        for (int i = 0; i < mCards.size(); i++) {
-            RomCard card = (RomCard) mCards.get(i);
+        for (Card c : mCards) {
+            RomCard card = (RomCard) c;
             if (info.equals(card.getRom())) {
                 return card;
             }
@@ -398,8 +396,8 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     }
 
     private RomCard findCardFromId(String kernelId) {
-        for (int i = 0; i < mCards.size(); i++) {
-            RomCard card = (RomCard) mCards.get(i);
+        for (Card c : mCards) {
+            RomCard card = (RomCard) c;
             if (card.getRom().kernelId.equals(kernelId)) {
                 return card;
             }
@@ -408,8 +406,8 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     }
 
     private void showCompletionMessage(RomCard card, boolean failed) {
-        for (int i = 0; i < mCards.size(); i++) {
-            RomCard curCard = (RomCard) mCards.get(i);
+        for (Card c : mCards) {
+            RomCard curCard = (RomCard) c;
             if (curCard == card) {
                 curCard.showCompletionMessage(mAction, failed);
             } else {

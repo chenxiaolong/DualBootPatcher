@@ -70,24 +70,11 @@ public class TasksCard extends Card {
             mTasksContainer = (LinearLayout) view
                     .findViewById(R.id.tasks_container);
 
-            for (int i = 0; i < mTasks.size(); i++) {
-                Task t = mTasks.get(i);
+            for (Task t : mTasks) {
                 showTask(t);
                 mTasksContainer.addView(t.mItem);
             }
         }
-    }
-
-    public void onDetachBlahBlah() {
-        for (int i = 0; i < mTasks.size(); i++) {
-            mTasks.get(i).mImageView = null;
-            mTasks.get(i).mProgressBar = null;
-            mTasks.get(i).mTextView = null;
-            mTasks.get(i).mItem = null;
-        }
-
-        mTasksContainer = null;
-        mInflater = null;
     }
 
     public void addTask(String task) {
@@ -109,9 +96,7 @@ public class TasksCard extends Card {
     public void updateTask(String task) {
         boolean reachedTask = false;
 
-        for (int i = 0; i < mTasks.size(); i++) {
-            Task t = mTasks.get(i);
-
+        for (Task t : mTasks) {
             if (t.mName.equals(task)) {
                 t.mProgressBarShown = true;
                 t.mImageViewShown = false;
@@ -122,13 +107,7 @@ public class TasksCard extends Card {
             } else {
                 t.mProgressBarShown = false;
                 t.mImageViewShown = true;
-
-                if (!reachedTask) {
-                    t.mImageViewChecked = true;
-                } else {
-                    t.mImageViewChecked = false;
-                }
-
+                t.mImageViewChecked = !reachedTask;
                 t.mColor = Color.LTGRAY;
             }
 
