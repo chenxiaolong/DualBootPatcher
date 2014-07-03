@@ -63,8 +63,6 @@ if os.path.exists(os.path.join(builddir, 'build.custom.conf')):
 version = config['builder']['version']
 android_sdk = config['builder']['android-sdk']
 android_ndk = config['builder']['android-ndk']
-win32_launcher = config['builder']['win32_launcher']
-mingw_prefix = config['builder']['mingw_prefix']
 
 # ********************************
 
@@ -511,7 +509,6 @@ def create_shortcuts_windows(targetdir):
 
     bingui = os.path.join(targetdir, 'PatchFileWindowsGUI.exe')
     bincli = os.path.join(targetdir, 'PatchFileWindows.exe')
-    manifest = os.path.join(builddir, 'shortcuts', 'windows-exe.manifest')
 
     tempdir = tempfile.mkdtemp()
 
@@ -540,74 +537,23 @@ def create_shortcuts_windows(targetdir):
 
     # Compile launcher
     print('Compiling Windows launcher executables ...')
-    if win32_launcher == 'C++':
-        with open(os.path.join(tempdir, 'res.rc'), 'w') as f:
-            f.write('1 ICON "combined.ico"\n')
-            # 24 = RT_MANIFEST, but windres doesn't seem to like it
-            f.write('1 24 \"%s\"' % manifest)
 
-        exit_status, output, error = run_command(
-            [mingw_prefix + 'windres', 'res.rc', 'res.o'],
-            cwd=tempdir
-        )
+    exit_status, output, error = run_command(
+        ['gmcs', os.path.join(builddir, 'shortcuts', 'windows-exe.cs'),
+         '-win32icon:' + os.path.join(tempdir, 'combined.ico'),
+         '-target:winexe', '-define:GUI',
+         '-out:' + bingui]
+    )
 
-        check_if_failed(exit_status, output, error,
-                        'Failed to compile Windows executable resource file')
+    check_if_failed(exit_status, output, error, fail_compile)
 
-        cxxflags_gui = '-static -Wl,-subsystem,windows'
-        cxxflags_cli = '-static'
+    exit_status, output, error = run_command(
+        ['gmcs', os.path.join(builddir, 'shortcuts', 'windows-exe.cs'),
+         '-win32icon:' + os.path.join(tempdir, 'combined.ico'),
+         '-out:' + bincli]
+    )
 
-        gpp = mingw_prefix + 'g++'
-        strip = mingw_prefix + 'strip'
-
-        exit_status, output, error = run_command(
-            [gpp, cxxflags_gui, '-DGUI', '-DSCRIPT="scripts\\\\qtmain.py"',
-             os.path.join(builddir, 'shortcuts', 'windows-exe.cpp'),
-             os.path.join(tempdir, 'res.o'),
-             '-lshlwapi',
-             '-o', bingui]
-        )
-
-        check_if_failed(exit_status, output, error, fail_compile)
-
-        exit_status, output, error = run_command(
-            [gpp, cxxflags_cli, '-DSCRIPT="scripts\\\\patchfile.py"',
-             os.path.join(builddir, 'shortcuts', 'windows-exe.cpp'),
-             os.path.join(tempdir, 'res.o'),
-             '-lshlwapi',
-             '-o', bincli]
-        )
-
-        check_if_failed(exit_status, output, error, fail_compile)
-
-        exit_status, output, error = run_command(
-            [strip, bingui, bincli]
-        )
-
-        check_if_failed(exit_status, output, error,
-                        'Failed to strip symbols from Windows launchers')
-
-        print('Compressing Windows launcher with UPX ...')
-        if buildtype != 'ci':
-            upx_compress([bingui, bincli])
-
-    elif win32_launcher == 'C#':
-        exit_status, output, error = run_command(
-            ['gmcs', os.path.join(builddir, 'shortcuts', 'windows-exe.cs'),
-             '-win32icon:' + os.path.join(tempdir, 'combined.ico'),
-             '-target:winexe', '-define:GUI',
-             '-out:' + bingui]
-        )
-
-        check_if_failed(exit_status, output, error, fail_compile)
-
-        exit_status, output, error = run_command(
-            ['gmcs', os.path.join(builddir, 'shortcuts', 'windows-exe.cs'),
-             '-win32icon:' + os.path.join(tempdir, 'combined.ico'),
-             '-out:' + bincli]
-        )
-
-        check_if_failed(exit_status, output, error, fail_compile)
+    check_if_failed(exit_status, output, error, fail_compile)
 
     shutil.rmtree(tempdir)
 
