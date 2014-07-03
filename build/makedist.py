@@ -297,7 +297,7 @@ def create_python_windows(targetdir):
     url = 'http://python.org/ftp/python/%s/python-%s.msi' % (pyver, pyver)
     md5 = 'e3be8a63294e42e126493ca96cfe48bd'
 
-    pyinst = os.path.join(builddir, 'windowsbinaries', 'python-%s.msi' % pyver)
+    pyinst = os.path.join(builddir, 'downloads', 'python-%s.msi' % pyver)
     pyport = os.path.join(targetdir, 'pythonportable')
     removefiles = os.path.join(builddir, 'remove.winpython.txt')
 
@@ -318,7 +318,7 @@ def create_python_android(targetdir):
     url = 'http://fs1.d-h.st/download/00122/wHx/' + filename
     md5 = 'a4c037587da9488d40fc01be4839afc8'
 
-    pytar = os.path.join(builddir, 'androidbinaries', filename)
+    pytar = os.path.join(builddir, 'downloads', filename)
     pyport = os.path.join(targetdir, 'pythonportable')
     removefiles = os.path.join(builddir, 'remove.androidpython.txt')
 
@@ -339,7 +339,7 @@ def create_pyyaml(targetdir, pysitelib):
     url = 'http://pyyaml.org/download/pyyaml/' + filename
     md5 = 'f50e08ef0fe55178479d3a618efe21db'
 
-    tarball = os.path.join(builddir, 'androidbinaries', filename)
+    tarball = os.path.join(builddir, 'downloads', filename)
 
     download(url, filename=tarball, md5=md5)
 
@@ -355,7 +355,7 @@ def create_pyqt_windows(targetdir):
     url = 'http://fs1.d-h.st/download/00115/LGr/' + filename
     md5 = '478a2151c1036e27462e324703ad9287'
 
-    pyqtinst = os.path.join(builddir, 'windowslibraries', filename)
+    pyqtinst = os.path.join(builddir, 'downloads', filename)
     pyport = os.path.join(targetdir, 'pythonportable')
     pysitelib = os.path.join(pyport, 'Lib', 'site-packages')
     pyqtdir = os.path.join(pysitelib, 'PyQt5')
@@ -376,7 +376,7 @@ def create_pyqt_windows(targetdir):
 
 
 def create_binaries_windows(targetdir):
-    binpath = os.path.join(builddir, 'windowsbinaries')
+    binpath = os.path.join(builddir, 'downloads')
     tbinpath = os.path.join(targetdir, 'binaries', 'windows')
 
     # Our mini-Cygwin :)
@@ -460,7 +460,7 @@ def create_android_toolchain():
 
 
 def create_binaries_android(targetdir):
-    binpath = os.path.join(builddir, 'androidbinaries')
+    binpath = os.path.join(builddir, 'downloads')
     tbinpath = os.path.join(targetdir, 'binaries', 'android')
 
     os.makedirs(tbinpath)

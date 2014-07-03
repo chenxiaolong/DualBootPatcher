@@ -1,8 +1,6 @@
 *.swp
 dist/
-build/windowsbinaries/
-build/windowslibraries/
-build/androidbinaries/
+build/downloads/
 build/build.custom.conf
 build/compile/build/
 build/compile/gcc/
