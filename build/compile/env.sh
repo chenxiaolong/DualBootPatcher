@@ -1,11 +1,30 @@
 #!/bin/bash
 
+get_conf() {
+    local CURDIR=$(cd "$(dirname "${BASH_SOURCE}")" && pwd)
+    local conf="${CURDIR}/../build.conf"
+    local conf_custom="${CURDIR}/../build.custom.conf"
+
+    python3 -c "
+import configparser
+import os
+
+config = configparser.ConfigParser()
+config.read('${conf}')
+
+if os.path.exists('${conf_custom}'):
+    config.read('${conf_custom}')
+
+print(config['$1']['$2'])
+"
+}
+
 setup_toolchain() {
-    export HOST_TOOLCHAIN_PREFIX="x86_64-unknown-linux-gnu"
-    export ANDROIDSDK="/opt/android-sdk"
-    export ANDROIDNDK="/opt/android-ndk"
-    export ANDROIDNDKVER=r9
-    export ANDROIDAPI=18
+    export HOST_TOOLCHAIN_PREFIX="$(get_conf builder host_toolchain)"
+    export ANDROIDSDK="$(get_conf builder android-sdk)"
+    export ANDROIDNDK="$(get_conf builder android-ndk)"
+    export ANDROIDNDKVER="$(get_conf builder android-ndk-ver)"
+    export ANDROIDAPI="$(get_conf builder android-api)"
 
     local CURDIR=$(cd "$(dirname "${BASH_SOURCE}")" && pwd)
 

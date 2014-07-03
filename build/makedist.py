@@ -112,7 +112,7 @@ def download_progress(count, block_size, total_size):
     sys.stdout.flush()
 
 
-def download(url, filename=None, directory=None):
+def download(url, filename=None, directory=None, md5=None):
     if not filename and not directory:
         raise Exception('Either filename or directory must be set')
 
@@ -127,11 +127,17 @@ def download(url, filename=None, directory=None):
         target = filename
         parentdir = os.path.dirname(os.path.abspath(filename))
 
-    if not os.path.exists(parentdir):
-        os.makedirs(parentdir)
+    if not os.path.exists(target):
+        if not os.path.exists(parentdir):
+            os.makedirs(parentdir)
 
-    urlretrieve(url, filename=target, reporthook=download_progress)
-    print('\r' + ' ' * 4 + '\r', end='')
+        print('Downloading: ' + url)
+
+        urlretrieve(url, filename=target, reporthook=download_progress)
+        print('\r' + ' ' * 4 + '\r', end='')
+
+    if md5 is not None and md5sum(target) != md5:
+        raise Exception('MD5 checksum of %s does not match' % target)
 
 
 def md5sum(filename):
@@ -154,6 +160,8 @@ def extract_tar(filename, destdir, files=None, regex=None):
     if not tarfile.is_tarfile(filename):
         raise Exception('%s is not a tar file' % filename)
 
+    print('Extracting %s ...' % filename)
+
     with tarfile.open(filename) as tar:
         if files:
             for member in tar.getmembers():
@@ -163,6 +171,32 @@ def extract_tar(filename, destdir, files=None, regex=None):
                     tar.extract(member, path=destdir)
         else:
             tar.extractall(destdir)
+
+
+def extract_msi(filename, destdir):
+    print('Extracting %s ...' % filename)
+
+    paths = get_windows_path([filename, destdir])
+    source = paths[0]
+    target = paths[1]
+
+    exit_status, output, error = run_command(
+        ['wine', 'msiexec', '/a', source, '/qb', 'TARGETDIR=' + target]
+    )
+
+    check_if_failed(exit_status, output, error,
+                    'Failed to extract ' + filename)
+
+
+def extract_7z(filename, destdir):
+    print('Extracting %s ...' % filename)
+
+    exit_status, output, error = run_command(
+        ['7z', 'x', '-o' + destdir, filename]
+    )
+
+    check_if_failed(exit_status, output, error,
+                    'Failed to extract ' + filename)
 
 
 def remove_files(listfile, basedir):
@@ -207,6 +241,10 @@ def upx_compress(files, lzma=True):
         command = ['upx', '-v', '-9']
     command.extend(files)
 
+    print('Compressing the following with UPX ...')
+    for f in files:
+        print('  ' + f)
+
     exit_status, output, error = run_command(command)
     check_if_failed(exit_status, output, error,
                     'Failed to compress files using upx: ' + str(files))
@@ -242,6 +280,20 @@ def get_target_info(android=False):
     return (targetname, targetdir, targetfile)
 
 
+def get_windows_path(paths):
+    if (type(paths) == str):
+        paths = [paths]
+
+    exit_status, output, error = run_command(
+        ['winepath', '-w'] + paths
+    )
+
+    check_if_failed(exit_status, output, error,
+                    'Failed to get Windows paths using winepath')
+
+    return output.split('\n')[:-1]
+
+
 def create_python_windows(targetdir):
     pyver = '3.4.0'
     url = 'http://python.org/ftp/python/%s/python-%s.msi' % (pyver, pyver)
@@ -251,33 +303,9 @@ def create_python_windows(targetdir):
     pyport = os.path.join(targetdir, 'pythonportable')
     removefiles = os.path.join(builddir, 'remove.winpython.txt')
 
-    if not os.path.exists(pyinst):
-        print('Downloading Python %s for Windows ...' % pyver)
-        download(url, filename=pyinst)
+    download(url, filename=pyinst, md5=md5)
 
-    print('Checking MD5 of Windows Python installer ...')
-    if md5sum(pyinst) != md5:
-        raise Exception('MD5 checksum does not match')
-
-    print('Getting Windows paths ...')
-    exit_status, output, error = run_command(
-        ['winepath', '-w', pyinst, pyport]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to get Windows paths using winepath')
-
-    winpaths = output.split('\n')
-    winpyinst = winpaths[0]
-    winpyport = winpaths[1]
-
-    print('Extracting Windows Python installer ...')
-    exit_status, output, error = run_command(
-        ['wine', 'msiexec', '/a', winpyinst, '/qb', 'TARGETDIR=' + winpyport]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to extract Python installer')
+    extract_msi(pyinst, pyport)
 
     print('Removing unneeded scripts and files ...')
     remove_files(removefiles, pyport)
@@ -296,13 +324,7 @@ def create_python_android(targetdir):
     pyport = os.path.join(targetdir, 'pythonportable')
     removefiles = os.path.join(builddir, 'remove.androidpython.txt')
 
-    if not os.path.exists(pytar):
-        print('Downloading Python %s for Android ...' % pyver)
-        download(url, filename=pytar)
-
-    print('Checking MD5 of Android Python archive ...')
-    if md5sum(pytar) != md5:
-        raise Exception('MD5 checksum does not match')
+    download(url, filename=pytar, md5=md5)
 
     tempdir = tempfile.mkdtemp()
     extract_tar(pytar, tempdir)
@@ -321,13 +343,7 @@ def create_pyyaml(targetdir, pysitelib):
 
     tarball = os.path.join(builddir, 'androidbinaries', filename)
 
-    if not os.path.exists(tarball):
-        print('Downloading PyYAML %s ...' % yamlver)
-        download(url, filename=tarball)
-
-    print('Checking MD5 of PyYAML tarball ...')
-    if md5sum(tarball) != md5:
-        raise Exception('MD5 checksum does not match')
+    download(url, filename=tarball, md5=md5)
 
     tempdir = tempfile.mkdtemp()
     extract_tar(tarball, tempdir)
@@ -347,23 +363,10 @@ def create_pyqt_windows(targetdir):
     pyqtdir = os.path.join(pysitelib, 'PyQt5')
     qtconf = os.path.join(pyport, 'qt.conf')
 
-    if not os.path.exists(pyqtinst):
-        print('Downloading PyQt 5.2.1 (for Python 3.4.0) for Windows ...')
-        download(url, filename=pyqtinst)
+    download(url, filename=pyqtinst, md5=md5)
 
-    print('Checking MD5 of PyQt5 archive ...')
-    if md5sum(pyqtinst) != md5:
-        raise Exception('MD5 checksum does not match')
+    extract_7z(pyqtinst, pysitelib)
 
-    print('Extracting PyQt5 archive ...')
-    exit_status, output, error = run_command(
-        ['7z', 'x', '-o' + pysitelib, pyqtinst]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to extract PyQt5 archive using p7zip')
-
-    print('Compressing PyQt5 libraries with UPX ...')
     if buildtype != 'ci':
         upx_compress(glob.glob(pyqtdir + os.sep + '*.dll'))
 
@@ -397,11 +400,8 @@ def create_binaries_windows(targetdir):
 
     for url in urls:
         filename = url.split('/')[-1]
-        if not os.path.exists(os.path.join(binpath, filename)):
-            print('Downloading %s ...' % filename)
-            download(url, directory=binpath)
+        download(url, directory=binpath)
 
-    print('Extracting cygwin libraries and binaries ...')
     extract_tar(
         os.path.join(binpath, f_cygwin),
         tbinpath,
@@ -442,11 +442,23 @@ def create_binaries_windows(targetdir):
         compress = binfiles + dllfiles
         for f in compress:
             for s in skip:
-                if f.endswith(os.sep + s):
+                if os.path.basename(f) == s:
                     compress.remove(f)
 
-        print('Compressing cygwin libraries and binaries with UPX ...')
         upx_compress(compress, lzma=False)
+
+
+def create_android_toolchain():
+    print('Creating Android NDK toolchain ...')
+
+    envscript = os.path.join(builddir, 'compile', 'env.sh')
+
+    exit_status, output, error = run_command(
+        ['bash', '-c', 'source %s; setup_toolchain' % envscript]
+    )
+
+    check_if_failed(exit_status, output, error,
+                    'Failed to create Android NDK toolchain')
 
 
 def create_binaries_android(targetdir):
@@ -455,33 +467,21 @@ def create_binaries_android(targetdir):
 
     os.makedirs(tbinpath)
 
-    tempdir = tempfile.mkdtemp()
-
-    print('Creating Android NDK toolchain ...')
-    exit_status, output, error = run_command(
-        ['bash', os.path.join(android_ndk, 'build', 'tools',
-                              'make-standalone-toolchain.sh'),
-         '--verbose', '--platform=android-18',
-         '--install-dir=' + tempdir,
-         '--ndk-dir=' + android_ndk,
-         '--system=linux-x86_64']
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to create Android NDK toolchain')
-
     filename = 'patch-2.7.tar.xz'
     url = 'ftp://ftp.gnu.org/gnu/patch/' + filename
-    if not os.path.exists(os.path.join(binpath, filename)):
-        print('Downloading %s ...' % filename)
-        download(url, directory=binpath)
+    download(url, directory=binpath)
+
+    create_android_toolchain()
+    gccdir = os.path.join(builddir, 'compile', 'gcc', 'bin')
+
+    tempdir = tempfile.mkdtemp()
 
     patchtar = os.path.join(binpath, filename)
     extract_tar(patchtar, tempdir)
     patchdir = os.path.join(tempdir, 'patch-2.7')
 
     envpath = os.environ.copy()
-    envpath['PATH'] += os.pathsep + os.path.join(tempdir, 'bin')
+    envpath['PATH'] += os.pathsep + gccdir
 
     exit_status, output, error = run_command(
         ['./configure', '--host=arm-linux-androideabi'],
