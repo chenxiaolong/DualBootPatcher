@@ -20,6 +20,18 @@
 
 #include <string>
 
+// Logging
+#include <android/log.h>
+
+#define LOG_TAG "syncdaemon"
+
+#define LOG(prio, tag, fmt...) __android_log_print(prio, tag, fmt)
+#define LOGD(...) LOG(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) LOG(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) LOG(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGV(...) LOG(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) LOG(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+
 static const std::string BUILD_PROP = "build.prop";
 
 static const std::string APP_DIR = "app.bak";

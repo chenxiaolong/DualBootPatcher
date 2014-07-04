@@ -18,7 +18,6 @@
 #include "common.h"
 
 #include <cstring>
-#include <iostream>
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -71,7 +70,7 @@ int recursively_delete(std::string directory) {
 
             struct stat s;
             if (stat(path.c_str(), &s) != 0) {
-                std::cout << "Failed to stat " << path << std::endl;
+                LOGE("Failed to stat %s", path.c_str());
                 continue;
             }
 
@@ -84,7 +83,7 @@ int recursively_delete(std::string directory) {
             }
 
             if (ret != 0) {
-                std::cout << "Failed to remove " << path << std::endl;
+                LOGE("Failed to remove %s", path.c_str());
             }
         }
     }

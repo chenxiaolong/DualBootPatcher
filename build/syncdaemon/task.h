@@ -18,7 +18,6 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include <iostream>
 #include <mutex>
 #include <condition_variable>
 #include <thread>
@@ -49,21 +48,20 @@ public:
 
     void execute() {
         if (!can_run) {
-            std::cout << "Task execution will delayed by "
-                    << delay << " seconds" << std::endl;
+            LOGD("Task execution will be delayed by %u seconds", delay);
 
             std::unique_lock<std::mutex> mlock(mutex_);
             can_run = true;
             mlock.unlock();
             cond_.notify_one();
         } else {
-            std::cout << "Task already waiting to be executed" << std::endl;
+            LOGD("Task already waiting to be executed");
         }
     }
 
     void kill() {
         if (!should_kill) {
-            std::cout << "Killing thread..." << std::endl;
+            LOGD("Killing thread ...");
             should_kill = true;
             cond_.notify_one();
         }

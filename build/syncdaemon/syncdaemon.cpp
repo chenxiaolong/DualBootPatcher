@@ -19,7 +19,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -217,15 +216,15 @@ int get_apk_information(struct rominformation *info, std::string package,
 }
 
 void sync_package(std::string package, std::vector<std::string> rom_ids) {
-    std::cout << "Attempting to share " << package << " across ";
+    std::string ids;
     for (int i = 0; i < rom_ids.size(); i++) {
         if (i == rom_ids.size() - 1) {
-            std::cout << rom_ids[i];
+            ids += rom_ids[i];
         } else {
-            std::cout << rom_ids[i] << ", ";
+            ids += rom_ids[i] + ", ";
         }
     }
-    std::cout << std::endl;
+    LOGV("Attempting to share %s across %s", package.c_str(), ids.c_str());
 
     std::vector<struct apkinformation *> apkinfos;
     time_t ts_latest = 0;
@@ -242,12 +241,11 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
         }
 
         if (info == nullptr) {
-            std::cout << "ROM ID " << rom_ids[i] << " in config for "
-                    << package << " does not exist" << std::endl;
+            LOGE("ROM ID %s in config for %s does not exist",
+                    rom_ids[i].c_str(), package.c_str());
 
             // Remove ID for non-existant ROM
-            std::cout << "Removing " << rom_ids[i] << " from config"
-                    << std::endl;
+            LOGD("Removing %s from config", rom_ids[i].c_str());
             ConfigFile::remove_rom_id(package, rom_ids[i]);
 
             continue;
@@ -260,8 +258,7 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
             apkinfo->apkdir = info->data + SEP + APP_DIR;
             apkinfo->libdir = "";
             apkinfo->cacheddex = "";
-            std::cout << package << " does not exist in " << info->id
-                    << ". The package will be copied" << std::endl;
+            LOGV("%s does not exist in %s", package.c_str(), info->id.c_str());
         }
 
         // Record timestamp of latest version
@@ -283,13 +280,12 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
     }
 
     if (latestapk == nullptr) {
-        std::cout << "Package " << package
-                << " is not installed!" << std::endl;
+        LOGE("Package %s is not installed!", package.c_str());
         free_vector(apkinfos);
         return;
     }
 
-    std::cout << "  - Latest version in ROM: " << latest->id << std::endl;
+    LOGV("  - Latest version is in ROM: %s", latest->id.c_str());
 
     for (int i = 0; i < apkinfos.size(); i++) {
         if (apkinfos[i] == latestapk) {
@@ -301,51 +297,48 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
         std::string targetname = basename2(latestapk->apkfile);
         std::string targetapk = apkinfos[i]->apkdir + "/" + targetname;
 
-        std::cout << "  - Source: " << latestapk->apkfile << std::endl
-                << "  - Target: " << targetapk << std::endl;
+        LOGV("  - Source: %s", latestapk->apkfile.c_str());
+        LOGV("  - Target: %s", targetapk.c_str());
 
         if (is_same_inode(latestapk->apkfile, apkinfos[i]->apkfile)) {
-            std::cout << "  - Skipping because inodes are the same"
-                    << std::endl;
+            LOGW("  - Skipping because inodes are the same");
             continue;
         }
 
         // Remove existing version from other ROMs
         if (!apkinfos[i]->apkfile.empty()
                 && remove(apkinfos[i]->apkfile.c_str()) != 0) {
-            std::cout << "Failed to remove apk "
-                    << apkinfos[i]->apkfile << std::endl;
+            LOGE("Failed to remove apk %s", apkinfos[i]->apkfile.c_str());
         }
 
         if (!apkinfos[i]->libdir.empty()
                 && recursively_delete(apkinfos[i]->libdir) != 0) {
-            std::cout << "Failed to remove native library directory "
-                    << apkinfos[i]->libdir << std::endl;
+            LOGE("Failed to remove native library directory %s",
+                    apkinfos[i]->libdir.c_str());
         }
 
         if (!apkinfos[i]->cacheddex.empty()
                 && remove(apkinfos[i]->cacheddex.c_str()) != 0) {
-            std::cout << "Failed to remove cached dex "
-                    << apkinfos[i]->cacheddex << std::endl;
+            LOGE("Failed to remove cached dex %s",
+                    apkinfos[i]->cacheddex.c_str());
         }
 
         if (link(latestapk->apkfile.c_str(), targetapk.c_str()) != 0) {
-            std::cout << "Failed to hard link "
-                    << latestapk->apkfile.c_str() << " to "
-                    << targetapk.c_str() << std::endl;
+            LOGE("Failed to hard link %s to %s", latestapk->apkfile.c_str(),
+                    targetapk.c_str());
         }
 
-        std::cout << "  - Successfully shared package" << std::endl;
+        LOGV("  - Successfully shared package");
     }
 
     free_vector(apkinfos);
 }
 
 void sync_packages() {
-    std::cout << "Reloading configuration file" << std::endl;
+    LOGD("Reloading configuration file");
 
     if (!ConfigFile::load_config()) {
-        std::cout << "Failed to load configuration file" << std::endl;
+        LOGE("Failed to load configuration file");
         return;
     }
 
@@ -390,7 +383,7 @@ int start_monitoring() {
     in_wd_appdir = inotify_add_watch(in_fd, appdir.c_str(),
                                      IN_CREATE | IN_DELETE);
     if (in_wd_appdir < 0) {
-        std::cout << "Failed to monitor " << appdir << std::endl;
+        LOGE("Failed to monitor %s", appdir.c_str());
         return -1;
     }
 
@@ -398,7 +391,7 @@ int start_monitoring() {
     in_wd_config = inotify_add_watch(in_fd, configdir.c_str(),
                                      IN_CREATE | IN_MODIFY);
     if (in_wd_config < 0) {
-        std::cout << "Failed to monitor " << configdir << std::endl;
+        LOGE("Failed to monitor %s", configdir.c_str());
         return -1;
     }
 
@@ -416,7 +409,7 @@ int start_monitoring() {
 
             if (event->wd == in_wd_config) {
                 if (std::string(event->name) == CONFIG_FILE) {
-                    std::cout << "Config file was updated" << std::endl;
+                    LOGV("Config file was updated");
                     task.execute();
                 }
             } else if (event->wd == in_wd_appdir) {
@@ -431,14 +424,14 @@ int start_monitoring() {
                     // upgrade, we'll delay the syncing for 30 seconds
 
                     if (event->mask & IN_CREATE) {
-                        std::cout << event->name << " was created" << std::endl;
+                        LOGD("%s was created", event->name);
                     } else if (event->mask & IN_DELETE) {
-                        std::cout << event->name << " was deleted" << std::endl;
+                        LOGD("%s was deleted", event->name);
                     }
 
                     task.execute();
                 } else {
-                    std::cout << event->name << " is not shared" << std::endl;
+                    LOGV("%s is not shared", event->name);
                 }
             }
 
@@ -459,10 +452,10 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, cleanup);
 
     for (int i = 0; i < roms.size(); i++) {
-        std::cout << "Discovered ROM id " << roms[i]->id << std::endl
-                << "  - System: " << roms[i]->system << std::endl
-                << "  - Cache: " << roms[i]->cache << std::endl
-                << "  - Data: " << roms[i]->data << std::endl;
+        LOGV("Discovered ROM ID %s", roms[i]->id.c_str());
+        LOGV("- System: %s", roms[i]->system.c_str());
+        LOGV("- Cache: %s", roms[i]->cache.c_str());
+        LOGV("- Data: %s", roms[i]->data.c_str());
     }
 
     // Make sure packages are synced once

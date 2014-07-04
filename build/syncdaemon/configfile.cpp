@@ -19,7 +19,6 @@
 #include "common.h"
 
 #include <fstream>
-#include <iostream>
 
 std::string ConfigFile::m_configfile;
 std::string ConfigFile::m_configdir;
@@ -55,8 +54,7 @@ bool ConfigFile::load_config() {
     file.open(get_config_file());
 
     if (!file) {
-        std::cout << "Config file " << get_config_file() << " not found"
-                << std::endl;
+        LOGE("Config file %s not found", get_config_file().c_str());
         return false;
     }
 
@@ -66,7 +64,7 @@ bool ConfigFile::load_config() {
     file.close();
 
     if (!success) {
-        std::cout << "Failed to parse configuration file" << std::endl;
+        LOGE("Failed to parse configuration file");
         return false;
     }
 
