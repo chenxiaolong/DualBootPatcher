@@ -413,25 +413,27 @@ int start_monitoring() {
                     task.execute();
                 }
             } else if (event->wd == in_wd_appdir) {
-                std::string package(event->name);
-                size_t pos = package.rfind("-");
-                if (pos != std::string::npos) {
-                    package.erase(pos);
-                }
+                std::string name(event->name);
 
-                if (ConfigFile::contains_package(package)) {
-                    // Instead of dealing with the inotify events during an
-                    // upgrade, we'll delay the syncing for 30 seconds
-
-                    if (event->mask & IN_CREATE) {
-                        LOGD("%s was created", event->name);
-                    } else if (event->mask & IN_DELETE) {
-                        LOGD("%s was deleted", event->name);
+                if (ends_with(name, ".apk")) {
+                    size_t pos = name.rfind("-");
+                    if (pos != std::string::npos) {
+                        name.erase(pos);
                     }
 
-                    task.execute();
-                } else {
-                    LOGV("%s is not shared", event->name);
+                    if (ConfigFile::contains_package(name)) {
+                        if (event->mask & IN_CREATE) {
+                            LOGD("%s was created", event->name);
+                        } else if (event->mask & IN_DELETE) {
+                            LOGD("%s was deleted", event->name);
+                        }
+
+                        // Instead of dealing with the inotify events during
+                        // an upgrade, we'll delay the syncing
+                        task.execute();
+                    } else {
+                        LOGV("%s is not shared", event->name);
+                    }
                 }
             }
 

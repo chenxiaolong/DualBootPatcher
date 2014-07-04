@@ -60,5 +60,6 @@ int recursively_delete(std::string directory);
 std::string dirname2(std::string path);
 std::string basename2(std::string path);
 std::string search_directory(std::string directory, std::string begin);
+bool ends_with(std::string const& src, std::string const& suffix);
 
 #endif //COMMON_H

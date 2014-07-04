@@ -133,3 +133,12 @@ std::string search_directory(std::string directory, std::string begin) {
 
     return "";
 }
+
+bool ends_with(std::string const& src, std::string const& suffix) {
+    if (src.length() >= suffix.length()) {
+        return src.compare(src.length() - suffix.length(),
+                suffix.length(), suffix) == 0;
+    } else {
+        return false;
+    }
+}
