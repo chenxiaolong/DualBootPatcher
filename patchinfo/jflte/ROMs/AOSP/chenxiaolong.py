@@ -10,7 +10,7 @@ patchinfo.ramdisk        = 'jflte/AOSP/cxl.def'
 patchinfo.patch          = [ autopatcher.auto_patch ]
 patchinfo.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
 # ROM has built in dual boot support
-patchinfo.configs        = [ 'all', '!dualboot' ]
+patchinfo.configs        = [ 'all', '!dual' ]
 
 # My ROM has dual-boot support built in, so we'll hack around that to support
 # triple, quadruple, ... boot
