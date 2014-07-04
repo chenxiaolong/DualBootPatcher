@@ -616,11 +616,28 @@ def create_shortcuts_linux(targetdir):
     check_if_failed(exit_status, output, error,
                     'Failed to strip symbols from Linux launcher')
 
-    print('Compressing Linux launcher with UPX ...')
     if buildtype != 'ci':
         upx_compress([bingui])
 
     os.chmod(bingui, 0o755)
+
+
+def create_syncdaemon(targetdir):
+    print('Compiling syncdaemon ...')
+    create_android_toolchain()
+
+    syncdaemondir = os.path.join(builddir, 'syncdaemon')
+    ramdisksdir = os.path.join(targetdir, 'ramdisks')
+
+    exit_status, output, error = run_command(
+        [os.path.join(syncdaemondir, 'build.sh'), buildtype]
+    )
+
+    check_if_failed(exit_status, output, error,
+                    'Failed to compile syncdaemon')
+
+    shutil.move(os.path.join(syncdaemondir, 'syncdaemon'),
+                os.path.join(ramdisksdir, 'syncdaemon'))
 
 
 def create_release(targetdir, targetfile, android=False):
@@ -647,6 +664,8 @@ def create_release(targetdir, targetfile, android=False):
                             os.path.join(targetdir, f))
         else:
             shutil.copy2(os.path.join(topdir, f), targetdir)
+
+    create_syncdaemon(targetdir)
 
     if buildtype != 'ci':
         upx_compress([os.path.join(targetdir, 'ramdisks', 'busybox-static')])
