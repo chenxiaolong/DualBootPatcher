@@ -229,14 +229,20 @@ def remove_files(listfile, basedir):
                         (listfile, str(missing)))
 
 
-def upx_compress(files, lzma=True):
+def upx_compress(files, lzma=True, force=False):
     if type(files) == str:
         files = [files]
 
+    command = ['upx', '-v']
+
     if lzma:
-        command = ['upx', '-v', '--lzma']
+        command.append('--lzma')
     else:
-        command = ['upx', '-v', '-9']
+        command.append('-9')
+
+    if force:
+        command.append('--force')
+
     command.extend(files)
 
     print('Compressing the following with UPX ...')
@@ -305,6 +311,10 @@ def create_python_windows(targetdir):
 
     extract_msi(pyinst, pyport)
 
+    if buildtype != 'ci':
+        upx_compress(glob.glob(pyport + os.sep + '*.dll'))
+        upx_compress(glob.glob(pyport + os.sep + '*.exe'), lzma=False)
+
     print('Removing unneeded scripts and files ...')
     remove_files(removefiles, pyport)
     for root, dirs, files in os.walk(pyport):
@@ -366,7 +376,38 @@ def create_pyqt_windows(targetdir):
     extract_7z(pyqtinst, pysitelib)
 
     if buildtype != 'ci':
-        upx_compress(glob.glob(pyqtdir + os.sep + '*.dll'))
+        upx_compress([pysitelib + os.sep + 'sip.pyd'])
+
+        base = pyqtdir + os.sep
+        plugins = base + os.sep + 'plugins' + os.sep
+        dlls = os.sep + '*.dll'
+
+        upx_compress([base + 'Qt5Concurrent.dll'], lzma=False)
+        upx_compress([base + 'Qt5Core.dll'])
+        upx_compress([base + 'Qt5Gui.dll'])
+        upx_compress([base + 'Qt5Network.dll'])
+        upx_compress([base + 'Qt5OpenGL.dll'])
+        upx_compress([base + 'Qt5PrintSupport.dll'])
+        upx_compress([base + 'Qt5Sql.dll'])
+        upx_compress([base + 'Qt5Test.dll'])
+        upx_compress([base + 'Qt5Widgets.dll'])
+        upx_compress([base + 'Qt5Xml.dll'])
+
+        upx_compress([base + 'QtCore.pyd'])
+        upx_compress([base + 'QtGui.pyd'])
+        upx_compress([base + 'Qt.pyd'], lzma=False)
+        upx_compress([base + 'QtWidgets.pyd'])
+
+        upx_compress(glob.glob(plugins + 'accessible' + dlls), lzma=False)
+        upx_compress(glob.glob(plugins + 'bearer' + dlls), lzma=False)
+
+        upx_compress(plugins + 'imageformats' + os.sep + 'qgif.dll', lzma=False)
+        upx_compress(plugins + 'imageformats' + os.sep + 'qico.dll', lzma=False)
+        upx_compress(plugins + 'imageformats' + os.sep + 'qjpeg.dll')
+
+        upx_compress(glob.glob(plugins + 'platforms' + dlls), lzma=False)
+        upx_compress(glob.glob(plugins + 'printsupport' + dlls), lzma=False)
+        upx_compress(glob.glob(plugins + 'sqldrivers' + dlls), lzma=False)
 
     print('Create qt.conf configuration file ...')
     with open(qtconf, 'w') as f:
@@ -428,8 +469,6 @@ def create_binaries_windows(targetdir):
         files=['usr/bin/diff.exe']
     )
 
-    skip = ['cygwin1.dll']
-
     binfiles = glob.glob(tbinpath + os.sep + '*.exe')
     dllfiles = glob.glob(tbinpath + os.sep + '*.dll')
 
@@ -437,13 +476,11 @@ def create_binaries_windows(targetdir):
         os.chmod(f, 0o0755)
 
     if buildtype != 'ci':
-        compress = binfiles + dllfiles
-        for f in compress:
-            for s in skip:
-                if os.path.basename(f) == s:
-                    compress.remove(f)
-
-        upx_compress(compress, lzma=False)
+        upx_compress([tbinpath + os.sep + 'cygiconv-2.dll'])
+        upx_compress([tbinpath + os.sep + 'cygintl-8.dll'], lzma=False)
+        upx_compress([tbinpath + os.sep + 'cygwin1.dll'], force=True)
+        upx_compress([tbinpath + os.sep + 'diff.exe'])
+        upx_compress([tbinpath + os.sep + 'hctap.exe'])
 
 
 def create_android_toolchain():
@@ -610,6 +647,13 @@ def create_release(targetdir, targetfile, android=False):
                             os.path.join(targetdir, f))
         else:
             shutil.copy2(os.path.join(topdir, f), targetdir)
+
+    if buildtype != 'ci':
+        upx_compress([os.path.join(targetdir, 'ramdisks', 'busybox-static')])
+        upx_compress(glob.glob(targetdir + os.sep + 'ramdisks' + os.sep +
+                               'init' + os.sep + 'init-*'))
+        upx_compress(glob.glob(targetdir + os.sep + 'ramdisks' + os.sep +
+                               'init' + os.sep + 'jflte' + os.sep + '*'))
 
     with open(os.path.join(topdir, 'patcher.yaml.in')) as f_in:
         with open(os.path.join(targetdir, 'patcher.yaml'), 'w') as f_out:
@@ -791,6 +835,10 @@ def build_android():
     shutil.move(targetfile, assetdir)
     shutil.copyfile(os.path.join(topdir, 'ramdisks', 'busybox-static'),
                     os.path.join(assetdir, 'tar'))
+
+    if buildtype != 'ci':
+        os.chmod(os.path.join(assetdir, 'tar'), 0o0755)
+        upx_compress([os.path.join(assetdir, 'tar')])
 
     build_android_app(targetname)
 
