@@ -299,9 +299,9 @@ def get_windows_path(paths):
 
 
 def create_python_windows(targetdir):
-    pyver = '3.4.0'
+    pyver = '3.4.1'
     url = 'http://python.org/ftp/python/%s/python-%s.msi' % (pyver, pyver)
-    md5 = 'e3be8a63294e42e126493ca96cfe48bd'
+    md5 = '4940c3fad01ffa2ca7f9cc43a005b89a'
 
     pyinst = os.path.join(builddir, 'downloads', 'python-%s.msi' % pyver)
     pyport = os.path.join(targetdir, 'pythonportable')
@@ -361,9 +361,9 @@ def create_pyyaml(targetdir, pysitelib):
 
 
 def create_pyqt_windows(targetdir):
-    filename = 'PyQt5_QtBase5.2.1_Python3.4.0_win32_msvc2010.7z'
-    url = 'http://fs1.d-h.st/download/00115/LGr/' + filename
-    md5 = '478a2151c1036e27462e324703ad9287'
+    filename = 'PyQt5_QtBase5.3.1_Python3.4.1_win32_msvc2010.7z'
+    url = 'http://fs1.d-h.st/download/00128/Zwu/' + filename
+    md5 = 'ed614494e863fa44138e9f638ac95bfd'
 
     pyqtinst = os.path.join(builddir, 'downloads', filename)
     pyport = os.path.join(targetdir, 'pythonportable')
@@ -405,7 +405,11 @@ def create_pyqt_windows(targetdir):
         upx_compress(plugins + 'imageformats' + os.sep + 'qico.dll', lzma=False)
         upx_compress(plugins + 'imageformats' + os.sep + 'qjpeg.dll')
 
-        upx_compress(glob.glob(plugins + 'platforms' + dlls), lzma=False)
+        upx_compress(plugins + 'platforms' + os.sep + 'qminimal.dll', lzma=False)
+        upx_compress(plugins + 'platforms' + os.sep + 'qoffscreen.dll', lzma=False)
+        # PyQt5 fails to run when this is compressed
+        #upx_compress(plugins + 'platforms' + os.sep + 'qwindows.dll', lzma=False)
+
         upx_compress(glob.glob(plugins + 'printsupport' + dlls), lzma=False)
         upx_compress(glob.glob(plugins + 'sqldrivers' + dlls), lzma=False)
 
