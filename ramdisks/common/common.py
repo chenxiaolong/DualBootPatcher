@@ -32,5 +32,18 @@ def modify_default_prop(cpiofile, partition_config):
     cpioentry.content = buf
 
 
+def add_syncdaemon(cpiofile):
+    cpioentry = cpiofile.get_file('init.rc')
+
+    buf = cpioentry.content
+    buf += fileio.encode('\nservice syncdaemon /sbin/syncdaemon\n')
+    buf += fileio.encode('    class main\n')
+    buf += fileio.encode('    user root\n')
+    buf += fileio.encode('    oneshot\n')
+
+    cpioentry.content = buf
+
+
 def init(cpiofile, partition_config):
     modify_default_prop(cpiofile, partition_config)
+    add_syncdaemon(cpiofile)

@@ -152,6 +152,13 @@ def patch_boot_image(file_info, path=None):
         perms=0o750
     )
 
+    # Copy syncdaemon
+    cf.add_file(
+        os.path.join(OS.ramdiskdir, 'syncdaemon'),
+        name='sbin/syncdaemon',
+        perms=0o750
+    )
+
     # Copy patched init if needed
     if file_info.patchinfo.patched_init is not None:
         cf.add_file(
