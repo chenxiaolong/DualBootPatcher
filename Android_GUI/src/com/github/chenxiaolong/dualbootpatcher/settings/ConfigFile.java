@@ -36,7 +36,6 @@ public class ConfigFile {
     private static final String CONF_SYNC_ACROSS = "syncacross";
     private static final String CONF_SHARE_DATA = "sharedata";
 
-    private String mConfigFile;
     private int mVersion;
     private boolean mChanged;
 
@@ -52,16 +51,21 @@ public class ConfigFile {
         loadConfig();
     }
 
-    private String getConfigFile() {
-        if (mConfigFile == null) {
-            if (FileUtils.isExistsDirectory(RomUtils.RAW_DATA)) {
-                mConfigFile = RomUtils.RAW_DATA + File.separator + CONFIG_FILE;
-            } else {
-                mConfigFile = RomUtils.DATA + File.separator + CONFIG_FILE;
-            }
-        }
+    // Ouch, that grammar ...
+    public static boolean isExistsConfigFile() {
+        File f = new File(getConfigFile());
+        return f.exists();
+    }
 
-        return mConfigFile;
+    private static String getConfigFile() {
+        // Avoid root for this (not using FileUtils.isExistsDirectory())
+        File d = new File(RomUtils.RAW_DATA);
+
+        if (d.exists() && d.isDirectory()) {
+            return RomUtils.RAW_DATA + File.separator + CONFIG_FILE;
+        } else {
+            return RomUtils.DATA + File.separator + CONFIG_FILE;
+        }
     }
 
     private void loadConfig() {
@@ -90,10 +94,15 @@ public class ConfigFile {
 
     public void save() {
         if (mChanged) {
-            switch (mVersion) {
-            case 1:
-                FileUtils.writeFileContents(getConfigFile(), createVersion1());
-                break;
+            if (mPackages.size() > 0) {
+                switch (mVersion) {
+                    case 0:
+                    case 1:
+                        FileUtils.writeFileContents(getConfigFile(), createVersion1());
+                        break;
+                }
+            } else {
+                FileUtils.deleteFile(getConfigFile());
             }
 
             mChanged = false;

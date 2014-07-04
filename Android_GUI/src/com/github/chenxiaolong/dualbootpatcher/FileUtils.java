@@ -161,6 +161,19 @@ public class FileUtils {
         }
     }
 
+    public static void deleteFile(String path) {
+        File file = new File(path);
+        file.delete();
+
+        if (isExistsFile(path)) {
+            CommandUtils.runRootCommand("rm -f " + path);
+        }
+    }
+
+    public static void chown(int uid, int gid, String path) {
+        CommandUtils.runRootCommand("chown " + uid + ":" + gid + " " + path);
+    }
+
     public static boolean isExistsDirectory(String path) {
         File file = new File(path);
         if (file.exists() && file.isDirectory() && file.canRead()) {
@@ -352,5 +365,21 @@ public class FileUtils {
         sb.append("same_inode ").append(file1).append(" ").append(file2);
 
         return CommandUtils.runRootCommand(sb.toString()) == 0;
+    }
+
+    public static boolean createTmpFs(String path) {
+        if (isExistsDirectory(path)) {
+            unmountAndRemove(path);
+        }
+
+        FileUtils.makedirs(path);
+        return CommandUtils.runRootCommand("mount -t tmpfs tmpfs " + path) == 0;
+    }
+
+    public static void unmountAndRemove(String path) {
+        if (isExistsDirectory(path)) {
+            CommandUtils.runRootCommand("umount " + path);
+            CommandUtils.runRootCommand("rm -rf " + path);
+        }
     }
 }
