@@ -8,8 +8,8 @@ Note: PyQt cannot be compiled under Wine!
      http://www.riverbankcomputing.com/software/sip/download
 4: Download PyQt5 source:
      http://www.riverbankcomputing.com/software/pyqt/download5
-5: Download QtBase 5.2.1 source:
-     http://download.qt-project.org/official_releases/qt/5.2/5.2.1/submodules/
+5: Download QtBase 5.3.1 source:
+     http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/
 
 6. Open Visual Studio Command Prompt (2010)
 
@@ -19,16 +19,16 @@ Note: PyQt cannot be compiled under Wine!
 10. $ nmake install
 
 11. Change to the Qt source directory
-12. $ configure -release -opensource -platform win32-msvc2010 -shared -nomake tests -nomake examples -no-icu -strip -mp -opengl desktop -prefix C:\QtCoreMinimal\5.2.1
+12. $ configure -release -opensource -platform win32-msvc2010 -shared -nomake tests -nomake examples -no-icu -strip -mp -opengl desktop -prefix C:\QtCoreMinimal\5.3.1
 13. $ nmake
 14. $ nmake install
 
 15. Change to the PyQt5 source directory
-16. $ set QT5DIR=C:\QtCoreMinimal\5.2.1
-17. $ set PATH=%PATH%;C:\QtCoreMinimal\5.2.1\bin;C:\Python34
+16. $ set QT5DIR=C:\QtCoreMinimal\5.3.1
+17. $ set PATH=%PATH%;C:\QtCoreMinimal\5.3.1\bin;C:\Python34
 18. $ C:\Python34\python.exe configure.py --verbose --concatenate --enable QtCore --enable QtGui --enable QtWidgets --no-designer-plugin --no-docstrings --no-qml-plugin --no-qsci-api --no-sip-files
 19. $ nmake
 20. $ nmake install
 
-21. Copy all the DLLs in C:\QtCoreMinimal\5.2.1\bin and the C:\QtCoreStatic\5.2.1\plugins folder to C:\Python34\Lib\site-packages\PyQt5
+21. Copy all the DLLs in C:\QtCoreMinimal\5.3.1\bin and the C:\QtCoreMinimal\5.3.1\plugins folder to C:\Python34\Lib\site-packages\PyQt5
 22. Zip up sip.pyd and PyQt5/ in C:\Python34\Lib\site-packages
