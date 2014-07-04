@@ -13,6 +13,9 @@ case "${1}" in
 debug)
     buildtype=debug
     ;;
+debug-nonboot)
+    buildtype=debug-nonboot
+    ;;
 release)
     buildtype=release
     ;;
@@ -37,7 +40,7 @@ pushd jsoncpp/
     python2 amalgamate.py
 popd
 
-if [[ "${buildtype}" == debug ]]; then
+if [[ "${buildtype}" == debug-nonboot ]]; then
     export CXXFLAGS='-g -O0'
 else
     export CXXFLAGS=''
@@ -53,7 +56,7 @@ ${CXX} ${CXXFLAGS} \
     -llog \
     -osyncdaemon
 
-if [[ "${buildtype}" != debug ]]; then
+if [[ "${buildtype}" != debug-nonboot ]]; then
     ${STRIP} syncdaemon
 fi
 
