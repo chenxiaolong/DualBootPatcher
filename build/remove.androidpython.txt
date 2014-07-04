@@ -38,7 +38,6 @@ lib/python3.4/lib-dynload/_socket.cpython-34m.so
 lib/python3.4/lib-dynload/_testbuffer.cpython-34m.so
 lib/python3.4/lib-dynload/_testcapi.cpython-34m.so
 lib/python3.4/lib-dynload/_testimportmultiple.cpython-34m.so
-lib/python3.4/lib-dynload/array.cpython-34m.so
 lib/python3.4/lib-dynload/audioop.cpython-34m.so
 lib/python3.4/lib-dynload/cmath.cpython-34m.so
 lib/python3.4/lib-dynload/fcntl.cpython-34m.so
@@ -66,7 +65,6 @@ lib/python3.4/antigravity.py
 lib/python3.4/ast.py
 lib/python3.4/asynchat.py
 
-lib/python3.4/base64.py
 lib/python3.4/bdb.py
 lib/python3.4/binhex.py
 lib/python3.4/bisect.py
@@ -85,7 +83,6 @@ lib/python3.4/cProfile.py
 lib/python3.4/crypt.py
 lib/python3.4/csv.py
 
-lib/python3.4/datetime.py
 lib/python3.4/decimal.py
 lib/python3.4/dis.py
 lib/python3.4/doctest.py

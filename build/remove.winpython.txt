@@ -50,7 +50,6 @@ Lib/antigravity.py
 Lib/ast.py
 Lib/asynchat.py
 
-Lib/base64.py
 Lib/bdb.py
 Lib/binhex.py
 Lib/bisect.py
@@ -69,7 +68,6 @@ Lib/cProfile.py
 Lib/crypt.py
 Lib/csv.py
 
-Lib/datetime.py
 Lib/decimal.py
 Lib/dis.py
 Lib/doctest.py
