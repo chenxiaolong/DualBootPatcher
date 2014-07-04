@@ -858,6 +858,8 @@ def build_android():
     shutil.move(targetfile, assetdir)
     shutil.copyfile(os.path.join(topdir, 'ramdisks', 'busybox-static'),
                     os.path.join(assetdir, 'tar'))
+    shutil.copyfile(os.path.join(targetdir, 'ramdisks', 'syncdaemon'),
+                    os.path.join(assetdir, 'syncdaemon'))
 
     if buildtype != 'ci':
         os.chmod(os.path.join(assetdir, 'tar'), 0o0755)
