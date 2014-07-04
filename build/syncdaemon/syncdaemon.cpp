@@ -45,7 +45,7 @@ int in_wd_config = -1;
 
 // Delay sync for 30 seconds to avoid running multiple times when there are
 // a ton of inotify events
-SingleDelayedTask task(5);
+SingleDelayedTask task(30);
 std::thread *task_thread = nullptr;
 
 struct rominformation {
