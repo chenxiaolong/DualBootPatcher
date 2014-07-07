@@ -24,8 +24,10 @@
 #include <thread>
 #include <vector>
 
+#include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
+#include <sys/file.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -460,6 +462,13 @@ int begin() {
 int main(int argc, char *argv[]) {
     if (geteuid() != 0) {
         LOGE("syncdaemon needs to be run as root");
+        return EXIT_FAILURE;
+    }
+
+    int pid_fd = open("/data/local/tmp/syncdaemon.pid", O_CREAT | O_RDWR, 0644);
+    int rc = flock(pid_fd, LOCK_EX | LOCK_NB);
+    if (rc < 0 && errno == EWOULDBLOCK) {
+        LOGV("Another instance of syncdaemon is already running");
         return EXIT_FAILURE;
     }
 
