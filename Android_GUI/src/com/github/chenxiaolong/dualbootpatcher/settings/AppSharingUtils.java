@@ -21,9 +21,6 @@ import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 
-import java.io.File;
-import java.util.ArrayList;
-
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
@@ -31,6 +28,9 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+
+import java.io.File;
+import java.util.ArrayList;
 
 public class AppSharingUtils {
     public static final String TAG = "AppSharingUtils";
@@ -111,19 +111,25 @@ public class AppSharingUtils {
             return -1;
         }
 
+        File syncdaemon = new File(context.getCacheDir() + File.separator + "syncdaemon");
+        if (!syncdaemon.exists()) {
+            FileUtils.extractAsset(context, "syncdaemon", syncdaemon);
+        }
+
         // Clean up in case something crashed before
-        final String path = "/data/local/tmp/syncdaemon";
-        final String syncdaemon = path + "/syncdaemon";
+        final String mountpoint = "/data/local/tmp/syncdaemon";
+        final String daemonBinary = mountpoint + File.separator + "syncdaemon";
 
-        FileUtils.createTmpFs(path);
-        FileUtils.chown(uid, uid, path);
+        FileUtils.createTmpFs(mountpoint);
+        FileUtils.chown(uid, uid, mountpoint);
 
-        FileUtils.extractAsset(context, "syncdaemon", new File(syncdaemon));
-        int exitCode = CommandUtils.runRootCommand("chmod 755 " + syncdaemon);
+        CommandUtils.runRootCommand("cp " + syncdaemon.getAbsolutePath() + " " + daemonBinary);
+        CommandUtils.runRootCommand("chmod 755 " + daemonBinary);
+        CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + daemonBinary);
 
-        CommandUtils.runRootCommand(syncdaemon + args);
+        int exitCode = CommandUtils.runRootCommand(daemonBinary + args);
 
-        FileUtils.unmountAndRemove(path);
+        FileUtils.unmountAndRemove(mountpoint);
 
         return exitCode;
     }
