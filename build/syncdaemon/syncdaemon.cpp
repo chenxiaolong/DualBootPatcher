@@ -458,6 +458,11 @@ int begin() {
 }
 
 int main(int argc, char *argv[]) {
+    if (geteuid() != 0) {
+        LOGE("syncdaemon needs to be run as root");
+        return EXIT_FAILURE;
+    }
+
     populate_roms();
     signal(SIGINT, cleanup);
     signal(SIGTERM, cleanup);
