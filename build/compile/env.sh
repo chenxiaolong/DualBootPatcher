@@ -1,9 +1,10 @@
 #!/bin/bash
 
+export __compile_dir=$(cd "$(dirname "${BASH_SOURCE}")" && pwd)
+
 get_conf() {
-    local CURDIR=$(cd "$(dirname "${BASH_SOURCE}")" && pwd)
-    local conf="${CURDIR}/../build.conf"
-    local conf_custom="${CURDIR}/../build.custom.conf"
+    local conf="${__compile_dir}/../build.conf"
+    local conf_custom="${__compile_dir}/../build.custom.conf"
 
     python3 -c "
 import configparser
@@ -26,9 +27,7 @@ setup_toolchain() {
     export ANDROIDNDKVER="$(get_conf builder android-ndk-ver)"
     export ANDROIDAPI="$(get_conf builder android-api)"
 
-    local CURDIR=$(cd "$(dirname "${BASH_SOURCE}")" && pwd)
-
-    export NDKPLATFORM="${CURDIR}"/gcc
+    export NDKPLATFORM="${__compile_dir}"/gcc
 
     export TOOLCHAIN_PREFIX=arm-linux-androideabi
     export TOOLCHAIN_VERSION=4.8

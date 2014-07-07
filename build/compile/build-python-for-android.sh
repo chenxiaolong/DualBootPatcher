@@ -43,6 +43,7 @@ patch -p1 -i ${CURDIR}/fix-termios.patch
 patch -p1 -i ${CURDIR}/fix-dlfcn.patch
 patch -p1 -i ${CURDIR}/fix-subprocess.patch
 patch -p1 -i ${CURDIR}/fix-module-linking.patch
+patch -p1 -i ${CURDIR}/0001-Compile-with-pie.patch
 
 cat >config.site <<EOF
 ac_cv_file__dev_ptmx=no
@@ -50,8 +51,9 @@ ac_cv_file__dev_ptc=no
 EOF
 
 setup_toolchain
-export CFLAGS="-DANDROID -mandroid -fomit-frame-pointer"
+export CFLAGS="-DANDROID -mandroid -fomit-frame-pointer --sysroot ${NDKPLATFORM}/sysroot -I${NDKPLATFORM}/sysroot/usr/include -fstack-protector-all -D_FORTIFY_SOURCE=2"
 export CXXFLAGS="${CFLAGS}"
+export LDFLAGS="-L${NDKPLATFORM}/sysroot/usr/lib -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro"
 
 rm -rf "${BUILDDIR}/python-install"
 
