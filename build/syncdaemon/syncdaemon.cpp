@@ -168,6 +168,13 @@ void populate_roms() {
             roms.push_back(info);
         }
     }
+
+    for (int i = 0; i < roms.size(); i++) {
+        LOGV("Discovered ROM ID %s", roms[i]->id.c_str());
+        LOGV("- System: %s", roms[i]->system.c_str());
+        LOGV("- Cache: %s", roms[i]->cache.c_str());
+        LOGV("- Data: %s", roms[i]->data.c_str());
+    }
 }
 
 std::string get_current_rom() {
@@ -338,6 +345,10 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
 }
 
 void sync_packages() {
+    if (roms.size() == 0) {
+        populate_roms();
+    }
+
     LOGD("Reloading configuration file");
 
     if (!ConfigFile::load_config()) {
@@ -355,7 +366,9 @@ void sync_packages() {
     }
 }
 
-void cleanup(int) {
+void cleanup(int signum) {
+    LOGV("Cleaning up ...");
+
     if (in_fd >= 0) {
         if (in_wd_appdir >= 0) {
             inotify_rm_watch(in_fd, in_wd_appdir);
@@ -376,7 +389,20 @@ void cleanup(int) {
     }
 }
 
+void setup_signals() {
+    struct sigaction sa;
+    sa.sa_handler = cleanup;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+}
+
 int start_monitoring() {
+    // Make sure packages are synced once
+    sync_packages();
+
     in_fd = inotify_init();
     if (in_fd < 0) {
         return -1;
@@ -472,21 +498,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    populate_roms();
-    signal(SIGINT, cleanup);
-    signal(SIGTERM, cleanup);
-
-    for (int i = 0; i < roms.size(); i++) {
-        LOGV("Discovered ROM ID %s", roms[i]->id.c_str());
-        LOGV("- System: %s", roms[i]->system.c_str());
-        LOGV("- Cache: %s", roms[i]->cache.c_str());
-        LOGV("- Data: %s", roms[i]->data.c_str());
-    }
-
-    // Make sure packages are synced once
-    sync_packages();
-
     if (argc > 1 && strcmp(argv[1], "--runonce") == 0) {
+        setup_signals();
+        sync_packages();
         return EXIT_SUCCESS;
     } else if (argc > 1 && strcmp(argv[1], "--daemon") == 0) {
         pid_t pid1;
@@ -499,6 +513,7 @@ int main(int argc, char *argv[]) {
             pid2 = fork();
 
             if (pid2 == 0) {
+                setup_signals();
                 begin();
             }
         } else {
