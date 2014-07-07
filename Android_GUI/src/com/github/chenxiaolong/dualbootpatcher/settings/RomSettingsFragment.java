@@ -30,6 +30,8 @@ import android.preference.PreferenceFragment;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class RomSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener {
@@ -93,16 +95,20 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         if (MiscUtils.compareVersions(version, "8.0.0") < 0) {
             mShareApps.setSummary(String.format(
-                    getActivity().getString(R.string.rom_settings_too_old),
-                    "8.0.0"));
+                    getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
             mSharePaidApps.setSummary(String.format(
-                    getActivity().getString(R.string.rom_settings_too_old),
-                    "8.0.0"));
-            mShareIndivApps.setSummary(String.format(
-                    getActivity().getString(R.string.rom_settings_too_old),
-                    "8.0.0"));
+                    getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
             mShareApps.setEnabled(false);
             mSharePaidApps.setEnabled(false);
+        }
+
+        RomInformation curRom = RomUtils.getCurrentRom();
+
+        // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon
+        if (curRom != null && !curRom.id.equals(RomUtils.PRIMARY_ID)
+                && MiscUtils.compareVersions(version, "8.0.0") < 0) {
+            mShareIndivApps.setSummary(String.format(
+                    getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
             mShareIndivApps.setEnabled(false);
         }
     }
