@@ -128,9 +128,10 @@ public class AppSharingUtils {
         return exitCode;
     }
 
-    public static boolean isSyncDaemonRunning() {
+    public static boolean isSyncDaemonRunning(Context context) {
         CommandParams params = new CommandParams();
-        params.command = new String[] {"pidof", "syncdaemon"};
+        params.command = FileUtils.getBusyboxCommand(context, "pidof",
+                new String[] { "syncdaemon" });
 
         CommandRunner cmd = new CommandRunner(params);
         cmd.start();

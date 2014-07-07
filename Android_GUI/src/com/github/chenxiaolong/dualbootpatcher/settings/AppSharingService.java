@@ -40,7 +40,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void spawnDaemon() {
-        if (!AppSharingUtils.isSyncDaemonRunning()) {
+        if (!AppSharingUtils.isSyncDaemonRunning(this)) {
             try {
                 RunSyncDaemonDaemon task = new RunSyncDaemonDaemon();
                 task.start();
@@ -52,7 +52,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void onPackageAddedOrUpgraded() {
-        if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning()) {
+        if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning(this)) {
             try {
                 RunSyncDaemonOnce task = new RunSyncDaemonOnce();
                 task.start();
@@ -91,7 +91,7 @@ public class AppSharingService extends IntentService {
     private class RunSyncDaemonDaemon extends Thread {
         @Override
         public void run() {
-            if (AppSharingUtils.isSyncDaemonRunning()) {
+            if (AppSharingUtils.isSyncDaemonRunning(AppSharingService.this)) {
                 Log.v(TAG, "syncdaemon is already running. Will not respawn");
                 return;
             }
@@ -103,7 +103,8 @@ public class AppSharingService extends IntentService {
     private class RunSyncDaemonOnce extends Thread {
         @Override
         public void run() {
-            if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning()) {
+            if (ConfigFile.isExistsConfigFile()
+                    && !AppSharingUtils.isSyncDaemonRunning(AppSharingService.this)) {
                 AppSharingUtils.runSyncDaemonOnce(AppSharingService.this);
             }
         }
@@ -133,7 +134,8 @@ public class AppSharingService extends IntentService {
 
             config.save();
 
-            if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning()) {
+            if (ConfigFile.isExistsConfigFile()
+                    && !AppSharingUtils.isSyncDaemonRunning(AppSharingService.this)) {
                 AppSharingUtils.runSyncDaemonOnce(AppSharingService.this);
             }
         }

@@ -27,7 +27,10 @@ import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandListener;
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.FullRootOutputListener;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
@@ -380,6 +383,84 @@ public class FileUtils {
         if (isExistsDirectory(path)) {
             CommandUtils.runRootCommand("umount " + path);
             CommandUtils.runRootCommand("rm -rf " + path);
+        }
+    }
+
+    public static void extractBusybox(Context context) {
+        File busybox = new File(context.getCacheDir() + File.separator + "busybox-static");
+
+        if (busybox.exists()) {
+            return;
+        }
+
+        FileUtils.extractAsset(context, "busybox-static", busybox);
+
+        CommandParams params = new CommandParams();
+        params.command = new String[] { "chmod", "0755", busybox.getAbsolutePath() };
+
+        CommandRunner cmd = new CommandRunner(params);
+        cmd.start();
+        CommandUtils.waitForCommand(cmd);
+    }
+
+    public static String[] getBusyboxCommand(Context context, String applet, String[] args) {
+        extractBusybox(context);
+
+        File busybox = new File(context.getCacheDir() + File.separator + "busybox-static");
+
+        ArrayList<String> newArgs = new ArrayList<String>();
+        newArgs.add(busybox.getAbsolutePath());
+        newArgs.add(applet);
+
+        for (String arg : args) {
+            newArgs.add(arg);
+        }
+
+        return newArgs.toArray(new String[newArgs.size()]);
+    }
+
+    private static int getPid(Context context, String name) {
+        extractBusybox(context);
+
+        FirstLineListener listener = new FirstLineListener();
+
+        CommandParams params = new CommandParams();
+        params.listener = listener;
+        CommandRunner cmd;
+
+        params.command = getBusyboxCommand(context, "pidof", new String[] { name });
+
+        cmd = new CommandRunner(params);
+        cmd.start();
+
+        try {
+            cmd.join();
+            return Integer.parseInt(listener.getLine());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
+    private static class FirstLineListener implements CommandListener {
+        private String mLine = null;
+
+        @Override
+        public void onNewOutputLine(String line, String stream) {
+            if (stream.equals(CommandUtils.STREAM_STDOUT)) {
+                if (mLine == null) {
+                    mLine = line;
+                }
+            }
+        }
+
+        @Override
+        public void onCommandCompletion(CommandResult result) {
+        }
+
+        public String getLine() {
+            return mLine;
         }
     }
 }

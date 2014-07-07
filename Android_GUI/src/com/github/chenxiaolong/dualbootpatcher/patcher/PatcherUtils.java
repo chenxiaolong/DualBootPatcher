@@ -65,9 +65,6 @@ public class PatcherUtils {
     /** Filename of the tar.xz archive */
     private static String mFileName;
 
-    /** Tar binary in the cache directory */
-    private static File mTar;
-
     /** Patcher's tar.xz archive in the cache directory */
     private static File mTargetFile;
 
@@ -80,14 +77,6 @@ public class PatcherUtils {
         }
 
         return mFileName;
-    }
-
-    private static File getTarBinary(Context context) {
-        if (mTar == null) {
-            mTar = new File(context.getCacheDir() + "/tar");
-        }
-
-        return mTar;
     }
 
     private static File getTargetFile(Context context) {
@@ -260,13 +249,10 @@ public class PatcherUtils {
             result = cmd.getResult();
 
             // TODO: Fix support for .img and .lok files
-            final String newFile = filename.replace(".zip", "_" + partConfig
-                    + ".zip");
+            final String newFile = filename.replace(".zip", "_" + partConfig + ".zip");
 
-            String message = result.data.getString(
-                    PatcherOutputFilter.RESULT_MESSAGE, "");
-            boolean failed = result.data.getBoolean(
-                    PatcherOutputFilter.RESULT_FAILED, true);
+            String message = result.data.getString(PatcherOutputFilter.RESULT_MESSAGE, "");
+            boolean failed = result.data.getBoolean(PatcherOutputFilter.RESULT_FAILED, true);
 
             Bundle ret = new Bundle();
             ret.putString(RESULT_PATCH_FILE_NEW_FILE, newFile);
@@ -395,12 +381,10 @@ public class PatcherUtils {
             }
         }
 
-        File tar = getTarBinary(context);
         File targetFile = getTargetFile(context);
         File targetDir = getTargetDirectory(context);
 
         if (!targetDir.exists()) {
-            FileUtils.extractAsset(context, "tar", tar);
             FileUtils.extractAsset(context, mFileName, targetFile);
 
             // Remove all previous files
@@ -411,18 +395,9 @@ public class PatcherUtils {
             CommandParams params = new CommandParams();
             CommandRunner cmd;
 
-            // Make tar executable
-            params.command = new String[] { "chmod", "755", tar.getPath() };
-            params.environment = null;
-            params.cwd = null;
-
-            cmd = new CommandRunner(params);
-            cmd.start();
-            CommandUtils.waitForCommand(cmd);
-
             // Extract patcher
-            params.command = new String[] { tar.getPath(), "-J", "-x", "-v",
-                    "-f", targetFile.getPath() };
+            params.command = FileUtils.getBusyboxCommand(context, "tar",
+                    new String[] { "-J", "-x", "-v", "-f", targetFile.getPath() });
             params.environment = null;
             params.cwd = context.getFilesDir();
 
@@ -431,8 +406,7 @@ public class PatcherUtils {
             CommandUtils.waitForCommand(cmd);
 
             // Make Python executable
-            params.command = new String[] { "chmod", "755",
-                    "pythonportable/bin/python3" };
+            params.command = new String[] { "chmod", "755", "pythonportable/bin/python3" };
             params.environment = null;
             params.cwd = targetDir;
 
@@ -442,7 +416,6 @@ public class PatcherUtils {
 
             // Delete archive and tar binary
             targetFile.delete();
-            tar.delete();
         }
     }
 }
