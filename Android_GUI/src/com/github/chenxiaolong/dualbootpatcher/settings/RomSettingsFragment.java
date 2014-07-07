@@ -93,6 +93,14 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         showAppSharingPrefs();
 
+        RomInformation curRom = RomUtils.getCurrentRom();
+        boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
+
+        if (isPrimary) {
+            mAppSharingCategory.removePreference(mShareApps);
+            mAppSharingCategory.removePreference(mSharePaidApps);
+        }
+
         if (MiscUtils.compareVersions(version, "8.0.0") < 0) {
             mShareApps.setSummary(String.format(
                     getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
@@ -102,11 +110,8 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mSharePaidApps.setEnabled(false);
         }
 
-        RomInformation curRom = RomUtils.getCurrentRom();
-
         // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon
-        if (curRom != null && !curRom.id.equals(RomUtils.PRIMARY_ID)
-                && MiscUtils.compareVersions(version, "8.0.0") < 0) {
+        if (!isPrimary && MiscUtils.compareVersions(version, "8.0.0") < 0) {
             mShareIndivApps.setSummary(String.format(
                     getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
             mShareIndivApps.setEnabled(false);
