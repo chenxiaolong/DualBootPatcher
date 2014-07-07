@@ -35,21 +35,6 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 public class AppSharingUtils {
     public static final String TAG = "AppSharingUtils";
 
-    // If we're running without a daemon, then we'll fire up syncdaemon when a package is
-    // installed, upgraded, and removed. The issue with this is that it depends on Android's
-    // PackageManager sending the events and this app receiving them. Applications installed by
-    // manually copying the apk files or by flashing from recovery will not get synced. Also,
-    // if the patcher is synced, it may or may not catch the PACKAGE_REPLACED broadcast for itself.
-    //
-    // The downside of using the daemon is that it determines when apps are installed, upgraded,
-    // or removed by monitoring /data/app with inotify. The issue here is that during an upgrade,
-    // Android puts the new apk file in /data/app and removes the old one when it's done. Also,
-    // there is no guarantee that the patcher will receive any PACKAGE_* broadcasts when itself
-    // is upgraded. To avoid issues, syncdaemon will delay the syncing by 30 seconds when it
-    // receives an inotify event. In this mode, syncdaemon will be spawned if it isn't already
-    // running by the time Android sends BOOT_COMPLETED.
-    public static final boolean NO_DAEMON = false;
-
     private static final String SHARE_APPS_PATH = "/data/patcher.share-app";
     private static final String SHARE_PAID_APPS_PATH = "/data/patcher.share-app-asec";
 
@@ -160,4 +145,18 @@ public class AppSharingUtils {
 
         return false;
     }
+
+    // If we're running without a daemon, then we'll fire up syncdaemon when a package is
+    // installed, upgraded, and removed. The issue with this is that it depends on Android's
+    // PackageManager sending the events and this app receiving them. Applications installed by
+    // manually copying the apk files or by flashing from recovery will not get synced. Also,
+    // if the patcher is synced, it may or may not catch the PACKAGE_REPLACED broadcast for itself.
+    //
+    // The downside of using the daemon is that it determines when apps are installed, upgraded,
+    // or removed by monitoring /data/app with inotify. The issue here is that during an upgrade,
+    // Android puts the new apk file in /data/app and removes the old one when it's done. Also,
+    // there is no guarantee that the patcher will receive any PACKAGE_* broadcasts when itself
+    // is upgraded. To avoid issues, syncdaemon will delay the syncing by 30 seconds when it
+    // receives an inotify event. In this mode, syncdaemon will be spawned if it isn't already
+    // running by the time Android sends BOOT_COMPLETED.
 }

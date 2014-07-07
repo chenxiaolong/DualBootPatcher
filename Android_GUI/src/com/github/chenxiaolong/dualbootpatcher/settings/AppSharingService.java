@@ -40,7 +40,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void spawnDaemon() {
-        if (!AppSharingUtils.NO_DAEMON) {
+        if (!AppSharingUtils.isSyncDaemonRunning()) {
             try {
                 RunSyncDaemonDaemon task = new RunSyncDaemonDaemon();
                 task.start();
@@ -52,7 +52,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void onPackageAddedOrUpgraded() {
-        if (AppSharingUtils.NO_DAEMON) {
+        if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning()) {
             try {
                 RunSyncDaemonOnce task = new RunSyncDaemonOnce();
                 task.start();
@@ -133,8 +133,7 @@ public class AppSharingService extends IntentService {
 
             config.save();
 
-            if (AppSharingUtils.NO_DAEMON && ConfigFile.isExistsConfigFile()
-                    && !AppSharingUtils.isSyncDaemonRunning()) {
+            if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning()) {
                 AppSharingUtils.runSyncDaemonOnce(AppSharingService.this);
             }
         }

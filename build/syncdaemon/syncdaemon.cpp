@@ -29,6 +29,7 @@
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "common.h"
@@ -448,6 +449,14 @@ void delayed_task_thread(SingleDelayedTask& t) {
     }
 }
 
+int begin() {
+    // Setup thread for future syncs
+    std::thread thread(std::bind(delayed_task_thread, std::ref(task)));
+    task_thread = &thread;
+
+    return start_monitoring();
+}
+
 int main(int argc, char *argv[]) {
     populate_roms();
     signal(SIGINT, cleanup);
@@ -465,13 +474,27 @@ int main(int argc, char *argv[]) {
 
     if (argc > 1 && strcmp(argv[1], "--runonce") == 0) {
         return EXIT_SUCCESS;
+    } else if (argc > 1 && strcmp(argv[1], "--daemon") == 0) {
+        pid_t pid1;
+        pid_t pid2;
+        int status;
+
+        pid1 = fork();
+
+        if (pid1 == 0) {
+            pid2 = fork();
+
+            if (pid2 == 0) {
+                begin();
+            }
+        } else {
+            waitpid(pid1, &status, 0);
+        }
+
+        return EXIT_SUCCESS;
     }
 
-    // Setup thread for future syncs
-    std::thread thread(std::bind(delayed_task_thread, std::ref(task)));
-    task_thread = &thread;
-
-    if (start_monitoring() != 0) {
+    if (begin() < 0) {
         return EXIT_FAILURE;
     }
 

@@ -111,8 +111,7 @@ public class AppListFragment extends PreferenceFragment {
         super.onDestroy();
         mConfig.save();
 
-        if (AppSharingUtils.NO_DAEMON && ConfigFile.isExistsConfigFile()
-                && !AppSharingUtils.isSyncDaemonRunning()) {
+        if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning()) {
             new Thread() {
                 @Override
                 public void run() {
