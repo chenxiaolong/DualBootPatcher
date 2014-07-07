@@ -40,13 +40,16 @@ pushd jsoncpp/
     python2 amalgamate.py
 popd
 
+export LDFLAGS='-pie'
+
 if [[ "${buildtype}" == debug-nonboot ]]; then
     export CXXFLAGS='-g -O0'
 else
-    export CXXFLAGS=''
+    export CXXFLAGS='-fstack-protector-all -D_FORTIFY_SOURCE=2'
+    export LDFLAGS+=' -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro'
 fi
 
-${CXX} ${CXXFLAGS} \
+${CXX} ${CXXFLAGS} ${LDFLAGS} \
     -std=c++11 \
     syncdaemon.cpp \
     common.cpp \
