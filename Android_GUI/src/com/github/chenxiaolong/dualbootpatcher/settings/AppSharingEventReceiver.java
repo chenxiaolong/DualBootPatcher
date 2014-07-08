@@ -29,12 +29,7 @@ public class AppSharingEventReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         Uri data = intent.getData();
 
-        if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
-            Intent serviceIntent = new Intent(context, AppSharingService.class);
-            serviceIntent.putExtra(AppSharingService.ACTION,
-                    AppSharingService.ACTION_SPAWN_DAEMON);
-            context.startService(serviceIntent);
-        } else if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
+        if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
             Intent serviceIntent = new Intent(context, AppSharingService.class);
             serviceIntent.putExtra(AppSharingService.ACTION,
                     AppSharingService.ACTION_PACKAGE_ADDED);

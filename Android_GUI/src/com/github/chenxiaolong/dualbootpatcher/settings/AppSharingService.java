@@ -29,7 +29,6 @@ public class AppSharingService extends IntentService {
     private static final String TAG = "AppSharingService";
 
     public static final String ACTION = "action";
-    public static final String ACTION_SPAWN_DAEMON = "spawn_daemon";
     public static final String ACTION_PACKAGE_ADDED = "package_added";
     public static final String ACTION_PACKAGE_UPGRADED = "package_upgraded";
     public static final String ACTION_PACKAGE_REMOVED = "package_removed";
@@ -52,18 +51,6 @@ public class AppSharingService extends IntentService {
         }
     }
 
-    private void onPackageAddedOrUpgraded() {
-        if (ConfigFile.isExistsConfigFile() && !SyncDaemonUtils.isRunning(this)) {
-            try {
-                RunSyncDaemonOnce task = new RunSyncDaemonOnce();
-                task.start();
-                task.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     private void onPackageRemoved(String pkg) {
         try {
             PackageRemovedTask task = new PackageRemovedTask(pkg);
@@ -78,12 +65,10 @@ public class AppSharingService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         String action = intent.getStringExtra(ACTION);
 
-        if (ACTION_SPAWN_DAEMON.equals(action)) {
+        if (ACTION_PACKAGE_ADDED.equals(action)) {
             spawnDaemon();
-        } else if (ACTION_PACKAGE_ADDED.equals(action)) {
-            onPackageAddedOrUpgraded();
         } else if (ACTION_PACKAGE_UPGRADED.equals(action)) {
-            onPackageAddedOrUpgraded();
+            spawnDaemon();
         } else if (ACTION_PACKAGE_REMOVED.equals(action)) {
             onPackageRemoved(intent.getStringExtra(EXTRA_PACKAGE));
         }
@@ -98,16 +83,6 @@ public class AppSharingService extends IntentService {
             }
 
             SyncDaemonUtils.runDaemon(AppSharingService.this);
-        }
-    }
-
-    private class RunSyncDaemonOnce extends Thread {
-        @Override
-        public void run() {
-            if (ConfigFile.isExistsConfigFile()
-                    && !SyncDaemonUtils.isRunning(AppSharingService.this)) {
-                SyncDaemonUtils.runOnce(AppSharingService.this);
-            }
         }
     }
 
