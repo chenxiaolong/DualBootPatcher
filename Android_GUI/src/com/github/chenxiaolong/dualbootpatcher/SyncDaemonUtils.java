@@ -21,11 +21,10 @@ import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
+import com.github.chenxiaolong.dualbootpatcher.MiscUtils.Version;
 
 import java.io.File;
+import java.util.Properties;
 
 // If we're running without a daemon, then we'll fire up syncdaemon when a package is
 // installed, upgraded, and removed. The issue with this is that it depends on Android's
@@ -44,23 +43,51 @@ public class SyncDaemonUtils {
     public static final String TAG = "SyncDaemonUtils";
     public static final String MOUNT_POINT = "/data/local/tmp/syncdaemon";
 
-    public static boolean isRunning(Context context) {
-        CommandParams params = new CommandParams();
-        params.command = CommandUtils.getBusyboxCommand(context, "pidof",
-                new String[] { "syncdaemon" });
-
-        CommandRunner cmd = new CommandRunner(params);
-        cmd.start();
-
-        try {
-            cmd.join();
-            CommandResult result = cmd.getResult();
-            return result.exitCode == 0;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public static void autoSpawn(Context context) {
+        // If the daemon is not running, just run it
+        int pid = CommandUtils.getPid(context, "syncdaemon");
+        if (pid <= 0) {
+            runDaemon(context);
+            return;
         }
 
-        return false;
+        Log.d(TAG, "syncdaemon is currently running");
+
+        // Otherwise, check if the running syncdaemon is the latest version
+        boolean shouldRespawn = true;
+        Version curVer = new Version(BuildConfig.VERSION_NAME);
+
+        Properties prop = MiscUtils.getProperties("/data/local/tmp/syncdaemon.pid");
+
+        if (prop.containsKey("version") && prop.containsKey("pid")) {
+            String propPid = prop.getProperty("pid");
+            String propVersion = prop.getProperty("version");
+
+            Log.d(TAG, "syncdaemon pid: " + propPid);
+            Log.d(TAG, "syncdaemon version: " + propVersion);
+
+            int pid2 = -1;
+
+            try {
+                pid2 = Integer.parseInt(propPid);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+
+            Version syncdaemonVer = new Version(propVersion);
+
+            if (pid == pid2 && syncdaemonVer.compareTo(curVer) == 0) {
+                shouldRespawn = false;
+            }
+        }
+
+        if (shouldRespawn) {
+            Log.d(TAG, "syncdaemon has a different version than the patcher. Respawning ...");
+            CommandUtils.killPid(context, pid);
+            runDaemon(context);
+        } else {
+            Log.d(TAG, "syncdaemon has the same version as the patcher. Will not respawn");
+        }
     }
 
     public static int runDaemon(Context context) {

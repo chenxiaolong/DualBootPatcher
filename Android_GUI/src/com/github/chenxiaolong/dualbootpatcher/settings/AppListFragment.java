@@ -111,14 +111,12 @@ public class AppListFragment extends PreferenceFragment {
         super.onDestroy();
         mConfig.save();
 
-        if (!SyncDaemonUtils.isRunning(context)) {
-            new Thread() {
-                @Override
-                public void run() {
-                    SyncDaemonUtils.runDaemon(context);
-                }
-            }.start();
-        }
+        new Thread() {
+            @Override
+            public void run() {
+                SyncDaemonUtils.autoSpawn(context);
+            }
+        }.start();
     }
 
     @Override
