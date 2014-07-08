@@ -98,7 +98,7 @@ public class SyncDaemonUtils {
         new RootFile(daemonBinary).chmod(0755);
         CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + daemonBinary);
 
-        int exitCode = CommandUtils.runRootCommand(daemonBinary + args);
+        int exitCode = CommandUtils.runRootCommand(daemonBinary + " " + args);
 
         mountPoint.unmountTmpFs();
         mountPoint.recursiveDelete();
