@@ -365,7 +365,7 @@ public final class CommandUtils {
         return newArgs.toArray(new String[newArgs.size()]);
     }
 
-    private static int getPid(Context context, String name) {
+    public static int getPid(Context context, String name) {
         FileUtils.extractBusybox(context);
 
         FirstLineListener listener = new FirstLineListener();
@@ -378,23 +378,41 @@ public final class CommandUtils {
 
         cmd = new CommandRunner(params);
         cmd.start();
+        waitForCommand(cmd);
 
-        try {
-            cmd.join();
-            return Integer.parseInt(listener.getLine());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (cmd.getResult().exitCode == 0) {
+            try {
+                return Integer.parseInt(listener.getLine());
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
         }
 
         return -1;
     }
 
+    public static boolean killPid(Context context, int pid) {
+        CommandParams params = new CommandParams();
+        params.command = new String[] { "kill", Integer.toString(pid) };
+
+        CommandRunner cmd = new CommandRunner(params);
+        cmd.start();
+        waitForCommand(cmd);
+
+        CommandResult result = cmd.getResult();
+        if (result.exitCode == 0) {
+            return true;
+        }
+
+        return runRootCommand("kill " + pid) == 0;
+    }
+
     private static class FirstLineListener implements CommandListener {
-        private String mLine = null;
+        private String mLine;
 
         @Override
         public void onNewOutputLine(String line, String stream) {
-            if (stream.equals(CommandUtils.STREAM_STDOUT)) {
+            if (stream.equals(STREAM_STDOUT)) {
                 if (mLine == null) {
                     mLine = line;
                 }
