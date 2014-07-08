@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
-import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
@@ -27,7 +26,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -51,12 +49,6 @@ public class ConfigFile {
 
     public ConfigFile() {
         loadConfig();
-    }
-
-    // Ouch, that grammar ...
-    public static boolean isExistsConfigFile() {
-        File f = new File(getConfigFile());
-        return f.exists();
     }
 
     private static String getConfigFile() {

@@ -27,7 +27,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.preference.PreferenceFragment;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -112,11 +111,11 @@ public class AppListFragment extends PreferenceFragment {
         super.onDestroy();
         mConfig.save();
 
-        if (ConfigFile.isExistsConfigFile() && !SyncDaemonUtils.isRunning(context)) {
+        if (!SyncDaemonUtils.isRunning(context)) {
             new Thread() {
                 @Override
                 public void run() {
-                    SyncDaemonUtils.runOnce(context);
+                    SyncDaemonUtils.runDaemon(context);
                 }
             }.start();
         }

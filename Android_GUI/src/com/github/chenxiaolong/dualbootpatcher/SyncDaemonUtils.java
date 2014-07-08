@@ -67,10 +67,6 @@ public class SyncDaemonUtils {
         return run(context, "--daemon");
     }
 
-    public static int runOnce(Context context) {
-        return run(context, " --runonce");
-    }
-
     private static int run(Context context, String args) {
         int uid = 0;
 

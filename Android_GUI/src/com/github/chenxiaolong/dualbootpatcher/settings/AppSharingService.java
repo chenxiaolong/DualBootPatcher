@@ -42,7 +42,7 @@ public class AppSharingService extends IntentService {
     private void spawnDaemon() {
         if (!SyncDaemonUtils.isRunning(this)) {
             try {
-                RunSyncDaemonDaemon task = new RunSyncDaemonDaemon();
+                RunSyncDaemon task = new RunSyncDaemon();
                 task.start();
                 task.join();
             } catch (InterruptedException e) {
@@ -74,15 +74,12 @@ public class AppSharingService extends IntentService {
         }
     }
 
-    private class RunSyncDaemonDaemon extends Thread {
+    private class RunSyncDaemon extends Thread {
         @Override
         public void run() {
-            if (SyncDaemonUtils.isRunning(AppSharingService.this)) {
-                Log.v(TAG, "syncdaemon is already running. Will not respawn");
-                return;
+            if (!SyncDaemonUtils.isRunning(AppSharingService.this)) {
+                SyncDaemonUtils.runDaemon(AppSharingService.this);
             }
-
-            SyncDaemonUtils.runDaemon(AppSharingService.this);
         }
     }
 
@@ -95,6 +92,10 @@ public class AppSharingService extends IntentService {
 
         @Override
         public void run() {
+            if (!SyncDaemonUtils.isRunning(AppSharingService.this)) {
+                SyncDaemonUtils.runDaemon(AppSharingService.this);
+            }
+
             ConfigFile config = new ConfigFile();
             RomInformation info = RomUtils.getCurrentRom();
 
@@ -109,11 +110,6 @@ public class AppSharingService extends IntentService {
             }
 
             config.save();
-
-            if (ConfigFile.isExistsConfigFile()
-                    && !SyncDaemonUtils.isRunning(AppSharingService.this)) {
-                SyncDaemonUtils.runOnce(AppSharingService.this);
-            }
         }
     }
 }
