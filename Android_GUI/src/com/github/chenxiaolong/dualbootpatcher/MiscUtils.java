@@ -31,7 +31,6 @@ public class MiscUtils {
     public static final int FEATURE_INDIV_APP_SYNCING = 4;
 
     public static class Version implements Comparable<Version> {
-        private String mVersionString;
         private int mMajorVer;
         private int mMinorVer;
         private int mVeryMinorVer;
@@ -40,13 +39,12 @@ public class MiscUtils {
         private String mGitCommit;
 
         public Version(String versionString) {
-            mVersionString = versionString;
-            parseVersion();
+            parseVersion(versionString);
         }
 
-        private void parseVersion() {
-            Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)(.+)?");
-            Matcher m = p.matcher(mVersionString);
+        private void parseVersion(String versionString) {
+            Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)(.*?)?(?:-.+)?");
+            Matcher m = p.matcher(versionString);
 
             if (!m.matches()) {
                 throw new IllegalArgumentException("Invalid version number");
@@ -55,7 +53,10 @@ public class MiscUtils {
             mMajorVer = Integer.parseInt(m.group(1));
             mMinorVer = Integer.parseInt(m.group(2));
             mVeryMinorVer = Integer.parseInt(m.group(3));
-            mSuffix = m.group(4);
+            String suffix = m.group(4);
+            if (suffix != null && !suffix.isEmpty()) {
+                mSuffix = m.group(4);
+            }
 
             if (mSuffix != null) {
                 parseRevision();
@@ -63,7 +64,7 @@ public class MiscUtils {
         }
 
         private void parseRevision() {
-            Pattern p = Pattern.compile("\\.r(\\d+)\\.g(.+)");
+            Pattern p = Pattern.compile("\\.r(\\d+)(?:\\.g(.+))?");
             Matcher m = p.matcher(mSuffix);
 
             if (!m.matches()) {
@@ -148,8 +149,7 @@ public class MiscUtils {
         }
 
         public String dump() {
-            return "mVersionString: " + mVersionString
-                    + ", mMajorVer: " + mMajorVer
+            return "mMajorVer: " + mMajorVer
                     + ", mMinorVer: " + mMinorVer
                     + ", mVeryMinorVer: " + mVeryMinorVer
                     + ", mSuffix: " + mSuffix
