@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 import android.content.Context;
 import android.os.Bundle;
 
+import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandListener;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
@@ -72,9 +73,10 @@ public class PatcherUtils {
     /** Directory of extracted patcher */
     private static File mTargetDir;
 
-    private static String getFilename(Context context) {
+    private static String getFilename() {
         if (mFileName == null) {
-            mFileName = String.format(FILENAME, MiscUtils.getVersion(context));
+            String version = BuildConfig.VERSION_NAME.split("-")[0];
+            mFileName = String.format(FILENAME, version);
         }
 
         return mFileName;
@@ -82,7 +84,7 @@ public class PatcherUtils {
 
     private static File getTargetFile(Context context) {
         if (mTargetFile == null) {
-            String fileName = getFilename(context);
+            String fileName = getFilename();
             mTargetFile = new File(context.getCacheDir() + "/" + fileName);
         }
 
@@ -91,8 +93,8 @@ public class PatcherUtils {
 
     static File getTargetDirectory(Context context) {
         if (mTargetDir == null) {
-            String dirName = String.format(DIRNAME,
-                    MiscUtils.getVersion(context));
+            String version = BuildConfig.VERSION_NAME.split("-")[0];
+            String dirName = String.format(DIRNAME, version);
             mTargetDir = new File(context.getFilesDir() + "/" + dirName);
         }
 

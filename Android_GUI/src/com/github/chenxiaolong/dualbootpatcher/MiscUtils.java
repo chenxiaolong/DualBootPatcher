@@ -17,68 +17,195 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Properties;
-
-import android.content.Context;
-import android.content.pm.PackageManager.NameNotFoundException;
-
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.FullRootOutputListener;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MiscUtils {
-    private static String mVersion;
+    public static final int FEATURE_GLOBAL_APP_SHARING = 1;
+    public static final int FEATURE_GLOBAL_PAID_APP_SHARING = 2;
+    public static final int FEATURE_INDIV_APP_SYNCING = 4;
 
-    public static String getVersion(Context context) {
-        if (mVersion == null) {
-            try {
-                mVersion = context.getPackageManager().getPackageInfo(
-                        context.getPackageName(), 0).versionName;
-                mVersion = mVersion.split("-")[0];
-            } catch (NameNotFoundException e) {
-                e.printStackTrace();
+    public static class Version implements Comparable<Version> {
+        private String mVersionString;
+        private int mMajorVer;
+        private int mMinorVer;
+        private int mVeryMinorVer;
+        public String mSuffix;
+        private int mRevision;
+        private String mGitCommit;
+
+        public Version(String versionString) {
+            mVersionString = versionString;
+            parseVersion();
+        }
+
+        private void parseVersion() {
+            Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)(.+)?");
+            Matcher m = p.matcher(mVersionString);
+
+            if (!m.matches()) {
+                throw new IllegalArgumentException("Invalid version number");
+            }
+
+            mMajorVer = Integer.parseInt(m.group(1));
+            mMinorVer = Integer.parseInt(m.group(2));
+            mVeryMinorVer = Integer.parseInt(m.group(3));
+            mSuffix = m.group(4);
+
+            if (mSuffix != null) {
+                parseRevision();
             }
         }
 
-        return mVersion;
-    }
+        private void parseRevision() {
+            Pattern p = Pattern.compile("\\.r(\\d+)\\.g(.+)");
+            Matcher m = p.matcher(mSuffix);
 
-    public static int compareVersions(String version1, String version2) {
-        String[] v1s = version1.split("\\.");
-        String[] v2s = version2.split("\\.");
-        int[] v1 = new int[v1s.length];
-        int[] v2 = new int[v2s.length];
+            if (!m.matches()) {
+                throw new IllegalArgumentException("Invalid version suffix");
+            }
 
-        if (v1s.length != v2s.length) {
-            return -2;
+            mRevision = Integer.parseInt(m.group(1));
+            mGitCommit = m.group(2);
         }
 
-        try {
-            for (int i = 0; i < v1s.length; i++) {
-                v1[i] = Integer.parseInt(v1s[i]);
-            }
-            for (int i = 0; i < v2s.length; i++) {
-                v2[i] = Integer.parseInt(v2s[i]);
+        @Override
+        public int compareTo(Version other) {
+            if (mMajorVer < other.mMajorVer) {
+                return -1;
+            } else if (mMajorVer > other.mMajorVer) {
+                return 1;
             }
 
-            for (int i = 0; i < v1.length; i++) {
-                if (v1[i] < v2[i]) {
-                    return -1;
-                } else if (v1[i] > v2[i]) {
-                    return 1;
-                }
+            if (mMinorVer < other.mMinorVer) {
+                return -1;
+            } else if (mMinorVer > other.mMinorVer) {
+                return 1;
+            }
+
+            if (mVeryMinorVer < other.mVeryMinorVer) {
+                return -1;
+            } else if (mVeryMinorVer > other.mVeryMinorVer) {
+                return 1;
+            }
+
+            // No suffix is always newer
+            if (mSuffix != null && other.mSuffix == null) {
+                return -1;
+            } else if (mSuffix == null && other.mSuffix != null) {
+                return 1;
+            }
+
+            if (mRevision < other.mRevision) {
+                return -1;
+            } else if (mRevision > other.mRevision) {
+                return 1;
             }
 
             return 0;
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-            return -2;
         }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+
+            if (!(other instanceof Version)) {
+                return false;
+            }
+
+            Version vOther = (Version) other;
+
+            return mMajorVer == vOther.mMajorVer
+                    && mMinorVer == vOther.mMinorVer
+                    && mVeryMinorVer == vOther.mVeryMinorVer
+                    && mSuffix == null ? vOther.mSuffix == null :
+                            mSuffix.equals(vOther.mSuffix)
+                    && mRevision == vOther.mRevision
+                    && mGitCommit == null ? vOther.mGitCommit == null :
+                            mGitCommit.equals(vOther.mGitCommit);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(mMajorVer).append(".");
+            sb.append(mMinorVer).append(".");
+            sb.append(mVeryMinorVer);
+            if (mRevision > 0) {
+                sb.append(".r").append(mRevision);
+            }
+            if (mGitCommit != null) {
+                sb.append(".g").append(mGitCommit);
+            }
+            return sb.toString();
+        }
+
+        public String dump() {
+            return "mVersionString: " + mVersionString
+                    + ", mMajorVer: " + mMajorVer
+                    + ", mMinorVer: " + mMinorVer
+                    + ", mVeryMinorVer: " + mVeryMinorVer
+                    + ", mSuffix: " + mSuffix
+                    + ", mRevision: " + mRevision
+                    + ", mGitCommit: " + mGitCommit;
+        }
+    }
+
+    public static Version getMinimumVersionFor(int features) {
+        ArrayList<Version> versions = new ArrayList<Version>();
+
+        // To find the minimum version for continuous integration builds, run the following command:
+        //   $ git describe --long | sed -E "s/^v//g;s/([^-]*-g)/r\1/;s/-/./g"
+        // If the command returns "7.0.0.r56.gdd3907d", then then minimum version (uncommitted
+        // changes) should be "7.0.0.r57".
+        //
+        // Release and debug versions should simply use the release version numbers (eg. X.Y.Z)
+        if (BuildConfig.BUILD_TYPE.equals("ci")) {
+            if ((features & FEATURE_GLOBAL_APP_SHARING) != 0) {
+                Version v = new Version("7.0.0.r57");
+                versions.add(v);
+            }
+
+            if ((features & FEATURE_GLOBAL_PAID_APP_SHARING) != 0) {
+                Version v = new Version("7.0.0.r57");
+                versions.add(v);
+            }
+
+            if ((features & FEATURE_INDIV_APP_SYNCING) != 0) {
+                Version v = new Version("7.0.0.r57");
+                versions.add(v);
+            }
+        } else {
+            if ((features & FEATURE_GLOBAL_APP_SHARING) != 0) {
+                Version v = new Version("8.0.0");
+                versions.add(v);
+            }
+
+            if ((features & FEATURE_GLOBAL_PAID_APP_SHARING) != 0) {
+                Version v = new Version("8.0.0");
+                versions.add(v);
+            }
+
+            if ((features & FEATURE_INDIV_APP_SYNCING) != 0) {
+                Version v = new Version("8.0.0");
+                versions.add(v);
+            }
+        }
+
+        if (versions.size() == 0) {
+            return null;
+        }
+
+        // Find maximum (which is the minimum version needed to support all of the requested
+        // features)
+        return Collections.max(versions);
     }
 
     public static String getPatchedByVersion() {
@@ -115,7 +242,6 @@ public class MiscUtils {
             return null;
         }
 
-        File propfile = new File(file);
         Properties prop = new Properties();
 
         String contents = new RootFile(file).getContents();

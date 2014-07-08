@@ -18,7 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.app.Fragment;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
@@ -45,14 +44,8 @@ public class AboutFragment extends Fragment {
 
         TextView version = (TextView) getActivity().findViewById(
                 R.id.about_version);
-        try {
-            String versionName = getActivity().getPackageManager()
-                    .getPackageInfo(getActivity().getPackageName(), 0).versionName;
-            version.setText(String.format(
-                    getActivity().getString(R.string.version), versionName));
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
-        }
+        version.setText(String.format(getActivity().getString(R.string.version),
+                BuildConfig.VERSION_NAME));
 
         TextView credits = (TextView) getActivity().findViewById(
                 R.id.about_credits);

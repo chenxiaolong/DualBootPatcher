@@ -29,6 +29,7 @@ import android.preference.PreferenceFragment;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
+import com.github.chenxiaolong.dualbootpatcher.MiscUtils.Version;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -89,7 +90,11 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mHaveRootAccess = CommandUtils.requestRootAccess();
         }
 
-        String version = MiscUtils.getPatchedByVersion();
+        Version version = new Version(MiscUtils.getPatchedByVersion());
+        Version verGlobalShareApps = MiscUtils.getMinimumVersionFor(
+                MiscUtils.FEATURE_GLOBAL_APP_SHARING | MiscUtils.FEATURE_GLOBAL_PAID_APP_SHARING);
+        Version verIndivAppSync = MiscUtils.getMinimumVersionFor(
+                MiscUtils.FEATURE_INDIV_APP_SYNCING);
 
         showAppSharingPrefs();
 
@@ -101,19 +106,19 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mAppSharingCategory.removePreference(mSharePaidApps);
         }
 
-        if (MiscUtils.compareVersions(version, "8.0.0") < 0) {
+        if (version.compareTo(verGlobalShareApps) < 0) {
             mShareApps.setSummary(String.format(
-                    getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
+                    getActivity().getString(R.string.rom_settings_too_old), verGlobalShareApps));
             mSharePaidApps.setSummary(String.format(
-                    getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
+                    getActivity().getString(R.string.rom_settings_too_old), verGlobalShareApps));
             mShareApps.setEnabled(false);
             mSharePaidApps.setEnabled(false);
         }
 
         // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon
-        if (!isPrimary && MiscUtils.compareVersions(version, "8.0.0") < 0) {
+        if (!isPrimary && version.compareTo(verIndivAppSync) < 0) {
             mShareIndivApps.setSummary(String.format(
-                    getActivity().getString(R.string.rom_settings_too_old), "8.0.0"));
+                    getActivity().getString(R.string.rom_settings_too_old), verIndivAppSync));
             mShareIndivApps.setEnabled(false);
         }
     }
