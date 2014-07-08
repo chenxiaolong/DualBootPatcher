@@ -21,6 +21,8 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.RootFile;
 
 import java.io.File;
 
@@ -29,17 +31,17 @@ public class SwitcherUtils {
     public static final String BOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/boot";
     // Can't use Environment.getExternalStorageDirectory() because the path is
     // different in the root environment
-    public static final String KERNEL_PATH_ROOT = "/raw-data/media/0/MultiKernels";
+    public static final String KERNEL_PATH_ROOT = "/media/0/MultiKernels";
 
     public static void writeKernel(String kernelId) throws Exception {
-        String[] paths = new String[] { KERNEL_PATH_ROOT,
-                KERNEL_PATH_ROOT.replace("raw-data", "data"),
+        String[] paths = new String[] { RomUtils.RAW_DATA + KERNEL_PATH_ROOT,
+                RomUtils.DATA + KERNEL_PATH_ROOT,
                 "/raw-system/dual-kernels", "/system/dual-kernels" };
 
         String kernel = null;
         for (String path : paths) {
             String temp = path + File.separator + kernelId + ".img";
-            if (!FileUtils.isExistsFile(temp)) {
+            if (!new RootFile(temp).isFile()) {
                 Log.e(TAG, temp + " not found");
                 continue;
             }
@@ -59,12 +61,14 @@ public class SwitcherUtils {
     }
 
     public static void backupKernel(String kernelId) throws Exception {
-        String kernel_path = KERNEL_PATH_ROOT;
-        if (!FileUtils.isExistsDirectory("/raw-data")) {
-            kernel_path = kernel_path.replace("raw-data", "data");
+        String kernel_path = RomUtils.RAW_DATA + KERNEL_PATH_ROOT;
+        if (!new RootFile(RomUtils.RAW_DATA).isDirectory()) {
+            kernel_path = RomUtils.DATA + KERNEL_PATH_ROOT;
         }
 
-        FileUtils.makedirs(kernel_path);
+        RootFile f = new RootFile(kernel_path);
+        f.mkdirs();
+
         String kernel = kernel_path + File.separator + kernelId + ".img";
 
         Log.v(TAG, "Backing up " + kernelId + " kernel");
@@ -77,8 +81,8 @@ public class SwitcherUtils {
         }
 
         Log.v(TAG, "Fixing permissions");
-        CommandUtils.runRootCommand("chmod -R 775 " + kernel_path);
-        CommandUtils.runRootCommand("chown -R media_rw:media_rw " + kernel_path);
+        f.recursiveChmod(0775);
+        f.recursiveChown("media_rw", "media_rw");
     }
 
     public static void reboot() {

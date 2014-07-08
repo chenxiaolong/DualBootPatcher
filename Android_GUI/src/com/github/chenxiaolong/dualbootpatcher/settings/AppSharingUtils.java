@@ -28,6 +28,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.RootFile;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -59,11 +60,11 @@ public class AppSharingUtils {
     }
 
     public static boolean isShareAppsEnabled() {
-        return FileUtils.isExistsFile(SHARE_APPS_PATH);
+        return new RootFile(SHARE_APPS_PATH).isFile();
     }
 
     public static boolean isSharePaidAppsEnabled() {
-        return FileUtils.isExistsFile(SHARE_PAID_APPS_PATH);
+        return new RootFile(SHARE_PAID_APPS_PATH).isFile();
     }
 
     public static String[] getAllApks() {
@@ -72,7 +73,7 @@ public class AppSharingUtils {
         ArrayList<String> apks = new ArrayList<String>();
 
         for (RomInformation rom : roms) {
-            String[] filenames = FileUtils.listdir(rom.data + File.separator + "app");
+            String[] filenames = new RootFile(rom.data + File.separator + "app").list();
 
             if (filenames == null || filenames.length == 0) {
                 continue;
@@ -87,83 +88,4 @@ public class AppSharingUtils {
 
         return apks.toArray(new String[apks.size()]);
     }
-
-    public static int runSyncDaemonDaemon(Context context) {
-        return runSyncDaemon(context, "--daemon");
-    }
-
-    public static int runSyncDaemonOnce(Context context) {
-        return runSyncDaemon(context, " --runonce");
-    }
-
-    private static int runSyncDaemon(Context context, String args) {
-        int uid = 0;
-
-        try {
-            uid = context.getPackageManager().getApplicationInfo(
-                    context.getPackageName(), 0).uid;
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        if (uid == 0) {
-            Log.e(TAG, "Couldn't determine UID");
-            return -1;
-        }
-
-        File syncdaemon = new File(context.getCacheDir() + File.separator + "syncdaemon");
-        if (!syncdaemon.exists()) {
-            FileUtils.extractAsset(context, "syncdaemon", syncdaemon);
-        }
-
-        // Clean up in case something crashed before
-        final String mountpoint = "/data/local/tmp/syncdaemon";
-        final String daemonBinary = mountpoint + File.separator + "syncdaemon";
-
-        FileUtils.createTmpFs(mountpoint);
-        FileUtils.chown(uid, uid, mountpoint);
-
-        CommandUtils.runRootCommand("cp " + syncdaemon.getAbsolutePath() + " " + daemonBinary);
-        CommandUtils.runRootCommand("chmod 755 " + daemonBinary);
-        CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + daemonBinary);
-
-        int exitCode = CommandUtils.runRootCommand(daemonBinary + args);
-
-        FileUtils.unmountAndRemove(mountpoint);
-
-        return exitCode;
-    }
-
-    public static boolean isSyncDaemonRunning(Context context) {
-        CommandParams params = new CommandParams();
-        params.command = FileUtils.getBusyboxCommand(context, "pidof",
-                new String[] { "syncdaemon" });
-
-        CommandRunner cmd = new CommandRunner(params);
-        cmd.start();
-
-        try {
-            cmd.join();
-            CommandResult result = cmd.getResult();
-            return result.exitCode == 0;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
-
-    // If we're running without a daemon, then we'll fire up syncdaemon when a package is
-    // installed, upgraded, and removed. The issue with this is that it depends on Android's
-    // PackageManager sending the events and this app receiving them. Applications installed by
-    // manually copying the apk files or by flashing from recovery will not get synced. Also,
-    // if the patcher is synced, it may or may not catch the PACKAGE_REPLACED broadcast for itself.
-    //
-    // The downside of using the daemon is that it determines when apps are installed, upgraded,
-    // or removed by monitoring /data/app with inotify. The issue here is that during an upgrade,
-    // Android puts the new apk file in /data/app and removes the old one when it's done. Also,
-    // there is no guarantee that the patcher will receive any PACKAGE_* broadcasts when itself
-    // is upgraded. To avoid issues, syncdaemon will delay the syncing by 30 seconds when it
-    // receives an inotify event. In this mode, syncdaemon will be spawned if it isn't already
-    // running by the time Android sends BOOT_COMPLETED.
 }

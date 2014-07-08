@@ -20,12 +20,14 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.RootFile;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -74,7 +76,7 @@ public class ConfigFile {
             mPackages.clear();
             mVersion = 0;
 
-            String contents = FileUtils.getFileContents(getConfigFile());
+            String contents = new RootFile(getConfigFile()).getContents();
             if (contents != null) {
                 try {
                     JSONObject root = new JSONObject(contents);
@@ -98,11 +100,11 @@ public class ConfigFile {
                 switch (mVersion) {
                     case 0:
                     case 1:
-                        FileUtils.writeFileContents(getConfigFile(), createVersion1());
+                        new RootFile(getConfigFile()).writeContents(createVersion1());
                         break;
                 }
             } else {
-                FileUtils.deleteFile(getConfigFile());
+                new RootFile(getConfigFile()).delete();
             }
 
             mChanged = false;

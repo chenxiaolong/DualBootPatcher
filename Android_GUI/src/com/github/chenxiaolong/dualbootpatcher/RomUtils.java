@@ -63,7 +63,7 @@ public class RomUtils {
     }
 
     private static boolean isBootedInPrimary() {
-        return !FileUtils.isExistsDirectory(RAW_SYSTEM) || FileUtils.isSameInode(RAW_SYSTEM +
+        return !new RootFile(RAW_SYSTEM).isDirectory() || FileUtils.isSameInode(RAW_SYSTEM +
                 File.separator + BUILD_PROP, SYSTEM + File.separator + BUILD_PROP);
     }
 
@@ -118,7 +118,7 @@ public class RomUtils {
                 info.kernelId = PRIMARY_KERNEL_ID;
 
                 mRoms.add(info);
-            } else if (FileUtils.isExistsFile(RAW_SYSTEM + File.separator + BUILD_PROP)) {
+            } else if (new RootFile(RAW_SYSTEM + File.separator + BUILD_PROP).isFile()) {
                 info = new RomInformation();
 
                 info.system = RAW_SYSTEM;
@@ -131,8 +131,8 @@ public class RomUtils {
                 mRoms.add(info);
             }
 
-            if (FileUtils.isExistsFile(RAW_SYSTEM + File.separator + SECONDARY_ID + File
-                    .separator + BUILD_PROP)) {
+            if (new RootFile(RAW_SYSTEM + File.separator + SECONDARY_ID + File
+                    .separator + BUILD_PROP).isFile()) {
                 info = new RomInformation();
 
                 info.system = SYSTEM + File.separator + SECONDARY_ID;
@@ -143,8 +143,8 @@ public class RomUtils {
                 info.kernelId = SECONDARY_KERNEL_ID;
 
                 mRoms.add(info);
-            } else if (FileUtils.isExistsFile(SYSTEM + File.separator + SECONDARY_ID + File
-                    .separator + BUILD_PROP)) {
+            } else if (new RootFile(SYSTEM + File.separator + SECONDARY_ID + File
+                    .separator + BUILD_PROP).isFile()) {
                 info = new RomInformation();
 
                 info.system = RAW_SYSTEM + File.separator + SECONDARY_ID;
@@ -167,7 +167,7 @@ public class RomUtils {
                 String cachePath = SYSTEM + File.separator + id + CACHE;
                 String dataPath = DATA + File.separator + id;
 
-                if (FileUtils.isExistsDirectory(rawSystemPath)) {
+                if (new RootFile(rawSystemPath).isDirectory()) {
                     info = new RomInformation();
 
                     info.system = rawSystemPath;
@@ -178,7 +178,7 @@ public class RomUtils {
                     info.kernelId = id;
 
                     mRoms.add(info);
-                } else if (FileUtils.isExistsDirectory(systemPath)) {
+                } else if (new RootFile(systemPath).isDirectory()) {
                     info = new RomInformation();
 
                     info.system = systemPath;

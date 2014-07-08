@@ -21,9 +21,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -305,6 +307,14 @@ public final class CommandUtils {
         }
     }
 
+    public static void waitForRootCommand(RootCommandRunner cmd) {
+        try {
+            cmd.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static int runRootCommand(String command) {
         RootCommandParams params = new RootCommandParams();
         params.command = command;
@@ -336,6 +346,67 @@ public final class CommandUtils {
         @Override
         public void onCommandCompletion(CommandResult result) {
             result.data.putString("output", mOutput.toString());
+        }
+    }
+
+    public static String[] getBusyboxCommand(Context context, String applet, String[] args) {
+        FileUtils.extractBusybox(context);
+
+        File busybox = new File(context.getCacheDir() + File.separator + "busybox-static");
+
+        ArrayList<String> newArgs = new ArrayList<String>();
+        newArgs.add(busybox.getAbsolutePath());
+        newArgs.add(applet);
+
+        for (String arg : args) {
+            newArgs.add(arg);
+        }
+
+        return newArgs.toArray(new String[newArgs.size()]);
+    }
+
+    private static int getPid(Context context, String name) {
+        FileUtils.extractBusybox(context);
+
+        FirstLineListener listener = new FirstLineListener();
+
+        CommandParams params = new CommandParams();
+        params.listener = listener;
+        CommandRunner cmd;
+
+        params.command = getBusyboxCommand(context, "pidof", new String[] { name });
+
+        cmd = new CommandRunner(params);
+        cmd.start();
+
+        try {
+            cmd.join();
+            return Integer.parseInt(listener.getLine());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
+    private static class FirstLineListener implements CommandListener {
+        private String mLine = null;
+
+        @Override
+        public void onNewOutputLine(String line, String stream) {
+            if (stream.equals(CommandUtils.STREAM_STDOUT)) {
+                if (mLine == null) {
+                    mLine = line;
+                }
+            }
+        }
+
+        @Override
+        public void onCommandCompletion(CommandResult result) {
+        }
+
+        public String getLine() {
+            return mLine;
         }
     }
 }

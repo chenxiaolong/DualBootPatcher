@@ -17,11 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import java.io.File;
-import java.util.ArrayList;
-
-import org.json.JSONException;
-
 import android.content.Context;
 import android.os.Bundle;
 
@@ -35,6 +30,12 @@ import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
+import com.github.chenxiaolong.dualbootpatcher.RootFile;
+
+import org.json.JSONException;
+
+import java.io.File;
+import java.util.ArrayList;
 
 public class PatcherUtils {
     public static final String TAG = "PatcherUtils";
@@ -369,13 +370,13 @@ public class PatcherUtils {
          * itself up properly - cacheDir|* - filesDir|*|tmp*
          */
         for (File d : context.getCacheDir().listFiles()) {
-            FileUtils.recursiveDelete(d);
+            new RootFile(d.getAbsolutePath()).recursiveDelete();
         }
         for (File d : context.getFilesDir().listFiles()) {
             if (d.isDirectory()) {
                 for (File t : d.listFiles()) {
                     if (t.getName().contains("tmp")) {
-                        FileUtils.recursiveDelete(t);
+                        new RootFile(t.getAbsolutePath()).recursiveDelete();
                     }
                 }
             }
@@ -389,14 +390,14 @@ public class PatcherUtils {
 
             // Remove all previous files
             for (File d : context.getFilesDir().listFiles()) {
-                FileUtils.recursiveDelete(d);
+                new RootFile(d.getAbsolutePath()).recursiveDelete();
             }
 
             CommandParams params = new CommandParams();
             CommandRunner cmd;
 
             // Extract patcher
-            params.command = FileUtils.getBusyboxCommand(context, "tar",
+            params.command = CommandUtils.getBusyboxCommand(context, "tar",
                     new String[] { "-J", "-x", "-v", "-f", targetFile.getPath() });
             params.environment = null;
             params.cwd = context.getFilesDir();
@@ -406,13 +407,9 @@ public class PatcherUtils {
             CommandUtils.waitForCommand(cmd);
 
             // Make Python executable
-            params.command = new String[] { "chmod", "755", "pythonportable/bin/python3" };
-            params.environment = null;
-            params.cwd = targetDir;
-
-            cmd = new CommandRunner(params);
-            cmd.start();
-            CommandUtils.waitForCommand(cmd);
+            RootFile f = new RootFile(targetDir.getAbsolutePath() + "/pythonportable/bin/python3");
+            f.setAttemptRoot(false);
+            f.chmod(0755);
 
             // Delete archive and tar binary
             targetFile.delete();

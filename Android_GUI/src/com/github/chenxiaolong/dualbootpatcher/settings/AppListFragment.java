@@ -43,6 +43,7 @@ import android.widget.TextView;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,11 +112,11 @@ public class AppListFragment extends PreferenceFragment {
         super.onDestroy();
         mConfig.save();
 
-        if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning(context)) {
+        if (ConfigFile.isExistsConfigFile() && !SyncDaemonUtils.isRunning(context)) {
             new Thread() {
                 @Override
                 public void run() {
-                    AppSharingUtils.runSyncDaemonOnce(context);
+                    SyncDaemonUtils.runOnce(context);
                 }
             }.start();
         }

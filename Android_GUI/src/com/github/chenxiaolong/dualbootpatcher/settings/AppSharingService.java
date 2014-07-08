@@ -23,6 +23,7 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 
 public class AppSharingService extends IntentService {
     private static final String TAG = "AppSharingService";
@@ -40,7 +41,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void spawnDaemon() {
-        if (!AppSharingUtils.isSyncDaemonRunning(this)) {
+        if (!SyncDaemonUtils.isRunning(this)) {
             try {
                 RunSyncDaemonDaemon task = new RunSyncDaemonDaemon();
                 task.start();
@@ -52,7 +53,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void onPackageAddedOrUpgraded() {
-        if (ConfigFile.isExistsConfigFile() && !AppSharingUtils.isSyncDaemonRunning(this)) {
+        if (ConfigFile.isExistsConfigFile() && !SyncDaemonUtils.isRunning(this)) {
             try {
                 RunSyncDaemonOnce task = new RunSyncDaemonOnce();
                 task.start();
@@ -91,12 +92,12 @@ public class AppSharingService extends IntentService {
     private class RunSyncDaemonDaemon extends Thread {
         @Override
         public void run() {
-            if (AppSharingUtils.isSyncDaemonRunning(AppSharingService.this)) {
+            if (SyncDaemonUtils.isRunning(AppSharingService.this)) {
                 Log.v(TAG, "syncdaemon is already running. Will not respawn");
                 return;
             }
 
-            AppSharingUtils.runSyncDaemonDaemon(AppSharingService.this);
+            SyncDaemonUtils.runDaemon(AppSharingService.this);
         }
     }
 
@@ -104,8 +105,8 @@ public class AppSharingService extends IntentService {
         @Override
         public void run() {
             if (ConfigFile.isExistsConfigFile()
-                    && !AppSharingUtils.isSyncDaemonRunning(AppSharingService.this)) {
-                AppSharingUtils.runSyncDaemonOnce(AppSharingService.this);
+                    && !SyncDaemonUtils.isRunning(AppSharingService.this)) {
+                SyncDaemonUtils.runOnce(AppSharingService.this);
             }
         }
     }
@@ -135,8 +136,8 @@ public class AppSharingService extends IntentService {
             config.save();
 
             if (ConfigFile.isExistsConfigFile()
-                    && !AppSharingUtils.isSyncDaemonRunning(AppSharingService.this)) {
-                AppSharingUtils.runSyncDaemonOnce(AppSharingService.this);
+                    && !SyncDaemonUtils.isRunning(AppSharingService.this)) {
+                SyncDaemonUtils.runOnce(AppSharingService.this);
             }
         }
     }

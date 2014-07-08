@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.Properties;
 
@@ -110,57 +111,27 @@ public class MiscUtils {
 
     public static Properties getProperties(String file) {
         // Make sure build.prop exists
-        if (!FileUtils.isExistsFile(file)) {
+        if (!new RootFile(file).isFile()) {
             return null;
         }
 
         File propfile = new File(file);
         Properties prop = new Properties();
 
-        if (!propfile.canRead()) {
-            try {
-                RootCommandParams params = new RootCommandParams();
-                params.command = "cat " + propfile.getPath();
-                params.listener = new FullRootOutputListener();
+        String contents = new RootFile(file).getContents();
 
-                RootCommandRunner cmd = new RootCommandRunner(params);
-                cmd.start();
-                cmd.join();
-                CommandResult result = cmd.getResult();
-
-                if (result.exitCode != 0) {
-                    return null;
-                }
-
-                String output = result.data.getString("output");
-
-                if (output == null) {
-                    return null;
-                }
-
-                prop.load(new StringReader(output));
-            } catch (Exception e) {
-                return null;
-            }
-        } else {
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(propfile.getPath());
-                prop.load(fis);
-            } catch (Exception e) {
-                return null;
-            } finally {
-                try {
-                    if (fis != null) {
-                        fis.close();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+        if (contents == null) {
+            return null;
         }
 
-        return prop;
+        try {
+            prop.load(new StringReader(contents));
+            return prop;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     public static Properties getDefaultProp() {
