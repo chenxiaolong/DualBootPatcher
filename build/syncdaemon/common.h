@@ -34,8 +34,8 @@
 
 static const std::string BUILD_PROP = "build.prop";
 
-static const std::string APP_DIR = "app.bak";
-static const std::string APP_LIB_DIR = "app-lib.bak";
+static const std::string APP_DIR = "app";
+static const std::string APP_LIB_DIR = "app-lib";
 static const std::string DEX_CACHE_DIR = "dalvik-cache";
 static const std::string DEX_CACHE_PREFIX = "data@app@";
 
