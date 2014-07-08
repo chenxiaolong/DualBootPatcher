@@ -109,10 +109,9 @@ public class SyncDaemonUtils {
             return -1;
         }
 
-        File syncdaemon = new File(context.getCacheDir() + File.separator + "syncdaemon");
-        if (!syncdaemon.exists()) {
-            FileUtils.extractAsset(context, "syncdaemon", syncdaemon);
-        }
+        // Delete old versions
+        FileUtils.deleteOldCachedAsset(context, "syncdaemon");
+        String syncdaemon = FileUtils.extractVersionedAssetToCache(context, "syncdaemon");
 
         // Clean up in case something crashed before
         final String daemonBinary = MOUNT_POINT + File.separator + "syncdaemon";
@@ -121,7 +120,7 @@ public class SyncDaemonUtils {
         mountPoint.mountTmpFs();
         mountPoint.chown(uid, uid);
 
-        CommandUtils.runRootCommand("cp " + syncdaemon.getAbsolutePath() + " " + daemonBinary);
+        CommandUtils.runRootCommand("cp " + syncdaemon + " " + daemonBinary);
         new RootFile(daemonBinary).chmod(0755);
         CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + daemonBinary);
 

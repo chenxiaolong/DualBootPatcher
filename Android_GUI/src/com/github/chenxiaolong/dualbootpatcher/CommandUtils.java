@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 
 import android.content.Context;
@@ -350,24 +351,20 @@ public final class CommandUtils {
     }
 
     public static String[] getBusyboxCommand(Context context, String applet, String[] args) {
-        FileUtils.extractBusybox(context);
-
-        File busybox = new File(context.getCacheDir() + File.separator + "busybox-static");
+        FileUtils.deleteOldCachedAsset(context, "busybox-static");
+        String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
+        new RootFile(busybox, false).chmod(0755);
 
         ArrayList<String> newArgs = new ArrayList<String>();
-        newArgs.add(busybox.getAbsolutePath());
+        newArgs.add(busybox);
         newArgs.add(applet);
 
-        for (String arg : args) {
-            newArgs.add(arg);
-        }
+        Collections.addAll(newArgs, args);
 
         return newArgs.toArray(new String[newArgs.size()]);
     }
 
     public static int getPid(Context context, String name) {
-        FileUtils.extractBusybox(context);
-
         FirstLineListener listener = new FirstLineListener();
 
         CommandParams params = new CommandParams();

@@ -27,24 +27,11 @@ import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandListener;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.FullRootOutputListener;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 
 public class FileUtils {
     @SuppressLint("NewApi")
@@ -153,6 +140,33 @@ public class FileUtils {
         }
     }
 
+    public static String extractVersionedAssetToCache(Context context, String asset) {
+        String prefix = asset + "::";
+        String target = prefix + BuildConfig.VERSION_NAME;
+
+        File cachedFile = new File(context.getCacheDir() + File.separator + target);
+        if (!cachedFile.exists()) {
+            FileUtils.extractAsset(context, asset, cachedFile);
+        }
+
+        return cachedFile.getAbsolutePath();
+    }
+
+    public static void deleteOldCachedAsset(Context context, String asset) {
+        String prefix = asset + "::";
+        String current = prefix + BuildConfig.VERSION_NAME;
+
+        for (File f : context.getCacheDir().listFiles()) {
+            if (f.isFile()) {
+                String name = f.getName();
+
+                if (name.startsWith(prefix) && !name.equals(current)) {
+                    f.delete();
+                }
+            }
+        }
+    }
+
     public static boolean isSameInode(String file1, String file2) {
         if (!new RootFile(file1).isFile() || !new RootFile(file2).isFile()) {
             return false;
@@ -172,17 +186,5 @@ public class FileUtils {
         sb.append("same_inode ").append(file1).append(" ").append(file2);
 
         return CommandUtils.runRootCommand(sb.toString()) == 0;
-    }
-
-    public static void extractBusybox(Context context) {
-        File busybox = new File(context.getCacheDir() + File.separator + "busybox-static");
-
-        if (busybox.exists()) {
-            return;
-        }
-
-        FileUtils.extractAsset(context, "busybox-static", busybox);
-
-        new RootFile(busybox.getAbsolutePath(), false).chmod(0755);
     }
 }
