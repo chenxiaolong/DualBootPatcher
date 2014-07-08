@@ -486,6 +486,14 @@ int begin() {
     return start_monitoring();
 }
 
+int write_pid(int fd) {
+    std::ostringstream ss;
+    ss << "pid=" << getpid() << std::endl;
+    ss << "version=" << VERSION << std::endl;
+    std::string text = ss.str();
+    write(fd, text.c_str(), text.size());
+}
+
 int main(int argc, char *argv[]) {
     if (argc > 1 && strcmp(argv[1], "--version") == 0) {
         std::cout << VERSION << std::endl;
@@ -504,7 +512,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // Android's open() doesn't work properly...
+    // https://github.com/android/platform_bionic/blob/master/libc/include/fcntl.h
+    chmod("/data/local/tmp/syncdaemon.pid", 0644);
+
     if (argc > 1 && strcmp(argv[1], "--runonce") == 0) {
+        write_pid(pid_fd);
         setup_signals();
         sync_packages();
         return EXIT_SUCCESS;
@@ -519,6 +532,7 @@ int main(int argc, char *argv[]) {
             pid2 = fork();
 
             if (pid2 == 0) {
+                write_pid(pid_fd);
                 setup_signals();
                 begin();
             }
@@ -529,6 +543,8 @@ int main(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
+    write_pid(pid_fd);
+    setup_signals();
     if (begin() < 0) {
         return EXIT_FAILURE;
     }
