@@ -83,7 +83,7 @@ public class SyncDaemonUtils {
 
         if (shouldRespawn) {
             Log.d(TAG, "syncdaemon has a different version than the patcher. Respawning ...");
-            CommandUtils.killPid(context, pid);
+            CommandUtils.killPid(pid);
             runDaemon(context);
         } else {
             Log.d(TAG, "syncdaemon has the same version as the patcher. Will not respawn");

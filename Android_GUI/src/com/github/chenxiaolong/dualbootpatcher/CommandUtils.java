@@ -388,7 +388,7 @@ public final class CommandUtils {
         return -1;
     }
 
-    public static boolean killPid(Context context, int pid) {
+    public static boolean killPid(int pid) {
         CommandParams params = new CommandParams();
         params.command = new String[] { "kill", Integer.toString(pid) };
 
@@ -397,11 +397,8 @@ public final class CommandUtils {
         waitForCommand(cmd);
 
         CommandResult result = cmd.getResult();
-        if (result.exitCode == 0) {
-            return true;
-        }
 
-        return runRootCommand("kill " + pid) == 0;
+        return result.exitCode == 0 || runRootCommand("kill " + pid) == 0;
     }
 
     private static class FirstLineListener implements CommandListener {
