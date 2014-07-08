@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -486,6 +487,11 @@ int begin() {
 }
 
 int main(int argc, char *argv[]) {
+    if (argc > 1 && strcmp(argv[1], "--version") == 0) {
+        std::cout << VERSION << std::endl;
+        return EXIT_SUCCESS;
+    }
+
     if (geteuid() != 0) {
         LOGE("syncdaemon needs to be run as root");
         return EXIT_FAILURE;

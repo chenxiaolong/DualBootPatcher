@@ -51,6 +51,7 @@ fi
 
 ${CXX} ${CXXFLAGS} ${LDFLAGS} \
     -std=c++11 \
+    -DVERSION=\"$(get_conf builder version)\" \
     syncdaemon.cpp \
     common.cpp \
     configfile.cpp \
