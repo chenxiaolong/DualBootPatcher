@@ -166,11 +166,21 @@
     <string name="rom_settings_show_exit_title">Show Exit button</string>
     <string name="rom_settings_show_reboot_title">Show Reboot button</string>
 
+    <string name="indiv_app_sharing_dialog_title">Individual app sharing</string>
+    <string name="indiv_app_sharing_dialog_desc">Individual app sharing allows the device to keep
+        one copy of an app for each ROM in order to save space. It also ensures that the app is
+        updated in each ROM.\n\nWhen an app is installed, upgraded, or removed, the patcher will
+        sometimes request root access to start up the \'syncdaemon\' service. Please allow the
+        request for the syncing to succeed.
+    </string>
+
     <!-- Miscellaneous -->
     <string name="none">None</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="proceed">Continue</string>
+
+    <string name="do_not_show_again">Do not show again</string>
 
     <string-array name="preset_dirs" translatable="false">
         <item>Google_Apps</item>

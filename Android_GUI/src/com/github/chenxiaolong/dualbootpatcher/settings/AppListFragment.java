@@ -17,8 +17,14 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnDismissListener;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import android.util.DisplayMetrics;
@@ -27,6 +33,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -45,8 +54,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
-public class AppListFragment extends PreferenceFragment implements LoaderListener {
+public class AppListFragment extends PreferenceFragment implements LoaderListener, OnDismissListener {
     private AppListLoaderFragment mLoaderFragment;
+
+    private SharedPreferences mPrefs;
+    private AlertDialog mDialog;
 
     private ProgressBar mProgressBar;
     private ListView mAppsList;
@@ -85,6 +97,16 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+
+        if (mDialog != null) {
+            mDialog.dismiss();
+            mDialog = null;
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         mLoaderFragment.attachListenerAndResendEvents(this);
@@ -105,6 +127,16 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
         mAppInfos = new ArrayList<AppInformation>();
         mAdapter = new AppAdapter(getActivity(), mAppInfos);
         mAppsList.setAdapter(mAdapter);
+
+        mPrefs = getActivity().getSharedPreferences("settings", 0);
+
+        boolean dialogWasOpen = savedInstanceState != null
+                && savedInstanceState.getBoolean("haveDialog");
+        boolean showedDialog = savedInstanceState != null;
+        boolean shouldShow = mPrefs.getBoolean("indiv_app_sync_show_dialog", true);
+        if ((shouldShow && !showedDialog) || dialogWasOpen) {
+            buildFirstTimeDialog();
+        }
     }
 
     @Override
@@ -114,6 +146,39 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
         mProgressBar = (ProgressBar) view.findViewById(R.id.loading);
         mAppsList = (ListView) view.findViewById(R.id.apps);
         return view;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        if (mDialog != null) {
+            outState.putBoolean("haveDialog", true);
+        }
+    }
+
+    private void buildFirstTimeDialog() {
+        if (mDialog == null) {
+            View checkboxView = View.inflate(getActivity(), R.layout.dialog_checkbox_layout, null);
+            CheckBox checkbox = (CheckBox) checkboxView.findViewById(R.id.checkbox);
+            checkbox.setText(R.string.do_not_show_again);
+            checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    Editor e = mPrefs.edit();
+                    e.putBoolean("indiv_app_sync_show_dialog", !isChecked);
+                    e.apply();
+                }
+            });
+
+            AlertDialog.Builder builder = new Builder(getActivity());
+            builder.setTitle(R.string.indiv_app_sharing_dialog_title);
+            builder.setMessage(R.string.indiv_app_sharing_dialog_desc);
+            builder.setView(checkboxView);
+            builder.setPositiveButton(R.string.proceed, null);
+            mDialog = builder.show();
+            mDialog.setOnDismissListener(this);
+        }
     }
 
     private void showAppList(boolean show) {
@@ -129,6 +194,13 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
         }
         mAdapter.notifyDataSetChanged();
         showAppList(true);
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialogInterface) {
+        if (mDialog == dialogInterface) {
+            mDialog = null;
+        }
     }
 
     // From AOSP's com.android.settings
