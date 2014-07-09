@@ -120,6 +120,11 @@ public class SyncDaemonUtils {
         mountPoint.mountTmpFs();
         mountPoint.chown(uid, uid);
 
+        RootFile daemonFile = new RootFile(daemonBinary);
+        if (daemonFile.isFile()) {
+            daemonFile.delete();
+        }
+
         CommandUtils.runRootCommand("cp " + syncdaemon + " " + daemonBinary);
         new RootFile(daemonBinary).chmod(0755);
         CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + daemonBinary);
