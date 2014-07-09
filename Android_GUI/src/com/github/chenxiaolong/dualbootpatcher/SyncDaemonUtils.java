@@ -76,7 +76,7 @@ public class SyncDaemonUtils {
 
             Version syncdaemonVer = new Version(propVersion);
 
-            if (pid == pid2 && syncdaemonVer.compareTo(curVer) == 0) {
+            if (pid == pid2 && syncdaemonVer.compareTo(curVer) >= 0) {
                 shouldRespawn = false;
             }
         }
