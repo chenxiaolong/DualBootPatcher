@@ -21,7 +21,7 @@ import android.app.IntentService;
 import android.content.Intent;
 
 public class SwitcherService extends IntentService {
-    private static final String TAG = "SwitcherService";
+    private static final String TAG = SwitcherService.class.getSimpleName();
     public static final String BROADCAST_INTENT = "com.chenxiaolong.github.dualbootpatcher.BROADCAST_SWITCHER_STATE";
 
     public static final String ACTION = "action";

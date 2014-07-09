@@ -7,7 +7,7 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 
 public class AlertDialogFragment extends DialogFragment {
-    public static final String TAG = "alert_dialog";
+    public static final String TAG = AlertDialogFragment.class.getSimpleName();
 
     private String mTitle = "";
     private String mMessage = "";

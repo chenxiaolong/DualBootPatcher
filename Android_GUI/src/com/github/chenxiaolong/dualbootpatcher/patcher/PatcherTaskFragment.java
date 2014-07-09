@@ -43,7 +43,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
  * orientation/configuration change.
  */
 public class PatcherTaskFragment extends Fragment {
-    public static final String TAG = "patcher_task";
+    public static final String TAG = PatcherTaskFragment.class.getSimpleName();
 
     private static final int REQUEST_FILE = 1234;
     private static final int REQUEST_DIFF_FILE = 2345;

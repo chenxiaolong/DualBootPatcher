@@ -26,7 +26,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 
 public class SwitcherTaskFragment extends Fragment {
-    public static final String TAG = "switcher_task";
+    public static final String TAG = SwitcherTaskFragment.class.getSimpleName();
 
     private ChoseRomListener mChoseRomListener;
     private SetKernelListener mSetKernelListener;

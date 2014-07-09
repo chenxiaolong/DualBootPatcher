@@ -17,14 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import it.gmariotti.cardslib.library.internal.Card;
-import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
-import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
-import it.gmariotti.cardslib.library.view.CardListView;
-import it.gmariotti.cardslib.library.view.CardView;
-
-import java.util.ArrayList;
-
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -46,10 +38,18 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.ChoseRomListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.SetKernelListener;
 
+import java.util.ArrayList;
+
+import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
+import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
+import it.gmariotti.cardslib.library.view.CardListView;
+import it.gmariotti.cardslib.library.view.CardView;
+
 public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         SetKernelListener {
-    public static final String TAG_CHOOSE_ROM = "choose_rom";
-    public static final String TAG_SET_KERNEL = "set_kernel";
+    public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
+    public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
     public static final int ACTION_CHOOSE_ROM = 1;
     public static final int ACTION_SET_KERNEL = 2;
 

@@ -36,7 +36,7 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class RomSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener {
-    public static final String TAG = "rom_settings";
+    public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
     private static final String KEY_APP_SHARING_CATEGORY = "app_sharing_category";
     private static final String KEY_NO_ROOT = "no_root";

@@ -27,7 +27,7 @@ import com.github.chenxiaolong.dualbootpatcher.RootFile;
 import java.io.File;
 
 public class SwitcherUtils {
-    public static final String TAG = "SwitcherUtils";
+    public static final String TAG = SwitcherUtils.class.getSimpleName();
     public static final String BOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/boot";
     // Can't use Environment.getExternalStorageDirectory() because the path is
     // different in the root environment

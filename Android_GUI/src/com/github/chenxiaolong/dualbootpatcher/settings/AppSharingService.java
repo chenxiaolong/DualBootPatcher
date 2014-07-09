@@ -26,7 +26,7 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 
 public class AppSharingService extends IntentService {
-    private static final String TAG = "AppSharingService";
+    private static final String TAG = AppSharingService.class.getSimpleName();
 
     public static final String ACTION = "action";
     public static final String ACTION_PACKAGE_ADDED = "package_added";

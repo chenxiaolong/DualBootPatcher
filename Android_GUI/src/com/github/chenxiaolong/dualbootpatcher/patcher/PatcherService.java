@@ -26,7 +26,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 
 public class PatcherService extends IntentService {
-    private static final String TAG = "PatcherService";
+    private static final String TAG = PatcherService.class.getSimpleName();
     public static final String BROADCAST_INTENT = "com.chenxiaolong.github.dualbootpatcher.BROADCAST_PATCHER_STATE";
 
     public static final String ACTION = "action";

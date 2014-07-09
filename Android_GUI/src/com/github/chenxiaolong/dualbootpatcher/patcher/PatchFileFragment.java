@@ -46,7 +46,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherTaskFragment.PatcherListener;
 
 public class PatchFileFragment extends Fragment implements PatcherListener {
-    public static final String TAG = "patch_file";
+    public static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final int STATE_READY = 0;
     private static final int STATE_CHOSE_FILE = 1;

@@ -34,7 +34,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class AppSharingUtils {
-    public static final String TAG = "AppSharingUtils";
+    public static final String TAG = AppSharingUtils.class.getSimpleName();
 
     private static final String SHARE_APPS_PATH = "/data/patcher.share-app";
     private static final String SHARE_PAID_APPS_PATH = "/data/patcher.share-app-asec";

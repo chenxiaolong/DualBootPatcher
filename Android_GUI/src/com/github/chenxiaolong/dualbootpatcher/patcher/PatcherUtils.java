@@ -39,7 +39,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class PatcherUtils {
-    public static final String TAG = "PatcherUtils";
+    public static final String TAG = PatcherUtils.class.getSimpleName();
     private static final String FILENAME = "DualBootPatcherAndroid-%s.tar.xz";
     private static final String DIRNAME = "DualBootPatcherAndroid-%s";
 

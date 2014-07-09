@@ -35,7 +35,7 @@ import com.stericson.RootTools.exceptions.RootDeniedException;
 import com.stericson.RootTools.execution.Command;
 
 public final class CommandUtils {
-    private static final String TAG = "Commands";
+    private static final String TAG = CommandUtils.class.getSimpleName();
 
     public static final String STREAM_STDOUT = "stdout";
     public static final String STREAM_STDERR = "stderr";

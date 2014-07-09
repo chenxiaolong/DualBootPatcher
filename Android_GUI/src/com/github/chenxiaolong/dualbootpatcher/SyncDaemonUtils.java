@@ -40,7 +40,7 @@ import java.util.Properties;
 // receives an inotify event. In this mode, syncdaemon will be spawned if it isn't already
 // running by the time Android sends BOOT_COMPLETED.
 public class SyncDaemonUtils {
-    public static final String TAG = "SyncDaemonUtils";
+    public static final String TAG = SyncDaemonUtils.class.getSimpleName();
     public static final String MOUNT_POINT = "/data/local/tmp/syncdaemon";
 
     public static void autoSpawn(Context context) {
