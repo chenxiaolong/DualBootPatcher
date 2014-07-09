@@ -259,7 +259,7 @@ public class MainActivity extends Activity {
 
     private void updateTitle() {
         if (mDrawerLayout.isDrawerOpen(mDrawerView) || mTitle == 0) {
-            getActionBar().setTitle(R.string.app_name);
+            getActionBar().setTitle(BuildConfig.APP_NAME_RESOURCE);
         } else {
             getActionBar().setTitle(mTitle);
         }
@@ -513,7 +513,7 @@ public class MainActivity extends Activity {
             break;
 
         case FRAGMENT_ABOUT:
-            mTitle = R.string.app_name;
+            mTitle = BuildConfig.APP_NAME_RESOURCE;
             updateTitle();
 
             if (prevAbout == null) {

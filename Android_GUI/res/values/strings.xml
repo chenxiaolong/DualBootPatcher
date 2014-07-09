@@ -19,7 +19,9 @@
 
 <resources>
 
-    <string name="app_name">Dual Boot Patcher</string>
+    <string name="app_name_release">Dual Boot Patcher</string>
+    <string name="app_name_debug">Dual Boot Patcher (Debug)</string>
+    <string name="app_name_snapshot">Dual Boot Patcher (Snapshot)</string>
 
     <string name="wait_until_finished">Please wait until all operations are finished.</string>
 

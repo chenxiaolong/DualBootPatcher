@@ -42,6 +42,10 @@ public class AboutFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        TextView name = (TextView) getActivity().findViewById(
+                R.id.about_name);
+        name.setText(BuildConfig.APP_NAME_RESOURCE);
+
         TextView version = (TextView) getActivity().findViewById(
                 R.id.about_version);
         version.setText(String.format(getActivity().getString(R.string.version),
