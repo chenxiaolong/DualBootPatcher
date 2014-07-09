@@ -28,8 +28,7 @@
     <!-- About -->
     <string name="logo">Dual Boot Patcher Logo</string>
     <string name="version">Version %s</string>
-    <string name="credits">
-        Special thanks to everyone who helped make this patcher possible!\n\n
+    <string name="credits">Special thanks to everyone who helped make this patcher possible!\n\n
         <a href="https://github.com/chenxiaolong/DualBootPatcher">Source Code</a>\n
         <a href="http://forum.xda-developers.com/showthread.php?t=2447534">XDA Thread</a>\n
         <a href="https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses">Licenses</a>
@@ -37,15 +36,12 @@
 
     <!-- Root access messages -->
     <string name="noroot_title">No root access</string>
-    <string name="noroot_switcher_desc">The application was unable to obtain root
-        access. Root access is needed for writing to the kernel/boot image
-        partition to switch between firmware.\n\n
-        Tap to try to obtain root access again.
-    </string>
-    <string name="noroot_settings_desc">The application was unable to obtain root
-        access. Root access is needed to change application sharing settings.\n\n
-        Tap to try to obtain root access again.
-    </string>
+    <string name="noroot_switcher_desc">The application was unable to obtain root access. Root
+        access is needed for writing to the kernel/boot image partition to switch between
+        firmware.\n\nTap to try to obtain root access again.</string>
+    <string name="noroot_settings_desc">The application was unable to obtain root access. Root
+        access is needed to change application sharing settings.\n\nTap to try to obtain root
+        access again.</string>
 
     <!-- Navigation drawer items -->
     <string name="title_choose_rom">Choose ROM</string>
@@ -81,47 +77,34 @@
 
     <!-- Patcher: File chooser card -->
     <string name="filemanager_missing_title">No file manager</string>
-    <string name="filemanager_missing_desc">There is no suitable file manager installed. Please install a file manager to be able to choose files to patch.</string>
+    <string name="filemanager_missing_desc">There is no suitable file manager installed. Please
+        install a file manager to be able to choose files to patch.</string>
 
     <string name="filechooser_initial_title">Tap to choose a file to patch</string>
-    <string name="filechooser_initial_desc">
-        Zip files and boot images (boot.img, boot.lok) are supported by the patcher.
-        If an unsupported file is chosen, additional options will appear that allow
-        the patching process to be customized.
-    </string>
+    <string name="filechooser_initial_desc">Zip files and boot images (boot.img, boot.lok) are
+        supported by the patcher. If an unsupported file is chosen, additional options will appear
+        that allow the patching process to be customized.</string>
 
     <string name="filechooser_ready_title">Tap to begin patching</string>
-    <string name="filechooser_ready_desc">
-        Selected file: %s\n\n
-        Tap and hold to choose a different file.
-    </string>
+    <string name="filechooser_ready_desc">Selected file: %s\n\nTap and hold to choose a different
+        file.</string>
 
     <string name="filechooser_unsupported_title">Tap to begin patching</string>
-    <string name="filechooser_unsupported_desc">
-        Selected file: %s\n\n
-        The file you have selected is not supported. You can attempt to patch the
-        file anyway using the options below.\n\n
-        Tap and hold to choose a different file.
-    </string>
+    <string name="filechooser_unsupported_desc">Selected file: %s\n\nThe file you have selected
+        is not supported. You can attempt to patch the file anyway using the options
+        below.\n\nTap and hold to choose a different file.</string>
 
     <string name="filechooser_success_title">Successfully patched file</string>
-    <string name="filechooser_success_desc">
-        New file: %s\n\n
-        Tap to choose another file to patch.
-    </string>
+    <string name="filechooser_success_desc">New file: %s\n\nTap to choose another file to
+        patch.</string>
 
     <string name="filechooser_failure_title">Failed to patch file</string>
-    <string name="filechooser_failure_desc">
-        %s\n\n
-        Tap to choose another file to patch.
-    </string>
+    <string name="filechooser_failure_desc">%s\n\nTap to choose another file to patch.</string>
 
     <!-- Patcher: Preset card -->
     <string name="preset_title">Preset</string>
     <string name="preset_custom">Custom</string>
-    <string name="preset_custom_desc">
-        Customize the patcher using the options below
-    </string>
+    <string name="preset_custom_desc">Customize the patcher using the options below</string>
 
     <!-- Patcher: Custom options card -->
     <string name="customopts_title">Custom options</string>
@@ -149,7 +132,8 @@
     <!-- Settings -->
     <string name="rom_settings_app_sharing_title">Application sharing (EXPERIMENTAL)</string>
     <string name="rom_settings_share_apps_title">Share applications</string>
-    <string name="rom_settings_share_apps_desc">Share applications from the primary ROM with the current ROM (requires reboot).</string>
+    <string name="rom_settings_share_apps_desc">Share applications from the primary ROM with the
+        current ROM (requires reboot).</string>
     <string name="rom_settings_share_paid_apps_title">Share paid applications</string>
     <string name="rom_settings_share_paid_apps_desc">
         <![CDATA[
@@ -157,10 +141,12 @@
             <strong>May not work due to DRM.</strong>
         ]]>
     </string>
-    <string name="rom_settings_too_old">This ROM was patched with an old version of the patcher. Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
+    <string name="rom_settings_too_old">This ROM was patched with an old version of the patcher.
+        Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
 
     <string name="rom_settings_indiv_app_sharing_title">Share individual applications</string>
-    <string name="rom_settings_indiv_app_sharing_desc">Share individual applications from the primary ROM with the current ROM (requires reboot).</string>
+    <string name="rom_settings_indiv_app_sharing_desc">Share individual applications from the
+        primary ROM with the current ROM (requires reboot).</string>
 
     <string name="rom_settings_patcher_title">Patcher</string>
     <string name="rom_settings_show_exit_title">Show Exit button</string>
@@ -171,8 +157,7 @@
         one copy of an app for each ROM in order to save space. It also ensures that the app is
         updated in each ROM.\n\nWhen an app is installed, upgraded, or removed, the patcher will
         sometimes request root access to start up the \'syncdaemon\' service. Please allow the
-        request for the syncing to succeed.
-    </string>
+        request for the syncing to succeed.</string>
 
     <!-- Miscellaneous -->
     <string name="none">None</string>
