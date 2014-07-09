@@ -17,14 +17,9 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.app.FragmentManager;
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.preference.PreferenceFragment;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -43,65 +38,35 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
+import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.AppInformation;
+import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.LoaderListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Locale;
 
-public class AppListFragment extends PreferenceFragment {
+public class AppListFragment extends PreferenceFragment implements LoaderListener {
+    private AppListLoaderFragment mLoaderFragment;
+
     private ProgressBar mProgressBar;
     private ListView mAppsList;
     private AppAdapter mAdapter;
     private ArrayList<AppInformation> mAppInfos;
     private ConfigFile mConfig;
 
-    private static class AppInformation implements Parcelable {
-        public String pkg;
-        public String name;
-        public Drawable icon;
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeString(pkg);
-            dest.writeString(name);
-            dest.writeValue(icon);
-        }
-
-        public static final Parcelable.Creator<AppInformation> CREATOR = new Parcelable
-                .Creator<AppInformation>() {
-            @Override
-            public AppInformation createFromParcel(Parcel in) {
-                return new AppInformation(in);
-            }
-
-            @Override
-            public AppInformation[] newArray(int size) {
-                return new AppInformation[size];
-            }
-        };
-
-        private AppInformation(Parcel in) {
-            pkg = in.readString();
-            name = in.readString();
-            icon = (Drawable) in.readValue(Drawable.class.getClassLoader());
-        }
-
-        public AppInformation() {
-        }
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mConfig = new ConfigFile();
+
+        FragmentManager fm = getFragmentManager();
+        mLoaderFragment = (AppListLoaderFragment) fm
+                .findFragmentByTag(AppListLoaderFragment.TAG);
+
+        if (mLoaderFragment == null) {
+            mLoaderFragment = new AppListLoaderFragment();
+            fm.beginTransaction().add(mLoaderFragment, AppListLoaderFragment.TAG).commit();
+        }
     }
 
     @Override
@@ -120,30 +85,26 @@ public class AppListFragment extends PreferenceFragment {
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        if (savedInstanceState != null) {
-            mAppInfos = savedInstanceState.getParcelableArrayList("appInfos");
-        }
-
-        if (mAppInfos == null) {
-            mAppInfos = new ArrayList<AppInformation>();
-            new AppInformationLoader(getActivity().getApplicationContext()).execute();
-            showAppList(false);
-        } else {
-            showAppList(true);
-        }
-
-        mAdapter = new AppAdapter(getActivity(), mAppInfos);
-        mAppsList.setAdapter(mAdapter);
+    public void onResume() {
+        super.onResume();
+        mLoaderFragment.attachListenerAndResendEvents(this);
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
+    public void onPause() {
+        super.onPause();
+        mLoaderFragment.detachListener();
+    }
 
-        outState.putParcelableArrayList("appInfos", mAppInfos);
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        showAppList(false);
+
+        mAppInfos = new ArrayList<AppInformation>();
+        mAdapter = new AppAdapter(getActivity(), mAppInfos);
+        mAppsList.setAdapter(mAdapter);
     }
 
     @Override
@@ -158,6 +119,16 @@ public class AppListFragment extends PreferenceFragment {
     private void showAppList(boolean show) {
         mProgressBar.setVisibility(show ? View.GONE : View.VISIBLE);
         mAppsList.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    public void loadedApps(ArrayList<AppInformation> appInfos) {
+        if (mAppInfos.size() != appInfos.size()) {
+            mAppInfos.clear();
+            mAppInfos.addAll(appInfos);
+        }
+        mAdapter.notifyDataSetChanged();
+        showAppList(true);
     }
 
     // From AOSP's com.android.settings
@@ -191,7 +162,7 @@ public class AppListFragment extends PreferenceFragment {
             final RomInformation[] roms = RomUtils.getRoms();
 
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.app_checkable_item, null);
+                convertView = mInflater.inflate(R.layout.app_checkable_item, parent, false);
 
                 holder = new AppViewHolder();
                 holder.appName = (TextView) convertView.findViewById(R.id.name);
@@ -293,70 +264,6 @@ public class AppListFragment extends PreferenceFragment {
             sections.toArray(mSections);
             mPositions = new Integer[sections.size()];
             positions.toArray(mPositions);
-        }
-    }
-
-    private class AppInformationLoader extends AsyncTask<Void, Void, Void> {
-        private final PackageManager mPackageManager;
-
-        public AppInformationLoader(Context context) {
-            mPackageManager = context.getPackageManager();
-        }
-
-        @Override
-        protected Void doInBackground(Void... args) {
-            String[] apks = AppSharingUtils.getAllApks();
-
-            if (apks == null) {
-                return null;
-            }
-
-            HashMap<String, Boolean> map = new HashMap<String, Boolean>();
-
-            for (String apk : apks) {
-                PackageInfo pi = mPackageManager.getPackageArchiveInfo(apk, 0);
-
-                if (pi == null) {
-                    continue;
-                }
-
-                String pkg = pi.applicationInfo.packageName;
-                if (map.containsKey(pkg)) {
-                    continue;
-                }
-
-                pi.applicationInfo.sourceDir = apk;
-                pi.applicationInfo.publicSourceDir = apk;
-
-                AppInformation appinfo = new AppInformation();
-                appinfo.pkg = pkg;
-                appinfo.name = (String) pi.applicationInfo.loadLabel(mPackageManager);
-                appinfo.icon = pi.applicationInfo.loadIcon(mPackageManager);
-
-                mAppInfos.add(appinfo);
-                map.put(pkg, true);
-            }
-
-            Collections.sort(mAppInfos, new AppInformationComparator());
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            mAdapter.notifyDataSetChanged();
-
-            showAppList(true);
-        }
-    }
-
-    private class AppInformationComparator implements Comparator<AppInformation> {
-        @Override
-        public int compare(AppInformation info1, AppInformation info2) {
-            Locale locale = getResources().getConfiguration().locale;
-            String name1 = info1.name.toLowerCase(locale);
-            String name2 = info2.name.toLowerCase(locale);
-            return name1.compareTo(name2);
         }
     }
 }
