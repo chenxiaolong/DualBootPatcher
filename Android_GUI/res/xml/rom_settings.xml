@@ -36,7 +36,6 @@
         <CheckBoxPreference
             android:key="share_paid_apps"
             android:persistent="false"
-            android:summary="@string/rom_settings_share_paid_apps_desc"
             android:title="@string/rom_settings_share_paid_apps_title" />
 
         <PreferenceScreen

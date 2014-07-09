@@ -26,6 +26,7 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
+import android.text.Html;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
@@ -113,6 +114,9 @@ public class RomSettingsFragment extends PreferenceFragment implements
                     getActivity().getString(R.string.rom_settings_too_old), verGlobalShareApps));
             mShareApps.setEnabled(false);
             mSharePaidApps.setEnabled(false);
+        } else {
+            mSharePaidApps.setSummary(Html.fromHtml(
+                    getActivity().getString(R.string.rom_settings_share_paid_apps_desc)));
         }
 
         // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon

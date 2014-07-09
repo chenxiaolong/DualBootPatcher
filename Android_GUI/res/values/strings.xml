@@ -151,7 +151,12 @@
     <string name="rom_settings_share_apps_title">Share applications</string>
     <string name="rom_settings_share_apps_desc">Share applications from the primary ROM with the current ROM (requires reboot).</string>
     <string name="rom_settings_share_paid_apps_title">Share paid applications</string>
-    <string name="rom_settings_share_paid_apps_desc">Share paid applications from the primary ROM with the current ROM (requires reboot).</string>
+    <string name="rom_settings_share_paid_apps_desc">
+        <![CDATA[
+            Share paid applications from the primary ROM with the current ROM (requires reboot).
+            <strong>May not work due to DRM.</strong>
+        ]]>
+    </string>
     <string name="rom_settings_too_old">This ROM was patched with an old version of the patcher. Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
 
     <string name="rom_settings_indiv_app_sharing_title">Share individual applications</string>
