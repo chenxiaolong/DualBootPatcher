@@ -72,6 +72,10 @@
 
     <string name="switcher_rom_image">ROM logo</string>
 
+    <string name="switcher_ask_set_kernel_title">Set kernel?</string>
+    <string name="switcher_ask_set_kernel_desc">The currently running kernel will be saved
+        as the kernel for %s.</string>
+
     <!-- Patcher: Device and partition configuration card -->
     <string name="devpartconfig_title">Device and partition configuration:</string>
 
@@ -160,6 +164,8 @@
     <!-- Miscellaneous -->
     <string name="none">None</string>
     <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="proceed">Continue</string>
 
     <string-array name="preset_dirs" translatable="false">
         <item>Google_Apps</item>

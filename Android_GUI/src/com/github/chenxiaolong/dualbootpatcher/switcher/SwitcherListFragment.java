@@ -17,10 +17,14 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
+import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -47,7 +51,7 @@ import it.gmariotti.cardslib.library.view.CardListView;
 import it.gmariotti.cardslib.library.view.CardView;
 
 public class SwitcherListFragment extends Fragment implements ChoseRomListener,
-        SetKernelListener {
+        SetKernelListener, OnDismissListener {
     public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
     public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
     public static final int ACTION_CHOOSE_ROM = 1;
@@ -70,6 +74,9 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     private ProgressBar mProgressBar;
     private int mAction;
     private RomInformation[] mRoms;
+
+    private AlertDialog mDialog;
+    private RomInformation mSelectedRom;
 
     private static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
@@ -112,6 +119,15 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         if (savedInstanceState != null) {
             mAttemptedRoot = savedInstanceState.getBoolean("attemptedRoot");
             mHaveRootAccess = savedInstanceState.getBoolean("haveRootAccess");
+
+            String selectedRomId = savedInstanceState.getString("selectedRomId");
+            if (selectedRomId != null) {
+                mSelectedRom = RomUtils.getRomFromId(selectedRomId);
+            }
+
+            if (savedInstanceState.getBoolean("haveDialog")) {
+                buildDialog();
+            }
         }
 
         // Get root access
@@ -185,12 +201,28 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+
+        if (mDialog != null) {
+            mDialog.dismiss();
+            mDialog = null;
+        }
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
         outState.putBoolean("performingAction", mPerformingAction);
         outState.putBoolean("attemptedRoot", mAttemptedRoot);
         outState.putBoolean("haveRootAccess", mHaveRootAccess);
+        if (mSelectedRom != null) {
+            outState.putString("selectedRomId", mSelectedRom.id);
+        }
+        if (mDialog != null) {
+            outState.putBoolean("haveDialog", true);
+        }
 
         // mCards will be null when switching to the SuperUser/SuperSU activity
         // for approving root access
@@ -245,6 +277,13 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
 
         Context context = getActivity().getApplicationContext();
         new CardLoaderTask(context, savedInstanceState).execute();
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialogInterface) {
+        if (mDialog == dialogInterface) {
+            mDialog = null;
+        }
     }
 
     private class CardLoaderTask extends AsyncTask<Void, Void, Void> {
@@ -304,7 +343,7 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
                 card.setOnClickListener(new OnCardClickListener() {
                     @Override
                     public void onClick(Card card, View view) {
-                        startAction(info);
+                        startActionAskingIfNeeded(info);
                     }
                 });
 
@@ -415,6 +454,41 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
             }
         }
         mCardArrayAdapter.notifyDataSetChanged();
+    }
+
+    private void buildDialog() {
+        if (mDialog == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(R.string.switcher_ask_set_kernel_title);
+
+            String message = String.format(
+                    getActivity().getString(R.string.switcher_ask_set_kernel_desc),
+                    RomUtils.getName(getActivity(), mSelectedRom));
+
+            builder.setMessage(message);
+
+            DialogInterface.OnClickListener listener = new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    startAction(mSelectedRom);
+                }
+            };
+
+            builder.setPositiveButton(R.string.proceed, listener);
+            builder.setNegativeButton(R.string.cancel, null);
+            mDialog = builder.show();
+            mDialog.setOnDismissListener(this);
+        }
+    }
+
+    private void startActionAskingIfNeeded(final RomInformation info) {
+        mSelectedRom = info;
+
+        if (mAction == ACTION_CHOOSE_ROM) {
+            startAction(info);
+        } else if (mAction == ACTION_SET_KERNEL) {
+            buildDialog();
+        }
     }
 
     private void startAction(RomInformation info) {

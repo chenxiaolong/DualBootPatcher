@@ -196,6 +196,17 @@ public class RomUtils {
         return mRoms.toArray(new RomInformation[mRoms.size()]);
     }
 
+    public static RomInformation getRomFromId(String id) {
+        RomInformation[] roms = getRoms();
+        for (RomInformation rom : roms) {
+            if (rom.id.equals(id)) {
+                return rom;
+            }
+        }
+
+        return null;
+    }
+
     private static String getDefaultName(Context context, RomInformation info) {
         if (info.kernelId.equals(PRIMARY_KERNEL_ID)) {
             return context.getString(R.string.primary);
