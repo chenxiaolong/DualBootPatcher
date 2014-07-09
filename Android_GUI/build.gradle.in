@@ -44,17 +44,20 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+            buildConfigField "int", "APP_NAME_RESOURCE", "R.string.app_name_release"
         }
 
         debug {
             applicationIdSuffix ".debug"
             versionNameSuffix "-DEBUG"
+            buildConfigField "int", "APP_NAME_RESOURCE", "R.string.app_name_debug"
         }
 
         ci {
             signingConfig signingConfigs.debug
             applicationIdSuffix ".snapshot"
             versionNameSuffix "-SNAPSHOT"
+            buildConfigField "int", "APP_NAME_RESOURCE", "R.string.app_name_snapshot"
         }
     }
 
@@ -91,6 +94,14 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
+        }
+
+        debug {
+            manifest.srcFile 'manifests/debug.xml'
+        }
+
+        ci {
+            manifest.srcFile 'ci/debug.xml'
         }
     }
 }
