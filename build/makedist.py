@@ -764,9 +764,9 @@ def build_android_app(targetname):
     if os.path.exists(os.path.join(distdir, apkname)):
         os.remove(os.path.join(distdir, apkname))
 
-    manifest = os.path.join(androiddir, 'AndroidManifest.xml')
-    with open(manifest + '.in') as f_in:
-        with open(os.path.join(manifest), 'w') as f_out:
+    gradle = os.path.join(androiddir, 'build.gradle')
+    with open(gradle + '.in') as f_in:
+        with open(os.path.join(gradle), 'w') as f_out:
             for line in f_in:
                 f_out.write(re.sub(r'@VERSION@', version, line))
 
