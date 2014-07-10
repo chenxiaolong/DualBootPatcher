@@ -101,6 +101,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
         mRootCheckerFragment = RootCheckerFragment.getInstance(getFragmentManager());
 
         if (!mAttemptedRoot) {
+            mAttemptedRoot = true;
             buildProgressDialog();
             mRootCheckerFragment.requestRoot();
         }
@@ -126,7 +127,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
     @Override
     public void onPause() {
         super.onPause();
-        mRootCheckerFragment.detachListener();
+        mRootCheckerFragment.detachListener(this);
     }
 
     @Override

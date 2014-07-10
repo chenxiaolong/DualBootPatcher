@@ -22,13 +22,15 @@ import android.app.FragmentManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import java.util.ArrayList;
+
 public class RootCheckerFragment extends Fragment {
     public static final String TAG = RootCheckerFragment.class.getName();
 
     private boolean mAttemptedRootRequest;
     private boolean mHaveRootAccess;
 
-    private RootCheckerListener mListener;
+    private ArrayList<RootCheckerListener> mListeners = new ArrayList<RootCheckerListener>();
 
     public interface RootCheckerListener {
         public void rootRequestAcknowledged(boolean allowed);
@@ -58,23 +60,25 @@ public class RootCheckerFragment extends Fragment {
     }
 
     public synchronized void attachListenerAndResendEvents(RootCheckerListener listener) {
-        mListener = listener;
+        mListeners.add(listener);
 
         if (mAttemptedRootRequest) {
-            mListener.rootRequestAcknowledged(mHaveRootAccess);
+            for (RootCheckerListener rcl : mListeners) {
+                rcl.rootRequestAcknowledged(mHaveRootAccess);
+            }
         }
     }
 
-    public synchronized void detachListener() {
-        mListener = null;
+    public synchronized void detachListener(RootCheckerListener listener) {
+        mListeners.remove(listener);
     }
 
     private synchronized void onRootRequestAcknowledged(boolean allowed) {
         mHaveRootAccess = allowed;
         mAttemptedRootRequest = true;
 
-        if (mListener != null) {
-            mListener.rootRequestAcknowledged(allowed);
+        for (RootCheckerListener rcl : mListeners) {
+            rcl.rootRequestAcknowledged(allowed);
         }
     }
 
