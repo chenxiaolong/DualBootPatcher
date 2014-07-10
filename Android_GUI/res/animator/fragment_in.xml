@@ -18,7 +18,7 @@
 -->
 
 <set xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- TODO: There has to be a better way of fixing this. Why does everything stay enlarged and invisible after the fragment_out animations? -->
+    <!-- TODO: There has to be a better way of fixing this. -->
     <objectAnimator
         android:duration="0"
         android:interpolator="@android:interpolator/decelerate_cubic"
