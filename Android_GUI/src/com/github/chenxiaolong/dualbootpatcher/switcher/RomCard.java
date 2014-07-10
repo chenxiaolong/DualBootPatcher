@@ -23,11 +23,13 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.squareup.picasso.Picasso;
 
 public class RomCard extends Card {
     private TextView mTitle;
@@ -46,6 +48,20 @@ public class RomCard extends Card {
 
     private boolean mEnabled = true;
 
+    private class PicassoCardThumbnail extends CardThumbnail {
+        private int mImageResId;
+
+        public PicassoCardThumbnail(Context context, int imageResId) {
+            super(context);
+            mImageResId = imageResId;
+        }
+
+        @Override
+        public void setupInnerViewElements(ViewGroup parent, View viewImage) {
+            Picasso.with(getContext()).load(mImageResId).resize(96, 96).into((ImageView) viewImage);
+        }
+    }
+
     public RomCard(Context context, RomInformation info, String name, String version,
             int imageResId) {
         super(context, R.layout.cardcontent_switcher);
@@ -53,8 +69,8 @@ public class RomCard extends Card {
         mName = name;
         mVersion = version;
 
-        CardThumbnail thumb = new CardThumbnail(getContext());
-        thumb.setDrawableResource(imageResId);
+        PicassoCardThumbnail thumb = new PicassoCardThumbnail(getContext(), imageResId);
+        thumb.setExternalUsage(true);
         addCardThumbnail(thumb);
     }
 
