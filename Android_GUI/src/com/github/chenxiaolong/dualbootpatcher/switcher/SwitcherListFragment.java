@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,9 +40,10 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnChoseRomEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnObtainedRomsEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnSetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.SwitcherTaskEvent;
+import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
+import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
 import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
@@ -271,14 +273,16 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         mCardListView = (CardListView) getActivity().findViewById(mCardListResId);
         if (mCardListView != null) {
-            mCardListView.setAdapter(mCardArrayAdapter);
+            AnimationAdapter animArrayAdapter = new AlphaInAnimationAdapter(mCardArrayAdapter);
+            animArrayAdapter.setAbsListView(mCardListView);
+            mCardListView.setExternalAdapter(animArrayAdapter, mCardArrayAdapter);
             refreshRomListVisibility(false);
         }
     }
 
     private void initCards() {
         Context context = getActivity().getApplicationContext();
-        SwitcherTasks.obtainRoms(context);
+        new ObtainRomsTask(context).execute();
     }
 
     @Override
@@ -463,41 +467,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
     }
 
-    @Subscribe
-    public void onObtainedRoms(OnObtainedRomsEvent event) {
-        mCards.clear();
-
-        for (int i = 0; i < event.roms.length; i++) {
-            final RomInformation info = event.roms[i];
-
-            RomCard card = new RomCard(getActivity(), info,
-                    event.names[i], event.versions[i], event.imageResIds[i]);
-
-            if (mSavedInstanceState != null) {
-                card.onRestoreInstanceState(mSavedInstanceState);
-            }
-
-            card.setOnClickListener(new OnCardClickListener() {
-                @Override
-                public void onClick(Card card, View view) {
-                    startActionAskingIfNeeded(info);
-                }
-            });
-
-            mCards.add(card);
-        }
-
-        mCardArrayAdapter.notifyDataSetChanged();
-        updateCardUI();
-
-        refreshProgressVisibility(false);
-        refreshRomListVisibility(true);
-
-        processQueuedEvents();
-
-        mCardsLoaded = true;
-    }
-
     private void processChoseRomEvent(OnChoseRomEvent event) {
         RomCard card = findCardFromId(event.kernelId);
         if (card != null) {
@@ -534,6 +503,76 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             }
 
             iter.remove();
+        }
+    }
+
+    private class ObtainRomsTask extends AsyncTask<Void, Void, Void> {
+        private final Context mContext;
+        private RomInformation[] mRoms;
+        private String[] mNames;
+        private String[] mVersions;
+        private int[] mImageResIds;
+
+        public ObtainRomsTask(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            mRoms = RomUtils.getRoms();
+            mNames = new String[mRoms.length];
+            mVersions = new String[mRoms.length];
+            mImageResIds = new int[mRoms.length];
+
+            for (int i = 0; i < mRoms.length; i++) {
+                mNames[i] = RomUtils.getName(mContext, mRoms[i]);
+                mVersions[i] = RomUtils.getVersion(mRoms[i]);
+                if (mVersions[i] == null) {
+                    mVersions[i] = mContext.getString(R.string.couldnt_determine_version);
+                }
+                mImageResIds[i] = RomUtils.getIconResource(mRoms[i]);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            if (getActivity() == null) {
+                return;
+            }
+
+            mCards.clear();
+
+            for (int i = 0; i < mRoms.length; i++) {
+                final RomInformation info = mRoms[i];
+
+                RomCard card = new RomCard(getActivity(), info,
+                        mNames[i], mVersions[i], mImageResIds[i]);
+
+                if (mSavedInstanceState != null) {
+                    card.onRestoreInstanceState(mSavedInstanceState);
+                }
+
+                card.setOnClickListener(new OnCardClickListener() {
+                    @Override
+                    public void onClick(Card card, View view) {
+                        startActionAskingIfNeeded(info);
+                    }
+                });
+
+                mCards.add(card);
+            }
+
+            mCardArrayAdapter.notifyDataSetChanged();
+            updateCardUI();
+
+            refreshProgressVisibility(false);
+            refreshRomListVisibility(true);
+
+            processQueuedEvents();
+
+            mCardsLoaded = true;
         }
     }
 }

@@ -51,13 +51,6 @@ public class SwitcherTasks {
         String kernelId;
     }
 
-    public static class OnObtainedRomsEvent extends SwitcherTaskEvent {
-        RomInformation[] roms;
-        String[] names;
-        String[] versions;
-        int[] imageResIds;
-    }
-
     // Task starters
 
     public static void chooseRom(String kernelId) {
@@ -66,10 +59,6 @@ public class SwitcherTasks {
 
     public static void setKernel(String kernelId) {
         new SetKernelTask(kernelId).execute();
-    }
-
-    public static void obtainRoms(Context context) {
-        new ObtainRomsTask(context).execute();
     }
 
     // Tasks
@@ -142,47 +131,6 @@ public class SwitcherTasks {
             event.failed = mFailed;
             event.message = mMessage;
             event.kernelId = mKernelId;
-            getBusInstance().post(event);
-        }
-    }
-
-    private static class ObtainRomsTask extends AsyncTask<Void, Void, Void> {
-        private final Context mContext;
-        private RomInformation[] mRoms;
-        private String[] mNames;
-        private String[] mVersions;
-        private int[] mImageResIds;
-
-        public ObtainRomsTask(Context context) {
-            mContext = context;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            mRoms = RomUtils.getRoms();
-            mNames = new String[mRoms.length];
-            mVersions = new String[mRoms.length];
-            mImageResIds = new int[mRoms.length];
-
-            for (int i = 0; i < mRoms.length; i++) {
-                mNames[i] = RomUtils.getName(mContext, mRoms[i]);
-                mVersions[i] = RomUtils.getVersion(mRoms[i]);
-                if (mVersions[i] == null) {
-                    mVersions[i] = mContext.getString(R.string.couldnt_determine_version);
-                }
-                mImageResIds[i] = RomUtils.getIconResource(mRoms[i]);
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            OnObtainedRomsEvent event = new OnObtainedRomsEvent();
-            event.roms = mRoms;
-            event.names = mNames;
-            event.versions = mVersions;
-            event.imageResIds = mImageResIds;
             getBusInstance().post(event);
         }
     }
