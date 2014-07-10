@@ -17,10 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import it.gmariotti.cardslib.library.internal.Card;
-import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
-import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
-import it.gmariotti.cardslib.library.view.CardView;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -44,6 +40,11 @@ import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherTaskFragment.PatcherListener;
+
+import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
+import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
+import it.gmariotti.cardslib.library.view.CardView;
 
 public class PatchFileFragment extends Fragment implements PatcherListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
@@ -248,7 +249,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         // Load patcher information
         if (mInfo == null) {
             Context context = getActivity().getApplicationContext();
-            new CardLoaderTask(context).execute();
+            new CardLoaderTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         } else {
             // Ensures that everything is needed right away (needed for, eg.
             // orientation change)
@@ -256,7 +257,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         }
     }
 
-    private class CardLoaderTask extends AsyncTask<Void, Void, Void> {
+    private class CardLoaderTask extends AsyncTask<Void, Void, PatcherInformation> {
         private final Context mContext;
 
         public CardLoaderTask(Context context) {
@@ -264,21 +265,18 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
-            if (mInfo == null) {
-                mInfo = PatcherUtils.getPatcherInformation(mContext);
-            }
-
-            return null;
+        protected PatcherInformation doInBackground(Void... params) {
+            return PatcherUtils.getPatcherInformation(mContext);
         }
 
         @Override
-        protected void onPostExecute(Void result) {
+        protected void onPostExecute(PatcherInformation result) {
             // Don't die on a configuration change
             if (getActivity() == null) {
                 return;
             }
 
+            mInfo = result;
             gotPatcherInformation();
         }
     }
