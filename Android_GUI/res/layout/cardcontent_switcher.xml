@@ -21,6 +21,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginLeft="3dp"
+    android:layout_marginRight="3dp"
     android:gravity="center_vertical"
     android:orientation="vertical" >
 
@@ -34,7 +35,9 @@
         android:id="@+id/switcher_subtitle"
         style="@style/card_subtitle_dim"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:ellipsize="middle"
+        android:singleLine="true" />
 
     <TextView
         android:id="@+id/switcher_message"
