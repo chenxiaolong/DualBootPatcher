@@ -79,12 +79,12 @@ public class MainActivity extends Activity {
 
     private final ArrayList<Integer> mDrawerItems = new ArrayList<Integer>();
     private View[] mDrawerItemViews;
-    private boolean[] mDrawerItemsLoaded;
     private boolean[] mDrawerItemsProgress;
     private int mDrawerItemSelected;
 
     private int mTitle;
     private Handler mHandler;
+    private Runnable mPending;
 
     private boolean mAutomated;
     private Bundle mAutomatedData;
@@ -124,6 +124,11 @@ public class MainActivity extends Activity {
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
                 updateTitle();
+
+                if (mPending != null) {
+                    mHandler.post(mPending);
+                    mPending = null;
+                }
             }
 
             @Override
@@ -189,7 +194,7 @@ public class MainActivity extends Activity {
                     mDrawerLayout.openDrawer(mDrawerView);
                     Editor e = mPrefs.edit();
                     e.putBoolean("first_start", false);
-                    e.commit();
+                    e.apply();
                 }
             }
         }.start();
@@ -206,8 +211,7 @@ public class MainActivity extends Activity {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putInt("fragment", mFragment);
         savedInstanceState.putInt("title", mTitle);
-        savedInstanceState.putBooleanArray("progressState",
-                mDrawerItemsProgress);
+        savedInstanceState.putBooleanArray("progressState", mDrawerItemsProgress);
         savedInstanceState.putInt("selectedItem", mDrawerItemSelected);
     }
 
@@ -270,7 +274,6 @@ public class MainActivity extends Activity {
         // container.removeAllViews();
 
         mDrawerItemViews = new View[mDrawerItems.size()];
-        mDrawerItemsLoaded = new boolean[mDrawerItems.size()];
         mDrawerItemsProgress = new boolean[mDrawerItems.size()];
 
         for (int i = 0; i < mDrawerItems.size(); i++) {
@@ -338,7 +341,6 @@ public class MainActivity extends Activity {
     }
 
     private void onDrawerItemClicked(final int item) {
-        mDrawerLayout.closeDrawer(mDrawerView);
         if (isItemAFragment(item)) {
             mDrawerItemSelected = item;
         }
@@ -351,19 +353,18 @@ public class MainActivity extends Activity {
             }
         }
 
-        // Add a small delay so the navigation drawer doesn't stutter
-        if (mDrawerItemsLoaded[item]) {
-            performDrawerItemSelection(item);
-        } else {
-            mDrawerItemsLoaded[item] = true;
-
-            mHandler.postDelayed(new Runnable() {
+        if (mDrawerLayout.isDrawerOpen(mDrawerView)) {
+            mPending = new Runnable() {
                 @Override
                 public void run() {
                     performDrawerItemSelection(item);
                 }
-            }, 200);
+            };
+        } else {
+            performDrawerItemSelection(item);
         }
+
+        mDrawerLayout.closeDrawer(mDrawerView);
     }
 
     private void showAsSelected(int item, boolean selected) {
@@ -445,17 +446,22 @@ public class MainActivity extends Activity {
         Fragment prevSetKernel = fm
                 .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
-        Fragment prevRomSettings = fm
-                .findFragmentByTag(RomSettingsFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
 
-        hideFragment(prevChooseRom);
-        hideFragment(prevSetKernel);
-        hideFragment(prevPatchFile);
-        hideFragment(prevRomSettings);
-        hideFragment(prevAbout);
-
         FragmentTransaction ft = fm.beginTransaction();
+
+        if (prevChooseRom != null) {
+            ft.hide(prevChooseRom);
+        }
+        if (prevSetKernel != null) {
+            ft.hide(prevSetKernel);
+        }
+        if (prevPatchFile != null) {
+            ft.hide(prevPatchFile);
+        }
+        if (prevAbout != null) {
+            ft.hide(prevAbout);
+        }
 
         switch (mFragment) {
         case FRAGMENT_CHOOSE_ROM:
@@ -471,8 +477,6 @@ public class MainActivity extends Activity {
                 ft.show(prevChooseRom);
             }
 
-            ft.commit();
-
             break;
 
         case FRAGMENT_SET_KERNEL:
@@ -487,8 +491,6 @@ public class MainActivity extends Activity {
             } else {
                 ft.show(prevSetKernel);
             }
-
-            ft.commit();
 
             break;
 
@@ -508,8 +510,6 @@ public class MainActivity extends Activity {
                 ft.show(prevPatchFile);
             }
 
-            ft.commit();
-
             break;
 
         case FRAGMENT_ABOUT:
@@ -523,19 +523,10 @@ public class MainActivity extends Activity {
                 ft.show(prevAbout);
             }
 
-            ft.commit();
-
             break;
         }
-    }
 
-    private void hideFragment(Fragment f) {
-        if (f != null) {
-            FragmentManager fm = getFragmentManager();
-            FragmentTransaction ft = fm.beginTransaction();
-            ft.hide(f);
-            ft.commit();
-        }
+        ft.commit();
     }
 
     public void lockNavigation() {
@@ -544,6 +535,7 @@ public class MainActivity extends Activity {
         getActionBar().setHomeButtonEnabled(false);
     }
 
+    @SuppressWarnings("unused")
     public void unlockNavigation() {
         mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         getActionBar().setDisplayHomeAsUpEnabled(true);
