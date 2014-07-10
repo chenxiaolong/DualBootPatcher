@@ -17,8 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import java.util.ArrayList;
-
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -49,6 +47,8 @@ import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsFragment;
 import com.github.chenxiaolong.dualbootpatcher.settings.SettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+
+import java.util.ArrayList;
 
 public class MainActivity extends Activity {
     private static final String PATCH_FILE = "com.github.chenxiaolong.dualbootpatcher.PATCH_FILE";
@@ -180,7 +180,7 @@ public class MainActivity extends Activity {
             mDrawerItemSelected = getItemForType(NAV_ABOUT);
         }
 
-        onDrawerItemClicked(mDrawerItemSelected);
+        onDrawerItemClicked(mDrawerItemSelected, false);
 
         refreshProgressBars();
         refreshOptionalItems();
@@ -333,16 +333,23 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 int item = getItemForType(type);
-                onDrawerItemClicked(item);
+                onDrawerItemClicked(item, true);
             }
         });
 
         return view;
     }
 
-    private void onDrawerItemClicked(final int item) {
+    private void onDrawerItemClicked(final int item, boolean userClicked) {
+        if (mDrawerItemSelected == item && userClicked) {
+            mDrawerLayout.closeDrawer(mDrawerView);
+            return;
+        }
+
         if (isItemAFragment(item)) {
             mDrawerItemSelected = item;
+            // Animate if user clicked
+            hideFragments(userClicked);
         }
 
         for (int i = 0; i < mDrawerItems.size(); i++) {
@@ -438,7 +445,7 @@ public class MainActivity extends Activity {
         return -1;
     }
 
-    private void showFragment() {
+    private void hideFragments(boolean animate) {
         FragmentManager fm = getFragmentManager();
 
         Fragment prevChooseRom = fm
@@ -449,6 +456,10 @@ public class MainActivity extends Activity {
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
 
         FragmentTransaction ft = fm.beginTransaction();
+
+        if (animate) {
+            ft.setCustomAnimations(0, R.animator.fragment_out);
+        }
 
         if (prevChooseRom != null) {
             ft.hide(prevChooseRom);
@@ -462,6 +473,23 @@ public class MainActivity extends Activity {
         if (prevAbout != null) {
             ft.hide(prevAbout);
         }
+
+        ft.commit();
+        fm.executePendingTransactions();
+    }
+
+    private void showFragment() {
+        FragmentManager fm = getFragmentManager();
+
+        Fragment prevChooseRom = fm
+                .findFragmentByTag(SwitcherListFragment.TAG_CHOOSE_ROM);
+        Fragment prevSetKernel = fm
+                .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
+        Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
+        Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
+
+        FragmentTransaction ft = fm.beginTransaction();
+        ft.setCustomAnimations(R.animator.fragment_in, 0);
 
         switch (mFragment) {
         case FRAGMENT_CHOOSE_ROM:
