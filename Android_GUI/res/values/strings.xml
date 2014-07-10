@@ -35,6 +35,7 @@
     </string>
 
     <!-- Root access messages -->
+    <string name="waiting_for_root">Waiting for root access</string>
     <string name="noroot_title">No root access</string>
     <string name="noroot_switcher_desc">The application was unable to obtain root access. Root
         access is needed for writing to the kernel/boot image partition to switch between
