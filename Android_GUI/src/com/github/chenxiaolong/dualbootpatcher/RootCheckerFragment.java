@@ -63,9 +63,7 @@ public class RootCheckerFragment extends Fragment {
         mListeners.add(listener);
 
         if (mAttemptedRootRequest) {
-            for (RootCheckerListener rcl : mListeners) {
-                rcl.rootRequestAcknowledged(mHaveRootAccess);
-            }
+            listener.rootRequestAcknowledged(mHaveRootAccess);
         }
     }
 
