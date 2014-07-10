@@ -31,12 +31,12 @@ source ../compile/env.sh
 setup_toolchain
 
 if [ ! -d jsoncpp ]; then
-    git clone https://github.com/jacobsa/jsoncpp.git
+    git clone https://github.com/open-source-parsers/jsoncpp.git
 fi
 
 pushd jsoncpp/
     git fetch
-    git checkout 47f1577fd38c3810469049bd5de5956a44954ae6
+    git checkout 60f778b9fcd1c59908293a6145dffd369d4f6daf
     python2 amalgamate.py
 popd
 
@@ -64,8 +64,8 @@ if [[ "${buildtype}" != debug-nonboot ]]; then
     ${STRIP} syncdaemon
 fi
 
-if [[ "${buildtype}" == release ]] && which upx >/dev/null; then
-    upx --lzma syncdaemon
-fi
+#if [[ "${buildtype}" == release ]] && which upx >/dev/null; then
+#    upx --lzma syncdaemon
+#fi
 
 # /data/local/Inst/bin/valgrind -v --leak-check=full --show-leak-kinds=all --track-origins=yes ./a.out
