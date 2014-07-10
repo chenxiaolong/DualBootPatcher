@@ -627,8 +627,8 @@ def create_shortcuts_linux(targetdir):
 
 
 def create_syncdaemon(targetdir):
-    print('Compiling syncdaemon ...')
     create_android_toolchain()
+    print('Compiling syncdaemon ...')
 
     syncdaemondir = os.path.join(builddir, 'syncdaemon')
     ramdisksdir = os.path.join(targetdir, 'ramdisks')
