@@ -75,23 +75,27 @@ public class RomCard extends Card {
     }
 
     private void updateViews() {
-        if (mShowProgress) {
-            mTitle.setVisibility(View.GONE);
-            mSubtitle.setVisibility(View.GONE);
-            mProgressBar.setVisibility(View.VISIBLE);
-        } else {
-            mTitle.setVisibility(View.VISIBLE);
-            mSubtitle.setVisibility(View.VISIBLE);
-            mProgressBar.setVisibility(View.GONE);
+        if (mTitle != null) {
+            if (mShowProgress) {
+                mTitle.setVisibility(View.GONE);
+                mSubtitle.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.VISIBLE);
+            } else {
+                mTitle.setVisibility(View.VISIBLE);
+                mSubtitle.setVisibility(View.VISIBLE);
+                mProgressBar.setVisibility(View.GONE);
+            }
         }
     }
 
     private void updateMessage() {
-        if (mShowMessage) {
-            mMessage.setVisibility(View.VISIBLE);
-            mMessage.setText(mStringResId);
-        } else {
-            mMessage.setVisibility(View.GONE);
+        if (mMessage != null) {
+            if (mShowMessage) {
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText(mStringResId);
+            } else {
+                mMessage.setVisibility(View.GONE);
+            }
         }
     }
 

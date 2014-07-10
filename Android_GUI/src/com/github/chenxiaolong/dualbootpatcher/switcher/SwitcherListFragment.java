@@ -25,8 +25,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
-import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,10 +38,14 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.ChoseRomListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.SetKernelListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnChoseRomEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnObtainedRomsEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnSetKernelEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.SwitcherTaskEvent;
+import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
@@ -51,18 +53,22 @@ import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
 import it.gmariotti.cardslib.library.view.CardListView;
 import it.gmariotti.cardslib.library.view.CardView;
 
-public class SwitcherListFragment extends Fragment implements ChoseRomListener,
-        SetKernelListener, OnDismissListener, RootCheckerListener {
+public class SwitcherListFragment extends Fragment implements OnDismissListener,
+        RootCheckerListener {
     public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
     public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
     public static final int ACTION_CHOOSE_ROM = 1;
     public static final int ACTION_SET_KERNEL = 2;
 
+    private static final String EXTRA_PERFORMING_ACTION = "performingAction";
+    private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
+    private static final String EXTRA_SELECTED_ROM_ID = "selectedRomId";
+    private static final String EXTRA_SHOWING_DIALOG = "showingDialog";
+
     private boolean mPerformingAction;
     private boolean mAttemptedRoot;
 
     private RootCheckerFragment mRootCheckerFragment;
-    private SwitcherTaskFragment mTaskFragment;
 
     private Bundle mSavedInstanceState;
 
@@ -75,7 +81,9 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     private CardListView mCardListView;
     private ProgressBar mProgressBar;
     private int mAction;
-    private RomInformation[] mRoms;
+    private boolean mCardsLoaded;
+
+    private ArrayList<SwitcherTaskEvent> mEvents = new ArrayList<SwitcherTaskEvent>();
 
     private AlertDialog mDialog;
     private RomInformation mSelectedRom;
@@ -99,16 +107,6 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        FragmentManager fm = getFragmentManager();
-        mTaskFragment = (SwitcherTaskFragment) fm
-                .findFragmentByTag(SwitcherTaskFragment.TAG);
-
-        if (mTaskFragment == null) {
-            mTaskFragment = new SwitcherTaskFragment();
-            fm.beginTransaction().add(mTaskFragment, SwitcherTaskFragment.TAG)
-                    .commit();
-        }
-
         if (getArguments() != null) {
             mAction = getArguments().getInt("action");
         }
@@ -123,14 +121,15 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         mSavedInstanceState = savedInstanceState;
 
         if (savedInstanceState != null) {
-            mAttemptedRoot = savedInstanceState.getBoolean("attemptedRoot");
+            mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
+            mAttemptedRoot = savedInstanceState.getBoolean(EXTRA_ATTEMPTED_ROOT);
 
-            String selectedRomId = savedInstanceState.getString("selectedRomId");
+            String selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
             if (selectedRomId != null) {
                 mSelectedRom = RomUtils.getRomFromId(selectedRomId);
             }
 
-            if (savedInstanceState.getBoolean("haveDialog")) {
+            if (savedInstanceState.getBoolean(EXTRA_SHOWING_DIALOG)) {
                 buildDialog();
             }
         }
@@ -145,6 +144,8 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
 
         initNoRootCard();
         mNoRootCardView.setVisibility(View.GONE);
+
+        initCardList();
 
         // Show progress bar on initial load, not on rotation
         if (savedInstanceState != null) {
@@ -188,12 +189,6 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         super.onResume();
 
         mRootCheckerFragment.attachListenerAndResendEvents(this);
-
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mTaskFragment.attachChoseRomListener(this);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mTaskFragment.attachSetKernelListener(this);
-        }
     }
 
     @Override
@@ -201,17 +196,20 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         super.onPause();
 
         mRootCheckerFragment.detachListener(this);
+    }
 
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mTaskFragment.detachChoseRomListener();
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mTaskFragment.detachSetKernelListener();
-        }
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        SwitcherTasks.getBusInstance().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
+
+        SwitcherTasks.getBusInstance().unregister(this);
 
         if (mDialog != null) {
             mDialog.dismiss();
@@ -223,18 +221,20 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putBoolean("performingAction", mPerformingAction);
-        outState.putBoolean("attemptedRoot", mAttemptedRoot);
+        outState.putBoolean(EXTRA_PERFORMING_ACTION, mPerformingAction);
+        outState.putBoolean(EXTRA_ATTEMPTED_ROOT, mAttemptedRoot);
         if (mSelectedRom != null) {
-            outState.putString("selectedRomId", mSelectedRom.id);
+            outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRom.id);
         }
         if (mDialog != null) {
-            outState.putBoolean("haveDialog", true);
+            outState.putBoolean(EXTRA_SHOWING_DIALOG, true);
         }
 
         // mCards will be null when switching to the SuperUser/SuperSU activity
         // for approving root access
         if (mCards != null) {
+            processQueuedEvents();
+
             for (Card c : mCards) {
                 RomCard card = (RomCard) c;
                 card.onSaveInstanceState(outState);
@@ -265,24 +265,20 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         mNoRootCardView.setCard(mNoRootCard);
     }
 
-    private void initCards(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            mPerformingAction = savedInstanceState
-                    .getBoolean("performingAction");
-        }
+    private void initCardList() {
+        mCards = new ArrayList<Card>();
+        mCardArrayAdapter = new CardArrayAdapter(getActivity(), mCards);
 
-        ArrayList<Card> cards = new ArrayList<Card>();
-        mCardArrayAdapter = new CardArrayAdapter(getActivity(), cards);
-
-        mCardListView = (CardListView) getActivity().findViewById(
-                mCardListResId);
+        mCardListView = (CardListView) getActivity().findViewById(mCardListResId);
         if (mCardListView != null) {
             mCardListView.setAdapter(mCardArrayAdapter);
             refreshRomListVisibility(false);
         }
+    }
 
+    private void initCards() {
         Context context = getActivity().getApplicationContext();
-        new CardLoaderTask(context, savedInstanceState).execute();
+        SwitcherTasks.obtainRoms(context);
     }
 
     @Override
@@ -299,80 +295,7 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
             refreshProgressVisibility(false);
         } else {
             mNoRootCardView.setVisibility(View.GONE);
-            initCards(mSavedInstanceState);
-        }
-    }
-
-    private class CardLoaderTask extends AsyncTask<Void, Void, Void> {
-        private final Context mContext;
-        private final Bundle mSavedInstanceState;
-        private String[] mNames;
-        private String[] mVersions;
-        private int[] mImageResIds;
-
-        public CardLoaderTask(Context context, Bundle savedInstanceState) {
-            mContext = context;
-            mSavedInstanceState = savedInstanceState;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            if (mRoms == null) {
-                mRoms = RomUtils.getRoms();
-            }
-
-            mNames = new String[mRoms.length];
-            mVersions = new String[mRoms.length];
-            mImageResIds = new int[mRoms.length];
-
-            for (int i = 0; i < mRoms.length; i++) {
-                mNames[i] = RomUtils.getName(mContext, mRoms[i]);
-                mVersions[i] = RomUtils.getVersion(mRoms[i]);
-                if (mVersions[i] == null) {
-                    mVersions[i] = getActivity().getString(
-                            R.string.couldnt_determine_version);
-                }
-                mImageResIds[i] = RomUtils.getIconResource(mRoms[i]);
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            // Don't die on a configuration change
-            if (getActivity() == null) {
-                return;
-            }
-
-            mCards = new ArrayList<Card>();
-
-            for (int i = 0; i < mRoms.length; i++) {
-                final RomInformation info = mRoms[i];
-
-                RomCard card = new RomCard(getActivity(), info, mNames[i],
-                        mVersions[i], mImageResIds[i]);
-
-                if (mSavedInstanceState != null) {
-                    card.onRestoreInstanceState(mSavedInstanceState);
-                }
-
-                card.setOnClickListener(new OnCardClickListener() {
-                    @Override
-                    public void onClick(Card card, View view) {
-                        startActionAskingIfNeeded(info);
-                    }
-                });
-
-                mCards.add(card);
-            }
-
-            mCardArrayAdapter.addAll(mCards);
-            mCardArrayAdapter.notifyDataSetChanged();
-            updateCardUI();
-
-            refreshProgressVisibility(false);
-            refreshRomListVisibility(true);
+            initCards();
         }
     }
 
@@ -516,33 +439,67 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         updateCardUI();
 
         if (mAction == ACTION_CHOOSE_ROM) {
-            chooseRom(info.kernelId);
+            SwitcherTasks.chooseRom(info.kernelId);
         } else if (mAction == ACTION_SET_KERNEL) {
-            setKernel(info.kernelId);
+            SwitcherTasks.setKernel(info.kernelId);
         }
     }
 
-    private void chooseRom(String kernelId) {
-        Context context = getActivity().getApplicationContext();
-        Intent intent = new Intent(context, SwitcherService.class);
-        intent.putExtra(SwitcherService.ACTION,
-                SwitcherService.ACTION_CHOOSE_ROM);
-        intent.putExtra("kernelId", kernelId);
-        context.startService(intent);
+    @Subscribe
+    public void onChoseRom(OnChoseRomEvent event) {
+        if (mCardsLoaded) {
+            processChoseRomEvent(event);
+        } else {
+            mEvents.add(event);
+        }
     }
 
-    private void setKernel(String kernelId) {
-        Context context = getActivity().getApplicationContext();
-        Intent intent = new Intent(context, SwitcherService.class);
-        intent.putExtra(SwitcherService.ACTION,
-                SwitcherService.ACTION_SET_KERNEL);
-        intent.putExtra("kernelId", kernelId);
-        context.startService(intent);
+    @Subscribe
+    public void onSetKernel(OnSetKernelEvent event) {
+        if (mCardsLoaded) {
+            processSetKernelEvent(event);
+        } else {
+            mEvents.add(event);
+        }
     }
 
-    @Override
-    public void onChoseRom(boolean failed, String message, String kernelId) {
-        RomCard card = findCardFromId(kernelId);
+    @Subscribe
+    public void onObtainedRoms(OnObtainedRomsEvent event) {
+        mCards.clear();
+
+        for (int i = 0; i < event.roms.length; i++) {
+            final RomInformation info = event.roms[i];
+
+            RomCard card = new RomCard(getActivity(), info,
+                    event.names[i], event.versions[i], event.imageResIds[i]);
+
+            if (mSavedInstanceState != null) {
+                card.onRestoreInstanceState(mSavedInstanceState);
+            }
+
+            card.setOnClickListener(new OnCardClickListener() {
+                @Override
+                public void onClick(Card card, View view) {
+                    startActionAskingIfNeeded(info);
+                }
+            });
+
+            mCards.add(card);
+        }
+
+        mCardArrayAdapter.notifyDataSetChanged();
+        updateCardUI();
+
+        refreshProgressVisibility(false);
+        refreshRomListVisibility(true);
+
+        processQueuedEvents();
+
+        mCardsLoaded = true;
+    }
+
+    private void processChoseRomEvent(OnChoseRomEvent event) {
+        RomCard card = findCardFromId(event.kernelId);
         if (card != null) {
             showProgress(card, false);
         }
@@ -550,12 +507,11 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         mPerformingAction = false;
         updateCardUI();
 
-        showCompletionMessage(card, failed);
+        showCompletionMessage(card, event.failed);
     }
 
-    @Override
-    public void onSetKernel(boolean failed, String message, String kernelId) {
-        RomCard card = findCardFromId(kernelId);
+    private void processSetKernelEvent(OnSetKernelEvent event) {
+        RomCard card = findCardFromId(event.kernelId);
         if (card != null) {
             showProgress(card, false);
         }
@@ -563,6 +519,21 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         mPerformingAction = false;
         updateCardUI();
 
-        showCompletionMessage(card, failed);
+        showCompletionMessage(card, event.failed);
+    }
+
+    private void processQueuedEvents() {
+        Iterator<SwitcherTaskEvent> iter = mEvents.iterator();
+        while (iter.hasNext()) {
+            SwitcherTaskEvent event = iter.next();
+
+            if (event instanceof OnChoseRomEvent) {
+                processChoseRomEvent((OnChoseRomEvent) event);
+            } else if (event instanceof  OnSetKernelEvent) {
+                processSetKernelEvent((OnSetKernelEvent) event);
+            }
+
+            iter.remove();
+        }
     }
 }
