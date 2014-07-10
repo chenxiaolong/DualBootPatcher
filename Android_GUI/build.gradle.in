@@ -22,13 +22,13 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.1.0"
+    compileSdkVersion 20
+    buildToolsVersion "20"
 
     defaultConfig {
         applicationId "com.github.chenxiaolong.dualbootpatcher"
         minSdkVersion 17
-        targetSdkVersion 19
+        targetSdkVersion 20
         versionCode 1
         versionName "@VERSION@"
     }
