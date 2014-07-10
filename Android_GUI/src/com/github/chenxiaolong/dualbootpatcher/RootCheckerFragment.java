@@ -88,9 +88,7 @@ public class RootCheckerFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Boolean result) {
-            synchronized (RootCheckerFragment.this) {
-                onRootRequestAcknowledged(result);
-            }
+            onRootRequestAcknowledged(result);
         }
     }
 }
