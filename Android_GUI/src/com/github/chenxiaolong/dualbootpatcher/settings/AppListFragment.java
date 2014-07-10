@@ -49,6 +49,8 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.AppInformation;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.LoaderListener;
+import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
+import com.nhaarman.listviewanimations.swinginadapters.prepared.ScaleInAnimationAdapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,7 +128,9 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
 
         mAppInfos = new ArrayList<AppInformation>();
         mAdapter = new AppAdapter(getActivity(), mAppInfos);
-        mAppsList.setAdapter(mAdapter);
+        AnimationAdapter animArrayAdapter = new ScaleInAnimationAdapter(mAdapter);
+        animArrayAdapter.setAbsListView(mAppsList);
+        mAppsList.setAdapter(animArrayAdapter);
 
         mPrefs = getActivity().getSharedPreferences("settings", 0);
 
