@@ -18,6 +18,8 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.content.Context;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public class RomUtils {
     private static final String KEY_OMNI_VERSION = "ro.omni.version";
     private static final String KEY_DISPLAY_ID = "ro.build.display.id";
 
-    public static class RomInformation {
+    public static class RomInformation implements Parcelable {
         // Mount points
         public String system;
         public String cache;
@@ -60,6 +62,45 @@ public class RomUtils {
         // Identifiers
         public String id;
         public String kernelId;
+
+        public RomInformation() {
+        }
+
+        protected RomInformation(Parcel in) {
+            system = in.readString();
+            cache = in.readString();
+            data = in.readString();
+            id = in.readString();
+            kernelId = in.readString();
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(system);
+            dest.writeString(cache);
+            dest.writeString(data);
+            dest.writeString(id);
+            dest.writeString(kernelId);
+        }
+
+        @SuppressWarnings("unused")
+        public static final Parcelable.Creator<RomInformation> CREATOR =
+                new Parcelable.Creator<RomInformation>() {
+            @Override
+            public RomInformation createFromParcel(Parcel in) {
+                return new RomInformation(in);
+            }
+
+            @Override
+            public RomInformation[] newArray(int size) {
+                return new RomInformation[size];
+            }
+        };
     }
 
     private static boolean isBootedInPrimary() {
@@ -87,6 +128,7 @@ public class RomUtils {
         return null;
     }
 
+    @SuppressWarnings("unused")
     private static RomInformation getCurrentRomViaInode() {
         RomInformation[] roms = getRoms();
 

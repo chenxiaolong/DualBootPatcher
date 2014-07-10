@@ -66,6 +66,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
     private static final String EXTRA_SELECTED_ROM_ID = "selectedRomId";
     private static final String EXTRA_SHOWING_DIALOG = "showingDialog";
+    private static final String EXTRA_ROMS = "roms";
+    private static final String EXTRA_ROM_NAMES = "romNames";
+    private static final String EXTRA_ROM_VERSIONS = "romVersions";
+    private static final String EXTRA_ROM_IMAGE_RES_IDS = "romImageResIds";
 
     private boolean mPerformingAction;
     private boolean mAttemptedRoot;
@@ -89,6 +93,11 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private AlertDialog mDialog;
     private RomInformation mSelectedRom;
+
+    private RomInformation[] mRoms;
+    private String[] mRomNames;
+    private String[] mRomVersions;
+    private int[] mRomImageResIds;
 
     private static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
@@ -125,6 +134,11 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         if (savedInstanceState != null) {
             mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
             mAttemptedRoot = savedInstanceState.getBoolean(EXTRA_ATTEMPTED_ROOT);
+
+            mRoms = (RomInformation[]) savedInstanceState.getParcelableArray(EXTRA_ROMS);
+            mRomNames = savedInstanceState.getStringArray(EXTRA_ROM_NAMES);
+            mRomVersions = savedInstanceState.getStringArray(EXTRA_ROM_VERSIONS);
+            mRomImageResIds = savedInstanceState.getIntArray(EXTRA_ROM_IMAGE_RES_IDS);
 
             String selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
             if (selectedRomId != null) {
@@ -230,6 +244,13 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
         if (mDialog != null) {
             outState.putBoolean(EXTRA_SHOWING_DIALOG, true);
+        }
+
+        if (mRoms != null) {
+            outState.putParcelableArray(EXTRA_ROMS, mRoms);
+            outState.putStringArray(EXTRA_ROM_NAMES, mRomNames);
+            outState.putStringArray(EXTRA_ROM_VERSIONS, mRomVersions);
+            outState.putIntArray(EXTRA_ROM_IMAGE_RES_IDS, mRomImageResIds);
         }
 
         // mCards will be null when switching to the SuperUser/SuperSU activity
@@ -449,6 +470,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
     }
 
+    @SuppressWarnings("unused")
     @Subscribe
     public void onChoseRom(OnChoseRomEvent event) {
         if (mCardsLoaded) {
@@ -458,6 +480,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
     }
 
+    @SuppressWarnings("unused")
     @Subscribe
     public void onSetKernel(OnSetKernelEvent event) {
         if (mCardsLoaded) {
@@ -506,40 +529,57 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
     }
 
-    private class ObtainRomsTask extends AsyncTask<Void, Void, Void> {
+    protected class ObtainRomsTask extends AsyncTask<Void, Void, ObtainRomsTask.RomInfoResult> {
         private final Context mContext;
-        private RomInformation[] mRoms;
-        private String[] mNames;
-        private String[] mVersions;
-        private int[] mImageResIds;
+
+        public class RomInfoResult {
+            RomInformation[] roms;
+            String[] names;
+            String[] versions;
+            int[] imageResIds;
+        }
 
         public ObtainRomsTask(Context context) {
             mContext = context;
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
-            mRoms = RomUtils.getRoms();
-            mNames = new String[mRoms.length];
-            mVersions = new String[mRoms.length];
-            mImageResIds = new int[mRoms.length];
-
-            for (int i = 0; i < mRoms.length; i++) {
-                mNames[i] = RomUtils.getName(mContext, mRoms[i]);
-                mVersions[i] = RomUtils.getVersion(mRoms[i]);
-                if (mVersions[i] == null) {
-                    mVersions[i] = mContext.getString(R.string.couldnt_determine_version);
-                }
-                mImageResIds[i] = RomUtils.getIconResource(mRoms[i]);
+        protected RomInfoResult doInBackground(Void... params) {
+            // If roms were already loaded, don't load them again
+            if (mRoms != null) {
+                return null;
             }
 
-            return null;
+            RomInfoResult result = new RomInfoResult();
+
+            result.roms = RomUtils.getRoms();
+            result.names = new String[result.roms.length];
+            result.versions = new String[result.roms.length];
+            result.imageResIds = new int[result.roms.length];
+
+            for (int i = 0; i < result.roms.length; i++) {
+                result.names[i] = RomUtils.getName(mContext, result.roms[i]);
+                result.versions[i] = RomUtils.getVersion(result.roms[i]);
+                if (result.versions[i] == null) {
+                    result.versions[i] = mContext.getString(R.string.couldnt_determine_version);
+                }
+                result.imageResIds[i] = RomUtils.getIconResource(result.roms[i]);
+            }
+
+            return result;
         }
 
         @Override
-        protected void onPostExecute(Void result) {
+        protected void onPostExecute(RomInfoResult result) {
             if (getActivity() == null) {
                 return;
+            }
+
+            if (result != null) {
+                mRoms = result.roms;
+                mRomNames = result.names;
+                mRomVersions = result.versions;
+                mRomImageResIds = result.imageResIds;
             }
 
             mCards.clear();
@@ -548,7 +588,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 final RomInformation info = mRoms[i];
 
                 RomCard card = new RomCard(getActivity(), info,
-                        mNames[i], mVersions[i], mImageResIds[i]);
+                        mRomNames[i], mRomVersions[i], mRomImageResIds[i]);
 
                 if (mSavedInstanceState != null) {
                     card.onRestoreInstanceState(mSavedInstanceState);
