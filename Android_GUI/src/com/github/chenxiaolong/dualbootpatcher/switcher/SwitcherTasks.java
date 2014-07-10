@@ -17,12 +17,8 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.content.Context;
 import android.os.AsyncTask;
 
-import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.squareup.otto.Bus;
 
 public class SwitcherTasks {

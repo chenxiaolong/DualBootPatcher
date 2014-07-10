@@ -282,7 +282,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private void initCards() {
         Context context = getActivity().getApplicationContext();
-        new ObtainRomsTask(context).execute();
+        new ObtainRomsTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @Override
