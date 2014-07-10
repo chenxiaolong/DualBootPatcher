@@ -34,11 +34,12 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
+import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.ChoseRomListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.SetKernelListener;
 
@@ -51,18 +52,19 @@ import it.gmariotti.cardslib.library.view.CardListView;
 import it.gmariotti.cardslib.library.view.CardView;
 
 public class SwitcherListFragment extends Fragment implements ChoseRomListener,
-        SetKernelListener, OnDismissListener {
+        SetKernelListener, OnDismissListener, RootCheckerListener {
     public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
     public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
     public static final int ACTION_CHOOSE_ROM = 1;
     public static final int ACTION_SET_KERNEL = 2;
 
-    private boolean mShowingProgress;
     private boolean mPerformingAction;
     private boolean mAttemptedRoot;
-    private boolean mHaveRootAccess;
 
+    private RootCheckerFragment mRootCheckerFragment;
     private SwitcherTaskFragment mTaskFragment;
+
+    private Bundle mSavedInstanceState;
 
     private int mCardListResId;
 
@@ -116,9 +118,12 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        mRootCheckerFragment = RootCheckerFragment.getInstance(getFragmentManager());
+
+        mSavedInstanceState = savedInstanceState;
+
         if (savedInstanceState != null) {
             mAttemptedRoot = savedInstanceState.getBoolean("attemptedRoot");
-            mHaveRootAccess = savedInstanceState.getBoolean("haveRootAccess");
 
             String selectedRomId = savedInstanceState.getString("selectedRomId");
             if (selectedRomId != null) {
@@ -130,12 +135,6 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
             }
         }
 
-        // Get root access
-        if (!mAttemptedRoot) {
-            mAttemptedRoot = true;
-            mHaveRootAccess = CommandUtils.requestRootAccess();
-        }
-
         if (mAction == ACTION_CHOOSE_ROM) {
             mProgressBar = (ProgressBar) getActivity().findViewById(
                     R.id.card_list_loading_choose_rom);
@@ -145,12 +144,16 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
         }
 
         initNoRootCard();
+        mNoRootCardView.setVisibility(View.GONE);
 
-        if (!mHaveRootAccess) {
-            mProgressBar.setVisibility(View.GONE);
-        } else {
-            mNoRootCardView.setVisibility(View.GONE);
-            initCards(savedInstanceState);
+        // Show progress bar on initial load, not on rotation
+        if (savedInstanceState != null) {
+            refreshProgressVisibility(false);
+        }
+
+        if (!mAttemptedRoot) {
+            mAttemptedRoot = true;
+            mRootCheckerFragment.requestRoot();
         }
     }
 
@@ -183,6 +186,9 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     @Override
     public void onResume() {
         super.onResume();
+
+        mRootCheckerFragment.attachListenerAndResendEvents(this);
+
         if (mAction == ACTION_CHOOSE_ROM) {
             mTaskFragment.attachChoseRomListener(this);
         } else if (mAction == ACTION_SET_KERNEL) {
@@ -193,6 +199,9 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     @Override
     public void onPause() {
         super.onPause();
+
+        mRootCheckerFragment.detachListener(this);
+
         if (mAction == ACTION_CHOOSE_ROM) {
             mTaskFragment.detachChoseRomListener();
         } else if (mAction == ACTION_SET_KERNEL) {
@@ -216,7 +225,6 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
 
         outState.putBoolean("performingAction", mPerformingAction);
         outState.putBoolean("attemptedRoot", mAttemptedRoot);
-        outState.putBoolean("haveRootAccess", mHaveRootAccess);
         if (mSelectedRom != null) {
             outState.putString("selectedRomId", mSelectedRom.id);
         }
@@ -270,10 +278,8 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
                 mCardListResId);
         if (mCardListView != null) {
             mCardListView.setAdapter(mCardArrayAdapter);
+            refreshRomListVisibility(false);
         }
-
-        mShowingProgress = true;
-        updateMainUI();
 
         Context context = getActivity().getApplicationContext();
         new CardLoaderTask(context, savedInstanceState).execute();
@@ -283,6 +289,17 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
     public void onDismiss(DialogInterface dialogInterface) {
         if (mDialog == dialogInterface) {
             mDialog = null;
+        }
+    }
+
+    @Override
+    public void rootRequestAcknowledged(boolean allowed) {
+        if (!allowed) {
+            mNoRootCardView.setVisibility(View.VISIBLE);
+            refreshProgressVisibility(false);
+        } else {
+            mNoRootCardView.setVisibility(View.GONE);
+            initCards(mSavedInstanceState);
         }
     }
 
@@ -354,19 +371,17 @@ public class SwitcherListFragment extends Fragment implements ChoseRomListener,
             mCardArrayAdapter.notifyDataSetChanged();
             updateCardUI();
 
-            mShowingProgress = false;
-            updateMainUI();
+            refreshProgressVisibility(false);
+            refreshRomListVisibility(true);
         }
     }
 
-    private void updateMainUI() {
-        if (mShowingProgress) {
-            mCardListView.setVisibility(View.GONE);
-            mProgressBar.setVisibility(View.VISIBLE);
-        } else {
-            mCardListView.setVisibility(View.VISIBLE);
-            mProgressBar.setVisibility(View.GONE);
-        }
+    private void refreshProgressVisibility(boolean visible) {
+        mProgressBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    private void refreshRomListVisibility(boolean visible) {
+        mCardListView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     private void updateCardUI() {
