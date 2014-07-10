@@ -311,7 +311,7 @@ def create_python_windows(targetdir):
 
     extract_msi(pyinst, pyport)
 
-    if buildtype != 'ci':
+    if buildtype == 'release':
         upx_compress(glob.glob(pyport + os.sep + '*.dll'))
         upx_compress(glob.glob(pyport + os.sep + '*.exe'), lzma=False)
 
@@ -375,7 +375,7 @@ def create_pyqt_windows(targetdir):
 
     extract_7z(pyqtinst, pysitelib)
 
-    if buildtype != 'ci':
+    if buildtype == 'release':
         upx_compress([pysitelib + os.sep + 'sip.pyd'])
 
         base = pyqtdir + os.sep
@@ -479,7 +479,7 @@ def create_binaries_windows(targetdir):
     for f in binfiles + dllfiles:
         os.chmod(f, 0o0755)
 
-    if buildtype != 'ci':
+    if buildtype == 'release':
         upx_compress([tbinpath + os.sep + 'cygiconv-2.dll'])
         upx_compress([tbinpath + os.sep + 'cygintl-8.dll'], lzma=False)
         upx_compress([tbinpath + os.sep + 'cygwin1.dll'], force=True)
@@ -620,7 +620,7 @@ def create_shortcuts_linux(targetdir):
     check_if_failed(exit_status, output, error,
                     'Failed to strip symbols from Linux launcher')
 
-    if buildtype != 'ci':
+    if buildtype == 'release':
         upx_compress([bingui])
 
     os.chmod(bingui, 0o755)
@@ -671,7 +671,7 @@ def create_release(targetdir, targetfile, android=False):
 
     create_syncdaemon(targetdir)
 
-    if buildtype != 'ci':
+    if buildtype == 'release':
         upx_compress([os.path.join(targetdir, 'ramdisks', 'busybox-static')])
         upx_compress(glob.glob(targetdir + os.sep + 'ramdisks' + os.sep +
                                'init' + os.sep + 'init-*'))
@@ -861,7 +861,7 @@ def build_android():
     shutil.copyfile(os.path.join(targetdir, 'ramdisks', 'syncdaemon'),
                     os.path.join(assetdir, 'syncdaemon'))
 
-    if buildtype != 'ci':
+    if buildtype == 'release':
         os.chmod(os.path.join(assetdir, 'busybox-static'), 0o0755)
         upx_compress([os.path.join(assetdir, 'busybox-static')])
 
