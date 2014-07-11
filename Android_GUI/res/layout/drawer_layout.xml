@@ -32,14 +32,19 @@
         android:layout_width="240dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/navigation_background" >
+        android:background="@color/navigation_background">
 
-        <LinearLayout
-            android:id="@+id/drawer_list"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentTop="true"
-            android:orientation="vertical" />
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/drawer_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_alignParentTop="true"
+                android:orientation="vertical" />
+        </ScrollView>
     </RelativeLayout>
 
 </android.support.v4.widget.DrawerLayout>
