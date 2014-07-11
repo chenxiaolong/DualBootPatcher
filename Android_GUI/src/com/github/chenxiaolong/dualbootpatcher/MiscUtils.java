@@ -95,11 +95,11 @@ public class MiscUtils {
                 return 1;
             }
 
-            // No suffix is always newer
+            // No suffix is older (suffix is n revisions ahead of the last git tag)
             if (mSuffix != null && other.mSuffix == null) {
-                return -1;
-            } else if (mSuffix == null && other.mSuffix != null) {
                 return 1;
+            } else if (mSuffix == null && other.mSuffix != null) {
+                return -1;
             }
 
             if (mRevision < other.mRevision) {
