@@ -1,0 +1,77 @@
+From 983876121aa681408ee92e816f302f5ab1ffcb17 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sun, 13 Jul 2014 17:50:01 -0400
+Subject: [PATCH] Remove log2()
+
+---
+ Modules/mathmodule.c | 4 ----
+ configure            | 2 +-
+ configure.ac         | 2 +-
+ pyconfig.h.in        | 3 ---
+ 4 files changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/Modules/mathmodule.c b/Modules/mathmodule.c
+index 7f094ff..573697f 100644
+--- a/Modules/mathmodule.c
++++ b/Modules/mathmodule.c
+@@ -603,9 +603,6 @@ m_log2(double x)
+     }
+ 
+     if (x > 0.0) {
+-#ifdef HAVE_LOG2
+-        return log2(x);
+-#else
+         double m;
+         int e;
+         m = frexp(x, &e);
+@@ -621,7 +618,6 @@ m_log2(double x)
+         else {
+             return log(m) / log(2.0) + e;
+         }
+-#endif
+     }
+     else if (x == 0.0) {
+         errno = EDOM;
+diff --git a/configure b/configure
+index 3757cc6..02bbaf3 100755
+--- a/configure
++++ b/configure
+@@ -13243,7 +13243,7 @@ _ACEOF
+ fi
+ done
+ 
+-for ac_func in hypot lgamma log1p log2 round tgamma
++for ac_func in hypot lgamma log1p round tgamma
+ do :
+   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+diff --git a/configure.ac b/configure.ac
+index 217fffd..9f8e75f 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -3838,7 +3838,7 @@ LIBS_SAVE=$LIBS
+ LIBS="$LIBS $LIBM"
+ 
+ AC_CHECK_FUNCS([acosh asinh atanh copysign erf erfc expm1 finite gamma])
+-AC_CHECK_FUNCS([hypot lgamma log1p log2 round tgamma])
++AC_CHECK_FUNCS([hypot lgamma log1p round tgamma])
+ AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
+ 
+ # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
+diff --git a/pyconfig.h.in b/pyconfig.h.in
+index 3574f67..b30622b 100644
+--- a/pyconfig.h.in
++++ b/pyconfig.h.in
+@@ -531,9 +531,6 @@
+ /* Define to 1 if you have the `log1p' function. */
+ #undef HAVE_LOG1P
+ 
+-/* Define to 1 if you have the `log2' function. */
+-#undef HAVE_LOG2
+-
+ /* Define this if you have the type long double. */
+ #undef HAVE_LONG_DOUBLE
+ 
+-- 
+2.0.1
+

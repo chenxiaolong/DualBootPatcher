@@ -44,6 +44,7 @@ patch -p1 -i ${CURDIR}/fix-dlfcn.patch
 patch -p1 -i ${CURDIR}/fix-subprocess.patch
 patch -p1 -i ${CURDIR}/fix-module-linking.patch
 patch -p1 -i ${CURDIR}/0001-Compile-with-pie.patch
+patch -p1 -i ${CURDIR}/0002-Remove-log2.patch
 
 cat >config.site <<EOF
 ac_cv_file__dev_ptmx=no
@@ -74,6 +75,8 @@ CONFIG_SITE=config.site \
     --disable-shared \
     --disable-ipv6 \
     --with-ensurepip=no
+
+sed -i '/HAVE_LOG2/s/^.*$/#define HAVE_LOG2 0/g' pyconfig.h
 
 make install \
   HOSTPGEN=./Parser/hostpgen
