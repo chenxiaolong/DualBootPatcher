@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher;
 import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RomUtils {
+    private static final String TAG = RomUtils.class.getSimpleName();
+
     private static ArrayList<RomInformation> mRoms;
 
     public static final String BUILD_PROP = "build.prop";
@@ -109,8 +112,18 @@ public class RomUtils {
     }
 
     public static RomInformation getCurrentRom() {
-        return getCurrentRomViaProp();
-        // return getCurrentRomViaInode();
+        RomInformation romProp = getCurrentRomViaProp();
+        RomInformation romInode = getCurrentRomViaInode();
+
+        if (romProp != romInode) {
+            Log.e(TAG, "The default.prop and inode methods returned different ROMs!");
+        }
+
+        if (romInode != null) {
+            return romInode;
+        } else {
+            return romProp;
+        }
     }
 
     private static RomInformation getCurrentRomViaProp() {
