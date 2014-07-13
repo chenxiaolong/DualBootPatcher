@@ -256,8 +256,8 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
                     rom_ids[i].c_str(), package.c_str());
 
             // Remove ID for non-existant ROM
-            LOGD("Removing %s from config", rom_ids[i].c_str());
-            ConfigFile::remove_rom_id(package, rom_ids[i]);
+            //LOGD("Removing %s from config", rom_ids[i].c_str());
+            //ConfigFile::remove_rom_id(package, rom_ids[i]);
 
             continue;
         }
