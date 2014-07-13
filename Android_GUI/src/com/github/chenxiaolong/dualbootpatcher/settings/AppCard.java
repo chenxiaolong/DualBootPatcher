@@ -47,10 +47,10 @@ import it.gmariotti.cardslib.library.internal.ViewToClickToExpand.CardElementUI;
 
 public class AppCard extends Card {
     private final AppInformation mAppInfo;
-    private final ConfigFile mConfig;
+    private final AppSharingConfigFile mConfig;
     private final RomInfoResult mRomInfos;
 
-    public AppCard(Context context, ConfigFile config, AppInformation appInfo,
+    public AppCard(Context context, AppSharingConfigFile config, AppInformation appInfo,
                    RomInfoResult romInfos) {
         super(context, R.layout.cardcontent_app);
         mConfig = config;

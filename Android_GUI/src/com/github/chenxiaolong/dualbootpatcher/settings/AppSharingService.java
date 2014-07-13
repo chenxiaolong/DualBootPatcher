@@ -90,7 +90,7 @@ public class AppSharingService extends IntentService {
         public void run() {
             SyncDaemonUtils.autoSpawn(AppSharingService.this);
 
-            ConfigFile config = new ConfigFile();
+            AppSharingConfigFile config = AppSharingConfigFile.getInstance();
             RomInformation info = RomUtils.getCurrentRom();
 
             if (info == null) {

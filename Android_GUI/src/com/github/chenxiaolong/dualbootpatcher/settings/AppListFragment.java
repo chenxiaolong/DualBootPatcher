@@ -58,7 +58,7 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     private ProgressBar mProgressBar;
     private CardListView mAppsList;
     private ArrayList<AppInformation> mAppInfos;
-    private ConfigFile mConfig;
+    private AppSharingConfigFile mConfig;
     private RomInfoResult mRomInfos;
 
     private boolean mLoadedApps;
@@ -73,7 +73,7 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mSavedInstanceState = savedInstanceState;
-        mConfig = new ConfigFile();
+        mConfig = AppSharingConfigFile.getInstance();
 
         FragmentManager fm = getFragmentManager();
         mLoaderFragment = (AppListLoaderFragment) fm
