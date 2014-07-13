@@ -136,7 +136,7 @@ mount_data() {
     # TODO: Fix case where the target's /data is not on the /data partition
     #mount_raw_partition $DEV_DATA
 
-    local MNT=$(echo $DEV_DATA | awk -F:: '{print $3}')
+    local MNT=$(echo $DEV_DATA | awk -F:: '{print $2}')
 
     mkdir -p /data $TARGET_DATA $TARGET_DATA/media "$MNT"/media
     mount -o bind $TARGET_DATA /data
@@ -253,7 +253,7 @@ format_data() {
 ################################################################
 
 set_multi_kernel() {
-  local MNT=$(echo $DEV_DATA | awk -F:: '{print $3}')
+  local MNT=$(echo $DEV_DATA | awk -F:: '{print $2}')
 
   local MOUNT=false
   if ! mount | grep -q "$MNT"; then
