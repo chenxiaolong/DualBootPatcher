@@ -301,24 +301,66 @@ class CpioFile:
 
         return buf
 
-    def add_file(self, filename, name=None, perms=None):
-        if name is None:
-            name = filename
-
-        # If file exists, delete it
+    def remove(self, name):
         for i in self.members:
             if i.name == name:
                 # Remove from inode map
                 if len(self.inodemap[i.ino]) > 1:
                     # Not going to deal with relocating data to another
                     # hard link
-                    raise Exception("Trying to replace hard link with data")
+                    raise Exception('Trying to replace hard link with data')
 
                 self.members.remove(i)
                 self.inodemap[i.ino].remove(i)
                 if len(self.inodemap[i.ino]) == 0:
                     del self.inodemap[i.ino]
                 break
+
+    def add_symlink(self, source, target):
+        if not source or not target:
+            raise Exception('The symlink source and target must be valid')
+
+        self.remove(target)
+
+        member = CpioEntryNew()
+        member.magic = MAGIC_NEW
+
+        # Give the member an inode number
+        member.ino = 0
+        while True:
+            member.ino -= 1
+            if member.ino not in self.inodemap:
+                break
+
+        self.inodemap[member.ino] = [member]
+
+        member.mode = stat.S_IFLNK
+        member.mode |= 0o777
+
+        member.uid = 0
+        member.gid = 0
+        member.nlink = 1
+        member.mtime = 0
+        member.dev_maj = 0
+        member.dev_min = 0
+        member.rdev_maj = 0
+        member.rdev_min = 0
+
+        member.name = target
+        member.namesize = len(target) + 1
+
+        member.content = source.encode('UTF-8')
+
+        member.chksum = 0
+
+        self.members.append(member)
+
+    def add_file(self, filename, name=None, perms=None):
+        if name is None:
+            name = filename
+
+        # If file exists, delete it
+        self.remove(name)
 
         member = CpioEntryNew()
         member.magic = MAGIC_NEW
