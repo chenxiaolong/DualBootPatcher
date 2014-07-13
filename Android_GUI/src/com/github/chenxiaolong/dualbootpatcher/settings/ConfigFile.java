@@ -50,23 +50,25 @@ public abstract class ConfigFile {
         }
     }
 
-    private void load() {
+    private synchronized void load() {
         // Only load once
         if (!mLoaded) {
             mLoaded = true;
             mVersion = 0;
 
+            JSONObject root = null;
+
             String contents = new RootFile(getConfigFile()).getContents();
             if (contents != null) {
                 try {
-                    JSONObject root = new JSONObject(contents);
+                    root = new JSONObject(contents);
                     mVersion = root.getInt(CONF_VERSION);
-
-                    onLoadedVersion(mVersion, root);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+
+            onLoadedVersion(mVersion, root);
         }
     }
 
@@ -82,11 +84,11 @@ public abstract class ConfigFile {
         return null;
     }
 
-    protected void setChanged(boolean changed) {
+    protected synchronized void setChanged(boolean changed) {
         mChanged = changed;
     }
 
-    public final void save() {
+    public synchronized final void save() {
         if (mChanged) {
             onSaveVersion(mVersion);
 
@@ -94,11 +96,11 @@ public abstract class ConfigFile {
         }
     }
 
-    protected final void delete() {
+    protected synchronized final void delete() {
         new RootFile(getConfigFile()).delete();
     }
 
-    protected final void write(int version, String contents) {
+    protected synchronized final void write(int version, String contents) {
         mVersion = version;
         new RootFile(getConfigFile()).writeContents(contents);
     }

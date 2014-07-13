@@ -56,11 +56,11 @@ public class AppSharingConfigFile extends ConfigFile {
 
     @Override
     protected void onLoadedVersion(int version, JSONObject root) {
+        mPackages = new ArrayList<SharedPackage>();
+
         if (root == null) {
             return;
         }
-
-        mPackages = new ArrayList<SharedPackage>();
 
         switch (version) {
         case 1:
@@ -84,7 +84,7 @@ public class AppSharingConfigFile extends ConfigFile {
         }
     }
 
-    public boolean isRomSynced(String pkg, RomInformation info) {
+    public synchronized boolean isRomSynced(String pkg, RomInformation info) {
         for (SharedPackage pkginfo : mPackages) {
             if (pkginfo.name.equals(pkg)) {
                 for (int j = 0; j < pkginfo.romIds.size(); j++) {
@@ -98,7 +98,7 @@ public class AppSharingConfigFile extends ConfigFile {
         return false;
     }
 
-    public void setRomSynced(String pkg, RomInformation info, boolean sync) {
+    public synchronized void setRomSynced(String pkg, RomInformation info, boolean sync) {
         setChanged(true);
 
         SharedPackage pkginfo = null;
@@ -135,7 +135,7 @@ public class AppSharingConfigFile extends ConfigFile {
         }
     }
 
-    public boolean isDataShared(String pkg) {
+    public synchronized boolean isDataShared(String pkg) {
         SharedPackage pkginfo = null;
 
         for (SharedPackage curpkginfo : mPackages) {
