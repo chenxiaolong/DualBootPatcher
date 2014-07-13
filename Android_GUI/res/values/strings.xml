@@ -160,6 +160,11 @@
         sometimes request root access to start up the \'syncdaemon\' service. Please allow the
         request for the syncing to succeed.</string>
 
+    <!-- Description for the individual app sharing preference indicating that is cannot be used
+         when global app sharing is enabled. -->
+    <string name="indiv_app_sharing_incompat_global">Cannot be used while global application
+        sharing is enabled.</string>
+
     <string name="installed_in_roms">Currently installed in:</string>
     <string name="share_apks_across_title">Use the same apk across:</string>
 

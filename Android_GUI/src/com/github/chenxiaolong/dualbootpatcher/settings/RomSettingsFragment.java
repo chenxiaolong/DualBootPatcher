@@ -168,11 +168,15 @@ public class RomSettingsFragment extends PreferenceFragment implements
         if (KEY_SHARE_APPS.equals(key)) {
             // Shouldn't be doing this on the UI thread, but this command
             // returns very quickly
-            return AppSharingUtils.setShareAppsEnabled((Boolean) objValue);
+            boolean ret = AppSharingUtils.setShareAppsEnabled((Boolean) objValue);
+            setupIndivAppSharePrefs(mSharePaidApps.isChecked() || (Boolean) objValue);
+            return ret;
         } else if (KEY_SHARE_PAID_APPS.equals(key)) {
             // Shouldn't be doing this on the UI thread, but this command
             // returns very quickly
-            return AppSharingUtils.setSharePaidAppsEnabled((Boolean) objValue);
+            boolean ret = AppSharingUtils.setSharePaidAppsEnabled((Boolean) objValue);
+            setupIndivAppSharePrefs(mShareApps.isChecked() || (Boolean) objValue);
+            return ret;
         }
 
         return true;
@@ -209,51 +213,71 @@ public class RomSettingsFragment extends PreferenceFragment implements
         }
     }
 
-    @Override
-    public void rootRequestAcknowledged(boolean allowed) {
+    private void setupGlobalAppSharePrefs() {
+        RomInformation curRom = RomUtils.getCurrentRom();
+        boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
+
+        if (isPrimary) {
+            mAppSharingCategory.removePreference(mShareApps);
+            mAppSharingCategory.removePreference(mSharePaidApps);
+            return;
+        }
+
         Version version = new Version(MiscUtils.getPatchedByVersion());
         Version verGlobalShareApps = MiscUtils.getMinimumVersionFor(
                 MiscUtils.FEATURE_GLOBAL_APP_SHARING | MiscUtils.FEATURE_GLOBAL_PAID_APP_SHARING);
+
+        if (version.compareTo(verGlobalShareApps) < 0) {
+            mShareApps.setSummary(String.format(getActivity().getString(
+                    R.string.rom_settings_too_old), verGlobalShareApps));
+
+            mSharePaidApps.setSummary(String.format(getActivity().getString(
+                    R.string.rom_settings_too_old), verGlobalShareApps));
+            mShareApps.setEnabled(false);
+            mSharePaidApps.setEnabled(false);
+        } else {
+            mSharePaidApps.setSummary(Html.fromHtml(getActivity().getString(
+                    R.string.rom_settings_share_paid_apps_desc)));
+        }
+    }
+
+    private void setupIndivAppSharePrefs(boolean globalShared) {
+        RomInformation curRom = RomUtils.getCurrentRom();
+        boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
+
+        Version version = new Version(MiscUtils.getPatchedByVersion());
         Version verIndivAppSync = MiscUtils.getMinimumVersionFor(
                 MiscUtils.FEATURE_INDIV_APP_SYNCING);
 
+        if (globalShared) {
+            // If global app sharing is enabled, then don't allow individual app sharing
+            mShareIndivApps.setSummary(R.string.indiv_app_sharing_incompat_global);
+            mShareIndivApps.setEnabled(false);
+        } else if (!isPrimary && version.compareTo(verIndivAppSync) < 0) {
+            // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon
+            mShareIndivApps.setSummary(String.format(getActivity().getString(
+                    R.string.rom_settings_too_old), verIndivAppSync));
+            mShareIndivApps.setEnabled(false);
+        } else {
+            mShareIndivApps.setSummary(R.string.rom_settings_indiv_app_sharing_desc);
+            mShareIndivApps.setEnabled(true);
+        }
+    }
+
+    @Override
+    public void rootRequestAcknowledged(boolean allowed) {
         showAppSharingPrefs(allowed);
 
         if (allowed) {
-            RomInformation curRom = RomUtils.getCurrentRom();
-            boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
-
-            if (isPrimary) {
-                mAppSharingCategory.removePreference(mShareApps);
-                mAppSharingCategory.removePreference(mSharePaidApps);
-            }
-
-            if (version.compareTo(verGlobalShareApps) < 0) {
-                mShareApps.setSummary(String.format(getActivity().getString(
-                        R.string.rom_settings_too_old), verGlobalShareApps));
-
-                mSharePaidApps.setSummary(String.format(getActivity().getString(
-                        R.string.rom_settings_too_old), verGlobalShareApps));
-                mShareApps.setEnabled(false);
-                mSharePaidApps.setEnabled(false);
-            } else {
-                mSharePaidApps.setSummary(Html.fromHtml(getActivity().getString(
-                        R.string.rom_settings_share_paid_apps_desc)));
-            }
-
-            // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon
-            if (!isPrimary && version.compareTo(verIndivAppSync) < 0) {
-                mShareIndivApps.setSummary(String.format(getActivity().getString(
-                        R.string.rom_settings_too_old), verIndivAppSync));
-                mShareIndivApps.setEnabled(false);
-            }
+            setupGlobalAppSharePrefs();
+            setupIndivAppSharePrefs(mShareApps.isChecked() || mSharePaidApps.isChecked());
         }
 
-        AlphaAnimation fadeOutAnimation = new AlphaAnimation(0, 1);
-        fadeOutAnimation.setDuration(100);
-        fadeOutAnimation.setFillAfter(true);
+        AlphaAnimation fadeAnimation = new AlphaAnimation(0, 1);
+        fadeAnimation.setDuration(100);
+        fadeAnimation.setFillAfter(true);
 
-        getView().startAnimation(fadeOutAnimation);
+        getView().startAnimation(fadeAnimation);
         getView().setVisibility(View.VISIBLE);
         if (mProgressDialog != null) {
             mProgressDialog.dismiss();
