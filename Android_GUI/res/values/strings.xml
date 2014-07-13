@@ -150,8 +150,8 @@
         Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
 
     <string name="rom_settings_indiv_app_sharing_title">Share individual applications</string>
-    <string name="rom_settings_indiv_app_sharing_desc">Share individual applications from the
-        primary ROM with the current ROM (requires reboot).</string>
+    <string name="rom_settings_indiv_app_sharing_desc">Share individual applications across ROMs
+        (requires reboot).</string>
 
     <string name="rom_settings_patcher_title">Patcher</string>
     <string name="rom_settings_show_exit_title">Show Exit button</string>
