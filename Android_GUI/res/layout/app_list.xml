@@ -34,8 +34,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fadingEdge="vertical"
-        android:fastScrollEnabled="true"
         android:scrollbars="vertical"
         card:list_card_layout_resourceID="@layout/cardlistlayout_app" />
+    <!-- android:fastScrollEnabled="true" -->
 
 </RelativeLayout>
