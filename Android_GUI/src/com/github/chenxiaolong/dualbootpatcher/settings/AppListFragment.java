@@ -67,9 +67,12 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     private ArrayList<Card> mCards;
     private CardArrayAdapter mCardArrayAdapter;
 
+    private Bundle mSavedInstanceState;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mSavedInstanceState = savedInstanceState;
         mConfig = new ConfigFile();
 
         FragmentManager fm = getFragmentManager();
@@ -163,6 +166,14 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
         if (mDialog != null) {
             outState.putBoolean("haveDialog", true);
         }
+
+        if (mCards.size() > 0) {
+            boolean[] expanded = new boolean[mCards.size()];
+            for (int i = 0; i < mCards.size(); i++) {
+                expanded[i] = mCards.get(i).isExpanded();
+            }
+            outState.putBooleanArray("cardsExpanded", expanded);
+        }
     }
 
     private void buildFirstTimeDialog() {
@@ -225,6 +236,15 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
             for (AppInformation appInfo : mAppInfos) {
                 AppCard card = new AppCard(getActivity(), mConfig, appInfo, mRomInfos);
                 mCards.add(card);
+            }
+
+            if (mSavedInstanceState != null) {
+                boolean[] expanded = mSavedInstanceState.getBooleanArray("cardsExpanded");
+                if (expanded != null && expanded.length == mCards.size()) {
+                    for (int i = 0; i < expanded.length; i++) {
+                        mCards.get(i).setExpanded(expanded[i]);
+                    }
+                }
             }
 
             mCardArrayAdapter.notifyDataSetChanged();
