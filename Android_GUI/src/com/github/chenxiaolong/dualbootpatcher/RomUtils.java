@@ -177,9 +177,9 @@ public class RomUtils {
                     .separator + BUILD_PROP).isFile()) {
                 info = new RomInformation();
 
-                info.system = SYSTEM + File.separator + SECONDARY_ID;
-                info.cache = CACHE + File.separator + SECONDARY_ID;
-                info.data = DATA + File.separator + SECONDARY_ID;
+                info.system = RAW_SYSTEM + File.separator + SECONDARY_ID;
+                info.cache = RAW_CACHE + File.separator + SECONDARY_ID;
+                info.data = RAW_DATA + File.separator + SECONDARY_ID;
 
                 info.id = SECONDARY_ID;
                 info.kernelId = SECONDARY_KERNEL_ID;
@@ -189,9 +189,9 @@ public class RomUtils {
                     .separator + BUILD_PROP).isFile()) {
                 info = new RomInformation();
 
-                info.system = RAW_SYSTEM + File.separator + SECONDARY_ID;
-                info.cache = RAW_CACHE + File.separator + SECONDARY_ID;
-                info.data = RAW_DATA + File.separator + SECONDARY_ID;
+                info.system = SYSTEM + File.separator + SECONDARY_ID;
+                info.cache = CACHE + File.separator + SECONDARY_ID;
+                info.data = DATA + File.separator + SECONDARY_ID;
 
                 info.id = SECONDARY_ID;
                 info.kernelId = SECONDARY_KERNEL_ID;

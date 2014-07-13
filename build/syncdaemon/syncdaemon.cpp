@@ -118,9 +118,9 @@ void populate_roms() {
     if (exists_file(RAW_SYSTEM + SEP + SECONDARY_ID + SEP + BUILD_PROP)) {
         info = new rominformation();
 
-        info->system = SYSTEM + SEP + SECONDARY_ID;
-        info->cache = CACHE + SEP + SECONDARY_ID;
-        info->data = DATA + SEP + SECONDARY_ID;
+        info->system = RAW_SYSTEM + SEP + SECONDARY_ID;
+        info->cache = RAW_CACHE + SEP + SECONDARY_ID;
+        info->data = RAW_DATA + SEP + SECONDARY_ID;
 
         info->id = SECONDARY_ID;
 
@@ -128,9 +128,9 @@ void populate_roms() {
     } else if (exists_file(SYSTEM + SEP + SECONDARY_ID + SEP + BUILD_PROP)) {
         info = new rominformation();
 
-        info->system = RAW_SYSTEM + SEP + SECONDARY_ID;
-        info->cache = RAW_CACHE + SEP + SECONDARY_ID;
-        info->data = RAW_DATA + SEP + SECONDARY_ID;
+        info->system = SYSTEM + SEP + SECONDARY_ID;
+        info->cache = CACHE + SEP + SECONDARY_ID;
+        info->data = DATA + SEP + SECONDARY_ID;
 
         info->id = SECONDARY_ID;
 
