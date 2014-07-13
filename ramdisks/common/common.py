@@ -44,6 +44,17 @@ def add_syncdaemon(cpiofile):
     cpioentry.content = buf
 
 
+def remove_and_relink_busybox(cpiofile):
+    # Remove bundled busybox
+    cpioentry = cpiofile.get_file('sbin/busybox')
+    if not cpioentry:
+        return
+
+    # The symlink will overwrite the original file
+    cpiofile.add_symlink('busybox-static', 'sbin/busybox')
+
+
 def init(cpiofile, partition_config):
     modify_default_prop(cpiofile, partition_config)
     add_syncdaemon(cpiofile)
+    remove_and_relink_busybox(cpiofile)
