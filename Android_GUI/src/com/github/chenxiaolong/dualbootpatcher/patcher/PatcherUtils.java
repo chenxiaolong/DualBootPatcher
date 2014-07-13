@@ -400,7 +400,7 @@ public class PatcherUtils {
 
             // Extract patcher
             params.command = CommandUtils.getBusyboxCommand(context, "tar",
-                    new String[] { "-J", "-x", "-v", "-f", targetFile.getPath() });
+                    "-J", "-x", "-v", "-f", targetFile.getPath());
             params.environment = null;
             params.cwd = context.getFilesDir();
 

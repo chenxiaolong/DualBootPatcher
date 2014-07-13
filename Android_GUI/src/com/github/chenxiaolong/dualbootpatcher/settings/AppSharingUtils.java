@@ -17,6 +17,8 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.content.Context;
+
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -60,8 +62,8 @@ public class AppSharingUtils {
         return new RootFile(SHARE_PAID_APPS_PATH).isFile();
     }
 
-    public static HashMap<RomInformation, ArrayList<String>> getAllApks() {
-        RomInformation[] roms = RomUtils.getRoms();
+    public static HashMap<RomInformation, ArrayList<String>> getAllApks(Context context) {
+        RomInformation[] roms = RomUtils.getRoms(context);
 
         HashMap<RomInformation, ArrayList<String>> apksMap =
                 new HashMap<RomInformation, ArrayList<String>>();

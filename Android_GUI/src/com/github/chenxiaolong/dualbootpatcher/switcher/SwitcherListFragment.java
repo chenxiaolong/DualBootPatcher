@@ -147,7 +147,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             String selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
             if (selectedRomId != null) {
-                mSelectedRom = RomUtils.getRomFromId(selectedRomId);
+                mSelectedRom = RomUtils.getRomFromId(getActivity(), selectedRomId);
             }
 
             if (savedInstanceState.getBoolean(EXTRA_SHOWING_DIALOG)) {
@@ -320,7 +320,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private void initCards() {
         Context context = getActivity().getApplicationContext();
-        new ObtainRomsTask(context, false).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new ObtainRomsTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @Override
@@ -592,7 +592,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     protected class ObtainRomsTask extends AsyncTask<Void, Void, ObtainRomsTask.RomInfoResult> {
         private final Context mContext;
-        private final boolean mForce;
 
         public class RomInfoResult {
             RomInformation[] roms;
@@ -601,9 +600,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             int[] imageResIds;
         }
 
-        public ObtainRomsTask(Context context, boolean force) {
+        public ObtainRomsTask(Context context) {
             mContext = context;
-            mForce = force;
         }
 
         @Override
@@ -615,7 +613,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             RomInfoResult result = new RomInfoResult();
 
-            result.roms = RomUtils.getRoms();
+            result.roms = RomUtils.getRoms(mContext);
             result.names = new String[result.roms.length];
             result.versions = new String[result.roms.length];
             result.imageResIds = new int[result.roms.length];

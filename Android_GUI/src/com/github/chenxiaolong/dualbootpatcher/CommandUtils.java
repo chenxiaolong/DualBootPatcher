@@ -34,6 +34,8 @@ import com.stericson.RootTools.RootTools;
 import com.stericson.RootTools.exceptions.RootDeniedException;
 import com.stericson.RootTools.execution.Command;
 
+import org.apache.commons.lang3.StringUtils;
+
 public final class CommandUtils {
     private static final String TAG = CommandUtils.class.getSimpleName();
 
@@ -350,7 +352,11 @@ public final class CommandUtils {
         }
     }
 
-    public static String[] getBusyboxCommand(Context context, String applet, String[] args) {
+    public static String getBusyboxCommandString(Context context, String applet, String... args) {
+        return StringUtils.join(getBusyboxCommand(context, applet, args), " ");
+    }
+
+    public static String[] getBusyboxCommand(Context context, String applet, String... args) {
         FileUtils.deleteOldCachedAsset(context, "busybox-static");
         String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
         new RootFile(busybox, false).chmod(0755);
@@ -371,7 +377,7 @@ public final class CommandUtils {
         params.listener = listener;
         CommandRunner cmd;
 
-        params.command = getBusyboxCommand(context, "pidof", new String[] { name });
+        params.command = getBusyboxCommand(context, "pidof", name);
 
         cmd = new CommandRunner(params);
         cmd.start();

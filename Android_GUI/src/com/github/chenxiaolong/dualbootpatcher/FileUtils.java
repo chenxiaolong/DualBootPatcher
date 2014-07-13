@@ -167,14 +167,17 @@ public class FileUtils {
         }
     }
 
-    public static boolean isSameInode(String file1, String file2) {
+    public static boolean isSameInode(Context context, String file1, String file2) {
         if (!new RootFile(file1).isFile() || !new RootFile(file2).isFile()) {
             return false;
         }
 
+        String ls = CommandUtils.getBusyboxCommandString(context, "ls", "-id", "\"${1}\"");
+        String awk = CommandUtils.getBusyboxCommandString(context, "awk", "'{print $1}'");
+
         StringBuilder sb = new StringBuilder();
         sb.append("get_inode() {");
-        sb.append("  ls -id \"${1}\" | awk '{print $1}';");
+        sb.append("  ").append(ls).append(" | ").append(awk).append(";");
         sb.append("};");
         sb.append("same_inode() {");
         sb.append("  if test $(get_inode \"${1}\") == $(get_inode \"${2}\"); then");

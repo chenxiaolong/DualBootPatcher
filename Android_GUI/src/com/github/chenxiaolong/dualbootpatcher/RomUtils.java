@@ -108,14 +108,14 @@ public class RomUtils {
         };
     }
 
-    private static boolean isBootedInPrimary() {
-        return !new RootFile(RAW_SYSTEM).isDirectory() || FileUtils.isSameInode(RAW_SYSTEM +
-                File.separator + BUILD_PROP, SYSTEM + File.separator + BUILD_PROP);
+    private static boolean isBootedInPrimary(Context context) {
+        return !new RootFile(RAW_SYSTEM).isDirectory() || FileUtils.isSameInode(context,
+                RAW_SYSTEM + File.separator + BUILD_PROP, SYSTEM + File.separator + BUILD_PROP);
     }
 
-    public static RomInformation getCurrentRom() {
-        RomInformation romProp = getCurrentRomViaProp();
-        RomInformation romInode = getCurrentRomViaInode();
+    public static RomInformation getCurrentRom(Context context) {
+        RomInformation romProp = getCurrentRomViaProp(context);
+        RomInformation romInode = getCurrentRomViaInode(context);
 
         if (romProp != romInode) {
             Log.e(TAG, "The default.prop and inode methods returned different ROMs!");
@@ -128,9 +128,9 @@ public class RomUtils {
         }
     }
 
-    private static RomInformation getCurrentRomViaProp() {
+    private static RomInformation getCurrentRomViaProp(Context context) {
         String curPartConfig = MiscUtils.getPartitionConfig();
-        RomInformation[] roms = getRoms();
+        RomInformation[] roms = getRoms(context);
 
         for (RomInformation rom : roms) {
             if (rom.id.equals(PRIMARY_KERNEL_ID) && curPartConfig == null) {
@@ -144,11 +144,11 @@ public class RomUtils {
     }
 
     @SuppressWarnings("unused")
-    private static RomInformation getCurrentRomViaInode() {
-        RomInformation[] roms = getRoms();
+    private static RomInformation getCurrentRomViaInode(Context context) {
+        RomInformation[] roms = getRoms(context);
 
         for (RomInformation rom : roms) {
-            if (FileUtils.isSameInode(rom.system + File.separator + BUILD_PROP,
+            if (FileUtils.isSameInode(context, rom.system + File.separator + BUILD_PROP,
                     SYSTEM + File.separator + BUILD_PROP)) {
                 return rom;
             }
@@ -157,14 +157,14 @@ public class RomUtils {
         return null;
     }
 
-    public static RomInformation[] getRoms() {
+    public static RomInformation[] getRoms(Context context) {
         if (mRoms == null) {
             mRoms = new ArrayList<RomInformation>();
 
             RomInformation info;
 
             // Check if primary ROM exists
-            if (isBootedInPrimary()) {
+            if (isBootedInPrimary(context)) {
                 info = new RomInformation();
 
                 info.system = SYSTEM;
@@ -253,8 +253,8 @@ public class RomUtils {
         return mRoms.toArray(new RomInformation[mRoms.size()]);
     }
 
-    public static RomInformation getRomFromId(String id) {
-        RomInformation[] roms = getRoms();
+    public static RomInformation getRomFromId(Context context, String id) {
+        RomInformation[] roms = getRoms(context);
         for (RomInformation rom : roms) {
             if (rom.id.equals(id)) {
                 return rom;

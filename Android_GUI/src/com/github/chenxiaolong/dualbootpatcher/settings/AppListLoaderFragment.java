@@ -69,7 +69,7 @@ public class AppListLoaderFragment extends Fragment {
             mPackageManager = getActivity().getPackageManager();
             mResources = getResources();
 
-            mTask = new LoaderTask();
+            mTask = new LoaderTask(getActivity().getApplicationContext());
             mTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
 
@@ -120,13 +120,19 @@ public class AppListLoaderFragment extends Fragment {
 
     private class LoaderTask extends AsyncTask<Void, Void, Void> {
         private static final int MAX_THREADS = 4;
+        private Context mContext;
         private ArrayList<AppInformation> mAppInfos = new ArrayList<AppInformation>();
         private HashMap<String, AppInformation> mAppInfosMap =
                 new HashMap<String, AppInformation>();
 
+        public LoaderTask(Context context) {
+            mContext = context;
+        }
+
         @Override
         protected Void doInBackground(Void... args) {
-            HashMap<RomInformation, ArrayList<String>> apksMap = AppSharingUtils.getAllApks();
+            HashMap<RomInformation, ArrayList<String>> apksMap =
+                    AppSharingUtils.getAllApks(mContext);
 
             if (apksMap == null) {
                 return null;
@@ -240,7 +246,7 @@ public class AppListLoaderFragment extends Fragment {
         @Override
         protected RomInfoResult doInBackground(Void... params) {
             final RomInfoResult result = new RomInfoResult();
-            result.roms = RomUtils.getRoms();
+            result.roms = RomUtils.getRoms(mContext);
 
             ArrayList<String> names = new ArrayList<String>();
             ArrayList<String> versions = new ArrayList<String>();

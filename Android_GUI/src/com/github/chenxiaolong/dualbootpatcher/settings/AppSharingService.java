@@ -91,7 +91,7 @@ public class AppSharingService extends IntentService {
             SyncDaemonUtils.autoSpawn(AppSharingService.this);
 
             AppSharingConfigFile config = AppSharingConfigFile.getInstance();
-            RomInformation info = RomUtils.getCurrentRom();
+            RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
 
             if (info == null) {
                 Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");

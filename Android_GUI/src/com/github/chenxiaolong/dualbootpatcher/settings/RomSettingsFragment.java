@@ -214,7 +214,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     private void setupGlobalAppSharePrefs() {
-        RomInformation curRom = RomUtils.getCurrentRom();
+        RomInformation curRom = RomUtils.getCurrentRom(getActivity());
         boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
 
         if (isPrimary) {
@@ -242,7 +242,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     private void setupIndivAppSharePrefs(boolean globalShared) {
-        RomInformation curRom = RomUtils.getCurrentRom();
+        RomInformation curRom = RomUtils.getCurrentRom(getActivity());
         boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
 
         Version version = new Version(MiscUtils.getPatchedByVersion());
