@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -26,47 +27,45 @@ import android.content.DialogInterface.OnDismissListener;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
-import android.preference.PreferenceFragment;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.GridLayout;
-import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.SectionIndexer;
-import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.AppInformation;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.LoaderListener;
+import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.RomInfoResult;
 import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
-import com.nhaarman.listviewanimations.swinginadapters.prepared.ScaleInAnimationAdapter;
+import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
 
-public class AppListFragment extends PreferenceFragment implements LoaderListener, OnDismissListener {
+import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
+import it.gmariotti.cardslib.library.view.CardListView;
+
+public class AppListFragment extends Fragment implements LoaderListener, OnDismissListener {
     private AppListLoaderFragment mLoaderFragment;
 
     private SharedPreferences mPrefs;
     private AlertDialog mDialog;
 
     private ProgressBar mProgressBar;
-    private ListView mAppsList;
-    private AppAdapter mAdapter;
+    private CardListView mAppsList;
     private ArrayList<AppInformation> mAppInfos;
     private ConfigFile mConfig;
+    private RomInfoResult mRomInfos;
+
+    private boolean mLoadedApps;
+    private boolean mLoadedRoms;
+
+    private ArrayList<Card> mCards;
+    private CardArrayAdapter mCardArrayAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -127,10 +126,15 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
         showAppList(false);
 
         mAppInfos = new ArrayList<AppInformation>();
-        mAdapter = new AppAdapter(getActivity(), mAppInfos);
-        AnimationAdapter animArrayAdapter = new ScaleInAnimationAdapter(mAdapter);
-        animArrayAdapter.setAbsListView(mAppsList);
-        mAppsList.setAdapter(animArrayAdapter);
+
+        mCards = new ArrayList<Card>();
+        mCardArrayAdapter = new CardArrayAdapter(getActivity(), mCards);
+        mAppsList = (CardListView) getActivity().findViewById(R.id.apps);
+        if (mAppsList != null) {
+            AnimationAdapter animArrayAdapter = new AlphaInAnimationAdapter(mCardArrayAdapter);
+            animArrayAdapter.setAbsListView(mAppsList);
+            mAppsList.setExternalAdapter(animArrayAdapter, mCardArrayAdapter);
+        }
 
         mPrefs = getActivity().getSharedPreferences("settings", 0);
 
@@ -148,7 +152,7 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.app_list, container, false);
         mProgressBar = (ProgressBar) view.findViewById(R.id.loading);
-        mAppsList = (ListView) view.findViewById(R.id.apps);
+        mAppsList = (CardListView) view.findViewById(R.id.apps);
         return view;
     }
 
@@ -196,8 +200,17 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
             mAppInfos.clear();
             mAppInfos.addAll(appInfos);
         }
-        mAdapter.notifyDataSetChanged();
-        showAppList(true);
+
+        mLoadedApps = true;
+        ready();
+    }
+
+    @Override
+    public void obtainedRomInfo(RomInfoResult result) {
+        mRomInfos = result;
+
+        mLoadedRoms = true;
+        ready();
     }
 
     @Override
@@ -207,139 +220,16 @@ public class AppListFragment extends PreferenceFragment implements LoaderListene
         }
     }
 
-    // From AOSP's com.android.settings
-    private static class AppViewHolder {
-        public TextView appName;
-        public ImageView appIcon;
-        public ArrayList<Button> shareButtons;
-    }
-
-    private class AppAdapter extends ArrayAdapter<AppInformation> implements SectionIndexer {
-        private final Context mContext;
-        private final LayoutInflater mInflater;
-
-        private final ArrayList<AppInformation> mInfos;
-        private String[] mSections;
-        private Integer[] mPositions;
-
-        public AppAdapter(Context context, ArrayList<AppInformation> infos) {
-            super(context, R.layout.app_checkable_item, infos);
-            mContext = context;
-            mInflater = LayoutInflater.from(context);
-            mInfos = infos;
-
-            reIndexList();
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            AppViewHolder holder;
-
-            final RomInformation[] roms = RomUtils.getRoms();
-
-            if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.app_checkable_item, parent, false);
-
-                holder = new AppViewHolder();
-                holder.appName = (TextView) convertView.findViewById(R.id.name);
-                holder.appIcon = (ImageView) convertView.findViewById(R.id.icon);
-                holder.shareButtons = new ArrayList<Button>();
-
-                GridLayout btnHolder = (GridLayout) convertView.findViewById(R.id.btn_holder);
-
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
-                float scaleFactor = getResources().getDimension(R.dimen.all_caps_button_width);
-                btnHolder.setColumnCount((int) ((float) metrics.widthPixels / scaleFactor));
-
-                for (int i = 0; i < roms.length; i++) {
-                    Button button = (Button) mInflater.inflate(R.layout.all_caps_button,
-                            btnHolder, false);
-
-                    btnHolder.addView(button);
-
-                    holder.shareButtons.add(button);
-                }
-
-                convertView.setTag(holder);
-            } else {
-                holder = (AppViewHolder) convertView.getTag();
+    private void ready() {
+        if (mLoadedApps && mLoadedRoms) {
+            for (AppInformation appInfo : mAppInfos) {
+                AppCard card = new AppCard(getActivity(), mConfig, appInfo, mRomInfos);
+                mCards.add(card);
             }
 
-            final AppInformation appinfo = mAppInfos.get(position);
-            holder.appName.setText(appinfo.name);
-            holder.appIcon.setImageDrawable(appinfo.icon);
+            mCardArrayAdapter.notifyDataSetChanged();
 
-            for (int i = 0; i < roms.length; i++) {
-                final RomInformation info = roms[i];
-                final Button button = holder.shareButtons.get(i);
-
-                String name = RomUtils.getName(mContext, info);
-
-                Locale locale = getResources().getConfiguration().locale;
-                button.setText(name.toUpperCase(locale));
-
-                button.setSelected(mConfig.isRomSynced(appinfo.pkg, info));
-
-                button.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        boolean selected = button.isSelected();
-                        mConfig.setRomSynced(appinfo.pkg, info, !selected);
-                        button.setSelected(!selected);
-                    }
-                });
-            }
-
-            return convertView;
-        }
-
-        @Override
-        public int getPositionForSection(int section) {
-            return mPositions[section];
-        }
-
-        @Override
-        public int getSectionForPosition(int position) {
-            int index = Arrays.binarySearch(mPositions, position);
-
-            return index >= 0 ? index : -index - 2;
-        }
-
-        @Override
-        public Object[] getSections() {
-            return mSections;
-        }
-
-        @Override
-        public void notifyDataSetChanged() {
-            super.notifyDataSetChanged();
-
-            reIndexList();
-        }
-
-        private void reIndexList() {
-            String prevFirstChar = "";
-
-            ArrayList<String> sections = new ArrayList<String>();
-            ArrayList<Integer> positions = new ArrayList<Integer>();
-
-            // List is already sorted
-            for (int i = 0; i < mInfos.size(); i++) {
-                String name = mInfos.get(i).name;
-                String firstChar = name.substring(0, 1).toUpperCase(getResources()
-                        .getConfiguration().locale);
-                if (!firstChar.equals(prevFirstChar)) {
-                    prevFirstChar = firstChar;
-
-                    sections.add(firstChar);
-                    positions.add(i);
-                }
-            }
-
-            mSections = new String[sections.size()];
-            sections.toArray(mSections);
-            mPositions = new Integer[sections.size()];
-            positions.toArray(mPositions);
+            showAppList(true);
         }
     }
 }

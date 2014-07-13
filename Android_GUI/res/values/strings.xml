@@ -160,6 +160,9 @@
         sometimes request root access to start up the \'syncdaemon\' service. Please allow the
         request for the syncing to succeed.</string>
 
+    <string name="installed_in_roms">Currently installed in:</string>
+    <string name="share_apks_across_title">Use the same apk across:</string>
+
     <!-- Miscellaneous -->
     <string name="none">None</string>
     <string name="ok">OK</string>

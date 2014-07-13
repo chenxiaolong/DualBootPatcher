@@ -36,4 +36,8 @@
     <dimen name="all_caps_button_padding">8dp</dimen>
     <dimen name="all_caps_button_text_size">12sp</dimen>
 
+    <!-- Card expand section -->
+    <dimen name="card_expand_padding_horiz">8dp</dimen>
+    <dimen name="card_expand_padding_vert">5dp</dimen>
+
 </resources>

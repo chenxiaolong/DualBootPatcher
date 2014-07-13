@@ -17,30 +17,26 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.app.Activity;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 import android.view.MenuItem;
 
-public class SettingsActivity extends PreferenceActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+import com.github.chenxiaolong.dualbootpatcher.R;
 
-        getActionBar().setDisplayHomeAsUpEnabled(true);
+public class AppListActivity extends Activity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.app_list_activity);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-        case android.R.id.home:
-            finish();
-            return true;
+            case android.R.id.home:
+                finish();
+                return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected boolean isValidFragment(String fragmentName) {
-        return RomSettingsFragment.class.getName().equals(fragmentName);
     }
 }

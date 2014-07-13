@@ -17,25 +17,10 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<it.gmariotti.cardslib.library.view.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/list_cardId"
+    style="@style/list_card.thumbnail"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
-
-    <ProgressBar
-        android:id="@+id/loading"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:indeterminate="true" />
-
-    <it.gmariotti.cardslib.library.view.CardListView
-        android:id="@+id/apps"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fadingEdge="vertical"
-        android:fastScrollEnabled="true"
-        android:scrollbars="vertical"
-        card:list_card_layout_resourceID="@layout/cardlistlayout_app" />
-
-</RelativeLayout>
+    android:layout_height="wrap_content"
+    card:card_layout_resourceID="@layout/cardlayout_app" />

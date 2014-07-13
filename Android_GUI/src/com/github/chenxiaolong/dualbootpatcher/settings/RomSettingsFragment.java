@@ -22,6 +22,7 @@ import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
@@ -82,6 +83,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
         mSharePaidApps.setOnPreferenceChangeListener(this);
 
         mShareIndivApps = findPreference(KEY_SHARE_INDIV_APPS);
+        mShareIndivApps.setOnPreferenceClickListener(this);
     }
 
     @Override
@@ -184,6 +186,8 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mAttemptedRoot = false;
             reloadFragment();
             return false;
+        } else if (KEY_SHARE_INDIV_APPS.equals(key)) {
+            startActivity(new Intent(getActivity(), AppListActivity.class));
         }
 
         return true;

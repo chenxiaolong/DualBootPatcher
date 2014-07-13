@@ -17,21 +17,14 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
-import android.content.Context;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.util.Log;
-
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
-import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class AppSharingUtils {
     public static final String TAG = AppSharingUtils.class.getSimpleName();
@@ -67,12 +60,14 @@ public class AppSharingUtils {
         return new RootFile(SHARE_PAID_APPS_PATH).isFile();
     }
 
-    public static String[] getAllApks() {
+    public static HashMap<RomInformation, ArrayList<String>> getAllApks() {
         RomInformation[] roms = RomUtils.getRoms();
 
-        ArrayList<String> apks = new ArrayList<String>();
+        HashMap<RomInformation, ArrayList<String>> apksMap =
+                new HashMap<RomInformation, ArrayList<String>>();
 
         for (RomInformation rom : roms) {
+            ArrayList<String> apks = new ArrayList<String>();
             String[] filenames = new RootFile(rom.data + File.separator + "app").list();
 
             if (filenames == null || filenames.length == 0) {
@@ -84,8 +79,12 @@ public class AppSharingUtils {
                     apks.add(rom.data + File.separator + "app" + File.separator + filename);
                 }
             }
+
+            if (apks.size() > 0) {
+                apksMap.put(rom, apks);
+            }
         }
 
-        return apks.toArray(new String[apks.size()]);
+        return apksMap;
     }
 }

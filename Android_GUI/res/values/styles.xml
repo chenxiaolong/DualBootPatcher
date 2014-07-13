@@ -70,6 +70,23 @@
         <item name="android:layout_marginTop">5dp</item>
     </style>
 
+    <style name="card_expand_title">
+        <item name="android:textSize">16sp</item>
+        <!-- <item name="android:textStyle">bold</item> -->
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="card_expand_layout">
+        <item name="android:paddingLeft">@dimen/card_expand_padding_horiz</item>
+        <item name="android:paddingRight">@dimen/card_expand_padding_horiz</item>
+        <item name="android:paddingBottom">@dimen/card_expand_padding_vert</item>
+        <item name="android:paddingTop">@dimen/card_expand_padding_vert</item>
+    </style>
+
+    <style name="card_expand_checkbox">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
     <!-- Navigation -->
     <style name="navigation_image">
         <item name="android:layout_width">22.0dip</item>

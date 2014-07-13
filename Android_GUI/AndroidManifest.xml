@@ -51,6 +51,10 @@
             android:name=".settings.SettingsActivity"
             android:label="@string/title_rom_settings"
             android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".settings.AppListActivity"
+            android:label="@string/rom_settings_indiv_app_sharing_title"
+            android:parentActivityName=".settings.SettingsActivity" />
 
         <receiver android:name=".settings.AppSharingEventReceiver">
             <intent-filter>

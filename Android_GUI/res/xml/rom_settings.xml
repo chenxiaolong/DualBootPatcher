@@ -17,11 +17,11 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
         android:key="app_sharing_category"
-        android:title="@string/rom_settings_app_sharing_title" >
+        android:title="@string/rom_settings_app_sharing_title">
         <Preference
             android:key="no_root"
             android:persistent="false"
@@ -39,11 +39,10 @@
             android:title="@string/rom_settings_share_paid_apps_title" />
 
         <PreferenceScreen
-            android:fragment="com.github.chenxiaolong.dualbootpatcher.settings.AppListFragment"
             android:key="share_indiv_apps"
             android:title="@string/rom_settings_indiv_app_sharing_title" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="@string/rom_settings_patcher_title" >
+    <PreferenceCategory android:title="@string/rom_settings_patcher_title">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="show_reboot"
