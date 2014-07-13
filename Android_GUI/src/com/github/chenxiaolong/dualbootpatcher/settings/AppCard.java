@@ -167,6 +167,10 @@ public class AppCard extends Card {
                 final CheckBox checkbox = checkboxes.get(i);
 
                 checkbox.setText(mRomInfos.names[i] + " (" + mRomInfos.versions[i] + ")");
+
+                // Clear listener before setting checked status since the view is recycled
+                checkbox.setOnCheckedChangeListener(null);
+
                 checkbox.setChecked(mConfig.isRomSynced(mAppInfo.pkg, rom));
 
                 checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
