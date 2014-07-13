@@ -169,17 +169,17 @@ public class MiscUtils {
         // Release and debug versions should simply use the release version numbers (eg. X.Y.Z)
         if (BuildConfig.BUILD_TYPE.equals("ci")) {
             if ((features & FEATURE_GLOBAL_APP_SHARING) != 0) {
-                Version v = new Version("7.0.0.r57");
+                Version v = new Version("7.0.0.r114");
                 versions.add(v);
             }
 
             if ((features & FEATURE_GLOBAL_PAID_APP_SHARING) != 0) {
-                Version v = new Version("7.0.0.r57");
+                Version v = new Version("7.0.0.r114");
                 versions.add(v);
             }
 
             if ((features & FEATURE_INDIV_APP_SYNCING) != 0) {
-                Version v = new Version("7.0.0.r57");
+                Version v = new Version("7.0.0.r114");
                 versions.add(v);
             }
         } else {
