@@ -40,7 +40,7 @@ public class RomCard extends Card {
     private boolean mShowProgress;
 
     private final RomInformation mRomInfo;
-    private final String mName;
+    private String mName;
     private final String mVersion;
 
     private int mStringResId;
@@ -158,6 +158,11 @@ public class RomCard extends Card {
         if (getCardView() != null) {
             enableViews();
         }
+    }
+
+    public void setName(String name) {
+        mName = name;
+        mTitle.setText(name);
     }
 
     public void onSaveInstanceState(Bundle outState) {

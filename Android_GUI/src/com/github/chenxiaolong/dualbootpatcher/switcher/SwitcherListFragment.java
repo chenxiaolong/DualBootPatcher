@@ -27,10 +27,12 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
@@ -51,6 +53,7 @@ import java.util.Iterator;
 
 import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
+import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
 import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
 import it.gmariotti.cardslib.library.view.CardListView;
 import it.gmariotti.cardslib.library.view.CardView;
@@ -66,6 +69,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
     private static final String EXTRA_SELECTED_ROM_ID = "selectedRomId";
     private static final String EXTRA_SHOWING_DIALOG = "showingDialog";
+    private static final String EXTRA_SHOWING_RENAME_DIALOG = "showingRenameDialog";
     private static final String EXTRA_ROMS = "roms";
     private static final String EXTRA_ROM_NAMES = "romNames";
     private static final String EXTRA_ROM_VERSIONS = "romVersions";
@@ -92,6 +96,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private ArrayList<SwitcherTaskEvent> mEvents = new ArrayList<SwitcherTaskEvent>();
 
     private AlertDialog mDialog;
+    private AlertDialog mRenameDialog;
     private RomInformation mSelectedRom;
 
     private RomInformation[] mRoms;
@@ -147,6 +152,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             if (savedInstanceState.getBoolean(EXTRA_SHOWING_DIALOG)) {
                 buildDialog();
+            }
+
+            if (savedInstanceState.getBoolean(EXTRA_SHOWING_RENAME_DIALOG)) {
+                buildRenameDialog();
             }
         }
 
@@ -231,6 +240,11 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             mDialog.dismiss();
             mDialog = null;
         }
+
+        if (mRenameDialog != null) {
+            mRenameDialog.dismiss();
+            mRenameDialog = null;
+        }
     }
 
     @Override
@@ -244,6 +258,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
         if (mDialog != null) {
             outState.putBoolean(EXTRA_SHOWING_DIALOG, true);
+        }
+        if (mRenameDialog != null) {
+            outState.putBoolean(EXTRA_SHOWING_RENAME_DIALOG, true);
         }
 
         if (mRoms != null) {
@@ -303,13 +320,16 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private void initCards() {
         Context context = getActivity().getApplicationContext();
-        new ObtainRomsTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new ObtainRomsTask(context, false).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @Override
-    public void onDismiss(DialogInterface dialogInterface) {
-        if (mDialog == dialogInterface) {
+    public void onDismiss(DialogInterface dialog) {
+        if (mDialog == dialog) {
             mDialog = null;
+        }
+        if (mRenameDialog == dialog) {
+            mRenameDialog = null;
         }
     }
 
@@ -432,7 +452,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             DialogInterface.OnClickListener listener = new OnClickListener() {
                 @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
+                public void onClick(DialogInterface dialog, int which) {
                     startAction(mSelectedRom);
                 }
             };
@@ -444,9 +464,50 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
     }
 
-    private void startActionAskingIfNeeded(final RomInformation info) {
-        mSelectedRom = info;
+    private void buildRenameDialog() {
+        if (mRenameDialog == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
+            String name = RomUtils.getName(getActivity(), mSelectedRom);
+            builder.setTitle(String.format(getActivity().getString(
+                    R.string.rename_rom_title), name));
+            builder.setMessage(String.format(getActivity().getString(
+                    R.string.rename_rom_desc), name));
+
+            final EditText textbox = new EditText(getActivity());
+            textbox.setInputType(InputType.TYPE_CLASS_TEXT
+                    | InputType.TYPE_TEXT_FLAG_AUTO_CORRECT);
+            builder.setView(textbox);
+
+            builder.setPositiveButton(R.string.ok, new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    RomUtils.setName(mSelectedRom, textbox.getText().toString());
+                    refreshNames();
+                }
+            });
+
+            builder.setNegativeButton(R.string.cancel, null);
+
+            mRenameDialog = builder.show();
+            mRenameDialog.setOnDismissListener(this);
+        }
+    }
+
+    private void refreshNames() {
+        for (int i = 0; i < mRoms.length; i++) {
+            final RomInformation info = mRoms[i];
+            final RomCard card = (RomCard) mCards.get(i);
+
+            String name = RomUtils.getName(getActivity(), info);
+            mRomNames[i] = name;
+            card.setName(name);
+        }
+
+        mCardArrayAdapter.notifyDataSetChanged();
+    }
+
+    private void startActionAskingIfNeeded(final RomInformation info) {
         if (mAction == ACTION_CHOOSE_ROM) {
             startAction(info);
         } else if (mAction == ACTION_SET_KERNEL) {
@@ -531,6 +592,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     protected class ObtainRomsTask extends AsyncTask<Void, Void, ObtainRomsTask.RomInfoResult> {
         private final Context mContext;
+        private final boolean mForce;
 
         public class RomInfoResult {
             RomInformation[] roms;
@@ -539,8 +601,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             int[] imageResIds;
         }
 
-        public ObtainRomsTask(Context context) {
+        public ObtainRomsTask(Context context, boolean force) {
             mContext = context;
+            mForce = force;
         }
 
         @Override
@@ -597,7 +660,17 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 card.setOnClickListener(new OnCardClickListener() {
                     @Override
                     public void onClick(Card card, View view) {
+                        mSelectedRom = info;
                         startActionAskingIfNeeded(info);
+                    }
+                });
+
+                card.setOnLongClickListener(new OnLongCardClickListener() {
+                    @Override
+                    public boolean onLongClick(Card card, View view) {
+                        mSelectedRom = info;
+                        buildRenameDialog();
+                        return true;
                     }
                 });
 

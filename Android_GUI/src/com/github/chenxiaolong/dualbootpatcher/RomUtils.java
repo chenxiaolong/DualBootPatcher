@@ -22,6 +22,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.settings.RomInfoConfigFile;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -281,8 +283,29 @@ public class RomUtils {
     }
 
     public static String getName(Context context, RomInformation info) {
-        // TODO: Allow renaming
-        return getDefaultName(context, info);
+        String customName = RomInfoConfigFile.getInstance().getRomName(info);
+        if (customName == null || customName.trim().isEmpty()) {
+            return getDefaultName(context, info);
+        } else {
+            return customName;
+        }
+    }
+
+    public static void setName(RomInformation info, String name) {
+        final RomInfoConfigFile config = RomInfoConfigFile.getInstance();
+
+        if (name != null && !name.trim().isEmpty()) {
+            config.setRomName(info, name.trim());
+        } else {
+            config.setRomName(info, null);
+        }
+
+        new Thread() {
+            @Override
+            public void run() {
+                config.save();
+            }
+        }.start();
     }
 
     private static Properties getBuildProp(RomInformation info) {
