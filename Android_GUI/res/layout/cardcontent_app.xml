@@ -36,7 +36,6 @@
         style="@style/card_subtitle_dim"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="middle"
-        android:singleLine="true" />
+        android:ellipsize="middle" />
 
 </LinearLayout>
