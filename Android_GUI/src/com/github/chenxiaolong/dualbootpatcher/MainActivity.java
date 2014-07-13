@@ -418,7 +418,7 @@ public class MainActivity extends Activity {
             break;
 
         case NAV_REBOOT:
-            SwitcherUtils.reboot();
+            SwitcherUtils.reboot(getApplicationContext());
             break;
 
         case NAV_ABOUT:
