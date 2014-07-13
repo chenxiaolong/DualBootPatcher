@@ -19,6 +19,7 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               style="@style/card_expand_layout"
+              android:id="@+id/expanded_layout"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical">
@@ -29,12 +30,6 @@
         android:layout_height="match_parent"
         android:text="@string/share_apks_across_title" />
 
-    <!-- Dynamically generated -->
-
-    <LinearLayout
-        android:id="@+id/btn_holder"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical" />
+    <!-- Dynamically generated checkboxes inserted here -->
 
 </LinearLayout>

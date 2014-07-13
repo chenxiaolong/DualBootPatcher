@@ -147,13 +147,13 @@ public class AppCard extends Card {
             if (view.getTag() == null) {
                 checkboxes = new ArrayList<CheckBox>();
 
-                LinearLayout btnHolder = (LinearLayout) view.findViewById(R.id.btn_holder);
+                LinearLayout ll = (LinearLayout) view.findViewById(R.id.expanded_layout);
 
                 for (int i = 0; i < mRomInfos.roms.length; i++) {
                     CheckBox checkbox = (CheckBox) mInflater.inflate(
-                            R.layout.app_rom_checkbox, btnHolder, false);
+                            R.layout.app_rom_checkbox, ll, false);
 
-                    btnHolder.addView(checkbox);
+                    ll.addView(checkbox);
                     checkboxes.add(checkbox);
                 }
 
