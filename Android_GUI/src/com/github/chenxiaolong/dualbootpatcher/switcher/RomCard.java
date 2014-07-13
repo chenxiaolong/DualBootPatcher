@@ -119,6 +119,9 @@ public class RomCard extends Card {
         mTitle.setEnabled(mEnabled);
         mSubtitle.setEnabled(mEnabled);
         setClickable(mEnabled);
+        setLongClickable(mEnabled);
+        getCardView().setClickable(mEnabled);
+        getCardView().setLongClickable(mEnabled);
     }
 
     public boolean isProgressShowing() {
