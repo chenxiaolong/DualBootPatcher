@@ -105,7 +105,7 @@ android {
         }
 
         ci {
-            manifest.srcFile 'ci/debug.xml'
+            manifest.srcFile 'manifests/ci.xml'
         }
     }
 }
