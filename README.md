@@ -40,7 +40,7 @@ Compiling from Source
 
     On *Fedora*, run:
 
-    `sudo yum install axel p7zip-plugins patch gcc-c++ zip upx mono-core ImageMagick`
+    `sudo yum install axel p7zip-plugins patch gcc-c++ zip upx mono-core ImageMagick glibc-static.i686 glibc-devel.i686`
 
     On *Arch Linux*, run:
 
