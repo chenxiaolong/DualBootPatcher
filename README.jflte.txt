@@ -21,6 +21,7 @@ Thanks to all the donators for supporting this project!
   * @Bejda
   * Cody Wells
   * @GhiGo65
+  * @remorema
 
 What's supported?
 
