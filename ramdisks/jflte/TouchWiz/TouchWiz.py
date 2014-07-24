@@ -29,12 +29,22 @@ def modify_init_rc(cpiofile):
     lines = fileio.bytes_to_lines(cpioentry.content)
     buf = bytes()
 
+    in_mediaserver = False
+
     for line in lines:
         if re.search(r"^.*setprop.*selinux.reload_policy.*$", line):
             buf += fileio.encode(re.sub(r"^", "#", line))
 
         elif 'check_icd' in line:
             buf += fileio.encode(re.sub(r"^", "#", line))
+
+        elif version == 'kk44' and \
+                line.startswith('service'):
+            in_mediaserver = '/system/bin/mediaserver' in line
+            buf += fileio.encode(line)
+
+        elif in_mediaserver and re.search(r'^\s*user', line):
+            buf += fileio.encode(fileio.whitespace(line) + 'user root\n')
 
         else:
             buf += fileio.encode(line)
