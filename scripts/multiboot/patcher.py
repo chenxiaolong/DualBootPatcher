@@ -32,13 +32,20 @@ import zipfile
 
 
 UPDATER_SCRIPT = 'META-INF/com/google/android/updater-script'
-FORMAT_SYSTEM = 'run_program("/sbin/busybox", "find", "/system",' \
+
+FORMAT = 'run_program("/sbin/busybox", "find", "%s",' \
     ' "-maxdepth", "1",' \
     ' "!", "-name", "multi-slot-*",' \
     ' "!", "-name", "dual");'
+FORMAT_SYSTEM = FORMAT % '/system'
+FORMAT_CACHE = FORMAT % '/cache'
+
+MOUNT = 'run_program("/sbin/busybox", "mount", "%s");'
+UNMOUNT = 'run_program("/sbin/busybox", "umount", "%s");'
+
 PERM_TOOL = 'backuppermtool.sh'
-PERMS_BACKUP = 'run_program("/tmp/%s", "backup");' % PERM_TOOL
-PERMS_RESTORE = 'run_program("/tmp/%s", "restore");' % PERM_TOOL
+PERMS_BACKUP = 'run_program("/tmp/%s", "backup", "%%s");' % PERM_TOOL
+PERMS_RESTORE = 'run_program("/tmp/%s", "restore", "%%s");' % PERM_TOOL
 EXTRACT = 'package_extract_file("%s", "%s");'
 MAKE_EXECUTABLE = 'set_perm(0, 0, 0777, "%s");'
 
@@ -475,55 +482,102 @@ class PrimaryUpgradePatcher(Patcher):
         OS.ui.set_task(self.tasks['PATCHING_FILES'])
 
         lines = fileio.all_lines(UPDATER_SCRIPT, directory=tempdir)
-        replaced_format_line = False
 
-        def insert_format_system(index, lines):
+        i = 0
+        i += autopatcher.insert_line(i,
+                EXTRACT % (PERM_TOOL, '/tmp/' + PERM_TOOL), lines)
+        i += autopatcher.insert_line(i,
+                EXTRACT % ('setfacl', '/tmp/setfacl'), lines)
+        i += autopatcher.insert_line(i,
+                EXTRACT % ('setfattr', '/tmp/setfattr'), lines)
+        i += autopatcher.insert_line(i,
+                EXTRACT % ('getfacl', '/tmp/getfacl'), lines)
+        i += autopatcher.insert_line(i,
+                EXTRACT % ('getfattr', '/tmp/getfattr'), lines)
+        i += autopatcher.insert_line(i,
+                MAKE_EXECUTABLE % ('/tmp/' + PERM_TOOL), lines)
+        i += autopatcher.insert_line(i,
+                MAKE_EXECUTABLE % '/tmp/setfacl', lines)
+        i += autopatcher.insert_line(i,
+                MAKE_EXECUTABLE % '/tmp/setfattr', lines)
+        i += autopatcher.insert_line(i,
+                MAKE_EXECUTABLE % '/tmp/getfacl', lines)
+        i += autopatcher.insert_line(i,
+                MAKE_EXECUTABLE % '/tmp/getfattr', lines)
+
+        def insert_format_system(index, lines, mount):
             i = 0
+
+            if mount:
+                i += autopatcher.insert_line(index + i,
+                                             MOUNT % '/system', lines)
+
             i += autopatcher.insert_line(index + i,
-                    EXTRACT % (PERM_TOOL, '/tmp/' + PERM_TOOL), lines)
-            i += autopatcher.insert_line(index + i,
-                    EXTRACT % ('setfacl', '/tmp/setfacl'), lines)
-            i += autopatcher.insert_line(index + i,
-                    EXTRACT % ('setfattr', '/tmp/setfattr'), lines)
-            i += autopatcher.insert_line(index + i,
-                    EXTRACT % ('getfacl', '/tmp/getfacl'), lines)
-            i += autopatcher.insert_line(index + i,
-                    EXTRACT % ('getfattr', '/tmp/getfattr'), lines)
-            i += autopatcher.insert_line(index + i,
-                    MAKE_EXECUTABLE % ('/tmp/' + PERM_TOOL), lines)
-            i += autopatcher.insert_line(index + i,
-                    MAKE_EXECUTABLE % '/tmp/setfacl', lines)
-            i += autopatcher.insert_line(index + i,
-                    MAKE_EXECUTABLE % '/tmp/setfattr', lines)
-            i += autopatcher.insert_line(index + i,
-                    MAKE_EXECUTABLE % '/tmp/getfacl', lines)
-            i += autopatcher.insert_line(index + i,
-                    MAKE_EXECUTABLE % '/tmp/getfattr', lines)
-            i += autopatcher.insert_line(index + i, PERMS_BACKUP, lines)
+                                         PERMS_BACKUP % '/system', lines)
             i += autopatcher.insert_line(index + i, FORMAT_SYSTEM, lines)
-            i += autopatcher.insert_line(index + i, PERMS_RESTORE, lines)
+            i += autopatcher.insert_line(index + i,
+                                         PERMS_RESTORE % '/system', lines)
+
+            if mount:
+                i += autopatcher.insert_line(index + i,
+                                             UNMOUNT % '/system', lines)
+
             return i
+
+        def insert_format_cache(index, lines, mount):
+            i = 0
+
+            if mount:
+                i += autopatcher.insert_line(index + i,
+                                             MOUNT % '/cache', lines)
+
+            i += autopatcher.insert_line(index + i,
+                                         PERMS_BACKUP % '/cache', lines)
+            i += autopatcher.insert_line(index + i, FORMAT_CACHE, lines)
+            i += autopatcher.insert_line(index + i,
+                                         PERMS_RESTORE % '/cache', lines)
+
+            if mount:
+                i += autopatcher.insert_line(index + i,
+                                             UNMOUNT % '/cache', lines)
+
+            return i
+
+        psystem = config.get_partition(self.file_info.device, 'system')
+        pcache = config.get_partition(self.file_info.device, 'cache')
+        replaced_format_system = False
+        replaced_format_cache = False
 
         i = 0
         while i < len(lines):
             if re.search(r"^\s*format\s*\(.*$", lines[i]):
                 if 'system' in lines[i] or (psystem and psystem in lines[i]):
-                    replaced_format_line = True
+                    replaced_format_system = True
                     del lines[i]
-                    i += insert_format_system(i, lines)
+                    i += insert_format_system(i, lines, True)
+
+                elif 'cache' in lines[i] or (pcache and pcache in lines[i]):
+                    replaced_format_cache = True
+                    del lines[i]
+                    i += insert_format_cache(i, lines, True)
 
                 else:
                     i += 1
 
             elif re.search(r'delete_recursive\s*\([^\)]*"/system"', lines[i]):
-                replaced_format_line = True
+                replaced_format_system = True
                 del lines[i]
-                i += insert_format_system(i, lines)
+                i += insert_format_system(i, lines, False)
+
+            elif re.search(r'delete_recursive\s*\([^\)]*"/cache"', lines[i]):
+                replaced_format_cache = True
+                del lines[i]
+                i += insert_format_cache(i, lines, False)
 
             else:
                 i += 1
 
-        if not replaced_format_line:
+        if not replaced_format_system:
             OS.ui.failed('The patcher could not find any /system formatting'
                     ' lines in the updater-script file.\n\nIf the file is'
                     ' a ROM, then something failed. If the file is not a'

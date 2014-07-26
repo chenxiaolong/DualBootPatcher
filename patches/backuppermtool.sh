@@ -4,21 +4,28 @@
 #
 # Back up and restore permissions of the secondary ROM
 
-mount /system || :
+usage() {
+  echo "Usage: ${0} [backup|restore] [/system|/cache]"
+}
 
 case ${1} in
 backup)
-  cd /system
+  if [ "x${2}" != 'x/system' ] && [ "x${2}" != 'x/cache' ]; then
+    usage
+    exit 1
+  fi
+
+  cd "${2}"
 
   if [ -d dual ]; then
-    /tmp/getfacl -R dual > /tmp/dual.acl.txt
-    /tmp/getfattr -R -n security.selinux dual > /tmp/dual.attr.txt
+    /tmp/getfacl -R dual > "/tmp/${2#/}.dual.acl.txt"
+    /tmp/getfattr -R -n security.selinux dual > "/tmp/${2#/}.dual.attr.txt"
   fi
 
   if test -n "$(find . -maxdepth 1 -name 'multi-slot-*')"; then
     for slot in multi-slot-*; do
-      /tmp/getfacl -R "${slot}" > "/tmp/${slot}.acl.txt"
-      /tmp/getfattr -R -n security.selinux "${slot}" > "/tmp/${slot}.attr.txt"
+      /tmp/getfacl -R "${slot}" > "/tmp/${2#/}.${slot}.acl.txt"
+      /tmp/getfattr -R -n security.selinux "${slot}" > "/tmp/${2#/}.${slot}.attr.txt"
     done
   fi
 
@@ -26,17 +33,22 @@ backup)
   ;;
 
 restore)
-  cd /system
+  if [ "x${2}" != 'x/system' ] && [ "x${2}" != 'x/cache' ]; then
+    usage
+    exit 1
+  fi
+
+  cd "${2}"
 
   if [ -d dual ]; then
-    /tmp/setfacl --restore=/tmp/dual.acl.txt
-    /tmp/setfattr --restore=/tmp/dual.attr.txt
+    /tmp/setfacl --restore="/tmp/${2#/}.dual.acl.txt"
+    /tmp/setfattr --restore="/tmp/${2#/}.dual.attr.txt"
   fi
 
   if test -n "$(find . -maxdepth 1 -name 'multi-slot-*')"; then
     for slot in multi-slot-*; do
-      /tmp/setfacl --restore="/tmp/${slot}.acl.txt"
-      /tmp/setfattr --restore="/tmp/${slot}.attr.txt"
+      /tmp/setfacl --restore="/tmp/${2#/}.${slot}.acl.txt"
+      /tmp/setfattr --restore="/tmp/${2#/}.${slot}.attr.txt"
     done
   fi
 
@@ -44,9 +56,7 @@ restore)
   ;;
 
 *)
-  echo "Usage: ${0} [backup|restore]"
+  usage
   exit 1
   ;;
 esac
-
-umount /system || :
