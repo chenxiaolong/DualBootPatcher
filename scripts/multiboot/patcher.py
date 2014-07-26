@@ -50,7 +50,7 @@ EXTRACT = 'package_extract_file("%s", "%s");'
 MAKE_EXECUTABLE = 'set_perm(0, 0, 0777, "%s");'
 
 
-class Patcher:
+class Patcher(object):
     @staticmethod
     def get_patcher_by_partconfig(file_info):
         if file_info.partconfig.id == 'primaryupgrade':
@@ -59,6 +59,8 @@ class Patcher:
             return MultibootPatcher(file_info)
 
     def __init__(self, file_info):
+        super(Patcher, self).__init__()
+
         self.tasks = dict()
         self.file_info = file_info
 
@@ -80,7 +82,7 @@ class Patcher:
 
 class MultibootPatcher(Patcher):
     def __init__(self, file_info):
-        super().__init__(file_info)
+        super(MultibootPatcher, self).__init__(file_info)
 
         # List of temporary directories created while patching
         self.tempdirs = list()
@@ -418,12 +420,12 @@ class MultibootPatcher(Patcher):
         for d in self.tempdirs:
             shutil.rmtree(d)
 
-        self.tempdirs.clear()
+        del self.tempdirs[:]
 
 
 class PrimaryUpgradePatcher(Patcher):
     def __init__(self, file_info):
-        super().__init__(file_info)
+        super(PrimaryUpgradePatcher, self).__init__(file_info)
 
         # List of temporary directories created while patching
         self.tempdirs = list()
@@ -638,4 +640,4 @@ class PrimaryUpgradePatcher(Patcher):
         for d in self.tempdirs:
             shutil.rmtree(d)
 
-        self.tempdirs.clear()
+        del self.tempdirs[:]

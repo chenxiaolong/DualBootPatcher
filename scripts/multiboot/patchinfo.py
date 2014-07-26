@@ -25,13 +25,15 @@ import functools
 import os
 
 
-class PatchInfo:
+class PatchInfo(object):
     """Patch information
 
     This contains information on how a ROM or kernel should be patched.
     """
 
     def __init__(self):
+        super(PatchInfo, self).__init__()
+
         # Name of the ROM/Kernel
         self.name = None
 

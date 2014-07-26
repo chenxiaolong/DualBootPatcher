@@ -26,8 +26,10 @@ ZIP_FILE = 'zip'
 UNSUPPORTED = 'UNSUPPORTED'
 
 
-class FileInfo:
+class FileInfo(object):
     def __init__(self):
+        super(FileInfo, self).__init__()
+
         self.patchinfo = None
         self.device = None
         self._filename = None
