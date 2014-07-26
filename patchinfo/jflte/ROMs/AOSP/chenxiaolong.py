@@ -1,14 +1,15 @@
 from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
+from multiboot.autopatchers.cyanogenmod import DalvikCachePatcher
 
 patchinfo = PatchInfo()
 
 patchinfo.matches        = r"^cm-.*noobdev.*.zip$"
 patchinfo.name           = "chenxiaolong's noobdev CyanogenMod"
 patchinfo.ramdisk        = 'jflte/AOSP/cxl.def'
-patchinfo.patch          = [ autopatcher.auto_patch ]
-patchinfo.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
+patchinfo.patch          = [ autopatcher.auto_patch, DalvikCachePatcher.store_in_data ]
+patchinfo.extract        = [ autopatcher.files_to_auto_patch, DalvikCachePatcher.files_for_store_in_data, 'system/build.prop' ]
 # ROM has built in dual boot support
 patchinfo.configs        = [ 'all', '!dual' ]
 
