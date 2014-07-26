@@ -1,6 +1,7 @@
 from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
+import os
 
 patchinfo = PatchInfo()
 
@@ -13,7 +14,7 @@ def auto_patch(directory, bootimg=None, device_check=True,
                partition_config=None, device=None):
     updater_script = 'META-INF/com/google/android/updater-script'
 
-    lines = fileio.all_lines(updater_script, directory=directory)
+    lines = fileio.all_lines(os.path.join(directory, updater_script))
 
     autopatcher.insert_dual_boot_sh(lines)
     autopatcher.replace_mount_lines(device, lines)

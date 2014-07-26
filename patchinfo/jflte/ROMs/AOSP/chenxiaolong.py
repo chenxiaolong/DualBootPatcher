@@ -2,6 +2,7 @@ from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 from multiboot.autopatchers.cyanogenmod import DalvikCachePatcher
+import os
 
 patchinfo = PatchInfo()
 
@@ -18,7 +19,7 @@ patchinfo.configs        = [ 'all', '!dual' ]
 def multi_boot(directory, bootimg = None, device_check = True,
                partition_config = None, device = None):
   updater_script = 'META-INF/com/google/android/updater-script'
-  lines = fileio.all_lines(updater_script, directory = directory)
+  lines = fileio.all_lines(os.path.join(directory, updater_script))
 
   i = 0
   while i < len(lines):
@@ -42,7 +43,7 @@ def multi_boot(directory, bootimg = None, device_check = True,
   fileio.write_lines(updater_script, lines, directory = directory)
 
   # Create /tmp/dualboot.prop
-  lines = fileio.all_lines('dualboot.sh', directory = directory)
+  lines = fileio.all_lines(os.path.join(directory, 'dualboot.sh'))
 
   lines.append("echo 'ro.dualboot=0' > /tmp/dualboot.prop")
 
@@ -53,7 +54,7 @@ patchinfo.patch.insert(0, multi_boot)
 # The auto-updater in my ROM needs to know if the ROM has been patched
 def system_prop(directory, bootimg = None, device_check = True,
                 partition_config = None, device = None):
-  lines = fileio.all_lines('system/build.prop', directory = directory)
+  lines = fileio.all_lines(os.path.join(directory, 'system/build.prop'))
 
   lines.append('ro.chenxiaolong.patched=%s\n' % partition_config.id)
 

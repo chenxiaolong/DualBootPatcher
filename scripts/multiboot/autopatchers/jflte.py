@@ -23,8 +23,7 @@ class GoogleEditionPatcher:
     @staticmethod
     def qcom_audio_fix(directory, bootimg=None, device_check=True,
                        partition_config=None, device=None):
-        lines = fileio.all_lines('system/etc/init.qcom.audio.sh',
-                                 directory=directory)
+        lines = fileio.all_lines(os.path.join(directory, 'system/etc/init.qcom.audio.sh'))
 
         i = 0
         while i < len(lines):
@@ -34,8 +33,7 @@ class GoogleEditionPatcher:
             else:
                 i += 1
 
-        fileio.write_lines('system/etc/init.qcom.audio.sh', lines,
-                           directory=directory)
+        fileio.write_lines(os.path.join(directory, 'system/etc/init.qcom.audio.sh'), lines)
 
     @staticmethod
     def files_for_qcom_audio_fix():

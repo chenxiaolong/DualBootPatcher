@@ -279,7 +279,7 @@ def is_android_boot_image(data):
 
 def insert_partition_info(directory, f, config, target_path_only=False):
     magic = '# PATCHER REPLACE ME - DO NOT REMOVE\n'
-    lines = fileio.all_lines(f, directory=directory)
+    lines = fileio.all_lines(os.path.join(directory, f))
 
     i = 0
     while i < len(lines):

@@ -31,34 +31,32 @@ def write(f, line):
         f.write(line.encode('UTF-8'))
 
 
-def _open_file(f, flags, directory=""):
+def _open_file(path, flags):
     if 'r' in flags and 'b' not in flags:
         if sys.hexversion < 0x03000000:
-            return codecs.open(os.path.join(directory, f), flags,
-                               encoding='UTF-8', errors='ignore')
+            return codecs.open(path, flags, encoding='UTF-8', errors='ignore')
         else:
-            return open(os.path.join(directory, f), flags,
-                        encoding='UTF-8', errors='ignore')
+            return open(path, flags, encoding='UTF-8', errors='ignore')
     else:
-        return open(os.path.join(directory, f), flags)
+        return open(path, flags)
 
 
-def first_line(f, directory=""):
-    f = _open_file(f, READ, directory=directory)
+def first_line(path):
+    f = _open_file(path, READ)
     line = f.readline()
     f.close()
     return line.rstrip('\n')
 
 
-def all_lines(f, directory=""):
-    f = _open_file(f, READ, directory=directory)
+def all_lines(path):
+    f = _open_file(path, READ)
     lines = f.readlines()
     f.close()
     return lines
 
 
-def write_lines(f, lines, directory=""):
-    f = _open_file(f, WRITE, directory=directory)
+def write_lines(path, lines):
+    f = _open_file(path, WRITE)
 
     for i in lines:
         write(f, i)

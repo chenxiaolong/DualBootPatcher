@@ -15,13 +15,14 @@
 
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
+import os
 
 
 class DalvikCachePatcher:
     @staticmethod
     def store_in_data(directory, bootimg=None, device_check=True,
                       partition_config=None, device=None):
-        lines = fileio.all_lines('system/build.prop', directory=directory)
+        lines = fileio.all_lines(os.path.join(directory, 'system/build.prop'))
 
         i = 0
         while i < len(lines):
@@ -31,8 +32,7 @@ class DalvikCachePatcher:
             else:
                 i += 1
 
-        fileio.write_lines('system/build.prop', lines,
-                           directory=directory)
+        fileio.write_lines(os.path.join(directory, 'system/build.prop'), lines)
 
     @staticmethod
     def files_for_store_in_data():

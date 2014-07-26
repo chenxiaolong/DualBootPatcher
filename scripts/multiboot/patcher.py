@@ -483,7 +483,7 @@ class PrimaryUpgradePatcher(Patcher):
 
         OS.ui.set_task(self.tasks['PATCHING_FILES'])
 
-        lines = fileio.all_lines(UPDATER_SCRIPT, directory=tempdir)
+        lines = fileio.all_lines(os.path.join(tempdir, UPDATER_SCRIPT))
 
         i = 0
         i += autopatcher.insert_line(i,
@@ -587,7 +587,7 @@ class PrimaryUpgradePatcher(Patcher):
                     ' patched.')
             return None
 
-        fileio.write_lines(UPDATER_SCRIPT, lines, directory=tempdir)
+        fileio.write_lines(os.path.join(tempdir, UPDATER_SCRIPT), lines)
 
         OS.ui.set_task(self.tasks['COMPRESSING_ZIP_FILE'])
         OS.ui.details('Opening input and output zip files ...')

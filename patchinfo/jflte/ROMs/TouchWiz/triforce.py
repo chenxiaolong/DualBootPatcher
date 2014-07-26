@@ -1,6 +1,7 @@
 from multiboot.patchinfo import PatchInfo
 import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
+import os
 import re
 
 patchinfo = PatchInfo()
@@ -15,7 +16,7 @@ patchinfo.extract        = [ autopatcher.files_to_auto_patch,
 def fix_aroma(directory, bootimg = None, device_check = True,
               partition_config = None, device = None):
   aroma_config = 'META-INF/com/google/android/aroma-config'
-  lines = fileio.all_lines(aroma_config, directory = directory)
+  lines = fileio.all_lines(os.path.join(directory, aroma_config))
 
   i = 0
   while i < len(lines):

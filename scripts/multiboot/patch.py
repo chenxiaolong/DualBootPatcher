@@ -51,7 +51,7 @@ def files_in_patch(patch_file):
 
     files = []
 
-    lines = fileio.all_lines(patch_file, directory=OS.patchdir)
+    lines = fileio.all_lines(os.path.join(OS.patchdir, patch_file))
 
     counter = 0
     while counter < len(lines):
