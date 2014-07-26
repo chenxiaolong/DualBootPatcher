@@ -22,11 +22,11 @@
 
 # PATCHER REPLACE ME - DO NOT REMOVE
 
-/sbin/busybox-static mkdir -p $TARGET_SYSTEM $TARGET_CACHE $TARGET_DATA
+/sbin/busybox-static mkdir -p "$TARGET_SYSTEM" "$TARGET_CACHE" "$TARGET_DATA"
 
-/sbin/busybox-static mount -o bind $TARGET_SYSTEM /system
-/sbin/busybox-static mount -o bind $TARGET_CACHE /cache
-/sbin/busybox-static mount -o bind $TARGET_DATA /data
+/sbin/busybox-static mount -o bind "$TARGET_SYSTEM" /system
+/sbin/busybox-static mount -o bind "$TARGET_CACHE" /cache
+/sbin/busybox-static mount -o bind "$TARGET_DATA" /data
 
 bind_mount() {
   local source="$1"
