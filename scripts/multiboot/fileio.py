@@ -15,6 +15,7 @@
 
 import multiboot.operatingsystem as OS
 
+import codecs
 import os
 import re
 import sys
@@ -30,26 +31,34 @@ def write(f, line):
         f.write(line.encode('UTF-8'))
 
 
-def open_file(f, flags, directory=""):
-    return open(os.path.join(directory, f), flags)
+def _open_file(f, flags, directory=""):
+    if 'r' in flags and 'b' not in flags:
+        if sys.hexversion < 0x03000000:
+            return codecs.open(os.path.join(directory, f), flags,
+                               encoding='UTF-8', errors='ignore')
+        else:
+            return open(os.path.join(directory, f), flags,
+                        encoding='UTF-8', errors='ignore')
+    else:
+        return open(os.path.join(directory, f), flags)
 
 
 def first_line(f, directory=""):
-    f = open_file(f, READ, directory=directory)
+    f = _open_file(f, READ, directory=directory)
     line = f.readline()
     f.close()
     return line.rstrip('\n')
 
 
 def all_lines(f, directory=""):
-    f = open_file(f, READ, directory=directory)
+    f = _open_file(f, READ, directory=directory)
     lines = f.readlines()
     f.close()
     return lines
 
 
 def write_lines(f, lines, directory=""):
-    f = open_file(f, WRITE, directory=directory)
+    f = _open_file(f, WRITE, directory=directory)
 
     for i in lines:
         write(f, i)
