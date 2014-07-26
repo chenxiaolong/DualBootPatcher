@@ -49,8 +49,10 @@ CPIO_TRAILER = "TRAILER!!!"
 IO_BLOCK_SIZE = 512
 
 
-class CpioEntryNew:
+class CpioEntryNew(object):
     def __init__(self):
+        super(CpioEntryNew, self).__init__()
+
         self.sformat = '<'
         self.sformat += '6s'  # c_magic     - "070701" for "new" portable format
                               #               "070702" for CRC format
