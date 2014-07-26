@@ -95,6 +95,16 @@ configs.append(multislot3)
 
 ################################################################
 
+primaryupgrade = PartitionConfig()
+
+primaryupgrade.name                = 'Primary ROM Upgrade'
+primaryupgrade.description         = 'Upgrade primary ROM without wiping the secondary ROM'
+primaryupgrade.id                  = 'primaryupgrade'
+
+configs.append(primaryupgrade)
+
+################################################################
+
 
 def get():
     return configs

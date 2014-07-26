@@ -28,6 +28,8 @@ import textwrap
 
 sys.dont_write_bytecode = True
 
+from multiboot.patcher import Patcher
+
 try:
     import multiboot.operatingsystem as OS
 except Exception as e:
@@ -38,7 +40,6 @@ import multiboot.autopatcher as autopatcher
 import multiboot.config as config
 import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
-import multiboot.patcher as patcher
 import multiboot.patchinfo as patchinfo
 import multiboot.ramdisk as ramdisk
 
@@ -433,11 +434,13 @@ def ask_partconfig(file_info):
 
 
 def patch_supported(file_info):
-    ui.info('Detected ' + file_info.patchinfo.name)
+    if partconfig.id != 'primaryupgrade':
+        ui.info('Detected ' + file_info.patchinfo.name)
 
     file_info.partconfig = partconfig
 
-    newfile = patcher.patch_file(file_info)
+    patcher = Patcher.get_patcher_by_partconfig(file_info)
+    newfile = patcher.start_patching()
 
     if not newfile:
         sys.exit(1)
@@ -749,10 +752,11 @@ try:
 
     file_info.device = device
 
-    supported = file_info.find_and_merge_patchinfo()
-
     if not partconfig_name:
         ask_partconfig(file_info)
+
+    supported = partconfig_name == 'primaryupgrade' \
+        or file_info.find_and_merge_patchinfo()
 
     check_parameters()
 

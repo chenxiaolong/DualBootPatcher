@@ -24,12 +24,12 @@ from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 
+from multiboot.patcher import Patcher
 import multiboot.autopatcher as autopatcher
 import multiboot.config as config
 import multiboot.fileinfo as fileinfo
 import multiboot.operatingsystem as OS
 import multiboot.partitionconfigs as partitionconfigs
-import multiboot.patcher as patcher
 import multiboot.patchinfo as patchinfo
 import multiboot.ramdisk as ramdisk
 import multiboot.ui.qtui as qtui
@@ -41,10 +41,11 @@ class PatcherTask(QtCore.QObject):
     def __init__(self, file_info):
         super().__init__()
         self.file_info = file_info
-        patcher.set_ui(qtui)
+        OS.set_ui(qtui)
 
     def patch(self):
-        output = patcher.patch_file(self.file_info)
+        patcher = Patcher.get_patcher_by_partconfig(self.file_info)
+        output = patcher.start_patching()
         failed = True
 
         if output:
@@ -692,7 +693,7 @@ class MessageBox(QtWidgets.QMessageBox):
                 break
 
 
-class Patcher(QtWidgets.QWidget):
+class QtPatcher(QtWidgets.QWidget):
     def __init__(self, parent=None, filename=None):
         super().__init__(parent)
         iconpath = os.path.join(OS.rootdir, 'scripts', 'icon.png')
@@ -704,6 +705,8 @@ class Patcher(QtWidgets.QWidget):
         else:
             self.filename = None
             self.automode = False
+
+        self.primaryupgrade = False
 
         self.partconfigs = partitionconfigs.get()
         self.devices = config.list_devices()
@@ -755,7 +758,7 @@ class Patcher(QtWidgets.QWidget):
         qtui.listener = self.progressdialog
 
         # Fixed size
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(420)
         self.setFixedHeight(self.sizeHint().height())
         self.move(300, 300)
 
@@ -765,7 +768,9 @@ class Patcher(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot(int)
     def partconfigselected(self, index):
-        self.partconfigdesc.setText(self.partconfigs[index].description)
+        partconfig = self.partconfigs[index]
+        self.primaryupgrade = partconfig.id == 'primaryupgrade'
+        self.partconfigdesc.setText(partconfig.description)
 
     @QtCore.pyqtSlot()
     def selectfile(self):
@@ -798,7 +803,8 @@ class Patcher(QtWidgets.QWidget):
             self.close()
             return
 
-        if not file_info.find_and_merge_patchinfo():
+        if not self.primaryupgrade \
+                and not file_info.find_and_merge_patchinfo():
             msgbox = UnsupportedFileDialog(self, file_info=file_info)
             ret = msgbox.exec()
             if ret == QtWidgets.QDialog.Accepted:
@@ -827,7 +833,8 @@ class Patcher(QtWidgets.QWidget):
 
         partconfig = self.partconfigs[self.partconfigcombobox.currentIndex()]
 
-        if not file_info.patchinfo.is_partconfig_supported(partconfig):
+        if not self.primaryupgrade and not \
+                file_info.patchinfo.is_partconfig_supported(partconfig):
             msgbox.setText(
                 'The \'%s\' partition configuration is not supported '
                 'for the file:<br />%s'
@@ -838,11 +845,17 @@ class Patcher(QtWidgets.QWidget):
             self.showwidgets()
             return
 
+        dialog_msg = ""
+
+        if file_info.patchinfo:
+            dialog_msg += ('Detected: <b>%s</b><br /><br />'
+                           % file_info.patchinfo.name)
+
+        dialog_msg += 'Click OK to patch:<br />' + file_info.filename
+
         file_info.partconfig = partconfig
 
-        msgbox.setText('Detected: <b>%s</b><br /><br />'
-                       'Click OK to patch:<br />%s'
-                       % (file_info.patchinfo.name, file_info.filename))
+        msgbox.setText(dialog_msg)
         msgbox.setIcon(QtWidgets.QMessageBox.Information)
         msgbox.setStandardButtons(
             QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
@@ -895,8 +908,8 @@ class Patcher(QtWidgets.QWidget):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 1:
-        gui = Patcher(filename=sys.argv[1])
+        gui = QtPatcher(filename=sys.argv[1])
     else:
-        gui = Patcher()
+        gui = QtPatcher()
     gui.show()
     sys.exit(app.exec_())

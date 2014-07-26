@@ -106,3 +106,8 @@ def is_darwin():
 
 def is_android():
     return android
+
+
+def set_ui(new_ui):
+    global ui
+    ui = new_ui
