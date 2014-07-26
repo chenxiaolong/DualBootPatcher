@@ -644,6 +644,30 @@ def create_syncdaemon(targetdir):
                 os.path.join(ramdisksdir, 'syncdaemon'))
 
 
+def create_acl_attr_android(targetdir):
+    print('Compiling acl and attr ...')
+
+    compiledir = os.path.join(builddir, 'compile')
+    patchesdir = os.path.join(targetdir, 'patches')
+
+    exit_status, output, error = run_command(
+        [os.path.join(compiledir, 'build-attr-acl.sh')],
+        cwd=compiledir
+    )
+
+    check_if_failed(exit_status, output, error,
+                    'Failed to compile acl and attr')
+
+    shutil.move(os.path.join(compiledir, 'getfacl'),
+                os.path.join(patchesdir, 'getfacl'))
+    shutil.move(os.path.join(compiledir, 'getfattr'),
+                os.path.join(patchesdir, 'getfattr'))
+    shutil.move(os.path.join(compiledir, 'setfacl'),
+                os.path.join(patchesdir, 'setfacl'))
+    shutil.move(os.path.join(compiledir, 'setfattr'),
+                os.path.join(patchesdir, 'setfattr'))
+
+
 def create_release(targetdir, targetfile, android=False):
     print('Creating release archive ...')
 
@@ -670,6 +694,7 @@ def create_release(targetdir, targetfile, android=False):
             shutil.copy2(os.path.join(topdir, f), targetdir)
 
     create_syncdaemon(targetdir)
+    create_acl_attr_android(targetdir)
 
     if buildtype == 'release':
         upx_compress([os.path.join(targetdir, 'ramdisks', 'busybox-static')])
