@@ -98,9 +98,10 @@ class PatchInfo(object):
 
     @ramdisk.setter
     def ramdisk(self, value):
-        ramdiskfile = os.path.join(OS.ramdiskdir, value)
-        if not os.path.exists(ramdiskfile):
-            raise IOError('Ramdisk definition %s not found' % value)
+        if value:
+            ramdiskfile = os.path.join(OS.ramdiskdir, value)
+            if not os.path.exists(ramdiskfile):
+                raise IOError('Ramdisk definition %s not found' % value)
 
         self._ramdisk = value
 
@@ -113,12 +114,15 @@ class PatchInfo(object):
 
     @bootimg.setter
     def bootimg(self, value):
-        if type(value) == str or callable(value):
-            temp = [value]
-        elif type(value) == list:
-            temp = value
+        if value:
+            if type(value) == str or callable(value):
+                temp = [value]
+            elif type(value) == list:
+                temp = value
+            else:
+                raise ValueError('Invalid type')
         else:
-            raise ValueError('Invalid type')
+            temp = None
 
         self._bootimg = temp
 
