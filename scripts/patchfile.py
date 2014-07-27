@@ -41,7 +41,11 @@ import multiboot.config as config
 import multiboot.fileinfo as fileinfo
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patchinfo as patchinfo
+import multiboot.plugins as plugins
 import multiboot.ramdisk as ramdisk
+
+# Load plugins
+plugins.init()
 
 
 ui = OS.ui
@@ -636,10 +640,9 @@ def patch_unsupported(file_info):
         patch_info.name = 'Unsupported file (with custom patcher options)'
 
         if f_autopatcher:
-            patch_info.patch = f_autopatcher.patcher
-            patch_info.extract = f_autopatcher.extractor
+            patch_info.autopatchers = f_autopatcher.autopatchers
         elif f_patch:
-            patch_info.patch = f_patch
+            patch_info.autopatchers = f_patch
 
         patch_info.has_boot_image = f_hasbootimage
         if patch_info.has_boot_image:
@@ -658,8 +661,7 @@ def patch_unsupported(file_info):
 
         patch_info.name = 'Unsupported file (manually set to: %s)' % \
             orig_patch_info.name
-        patch_info.patch = orig_patch_info.patch
-        patch_info.extract = orig_patch_info.extract
+        patch_info.autopatchers = orig_patch_info.autopatchers
         patch_info.ramdisk = orig_patch_info.ramdisk
         patch_info.bootimg = orig_patch_info.bootimg
         patch_info.has_boot_image = orig_patch_info.has_boot_image
@@ -698,10 +700,9 @@ def load_automated(file_info):
         patch_info.name = 'Unsupported file (with custom parameters)'
 
         if f_autopatcher:
-            patch_info.patch = f_autopatcher.patcher
-            patch_info.extract = f_autopatcher.extractor
+            patch_info.autopatchers = f_autopatcher.autopatchers
         elif f_patch:
-            patch_info.patch = f_patch
+            patch_info.autopatchers = f_patch
 
         patch_info.has_boot_image = f_hasbootimage
         if patch_info.has_boot_image:
@@ -720,8 +721,7 @@ def load_automated(file_info):
 
         patch_info.name = 'Unsupported file (manually set to: %s)' % \
             orig_patch_info.name
-        patch_info.patch = orig_patch_info.patch
-        patch_info.extract = orig_patch_info.extract
+        patch_info.autopatchers = orig_patch_info.autopatchers
         patch_info.ramdisk = orig_patch_info.ramdisk
         patch_info.bootimg = orig_patch_info.bootimg
         patch_info.has_boot_image = orig_patch_info.has_boot_image

@@ -15,24 +15,21 @@
 
 from multiboot.autopatchers.base import BasePatcher
 import multiboot.fileio as fileio
+import multiboot.patch as patch
 import os
 
 
-class DalvikCachePatcher(BasePatcher):
+class PatchFilePatcher(BasePatcher):
     def __init__(self, **kwargs):
-        super(DalvikCachePatcher, self).__init__(**kwargs)
+        super(PatchFilePatcher, self).__init__(**kwargs)
 
-        self.files_list = ['system/build.prop']
+        self.patchfile = kwargs['patchfile']
+        self.files_list = patch.files_in_patch(self.patchfile)
 
-    def patch(self, directory, file_info, bootimages=None):
-        lines = fileio.all_lines(os.path.join(directory, 'system/build.prop'))
+    def patch(self, directory, bootimg=None, device_check=True,
+              partition_config=None, device=None):
+        ret = patch.apply_patch(self.patchfile, directory)
 
-        i = 0
-        while i < len(lines):
-            if 'dalvik.vm.dexopt-data-only' in lines[i]:
-                del lines[i]
-
-            else:
-                i += 1
-
-        fileio.write_lines(os.path.join(directory, 'system/build.prop'), lines)
+        if not ret:
+            self.error_msg = patch.error_msg
+            return False

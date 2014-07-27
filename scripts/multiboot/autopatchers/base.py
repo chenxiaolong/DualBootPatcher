@@ -13,26 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from multiboot.autopatchers.base import BasePatcher
-import multiboot.fileio as fileio
-import os
 
-
-class DalvikCachePatcher(BasePatcher):
+class BasePatcher(object):
     def __init__(self, **kwargs):
-        super(DalvikCachePatcher, self).__init__(**kwargs)
+        super(BasePatcher, self).__init__()
 
-        self.files_list = ['system/build.prop']
+        self.files_list = list()
+        self.error_msg = None
 
-    def patch(self, directory, file_info, bootimages=None):
-        lines = fileio.all_lines(os.path.join(directory, 'system/build.prop'))
-
-        i = 0
-        while i < len(lines):
-            if 'dalvik.vm.dexopt-data-only' in lines[i]:
-                del lines[i]
-
-            else:
-                i += 1
-
-        fileio.write_lines(os.path.join(directory, 'system/build.prop'), lines)
+    def patch(self, directory, **kwargs):
+        raise Exception('BasePatcher\'s patch() must be overridden')

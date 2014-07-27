@@ -31,6 +31,7 @@ import multiboot.fileinfo as fileinfo
 import multiboot.operatingsystem as OS
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patchinfo as patchinfo
+import multiboot.plugins as plugins
 import multiboot.ramdisk as ramdisk
 import multiboot.ui.qtui as qtui
 
@@ -617,10 +618,9 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
             if self.rbautopatch.isChecked():
                 ap = self.autopatchers[self.cmbautopatchsel.currentIndex()]
-                patch_info.patch = ap.patcher
-                patch_info.extract = ap.extractor
+                patch_info.autopatchers = ap.autopatchers
             elif self.rbpatch.isChecked():
-                patch_info.patch = self.lepatchinput.text()
+                patch_info.autopatchers = self.lepatchinput.text()
 
             patch_info.has_boot_image = self.cbhasbootimg.isChecked()
             if patch_info.has_boot_image:
@@ -645,8 +645,7 @@ class UnsupportedFileDialog(QtWidgets.QDialog):
 
             patch_info.name = 'Unsupported file (manually set to: %s)' % \
                 orig_patch_info.name
-            patch_info.patch = orig_patch_info.patch
-            patch_info.extract = orig_patch_info.extract
+            patch_info.autopatchers = orig_patch_info.autopatchers
             patch_info.ramdisk = orig_patch_info.ramdisk
             patch_info.bootimg = orig_patch_info.bootimg
             patch_info.has_boot_image = orig_patch_info.has_boot_image
@@ -906,6 +905,9 @@ class QtPatcher(QtWidgets.QWidget):
 
 
 if __name__ == '__main__':
+    # Load plugins
+    plugins.init()
+
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 1:
         gui = QtPatcher(filename=sys.argv[1])

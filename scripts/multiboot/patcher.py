@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from multiboot.autopatchers.patchfile import PatchFilePatcher
 import multiboot.autopatcher as autopatcher
 import multiboot.bootimage as bootimage
 import multiboot.config as config
@@ -20,7 +21,6 @@ import multiboot.fileinfo as fileinfo
 import multiboot.fileio as fileio
 import multiboot.minicpio.minicpio as minicpio
 import multiboot.operatingsystem as OS
-import multiboot.patch as patch
 import multiboot.ramdisk as ramdisk
 
 import gzip
@@ -251,29 +251,24 @@ class MultibootPatcher(Patcher):
         if not OS.is_android():
             OS.ui.info('--- Please wait. This may take a while ---')
 
+        ap_instances = []
         files_to_patch = []
-        if type(self.file_info.patchinfo.patch) == str and \
-                self.file_info.patchinfo.patch != "":
-            files_to_patch = patch.files_in_patch(
-                self.file_info.patchinfo.patch)
-        elif type(self.file_info.patchinfo.patch) == list:
-            for i in self.file_info.patchinfo.patch:
-                if type(i) == str and i != "":
-                    files_to_patch.extend(patch.files_in_patch(i))
 
-        if self.file_info.patchinfo.extract:
-            for i in self.file_info.patchinfo.extract:
-                if callable(i):
-                    output = i()
+        if self.file_info.patchinfo.autopatchers:
+            for ap in self.file_info.patchinfo.autopatchers:
+                if type(ap) == str:
+                    # Special case for patch files
+                    ap_instances.append(PatchFilePatcher(patchfile=ap))
+#                elif issubclass(ap, BasePatcher):
+                elif True:
+                    ap_instances.append(ap())
+                else:
+                    raise ValueError('Invalid autopatcher type')
 
-                    if type(output) == list:
-                        files_to_patch.extend(output)
-
-                    elif type(output) == str:
-                        files_to_patch.append(output)
-
-                elif type(i) == str:
-                    files_to_patch.append(i)
+            for ap in ap_instances:
+                for f in ap.files_list:
+                    if f not in files_to_patch:
+                        files_to_patch.append(f)
 
         tempdir = tempfile.mkdtemp()
         self.tempdirs.append(tempdir)
@@ -291,9 +286,9 @@ class MultibootPatcher(Patcher):
                 OS.ui.failed('Failed to extract file: %s' % f)
                 return None
 
-        if self.file_info.patchinfo.has_boot_image:
-            bootimages = list()
+        bootimages = list()
 
+        if self.file_info.patchinfo.has_boot_image:
             for i in self.file_info.patchinfo.bootimg:
                 if callable(i):
                     output = i(self.file_info.filename)
@@ -341,27 +336,16 @@ class MultibootPatcher(Patcher):
         autopatcher.insert_partition_info(tempdir, 'dualboot.sh',
                                           self.file_info.partconfig)
 
-        if self.file_info.patchinfo.patch:
-            OS.ui.details('Running patch functions ...')
+        if ap_instances:
+            OS.ui.details('Running autopatchers ...')
 
-            for i in self.file_info.patchinfo.patch:
-                if callable(i):
-                    if self.file_info.patchinfo.has_boot_image:
-                        i(tempdir,
-                          bootimg=bootimages,
-                          device_check=self.file_info.patchinfo.device_check,
-                          partition_config=self.file_info.partconfig,
-                          device=self.file_info.device)
-                    else:
-                        i(tempdir,
-                          device_check=self.file_info.patchinfo.device_check,
-                          partition_config=self.file_info.partconfig,
-                          device=self.file_info.device)
+            for ap in ap_instances:
+                ret = ap.patch(tempdir, self.file_info, bootimages=bootimages)
 
-                elif type(i) == str:
-                    if not patch.apply_patch(i, tempdir):
-                        OS.ui.failed(patch.error_msg)
-                        return None
+                # Auto patchers do not have to return anything
+                if ret is False:
+                    OS.ui.failed(ap.error_msg)
+                    return None
 
         OS.ui.set_task(self.tasks['COMPRESSING_ZIP_FILE'])
         OS.ui.details('Opening input and output zip files ...')
@@ -486,26 +470,26 @@ class PrimaryUpgradePatcher(Patcher):
         lines = fileio.all_lines(os.path.join(tempdir, UPDATER_SCRIPT))
 
         i = 0
-        i += autopatcher.insert_line(i,
-                EXTRACT % (PERM_TOOL, '/tmp/' + PERM_TOOL), lines)
-        i += autopatcher.insert_line(i,
-                EXTRACT % ('setfacl', '/tmp/setfacl'), lines)
-        i += autopatcher.insert_line(i,
-                EXTRACT % ('setfattr', '/tmp/setfattr'), lines)
-        i += autopatcher.insert_line(i,
-                EXTRACT % ('getfacl', '/tmp/getfacl'), lines)
-        i += autopatcher.insert_line(i,
-                EXTRACT % ('getfattr', '/tmp/getfattr'), lines)
-        i += autopatcher.insert_line(i,
-                MAKE_EXECUTABLE % ('/tmp/' + PERM_TOOL), lines)
-        i += autopatcher.insert_line(i,
-                MAKE_EXECUTABLE % '/tmp/setfacl', lines)
-        i += autopatcher.insert_line(i,
-                MAKE_EXECUTABLE % '/tmp/setfattr', lines)
-        i += autopatcher.insert_line(i,
-                MAKE_EXECUTABLE % '/tmp/getfacl', lines)
-        i += autopatcher.insert_line(i,
-                MAKE_EXECUTABLE % '/tmp/getfattr', lines)
+        i += autopatcher.insert_line(
+            i, EXTRACT % (PERM_TOOL, '/tmp/' + PERM_TOOL), lines)
+        i += autopatcher.insert_line(
+            i, EXTRACT % ('setfacl', '/tmp/setfacl'), lines)
+        i += autopatcher.insert_line(
+            i, EXTRACT % ('setfattr', '/tmp/setfattr'), lines)
+        i += autopatcher.insert_line(
+            i, EXTRACT % ('getfacl', '/tmp/getfacl'), lines)
+        i += autopatcher.insert_line(
+            i, EXTRACT % ('getfattr', '/tmp/getfattr'), lines)
+        i += autopatcher.insert_line(
+            i, MAKE_EXECUTABLE % ('/tmp/' + PERM_TOOL), lines)
+        i += autopatcher.insert_line(
+            i, MAKE_EXECUTABLE % '/tmp/setfacl', lines)
+        i += autopatcher.insert_line(
+            i, MAKE_EXECUTABLE % '/tmp/setfattr', lines)
+        i += autopatcher.insert_line(
+            i, MAKE_EXECUTABLE % '/tmp/getfacl', lines)
+        i += autopatcher.insert_line(
+            i, MAKE_EXECUTABLE % '/tmp/getfattr', lines)
 
         def insert_format_system(index, lines, mount):
             i = 0
@@ -581,10 +565,10 @@ class PrimaryUpgradePatcher(Patcher):
 
         if not replaced_format_system:
             OS.ui.failed('The patcher could not find any /system formatting'
-                    ' lines in the updater-script file.\n\nIf the file is'
-                    ' a ROM, then something failed. If the file is not a'
-                    ' ROM (eg. kernel or mod), it doesn\'t need to be'
-                    ' patched.')
+                         ' lines in the updater-script file.\n\nIf the file is'
+                         ' a ROM, then something failed. If the file is not a'
+                         ' ROM (eg. kernel or mod), it doesn\'t need to be'
+                         ' patched.')
             return None
 
         fileio.write_lines(os.path.join(tempdir, UPDATER_SCRIPT), lines)

@@ -13,17 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import multiboot.autopatcher as autopatcher
+from multiboot.autopatchers.base import BasePatcher
 import multiboot.fileio as fileio
 
 
-class GoogleEditionPatcher:
+class GoogleEditionPatcher(BasePatcher):
     # WTF? Script removes system/etc/snd_soc_msm/snd_soc_msm_2x_Fusion3_auxpcm
     # causing the ROM to fail to boot
-    @staticmethod
-    def qcom_audio_fix(directory, bootimg=None, device_check=True,
-                       partition_config=None, device=None):
-        lines = fileio.all_lines(os.path.join(directory, 'system/etc/init.qcom.audio.sh'))
+
+    def __init__(self, **kwargs):
+        super(GoogleEditionPatcher, self).__init__(**kwargs)
+
+        self.files_list = ['system/etc/init.qcom.audio.sh']
+
+    def patch(self, directory, file_info, bootimages=None):
+        lines = fileio.all_lines(os.path.join(
+            directory, 'system/etc/init.qcom.audio.sh'))
 
         i = 0
         while i < len(lines):
@@ -33,23 +38,5 @@ class GoogleEditionPatcher:
             else:
                 i += 1
 
-        fileio.write_lines(os.path.join(directory, 'system/etc/init.qcom.audio.sh'), lines)
-
-    @staticmethod
-    def files_for_qcom_audio_fix():
-        return ['system/etc/init.qcom.audio.sh']
-
-
-def get_auto_patchers():
-    autopatchers = list()
-
-    googleedition = autopatcher.AutoPatcher()
-    googleedition.name = 'Standard + Google Edition Fix'
-    googleedition.patcher = [autopatcher.auto_patch,
-                             GoogleEditionPatcher.qcom_audio_fix]
-    googleedition.extractor = [autopatcher.files_to_auto_patch,
-                               GoogleEditionPatcher.files_for_qcom_audio_fix]
-
-    autopatchers.append(googleedition)
-
-    return autopatchers
+        fileio.write_lines(os.path.join(
+            directory, 'system/etc/init.qcom.audio.sh'), lines)

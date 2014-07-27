@@ -30,7 +30,11 @@ import multiboot.autopatcher as autopatcher
 import multiboot.config as config
 import multiboot.partitionconfigs as partitionconfigs
 import multiboot.patchinfo as patchinfo
+import multiboot.plugins as plugins
 import multiboot.ramdisk as ramdisk
+
+# Load plugins
+plugins.init()
 
 
 j = dict()
@@ -81,37 +85,21 @@ for i in presets:
     jsonobj['path'] = i[0][:-3]
     jsonobj['name'] = i[1].name
 
-    if i[1].patch:
+    if i[1].autopatchers:
         temparr = list()
 
-        if type(i[1].patch) != list:
-            patches = [i[1].patch]
+        if type(i[1].autopatchers) != list:
+            autopatchers = [i[1].autopatchers]
         else:
-            patches = i[1].patch
+            autopatchers = i[1].autopatchers
 
-        for p in patches:
-            if type(p) == str:
-                temparr.append(p)
+        for a in autopatchers:
+            if type(a) == str:
+                temparr.append(a)
             else:
-                temparr.append(p.__name__)
+                temparr.append(a.__name__)
 
-        jsonobj['patch'] = temparr
-
-    if i[1].extract:
-        temparr = list()
-
-        if type(i[1].extract) != list:
-            extractors = [i[1].extract]
-        else:
-            extractors = i[1].extract
-
-        for e in extractors:
-            if type(e) == str:
-                temparr.append(e)
-            else:
-                temparr.append(e.__name__)
-
-        jsonobj['extract'] = temparr
+        jsonobj['autopatchers'] = temparr
 
     jsonobj['has_boot_image'] = i[1].has_boot_image
     if i[1].has_boot_image:
@@ -150,37 +138,21 @@ for a in autopatchers:
     jsonobj = dict()
     jsonobj['name'] = a.name
 
-    if a.patcher:
+    if a.autopatchers:
         temparr = list()
 
-        if type(a.patcher) != list:
-            patchers = [a.patcher]
+        if type(a.autopatchers) != list:
+            autopatchers = [a.autopatchers]
         else:
-            patchers = a.patcher
+            autopatchers = a.autopatchers
 
-        for p in patchers:
-            if type(p) == str:
-                temparr.append(p)
+        for a in autopatchers:
+            if type(a) == str:
+                temparr.append(a)
             else:
-                temparr.append(p.__name__)
+                temparr.append(a.__name__)
 
-        jsonobj['patcher'] = temparr
-
-    if a.extractor:
-        temparr = list()
-
-        if type(a.extractor) != list:
-            extractors = [a.extractor]
-        else:
-            extractors = a.extractor
-
-        for e in extractors:
-            if type(e) == str:
-                temparr.append(e)
-            else:
-                temparr.append(e.__name__)
-
-        jsonobj['extractor'] = temparr
+        jsonobj['autopatchers'] = temparr
 
     jsonarr.append(jsonobj)
 
