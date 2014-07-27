@@ -36,7 +36,8 @@ UPDATER_SCRIPT = 'META-INF/com/google/android/updater-script'
 FORMAT = 'run_program("/sbin/busybox", "find", "%s",' \
     ' "-maxdepth", "1",' \
     ' "!", "-name", "multi-slot-*",' \
-    ' "!", "-name", "dual");'
+    ' "!", "-name", "dual",' \
+    ' "-delete");'
 FORMAT_SYSTEM = FORMAT % '/system'
 FORMAT_CACHE = FORMAT % '/cache'
 
@@ -490,23 +491,31 @@ class PrimaryUpgradePatcher(Patcher):
             i, MAKE_EXECUTABLE % '/tmp/getfacl', lines)
         i += autopatcher.insert_line(
             i, MAKE_EXECUTABLE % '/tmp/getfattr', lines)
+        i += autopatcher.insert_line(
+            i, MOUNT % '/system', lines)
+        i += autopatcher.insert_line(
+            i, PERMS_BACKUP % '/system', lines)
+        i += autopatcher.insert_line(
+            i, UNMOUNT % '/system', lines)
+        i += autopatcher.insert_line(
+            i, MOUNT % '/cache', lines)
+        i += autopatcher.insert_line(
+            i, PERMS_BACKUP % '/cache', lines)
+        i += autopatcher.insert_line(
+            i, UNMOUNT % '/cache', lines)
 
         def insert_format_system(index, lines, mount):
             i = 0
 
             if mount:
-                i += autopatcher.insert_line(index + i,
-                                             MOUNT % '/system', lines)
+                i += autopatcher.insert_line(
+                    index + i, MOUNT % '/system', lines)
 
-            i += autopatcher.insert_line(index + i,
-                                         PERMS_BACKUP % '/system', lines)
             i += autopatcher.insert_line(index + i, FORMAT_SYSTEM, lines)
-            i += autopatcher.insert_line(index + i,
-                                         PERMS_RESTORE % '/system', lines)
 
             if mount:
-                i += autopatcher.insert_line(index + i,
-                                             UNMOUNT % '/system', lines)
+                i += autopatcher.insert_line(
+                    index + i, UNMOUNT % '/system', lines)
 
             return i
 
@@ -514,18 +523,14 @@ class PrimaryUpgradePatcher(Patcher):
             i = 0
 
             if mount:
-                i += autopatcher.insert_line(index + i,
-                                             MOUNT % '/cache', lines)
+                i += autopatcher.insert_line(
+                    index + i, MOUNT % '/cache', lines)
 
-            i += autopatcher.insert_line(index + i,
-                                         PERMS_BACKUP % '/cache', lines)
             i += autopatcher.insert_line(index + i, FORMAT_CACHE, lines)
-            i += autopatcher.insert_line(index + i,
-                                         PERMS_RESTORE % '/cache', lines)
 
             if mount:
-                i += autopatcher.insert_line(index + i,
-                                             UNMOUNT % '/cache', lines)
+                i += autopatcher.insert_line(
+                    index + i, UNMOUNT % '/cache', lines)
 
             return i
 
@@ -570,6 +575,19 @@ class PrimaryUpgradePatcher(Patcher):
                          ' ROM (eg. kernel or mod), it doesn\'t need to be'
                          ' patched.')
             return None
+
+        i += autopatcher.insert_line(
+            i, MOUNT % '/system', lines)
+        i += autopatcher.insert_line(
+            i, PERMS_RESTORE % '/system', lines)
+        i += autopatcher.insert_line(
+            i, UNMOUNT % '/system', lines)
+        i += autopatcher.insert_line(
+            i, MOUNT % '/cache', lines)
+        i += autopatcher.insert_line(
+            i, PERMS_RESTORE % '/cache', lines)
+        i += autopatcher.insert_line(
+            i, UNMOUNT % '/cache', lines)
 
         fileio.write_lines(os.path.join(tempdir, UPDATER_SCRIPT), lines)
 
