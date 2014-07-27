@@ -1,5 +1,5 @@
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 import os
 
@@ -7,8 +7,7 @@ patchinfo = PatchInfo()
 
 patchinfo.name           = 'Echoe TouchWiz'
 patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-patchinfo.patch          = autopatcher.auto_patch
-patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.autopatchers   = [StandardPatcher]
 
 def matches(filename):
   regexes = [ r"^Echoe[ _]?(Rom|SLIM).*\.zip$",

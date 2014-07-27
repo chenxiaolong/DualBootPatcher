@@ -1,13 +1,12 @@
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import os
 
 patchinfo = PatchInfo()
 
 patchinfo.name           = "geiti94's HTC Sense 5 port"
 patchinfo.ramdisk        = 'jflte/AOSP/AOSP.def'
-patchinfo.patch          = autopatcher.auto_patch
-patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.autopatchers   = [StandardPatcher]
 
 def matches(filename):
   filename = os.path.split(filename)[1]

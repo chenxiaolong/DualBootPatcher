@@ -1,5 +1,6 @@
+from multiboot.autopatchers.base import BasePatcher
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 import os
 
@@ -8,55 +9,67 @@ patchinfo = PatchInfo()
 patchinfo.matches        = r"^cm-.*noobdev.*.zip$"
 patchinfo.name           = "chenxiaolong's noobdev CyanogenMod"
 patchinfo.ramdisk        = 'hammerhead/AOSP/cxl.def'
-patchinfo.patch          = [ autopatcher.auto_patch ]
-patchinfo.extract        = [ autopatcher.files_to_auto_patch, 'system/build.prop' ]
+patchinfo.autopatchers   = [StandardPatcher]
 # ROM has built in dual boot support
-patchinfo.configs        = [ 'all', '!dual' ]
+patchinfo.configs        = ['all', '!dual']
 
-# My ROM has dual-boot support built in, so we'll hack around that to support
-# triple, quadruple, ... boot
-def multi_boot(directory, bootimg = None, device_check = True,
-               partition_config = None, device = None):
-  updater_script = 'META-INF/com/google/android/updater-script'
-  lines = fileio.all_lines(os.path.join(directory, updater_script))
 
-  i = 0
-  while i < len(lines):
-    # Remove existing dualboot.sh lines
-    if 'system/bin/dualboot.sh' in lines[i]:
-      del lines[i]
+class MultiBoot(BasePatcher):
+    def __init__(self, **kwargs):
+        super(MultiBoot, self).__init__(**kwargs)
 
-    # Remove confusing messages
-    elif 'boot installation is' in lines[i]:
-      # Can't remove - sole line inside if statement
-      lines[i] = 'ui_print("");\n'
-      i += 1
+        # Don't need to add, since it's not from the original zip file
+        #self.files_list.append('dualboot.sh')
 
-    elif 'set-secondary' in lines[i]:
-      lines[i] = 'ui_print("");\n'
-      i += 1
+    def patch(self, directory, file_info, bootimages=None):
+        # My ROM has dual-boot support built in, so we'll hack around that to
+        # support triple, quadruple, ... boot
+        updater_script = 'META-INF/com/google/android/updater-script'
+        lines = fileio.all_lines(os.path.join(directory, updater_script))
 
-    else:
-      i += 1
+        i = 0
+        while i < len(lines):
+            # Remove existing dualboot.sh lines
+            if 'system/bin/dualboot.sh' in lines[i]:
+                del lines[i]
 
-  fileio.write_lines(updater_script, lines, directory = directory)
+            # Remove confusing messages
+            elif 'boot installation is' in lines[i]:
+                # Can't remove - sole line inside if statement
+                lines[i] = 'ui_print("");\n'
+                i += 1
 
-  # Create /tmp/dualboot.prop
-  lines = fileio.all_lines(os.path.join(directory, 'dualboot.sh'))
+            elif 'set-secondary' in lines[i]:
+                lines[i] = 'ui_print("");\n'
+                i += 1
 
-  lines.append("echo 'ro.dualboot=0' > /tmp/dualboot.prop")
+            else:
+                i += 1
 
-  fileio.write_lines('dualboot.sh', lines, directory = directory)
+        fileio.write_lines(os.path.join(directory, updater_script), lines)
 
-patchinfo.patch.insert(0, multi_boot)
+        # Create /tmp/dualboot.prop
+        lines = fileio.all_lines(os.path.join(directory, 'dualboot.sh'))
 
-# The auto-updater in my ROM needs to know if the ROM has been patched
-def system_prop(directory, bootimg = None, device_check = True,
-                partition_config = None, device = None):
-  lines = fileio.all_lines(os.path.join(directory, 'system/build.prop'))
+        lines.append("echo 'ro.dualboot=0' > /tmp/dualboot.prop")
 
-  lines.append('ro.chenxiaolong.patched=%s\n' % partition_config.id)
+        fileio.write_lines(os.path.join(directory, 'dualboot.sh'), lines)
 
-  fileio.write_lines('system/build.prop', lines, directory = directory)
 
-patchinfo.patch.append(system_prop)
+class SystemProp(BasePatcher):
+    def __init__(self, **kwargs):
+        super(SystemProp, self).__init__(**kwargs)
+
+        self.files_list.append('system/build.prop')
+
+    def patch(self, directory, file_info, bootimages=None):
+        # The auto-updater in my ROM needs to know if the ROM has been patched
+        lines = fileio.all_lines(os.path.join(directory, 'system/build.prop'))
+
+        lines.append('ro.chenxiaolong.patched=%s\n' % file_info.partconfig.id)
+
+        fileio.write_lines(os.path.join(directory, 'system/build.prop'), lines)
+
+
+patchinfo.autopatchers.insert(0, MultiBoot)
+patchinfo.autopatchers.append(SystemProp)

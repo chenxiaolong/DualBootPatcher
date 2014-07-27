@@ -1,11 +1,10 @@
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import os
 
 patchinfo = PatchInfo()
 
 patchinfo.name           = 'Xposed Framework Disabler'
-patchinfo.patch          = 'Other/xposed.dualboot.patch'
+patchinfo.autopatchers   = ['Other/xposed.dualboot.patch']
 patchinfo.has_boot_image = False
 
 def matches(filename):

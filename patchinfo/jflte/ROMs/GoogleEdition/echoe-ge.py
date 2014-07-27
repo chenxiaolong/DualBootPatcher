@@ -1,6 +1,6 @@
-from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.autopatchers.jflte import GoogleEditionPatcher
+from multiboot.patchinfo import PatchInfo
 import os
 import re
 
@@ -8,8 +8,7 @@ patchinfo = PatchInfo()
 
 patchinfo.name           = 'Echoe Google Edition'
 patchinfo.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
-patchinfo.patch          = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
-patchinfo.extract        = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
+patchinfo.autopatchers   = [StandardPatcher, GoogleEditionPatcher]
 
 def matches(filename):
   filename = os.path.split(filename)[1]

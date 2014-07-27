@@ -6,8 +6,8 @@
 #
 # Please copy this file to a new one before editing.
 
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import re
 
 patchinfo = PatchInfo()
@@ -53,12 +53,11 @@ patchinfo.has_boot_image = True
 # a list can be provided (eg. ['boot1.img', 'boot2.img'])
 #patchinfo.bootimg        = 'boot.img'
 
-# These two lines enable the autopatcher. In most cases, this is sufficient.
-patchinfo.patch          = autopatcher.auto_patch
-patchinfo.extract        = autopatcher.files_to_auto_patch
+# This line enables the autopatcher. In most cases, this is sufficient.
+patchinfo.autopatchers   = [StandardPatcher]
 # If, for whatever reason, the autopatcher doesn't work, uncomment this line,
 # copy your patch to patches/ and put the patch here.
-#patchinfo.patch          = 'jflte/AOSP/YourROM.patch'
+#patchinfo.autopatchers   = ['jflte/AOSP/YourROM.patch']
 
 ### Advanced stuff ###
 

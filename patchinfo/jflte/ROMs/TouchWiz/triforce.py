@@ -1,5 +1,6 @@
+from multiboot.autopatchers.base import BasePatcher
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 import os
 import re
@@ -9,31 +10,33 @@ patchinfo = PatchInfo()
 patchinfo.matches        = r"^TriForceROM[0-9\.]+\.zip$"
 patchinfo.name           = 'TriForceROM'
 patchinfo.ramdisk        = 'jflte/TouchWiz/TouchWiz.def'
-patchinfo.patch          = [ autopatcher.auto_patch ]
-patchinfo.extract        = [ autopatcher.files_to_auto_patch,
-                             'META-INF/com/google/android/aroma-config' ]
+patchinfo.autopatchers   = [StandardPatcher]
 
-def fix_aroma(directory, bootimg = None, device_check = True,
-              partition_config = None, device = None):
-  aroma_config = 'META-INF/com/google/android/aroma-config'
-  lines = fileio.all_lines(os.path.join(directory, aroma_config))
 
-  i = 0
-  while i < len(lines):
-    if re.search('/system/build.prop', lines[i]):
-      # Remove 'raw-' since aroma mounts the partitions directly
-      target_dir = re.sub("raw-", "", partition_config.target_system)
-      lines[i] = re.sub('/system', target_dir, lines[i])
+class FixAroma(BasePatcher):
+    def __init__(self, **kwargs):
+        super(FixAroma, self).__init__(**kwargs)
 
-    elif re.search(r"/sbin/mount.*/system", lines[i]):
-      i += autopatcher.insert_line(i + 1, re.sub('/system', '/cache', lines[i]), lines)
-      i += autopatcher.insert_line(i + 1, re.sub('/system', '/data', lines[i]), lines)
+        self.files_list.append('META-INF/com/google/android/aroma-config')
 
-    elif '~welcome.title' in lines[i]:
-      i += autopatcher.insert_line(i + 1, '"***IMPORTANT***: You MUST choose the stock kernel for dual booting to work. If you want to use a custom kernel, you can patch and flash it afterwards.\\n\\n" +', lines)
+    def patch(self, directory, file_info, bootimages=None):
+        aroma_config = 'META-INF/com/google/android/aroma-config'
+        lines = fileio.all_lines(os.path.join(directory, aroma_config))
 
-    i += 1
+        i = 0
+        while i < len(lines):
+            if re.search('/system/build.prop', lines[i]):
+                # Remove 'raw-' since aroma mounts the partitions directly
+                target_dir = re.sub("raw-", "", file_info.partconfig.target_system)
+                lines[i] = re.sub('/system', target_dir, lines[i])
 
-  fileio.write_lines(aroma_config, lines, directory = directory)
+            elif re.search(r"/sbin/mount.*/system", lines[i]):
+                i += autopatcher.insert_line(i + 1, re.sub('/system', '/cache', lines[i]), lines)
+                i += autopatcher.insert_line(i + 1, re.sub('/system', '/data', lines[i]), lines)
 
-patchinfo.patch.append(fix_aroma)
+            i += 1
+
+        fileio.write_lines(os.path.join(directory, aroma_config), lines)
+
+
+patchinfo.autopatchers.append(FixAroma)

@@ -1,12 +1,11 @@
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import os
 
 patchinfo = PatchInfo()
 
 patchinfo.name           = "Moto X's Qualcomm-optimized Dalvik and Bionic libraries"
-patchinfo.patch          = autopatcher.auto_patch
-patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.autopatchers   = [StandardPatcher]
 patchinfo.has_boot_image = False
 
 def matches(filename):

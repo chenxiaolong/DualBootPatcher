@@ -1,8 +1,7 @@
-from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.autopatchers.jflte import GoogleEditionPatcher
+from multiboot.patchinfo import PatchInfo
 import os
-import re
 
 patchinfo = PatchInfo()
 
@@ -13,10 +12,8 @@ patchinfo.ramdisk        = 'jflte/GoogleEdition/GoogleEdition.def'
 def on_filename_set(patchinfo, filename):
   filename = os.path.split(filename)[1]
   if filename.startswith("KK"):
-    patchinfo.patch      = [ autopatcher.auto_patch, GoogleEditionPatcher.qcom_audio_fix ]
-    patchinfo.extract    = [ autopatcher.files_to_auto_patch, GoogleEditionPatcher.files_for_qcom_audio_fix ]
+    patchinfo.autopatchers= [StandardPatcher, GoogleEditionPatcher]
   elif filename.startswith("KB"):
-    patchinfo.patch      = [ autopatcher.auto_patch ]
-    patchinfo.extract    = [ autopatcher.files_to_auto_patch ]
+    patchinfo.autopatchers= [StandardPatcher]
 
 patchinfo.on_filename_set = on_filename_set

@@ -1,5 +1,6 @@
+from multiboot.autopatchers.base import BasePatcher
+from multiboot.autopatchers.standard import StandardPatcher
 from multiboot.patchinfo import PatchInfo
-import multiboot.autopatcher as autopatcher
 import multiboot.fileio as fileio
 import os
 import re
@@ -8,32 +9,36 @@ patchinfo = PatchInfo()
 
 patchinfo.matches        = r"^Slim_aroma_selectable_gapps.*\.zip$"
 patchinfo.name           = 'SlimRoms AROMA Google Apps'
-patchinfo.patch          = [ autopatcher.auto_patch ]
-patchinfo.extract        = autopatcher.files_to_auto_patch
+patchinfo.autopatchers   = [StandardPatcher]
 patchinfo.has_boot_image = False
 
-def handle_bundled_mount(directory, bootimg = None, device_check = True,
-                         partition_config = None, device = True):
-  updater_script = 'META-INF/com/google/android/updater-script'
-  lines = fileio.all_lines(os.path.join(directory, updater_script))
 
-  i = 0
-  while i < len(lines):
-    if re.search('/tmp/mount.*/system', lines[i]):
-      del lines[i]
-      i += autopatcher.insert_mount_system(i, lines)
+class HandleBundledMount(BasePatcher):
+    def __init__(self, **kwargs):
+        super(HandleBundledMount, self).__init__(**kwargs)
 
-    elif re.search('/tmp/mount.*/cache', lines[i]):
-      del lines[i]
-      i += autopatcher.insert_mount_cache(i, lines)
+    def patch(self, directory, file_info, bootimages=None):
+        updater_script = 'META-INF/com/google/android/updater-script'
+        lines = fileio.all_lines(os.path.join(directory, updater_script))
 
-    elif re.search('/tmp/mount.*/data', lines[i]):
-      del lines[i]
-      i += autopatcher.insert_mount_data(i, lines)
+        i = 0
+        while i < len(lines):
+            if re.search('/tmp/mount.*/system', lines[i]):
+                del lines[i]
+                i += StandardPatcher.insert_mount_system(i, lines)
 
-    else:
-      i += 1
+            elif re.search('/tmp/mount.*/cache', lines[i]):
+                del lines[i]
+                i += StandardPatcher.insert_mount_cache(i, lines)
 
-  fileio.write_lines(updater_script, lines, directory = directory)
+            elif re.search('/tmp/mount.*/data', lines[i]):
+                del lines[i]
+                i += StandardPatcher.insert_mount_data(i, lines)
 
-patchinfo.patch.append(handle_bundled_mount)
+            else:
+                i += 1
+
+        fileio.write_lines(os.path.join(directory, updater_script), lines)
+
+
+patchinfo.autopatchers.append(HandleBundledMount)
