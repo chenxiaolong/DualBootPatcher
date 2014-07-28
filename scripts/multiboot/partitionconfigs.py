@@ -95,11 +95,22 @@ configs.append(multislot3)
 
 ################################################################
 
+# Special non-dualboot case
+
 primaryupgrade = PartitionConfig()
 
 primaryupgrade.name                = 'Primary ROM Upgrade'
 primaryupgrade.description         = 'Upgrade primary ROM without wiping the secondary ROM'
+primaryupgrade.kernel              = "primary"
 primaryupgrade.id                  = 'primaryupgrade'
+
+primaryupgrade.target_system       = "/system"
+primaryupgrade.target_cache        = "/cache"
+primaryupgrade.target_data         = "/data"
+
+primaryupgrade.target_system_partition = PartitionConfig.SYSTEM
+primaryupgrade.target_cache_partition  = PartitionConfig.CACHE
+primaryupgrade.target_data_partition   = PartitionConfig.DATA
 
 configs.append(primaryupgrade)
 

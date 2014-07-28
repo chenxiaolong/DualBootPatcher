@@ -474,6 +474,8 @@ class PrimaryUpgradePatcher(Patcher):
         i += autopatcher.insert_line(
             i, EXTRACT % (PERM_TOOL, '/tmp/' + PERM_TOOL), lines)
         i += autopatcher.insert_line(
+            i, EXTRACT % ('dualboot.sh', '/tmp/dualboot.sh'), lines)
+        i += autopatcher.insert_line(
             i, EXTRACT % ('setfacl', '/tmp/setfacl'), lines)
         i += autopatcher.insert_line(
             i, EXTRACT % ('setfattr', '/tmp/setfattr'), lines)
@@ -483,6 +485,8 @@ class PrimaryUpgradePatcher(Patcher):
             i, EXTRACT % ('getfattr', '/tmp/getfattr'), lines)
         i += autopatcher.insert_line(
             i, MAKE_EXECUTABLE % ('/tmp/' + PERM_TOOL), lines)
+        i += autopatcher.insert_line(
+            i, MAKE_EXECUTABLE % '/tmp/dualboot.sh', lines)
         i += autopatcher.insert_line(
             i, MAKE_EXECUTABLE % '/tmp/setfacl', lines)
         i += autopatcher.insert_line(
@@ -588,8 +592,14 @@ class PrimaryUpgradePatcher(Patcher):
             i, PERMS_RESTORE % '/cache', lines)
         i += autopatcher.insert_line(
             i, UNMOUNT % '/cache', lines)
+        i += autopatcher.insert_line(
+            i, 'run_program("/tmp/dualboot.sh", "set-multi-kernel");', lines)
 
         fileio.write_lines(os.path.join(tempdir, UPDATER_SCRIPT), lines)
+
+        shutil.copy(os.path.join(OS.patchdir, 'dualboot.sh'), tempdir)
+        autopatcher.insert_partition_info(tempdir, 'dualboot.sh',
+                                          self.file_info.partconfig)
 
         OS.ui.set_task(self.tasks['COMPRESSING_ZIP_FILE'])
         OS.ui.details('Opening input and output zip files ...')
@@ -603,7 +613,7 @@ class PrimaryUpgradePatcher(Patcher):
 
         progress_current = 0
         # Five extra files
-        progress_total = len(z_input.infolist()) + 5
+        progress_total = len(z_input.infolist()) + 6
 
         OS.ui.max_progress(progress_total)
 
@@ -625,6 +635,10 @@ class PrimaryUpgradePatcher(Patcher):
         OS.ui.progress()
         z_output.write(os.path.join(tempdir, UPDATER_SCRIPT),
                        arcname=UPDATER_SCRIPT)
+        OS.ui.details('Adding file to zip: ' + 'dualboot.sh')
+        OS.ui.progress()
+        z_output.write(os.path.join(tempdir, 'dualboot.sh'),
+                       arcname='dualboot.sh')
 
         for f in [PERM_TOOL, 'setfacl', 'setfattr', 'getfacl', 'getfattr']:
             OS.ui.details('Adding file to zip: ' + f)
