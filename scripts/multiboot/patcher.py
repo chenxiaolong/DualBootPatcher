@@ -568,12 +568,12 @@ class PrimaryUpgradePatcher(Patcher):
             else:
                 i += 1
 
-        if not replaced_format_system:
-            OS.ui.failed('The patcher could not find any /system formatting'
-                         ' lines in the updater-script file.\n\nIf the file is'
-                         ' a ROM, then something failed. If the file is not a'
-                         ' ROM (eg. kernel or mod), it doesn\'t need to be'
-                         ' patched.')
+        if not replaced_format_system and not replaced_format_cache:
+            OS.ui.failed('The patcher could not find any /system or /cache'
+                         ' formatting lines in the updater-script file.\n\n'
+                         'If the file is a ROM, then something failed. If the'
+                         ' file is not a ROM (eg. kernel or mod), it doesn\'t'
+                         ' need to be patched.')
             return None
 
         i += autopatcher.insert_line(
