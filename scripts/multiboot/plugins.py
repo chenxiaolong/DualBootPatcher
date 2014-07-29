@@ -75,7 +75,7 @@ def load_ramdisks():
 
                     plugin = imp.load_source(name, fullpath)
 
-                    ramdisks[relpath] = plugin
+                    ramdisks[relpath.replace('\\', '/')] = plugin
 
 
 def init():
