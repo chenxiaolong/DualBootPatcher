@@ -102,6 +102,7 @@ Kernels:
   * Adam kernel
   * Alucard kernel (AOSP, Google Edition, & TouchWiz)
   * Echoe AEL (Google Edition)
+  * GoogyMax3 (CyanogenMod, Google Edition, & TouchWiz)
   * Plain boot.img files (use useful/patch-ramdisk.bat script)
 
 Other:
