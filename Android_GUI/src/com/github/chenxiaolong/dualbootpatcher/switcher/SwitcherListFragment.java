@@ -468,13 +468,15 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         if (mRenameDialog == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
+            String defaultName = RomUtils.getDefaultName(getActivity(), mSelectedRom);
             String name = RomUtils.getName(getActivity(), mSelectedRom);
             builder.setTitle(String.format(getActivity().getString(
-                    R.string.rename_rom_title), name));
+                    R.string.rename_rom_title), defaultName));
             builder.setMessage(String.format(getActivity().getString(
-                    R.string.rename_rom_desc), name));
+                    R.string.rename_rom_desc), defaultName));
 
             final EditText textbox = new EditText(getActivity());
+            textbox.setText(name);
             textbox.setInputType(InputType.TYPE_CLASS_TEXT
                     | InputType.TYPE_TEXT_FLAG_AUTO_CORRECT);
             builder.setView(textbox);

@@ -264,7 +264,7 @@ public class RomUtils {
         return null;
     }
 
-    private static String getDefaultName(Context context, RomInformation info) {
+    public static String getDefaultName(Context context, RomInformation info) {
         if (info.kernelId.equals(PRIMARY_KERNEL_ID)) {
             return context.getString(R.string.primary);
         } else if (info.kernelId.equals(SECONDARY_KERNEL_ID)) {
