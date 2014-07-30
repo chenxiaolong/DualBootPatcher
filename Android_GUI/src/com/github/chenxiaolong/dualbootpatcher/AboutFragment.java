@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -53,6 +54,24 @@ public class AboutFragment extends Fragment {
 
         TextView credits = (TextView) getActivity().findViewById(
                 R.id.about_credits);
+
+        String linkable = "<a href=\"%s\">%s</a>\n";
+        String newline = "<br />";
+        String separator = " | ";
+
+        String creditsText = getActivity().getString(R.string.credits);
+        String sourceCode = String.format(linkable,
+                getActivity().getString(R.string.url_source_code),
+                getActivity().getString(R.string.link_source_code));
+        String xdaThread = String.format(linkable,
+                getActivity().getString(R.string.url_xda_thread),
+                getActivity().getString(R.string.link_xda_thread));
+        String licenses = String.format(linkable,
+                getActivity().getString(R.string.url_licenses),
+                getActivity().getString(R.string.link_licenses));
+
+        credits.setText(Html.fromHtml(creditsText + newline + newline
+                + sourceCode + separator + xdaThread + separator + licenses));
         credits.setMovementMethod(LinkMovementMethod.getInstance());
     }
 }

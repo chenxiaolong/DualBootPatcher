@@ -135,11 +135,11 @@ public class RomCard extends Card {
 
     public void showCompletionMessage(int action, boolean failed) {
         if (action == SwitcherListFragment.ACTION_CHOOSE_ROM) {
-            mStringResId = failed ? R.string.write_kernel_failure
-                    : R.string.write_kernel_success;
+            mStringResId = failed ? R.string.choose_rom_failure
+                    : R.string.choose_rom_success;
         } else if (action == SwitcherListFragment.ACTION_SET_KERNEL) {
-            mStringResId = failed ? R.string.back_up_kernel_failure
-                    : R.string.back_up_kernel_success;
+            mStringResId = failed ? R.string.set_kernel_failure
+                    : R.string.set_kernel_success;
         }
 
         mShowMessage = true;

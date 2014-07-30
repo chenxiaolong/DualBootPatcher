@@ -27,7 +27,7 @@
         android:id="@+id/logo"
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:contentDescription="@string/logo"
+        android:contentDescription="@null"
         android:src="@drawable/logo_big" />
 
     <LinearLayout
@@ -57,7 +57,6 @@
             android:layout_marginTop="20dp"
             android:gravity="center"
             android:lineSpacingExtra="5sp"
-            android:text="@string/credits"
             android:textSize="16sp" />
     </LinearLayout>
 

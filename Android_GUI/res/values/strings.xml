@@ -18,168 +18,244 @@
 -->
 
 <resources>
-
+    <!-- Name of the app built in release mode -->
     <string name="app_name_release">Dual Boot Patcher</string>
+    <!-- Name of the app built in debug mode -->
     <string name="app_name_debug">Dual Boot Patcher (Debug)</string>
+    <!-- Name of the app built in snapshot mode -->
     <string name="app_name_snapshot">Dual Boot Patcher (Snapshot)</string>
 
+    <!-- Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching) -->
     <string name="wait_until_finished">Please wait until all operations are finished.</string>
 
-    <!-- About -->
-    <string name="logo">Dual Boot Patcher Logo</string>
+    <!-- Indicate the version of the app on the about screen -->
     <string name="version">Version %s</string>
-    <string name="credits">Special thanks to everyone who helped make this patcher possible!\n\n
-        <a href="https://github.com/chenxiaolong/DualBootPatcher">Source Code</a>\n
-        <a href="http://forum.xda-developers.com/showthread.php?t=2447534">XDA Thread</a>\n
-        <a href="https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses">Licenses</a>
-    </string>
+    <!-- GitHub source code web page URL -->
+    <string name="url_source_code" translatable="false">https://github.com/chenxiaolong/DualBootPatcher</string>
+    <!-- GitHub source code link text -->
+    <string name="link_source_code">Source Code</string>
+    <!-- XDA forum thread web page URL -->
+    <string name="url_xda_thread" translatable="false">http://forum.xda-developers.com/showthread.php?t=2447534</string>
+    <!-- XDA forum thread link text -->
+    <string name="link_xda_thread">XDA Thread</string>
+    <!-- Licenses URL -->
+    <string name="url_licenses" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses</string>
+    <!-- Licenses link text -->
+    <string name="link_licenses">Licenses</string>
+    <!-- Thank you message for contributors and links to relavent URLs -->
+    <string name="credits">Special thanks to everyone who helped make this patcher possible!</string>
 
-    <!-- Root access messages -->
+    <!-- Message in ROM Settings screen indicating that it's waiting for root access -->
     <string name="waiting_for_root">Waiting for root access</string>
+    <!-- Title for the card shown in the switcher when root access could not be obtained -->
     <string name="noroot_title">No root access</string>
+    <!-- Message for the card shown in the switcher when root access could not be obtained -->
     <string name="noroot_switcher_desc">The application was unable to obtain root access. Root
         access is needed for writing to the kernel/boot image partition to switch between
         firmware.\n\nTap to try to obtain root access again.</string>
+    <!-- Message for the card shown in the ROM Settings screen when root access could not be obtained -->
     <string name="noroot_settings_desc">The application was unable to obtain root access. Root
         access is needed to change application sharing settings.\n\nTap to try to obtain root
         access again.</string>
 
-    <!-- Navigation drawer items -->
+    <!-- Navigation drawer item for selecting the ROM -->
     <string name="title_choose_rom">Choose ROM</string>
+    <!-- Navigation drawer item for setting the kernel -->
     <string name="title_set_kernel">Set Kernel</string>
+    <!-- Navigation drawer item for patching a zip file -->
     <string name="title_patch_zip">Patch Zip File</string>
+    <!-- Navigation drawer item for changing the ROM settings -->
     <string name="title_rom_settings">ROM Settings</string>
+    <!-- Nagivation drawer item for rebooting the device -->
     <string name="title_reboot">Reboot</string>
+    <!-- Navigation drawer item for showing the about screen -->
     <string name="title_about">About</string>
+    <!-- Nagivation drawer item for exiting the app -->
     <string name="title_exit">Exit</string>
 
+    <!-- Accessibility text for opening the app drawer -->
     <string name="drawer_open">Open navigation drawer</string>
+    <!-- Accessibility text for closing the app drawer -->
     <string name="drawer_close">Close navigation drawer</string>
 
-    <!-- Switcher -->
+    <!-- Default name for the primary ROM -->
     <string name="primary">Primary</string>
+    <!-- Default name for the secondary ROM -->
     <string name="secondary">Secondary</string>
+    <!-- Default name for the multi-slot ROMs -->
     <string name="multislot">Multi Slot %s</string>
+    <!-- Text shown when a ROM's version could not be detected -->
     <string name="couldnt_determine_version">Couldn\'t determine ROM version</string>
 
-    <string name="write_kernel_success">Successfully switched</string>
-    <string name="write_kernel_failure">Failed to write kernel</string>
-    <string name="back_up_kernel_success">Successfully set the kernel</string>
-    <string name="back_up_kernel_failure">Failed to set kernel</string>
+    <!-- Message shown when switching ROMs succeeds -->
+    <string name="choose_rom_success">Successfully switched</string>
+    <!-- Message shown when switching ROMs failed -->
+    <string name="choose_rom_failure">Failed to switch ROM</string>
+    <!-- Message shown when setting the kernel succeeds -->
+    <string name="set_kernel_success">Successfully set the kernel</string>
+    <!-- Message shown when setting the kernel fails -->
+    <string name="set_kernel_failure">Failed to set kernel</string>
 
+    <!-- Accessibility text for the ROM logo images -->
     <string name="switcher_rom_image">ROM logo</string>
 
+    <!-- Title for the confirmation dialog box shown when trying to set the kernel -->
     <string name="switcher_ask_set_kernel_title">Set kernel?</string>
+    <!-- Message for the confirmation dialog box shown when trying to set the kernel -->
     <string name="switcher_ask_set_kernel_desc">The currently running kernel will be saved
         as the kernel for %s.</string>
 
+    <!-- Title for the dialog box to rename a ROM -->
     <string name="rename_rom_title">Rename %s</string>
+    <!-- Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM -->
     <string name="rename_rom_desc">Enter a new name for %s. Leave blank to use the
         default name.</string>
 
-    <!-- Patcher: Device and partition configuration card -->
+    <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>
 
-    <!-- Patcher: File chooser card -->
+    <!-- Title for the dialog box indicating that no file manager is installed -->
     <string name="filemanager_missing_title">No file manager</string>
+    <!-- Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file -->
     <string name="filemanager_missing_desc">There is no suitable file manager installed. Please
         install a file manager to be able to choose files to patch.</string>
 
+    <!-- Title for the file chooser card telling the user to tap to choose a file -->
     <string name="filechooser_initial_title">Tap to choose a file to patch</string>
+    <!-- Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown -->
     <string name="filechooser_initial_desc">Zip files and boot images (boot.img, boot.lok) are
         supported by the patcher. If an unsupported file is chosen, additional options will appear
         that allow the patching process to be customized.</string>
 
+    <!-- Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching -->
     <string name="filechooser_ready_title">Tap to begin patching</string>
+    <!-- Message indicating which file has been chosen and that tapping allows another file to be chosen -->
     <string name="filechooser_ready_desc">Selected file: %s\n\nTap and hold to choose a different
         file.</string>
 
+    <!-- Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching -->
     <string name="filechooser_unsupported_title">Tap to begin patching</string>
+    <!-- Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options -->
     <string name="filechooser_unsupported_desc">Selected file: %s\n\nThe file you have selected
         is not supported. You can attempt to patch the file anyway using the options
         below.\n\nTap and hold to choose a different file.</string>
 
+    <!-- Title for the file chooser card indicating that the file was successfully patched -->
     <string name="filechooser_success_title">Successfully patched file</string>
+    <!-- Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch -->
     <string name="filechooser_success_desc">New file: %s\n\nTap to choose another file to
         patch.</string>
 
+    <!-- Title for the file chooser card indicating that the patcher failed to patch the file -->
     <string name="filechooser_failure_title">Failed to patch file</string>
+    <!-- Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch -->
     <string name="filechooser_failure_desc">%s\n\nTap to choose another file to patch.</string>
 
-    <!-- Patcher: Preset card -->
+    <!-- Title for the preset card -->
     <string name="preset_title">Preset</string>
+    <!-- Name for the custom preset item -->
     <string name="preset_custom">Custom</string>
+    <!-- Description for the custom preset item indicating that further options can be modified -->
     <string name="preset_custom_desc">Customize the patcher using the options below</string>
 
-    <!-- Patcher: Custom options card -->
+    <!-- Title for the custom options card -->
     <string name="customopts_title">Custom options</string>
+    <!-- Name for the autopatcher radio button -->
     <string name="customopts_autopatcher">Autopatcher</string>
+    <!-- Name for the patch file radio button -->
     <string name="customopts_patchfile">Patch file</string>
+    <!-- Name for the button to select a .patch or .diff file -->
     <string name="customopts_choosepatch">Choose patch file</string>
+    <!-- Name for the option to disable checks for the device's model -->
     <string name="customopts_devicecheck">Remove device check</string>
+    <!-- Name for the option telling the patcher that the file has a boot image -->
     <string name="customopts_hasbootimage">Has boot image</string>
+    <!-- Name for the ramdisks combobox -->
     <string name="customopts_ramdisk">Ramdisk</string>
+    <!-- Name for the patched init binary combobox -->
     <string name="customopts_patchedinit">Patched init</string>
+    <!-- Name for the boot image text box -->
     <string name="customopts_bootimage">Boot image</string>
+    <!-- Default text for the boot image text box indicating that leaving the box blank will enable autodetection -->
     <string name="customopts_bootimage_hint">Leave blank to autodetect</string>
 
-    <!-- Patcher: Tasks card -->
+    <!-- Accessibility text for the checkbox in the progress box -->
     <string name="task_checkbox_image">Task completion checkbox</string>
 
-    <!-- Patcher: Details card -->
+    <!-- Title for the details card -->
     <string name="details_title">Details:</string>
+    <!-- Text for the details card indicating that the patching is done -->
     <string name="details_done">Done</string>
 
-    <!-- Patcher: Progress card -->
+    <!-- Title for the progress card -->
     <string name="overall_progress">Overall progress:</string>
+    <!-- Text for the progress card showing how many files have been added to the new zip -->
     <string name="overall_progress_files">%1$s/%2$s files</string>
 
-    <!-- Settings -->
+    <!-- Title for the application sharing section of the ROM Settings -->
     <string name="rom_settings_app_sharing_title">Application sharing (EXPERIMENTAL)</string>
+    <!-- Name of the preference for globally sharing free applications from the primary ROM -->
     <string name="rom_settings_share_apps_title">Share applications</string>
+    <!-- Description of the preference for globally shareing free applications from the primary ROM -->
     <string name="rom_settings_share_apps_desc">Share applications from the primary ROM with the
         current ROM (requires reboot).</string>
+    <!-- Name of the preference for globally sharing paid applications from the primary ROM -->
     <string name="rom_settings_share_paid_apps_title">Share paid applications</string>
+    <!-- Description of the preference for globally shareing paid applications from the primary ROM -->
     <string name="rom_settings_share_paid_apps_desc">
         <![CDATA[
             Share paid applications from the primary ROM with the current ROM (requires reboot).
             <strong>May not work due to DRM.</strong>
         ]]>
     </string>
+    <!-- Message indicating that the current ROM was patched with an older version of the patcher and must be repatched with a newer version -->
     <string name="rom_settings_too_old">This ROM was patched with an old version of the patcher.
         Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
 
+    <!-- Title for the preference to share individual applications -->
     <string name="rom_settings_indiv_app_sharing_title">Share individual applications</string>
+    <!-- Description for the preference to share individual applications -->
     <string name="rom_settings_indiv_app_sharing_desc">Share individual applications across ROMs
         (requires reboot).</string>
 
+    <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>
+    <!-- Title for the preference to show the exit button in the navigation drawer -->
     <string name="rom_settings_show_exit_title">Show Exit button</string>
+    <!-- Title for the preference to show the reboot button in the navigation drawer -->
     <string name="rom_settings_show_reboot_title">Show Reboot button</string>
 
+    <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_dialog_title">Individual app sharing</string>
+    <!-- Description for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_dialog_desc">Individual app sharing allows the device to keep
-        one copy of an app for each ROM in order to save space. It also ensures that the app is
+        one copy of an app for every selected ROM in order to save space. It also ensures that the app is
         updated in each ROM.\n\nWhen an app is installed, upgraded, or removed, the patcher will
         sometimes request root access to start up the \'syncdaemon\' service. Please allow the
         request for the syncing to succeed.</string>
 
-    <!-- Description for the individual app sharing preference indicating that is cannot be used
-         when global app sharing is enabled. -->
+    <!-- Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled. -->
     <string name="indiv_app_sharing_incompat_global">Cannot be used while global application
         sharing is enabled.</string>
 
+    <!-- Description in the app sharing list showing which ROMs the application is installed in -->
     <string name="installed_in_roms">Currently installed in:</string>
+    <!-- Description for the checkboxes indicating which ROMs the application should be shared across -->
     <string name="share_apks_across_title">Use the same apk across:</string>
 
-    <!-- Miscellaneous -->
+    <!-- Word/phrase for None (used in eg. a list) -->
     <string name="none">None</string>
+    <!-- Word/phrase for OK (used in dialog boxes) -->
     <string name="ok">OK</string>
+    <!-- Word/phrase for Cancel (used in dialog boxes) -->
     <string name="cancel">Cancel</string>
+    <!-- Word/phrase for Continue (used in dialog boxes) -->
     <string name="proceed">Continue</string>
 
+    <!-- Text for checkbox in dialogs indicating that the dialog should not be shown again -->
     <string name="do_not_show_again">Do not show again</string>
 
+    <!-- Presets that should always be visible -->
     <string-array name="preset_dirs" translatable="false">
         <item>Google_Apps</item>
         <item>Other</item>
