@@ -58,8 +58,6 @@ device = None
 partconfig_name = None
 partconfig = None
 noquestions = False
-share_apps = False
-share_paid_apps = False
 
 # For unsupported files
 f_preset_name = None
@@ -203,20 +201,6 @@ def parse_args():
                             The patcher will fail and exit if the file is
                             unsupported
                         '''),
-                        action='store_true')
-
-    parser.add_argument('--share-apps',
-                        help=textwrap.dedent('''
-                            Attempt to share apps by using the primary ROM's
-                            /data/app. (EXPERIMENTAL)
-                        '''),
-                        action='store_true')
-
-    parser.add_argument('--share-paid-apps',
-                        help=textwrap.dedent('''
-                            Attempt to share paid apps by using the primary
-                            ROM's /data/app-asec. (EXPERIMENTAL)
-                         '''),
                         action='store_true')
 
     group = parser.add_argument_group('Unsupported files',
