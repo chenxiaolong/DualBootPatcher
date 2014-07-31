@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import binascii
 import gzip
+import mmap
 import os
 import struct
 import sys
@@ -29,6 +30,38 @@ BOOT_MAGIC = "ANDROID!"
 BOOT_MAGIC_SIZE = 8
 BOOT_NAME_SIZE = 16
 BOOT_ARGS_SIZE = 512
+
+# From loki.h in the original source code:
+# https://raw.githubusercontent.com/djrbliss/loki/master/loki.h
+SHELL_CODE = b'\xfe\xb5'        \
+    b'\x0d\x4d'                 \
+    b'\xd5\xf8'                 \
+    b'\x88\x04'                 \
+    b'\xab\x68'                 \
+    b'\x98\x42'                 \
+    b'\x12\xd0'                 \
+    b'\xd5\xf8'                 \
+    b'\x90\x64'                 \
+    b'\x0a\x4c'                 \
+    b'\xd5\xf8'                 \
+    b'\x8c\x74'                 \
+    b'\x07\xf5\x80\x57'         \
+    b'\x0f\xce'                 \
+    b'\x0f\xc4'                 \
+    b'\x10\x3f'                 \
+    b'\xfb\xdc'                 \
+    b'\xd5\xf8'                 \
+    b'\x88\x04'                 \
+    b'\x04\x49'                 \
+    b'\xd5\xf8'                 \
+    b'\x8c\x24'                 \
+    b'\xa8\x60'                 \
+    b'\x69\x61'                 \
+    b'\x2a\x61'                 \
+    b'\x00\x20'                 \
+    b'\xfe\xbd'                 \
+    b'\xff\xff\xff\xff'         \
+    b'\xee\xee\xee\xee'
 
 
 def bytes_to_str(data):
@@ -230,6 +263,32 @@ def extract(filename, directory):
 
     print_i("Kernel size: " + str(kernel_size))
 
+    # If the boot image was patched with a newer version of loki, find the
+    # ramdisk offset in the shell code
+    if lok_ramdisk_addr != 0:
+        mm = mmap.mmap(f.fileno(), 0, mmap.MAP_PRIVATE, mmap.PROT_READ)
+
+        orig_ramdisk_addr = -1
+
+        # Length is 1 shorter than the C version since we don't have a null
+        # byte at the end
+        for i in range(total_size - (len(SHELL_CODE) - 8) - 1, -1, -1):
+            if mm[i:i + len(SHELL_CODE) - 8] == SHELL_CODE[:-8]:
+                loc = i + len(SHELL_CODE) - 4
+                orig_ramdisk_addr = struct.unpack('<I', mm[loc:loc + 4])[0]
+                break
+
+        mm.close()
+
+        if orig_ramdisk_addr == -1:
+            raise Exception("Could not determine ramdisk offset")
+
+    # Otherwise, use the jflte default
+    else:
+        orig_ramdisk_addr = kernel_addr - 0x00008000 + 0x02000000
+
+    print_i('Original ramdisk address: %s' % hex(orig_ramdisk_addr))
+
     print_i("")
 
     print_i("Writing kernel command line to %s-cmdline ..." % basename)
@@ -240,6 +299,11 @@ def extract(filename, directory):
     print_i("Writing base address to %s-base ..." % basename)
     out = open(os.path.join(directory, basename + "-base"), 'wb')
     out.write(('%08x\n' % (kernel_addr - 0x00008000)).encode('ASCII'))
+    out.close()
+
+    print_i("Writing ramdisk offset to %s-ramdisk_offset ..." % basename)
+    out = open(os.path.join(directory, basename + "-ramdisk_offset"), 'wb')
+    out.write(('%08x\n' % (orig_ramdisk_addr - kernel_addr + 0x00008000)).encode('ASCII'))
     out.close()
 
     print_i("Writing page size to %s-pagesize ..." % basename)

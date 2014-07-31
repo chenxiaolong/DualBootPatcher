@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import multiboot.config as config
 import multiboot.cmd as cmd
 import multiboot.debug as debug
 import multiboot.fileio as fileio
@@ -100,10 +99,6 @@ def extract(boot_image, output_dir, device=None):
         info.ramdisk_offset = \
             int(fileio.first_line(prefix + '-ramdisk_offset'), 16)
         os.remove(prefix + '-ramdisk_offset')
-    elif device and config.has('devices', device, 'ramdisk'):
-        # We need this for Loki'd boot images
-        ramdiskopts = config.config['devices'][device]['ramdisk']
-        info.ramdisk_offset = ramdiskopts['offset']
 
     if os.path.exists(prefix + '-second_offset'):
         info.second_offset = \

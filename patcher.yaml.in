@@ -6,11 +6,6 @@ devices:
       name:     Samsung Galaxy S 4
       selinux:  permissive
 
-      # This is normally detected automatically, but this address is not stored
-      # in a loki'd boot image
-      ramdisk:
-        offset: 0x02000000
-
       partitions:
         system: mmcblk0p16
         cache:  mmcblk0p18
