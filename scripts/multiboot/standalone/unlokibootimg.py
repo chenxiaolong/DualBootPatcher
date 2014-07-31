@@ -214,16 +214,20 @@ def extract(filename, directory):
         gzip_size = lok_orig_ramdisk_size
         print_i("Ramdisk size: %i" % gzip_size)
 
-    # Get kernel size
-    # Unfortunately, the original size is not stored in the Loki header on
-    # kernels for Samsung devices and we can't reverse Dan Rosenberg's
-    # expression because data is loss with the bitwise and:
-    # hdr->kernel_size = ((hdr->kernel_size + page_mask) & ~page_mask) + hdr->ramdisk_size;
-    # Luckily, the zimage headers stores the size at 0x2c, so we can get it
-    # from there.
-    # http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
-    f.seek(page_size + 0x2c, os.SEEK_SET)
-    kernel_size = struct.unpack('<I', f.read(4))[0]
+    if lok_orig_kernel_size == 0:
+        # Get kernel size
+        # Unfortunately, the original size is not stored in the Loki header on
+        # kernels for Samsung devices and we can't reverse Dan Rosenberg's
+        # expression because data is loss with the bitwise and:
+        # hdr->kernel_size = ((hdr->kernel_size + page_mask) & ~page_mask) + hdr->ramdisk_size;
+        # Luckily, the zimage headers stores the size at 0x2c, so we can get it
+        # from there.
+        # http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
+        f.seek(page_size + 0x2c, os.SEEK_SET)
+        kernel_size = struct.unpack('<I', f.read(4))[0]
+    else:
+        kernel_size = lok_orig_kernel_size
+
     print_i("Kernel size: " + str(kernel_size))
 
     print_i("")
