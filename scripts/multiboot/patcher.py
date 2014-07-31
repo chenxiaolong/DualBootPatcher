@@ -22,6 +22,7 @@ import multiboot.fileio as fileio
 import multiboot.minicpio.minicpio as minicpio
 import multiboot.operatingsystem as OS
 import multiboot.ramdisk as ramdisk
+import ramdisks.common.common as common
 
 import gzip
 import os
@@ -651,6 +652,112 @@ class PrimaryUpgradePatcher(Patcher):
 
         os.close(new_zip_file[0])
         return new_zip_file[1]
+
+    def cleanup(self):
+        for d in self.tempdirs:
+            shutil.rmtree(d)
+
+        del self.tempdirs[:]
+
+
+class SyncdaemonPatcher(Patcher):
+    def __init__(self, file_info):
+        super(SyncdaemonPatcher, self).__init__(file_info)
+
+        # List of temporary directories created while patching
+        self.tempdirs = list()
+
+        self.add_task('PATCHING_RAMDISK', 'Patching ramdisk')
+
+    def start_patching(self):
+        newfile = None
+
+        try:
+            if self.file_info.filetype == fileinfo.BOOT_IMAGE:
+                newfile = self.patch_boot_image()
+
+                if newfile is not None:
+                    OS.ui.succeeded('Successfully patched boot image')
+
+            else:
+                OS.ui.failed('Unsupported file extension')
+
+        except Exception as e:
+            OS.ui.failed(str(e))
+
+        self.cleanup()
+
+        return newfile
+
+    def patch_boot_image(self):
+        path = self.file_info.filename
+
+        OS.ui.set_task(self.tasks['PATCHING_RAMDISK'])
+
+        tempdir = tempfile.mkdtemp()
+        self.tempdirs.append(tempdir)
+
+        OS.ui.details('Unpacking boot image ...')
+
+        bootimageinfo = bootimage.extract(path, tempdir,
+                                          device=self.file_info.device)
+        if not bootimageinfo:
+            OS.ui.failed(bootimage.error_msg)
+            return None
+
+        target_ramdisk = os.path.join(tempdir, 'ramdisk.cpio')
+
+        # Minicpio
+        OS.ui.details('Loading ramdisk with minicpio ...')
+        cf = minicpio.CpioFile()
+        with gzip.open(bootimageinfo.ramdisk, 'rb') as f:
+            cf.load(f.read())
+
+        os.remove(bootimageinfo.ramdisk)
+
+        OS.ui.details('Modifying ramdisk ...')
+
+        # Add syncdaemon to init.rc if it doesn't already exist
+        if not cf.get_file('sbin/syncdaemon'):
+            common.add_syncdaemon(cf)
+
+        # Copy syncdaemon
+        cf.add_file(
+            os.path.join(OS.ramdiskdir, 'syncdaemon'),
+            name='sbin/syncdaemon',
+            perms=0o750
+        )
+
+        # Create gzip compressed ramdisk
+        OS.ui.details('Creating gzip compressed ramdisk with minicpio ...')
+
+        target_ramdisk = target_ramdisk + ".gz"
+
+        with gzip.open(target_ramdisk, 'wb') as f_out:
+            data = cf.create()
+
+            if data is not None:
+                f_out.write(data)
+            else:
+                OS.ui.failed('Failed to create gzip compressed ramdisk')
+                return None
+
+        OS.ui.details('Running mkbootimg ...')
+
+        bootimageinfo.ramdisk = target_ramdisk
+
+        new_boot_image = tempfile.mkstemp()
+
+        if not bootimage.create(bootimageinfo, new_boot_image[1]):
+            OS.ui.failed('Failed to create boot image: ' + bootimage.error_msg)
+            os.close(new_boot_image[0])
+            os.remove(new_boot_image[1])
+            return None
+
+        os.remove(target_ramdisk)
+
+        os.close(new_boot_image[0])
+        return new_boot_image[1]
 
     def cleanup(self):
         for d in self.tempdirs:
