@@ -511,10 +511,12 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             final File tempThumbnail = RomUtils.getThumbnailTempFile(
                     getActivity(), mSelectedRom);
 
-            // Save a temporary copy of the current image
+            // Save a temporary copy of the current image when the dialog first appears. All
+            // changes are done on the temporary image and then copied back if the OK button is
+            // pressed.
             try {
                 File curThumbnail = RomUtils.getThumbnailFile(mSelectedRom);
-                if (curThumbnail.isFile() && !tempThumbnail.exists()) {
+                if (curThumbnail.isFile() && !tempThumbnail.exists() && !mRebootDialogShowing) {
                     org.apache.commons.io.FileUtils.copyFile(curThumbnail, tempThumbnail);
                 }
             } catch (IOException e) {
@@ -547,6 +549,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
                     RomUtils.setName(mSelectedRom, mRomDialogCard.getName());
                     refreshNames();
+
+                    mRebootDialogShowing = false;
                 }
             });
 
@@ -556,6 +560,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                     if (tempThumbnail.isFile()) {
                         tempThumbnail.delete();
                     }
+
+                    mRebootDialogShowing = false;
                 }
             });
 
