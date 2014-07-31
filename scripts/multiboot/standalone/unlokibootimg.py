@@ -201,14 +201,18 @@ def extract(filename, directory):
     if gzip_offset == 0:
         gzip_offset = offsets[0]
 
-    # The ramdisk is supposed to be from the gzip header to EOF, but loki needs
-    # to store a copy of aboot, so it is stored in 0x200 bytes are the end,
-    # which Dan Rosenberg calls the "fake" area.
-    gzip_size = total_size - gzip_offset - 0x200
-    # The line above is for Samsung kernels only. Uncomment this one for use on
-    # LG kernels:
-    #gzip_size = total_size - gzip_offset - page_size
-    print_i("Ramdisk size: %i (may include some padding)" % gzip_size)
+    if lok_orig_ramdisk_size == 0:
+        # The ramdisk is supposed to be from the gzip header to EOF, but loki needs
+        # to store a copy of aboot, so it is stored in 0x200 bytes are the end,
+        # which Dan Rosenberg calls the "fake" area.
+        gzip_size = total_size - gzip_offset - 0x200
+        # The line above is for Samsung kernels only. Uncomment this one for use on
+        # LG kernels:
+        #gzip_size = total_size - gzip_offset - page_size
+        print_i("Ramdisk size: %i (may include some padding)" % gzip_size)
+    else:
+        gzip_size = lok_orig_ramdisk_size
+        print_i("Ramdisk size: %i" % gzip_size)
 
     # Get kernel size
     # Unfortunately, the original size is not stored in the Loki header on
@@ -252,9 +256,14 @@ def extract(filename, directory):
     print_i("Writing ramdisk to %s-ramdisk.gz ..." % basename)
     f.seek(gzip_offset, os.SEEK_SET)
     ramdisk_data = f.read(gzip_size)
-    out = gzip.open(os.path.join(directory, basename + "-ramdisk.gz"), 'wb')
-    out.write(zlib.decompress(ramdisk_data, 16 + zlib.MAX_WBITS))
-    out.close()
+    if lok_orig_ramdisk_size == 0:
+        out = gzip.open(os.path.join(directory, basename + "-ramdisk.gz"), 'wb')
+        out.write(zlib.decompress(ramdisk_data, 16 + zlib.MAX_WBITS))
+        out.close()
+    else:
+        out = open(os.path.join(directory, basename + "-ramdisk.gz"), 'wb')
+        out.write(ramdisk_data)
+        out.close()
 
     f.close()
 
