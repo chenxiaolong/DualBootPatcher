@@ -109,7 +109,9 @@
     <string name="rename_rom_title">Rename %s</string>
     <!-- Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM -->
     <string name="rename_rom_desc">Enter a new name for %s. Leave blank to use the
-        default name.</string>
+        default name. Tap the icon to change the ROM\'s icon.</string>
+    <!-- Dialog button text for resetting the ROM icon -->
+    <string name="reset_icon">Reset icon</string>
 
     <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>

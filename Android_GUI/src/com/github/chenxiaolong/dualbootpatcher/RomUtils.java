@@ -351,4 +351,19 @@ public class RomUtils {
             return R.drawable.rom_android;
         }
     }
+
+    public static File getThumbnailTempFile(Context context, RomInformation romInfo) {
+        return new File(context.getCacheDir() + File.separator
+                + "image." + romInfo.id + ".webp.tmp");
+    }
+
+    public static File getThumbnailFile(RomInformation romInfo) {
+        if (new File(RAW_DATA).isDirectory()) {
+            return new File(RAW_DATA + File.separator
+                    + "patcher.image." + romInfo.id + ".webp");
+        } else {
+            return new File(DATA + File.separator
+                    + "patcher.image." + romInfo.id + ".webp");
+        }
+    }
 }

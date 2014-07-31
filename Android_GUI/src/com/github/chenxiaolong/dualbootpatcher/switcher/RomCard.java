@@ -28,8 +28,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.squareup.picasso.Picasso;
+
+import java.io.File;
 
 public class RomCard extends Card {
     private TextView mTitle;
@@ -42,6 +45,7 @@ public class RomCard extends Card {
     private final RomInformation mRomInfo;
     private String mName;
     private final String mVersion;
+    private final File mFile;
 
     private int mStringResId;
     private boolean mShowMessage;
@@ -58,7 +62,14 @@ public class RomCard extends Card {
 
         @Override
         public void setupInnerViewElements(ViewGroup parent, View viewImage) {
-            Picasso.with(getContext()).load(mImageResId).resize(96, 96).into((ImageView) viewImage);
+            if (mFile != null && mFile.exists() && mFile.canRead()) {
+                // Don't cache the image since we may need to refresh it
+                Picasso.with(getContext()).load(mFile).resize(96, 96).skipMemoryCache()
+                        .error(mImageResId).into((ImageView) viewImage);
+            } else {
+                Picasso.with(getContext()).load(mImageResId).resize(96, 96)
+                        .into((ImageView) viewImage);
+            }
         }
     }
 
@@ -68,6 +79,8 @@ public class RomCard extends Card {
         mRomInfo = info;
         mName = name;
         mVersion = version;
+
+        mFile = RomUtils.getThumbnailFile(mRomInfo);
 
         PicassoCardThumbnail thumb = new PicassoCardThumbnail(getContext(), imageResId);
         thumb.setExternalUsage(true);

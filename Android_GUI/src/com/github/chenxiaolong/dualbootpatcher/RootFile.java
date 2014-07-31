@@ -138,6 +138,23 @@ public class RootFile {
         }
     }
 
+    public void moveTo(File dest) {
+        moveTo(new RootFile(dest.toString()));
+    }
+
+    public void moveTo(RootFile dest) {
+        try {
+            org.apache.commons.io.FileUtils.moveFile(mFile, dest.mFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            if (mAttemptRoot) {
+                CommandUtils.runRootCommand("mv " + getAbsolutePath()
+                        + " " + dest.getAbsolutePath());
+            }
+        }
+    }
+
     public String[] list() {
         if (!isDirectory()) {
             return null;

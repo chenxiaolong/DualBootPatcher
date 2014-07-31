@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -25,14 +26,17 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
@@ -41,6 +45,7 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
+import com.github.chenxiaolong.dualbootpatcher.RootFile;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnChoseRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnSetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.SwitcherTaskEvent;
@@ -48,6 +53,11 @@ import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
 import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
 import com.squareup.otto.Subscribe;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -75,6 +85,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final String EXTRA_ROM_VERSIONS = "romVersions";
     private static final String EXTRA_ROM_IMAGE_RES_IDS = "romImageResIds";
 
+    private static final int REQUEST_IMAGE = 1234;
+
     private boolean mPerformingAction;
     private boolean mAttemptedRoot;
 
@@ -98,6 +110,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private AlertDialog mDialog;
     private AlertDialog mRenameDialog;
     private RomInformation mSelectedRom;
+    private RomDialogCard mRomDialogCard;
+    private boolean mRebootDialogShowing;
 
     private RomInformation[] mRoms;
     private String[] mRomNames;
@@ -155,7 +169,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             }
 
             if (savedInstanceState.getBoolean(EXTRA_SHOWING_RENAME_DIALOG)) {
-                buildRenameDialog();
+                mRebootDialogShowing = true;
             }
         }
 
@@ -227,6 +241,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     public void onStart() {
         super.onStart();
 
+        if (mRebootDialogShowing) {
+            buildRenameDialog();
+        }
+
         SwitcherTasks.getBusInstance().register(this);
     }
 
@@ -260,7 +278,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             outState.putBoolean(EXTRA_SHOWING_DIALOG, true);
         }
         if (mRenameDialog != null) {
-            outState.putBoolean(EXTRA_SHOWING_RENAME_DIALOG, true);
+            outState.putBoolean(EXTRA_SHOWING_RENAME_DIALOG, mRebootDialogShowing);
         }
 
         if (mRoms != null) {
@@ -475,24 +493,102 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             builder.setMessage(String.format(getActivity().getString(
                     R.string.rename_rom_desc), defaultName));
 
-            final EditText textbox = new EditText(getActivity());
-            textbox.setText(name);
-            textbox.setInputType(InputType.TYPE_CLASS_TEXT
-                    | InputType.TYPE_TEXT_FLAG_AUTO_CORRECT);
-            builder.setView(textbox);
+            LayoutInflater inflater = getActivity().getLayoutInflater();
+
+            View v = inflater.inflate(R.layout.dialog_rename_rom, null);
+
+            View.OnClickListener listener = new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent();
+                    intent.setType("image/*");
+                    intent.setAction(Intent.ACTION_GET_CONTENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    startActivityForResult(intent, REQUEST_IMAGE);
+                }
+            };
+
+            final File tempThumbnail = RomUtils.getThumbnailTempFile(
+                    getActivity(), mSelectedRom);
+
+            // Save a temporary copy of the current image
+            try {
+                File curThumbnail = RomUtils.getThumbnailFile(mSelectedRom);
+                if (curThumbnail.isFile() && !tempThumbnail.exists()) {
+                    org.apache.commons.io.FileUtils.copyFile(curThumbnail, tempThumbnail);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            int imageResId = RomUtils.getIconResource(mSelectedRom);
+
+            mRomDialogCard = new RomDialogCard(getActivity(), mSelectedRom,
+                    name, imageResId, listener);
+
+            CardView cardView = (CardView) v.findViewById(R.id.rom_card);
+            cardView.setCard(mRomDialogCard);
+
+            builder.setView(v);
 
             builder.setPositiveButton(R.string.ok, new OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    RomUtils.setName(mSelectedRom, textbox.getText().toString());
+                    RootFile thumbnail = new RootFile(
+                            RomUtils.getThumbnailFile(mSelectedRom).toString());
+
+                    if (tempThumbnail.isFile()) {
+                        RootFile temp = new RootFile(tempThumbnail.toString());
+                        temp.moveTo(thumbnail);
+                        thumbnail.chmod(0755);
+                    } else {
+                        thumbnail.delete();
+                    }
+
+                    RomUtils.setName(mSelectedRom, mRomDialogCard.getName());
                     refreshNames();
                 }
             });
 
-            builder.setNegativeButton(R.string.cancel, null);
+            builder.setNegativeButton(R.string.cancel, new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if (tempThumbnail.isFile()) {
+                        tempThumbnail.delete();
+                    }
+                }
+            });
+
+            builder.setNeutralButton(R.string.reset_icon, new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // Dummy
+                }
+            });
 
             mRenameDialog = builder.show();
             mRenameDialog.setOnDismissListener(this);
+            mRenameDialog.setCanceledOnTouchOutside(false);
+
+            // Set listener on the button after the dialog is created so the dialog isn't dismissed
+            ((AlertDialog) mRenameDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
+                    .setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    tempThumbnail.delete();
+
+                    refreshRenameDialog();
+                }
+            });
+
+            mRebootDialogShowing = true;
+        }
+    }
+
+    private void refreshRenameDialog() {
+        if (mRenameDialog != null) {
+            CardView cardView = (CardView) mRenameDialog.findViewById(R.id.rom_card);
+            cardView.refreshCard(mRomDialogCard);
         }
     }
 
@@ -589,6 +685,87 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             }
 
             iter.remove();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int request, int result, Intent data) {
+        switch (request) {
+            case REQUEST_IMAGE:
+                if (data != null && result == Activity.RESULT_OK) {
+                    new ResizeAndCacheImageTask(getActivity().getApplicationContext(),
+                            data.getData()).execute();
+                }
+                break;
+        }
+
+        super.onActivityResult(request, result, data);
+    }
+
+    protected class ResizeAndCacheImageTask extends AsyncTask<Void, Void, Void> {
+        private final Context mContext;
+        private final Uri mUri;
+
+        public ResizeAndCacheImageTask(Context context, Uri uri) {
+            mContext = context;
+            mUri = uri;
+        }
+
+        private Bitmap getThumbnail(Uri uri) {
+            try {
+                InputStream input = mContext.getContentResolver().openInputStream(uri);
+                Bitmap bitmap = BitmapFactory.decodeStream(input);
+                input.close();
+
+                if (bitmap == null) {
+                    return null;
+                }
+
+                return ThumbnailUtils.extractThumbnail(bitmap, 96, 96);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Bitmap thumbnail = getThumbnail(mUri);
+
+            // Write the image to a temporary file. If the user selects it,
+            // the move it to the appropriate location.
+            File f = RomUtils.getThumbnailTempFile(mContext, mSelectedRom);
+
+            FileOutputStream out = null;
+
+            try {
+                out = new FileOutputStream(f);
+                thumbnail.compress(Bitmap.CompressFormat.WEBP, 100, out);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            if (getActivity() == null) {
+                return;
+            }
+
+            refreshRenameDialog();
         }
     }
 
