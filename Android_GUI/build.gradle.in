@@ -19,12 +19,19 @@ dependencies {
     compile 'com.squareup.picasso:picasso:2.3.2'
     compile 'com.nhaarman.listviewanimations:library:2.6.0'
     compile 'org.apache.commons:commons-lang3:+'
+    compile 'commons-io:commons-io:2.4+'
     compile files('libs/RootTools-3.4.jar')
 }
 
 android {
     compileSdkVersion 19
     buildToolsVersion "20.0.0"
+
+    packagingOptions {
+        // Both commons-lang3 and common-io want to include these file
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
 
     defaultConfig {
         applicationId "com.github.chenxiaolong.dualbootpatcher"
