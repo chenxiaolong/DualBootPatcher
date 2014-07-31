@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Adaptador Duplo Boot</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Adaptador Duplo Boot (Debug)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Adaptador Duplo Boot (Versão Snapshot)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Aguarde até que todas as operações estejam terminadas</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Versão %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Código fonte</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">Fórum XDA</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Licenças</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Agradecimentos especiais a todos que ajudaram a viabilizar este Adaptador!</string>
+  <!--Message in ROM Settings screen indicating that it's waiting for root access-->
+  <string name="waiting_for_root">Aguardando pelo acesso root</string>
+  <!--Title for the card shown in the switcher when root access could not be obtained-->
+  <string name="noroot_title">Não há acesso root</string>
+  <!--Message for the card shown in the switcher when root access could not be obtained-->
+  <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
+  <!--Navigation drawer item for selecting the ROM-->
+  <!--Navigation drawer item for setting the kernel-->
+  <!--Navigation drawer item for patching a zip file-->
+  <!--Navigation drawer item for changing the ROM settings-->
+  <!--Nagivation drawer item for rebooting the device-->
+  <!--Navigation drawer item for showing the about screen-->
+  <!--Nagivation drawer item for exiting the app-->
+  <!--Accessibility text for opening the app drawer-->
+  <!--Accessibility text for closing the app drawer-->
+  <!--Default name for the primary ROM-->
+  <!--Default name for the secondary ROM-->
+  <!--Default name for the multi-slot ROMs-->
+  <!--Text shown when a ROM's version could not be detected-->
+  <!--Message shown when switching ROMs succeeds-->
+  <!--Message shown when switching ROMs failed-->
+  <!--Message shown when setting the kernel succeeds-->
+  <!--Message shown when setting the kernel fails-->
+  <!--Accessibility text for the ROM logo images-->
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <!--Title for the dialog box to rename a ROM-->
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <!--Title for the patcher card asking for the device and partition configuration-->
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <!--Title for the file chooser card telling the user to tap to choose a file-->
+  <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
+  <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
+  <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
+  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
+  <!--Title for the file chooser card indicating that the file was successfully patched-->
+  <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
+  <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
+  <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
+  <!--Title for the preset card-->
+  <!--Name for the custom preset item-->
+  <!--Description for the custom preset item indicating that further options can be modified-->
+  <!--Title for the custom options card-->
+  <!--Name for the autopatcher radio button-->
+  <!--Name for the patch file radio button-->
+  <!--Name for the button to select a .patch or .diff file-->
+  <!--Name for the option to disable checks for the device's model-->
+  <!--Name for the option telling the patcher that the file has a boot image-->
+  <!--Name for the ramdisks combobox-->
+  <!--Name for the patched init binary combobox-->
+  <!--Name for the boot image text box-->
+  <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
+  <!--Accessibility text for the checkbox in the progress box-->
+  <!--Title for the details card-->
+  <!--Text for the details card indicating that the patching is done-->
+  <!--Title for the progress card-->
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <!--Title for the application sharing section of the ROM Settings-->
+  <!--Name of the preference for globally sharing free applications from the primary ROM-->
+  <!--Description of the preference for globally shareing free applications from the primary ROM-->
+  <!--Name of the preference for globally sharing paid applications from the primary ROM-->
+  <!--Description of the preference for globally shareing paid applications from the primary ROM-->
+  <!--Message indicating that the current ROM was patched with an older version of the patcher and must be repatched with a newer version-->
+  <!--Title for the preference to share individual applications-->
+  <!--Description for the preference to share individual applications-->
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <!--Title for the dialog box explaining individual application sharing-->
+  <!--Description for the dialog box explaining individual application sharing-->
+  <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
+  <!--Description in the app sharing list showing which ROMs the application is installed in-->
+  <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
+  <!--Word/phrase for None (used in eg. a list)-->
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <!--Presets that should always be visible-->
+</resources>
