@@ -86,4 +86,8 @@ public class RomDialogCard extends Card {
     public String getName() {
         return mEditText.getText().toString();
     }
+
+    public void setName(String name) {
+        mEditText.setText(name);
+    }
 }

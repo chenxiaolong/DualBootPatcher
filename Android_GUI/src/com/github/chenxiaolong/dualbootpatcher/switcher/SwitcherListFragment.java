@@ -84,6 +84,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final String EXTRA_ROM_NAMES = "romNames";
     private static final String EXTRA_ROM_VERSIONS = "romVersions";
     private static final String EXTRA_ROM_IMAGE_RES_IDS = "romImageResIds";
+    private static final String EXTRA_ROM_DIALOG_NAME = "romDialogName";
 
     private static final int REQUEST_IMAGE = 1234;
 
@@ -112,6 +113,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private RomInformation mSelectedRom;
     private RomDialogCard mRomDialogCard;
     private boolean mRebootDialogShowing;
+    private String mRomDialogName;
 
     private RomInformation[] mRoms;
     private String[] mRomNames;
@@ -171,6 +173,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             if (savedInstanceState.getBoolean(EXTRA_SHOWING_RENAME_DIALOG)) {
                 mRebootDialogShowing = true;
             }
+
+            mRomDialogName = savedInstanceState.getString(EXTRA_ROM_DIALOG_NAME);
         }
 
         if (mAction == ACTION_CHOOSE_ROM) {
@@ -243,6 +247,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         if (mRebootDialogShowing) {
             buildRenameDialog();
+            if (mRomDialogName != null) {
+                mRomDialogCard.setName(mRomDialogName);
+            }
         }
 
         SwitcherTasks.getBusInstance().register(this);
@@ -279,6 +286,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
         if (mRenameDialog != null) {
             outState.putBoolean(EXTRA_SHOWING_RENAME_DIALOG, mRebootDialogShowing);
+        }
+        if (mRomDialogCard != null) {
+            outState.putString(EXTRA_ROM_DIALOG_NAME, mRomDialogCard.getName());
         }
 
         if (mRoms != null) {
@@ -348,6 +358,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
         if (mRenameDialog == dialog) {
             mRenameDialog = null;
+            mRomDialogCard = null;
         }
     }
 
