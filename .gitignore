@@ -1,6 +1,33 @@
+# Binary releases
+/dist/
+
+# Custom configuration
+/build/build.custom.conf
+
+# Downloads
+/build/downloads/
+
+# Toolchains
+/build/compile/gcc*
+
+# Compiled files
+/build/compile/build/
+/build/compile/valgrind/
+/build/compile/getfacl
+/build/compile/getfattr
+/build/compile/setfacl
+/build/compile/setfattr
+
+# syncdaemon
+/build/syncdaemon/jsoncpp/
+/build/syncdaemon/syncdaemon
+
+# KDevelop settings
+.kdev_include_paths
+
+# Temporary files
 *.swp
-dist/
-build/downloads/
-build/build.custom.conf
-build/compile/build/
-build/compile/gcc/
+*.bak*
+
+# Transifex configuration
+.tx/

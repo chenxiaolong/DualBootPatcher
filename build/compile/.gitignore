@@ -1,6 +1,0 @@
-gcc-linaro*
-valgrind/
-getfacl
-setfacl
-getfattr
-setfattr
