@@ -33,6 +33,10 @@ android {
         exclude 'META-INF/NOTICE.txt'
     }
 
+    lintOptions {
+        disable 'MissingTranslation'
+    }
+
     defaultConfig {
         applicationId "com.github.chenxiaolong.dualbootpatcher"
         minSdkVersion 17
