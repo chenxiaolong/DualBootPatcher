@@ -165,9 +165,13 @@ def extract(filename, directory):
 
     offset = -1
     while True:
-        offset = data.find(b"\x1F\x8B\x08\x00", offset + 1)
-        if offset == -1:
+        newoffset = data.find(b"\x1F\x8B\x08\x00", offset + 1)
+        if newoffset == -1:
+            newoffset = data.find(b"\x1F\x8B\x08\x08", offset + 1)
+        if newoffset == -1:
             break
+
+        offset = newoffset
 
         print_i("Found gzip header at: " + hex(gzip_offset + offset))
 
