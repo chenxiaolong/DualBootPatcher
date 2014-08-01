@@ -74,6 +74,7 @@ ROMs:
   * Vanir
   * AOSP (Broodplank)
   * OctOS
+  * ColorOS
   * TouchWiz ROMs
     - FoxHound
     - GoldenEye
