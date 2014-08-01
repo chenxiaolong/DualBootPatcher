@@ -25,6 +25,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 
 import java.io.File;
 
@@ -34,7 +35,12 @@ public class SwitcherUtils {
     // Can't use Environment.getExternalStorageDirectory() because the path is
     // different in the root environment
     public static final String KERNEL_PATH_ROOT = "/media/0/MultiKernels";
-    public static final String MOUNT_POINT = "/data/local/tmp/busybox";
+    private static final String MOUNT_POINT = "/data/local/tmp/busybox";
+    private static final String TMP_KERNEL = "/data/local/tmp/tmp.dbp";
+
+    private static int dd(String source, String dest) {
+        return CommandUtils.runRootCommand("dd if=" + source + " of=" + dest);
+    }
 
     public static void writeKernel(String kernelId) throws Exception {
         String[] paths = new String[] { RomUtils.RAW_DATA + KERNEL_PATH_ROOT,
@@ -56,36 +62,62 @@ public class SwitcherUtils {
             throw new Exception("The kernel for " + kernelId + " was not found");
         }
 
-        int exitCode = CommandUtils.runRootCommand("dd if=" + kernel + " of=" + BOOT_PARTITION);
-        if (exitCode != 0) {
+        int ret = dd(kernel, BOOT_PARTITION);
+        if (ret != 0) {
             Log.e(TAG, "Failed to write " + kernel + " with dd");
             throw new Exception("Failed to write " + kernel + " with dd");
         }
     }
 
-    public static void backupKernel(String kernelId) throws Exception {
+    public static void backupKernel(Context context, String kernelId) throws Exception {
         String kernel_path = RomUtils.RAW_DATA + KERNEL_PATH_ROOT;
         if (!new RootFile(RomUtils.RAW_DATA).isDirectory()) {
             kernel_path = RomUtils.DATA + KERNEL_PATH_ROOT;
         }
 
+        // Copy kernel to a temporary location
+        RootFile tmpdir = new RootFile(TMP_KERNEL);
+        tmpdir.mkdirs();
+
+        String tmpKernel = TMP_KERNEL + File.separator + kernelId + ".img";
+        int ret = dd(BOOT_PARTITION, tmpKernel);
+        if (ret != 0) {
+            String msg = "Failed to backup to " + tmpKernel + " with dd";
+            Log.e(TAG, msg);
+            throw new Exception(msg);
+        }
+        tmpdir.recursiveChmod(0777);
+
+        // Update syncdaemon in the boot image
+        if (!PatcherUtils.updateSyncdaemon(context, tmpKernel)) {
+            String msg = "Failed to update syncdaemon";
+            Log.e(TAG, msg);
+            throw new Exception(msg);
+        }
+
+        // Copy to target
+        String updatedKernel = tmpKernel.replace(".img", "_syncdaemon.img");
+        String targetKernel = kernel_path + File.separator + kernelId + ".img";
+
         RootFile f = new RootFile(kernel_path);
         f.mkdirs();
 
-        String kernel = kernel_path + File.separator + kernelId + ".img";
-
-        Log.v(TAG, "Backing up " + kernelId + " kernel");
-
-        int exitCode = CommandUtils.runRootCommand("dd if=" + BOOT_PARTITION + " of=" + kernel);
-
-        if (exitCode != 0) {
-            Log.e(TAG, "Failed to backup to " + kernel + " with dd");
-            throw new Exception("Failed to backup to " + kernel + " with dd");
-        }
+        new RootFile(updatedKernel).copyTo(new RootFile(targetKernel));
 
         Log.v(TAG, "Fixing permissions");
         f.recursiveChmod(0775);
         f.recursiveChown("media_rw", "media_rw");
+
+        // Write updated image back to boot partition
+        ret = dd(targetKernel, BOOT_PARTITION);
+        if (ret != 0) {
+            String msg = "Failed to backup to " + targetKernel + " with dd";
+            Log.e(TAG, msg);
+            throw new Exception(msg);
+        }
+
+        // Remove temporary directory
+        tmpdir.recursiveDelete();
     }
 
     public static void reboot(final Context context) {

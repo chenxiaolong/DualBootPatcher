@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.content.Context;
 import android.os.AsyncTask;
 
 import com.squareup.otto.Bus;
@@ -53,8 +54,8 @@ public class SwitcherTasks {
         new ChooseRomTask(kernelId).execute();
     }
 
-    public static void setKernel(String kernelId) {
-        new SetKernelTask(kernelId).execute();
+    public static void setKernel(Context context, String kernelId) {
+        new SetKernelTask(context, kernelId).execute();
     }
 
     // Tasks
@@ -96,12 +97,14 @@ public class SwitcherTasks {
     }
 
     private static class SetKernelTask extends AsyncTask<Void, Void, Void> {
+        private Context mContext;
         private String mKernelId;
 
         private boolean mFailed;
         private String mMessage;
 
-        public SetKernelTask(String kernelId) {
+        public SetKernelTask(Context context, String kernelId) {
+            mContext = context;
             mKernelId = kernelId;
         }
 
@@ -111,7 +114,7 @@ public class SwitcherTasks {
             mMessage = "";
 
             try {
-                SwitcherUtils.backupKernel(mKernelId);
+                SwitcherUtils.backupKernel(mContext, mKernelId);
                 mFailed = false;
             } catch (Exception e) {
                 mMessage = e.getMessage();

@@ -269,6 +269,32 @@ public class PatcherUtils {
         return null;
     }
 
+    public synchronized static boolean updateSyncdaemon(Context context, String bootimg) {
+        // Make sure patcher is extracted first
+        extractPatcher(context);
+
+        ArrayList<String> args = new ArrayList<String>();
+        args.add("pythonportable/bin/python3");
+        args.add("-B");
+        args.add("scripts/updatesyncdaemon.py");
+        args.add(bootimg);
+
+        CommandParams params = new CommandParams();
+        params.command = args.toArray(new String[args.size()]);
+        params.environment = new String[] { "PYTHONUNBUFFERED=true" };
+        params.cwd = getTargetDirectory(context);
+
+        CommandRunner cmd = new CommandRunner(params);
+        cmd.start();
+        CommandUtils.waitForCommand(cmd);
+
+        if (cmd.getResult() != null) {
+            return cmd.getResult().exitCode == 0;
+        } else {
+            return false;
+        }
+    }
+
     public synchronized static boolean isFileSupported(Context context,
             Bundle data) {
         // Make sure patcher is extracted first
