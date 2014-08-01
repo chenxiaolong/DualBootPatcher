@@ -130,7 +130,8 @@ public class RootFile {
 
             if (files != null) {
                 for (String file : files) {
-                    new RootFile(file, mAttemptRoot).recursiveDelete();
+                    new RootFile(getAbsolutePath() + File.separator + file,
+                            mAttemptRoot).recursiveDelete();
                 }
             }
 
