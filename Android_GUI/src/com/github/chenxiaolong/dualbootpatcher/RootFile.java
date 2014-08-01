@@ -149,8 +149,9 @@ public class RootFile {
             e.printStackTrace();
 
             if (mAttemptRoot) {
-                CommandUtils.runRootCommand("mv " + getAbsolutePath()
+                CommandUtils.runRootCommand("cp " + getAbsolutePath()
                         + " " + dest.getAbsolutePath());
+                delete();
             }
         }
     }
