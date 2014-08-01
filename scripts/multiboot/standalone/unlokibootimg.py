@@ -18,11 +18,13 @@
 # Python 2 compatibility
 from __future__ import print_function
 
+import argparse
 import binascii
 import gzip
 import os
 import struct
 import sys
+import textwrap
 import zlib
 
 BOOT_MAGIC = "ANDROID!"
@@ -340,34 +342,47 @@ def extract(filename, directory):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print_i("Usage: %s -i boot.img [-o output_directory]" % sys.argv[0])
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.formatter_class = argparse.RawDescriptionHelpFormatter
+    parser.description = textwrap.dedent('''
+    unlokibootimg - Extract loki'd boot images
+    ------------------------------------------
+    ''')
 
-    filename = ""
-    directory = ""
+    parser.add_argument('-i', '--input',
+                        help='Boot image to extract',
+                        action='store')
 
-    counter = 1
-    while counter < len(sys.argv):
-        if sys.argv[counter] == "-i":
-            filename = sys.argv[counter + 1]
-            counter += 2
-        elif sys.argv[counter] == "-o":
-            directory = sys.argv[counter + 1]
-            counter += 2
-        else:
-            print_i("Unrecognized argument " + sys.argv[counter])
-            sys.exit(1)
+    parser.add_argument('-o', '--output',
+                        help='Output directory (default: current directory)',
+                        action='store')
 
-    if filename == "":
-        print_i("No loki image specified")
+    parser.add_argument('--isloki',
+                        help='Test if image is loki\'d',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    filename = args.input
+    directory = args.output
+
+    if not filename:
+        print_i('No loki image specified')
         sys.exit(1)
 
     if not os.path.exists(filename):
         print_i(filename + " does not exist")
         sys.exit(1)
 
-    if directory == "":
+    if args.isloki:
+        if is_loki(filename):
+            print_i('true')
+            sys.exit(0)
+        else:
+            print_i('false')
+            sys.exit(1)
+
+    if not directory:
         directory = os.getcwd()
     elif not os.path.exists(directory):
         os.makedirs(directory)
