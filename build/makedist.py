@@ -697,7 +697,7 @@ def create_release(targetdir, targetfile, android=False):
     create_acl_attr_android(targetdir)
 
     if buildtype == 'release':
-        upx_compress([os.path.join(targetdir, 'ramdisks', 'busybox-static')])
+        #upx_compress([os.path.join(targetdir, 'ramdisks', 'busybox-static')])
         upx_compress(glob.glob(targetdir + os.sep + 'ramdisks' + os.sep +
                                'init' + os.sep + 'init-*'))
         upx_compress(glob.glob(targetdir + os.sep + 'ramdisks' + os.sep +
