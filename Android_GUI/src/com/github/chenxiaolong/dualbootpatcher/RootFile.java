@@ -157,6 +157,23 @@ public class RootFile {
         }
     }
 
+    public void copyTo(File dest) {
+        copyTo(new RootFile(dest.toString()));
+    }
+
+    public void copyTo(RootFile dest) {
+        try {
+            org.apache.commons.io.FileUtils.copyFile(mFile, dest.mFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            if (mAttemptRoot) {
+                CommandUtils.runRootCommand("cp " + getAbsolutePath()
+                        + " " + dest.getAbsolutePath());
+            }
+        }
+    }
+
     public String[] list() {
         if (!isDirectory()) {
             return null;
