@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -33,6 +34,7 @@ public class SwitcherUtils {
     // Can't use Environment.getExternalStorageDirectory() because the path is
     // different in the root environment
     public static final String KERNEL_PATH_ROOT = "/media/0/MultiKernels";
+    public static final String MOUNT_POINT = "/data/local/tmp/busybox";
 
     public static void writeKernel(String kernelId) throws Exception {
         String[] paths = new String[] { RomUtils.RAW_DATA + KERNEL_PATH_ROOT,
@@ -90,9 +92,51 @@ public class SwitcherUtils {
         new Thread() {
             @Override
             public void run() {
-                String reboot = CommandUtils.getBusyboxCommandString(context, "reboot");
-                CommandUtils.runRootCommand(reboot);
+                runReboot(context);
             }
         }.start();
+    }
+
+    private static int runReboot(Context context) {
+        int uid = 0;
+
+        try {
+            uid = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), 0).uid;
+        } catch (NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        if (uid == 0) {
+            Log.e(TAG, "Couldn't determine UID");
+            return -1;
+        }
+
+        // Delete old versions
+        FileUtils.deleteOldCachedAsset(context, "busybox-static");
+        String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
+
+        // Clean up in case something crashed before
+        final String busyboxBinary = MOUNT_POINT + File.separator + "busybox";
+
+        RootFile mountPoint = new RootFile(MOUNT_POINT);
+        mountPoint.mountTmpFs();
+        mountPoint.chown(uid, uid);
+
+        RootFile busyboxFile = new RootFile(busyboxBinary);
+        if (busyboxFile.isFile()) {
+            busyboxFile.delete();
+        }
+
+        CommandUtils.runRootCommand("cp " + busybox + " " + busyboxBinary);
+        new RootFile(busyboxBinary).chmod(0755);
+        CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + busyboxBinary);
+
+        int exitCode = CommandUtils.runRootCommand(busyboxBinary + " reboot");
+
+        mountPoint.unmountTmpFs();
+        mountPoint.recursiveDelete();
+
+        return exitCode;
     }
 }
