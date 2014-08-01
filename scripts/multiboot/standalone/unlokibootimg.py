@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import binascii
 import gzip
-import mmap
 import os
 import struct
 import sys
@@ -266,28 +265,29 @@ def extract(filename, directory):
     # If the boot image was patched with a newer version of loki, find the
     # ramdisk offset in the shell code
     if lok_ramdisk_addr != 0:
-        mm = mmap.mmap(f.fileno(), 0, mmap.MAP_PRIVATE, mmap.PROT_READ)
+        f.seek(0, os.SEEK_SET)
+        data = f.read()
 
         orig_ramdisk_addr = -1
 
         # Length is 1 shorter than the C version since we don't have a null
         # byte at the end
         for i in range(total_size - (len(SHELL_CODE) - 8) - 1, -1, -1):
-            if mm[i:i + len(SHELL_CODE) - 8] == SHELL_CODE[:-8]:
+            if data[i:i + len(SHELL_CODE) - 8] == SHELL_CODE[:-8]:
                 loc = i + len(SHELL_CODE) - 4
-                orig_ramdisk_addr = struct.unpack('<I', mm[loc:loc + 4])[0]
+                orig_ramdisk_addr = struct.unpack('<I', data[loc:loc + 4])[0]
                 break
-
-        mm.close()
 
         if orig_ramdisk_addr == -1:
             raise Exception("Could not determine ramdisk offset")
+
+        print_i('Original ramdisk address: %s' % hex(orig_ramdisk_addr))
 
     # Otherwise, use the jflte default
     else:
         orig_ramdisk_addr = kernel_addr - 0x00008000 + 0x02000000
 
-    print_i('Original ramdisk address: %s' % hex(orig_ramdisk_addr))
+        print_i('Default ramdisk address: %s' % hex(orig_ramdisk_addr))
 
     print_i("")
 
