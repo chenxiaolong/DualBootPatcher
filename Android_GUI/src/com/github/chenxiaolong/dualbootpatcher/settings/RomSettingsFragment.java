@@ -379,6 +379,10 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
             mOverMin = sdVersion.compareTo(minVersion) >= 0;
 
+            if (mOverMin) {
+                mAppSharingCategory.removePreference(mUpdateRamdisk);
+            }
+
             setupGlobalAppSharePrefs();
             setupIndivAppSharePrefs(mShareApps.isChecked() || mSharePaidApps.isChecked());
         }
