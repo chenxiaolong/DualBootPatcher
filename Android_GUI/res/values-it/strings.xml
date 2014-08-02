@@ -3,11 +3,11 @@
   <!--Name of the app built in release mode-->
   <string name="app_name_release">Dual Boot Patcher</string>
   <!--Name of the app built in debug mode-->
-  <string name="app_name_debug">Dual Boot Patcher (Versione Sviluppatori)</string>
+  <string name="app_name_debug">Dual Boot Patcher (Debug)</string>
   <!--Name of the app built in snapshot mode-->
-  <string name="app_name_snapshot">Dual Boot Patcher (Versione Istantanea)</string>
+  <string name="app_name_snapshot">Dual Boot Patcher (Snapshot)</string>
   <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
-  <string name="wait_until_finished">Attendi il completamento delle operazioni</string>
+  <string name="wait_until_finished">Attendi il completamento delle operazioni.</string>
   <!--Indicate the version of the app on the about screen-->
   <string name="version">Versione %s </string>
   <!--GitHub source code web page URL-->
@@ -15,28 +15,28 @@
   <string name="link_source_code">Codice sorgente</string>
   <!--XDA forum thread web page URL-->
   <!--XDA forum thread link text-->
-  <string name="link_xda_thread">Thread XDA</string>
+  <string name="link_xda_thread">XDA Thread</string>
   <!--Licenses URL-->
   <!--Licenses link text-->
   <string name="link_licenses">Licenze</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Un ringraziamento speciale a tutti quelli che hanno contribuito per rendere possibile questo patcher! </string>
+  <string name="credits">Un ringraziamento speciale a tutti quelli che hanno contribuito a rendere possibile questo patcher! </string>
   <!--Message in ROM Settings screen indicating that it's waiting for root access-->
   <string name="waiting_for_root">In attesa dei permessi di root</string>
   <!--Title for the card shown in the switcher when root access could not be obtained-->
   <string name="noroot_title">Non ci sono i permessi di root</string>
   <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_switcher_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di \nroot sono richiesti per accedere alla partizione del kernel/boot.img per lo switch tra \ni firmware.\n\nFai un tap per riprovare a concedere i permessi di root.</string>
+  <string name="noroot_switcher_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di root sono richiesti per accedere alla partizione del kernel/boot.img per lo switch tra i firmware.\n\nFai un tap per riprovare a concedere i permessi di root.</string>
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
-  <string name="noroot_settings_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di\nroot sono richiesti per modificare i parametri di condivisione delle applicazioni. \n\nPremi qui per ottenere nuovamente i diritti di amministratore.</string>
+  <string name="noroot_settings_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di root sono richiesti per modificare i parametri di condivisione delle applicazioni. \n\nPremi qui per ottenere nuovamente i diritti di amministratore.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_choose_rom">Scegli la ROM</string>
   <!--Navigation drawer item for setting the kernel-->
   <string name="title_set_kernel">Imposta il Kernel</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">Patcha i File Zip</string>
+  <string name="title_patch_zip">Patcha File Zip</string>
   <!--Navigation drawer item for changing the ROM settings-->
-  <string name="title_rom_settings">Configurazioni ROM</string>
+  <string name="title_rom_settings">Impostazioni ROM</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Riavvia</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -48,11 +48,11 @@
   <!--Accessibility text for closing the app drawer-->
   <string name="drawer_close">Chiudi il navigation drawer</string>
   <!--Default name for the primary ROM-->
-  <string name="primary">Primaria</string>
+  <string name="primary">ROM primaria</string>
   <!--Default name for the secondary ROM-->
-  <string name="secondary">Secondaria</string>
+  <string name="secondary">ROM secondaria</string>
   <!--Default name for the multi-slot ROMs-->
-  <string name="multislot">Multi Slot %s</string>
+  <string name="multislot">ROM Multi Slot %s</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Non è possibile determinare la versione della ROM</string>
   <!--Message shown when switching ROMs succeeds-->
@@ -68,33 +68,35 @@
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
   <string name="switcher_ask_set_kernel_title">Impostare il kernel?</string>
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
-  <string name="switcher_ask_set_kernel_desc">Il kernel attualmente in esecuzione verrà impostato \ncome kernel per %s.</string>
+  <string name="switcher_ask_set_kernel_desc">Il kernel attualmente in esecuzione verrà impostato come kernel per %s.</string>
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Rinomina %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Aggiungi un nuovo nome per %s. Lascia il campo vuoto \nper usare il nome di default.</string>
+  <string name="rename_rom_desc">Immetti un nuovo nome per %s. Lascia in bianco per usare il nome di default. Premi sull\'icona della ROM per cambiarla.</string>
+  <!--Dialog button text for resetting the ROM icon-->
+  <string name="reset_icon">Resetta icona</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
-  <string name="devpartconfig_title">Configurazione del dispositivo e della partizione:</string>
+  <string name="devpartconfig_title">Configurazione del dispositivo e dello slot:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">File manager non trovato</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
-  <string name="filemanager_missing_desc">Non è installato un file manager adatto.\nInstalla un file manager per poter selezionare il file da patchare.</string>
+  <string name="filemanager_missing_desc">Non è installato un file manager adatto. Installa un file manager per poter selezionare il file da patchare.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Premi per selezionare un file da patchare</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">I file con estensione Zip e img (boot.img, boot.lok) sono \nsupportati dal patcher. Se sarà scelto un file non supportato, \nappariranno delle opzioni avanzate \nche consentiranno di personalizzare il processo di patching.</string>
+  <string name="filechooser_initial_desc">I file con estensione Zip e img (boot.img, boot.lok) sono supportati dal patcher. Se sarà scelto un file non supportato, appariranno delle opzioni avanzate che consentiranno di personalizzare il processo di patching.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Premi per iniziare il processo di patching</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
-  <string name="filechooser_ready_desc">File scelto: %s\n\nPremi e tieni premuto per scegliere un altro\nfile.</string>
+  <string name="filechooser_ready_desc">File scelto: %s\n\nPremi e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Premi per iniziare il processo di patching</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato\nnon è supportato. È comunque possibile patchare il file usando le opzioni \nsottostanti.\n\nPremi e tieni premuto per scegliere un altro file.</string>
+  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. È comunque possibile patchare il file usando le opzioni sottostanti.\n\nPremi e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">File patchato con successo</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_success_desc">Nuovo file: %s\n\nPremi per selezionare un altro file da\npatchare.</string>
+  <string name="filechooser_success_desc">Nuovo file: %s\n\nPremi per selezionare un altro file da patchare.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Impossibile patchare il file</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
@@ -102,9 +104,9 @@
   <!--Title for the preset card-->
   <string name="preset_title">Preset</string>
   <!--Name for the custom preset item-->
-  <string name="preset_custom">Personalizzazione</string>
+  <string name="preset_custom">Personalizzato</string>
   <!--Description for the custom preset item indicating that further options can be modified-->
-  <string name="preset_custom_desc">Personalzza il metodo di patching del file usando le seguenti opzioni</string>
+  <string name="preset_custom_desc">Personalizza il processo di patching usando le opzioni sottostanti</string>
   <!--Title for the custom options card-->
   <string name="customopts_title">Opzioni personalizzate</string>
   <!--Name for the autopatcher radio button-->
@@ -112,15 +114,15 @@
   <!--Name for the patch file radio button-->
   <string name="customopts_patchfile">Patcha il file</string>
   <!--Name for the button to select a .patch or .diff file-->
-  <string name="customopts_choosepatch">Scegli file patch</string>
+  <string name="customopts_choosepatch">Scegli la patch</string>
   <!--Name for the option to disable checks for the device's model-->
-  <string name="customopts_devicecheck">Non verificare il modello del dispositivo</string>
+  <string name="customopts_devicecheck">Rimuovi controllo del dispositivo</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
-  <string name="customopts_hasbootimage">Kernel presente</string>
+  <string name="customopts_hasbootimage">È presente un kernel</string>
   <!--Name for the ramdisks combobox-->
   <string name="customopts_ramdisk">Ramdisk</string>
   <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">Patched init</string>
+  <string name="customopts_patchedinit">Init patchato</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Kernel</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
@@ -140,32 +142,32 @@
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="rom_settings_share_apps_title">Condivisione applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Condivione delle applicazioni dalla ROM primaria con la\nROM corrente (richiede riaccensione).</string>
+  <string name="rom_settings_share_apps_desc">Condivione delle applicazioni dalla ROM primaria con la ROM corrente (richiede riavvio).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Condivisione applicazioni pagate</string>
+  <string name="rom_settings_share_paid_apps_title">Condividi applicazioni pagate</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
   <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
 Condividi le applicazioni pagate dalla ROM primaria con la ROM corrente (richiede riavvio).
 <strong>Potrebbe non funzionare a causa dei DRM.</strong>
 ]]></string>
   <!--Message indicating that the current ROM was patched with an older version of the patcher and must be repatched with a newer version-->
-  <string name="rom_settings_too_old">Questa ROM è stata patchata con una vecchia versione del programma. Per favore correggi e reinstalla questa ROM (o kernel) con la versione %s o successiva.</string>
+  <string name="rom_settings_too_old">Questa ROM è stata patchata con una vecchia versione del patcher. Per favore patcha e reinstalla questa ROM (o kernel) con la versione %s o successiva.</string>
   <!--Title for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_title">Condivisione individuale delle applicazioni </string>
+  <string name="rom_settings_indiv_app_sharing_title">Condividi singole applicazioni </string>
   <!--Description for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_desc">Condividi individualmente le applicazioni attraverso le ROM\n(richiede riavvio).</string>
+  <string name="rom_settings_indiv_app_sharing_desc">Condividi individualmente le applicazioni attraverso le ROM (richiede riavvio).</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
-  <string name="rom_settings_show_exit_title">Mostra bottone di Uscita</string>
+  <string name="rom_settings_show_exit_title">Mostra bottone Esci</string>
   <!--Title for the preference to show the reboot button in the navigation drawer-->
-  <string name="rom_settings_show_reboot_title">Mostra bottone di Riavvio</string>
+  <string name="rom_settings_show_reboot_title">Mostra bottone Riavvia</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_dialog_title">Condivisione individuale delle applicazioni</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_dialog_desc">La condivisione individuale delle applicazioni consente\nal dispositivo di tenere una copia di una applicazione per ogni ROM selezionata per consentire di risparmiare spazio. \nInoltre garantisce che ogni applicazione sia\naggiornata in ogni ROM.\n\nQuando un applicazione viene installata, aggiornata, o rimossa, il patcher a volte richiederà i permessi di root per far partire il servizio \'syncdaemon\'. Per favore, acconsenti la richiesta\ndi sincronizzazione affinchè possa essere eseguita.</string>
+  <string name="indiv_app_sharing_dialog_desc">La condivisione individuale delle applicazioni consente al dispositivo di tenere una copia di un\'applicazione per ogni ROM selezionata al fine di risparmiare spazio. Inoltre garantisce che ogni applicazione venga aggiornata in ogni ROM.\n\nQuando un applicazione viene installata, aggiornata o rimossa, il patcher a volte richiederà i permessi di root per avviare il servizio \'syncdaemon\'. Per favore, acconsenti la richiesta di sincronizzazione affinchè possa essere eseguita.</string>
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
-  <string name="indiv_app_sharing_incompat_global">Non può essere usato quando la condivisione globale delle applicazioni è abilitata.</string>
+  <string name="indiv_app_sharing_incompat_global">Non può essere usata mentre la condivisione globale delle applicazioni è abilitata.</string>
   <!--Description in the app sharing list showing which ROMs the application is installed in-->
   <string name="installed_in_roms">Attualmente installato in:</string>
   <!--Description for the checkboxes indicating which ROMs the application should be shared across-->

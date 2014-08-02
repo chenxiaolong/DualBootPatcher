@@ -49,6 +49,7 @@
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
   <!--Title for the dialog box to rename a ROM-->
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <!--Dialog button text for resetting the ROM icon-->
   <!--Title for the patcher card asking for the device and partition configuration-->
   <!--Title for the dialog box indicating that no file manager is installed-->
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->

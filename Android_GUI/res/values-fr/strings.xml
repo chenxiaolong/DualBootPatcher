@@ -72,7 +72,7 @@
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Renommer %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Entrer un nouveau nom pour %s. Laisser vide pour utiliser \nle nom par défaut.</string>
+  <!--Dialog button text for resetting the ROM icon-->
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Appareil et configuration de partition:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -82,7 +82,7 @@
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Appuyer pour choisir un fichier à patcher</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">Les fichiers Zip et images de démarrage (boot.img, boot.lok) sont \npris en charge par le patcher. Si un fichier non pris en charge est choisi, des options supplémentaires apparaitront qui permettront au processus de patchage\nd\'être personnalisé.</string>
+  <string name="filechooser_initial_desc">Les fichiers Zip et images de démarrage (boot.img, boot.lok) sont \npris en charge par le patcher. Si un fichier non pris en charge est choisi, des options supplémentaires apparaitront, lesquels permettront au processus de patchage\nd\'être personnalisé.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Taper pour commencer le patchage</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
@@ -138,11 +138,11 @@
   <!--Title for the application sharing section of the ROM Settings-->
   <string name="rom_settings_app_sharing_title">Partage d\'application (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_title">Partager applications</string>
+  <string name="rom_settings_share_apps_title">Partager les applications</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Partager applications de la ROM primaire avec la\nROM actuelle (requiert un redémarrage).</string>
+  <string name="rom_settings_share_apps_desc">Partager des applications de la ROM primaire avec la\nROM actuelle (requiert un redémarrage).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Partager applications payantes</string>
+  <string name="rom_settings_share_paid_apps_title">Partager les applications payantes</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
   <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
 Partager les applications de la ROM primaire avec la ROM actuelle (requiert un redémarrage).
