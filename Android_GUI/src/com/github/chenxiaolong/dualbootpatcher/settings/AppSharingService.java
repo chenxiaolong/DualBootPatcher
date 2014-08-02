@@ -23,30 +23,17 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 
 public class AppSharingService extends IntentService {
     private static final String TAG = AppSharingService.class.getSimpleName();
 
     public static final String ACTION = "action";
-    public static final String ACTION_PACKAGE_ADDED = "package_added";
-    public static final String ACTION_PACKAGE_UPGRADED = "package_upgraded";
     public static final String ACTION_PACKAGE_REMOVED = "package_removed";
 
     public static final String EXTRA_PACKAGE = "package";
 
     public AppSharingService() {
         super(TAG);
-    }
-
-    private void spawnDaemon() {
-        try {
-            RunSyncDaemon task = new RunSyncDaemon();
-            task.start();
-            task.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     private void onPackageRemoved(String pkg) {
@@ -63,19 +50,8 @@ public class AppSharingService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         String action = intent.getStringExtra(ACTION);
 
-        if (ACTION_PACKAGE_ADDED.equals(action)) {
-            spawnDaemon();
-        } else if (ACTION_PACKAGE_UPGRADED.equals(action)) {
-            spawnDaemon();
-        } else if (ACTION_PACKAGE_REMOVED.equals(action)) {
+        if (ACTION_PACKAGE_REMOVED.equals(action)) {
             onPackageRemoved(intent.getStringExtra(EXTRA_PACKAGE));
-        }
-    }
-
-    private class RunSyncDaemon extends Thread {
-        @Override
-        public void run() {
-            SyncDaemonUtils.autoSpawn(AppSharingService.this);
         }
     }
 
@@ -88,8 +64,6 @@ public class AppSharingService extends IntentService {
 
         @Override
         public void run() {
-            SyncDaemonUtils.autoSpawn(AppSharingService.this);
-
             AppSharingConfigFile config = AppSharingConfigFile.getInstance();
             RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
 

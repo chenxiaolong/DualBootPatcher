@@ -642,7 +642,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         if (mAction == ACTION_CHOOSE_ROM) {
             SwitcherTasks.chooseRom(info.kernelId);
         } else if (mAction == ACTION_SET_KERNEL) {
-            SwitcherTasks.setKernel(getActivity().getApplicationContext(), info.kernelId);
+            SwitcherTasks.setKernel(info.kernelId);
         }
     }
 

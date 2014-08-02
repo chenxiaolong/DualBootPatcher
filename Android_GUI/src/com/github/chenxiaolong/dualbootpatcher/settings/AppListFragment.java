@@ -21,7 +21,6 @@ import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.SharedPreferences;
@@ -36,7 +35,6 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ProgressBar;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.SyncDaemonUtils;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.AppInformation;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.LoaderListener;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.RomInfoResult;
@@ -87,17 +85,8 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
 
     @Override
     public void onDestroy() {
-        final Context context = AppListFragment.this.getActivity().getApplicationContext();
-
         super.onDestroy();
         mConfig.save();
-
-        new Thread() {
-            @Override
-            public void run() {
-                SyncDaemonUtils.autoSpawn(context);
-            }
-        }.start();
     }
 
     @Override

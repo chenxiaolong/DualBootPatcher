@@ -1,4 +1,4 @@
-From c2a33a909bcce6e68f888e33c1eb79b065d2a84c Mon Sep 17 00:00:00 2001
+From 6bfa3a3cbbfe7e96cf94e6d420f3e0c75da63c5d Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Fri, 1 Aug 2014 16:33:40 -0400
 Subject: [PATCH] Add loki JNI shared library
@@ -227,7 +227,7 @@ index 16bdd4d..b6ffe6f 100644
  	close(aboot_fd);
 diff --git a/loki_jni.c b/loki_jni.c
 new file mode 100644
-index 0000000..64f7a53
+index 0000000..b886645
 --- /dev/null
 +++ b/loki_jni.c
 @@ -0,0 +1,74 @@
@@ -251,7 +251,7 @@ index 0000000..64f7a53
 +#include <jni.h>
 +#include "loki.h"
 +
-+JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_switcher_SwitcherUtils_lokiPatch(
++JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_settings_AppSharingUtils_lokiPatch(
 +        JNIEnv *env, jclass clazz, jstring jPartitionLabel, jstring jAbootImage,
 +        jstring jInImage, jstring jOutImage) {
 +    const char *partitionLabel = (*env)->GetStringUTFChars(env, jPartitionLabel, 0);
@@ -269,7 +269,7 @@ index 0000000..64f7a53
 +    return ret;
 +}
 +
-+JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_switcher_SwitcherUtils_lokiFlash(
++JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_settings_AppSharingUtils_lokiFlash(
 +        JNIEnv *env, jclass clazz, jstring jPartitionLabel, jstring jLokiImage) {
 +    const char *partitionLabel = (*env)->GetStringUTFChars(env, jPartitionLabel, 0);
 +    const char *lokiImage = (*env)->GetStringUTFChars(env, jLokiImage, 0);
@@ -282,7 +282,7 @@ index 0000000..64f7a53
 +    return ret;
 +}
 +
-+JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_switcher_SwitcherUtils_lokiFind(
++JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_settings_AppSharingUtils_lokiFind(
 +        JNIEnv *env, jclass clazz, jstring jAbootImage) {
 +    const char *abootImage = (*env)->GetStringUTFChars(env, jAbootImage, 0);
 +
@@ -293,7 +293,7 @@ index 0000000..64f7a53
 +    return ret;
 +}
 +
-+JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_switcher_SwitcherUtils_lokiUnlok(
++JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_settings_AppSharingUtils_lokiUnlok(
 +        JNIEnv *env, jclass clazz, jstring jInImage, jstring jOutImage) {
 +    const char *inImage = (*env)->GetStringUTFChars(env, jInImage, 0);
 +    const char *outImage = (*env)->GetStringUTFChars(env, jOutImage, 0);

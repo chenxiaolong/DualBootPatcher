@@ -41,6 +41,12 @@
         <PreferenceScreen
             android:key="share_indiv_apps"
             android:title="@string/rom_settings_indiv_app_sharing_title" />
+
+        <Preference
+            android:key="update_ramdisk"
+            android:persistent="false"
+            android:summary="@string/update_ramdisk_desc"
+            android:title="@string/update_ramdisk_title" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/rom_settings_patcher_title">
         <CheckBoxPreference

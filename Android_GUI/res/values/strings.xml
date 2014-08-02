@@ -210,15 +210,27 @@
             <strong>May not work due to DRM.</strong>
         ]]>
     </string>
-    <!-- Message indicating that the current ROM was patched with an older version of the patcher and must be repatched with a newer version -->
-    <string name="rom_settings_too_old">This ROM was patched with an old version of the patcher.
-        Please patch and reinstall this ROM (or kernel) with version %s or higher.</string>
 
     <!-- Title for the preference to share individual applications -->
     <string name="rom_settings_indiv_app_sharing_title">Share individual applications</string>
     <!-- Description for the preference to share individual applications -->
     <string name="rom_settings_indiv_app_sharing_desc">Share individual applications across ROMs
         (requires reboot).</string>
+    <!-- Preference for updating the ramdisk -->
+    <string name="update_ramdisk_title">Update ramdisk</string>
+    <!-- Description for updating the ramdisk. Avoids having to repatch the ROM -->
+    <string name="update_ramdisk_desc">The ramdisk needs to be updated to use the application
+        sharing features.</string>
+    <!-- Title when ramdisk is successfully updated -->
+    <string name="update_ramdisk_success_title">Successfully updated ramdisk</string>
+    <!-- Message asking user to reboot when the ramdisk updating succeeds -->
+    <string name="update_ramdisk_reboot_desc">The ramdisk was successfully updated. Would you like
+        to reboot now?</string>
+    <!-- Title when ramdisk failed to update -->
+    <string name="update_ramdisk_failure_title">Failed to update ramdisk</string>
+    <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
+    <string name="update_ramdisk_failure_desc">The ramdisk failed to update. Application
+        sharing most likely will not work properly.</string>
 
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>
@@ -253,9 +265,15 @@
     <string name="cancel">Cancel</string>
     <!-- Word/phrase for Continue (used in dialog boxes) -->
     <string name="proceed">Continue</string>
+    <!-- Reboot now (used in dialog boxes) -->
+    <string name="reboot_now">Reboot now</string>
+    <!-- Reboot later (used in dialog boxes) -->
+    <string name="reboot_later">Reboot later</string>
 
     <!-- Text for checkbox in dialogs indicating that the dialog should not be shown again -->
     <string name="do_not_show_again">Do not show again</string>
+    <!-- Text shown in a progress dialog asking the user to wait -->
+    <string name="please_wait">Please wait</string>
 
     <!-- Presets that should always be visible -->
     <string-array name="preset_dirs" translatable="false">

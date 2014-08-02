@@ -17,10 +17,13 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.os.Bundle;
@@ -31,9 +34,11 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.text.Html;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils.Version;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -41,17 +46,33 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
+import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingTasks.OnUpdatedRamdiskEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+import com.squareup.otto.Subscribe;
+
+import java.util.Properties;
 
 public class RomSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener, RootCheckerListener,
         OnDismissListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
+    private static final String MINIMUM_VERSION = "7.0.0.r114";
+
+    private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
+    private static final String EXTRA_ROOT_CHECK_DIALOG = "rootCheckDialog";
+    private static final String EXTRA_UPDATE_RAMDISK_DIALOG = "updateRamdiskDialog";
+    private static final String EXTRA_UPDATE_RAMDISK_DONE_DIALOG = "updateRamdiskDoneDialog";
+    private static final String EXTRA_UPDATE_FAILED = "updateFailed";
+
     private static final String KEY_APP_SHARING_CATEGORY = "app_sharing_category";
     private static final String KEY_NO_ROOT = "no_root";
     private static final String KEY_SHARE_APPS = "share_apps";
     private static final String KEY_SHARE_PAID_APPS = "share_paid_apps";
     private static final String KEY_SHARE_INDIV_APPS = "share_indiv_apps";
+    private static final String KEY_UPDATE_RAMDISK = "update_ramdisk";
+
+    private boolean mOverMin;
 
     private RootCheckerFragment mRootCheckerFragment;
     private ProgressDialog mProgressDialog;
@@ -63,6 +84,11 @@ public class RomSettingsFragment extends PreferenceFragment implements
     private CheckBoxPreference mShareApps;
     private CheckBoxPreference mSharePaidApps;
     private Preference mShareIndivApps;
+
+    private Preference mUpdateRamdisk;
+    private ProgressDialog mRamdiskDialog;
+    private AlertDialog mUpdateDoneDialog;
+    private boolean mUpdateFailed;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,6 +110,9 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         mShareIndivApps = findPreference(KEY_SHARE_INDIV_APPS);
         mShareIndivApps.setOnPreferenceClickListener(this);
+
+        mUpdateRamdisk = findPreference(KEY_UPDATE_RAMDISK);
+        mUpdateRamdisk.setOnPreferenceClickListener(this);
     }
 
     @Override
@@ -93,9 +122,9 @@ public class RomSettingsFragment extends PreferenceFragment implements
         getView().setVisibility(View.GONE);
 
         if (savedInstanceState != null) {
-            mAttemptedRoot = savedInstanceState.getBoolean("attemptedRoot");
+            mAttemptedRoot = savedInstanceState.getBoolean(EXTRA_ATTEMPTED_ROOT);
 
-            if (!mAttemptedRoot && savedInstanceState.getBoolean("haveDialog")) {
+            if (!mAttemptedRoot && savedInstanceState.getBoolean(EXTRA_ROOT_CHECK_DIALOG)) {
                 buildProgressDialog();
             }
         }
@@ -107,16 +136,37 @@ public class RomSettingsFragment extends PreferenceFragment implements
             buildProgressDialog();
             mRootCheckerFragment.requestRoot();
         }
+
+        if (savedInstanceState != null) {
+            mUpdateFailed = savedInstanceState.getBoolean(EXTRA_UPDATE_FAILED);
+
+            if (savedInstanceState.getBoolean(EXTRA_UPDATE_RAMDISK_DIALOG, false)) {
+                buildUpdateRamdiskDialog();
+            }
+
+            if (savedInstanceState.getBoolean(EXTRA_UPDATE_RAMDISK_DONE_DIALOG, false)) {
+                buildUpdateRamdiskDoneDialog();
+            }
+        }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putBoolean("attemptedRoot", mAttemptedRoot);
+        outState.putBoolean(EXTRA_ATTEMPTED_ROOT, mAttemptedRoot);
+        outState.putBoolean(EXTRA_UPDATE_FAILED, mUpdateFailed);
 
         if (mProgressDialog != null) {
-            outState.putBoolean("haveDialog", true);
+            outState.putBoolean(EXTRA_ROOT_CHECK_DIALOG, true);
+        }
+
+        if (mRamdiskDialog != null) {
+            outState.putBoolean(EXTRA_UPDATE_RAMDISK_DIALOG, true);
+        }
+
+        if (mUpdateDoneDialog != null) {
+            outState.putBoolean(EXTRA_UPDATE_RAMDISK_DONE_DIALOG, true);
         }
     }
 
@@ -133,12 +183,31 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+
+        AppSharingTasks.getBusInstance().register(this);
+    }
+
+    @Override
     public void onStop() {
         super.onStop();
+
+        AppSharingTasks.getBusInstance().unregister(this);
 
         if (mProgressDialog != null) {
             mProgressDialog.dismiss();
             mProgressDialog = null;
+        }
+
+        if (mRamdiskDialog != null) {
+            mRamdiskDialog.dismiss();
+            mRamdiskDialog = null;
+        }
+
+        if (mUpdateDoneDialog != null) {
+            mUpdateDoneDialog.dismiss();
+            mUpdateDoneDialog = null;
         }
     }
 
@@ -150,6 +219,52 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mProgressDialog.setIndeterminate(true);
             mProgressDialog.show();
             mProgressDialog.setOnDismissListener(this);
+        }
+    }
+
+    private void buildUpdateRamdiskDialog() {
+        if (mRamdiskDialog == null) {
+            mRamdiskDialog = new ProgressDialog(getActivity());
+            mRamdiskDialog.setMessage(getString(R.string.please_wait));
+            mRamdiskDialog.setCancelable(false);
+            mRamdiskDialog.setIndeterminate(true);
+            mRamdiskDialog.show();
+            mRamdiskDialog.setOnDismissListener(this);
+        }
+    }
+
+    private void buildUpdateRamdiskDoneDialog() {
+        if (mUpdateDoneDialog == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+            if (mUpdateFailed) {
+                builder.setTitle(R.string.update_ramdisk_failure_title);
+                builder.setMessage(R.string.update_ramdisk_failure_desc);
+
+                builder.setNegativeButton(R.string.ok, null);
+            } else {
+                builder.setTitle(R.string.update_ramdisk_success_title);
+                builder.setMessage(R.string.update_ramdisk_reboot_desc);
+
+                final Context context = getActivity().getApplicationContext();
+
+                builder.setNegativeButton(R.string.reboot_later, null);
+                builder.setPositiveButton(R.string.reboot_now, new OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                SwitcherUtils.reboot(context);
+                            }
+                        }.start();
+                    }
+                });
+            }
+
+            mUpdateDoneDialog = builder.show();
+            mUpdateDoneDialog.setOnDismissListener(this);
+            mUpdateDoneDialog.setCanceledOnTouchOutside(false);
         }
     }
 
@@ -192,6 +307,9 @@ public class RomSettingsFragment extends PreferenceFragment implements
             return false;
         } else if (KEY_SHARE_INDIV_APPS.equals(key)) {
             startActivity(new Intent(getActivity(), AppListActivity.class));
+        } else if (KEY_UPDATE_RAMDISK.equals(key)) {
+            buildUpdateRamdiskDialog();
+            AppSharingTasks.updateRamdisk(getActivity().getApplicationContext());
         }
 
         return true;
@@ -202,11 +320,13 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mAppSharingCategory.removePreference(mShareApps);
             mAppSharingCategory.removePreference(mSharePaidApps);
             mAppSharingCategory.removePreference(mShareIndivApps);
+            mAppSharingCategory.removePreference(mUpdateRamdisk);
         } else {
             mAppSharingCategory.removePreference(mNoRoot);
             mAppSharingCategory.addPreference(mShareApps);
             mAppSharingCategory.addPreference(mSharePaidApps);
             mAppSharingCategory.addPreference(mShareIndivApps);
+            mAppSharingCategory.addPreference(mUpdateRamdisk);
 
             mShareApps.setChecked(AppSharingUtils.isShareAppsEnabled());
             mSharePaidApps.setChecked(AppSharingUtils.isSharePaidAppsEnabled());
@@ -223,44 +343,23 @@ public class RomSettingsFragment extends PreferenceFragment implements
             return;
         }
 
-        Version version = new Version(MiscUtils.getPatchedByVersion());
-        Version verGlobalShareApps = MiscUtils.getMinimumVersionFor(
-                MiscUtils.FEATURE_GLOBAL_APP_SHARING | MiscUtils.FEATURE_GLOBAL_PAID_APP_SHARING);
+        mSharePaidApps.setSummary(Html.fromHtml(getActivity().getString(
+                R.string.rom_settings_share_paid_apps_desc)));
 
-        if (version.compareTo(verGlobalShareApps) < 0) {
-            mShareApps.setSummary(String.format(getActivity().getString(
-                    R.string.rom_settings_too_old), verGlobalShareApps));
-
-            mSharePaidApps.setSummary(String.format(getActivity().getString(
-                    R.string.rom_settings_too_old), verGlobalShareApps));
+        if (!mOverMin) {
             mShareApps.setEnabled(false);
             mSharePaidApps.setEnabled(false);
-        } else {
-            mSharePaidApps.setSummary(Html.fromHtml(getActivity().getString(
-                    R.string.rom_settings_share_paid_apps_desc)));
         }
     }
 
     private void setupIndivAppSharePrefs(boolean globalShared) {
-        RomInformation curRom = RomUtils.getCurrentRom(getActivity());
-        boolean isPrimary = curRom != null && curRom.id.equals(RomUtils.PRIMARY_ID);
-
-        Version version = new Version(MiscUtils.getPatchedByVersion());
-        Version verIndivAppSync = MiscUtils.getMinimumVersionFor(
-                MiscUtils.FEATURE_INDIV_APP_SYNCING);
-
         if (globalShared) {
             // If global app sharing is enabled, then don't allow individual app sharing
             mShareIndivApps.setSummary(R.string.indiv_app_sharing_incompat_global);
             mShareIndivApps.setEnabled(false);
-        } else if (!isPrimary && version.compareTo(verIndivAppSync) < 0) {
-            // Show warning if we're not booted in primary and the ramdisk does not have syncdaemon
-            mShareIndivApps.setSummary(String.format(getActivity().getString(
-                    R.string.rom_settings_too_old), verIndivAppSync));
-            mShareIndivApps.setEnabled(false);
         } else {
             mShareIndivApps.setSummary(R.string.rom_settings_indiv_app_sharing_desc);
-            mShareIndivApps.setEnabled(true);
+            mShareIndivApps.setEnabled(mOverMin);
         }
     }
 
@@ -269,6 +368,17 @@ public class RomSettingsFragment extends PreferenceFragment implements
         showAppSharingPrefs(allowed);
 
         if (allowed) {
+            Version minVersion = new Version(MINIMUM_VERSION);
+            String sdVersionStr = getSyncDaemonVersion(getActivity());
+            Version sdVersion;
+            if (sdVersionStr != null) {
+                sdVersion = new Version(sdVersionStr);
+            } else {
+                sdVersion = new Version("0.0.0");
+            }
+
+            mOverMin = sdVersion.compareTo(minVersion) >= 0;
+
             setupGlobalAppSharePrefs();
             setupIndivAppSharePrefs(mShareApps.isChecked() || mSharePaidApps.isChecked());
         }
@@ -285,9 +395,64 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
-    public void onDismiss(DialogInterface dialogInterface) {
-        if (mProgressDialog != null) {
+    public void onDismiss(DialogInterface dialog) {
+        if (mProgressDialog != null && mProgressDialog == dialog) {
             mProgressDialog = null;
         }
+
+        if (mRamdiskDialog != null && mRamdiskDialog == dialog) {
+            mRamdiskDialog = null;
+        }
+
+        if (mUpdateDoneDialog != null && mUpdateDoneDialog == dialog) {
+            mUpdateDoneDialog = null;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe
+    public void onUpdatedRamdisk(OnUpdatedRamdiskEvent e) {
+        if (mRamdiskDialog != null) {
+            mRamdiskDialog.dismiss();
+        }
+
+        mUpdateFailed = e.failed;
+        buildUpdateRamdiskDoneDialog();
+    }
+
+    private String getSyncDaemonVersion(Context context) {
+        // If the daemon is not running, assume that it's not installed
+        int pid = CommandUtils.getPid(context, "syncdaemon");
+        if (pid <= 0) {
+            return null;
+        }
+
+        //Version curVer = new Version(BuildConfig.VERSION_NAME);
+
+        Properties prop = MiscUtils.getProperties("/data/local/tmp/syncdaemon.pid");
+
+        if (prop.containsKey("version") && prop.containsKey("pid")) {
+            String propPid = prop.getProperty("pid");
+            String propVersion = prop.getProperty("version");
+
+            Log.d(TAG, "syncdaemon pid: " + propPid);
+            Log.d(TAG, "syncdaemon version: " + propVersion);
+
+            int pid2 = -1;
+
+            try {
+                pid2 = Integer.parseInt(propPid);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+
+            // Only check the version in the properties file if it corresponds to the currently
+            // running syncdaemon
+            if (pid == pid2) {
+                return propVersion;
+            }
+        }
+
+        return null;
     }
 }

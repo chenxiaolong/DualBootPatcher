@@ -19,17 +19,11 @@ package com.github.chenxiaolong.dualbootpatcher;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MiscUtils {
-    public static final int FEATURE_GLOBAL_APP_SHARING = 1;
-    public static final int FEATURE_GLOBAL_PAID_APP_SHARING = 2;
-    public static final int FEATURE_INDIV_APP_SYNCING = 4;
-
     public static class Version implements Comparable<Version> {
         private int mMajorVer;
         private int mMinorVer;
@@ -156,56 +150,6 @@ public class MiscUtils {
                     + ", mRevision: " + mRevision
                     + ", mGitCommit: " + mGitCommit;
         }
-    }
-
-    public static Version getMinimumVersionFor(int features) {
-        ArrayList<Version> versions = new ArrayList<Version>();
-
-        // To find the minimum version for continuous integration builds, run the following command:
-        //   $ git describe --long | sed -E "s/^v//g;s/([^-]*-g)/r\1/;s/-/./g"
-        // If the command returns "7.0.0.r56.gdd3907d", then then minimum version (uncommitted
-        // changes) should be "7.0.0.r57".
-        //
-        // Release and debug versions should simply use the release version numbers (eg. X.Y.Z)
-        if (BuildConfig.BUILD_TYPE.equals("ci")) {
-            if ((features & FEATURE_GLOBAL_APP_SHARING) != 0) {
-                Version v = new Version("7.0.0.r114");
-                versions.add(v);
-            }
-
-            if ((features & FEATURE_GLOBAL_PAID_APP_SHARING) != 0) {
-                Version v = new Version("7.0.0.r114");
-                versions.add(v);
-            }
-
-            if ((features & FEATURE_INDIV_APP_SYNCING) != 0) {
-                Version v = new Version("7.0.0.r114");
-                versions.add(v);
-            }
-        } else {
-            if ((features & FEATURE_GLOBAL_APP_SHARING) != 0) {
-                Version v = new Version("8.0.0");
-                versions.add(v);
-            }
-
-            if ((features & FEATURE_GLOBAL_PAID_APP_SHARING) != 0) {
-                Version v = new Version("8.0.0");
-                versions.add(v);
-            }
-
-            if ((features & FEATURE_INDIV_APP_SYNCING) != 0) {
-                Version v = new Version("8.0.0");
-                versions.add(v);
-            }
-        }
-
-        if (versions.size() == 0) {
-            return null;
-        }
-
-        // Find maximum (which is the minimum version needed to support all of the requested
-        // features)
-        return Collections.max(versions);
     }
 
     public static String getPatchedByVersion() {

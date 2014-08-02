@@ -28,7 +28,6 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.LiveOutputFilter;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
@@ -426,7 +425,10 @@ public class PatcherUtils {
          * itself up properly - cacheDir|* - filesDir|*|tmp*
          */
         for (File d : context.getCacheDir().listFiles()) {
-            new RootFile(d.getAbsolutePath()).recursiveDelete();
+            if (d.getName().startsWith("DualBootPatcherAndroid")
+                    || d.getName().startsWith("tmp")) {
+                new RootFile(d.getAbsolutePath()).recursiveDelete();
+            }
         }
         for (File d : context.getFilesDir().listFiles()) {
             if (d.isDirectory()) {

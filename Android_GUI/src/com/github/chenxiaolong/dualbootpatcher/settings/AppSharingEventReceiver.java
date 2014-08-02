@@ -21,7 +21,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 
 public class AppSharingEventReceiver extends BroadcastReceiver {
     @Override
@@ -29,24 +28,12 @@ public class AppSharingEventReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         Uri data = intent.getData();
 
-        if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
-            Intent serviceIntent = new Intent(context, AppSharingService.class);
-            serviceIntent.putExtra(AppSharingService.ACTION,
-                    AppSharingService.ACTION_PACKAGE_ADDED);
-            context.startService(serviceIntent);
-        } else if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(action)) {
+        if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(action)) {
             Intent serviceIntent = new Intent(context, AppSharingService.class);
             serviceIntent.putExtra(AppSharingService.ACTION,
                     AppSharingService.ACTION_PACKAGE_REMOVED);
             serviceIntent.putExtra(AppSharingService.EXTRA_PACKAGE, data.getSchemeSpecificPart());
             context.startService(serviceIntent);
-        } else if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
-            Intent serviceIntent = new Intent(context, AppSharingService.class);
-            serviceIntent.putExtra(AppSharingService.ACTION,
-                    AppSharingService.ACTION_PACKAGE_UPGRADED);
-            context.startService(serviceIntent);
         }
     }
-
-
 }
