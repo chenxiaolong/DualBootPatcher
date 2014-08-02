@@ -32,6 +32,7 @@ import java.io.File;
 public class SwitcherUtils {
     public static final String TAG = SwitcherUtils.class.getSimpleName();
     public static final String BOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/boot";
+    public static final String ABOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/aboot";
     // Can't use Environment.getExternalStorageDirectory() because the path is
     // different in the root environment
     public static final String KERNEL_PATH_ROOT = "/media/0/MultiKernels";
@@ -88,6 +89,9 @@ public class SwitcherUtils {
         }
         tmpdir.recursiveChmod(0777);
 
+        // We have to reloki the kernel if the original was loki'd
+        boolean wasLoki = PatcherUtils.isLokiBootImage(context, tmpKernel);
+
         // Update syncdaemon in the boot image
         if (!PatcherUtils.updateSyncdaemon(context, tmpKernel)) {
             String msg = "Failed to update syncdaemon";
@@ -98,6 +102,25 @@ public class SwitcherUtils {
         // Copy to target
         String updatedKernel = tmpKernel.replace(".img", "_syncdaemon.img");
         String targetKernel = kernel_path + File.separator + kernelId + ".img";
+
+        if (wasLoki) {
+            String aboot = TMP_KERNEL + File.separator + "aboot.img";
+            ret = dd(ABOOT_PARTITION, aboot);
+            new RootFile(aboot).chmod(0777);
+
+            String lokiKernel = kernel_path + File.separator + kernelId + ".img";
+
+            ret = lokiPatch("boot", aboot, updatedKernel, lokiKernel);
+            if (ret != 0) {
+                String msg = "Failed to loki patch new boot image";
+                Log.e(TAG, msg);
+                throw new Exception(msg);
+            } else {
+                Log.d(TAG, "loki patching returned: " + ret);
+            }
+
+            targetKernel = lokiKernel;
+        }
 
         RootFile f = new RootFile(kernel_path);
         f.mkdirs();
@@ -171,4 +194,19 @@ public class SwitcherUtils {
 
         return exitCode;
     }
+
+    // libloki-jni native library
+
+    static {
+        System.loadLibrary("loki-jni");
+    }
+
+    private static native int lokiPatch(String partitionLabel, String abootImage,
+             String inImage, String outImage);
+
+    private static native int lokiFlash(String partitionLabel, String lokiImage);
+
+    private static native int lokiFind(String abootImage);
+
+    private static native int lokiUnlok(String inImage, String outImage);
 }
