@@ -795,6 +795,12 @@ def build_android_app(targetname):
             for line in f_in:
                 f_out.write(re.sub(r'@VERSION@', version, line))
 
+    # Add JNI stuff
+    print('Setting up JNI sources ...')
+    exit_status, output, error = run_command(
+        [os.path.join(builddir, 'compile', 'get-loki-jni.sh')]
+    )
+
     if buildtype == 'release':
         task = 'assembleRelease'
         apkfile = 'Android_GUI-release.apk'
@@ -811,6 +817,7 @@ def build_android_app(targetname):
     output = io.StringIO()
     sdkenv = os.environ.copy()
     sdkenv['ANDROID_HOME'] = android_sdk
+    sdkenv['ANDROID_NDK_HOME'] = android_ndk
     sdkenv['TERM'] = 'xterm'
     child = pexpect.spawnu(androiddir + '/gradlew', [task],
                            cwd=androiddir, env=sdkenv, timeout=600)

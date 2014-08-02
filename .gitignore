@@ -12,6 +12,7 @@
 
 # Compiled files
 /build/compile/build/
+/build/compile/loki/
 /build/compile/valgrind/
 /build/compile/getfacl
 /build/compile/getfattr
@@ -31,3 +32,6 @@
 
 # Transifex
 /translations/
+
+# JNI
+/Android_GUI/jni/
