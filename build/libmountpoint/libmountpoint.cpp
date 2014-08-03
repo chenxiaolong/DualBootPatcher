@@ -15,15 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <mntent.h>
 #include "libmountpoint.h"
 
 #ifdef __ANDROID_API__
-#define SETMNTENT(x, y) fopen(x, y)
-#define ENDMNTENT(x) fclose(x)
+#include "mntent.h"
 #else
-#define SETMNTENT(x, y) setmntent(x, y)
-#define ENDMNTENT(x) endmntent(x)
+#include <mntent.h>
 #endif
 
 std::vector<std::string> get_mount_points() {
@@ -32,13 +29,13 @@ std::vector<std::string> get_mount_points() {
     FILE *f;
     struct mntent *ent;
 
-    f = SETMNTENT(MOUNTS, "r");
+    f = setmntent(MOUNTS, "r");
     if (f != NULL) {
         while ((ent = getmntent(f)) != NULL) {
             mount_points.push_back(ent->mnt_dir);
         }
     }
-    ENDMNTENT(f);
+    endmntent(f);
 
     return mount_points;
 }
@@ -48,7 +45,7 @@ std::string get_mnt_fsname(std::string mountpoint) {
     struct mntent *ent;
     std::string fsname;
 
-    f = SETMNTENT(MOUNTS, "r");
+    f = setmntent(MOUNTS, "r");
     if (f != NULL) {
         while ((ent = getmntent(f)) != NULL) {
             if (mountpoint == ent->mnt_dir) {
@@ -57,6 +54,7 @@ std::string get_mnt_fsname(std::string mountpoint) {
             }
         }
     }
+    endmntent(f);
 
     return fsname;
 }
@@ -66,7 +64,7 @@ std::string get_mnt_type(std::string mountpoint) {
     struct mntent *ent;
     std::string mnttype;
 
-    f = SETMNTENT(MOUNTS, "r");
+    f = setmntent(MOUNTS, "r");
     if (f != NULL) {
         while ((ent = getmntent(f)) != NULL) {
             if (mountpoint == ent->mnt_dir) {
@@ -75,6 +73,7 @@ std::string get_mnt_type(std::string mountpoint) {
             }
         }
     }
+    endmntent(f);
 
     return mnttype;
 }
@@ -84,7 +83,7 @@ std::string get_mnt_opts(std::string mountpoint) {
     struct mntent *ent;
     std::string mntopts;
 
-    f = SETMNTENT(MOUNTS, "r");
+    f = setmntent(MOUNTS, "r");
     if (f != NULL) {
         while ((ent = getmntent(f)) != NULL) {
             if (mountpoint == ent->mnt_dir) {
@@ -93,6 +92,7 @@ std::string get_mnt_opts(std::string mountpoint) {
             }
         }
     }
+    endmntent(f);
 
     return mntopts;
 }
@@ -102,7 +102,7 @@ int get_mnt_freq(std::string mountpoint) {
     struct mntent *ent;
     int mntfreq = 0;
 
-    f = SETMNTENT(MOUNTS, "r");
+    f = setmntent(MOUNTS, "r");
     if (f != NULL) {
         while ((ent = getmntent(f)) != NULL) {
             if (mountpoint == ent->mnt_dir) {
@@ -111,6 +111,7 @@ int get_mnt_freq(std::string mountpoint) {
             }
         }
     }
+    endmntent(f);
 
     return mntfreq;
 }
@@ -120,7 +121,7 @@ int get_mnt_passno(std::string mountpoint) {
     struct mntent *ent;
     int mntpassno = 0;
 
-    f = SETMNTENT(MOUNTS, "r");
+    f = setmntent(MOUNTS, "r");
     if (f != NULL) {
         while ((ent = getmntent(f)) != NULL) {
             if (mountpoint == ent->mnt_dir) {
@@ -129,6 +130,7 @@ int get_mnt_passno(std::string mountpoint) {
             }
         }
     }
+    endmntent(f);
 
     return mntpassno;
 }
