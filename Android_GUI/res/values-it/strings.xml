@@ -150,8 +150,6 @@
 Condividi le applicazioni pagate dalla ROM primaria con la ROM corrente (richiede riavvio).
 <strong>Potrebbe non funzionare a causa dei DRM.</strong>
 ]]></string>
-  <!--Message indicating that the current ROM was patched with an older version of the patcher and must be repatched with a newer version-->
-  <string name="rom_settings_too_old">Questa ROM è stata patchata con una vecchia versione del patcher. Per favore patcha e reinstalla questa ROM (o kernel) con la versione %s o successiva.</string>
   <!--Title for the preference to share individual applications-->
   <string name="rom_settings_indiv_app_sharing_title">Condividi singole applicazioni </string>
   <!--Description for the preference to share individual applications-->
@@ -169,7 +167,7 @@ Condividi le applicazioni pagate dalla ROM primaria con la ROM corrente (richied
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
   <string name="indiv_app_sharing_incompat_global">Non può essere usata mentre la condivisione globale delle applicazioni è abilitata.</string>
   <!--Description in the app sharing list showing which ROMs the application is installed in-->
-  <string name="installed_in_roms">Attualmente installato in:</string>
+  <string name="installed_in_roms">Attualmente installata in:</string>
   <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
   <string name="share_apks_across_title">Usa lo stesso apk per:</string>
   <!--Word/phrase for None (used in eg. a list)-->
