@@ -21,6 +21,35 @@
 #include <string>
 #include <vector>
 
+#ifdef __ANDROID_API__
+#include <android/log.h>
+
+#define LOG_TAG "libmountpoint"
+
+#define LOG(prio, tag, fmt...) __android_log_print(prio, tag, fmt)
+#define LOGD(...) LOG(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) LOG(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) LOG(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGV(...) LOG(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) LOG(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+
+#else
+
+#ifdef __cplusplus
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#define LOG(prio, tag, fmt...) printf(fmt); printf("\n")
+#define LOGD(...) LOG(0, 0, __VA_ARGS__)
+#define LOGE(...) LOG(0, 0, __VA_ARGS__)
+#define LOGI(...) LOG(0, 0, __VA_ARGS__)
+#define LOGV(...) LOG(0, 0, __VA_ARGS__)
+#define LOGW(...) LOG(0, 0, __VA_ARGS__)
+
+#endif
+
 #define MOUNTS "/proc/mounts"
 
 std::vector<std::string> get_mount_points();
