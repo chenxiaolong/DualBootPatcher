@@ -100,7 +100,7 @@ std::string get_mnt_opts(std::string mountpoint) {
 int get_mnt_freq(std::string mountpoint) {
     FILE *f;
     struct mntent *ent;
-    int mntfreq;
+    int mntfreq = 0;
 
     f = SETMNTENT(MOUNTS, "r");
     if (f != NULL) {
@@ -118,7 +118,7 @@ int get_mnt_freq(std::string mountpoint) {
 int get_mnt_passno(std::string mountpoint) {
     FILE *f;
     struct mntent *ent;
-    int mntpassno;
+    int mntpassno = 0;
 
     f = SETMNTENT(MOUNTS, "r");
     if (f != NULL) {
