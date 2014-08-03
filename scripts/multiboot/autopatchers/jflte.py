@@ -15,6 +15,7 @@
 
 from multiboot.autopatchers.base import BasePatcher
 import multiboot.fileio as fileio
+import os
 
 
 class GoogleEditionPatcher(BasePatcher):
