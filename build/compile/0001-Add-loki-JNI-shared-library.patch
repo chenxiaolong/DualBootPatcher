@@ -1,10 +1,10 @@
-From 6bfa3a3cbbfe7e96cf94e6d420f3e0c75da63c5d Mon Sep 17 00:00:00 2001
+From 12f330b8556e45d5454227be6e1168e16e9fa7ce Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Fri, 1 Aug 2014 16:33:40 -0400
 Subject: [PATCH] Add loki JNI shared library
 
 ---
- Android.mk     |  8 +++++++
+ Android.mk     | 20 ++++------------
  Application.mk |  2 ++
  loki.h         | 11 +++++++++
  loki_find.c    | 14 +++++------
@@ -12,24 +12,37 @@ Subject: [PATCH] Add loki JNI shared library
  loki_jni.c     | 74 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  loki_patch.c   | 52 ++++++++++++++++++++---------------------
  loki_unlok.c   | 28 +++++++++++-----------
- 8 files changed, 156 insertions(+), 61 deletions(-)
+ 8 files changed, 153 insertions(+), 76 deletions(-)
  create mode 100644 Application.mk
  create mode 100644 loki_jni.c
 
 diff --git a/Android.mk b/Android.mk
-index 8a81933..39569e6 100644
+index 8a81933..c03b1d4 100644
 --- a/Android.mk
 +++ b/Android.mk
-@@ -17,3 +17,11 @@ LOCAL_MODULE_TAGS := eng
- LOCAL_STATIC_LIBRARIES := libc
- LOCAL_FORCE_STATIC_EXECUTABLE := true
- include $(BUILD_EXECUTABLE)
-+
+@@ -1,19 +1,9 @@
+ LOCAL_PATH := $(call my-dir)
+ 
+-# libloki
 +# libloki JNI
-+include $(CLEAR_VARS)
+ include $(CLEAR_VARS)
+-LOCAL_SRC_FILES := loki_flash.c loki_patch.c
+-LOCAL_MODULE := libloki_static
 +LOCAL_SRC_FILES := loki_flash.c loki_patch.c loki_find.c loki_unlok.c loki_jni.c
 +LOCAL_MODULE := libloki-jni
-+LOCAL_MODULE_TAGS := eng
+ LOCAL_MODULE_TAGS := eng
+-include $(BUILD_STATIC_LIBRARY)
+-
+-# build static binary
+-include $(CLEAR_VARS)
+-LOCAL_SRC_FILES := loki_flash.c loki_patch.c loki_find.c loki_unlok.c main.c
+-LOCAL_MODULE := loki_tool_static
+-LOCAL_MODULE_STEM := loki_tool
+-LOCAL_MODULE_TAGS := eng
+-# LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
+-LOCAL_STATIC_LIBRARIES := libc
+-LOCAL_FORCE_STATIC_EXECUTABLE := true
+-include $(BUILD_EXECUTABLE)
 +LOCAL_LDLIBS := -llog
 +include $(BUILD_SHARED_LIBRARY)
 diff --git a/Application.mk b/Application.mk
