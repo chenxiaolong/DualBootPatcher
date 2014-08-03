@@ -34,4 +34,4 @@
 /translations/
 
 # JNI
-/Android_GUI/jni/
+/Android_GUI/jni-*/

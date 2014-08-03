@@ -798,7 +798,7 @@ def build_android_app(targetname):
     # Add JNI stuff
     print('Setting up JNI sources ...')
     exit_status, output, error = run_command(
-        [os.path.join(builddir, 'compile', 'get-loki-jni.sh')]
+        [os.path.join(builddir, 'compile', 'build-jni-libs.sh')]
     )
 
     if buildtype == 'release':
