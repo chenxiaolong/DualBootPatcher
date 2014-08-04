@@ -20,4 +20,4 @@ cp loki/*.{c,h,mk} ../../Android_GUI/jni-libloki/jni/
 
 rm -rf ../../Android_GUI/jni-libmountpoint/
 mkdir -p ../../Android_GUI/jni-libmountpoint/jni/
-cp ../libmountpoint/*.{cpp,h,mk} ../../Android_GUI/jni-libmountpoint/jni/
+cp ../libmountpoint/*.{cpp,c,h,mk} ../../Android_GUI/jni-libmountpoint/jni/
