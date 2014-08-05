@@ -35,6 +35,8 @@
   <string name="title_set_kernel">Régler le kernel</string>
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Patcher un fichier Zip</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Espace libre</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Réglages de la ROM</string>
   <!--Nagivation drawer item for rebooting the device-->
@@ -137,6 +139,18 @@
   <string name="overall_progress">Progression globale:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">fichiers %1$s/%2$s </string>
+  <!--Title for the partition's mount point-->
+  <string name="free_space_mount_point">Point de montage:</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">Taille totale:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Occupé:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">Libre:</string>
+  <!--Format string for gigabytes-->
+  <!--Format string for megabytes-->
+  <!--Format string for kilobytes-->
+  <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
   <string name="rom_settings_app_sharing_title">Partage d\'application (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
