@@ -21,6 +21,7 @@ import multiboot.fileinfo as fileinfo
 import multiboot.fileio as fileio
 import multiboot.minicpio.minicpio as minicpio
 import multiboot.operatingsystem as OS
+import multiboot.partitionconfigs as partitionconfigs
 import multiboot.ramdisk as ramdisk
 import ramdisks.common.common as common
 
@@ -183,7 +184,7 @@ class MultibootPatcher(Patcher):
             tempdir
         )
         autopatcher.insert_partition_info(
-            tempdir, 'init.multiboot.mounting.sh',
+            os.path.join(tempdir, 'init.multiboot.mounting.sh'),
             self.file_info.partconfig, target_path_only=True
         )
         cf.add_file(
@@ -335,8 +336,9 @@ class MultibootPatcher(Patcher):
         OS.ui.set_task(self.tasks['PATCHING_FILES'])
 
         shutil.copy(os.path.join(OS.patchdir, 'dualboot.sh'), tempdir)
-        autopatcher.insert_partition_info(tempdir, 'dualboot.sh',
-                                          self.file_info.partconfig)
+        autopatcher.insert_partition_info(
+            os.path.join(tempdir, 'dualboot.sh'),
+            self.file_info.partconfig)
 
         if ap_instances:
             OS.ui.details('Running autopatchers ...')
@@ -599,8 +601,9 @@ class PrimaryUpgradePatcher(Patcher):
         fileio.write_lines(os.path.join(tempdir, UPDATER_SCRIPT), lines)
 
         shutil.copy(os.path.join(OS.patchdir, 'dualboot.sh'), tempdir)
-        autopatcher.insert_partition_info(tempdir, 'dualboot.sh',
-                                          self.file_info.partconfig)
+        autopatcher.insert_partition_info(
+            os.path.join(tempdir, 'dualboot.sh'),
+            self.file_info.partconfig)
 
         OS.ui.set_task(self.tasks['COMPRESSING_ZIP_FILE'])
         OS.ui.details('Opening input and output zip files ...')
@@ -660,6 +663,7 @@ class PrimaryUpgradePatcher(Patcher):
         del self.tempdirs[:]
 
 
+# UPDATE INIT.MULTIBOOT.SH
 class SyncdaemonPatcher(Patcher):
     def __init__(self, file_info):
         super(SyncdaemonPatcher, self).__init__(file_info)
@@ -689,6 +693,32 @@ class SyncdaemonPatcher(Patcher):
 
         return newfile
 
+    def find_partconfig(self, cf):
+        partconfig_id = None
+
+        defaultprop = cf.get_file('default.prop')
+        if defaultprop:
+            lines = fileio.bytes_to_lines(defaultprop.content)
+            for line in lines:
+                if line.startswith('ro.patcher.patched'):
+                    partconfig_id = line.partition('=')[1]
+
+        mountscript = cf.get_file('init.multiboot.mounting.sh')
+        if mountscript:
+            lines = fileio.bytes_to_lines(mountscript.content)
+            for line in lines:
+                if line.startswith('TARGET_DATA='):
+                    match = re.search(r'/raw-data/([^/"]+)', line)
+                    if match:
+                        partconfig_id = match.group(1)
+
+        configs = partitionconfigs.get()
+        for config in configs:
+            if config.id == partconfig_id:
+                return config
+
+        return None
+
     def patch_boot_image(self):
         path = self.file_info.filename
 
@@ -716,6 +746,27 @@ class SyncdaemonPatcher(Patcher):
         os.remove(bootimageinfo.ramdisk)
 
         OS.ui.details('Modifying ramdisk ...')
+
+        # Update
+        partconfig = self.find_partconfig(cf)
+
+        if partconfig and cf.get_file('init.multiboot.mounting.sh'):
+            temp = tempfile.mkstemp()
+
+            shutil.copyfile(
+                os.path.join(OS.ramdiskdir, 'init.multiboot.mounting.sh'),
+                temp[1]
+            )
+
+            autopatcher.insert_partition_info(
+                temp[1], partconfig, target_path_only=True
+            )
+
+            cf.add_file(temp[1], name='init.multiboot.mounting.sh',
+                        perms=0o750)
+
+            os.close(temp[0])
+            os.remove(temp[1])
 
         # Add syncdaemon to init.rc if it doesn't already exist
         if not cf.get_file('sbin/syncdaemon'):

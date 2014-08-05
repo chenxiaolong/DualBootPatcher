@@ -30,9 +30,9 @@ def insert_line(index, line, lines):
     return 1
 
 
-def insert_partition_info(directory, f, config, target_path_only=False):
+def insert_partition_info(f, config, target_path_only=False):
     magic = '# PATCHER REPLACE ME - DO NOT REMOVE\n'
-    lines = fileio.all_lines(os.path.join(directory, f))
+    lines = fileio.all_lines(f)
 
     i = 0
     while i < len(lines):
@@ -68,7 +68,7 @@ def insert_partition_info(directory, f, config, target_path_only=False):
 
         i += 1
 
-    fileio.write_lines(os.path.join(directory, f), lines)
+    fileio.write_lines(f, lines)
 
 
 class AutoPatcherPreset:
