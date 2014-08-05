@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <!--Name of the app built in release mode-->
-  <string name="app_name_release">Adaptador Duplo Boot</string>
+  <string name="app_name_release">Adaptador Múltiplo Boot</string>
   <!--Name of the app built in debug mode-->
-  <string name="app_name_debug">Adaptador Duplo Boot (Debug)</string>
+  <string name="app_name_debug">Adaptador Múltiplo Boot (Debug)</string>
   <!--Name of the app built in snapshot mode-->
-  <string name="app_name_snapshot">Adaptador Duplo Boot (Versão Snapshot)</string>
+  <string name="app_name_snapshot">Adaptador Múltiplo Boot (Snapshot)</string>
   <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
   <string name="wait_until_finished">Aguarde até que todas as operações estejam terminadas</string>
   <!--Indicate the version of the app on the about screen-->
@@ -20,87 +20,183 @@
   <!--Licenses link text-->
   <string name="link_licenses">Licenças</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Agradecimentos especiais a todos que ajudaram a viabilizar este Adaptador!</string>
+  <string name="credits">Agradecimentos especiais a todos que ajudaram a viabilizar este aplicativo!</string>
   <!--Message in ROM Settings screen indicating that it's waiting for root access-->
   <string name="waiting_for_root">Aguardando pelo acesso root</string>
   <!--Title for the card shown in the switcher when root access could not be obtained-->
   <string name="noroot_title">Não há acesso root</string>
   <!--Message for the card shown in the switcher when root access could not be obtained-->
+  <string name="noroot_switcher_desc">O aplicativo não conseguiu obter o acesso root. O acesso root é necessário para escrever o kernel/boot e alterar entre os firmwares.\n\nClique para tentar obter o acesso root novamente.</string>
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
+  <string name="noroot_settings_desc">O aplicativo não conseguiu obter o acesso root. O acesso root é necessário para alterar as definições de compartilhamento.\n\nClique para tentar obter o acesso root novamente.</string>
   <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_choose_rom">Escolher a ROM</string>
   <!--Navigation drawer item for setting the kernel-->
+  <string name="title_set_kernel">Definir o Kernel</string>
   <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Modificar o arquivo zip</string>
   <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Definições da ROM</string>
   <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Reiniciar</string>
   <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">Sobre</string>
   <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Sair</string>
   <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Abrir o painel de navegação </string>
   <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Fechar o painel de navegação </string>
   <!--Default name for the primary ROM-->
+  <string name="primary">Primária</string>
   <!--Default name for the secondary ROM-->
+  <string name="secondary">Secundária</string>
   <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">MultiROM %s</string>
   <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">Não foi possível determinar a versão da ROM</string>
   <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">Alternada com sucesso</string>
   <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">Falha ao alternar a ROM</string>
   <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Configuração do kernel com sucesso</string>
   <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Falha ao configurar o kernel</string>
   <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">Logotipo da ROM</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Configurar o kernel?</string>
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">O kernel que está atualmente carregado será salvo como o kernel %s</string>
   <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">Renomear %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Digite o novo nome para a ROM %s. Deixe em branco para utilizar o nome padrão. Toque no ícone para alterar o ícone da ROM.</string>
   <!--Dialog button text for resetting the ROM icon-->
+  <string name="reset_icon">Reconfigurar o ícone</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
+  <string name="devpartconfig_title">Configuração do aparelho e das partições:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Sem gerenciador de arquivos</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Não há um gerenciador de arquivos instalado. Por favor,\ninstale um gerenciador de arquivo para poder escolher os\narquivos a serem adaptados.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
+  <string name="filechooser_initial_title">Toque para escolher um arquivo a ser adaptado</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <string name="filechooser_initial_desc">Arquivos .zip e de imagens de boot (boot.img, boot.lok) são suportados pelo adaptador. Se um arquivo não suportado for escolhido, opções adicionais que permitem personalizar o processo de adaptação irão aparecer em seguida.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
+  <string name="filechooser_ready_title">Toque para começar a adaptação</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
+  <string name="filechooser_ready_desc">Arquivo selecionado: %s\n\nToque e segure para escolher um arquivo diferente.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
+  <string name="filechooser_unsupported_title">Toque para começar a adaptação</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
+  <string name="filechooser_unsupported_desc">Arquivo selecionado: %s\n\nO arquivo que você selecionou não é suportado. Você pode tentar mesmo assim utilizando as opções abaixo.\n\nToque e segure para escolher um arquivo diferente.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
+  <string name="filechooser_success_title">Arquivo adaptado com sucesso</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_success_desc">Novo arquivo: %s\n\nToque para escolher outro arquivo a ser adaptado.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
+  <string name="filechooser_failure_title">Falha ao adaptar o arquivo</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_failure_desc">%s\n\nToque para escolher outro arquivo a ser adaptado.</string>
   <!--Title for the preset card-->
+  <string name="preset_title">Pré-configurações</string>
   <!--Name for the custom preset item-->
+  <string name="preset_custom">Personalizado</string>
   <!--Description for the custom preset item indicating that further options can be modified-->
+  <string name="preset_custom_desc">Personalize o adaptador utilizando as opções abaixo</string>
   <!--Title for the custom options card-->
+  <string name="customopts_title">Opções personalizadas</string>
   <!--Name for the autopatcher radio button-->
+  <string name="customopts_autopatcher">Autoadaptação</string>
   <!--Name for the patch file radio button-->
+  <string name="customopts_patchfile">Arquivo a ser adaptado</string>
   <!--Name for the button to select a .patch or .diff file-->
+  <string name="customopts_choosepatch">Escolha o arquivo a ser adaptado</string>
   <!--Name for the option to disable checks for the device's model-->
+  <string name="customopts_devicecheck">Remover a verificação do aparelho</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
+  <string name="customopts_hasbootimage">Possui imagem de boot</string>
   <!--Name for the ramdisks combobox-->
+  <string name="customopts_ramdisk">Ramdisk</string>
   <!--Name for the patched init binary combobox-->
+  <string name="customopts_patchedinit">Init adaptado</string>
   <!--Name for the boot image text box-->
+  <string name="customopts_bootimage">Imagem de boot</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
+  <string name="customopts_bootimage_hint">Deixe em branco para autodetectar</string>
   <!--Accessibility text for the checkbox in the progress box-->
+  <string name="task_checkbox_image">Opção ao completar a tarefa</string>
   <!--Title for the details card-->
+  <string name="details_title">Detalhes:</string>
   <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Feito</string>
   <!--Title for the progress card-->
+  <string name="overall_progress">Progresso global:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">Arquivos: %1$s/%2$s</string>
   <!--Title for the application sharing section of the ROM Settings-->
+  <string name="rom_settings_app_sharing_title">Compartilhamento de aplicativos (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
+  <string name="rom_settings_share_apps_title">Compartilhar aplicativos</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
+  <string name="rom_settings_share_apps_desc">Compartilhar aplicativos da ROM primária com a ROM atual (requer reinicialização)</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
+  <string name="rom_settings_share_paid_apps_title">Compartilhar aplicativos pagos</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <!--Message indicating that the current ROM was patched with an older version of the patcher and must be repatched with a newer version-->
+  <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
+Compartilhar aplicativos pagos da ROM primária com a ROM atual (requer reinício).
+<strong>Pode não funcionar devido à DRM.</strong>
+]]></string>
   <!--Title for the preference to share individual applications-->
+  <string name="rom_settings_indiv_app_sharing_title">Compartilhar aplicativos individuais</string>
   <!--Description for the preference to share individual applications-->
+  <string name="rom_settings_indiv_app_sharing_desc">Compartilhar aplicativos individuais entre as ROMs (requer reinicialização)</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Atualizar o Ramdisk</string>
+  <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
+  <string name="update_ramdisk_desc">Para utilizar as funções de compartilhamento do aplicativo, o Ramdisk precisa ser atualizado.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Ramdisk atualizado com sucesso</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">O Ramdisk foi atualizado com sucesso.\nVocê deseja reiniciar agora?</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Falha ao atualizar o Ramdisk</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Falha ao atualizar o Ramdisk. O compartilhamento de aplicativos provavelmente não irá funcionar corretamente.</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Adaptador</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Mostrar botão Sair</string>
   <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Mostrar botão Reiniciar</string>
   <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_dialog_title">Compartilhar aplicativos específicos</string>
   <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_dialog_desc">O compartilhamento de aplicativos específicos permite manter uma cópia do aplicativo em cada ROM selecionada. Também permite que o aplicativo seja atualizado em cada ROM.\n\nQuando o aplicativo for instalado, atualizado ou desinstalado, o adaptador poderá solicitar o acesso root para iniciar o serviço  \'syncdaemon\'. Por favor, permita este acesso para que a sincronização ocorra.</string>
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
+  <string name="indiv_app_sharing_incompat_global">Não pode ser utilizado quando o compartilhamento global de aplicativos estiver habilitado.</string>
   <!--Description in the app sharing list showing which ROMs the application is installed in-->
+  <string name="installed_in_roms">Atualmente instalado em:</string>
   <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
+  <string name="share_apks_across_title">Utilize o mesmo apk entre as ROMs:</string>
   <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">Nenhum(a)</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">Ok</string>
   <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">Cancelar</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Continuar</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Reiniciar agora</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Reiniciar mais tarde</string>
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Não mostrar novamente</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Por favor, aguarde</string>
   <!--Presets that should always be visible-->
 </resources>

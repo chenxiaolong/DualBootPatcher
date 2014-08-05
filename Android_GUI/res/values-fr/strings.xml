@@ -26,7 +26,7 @@
   <!--Title for the card shown in the switcher when root access could not be obtained-->
   <string name="noroot_title">Pas d\'accès root</string>
   <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_switcher_desc">L\'application n\'a pas pu obtenir un accès root.\nL\'accès root est nécessaire pour écrire dans la partition boot/ kernel  \nafin de basculer entre les firmwares\nAppuyez  à nouveau pour tenter d\'obtenir un accès root.</string>
+  <string name="noroot_switcher_desc">L\'application n\'a pas pu obtenir un accès root.\nL\'accès root est nécessaire pour écrire dans la partition boot/ kernel  afin de basculer entre les firmwares\nAppuyez  à nouveau pour tenter d\'obtenir un accès root.</string>
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
   <string name="noroot_settings_desc">L\'application n\'a pas pu obtenir un accès root.\nL\'accès root est nécessaire pour modifier les paramètres de partage des applications\nAppuyez  à nouveau sur pour tenter d\'obtenir un accès root.</string>
   <!--Navigation drawer item for selecting the ROM-->
@@ -68,17 +68,19 @@
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
   <string name="switcher_ask_set_kernel_title">Réglez le kernel?</string>
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
-  <string name="switcher_ask_set_kernel_desc">Le kernel en cours d\'éxécution sera enregistré \ncomme le kernel pour %s.</string>
+  <string name="switcher_ask_set_kernel_desc">Le kernel en cours d\'éxécution sera enregistré comme le kernel pour %s.</string>
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Renommer %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Entrer un nouveau nom pour %s. Laisser vide pour utiliser le nom par défaut. Appuyer l\'icône pour changer l\'icône de la ROM.</string>
   <!--Dialog button text for resetting the ROM icon-->
+  <string name="reset_icon">Réinitialiser l\'icône</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Appareil et configuration de partition:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Pas de gestionnaire de fichier</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
-  <string name="filemanager_missing_desc">Il n\'y a pas de gestionnaire de fichier approprié installé. S\'il vous plaît, \ninstaller un gestionnaire de fichiers pour pouvoir choisir les fichiers à patcher.</string>
+  <string name="filemanager_missing_desc">Il n\'y a pas de gestionnaire de fichier approprié installé. S\'il vous plaît, installer un gestionnaire de fichiers pour pouvoir choisir les fichiers à patcher.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Appuyer pour choisir un fichier à patcher</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
@@ -90,11 +92,11 @@
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Appuyer pour commencer le patchage</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s\n\nLe fichier que vous avez sélectionné  n\'est pas supporté. \nVous pouvez toujours essayer de patcher le fichier en utilisant les options \nci-dessous\n\nAppuyer et maintenir pour choisir un fichier différent.\n</string>
+  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s\n\nLe fichier que vous avez sélectionné  n\'est pas supporté. \nVous pouvez tout de même essayer de patcher le fichier en utilisant les options ci-dessous.\n\nAppuyer et maintenir pour choisir un fichier différent.\n</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Fichier patché avec succès</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_success_desc">Nouveau fichier: %s\n\nAppuyer pour choisir un autre fichier à\npatcher.</string>
+  <string name="filechooser_success_desc">Nouveau fichier: %s\n\nAppuyer pour choisir un autre fichier à patcher.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Impossible de patcher le fichier</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
@@ -140,7 +142,7 @@
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="rom_settings_share_apps_title">Partager les applications</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Partager des applications de la ROM primaire avec la\nROM actuelle (requiert un redémarrage).</string>
+  <string name="rom_settings_share_apps_desc">Partager des applications de la ROM primaire avec la ROM actuelle (requiert un redémarrage).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
   <string name="rom_settings_share_paid_apps_title">Partager les applications payantes</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
@@ -153,11 +155,17 @@ Partager les applications de la ROM primaire avec la ROM actuelle (requiert un r
   <!--Description for the preference to share individual applications-->
   <string name="rom_settings_indiv_app_sharing_desc">Partager les applications individuelles à travers les ROMs\n(requiert un redémarrage).</string>
   <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Mettre à jour le disque virtuel</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
+  <string name="update_ramdisk_desc">Le disque virtuel nécessite d\'être mis à jour pour utiliser les caractéristique de partage d\'application.</string>
   <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Succès de mise à jour du disque virtuel</string>
   <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">Le disque virtuel a été mis à jour avec succès. Voulez vous redémarrer maintenant?</string>
   <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Impossible de mettre à jour le disque virtuel</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Le disque virtuel n\'a pu être mis à jour.\nLe partage ne fonctionnera probablement pas correctement.</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -167,7 +175,7 @@ Partager les applications de la ROM primaire avec la ROM actuelle (requiert un r
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_dialog_desc">Le partage de l\'application individuelle permet à l\'appareil de conserver\nune copie d\'une application pour chaque ROM sélectionnée afin de gagner de la place. Il s\'assure également que l\'application est\nmise à jour dans chaque ROM\n\nQuand une application est installée, mise à jour, ou désinstallée, le patcher demandera\nparfois un accès root pour démarrer le service \'syncdaemon\'. SVP, autoriser la requête \npour que la synchronisation soit réussie.</string>
+  <string name="indiv_app_sharing_dialog_desc">Le partage de l\'application individuelle permet à l\'appareil de conserver une copie d\'une application pour chaque ROM sélectionnée afin de gagner de la place. Il s\'assure également que l\'application est mise à jour dans chaque ROM\n\nQuand une application est installée, mise à jour, ou désinstallée, le patcher demandera parfois un accès root pour démarrer le service \'syncdaemon\'. SVP, autoriser la requête pour que la synchronisation soit réussie.</string>
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
   <string name="indiv_app_sharing_incompat_global">Ne peut être utilisé en application globale\nle partage est activé.</string>
   <!--Description in the app sharing list showing which ROMs the application is installed in-->
@@ -183,9 +191,12 @@ Partager les applications de la ROM primaire avec la ROM actuelle (requiert un r
   <!--Word/phrase for Continue (used in dialog boxes)-->
   <string name="proceed">Continuer</string>
   <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Redémarrer maintenant</string>
   <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Redémarrer plus tard</string>
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
   <string name="do_not_show_again">Ne plus afficher</string>
   <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Veuillez attendre s\'il vous plait</string>
   <!--Presets that should always be visible-->
 </resources>

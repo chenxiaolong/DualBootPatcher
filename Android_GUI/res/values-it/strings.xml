@@ -15,7 +15,7 @@
   <string name="link_source_code">Codice sorgente</string>
   <!--XDA forum thread web page URL-->
   <!--XDA forum thread link text-->
-  <string name="link_xda_thread">XDA Thread</string>
+  <string name="link_xda_thread">Thread XDA</string>
   <!--Licenses URL-->
   <!--Licenses link text-->
   <string name="link_licenses">Licenze</string>
@@ -28,7 +28,7 @@
   <!--Message for the card shown in the switcher when root access could not be obtained-->
   <string name="noroot_switcher_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di root sono richiesti per accedere alla partizione del kernel/boot.img per lo switch tra i firmware.\n\nFai un tap per riprovare a concedere i permessi di root.</string>
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
-  <string name="noroot_settings_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di root sono richiesti per modificare i parametri di condivisione delle applicazioni. \n\nPremi qui per ottenere nuovamente i diritti di amministratore.</string>
+  <string name="noroot_settings_desc">Non sono stati concessi i permessi di root all\'applicazione. I permessi di root sono richiesti per modificare i parametri di condivisione delle applicazioni. \n\nFai un tap per riprovare a concedere i permessi di root.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_choose_rom">Scegli la ROM</string>
   <!--Navigation drawer item for setting the kernel-->
@@ -142,18 +142,30 @@
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="rom_settings_share_apps_title">Condivisione applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Condivione delle applicazioni dalla ROM primaria con la ROM corrente (richiede riavvio).</string>
+  <string name="rom_settings_share_apps_desc">Condividi le applicazioni della ROM primaria con la ROM corrente (richiede riavvio).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Condividi applicazioni pagate</string>
+  <string name="rom_settings_share_paid_apps_title">Condividi le applicazioni pagate</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
   <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
-Condividi le applicazioni pagate dalla ROM primaria con la ROM corrente (richiede riavvio).
+Condividi le applicazioni pagate della ROM primaria con la ROM corrente (richiede riavvio).
 <strong>Potrebbe non funzionare a causa dei DRM.</strong>
 ]]></string>
   <!--Title for the preference to share individual applications-->
   <string name="rom_settings_indiv_app_sharing_title">Condividi singole applicazioni </string>
   <!--Description for the preference to share individual applications-->
   <string name="rom_settings_indiv_app_sharing_desc">Condividi individualmente le applicazioni attraverso le ROM (richiede riavvio).</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Aggiorna ramdisk</string>
+  <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
+  <string name="update_ramdisk_desc">Per poter usare la condivisione delle applicazioni, la ramdisk deve essere aggiornata.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Ramdisk aggiornata con successo</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">La ramdisk è stata aggiornata con successo. Vuoi riavviare adesso?</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Aggiornamento ramdisk fallito</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Aggiornamento ramdisk fallito. La condivisione delle applicazioni molto probabilmente presenterà malfunzionamenti.</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -178,7 +190,13 @@ Condividi le applicazioni pagate dalla ROM primaria con la ROM corrente (richied
   <string name="cancel">Annulla</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->
   <string name="proceed">Continua</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Riavvia adesso</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Riavvia dopo</string>
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
   <string name="do_not_show_again">Non mostrare di nuovo</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Per favore, attendi</string>
   <!--Presets that should always be visible-->
 </resources>
