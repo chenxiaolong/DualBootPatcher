@@ -464,6 +464,7 @@ public class MainActivity extends Activity {
         Fragment prevSetKernel = fm
                 .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
+        Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
 
         FragmentTransaction ft = fm.beginTransaction();
@@ -480,6 +481,9 @@ public class MainActivity extends Activity {
         }
         if (prevPatchFile != null) {
             ft.hide(prevPatchFile);
+        }
+        if (prevFreeSpace != null) {
+            ft.hide(prevFreeSpace);
         }
         if (prevAbout != null) {
             ft.hide(prevAbout);
