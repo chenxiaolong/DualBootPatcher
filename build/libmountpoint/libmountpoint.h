@@ -58,5 +58,7 @@ std::string get_mnt_type(std::string mountpoint);
 std::string get_mnt_opts(std::string mountpoint);
 int get_mnt_freq(std::string mountpoint);
 int get_mnt_passno(std::string mountpoint);
+unsigned long long get_mnt_total_size(std::string mountpoint);
+unsigned long long get_mnt_avail_space(std::string mountpoint);
 
 #endif

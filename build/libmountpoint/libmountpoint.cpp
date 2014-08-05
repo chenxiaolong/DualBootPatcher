@@ -19,8 +19,12 @@
 
 #ifdef __ANDROID_API__
 #include "mntent.h"
+#include <sys/vfs.h>
+#define statvfs statfs
+#define fstatvfs fstatfs
 #else
 #include <mntent.h>
+#include <sys/statvfs.h>
 #endif
 
 std::vector<std::string> get_mount_points() {
@@ -133,4 +137,24 @@ int get_mnt_passno(std::string mountpoint) {
     endmntent(f);
 
     return mntpassno;
+}
+
+unsigned long long get_mnt_total_size(std::string mountpoint) {
+    struct statvfs s;
+
+    if (statvfs(mountpoint.c_str(), &s) < 0) {
+        return 0;
+    }
+
+    return s.f_bsize * s.f_blocks;
+}
+
+unsigned long long get_mnt_avail_space(std::string mountpoint) {
+    struct statvfs s;
+
+    if (statvfs(mountpoint.c_str(), &s) < 0) {
+        return 0;
+    }
+
+    return s.f_bsize * s.f_bavail;
 }

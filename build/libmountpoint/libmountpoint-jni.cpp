@@ -36,6 +36,86 @@ JNIEXPORT jobjectArray JNICALL Java_com_github_chenxiaolong_dualbootpatcher_free
     return ret;
 }
 
+JNIEXPORT jstring JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntFsname(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    std::string ret = get_mnt_fsname(mountpoint);
+    jstring jret = env->NewStringUTF(ret.c_str());
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return jret;
+}
+
+JNIEXPORT jstring JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntType(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    std::string ret = get_mnt_type(mountpoint);
+    jstring jret = env->NewStringUTF(ret.c_str());
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return jret;
+}
+
+JNIEXPORT jstring JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntOpts(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    std::string ret = get_mnt_opts(mountpoint);
+    jstring jret = env->NewStringUTF(ret.c_str());
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return jret;
+}
+
+JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntFreq(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    jint ret = get_mnt_freq(mountpoint);
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return ret;
+}
+
+JNIEXPORT jint JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntPassno(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    jint ret = get_mnt_passno(mountpoint);
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return ret;
+}
+
+JNIEXPORT jlong JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntTotalSize(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    jlong ret = get_mnt_total_size(mountpoint);
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return ret;
+}
+
+JNIEXPORT jlong JNICALL Java_com_github_chenxiaolong_dualbootpatcher_freespace_FreeSpaceFragment_getMntAvailSpace(
+        JNIEnv *env, jclass clazz, jstring jMountpoint) {
+    const char *mountpoint = env->GetStringUTFChars(jMountpoint, JNI_FALSE);
+
+    jlong ret = get_mnt_avail_space(mountpoint);
+
+    env->ReleaseStringUTFChars(jMountpoint, mountpoint);
+
+    return ret;
+}
+
 #ifdef __cplusplus
 }
 #endif
