@@ -107,4 +107,24 @@
         <item name="android:layout_height">1.0dip</item>
     </style>
 
+    <style name="usage_bar">
+        <item name="android:layout_height">100dp</item>
+        <item name="android:layout_width">100dp</item>
+        <item name="progress" format="float">0.3</item>
+        <item name="progress_color">@android:color/black</item>
+        <item name="progress_width">20dp</item>
+        <item name="shadow_width">6dp</item>
+        <item name="random_rotation">true</item>
+    </style>
+
+    <style name="free_space_title">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/standardtext</item>
+    </style>
+
+    <style name="free_space_size_text">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/standardtext</item>
+    </style>
+
 </resources>

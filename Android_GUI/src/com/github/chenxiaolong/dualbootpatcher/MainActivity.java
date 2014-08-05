@@ -42,6 +42,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.chenxiaolong.dualbootpatcher.freespace.FreeSpaceFragment;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
 import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsFragment;
 import com.github.chenxiaolong.dualbootpatcher.settings.SettingsActivity;
@@ -55,21 +56,22 @@ public class MainActivity extends Activity {
 
     private static final int[] RES_NAV_TITLES = new int[] {
             R.string.title_choose_rom, R.string.title_set_kernel,
-            R.string.title_patch_zip, R.string.title_rom_settings,
+            R.string.title_patch_zip, R.string.title_free_space, R.string.title_rom_settings,
             R.string.title_reboot, R.string.title_about, R.string.title_exit };
 
     private static final int[] RES_NAV_ICONS = new int[] { R.drawable.check,
-            R.drawable.pin, R.drawable.split, R.drawable.settings,
+            R.drawable.pin, R.drawable.split, R.drawable.storage, R.drawable.settings,
             R.drawable.refresh, R.drawable.about, R.drawable.exit };
 
     private static final int NAV_SEPARATOR = -1;
     private static final int NAV_CHOOSE_ROM = 0;
     private static final int NAV_SET_KERNEL = 1;
     private static final int NAV_PATCH_FILE = 2;
-    private static final int NAV_SETTINGS = 3;
-    private static final int NAV_REBOOT = 4;
-    private static final int NAV_ABOUT = 5;
-    private static final int NAV_EXIT = 6;
+    private static final int NAV_FREE_SPACE = 3;
+    private static final int NAV_SETTINGS = 4;
+    private static final int NAV_REBOOT = 5;
+    private static final int NAV_ABOUT = 6;
+    private static final int NAV_EXIT = 7;
 
     private SharedPreferences mPrefs;
 
@@ -92,7 +94,8 @@ public class MainActivity extends Activity {
     public static final int FRAGMENT_CHOOSE_ROM = 1;
     public static final int FRAGMENT_SET_KERNEL = 2;
     public static final int FRAGMENT_PATCH_FILE = 3;
-    public static final int FRAGMENT_ABOUT = 4;
+    public static final int FRAGMENT_FREE_SPACE = 4;
+    public static final int FRAGMENT_ABOUT = 5;
 
     private int mFragment;
 
@@ -149,6 +152,7 @@ public class MainActivity extends Activity {
         mDrawerItems.add(NAV_CHOOSE_ROM);
         mDrawerItems.add(NAV_SET_KERNEL);
         mDrawerItems.add(NAV_PATCH_FILE);
+        mDrawerItems.add(NAV_FREE_SPACE);
         mDrawerItems.add(NAV_SETTINGS);
         mDrawerItems.add(NAV_SEPARATOR);
         mDrawerItems.add(NAV_REBOOT);
@@ -294,6 +298,7 @@ public class MainActivity extends Activity {
         case NAV_CHOOSE_ROM:
         case NAV_SET_KERNEL:
         case NAV_PATCH_FILE:
+        case NAV_FREE_SPACE:
         case NAV_ABOUT:
             return true;
 
@@ -381,6 +386,7 @@ public class MainActivity extends Activity {
         case NAV_CHOOSE_ROM:
         case NAV_SET_KERNEL:
         case NAV_PATCH_FILE:
+        case NAV_FREE_SPACE:
         case NAV_ABOUT:
             View view = mDrawerItemViews[item];
             TextView textView = (TextView) view.findViewById(R.id.drawer_text);
@@ -406,6 +412,11 @@ public class MainActivity extends Activity {
 
         case NAV_PATCH_FILE:
             mFragment = FRAGMENT_PATCH_FILE;
+            showFragment();
+            break;
+
+        case NAV_FREE_SPACE:
+            mFragment = FRAGMENT_FREE_SPACE;
             showFragment();
             break;
 
@@ -486,6 +497,7 @@ public class MainActivity extends Activity {
         Fragment prevSetKernel = fm
                 .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
+        Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
 
         FragmentTransaction ft = fm.beginTransaction();
@@ -540,6 +552,19 @@ public class MainActivity extends Activity {
 
             break;
 
+        case FRAGMENT_FREE_SPACE:
+            mTitle = R.string.title_free_space;
+            updateTitle();
+
+            if (prevFreeSpace == null) {
+                Fragment f = FreeSpaceFragment.newInstance();
+                ft.add(R.id.content_frame, f, FreeSpaceFragment.TAG);
+            } else {
+                ft.show(prevFreeSpace);
+            }
+
+            break;
+
         case FRAGMENT_ABOUT:
             mTitle = BuildConfig.APP_NAME_RESOURCE;
             updateTitle();
@@ -584,6 +609,10 @@ public class MainActivity extends Activity {
 
         case FRAGMENT_PATCH_FILE:
             type = NAV_PATCH_FILE;
+            break;
+
+        case FRAGMENT_FREE_SPACE:
+            type = NAV_FREE_SPACE;
             break;
 
         default:
