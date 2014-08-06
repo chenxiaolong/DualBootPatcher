@@ -172,8 +172,10 @@ public class FileUtils {
             return false;
         }
 
-        String ls = CommandUtils.getBusyboxCommandString(context, "ls", "-id", "\"${1}\"");
-        String awk = CommandUtils.getBusyboxCommandString(context, "awk", "'{print $1}'");
+        String busybox = CommandUtils.mountBusyboxTmpfs(context);
+
+        String ls = busybox + " ls -id \"${1}\"";
+        String awk = busybox + " awk '{print $1}'";
 
         StringBuilder sb = new StringBuilder();
         sb.append("get_inode() {");
@@ -188,6 +190,10 @@ public class FileUtils {
         sb.append("};");
         sb.append("same_inode ").append(file1).append(" ").append(file2);
 
-        return CommandUtils.runRootCommand(sb.toString()) == 0;
+        boolean success = CommandUtils.runRootCommand(sb.toString()) == 0;
+
+        CommandUtils.unmountBusyboxTmpfs();
+
+        return success;
     }
 }
