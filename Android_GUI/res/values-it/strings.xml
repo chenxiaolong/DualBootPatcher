@@ -140,6 +140,7 @@
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">File %1$s/%2$s </string>
   <!--Title for the partition's mount point-->
+  <string name="free_space_mount_point">Partizione:</string>
   <!--Title for total size of partition-->
   <string name="free_space_total_size">Totale:</string>
   <!--Title for occupied space on partition-->
