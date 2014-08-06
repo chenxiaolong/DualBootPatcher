@@ -124,6 +124,9 @@ public class AppSharingUtils {
             throw new Exception("Failed to update syncdaemon");
         }
 
+        String newKernel = context.getCacheDir() + File.separator + "kernel_syncdaemon.img";
+        RootFile newKernelFile = new RootFile(newKernel);
+
         if (wasLokid) {
             String aboot = context.getCacheDir() + File.separator + "aboot.img";
             SwitcherUtils.dd(SwitcherUtils.ABOOT_PARTITION, aboot);
@@ -131,18 +134,18 @@ public class AppSharingUtils {
 
             String lokiKernel = context.getCacheDir() + File.separator + "kernel.lok";
 
-            if (lokiPatch("boot", aboot, tmpKernel, lokiKernel) != 0) {
+            if (lokiPatch("boot", aboot, newKernel, lokiKernel) != 0) {
                 throw new Exception("Failed to loki patch new boot image");
             }
 
-            tmpKernelFile.delete();
+            newKernelFile.delete();
 
             org.apache.commons.io.FileUtils.moveFile(
-                    new File(lokiKernel), new File(tmpKernel));
+                    new File(lokiKernel), new File(newKernel));
         }
 
         // Copy to target
-        tmpKernelFile.copyTo(bootImageFile);
+        newKernelFile.copyTo(bootImageFile);
         bootImageFile.chmod(0755);
 
         SwitcherUtils.writeKernel(romInfo.kernelId);
