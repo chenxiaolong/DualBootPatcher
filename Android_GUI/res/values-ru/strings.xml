@@ -1,0 +1,211 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Прошиватель Двойного Старта</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Прошиватель Двойного Старта (отладка)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Прошиватель Двойного Старта (закладка)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Подождите до окончания всех работ.</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Версия %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Исходный Kод</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">Тема на форуме XDA</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Лицензии</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Огромные благодарности всем кто помог реализовать этот проект!</string>
+  <!--Message in ROM Settings screen indicating that it's waiting for root access-->
+  <string name="waiting_for_root">Ждем разрешение на root доступ</string>
+  <!--Title for the card shown in the switcher when root access could not be obtained-->
+  <string name="noroot_title">Режим root доступа запрещен</string>
+  <!--Message for the card shown in the switcher when root access could not be obtained-->
+  <string name="noroot_switcher_desc">Программа не смогла заполучить режим доступа \"root\".\nДоступ с административными правами нужен для изменения ядра во встроенной\nпрограмме.\n\nНажмите для повторного запроса режима root.</string>
+  <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
+  <string name="noroot_settings_desc">Программа не смогла заполучить режим доступа \"root\".\nДоступ с административными правами нужен для изменения настроек ресурсов.\n\nНажмите для повторного\nзапроса режима root.</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_choose_rom">Выберите ROM</string>
+  <!--Navigation drawer item for setting the kernel-->
+  <string name="title_set_kernel">Установить Ядро</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Прошить Zip Файл</string>
+  <!--Navigation drawer item for checking free space-->
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Настройки ROM-а</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Перегрузить</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">О Программе</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Выход</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Открыть ящик навигации</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Закрыть ящик навигации</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">Главный</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">Второстепенный</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">Позиция # %s</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">Не удалось определить версию ROM-а</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">Переключение удачно</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">Ошибка при переключении</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Ядро установленно удачно</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Ошибка при установки ядра</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">Эмблема ROM-а</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Установить ядро?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">Текущее ядро будет сохранено как\nядро для # %s</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">Переименовать %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Введите новие имя для %s. Очистите чтобы оставить\nимя по умолчанию. Нажмите на иконку чтобы её изменить.</string>
+  <!--Dialog button text for resetting the ROM icon-->
+  <string name="reset_icon">Сброс иконки</string>
+  <!--Title for the patcher card asking for the device and partition configuration-->
+  <string name="devpartconfig_title">Конфигурация устройства и партиций:</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Файловый менеджер не найден</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Файловый менеджер не установлен на этом устройстве.\nПожалуйста установите менеджер для выбора файлов.</string>
+  <!--Title for the file chooser card telling the user to tap to choose a file-->
+  <string name="filechooser_initial_title">Нажмите для выбора файла</string>
+  <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <string name="filechooser_initial_desc">Zip файлы и образы загрузочного диска (boot.img, boot.lok)\nподдерживаются этой программой. При выборе неподдерживаемого файла, появятся \nопции позволяющие нестандартныe настройки.</string>
+  <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
+  <string name="filechooser_ready_title">Нажмите чтобы начать прошивку</string>
+  <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
+  <string name="filechooser_ready_desc">Выбранный файл: %s\n\nНажмите и держите чтобы выбрать\nдругой файл.</string>
+  <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
+  <string name="filechooser_unsupported_title">Нажмите чтобы начать прошивку</string>
+  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
+  <string name="filechooser_unsupported_desc">Выбранный файл: %s\n\nВы выбрали файл который не поддерживается этой программой.\nВы можете попробовать прошить этот файл, используя следуюшие опции:\n\nНажмите и держите чтобы выбрать другой файл.</string>
+  <!--Title for the file chooser card indicating that the file was successfully patched-->
+  <string name="filechooser_success_title">Прошивка завершена успешно</string>
+  <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_success_desc">Новый файл: %s\n\nНажмите чтобы выбрать другой файл\nдля прошивки.</string>
+  <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
+  <string name="filechooser_failure_title">Прошивка не удачна</string>
+  <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_failure_desc">%s\n\nНажмите чтобы выбрать другой файл.</string>
+  <!--Title for the preset card-->
+  <string name="preset_title">Предварительные настройки</string>
+  <!--Name for the custom preset item-->
+  <string name="preset_custom">Нестандартные настройки</string>
+  <!--Description for the custom preset item indicating that further options can be modified-->
+  <string name="preset_custom_desc">Настроить прошивательпользуя следующие опции</string>
+  <!--Title for the custom options card-->
+  <string name="customopts_title">Нестандартные настройки</string>
+  <!--Name for the autopatcher radio button-->
+  <string name="customopts_autopatcher">Авто-прошиватель</string>
+  <!--Name for the patch file radio button-->
+  <string name="customopts_patchfile">Прошить файл</string>
+  <!--Name for the button to select a .patch or .diff file-->
+  <string name="customopts_choosepatch">Выбрать файл прошивки</string>
+  <!--Name for the option to disable checks for the device's model-->
+  <string name="customopts_devicecheck">Убрать проверку устройства</string>
+  <!--Name for the option telling the patcher that the file has a boot image-->
+  <string name="customopts_hasbootimage">Образ загрузочного диска присытствует</string>
+  <!--Name for the ramdisks combobox-->
+  <string name="customopts_ramdisk">Виртуальный диск</string>
+  <!--Name for the patched init binary combobox-->
+  <string name="customopts_patchedinit">Прошитый инициатор</string>
+  <!--Name for the boot image text box-->
+  <string name="customopts_bootimage">Образ загрузочного диска</string>
+  <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
+  <string name="customopts_bootimage_hint">Очистить для авто-обнаружения</string>
+  <!--Accessibility text for the checkbox in the progress box-->
+  <string name="task_checkbox_image">Отметка завершения работы</string>
+  <!--Title for the details card-->
+  <string name="details_title">Элементы:</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Завершено</string>
+  <!--Title for the progress card-->
+  <string name="overall_progress">Общий прогресс:</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">%1$s/%2$s файлов</string>
+  <!--Title for the partition's mount point-->
+  <!--Title for total size of partition-->
+  <!--Title for occupied space on partition-->
+  <!--Title for free space on partition-->
+  <!--Format string for gigabytes-->
+  <!--Format string for megabytes-->
+  <!--Format string for kilobytes-->
+  <!--Format string for bytes-->
+  <!--Title for the application sharing section of the ROM Settings-->
+  <string name="rom_settings_app_sharing_title">Совместное владение приложений (ЭКСПЕРИМЕНТАЛЬНО)</string>
+  <!--Name of the preference for globally sharing free applications from the primary ROM-->
+  <string name="rom_settings_share_apps_title">Совместно владеть приложениями</string>
+  <!--Description of the preference for globally shareing free applications from the primary ROM-->
+  <string name="rom_settings_share_apps_desc">Владеть приложениями совместно из главного ROMа\nс текущим (перезагрузка обязательна).</string>
+  <!--Name of the preference for globally sharing paid applications from the primary ROM-->
+  <string name="rom_settings_share_paid_apps_title">Совместно владеть платными приложениями</string>
+  <!--Description of the preference for globally shareing paid applications from the primary ROM-->
+  <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
+Совместно владеть приложениями из главного ROM-а с текущим (перезагрузка обязательна).
+<strong>Успех не гарантирован из-за DRM.</strong>
+]]>\n</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="rom_settings_indiv_app_sharing_title">Совместно владеть приложениями</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="rom_settings_indiv_app_sharing_desc">Совместно владеть приложениями со всеми ROM-ами\n(перезагрузка обязательна).</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Обновить виртуальный диск</string>
+  <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
+  <string name="update_ramdisk_desc">Виртуальный диск должен быть обновлен для использования\nсовместного владения приложениями.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Виртуальный диск обновлен успешно</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">Виртуальный диск был обновлен успешно. Перезапустить устройство\nсейчас?</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Виртуальный диск не обновлен</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Произошла ошибка при обновлении виртуального диска.\nСовместное владение приложениями не будет работать.</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Прошиватель</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Показывать кнопку выхода</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Показывать кнопку перезапуска</string>
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_dialog_title">Совместное владение индивидуальных приложений</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_dialog_desc">Совместное владение индивидуальных приложений позволяет хранить только\nодну копию приложения для всех выбранных ROM-ов. Таким образом экономится место\nхранения, и гарантируется обновление данного приложения во всех ROM-ах одновременно.\n\nКогда приложени устанавливается, обновляется, или удаляется, прошиватель может запросить root режим доступа для запуска сервиса \"syncdaemon\". Пожалуйста разрешите доступ для\nуспешной синхронизации.</string>
+  <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
+  <string name="indiv_app_sharing_incompat_global">Не работает когда общее совместное владение\nприложениями включено.</string>
+  <!--Description in the app sharing list showing which ROMs the application is installed in-->
+  <string name="installed_in_roms">Установленно в:</string>
+  <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
+  <string name="share_apks_across_title">Использовать один APK:</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">Без выбора</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">ОК</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">Отменить</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Продолжить</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Перегрузить сейчас</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Перегрузить позже</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Больше не показывать</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Подождите пожалуйста</string>
+  <!--Presets that should always be visible-->
+</resources>
