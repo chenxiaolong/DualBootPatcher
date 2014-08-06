@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 
 import android.content.Context;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -41,6 +42,7 @@ public final class CommandUtils {
 
     public static final String STREAM_STDOUT = "stdout";
     public static final String STREAM_STDERR = "stderr";
+    private static final String BUSYBOX_MOUNT = "/data/local/tmp/busybox";
 
     public static interface CommandListener {
         public void onNewOutputLine(String line, String stream);
@@ -368,6 +370,55 @@ public final class CommandUtils {
         Collections.addAll(newArgs, args);
 
         return newArgs.toArray(new String[newArgs.size()]);
+    }
+
+    public static String mountBusyboxTmpfs(Context context) {
+        int uid = getUid(context);
+
+        // Delete old versions
+        FileUtils.deleteOldCachedAsset(context, "busybox-static");
+        String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
+
+        // Clean up in case something crashed before
+        final String busyboxBinary = BUSYBOX_MOUNT + File.separator + "busybox";
+
+        RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
+        mountPoint.mountTmpFs();
+        mountPoint.chown(uid, uid);
+
+        RootFile busyboxFile = new RootFile(busyboxBinary);
+        if (busyboxFile.isFile()) {
+            busyboxFile.delete();
+        }
+
+        CommandUtils.runRootCommand("cp " + busybox + " " + busyboxBinary);
+        new RootFile(busyboxBinary).chmod(0755);
+        CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + busyboxBinary);
+
+        return busyboxBinary;
+    }
+
+    public static void unmountBusyboxTmpfs() {
+        RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
+        mountPoint.unmountTmpFs();
+        mountPoint.recursiveDelete();
+    }
+
+    public static int getUid(Context context) {
+        int uid = 0;
+
+        try {
+            uid = context.getPackageManager().getApplicationInfo(context.getPackageName(), 0).uid;
+        } catch (NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        if (uid == 0) {
+            Log.e(TAG, "Couldn't determine UID");
+            return -1;
+        }
+
+        return uid;
     }
 
     public static int getPid(Context context, String name) {
