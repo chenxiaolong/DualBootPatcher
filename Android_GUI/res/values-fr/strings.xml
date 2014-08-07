@@ -86,7 +86,7 @@
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Appuyer pour choisir un fichier à patcher</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">Les fichiers Zip et images de démarrage (boot.img, boot.lok) sont \npris en charge par le patcher. Si un fichier non pris en charge est choisi, des options supplémentaires apparaitront, lesquels permettront au processus de patchage\nd\'être personnalisé.</string>
+  <string name="filechooser_initial_desc">Les fichiers Zip et images de démarrage (boot.img, boot.lok) sont \npris en charge par le Patcher. Si un fichier non pris en charge est choisi, des options supplémentaires apparaitront, lesquels permettront au processus de patchage\nd\'être personnalisé.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Taper pour commencer le patchage</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->

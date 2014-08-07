@@ -94,7 +94,7 @@
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Premi per iniziare il processo di patching</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. È comunque possibile patchare il file usando le opzioni sottostanti.\n\nPremi e tieni premuto per scegliere un altro file.</string>
+  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. \nÈ comunque possibile patchare il file usando le opzioni sottostanti.\n\nPremi e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">File patchato con successo</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -197,7 +197,7 @@ Condividi le applicazioni pagate della ROM primaria con la ROM corrente (richied
   <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
   <string name="share_apks_across_title">Usa lo stesso apk per:</string>
   <!--Word/phrase for None (used in eg. a list)-->
-  <string name="none">Niente</string>
+  <string name="none">No</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
   <string name="ok">OK</string>
   <!--Word/phrase for Cancel (used in dialog boxes)-->
