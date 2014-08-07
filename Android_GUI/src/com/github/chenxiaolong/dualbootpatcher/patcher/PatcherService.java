@@ -149,7 +149,6 @@ public class PatcherService extends IntentService {
         resultIntent.setAction(Intent.ACTION_MAIN);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
-                //PendingIntent.FLAG_UPDATE_CURRENT);
 
         final Notification.Builder builder = new Notification.Builder(this);
         builder.setSmallIcon(R.drawable.ic_launcher);
