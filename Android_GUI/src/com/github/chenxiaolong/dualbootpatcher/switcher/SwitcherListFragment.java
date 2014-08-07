@@ -46,9 +46,9 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnChoseRomEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.OnSetKernelEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTasks.SwitcherTaskEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.OnChoseRomEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.OnSetKernelEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.SwitcherTaskEvent;
 import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
 import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
 import com.squareup.otto.Subscribe;
@@ -92,6 +92,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private boolean mAttemptedRoot;
 
     private RootCheckerFragment mRootCheckerFragment;
+    private SwitcherTaskFragment mTaskFragment;
 
     private Bundle mSavedInstanceState;
 
@@ -141,6 +142,15 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         if (getArguments() != null) {
             mAction = getArguments().getInt("action");
+        }
+
+        FragmentManager fm = getFragmentManager();
+        mTaskFragment = (SwitcherTaskFragment) fm
+                .findFragmentByTag(SwitcherTaskFragment.TAG);
+
+        if (mTaskFragment == null) {
+            mTaskFragment = new SwitcherTaskFragment();
+            fm.beginTransaction().add(mTaskFragment, SwitcherTaskFragment.TAG).commit();
         }
     }
 
@@ -252,14 +262,14 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             }
         }
 
-        SwitcherTasks.getBusInstance().register(this);
+        SwitcherTaskFragment.getBusInstance().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
-        SwitcherTasks.getBusInstance().unregister(this);
+        SwitcherTaskFragment.getBusInstance().unregister(this);
 
         if (mDialog != null) {
             mDialog.dismiss();
@@ -640,9 +650,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         updateCardUI();
 
         if (mAction == ACTION_CHOOSE_ROM) {
-            SwitcherTasks.chooseRom(info.kernelId);
+            mTaskFragment.chooseRom(info.kernelId);
         } else if (mAction == ACTION_SET_KERNEL) {
-            SwitcherTasks.setKernel(info.kernelId);
+            mTaskFragment.setKernel(info.kernelId);
         }
     }
 
