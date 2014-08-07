@@ -57,7 +57,8 @@ public class RomSettingsFragment extends PreferenceFragment implements
         OnDismissListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
-    private static final String MINIMUM_VERSION = "7.0.0.r114";
+    //private static final String MINIMUM_VERSION = "7.0.0.r114";
+    private static final String MINIMUM_VERSION = "9.0.0";
 
     private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
     private static final String EXTRA_ROOT_CHECK_DIALOG = "rootCheckDialog";

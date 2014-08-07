@@ -18,12 +18,17 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandListener;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
+import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
+import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class PatcherService extends IntentService {
     private static final String TAG = PatcherService.class.getSimpleName();
@@ -54,6 +59,12 @@ public class PatcherService extends IntentService {
     public static final String RESULT_PATCHER_INFO = "patcher_info";
     public static final String RESULT_FILENAME = "filename";
     public static final String RESULT_SUPPORTED = "supported";
+
+    private static final String PREFIX_ADD_TASK = "ADDTASK:";
+    private static final String PREFIX_SET_TASK = "SETTASK:";
+    private static final String PREFIX_SET_DETAILS = "SETDETAILS:";
+    private static final String PREFIX_SET_MAX_PROGRESS = "SETMAXPROGRESS:";
+    private static final String PREFIX_SET_PROGRESS = "SETPROGRESS:";
 
     public PatcherService() {
         super(TAG);
@@ -127,33 +138,85 @@ public class PatcherService extends IntentService {
     }
 
     private void getPatcherInformation() {
-        try {
-            GetPatcherInformation task = new GetPatcherInformation();
-            task.start();
-            task.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        PatcherInformation info = PatcherUtils.getPatcherInformation(this);
+
+        onFetchedPatcherInformation(info);
     }
 
     private void patchFile(Bundle data) {
-        try {
-            PatchFile task = new PatchFile(data);
-            task.start();
-            task.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        resultIntent.setAction(Intent.ACTION_MAIN);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
+                //PendingIntent.FLAG_UPDATE_CURRENT);
+
+        final Notification.Builder builder = new Notification.Builder(this);
+        builder.setSmallIcon(R.drawable.ic_launcher);
+        builder.setOngoing(true);
+        builder.setContentTitle(getString(R.string.overall_progress));
+        builder.setContentIntent(pendingIntent);
+        builder.setProgress(0, 0, true);
+
+        final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        nm.notify(1, builder.build());
+
+        CommandListener listener = new CommandListener() {
+            private int mCurProgress;
+            private int mMaxProgress;
+
+            @Override
+            public void onNewOutputLine(String line, String stream) {
+                if (line.contains(PREFIX_ADD_TASK)) {
+                    addTask(line.replace(PREFIX_ADD_TASK, ""));
+                } else if (line.contains(PREFIX_SET_TASK)) {
+                    updateTask(line.replace(PREFIX_SET_TASK, ""));
+                } else if (line.contains(PREFIX_SET_DETAILS)) {
+                    updateDetails(line.replace(PREFIX_SET_DETAILS, ""));
+                } else if (line.contains(PREFIX_SET_MAX_PROGRESS)) {
+                    mMaxProgress = Integer.parseInt(line.replace(PREFIX_SET_MAX_PROGRESS, ""));
+
+                    builder.setContentText(String.format(getString(
+                            R.string.overall_progress_files), mCurProgress, mMaxProgress));
+                    builder.setProgress(mMaxProgress, mCurProgress, false);
+                    nm.notify(1, builder.build());
+
+                    setProgressMax(mMaxProgress);
+                } else if (line.contains(PREFIX_SET_PROGRESS)) {
+                    mCurProgress = Integer.parseInt(line.replace(PREFIX_SET_PROGRESS, ""));
+
+                    builder.setContentText(String.format(getString(
+                            R.string.overall_progress_files), mCurProgress, mMaxProgress));
+                    builder.setProgress(mMaxProgress, mCurProgress, false);
+                    nm.notify(1, builder.build());
+
+                    setProgress(mCurProgress);
+                } else {
+                    newOutputLine(line, stream);
+                }
+            }
+
+            @Override
+            public void onCommandCompletion(CommandResult result) {
+            }
+        };
+
+        Bundle result = PatcherUtils.patchFile(this, listener, data);
+
+        if (result != null) {
+            String newFile = result.getString(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE);
+            String message = result.getString(PatcherUtils.RESULT_PATCH_FILE_MESSAGE);
+            boolean failed = result.getBoolean(PatcherUtils.RESULT_PATCH_FILE_FAILED);
+            onPatchedFile(failed, message, newFile);
         }
+
+        nm.cancel(1);
     }
 
     private void checkSupported(Bundle data) {
-        try {
-            CheckSupported task = new CheckSupported(data);
-            task.start();
-            task.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        boolean supported = PatcherUtils.isFileSupported(this, data);
+
+        onCheckedSupported(data.getString(PatcherUtils.PARAM_FILENAME), supported);
     }
 
     @Override
@@ -166,79 +229,6 @@ public class PatcherService extends IntentService {
             patchFile(intent.getExtras());
         } else if (ACTION_CHECK_SUPPORTED.equals(action)) {
             checkSupported(intent.getExtras());
-        }
-    }
-
-    private class GetPatcherInformation extends Thread {
-        @Override
-        public void run() {
-            PatcherInformation info = PatcherUtils
-                    .getPatcherInformation(PatcherService.this);
-
-            onFetchedPatcherInformation(info);
-        }
-    }
-
-    private class PatchFile extends Thread implements CommandListener {
-        private final Bundle mData;
-
-        public PatchFile(Bundle data) {
-            mData = data;
-        }
-
-        @Override
-        public void run() {
-            Bundle data = PatcherUtils.patchFile(PatcherService.this, this,
-                    mData);
-
-            if (data != null) {
-                String newFile = data
-                        .getString(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE);
-                String message = data
-                        .getString(PatcherUtils.RESULT_PATCH_FILE_MESSAGE);
-                boolean failed = data
-                        .getBoolean(PatcherUtils.RESULT_PATCH_FILE_FAILED);
-                onPatchedFile(failed, message, newFile);
-            }
-        }
-
-        @Override
-        public void onNewOutputLine(String line, String stream) {
-            if (line.contains("ADDTASK:")) {
-                addTask(line.replace("ADDTASK:", ""));
-            } else if (line.contains("SETTASK:")) {
-                updateTask(line.replace("SETTASK:", ""));
-            } else if (line.contains("SETDETAILS:")) {
-                updateDetails(line.replace("SETDETAILS:", ""));
-            } else if (line.contains("SETMAXPROGRESS:")) {
-                setProgressMax(Integer.parseInt(line.replace("SETMAXPROGRESS:",
-                        "")));
-            } else if (line.contains("SETPROGRESS:")) {
-                setProgress(Integer.parseInt(line.replace("SETPROGRESS:", "")));
-            } else {
-                newOutputLine(line, stream);
-            }
-        }
-
-        @Override
-        public void onCommandCompletion(CommandResult result) {
-        }
-    }
-
-    private class CheckSupported extends Thread {
-        private final Bundle mData;
-
-        public CheckSupported(Bundle data) {
-            mData = data;
-        }
-
-        @Override
-        public void run() {
-            boolean supported = PatcherUtils.isFileSupported(
-                    PatcherService.this, mData);
-
-            onCheckedSupported(mData.getString(PatcherUtils.PARAM_FILENAME),
-                    supported);
         }
     }
 }
