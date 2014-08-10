@@ -39,6 +39,8 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -46,12 +48,10 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.OnChoseRomEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.OnSetKernelEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherTaskFragment.SwitcherTaskEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.ChoseRomEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
 import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
-import com.squareup.otto.Subscribe;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,7 +69,7 @@ import it.gmariotti.cardslib.library.view.CardListView;
 import it.gmariotti.cardslib.library.view.CardView;
 
 public class SwitcherListFragment extends Fragment implements OnDismissListener,
-        RootCheckerListener {
+        RootCheckerListener, EventCollectorListener {
     public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
     public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
     public static final int ACTION_CHOOSE_ROM = 1;
@@ -92,7 +92,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private boolean mAttemptedRoot;
 
     private RootCheckerFragment mRootCheckerFragment;
-    private SwitcherTaskFragment mTaskFragment;
+    private SwitcherEventCollector mEventCollector;
 
     private Bundle mSavedInstanceState;
 
@@ -107,7 +107,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private int mAction;
     private boolean mCardsLoaded;
 
-    private ArrayList<SwitcherTaskEvent> mEvents = new ArrayList<SwitcherTaskEvent>();
+    private ArrayList<BaseEvent> mEvents = new ArrayList<BaseEvent>();
 
     private AlertDialog mDialog;
     private AlertDialog mRenameDialog;
@@ -145,12 +145,11 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
 
         FragmentManager fm = getFragmentManager();
-        mTaskFragment = (SwitcherTaskFragment) fm
-                .findFragmentByTag(SwitcherTaskFragment.TAG);
+        mEventCollector = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
 
-        if (mTaskFragment == null) {
-            mTaskFragment = new SwitcherTaskFragment();
-            fm.beginTransaction().add(mTaskFragment, SwitcherTaskFragment.TAG).commit();
+        if (mEventCollector == null) {
+            mEventCollector = new SwitcherEventCollector();
+            fm.beginTransaction().add(mEventCollector, SwitcherEventCollector.TAG).commit();
         }
     }
 
@@ -242,6 +241,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         super.onResume();
 
         mRootCheckerFragment.attachListenerAndResendEvents(this);
+        mEventCollector.attachListener(this);
     }
 
     @Override
@@ -249,6 +249,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         super.onPause();
 
         mRootCheckerFragment.detachListener(this);
+        mEventCollector.detachListener();
     }
 
     @Override
@@ -261,15 +262,11 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 mRomDialogCard.setName(mRomDialogName);
             }
         }
-
-        SwitcherTaskFragment.getBusInstance().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-
-        SwitcherTaskFragment.getBusInstance().unregister(this);
 
         if (mDialog != null) {
             mDialog.dismiss();
@@ -650,33 +647,13 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         updateCardUI();
 
         if (mAction == ACTION_CHOOSE_ROM) {
-            mTaskFragment.chooseRom(info.kernelId);
+            mEventCollector.chooseRom(info.kernelId);
         } else if (mAction == ACTION_SET_KERNEL) {
-            mTaskFragment.setKernel(info.kernelId);
+            mEventCollector.setKernel(info.kernelId);
         }
     }
 
-    @SuppressWarnings("unused")
-    @Subscribe
-    public void onChoseRom(OnChoseRomEvent event) {
-        if (mCardsLoaded) {
-            processChoseRomEvent(event);
-        } else {
-            mEvents.add(event);
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe
-    public void onSetKernel(OnSetKernelEvent event) {
-        if (mCardsLoaded) {
-            processSetKernelEvent(event);
-        } else {
-            mEvents.add(event);
-        }
-    }
-
-    private void processChoseRomEvent(OnChoseRomEvent event) {
+    private void processChoseRomEvent(ChoseRomEvent event) {
         RomCard card = findCardFromId(event.kernelId);
         if (card != null) {
             showProgress(card, false);
@@ -688,7 +665,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         showCompletionMessage(card, event.failed);
     }
 
-    private void processSetKernelEvent(OnSetKernelEvent event) {
+    private void processSetKernelEvent(SetKernelEvent event) {
         RomCard card = findCardFromId(event.kernelId);
         if (card != null) {
             showProgress(card, false);
@@ -701,14 +678,14 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     }
 
     private void processQueuedEvents() {
-        Iterator<SwitcherTaskEvent> iter = mEvents.iterator();
+        Iterator<BaseEvent> iter = mEvents.iterator();
         while (iter.hasNext()) {
-            SwitcherTaskEvent event = iter.next();
+            BaseEvent event = iter.next();
 
-            if (event instanceof OnChoseRomEvent) {
-                processChoseRomEvent((OnChoseRomEvent) event);
-            } else if (event instanceof  OnSetKernelEvent) {
-                processSetKernelEvent((OnSetKernelEvent) event);
+            if (event instanceof ChoseRomEvent) {
+                processChoseRomEvent((ChoseRomEvent) event);
+            } else if (event instanceof SetKernelEvent) {
+                processSetKernelEvent((SetKernelEvent) event);
             }
 
             iter.remove();
@@ -727,6 +704,27 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
 
         super.onActivityResult(request, result, data);
+    }
+
+    @Override
+    public void onEventReceived(BaseEvent event) {
+        if (event instanceof ChoseRomEvent) {
+            ChoseRomEvent e = (ChoseRomEvent) event;
+
+            if (mCardsLoaded) {
+                processChoseRomEvent(e);
+            } else {
+                mEvents.add(event);
+            }
+        } else if (event instanceof SetKernelEvent) {
+            SetKernelEvent e = (SetKernelEvent) event;
+
+            if (mCardsLoaded) {
+                processSetKernelEvent(e);
+            } else {
+                mEvents.add(event);
+            }
+        }
     }
 
     protected class ResizeAndCacheImageTask extends AsyncTask<Void, Void, Void> {

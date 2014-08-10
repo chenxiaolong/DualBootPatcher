@@ -18,17 +18,16 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
-import com.squareup.otto.Bus;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector;
 
-public class SwitcherTaskFragment extends Fragment {
-    public static final String TAG = SwitcherTaskFragment.class.getSimpleName();
+public class SwitcherEventCollector extends EventCollector {
+    public static final String TAG = SwitcherEventCollector.class.getSimpleName();
 
     private Context mContext;
 
@@ -45,32 +44,17 @@ public class SwitcherTaskFragment extends Fragment {
                     String message = bundle.getString(SwitcherService.RESULT_MESSAGE);
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
 
-                    OnChoseRomEvent event = new OnChoseRomEvent();
-                    event.failed = failed;
-                    event.message = message;
-                    event.kernelId = kernelId;
-                    getBusInstance().post(event);
+                    sendEvent(new ChoseRomEvent(failed, message, kernelId));
                 } else if (SwitcherService.STATE_SET_KERNEL.equals(state)) {
                     boolean failed = bundle.getBoolean(SwitcherService.RESULT_FAILED);
                     String message = bundle.getString(SwitcherService.RESULT_MESSAGE);
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
 
-                    OnSetKernelEvent event = new OnSetKernelEvent();
-                    event.failed = failed;
-                    event.message = message;
-                    event.kernelId = kernelId;
-                    getBusInstance().post(event);
+                    sendEvent(new SetKernelEvent(failed, message, kernelId));
                 }
             }
         }
     };
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        setRetainInstance(true);
-    }
 
     @Override
     public void onAttach(Activity activity) {
@@ -90,32 +74,7 @@ public class SwitcherTaskFragment extends Fragment {
         }
     }
 
-    // Otto bus
-
-    private static final Bus BUS = new Bus();
-
-    public static Bus getBusInstance() {
-        return BUS;
-    }
-
-    // Events
-
-    public static class SwitcherTaskEvent {
-    }
-
-    public static class OnChoseRomEvent extends SwitcherTaskEvent {
-        boolean failed;
-        String message;
-        String kernelId;
-    }
-
-    public static class OnSetKernelEvent extends SwitcherTaskEvent {
-        boolean failed;
-        String message;
-        String kernelId;
-    }
-
-    // Task starters
+    // Start tasks
 
     public void chooseRom(String kernelId) {
         Intent intent = new Intent(mContext, SwitcherService.class);
@@ -129,5 +88,31 @@ public class SwitcherTaskFragment extends Fragment {
         intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_SET_KERNEL);
         intent.putExtra(SwitcherService.PARAM_KERNEL_ID, kernelId);
         mContext.startService(intent);
+    }
+
+    // Events
+
+    public class ChoseRomEvent extends BaseEvent {
+        boolean failed;
+        String message;
+        String kernelId;
+
+        public ChoseRomEvent(boolean failed, String message, String kernelId) {
+            this.failed = failed;
+            this.message = message;
+            this.kernelId = kernelId;
+        }
+    }
+
+    public class SetKernelEvent extends BaseEvent {
+        boolean failed;
+        String message;
+        String kernelId;
+
+        public SetKernelEvent(boolean failed, String message, String kernelId) {
+            this.failed = failed;
+            this.message = message;
+            this.kernelId = kernelId;
+        }
     }
 }
