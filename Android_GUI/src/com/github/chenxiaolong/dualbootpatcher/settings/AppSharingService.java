@@ -26,9 +26,16 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class AppSharingService extends IntentService {
     private static final String TAG = AppSharingService.class.getSimpleName();
+    public static final String BROADCAST_INTENT = "com.chenxiaolong.github.dualbootpatcher.BROADCAST_APP_SHARING_STATE";
 
     public static final String ACTION = "action";
     public static final String ACTION_PACKAGE_REMOVED = "package_removed";
+    public static final String ACTION_UPDATE_RAMDISK = "update_ramdisk";
+
+    public static final String STATE = "state";
+    public static final String STATE_UPDATED_RAMDISK = "updated_ramdisk";
+
+    public static final String RESULT_FAILED = "failed";
 
     public static final String EXTRA_PACKAGE = "package";
 
@@ -37,13 +44,37 @@ public class AppSharingService extends IntentService {
     }
 
     private void onPackageRemoved(String pkg) {
-        try {
-            PackageRemovedTask task = new PackageRemovedTask(pkg);
-            task.start();
-            task.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        AppSharingConfigFile config = AppSharingConfigFile.getInstance();
+        RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
+
+        if (info == null) {
+            Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");
+            return;
         }
+
+        // Unsync package if explicitly removed
+        if (config.isRomSynced(pkg, info)) {
+            config.setRomSynced(pkg, info, false);
+        }
+
+        config.save();
+    }
+
+    private void updateRamdisk() {
+        boolean failed;
+
+        try {
+            AppSharingUtils.updateRamdisk(this);
+            failed = false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            failed = true;
+        }
+
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_UPDATED_RAMDISK);
+        i.putExtra(RESULT_FAILED, failed);
+        sendBroadcast(i);
     }
 
     @Override
@@ -52,32 +83,8 @@ public class AppSharingService extends IntentService {
 
         if (ACTION_PACKAGE_REMOVED.equals(action)) {
             onPackageRemoved(intent.getStringExtra(EXTRA_PACKAGE));
-        }
-    }
-
-    private class PackageRemovedTask extends Thread {
-        private String mPackage;
-
-        public PackageRemovedTask(String pkg) {
-            mPackage = pkg;
-        }
-
-        @Override
-        public void run() {
-            AppSharingConfigFile config = AppSharingConfigFile.getInstance();
-            RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
-
-            if (info == null) {
-                Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");
-                return;
-            }
-
-            // Unsync package if explicitly removed
-            if (config.isRomSynced(mPackage, info)) {
-                config.setRomSynced(mPackage, info, false);
-            }
-
-            config.save();
+        } else if (ACTION_UPDATE_RAMDISK.equals(action)) {
+            updateRamdisk();
         }
     }
 }

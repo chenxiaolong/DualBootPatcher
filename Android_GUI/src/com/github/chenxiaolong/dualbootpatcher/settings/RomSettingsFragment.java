@@ -39,6 +39,8 @@ import android.view.View;
 import android.view.animation.AlphaAnimation;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.MiscUtils.Version;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -46,15 +48,15 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
 import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
-import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingTasks.OnUpdatedRamdiskEvent;
+import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingEventCollector
+        .UpdatedRamdiskEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
-import com.squareup.otto.Subscribe;
 
 import java.util.Properties;
 
 public class RomSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener, RootCheckerListener,
-        OnDismissListener {
+        OnDismissListener, EventCollectorListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
     private static final String MINIMUM_VERSION = "7.0.0.r114";
@@ -75,6 +77,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
     private boolean mOverMin;
 
     private RootCheckerFragment mRootCheckerFragment;
+    private AppSharingEventCollector mEventCollector;
     private ProgressDialog mProgressDialog;
     private boolean mAttemptedRoot;
 
@@ -93,6 +96,15 @@ public class RomSettingsFragment extends PreferenceFragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        FragmentManager fm = getFragmentManager();
+        mEventCollector = (AppSharingEventCollector) fm.findFragmentByTag(
+                AppSharingEventCollector.TAG);
+
+        if (mEventCollector == null) {
+            mEventCollector = new AppSharingEventCollector();
+            fm.beginTransaction().add(mEventCollector, AppSharingEventCollector.TAG).commit();
+        }
 
         getPreferenceManager().setSharedPreferencesName("settings");
 
@@ -174,26 +186,19 @@ public class RomSettingsFragment extends PreferenceFragment implements
     public void onResume() {
         super.onResume();
         mRootCheckerFragment.attachListenerAndResendEvents(this);
+        mEventCollector.attachListener(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mRootCheckerFragment.detachListener(this);
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        AppSharingTasks.getBusInstance().register(this);
+        mEventCollector.detachListener();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-
-        AppSharingTasks.getBusInstance().unregister(this);
 
         if (mProgressDialog != null) {
             mProgressDialog.dismiss();
@@ -309,7 +314,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
             startActivity(new Intent(getActivity(), AppListActivity.class));
         } else if (KEY_UPDATE_RAMDISK.equals(key)) {
             buildUpdateRamdiskDialog();
-            AppSharingTasks.updateRamdisk(getActivity().getApplicationContext());
+            mEventCollector.updateRamdisk();
         }
 
         return true;
@@ -413,17 +418,6 @@ public class RomSettingsFragment extends PreferenceFragment implements
         }
     }
 
-    @SuppressWarnings("unused")
-    @Subscribe
-    public void onUpdatedRamdisk(OnUpdatedRamdiskEvent e) {
-        if (mRamdiskDialog != null) {
-            mRamdiskDialog.dismiss();
-        }
-
-        mUpdateFailed = e.failed;
-        buildUpdateRamdiskDoneDialog();
-    }
-
     private String getSyncDaemonVersion(Context context) {
         // If the daemon is not running, assume that it's not installed
         int pid = CommandUtils.getPid(context, "syncdaemon");
@@ -458,5 +452,19 @@ public class RomSettingsFragment extends PreferenceFragment implements
         }
 
         return null;
+    }
+
+    @Override
+    public void onEventReceived(BaseEvent event) {
+        if (event instanceof UpdatedRamdiskEvent) {
+            UpdatedRamdiskEvent e = (UpdatedRamdiskEvent) event;
+
+            if (mRamdiskDialog != null) {
+                mRamdiskDialog.dismiss();
+            }
+
+            mUpdateFailed = e.failed;
+            buildUpdateRamdiskDoneDialog();
+        }
     }
 }
