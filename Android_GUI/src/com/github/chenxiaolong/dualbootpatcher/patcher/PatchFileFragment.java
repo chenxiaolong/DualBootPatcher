@@ -35,18 +35,28 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
 import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherTaskFragment.PatcherListener;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.AddTaskEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.CheckedSupportedEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.RequestedDiffFileEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateTaskEvent;
 
 import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
 import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
 import it.gmariotti.cardslib.library.view.CardView;
 
-public class PatchFileFragment extends Fragment implements PatcherListener {
+public class PatchFileFragment extends Fragment implements EventCollectorListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final int STATE_READY = 0;
@@ -67,7 +77,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
     private int mState;
     private boolean mAutomated;
 
-    private PatcherTaskFragment mTaskFragment;
+    private PatcherEventCollector mEventCollector;
 
     private ScrollView mScrollView;
     private ProgressBar mProgressBar;
@@ -116,13 +126,11 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         super.onCreate(savedInstanceState);
 
         FragmentManager fm = getFragmentManager();
-        mTaskFragment = (PatcherTaskFragment) fm
-                .findFragmentByTag(PatcherTaskFragment.TAG);
+        mEventCollector = (PatcherEventCollector) fm.findFragmentByTag(PatcherEventCollector.TAG);
 
-        if (mTaskFragment == null) {
-            mTaskFragment = new PatcherTaskFragment();
-            fm.beginTransaction().add(mTaskFragment, PatcherTaskFragment.TAG)
-                    .commit();
+        if (mEventCollector == null) {
+            mEventCollector = new PatcherEventCollector();
+            fm.beginTransaction().add(mEventCollector, PatcherEventCollector.TAG).commit();
         }
     }
 
@@ -284,13 +292,13 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
     @Override
     public void onResume() {
         super.onResume();
-        mTaskFragment.attachListener(this);
+        mEventCollector.attachListener(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mTaskFragment.detachListener();
+        mEventCollector.detachListener();
     }
 
     @Override
@@ -527,51 +535,6 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         context.startService(intent);
     }
 
-    @Override
-    public void finishedPatching(boolean failed, String message, String newFile) {
-        mState = STATE_READY;
-        updateCardUI();
-
-        // Update MTP cache
-        if (!failed) {
-            MediaScannerConnection.scanFile(getActivity(),
-                    new String[] { newFile }, null, null);
-        }
-
-        if (mAutomated) {
-            Intent data = new Intent();
-            data.putExtra(RESULT_FILENAME_OLD, newFile);
-            data.putExtra(RESULT_FILENAME, newFile);
-            data.putExtra(RESULT_MESSAGE, message);
-            data.putExtra(RESULT_FAILED, failed);
-            getActivity().setResult(Activity.RESULT_OK, data);
-            getActivity().finish();
-            return;
-        }
-
-        // Scroll back to the top
-        mScrollView.post(new Runnable() {
-            @Override
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_UP);
-            }
-        });
-
-        // Display message
-        mFileChooserCard.onFinishedPatching(failed, message, newFile);
-
-        // Reset for next round of patching
-        mPresetCard.reset();
-        mCustomOptsCard.reset();
-        mTasksCard.reset();
-        mDetailsCard.reset();
-        mProgressCard.reset();
-
-        // Tap to choose the next file
-        setTapActionChooseFile();
-        mFileChooserCardView.refreshCard(mFileChooserCard);
-    }
-
     private void checkSupported(String filename) {
         // Show progress on file chooser card
         mFileChooserCard.setProgressShowing(true);
@@ -589,22 +552,13 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         context.startService(intent);
     }
 
-    @Override
-    public void checkedSupported(String zipFile, boolean supported) {
-        mFileChooserCard.onFileChosen(zipFile, supported);
-        setTapActionPatchFile();
-        mFileChooserCardView.refreshCard(mFileChooserCard);
-        mFileChooserCard.setProgressShowing(false);
 
-        mState = STATE_CHOSE_FILE;
-        updateCardUI();
-    }
 
     private void setTapActionChooseFile() {
         mFileChooserCard.setOnClickListener(new OnCardClickListener() {
             @Override
             public void onClick(Card card, View view) {
-                mTaskFragment.startFileChooser();
+                mEventCollector.startFileChooser();
             }
         });
 
@@ -622,7 +576,7 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
         mFileChooserCard.setOnLongClickListener(new OnLongCardClickListener() {
             @Override
             public boolean onLongClick(Card card, View view) {
-                mTaskFragment.startFileChooser();
+                mEventCollector.startFileChooser();
                 return true;
             }
         });
@@ -679,47 +633,96 @@ public class PatchFileFragment extends Fragment implements PatcherListener {
     }
 
     private void setCustomOptsActions() {
-        mCustomOptsCard.mChoosePatchButton
-                .setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mTaskFragment.startFileChooserDiff();
-                    }
-                });
+        mCustomOptsCard.mChoosePatchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mEventCollector.startFileChooserDiff();
+            }
+        });
     }
 
     @Override
-    public void addTask(String task) {
-        mTasksCard.addTask(task);
-    }
+    public void onEventReceived(BaseEvent event) {
+        if (event instanceof AddTaskEvent) {
+            AddTaskEvent e = (AddTaskEvent) event;
 
-    @Override
-    public void updateTask(String text) {
-        mTasksCard.updateTask(text);
-    }
+            mTasksCard.addTask(e.task);
+        } else if (event instanceof UpdateTaskEvent) {
+            UpdateTaskEvent e = (UpdateTaskEvent) event;
 
-    @Override
-    public void updateDetails(String text) {
-        mDetailsCard.setDetails(text);
-    }
+            mTasksCard.updateTask(e.task);
+        } else if (event instanceof UpdateDetailsEvent) {
+            UpdateDetailsEvent e = (UpdateDetailsEvent) event;
 
-    @Override
-    public void setProgress(int i) {
-        mProgressCard.setProgress(i);
-    }
+            mDetailsCard.setDetails(e.text);
+        } else if (event instanceof SetMaxProgressEvent) {
+            SetMaxProgressEvent e = (SetMaxProgressEvent) event;
 
-    @Override
-    public void setMaxProgress(int i) {
-        mProgressCard.setMaxProgress(i);
-    }
+            mProgressCard.setMaxProgress(e.maxProgress);
+        } else if (event instanceof SetProgressEvent) {
+            SetProgressEvent e = (SetProgressEvent) event;
 
-    @Override
-    public void requestedFile(String file) {
-        checkSupported(file);
-    }
+            mProgressCard.setProgress(e.progress);
+        } else if (event instanceof FinishedPatchingEvent) {
+            FinishedPatchingEvent e = (FinishedPatchingEvent) event;
 
-    @Override
-    public void requestedDiffFile(String file) {
-        mCustomOptsCard.onDiffFileSelected(file);
+            mState = STATE_READY;
+            updateCardUI();
+
+            // Update MTP cache
+            if (!e.failed) {
+                MediaScannerConnection.scanFile(getActivity(),
+                        new String[] { e.newFile }, null, null);
+            }
+
+            if (mAutomated) {
+                Intent data = new Intent();
+                data.putExtra(RESULT_FILENAME_OLD, e.newFile);
+                data.putExtra(RESULT_FILENAME, e.newFile);
+                data.putExtra(RESULT_MESSAGE, e.message);
+                data.putExtra(RESULT_FAILED, e.failed);
+                getActivity().setResult(Activity.RESULT_OK, data);
+                getActivity().finish();
+                return;
+            }
+
+            // Scroll back to the top
+            mScrollView.post(new Runnable() {
+                @Override
+                public void run() {
+                    mScrollView.fullScroll(View.FOCUS_UP);
+                }
+            });
+
+            // Display message
+            mFileChooserCard.onFinishedPatching(e.failed, e.message, e.newFile);
+
+            // Reset for next round of patching
+            mPresetCard.reset();
+            mCustomOptsCard.reset();
+            mTasksCard.reset();
+            mDetailsCard.reset();
+            mProgressCard.reset();
+
+            // Tap to choose the next file
+            setTapActionChooseFile();
+            mFileChooserCardView.refreshCard(mFileChooserCard);
+        } else if (event instanceof CheckedSupportedEvent) {
+            CheckedSupportedEvent e = (CheckedSupportedEvent) event;
+
+            mFileChooserCard.onFileChosen(e.zipFile, e.supported);
+            setTapActionPatchFile();
+            mFileChooserCardView.refreshCard(mFileChooserCard);
+            mFileChooserCard.setProgressShowing(false);
+
+            mState = STATE_CHOSE_FILE;
+            updateCardUI();
+        } else if (event instanceof RequestedFileEvent) {
+            RequestedFileEvent e = (RequestedFileEvent) event;
+            checkSupported(e.file);
+        } else if (event instanceof RequestedDiffFileEvent) {
+            RequestedDiffFileEvent e = (RequestedDiffFileEvent) event;
+            mCustomOptsCard.onDiffFileSelected(e.file);
+        }
     }
 }
