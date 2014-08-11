@@ -771,6 +771,27 @@ class SyncdaemonPatcher(Patcher):
         # Add syncdaemon to init.rc if it doesn't already exist
         if not cf.get_file('sbin/syncdaemon'):
             common.add_syncdaemon(cf)
+        else:
+            # Make sure 'oneshot' (added by previous versions) is removed
+            initrc = cf.get_file('init.rc')
+            lines = fileio.bytes_to_lines(initrc.content)
+            buf = bytes()
+
+            in_syncdaemon = False
+
+            for line in lines:
+                if line.startswith('service'):
+                    in_syncdaemon = '/sbin/syncdaemon' in line
+                    buf += fileio.encode(line)
+
+                elif in_syncdaemon and 'oneshot' in line:
+                    continue
+
+                else:
+                    buf += fileio.encode(line)
+
+            initrc.content = buf
+
 
         # Copy syncdaemon
         cf.add_file(

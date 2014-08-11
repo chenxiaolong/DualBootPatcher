@@ -39,7 +39,6 @@ def add_syncdaemon(cpiofile):
     buf += fileio.encode('\nservice syncdaemon /sbin/syncdaemon\n')
     buf += fileio.encode('    class main\n')
     buf += fileio.encode('    user root\n')
-    buf += fileio.encode('    oneshot\n')
 
     cpioentry.content = buf
 
