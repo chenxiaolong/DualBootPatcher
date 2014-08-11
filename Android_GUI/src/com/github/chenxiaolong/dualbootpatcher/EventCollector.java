@@ -21,11 +21,18 @@ import android.app.Fragment;
 import android.os.Bundle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class EventCollector extends Fragment {
-    private EventCollectorListener mListener;
-    private ArrayList<BaseEvent> mEventQueue = new ArrayList<BaseEvent>();
+    private HashMap<String, ListenerAndQueue> mEventQueues =
+            new HashMap<String, ListenerAndQueue>();
+
+    private class ListenerAndQueue {
+        EventCollectorListener listener;
+        ArrayList<BaseEvent> queue = new ArrayList<BaseEvent>();
+    }
 
     public interface EventCollectorListener {
         public void onEventReceived(BaseEvent event);
@@ -52,29 +59,50 @@ public class EventCollector extends Fragment {
         setRetainInstance(true);
     }
 
-    public synchronized void attachListener(EventCollectorListener listener) {
-        mListener = listener;
+    public synchronized void attachListener(String tag, EventCollectorListener listener) {
+        ListenerAndQueue lq;
 
-        Iterator<BaseEvent> iter = mEventQueue.iterator();
+        if (mEventQueues.containsKey(tag)) {
+            lq = mEventQueues.get(tag);
+        } else {
+            lq = new ListenerAndQueue();
+        }
+
+        lq.listener = listener;
+
+        Iterator<BaseEvent> iter = lq.queue.iterator();
         while (iter.hasNext()) {
             BaseEvent event = iter.next();
-            mListener.onEventReceived(event);
+            lq.listener.onEventReceived(event);
 
             if (!event.getKeepInQueue()) {
                 iter.remove();
             }
         }
+
+        mEventQueues.put(tag, lq);
     }
 
-    public synchronized void detachListener() {
-        mListener = null;
+    public synchronized void detachListener(String tag) {
+        // If this fails, something really bad happened anyway
+        if (mEventQueues.containsKey(tag)) {
+            mEventQueues.get(tag).listener = null;
+        }
     }
 
     protected synchronized void sendEvent(BaseEvent event) {
-        if (mListener != null) {
-            mListener.onEventReceived(event);
-        } else {
-            mEventQueue.add(event);
+        for (Map.Entry<String, ListenerAndQueue> entry : mEventQueues.entrySet()) {
+            ListenerAndQueue lq = entry.getValue();
+
+            if (lq.listener != null) {
+                lq.listener.onEventReceived(event);
+
+                if (event.getKeepInQueue()) {
+                    lq.queue.add(event);
+                }
+            } else {
+                lq.queue.add(event);
+            }
         }
     }
 }
