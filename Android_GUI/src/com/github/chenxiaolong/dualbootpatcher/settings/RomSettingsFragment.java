@@ -55,7 +55,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
         EventCollectorListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
-    private static final String MINIMUM_VERSION = "7.0.0.r114";
+    private static final String MINIMUM_VERSION = "8.0.0.r83";
 
     private static final String EXTRA_ROOT_CHECK_DIALOG = "rootCheckDialog";
     private static final String EXTRA_UPDATE_RAMDISK_DIALOG = "updateRamdiskDialog";
