@@ -112,4 +112,49 @@ public class EventCollector extends Fragment {
             }
         }
     }
+
+    protected synchronized void sendEventIfNotQueued(BaseEvent event) {
+        for (Map.Entry<String, ListenerAndQueue> entry : mEventQueues.entrySet()) {
+            ListenerAndQueue lq = entry.getValue();
+
+            boolean skip = false;
+
+            for (BaseEvent e : lq.queue) {
+                if (e == event) {
+                    skip = true;
+                    break;
+                }
+            }
+
+            if (skip) {
+                continue;
+            }
+
+            if (lq.listener != null) {
+                lq.listener.onEventReceived(event);
+
+                if (event.getKeepInQueue()) {
+                    lq.queue.add(event);
+                }
+            } else {
+                lq.queue.add(event);
+            }
+        }
+    }
+
+    // Remove all events of a certain type
+    protected synchronized void removeAllEvents(Class type) {
+        for (Map.Entry<String, ListenerAndQueue> entry : mEventQueues.entrySet()) {
+            ListenerAndQueue lq = entry.getValue();
+
+            Iterator<BaseEvent> iter = lq.queue.iterator();
+            while (iter.hasNext()) {
+                BaseEvent e = iter.next();
+
+                if (type.isInstance(e)) {
+                    iter.remove();
+                }
+            }
+        }
+    }
 }
