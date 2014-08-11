@@ -292,13 +292,13 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public void onResume() {
         super.onResume();
-        mEventCollector.attachListener(this);
+        mEventCollector.attachListener(TAG, this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mEventCollector.detachListener();
+        mEventCollector.detachListener(TAG);
     }
 
     @Override

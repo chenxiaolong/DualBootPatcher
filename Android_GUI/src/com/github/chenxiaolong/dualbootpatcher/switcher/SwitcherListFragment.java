@@ -45,8 +45,8 @@ import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
-import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
+import com.github.chenxiaolong.dualbootpatcher.RootCheckerEventCollector;
+import com.github.chenxiaolong.dualbootpatcher.RootCheckerEventCollector.RootAcknowledgedEvent;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.ChoseRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
@@ -69,14 +69,13 @@ import it.gmariotti.cardslib.library.view.CardListView;
 import it.gmariotti.cardslib.library.view.CardView;
 
 public class SwitcherListFragment extends Fragment implements OnDismissListener,
-        RootCheckerListener, EventCollectorListener {
+        EventCollectorListener {
     public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
     public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
     public static final int ACTION_CHOOSE_ROM = 1;
     public static final int ACTION_SET_KERNEL = 2;
 
     private static final String EXTRA_PERFORMING_ACTION = "performingAction";
-    private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
     private static final String EXTRA_SELECTED_ROM_ID = "selectedRomId";
     private static final String EXTRA_SHOWING_DIALOG = "showingDialog";
     private static final String EXTRA_SHOWING_RENAME_DIALOG = "showingRenameDialog";
@@ -89,10 +88,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final int REQUEST_IMAGE = 1234;
 
     private boolean mPerformingAction;
-    private boolean mAttemptedRoot;
 
-    private RootCheckerFragment mRootCheckerFragment;
     private SwitcherEventCollector mEventCollector;
+    private RootCheckerEventCollector mRootChecker;
 
     private Bundle mSavedInstanceState;
 
@@ -157,13 +155,12 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mRootCheckerFragment = RootCheckerFragment.getInstance(getFragmentManager());
+        mRootChecker = RootCheckerEventCollector.getInstance(getFragmentManager());
 
         mSavedInstanceState = savedInstanceState;
 
         if (savedInstanceState != null) {
             mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
-            mAttemptedRoot = savedInstanceState.getBoolean(EXTRA_ATTEMPTED_ROOT);
 
             mRoms = (RomInformation[]) savedInstanceState.getParcelableArray(EXTRA_ROMS);
             mRomNames = savedInstanceState.getStringArray(EXTRA_ROM_NAMES);
@@ -204,10 +201,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             refreshProgressVisibility(false);
         }
 
-        if (!mAttemptedRoot) {
-            mAttemptedRoot = true;
-            mRootCheckerFragment.requestRoot();
-        }
+        mRootChecker.requestRoot();
     }
 
     private void reloadFragment() {
@@ -240,16 +234,26 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     public void onResume() {
         super.onResume();
 
-        mRootCheckerFragment.attachListenerAndResendEvents(this);
-        mEventCollector.attachListener(this);
+        if (mAction == ACTION_CHOOSE_ROM) {
+            mEventCollector.attachListener(TAG_CHOOSE_ROM, this);
+            mRootChecker.attachListener(TAG_CHOOSE_ROM, this);
+        } else if (mAction == ACTION_SET_KERNEL) {
+            mEventCollector.attachListener(TAG_SET_KERNEL, this);
+            mRootChecker.attachListener(TAG_SET_KERNEL, this);
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
-        mRootCheckerFragment.detachListener(this);
-        mEventCollector.detachListener();
+        if (mAction == ACTION_CHOOSE_ROM) {
+            mEventCollector.detachListener(TAG_CHOOSE_ROM);
+            mRootChecker.detachListener(TAG_CHOOSE_ROM);
+        } else if (mAction == ACTION_SET_KERNEL) {
+            mEventCollector.detachListener(TAG_SET_KERNEL);
+            mRootChecker.detachListener(TAG_SET_KERNEL);
+        }
     }
 
     @Override
@@ -284,7 +288,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         super.onSaveInstanceState(outState);
 
         outState.putBoolean(EXTRA_PERFORMING_ACTION, mPerformingAction);
-        outState.putBoolean(EXTRA_ATTEMPTED_ROOT, mAttemptedRoot);
         if (mSelectedRom != null) {
             outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRom.id);
         }
@@ -323,7 +326,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mNoRootCard.setOnClickListener(new OnCardClickListener() {
             @Override
             public void onClick(Card card, View view) {
-                mAttemptedRoot = false;
+                mRootChecker.resetAttempt();
                 reloadFragment();
             }
         });
@@ -366,17 +369,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         if (mRenameDialog == dialog) {
             mRenameDialog = null;
             mRomDialogCard = null;
-        }
-    }
-
-    @Override
-    public void rootRequestAcknowledged(boolean allowed) {
-        if (!allowed) {
-            mNoRootCardView.setVisibility(View.VISIBLE);
-            refreshProgressVisibility(false);
-        } else {
-            mNoRootCardView.setVisibility(View.GONE);
-            initCards();
         }
     }
 
@@ -723,6 +715,16 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 processSetKernelEvent(e);
             } else {
                 mEvents.add(event);
+            }
+        } else if (event instanceof RootAcknowledgedEvent) {
+            RootAcknowledgedEvent e = (RootAcknowledgedEvent) event;
+
+            if (!e.allowed) {
+                mNoRootCardView.setVisibility(View.VISIBLE);
+                refreshProgressVisibility(false);
+            } else {
+                mNoRootCardView.setVisibility(View.GONE);
+                initCards();
             }
         }
     }

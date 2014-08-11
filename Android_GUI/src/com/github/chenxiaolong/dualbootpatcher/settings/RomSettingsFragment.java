@@ -43,21 +43,20 @@ import com.github.chenxiaolong.dualbootpatcher.MiscUtils.Version;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment;
-import com.github.chenxiaolong.dualbootpatcher.RootCheckerFragment.RootCheckerListener;
+import com.github.chenxiaolong.dualbootpatcher.RootCheckerEventCollector;
+import com.github.chenxiaolong.dualbootpatcher.RootCheckerEventCollector.RootAcknowledgedEvent;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingEventCollector.SettingsInfoEvent;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingEventCollector
         .UpdatedRamdiskEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 public class RomSettingsFragment extends PreferenceFragment implements
-        OnPreferenceChangeListener, OnPreferenceClickListener, RootCheckerListener,
-        OnDismissListener, EventCollectorListener {
+        OnPreferenceChangeListener, OnPreferenceClickListener, OnDismissListener,
+        EventCollectorListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
     private static final String MINIMUM_VERSION = "7.0.0.r114";
 
-    private static final String EXTRA_ATTEMPTED_ROOT = "attemptedRoot";
     private static final String EXTRA_ROOT_CHECK_DIALOG = "rootCheckDialog";
     private static final String EXTRA_UPDATE_RAMDISK_DIALOG = "updateRamdiskDialog";
     private static final String EXTRA_UPDATE_RAMDISK_DONE_DIALOG = "updateRamdiskDoneDialog";
@@ -74,12 +73,10 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
     private boolean mOverMin;
 
-    private RootCheckerFragment mRootCheckerFragment;
     private AppSharingEventCollector mEventCollector;
+    private RootCheckerEventCollector mRootChecker;
     private ProgressDialog mProgressDialog;
-    private boolean mAttemptedRoot;
     private boolean mRootAllowed;
-    private boolean mRootEventReceived;
 
     private String mSyncdaemonVersion;
     private RomInformation mCurrentRom;
@@ -142,19 +139,16 @@ public class RomSettingsFragment extends PreferenceFragment implements
         getView().setVisibility(View.GONE);
 
         if (savedInstanceState != null) {
-            mAttemptedRoot = savedInstanceState.getBoolean(EXTRA_ATTEMPTED_ROOT);
-
-            if (!mAttemptedRoot && savedInstanceState.getBoolean(EXTRA_ROOT_CHECK_DIALOG)) {
+            if (savedInstanceState.getBoolean(EXTRA_ROOT_CHECK_DIALOG)) {
                 buildProgressDialog();
             }
         }
 
-        mRootCheckerFragment = RootCheckerFragment.getInstance(getFragmentManager());
+        mRootChecker = RootCheckerEventCollector.getInstance(getFragmentManager());
 
-        if (!mAttemptedRoot) {
-            mAttemptedRoot = true;
+        if (!mRootChecker.isAttemptedRoot()) {
             buildProgressDialog();
-            mRootCheckerFragment.requestRoot();
+            mRootChecker.requestRoot();
         }
 
         if (savedInstanceState != null) {
@@ -174,7 +168,6 @@ public class RomSettingsFragment extends PreferenceFragment implements
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putBoolean(EXTRA_ATTEMPTED_ROOT, mAttemptedRoot);
         outState.putBoolean(EXTRA_UPDATE_FAILED, mUpdateFailed);
         outState.putString(EXTRA_SYNCDAEMON_VERSION, mSyncdaemonVersion);
         outState.putParcelable(EXTRA_CURRENT_ROM, mCurrentRom);
@@ -195,19 +188,15 @@ public class RomSettingsFragment extends PreferenceFragment implements
     @Override
     public void onResume() {
         super.onResume();
-        mRootCheckerFragment.attachListenerAndResendEvents(this);
-        mEventCollector.attachListener(this);
-
-        if (mSyncdaemonVersion == null) {
-            mEventCollector.getInfo();
-        }
+        mRootChecker.attachListener(TAG, this);
+        mEventCollector.attachListener(TAG, this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mRootCheckerFragment.detachListener(this);
-        mEventCollector.detachListener();
+        mRootChecker.detachListener(TAG);
+        mEventCollector.detachListener(TAG);
     }
 
     @Override
@@ -321,7 +310,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
         final String key = preference.getKey();
 
         if (KEY_NO_ROOT.equals(key)) {
-            mAttemptedRoot = false;
+            mRootChecker.resetAttempt();
             reloadFragment();
             return false;
         } else if (KEY_SHARE_INDIV_APPS.equals(key)) {
@@ -382,14 +371,6 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
-    public void rootRequestAcknowledged(boolean allowed) {
-        mRootEventReceived = true;
-        mRootAllowed = allowed;
-
-        ready();
-    }
-
-    @Override
     public void onDismiss(DialogInterface dialog) {
         if (mProgressDialog != null && mProgressDialog == dialog) {
             mProgressDialog = null;
@@ -427,36 +408,44 @@ public class RomSettingsFragment extends PreferenceFragment implements
             mCurrentRom = e.currentRom;
 
             ready();
+        } else if (event instanceof RootAcknowledgedEvent) {
+            RootAcknowledgedEvent e = (RootAcknowledgedEvent) event;
+
+            mRootAllowed = e.allowed;
+
+            if (mRootAllowed && mSyncdaemonVersion == null) {
+                mEventCollector.getInfo();
+            } else {
+                ready();
+            }
         }
     }
 
     private void ready() {
-        if (mSyncdaemonVersion != null && mRootEventReceived) {
-            showAppSharingPrefs(mRootAllowed);
+        showAppSharingPrefs(mRootAllowed);
 
-            if (mRootAllowed) {
-                Version minVersion = new Version(MINIMUM_VERSION);
-                Version sdVersion = new Version(mSyncdaemonVersion);
+        if (mRootAllowed) {
+            Version minVersion = new Version(MINIMUM_VERSION);
+            Version sdVersion = new Version(mSyncdaemonVersion);
 
-                mOverMin = sdVersion.compareTo(minVersion) >= 0;
+            mOverMin = sdVersion.compareTo(minVersion) >= 0;
 
-                if (mOverMin) {
-                    mAppSharingCategory.removePreference(mUpdateRamdisk);
-                }
-
-                setupGlobalAppSharePrefs();
-                setupIndivAppSharePrefs(mShareApps.isChecked() || mSharePaidApps.isChecked());
+            if (mOverMin) {
+                mAppSharingCategory.removePreference(mUpdateRamdisk);
             }
 
-            AlphaAnimation fadeAnimation = new AlphaAnimation(0, 1);
-            fadeAnimation.setDuration(100);
-            fadeAnimation.setFillAfter(true);
+            setupGlobalAppSharePrefs();
+            setupIndivAppSharePrefs(mShareApps.isChecked() || mSharePaidApps.isChecked());
+        }
 
-            getView().startAnimation(fadeAnimation);
-            getView().setVisibility(View.VISIBLE);
-            if (mProgressDialog != null) {
-                mProgressDialog.dismiss();
-            }
+        AlphaAnimation fadeAnimation = new AlphaAnimation(0, 1);
+        fadeAnimation.setDuration(100);
+        fadeAnimation.setFillAfter(true);
+
+        getView().startAnimation(fadeAnimation);
+        getView().setVisibility(View.VISIBLE);
+        if (mProgressDialog != null) {
+            mProgressDialog.dismiss();
         }
     }
 }
