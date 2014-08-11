@@ -25,6 +25,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class AppSharingEventCollector extends EventCollector {
     public static final String TAG = AppSharingEventCollector.class.getSimpleName();
@@ -43,6 +44,11 @@ public class AppSharingEventCollector extends EventCollector {
                     boolean failed = bundle.getBoolean(AppSharingService.RESULT_FAILED);
 
                     sendEvent(new UpdatedRamdiskEvent(failed));
+                } else if (AppSharingService.STATE_GOT_INFO.equals(state)) {
+                    RomInformation curRom = bundle.getParcelable(AppSharingService.RESULT_ROMINFO);
+                    String version = bundle.getString(AppSharingService.RESULT_VERSION);
+
+                    sendEvent(new SettingsInfoEvent(curRom, version));
                 }
             }
         }
@@ -74,7 +80,23 @@ public class AppSharingEventCollector extends EventCollector {
         mContext.startService(intent);
     }
 
+    public void getInfo() {
+        Intent intent = new Intent(mContext, AppSharingService.class);
+        intent.putExtra(AppSharingService.ACTION, AppSharingService.ACTION_GET_INFO);
+        mContext.startService(intent);
+    }
+
     // Events
+
+    public class SettingsInfoEvent extends BaseEvent {
+        RomInformation currentRom;
+        String syncDaemonVersion;
+
+        public SettingsInfoEvent(RomInformation currentRom, String syncDaemonVersion) {
+            this.currentRom = currentRom;
+            this.syncDaemonVersion = syncDaemonVersion;
+        }
+    }
 
     public class UpdatedRamdiskEvent extends BaseEvent {
         boolean failed;
