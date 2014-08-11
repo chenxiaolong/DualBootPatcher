@@ -23,3 +23,7 @@ Thanks to everyone for the help!
 * remorema
   - http://forum.xda-developers.com/member.php?u=1634956
   - Portuguese translations
+
+* Chahk
+  - http://forum.xda-developers.com/member.php?u=1700634
+  - Russian translations
