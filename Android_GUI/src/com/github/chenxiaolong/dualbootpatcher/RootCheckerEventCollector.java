@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 public class RootCheckerEventCollector extends EventCollector {
     public static final String TAG = RootCheckerEventCollector.class.getSimpleName();
 
-    private boolean sAttemptedRoot;
+    private RootAcknowledgedEvent mEvent;
 
     public static RootCheckerEventCollector getInstance(FragmentManager fm) {
         RootCheckerEventCollector f = (RootCheckerEventCollector) fm.findFragmentByTag(TAG);
@@ -20,18 +20,23 @@ public class RootCheckerEventCollector extends EventCollector {
     }
 
     public synchronized void requestRoot() {
-        if (!sAttemptedRoot) {
+        if (mEvent == null) {
             new RootCheckerTask().execute();
-            sAttemptedRoot = true;
+        } else {
+            sendRootAckEvent();
         }
     }
 
     public synchronized void resetAttempt() {
-        sAttemptedRoot = false;
+        mEvent = null;
     }
 
     public synchronized boolean isAttemptedRoot() {
-        return sAttemptedRoot;
+        return mEvent != null;
+    }
+
+    private synchronized void sendRootAckEvent() {
+        sendEventIfNotQueued(mEvent);
     }
 
     // Events
@@ -54,7 +59,9 @@ public class RootCheckerEventCollector extends EventCollector {
 
         @Override
         protected void onPostExecute(Boolean result) {
-            sendEvent(new RootAcknowledgedEvent(result));
+            mEvent = new RootAcknowledgedEvent(result);
+            removeAllEvents(RootAcknowledgedEvent.class);
+            sendRootAckEvent();
         }
     }
 }
