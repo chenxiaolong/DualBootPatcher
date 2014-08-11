@@ -190,8 +190,6 @@ public class PatcherEventCollector extends EventCollector {
         String task;
 
         public AddTaskEvent(String task) {
-            setKeepInQueue(true);
-
             this.task = task;
         }
     }
