@@ -518,6 +518,7 @@ int main(int argc, char *argv[]) {
 
     if (argc > 1 && strcmp(argv[1], "--runonce") == 0) {
         write_pid(pid_fd);
+        close(pid_fd);
         setup_signals();
         sync_packages();
         return EXIT_SUCCESS;
@@ -533,6 +534,7 @@ int main(int argc, char *argv[]) {
 
             if (pid2 == 0) {
                 write_pid(pid_fd);
+                close(pid_fd);
                 setup_signals();
                 begin();
             }
@@ -544,6 +546,7 @@ int main(int argc, char *argv[]) {
     }
 
     write_pid(pid_fd);
+    close(pid_fd);
     setup_signals();
     if (begin() < 0) {
         return EXIT_FAILURE;
