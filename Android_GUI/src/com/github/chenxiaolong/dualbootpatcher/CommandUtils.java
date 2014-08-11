@@ -375,23 +375,22 @@ public final class CommandUtils {
     public static String mountBusyboxTmpfs(Context context) {
         int uid = getUid(context);
 
-        // Delete old versions
-        FileUtils.deleteOldCachedAsset(context, "busybox-static");
-        String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
-
-        // Clean up in case something crashed before
-        final String busyboxBinary = BUSYBOX_MOUNT + File.separator + "busybox";
-
         RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
         mountPoint.mountTmpFs();
         mountPoint.chown(uid, uid);
 
+        final String busyboxBinary = BUSYBOX_MOUNT + File.separator + "busybox";
+
+        // If busybox does not exist, extract it
         RootFile busyboxFile = new RootFile(busyboxBinary);
-        if (busyboxFile.isFile()) {
-            busyboxFile.delete();
+        if (!busyboxFile.isFile()) {
+            // Delete old versions
+            FileUtils.deleteOldCachedAsset(context, "busybox-static");
+            String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
+
+            CommandUtils.runRootCommand("cp " + busybox + " " + busyboxBinary);
         }
 
-        CommandUtils.runRootCommand("cp " + busybox + " " + busyboxBinary);
         new RootFile(busyboxBinary).chmod(0755);
         CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + busyboxBinary);
 
