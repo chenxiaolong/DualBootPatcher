@@ -44,6 +44,9 @@ public final class CommandUtils {
     public static final String STREAM_STDERR = "stderr";
     private static final String BUSYBOX_MOUNT = "/data/local/tmp/busybox";
 
+    // Don't unmount the tmpfs used for running busybox as root since it wastes a lot of time
+    private static final boolean NO_UNMOUNT_TMPFS = true;
+
     public static interface CommandListener {
         public void onNewOutputLine(String line, String stream);
 
@@ -398,9 +401,11 @@ public final class CommandUtils {
     }
 
     public static void unmountBusyboxTmpfs() {
-        RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
-        mountPoint.unmountTmpFs();
-        mountPoint.recursiveDelete();
+        if (!NO_UNMOUNT_TMPFS) {
+            RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
+            mountPoint.unmountTmpFs();
+            mountPoint.recursiveDelete();
+        }
     }
 
     public static int getUid(Context context) {
