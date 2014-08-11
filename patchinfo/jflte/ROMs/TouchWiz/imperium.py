@@ -23,9 +23,9 @@ class ModifiedStandard(BasePatcher):
         lines = fileio.all_lines(os.path.join(directory, updater_script))
 
         StandardPatcher.insert_dual_boot_sh(lines)
-        StandardPatcher.replace_mount_lines(device, lines)
-        StandardPatcher.replace_unmount_lines(device, lines)
-        StandardPatcher.replace_format_lines(device, lines)
+        StandardPatcher.replace_mount_lines(file_info.device, lines)
+        StandardPatcher.replace_unmount_lines(file_info.device, lines)
+        StandardPatcher.replace_format_lines(file_info.device, lines)
         StandardPatcher.insert_unmount_everything(len(lines), lines)
 
         # Insert set kernel line
