@@ -148,6 +148,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
 
         if (!mRootChecker.isAttemptedRoot()) {
             buildProgressDialog();
+            mRootChecker.createListener(TAG);
             mRootChecker.requestRoot();
         }
 

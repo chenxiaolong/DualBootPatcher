@@ -201,6 +201,12 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             refreshProgressVisibility(false);
         }
 
+        if (mAction == ACTION_CHOOSE_ROM) {
+            mRootChecker.createListener(TAG_CHOOSE_ROM);
+        } else if (mAction == ACTION_SET_KERNEL) {
+            mRootChecker.createListener(TAG_SET_KERNEL);
+        }
+
         mRootChecker.requestRoot();
     }
 
