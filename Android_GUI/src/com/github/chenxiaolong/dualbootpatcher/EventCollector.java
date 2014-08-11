@@ -59,6 +59,11 @@ public class EventCollector extends Fragment {
         setRetainInstance(true);
     }
 
+    // Create a null listener to catch events before attachListener() is called
+    public synchronized void createListener(String tag) {
+        attachListener(tag, null);
+    }
+
     public synchronized void attachListener(String tag, EventCollectorListener listener) {
         ListenerAndQueue lq;
 
@@ -70,13 +75,15 @@ public class EventCollector extends Fragment {
 
         lq.listener = listener;
 
-        Iterator<BaseEvent> iter = lq.queue.iterator();
-        while (iter.hasNext()) {
-            BaseEvent event = iter.next();
-            lq.listener.onEventReceived(event);
+        if (lq.listener != null) {
+            Iterator<BaseEvent> iter = lq.queue.iterator();
+            while (iter.hasNext()) {
+                BaseEvent event = iter.next();
+                lq.listener.onEventReceived(event);
 
-            if (!event.getKeepInQueue()) {
-                iter.remove();
+                if (!event.getKeepInQueue()) {
+                    iter.remove();
+                }
             }
         }
 
