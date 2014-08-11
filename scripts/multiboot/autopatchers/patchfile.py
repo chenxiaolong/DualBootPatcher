@@ -26,8 +26,7 @@ class PatchFilePatcher(BasePatcher):
         self.patchfile = kwargs['patchfile']
         self.files_list = patch.files_in_patch(self.patchfile)
 
-    def patch(self, directory, bootimg=None, device_check=True,
-              partition_config=None, device=None):
+    def patch(self, directory, file_info, bootimages=None):
         ret = patch.apply_patch(self.patchfile, directory)
 
         if not ret:
