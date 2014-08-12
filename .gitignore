@@ -22,6 +22,8 @@
 # syncdaemon
 /build/syncdaemon/jsoncpp/
 /build/syncdaemon/syncdaemon
+/build/syncdaemon/libs/
+/build/syncdaemon/obj/
 
 # KDevelop settings
 .kdev_include_paths
