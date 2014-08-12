@@ -634,7 +634,7 @@ def create_syncdaemon(targetdir):
     ramdisksdir = os.path.join(targetdir, 'ramdisks')
 
     exit_status, output, error = run_command(
-        [os.path.join(syncdaemondir, 'build.sh'), buildtype]
+        [os.path.join(syncdaemondir, 'build.sh')]
     )
 
     check_if_failed(exit_status, output, error,

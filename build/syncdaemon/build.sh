@@ -4,31 +4,10 @@ set -e
 
 cd "$(dirname "${0}")"
 
-if [[ -z "${1}" ]]; then
-    echo "Usage: ${0} [release|debug]"
-    exit 1
-fi
-
-case "${1}" in
-debug)
-    buildtype=debug
-    ;;
-debug-nonboot)
-    buildtype=debug-nonboot
-    ;;
-release)
-    buildtype=release
-    ;;
-ci)
-    buildtype=ci
-    ;;
-*)
-    echo "Invalid build type ${1}"
-    exit 1
-esac
-
 source ../compile/env.sh
-setup_toolchain
+
+export ANDROID_NDK_HOME="$(get_conf builder android-ndk)"
+export PATH="${PATH}:${ANDROID_NDK_HOME}"
 
 if [ ! -d jsoncpp ]; then
     git clone https://github.com/open-source-parsers/jsoncpp.git
@@ -40,28 +19,8 @@ pushd jsoncpp/
     python2 amalgamate.py
 popd
 
-export LDFLAGS='-pie'
-
-if [[ "${buildtype}" == debug-nonboot ]]; then
-    export CXXFLAGS='-g -O0'
-else
-    export CXXFLAGS='-fstack-protector-all -D_FORTIFY_SOURCE=2'
-    export LDFLAGS+=' -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro'
-fi
-
-${CXX} ${CXXFLAGS} ${LDFLAGS} \
-    -std=c++11 \
-    -DVERSION=\"$(get_conf builder version)\" \
-    syncdaemon.cpp \
-    common.cpp \
-    configfile.cpp \
-    jsoncpp/dist/jsoncpp.cpp \
-    -Ijsoncpp/dist \
-    -llog \
-    -osyncdaemon \
-    -Wall \
-    -Wextra \
-    -pedantic
+ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=Application.mk clean
+ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=Application.mk
 
 # Static analyzer
 if false; then
@@ -91,9 +50,7 @@ if false; then
         -pedantic
 fi
 
-if [[ "${buildtype}" != debug-nonboot ]]; then
-    ${STRIP} syncdaemon
-fi
+cp libs/armeabi-v7a/syncdaemon .
 
 #if [[ "${buildtype}" == release ]] && which upx >/dev/null; then
 #    upx --lzma syncdaemon
