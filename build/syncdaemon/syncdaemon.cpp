@@ -518,6 +518,9 @@ int main(int argc, char *argv[]) {
     // https://github.com/android/platform_bionic/blob/master/libc/include/fcntl.h
     chmod("/data/local/tmp/syncdaemon.pid", 0644);
 
+    // Clear file
+    ftruncate(pid_fd, 0);
+
     if (argc > 1 && strcmp(argv[1], "--runonce") == 0) {
         write_pid(pid_fd);
         close(pid_fd);
