@@ -79,7 +79,7 @@ template <typename T> std::string to_string(T value) {
 }
 
 template <typename T> void free_vector(std::vector<T> const& vector) {
-    for (int i = 0; i < vector.size(); i++) {
+    for (unsigned int i = 0; i < vector.size(); i++) {
         delete vector[i];
     }
 }
@@ -170,7 +170,7 @@ void populate_roms() {
         }
     }
 
-    for (int i = 0; i < roms.size(); i++) {
+    for (unsigned int i = 0; i < roms.size(); i++) {
         LOGV("Discovered ROM ID %s", roms[i]->id.c_str());
         LOGV("- System: %s", roms[i]->system.c_str());
         LOGV("- Cache: %s", roms[i]->cache.c_str());
@@ -179,7 +179,7 @@ void populate_roms() {
 }
 
 std::string get_current_rom() {
-    for (int i = 0; i < roms.size(); i++) {
+    for (unsigned int i = 0; i < roms.size(); i++) {
         if (is_same_inode(SYSTEM + SEP + BUILD_PROP,
                 roms[i]->system + SEP + BUILD_PROP)) {
             return roms[i]->id;
@@ -213,14 +213,15 @@ int get_apk_information(struct rominformation *info, std::string package,
     // Find the dex cache file
     std::string dexcachedir1 = info->data + SEP + DEX_CACHE_DIR;
     std::string dexcachedir2 = info->cache + SEP + DEX_CACHE_DIR;
+    std::string dexname1 = search_directory(dexcachedir1,
+            DEX_CACHE_PREFIX + package + "-");
+    std::string dexname2 = search_directory(dexcachedir2,
+            DEX_CACHE_PREFIX + package + "-");
 
-    name = search_directory(dexcachedir1, DEX_CACHE_PREFIX + package + "-");
-    if (!name.empty()) {
-        apkinfo->cacheddex = dexcachedir1 + SEP + name;
-    } else {
-        name = search_directory(dexcachedir2,
-                                DEX_CACHE_PREFIX + package + "-");
-        apkinfo->cacheddex = dexcachedir2 + SEP + name;
+    if (!dexname1.empty()) {
+        apkinfo->cacheddex = dexcachedir1 + SEP + dexname1;
+    } else if (!dexname2.empty()) {
+        apkinfo->cacheddex = dexcachedir2 + SEP + dexname2;
     }
 
     return 0;
@@ -228,7 +229,7 @@ int get_apk_information(struct rominformation *info, std::string package,
 
 void sync_package(std::string package, std::vector<std::string> rom_ids) {
     std::string ids;
-    for (int i = 0; i < rom_ids.size(); i++) {
+    for (unsigned int i = 0; i < rom_ids.size(); i++) {
         if (i == rom_ids.size() - 1) {
             ids += rom_ids[i];
         } else {
@@ -242,10 +243,10 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
     struct rominformation *latest = nullptr;
     struct apkinformation *latestapk = nullptr;
 
-    for (int i = 0; i < rom_ids.size(); i++) {
+    for (unsigned int i = 0; i < rom_ids.size(); i++) {
         struct rominformation *info = nullptr;
 
-        for (int j = 0; j < roms.size(); j++) {
+        for (unsigned int j = 0; j < roms.size(); j++) {
             if (roms[j]->id == rom_ids[i]) {
                 info = roms[j];
             }
@@ -298,7 +299,7 @@ void sync_package(std::string package, std::vector<std::string> rom_ids) {
 
     LOGV("  - Latest version is in ROM: %s", latest->id.c_str());
 
-    for (int i = 0; i < apkinfos.size(); i++) {
+    for (unsigned int i = 0; i < apkinfos.size(); i++) {
         if (apkinfos[i] == latestapk) {
             continue;
         }
@@ -358,7 +359,7 @@ void sync_packages() {
     }
 
     std::vector<std::string> packages = ConfigFile::get_packages();
-    for (int i = 0; i < packages.size(); i++) {
+    for (unsigned int i = 0; i < packages.size(); i++) {
         std::string package = packages[i];
         std::vector<std::string> rom_ids = ConfigFile::get_rom_ids(package);
         // TODO: Share data in the future?
@@ -367,7 +368,7 @@ void sync_packages() {
     }
 }
 
-void cleanup(int signum) {
+void cleanup(int) {
     LOGV("Cleaning up ...");
 
     if (in_fd >= 0) {
@@ -385,7 +386,7 @@ void cleanup(int signum) {
         task_thread->join();
     }
 
-    for (int i = 0; i < roms.size(); i++) {
+    for (unsigned int i = 0; i < roms.size(); i++) {
         delete roms[i];
     }
 }
@@ -486,7 +487,7 @@ int begin() {
     return start_monitoring();
 }
 
-int write_pid(int fd) {
+void write_pid(int fd) {
     std::ostringstream ss;
     ss << "pid=" << getpid() << std::endl;
     ss << "version=" << VERSION << std::endl;
@@ -508,6 +509,7 @@ int main(int argc, char *argv[]) {
     int pid_fd = open("/data/local/tmp/syncdaemon.pid", O_CREAT | O_RDWR, 0644);
     int rc = flock(pid_fd, LOCK_EX | LOCK_NB);
     if (rc < 0 && errno == EWOULDBLOCK) {
+        close(pid_fd);
         LOGV("Another instance of syncdaemon is already running");
         return EXIT_FAILURE;
     }

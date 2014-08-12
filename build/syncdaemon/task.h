@@ -33,7 +33,7 @@ public:
             cond_.wait(mlock);
         }
 
-        for (int i = 0; i < delay; i++) {
+        for (unsigned int i = 0; i < delay; i++) {
             if (should_kill) {
                 should_kill = false;
                 return false;
@@ -67,7 +67,8 @@ public:
         }
     }
 
-    SingleDelayedTask(unsigned int seconds) : delay(seconds) {
+    SingleDelayedTask(unsigned int seconds) : delay(seconds),
+            can_run(false), should_kill(false) {
     }
 
     SingleDelayedTask() = default;

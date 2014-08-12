@@ -21,6 +21,8 @@
 #include <string>
 
 // Logging
+#ifdef __ANDROID_API__
+
 #include <android/log.h>
 
 #define LOG_TAG "syncdaemon"
@@ -31,6 +33,18 @@
 #define LOGI(...) LOG(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGV(...) LOG(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) LOG(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+
+#else
+
+#include <cstdio>
+
+#define LOGD(...) printf(__VA_ARGS__); printf("\n")
+#define LOGE(...) printf(__VA_ARGS__); printf("\n")
+#define LOGI(...) printf(__VA_ARGS__); printf("\n")
+#define LOGV(...) printf(__VA_ARGS__); printf("\n")
+#define LOGW(...) printf(__VA_ARGS__); printf("\n")
+
+#endif
 
 static const std::string BUILD_PROP = "build.prop";
 

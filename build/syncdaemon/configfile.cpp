@@ -136,7 +136,7 @@ std::vector<std::string> ConfigFile::get_rom_ids_1(std::string package) {
         return rom_ids;
     }
 
-    for (int i = 0; i < syncacross.size(); i++) {
+    for (unsigned int i = 0; i < syncacross.size(); i++) {
         rom_ids.push_back(syncacross[i].asString());
     }
 
@@ -166,7 +166,7 @@ bool ConfigFile::remove_rom_id_1(std::string package, std::string rom_id) {
 
     // jsoncpp has no built-in way of removing items from an array
     Json::Value new_array(Json::arrayValue);
-    for (int i = 0; i < syncacross.size(); i++) {
+    for (unsigned int i = 0; i < syncacross.size(); i++) {
         std::string value = syncacross[i].asString();
         if (rom_id == value) {
             removed = true;

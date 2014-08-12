@@ -86,6 +86,8 @@ int recursively_delete(std::string directory) {
                 LOGE("Failed to remove %s", path.c_str());
             }
         }
+
+        closedir(dir);
     }
 
     // Ignore return values from recursive calls since rmdir() will fail anyway

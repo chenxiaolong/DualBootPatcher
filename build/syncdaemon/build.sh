@@ -58,7 +58,38 @@ ${CXX} ${CXXFLAGS} ${LDFLAGS} \
     jsoncpp/dist/jsoncpp.cpp \
     -Ijsoncpp/dist \
     -llog \
-    -osyncdaemon
+    -osyncdaemon \
+    -Wall \
+    -Wextra \
+    -pedantic
+
+# Static analyzer
+if false; then
+    cppcheck \
+        --enable=all \
+        --inconclusive \
+        common.cpp \
+        configfile.cpp \
+        syncdaemon.cpp \
+        -Ijsoncpp/dist \
+        --force
+fi
+
+# x86 build
+if false; then
+    g++ \
+        -DVERSION=\"$(get_conf builder version)\" \
+        -std=c++11 \
+        common.cpp \
+        configfile.cpp \
+        syncdaemon.cpp \
+        jsoncpp/dist/jsoncpp.cpp \
+        -osyncdaemon_x86 \
+        -Ijsoncpp/dist \
+        -Wall \
+        -Wextra \
+        -pedantic
+fi
 
 if [[ "${buildtype}" != debug-nonboot ]]; then
     ${STRIP} syncdaemon
