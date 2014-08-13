@@ -117,17 +117,20 @@ def build(filename, board=None, base=None, cmdline=None, page_size=None,
         f.close()
         dt_size = len(dt_data)
 
-    sha = hashlib.sha1()
-    sha.update(kernel_data)
-    sha.update(struct.pack('<I', kernel_size))
-    sha.update(ramdisk_data)
-    sha.update(struct.pack('<I', ramdisk_size))
-    if second_data:
-        sha.update(second_data)
-        sha.update(struct.pack('<I', second_size))
-    if dt_data:
-        sha.update(dt_data)
-        sha.update(struct.pack('<I', dt_size))
+    try:
+        sha = hashlib.sha1()
+        sha.update(kernel_data)
+        sha.update(struct.pack('<I', kernel_size))
+        sha.update(ramdisk_data)
+        sha.update(struct.pack('<I', ramdisk_size))
+        if second_data:
+            sha.update(second_data)
+            sha.update(struct.pack('<I', second_size))
+        if dt_data:
+            sha.update(dt_data)
+            sha.update(struct.pack('<I', dt_size))
+    except struct.error as e:
+        raise MkbootimgError(str(e))
 
     f = open(filename, 'wb')
 
