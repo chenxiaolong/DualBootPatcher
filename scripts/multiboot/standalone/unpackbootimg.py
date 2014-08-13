@@ -19,8 +19,6 @@
 from __future__ import print_function
 
 import binascii
-import gzip
-import hashlib
 import os
 import struct
 import sys
@@ -29,6 +27,10 @@ BOOT_MAGIC = "ANDROID!"
 BOOT_MAGIC_SIZE = 8
 BOOT_NAME_SIZE = 16
 BOOT_ARGS_SIZE = 512
+
+
+class UnpackbootimgError(Exception):
+    pass
 
 
 def read_padding(f, itemsize, pagesize):
@@ -46,7 +48,7 @@ def read_padding(f, itemsize, pagesize):
 
 def bytes_to_str(data):
     temp = binascii.hexlify(data).decode("utf-8")
-    #return "\\x" + "\\x".join(a + b for a, b in zip(temp[::2], temp[1::2]))
+    # return "\\x" + "\\x".join(a + b for a, b in zip(temp[::2], temp[1::2]))
     return "".join(a + b for a, b in zip(temp[::2], temp[1::2]))
 
 
@@ -76,31 +78,36 @@ def extract(filename, directory):
         i += 1
 
     if i > 512:
-        raise Exception("Android header not found")
+        raise UnpackbootimgError("Android header not found")
 
     # Read Android header
     f.seek(0, os.SEEK_SET)
 
     sformat = '<'
-    sformat += str(BOOT_MAGIC_SIZE) + 's'  # magic
-    sformat += '10I'                       # kernel_size, kernel_addr,
-                                           # ramdisk_size, ramdisk_addr,
-                                           # second_size, second_addr,
-                                           # tags_addr, page_size,
-                                           # dt_size, unused
-    sformat += str(BOOT_NAME_SIZE) + 's'   # name
-    sformat += str(BOOT_ARGS_SIZE) + 's'   # cmdline
-    sformat += str(8 * 4) + 's'            # id (unsigned[8])
+    # magic
+    sformat += str(BOOT_MAGIC_SIZE) + 's'
+    # kernel_size, kernel_addr, ramdisk_size, ramdisk_addr,
+    # second_size, second_addr, tags_addr, page_size, dt_size, unused
+    sformat += '10I'
+    # name
+    sformat += str(BOOT_NAME_SIZE) + 's'
+    # cmdline
+    sformat += str(BOOT_ARGS_SIZE) + 's'
+    # id (unsigned[8])
+    sformat += str(8 * 4) + 's'
 
     header_size = struct.calcsize(sformat)
     header = f.read(header_size)
 
-    magic, kernel_size, kernel_addr, \
-        ramdisk_size, ramdisk_addr, \
-        second_size, second_addr, \
-        tags_addr, page_size, \
-        dt_size, unused, \
-        board, cmdline, ident = struct.unpack(sformat, header)
+    try:
+        magic, kernel_size, kernel_addr, \
+            ramdisk_size, ramdisk_addr, \
+            second_size, second_addr, \
+            tags_addr, page_size, \
+            dt_size, unused, \
+            board, cmdline, ident = struct.unpack(sformat, header)
+    except struct.error as e:
+        raise UnpackbootimgError(str(e))
 
     print_i("- magic:        " + magic.decode('ASCII'))
     print_i("- kernel_size:  " + str(kernel_size))
@@ -184,7 +191,7 @@ def extract(filename, directory):
     f.close()
 
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 3:
         print_i("Usage: %s -i boot.img [-o output_directory]" % sys.argv[0])
         sys.exit(1)
@@ -217,9 +224,15 @@ if __name__ == "__main__":
     elif not os.path.exists(directory):
         os.makedirs(directory)
 
+    global use_stdout
+
     try:
         use_stdout = True
         extract(filename, directory)
-    except Exception as e:
+    except (OSError, UnpackbootimgError) as e:
         use_stdout = False
         print_i("Failed: " + str(e))
+
+
+if __name__ == "__main__":
+    main()
