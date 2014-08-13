@@ -138,10 +138,10 @@ class MultibootPatcher(Patcher):
 
         OS.ui.details('Unpacking boot image ...')
 
-        bootimageinfo = bootimage.extract(path, tempdir,
-                                          device=self.file_info.device)
-        if not bootimageinfo:
-            OS.ui.failed(bootimage.error_msg)
+        try:
+            bootimageinfo = bootimage.extract(path, tempdir)
+        except bootimage.ExtractError as e:
+            OS.ui.failed(str(e))
             return None
 
         selinux = config.get_selinux(self.file_info.device)
@@ -238,8 +238,10 @@ class MultibootPatcher(Patcher):
 
         new_boot_image = tempfile.mkstemp()
 
-        if not bootimage.create(bootimageinfo, new_boot_image[1]):
-            OS.ui.failed('Failed to create boot image: ' + bootimage.error_msg)
+        try:
+            bootimage.create(bootimageinfo, new_boot_image[1])
+        except bootimage.CreateError as e:
+            OS.ui.failed('Failed to create boot image: ' + str(e))
             os.close(new_boot_image[0])
             os.remove(new_boot_image[1])
             return None
@@ -361,7 +363,6 @@ class MultibootPatcher(Patcher):
         z_input = zipfile.ZipFile(self.file_info.filename, 'r')
         z_output = zipfile.ZipFile(new_zip_file[1], 'w', zipfile.ZIP_DEFLATED)
 
-        progress_current = 0
         progress_total = len(z_input.infolist()) - len(files_to_patch)
         if self.file_info.patchinfo.has_boot_image:
             progress_total -= len(bootimages)
@@ -615,7 +616,6 @@ class PrimaryUpgradePatcher(Patcher):
         z_input = zipfile.ZipFile(self.file_info.filename, 'r')
         z_output = zipfile.ZipFile(new_zip_file[1], 'w', zipfile.ZIP_DEFLATED)
 
-        progress_current = 0
         # Five extra files
         progress_total = len(z_input.infolist()) + 6
 
@@ -729,10 +729,10 @@ class SyncdaemonPatcher(Patcher):
 
         OS.ui.details('Unpacking boot image ...')
 
-        bootimageinfo = bootimage.extract(path, tempdir,
-                                          device=self.file_info.device)
-        if not bootimageinfo:
-            OS.ui.failed(bootimage.error_msg)
+        try:
+            bootimageinfo = bootimage.extract(path, tempdir)
+        except bootimage.ExtractError as e:
+            OS.ui.failed(str(e))
             return None
 
         target_ramdisk = os.path.join(tempdir, 'ramdisk.cpio')
@@ -820,8 +820,10 @@ class SyncdaemonPatcher(Patcher):
 
         new_boot_image = tempfile.mkstemp()
 
-        if not bootimage.create(bootimageinfo, new_boot_image[1]):
-            OS.ui.failed('Failed to create boot image: ' + bootimage.error_msg)
+        try:
+            bootimage.create(bootimageinfo, new_boot_image[1])
+        except bootimage.CreateError as e:
+            OS.ui.failed('Failed to create boot image: ' + str(e))
             os.close(new_boot_image[0])
             os.remove(new_boot_image[1])
             return None

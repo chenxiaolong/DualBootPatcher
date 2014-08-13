@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import multiboot.cmd as cmd
 import multiboot.debug as debug
 import multiboot.fileio as fileio
 import multiboot.operatingsystem as OS
@@ -23,7 +22,13 @@ import multiboot.standalone.unpackbootimg as unpackbootimg
 
 import os
 
-error_msg = None
+
+class CreateError(Exception):
+    pass
+
+
+class ExtractError(Exception):
+    pass
 
 
 class BootImageInfo:
@@ -45,8 +50,6 @@ class BootImageInfo:
 
 
 def create(info, output_file):
-    global output, error, error_msg
-
     try:
         mkbootimg.build(
             output_file,
@@ -63,15 +66,11 @@ def create(info, output_file):
             second=info.second,
             dt=info.dt
         )
-        return True
-    except Exception as e:
-        error_msg = 'Failed to create boot image: ' + str(e)
-        return False
+    except (OSError, mkbootimg.MkbootimgError) as e:
+        raise CreateError('Failed to create boot image: ' + str(e))
 
 
-def extract(boot_image, output_dir, device=None):
-    global output, error, error_msg
-
+def extract(boot_image, output_dir):
     try:
         if not OS.is_android() and not debug.is_debug():
             unlokibootimg.show_output = False
@@ -81,9 +80,9 @@ def extract(boot_image, output_dir, device=None):
             unlokibootimg.extract(boot_image, output_dir)
         else:
             unpackbootimg.extract(boot_image, output_dir)
-    except Exception as e:
-        error_msg = 'Failed to extract boot image'
-        return None
+    except (OSError, unlokibootimg.UnlokibootimgError,
+            unpackbootimg.UnpackbootimgError) as e:
+        raise ExtractError('Failed to extract boot image: ' + str(e))
 
     info = BootImageInfo()
 
