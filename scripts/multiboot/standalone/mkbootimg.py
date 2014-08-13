@@ -18,18 +18,21 @@
 # Python 2 compatibility
 from __future__ import print_function
 
-import binascii
-import gzip
+import argparse
 import hashlib
 import os
 import struct
 import sys
-import zlib
+import textwrap
 
 BOOT_MAGIC = "ANDROID!"
 BOOT_MAGIC_SIZE = 8
 BOOT_NAME_SIZE = 16
 BOOT_ARGS_SIZE = 512
+
+
+class MkbootimgError(Exception):
+    pass
 
 
 def write_padding(f, pagesize, itemsize):
@@ -62,34 +65,37 @@ def build(filename, board=None, base=None, cmdline=None, page_size=None,
           kernel_offset=None, ramdisk_offset=None, second_offset=None,
           tags_offset=None, kernel=None, ramdisk=None, second=None, dt=None):
     # Defaults
-    if board is None:          board          = ""
-    if cmdline is None:        cmdline        = ""
-    if base is None:           base           = 0x10000000
-    if kernel_offset is None:  kernel_offset  = 0x00008000
-    if ramdisk_offset is None: ramdisk_offset = 0x01000000
-    if second_offset is None:  second_offset  = 0x00f00000
-    if tags_offset is None:    tags_offset    = 0x00000100
+    if board is None:
+        board = ""
+    if cmdline is None:
+        cmdline = ""
+    if base is None:
+        base = 0x10000000
+    if kernel_offset is None:
+        kernel_offset = 0x00008000
+    if ramdisk_offset is None:
+        ramdisk_offset = 0x01000000
+    if second_offset is None:
+        second_offset = 0x00f00000
+    if tags_offset is None:
+        tags_offset = 0x00000100
 
-    kernel_addr  = base + kernel_offset
+    kernel_addr = base + kernel_offset
     ramdisk_addr = base + ramdisk_offset
-    second_addr  = base + second_offset
-    tags_addr    = base + tags_offset
+    second_addr = base + second_offset
+    tags_addr = base + tags_offset
 
     if len(board) >= BOOT_NAME_SIZE:
-        raise Exception("Board name too large")
+        raise ValueError("Board name too large")
 
     if len(cmdline) > BOOT_ARGS_SIZE - 1:
-        raise Exception("Kernel command line too large")
+        raise ValueError("Kernel command line too large")
 
-    kernel_data = None
-    kernel_size = 0
     f = open(kernel, 'rb')
     kernel_data = f.read()
     f.close()
     kernel_size = len(kernel_data)
 
-    ramdisk_data = None
-    ramdisk_size = 0
     f = open(ramdisk, 'rb')
     ramdisk_data = f.read()
     f.close()
@@ -126,33 +132,39 @@ def build(filename, board=None, base=None, cmdline=None, page_size=None,
     f = open(filename, 'wb')
 
     sformat = '<'
-    sformat += str(BOOT_MAGIC_SIZE) + 's'  # magic
-    sformat += '10I'                       # kernel_size, kernel_addr,
-                                           # ramdisk_size, ramdisk_addr,
-                                           # second_size, second_addr,
-                                           # tags_addr, page_size,
-                                           # dt_size, unused
-    sformat += str(BOOT_NAME_SIZE) + 's'   # name
-    sformat += str(BOOT_ARGS_SIZE) + 's'   # cmdline
-    sformat += str(8 * 4) + 's'            # id (unsigned[8])
+    # magic
+    sformat += str(BOOT_MAGIC_SIZE) + 's'
+    # kernel_size, kernel_addr, ramdisk_size, ramdisk_addr,
+    # second_size, second_addr, tags_addr, page_size, dt_size, unused
+    sformat += '10I'
+    # name
+    sformat += str(BOOT_NAME_SIZE) + 's'
+    # cmdline
+    sformat += str(BOOT_ARGS_SIZE) + 's'
+    # id (unsigned[8])
+    sformat += str(8 * 4) + 's'
 
-    f.write(struct.pack(
-        sformat,
-        BOOT_MAGIC.encode('ascii'), # magic
-        kernel_size,                # kernel_size
-        kernel_addr,                # kernel_addr
-        ramdisk_size,               # ramdisk_size
-        ramdisk_addr,               # ramdisk_addr
-        second_size,                # second_size
-        second_addr,                # second_addr
-        tags_addr,                  # tags_addr
-        page_size,                  # page_size
-        dt_size,                    # dt_size
-        0,                          # unused
-        board.encode('ascii'),      # name
-        cmdline.encode('ascii'),    # cmdline
-        sha.digest()                # id
-    ))
+    try:
+        f.write(struct.pack(
+            sformat,
+            BOOT_MAGIC.encode('ascii'),  # magic
+            kernel_size,                 # kernel_size
+            kernel_addr,                 # kernel_addr
+            ramdisk_size,                # ramdisk_size
+            ramdisk_addr,                # ramdisk_addr
+            second_size,                 # second_size
+            second_addr,                 # second_addr
+            tags_addr,                   # tags_addr
+            page_size,                   # page_size
+            dt_size,                     # dt_size
+            0,                           # unused
+            board.encode('ascii'),       # name
+            cmdline.encode('ascii'),     # cmdline
+            sha.digest()                 # id
+        ))
+
+    except struct.error as e:
+        raise MkbootimgError('Failed to pack arguments: ' + str(e))
 
     write_padding(f, page_size, struct.calcsize(sformat))
 
@@ -173,7 +185,7 @@ def build(filename, board=None, base=None, cmdline=None, page_size=None,
     f.close()
 
 
-def auto_from_dir(directory, prefix):
+def auto_from_dir(output, directory, prefix):
     prefix = os.path.join(directory, prefix)
 
     base = None
@@ -215,12 +227,16 @@ def auto_from_dir(directory, prefix):
     kernel = None
     if os.path.exists(prefix + '-zImage'):
         kernel = prefix + '-zImage'
+    else:
+        raise FileNotFoundError(prefix + '-zImage')
 
     ramdisk = None
     if os.path.exists(prefix + '-ramdisk.gz'):
         ramdisk = prefix + '-ramdisk.gz'
     elif os.path.exists(prefix + '-ramdisk.lz4'):
         ramdisk = prefix + '-ramdisk.lz4'
+    else:
+        raise FileNotFoundError(prefix + '-ramdisk.{gz,lz4}')
 
     second = None
     if os.path.exists(prefix + '-second'):
@@ -245,127 +261,96 @@ def auto_from_dir(directory, prefix):
           dt=dt)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print_i("Usage: %s" % sys.argv[0])
-        print_i("       -o|--output <filename>")
-        print_i("")
-        print_i("Manual mode:")
-        print_i("       [ --board <name> ]")
-        print_i("       [ --base <address> ]")
-        print_i("       [ --cmdline <kernel-cmdline> ]")
-        print_i("       [ --pagesize <size> ]")
-        print_i("       [ --kernel_offset <address> ]")
-        print_i("       [ --ramdisk_offset <address> ]")
-        print_i("       [ --second_offset <address> ]")
-        print_i("       [ --tags_offset <address> ]")
-        print_i("       --kernel <filename>")
-        print_i("       --ramdisk <filename>")
-        print_i("       [ --second <filename> ]")
-        print_i("       [ --dt <filename> ]")
-        print_i("")
-        print_i("Automatic mode:")
-        print_i("       --auto_dir <directory>")
-        print_i("       --auto_prefix <prefix>")
-        sys.exit(1)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.formatter_class = argparse.RawDescriptionHelpFormatter
+    parser.description = textwrap.dedent('''
+    mkbootimg - Create Android boot images
+    --------------------------------------
+    ''')
 
-    board = None
-    base = None
-    cmdline = None
-    page_size = None
-    kernel_offset = None
-    ramdisk_offset = None
-    second_offset = None
-    tags_offset = None
-    kernel = None
-    ramdisk = None
-    second = None
-    dt = None
-    output = None
+    parser.add_argument('-o', '--output',
+                        help='Path to resulting boot image',
+                        required=True)
 
-    auto_dir = None
-    auto_base = None
+    manualmode = parser.add_argument_group('Manual mode')
+    manualmode.add_argument('--board',
+                            help='ASCII product board name')
+    manualmode.add_argument('--base',
+                            help='Base address that the offsets are added to')
+    manualmode.add_argument('--cmdline',
+                            help='Kernel command line')
+    manualmode.add_argument('--pagesize',
+                            help='Page size of the flash memory')
+    manualmode.add_argument('--kernel_offset',
+                            help='Physical address for the kernel')
+    manualmode.add_argument('--ramdisk_offset',
+                            help='Physical address for the ramdisk')
+    manualmode.add_argument('--second_offset',
+                            help='Physical address for second bootloader')
+    manualmode.add_argument('--tags_offset',
+                            help='Physical address for kernel tags')
+    manualmode.add_argument('--kernel',
+                            help='Path to kernel image',
+                            required=True)
+    manualmode.add_argument('--ramdisk',
+                            help='Path to ramdisk image',
+                            required=True)
+    manualmode.add_argument('--second',
+                            help='Path to second bootloader image')
+    manualmode.add_argument('--dt',
+                            help='Path to device tree image')
 
-    i = 1
-    while i < len(sys.argv):
-        if sys.argv[i] == '--board':
-            board = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--base':
-            base = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--cmdline':
-            cmdline = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--pagesize':
-            page_size = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--kernel_offset':
-            kernel_offset = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--ramdisk_offset':
-            ramdisk_offset = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--second_offset':
-            second_offset = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--tags_offset':
-            tags_offset = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--kernel':
-            kernel = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--ramdisk':
-            ramdisk = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--second':
-            second = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--dt':
-            dt = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '-o' or sys.argv[i] == '--output':
-            output = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--auto_dir':
-            auto_dir = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == '--auto_prefix':
-            auto_base = sys.argv[i + 1]
-            i += 2
-        else:
-            print_i("Unrecognized argument " + sys.argv[i])
-            sys.exit(1)
+    automode = parser.add_argument_group('Automatic mode')
+    automode.add_argument('--auto_dir',
+                          help='Directory containing extracted boot image')
+    automode.add_argument('--auto_prefix',
+                          help='Filename prefix of the extracted files')
 
-    if not output:
-        print_i("No output filename specified")
-        sys.exit(1)
+    args = parser.parse_args()
+
+    board = args.board
+    base = args.base
+    cmdline = args.cmdline
+    page_size = args.pagesize
+    kernel_offset = args.kernel_offset
+    ramdisk_offset = args.ramdisk_offset
+    second_offset = args.second_offset
+    tags_offset = args.tags_offset
+    kernel = args.kernel
+    ramdisk = args.ramdisk
+    second = args.second
+    dt = args.dt
+    output = args.output
+
+    auto_dir = args.auto_dir
+    auto_base = args.auto_prefix
 
     if (auto_dir and not auto_base) or (auto_base and not auto_dir):
-        print_i("Automatic mode used, but second argument is missing")
+        print_i('Automatic mode used, but second argument is missing')
         sys.exit(1)
+
+    global use_stdout
 
     try:
         use_stdout = True
 
         if auto_dir and auto_base:
-            auto_from_dir(auto_dir, auto_base)
+            auto_from_dir(output, auto_dir, auto_base)
 
         else:
-            if not kernel:
-                print_i("No kernel specified")
-                sys.exit(1)
-
-            if not ramdisk:
-                print_i("No ramdisk specified")
-                sys.exit(1)
-
-            if base:           base           = int(base, 16)
-            if page_size:      page_size      = int(page_size)
-            if kernel_offset:  kernel_offset  = int(kernel_offset, 16)
-            if ramdisk_offset: ramdisk_offset = int(ramdisk_offset, 16)
-            if second_offset:  second_offset  = int(second_offset, 16)
-            if tags_offset:    tags_offset    = int(tags_offset, 16)
+            if base:
+                base = int(base, 16)
+            if page_size:
+                page_size = int(page_size)
+            if kernel_offset:
+                kernel_offset = int(kernel_offset, 16)
+            if ramdisk_offset:
+                ramdisk_offset = int(ramdisk_offset, 16)
+            if second_offset:
+                second_offset = int(second_offset, 16)
+            if tags_offset:
+                tags_offset = int(tags_offset, 16)
 
             build(output,
                   board=board,
@@ -380,6 +365,16 @@ if __name__ == "__main__":
                   ramdisk=ramdisk,
                   second=second,
                   dt=dt)
-    except Exception as e:
+
+    except OSError as e:
         use_stdout = False
-        print_i("Failed: " + str(e))
+        print_i('Failed: ' + str(e))
+
+    except MkbootimgError as e:
+        use_stdout = False
+        print_i(str(e) +
+                ' (Most likely a parameter or file is missing or incorrect)')
+
+
+if __name__ == "__main__":
+    parse_args()
