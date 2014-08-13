@@ -20,26 +20,31 @@ import multiboot.plugins as plugins
 import multiboot.operatingsystem as OS
 import ramdisks.common.common as common
 
-import imp
 import os
 import re
 
 
+class RamdiskPatchError(Exception):
+    pass
+
+
 def process_def(def_file, cpiofile, partition_config):
-    debug.debug("Loading ramdisk definition %s" % def_file)
+    try:
+        debug.debug("Loading ramdisk definition %s" % def_file)
 
-    for line in fileio.all_lines(def_file):
-        if line.startswith("pyscript"):
-            path = re.search(r"^pyscript\s*=\s*\"?(.*)\"?\s*$", line).group(1)
+        for line in fileio.all_lines(def_file):
+            if line.startswith("pyscript"):
+                path = re.search(r"^pyscript\s*=\s*\"?(.*)\"?\s*$", line).group(1)
 
-            debug.debug("Loading pyscript " + path)
+                debug.debug("Loading pyscript " + path)
 
-            plugin = plugins.ramdisks[path]
+                plugin = plugins.ramdisks[path]
 
-            common.init(cpiofile, partition_config)
-            plugin.patch_ramdisk(cpiofile, partition_config)
+                common.init(cpiofile, partition_config)
+                plugin.patch_ramdisk(cpiofile, partition_config)
 
-    return True
+    except Exception as e:
+        raise RamdiskPatchError(str(e))
 
 
 def get_all_ramdisks(device):

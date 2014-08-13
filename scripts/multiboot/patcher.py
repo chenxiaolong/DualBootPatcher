@@ -174,7 +174,7 @@ class MultibootPatcher(Patcher):
                 cf,
                 self.file_info.partconfig
             )
-        except Exception as e:
+        except ramdisk.RamdiskPatchError as e:
             OS.ui.failed('Failed to patch ramdisk: ' + str(e))
             return None
 
