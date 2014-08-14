@@ -114,7 +114,7 @@
   <!--Name for the autopatcher radio button-->
   <string name="customopts_autopatcher">Autopatcher</string>
   <!--Name for the patch file radio button-->
-  <string name="customopts_patchfile">Patcha il file</string>
+  <string name="customopts_patchfile">File patch</string>
   <!--Name for the button to select a .patch or .diff file-->
   <string name="customopts_choosepatch">Scegli la patch</string>
   <!--Name for the option to disable checks for the device's model-->

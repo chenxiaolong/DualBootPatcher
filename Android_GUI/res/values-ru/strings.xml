@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
   <!--Name of the app built in release mode-->
-  <string name="app_name_release">Прошиватель Двойного Старта</string>
+  <string name="app_name_release">Dual Boot Patcher</string>
   <!--Name of the app built in debug mode-->
-  <string name="app_name_debug">Прошиватель Двойного Старта (отладка)</string>
+  <string name="app_name_debug">Dual Boot Patcher (отладка)</string>
   <!--Name of the app built in snapshot mode-->
-  <string name="app_name_snapshot">Прошиватель Двойного Старта (закладка)</string>
+  <string name="app_name_snapshot">Dual Boot Patcher (закладка)</string>
   <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
   <string name="wait_until_finished">Подождите до окончания всех работ.</string>
   <!--Indicate the version of the app on the about screen-->
@@ -36,6 +36,7 @@
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Прошить Zip Файл</string>
   <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Свободное Место</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Настройки ROM-а</string>
   <!--Nagivation drawer item for rebooting the device-->
@@ -139,9 +140,13 @@
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s файлов</string>
   <!--Title for the partition's mount point-->
+  <string name="free_space_mount_point">Точка монтирования:</string>
   <!--Title for total size of partition-->
+  <string name="free_space_total_size">Обший размер:</string>
   <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Занято:</string>
   <!--Title for free space on partition-->
+  <string name="free_space_free_size">Свободно:</string>
   <!--Format string for gigabytes-->
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
