@@ -294,11 +294,9 @@ def parse_args():
     manualmode.add_argument('--tags_offset',
                             help='Physical address for kernel tags')
     manualmode.add_argument('--kernel',
-                            help='Path to kernel image',
-                            required=True)
+                            help='Path to kernel image')
     manualmode.add_argument('--ramdisk',
-                            help='Path to ramdisk image',
-                            required=True)
+                            help='Path to ramdisk image')
     manualmode.add_argument('--second',
                             help='Path to second bootloader image')
     manualmode.add_argument('--dt',
@@ -331,6 +329,10 @@ def parse_args():
 
     if (auto_dir and not auto_base) or (auto_base and not auto_dir):
         print_i('Automatic mode used, but second argument is missing')
+        sys.exit(1)
+
+    if not auto_dir and not auto_base and (not kernel or not ramdisk):
+        print_i('The --kernel and --ramdisk parameters must be passed')
         sys.exit(1)
 
     global use_stdout
