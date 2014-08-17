@@ -125,7 +125,7 @@ def build(filename, board=None, base=None, cmdline=None, page_size=None,
         sha.update(struct.pack('<I', ramdisk_size))
         if second_data:
             sha.update(second_data)
-            sha.update(struct.pack('<I', second_size))
+        sha.update(struct.pack('<I', second_size))
         if dt_data:
             sha.update(dt_data)
             sha.update(struct.pack('<I', dt_size))
