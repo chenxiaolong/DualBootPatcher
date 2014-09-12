@@ -2,8 +2,6 @@ Important: Make sure you have enough disk space before trying to patch. The
 free space needed is the size of the original file + the extracted size of the
 file. For Windows, this is the amount of space you need on the C: drive.
 
-To use the GUI on Linux, make sure PyQt5 for Python 3 is installed.
-
 Donators:
 
 Thanks to all the donators for supporting this project!

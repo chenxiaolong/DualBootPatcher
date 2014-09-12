@@ -35,20 +35,18 @@ Compiling from Source
     - gcc-multilib
     - zip
     - upx
-    - mono
-    - ImageMagick
 
     On *Fedora*, run:
 
-    `sudo yum install axel p7zip-plugins patch gcc-c++ zip upx mono-core ImageMagick glibc-static.i686 glibc-devel.i686`
+    `sudo yum install axel p7zip-plugins patch gcc-c++ zip upx glibc-static.i686 glibc-devel.i686`
 
     On *Arch Linux*, run:
 
-    `sudo pacman -Sy axel p7zip patch gcc-multilib zip upx mono imagemagick`
+    `sudo pacman -Sy axel p7zip patch gcc-multilib zip upx`
 
     On *Ubuntu*, run:
 
-    `sudo apt-get install axel p7zip-full patch g++ zip upx-ucl mono-mcs imagemagick`
+    `sudo apt-get install axel p7zip-full patch g++ zip upx-ucl`
 
 3. Create a configuration file `build/build.custom.conf` (or copy `build/build.conf`) for your system. Any options set here will override `build.conf`.
 

@@ -30,7 +30,6 @@ import re
 import shutil
 import subprocess
 import tarfile
-import tempfile
 import textwrap
 import zipfile
 from urllib.request import urlretrieve
@@ -171,64 +170,6 @@ def extract_tar(filename, destdir, files=None, regex=None):
             tar.extractall(destdir)
 
 
-def extract_msi(filename, destdir):
-    print('Extracting %s ...' % filename)
-
-    paths = get_windows_path([filename, destdir])
-    source = paths[0]
-    target = paths[1]
-
-    exit_status, output, error = run_command(
-        ['wine', 'msiexec', '/a', source, '/qb', 'TARGETDIR=' + target]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to extract ' + filename)
-
-
-def extract_7z(filename, destdir):
-    print('Extracting %s ...' % filename)
-
-    exit_status, output, error = run_command(
-        ['7z', 'x', '-o' + destdir, filename]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to extract ' + filename)
-
-
-def remove_files(listfile, basedir):
-    missing = list()
-
-    with open(listfile, 'r') as f:
-        for line in f:
-            if line:
-                line = line.strip('\n')
-            if not line:
-                continue
-
-            toremove = os.path.join(basedir, line)
-
-            if not os.path.exists(toremove):
-                missing.append(line)
-                continue
-
-            isdir = False
-            if line.endswith('/'):
-                isdir = True
-            elif os.path.isdir(toremove):
-                isdir = True
-
-            if isdir:
-                shutil.rmtree(toremove)
-            else:
-                os.remove(toremove)
-
-    if missing:
-        raise Exception('Fix %s: these are missing: %s' %
-                        (listfile, str(missing)))
-
-
 def upx_compress(files, lzma=True, force=False):
     if type(files) == str:
         files = [files]
@@ -284,209 +225,6 @@ def get_target_info(android=False):
     return (targetname, targetdir, targetfile)
 
 
-def get_windows_path(paths):
-    if (type(paths) == str):
-        paths = [paths]
-
-    exit_status, output, error = run_command(
-        ['winepath', '-w'] + paths
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to get Windows paths using winepath')
-
-    return output.split('\n')[:-1]
-
-
-def create_python_windows(targetdir):
-    pyver = '3.4.1'
-    url = 'http://python.org/ftp/python/%s/python-%s.msi' % (pyver, pyver)
-    md5 = '4940c3fad01ffa2ca7f9cc43a005b89a'
-
-    pyinst = os.path.join(builddir, 'downloads', 'python-%s.msi' % pyver)
-    pyport = os.path.join(targetdir, 'pythonportable')
-    removefiles = os.path.join(builddir, 'remove.winpython.txt')
-
-    download(url, filename=pyinst, md5=md5)
-
-    extract_msi(pyinst, pyport)
-
-    if buildtype == 'release':
-        upx_compress(glob.glob(pyport + os.sep + '*.dll'))
-        upx_compress(glob.glob(pyport + os.sep + '*.exe'), lzma=False)
-
-    print('Removing unneeded scripts and files ...')
-    remove_files(removefiles, pyport)
-    for root, dirs, files in os.walk(pyport):
-        if '__pycache__' in dirs:
-            shutil.rmtree(os.path.join(root, '__pycache__'))
-
-
-def create_python_android(targetdir):
-    pyver = '3.4.1'
-    filename = 'python-install-%s-no-log2.tar.xz' % pyver
-    url = 'http://fs1.d-h.st/download/00129/UQU/' + filename
-    md5 = '219ea78cc7d46eea1807953423c5d200'
-
-    pytar = os.path.join(builddir, 'downloads', filename)
-    pyport = os.path.join(targetdir, 'pythonportable')
-    removefiles = os.path.join(builddir, 'remove.androidpython.txt')
-
-    download(url, filename=pytar, md5=md5)
-
-    tempdir = tempfile.mkdtemp()
-    extract_tar(pytar, tempdir)
-    shutil.move(os.path.join(tempdir, 'python-install'), pyport)
-    shutil.rmtree(tempdir)
-
-    print('Removing unneeded scripts and files ...')
-    remove_files(removefiles, pyport)
-
-
-def create_pyyaml(targetdir, pysitelib):
-    yamlver = '3.11'
-    filename = 'PyYAML-%s.tar.gz' % yamlver
-    url = 'http://pyyaml.org/download/pyyaml/' + filename
-    md5 = 'f50e08ef0fe55178479d3a618efe21db'
-
-    tarball = os.path.join(builddir, 'downloads', filename)
-
-    download(url, filename=tarball, md5=md5)
-
-    tempdir = tempfile.mkdtemp()
-    extract_tar(tarball, tempdir)
-    shutil.move(os.path.join(tempdir, 'PyYAML-' + yamlver, 'lib3', 'yaml'),
-                os.path.join(pysitelib, 'yaml'))
-    shutil.rmtree(tempdir)
-
-
-def create_pyqt_windows(targetdir):
-    filename = 'PyQt5_QtBase5.3.1_Python3.4.1_win32_msvc2010.7z'
-    url = 'http://fs1.d-h.st/download/00128/Zwu/' + filename
-    md5 = 'ed614494e863fa44138e9f638ac95bfd'
-
-    pyqtinst = os.path.join(builddir, 'downloads', filename)
-    pyport = os.path.join(targetdir, 'pythonportable')
-    pysitelib = os.path.join(pyport, 'Lib', 'site-packages')
-    pyqtdir = os.path.join(pysitelib, 'PyQt5')
-    qtconf = os.path.join(pyport, 'qt.conf')
-
-    download(url, filename=pyqtinst, md5=md5)
-
-    extract_7z(pyqtinst, pysitelib)
-
-    if buildtype == 'release':
-        upx_compress([pysitelib + os.sep + 'sip.pyd'])
-
-        base = pyqtdir + os.sep
-        plugins = base + os.sep + 'plugins' + os.sep
-        dlls = os.sep + '*.dll'
-
-        upx_compress([base + 'Qt5Concurrent.dll'], lzma=False)
-        upx_compress([base + 'Qt5Core.dll'])
-        upx_compress([base + 'Qt5Gui.dll'])
-        upx_compress([base + 'Qt5Network.dll'])
-        upx_compress([base + 'Qt5OpenGL.dll'])
-        upx_compress([base + 'Qt5PrintSupport.dll'])
-        upx_compress([base + 'Qt5Sql.dll'])
-        upx_compress([base + 'Qt5Test.dll'])
-        upx_compress([base + 'Qt5Widgets.dll'])
-        upx_compress([base + 'Qt5Xml.dll'])
-
-        upx_compress([base + 'QtCore.pyd'])
-        upx_compress([base + 'QtGui.pyd'])
-        upx_compress([base + 'Qt.pyd'], lzma=False)
-        upx_compress([base + 'QtWidgets.pyd'])
-
-        upx_compress(glob.glob(plugins + 'accessible' + dlls), lzma=False)
-        upx_compress(glob.glob(plugins + 'bearer' + dlls), lzma=False)
-
-        upx_compress(plugins + 'imageformats' + os.sep + 'qgif.dll', lzma=False)
-        upx_compress(plugins + 'imageformats' + os.sep + 'qico.dll', lzma=False)
-        upx_compress(plugins + 'imageformats' + os.sep + 'qjpeg.dll')
-
-        upx_compress(plugins + 'platforms' + os.sep + 'qminimal.dll', lzma=False)
-        upx_compress(plugins + 'platforms' + os.sep + 'qoffscreen.dll', lzma=False)
-        # PyQt5 fails to run when this is compressed
-        #upx_compress(plugins + 'platforms' + os.sep + 'qwindows.dll', lzma=False)
-
-        upx_compress(glob.glob(plugins + 'printsupport' + dlls), lzma=False)
-        upx_compress(glob.glob(plugins + 'sqldrivers' + dlls), lzma=False)
-
-    print('Create qt.conf configuration file ...')
-    with open(qtconf, 'w') as f:
-        f.write('[Paths]\n')
-        f.write('Prefix = Lib/site-packages/PyQt5\n')
-        f.write('Binaries = Lib/site-packages/PyQt5\n')
-
-
-def create_binaries_windows(targetdir):
-    binpath = os.path.join(builddir, 'downloads')
-    tbinpath = os.path.join(targetdir, 'binaries', 'windows')
-
-    # Our mini-Cygwin :)
-    baseurl = "http://mirrors.kernel.org/sourceware/cygwin/x86/release"
-
-    f_cygwin = 'cygwin-1.7.28-2.tar.xz'
-    f_libintl = 'libintl8-0.18.1.1-2.tar.bz2'
-    f_libiconv = 'libiconv2-1.14-2.tar.bz2'
-    f_patch = 'patch-2.7.1-1.tar.bz2'
-    f_diffutils = 'diffutils-3.2-1.tar.bz2'
-
-    urls = [
-        baseurl + '/cygwin/' + f_cygwin,
-        baseurl + '/gettext/libintl8/' + f_libintl,
-        baseurl + '/libiconv/libiconv2/' + f_libiconv,
-        baseurl + '/patch/' + f_patch,
-        baseurl + '/diffutils/' + f_diffutils
-    ]
-
-    for url in urls:
-        filename = url.split('/')[-1]
-        download(url, directory=binpath)
-
-    extract_tar(
-        os.path.join(binpath, f_cygwin),
-        tbinpath,
-        files=['usr/bin/cygwin1.dll']
-    )
-    extract_tar(
-        os.path.join(binpath, f_libintl),
-        tbinpath,
-        files=['usr/bin/cygintl-8.dll']
-    )
-    extract_tar(
-        os.path.join(binpath, f_libiconv),
-        tbinpath,
-        files=['usr/bin/cygiconv-2.dll']
-    )
-    extract_tar(
-        os.path.join(binpath, f_patch),
-        tbinpath,
-        files=['usr/bin/patch.exe']
-    )
-    shutil.move(os.path.join(tbinpath, 'patch.exe'),
-                os.path.join(tbinpath, 'hctap.exe'))
-    extract_tar(
-        os.path.join(binpath, f_diffutils),
-        tbinpath,
-        files=['usr/bin/diff.exe']
-    )
-
-    binfiles = glob.glob(tbinpath + os.sep + '*.exe')
-    dllfiles = glob.glob(tbinpath + os.sep + '*.dll')
-
-    for f in binfiles + dllfiles:
-        os.chmod(f, 0o0755)
-
-    if buildtype == 'release':
-        upx_compress([tbinpath + os.sep + 'cygiconv-2.dll'])
-        upx_compress([tbinpath + os.sep + 'cygintl-8.dll'], lzma=False)
-        upx_compress([tbinpath + os.sep + 'cygwin1.dll'], force=True)
-        upx_compress([tbinpath + os.sep + 'diff.exe'])
-        upx_compress([tbinpath + os.sep + 'hctap.exe'])
-
-
 def create_android_toolchain():
     print('Creating Android NDK toolchain ...')
 
@@ -498,132 +236,6 @@ def create_android_toolchain():
 
     check_if_failed(exit_status, output, error,
                     'Failed to create Android NDK toolchain')
-
-
-def create_binaries_android(targetdir):
-    binpath = os.path.join(builddir, 'downloads')
-    tbinpath = os.path.join(targetdir, 'binaries', 'android')
-
-    os.makedirs(tbinpath)
-
-    filename = 'patch-2.7.tar.xz'
-    url = 'ftp://ftp.gnu.org/gnu/patch/' + filename
-    download(url, directory=binpath)
-
-    create_android_toolchain()
-    gccdir = os.path.join(builddir, 'compile', 'gcc', 'bin')
-
-    tempdir = tempfile.mkdtemp()
-
-    patchtar = os.path.join(binpath, filename)
-    extract_tar(patchtar, tempdir)
-    patchdir = os.path.join(tempdir, 'patch-2.7')
-
-    envpath = os.environ.copy()
-    envpath['PATH'] += os.pathsep + gccdir
-
-    exit_status, output, error = run_command(
-        ['./configure', '--host=arm-linux-androideabi'],
-        cwd=patchdir,
-        env=envpath
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to run ./configure for patch-2.7')
-
-    exit_status, output, error = run_command(
-        ['make'],
-        cwd=patchdir,
-        env=envpath
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to compile patch-2.7')
-
-    shutil.copy2(os.path.join(patchdir, 'src', 'patch'), tbinpath)
-
-    shutil.rmtree(tempdir)
-
-
-def create_shortcuts_windows(targetdir):
-    fail_compile = 'Failed to compile Windows launcher'
-
-    bingui = os.path.join(targetdir, 'PatchFileWindowsGUI.exe')
-    bincli = os.path.join(targetdir, 'PatchFileWindows.exe')
-
-    tempdir = tempfile.mkdtemp()
-
-    icon = os.path.join(androiddir, 'ic_launcher-web.png')
-    icon_sizes = [256, 64, 48, 40, 32, 24, 20, 16]
-
-    print('Generating icons for Windows ...')
-    for size in icon_sizes:
-        exit_status, output, error = run_command(
-            ['convert', '-resize', '%dx%d' % (size, size), icon,
-             'output-%d.ico' % size],
-            cwd=tempdir
-        )
-
-        check_if_failed(exit_status, output, error,
-                        'Failed to convert icon using ImageMagick')
-
-    icon_files = ['output-%d.ico' % x for x in icon_sizes]
-    exit_status, output, error = run_command(
-        ['convert'] + icon_files + ['combined.ico'],
-        cwd=tempdir
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to combine icons into a single .ico file')
-
-    # Compile launcher
-    print('Compiling Windows launcher executables ...')
-
-    exit_status, output, error = run_command(
-        ['gmcs', os.path.join(builddir, 'shortcuts', 'windows-exe.cs'),
-         '-win32icon:' + os.path.join(tempdir, 'combined.ico'),
-         '-target:winexe', '-define:GUI',
-         '-out:' + bingui]
-    )
-
-    check_if_failed(exit_status, output, error, fail_compile)
-
-    exit_status, output, error = run_command(
-        ['gmcs', os.path.join(builddir, 'shortcuts', 'windows-exe.cs'),
-         '-win32icon:' + os.path.join(tempdir, 'combined.ico'),
-         '-out:' + bincli]
-    )
-
-    check_if_failed(exit_status, output, error, fail_compile)
-
-    shutil.rmtree(tempdir)
-
-
-def create_shortcuts_linux(targetdir):
-    bingui = os.path.join(targetdir, 'PatchFileLinuxGUI')
-
-    print('Compiling Linux launcher executables ...')
-    exit_status, output, error = run_command(
-        ['gcc', '-m32', '-static', '-DPYTHON3',
-         '-DSCRIPT="scripts/qtmain.py"',
-         os.path.join(builddir, 'shortcuts', 'linux-bin.c'),
-         '-o', bingui]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to compile Linux launcher')
-
-    exit_status, output, error = run_command(
-        ['strip', bingui]
-    )
-
-    check_if_failed(exit_status, output, error,
-                    'Failed to strip symbols from Linux launcher')
-
-    if buildtype == 'release':
-        upx_compress([bingui])
-
-    os.chmod(bingui, 0o755)
 
 
 def create_syncdaemon(targetdir):
@@ -712,7 +324,6 @@ def create_release(targetdir, targetfile, android=False):
         remove = [
             'patchinfo/README',
             'patchinfo/Sample.py',
-            'scripts/gendiff.py',
             'scripts/qtmain.py',
         ]
 
@@ -758,17 +369,6 @@ def build_pc():
         print('Removing old distribution ...')
         shutil.rmtree(targetdir)
     os.makedirs(targetdir)
-
-    create_python_windows(targetdir)
-    create_pyqt_windows(targetdir)
-
-    pyport = os.path.join(targetdir, 'pythonportable')
-    pysitelib = os.path.join(pyport, 'Lib', 'site-packages')
-    create_pyyaml(targetdir, pysitelib)
-
-    create_binaries_windows(targetdir)
-    create_shortcuts_windows(targetdir)
-    create_shortcuts_linux(targetdir)
 
     create_release(targetdir, targetfile)
 
@@ -872,14 +472,6 @@ def build_android():
         print('Removing old distribution ...')
         shutil.rmtree(targetdir)
     os.makedirs(targetdir)
-
-    create_python_android(targetdir)
-
-    pyport = os.path.join(targetdir, 'pythonportable')
-    pysitelib = os.path.join(pyport, 'lib', 'python3.4', 'site-packages')
-    create_pyyaml(targetdir, pysitelib)
-
-    create_binaries_android(targetdir)
 
     create_release(targetdir, targetfile, android=True)
 
