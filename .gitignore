@@ -1,32 +1,10 @@
 # Binary releases
 /dist/
 
-# Custom configuration
-/build/build.custom.conf
-
-# Downloads
-/build/downloads/
-
-# Toolchains
-/build/compile/gcc*
-
-# Compiled files
-/build/compile/build/
-/build/compile/loki/
-/build/compile/valgrind/
-/build/compile/getfacl
-/build/compile/getfattr
-/build/compile/setfacl
-/build/compile/setfattr
-
-# syncdaemon
-/build/syncdaemon/jsoncpp/
-/build/syncdaemon/syncdaemon
-/build/syncdaemon/libs/
-/build/syncdaemon/obj/
-
-# KDevelop settings
+# KDevelop
 .kdev_include_paths
+.kdev4/
+*.kdev4
 
 # Temporary files
 *.swp
@@ -37,3 +15,16 @@
 
 # JNI
 /Android_GUI/jni-*/
+
+# Third party
+/thirdparty/*/
+/thirdparty/*.tar*
+/MultiBootPatcher/thirdparty/*.tar*
+
+# libloki
+/MultiBootPatcher/libloki/loki/
+
+# syncdaemon
+/MultiBootPatcher/syncdaemon/jsoncpp/
+/MultiBootPatcher/syncdaemon/libs/
+/MultiBootPatcher/syncdaemon/obj/
