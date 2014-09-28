@@ -1,0 +1,11 @@
+<patchinfo>
+    <name>Negalite</name>
+    <regex>^negalite-.+\.zip</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+        <autopatcher file="jflte/ROMs/TouchWiz/negalite.dualboot.patch">PatchFile</autopatcher>
+        <autopatcher>NegaliteNoWipeData</autopatcher>
+    </autopatchers>
+</patchinfo>

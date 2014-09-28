@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Ktoonsez Google Edition kernel</name>
+    <regex>^KT-SGS4-(JB4.3|KK4.4)-TWGE-.*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

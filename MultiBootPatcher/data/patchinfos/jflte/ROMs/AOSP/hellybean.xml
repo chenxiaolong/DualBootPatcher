@@ -1,0 +1,11 @@
+<patchinfo>
+    <name>HellyBean/HellyKat</name>
+    <regex>^Helly?(bean|kat)-.*\.zip$</regex>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+
+    <device-check>false</device-check>
+</patchinfo>

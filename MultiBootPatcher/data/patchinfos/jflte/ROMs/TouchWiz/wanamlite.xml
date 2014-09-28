@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>WanamLite</name>
+    <regex>^GT-I9505_WanamLite.+\.zip$</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

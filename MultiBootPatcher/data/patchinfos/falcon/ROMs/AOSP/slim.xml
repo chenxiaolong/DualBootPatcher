@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>SlimRoms</name>
+    <regex>^Slim-.*.zip$</regex>
+
+    <ramdisk>falcon/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

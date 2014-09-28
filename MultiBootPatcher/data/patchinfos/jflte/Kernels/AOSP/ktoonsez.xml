@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Ktoonsez AOSP kernel</name>
+    <regex>^KT-SGS4-[^-]+-AOSP-.*\.zip$</regex>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

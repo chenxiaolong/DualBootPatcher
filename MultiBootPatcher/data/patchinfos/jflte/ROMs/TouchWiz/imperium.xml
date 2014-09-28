@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Imperium</name>
+    <regex>^Imperium_.*\.zip$</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher>ImperiumPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

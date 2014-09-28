@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Chainfire's SuperSU</name>
+    <regex>^UPDATE-SuperSU-v[0-9A-Za-z\.]+\.zip$</regex>
+
+    <has-boot-image>false</has-boot-image>
+    <autopatchers>
+        <autopatcher file="Other/supersu.dualboot.patch">PatchFile</autopatcher>
+    </autopatchers>
+</patchinfo>

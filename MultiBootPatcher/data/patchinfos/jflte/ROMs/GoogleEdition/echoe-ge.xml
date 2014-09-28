@@ -1,0 +1,13 @@
+<patchinfo>
+    <name>Echoe Google Edition</name>
+    <regexes>
+        <regex>^Echoe_KitKat.+\.zip$</regex>
+        <regex>^EchoeGE.+\.zip$</regex>
+    </regexes>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+        <autopatcher>GoogleEditionPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

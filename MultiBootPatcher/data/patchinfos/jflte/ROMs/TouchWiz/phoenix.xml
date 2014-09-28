@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>PhoeniX</name>
+    <regex>^PhoeniX.ROM.*\.zip$</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

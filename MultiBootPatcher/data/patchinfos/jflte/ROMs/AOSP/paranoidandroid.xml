@@ -1,0 +1,12 @@
+<patchinfo>
+    <name>ParanoidAndroid</name>
+    <regexes>
+    	<regex>^pa_[a-z0-9]+-.+-.+\.zip$</regex>
+    	<exclude-regex>gapps</exclude-regex>
+	</regexes>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

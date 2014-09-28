@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>Infamous Google Edition</name>
+    <regex>^Infamous_GE.*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+        <autopatcher>GoogleEditionPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

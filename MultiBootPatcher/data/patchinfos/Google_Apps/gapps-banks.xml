@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>BaNks's Google Apps</name>
+    <regex>^[0-9]+-[0-9]+_GApps_(Standard|Minimal|Core)_[0-9\.]+_signed\.zip$</regex>
+
+    <has-boot-image>false</has-boot-image>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

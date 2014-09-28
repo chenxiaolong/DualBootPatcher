@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Echoe AEL Google Edition kernel</name>
+    <regex>^AEL_GE.+\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

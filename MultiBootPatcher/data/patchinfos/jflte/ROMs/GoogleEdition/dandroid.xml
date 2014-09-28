@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>Dandroid</name>
+    <regex>^([Dd]anvdh-GE|Dandroid).*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+        <autopatcher>GoogleEditionPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>AICP ROM</name>
+    <regex>^aicp_.*\.zip$</regex>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>JellyBeer</name>
+    <regex>^JellyBeer-.*\.zip$</regex>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <patched-init>init-jb42</patched-init>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

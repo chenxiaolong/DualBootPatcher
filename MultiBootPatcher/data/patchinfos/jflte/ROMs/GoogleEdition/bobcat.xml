@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>BoBCaTROM</name>
+    <regex>^.*BoBCaTROM_GE.*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+        <autopatcher>GoogleEditionPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

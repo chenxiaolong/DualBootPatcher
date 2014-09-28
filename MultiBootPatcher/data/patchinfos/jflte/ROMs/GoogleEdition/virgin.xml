@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>VirginROM</name>
+    <regex>^VirginROM.*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+        <autopatcher>GoogleEditionPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

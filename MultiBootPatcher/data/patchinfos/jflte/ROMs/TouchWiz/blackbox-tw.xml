@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>BlackBox TouchWiz</name>
+    <regex>^[a-zA-Z0-9]+BlackBox[0-9]+SGS4\.zip$</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

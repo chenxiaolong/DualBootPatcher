@@ -1,0 +1,19 @@
+<patchinfo>
+    <name>Kangabean/Kangakat</name>
+    <regex>^K[BK]-.*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+
+    <matches regex="KK.*">
+        <autopatchers>
+            <autopatcher>StandardPatcher</autopatcher>
+            <autopatcher>GoogleEditionPatcher</autopatcher>
+        </autopatchers>
+    </matches>
+
+    <matches regex="KB.*">
+        <autopatchers>
+            <autopatcher>StandardPatcher</autopatcher>
+        </autopatchers>
+    </matches>
+</patchinfo>

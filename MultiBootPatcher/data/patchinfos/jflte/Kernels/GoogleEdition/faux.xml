@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Faux Google Edition kernel</name>
+    <regex>^j(ged|f)lte([a-z]+)?-faux123-GE-.*\.zip$</regex>
+
+    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

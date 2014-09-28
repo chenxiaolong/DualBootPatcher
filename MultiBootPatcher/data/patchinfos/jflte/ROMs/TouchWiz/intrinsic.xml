@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>iNTriNsiC</name>
+    <regex>iNTriNsiC 8-6-13.zip</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher file="jflte/ROMs/TouchWiz/intrinsic-20130806.dualboot.patch">PatchFile</autopatcher>
+    </autopatchers>
+</patchinfo>

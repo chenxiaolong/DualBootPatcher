@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>Faux kernel</name>
+    <regex>^jflte[a-z]+-aosp-faux123-.*\.zip$</regex>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>
+

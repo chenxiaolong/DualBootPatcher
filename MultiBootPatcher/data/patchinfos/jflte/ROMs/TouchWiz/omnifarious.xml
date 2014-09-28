@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Omnifarious's modified stock TouchWiz</name>
+    <regex>^MODIFIED_STOCK_.*\.zip$</regex>
+
+    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>

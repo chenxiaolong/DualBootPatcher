@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>ComaDose</name>
+    <regex>^ComaDose_V[0-9\.]+_Cossbreeder_[0-9\.]+\.zip$</regex>
+
+    <has-boot-image>false</has-boot-image>
+    <autopatchers>
+        <autopatcher file="jflte/Other/comadose.dualboot.patch">PatchFile</autopatcher>
+    </autopatchers>
+</patchinfo>

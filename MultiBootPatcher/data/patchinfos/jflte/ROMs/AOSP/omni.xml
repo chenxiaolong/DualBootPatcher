@@ -1,0 +1,9 @@
+<patchinfo>
+    <name>Omni</name>
+    <regex>^omni-[0-9\.]+-[0-9]+.*\.zip$</regex>
+
+    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>
