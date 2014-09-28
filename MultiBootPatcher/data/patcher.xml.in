@@ -1,0 +1,56 @@
+<patcher>
+    <version>@DBP_VERSION@</version>
+
+    <!-- Supported devices -->
+    <devices>
+        <device codename="jflte">
+            <name>Samsung Galaxy S 4</name>
+            <selinux>permissive</selinux>
+
+            <partitions>
+                <partition type="system">mmcblk0p16</partition>
+                <partition type="cache">mmcblk0p18</partition>
+                <partition type="data">mmcblk0p29</partition>
+            </partitions>
+        </device>
+
+        <device codename="hammerhead">
+            <name>Google/LG Nexus 5</name>
+            <selinux>unchanged</selinux>
+        </device>
+
+        <device codename="bacon">
+            <name>OnePlus One</name>
+            <selinux>unchanged</selinux>
+        </device>
+
+        <device codename="d800">
+            <name>LG G2</name>
+            <selinux>unchanged</selinux>
+        </device>
+
+        <device codename="falcon">
+            <name>Motorola Moto G</name>
+            <selinux>unchanged</selinux>
+        </device>
+
+        <device codename="hlte">
+            <name>Samsung Galaxy Note 3</name>
+            <selinux>permissive</selinux>
+
+            <partitions>
+                <partition type="system">mmcblk0p23</partition>
+                <partition type="cache">mmcblk0p24</partition>
+                <partition type="data">mmcblk0p26</partition>
+            </partitions>
+        </device>
+    </devices>
+
+    <!-- Advanced stuff -->
+
+    <!-- patchinfos directories to always include -->
+    <patchinfo-dirs>
+        <patchinfo-dir>Google_Apps</patchinfo-dir>
+        <patchinfo-dir>Other</patchinfo-dir>
+    </patchinfo-dirs>
+</patcher>
