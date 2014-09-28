@@ -1,0 +1,25 @@
+From dbf2565c194ac115085aee402b19b563de5e0cfe Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sun, 28 Sep 2014 15:29:12 -0400
+Subject: [PATCH] Don't fail when JDK isn't installed
+
+---
+ core/main.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/main.mk b/core/main.mk
+index edc8447..664ded2 100644
+--- a/core/main.mk
++++ b/core/main.mk
+@@ -188,7 +188,7 @@ $(info $(space))
+ $(info Please follow the machine setup instructions at)
+ $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
+ $(info ************************************************************)
+-$(error stop)
++#$(error stop)
+ endif
+ 
+ ifndef BUILD_EMULATOR
+-- 
+2.1.1
+
