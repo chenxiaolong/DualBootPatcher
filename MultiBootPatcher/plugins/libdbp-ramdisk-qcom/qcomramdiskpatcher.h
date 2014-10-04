@@ -36,8 +36,6 @@ public:
     static const QString SystemPartition;
     static const QString CachePartition;
     static const QString DataPartition;
-    static const QString ApnhlosPartition;
-    static const QString MdmPartition;
 
     static const QString ArgAdditionalFstabs;
     static const QString ArgForceSystemRw;
@@ -68,14 +66,11 @@ public:
     bool modifyInitQcomRc(QStringList additionalFiles = QStringList());
 
     bool modifyFstab(// Optional
-                     bool *moveApnhlosMount = nullptr,
-                     bool *moveMdmMount = nullptr);
+                     bool removeModemMounts = false);
     bool modifyFstab(QVariantMap args,
                      // Optional
-                     bool *moveApnhlosMount = nullptr,
-                     bool *moveMdmMount = nullptr);
-    bool modifyFstab(bool *moveApnhlosMount,
-                     bool *moveMdmMount,
+                     bool removeModemMounts = false);
+    bool modifyFstab(bool removeModemMounts,
                      const QStringList &additionalFstabs,
                      bool forceSystemRw,
                      bool forceCacheRw,
@@ -89,11 +84,8 @@ public:
                      const QString &defaultCacheMountArgs,
                      const QString &defaultCacheVoldArgs);
 
-    bool modifyInitTargetRc(bool insertApnhlos = false,
-                            bool insertMdm = false);
-    bool modifyInitTargetRc(QString filename,
-                            bool insertApnhlos = false,
-                            bool insertMdm = false);
+    bool modifyInitTargetRc();
+    bool modifyInitTargetRc(QString filename);
 
 private:
     static QString makeWritable(const QString &mountArgs);

@@ -33,10 +33,6 @@ const QString QcomRamdiskPatcher::CachePartition =
         QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/cache");
 const QString QcomRamdiskPatcher::DataPartition =
         QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/userdata");
-const QString QcomRamdiskPatcher::ApnhlosPartition =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/apnhlos");
-const QString QcomRamdiskPatcher::MdmPartition =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/mdm");
 
 const QString QcomRamdiskPatcher::ArgAdditionalFstabs =
         QStringLiteral("AdditionalFstabs");
@@ -240,16 +236,13 @@ static QString closestMatch(const QString &searchTerm, const QStringList &list)
     return list[index];
 }
 
-bool QcomRamdiskPatcher::modifyFstab(bool *moveApnhlosMount,
-                                     bool *moveMdmMount)
+bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts)
 {
-    return modifyFstab(QVariantMap(),
-                       moveApnhlosMount, moveMdmMount);
+    return modifyFstab(QVariantMap(), removeModemMounts);
 }
 
 bool QcomRamdiskPatcher::modifyFstab(QVariantMap args,
-                                     bool *moveApnhlosMount,
-                                     bool *moveMdmMount)
+                                     bool removeModemMounts)
 {
     QStringList additionalFstabs;
     bool forceSystemRw = false;
@@ -312,8 +305,7 @@ bool QcomRamdiskPatcher::modifyFstab(QVariantMap args,
         defaultCacheVoldArgs = args[ArgDefaultCacheVoldArgs].toString();
     }
 
-    return modifyFstab(moveApnhlosMount,
-                       moveMdmMount,
+    return modifyFstab(removeModemMounts,
                        additionalFstabs,
                        forceSystemRw,
                        forceCacheRw,
@@ -328,8 +320,7 @@ bool QcomRamdiskPatcher::modifyFstab(QVariantMap args,
                        defaultCacheVoldArgs);
 }
 
-bool QcomRamdiskPatcher::modifyFstab(bool *moveApnhlosMount,
-                                     bool *moveMdmMount,
+bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
                                      const QStringList &additionalFstabs,
                                      bool forceSystemRw,
                                      bool forceCacheRw,
@@ -498,18 +489,11 @@ bool QcomRamdiskPatcher::modifyFstab(bool *moveApnhlosMount,
 
                 line = mountLine.arg(comment).arg(blockDev).arg(mountPoint)
                         .arg(fsType).arg(mountArgs).arg(voldArgs);
-            } else if (match.hasMatch() && blockDev == ApnhlosPartition) {
+            } else if (match.hasMatch()
+                    && (blockDev.contains(QStringLiteral("apnhlos"))
+                    || blockDev.contains(QStringLiteral("mdm"))
+                    || blockDev.contains(QStringLiteral("modem")))) {
                 iter.remove();
-
-                if (moveApnhlosMount != nullptr) {
-                    *moveApnhlosMount = true;
-                }
-            } else if (match.hasMatch() && blockDev == MdmPartition) {
-                iter.remove();
-
-                if (moveMdmMount != nullptr) {
-                    *moveMdmMount = true;
-                }
             }
         }
 
@@ -550,24 +534,19 @@ static QString whitespace(const QString &str) {
     return str.left(index);
 }
 
-bool QcomRamdiskPatcher::modifyInitTargetRc(bool insertApnhlos,
-                                            bool insertMdm)
+bool QcomRamdiskPatcher::modifyInitTargetRc()
 {
-    return modifyInitTargetRc(QStringLiteral("init.target.rc"),
-                              insertApnhlos, insertMdm);
+    return modifyInitTargetRc(QStringLiteral("init.target.rc"));
 }
 
-bool QcomRamdiskPatcher::modifyInitTargetRc(QString filename,
-                                            bool insertApnhlos,
-                                            bool insertMdm)
+bool QcomRamdiskPatcher::modifyInitTargetRc(QString filename)
 {
     Q_D(QcomRamdiskPatcher);
 
     QByteArray contents = d->cpio->contents(filename);
     if (contents.isNull()) {
         d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(filename);
+        d->errorString = PatcherError::errorString(d->errorCode).arg(filename);
         return false;
     }
 
@@ -592,31 +571,6 @@ bool QcomRamdiskPatcher::modifyInitTargetRc(QString filename,
                 QStringLiteral("/data/media(\\s|$)")))) {
             line.replace(QStringLiteral("/data/media"),
                          QStringLiteral("/raw-data/media"));
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("^\\s+setprop\\s+ro.crypto.fuse_sdcard\\s+true")))) {
-            QString voldArgs = QStringLiteral(
-                    "shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337");
-
-            QString mountVfat = QStringLiteral("mount vfat %1 %2 ro %3");
-            QString wait = QStringLiteral("wait ");
-
-            if (insertApnhlos) {
-                iter.insert(whitespace(line)
-                        % wait % ApnhlosPartition);
-                iter.insert(whitespace(line)
-                        % mountVfat.arg(ApnhlosPartition)
-                                .arg(QStringLiteral("/firmware"))
-                                .arg(voldArgs));
-            }
-
-            if (insertMdm) {
-                iter.insert(whitespace(line)
-                        % wait % MdmPartition);
-                iter.insert(whitespace(line)
-                        % mountVfat.arg(MdmPartition)
-                                .arg(QStringLiteral("/firmware-mdm"))
-                                .arg(voldArgs));
-            }
         }
     }
 

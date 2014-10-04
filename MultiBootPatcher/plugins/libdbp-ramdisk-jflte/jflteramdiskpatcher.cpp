@@ -157,20 +157,21 @@ bool JflteRamdiskPatcher::patchAOSP()
         return false;
     }
 
-    bool moveApnhlos;
-    bool moveMdm;
-
-    if (!qcomPatcher.modifyFstab(&moveApnhlos, &moveMdm)) {
+    if (!qcomPatcher.modifyFstab(true)) {
         d->errorCode = qcomPatcher.error();
         d->errorString = qcomPatcher.errorString();
         return false;
     }
 
-    if (!qcomPatcher.modifyInitTargetRc(moveApnhlos, moveMdm)) {
+    if (!qcomPatcher.modifyInitTargetRc()) {
         d->errorCode = qcomPatcher.error();
         d->errorString = qcomPatcher.errorString();
         return false;
     }
+
+    QString mountScript = d->pp->scriptsDirectory()
+            % QStringLiteral("/jflte/mount.modem.sh");
+    d->cpio->addFile(mountScript, QStringLiteral("init.additional.sh"), 0755);
 
     return true;
 }
@@ -209,6 +210,10 @@ bool JflteRamdiskPatcher::patchCXL()
     if (!cxlModifyInitTargetRc()) {
         return false;
     }
+
+    QString mountScript = d->pp->scriptsDirectory()
+            % QStringLiteral("/jflte/mount.modem.sh");
+    d->cpio->addFile(mountScript, QStringLiteral("init.additional.sh"), 0755);
 
     return true;
 }
@@ -344,6 +349,10 @@ bool JflteRamdiskPatcher::patchTouchWiz()
         return false;
     }
 
+    QString mountScript = d->pp->scriptsDirectory()
+            % QStringLiteral("/jflte/mount.modem.sh");
+    d->cpio->addFile(mountScript, QStringLiteral("init.additional.sh"), 0755);
+
     // Samsung's init binary is pretty screwed up
     if (d->getwVersion == GalaxyRamdiskPatcher::KitKat) {
         d->cpio->remove(QStringLiteral("init"));
@@ -355,10 +364,6 @@ bool JflteRamdiskPatcher::patchTouchWiz()
         QString newAdbd = d->pp->initsDirectory()
                 % QStringLiteral("/jflte/tw44-adbd");
         d->cpio->addFile(newAdbd, QStringLiteral("sbin/adbd"), 0755);
-
-        QString mountScript = d->pp->scriptsDirectory()
-                % QStringLiteral("/jflte/mount.modem.sh");
-        d->cpio->addFile(mountScript, QStringLiteral("init.additional.sh"), 0755);
     }
 
     return true;
