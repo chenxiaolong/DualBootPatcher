@@ -568,7 +568,7 @@ bool QcomRamdiskPatcher::modifyInitTargetRc(QString filename)
             // Add command for our mount script
             iter.insert(whitespace(line) % CoreRamdiskPatcher::ExecMount);
         } else if (line.contains(QRegularExpression(
-                QStringLiteral("/data/media(\\s|$)")))) {
+                QStringLiteral("\\s/data/media(\\s|$)")))) {
             line.replace(QStringLiteral("/data/media"),
                          QStringLiteral("/raw-data/media"));
         }
