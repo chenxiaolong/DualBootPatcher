@@ -23,23 +23,25 @@
 #include <libdbp/patcherpaths.h>
 
 #include <libdbp-ramdisk-common/coreramdiskpatcher.h>
+#include <libdbp-ramdisk-galaxy/galaxyramdiskpatcher.h>
 #include <libdbp-ramdisk-qcom/qcomramdiskpatcher.h>
 
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringBuilder>
 
 
-const QString JflteRamdiskPatcher::AOSP =
-        QStringLiteral("jflte/AOSP/AOSP");
-const QString JflteRamdiskPatcher::CXL =
-        QStringLiteral("jflte/AOSP/cxl");
-const QString JflteRamdiskPatcher::GoogleEdition =
-        QStringLiteral("jflte/GoogleEdition/GoogleEdition");
-const QString JflteRamdiskPatcher::TouchWiz =
-        QStringLiteral("jflte/TouchWiz/TouchWiz");
-
-static const QString JellyBean = QStringLiteral("jb43");
-static const QString KitKat = QStringLiteral("kk44");
+/*! \brief AOSP ramdisk patcher */
+const QString JflteRamdiskPatcher::AOSP
+        = QStringLiteral("jflte/AOSP/AOSP");
+/*! \brief noobdev ramdisk patcher */
+const QString JflteRamdiskPatcher::CXL
+        = QStringLiteral("jflte/AOSP/cxl");
+/*! \brief Google Edition ramdisk patcher */
+const QString JflteRamdiskPatcher::GoogleEdition
+        = QStringLiteral("jflte/GoogleEdition/GoogleEdition");
+/*! \brief TouchWiz ramdisk patcher */
+const QString JflteRamdiskPatcher::TouchWiz
+        = QStringLiteral("jflte/TouchWiz/TouchWiz");
 
 static const QString InitRc = QStringLiteral("init.rc");
 static const QString InitTargetRc = QStringLiteral("init.target.rc");
@@ -50,11 +52,26 @@ static const QString Msm8960LpmRc = QStringLiteral("MSM8960_lpm.rc");
 static const QChar Comment = QLatin1Char('#');
 static const QChar Newline = QLatin1Char('\n');
 
+
+/*!
+    \class JflteRamdiskPatcher
+    \brief Handles common ramdisk patching operations for the Samsung Galaxy S 4
+
+    This patcher handles the patching of ramdisks for the Samsung Galaxy S 4.
+    The currently supported ramdisk types are:
+
+    1. AOSP or AOSP-derived ramdisks
+    2. Google Edition (Google Play Edition) ramdisks
+    3. TouchWiz (Android 4.2-4.4) ramdisks
+    4. noobdev (built-in dual booting) ramdisks
+ */
+
+
 JflteRamdiskPatcher::JflteRamdiskPatcher(const PatcherPaths * const pp,
                                          const QString &id,
                                          const FileInfo * const info,
-                                         CpioFile * const cpio) :
-    d_ptr(new JflteRamdiskPatcherPrivate())
+                                         CpioFile * const cpio)
+    : d_ptr(new JflteRamdiskPatcherPrivate())
 {
     Q_D(JflteRamdiskPatcher);
 
@@ -65,9 +82,9 @@ JflteRamdiskPatcher::JflteRamdiskPatcher(const PatcherPaths * const pp,
 
     if (d->id == GoogleEdition || d->id == TouchWiz) {
         if (d->cpio->exists(Msm8960LpmRc)) {
-            d->getwVersion = JellyBean;
+            d->getwVersion = GalaxyRamdiskPatcher::JellyBean;
         } else {
-            d->getwVersion = KitKat;
+            d->getwVersion = GalaxyRamdiskPatcher::KitKat;
         }
     }
 }
@@ -202,6 +219,7 @@ bool JflteRamdiskPatcher::patchGoogleEdition()
 
     CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
     QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    GalaxyRamdiskPatcher galaxyPatcher(d->pp, d->info, d->cpio, d->getwVersion);
 
     if (!corePatcher.patchRamdisk()) {
         d->errorCode = corePatcher.error();
@@ -215,7 +233,9 @@ bool JflteRamdiskPatcher::patchGoogleEdition()
         return false;
     }
 
-    if (!geModifyInitRc()) {
+    if (!galaxyPatcher.geModifyInitRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
@@ -238,12 +258,14 @@ bool JflteRamdiskPatcher::patchGoogleEdition()
         return false;
     }
 
-    if (!getwModifyMsm8960LpmRc()) {
+    if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
     // Samsung's init binary is pretty screwed up
-    if (d->getwVersion == KitKat) {
+    if (d->getwVersion == GalaxyRamdiskPatcher::KitKat) {
         d->cpio->remove(QStringLiteral("init"));
 
         QString newInit = d->pp->initsDirectory()
@@ -260,6 +282,7 @@ bool JflteRamdiskPatcher::patchTouchWiz()
 
     CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
     QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    GalaxyRamdiskPatcher galaxyPatcher(d->pp, d->info, d->cpio, d->getwVersion);
 
     if (!corePatcher.patchRamdisk()) {
         d->errorCode = corePatcher.error();
@@ -273,7 +296,9 @@ bool JflteRamdiskPatcher::patchTouchWiz()
         return false;
     }
 
-    if (!twModifyInitRc()) {
+    if (!galaxyPatcher.twModifyInitRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
@@ -295,24 +320,32 @@ bool JflteRamdiskPatcher::patchTouchWiz()
         return false;
     }
 
-    if (!twModifyInitTargetRc()) {
+    if (!galaxyPatcher.twModifyInitTargetRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
-    if (!getwModifyMsm8960LpmRc()) {
+    if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
-    if (!twModifyUeventdRc()) {
+    if (!galaxyPatcher.twModifyUeventdRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
-    if (!twModifyUeventdQcomRc()) {
+    if (!galaxyPatcher.twModifyUeventdQcomRc()) {
+        d->errorCode = galaxyPatcher.error();
+        d->errorString = galaxyPatcher.errorString();
         return false;
     }
 
     // Samsung's init binary is pretty screwed up
-    if (d->getwVersion == KitKat) {
+    if (d->getwVersion == GalaxyRamdiskPatcher::KitKat) {
         d->cpio->remove(QStringLiteral("init"));
 
         QString newInit = d->pp->initsDirectory()
@@ -354,250 +387,6 @@ bool JflteRamdiskPatcher::cxlModifyInitTargetRc()
     }
 
     d->cpio->setContents(InitTargetRc, lines.join(Newline).toUtf8());
-
-    return true;
-}
-
-bool JflteRamdiskPatcher::geModifyInitRc()
-{
-    Q_D(JflteRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(InitRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(InitRc);
-        return false;
-    }
-
-    QString previousLine;
-
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        QString &line = iter.next();
-
-        if (d->getwVersion == KitKat
-                && line.contains(QRegularExpression(
-                        QStringLiteral("mount.*/system")))
-                && previousLine.contains(QRegularExpression(
-                        QStringLiteral("on\\s+charger")))) {
-            iter.remove();
-            iter.insert(QStringLiteral("    mount_all fstab.jgedlte"));
-            iter.insert(QStringLiteral("    ") % CoreRamdiskPatcher::ExecMount);
-        }
-
-        previousLine = line;
-    }
-
-    d->cpio->setContents(InitRc, lines.join(Newline).toUtf8());
-
-    return true;
-}
-
-static QString whitespace(const QString &str) {
-    int index = 0;
-
-    for (QChar c : str) {
-        if (c.isSpace()) {
-            index++;
-        } else {
-            break;
-        }
-    }
-
-    return str.left(index);
-}
-
-bool JflteRamdiskPatcher::twModifyInitRc()
-{
-    Q_D(JflteRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(InitRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(InitRc);
-        return false;
-    }
-
-    bool inMediaserver = false;
-
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        if (line.contains(QRegularExpression(
-                QStringLiteral("^.*setprop.*selinux.reload_policy.*$")))) {
-            line.insert(0, Comment);
-        } else if (line.contains(QStringLiteral("check_icd"))) {
-            line.insert(0, Comment);
-        } else if (d->getwVersion == KitKat
-                && line.startsWith(QStringLiteral("service"))) {
-            inMediaserver = line.contains(QStringLiteral(
-                    "/system/bin/mediaserver"));
-        } else if (inMediaserver && line.contains(QRegularExpression(
-                QStringLiteral("^\\s*user")))) {
-            line = whitespace(line) % QStringLiteral("user root");
-        }
-    }
-
-    d->cpio->setContents(InitRc, lines.join(Newline).toUtf8());
-
-    return true;
-}
-
-bool JflteRamdiskPatcher::twModifyInitTargetRc()
-{
-    Q_D(JflteRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(InitTargetRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(InitTargetRc);
-        return false;
-    }
-
-    bool inQcam = false;
-
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        QString &line = iter.next();
-
-        if (d->getwVersion == KitKat
-                && line.contains(QRegularExpression(
-                        QStringLiteral("^on\\s+fs_selinux\\s*$")))) {
-            iter.insert(QStringLiteral("    mount_all fstab.qcom"));
-            iter.insert(QStringLiteral("    ") % CoreRamdiskPatcher::ExecMount);
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("^.*setprop.*selinux.reload_policy.*$")))) {
-            line.insert(0, Comment);
-        } else if (d->getwVersion == KitKat
-                && line.startsWith(QStringLiteral("service"))) {
-            inQcam = line.contains(QStringLiteral("qcamerasvr"));
-        }
-
-        // This is not exactly safe, but it's the best we can do. TouchWiz is
-        // doing some funny business where a process running under a certain
-        // user or group (confirmed by /proc/<pid>/status) cannot access files
-        // by that group. Not only that, mm-qcamera-daemon doesn't work if the
-        // process has multiple groups and root is not the primary group. Oh
-        // well, I'm done debugging proprietary binaries.
-
-        else if (inQcam && line.contains(QRegularExpression(
-                QStringLiteral("^\\s*user")))) {
-            line = whitespace(line) % QStringLiteral("user root");
-        } else if (inQcam && line.contains(QRegularExpression(
-                QStringLiteral("^\\s*group")))) {
-            line = whitespace(line) % QStringLiteral("group root");
-        }
-    }
-
-    d->cpio->setContents(InitTargetRc, lines.join(Newline).toUtf8());
-
-    return true;
-}
-
-bool JflteRamdiskPatcher::twModifyUeventdRc()
-{
-    Q_D(JflteRamdiskPatcher);
-
-    // Only needs to be patched for Kit Kat
-    if (d->getwVersion != KitKat) {
-        return true;
-    }
-
-    QByteArray contents = d->cpio->contents(UeventdRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(UeventdRc);
-        return false;
-    }
-
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        if (line.contains(QStringLiteral("/dev/snd/*"))) {
-            line.replace(QStringLiteral("0660"),
-                         QStringLiteral("0666"));
-        }
-    }
-
-    d->cpio->setContents(UeventdRc, lines.join(Newline).toUtf8());
-
-    return true;
-}
-
-bool JflteRamdiskPatcher::twModifyUeventdQcomRc()
-{
-    Q_D(JflteRamdiskPatcher);
-
-    // Only needs to be patched for Kit Kat
-    if (d->getwVersion != KitKat) {
-        return true;
-    }
-
-    QByteArray contents = d->cpio->contents(UeventdQcomRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(UeventdQcomRc);
-        return false;
-    }
-
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        // More funny business: even with mm-qcamera-daemon running as root,
-        // the daemon and the default camera application are unable access the
-        // camera hardware unless it's writable to everyone. Baffles me...
-        //
-        // More, more funny business: chmod'ing the /dev/video* devices to
-        // anything while mm-qcamera-daemon is running causes a kernel panic.
-        // **Wonderful** /s
-        if (line.contains(QStringLiteral("/dev/video*"))
-                || line.contains(QStringLiteral("/dev/media*"))
-                || line.contains(QStringLiteral("/dev/v4l-subdev*"))
-                || line.contains(QStringLiteral("/dev/msm_camera/*"))
-                || line.contains(QStringLiteral("/dev/msm_vidc_enc"))) {
-            line.replace(QStringLiteral("0660"),
-                         QStringLiteral("0666"));
-        }
-    }
-
-    lines << QStringLiteral("/dev/ion 0666 system system\n");
-
-    d->cpio->setContents(UeventdQcomRc, lines.join(Newline).toUtf8());
-
-    return true;
-}
-
-bool JflteRamdiskPatcher::getwModifyMsm8960LpmRc()
-{
-    Q_D(JflteRamdiskPatcher);
-
-    // This file does not exist on Kit Kat ramdisks
-    if (d->getwVersion == KitKat) {
-        return true;
-    }
-
-    QByteArray contents = d->cpio->contents(Msm8960LpmRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(Msm8960LpmRc);
-        return false;
-    }
-
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        if (line.contains(QRegularExpression(
-                QStringLiteral("^\\s+mount.*/cache.*$")))) {
-            line.insert(0, Comment);
-        }
-    }
-
-    d->cpio->setContents(Msm8960LpmRc,
-                         lines.join(Newline).toUtf8());
 
     return true;
 }

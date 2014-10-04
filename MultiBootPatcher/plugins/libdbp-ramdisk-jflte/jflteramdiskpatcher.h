@@ -42,12 +42,12 @@ public:
     static const QString GoogleEdition;
     static const QString TouchWiz;
 
-    virtual PatcherError::Error error() const;
-    virtual QString errorString() const;
+    virtual PatcherError::Error error() const override;
+    virtual QString errorString() const override;
 
-    virtual QString name() const;
+    virtual QString name() const override;
 
-    virtual bool patchRamdisk();
+    virtual bool patchRamdisk() override;
 
 private:
     bool patchAOSP();
@@ -57,18 +57,6 @@ private:
 
     // chenxiaolong's noobdev
     bool cxlModifyInitTargetRc();
-
-    // Google Edition
-    bool geModifyInitRc();
-
-    // TouchWiz
-    bool twModifyInitRc();
-    bool twModifyInitTargetRc();
-    bool twModifyUeventdRc();
-    bool twModifyUeventdQcomRc();
-
-    // Google Edition and TouchWiz
-    bool getwModifyMsm8960LpmRc();
 
     const QScopedPointer<JflteRamdiskPatcherPrivate> d_ptr;
     Q_DECLARE_PRIVATE(JflteRamdiskPatcher)

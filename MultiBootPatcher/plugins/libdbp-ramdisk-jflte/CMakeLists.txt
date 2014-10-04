@@ -28,6 +28,7 @@ target_link_libraries(dbp-ramdisk-jflte
     Qt5::Core
     dbp
     dbp-ramdisk-common
+    dbp-ramdisk-galaxy
     dbp-ramdisk-qcom
 )
 
