@@ -140,10 +140,19 @@ bool KlteRamdiskPatcher::patchAOSP()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitTargetRc(moveApnhlos, moveMdm)) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
-        return false;
+    if (d->cpio->exists(QStringLiteral("init.target.rc"))) {
+        if (!qcomPatcher.modifyInitTargetRc(moveApnhlos, moveMdm)) {
+            d->errorCode = qcomPatcher.error();
+            d->errorString = qcomPatcher.errorString();
+            return false;
+        }
+    } else {
+        if (!qcomPatcher.modifyInitTargetRc(QStringLiteral("init.qcom.rc"),
+                                            moveApnhlos, moveMdm)) {
+            d->errorCode = qcomPatcher.error();
+            d->errorString = qcomPatcher.errorString();
+            return false;
+        }
     }
 
     return true;
