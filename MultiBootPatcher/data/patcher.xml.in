@@ -25,6 +25,17 @@
             </partitions>
         </device>
 
+        <device codename="klte">
+            <name>Samsung Galaxy S 5</name>
+            <selinux>permissive</selinux>
+
+            <partitions>
+                <partition type="system">mmcblk0p23</partition>
+                <partition type="cache">mmcblk0p24</partition>
+                <partition type="data">mmcblk0p26</partition>
+            </partitions>
+        </device>
+
         <device codename="hammerhead">
             <name>Google/LG Nexus 5</name>
             <selinux>unchanged</selinux>
