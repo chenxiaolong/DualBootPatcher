@@ -186,7 +186,7 @@ bool QcomRamdiskPatcher::modifyInitQcomRc(QStringList additionalFiles)
             QString &line = iter.next();
 
             if (line.contains(QRegularExpression(
-                    QStringLiteral("/data/media(\\s|$)")))) {
+                    QStringLiteral("\\s/data/media(\\s|$)")))) {
                 line.replace(QStringLiteral("/data/media"),
                              QStringLiteral("/raw-data/media"));
             }
