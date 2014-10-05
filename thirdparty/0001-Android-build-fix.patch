@@ -1,0 +1,57 @@
+From b48e9fc8937d4892713b8124a7458f2785220d33 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sat, 4 Oct 2014 22:58:27 -0400
+Subject: [PATCH] Android build fix
+
+---
+ CMakeLists.txt                                  | 4 ++--
+ libarchive/archive_read_disk_posix.c            | 6 ++++++
+ libarchive/test/test_compat_pax_libarchive_2x.c | 3 ++-
+ 3 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2cdb9fb..eb9732a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1521,5 +1521,5 @@ IF(ENABLE_TEST)
+ ENDIF(ENABLE_TEST)
+ 
+ add_subdirectory(libarchive)
+-add_subdirectory(tar)
+-add_subdirectory(cpio)
++#add_subdirectory(tar)
++#add_subdirectory(cpio)
+diff --git a/libarchive/archive_read_disk_posix.c b/libarchive/archive_read_disk_posix.c
+index a13dbbf..059219b 100644
+--- a/libarchive/archive_read_disk_posix.c
++++ b/libarchive/archive_read_disk_posix.c
+@@ -93,6 +93,12 @@ __FBSDID("$FreeBSD$");
+ #include <sys/ioctl.h>
+ #endif
+ 
++#ifdef __ANDROID__
++#include <sys/vfs.h>
++#define statvfs statfs
++#define fstatvfs fstatfs
++#endif
++
+ #include "archive.h"
+ #include "archive_string.h"
+ #include "archive_entry.h"
+diff --git a/libarchive/test/test_compat_pax_libarchive_2x.c b/libarchive/test/test_compat_pax_libarchive_2x.c
+index 6ea25e4..41dec5c 100644
+--- a/libarchive/test/test_compat_pax_libarchive_2x.c
++++ b/libarchive/test/test_compat_pax_libarchive_2x.c
+@@ -41,7 +41,8 @@ __FBSDID("$FreeBSD");
+ DEFINE_TEST(test_compat_pax_libarchive_2x)
+ {
+ #if (defined(_WIN32) && !defined(__CYGWIN__)) \
+-         || defined(__STDC_ISO_10646__) || defined(__APPLE__)
++         || defined(__STDC_ISO_10646__) || defined(__APPLE__) \
++         || defined(__ANDROID__)
+ 	skipping("This test only for the platform the WCS of which is "
+ 	    "not Unicode.");
+ #else
+-- 
+2.1.2
+
