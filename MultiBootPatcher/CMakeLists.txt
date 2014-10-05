@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 project(DualBootPatcher)
 set(DBP_VERSION_MAJOR 9)
 set(DBP_VERSION_MINOR 0)
-set(DBP_VERSION_PATCH 0Alpha5)
+set(DBP_VERSION_PATCH 0Alpha6)
 set(DBP_VERSION "${DBP_VERSION_MAJOR}.${DBP_VERSION_MINOR}.${DBP_VERSION_PATCH}")
 
 include(ExternalProject)
@@ -11,6 +11,19 @@ include(GNUInstallDirs)
 
 if(CMAKE_TOOLCHAIN_FILE)
     get_filename_component(CMAKE_TOOLCHAIN_FILE ${CMAKE_TOOLCHAIN_FILE} ABSOLUTE)
+endif()
+
+# Some cross-compiling toolchain files change the behavior of find_* and
+# define find_host_* with the original behavior
+if(NOT COMMAND find_host_package)
+    macro(find_host_package)
+        find_package(${ARGN})
+    endmacro()
+endif()
+if(NOT COMMAND find_host_program)
+    macro(find_host_program)
+        find_program(${ARGN})
+    endmacro()
 endif()
 
 
@@ -52,12 +65,17 @@ else()
 endif()
 
 
+if(ANDROID)
+# Allow the libarchive directory to be specified
+list(APPEND CMAKE_FIND_ROOT_PATH ${LIBARCHIVE_DIR})
+endif()
+
 find_package(LibArchive REQUIRED)
 include_directories(${LibArchive_INCLUDE_DIRS})
 link_directories(${LibArchive_LIBRARY_DIRS})
 
 # Need ndk-build for building the Android stuff
-find_program(NDK_BUILD ndk-build HINTS "$ENV{ANDROID_NDK_HOME}" "$ENV{ANDROID_NDK}")
+find_host_program(NDK_BUILD ndk-build HINTS "$ENV{ANDROID_NDK_HOME}" "$ENV{ANDROID_NDK}")
 if(NOT NDK_BUILD)
     message(FATAL_ERROR "Could NOT find Android NDK (missing: ndk-build)")
 endif()
