@@ -48,11 +48,12 @@ set(DBP_HEADERS
 
 add_library(dbp SHARED ${DBP_SOURCES})
 
-set_target_properties(dbp PROPERTIES
-    VERSION 1.0.0
-    SOVERSION 1
-    OUTPUT_NAME "dbp"
-)
+if(NOT ANDROID)
+    set_target_properties(dbp PROPERTIES
+        VERSION 1.0.0
+        SOVERSION 1
+    )
+endif()
 
 target_link_libraries(dbp
     Qt5::Core
