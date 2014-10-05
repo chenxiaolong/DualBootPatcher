@@ -84,9 +84,12 @@ endif()
 # Main patcher
 add_subdirectory(libdbp)
 add_subdirectory(plugins)
-add_subdirectory(gui)
 add_subdirectory(data)
 add_subdirectory(shortcuts)
+
+if(NOT ANDROID)
+    add_subdirectory(gui)
+endif()
 
 # Android stuff
 add_subdirectory(syncdaemon)
