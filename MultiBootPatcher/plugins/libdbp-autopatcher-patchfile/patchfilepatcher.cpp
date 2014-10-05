@@ -186,7 +186,7 @@ bool PatchFilePatcher::patchFile(const QString &file,
 #if defined(Q_OS_ANDROID)
     QString patch = d->pp->binariesDirectory() % Sep
             % QStringLiteral("android") % Sep
-            % d->info->architecture() % Sep
+            % d->info->device()->architecture() % Sep
             % QStringLiteral("patch");
 #elif defined(Q_OS_WIN32)
     QString patch = d->pp->binariesDirectory() % Sep
