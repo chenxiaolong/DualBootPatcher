@@ -27,10 +27,15 @@ if(NOT COMMAND find_host_program)
 endif()
 
 
-# Enable C++11 support
 if(CMAKE_COMPILER_IS_GNUCXX)
+    # Enable C++11 support
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+
+    # Enable warnings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic")
+    # Except for "/*" within comment errors (present in doxygen blocks)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=comment")
 endif()
 
 
