@@ -138,10 +138,4 @@ public:
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(MainWindowPrivate::SupportedFlags)
 
-class PatcherTaskPrivate {
-public:
-    QSharedPointer<Patcher> patcher;
-    QSharedPointer<FileInfo> info;
-};
-
 #endif // MAINWINDOW_P_H

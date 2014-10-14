@@ -23,8 +23,15 @@
 #include <libdbp/fileinfo.h>
 #include <libdbp/patcherinterface.h>
 
+#include <QtCore/QMetaType>
 #include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QWidget>
+
+
+typedef QSharedPointer<Patcher> PatcherPtr;
+Q_DECLARE_METATYPE(PatcherPtr)
+typedef QSharedPointer<FileInfo> FileInfoPtr;
+Q_DECLARE_METATYPE(FileInfoPtr)
 
 class MainWindowPrivate;
 
@@ -35,6 +42,9 @@ class MainWindow : public QWidget
 public:
     MainWindow(PatcherPaths* pp, QWidget* parent = 0);
     ~MainWindow();
+
+signals:
+    void runThread(PatcherPtr patcher, FileInfoPtr info);
 
 private slots:
     void onDeviceSelected(int index);
@@ -54,7 +64,6 @@ private slots:
 
     void onPatchingFinished(const QString &newFile, bool failed,
                             const QString &errorMessage);
-    void onThreadCompleted();
 
 private:
     void addWidgets();
@@ -88,20 +97,13 @@ class PatcherTask : public QObject
     Q_OBJECT
 
 public:
-    PatcherTask(QSharedPointer<Patcher> patcher,
-                QSharedPointer<FileInfo> info,
-                QWidget *parent = 0);
-    ~PatcherTask();
+    PatcherTask(QWidget *parent = 0);
 
-    void patch();
+    void patch(PatcherPtr patcher, FileInfoPtr info);
 
 signals:
     void finished(const QString &newFile, bool failed,
                   const QString &errorMessage);
-
-private:
-    const QScopedPointer <PatcherTaskPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(PatcherTask)
 };
 
 #endif // MAINWINDOW_H

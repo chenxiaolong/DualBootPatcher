@@ -31,6 +31,9 @@
 #include <QtWidgets/QGroupBox>
 
 
+const int patcherPtrTypeId = qRegisterMetaType<PatcherPtr>("PatcherPtr");
+const int fileInfoPtrTypeId = qRegisterMetaType<FileInfoPtr>("FileInfoPtr");
+
 MainWindow::MainWindow(PatcherPaths *pp, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
@@ -55,10 +58,28 @@ MainWindow::MainWindow(PatcherPaths *pp, QWidget *parent)
     populateWidgets();
     setWidgetDefaults();
     updateWidgetsVisibility();
+
+    // Create thread
+    d->thread = new QThread(this);
+    d->task = new PatcherTask();
+    d->task->moveToThread(d->thread);
+
+    connect(d->thread, &QThread::finished,
+            d->task, &QObject::deleteLater);
+    connect(this, &MainWindow::runThread,
+            d->task, &PatcherTask::patch);
+    connect(d->task, &PatcherTask::finished,
+            this, &MainWindow::onPatchingFinished);
+
+    d->thread->start();
 }
 
 MainWindow::~MainWindow()
 {
+    Q_D(MainWindow);
+
+    d->thread->quit();
+    d->thread->wait();
 }
 
 void MainWindow::onDeviceSelected(int index)
@@ -199,17 +220,6 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
 
     d->state = MainWindowPrivate::FinishedPatching;
     updateWidgetsVisibility();
-}
-
-void MainWindow::onThreadCompleted()
-{
-    Q_D(MainWindow);
-
-    d->thread->deleteLater();
-    d->thread = nullptr;
-
-    d->task->deleteLater();
-    d->task = nullptr;
 
     disconnect(d->patcher.data(), &Patcher::maxProgressUpdated,
                this, &MainWindow::onMaxProgressUpdated);
@@ -758,7 +768,7 @@ void MainWindow::startPatching()
     d->state = MainWindowPrivate::Patching;
     updateWidgetsVisibility();
 
-    QSharedPointer<FileInfo> fileInfo(new FileInfo());
+    FileInfoPtr fileInfo(new FileInfo());
     fileInfo->setFilename(d->fileName);
     fileInfo->setDevice(d->device);
     if (!d->partConfigs.isEmpty()) {
@@ -766,16 +776,6 @@ void MainWindow::startPatching()
     }
     fileInfo->setPatchInfo(d->patchInfo);
 
-    d->thread = new QThread(this);
-    d->task = new PatcherTask(d->patcher, fileInfo);
-    d->task->moveToThread(d->thread);
-
-    connect(d->thread, &QThread::finished,
-            this, &MainWindow::onThreadCompleted);
-    connect(d->thread, &QThread::started,
-            d->task, &PatcherTask::patch);
-    connect(d->task, &PatcherTask::finished,
-            this, &MainWindow::onPatchingFinished);
     connect(d->patcher.data(), &Patcher::maxProgressUpdated,
             this, &MainWindow::onMaxProgressUpdated);
     connect(d->patcher.data(), &Patcher::progressUpdated,
@@ -783,7 +783,7 @@ void MainWindow::startPatching()
     connect(d->patcher.data(), &Patcher::detailsUpdated,
             this, &MainWindow::onDetailsUpdated);
 
-    d->thread->start();
+    emit runThread(d->patcher, fileInfo);
 }
 
 QWidget * MainWindow::newHorizLine(QWidget *parent)
@@ -795,29 +795,17 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
     return frame;
 }
 
-PatcherTask::PatcherTask(QSharedPointer<Patcher> patcher,
-                         QSharedPointer<FileInfo> info,
-                         QWidget *parent)
-    : QObject(parent), d_ptr(new PatcherTaskPrivate())
-{
-    Q_D(PatcherTask);
-
-    d->patcher = patcher;
-    d->info = info;
-}
-
-PatcherTask::~PatcherTask()
+PatcherTask::PatcherTask(QWidget *parent)
+    : QObject(parent)
 {
 }
 
-void PatcherTask::patch()
+void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
-    Q_D(PatcherTask);
-
-    d->patcher->setFileInfo(d->info.data());
-    if (!d->patcher->patchFile()) {
-        emit finished(QString(), true, d->patcher->errorString());
+    patcher->setFileInfo(info.data());
+    if (!patcher->patchFile()) {
+        emit finished(QString(), true, patcher->errorString());
     } else {
-        emit finished(d->patcher->newFilePath(), false, QString());
+        emit finished(patcher->newFilePath(), false, QString());
     }
 }
