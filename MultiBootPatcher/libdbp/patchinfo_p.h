@@ -58,7 +58,7 @@ public:
     // NOTE: If the variable is a list, the "overridden" values are used
     //       in addition to the default values
 
-    // List of autopatcher plugins to use
+    // List of autopatchers to use
     QHash<QString, PatchInfo::AutoPatcherItems> autoPatchers;
 
     // Whether or not the file contains (a) boot image(s)
@@ -70,7 +70,7 @@ public:
     // List of manually specified boot images
     QHash<QString, QStringList> bootImages;
 
-    // Ramdisk plugin to use
+    // Ramdisk patcher to use
     QHash<QString, QString> ramdisk;
 
     // Name of alternative binary to use

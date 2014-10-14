@@ -37,16 +37,16 @@ QString PatcherError::errorString(Error error)
         return tr("An unknown error has occurred");
 
     case ImplementationError:
-        return tr("The dualbootpatcher library or one of it's plugins wasn't called properly");
+        return tr("The dualbootpatcher library wasn't called properly");
 
     case PatcherCreateError:
-        return tr("Failed to create patcher from plugin: %1");
+        return tr("Failed to create patcher: %1");
 
     case AutoPatcherCreateError:
-        return tr("Failed to create autopatcher from plugin: %1");
+        return tr("Failed to create autopatcher: %1");
 
     case RamdiskPatcherCreateError:
-        return tr("Failed to create ramdisk patcher from plugin: %1");
+        return tr("Failed to create ramdisk patcher: %1");
 
     case FileOpenError:
         return tr("Failed to open file: %1");

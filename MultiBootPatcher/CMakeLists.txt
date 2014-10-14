@@ -48,7 +48,6 @@ endif()
 if(${PORTABLE})
     set(BIN_INSTALL_DIR bin)
     set(DATA_INSTALL_DIR data)
-    set(PLUGINS_INSTALL_DIR plugins)
     set(HEADERS_INSTALL_DIR include)
 
     if(WIN32)
@@ -60,7 +59,6 @@ else()
     set(BIN_INSTALL_DIR ${CMAKE_INSTALL_BINDIR})
     set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
     set(DATA_INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/dbp)
-    set(PLUGINS_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/dbp)
     set(HEADERS_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
@@ -83,7 +81,6 @@ endif()
 
 # Main patcher
 add_subdirectory(libdbp)
-add_subdirectory(plugins)
 add_subdirectory(data)
 add_subdirectory(shortcuts)
 
@@ -104,7 +101,7 @@ add_subdirectory(thirdparty)
 
 # CPack removes the prefix when archive component install is used, unfortunately
 #set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-#set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} Libraries Applications Plugins)
+#set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} Libraries Applications)
 
 set(CPACK_PACKAGE_NAME "DualBootPatcher")
 set(CPACK_PACKAGE_VERSION_MAJOR ${DBP_VERSION_MAJOR})

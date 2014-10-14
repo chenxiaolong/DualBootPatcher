@@ -22,17 +22,20 @@
 
 #include "libdbp_global.h"
 
+#include "cpiofile.h"
 #include "device.h"
+#include "fileinfo.h"
 #include "partitionconfig.h"
 #include "patchererror.h"
 #include "patchinfo.h"
 
 #include <QtCore/QScopedPointer>
+#include <QtCore/QSharedPointer>
 #include <QtCore/QXmlStreamReader>
 
-class IPatcherFactory;
-class IAutoPatcherFactory;
-class IRamdiskPatcherFactory;
+class Patcher;
+class AutoPatcher;
+class RamdiskPatcher;
 
 class PatcherPathsPrivate;
 
@@ -51,17 +54,14 @@ public:
     QString initsDirectory() const;
     QString patchesDirectory() const;
     QString patchInfosDirectory() const;
-    QString pluginsDirectory() const;
     QString scriptsDirectory() const;
 
     void setConfigFile(const QString &path);
     void setBinariesDirectory(const QString &path);
     void setDataDirectory(const QString &path);
     void setInitsDirectory(const QString &path);
-    void setMiscDirectory(const QString &path);
     void setPatchesDirectory(const QString &path);
     void setPatchInfosDirectory(const QString &path);
-    void setPluginsDirectory(const QString &path);
     void setScriptsDirectory(const QString &path);
 
     void reset();
@@ -71,13 +71,21 @@ public:
     Device * deviceFromCodename(const QString &codename) const;
     QList<PatchInfo *> patchInfos(const Device * const device) const;
 
-    QList<IPatcherFactory *> patcherFactories() const;
-    QList<IAutoPatcherFactory *> autoPatcherFactories() const;
-    QList<IRamdiskPatcherFactory *> ramdiskPatcherFactories() const;
+    void loadDefaultPatchers();
 
-    IPatcherFactory * patcherFactory(const QString &name) const;
-    IAutoPatcherFactory * autoPatcherFactory(const QString &name) const;
-    IRamdiskPatcherFactory * ramdiskPatcherFactory(const QString &name) const;
+    QStringList patchers() const;
+    QStringList autoPatchers() const;
+    QStringList ramdiskPatchers() const;
+
+    QString patcherName(const QString &id) const;
+
+    QSharedPointer<Patcher> createPatcher(const QString &id) const;
+    QSharedPointer<AutoPatcher> createAutoPatcher(const QString &id,
+                                                  const FileInfo * const info,
+                                                  const PatchInfo::AutoPatcherArgs &args) const;
+    QSharedPointer<RamdiskPatcher> createRamdiskPatcher(const QString &id,
+                                                        const FileInfo * const info,
+                                                        CpioFile * const cpio) const;
 
     QList<PartitionConfig *> partitionConfigs() const;
     PartitionConfig * partitionConfig(const QString &id) const;
@@ -85,12 +93,9 @@ public:
     QStringList initBinaries() const;
 
     bool loadConfig();
-    bool loadPlugins();
     bool loadPatchInfos();
 
 private:
-    bool loadPlugin(QObject *plugin);
-
     // Tags for main config file
     static const QString ConfigTagPatcher;
     static const QString ConfigTagVersion;

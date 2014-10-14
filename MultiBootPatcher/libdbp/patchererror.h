@@ -36,7 +36,7 @@ public:
         UnknownError,
         ImplementationError,
 
-        // Plugins
+        // Patchers
         PatcherCreateError,
         AutoPatcherCreateError,
         RamdiskPatcherCreateError,

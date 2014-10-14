@@ -26,14 +26,29 @@
 #include "patchinfo.h"
 #include "patchinfo_p.h"
 
-#include "plugininterface.h"
+#include "patcherinterface.h"
+
+// Patchers
+#include "patchers/multiboot/multibootpatcher.h"
+#include "patchers/primaryupgrade/primaryupgradepatcher.h"
+#include "patchers/syncdaemonupdate/syncdaemonupdatepatcher.h"
+#include "autopatchers/jflte/jfltepatcher.h"
+#include "autopatchers/noobdev/noobdevpatcher.h"
+#include "autopatchers/patchfile/patchfilepatcher.h"
+#include "autopatchers/standard/standardpatcher.h"
+#include "ramdiskpatchers/bacon/baconramdiskpatcher.h"
+#include "ramdiskpatchers/d800/d800ramdiskpatcher.h"
+#include "ramdiskpatchers/falcon/falconramdiskpatcher.h"
+#include "ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h"
+#include "ramdiskpatchers/hlte/hlteramdiskpatcher.h"
+#include "ramdiskpatchers/jflte/jflteramdiskpatcher.h"
+#include "ramdiskpatchers/klte/klteramdiskpatcher.h"
 
 #include <QtCore/QDebug>
 #include <QtCore/QDir>
 #include <QtCore/QDirIterator>
 #include <QtCore/QFile>
 #include <QtCore/QJsonObject>
-#include <QtCore/QPluginLoader>
 #include <QtCore/QStringBuilder>
 #include <QtCore/QXmlStreamReader>
 
@@ -92,6 +107,7 @@ const QString PatcherPaths::XmlTextFalse = QLatin1String("false");
 
 PatcherPaths::PatcherPaths() : d_ptr(new PatcherPathsPrivate())
 {
+    loadDefaultPatchers();
 }
 
 PatcherPaths::~PatcherPaths()
@@ -117,18 +133,6 @@ PatcherPaths::~PatcherPaths()
         delete config;
     }
     d->partConfigs.clear();
-
-    // Clean up plugins
-    d->patcherFactories.clear();
-    d->autoPatcherFactories.clear();
-    d->ramdiskPatcherFactories.clear();
-    for (QPluginLoader *loader : d->pluginLoaders) {
-        if (!loader->unload()) {
-            qWarning() << loader->errorString();
-        }
-        delete loader;
-    }
-    d->pluginLoaders.clear();
 }
 
 PatcherError::Error PatcherPaths::error() const
@@ -207,13 +211,6 @@ QString PatcherPaths::patchInfosDirectory() const
     }
 }
 
-QString PatcherPaths::pluginsDirectory() const
-{
-    Q_D(const PatcherPaths);
-
-    return d->pluginsDir;
-}
-
 QString PatcherPaths::scriptsDirectory() const
 {
     Q_D(const PatcherPaths);
@@ -267,13 +264,6 @@ void PatcherPaths::setPatchInfosDirectory(const QString &path)
     d->patchInfosDir = path;
 }
 
-void PatcherPaths::setPluginsDirectory(const QString &path)
-{
-    Q_D(PatcherPaths);
-
-    d->pluginsDir = path;
-}
-
 void PatcherPaths::setScriptsDirectory(const QString &path)
 {
     Q_D(PatcherPaths);
@@ -291,7 +281,6 @@ void PatcherPaths::reset()
     d->initsDir.clear();
     d->patchesDir.clear();
     d->patchInfosDir.clear();
-    d->pluginsDir.clear();
 
     // Config
     for (Device *device : d->devices) {
@@ -352,64 +341,143 @@ QList<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
     return l;
 }
 
-QList<IPatcherFactory *> PatcherPaths::patcherFactories() const
+void PatcherPaths::loadDefaultPatchers()
 {
-    Q_D(const PatcherPaths);
+    Q_D(PatcherPaths);
 
-    return d->patcherFactories;
+    d->partConfigs << MultiBootPatcher::partConfigs();
+    d->partConfigs << PrimaryUpgradePatcher::partConfigs();
 }
 
-QList<IAutoPatcherFactory *> PatcherPaths::autoPatcherFactories() const
+QStringList PatcherPaths::patchers() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->autoPatcherFactories;
+    return QStringList()
+            << MultiBootPatcher::Id
+            << PrimaryUpgradePatcher::Id
+            << SyncdaemonUpdatePatcher::Id;
 }
 
-QList<IRamdiskPatcherFactory *> PatcherPaths::ramdiskPatcherFactories() const
+QStringList PatcherPaths::autoPatchers() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->ramdiskPatcherFactories;
+    return QStringList()
+            << JflteDalvikCachePatcher::Id
+            << JflteGoogleEditionPatcher::Id
+            << JflteSlimAromaBundledMount::Id
+            << JflteImperiumPatcher::Id
+            << JflteNegaliteNoWipeData::Id
+            << JflteTriForceFixAroma::Id
+            << JflteTriForceFixUpdate::Id
+            << NoobdevMultiBoot::Id
+            << NoobdevSystemProp::Id
+            << PatchFilePatcher::Id
+            << StandardPatcher::Id;
 }
 
-IPatcherFactory *PatcherPaths::patcherFactory(const QString &name) const
+QStringList PatcherPaths::ramdiskPatchers() const
 {
-    Q_D(const PatcherPaths);
+    return QStringList()
+            << BaconRamdiskPatcher::Id
+            << D800RamdiskPatcher::Id
+            << FalconRamdiskPatcher::Id
+            << HammerheadAOSPRamdiskPatcher::Id
+            << HammerheadNoobdevRamdiskPatcher::Id
+            << HlteAOSPRamdiskPatcher::Id
+            << JflteAOSPRamdiskPatcher::Id
+            << JflteGoogleEditionRamdiskPatcher::Id
+            << JflteNoobdevRamdiskPatcher::Id
+            << JflteTouchWizRamdiskPatcher::Id
+            << KlteAOSPRamdiskPatcher::Id
+            << KlteTouchWizRamdiskPatcher::Id;
+}
 
-    for (IPatcherFactory *factory : d->patcherFactories) {
-        if (factory->patchers().contains(name)) {
-            return factory;
-        }
+QSharedPointer<Patcher> PatcherPaths::createPatcher(const QString &id) const
+{
+    if (id == MultiBootPatcher::Id) {
+        return QSharedPointer<Patcher>(new MultiBootPatcher(this));
+    } else if (id == PrimaryUpgradePatcher::Id) {
+        return QSharedPointer<Patcher>(new PrimaryUpgradePatcher(this));
+    } else if (id == SyncdaemonUpdatePatcher::Id) {
+        return QSharedPointer<Patcher>(new SyncdaemonUpdatePatcher(this));
     }
 
-    return nullptr;
+    return QSharedPointer<Patcher>();
 }
 
-IAutoPatcherFactory *PatcherPaths::autoPatcherFactory(const QString &name) const
+QSharedPointer<AutoPatcher> PatcherPaths::createAutoPatcher(const QString &id,
+                                                            const FileInfo * const info,
+                                                            const PatchInfo::AutoPatcherArgs &args) const
 {
-    Q_D(const PatcherPaths);
-
-    for (IAutoPatcherFactory *factory : d->autoPatcherFactories) {
-        if (factory->autoPatchers().contains(name)) {
-            return factory;
-        }
+    if (id == JflteDalvikCachePatcher::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteDalvikCachePatcher(this, info));
+    } else if (id == JflteGoogleEditionPatcher::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteGoogleEditionPatcher(this, info));
+    } else if (id == JflteSlimAromaBundledMount::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteSlimAromaBundledMount(this, info));
+    } else if (id == JflteImperiumPatcher::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteImperiumPatcher(this, info));
+    } else if (id == JflteNegaliteNoWipeData::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteNegaliteNoWipeData(this, info));
+    } else if (id == JflteTriForceFixAroma::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteTriForceFixAroma(this, info));
+    } else if (id == JflteTriForceFixUpdate::Id) {
+        return QSharedPointer<AutoPatcher>(new JflteTriForceFixUpdate(this, info));
+    } else if (id == NoobdevMultiBoot::Id) {
+        return QSharedPointer<AutoPatcher>(new NoobdevMultiBoot(this, info));
+    } else if (id == NoobdevSystemProp::Id) {
+        return QSharedPointer<AutoPatcher>(new NoobdevSystemProp(this, info));
+    } else if (id == PatchFilePatcher::Id) {
+        return QSharedPointer<AutoPatcher>(new PatchFilePatcher(this, info, args));
+    } else if (id == StandardPatcher::Id) {
+        return QSharedPointer<AutoPatcher>(new StandardPatcher(this, info, args));
     }
 
-    return nullptr;
+    return QSharedPointer<AutoPatcher>();
 }
 
-IRamdiskPatcherFactory * PatcherPaths::ramdiskPatcherFactory(const QString &name) const
+QSharedPointer<RamdiskPatcher> PatcherPaths::createRamdiskPatcher(const QString &id,
+                                                                  const FileInfo * const info,
+                                                                  CpioFile * const cpio) const
 {
-    Q_D(const PatcherPaths);
-
-    for (IRamdiskPatcherFactory *factory : d->ramdiskPatcherFactories) {
-        if (factory->ramdiskPatchers().contains(name)) {
-            return factory;
-        }
+    if (id == BaconRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new BaconRamdiskPatcher(this, info, cpio));
+    } else if (id == D800RamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new D800RamdiskPatcher(this, info, cpio));
+    } else if (id == FalconRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new FalconRamdiskPatcher(this, info, cpio));
+    } else if (id == HammerheadAOSPRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new HammerheadAOSPRamdiskPatcher(this, info, cpio));
+    } else if (id == HammerheadNoobdevRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new HammerheadNoobdevRamdiskPatcher(this, info, cpio));
+    } else if (id == HlteAOSPRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new HlteAOSPRamdiskPatcher(this, info, cpio));
+    } else if (id == JflteAOSPRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new JflteAOSPRamdiskPatcher(this, info, cpio));
+    } else if (id == JflteGoogleEditionRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new JflteGoogleEditionRamdiskPatcher(this, info, cpio));
+    } else if (id == JflteNoobdevRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new JflteNoobdevRamdiskPatcher(this, info, cpio));
+    } else if (id == JflteTouchWizRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new JflteTouchWizRamdiskPatcher(this, info, cpio));
+    } else if (id == KlteAOSPRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new KlteAOSPRamdiskPatcher(this, info, cpio));
+    } else if (id == KlteTouchWizRamdiskPatcher::Id) {
+        return QSharedPointer<RamdiskPatcher>(new KlteTouchWizRamdiskPatcher(this, info, cpio));
     }
 
-    return nullptr;
+    return QSharedPointer<RamdiskPatcher>();
+}
+
+QString PatcherPaths::patcherName(const QString &id) const
+{
+    if (id == MultiBootPatcher::Id) {
+        return MultiBootPatcher::Name;
+    } else if (id == PrimaryUpgradePatcher::Id) {
+        return PrimaryUpgradePatcher::Name;
+    } else if (id == SyncdaemonUpdatePatcher::Id) {
+        return SyncdaemonUpdatePatcher::Name;
+    }
+
+    return QString();
 }
 
 QList<PartitionConfig *> PatcherPaths::partitionConfigs() const
@@ -500,90 +568,6 @@ bool PatcherPaths::loadConfig()
     file.close();
 
     return true;
-}
-
-bool PatcherPaths::loadPlugins()
-{
-    Q_D(PatcherPaths);
-
-    QDir dir(pluginsDirectory());
-    if (!dir.exists()) {
-        d->errorCode = PatcherError::DirectoryNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(pluginsDirectory());
-        return false;
-    }
-
-    QDirIterator iter(dir.absolutePath(),
-                      QStringList() << QStringLiteral("*dbp-*.so")
-                                    << QStringLiteral("*dbp-*.dll"),
-                      QDir::Files, QDirIterator::Subdirectories);
-    while (iter.hasNext()) {
-        QString name = iter.next();
-
-        QPluginLoader *loader = new QPluginLoader(name);
-
-        //qDebug() << loader->metaData().value(QStringLiteral("MetaData")).toObject().keys();
-
-        QObject *plugin = loader->instance();
-
-        if (!plugin) {
-            qWarning() << "Invalid plugin:" << name;
-            qWarning() << loader->errorString();
-            loader->unload();
-            delete loader;
-        } else if (!loadPlugin(plugin)) {
-            qWarning() << "Found plugin, but it doesn't implement any interfaces:" << name;
-            loader->unload();
-            delete loader;
-        } else {
-            qDebug() << "Loaded plugin:" << name;
-            d->pluginLoaders << loader;
-        }
-    }
-
-    qDebug() << "Loaded"
-             << d->patcherFactories.size()
-             << "patchers,"
-             << d->autoPatcherFactories.size()
-             << "autopatchers, and"
-             << d->ramdiskPatcherFactories.size()
-             << "ramdisk patchers";
-
-    return true;
-}
-
-bool PatcherPaths::loadPlugin(QObject *plugin)
-{
-    Q_D(PatcherPaths);
-
-    bool loadedSomething = false;
-
-    IPatcherFactory *iPatcherFactory =
-            qobject_cast<IPatcherFactory *>(plugin);
-    if (iPatcherFactory) {
-        loadedSomething = true;
-        d->patcherFactories << iPatcherFactory;
-
-        // Add all the partition configs
-        d->partConfigs << iPatcherFactory->partConfigs();
-    }
-
-    IAutoPatcherFactory *iAutoPatcherFactory =
-            qobject_cast<IAutoPatcherFactory *>(plugin);
-    if (iAutoPatcherFactory) {
-        loadedSomething = true;
-        d->autoPatcherFactories << iAutoPatcherFactory;
-    }
-
-    IRamdiskPatcherFactory *iRamdiskPatcherFactory =
-            qobject_cast<IRamdiskPatcherFactory *>(plugin);
-    if (iRamdiskPatcherFactory) {
-        loadedSomething = true;
-        d->ramdiskPatcherFactories << iRamdiskPatcherFactory;
-    }
-
-    return loadedSomething;
 }
 
 bool PatcherPaths::loadPatchInfos()
