@@ -489,7 +489,7 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
 
                 line = mountLine.arg(comment).arg(blockDev).arg(mountPoint)
                         .arg(fsType).arg(mountArgs).arg(voldArgs);
-            } else if (match.hasMatch()
+            } else if (match.hasMatch() && removeModemMounts
                     && (blockDev.contains(QStringLiteral("apnhlos"))
                     || blockDev.contains(QStringLiteral("mdm"))
                     || blockDev.contains(QStringLiteral("modem")))) {
