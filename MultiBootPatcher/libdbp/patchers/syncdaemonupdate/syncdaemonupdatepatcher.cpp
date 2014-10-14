@@ -127,6 +127,16 @@ bool SyncdaemonUpdatePatcher::patchFile()
         return false;
     }
 
+    bool isImg = d->info->filename().endsWith(
+            QStringLiteral(".img"), Qt::CaseInsensitive);
+    bool isLok = d->info->filename().endsWith(
+            QStringLiteral(".lok"), Qt::CaseInsensitive);
+    if (!isImg && !isLok) {
+        d->errorCode = PatcherError::OnlyBootImageSupported;
+        d->errorString = PatcherError::errorString(d->errorCode);
+        return false;
+    }
+
     return patchImage();
 }
 

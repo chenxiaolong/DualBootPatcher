@@ -71,6 +71,10 @@ public:
 
         // XML
         XmlParseFileError,
+
+        // Supported files
+        OnlyZipSupported,
+        OnlyBootImageSupported,
     };
 
     static QString errorString(Error error);

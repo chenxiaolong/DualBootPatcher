@@ -111,6 +111,12 @@ QString PatcherError::errorString(Error error)
     case XmlParseFileError:
         return tr("Failed to parse XML file: %1");
 
+    case OnlyZipSupported:
+        return tr("Only ZIP files are supported by %1");
+
+    case OnlyBootImageSupported:
+        return tr("Only boot images are supported by %1");
+
     default:
         return QString();
     }

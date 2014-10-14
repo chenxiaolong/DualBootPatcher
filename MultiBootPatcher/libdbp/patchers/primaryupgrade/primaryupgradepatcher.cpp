@@ -188,6 +188,13 @@ bool PrimaryUpgradePatcher::patchFile()
         return false;
     }
 
+    if (!d->info->filename().endsWith(
+            QStringLiteral(".zip"), Qt::CaseInsensitive)) {
+        d->errorCode = PatcherError::OnlyZipSupported;
+        d->errorString = PatcherError::errorString(d->errorCode);
+        return false;
+    }
+
     return patchZip();
 }
 
