@@ -55,6 +55,8 @@ public:
 
     virtual bool patchFile();
 
+    virtual void cancelPatching();
+
 private:
     bool patchImage();
     QString findPartConfigId(const CpioFile * const cpio) const;

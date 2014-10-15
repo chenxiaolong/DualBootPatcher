@@ -31,6 +31,7 @@ public:
     const FileInfo *info;
 
     int progress;
+    volatile bool cancelled;
 
     PatcherError::Error errorCode;
     QString errorString;

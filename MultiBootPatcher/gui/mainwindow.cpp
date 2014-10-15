@@ -78,6 +78,10 @@ MainWindow::~MainWindow()
 {
     Q_D(MainWindow);
 
+    if (!d->patcher.isNull()) {
+        d->patcher->cancelPatching();
+    }
+
     d->thread->quit();
     d->thread->wait();
 }

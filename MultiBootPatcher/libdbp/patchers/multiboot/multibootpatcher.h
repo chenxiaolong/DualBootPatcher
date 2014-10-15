@@ -42,21 +42,23 @@ public:
 
     static QList<PartitionConfig *> partConfigs();
 
-    virtual PatcherError::Error error() const;
-    virtual QString errorString() const;
+    virtual PatcherError::Error error() const override;
+    virtual QString errorString() const override;
 
     // Patcher info
-    virtual QString id() const;
-    virtual QString name() const;
-    virtual bool usesPatchInfo() const;
-    virtual QStringList supportedPartConfigIds() const;
+    virtual QString id() const override;
+    virtual QString name() const override;
+    virtual bool usesPatchInfo() const override;
+    virtual QStringList supportedPartConfigIds() const override;
 
     // Patching
-    virtual void setFileInfo(const FileInfo * const info);
+    virtual void setFileInfo(const FileInfo * const info) override;
 
-    virtual QString newFilePath();
+    virtual QString newFilePath() override;
 
-    virtual bool patchFile();
+    virtual bool patchFile() override;
+
+    virtual void cancelPatching() override;
 
 private:
     bool patchBootImage(QByteArray *data);

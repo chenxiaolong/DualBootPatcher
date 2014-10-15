@@ -59,6 +59,8 @@ public:
 
     virtual bool patchFile();
 
+    virtual void cancelPatching();
+
 private:
     static const QString Format;
     static const QString Mount;

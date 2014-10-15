@@ -34,6 +34,31 @@
 #include <archive_entry.h>
 
 
+#define RETURN_IF_CANCELLED \
+    if (d->cancelled) { \
+        return false; \
+    }
+
+#define RETURN_IF_CANCELLED_AND_FREE_READ(x) \
+    if (d->cancelled) { \
+        archive_read_free(x); \
+        return false; \
+    }
+
+#define RETURN_IF_CANCELLED_AND_FREE_WRITE(x) \
+    if (d->cancelled) { \
+        archive_write_free(x); \
+        return false; \
+    }
+
+#define RETURN_ERROR_IF_CANCELLED \
+    if (d->cancelled) { \
+        d->errorCode = PatcherError::PatchingCancelled; \
+        d->errorString = PatcherError::errorString(d->errorCode); \
+        return false; \
+    }
+
+
 const QString MultiBootPatcher::Id =
         QStringLiteral("MultiBootPatcher");
 const QString MultiBootPatcher::Name =
@@ -169,9 +194,18 @@ QString MultiBootPatcher::newFilePath()
             % d->info->partConfig()->id() % QLatin1Char('.') % fi.suffix());
 }
 
+void MultiBootPatcher::cancelPatching()
+{
+    Q_D(MultiBootPatcher);
+
+    d->cancelled = true;
+}
+
 bool MultiBootPatcher::patchFile()
 {
     Q_D(MultiBootPatcher);
+
+    d->cancelled = false;
 
     if (d->info == nullptr) {
         qWarning() << "d->info cannot be null!";
@@ -187,7 +221,11 @@ bool MultiBootPatcher::patchFile()
         return false;
     }
 
-    return patchZip();
+    bool ret = patchZip();
+
+    RETURN_ERROR_IF_CANCELLED
+
+    return ret;
 }
 
 bool MultiBootPatcher::patchBootImage(QByteArray *data)
@@ -216,6 +254,8 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
     CpioFile cpio;
     cpio.load(bi.ramdiskImage());
 
+    RETURN_IF_CANCELLED
+
     QSharedPointer<RamdiskPatcher> rp = d->pp->createRamdiskPatcher(
             d->info->patchInfo()->ramdisk(key), d->info, &cpio);
     if (rp.isNull()) {
@@ -231,6 +271,8 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
         return false;
     }
 
+    RETURN_IF_CANCELLED
+
     QString mountScript = QStringLiteral("init.multiboot.mounting.sh");
     QFile mountScriptFile(d->pp->scriptsDirectory()
             % QLatin1Char('/') % mountScript);
@@ -244,6 +286,8 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
     QByteArray mountScriptContents = mountScriptFile.readAll();
     mountScriptFile.close();
 
+    RETURN_IF_CANCELLED
+
     d->info->partConfig()->replaceShellLine(&mountScriptContents, true);
 
     if (cpio.exists(mountScript)) {
@@ -251,6 +295,8 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
     }
 
     cpio.addFile(mountScriptContents, mountScript, 0750);
+
+    RETURN_IF_CANCELLED
 
     // Add busybox
     QString busybox = QStringLiteral("sbin/busybox-static");
@@ -261,6 +307,8 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
 
     cpio.addFile(d->pp->binariesDirectory()
             % QStringLiteral("/busybox-static"), busybox, 0750);
+
+    RETURN_IF_CANCELLED
 
     // Add syncdaemon
     QString syncdaemon = QStringLiteral("sbin/syncdaemon");
@@ -273,6 +321,8 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
             % QStringLiteral("android") % Sep
             % d->info->device()->architecture() % Sep
             % QStringLiteral("syncdaemon"), syncdaemon, 0750);
+
+    RETURN_IF_CANCELLED
 
     // Add patched init binary if it was specified by the patchinfo
     if (!d->info->patchInfo()->patchedInit(key).isEmpty()) {
@@ -289,10 +339,14 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
         }
     }
 
+    RETURN_IF_CANCELLED
+
     QByteArray newRamdisk = cpio.createData(true);
     bi.setRamdiskImage(newRamdisk);
 
     *data = bi.create();
+
+    RETURN_IF_CANCELLED
 
     return true;
 }
@@ -324,6 +378,8 @@ bool MultiBootPatcher::patchZip()
         return false;
     }
 
+    RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
+
     emit detailsUpdated(tr("Counting number of files in zip file ..."));
 
     int count = scanNumberOfFiles();
@@ -331,6 +387,8 @@ bool MultiBootPatcher::patchZip()
         archive_write_free(aOutput);
         return false;
     }
+
+    RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
 
     // +1 for dualboot.sh
     emit maxProgressUpdated(count + 1);
@@ -349,12 +407,16 @@ bool MultiBootPatcher::patchZip()
         return false;
     }
 
+    RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
+
     // On the second pass, run the autopatchers on the rest of the files
 
     if (!scanAndPatchRemaining(aOutput, bootImages)) {
         archive_write_free(aOutput);
         return false;
     }
+
+    RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
 
     emit progressUpdated(++d->progress);
     emit detailsUpdated(QStringLiteral("dualboot.sh"));
@@ -379,6 +441,8 @@ bool MultiBootPatcher::patchZip()
     }
 
     archive_write_free(aOutput);
+
+    RETURN_IF_CANCELLED
 
     return true;
 }
@@ -512,9 +576,13 @@ bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
         return false;
     }
 
+    RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
+
     archive_entry *entry;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
+        RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
+
         const QString curFile =
                 QString::fromLocal8Bit(archive_entry_pathname(entry));
 
@@ -570,6 +638,9 @@ bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
     }
 
     archive_read_free(aInput);
+
+    RETURN_IF_CANCELLED
+
     return true;
 }
 
@@ -596,6 +667,8 @@ bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
         return false;
     }
 
+    RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
+
     QHash<QString, QList<QSharedPointer<AutoPatcher>>> patcherFromFile;
 
     for (const PatchInfo::AutoPatcherItem &item :
@@ -616,6 +689,8 @@ bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
 
         QStringList existingFiles = ap->existingFiles();
         if (existingFiles.isEmpty()) {
+            archive_read_free(aInput);
+
             d->errorCode = PatcherError::CustomError;
             d->errorString = tr("Failed to run autopatcher: The %1 patcher says no existing files in the zip file should be patched.").arg(item.first);
             return false;
@@ -626,9 +701,13 @@ bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
         }
     }
 
+    RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
+
     archive_entry *entry;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
+        RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
+
         const QString curFile =
                 QString::fromLocal8Bit(archive_entry_pathname(entry));
 
@@ -732,6 +811,7 @@ int MultiBootPatcher::scanNumberOfFiles()
     int count = 0;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
+        RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
         count++;
         archive_read_data_skip(aInput);
     }

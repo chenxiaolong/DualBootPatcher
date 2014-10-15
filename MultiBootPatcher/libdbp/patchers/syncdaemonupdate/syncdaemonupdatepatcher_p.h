@@ -30,6 +30,8 @@ public:
     const PatcherPaths *pp;
     const FileInfo *info;
 
+    bool cancelled;
+
     PatcherError::Error errorCode;
     QString errorString;
 };

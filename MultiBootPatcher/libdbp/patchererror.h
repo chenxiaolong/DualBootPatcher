@@ -75,6 +75,9 @@ public:
         // Supported files
         OnlyZipSupported,
         OnlyBootImageSupported,
+
+        // Cancelled
+        PatchingCancelled,
     };
 
     static QString errorString(Error error);

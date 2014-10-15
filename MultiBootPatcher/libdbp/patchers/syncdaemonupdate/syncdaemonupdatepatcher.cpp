@@ -33,6 +33,19 @@
 #include <QtCore/QStringBuilder>
 
 
+#define RETURN_IF_CANCELLED \
+    if (d->cancelled) { \
+        return false; \
+    }
+
+#define RETURN_ERROR_IF_CANCELLED \
+    if (d->cancelled) { \
+        d->errorCode = PatcherError::PatchingCancelled; \
+        d->errorString = PatcherError::errorString(d->errorCode); \
+        return false; \
+    }
+
+
 const QString SyncdaemonUpdatePatcher::Id =
         QStringLiteral("SyncdaemonUpdatePatcher");
 const QString SyncdaemonUpdatePatcher::Name =
@@ -116,6 +129,13 @@ QString SyncdaemonUpdatePatcher::newFilePath()
             % QStringLiteral("_syncdaemon.") % fi.suffix());
 }
 
+void SyncdaemonUpdatePatcher::cancelPatching()
+{
+    Q_D(SyncdaemonUpdatePatcher);
+
+    d->cancelled = true;
+}
+
 bool SyncdaemonUpdatePatcher::patchFile()
 {
     Q_D(SyncdaemonUpdatePatcher);
@@ -137,7 +157,11 @@ bool SyncdaemonUpdatePatcher::patchFile()
         return false;
     }
 
-    return patchImage();
+    bool ret = patchImage();
+
+    RETURN_ERROR_IF_CANCELLED
+
+    return ret;
 }
 
 bool SyncdaemonUpdatePatcher::patchImage()
@@ -153,6 +177,8 @@ bool SyncdaemonUpdatePatcher::patchImage()
 
     CpioFile cpio;
     cpio.load(bi.ramdiskImage());
+
+    RETURN_IF_CANCELLED
 
     QString partConfigId = findPartConfigId(&cpio);
     if (!partConfigId.isNull()) {
@@ -189,6 +215,8 @@ bool SyncdaemonUpdatePatcher::patchImage()
         }
     }
 
+    RETURN_IF_CANCELLED
+
     // Add syncdaemon to init.rc if it doesn't already exist
     if (!cpio.exists(QStringLiteral("sbin/syncdaemon"))) {
         CoreRamdiskPatcher crp(d->pp, d->info, &cpio);
@@ -217,6 +245,8 @@ bool SyncdaemonUpdatePatcher::patchImage()
                          lines.join(QLatin1Char('\n')).toUtf8());
     }
 
+    RETURN_IF_CANCELLED
+
     QString syncdaemon = QStringLiteral("sbin/syncdaemon");
 
     if (cpio.exists(syncdaemon)) {
@@ -227,6 +257,8 @@ bool SyncdaemonUpdatePatcher::patchImage()
             % QStringLiteral("android") % Sep
             % d->info->device()->architecture() % Sep
             % QStringLiteral("syncdaemon"), syncdaemon, 0750);
+
+    RETURN_IF_CANCELLED
 
     bi.setRamdiskImage(cpio.createData(true));
 
@@ -240,6 +272,8 @@ bool SyncdaemonUpdatePatcher::patchImage()
 
     file.write(bi.create());
     file.close();
+
+    RETURN_IF_CANCELLED
 
     return true;
 }

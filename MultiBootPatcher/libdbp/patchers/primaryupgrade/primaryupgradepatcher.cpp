@@ -33,6 +33,38 @@
 #include <archive_entry.h>
 
 
+#define RETURN_IF_CANCELLED \
+    if (d->cancelled) { \
+        return false; \
+    }
+
+#define RETURN_IF_CANCELLED_AND_FREE_READ(x) \
+    if (d->cancelled) { \
+        archive_read_free(x); \
+        return false; \
+    }
+
+#define RETURN_IF_CANCELLED_AND_FREE_WRITE(x) \
+    if (d->cancelled) { \
+        archive_write_free(x); \
+        return false; \
+    }
+
+#define RETURN_IF_CANCELLED_AND_FREE_READ_WRITE(x, y) \
+    if (d->cancelled) { \
+        archive_read_free(x); \
+        archive_write_free(y); \
+        return false; \
+    }
+
+#define RETURN_ERROR_IF_CANCELLED \
+    if (d->cancelled) { \
+        d->errorCode = PatcherError::PatchingCancelled; \
+        d->errorString = PatcherError::errorString(d->errorCode); \
+        return false; \
+    }
+
+
 const QString PrimaryUpgradePatcher::Id =
         QStringLiteral("PrimaryUpgradePatcher");
 const QString PrimaryUpgradePatcher::Name =
@@ -177,9 +209,18 @@ QString PrimaryUpgradePatcher::newFilePath()
             % QLatin1String("_primaryupgrade.") % fi.suffix());
 }
 
+void PrimaryUpgradePatcher::cancelPatching()
+{
+    Q_D(PrimaryUpgradePatcher);
+
+    d->cancelled = true;
+}
+
 bool PrimaryUpgradePatcher::patchFile()
 {
     Q_D(PrimaryUpgradePatcher);
+
+    d->cancelled = false;
 
     if (d->info == nullptr) {
         qWarning() << "d->info is null!";
@@ -195,7 +236,11 @@ bool PrimaryUpgradePatcher::patchFile()
         return false;
     }
 
-    return patchZip();
+    bool ret = patchZip();
+
+    RETURN_ERROR_IF_CANCELLED
+
+    return ret;
 }
 
 bool PrimaryUpgradePatcher::patchZip()
@@ -210,6 +255,8 @@ bool PrimaryUpgradePatcher::patchZip()
     if (count < 0) {
         return false;
     }
+
+    RETURN_IF_CANCELLED
 
     // 6 extra files
     emit maxProgressUpdated(count + 6);
@@ -255,6 +302,8 @@ bool PrimaryUpgradePatcher::patchZip()
     archive_entry *entry;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
+        RETURN_IF_CANCELLED_AND_FREE_READ_WRITE(aInput, aOutput)
+
         const QString curFile =
                 QString::fromLocal8Bit(archive_entry_pathname(entry));
 
@@ -380,6 +429,8 @@ bool PrimaryUpgradePatcher::patchZip()
 
     archive_read_free(aInput);
     archive_write_free(aOutput);
+
+    RETURN_IF_CANCELLED
 
     return true;
 }
@@ -638,6 +689,8 @@ int PrimaryUpgradePatcher::scanNumberOfFiles()
     int count = 0;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
+        RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
+
         const QString curFile =
                 QString::fromLocal8Bit(archive_entry_pathname(entry));
         if (!ignoreFile(curFile)) {
@@ -647,6 +700,9 @@ int PrimaryUpgradePatcher::scanNumberOfFiles()
     }
 
     archive_read_free(aInput);
+
+    RETURN_IF_CANCELLED
+
     return count;
 }
 

@@ -117,6 +117,9 @@ QString PatcherError::errorString(Error error)
     case OnlyBootImageSupported:
         return tr("Only boot images are supported by %1");
 
+    case PatchingCancelled:
+        return tr("Patching was cancelled");
+
     default:
         return QString();
     }

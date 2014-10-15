@@ -109,6 +109,15 @@ public:
      */
     virtual bool patchFile() = 0;
 
+public slots:
+    /*!
+        \brief Cancel the patching of a file
+
+        This method allows the patching process to be cancelled. This is only
+        useful if the patching operation is being done on a thread.
+     */
+    virtual void cancelPatching() = 0;
+
 signals:
     void maxProgressUpdated(int max);
     void progressUpdated(int max);
