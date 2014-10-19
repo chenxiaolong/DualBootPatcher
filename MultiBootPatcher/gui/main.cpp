@@ -42,27 +42,21 @@ int main(int argc, char *argv[])
 
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
 
-    PatcherPaths *pp = new PatcherPaths();
+    PatcherPaths pp;
 
 #ifdef PORTABLE
-    pp->setDataDirectory(a.applicationDirPath() % Sep % QStringLiteral(LOCAL_DATA_DIR));
+    pp.setDataDirectory(a.applicationDirPath() % Sep % QStringLiteral(LOCAL_DATA_DIR));
 #else
-    pp->setDataDirectory(QStringLiteral(DATA_DIR));
+    pp.setDataDirectory(QStringLiteral(DATA_DIR));
 #endif
 
-    if (!pp->loadConfig()) {
+    if (!pp.loadPatchInfos()) {
         QMessageBox::warning(nullptr, a.applicationName(),
-                             QObject::tr("Failed to load configuration file: %1").arg(pp->configFile()));
+                             QObject::tr("Failed to load patchinfo files in: %1").arg(pp.patchInfosDirectory()));
         return 1;
     }
 
-    if (!pp->loadPatchInfos()) {
-        QMessageBox::warning(nullptr, a.applicationName(),
-                             QObject::tr("Failed to load patchinfo files in: %1").arg(pp->patchInfosDirectory()));
-        return 1;
-    }
-
-    MainWindow w(pp);
+    MainWindow w(&pp);
     w.show();
 
     return a.exec();

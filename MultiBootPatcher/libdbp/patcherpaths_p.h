@@ -30,9 +30,6 @@ class PatcherPathsPrivate
 public:
     ~PatcherPathsPrivate();
 
-    // Files
-    QString configFile;
-
     // Directories
     QString binariesDir;
     QString dataDir;
@@ -41,7 +38,6 @@ public:
     QString patchInfosDir;
     QString scriptsDir;
 
-    // Config
     QString version;
     QList<Device *> devices;
     QStringList patchinfoIncludeDirs;

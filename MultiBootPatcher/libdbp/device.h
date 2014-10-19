@@ -30,17 +30,26 @@ class PatcherPaths;
 
 class LIBDBPSHARED_EXPORT Device
 {
-    friend class PatcherPaths;
-
 public:
+    static const QString SelinuxPermissive;
+    static const QString SelinuxUnchanged;
+    static const QString SystemPartition;
+    static const QString CachePartition;
+    static const QString DataPartition;
+
     Device();
     ~Device();
 
     QString codename() const;
+    void setCodename(const QString &name);
     QString name() const;
+    void setName(const QString &name);
     QString architecture() const;
+    void setArchitecture(const QString &arch);
     QString selinux() const;
+    void setSelinux(const QString &selinux);
     QString partition(const QString &which) const;
+    void setPartition(const QString &which, const QString &partition);
     QStringList partitionTypes() const;
 
 private:

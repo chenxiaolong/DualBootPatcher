@@ -20,8 +20,11 @@
 #include "device.h"
 #include "device_p.h"
 
-
-const QString DevicePrivate::Unchanged = QStringLiteral("unchanged");
+const QString Device::SelinuxPermissive = QStringLiteral("permissive");
+const QString Device::SelinuxUnchanged = QStringLiteral("unchanged");
+const QString Device::SystemPartition = QStringLiteral("system");
+const QString Device::CachePartition = QStringLiteral("cache");
+const QString Device::DataPartition = QStringLiteral("data");
 
 Device::Device() : d_ptr(new DevicePrivate())
 {
@@ -43,11 +46,25 @@ QString Device::codename() const
     return d->codename;
 }
 
+void Device::setCodename(const QString& name)
+{
+    Q_D(Device);
+
+    d->codename = name;
+}
+
 QString Device::name() const
 {
     Q_D(const Device);
 
     return d->name;
+}
+
+void Device::setName(const QString& name)
+{
+    Q_D(Device);
+
+    d->name = name;
 }
 
 QString Device::architecture() const
@@ -57,15 +74,29 @@ QString Device::architecture() const
     return d->architecture;
 }
 
+void Device::setArchitecture(const QString& arch)
+{
+    Q_D(Device);
+
+    d->architecture = arch;
+}
+
 QString Device::selinux() const
 {
     Q_D(const Device);
 
-    if (d->selinux == DevicePrivate::Unchanged) {
+    if (d->selinux == SelinuxUnchanged) {
         return QString();
     }
 
     return d->selinux;
+}
+
+void Device::setSelinux(const QString& selinux)
+{
+    Q_D(Device);
+
+    d->selinux = selinux;
 }
 
 QString Device::partition(const QString &which) const
@@ -77,6 +108,13 @@ QString Device::partition(const QString &which) const
     } else {
         return QString();
     }
+}
+
+void Device::setPartition(const QString& which, const QString& partition)
+{
+    Q_D(Device);
+
+    d->partitions[which] = partition;
 }
 
 QStringList Device::partitionTypes() const

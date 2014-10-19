@@ -6,6 +6,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 add_definitions(
     -DLIBDBP_LIBRARY
+    -DLIBDBP_VERSION="${DBP_VERSION}"
 )
 
 add_definitions(

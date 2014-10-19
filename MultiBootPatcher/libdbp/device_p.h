@@ -26,8 +26,6 @@
 class DevicePrivate
 {
 public:
-    static const QString Unchanged;
-
     QString codename;
     QString name;
     QString architecture;

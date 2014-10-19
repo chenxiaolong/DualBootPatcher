@@ -1,16 +1,3 @@
-# Configuration file
-configure_file(
-    patcher.xml.in
-    ${CMAKE_CURRENT_BINARY_DIR}/patcher.xml
-    @ONLY
-)
-
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/patcher.xml
-    DESTINATION ${DATA_INSTALL_DIR}
-    COMPONENT Libraries
-)
-
 # init binaries
 install(
     DIRECTORY inits/

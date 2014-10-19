@@ -52,7 +52,6 @@
 #include <QtCore/QStringBuilder>
 #include <QtCore/QXmlStreamReader>
 
-static const QString ConfigFileName = QStringLiteral("patcher.xml");
 static const QString BinariesDirName = QStringLiteral("binaries");
 static const QString InitsDirName = QStringLiteral("inits");
 static const QString PatchesDirName = QStringLiteral("patches");
@@ -68,20 +67,6 @@ PatcherPathsPrivate::~PatcherPathsPrivate()
 }
 
 // --------------------------------
-
-const QString PatcherPaths::ConfigTagPatcher = QLatin1String("patcher");
-const QString PatcherPaths::ConfigTagVersion = QLatin1String("version");
-const QString PatcherPaths::ConfigTagDevices = QLatin1String("devices");
-const QString PatcherPaths::ConfigTagDevice = QLatin1String("device");
-const QString PatcherPaths::ConfigTagName = QLatin1String("name");
-const QString PatcherPaths::ConfigTagSelinux = QLatin1String("selinux");
-const QString PatcherPaths::ConfigTagPartitions = QLatin1String("partitions");
-const QString PatcherPaths::ConfigTagPartition = QLatin1String("partition");
-const QString PatcherPaths::ConfigTagPatchInfoDirs = QLatin1String("patchinfo-dirs");
-const QString PatcherPaths::ConfigTagPatchInfoDir = QLatin1String("patchinfo-dir");
-
-const QString PatcherPaths::ConfigAttrCodeName = QLatin1String("codename");
-const QString PatcherPaths::ConfigAttrType = QLatin1String("type");
 
 const QString PatcherPaths::PatchInfoTagPatchinfo = QLatin1String("patchinfo");
 const QString PatcherPaths::PatchInfoTagMatches = QLatin1String("matches");
@@ -107,7 +92,15 @@ const QString PatcherPaths::XmlTextFalse = QLatin1String("false");
 
 PatcherPaths::PatcherPaths() : d_ptr(new PatcherPathsPrivate())
 {
+    Q_D(PatcherPaths);
+
+    loadDefaultDevices();
     loadDefaultPatchers();
+
+    d->patchinfoIncludeDirs << QStringLiteral("Google_Apps");
+    d->patchinfoIncludeDirs << QStringLiteral("Other");
+
+    d->version = QStringLiteral(LIBDBP_VERSION);
 }
 
 PatcherPaths::~PatcherPaths()
@@ -147,17 +140,6 @@ QString PatcherPaths::errorString() const
     Q_D(const PatcherPaths);
 
     return d->errorString;
-}
-
-QString PatcherPaths::configFile() const
-{
-    Q_D(const PatcherPaths);
-
-    if (d->configFile.isNull()) {
-        return dataDirectory() % Sep % ConfigFileName;
-    } else {
-        return d->configFile;
-    }
 }
 
 QString PatcherPaths::binariesDirectory() const
@@ -222,13 +204,6 @@ QString PatcherPaths::scriptsDirectory() const
     }
 }
 
-void PatcherPaths::setConfigFile(const QString &path)
-{
-    Q_D(PatcherPaths);
-
-    d->configFile = path;
-}
-
 void PatcherPaths::setBinariesDirectory(const QString &path)
 {
     Q_D(PatcherPaths);
@@ -276,19 +251,16 @@ void PatcherPaths::reset()
     Q_D(PatcherPaths);
 
     // Paths
-    d->configFile.clear();
     d->dataDir.clear();
     d->initsDir.clear();
     d->patchesDir.clear();
     d->patchInfosDir.clear();
 
-    // Config
     for (Device *device : d->devices) {
         delete device;
     }
 
     d->devices.clear();
-    d->version.clear();
 }
 
 QString PatcherPaths::version() const
@@ -339,6 +311,71 @@ QList<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
     }
 
     return l;
+}
+
+void PatcherPaths::loadDefaultDevices()
+{
+    Q_D(PatcherPaths);
+
+    Device *device;
+
+    // Samsung Galaxy S 4
+    device = new Device();
+    device->setCodename(QStringLiteral("jflte"));
+    device->setName(QStringLiteral("Samsung Galaxy S 4"));
+    device->setSelinux(Device::SelinuxPermissive);
+    device->setPartition(Device::SystemPartition, QStringLiteral("mmcblk0p16"));
+    device->setPartition(Device::CachePartition, QStringLiteral("mmcblk0p18"));
+    device->setPartition(Device::DataPartition, QStringLiteral("mmcblk0p29"));
+    d->devices << device;
+
+    // Samsung Galaxy S 5
+    device = new Device();
+    device->setCodename(QStringLiteral("klte"));
+    device->setName(QStringLiteral("Samsung Galaxy S 5"));
+    device->setSelinux(Device::SelinuxPermissive);
+    device->setPartition(Device::SystemPartition, QStringLiteral("mmcblk0p23"));
+    device->setPartition(Device::CachePartition, QStringLiteral("mmcblk0p24"));
+    device->setPartition(Device::DataPartition, QStringLiteral("mmcblk0p26"));
+    d->devices << device;
+
+    // Samsung Galaxy Note 3
+    device = new Device();
+    device->setCodename(QStringLiteral("hlte"));
+    device->setName(QStringLiteral("Samsung Galaxy Note 3"));
+    device->setSelinux(Device::SelinuxPermissive);
+    device->setPartition(Device::SystemPartition, QStringLiteral("mmcblk0p23"));
+    device->setPartition(Device::CachePartition, QStringLiteral("mmcblk0p24"));
+    device->setPartition(Device::DataPartition, QStringLiteral("mmcblk0p26"));
+    d->devices << device;
+
+    // Google/LG Nexus 5
+    device = new Device();
+    device->setCodename(QStringLiteral("hammerhead"));
+    device->setName(QStringLiteral("Google/LG Nexus 5"));
+    device->setSelinux(Device::SelinuxUnchanged);
+    d->devices << device;
+
+    // OnePlus One
+    device = new Device();
+    device->setCodename(QStringLiteral("bacon"));
+    device->setName(QStringLiteral("OnePlus One"));
+    device->setSelinux(Device::SelinuxUnchanged);
+    d->devices << device;
+
+    // LG G2
+    device = new Device();
+    device->setCodename(QStringLiteral("d800"));
+    device->setName(QStringLiteral("LG G2"));
+    device->setSelinux(Device::SelinuxUnchanged);
+    d->devices << device;
+
+    // Falcon
+    device = new Device();
+    device->setCodename(QStringLiteral("falcon"));
+    device->setName(QStringLiteral("Motorola Moto G"));
+    device->setSelinux(Device::SelinuxUnchanged);
+    d->devices << device;
 }
 
 void PatcherPaths::loadDefaultPatchers()
@@ -523,53 +560,6 @@ PartitionConfig * PatcherPaths::partitionConfig(const QString &id) const
     return nullptr;
 }
 
-bool PatcherPaths::loadConfig()
-{
-    Q_D(PatcherPaths);
-
-    QFile file(configFile());
-    if (!file.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(configFile());
-        return false;
-    }
-
-    QXmlStreamReader xml(&file);
-
-    while (!xml.atEnd() && !xml.hasError()) {
-        QXmlStreamReader::TokenType token = xml.readNext();
-
-        if (token == QXmlStreamReader::StartDocument) {
-            continue;
-        }
-
-        if (token == QXmlStreamReader::StartElement) {
-            if (xml.name() == ConfigTagPatcher) {
-                parseConfigTagPatcher(xml);
-            } else {
-                qWarning() << "Unknown tag:" << xml.name();
-            }
-        }
-    }
-
-    if (xml.hasError()) {
-        qWarning() << "XML:" << xml.errorString();
-        xml.clear();
-        file.close();
-
-        d->errorCode = PatcherError::XmlParseFileError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(configFile());
-        return false;
-    }
-
-    xml.clear();
-    file.close();
-
-    return true;
-}
-
 bool PatcherPaths::loadPatchInfos()
 {
     Q_D(PatcherPaths);
@@ -596,297 +586,6 @@ bool PatcherPaths::loadPatchInfos()
     }
 
     return true;
-}
-
-void PatcherPaths::parseConfigTagPatcher(QXmlStreamReader &xml)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagPatcher) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == ConfigTagPatcher)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == ConfigTagPatcher) {
-                qWarning() << "Nested <patcher> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == ConfigTagVersion) {
-                parseConfigTagVersion(xml);
-            } else if (xml.name() == ConfigTagDevices) {
-                parseConfigTagDevices(xml);
-            } else if (xml.name() == ConfigTagPatchInfoDirs) {
-                parseConfigTagPatchInfoDirs(xml);
-            } else {
-                qWarning() << "Unrecognized tag within <patcher>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
-    }
-}
-
-void PatcherPaths::parseConfigTagVersion(QXmlStreamReader &xml)
-{
-    Q_D(PatcherPaths);
-
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagVersion) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (d->version.isNull()) {
-            d->version = xml.text().toString();
-        } else {
-            qWarning() << "Ignoring additional <version> elements";
-        }
-    } else {
-        qWarning() << "<version> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parseConfigTagDevices(QXmlStreamReader &xml)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagDevices) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == ConfigTagDevices)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == ConfigTagDevices) {
-                qWarning() << "Nested <devices> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == ConfigTagDevice) {
-                parseConfigTagDevice(xml);
-            } else {
-                qWarning() << "Unrecognized tag within <devices>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
-    }
-}
-
-void PatcherPaths::parseConfigTagDevice(QXmlStreamReader &xml)
-{
-    Q_D(PatcherPaths);
-
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagDevice) {
-        return;
-    }
-
-    QXmlStreamAttributes attrs = xml.attributes();
-    if (!attrs.hasAttribute(ConfigAttrCodeName)) {
-        qWarning() << "<device> element has no 'codename' attribute";
-        xml.skipCurrentElement();
-        return;
-    }
-
-    Device *device = new Device();
-    device->d_func()->codename = attrs.value(ConfigAttrCodeName).toString();
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == ConfigTagDevice)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == ConfigTagDevice) {
-                qWarning() << "Nested <device> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == ConfigTagName) {
-                parseConfigTagName(xml, device);
-            } else if (xml.name() == ConfigTagSelinux) {
-                parseConfigTagSelinux(xml, device);
-            } else if (xml.name() == ConfigTagPartitions) {
-                parseConfigTagPartitions(xml, device);
-            } else {
-                qWarning() << "Unrecognized tag within <device>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
-    }
-
-    d->devices << device;
-}
-
-void PatcherPaths::parseConfigTagName(QXmlStreamReader &xml,
-                                      Device *device)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagName) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (device->d_func()->name.isNull()) {
-            device->d_func()->name = xml.text().toString();
-        } else {
-            qWarning() << "Ignoring additional <name> elements";
-        }
-    } else {
-        qWarning() << "<name> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parseConfigTagSelinux(QXmlStreamReader &xml,
-                                         Device *device)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagSelinux) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (device->d_func()->selinux.isNull()) {
-            device->d_func()->selinux = xml.text().toString();
-        } else {
-            qWarning() << "Ignoring additional <selinux> elements";
-        }
-    } else {
-        qWarning() << "<selinux> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parseConfigTagPartitions(QXmlStreamReader &xml,
-                                            Device *device)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagPartitions) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == ConfigTagPartitions)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == ConfigTagPartitions) {
-                qWarning() << "Nested <partitions> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == ConfigTagPartition) {
-                parseConfigTagPartition(xml, device);
-            } else {
-                qWarning() << "Unrecognized tag within <partitions>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
-    }
-}
-
-void PatcherPaths::parseConfigTagPartition(QXmlStreamReader &xml,
-                                           Device *device)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagPartition) {
-        return;
-    }
-
-    QXmlStreamAttributes attrs = xml.attributes();
-    if (!attrs.hasAttribute(ConfigAttrType)) {
-        qWarning() << "<partitions> element has no 'type' attribute";
-        xml.skipCurrentElement();
-        return;
-    }
-
-    QString type = attrs.value(ConfigAttrType).toString();
-
-    if (device->d_func()->partitions.contains(type)) {
-        qWarning() << "<partition> with type" << type << "has already been defined";
-        xml.skipCurrentElement();
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        device->d_func()->partitions[type] = xml.text().toString();
-    } else {
-        qWarning() << "<partition> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parseConfigTagPatchInfoDirs(QXmlStreamReader &xml)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagPatchInfoDirs) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == ConfigTagPatchInfoDirs)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == ConfigTagPatchInfoDirs) {
-                qWarning() << "Nested <patchinfo-dirs> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == ConfigTagPatchInfoDir) {
-                parseConfigTagPatchInfoDir(xml);
-            } else {
-                qWarning() << "Unrecognized tag within <patchinfo-dirs>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
-    }
-}
-
-void PatcherPaths::parseConfigTagPatchInfoDir(QXmlStreamReader &xml)
-{
-    Q_D(PatcherPaths);
-
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != ConfigTagPatchInfoDir) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (!d->patchinfoIncludeDirs.contains(xml.text().toString())) {
-            d->patchinfoIncludeDirs << xml.text().toString();
-        } else {
-            qWarning() << "Ignoring repeated <patchinfo-dir> value:" << xml.text();
-        }
-    } else {
-        qWarning() << "<patchinfo-dir> tag has no text";
-    }
-
-    xml.skipCurrentElement();
 }
 
 bool PatcherPaths::loadPatchInfoXml(const QString &path,
