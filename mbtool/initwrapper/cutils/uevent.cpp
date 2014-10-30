@@ -29,12 +29,12 @@
  */
 ssize_t uevent_kernel_multicast_recv(int socket, void *buffer, size_t length)
 {
-    uid_t user = -1;
-    return uevent_kernel_multicast_uid_recv(socket, buffer, length, &user);
+    uid_t uid = -1;
+    return uevent_kernel_multicast_uid_recv(socket, buffer, length, &uid);
 }
 
 /**
- * Like the above, but passes a uid_t in by reference. In the event that this
+ * Like the above, but passes a uid_t in by pointer. In the event that this
  * fails due to a bad uid check, the uid_t will be set to the uid of the
  * socket's peer.
  *
@@ -42,8 +42,12 @@ ssize_t uevent_kernel_multicast_recv(int socket, void *buffer, size_t length)
  * returns -1, sets errno to EIO, and sets "user" to the UID associated with the
  * message. If the peer UID cannot be determined, "user" is set to -1."
  */
-ssize_t uevent_kernel_multicast_uid_recv(int socket, void *buffer,
-                                         size_t length, uid_t *user)
+ssize_t uevent_kernel_multicast_uid_recv(int socket, void *buffer, size_t length, uid_t *uid)
+{
+    return uevent_kernel_recv(socket, buffer, length, true, uid);
+}
+
+ssize_t uevent_kernel_recv(int socket, void *buffer, size_t length, bool require_group, uid_t *uid)
 {
     struct iovec iov = { buffer, length };
     struct sockaddr_nl addr;
@@ -58,7 +62,7 @@ ssize_t uevent_kernel_multicast_uid_recv(int socket, void *buffer,
         0,
     };
 
-    *user = -1;
+    *uid = -1;
     ssize_t n = recvmsg(socket, &hdr, 0);
     if (n <= 0) {
         return n;
@@ -74,14 +78,18 @@ ssize_t uevent_kernel_multicast_uid_recv(int socket, void *buffer,
     }
 
     cred = (struct ucred *) CMSG_DATA(cmsg);
-    *user = cred->uid;
+    *uid = cred->uid;
     if (cred->uid != 0) {
         // Ignoring netlink message from non-root user
         goto out;
     }
 
-    if (addr.nl_groups == 0 || addr.nl_pid != 0) {
-        // Ignoring non-kernel or unicast netlink message
+    if (addr.nl_pid != 0) {
+        // Ignore non-kernel
+        goto out;
+    }
+    if (require_group && addr.nl_groups == 0) {
+        // Ignore unicast messages when requested
         goto out;
     }
 
