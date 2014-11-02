@@ -805,8 +805,14 @@ void BootImage::dumpHeader() const
 std::string BootImage::boardName() const
 {
     // The string may not be null terminated
-    return std::string(reinterpret_cast<char *>(m_impl->header.name),
-                       BOOT_NAME_SIZE);
+    void *location;
+    if ((location = std::memchr(m_impl->header.name, 0, BOOT_NAME_SIZE)) != nullptr) {
+        return std::string(reinterpret_cast<char *>(m_impl->header.name),
+                           reinterpret_cast<char *>(location));
+    } else {
+        return std::string(reinterpret_cast<char *>(m_impl->header.name),
+                           BOOT_NAME_SIZE);
+    }
 }
 
 void BootImage::setBoardName(const std::string &name)
@@ -824,8 +830,14 @@ void BootImage::resetBoardName()
 std::string BootImage::kernelCmdline() const
 {
     // The string may not be null terminated
-    return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
-                       BOOT_ARGS_SIZE);
+    void *location;
+    if ((location = std::memchr(m_impl->header.cmdline, 0, BOOT_ARGS_SIZE)) != nullptr) {
+        return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
+                           reinterpret_cast<char *>(location));
+    } else {
+        return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
+                           BOOT_ARGS_SIZE);
+    }
 }
 
 void BootImage::setKernelCmdline(const std::string &cmdline)
