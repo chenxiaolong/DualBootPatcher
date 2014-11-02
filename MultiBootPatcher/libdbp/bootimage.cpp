@@ -366,16 +366,15 @@ bool BootImage::loadLokiHeader(const std::vector<unsigned char> &data,
 int BootImage::lokiFindGzipOffset(const std::vector<unsigned char> &data) const
 {
     // Find the location of the ramdisk inside the boot image
-    unsigned int gzipOffset = 0x400 + sizeof(LokiHeader);
+    const unsigned int startOffset = 0x400 + sizeof(LokiHeader);
 
-    const char *gzip1 = "\x1F\x8B\x08\x00";
-    const char *gzip2 = "\x1F\x8B\x08\x08";
+    static const unsigned char gzip1[] = { 0x1F, 0x8B, 0x08, 0x00 };
+    static const unsigned char gzip2[] = { 0x1F, 0x8B, 0x08, 0x08 };
 
     std::vector<unsigned int> offsets;
     std::vector<bool> timestamps; // True if timestamp is not 0x00000000
 
-    // This is the offset on top of gzipOffset
-    int curOffset = gzipOffset - 1;
+    unsigned int curOffset = startOffset - 1;
 
     while (true) {
         // Try to find first gzip header
@@ -417,7 +416,7 @@ int BootImage::lokiFindGzipOffset(const std::vector<unsigned char> &data) const
     Log::log(Log::Debug, "Found %lu gzip headers", offsets.size());
 
     // Try gzip offset that is immediately followed by non-null timestamp first
-    gzipOffset = 0;
+    unsigned int gzipOffset = 0;
     for (unsigned int i = 0; i < offsets.size(); ++i) {
         if (timestamps[i]) {
             gzipOffset = offsets[i];
