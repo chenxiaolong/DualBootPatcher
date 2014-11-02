@@ -202,7 +202,7 @@ void StandardPatcher::insertWriteKernel(std::vector<std::string> *lines,
                 auto fwdIt = (++it).base();
                 while (fwdIt != lines->end()) {
                     if (fwdIt->find(";") != std::string::npos) {
-                        lines->insert(fwdIt, setKernelLine);
+                        lines->insert(++fwdIt, setKernelLine);
                         return;
                     } else {
                         ++fwdIt;
