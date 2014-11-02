@@ -589,9 +589,8 @@ bool QcomRamdiskPatcher::modifyInitTargetRc(const std::string &filename)
         } else if (boost::regex_search(*it,
                 boost::regex("^\\s+mount_all\\s+(\\./)?fstab\\..*$"))) {
             // Add command for our mount script
-            ++it;
-            it = lines.insert(
-                    it, whitespace(*it) + CoreRamdiskPatcher::ExecMount);
+            std::string spaces = whitespace(*it);
+            it = lines.insert(++it, spaces + CoreRamdiskPatcher::ExecMount);
         } else if (boost::regex_search(*it,
                 boost::regex("\\s/data/media(\\s|$)"))) {
             boost::replace_all(*it, "/data/media", "/raw-data/media");
