@@ -93,26 +93,6 @@ public:
 
 
 private:
-    bool loadAndroidHeader(const std::vector<unsigned char> &data,
-                           const int headerIndex,
-                           const bool isLoki);
-    bool loadLokiHeader(const std::vector< unsigned char> &data,
-                        const int headerIndex,
-                        const bool isLoki);
-    int lokiFindGzipOffset(const std::vector<unsigned char> &data) const;
-    int lokiFindRamdiskSize(const std::vector<unsigned char> &data,
-                            const LokiHeader *loki,
-                            const int &ramdiskOffset) const;
-    int lokiFindKernelSize(const std::vector<unsigned char> &data,
-                           const LokiHeader *loki) const;
-    unsigned int lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
-                                        const LokiHeader *loki) const;
-    int skipPadding(const int &itemSize,
-                    const int &pageSize) const;
-    void updateSHA1Hash();
-
-    void dumpHeader() const;
-
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
