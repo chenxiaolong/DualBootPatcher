@@ -20,13 +20,11 @@
 #ifndef FALCONRAMDISKPATCHER_H
 #define FALCONRAMDISKPATCHER_H
 
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
-#include <QtCore/QObject>
+#include "cpiofile.h"
+#include "patcherinterface.h"
 
-
-class FalconRamdiskPatcherPrivate;
 
 class FalconRamdiskPatcher : public RamdiskPatcher
 {
@@ -36,18 +34,17 @@ public:
                                   CpioFile * const cpio);
     ~FalconRamdiskPatcher();
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 
 private:
-    const QScopedPointer<FalconRamdiskPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(FalconRamdiskPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // FALCONRAMDISKPATCHER_H

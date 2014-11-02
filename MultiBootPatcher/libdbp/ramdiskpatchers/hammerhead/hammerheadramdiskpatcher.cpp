@@ -17,48 +17,45 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "hammerheadramdiskpatcher.h"
-#include "hammerheadramdiskpatcher_p.h"
+#include "ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h"
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+class HammerheadBaseRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
+
+    PatcherError error;
+};
+
+
 HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherPaths * const pp,
                                                            const FileInfo * const info,
                                                            CpioFile * const cpio) :
-    d_ptr(new HammerheadBaseRamdiskPatcherPrivate())
+    m_impl(new Impl())
 {
-    Q_D(HammerheadBaseRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 HammerheadBaseRamdiskPatcher::~HammerheadBaseRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error HammerheadBaseRamdiskPatcher::error() const
+PatcherError HammerheadBaseRamdiskPatcher::error() const
 {
-    Q_D(const HammerheadBaseRamdiskPatcher);
-
-    return d->errorCode;
-}
-
-QString HammerheadBaseRamdiskPatcher::errorString() const
-{
-    Q_D(const HammerheadBaseRamdiskPatcher);
-
-    return d->errorString;
+    return m_impl->error;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString HammerheadAOSPRamdiskPatcher::Id
-        = QStringLiteral("hammerhead/AOSP/AOSP");
+const std::string HammerheadAOSPRamdiskPatcher::Id = "hammerhead/AOSP/AOSP";
 
 HammerheadAOSPRamdiskPatcher::HammerheadAOSPRamdiskPatcher(const PatcherPaths *const pp,
                                                            const FileInfo *const info,
@@ -67,40 +64,33 @@ HammerheadAOSPRamdiskPatcher::HammerheadAOSPRamdiskPatcher(const PatcherPaths *c
 {
 }
 
-QString HammerheadAOSPRamdiskPatcher::id() const
+std::string HammerheadAOSPRamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool HammerheadAOSPRamdiskPatcher::patchRamdisk()
 {
-    Q_D(HammerheadBaseRamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyFstab()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyInitTargetRc(
-            QStringLiteral("init.hammerhead.rc"))) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+    if (!qcomPatcher.modifyInitTargetRc("init.hammerhead.rc")) {
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
@@ -109,8 +99,7 @@ bool HammerheadAOSPRamdiskPatcher::patchRamdisk()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString HammerheadNoobdevRamdiskPatcher::Id
-        = QStringLiteral("hammerhead/AOSP/cxl");
+const std::string HammerheadNoobdevRamdiskPatcher::Id = "hammerhead/AOSP/cxl";
 
 HammerheadNoobdevRamdiskPatcher::HammerheadNoobdevRamdiskPatcher(const PatcherPaths *const pp,
                                                                  const FileInfo *const info,
@@ -119,39 +108,32 @@ HammerheadNoobdevRamdiskPatcher::HammerheadNoobdevRamdiskPatcher(const PatcherPa
 {
 }
 
-QString HammerheadNoobdevRamdiskPatcher::id() const
+std::string HammerheadNoobdevRamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool HammerheadNoobdevRamdiskPatcher::patchRamdisk()
 {
-    Q_D(HammerheadBaseRamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     // /raw-cache needs to always be mounted rw so OpenDelta can write to
     // /cache/recovery
-    QVariantMap args;
+    QcomRamdiskPatcher::FstabArgs args;
     args[QcomRamdiskPatcher::ArgForceCacheRw] = true;
     args[QcomRamdiskPatcher::ArgKeepMountPoints] = true;
-    args[QcomRamdiskPatcher::ArgSystemMountPoint] =
-            QStringLiteral("/raw-system");
-    args[QcomRamdiskPatcher::ArgCacheMountPoint] =
-            QStringLiteral("/raw-cache");
-    args[QcomRamdiskPatcher::ArgDataMountPoint] =
-            QStringLiteral("/raw-data");
+    args[QcomRamdiskPatcher::ArgSystemMountPoint] = "/raw-system";
+    args[QcomRamdiskPatcher::ArgCacheMountPoint] = "/raw-cache";
+    args[QcomRamdiskPatcher::ArgDataMountPoint] = "/raw-data";
 
     if (!qcomPatcher.modifyFstab(args)) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 

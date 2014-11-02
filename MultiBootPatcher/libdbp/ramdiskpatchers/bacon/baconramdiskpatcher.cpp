@@ -17,87 +17,76 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "baconramdiskpatcher.h"
-#include "baconramdiskpatcher_p.h"
+#include "ramdiskpatchers/bacon/baconramdiskpatcher.h"
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
-const QString BaconRamdiskPatcher::Id =
-        QStringLiteral("bacon/AOSP/AOSP");
+class BaconRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
+
+    PatcherError error;
+};
+
+
+const std::string BaconRamdiskPatcher::Id = "bacon/AOSP/AOSP";
 
 BaconRamdiskPatcher::BaconRamdiskPatcher(const PatcherPaths * const pp,
                                          const FileInfo * const info,
                                          CpioFile * const cpio)
-    : d_ptr(new BaconRamdiskPatcherPrivate())
+    : m_impl(new Impl())
 {
-    Q_D(BaconRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 BaconRamdiskPatcher::~BaconRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error BaconRamdiskPatcher::error() const
+PatcherError BaconRamdiskPatcher::error() const
 {
-    Q_D(const BaconRamdiskPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString BaconRamdiskPatcher::errorString() const
-{
-    Q_D(const BaconRamdiskPatcher);
-
-    return d->errorString;
-}
-
-QString BaconRamdiskPatcher::id() const
+std::string BaconRamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool BaconRamdiskPatcher::patchRamdisk()
 {
-    Q_D(BaconRamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitQcomRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyFstab()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyInitTargetRc(
-            QStringLiteral("init.bacon.rc"))) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+    if (!qcomPatcher.modifyInitTargetRc("init.bacon.rc")) {
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 

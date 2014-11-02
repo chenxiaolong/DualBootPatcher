@@ -20,15 +20,12 @@
 #ifndef CPIOFILE_H
 #define CPIOFILE_H
 
+#include <memory>
+#include <vector>
+
 #include "libdbp_global.h"
 #include "patchererror.h"
 
-#include <QtCore/QByteArray>
-#include <QtCore/QScopedPointer>
-#include <QtCore/QString>
-#include <QtCore/QStringList>
-
-class CpioFilePrivate;
 
 class LIBDBPSHARED_EXPORT CpioFile
 {
@@ -36,32 +33,33 @@ public:
     CpioFile();
     ~CpioFile();
 
-    PatcherError::Error error() const;
-    QString errorString() const;
+    PatcherError error() const;
 
-    bool load(const QByteArray &data);
-    QByteArray createData(bool gzip);
+    bool load(const std::vector<unsigned char> &data);
+    std::vector<unsigned char> createData(bool gzip);
 
-    bool exists(const QString &name) const;
-    bool remove(const QString &name);
+    bool exists(const std::string &name) const;
+    bool remove(const std::string &name);
 
-    QStringList filenames() const;
+    std::vector<std::string> filenames() const;
 
     // File contents
 
-    QByteArray contents(const QString &name) const;
-    void setContents(const QString &name, const QByteArray &data);
+    std::vector<unsigned char> contents(const std::string &name) const;
+    void setContents(const std::string &name,
+                     std::vector<unsigned char> data);
 
     // Adding new files
 
-    bool addSymlink(const QString &source, const QString &target);
-    bool addFile(const QString &path, const QString &name, uint perms);
-    bool addFile(const QByteArray &contents, const QString &name, uint perms);
-
+    bool addSymlink(const std::string &source, const std::string &target);
+    bool addFile(const std::string &path, const std::string &name,
+                 unsigned int perms);
+    bool addFile(std::vector<unsigned char> contents,
+                 const std::string &name, unsigned int perms);
 
 private:
-    const QScopedPointer<CpioFilePrivate> d_ptr;
-    Q_DECLARE_PRIVATE(CpioFile)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // CPIOFILE_H

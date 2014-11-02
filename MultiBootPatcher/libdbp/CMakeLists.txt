@@ -1,5 +1,4 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
 
 # Allow libdbp headers to be found
 include_directories(${CMAKE_SOURCE_DIR})
@@ -7,12 +6,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 add_definitions(
     -DLIBDBP_LIBRARY
     -DLIBDBP_VERSION="${DBP_VERSION}"
-)
-
-add_definitions(
-    -DQT_NO_CAST_FROM_ASCII
-    -DQT_NO_CAST_TO_ASCII
-    -DQT_NO_CAST_FROM_BYTEARRAY
 )
 
 set(DBP_SOURCES
@@ -24,17 +17,7 @@ set(DBP_SOURCES
     patcherpaths.cpp
     device.cpp
     patchererror.cpp
-    patcherinterface.cpp
-)
-
-set(DBP_PRIVATE_HEADERS
-    bootimage_p.h
-    cpiofile_p.h
-    device_p.h
-    fileinfo_p.h
-    partitionconfig_p.h
-    patcherpaths_p.h
-    patchinfo_p.h
+    private/fileutils.cpp
 )
 
 set(DBP_HEADERS
@@ -58,10 +41,6 @@ set(DBP_AUTOPATCHER_JFLTE_SOURCES
     autopatchers/jflte/jfltepatcher.cpp
 )
 
-set(DBP_AUTOPATCHER_JFLTE_PRIVATE_HEADERS
-    autopatchers/jflte/jfltepatcher_p.h
-)
-
 set(DBP_AUTOPATCHER_JFLTE_HEADERS
     autopatchers/jflte/jfltepatcher.h
 )
@@ -72,10 +51,6 @@ set(DBP_AUTOPATCHER_JFLTE_HEADERS
 
 set(DBP_AUTOPATCHER_NOOBDEV_SOURCES
     autopatchers/noobdev/noobdevpatcher.cpp
-)
-
-set(DBP_AUTOPATCHER_NOOBDEV_PRIVATE_HEADERS
-    autopatchers/noobdev/noobdevpatcher_p.h
 )
 
 set(DBP_AUTOPATCHER_NOOBDEV_HEADERS
@@ -90,10 +65,6 @@ set(DBP_AUTOPATCHER_PATCHFILE_SOURCES
     autopatchers/patchfile/patchfilepatcher.cpp
 )
 
-set(DBP_AUTOPATCHER_PATCHFILE_PRIVATE_HEADERS
-    autopatchers/patchfile/patchfilepatcher_p.h
-)
-
 set(DBP_AUTOPATCHER_PATCHFILE_HEADERS
     autopatchers/patchfile/patchfilepatcher.h
 )
@@ -104,10 +75,6 @@ set(DBP_AUTOPATCHER_PATCHFILE_HEADERS
 
 set(DBP_AUTOPATCHER_STANDARD_SOURCES
     autopatchers/standard/standardpatcher.cpp
-)
-
-set(DBP_AUTOPATCHER_STANDARD_PRIVATE_HEADERS
-    autopatchers/standard/standardpatcher_p.h
 )
 
 set(DBP_AUTOPATCHER_STANDARD_HEADERS
@@ -122,10 +89,6 @@ set(DBP_PATCHER_MULTIBOOT_SOURCES
     patchers/multiboot/multibootpatcher.cpp
 )
 
-set(DBP_PATCHER_MULTIBOOT_PRIVATE_HEADERS
-    patchers/multiboot/multibootpatcher_p.h
-)
-
 set(DBP_PATCHER_MULTIBOOT_HEADERS
     patchers/multiboot/multibootpatcher.h
 )
@@ -136,10 +99,6 @@ set(DBP_PATCHER_MULTIBOOT_HEADERS
 
 set(DBP_PATCHER_PRIMARYUPGRADE_SOURCES
     patchers/primaryupgrade/primaryupgradepatcher.cpp
-)
-
-set(DBP_PATCHER_PRIMARYUPGRADE_PRIVATE_HEADERS
-    patchers/primaryupgrade/primaryupgradepatcher_p.h
 )
 
 set(DBP_PATCHER_PRIMARYUPGRADE_HEADERS
@@ -154,10 +113,6 @@ set(DBP_PATCHER_SYNCDAEMONUPDATE_SOURCES
     patchers/syncdaemonupdate/syncdaemonupdatepatcher.cpp
 )
 
-set(DBP_PATCHER_SYNCDAEMONUPDATE_PRIVATE_HEADERS
-    patchers/syncdaemonupdate/syncdaemonupdatepatcher_p.h
-)
-
 set(DBP_PATCHER_SYNCDAEMONUPDATE_HEADERS
     patchers/syncdaemonupdate/syncdaemonupdatepatcher.h
 )
@@ -168,10 +123,6 @@ set(DBP_PATCHER_SYNCDAEMONUPDATE_HEADERS
 
 set(DBP_RAMDISK_BACON_SOURCES
     ramdiskpatchers/bacon/baconramdiskpatcher.cpp
-)
-
-set(DBP_RAMDISK_BACON_PRIVATE_HEADERS
-    ramdiskpatchers/bacon/baconramdiskpatcher_p.h
 )
 
 set(DBP_RAMDISK_BACON_HEADERS
@@ -186,10 +137,6 @@ set(DBP_RAMDISK_COMMON_SOURCES
     ramdiskpatchers/common/coreramdiskpatcher.cpp
 )
 
-set(DBP_RAMDISK_COMMON_PRIVATE_HEADERS
-    ramdiskpatchers/common/coreramdiskpatcher_p.h
-)
-
 set(DBP_RAMDISK_COMMON_HEADERS
     ramdiskpatchers/common/coreramdiskpatcher.h
 )
@@ -200,10 +147,6 @@ set(DBP_RAMDISK_COMMON_HEADERS
 
 set(DBP_RAMDISK_D800_SOURCES
     ramdiskpatchers/d800/d800ramdiskpatcher.cpp
-)
-
-set(DBP_RAMDISK_D800_PRIVATE_HEADERS
-    ramdiskpatchers/d800/d800ramdiskpatcher_p.h
 )
 
 set(DBP_RAMDISK_D800_HEADERS
@@ -218,10 +161,6 @@ set(DBP_RAMDISK_FALCON_SOURCES
     ramdiskpatchers/falcon/falconramdiskpatcher.cpp
 )
 
-set(DBP_RAMDISK_FALCON_PRIVATE_HEADERS
-    ramdiskpatchers/falcon/falconramdiskpatcher_p.h
-)
-
 set(DBP_RAMDISK_FALCON_HEADERS
     ramdiskpatchers/falcon/falconramdiskpatcher.h
 )
@@ -232,10 +171,6 @@ set(DBP_RAMDISK_FALCON_HEADERS
 
 set(DBP_RAMDISK_GALAXY_SOURCES
     ramdiskpatchers/galaxy/galaxyramdiskpatcher.cpp
-)
-
-set(DBP_RAMDISK_GALAXY_PRIVATE_HEADERS
-    ramdiskpatchers/galaxy/galaxyramdiskpatcher_p.h
 )
 
 set(DBP_RAMDISK_GALAXY_HEADERS
@@ -250,10 +185,6 @@ set(DBP_RAMDISK_HAMMERHEAD_SOURCES
     ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.cpp
 )
 
-set(DBP_RAMDISK_HAMMERHEAD_PRIVATE_HEADERS
-    ramdiskpatchers/hammerhead/hammerheadramdiskpatcher_p.h
-)
-
 set(DBP_RAMDISK_HAMMERHEAD_HEADERS
     ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h
 )
@@ -264,10 +195,6 @@ set(DBP_RAMDISK_HAMMERHEAD_HEADERS
 
 set(DBP_RAMDISK_HLTE_SOURCES
     ramdiskpatchers/hlte/hlteramdiskpatcher.cpp
-)
-
-set(DBP_RAMDISK_HLTE_PRIVATE_HEADERS
-    ramdiskpatchers/hlte/hlteramdiskpatcher_p.h
 )
 
 set(DBP_RAMDISK_HLTE_HEADERS
@@ -282,10 +209,6 @@ set(DBP_RAMDISK_JFLTE_SOURCES
     ramdiskpatchers/jflte/jflteramdiskpatcher.cpp
 )
 
-set(DBP_RAMDISK_JFLTE_PRIVATE_HEADERS
-    ramdiskpatchers/jflte/jflteramdiskpatcher_p.h
-)
-
 set(DBP_RAMDISK_JFLTE_HEADERS
     ramdiskpatchers/jflte/jflteramdiskpatcher.h
 )
@@ -298,10 +221,6 @@ set(DBP_RAMDISK_KLTE_SOURCES
     ramdiskpatchers/klte/klteramdiskpatcher.cpp
 )
 
-set(DBP_RAMDISK_KLTE_PRIVATE_HEADERS
-    ramdiskpatchers/klte/klteramdiskpatcher_p.h
-)
-
 set(DBP_RAMDISK_KLTE_HEADERS
     ramdiskpatchers/klte/klteramdiskpatcher.h
 )
@@ -312,10 +231,6 @@ set(DBP_RAMDISK_KLTE_HEADERS
 
 set(DBP_RAMDISK_QCOM_SOURCES
     ramdiskpatchers/qcom/qcomramdiskpatcher.cpp
-)
-
-set(DBP_RAMDISK_QCOM_PRIVATE_HEADERS
-    ramdiskpatchers/qcom/qcomramdiskpatcher_p.h
 )
 
 set(DBP_RAMDISK_QCOM_HEADERS
@@ -354,8 +269,9 @@ if(NOT ANDROID)
 endif()
 
 target_link_libraries(dbp
-    Qt5::Core
+    ${Boost_LIBRARIES}
     ${LibArchive_LIBRARIES}
+    ${LIBXML2_LIBRARIES}
 )
 
 # Install library

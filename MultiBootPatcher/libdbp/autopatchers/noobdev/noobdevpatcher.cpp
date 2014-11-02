@@ -17,52 +17,50 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "noobdevpatcher.h"
-#include "noobdevpatcher_p.h"
+#include "autopatchers/noobdev/noobdevpatcher.h"
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/format.hpp>
 
 
-static const QString UpdaterScript =
-        QStringLiteral("META-INF/com/google/android/updater-script");
-static const QString DualBootSh =
-        QStringLiteral("dualboot.sh");
-static const QString BuildProp =
-        QStringLiteral("system/build.prop");
+class NoobdevBasePatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+};
 
-static const QString PrintEmpty =
-        QStringLiteral("ui_print(\"\");");
 
-static const QChar Newline = QLatin1Char('\n');
+static const std::string UpdaterScript =
+        "META-INF/com/google/android/updater-script";
+static const std::string DualBootSh = "dualboot.sh";
+static const std::string BuildProp = "system/build.prop";
+
+static const std::string PrintEmpty = "ui_print(\"\");";
 
 
 NoobdevBasePatcher::NoobdevBasePatcher(const PatcherPaths * const pp,
                                        const FileInfo * const info)
-    : d_ptr(new NoobdevBasePatcherPrivate())
+    : m_impl(new Impl())
 {
-    Q_D(NoobdevBasePatcher);
-
-    d->pp = pp;
-    d->info = info;
+    m_impl->pp = pp;
+    m_impl->info = info;
 }
 
 NoobdevBasePatcher::~NoobdevBasePatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error NoobdevBasePatcher::error() const
+PatcherError NoobdevBasePatcher::error() const
 {
-    return PatcherError::NoError;
-}
-
-QString NoobdevBasePatcher::errorString() const
-{
-    return PatcherError::errorString(PatcherError::NoError);
+    return PatcherError();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString NoobdevMultiBoot::Id
-        = QStringLiteral("NoobdevMultiBoot");
+const std::string NoobdevMultiBoot::Id = "NoobdevMultiBoot";
 
 NoobdevMultiBoot::NoobdevMultiBoot(const PatcherPaths* const pp,
                                    const FileInfo* const info)
@@ -70,55 +68,57 @@ NoobdevMultiBoot::NoobdevMultiBoot(const PatcherPaths* const pp,
 {
 }
 
-QString NoobdevMultiBoot::id() const
+std::string NoobdevMultiBoot::id() const
 {
     return Id;
 }
 
-QStringList NoobdevMultiBoot::newFiles() const
+std::vector<std::string> NoobdevMultiBoot::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList NoobdevMultiBoot::existingFiles() const
+std::vector<std::string> NoobdevMultiBoot::existingFiles() const
 {
-    return QStringList() << UpdaterScript
-                         << DualBootSh;
+    std::vector<std::string> files;
+    files.push_back(UpdaterScript);
+    files.push_back(DualBootSh);
+    return files;
 }
 
-bool NoobdevMultiBoot::patchFile(const QString &file,
-                                 QByteArray * const contents,
-                                 const QStringList &bootImages)
+bool NoobdevMultiBoot::patchFile(const std::string &file,
+                                 std::vector<unsigned char> * const contents,
+                                 const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
+    (void) bootImages;
 
     if (file == UpdaterScript) {
         // My ROM has built-in dual boot support, so we'll hack around that to
         // support triple, quadruple, ... boot
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        QMutableStringListIterator iter(lines);
-        while (iter.hasNext()) {
-            QString &line = iter.next();
-
-            if (line.contains(QStringLiteral("system/bin/dualboot.sh"))) {
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (it->find("system/bin/dualboot.sh") != std::string::npos) {
                 // Remove existing dualboot.sh lines
-                iter.remove();
-            } else if (line.contains(QStringLiteral("boot installation is"))) {
+                it = lines.erase(it);
+            } else if (it->find("boot installation is") != std::string::npos) {
                 // Remove confusing messages, but need to keep at least one
                 // statement in the if-block to keep update-binary happy
-                line = PrintEmpty;
-            } else if (line.contains(QStringLiteral("set-secondary"))) {
-                line = PrintEmpty;
+                *it = PrintEmpty;
+            } else if (it->find("set-secondary") != std::string::npos) {
+                *it = PrintEmpty;
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     } else if (file == DualBootSh) {
-        QString noDualBoot = QStringLiteral("echo 'ro.dualboot=0' > /tmp/dualboot.prop\n");
-        contents->append(noDualBoot.toUtf8());
+        const std::string noDualBoot("echo 'ro.dualboot=0' > /tmp/dualboot.prop\n");
+        contents->insert(contents->end(), noDualBoot.begin(), noDualBoot.end());
 
         return true;
     }
@@ -128,8 +128,7 @@ bool NoobdevMultiBoot::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString NoobdevSystemProp::Id
-        = QStringLiteral("NoobdevSystemProp");
+const std::string NoobdevSystemProp::Id = "NoobdevSystemProp";
 
 NoobdevSystemProp::NoobdevSystemProp(const PatcherPaths* const pp,
                                      const FileInfo* const info)
@@ -137,32 +136,34 @@ NoobdevSystemProp::NoobdevSystemProp(const PatcherPaths* const pp,
 {
 }
 
-QString NoobdevSystemProp::id() const
+std::string NoobdevSystemProp::id() const
 {
     return Id;
 }
 
-QStringList NoobdevSystemProp::newFiles() const
+std::vector<std::string> NoobdevSystemProp::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList NoobdevSystemProp::existingFiles() const
+std::vector<std::string> NoobdevSystemProp::existingFiles() const
 {
-    return QStringList() << BuildProp;
+    std::vector<std::string> files;
+    files.push_back(BuildProp);
+    return files;
 }
 
-bool NoobdevSystemProp::patchFile(const QString &file,
-                                  QByteArray * const contents,
-                                  const QStringList &bootImages)
+bool NoobdevSystemProp::patchFile(const std::string &file,
+                                  std::vector<unsigned char> * const contents,
+                                  const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
-    Q_D(NoobdevBasePatcher);
+    (void) bootImages;
 
     if (file == BuildProp) {
         // The auto-updater in my ROM needs to know if the ROM has been patched
-        QString prop = QStringLiteral("ro.chenxiaolong.patched=%1\n");
-        contents->append(prop.arg(d->info->partConfig()->id()).toUtf8());
+        const std::string prop = (boost::format("ro.chenxiaolong.patched=%1%\n")
+                % m_impl->info->partConfig()->id()).str();
+        contents->insert(contents->end(), prop.begin(), prop.end());
 
         return true;
     }

@@ -40,6 +40,11 @@ endif()
 
 
 # Find dependencies
+find_package(Boost REQUIRED COMPONENTS filesystem regex system)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 find_package(Qt5Core 5.3 REQUIRED)
 
 
@@ -77,15 +82,21 @@ find_package(LibArchive REQUIRED)
 include_directories(${LibArchive_INCLUDE_DIRS})
 link_directories(${LibArchive_LIBRARY_DIRS})
 
+find_package(LibXml2 REQUIRED)
+include_directories(${LIBXML2_INCLUDE_DIR})
+
 # Need ndk-build for building the Android stuff
 find_host_program(NDK_BUILD ndk-build HINTS "$ENV{ANDROID_NDK_HOME}" "$ENV{ANDROID_NDK}")
 if(NOT NDK_BUILD)
-    message(FATAL_ERROR "Could NOT find Android NDK (missing: ndk-build)")
+    message(WARNING "Could NOT find Android NDK (missing: ndk-build)\nAndroid components will not be built")
 endif()
 
 
 # Main patcher
 add_subdirectory(libdbp)
+if(ANDROID)
+add_subdirectory(libdbp-basic-jni)
+endif()
 add_subdirectory(data)
 add_subdirectory(shortcuts)
 
@@ -94,9 +105,11 @@ if(NOT ANDROID)
 endif()
 
 # Android stuff
-add_subdirectory(syncdaemon)
-add_subdirectory(libmountpoint)
-add_subdirectory(libloki)
+if(NDK_BUILD)
+    add_subdirectory(syncdaemon)
+    add_subdirectory(libmountpoint)
+    add_subdirectory(libloki)
+endif()
 
 # Third party binaries
 add_subdirectory(thirdparty)

@@ -20,69 +20,47 @@
 #ifndef MULTIBOOTPATCHER_H
 #define MULTIBOOTPATCHER_H
 
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
-// libarchive
 #include <archive.h>
 
+#include "patcherinterface.h"
 
-class MultiBootPatcherPrivate;
 
 class MultiBootPatcher : public Patcher
 {
-    Q_OBJECT
-
 public:
-    explicit MultiBootPatcher(const PatcherPaths * const pp,
-                              QObject *parent = 0);
+    explicit MultiBootPatcher(const PatcherPaths * const pp);
     ~MultiBootPatcher();
 
-    static const QString Id;
-    static const QString Name;
+    static const std::string Id;
+    static const std::string Name;
 
-    static QList<PartitionConfig *> partConfigs();
+    static std::vector<PartitionConfig *> partConfigs();
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
     // Patcher info
-    virtual QString id() const override;
-    virtual QString name() const override;
+    virtual std::string id() const override;
+    virtual std::string name() const override;
     virtual bool usesPatchInfo() const override;
-    virtual QStringList supportedPartConfigIds() const override;
+    virtual std::vector<std::string> supportedPartConfigIds() const override;
 
     // Patching
     virtual void setFileInfo(const FileInfo * const info) override;
 
-    virtual QString newFilePath() override;
+    virtual std::string newFilePath() override;
 
-    virtual bool patchFile() override;
+    virtual bool patchFile(MaxProgressUpdatedCallback maxProgressCb,
+                           ProgressUpdatedCallback progressCb,
+                           DetailsUpdatedCallback detailsCb,
+                           void *userData) override;
 
     virtual void cancelPatching() override;
 
 private:
-    bool patchBootImage(QByteArray *data);
-    bool patchZip();
-    bool addFile(archive * const a,
-                 const QString &path,
-                 const QString &name);
-    bool addFile(archive * const a,
-                 const QByteArray &contents,
-                 const QString &name);
-    bool readToByteArray(archive *aInput,
-                         QByteArray *output) const;
-    bool copyData(archive *aInput, archive *aOutput) const;
-
-    bool scanAndPatchBootImages(archive * const aOutput,
-                                QStringList *bootImages);
-    bool scanAndPatchRemaining(archive * const aOutput,
-                               const QStringList &bootImages);
-
-    int scanNumberOfFiles();
-
-private:
-    const QScopedPointer<MultiBootPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(MultiBootPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // MULTIBOOTPATCHER_H

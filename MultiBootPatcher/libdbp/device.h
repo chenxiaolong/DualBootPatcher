@@ -20,41 +20,39 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include <memory>
+#include <vector>
+
 #include "libdbp_global.h"
 
-#include <QtCore/QScopedPointer>
-#include <QtCore/QStringList>
-
-class DevicePrivate;
-class PatcherPaths;
 
 class LIBDBPSHARED_EXPORT Device
 {
 public:
-    static const QString SelinuxPermissive;
-    static const QString SelinuxUnchanged;
-    static const QString SystemPartition;
-    static const QString CachePartition;
-    static const QString DataPartition;
+    static const std::string SelinuxPermissive;
+    static const std::string SelinuxUnchanged;
+    static const std::string SystemPartition;
+    static const std::string CachePartition;
+    static const std::string DataPartition;
 
     Device();
     ~Device();
 
-    QString codename() const;
-    void setCodename(const QString &name);
-    QString name() const;
-    void setName(const QString &name);
-    QString architecture() const;
-    void setArchitecture(const QString &arch);
-    QString selinux() const;
-    void setSelinux(const QString &selinux);
-    QString partition(const QString &which) const;
-    void setPartition(const QString &which, const QString &partition);
-    QStringList partitionTypes() const;
+    std::string codename() const;
+    void setCodename(std::string name);
+    std::string name() const;
+    void setName(std::string name);
+    std::string architecture() const;
+    void setArchitecture(std::string arch);
+    std::string selinux() const;
+    void setSelinux(std::string selinux);
+    std::string partition(const std::string &which) const;
+    void setPartition(const std::string &which, std::string partition);
+    std::vector<std::string> partitionTypes() const;
 
 private:
-    const QScopedPointer<DevicePrivate> d_ptr;
-    Q_DECLARE_PRIVATE(Device)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // DEVICE_H

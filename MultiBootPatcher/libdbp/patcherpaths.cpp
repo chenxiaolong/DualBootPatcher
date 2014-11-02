@@ -18,15 +18,19 @@
  */
 
 #include "patcherpaths.h"
-#include "patcherpaths_p.h"
+
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #include "device.h"
-#include "device_p.h"
-
-#include "patchinfo.h"
-#include "patchinfo_p.h"
-
 #include "patcherinterface.h"
+#include "patchinfo.h"
+#include "private/logging.h"
 
 // Patchers
 #include "patchers/multiboot/multibootpatcher.h"
@@ -44,22 +48,63 @@
 #include "ramdiskpatchers/jflte/jflteramdiskpatcher.h"
 #include "ramdiskpatchers/klte/klteramdiskpatcher.h"
 
-#include <QtCore/QDebug>
-#include <QtCore/QDir>
-#include <QtCore/QDirIterator>
-#include <QtCore/QFile>
-#include <QtCore/QJsonObject>
-#include <QtCore/QStringBuilder>
-#include <QtCore/QXmlStreamReader>
 
-static const QString BinariesDirName = QStringLiteral("binaries");
-static const QString InitsDirName = QStringLiteral("inits");
-static const QString PatchesDirName = QStringLiteral("patches");
-static const QString PatchInfosDirName = QStringLiteral("patchinfos");
-static const QString ScriptsDirName = QStringLiteral("scripts");
-static const QChar Sep = QLatin1Char('/');
+class PatcherPaths::Impl
+{
+public:
+    ~Impl();
 
-PatcherPathsPrivate::~PatcherPathsPrivate()
+    // Directories
+    std::string binariesDir;
+    std::string dataDir;
+    std::string initsDir;
+    std::string patchesDir;
+    std::string patchInfosDir;
+    std::string scriptsDir;
+
+    std::string version;
+    std::vector<Device *> devices;
+    std::vector<std::string> patchinfoIncludeDirs;
+
+    // PatchInfos
+    std::vector<PatchInfo *> patchInfos;
+
+    // Partition configurations
+    std::vector<PartitionConfig *> partConfigs;
+
+    bool loadedConfig;
+
+    // Errors
+    PatcherError error;
+
+    // XML parsing functions for the patchinfo files
+    bool loadPatchInfoXml(const std::string &path, const std::string &pathId);
+    void parsePatchInfoTagPatchinfo(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagMatches(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagNotMatched(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagName(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagRegex(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagExcludeRegex(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagRegexes(xmlNode *node, PatchInfo * const info);
+    void parsePatchInfoTagHasBootImage(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagRamdisk(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagPatchedInit(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagAutopatchers(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagAutopatcher(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagDeviceCheck(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagPartconfigs(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagExclude(xmlNode *node, PatchInfo * const info, const std::string &type);
+    void parsePatchInfoTagInclude(xmlNode *node, PatchInfo * const info, const std::string &type);
+};
+
+
+static const std::string BinariesDirName = "binaries";
+static const std::string InitsDirName = "inits";
+static const std::string PatchesDirName = "patches";
+static const std::string PatchInfosDirName = "patchinfos";
+static const std::string ScriptsDirName = "scripts";
+
+PatcherPaths::Impl::~Impl()
 {
     for (Device *device : devices) {
         delete device;
@@ -68,220 +113,173 @@ PatcherPathsPrivate::~PatcherPathsPrivate()
 
 // --------------------------------
 
-const QString PatcherPaths::PatchInfoTagPatchinfo = QLatin1String("patchinfo");
-const QString PatcherPaths::PatchInfoTagMatches = QLatin1String("matches");
-const QString PatcherPaths::PatchInfoTagNotMatched = QLatin1String("not-matched");
-const QString PatcherPaths::PatchInfoTagName = QLatin1String("name");
-const QString PatcherPaths::PatchInfoTagRegex = QLatin1String("regex");
-const QString PatcherPaths::PatchInfoTagExcludeRegex = QLatin1String("exclude-regex");
-const QString PatcherPaths::PatchInfoTagRegexes = QLatin1String("regexes");
-const QString PatcherPaths::PatchInfoTagHasBootImage = QLatin1String("has-boot-image");
-const QString PatcherPaths::PatchInfoTagRamdisk = QLatin1String("ramdisk");
-const QString PatcherPaths::PatchInfoTagPatchedInit = QLatin1String("patched-init");
-const QString PatcherPaths::PatchInfoTagAutopatchers = QLatin1String("autopatchers");
-const QString PatcherPaths::PatchInfoTagAutopatcher = QLatin1String("autopatcher");
-const QString PatcherPaths::PatchInfoTagDeviceCheck = QLatin1String("device-check");
-const QString PatcherPaths::PatchInfoTagPartconfigs = QLatin1String("partconfigs");
-const QString PatcherPaths::PatchInfoTagInclude = QLatin1String("include");
-const QString PatcherPaths::PatchInfoTagExclude = QLatin1String("exclude");
+const xmlChar *PatchInfoTagPatchinfo = (xmlChar *) "patchinfo";
+const xmlChar *PatchInfoTagMatches = (xmlChar *) "matches";
+const xmlChar *PatchInfoTagNotMatched = (xmlChar *) "not-matched";
+const xmlChar *PatchInfoTagName = (xmlChar *) "name";
+const xmlChar *PatchInfoTagRegex = (xmlChar *) "regex";
+const xmlChar *PatchInfoTagExcludeRegex = (xmlChar *) "exclude-regex";
+const xmlChar *PatchInfoTagRegexes = (xmlChar *) "regexes";
+const xmlChar *PatchInfoTagHasBootImage = (xmlChar *) "has-boot-image";
+const xmlChar *PatchInfoTagRamdisk = (xmlChar *) "ramdisk";
+const xmlChar *PatchInfoTagPatchedInit = (xmlChar *) "patched-init";
+const xmlChar *PatchInfoTagAutopatchers = (xmlChar *) "autopatchers";
+const xmlChar *PatchInfoTagAutopatcher = (xmlChar *) "autopatcher";
+const xmlChar *PatchInfoTagDeviceCheck = (xmlChar *) "device-check";
+const xmlChar *PatchInfoTagPartconfigs = (xmlChar *) "partconfigs";
+const xmlChar *PatchInfoTagInclude = (xmlChar *) "include";
+const xmlChar *PatchInfoTagExclude = (xmlChar *) "exclude";
 
-const QString PatcherPaths::PatchInfoAttrRegex = QLatin1String("regex");
+const xmlChar *PatchInfoAttrRegex = (xmlChar *) "regex";
 
-const QString PatcherPaths::XmlTextTrue = QLatin1String("true");
-const QString PatcherPaths::XmlTextFalse = QLatin1String("false");
+const xmlChar *XmlTextTrue = (xmlChar *) "true";
+const xmlChar *XmlTextFalse = (xmlChar *) "false";
 
-PatcherPaths::PatcherPaths() : d_ptr(new PatcherPathsPrivate())
+PatcherPaths::PatcherPaths() : m_impl(new Impl())
 {
-    Q_D(PatcherPaths);
-
     loadDefaultDevices();
     loadDefaultPatchers();
 
-    d->patchinfoIncludeDirs << QStringLiteral("Google_Apps");
-    d->patchinfoIncludeDirs << QStringLiteral("Other");
+    m_impl->patchinfoIncludeDirs.push_back("Google_Apps");
+    m_impl->patchinfoIncludeDirs.push_back("Other");
 
-    d->version = QStringLiteral(LIBDBP_VERSION);
+    m_impl->version = LIBDBP_VERSION;
 }
 
 PatcherPaths::~PatcherPaths()
 {
-    // Destructor so d_ptr is destroyed
-
-    Q_D(PatcherPaths);
-
     // Clean up devices
-    for (Device *device : d->devices) {
+    for (Device *device : m_impl->devices) {
         delete device;
     }
-    d->devices.clear();
+    m_impl->devices.clear();
 
     // Clean up patchinfos
-    for (PatchInfo *info : d->patchInfos) {
+    for (PatchInfo *info : m_impl->patchInfos) {
         delete info;
     }
-    d->patchInfos.clear();
+    m_impl->patchInfos.clear();
 
     // Clean up partconfigs
-    for (PartitionConfig *config : d->partConfigs) {
+    for (PartitionConfig *config : m_impl->partConfigs) {
         delete config;
     }
-    d->partConfigs.clear();
+    m_impl->partConfigs.clear();
 }
 
-PatcherError::Error PatcherPaths::error() const
+PatcherError PatcherPaths::error() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString PatcherPaths::errorString() const
+std::string PatcherPaths::binariesDirectory() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->errorString;
-}
-
-QString PatcherPaths::binariesDirectory() const
-{
-    Q_D(const PatcherPaths);
-
-    if (d->binariesDir.isNull()) {
-        return dataDirectory() % Sep % BinariesDirName;
+    if (m_impl->binariesDir.empty()) {
+        return dataDirectory() + "/" + BinariesDirName;
     } else {
-        return d->binariesDir;
+        return m_impl->binariesDir;
     }
 }
 
-QString PatcherPaths::dataDirectory() const
+std::string PatcherPaths::dataDirectory() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->dataDir;
+    return m_impl->dataDir;
 }
 
-QString PatcherPaths::initsDirectory() const
+std::string PatcherPaths::initsDirectory() const
 {
-    Q_D(const PatcherPaths);
-
-    if (d->initsDir.isNull()) {
-        return dataDirectory() % Sep % InitsDirName;
+    if (m_impl->initsDir.empty()) {
+        return dataDirectory() + "/" + InitsDirName;
     } else {
-        return d->initsDir;
+        return m_impl->initsDir;
     }
 }
 
-QString PatcherPaths::patchesDirectory() const
+std::string PatcherPaths::patchesDirectory() const
 {
-    Q_D(const PatcherPaths);
-
-    if (d->patchesDir.isNull()) {
-        return dataDirectory() % Sep % PatchesDirName;
+    if (m_impl->patchesDir.empty()) {
+        return dataDirectory() + "/" + PatchesDirName;
     } else {
-        return d->patchesDir;
+        return m_impl->patchesDir;
     }
 }
 
-QString PatcherPaths::patchInfosDirectory() const
+std::string PatcherPaths::patchInfosDirectory() const
 {
-    Q_D(const PatcherPaths);
-
-    if (d->patchInfosDir.isNull()) {
-        return dataDirectory() % Sep % PatchInfosDirName;
+    if (m_impl->patchInfosDir.empty()) {
+        return dataDirectory() + "/" + PatchInfosDirName;
     } else {
-        return d->patchInfosDir;
+        return m_impl->patchInfosDir;
     }
 }
 
-QString PatcherPaths::scriptsDirectory() const
+std::string PatcherPaths::scriptsDirectory() const
 {
-    Q_D(const PatcherPaths);
-
-    if (d->scriptsDir.isNull()) {
-        return dataDirectory() % Sep % ScriptsDirName;
+    if (m_impl->scriptsDir.empty()) {
+        return dataDirectory() + "/" + ScriptsDirName;
     } else {
-        return d->scriptsDir;
+        return m_impl->scriptsDir;
     }
 }
 
-void PatcherPaths::setBinariesDirectory(const QString &path)
+void PatcherPaths::setBinariesDirectory(std::string path)
 {
-    Q_D(PatcherPaths);
-
-    d->binariesDir = path;
+    m_impl->binariesDir = std::move(path);
 }
 
-void PatcherPaths::setDataDirectory(const QString &path)
+void PatcherPaths::setDataDirectory(std::string path)
 {
-    Q_D(PatcherPaths);
-
-    d->dataDir = path;
+    m_impl->dataDir = std::move(path);
 }
 
-void PatcherPaths::setInitsDirectory(const QString &path)
+void PatcherPaths::setInitsDirectory(std::string path)
 {
-    Q_D(PatcherPaths);
-
-    d->initsDir = path;
+    m_impl->initsDir = std::move(path);
 }
 
-void PatcherPaths::setPatchesDirectory(const QString &path)
+void PatcherPaths::setPatchesDirectory(std::string path)
 {
-    Q_D(PatcherPaths);
-
-    d->patchesDir = path;
+    m_impl->patchesDir = std::move(path);
 }
 
-void PatcherPaths::setPatchInfosDirectory(const QString &path)
+void PatcherPaths::setPatchInfosDirectory(std::string path)
 {
-    Q_D(PatcherPaths);
-
-    d->patchInfosDir = path;
+    m_impl->patchInfosDir = std::move(path);
 }
 
-void PatcherPaths::setScriptsDirectory(const QString &path)
+void PatcherPaths::setScriptsDirectory(std::string path)
 {
-    Q_D(PatcherPaths);
-
-    d->scriptsDir = path;
+    m_impl->scriptsDir = std::move(path);
 }
 
 void PatcherPaths::reset()
 {
-    Q_D(PatcherPaths);
-
     // Paths
-    d->dataDir.clear();
-    d->initsDir.clear();
-    d->patchesDir.clear();
-    d->patchInfosDir.clear();
+    m_impl->dataDir.clear();
+    m_impl->initsDir.clear();
+    m_impl->patchesDir.clear();
+    m_impl->patchInfosDir.clear();
 
-    for (Device *device : d->devices) {
+    for (Device *device : m_impl->devices) {
         delete device;
     }
 
-    d->devices.clear();
+    m_impl->devices.clear();
 }
 
-QString PatcherPaths::version() const
+std::string PatcherPaths::version() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->version;
+    return m_impl->version;
 }
 
-QList<Device *> PatcherPaths::devices() const
+std::vector<Device *> PatcherPaths::devices() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->devices;
+    return m_impl->devices;
 }
 
-Device * PatcherPaths::deviceFromCodename(const QString &codename) const
+Device * PatcherPaths::deviceFromCodename(const std::string &codename) const
 {
-    Q_D(const PatcherPaths);
-
-    for (Device * device : d->devices) {
+    for (Device * device : m_impl->devices) {
         if (device->codename() == codename) {
             return device;
         }
@@ -290,21 +288,24 @@ Device * PatcherPaths::deviceFromCodename(const QString &codename) const
     return nullptr;
 }
 
-QList<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
+std::vector<PatchInfo *> PatcherPaths::patchInfos() const
 {
-    Q_D(const PatcherPaths);
+    return m_impl->patchInfos;
+}
 
-    QList<PatchInfo *> l;
+std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
+{
+    std::vector<PatchInfo *> l;
 
-    for (PatchInfo *info : d->patchInfos) {
-        if (info->path().startsWith(device->codename())) {
-            l << info;
+    for (PatchInfo *info : m_impl->patchInfos) {
+        if (boost::starts_with(info->path(), device->codename())) {
+            l.push_back(info);
             continue;
         }
 
-        for (const QString &include : d->patchinfoIncludeDirs) {
-            if (info->path().startsWith(include)) {
-                l << info;
+        for (auto const &include : m_impl->patchinfoIncludeDirs) {
+            if (boost::starts_with(info->path(), include)) {
+                l.push_back(info);
                 break;
             }
         }
@@ -315,196 +316,200 @@ QList<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
 
 void PatcherPaths::loadDefaultDevices()
 {
-    Q_D(PatcherPaths);
-
     Device *device;
 
     // Samsung Galaxy S 4
     device = new Device();
-    device->setCodename(QStringLiteral("jflte"));
-    device->setName(QStringLiteral("Samsung Galaxy S 4"));
+    device->setCodename("jflte");
+    device->setName("Samsung Galaxy S 4");
     device->setSelinux(Device::SelinuxPermissive);
-    device->setPartition(Device::SystemPartition, QStringLiteral("mmcblk0p16"));
-    device->setPartition(Device::CachePartition, QStringLiteral("mmcblk0p18"));
-    device->setPartition(Device::DataPartition, QStringLiteral("mmcblk0p29"));
-    d->devices << device;
+    device->setPartition(Device::SystemPartition, "mmcblk0p16");
+    device->setPartition(Device::CachePartition, "mmcblk0p18");
+    device->setPartition(Device::DataPartition, "mmcblk0p29");
+    m_impl->devices.push_back(device);
 
     // Samsung Galaxy S 5
     device = new Device();
-    device->setCodename(QStringLiteral("klte"));
-    device->setName(QStringLiteral("Samsung Galaxy S 5"));
+    device->setCodename("klte");
+    device->setName("Samsung Galaxy S 5");
     device->setSelinux(Device::SelinuxPermissive);
-    device->setPartition(Device::SystemPartition, QStringLiteral("mmcblk0p23"));
-    device->setPartition(Device::CachePartition, QStringLiteral("mmcblk0p24"));
-    device->setPartition(Device::DataPartition, QStringLiteral("mmcblk0p26"));
-    d->devices << device;
+    device->setPartition(Device::SystemPartition, "mmcblk0p23");
+    device->setPartition(Device::CachePartition, "mmcblk0p24");
+    device->setPartition(Device::DataPartition, "mmcblk0p26");
+    m_impl->devices.push_back(device);
 
     // Samsung Galaxy Note 3
     device = new Device();
-    device->setCodename(QStringLiteral("hlte"));
-    device->setName(QStringLiteral("Samsung Galaxy Note 3"));
+    device->setCodename("hlte");
+    device->setName("Samsung Galaxy Note 3");
     device->setSelinux(Device::SelinuxPermissive);
-    device->setPartition(Device::SystemPartition, QStringLiteral("mmcblk0p23"));
-    device->setPartition(Device::CachePartition, QStringLiteral("mmcblk0p24"));
-    device->setPartition(Device::DataPartition, QStringLiteral("mmcblk0p26"));
-    d->devices << device;
+    device->setPartition(Device::SystemPartition, "mmcblk0p23");
+    device->setPartition(Device::CachePartition, "mmcblk0p24");
+    device->setPartition(Device::DataPartition, "mmcblk0p26");
+    m_impl->devices.push_back(device);
 
     // Google/LG Nexus 5
     device = new Device();
-    device->setCodename(QStringLiteral("hammerhead"));
-    device->setName(QStringLiteral("Google/LG Nexus 5"));
+    device->setCodename("hammerhead");
+    device->setName("Google/LG Nexus 5");
     device->setSelinux(Device::SelinuxUnchanged);
-    d->devices << device;
+    m_impl->devices.push_back(device);
 
     // OnePlus One
     device = new Device();
-    device->setCodename(QStringLiteral("bacon"));
-    device->setName(QStringLiteral("OnePlus One"));
+    device->setCodename("bacon");
+    device->setName("OnePlus One");
     device->setSelinux(Device::SelinuxUnchanged);
-    d->devices << device;
+    m_impl->devices.push_back(device);
 
     // LG G2
     device = new Device();
-    device->setCodename(QStringLiteral("d800"));
-    device->setName(QStringLiteral("LG G2"));
+    device->setCodename("d800");
+    device->setName("LG G2");
     device->setSelinux(Device::SelinuxUnchanged);
-    d->devices << device;
+    m_impl->devices.push_back(device);
 
     // Falcon
     device = new Device();
-    device->setCodename(QStringLiteral("falcon"));
-    device->setName(QStringLiteral("Motorola Moto G"));
+    device->setCodename("falcon");
+    device->setName("Motorola Moto G");
     device->setSelinux(Device::SelinuxUnchanged);
-    d->devices << device;
+    m_impl->devices.push_back(device);
 }
 
 void PatcherPaths::loadDefaultPatchers()
 {
-    Q_D(PatcherPaths);
+    auto configs1 = MultiBootPatcher::partConfigs();
+    auto configs2 = PrimaryUpgradePatcher::partConfigs();
 
-    d->partConfigs << MultiBootPatcher::partConfigs();
-    d->partConfigs << PrimaryUpgradePatcher::partConfigs();
+    m_impl->partConfigs.insert(m_impl->partConfigs.end(),
+                               configs1.begin(), configs1.end());
+    m_impl->partConfigs.insert(m_impl->partConfigs.end(),
+                               configs2.begin(), configs2.end());
 }
 
-QStringList PatcherPaths::patchers() const
+std::vector<std::string> PatcherPaths::patchers() const
 {
-    return QStringList()
-            << MultiBootPatcher::Id
-            << PrimaryUpgradePatcher::Id
-            << SyncdaemonUpdatePatcher::Id;
+    std::vector<std::string> list;
+    list.push_back(MultiBootPatcher::Id);
+    list.push_back(PrimaryUpgradePatcher::Id);
+    list.push_back(SyncdaemonUpdatePatcher::Id);
+    return list;
 }
 
-QStringList PatcherPaths::autoPatchers() const
+std::vector<std::string> PatcherPaths::autoPatchers() const
 {
-    return QStringList()
-            << JflteDalvikCachePatcher::Id
-            << JflteGoogleEditionPatcher::Id
-            << JflteSlimAromaBundledMount::Id
-            << JflteImperiumPatcher::Id
-            << JflteNegaliteNoWipeData::Id
-            << JflteTriForceFixAroma::Id
-            << JflteTriForceFixUpdate::Id
-            << NoobdevMultiBoot::Id
-            << NoobdevSystemProp::Id
-            << PatchFilePatcher::Id
-            << StandardPatcher::Id;
+    std::vector<std::string> list;
+    list.push_back(JflteDalvikCachePatcher::Id);
+    list.push_back(JflteGoogleEditionPatcher::Id);
+    list.push_back(JflteSlimAromaBundledMount::Id);
+    list.push_back(JflteImperiumPatcher::Id);
+    list.push_back(JflteNegaliteNoWipeData::Id);
+    list.push_back(JflteTriForceFixAroma::Id);
+    list.push_back(JflteTriForceFixUpdate::Id);
+    list.push_back(NoobdevMultiBoot::Id);
+    list.push_back(NoobdevSystemProp::Id);
+    list.push_back(PatchFilePatcher::Id);
+    list.push_back(StandardPatcher::Id);
+    return list;
 }
 
-QStringList PatcherPaths::ramdiskPatchers() const
+std::vector<std::string> PatcherPaths::ramdiskPatchers() const
 {
-    return QStringList()
-            << BaconRamdiskPatcher::Id
-            << D800RamdiskPatcher::Id
-            << FalconRamdiskPatcher::Id
-            << HammerheadAOSPRamdiskPatcher::Id
-            << HammerheadNoobdevRamdiskPatcher::Id
-            << HlteAOSPRamdiskPatcher::Id
-            << JflteAOSPRamdiskPatcher::Id
-            << JflteGoogleEditionRamdiskPatcher::Id
-            << JflteNoobdevRamdiskPatcher::Id
-            << JflteTouchWizRamdiskPatcher::Id
-            << KlteAOSPRamdiskPatcher::Id
-            << KlteTouchWizRamdiskPatcher::Id;
+    std::vector<std::string> list;
+    list.push_back(BaconRamdiskPatcher::Id);
+    list.push_back(D800RamdiskPatcher::Id);
+    list.push_back(FalconRamdiskPatcher::Id);
+    list.push_back(HammerheadAOSPRamdiskPatcher::Id);
+    list.push_back(HammerheadNoobdevRamdiskPatcher::Id);
+    list.push_back(HlteAOSPRamdiskPatcher::Id);
+    list.push_back(JflteAOSPRamdiskPatcher::Id);
+    list.push_back(JflteGoogleEditionRamdiskPatcher::Id);
+    list.push_back(JflteNoobdevRamdiskPatcher::Id);
+    list.push_back(JflteTouchWizRamdiskPatcher::Id);
+    list.push_back(KlteAOSPRamdiskPatcher::Id);
+    list.push_back(KlteTouchWizRamdiskPatcher::Id);
+    return list;
 }
 
-QSharedPointer<Patcher> PatcherPaths::createPatcher(const QString &id) const
+std::shared_ptr<Patcher> PatcherPaths::createPatcher(const std::string &id) const
 {
     if (id == MultiBootPatcher::Id) {
-        return QSharedPointer<Patcher>(new MultiBootPatcher(this));
+        return std::make_shared<MultiBootPatcher>(this);
     } else if (id == PrimaryUpgradePatcher::Id) {
-        return QSharedPointer<Patcher>(new PrimaryUpgradePatcher(this));
+        return std::make_shared<PrimaryUpgradePatcher>(this);
     } else if (id == SyncdaemonUpdatePatcher::Id) {
-        return QSharedPointer<Patcher>(new SyncdaemonUpdatePatcher(this));
+        return std::make_shared<SyncdaemonUpdatePatcher>(this);
     }
 
-    return QSharedPointer<Patcher>();
+    return std::shared_ptr<Patcher>();
 }
 
-QSharedPointer<AutoPatcher> PatcherPaths::createAutoPatcher(const QString &id,
-                                                            const FileInfo * const info,
-                                                            const PatchInfo::AutoPatcherArgs &args) const
+std::shared_ptr<AutoPatcher> PatcherPaths::createAutoPatcher(const std::string &id,
+                                                             const FileInfo * const info,
+                                                             const PatchInfo::AutoPatcherArgs &args) const
 {
     if (id == JflteDalvikCachePatcher::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteDalvikCachePatcher(this, info));
+        return std::make_shared<JflteDalvikCachePatcher>(this, info);
     } else if (id == JflteGoogleEditionPatcher::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteGoogleEditionPatcher(this, info));
+        return std::make_shared<JflteGoogleEditionPatcher>(this, info);
     } else if (id == JflteSlimAromaBundledMount::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteSlimAromaBundledMount(this, info));
+        return std::make_shared<JflteSlimAromaBundledMount>(this, info);
     } else if (id == JflteImperiumPatcher::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteImperiumPatcher(this, info));
+        return std::make_shared<JflteImperiumPatcher>(this, info);
     } else if (id == JflteNegaliteNoWipeData::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteNegaliteNoWipeData(this, info));
+        return std::make_shared<JflteNegaliteNoWipeData>(this, info);
     } else if (id == JflteTriForceFixAroma::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteTriForceFixAroma(this, info));
+        return std::make_shared<JflteTriForceFixAroma>(this, info);
     } else if (id == JflteTriForceFixUpdate::Id) {
-        return QSharedPointer<AutoPatcher>(new JflteTriForceFixUpdate(this, info));
+        return std::make_shared<JflteTriForceFixUpdate>(this, info);
     } else if (id == NoobdevMultiBoot::Id) {
-        return QSharedPointer<AutoPatcher>(new NoobdevMultiBoot(this, info));
+        return std::make_shared<NoobdevMultiBoot>(this, info);
     } else if (id == NoobdevSystemProp::Id) {
-        return QSharedPointer<AutoPatcher>(new NoobdevSystemProp(this, info));
+        return std::make_shared<NoobdevSystemProp>(this, info);
     } else if (id == PatchFilePatcher::Id) {
-        return QSharedPointer<AutoPatcher>(new PatchFilePatcher(this, info, args));
+        return std::make_shared<PatchFilePatcher>(this, info, args);
     } else if (id == StandardPatcher::Id) {
-        return QSharedPointer<AutoPatcher>(new StandardPatcher(this, info, args));
+        return std::make_shared<StandardPatcher>(this, info, args);
     }
 
-    return QSharedPointer<AutoPatcher>();
+    return std::shared_ptr<AutoPatcher>();
 }
 
-QSharedPointer<RamdiskPatcher> PatcherPaths::createRamdiskPatcher(const QString &id,
-                                                                  const FileInfo * const info,
-                                                                  CpioFile * const cpio) const
+std::shared_ptr<RamdiskPatcher> PatcherPaths::createRamdiskPatcher(const std::string &id,
+                                                                   const FileInfo * const info,
+                                                                   CpioFile * const cpio) const
 {
     if (id == BaconRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new BaconRamdiskPatcher(this, info, cpio));
+        return std::make_shared<BaconRamdiskPatcher>(this, info, cpio);
     } else if (id == D800RamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new D800RamdiskPatcher(this, info, cpio));
+        return std::make_shared<D800RamdiskPatcher>(this, info, cpio);
     } else if (id == FalconRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new FalconRamdiskPatcher(this, info, cpio));
+        return std::make_shared<FalconRamdiskPatcher>(this, info, cpio);
     } else if (id == HammerheadAOSPRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new HammerheadAOSPRamdiskPatcher(this, info, cpio));
+        return std::make_shared<HammerheadAOSPRamdiskPatcher>(this, info, cpio);
     } else if (id == HammerheadNoobdevRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new HammerheadNoobdevRamdiskPatcher(this, info, cpio));
+        return std::make_shared<HammerheadNoobdevRamdiskPatcher>(this, info, cpio);
     } else if (id == HlteAOSPRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new HlteAOSPRamdiskPatcher(this, info, cpio));
+        return std::make_shared<HlteAOSPRamdiskPatcher>(this, info, cpio);
     } else if (id == JflteAOSPRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new JflteAOSPRamdiskPatcher(this, info, cpio));
+        return std::make_shared<JflteAOSPRamdiskPatcher>(this, info, cpio);
     } else if (id == JflteGoogleEditionRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new JflteGoogleEditionRamdiskPatcher(this, info, cpio));
+        return std::make_shared<JflteGoogleEditionRamdiskPatcher>(this, info, cpio);
     } else if (id == JflteNoobdevRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new JflteNoobdevRamdiskPatcher(this, info, cpio));
+        return std::make_shared<JflteNoobdevRamdiskPatcher>(this, info, cpio);
     } else if (id == JflteTouchWizRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new JflteTouchWizRamdiskPatcher(this, info, cpio));
+        return std::make_shared<JflteTouchWizRamdiskPatcher>(this, info, cpio);
     } else if (id == KlteAOSPRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new KlteAOSPRamdiskPatcher(this, info, cpio));
+        return std::make_shared<KlteAOSPRamdiskPatcher>(this, info, cpio);
     } else if (id == KlteTouchWizRamdiskPatcher::Id) {
-        return QSharedPointer<RamdiskPatcher>(new KlteTouchWizRamdiskPatcher(this, info, cpio));
+        return std::make_shared<KlteTouchWizRamdiskPatcher>(this, info, cpio);
     }
 
-    return QSharedPointer<RamdiskPatcher>();
+    return std::shared_ptr<RamdiskPatcher>();
 }
 
-QString PatcherPaths::patcherName(const QString &id) const
+std::string PatcherPaths::patcherName(const std::string &id) const
 {
     if (id == MultiBootPatcher::Id) {
         return MultiBootPatcher::Name;
@@ -514,44 +519,17 @@ QString PatcherPaths::patcherName(const QString &id) const
         return SyncdaemonUpdatePatcher::Name;
     }
 
-    return QString();
+    return std::string();
 }
 
-QList<PartitionConfig *> PatcherPaths::partitionConfigs() const
+std::vector<PartitionConfig *> PatcherPaths::partitionConfigs() const
 {
-    Q_D(const PatcherPaths);
-
-    return d->partConfigs;
+    return m_impl->partConfigs;
 }
 
-QStringList PatcherPaths::initBinaries() const
+PartitionConfig * PatcherPaths::partitionConfig(const std::string &id) const
 {
-    Q_D(const PatcherPaths);
-
-    QStringList inits;
-
-    QDir dir(initsDirectory());
-    if (!dir.exists() || !dir.isReadable()) {
-        return QStringList();
-    }
-
-    QDirIterator iter(dir.absolutePath(),
-                      QStringList(QStringLiteral("*")),
-                      QDir::Files, QDirIterator::Subdirectories);
-    while (iter.hasNext()) {
-        const QString &name = iter.next();
-        inits << dir.relativeFilePath(name);
-    }
-
-    inits.sort();
-    return inits;
-}
-
-PartitionConfig * PatcherPaths::partitionConfig(const QString &id) const
-{
-    Q_D(const PatcherPaths);
-
-    for (PartitionConfig *config : d->partConfigs) {
+    for (PartitionConfig *config : m_impl->partConfigs) {
         if (config->id() == id) {
             return config;
         }
@@ -560,580 +538,581 @@ PartitionConfig * PatcherPaths::partitionConfig(const QString &id) const
     return nullptr;
 }
 
-bool PatcherPaths::loadPatchInfos()
+std::vector<std::string> PatcherPaths::initBinaries() const
 {
-    Q_D(PatcherPaths);
+    std::vector<std::string> inits;
 
-    QDir dir(patchInfosDirectory());
-    if (!dir.exists() || !dir.isReadable()) {
-        d->errorCode = PatcherError::DirectoryNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(patchInfosDirectory());
-        return false;
-    }
+    try {
+        const std::string dir = initsDirectory() + "/";
 
-    QDirIterator iter(dir.absolutePath(),
-                      QStringList(QStringLiteral("*.xml")),
-                      QDir::Files, QDirIterator::Subdirectories);
-    while (iter.hasNext()) {
-        QString name = iter.next();
-        QString id = dir.relativeFilePath(name.left(name.size() - 4));
-        if (!loadPatchInfoXml(name, id)) {
-            d->errorCode = PatcherError::XmlParseFileError;
-            d->errorString = PatcherError::errorString(d->errorCode).arg(name);
-            return false;
+        boost::filesystem::recursive_directory_iterator it(dir);
+        boost::filesystem::recursive_directory_iterator end;
+
+        for (; it != end; ++it) {
+            if (boost::filesystem::is_regular_file(it->status())) {
+                std::string relPath = it->path().string();
+                boost::erase_first(relPath, dir);
+                inits.push_back(relPath);
+            }
         }
+    } catch (std::exception &e) {
+        Log::log(Log::Warning, e.what());
     }
 
-    return true;
+    std::sort(inits.begin(), inits.end());
+
+    return inits;
 }
 
-bool PatcherPaths::loadPatchInfoXml(const QString &path,
-                                    const QString &pathId)
+bool PatcherPaths::loadPatchInfos()
 {
-    Q_D(PatcherPaths);
+    try {
+        const std::string dir = patchInfosDirectory() + "/";
 
-    QFile file(path);
-    if (!file.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(path);
+        boost::filesystem::recursive_directory_iterator it(dir);
+        boost::filesystem::recursive_directory_iterator end;
+
+        for (; it != end; ++it) {
+            if (boost::filesystem::is_regular_file(it->status())
+                    && it->path().extension() == ".xml") {
+                std::string id = it->path().string();
+                boost::erase_first(id, dir);
+                boost::erase_tail(id, 4);
+
+                if (!m_impl->loadPatchInfoXml(it->path().string(), id)) {
+                    m_impl->error = PatcherError::createXmlError(
+                            PatcherError::XmlParseFileError, it->path().string());
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    } catch (std::exception &e) {
+        Log::log(Log::Warning, e.what());
+    }
+
+    return false;
+}
+
+bool PatcherPaths::Impl::loadPatchInfoXml(const std::string &path,
+                                          const std::string &pathId)
+{
+    (void) pathId;
+
+    LIBXML_TEST_VERSION
+
+    xmlDoc *doc = xmlReadFile(path.c_str(), nullptr, 0);
+    if (doc == nullptr) {
+        error = PatcherError::createXmlError(
+                PatcherError::XmlParseFileError, path);
         return false;
     }
 
-    QXmlStreamReader xml(&file);
+    xmlNode *root = xmlDocGetRootElement(doc);
 
-    while (!xml.atEnd() && !xml.hasError()) {
-        QXmlStreamReader::TokenType token = xml.readNext();
-
-        if (token == QXmlStreamReader::StartDocument) {
+    for (auto *curNode = root; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
             continue;
         }
 
-        if (token == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagPatchinfo) {
-                PatchInfo *info = new PatchInfo();
-                parsePatchInfoTagPatchinfo(xml, info);
-
-                if (xml.hasError()) {
-                    delete info;
-                } else {
-                    info->d_func()->path = pathId;
-                    d->patchInfos << info;
-                }
-            } else {
-                qWarning() << "Unknown tag:" << xml.name();
-            }
+        if (xmlStrcmp(curNode->name, PatchInfoTagPatchinfo) == 0) {
+            PatchInfo *info = new PatchInfo();
+            parsePatchInfoTagPatchinfo(curNode, info);
+            info->setPath(pathId);
+            patchInfos.push_back(info);
+        } else {
+            Log::log(Log::Warning, "Unknown tag: %s", (char *) curNode->name);
         }
     }
 
-    if (xml.hasError()) {
-        qWarning() << "Failed to parse XML:" << xml.errorString();
-        xml.clear();
-        file.close();
-        return false;
-    }
-
-    xml.clear();
-
-    file.close();
+    xmlFreeDoc(doc);
+    xmlCleanupParser();
 
     return true;
 }
 
-void PatcherPaths::parsePatchInfoTagPatchinfo(QXmlStreamReader &xml,
-                                              PatchInfo * const info)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagPatchinfo) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == PatchInfoTagPatchinfo)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagPatchinfo) {
-                qWarning() << "Nested <patchinfo> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == PatchInfoTagMatches) {
-                parsePatchInfoTagMatches(xml, info);
-            } else if (xml.name() == PatchInfoTagNotMatched) {
-                parsePatchInfoTagNotMatched(xml, info);
-            } else if (xml.name() == PatchInfoTagName) {
-                parsePatchInfoTagName(xml, info);
-            } else if (xml.name() == PatchInfoTagRegex) {
-                parsePatchInfoTagRegex(xml, info);
-            } else if (xml.name() == PatchInfoTagRegexes) {
-                parsePatchInfoTagRegexes(xml, info);
-            } else if (xml.name() == PatchInfoTagHasBootImage) {
-                parsePatchInfoTagHasBootImage(xml, info, PatchInfo::Default);
-            } else if (xml.name() == PatchInfoTagRamdisk) {
-                parsePatchInfoTagRamdisk(xml, info, PatchInfo::Default);
-            } else if (xml.name() == PatchInfoTagPatchedInit) {
-                parsePatchInfoTagPatchedInit(xml, info, PatchInfo::Default);
-            } else if (xml.name() == PatchInfoTagAutopatchers) {
-                parsePatchInfoTagAutopatchers(xml, info, PatchInfo::Default);
-            } else if (xml.name() == PatchInfoTagDeviceCheck) {
-                parsePatchInfoTagDeviceCheck(xml, info, PatchInfo::Default);
-            } else if (xml.name() == PatchInfoTagPartconfigs) {
-                parsePatchInfoTagPartconfigs(xml, info, PatchInfo::Default);
-            } else {
-                qWarning() << "Unrecognized tag within <patchinfo>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
+static std::string xmlStringToStdString(const xmlChar* xmlString) {
+    if (xmlString) {
+        return std::string(reinterpret_cast<const char*>(xmlString));
+    } else {
+        return std::string();
     }
 }
 
-void PatcherPaths::parsePatchInfoTagMatches(QXmlStreamReader &xml,
-                                            PatchInfo * const info)
+void PatcherPaths::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
+                                                    PatchInfo * const info)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagMatches) {
-        return;
-    }
+    assert(xmlStrcmp(node->name, PatchInfoTagPatchinfo) == 0);
 
-    QXmlStreamAttributes attrs = xml.attributes();
-    if (!attrs.hasAttribute(PatchInfoAttrRegex)) {
-        qWarning() << "<matches> element has no 'regex' attribute";
-        xml.skipCurrentElement();
-        return;
-    }
-
-    const QString regex = attrs.value(PatchInfoAttrRegex).toString();
-
-    info->d_func()->condRegexes.append(regex);
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == PatchInfoTagMatches)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagMatches) {
-                qWarning() << "Nested <matches> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == PatchInfoTagHasBootImage) {
-                parsePatchInfoTagHasBootImage(xml, info, regex);
-            } else if (xml.name() == PatchInfoTagRamdisk) {
-                parsePatchInfoTagRamdisk(xml, info, regex);
-            } else if (xml.name() == PatchInfoTagPatchedInit) {
-                parsePatchInfoTagPatchedInit(xml, info, regex);
-            } else if (xml.name() == PatchInfoTagAutopatchers) {
-                parsePatchInfoTagAutopatchers(xml, info, regex);
-            } else if (xml.name() == PatchInfoTagDeviceCheck) {
-                parsePatchInfoTagDeviceCheck(xml, info, regex);
-            } else if (xml.name() == PatchInfoTagPartconfigs) {
-                parsePatchInfoTagPartconfigs(xml, info, regex);
-            } else {
-                qWarning() << "Unrecognized tag within <matches>:" << xml.name();
-                xml.skipCurrentElement();
-            }
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
+            continue;
         }
 
-        xml.readNext();
+        if (xmlStrcmp(curNode->name, PatchInfoTagPatchinfo) == 0) {
+            Log::log(Log::Warning, "Nested <patchinfo> is not allowed");
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagMatches) == 0) {
+            parsePatchInfoTagMatches(curNode, info);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagNotMatched) == 0) {
+            parsePatchInfoTagNotMatched(curNode, info);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagName) == 0) {
+            parsePatchInfoTagName(curNode, info);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagRegex) == 0) {
+            parsePatchInfoTagRegex(curNode, info);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagRegexes) == 0) {
+            parsePatchInfoTagRegexes(curNode, info);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagHasBootImage) == 0) {
+            parsePatchInfoTagHasBootImage(curNode, info, PatchInfo::Default);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
+            parsePatchInfoTagRamdisk(curNode, info, PatchInfo::Default);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagPatchedInit) == 0) {
+            parsePatchInfoTagPatchedInit(curNode, info, PatchInfo::Default);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
+            parsePatchInfoTagAutopatchers(curNode, info, PatchInfo::Default);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
+            parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::Default);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
+            parsePatchInfoTagPartconfigs(curNode, info, PatchInfo::Default);
+        } else {
+            Log::log(Log::Warning, "Unrecognized tag within <patchinfo>: %s",
+                     (char *) curNode->name);
+        }
     }
 }
 
-void PatcherPaths::parsePatchInfoTagNotMatched(QXmlStreamReader &xml,
+void PatcherPaths::Impl::parsePatchInfoTagMatches(xmlNode *node,
+                                                  PatchInfo * const info)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagMatches) == 0);
+
+    xmlChar *value = xmlGetProp(node, PatchInfoAttrRegex);
+    if (value == nullptr) {
+        Log::log(Log::Warning, "<matches> element has no 'regex' attribute");
+        return;
+    }
+
+    const std::string regex = xmlStringToStdString(value);
+    xmlFree(value);
+
+    auto regexes = info->condRegexes();
+    regexes.push_back(regex);
+    info->setCondRegexes(std::move(regexes));
+
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+
+        if (xmlStrcmp(curNode->name, PatchInfoTagMatches) == 0) {
+            Log::log(Log::Warning, "Nested <matches> is not allowed");
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagHasBootImage) == 0) {
+            parsePatchInfoTagHasBootImage(curNode, info, regex);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
+            parsePatchInfoTagRamdisk(curNode, info, regex);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagPatchedInit) == 0) {
+            parsePatchInfoTagPatchedInit(curNode, info, regex);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
+            parsePatchInfoTagAutopatchers(curNode, info, regex);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
+            parsePatchInfoTagDeviceCheck(curNode, info, regex);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
+            parsePatchInfoTagPartconfigs(curNode, info, regex);
+        } else {
+            Log::log(Log::Warning, "Unrecognized tag within <matches>: %s",
+                     (char *) curNode->name);
+        }
+    }
+}
+
+void PatcherPaths::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
+                                                     PatchInfo * const info)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagNotMatched) == 0);
+
+    info->setHasNotMatched(true);
+
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+
+        if (xmlStrcmp(curNode->name, PatchInfoTagNotMatched) == 0) {
+            Log::log(Log::Warning, "Nested <not-matched> is not allowed");
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagHasBootImage) == 0) {
+            parsePatchInfoTagHasBootImage(curNode, info, PatchInfo::NotMatched);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
+            parsePatchInfoTagRamdisk(curNode, info, PatchInfo::NotMatched);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagPatchedInit) == 0) {
+            parsePatchInfoTagPatchedInit(curNode, info, PatchInfo::NotMatched);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
+            parsePatchInfoTagAutopatchers(curNode, info, PatchInfo::NotMatched);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
+            parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::NotMatched);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
+            parsePatchInfoTagPartconfigs(curNode, info, PatchInfo::NotMatched);
+        } else {
+            Log::log(Log::Warning, "Unrecognized tag within <not-matched>: %s",
+                     (char *) curNode->name);
+        }
+    }
+}
+
+void PatcherPaths::Impl::parsePatchInfoTagName(xmlNode *node,
                                                PatchInfo * const info)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagNotMatched) {
-        return;
-    }
+    assert(xmlStrcmp(node->name, PatchInfoTagName) == 0);
 
-    info->d_func()->hasNotMatchedElement = true;
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == PatchInfoTagNotMatched)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagNotMatched) {
-                qWarning() << "Nested <not-matched> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == PatchInfoTagHasBootImage) {
-                parsePatchInfoTagHasBootImage(xml, info, PatchInfo::NotMatched);
-            } else if (xml.name() == PatchInfoTagRamdisk) {
-                parsePatchInfoTagRamdisk(xml, info, PatchInfo::NotMatched);
-            } else if (xml.name() == PatchInfoTagPatchedInit) {
-                parsePatchInfoTagPatchedInit(xml, info, PatchInfo::NotMatched);
-            } else if (xml.name() == PatchInfoTagAutopatchers) {
-                parsePatchInfoTagAutopatchers(xml, info, PatchInfo::NotMatched);
-            } else if (xml.name() == PatchInfoTagDeviceCheck) {
-                parsePatchInfoTagDeviceCheck(xml, info, PatchInfo::NotMatched);
-            } else if (xml.name() == PatchInfoTagPartconfigs) {
-                parsePatchInfoTagPartconfigs(xml, info, PatchInfo::NotMatched);
-            } else {
-                qWarning() << "Unrecognized tag within <not-matched>:" << xml.name();
-                xml.skipCurrentElement();
-            }
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
         }
 
-        xml.readNext();
-    }
-}
-
-void PatcherPaths::parsePatchInfoTagName(QXmlStreamReader &xml,
-                                         PatchInfo * const info)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagName) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (info->d_func()->name.isNull()) {
-            info->d_func()->name = xml.text().toString();
+        hasText = true;
+        if (info->name().empty()) {
+            info->setName(xmlStringToStdString(curNode->content));
         } else {
-            qWarning() << "Ignoring additional <name> elements";
+            Log::log(Log::Warning, "Ignoring additional <name> elements");
         }
-    } else {
-        qWarning() << "<name> tag has no text";
     }
 
-    xml.skipCurrentElement();
+    if (!hasText) {
+        Log::log(Log::Warning, "<name> tag has no text");
+    }
 }
 
-void PatcherPaths::parsePatchInfoTagRegex(QXmlStreamReader &xml,
-                                          PatchInfo * const info)
+void PatcherPaths::Impl::parsePatchInfoTagRegex(xmlNode *node,
+                                                PatchInfo * const info)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagRegex) {
-        return;
-    }
+    assert(xmlStrcmp(node->name, PatchInfoTagRegex) == 0);
 
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        info->d_func()->regexes.append(xml.text().toString());
-    } else {
-        qWarning() << "<regex> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parsePatchInfoTagExcludeRegex(QXmlStreamReader &xml,
-                                                 PatchInfo * const info)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagExcludeRegex) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        info->d_func()->excludeRegexes.append(xml.text().toString());
-    } else {
-        qWarning() << "<exclude-regex> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parsePatchInfoTagRegexes(QXmlStreamReader &xml,
-                                            PatchInfo * const info)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagRegexes) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == PatchInfoTagRegexes)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagRegexes) {
-                qWarning() << "Nested <regexes> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == PatchInfoTagRegex) {
-                parsePatchInfoTagRegex(xml, info);
-            } else if (xml.name() == PatchInfoTagExcludeRegex) {
-                parsePatchInfoTagExcludeRegex(xml, info);
-            } else {
-                qWarning() << "Unrecognized tag within <regexes>:" << xml.name();
-                xml.skipCurrentElement();
-            }
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
         }
 
-        xml.readNext();
+        hasText = true;
+        auto regexes = info->regexes();
+        regexes.push_back(xmlStringToStdString(curNode->content));
+        info->setRegexes(std::move(regexes));
+    }
+
+    if (!hasText) {
+        Log::log(Log::Warning, "<regex> tag has no text");
     }
 }
 
-void PatcherPaths::parsePatchInfoTagHasBootImage(QXmlStreamReader &xml,
-                                                 PatchInfo * const info,
-                                                 const QString &type)
+void PatcherPaths::Impl::parsePatchInfoTagExcludeRegex(xmlNode *node,
+                                                       PatchInfo * const info)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagHasBootImage) {
-        return;
+    assert(xmlStrcmp(node->name, PatchInfoTagExcludeRegex) == 0);
+
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
+        }
+
+        hasText = true;
+        auto regexes = info->excludeRegexes();
+        regexes.push_back(xmlStringToStdString(curNode->content));
+        info->setExcludeRegexes(std::move(regexes));
     }
 
-    xml.readNext();
+    if (!hasText) {
+        Log::log(Log::Warning, "<exclude-regex> tag has no text");
+    }
+}
 
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (xml.text() == XmlTextTrue) {
-            info->d_func()->hasBootImage[type] = true;
-        } else if (xml.text() == XmlTextFalse) {
-            info->d_func()->hasBootImage[type] = false;
+void PatcherPaths::Impl::parsePatchInfoTagRegexes(xmlNode *node,
+                                                  PatchInfo * const info)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagRegexes) == 0);
+
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+
+        if (xmlStrcmp(curNode->name, PatchInfoTagRegexes) == 0) {
+            Log::log(Log::Warning, "Nested <regexes> is not allowed");
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagRegex) == 0) {
+            parsePatchInfoTagRegex(curNode, info);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagExcludeRegex) == 0) {
+            parsePatchInfoTagExcludeRegex(curNode, info);
         } else {
-            qWarning() << "Unknown value for <has-boot-image>:" << xml.text();
+            Log::log(Log::Warning, "Unrecognized tag within <regexes>: %s",
+                     (char *) curNode->name);
         }
-    } else {
-        qWarning() << "<has-boot-image> tag has no text";
     }
-
-    xml.skipCurrentElement();
 }
 
-void PatcherPaths::parsePatchInfoTagRamdisk(QXmlStreamReader &xml,
-                                            PatchInfo * const info,
-                                            const QString &type)
+void PatcherPaths::Impl::parsePatchInfoTagHasBootImage(xmlNode *node,
+                                                       PatchInfo * const info,
+                                                       const std::string &type)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagRamdisk) {
-        return;
-    }
+    assert(xmlStrcmp(node->name, PatchInfoTagHasBootImage) == 0);
 
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        info->d_func()->ramdisk[type] = xml.text().toString();
-    } else {
-        qWarning() << "<ramdisk> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parsePatchInfoTagPatchedInit(QXmlStreamReader &xml,
-                                                PatchInfo * const info,
-                                                const QString &type)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagPatchedInit) {
-        return;
-    }
-
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        info->d_func()->patchedInit[type] = xml.text().toString();
-    } else {
-        qWarning() << "<patched-init> tag has no text";
-    }
-
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parsePatchInfoTagAutopatchers(QXmlStreamReader &xml,
-                                                 PatchInfo * const info,
-                                                 const QString &type)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagAutopatchers) {
-        return;
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == PatchInfoTagAutopatchers)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagAutopatchers) {
-                qWarning() << "Nested <autopatchers> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == PatchInfoTagAutopatcher) {
-                parsePatchInfoTagAutopatcher(xml, info, type);
-            } else {
-                qWarning() << "Unrecognized tag within <autopatchers>:" << xml.name();
-                xml.skipCurrentElement();
-            }
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
         }
 
-        xml.readNext();
+        hasText = true;
+        if (xmlStrcmp(curNode->content, XmlTextTrue) == 0) {
+            info->setHasBootImage(type, true);
+        } else if (xmlStrcmp(curNode->content, XmlTextFalse) == 0) {
+            info->setHasBootImage(type, false);
+        } else {
+            Log::log(Log::Warning, "Unknown value for <has-boot-image>: %s",
+                     (char *) curNode->content);
+        }
+    }
+
+    if (!hasText) {
+        Log::log(Log::Warning, "<has-boot-image> tag has no text");
     }
 }
 
-void PatcherPaths::parsePatchInfoTagAutopatcher(QXmlStreamReader &xml,
-                                                PatchInfo * const info,
-                                                const QString &type)
+void PatcherPaths::Impl::parsePatchInfoTagRamdisk(xmlNode *node,
+                                                  PatchInfo * const info,
+                                                  const std::string &type)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagAutopatcher) {
-        return;
+    assert(xmlStrcmp(node->name, PatchInfoTagRamdisk) == 0);
+
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
+        }
+
+        hasText = true;
+        if (info->ramdisk(type).empty()) {
+            info->setRamdisk(type, xmlStringToStdString(curNode->content));
+        } else {
+            Log::log(Log::Warning, "Ignoring additional <ramdisk> elements");
+        }
     }
 
-    QXmlStreamAttributes attrs = xml.attributes();
+    if (!hasText) {
+        Log::log(Log::Warning, "<ramdisk> tag has no text");
+    }
+}
+
+void PatcherPaths::Impl::parsePatchInfoTagPatchedInit(xmlNode *node,
+                                                      PatchInfo * const info,
+                                                      const std::string &type)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagPatchedInit) == 0);
+
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
+        }
+
+        hasText = true;
+        if (info->patchedInit(type).empty()) {
+            info->setPatchedInit(type, xmlStringToStdString(curNode->content));
+        } else {
+            Log::log(Log::Warning, "Ignoring additional <patched-init> elements");
+        }
+    }
+
+    if (!hasText) {
+        Log::log(Log::Warning, "<patched-init> tag has no text");
+    }
+}
+
+void PatcherPaths::Impl::parsePatchInfoTagAutopatchers(xmlNode *node,
+                                                       PatchInfo * const info,
+                                                       const std::string &type)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagAutopatchers) == 0);
+
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+
+        if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
+            Log::log(Log::Warning, "Nested <autopatchers> is not allowed");
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatcher) == 0) {
+            parsePatchInfoTagAutopatcher(curNode, info, type);
+        } else {
+            Log::log(Log::Warning, "Unrecognized tag within <autopatchers>: %s",
+                     (char *) curNode->name);
+        }
+    }
+}
+
+void PatcherPaths::Impl::parsePatchInfoTagAutopatcher(xmlNode *node,
+                                                      PatchInfo * const info,
+                                                      const std::string &type)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagAutopatcher) == 0);
+
     PatchInfo::AutoPatcherArgs args;
-    for (const QXmlStreamAttribute &attr : attrs) {
-        args[attr.name().toString()] = attr.value().toString();
+
+    for (xmlAttr *attr = node->properties; attr; attr = attr->next) {
+        auto name = attr->name;
+        auto value = xmlGetProp(node, name);
+
+        args[xmlStringToStdString(name)] = xmlStringToStdString(value);
+
+        xmlFree(value);
     }
 
-    xml.readNext();
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
+        }
 
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        PatchInfo::AutoPatcherItem item(xml.text().toString(), args);
-        info->d_func()->autoPatchers[type].append(item);
-    } else {
-        qWarning() << "<autopatcher> tag has no text";
+        hasText = true;
+        auto aps = info->autoPatchers(type);
+        aps.push_back(std::make_pair(xmlStringToStdString(curNode->content), args));
+        info->setAutoPatchers(type, std::move(aps));
     }
 
-    xml.skipCurrentElement();
+    if (!hasText) {
+        Log::log(Log::Warning, "<autopatcher> tag has no text");
+    }
 }
 
-void PatcherPaths::parsePatchInfoTagDeviceCheck(QXmlStreamReader &xml,
-                                                PatchInfo * const info,
-                                                const QString &type)
+void PatcherPaths::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
+                                                      PatchInfo * const info,
+                                                      const std::string &type)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagDeviceCheck) {
-        return;
-    }
+    assert(xmlStrcmp(node->name, PatchInfoTagDeviceCheck) == 0);
 
-    xml.readNext();
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
+        }
 
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        if (xml.text() == XmlTextTrue) {
-            info->d_func()->deviceCheck[type] = true;
-        } else if (xml.text() == XmlTextFalse) {
-            info->d_func()->deviceCheck[type] = false;
+        hasText = true;
+        if (xmlStrcmp(curNode->content, XmlTextTrue) == 0) {
+            info->setDeviceCheck(type, true);
+        } else if (xmlStrcmp(curNode->content, XmlTextFalse) == 0) {
+            info->setDeviceCheck(type, false);
         } else {
-            qWarning() << "Unknown value for <device-check>:" << xml.text();
+            Log::log(Log::Warning, "Unknown value for <device-check>: %s",
+                     (char *) curNode->content);
         }
-    } else {
-        qWarning() << "<device-check> tag has no text";
     }
 
-    xml.skipCurrentElement();
-}
-
-void PatcherPaths::parsePatchInfoTagPartconfigs(QXmlStreamReader &xml,
-                                                PatchInfo * const info,
-                                                const QString &type)
-{
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagPartconfigs) {
-        return;
-    }
-
-    if (!info->d_func()->supportedConfigs.contains(type)) {
-        info->d_func()->supportedConfigs[type].append(QStringLiteral("all"));
-    }
-
-    xml.readNext();
-
-    while (!xml.hasError()
-            && !(xml.tokenType() == QXmlStreamReader::EndElement
-            && xml.name() == PatchInfoTagPartconfigs)) {
-        if (xml.tokenType() == QXmlStreamReader::StartElement) {
-            if (xml.name() == PatchInfoTagPartconfigs) {
-                qWarning() << "Nested <partconfigs> is not allowed";
-                xml.skipCurrentElement();
-            } else if (xml.name() == PatchInfoTagExclude) {
-                parsePatchInfoTagExclude(xml, info, type);
-            } else if (xml.name() == PatchInfoTagInclude) {
-                parsePatchInfoTagInclude(xml, info, type);
-            } else {
-                qWarning() << "Unrecognized tag within <partconfigs>:" << xml.name();
-                xml.skipCurrentElement();
-            }
-        }
-
-        xml.readNext();
+    if (!hasText) {
+        Log::log(Log::Warning, "<device-check> tag has no text");
     }
 }
 
-void PatcherPaths::parsePatchInfoTagExclude(QXmlStreamReader &xml,
-                                            PatchInfo * const info,
-                                            const QString &type)
+void PatcherPaths::Impl::parsePatchInfoTagPartconfigs(xmlNode *node,
+                                                      PatchInfo * const info,
+                                                      const std::string &type)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagExclude) {
-        return;
+    assert(xmlStrcmp(node->name, PatchInfoTagPartconfigs) == 0);
+
+    auto configs = info->supportedConfigs(type);
+    if (configs.empty()) {
+        configs.push_back("all");
     }
+    info->setSupportedConfigs(type, std::move(configs));
 
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        int index = -1;
-        bool exists = false;
-
-        const QString negated = QLatin1Char('!') % xml.text().toString();
-
-        for (int i = 0; i < info->d_func()->supportedConfigs[type].size(); i++) {
-            if (info->d_func()->supportedConfigs[type][i] == xml.text()) {
-                index = i;
-            }
-            if (info->d_func()->supportedConfigs[type][i] == negated) {
-                exists = true;
-            }
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_ELEMENT_NODE) {
+            continue;
         }
 
-        if (!exists) {
-            if (index != -1) {
-                info->d_func()->supportedConfigs[type].removeAt(index);
-            } else {
-                info->d_func()->supportedConfigs[type].append(
-                        QLatin1Char('!') % xml.text().toString());
-            }
+        if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
+            Log::log(Log::Warning, "Nested <partconfigs> is not allowed");
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagExclude) == 0) {
+            parsePatchInfoTagExclude(curNode, info, type);
+        } else if (xmlStrcmp(curNode->name, PatchInfoTagInclude) == 0) {
+            parsePatchInfoTagInclude(curNode, info, type);
+        } else {
+            Log::log(Log::Warning, "Unrecognized tag within <partconfigs>: %s",
+                     (char *) curNode->name);
         }
-    } else {
-        qWarning() << "<exclude> tag has no text";
     }
-
-    xml.skipCurrentElement();
 }
 
-void PatcherPaths::parsePatchInfoTagInclude(QXmlStreamReader &xml,
-                                            PatchInfo * const info,
-                                            const QString &type)
+void PatcherPaths::Impl::parsePatchInfoTagExclude(xmlNode *node,
+                                                  PatchInfo * const info,
+                                                  const std::string &type)
 {
-    if (xml.tokenType() != QXmlStreamReader::StartElement
-            || xml.name() != PatchInfoTagInclude) {
-        return;
-    }
+    assert(xmlStrcmp(node->name, PatchInfoTagExclude) == 0);
 
-    xml.readNext();
-
-    if (xml.tokenType() == QXmlStreamReader::Characters) {
-        int index = -1;
-        bool exists = false;
-
-        const QString negated = QLatin1Char('!') % xml.text().toString();
-
-        for (int i = 0; i < info->d_func()->supportedConfigs[type].size(); i++) {
-            if (info->d_func()->supportedConfigs[type][i] == negated) {
-                index = i;
-            }
-            if (info->d_func()->supportedConfigs[type][i] == xml.text()) {
-                exists = true;
-            }
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
         }
 
-        if (!exists) {
-            if (index != -1) {
-                info->d_func()->supportedConfigs[type].removeAt(index);
-            } else {
-                info->d_func()->supportedConfigs[type].append(xml.text().toString());
-            }
+        hasText = true;
+
+        const std::string text = xmlStringToStdString(curNode->content);
+        const std::string negated = "!" + text;
+
+        auto configs = info->supportedConfigs(type);
+
+        auto itYes = std::find(configs.begin(), configs.end(), text);
+        if (itYes != configs.end()) {
+            configs.erase(itYes);
         }
-    } else {
-        qWarning() << "<include> tag has no text";
+
+        auto itNo = std::find(configs.begin(), configs.end(), negated);
+        if (itNo != configs.end()) {
+            configs.erase(itNo);
+        }
+
+        configs.push_back(negated);
+        info->setSupportedConfigs(type, std::move(configs));
     }
 
-    xml.skipCurrentElement();
+    if (!hasText) {
+        Log::log(Log::Warning, "<exclude> tag has no text");
+    }
+}
+
+void PatcherPaths::Impl::parsePatchInfoTagInclude(xmlNode *node,
+                                                  PatchInfo * const info,
+                                                  const std::string &type)
+{
+    assert(xmlStrcmp(node->name, PatchInfoTagInclude) == 0);
+
+    bool hasText = false;
+    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
+        if (curNode->type != XML_TEXT_NODE) {
+            continue;
+        }
+
+        hasText = true;
+
+        const std::string text = xmlStringToStdString(curNode->content);
+        const std::string negated = "!" + text;
+
+        auto configs = info->supportedConfigs(type);
+
+        auto itYes = std::find(configs.begin(), configs.end(), text);
+        if (itYes != configs.end()) {
+            configs.erase(itYes);
+        }
+
+        auto itNo = std::find(configs.begin(), configs.end(), negated);
+        if (itNo != configs.end()) {
+            configs.erase(itNo);
+        }
+
+        configs.push_back(text);
+        info->setSupportedConfigs(type, std::move(configs));
+    }
+
+    if (!hasText) {
+        Log::log(Log::Warning, "<include> tag has no text");
+    }
 }

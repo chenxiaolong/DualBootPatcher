@@ -18,18 +18,76 @@
  */
 
 #include "patchinfo.h"
-#include "patchinfo_p.h"
+
+#include <unordered_map>
+
+#include <boost/filesystem/path.hpp>
+#include <boost/regex.hpp>
 
 #include "patcherpaths.h"
 
-#include <QtCore/QFileInfo>
-#include <QtCore/QRegularExpression>
+
+class PatchInfo::Impl
+{
+public:
+    Impl();
+
+    std::string path;
+
+    // The name of the ROM
+    std::string name;
+
+    // Regular expressions for matching the filename
+    std::vector<std::string> regexes;
+
+    // If the regexes are over-encompassing, these regexes are used to
+    // exclude the filename
+    std::vector<std::string> excludeRegexes;
+
+    // List of regexes used for conditionals
+    std::vector<std::string> condRegexes;
+
+    // Whether the patchinfo has a <not-matched> elements (acts as the
+    // "else" statement for the conditionals)
+    bool hasNotMatchedElement;
+
+    // ** For the variables below, use hashmap[Default] to get the default
+    //    values and hashmap[regex] with the index in condRegexes to get
+    //    the overridden values.
+    //
+    // NOTE: If the variable is a list, the "overridden" values are used
+    //       in addition to the default values
+
+    // List of autopatchers to use
+    std::unordered_map<std::string, PatchInfo::AutoPatcherItems> autoPatchers;
+
+    // Whether or not the file contains (a) boot image(s)
+    std::unordered_map<std::string, bool> hasBootImage;
+
+    // Attempt to autodetect boot images (finds .img files and checks their headers)
+    std::unordered_map<std::string, bool> autodetectBootImages;
+
+    // List of manually specified boot images
+    std::unordered_map<std::string, std::vector<std::string>> bootImages;
+
+    // Ramdisk patcher to use
+    std::unordered_map<std::string, std::string> ramdisk;
+
+    // Name of alternative binary to use
+    std::unordered_map<std::string, std::string> patchedInit;
+
+    // Whether or not device checks/asserts should be kept
+    std::unordered_map<std::string, bool> deviceCheck;
+
+    // List of supported partition configurations
+    std::unordered_map<std::string, std::vector<std::string>> supportedConfigs;
+};
 
 
-const QString PatchInfo::Default = QStringLiteral("default");
-const QString PatchInfo::NotMatched = QStringLiteral("not-matched");
+const std::string PatchInfo::Default = "default";
+const std::string PatchInfo::NotMatched = "not-matched";
 
-PatchInfoPrivate::PatchInfoPrivate()
+PatchInfo::Impl::Impl()
 {
     // No <not-matched> element
     hasNotMatchedElement = false;
@@ -44,65 +102,53 @@ PatchInfoPrivate::PatchInfoPrivate()
     deviceCheck[PatchInfo::Default] = true;
 
     // Allow all configs
-    supportedConfigs[PatchInfo::Default].append(QStringLiteral("all"));
+    supportedConfigs[PatchInfo::Default].push_back("all");
 }
 
 // --------------------------------
 
-PatchInfo::PatchInfo(QObject *parent) :
-    QObject(parent), d_ptr(new PatchInfoPrivate())
+PatchInfo::PatchInfo() : m_impl(new Impl())
 {
 }
 
 PatchInfo::~PatchInfo()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-QString PatchInfo::path() const
+std::string PatchInfo::path() const
 {
-    Q_D(const PatchInfo);
-
-    return d->path;
+    return m_impl->path;
 }
 
-void PatchInfo::setPath(const QString &path)
+void PatchInfo::setPath(std::string path)
 {
-    Q_D(PatchInfo);
-
-    d->path = path;
+    m_impl->path = std::move(path);
 }
 
-QString PatchInfo::name() const
+std::string PatchInfo::name() const
 {
-    Q_D(const PatchInfo);
-
-    return d->name;
+    return m_impl->name;
 }
 
-void PatchInfo::setName(const QString &name)
+void PatchInfo::setName(std::string name)
 {
-    Q_D(PatchInfo);
-
-    d->name = name;
+    m_impl->name = std::move(name);
 }
 
-QString PatchInfo::keyFromFilename(const QString &filename) const
+std::string PatchInfo::keyFromFilename(const std::string &fileName) const
 {
-    Q_D(const PatchInfo);
-
-    QString basename = QFileInfo(filename).fileName();
+    std::string noPath = boost::filesystem::path(fileName).filename().string();
 
     // The conditional regex is the key if <matches> elements are used
     // in the patchinfo xml files
-    for (const QString &regex : d->condRegexes) {
-        if (basename.contains(QRegularExpression(regex))) {
+    for (auto &regex : m_impl->condRegexes) {
+        if (boost::regex_search(noPath, boost::regex(regex))) {
             return regex;
         }
     }
 
     // If none of those are matched, try <not-matched>
-    if (d->hasNotMatchedElement) {
+    if (m_impl->hasNotMatchedElement) {
         return NotMatched;
     }
 
@@ -110,207 +156,218 @@ QString PatchInfo::keyFromFilename(const QString &filename) const
     return Default;
 }
 
-QStringList PatchInfo::regexes() const
+std::vector<std::string> PatchInfo::regexes() const
 {
-    Q_D(const PatchInfo);
-
-    return d->regexes;
+    return m_impl->regexes;
 }
 
-void PatchInfo::setRegexes(const QStringList &regexes)
+void PatchInfo::setRegexes(std::vector<std::string> regexes)
 {
-    Q_D(PatchInfo);
-
-    d->regexes = regexes;
+    m_impl->regexes = std::move(regexes);
 }
 
-QStringList PatchInfo::excludeRegexes() const
+std::vector<std::string> PatchInfo::excludeRegexes() const
 {
-    Q_D(const PatchInfo);
-
-    return d->excludeRegexes;
+    return m_impl->excludeRegexes;
 }
 
-void PatchInfo::setExcludeRegexes(const QStringList &regexes)
+void PatchInfo::setExcludeRegexes(std::vector<std::string> regexes)
 {
-    Q_D(PatchInfo);
-
-    d->excludeRegexes = regexes;
+    m_impl->excludeRegexes = std::move(regexes);
 }
 
-PatchInfo::AutoPatcherItems PatchInfo::autoPatchers(const QString &key) const
+std::vector<std::string> PatchInfo::condRegexes() const
 {
-    Q_D(const PatchInfo);
+    return m_impl->condRegexes;
+}
 
-    const AutoPatcherItems &def = d->autoPatchers.value(Default);
+void PatchInfo::setCondRegexes(std::vector<std::string> regexes)
+{
+    m_impl->condRegexes = std::move(regexes);
+}
 
-    if (key != Default && d->autoPatchers.keys().contains(key)) {
-        return AutoPatcherItems() << def << d->autoPatchers[key];
+bool PatchInfo::hasNotMatched() const
+{
+    return m_impl->hasNotMatchedElement;
+}
+
+void PatchInfo::setHasNotMatched(bool hasElem)
+{
+    m_impl->hasNotMatchedElement = hasElem;
+}
+
+PatchInfo::AutoPatcherItems PatchInfo::autoPatchers(const std::string &key) const
+{
+    bool hasKey = m_impl->autoPatchers.find(key) != m_impl->autoPatchers.end();
+    bool hasDefault = m_impl->autoPatchers.find(Default) != m_impl->autoPatchers.end();
+
+    AutoPatcherItems items;
+
+    if (hasDefault) {
+        auto &aps = m_impl->autoPatchers[Default];
+        items.insert(items.end(), aps.begin(), aps.end());
     }
 
-    return def;
-}
-
-void PatchInfo::setAutoPatchers(const QString &key, AutoPatcherItems autoPatchers)
-{
-    Q_D(PatchInfo);
-
-    d->autoPatchers[key] = autoPatchers;
-}
-
-bool PatchInfo::hasBootImage(const QString &key) const
-{
-    Q_D(const PatchInfo);
-
-    if (d->hasBootImage.keys().contains(key)) {
-        return d->hasBootImage[key];
+    if (key != Default && hasKey) {
+        auto &aps = m_impl->autoPatchers[key];
+        items.insert(items.end(), aps.begin(), aps.end());
     }
 
-    return d->hasBootImage.value(Default);
+    return items;
 }
 
-void PatchInfo::setHasBootImage(const QString &key, bool hasBootImage)
+void PatchInfo::setAutoPatchers(const std::string &key,
+                                AutoPatcherItems autoPatchers)
 {
-    Q_D(PatchInfo);
-
-    d->hasBootImage[key] = hasBootImage;
+    m_impl->autoPatchers[key] = std::move(autoPatchers);
 }
 
-bool PatchInfo::autodetectBootImages(const QString &key) const
+bool PatchInfo::hasBootImage(const std::string &key) const
 {
-    Q_D(const PatchInfo);
-
-    if (d->autodetectBootImages.keys().contains(key)) {
-        return d->autodetectBootImages[key];
+    if (m_impl->hasBootImage.find(key) != m_impl->hasBootImage.end()) {
+        return m_impl->hasBootImage[key];
     }
 
-    return d->autodetectBootImages.value(Default);
+    return bool();
 }
 
-void PatchInfo::setAutoDetectBootImages(const QString &key, bool autoDetect)
+void PatchInfo::setHasBootImage(const std::string &key, bool hasBootImage)
 {
-    Q_D(PatchInfo);
-
-    d->autodetectBootImages[key] = autoDetect;
+    m_impl->hasBootImage[key] = hasBootImage;
 }
 
-QStringList PatchInfo::bootImages(const QString &key) const
+bool PatchInfo::autodetectBootImages(const std::string &key) const
 {
-    Q_D(const PatchInfo);
-
-    const QStringList &def = d->bootImages.value(Default);
-
-    if (key != Default && d->bootImages.keys().contains(key)) {
-        return QStringList() << def << d->bootImages[key];
+    if (m_impl->autodetectBootImages.find(key)
+            != m_impl->autodetectBootImages.end()) {
+        return m_impl->autodetectBootImages[key];
     }
 
-    return def;
+    return bool();
 }
 
-void PatchInfo::setBootImages(const QString &key, const QStringList &bootImages)
+void PatchInfo::setAutoDetectBootImages(const std::string &key, bool autoDetect)
 {
-    Q_D(PatchInfo);
-
-    d->bootImages[key] = bootImages;
+    m_impl->autodetectBootImages[key] = autoDetect;
 }
 
-QString PatchInfo::ramdisk(const QString &key) const
+std::vector<std::string> PatchInfo::bootImages(const std::string &key) const
 {
-    Q_D(const PatchInfo);
+    bool hasKey = m_impl->bootImages.find(key) != m_impl->bootImages.end();
+    bool hasDefault = m_impl->bootImages.find(Default) != m_impl->bootImages.end();
 
-    if (d->ramdisk.keys().contains(key)) {
-        return d->ramdisk[key];
+    std::vector<std::string> items;
+
+    if (hasDefault) {
+        auto &imgs = m_impl->bootImages[Default];
+        items.insert(items.end(), imgs.begin(), imgs.end());
     }
 
-    return d->ramdisk.value(Default);
-}
-
-void PatchInfo::setRamdisk(const QString &key, const QString &ramdisk)
-{
-    Q_D(PatchInfo);
-
-    d->ramdisk[key] = ramdisk;
-}
-
-QString PatchInfo::patchedInit(const QString &key) const
-{
-    Q_D(const PatchInfo);
-
-    if (d->patchedInit.keys().contains(key)) {
-        return d->patchedInit[key];
+    if (key != Default && hasKey) {
+        auto &imgs = m_impl->bootImages[key];
+        items.insert(items.end(), imgs.begin(), imgs.end());
     }
 
-    return d->patchedInit.value(Default);
+    return items;
 }
 
-void PatchInfo::setPatchedInit(const QString &key, const QString &init)
+void PatchInfo::setBootImages(const std::string &key,
+                              std::vector<std::string> bootImages)
 {
-    Q_D(PatchInfo);
-
-    d->patchedInit[key] = init;
+    m_impl->bootImages[key] = std::move(bootImages);
 }
 
-bool PatchInfo::deviceCheck(const QString &key) const
+std::string PatchInfo::ramdisk(const std::string &key) const
 {
-    Q_D(const PatchInfo);
-
-    if (d->deviceCheck.keys().contains(key)) {
-        return d->deviceCheck[key];
+    if (m_impl->ramdisk.find(key) != m_impl->ramdisk.end()) {
+        return m_impl->ramdisk[key];
     }
 
-    return d->deviceCheck.value(Default);
+    return std::string();
 }
 
-void PatchInfo::setDeviceCheck(const QString &key, bool deviceCheck)
+void PatchInfo::setRamdisk(const std::string &key, std::string ramdisk)
 {
-    Q_D(PatchInfo);
-
-    d->deviceCheck[key] = deviceCheck;
+    m_impl->ramdisk[key] = std::move(ramdisk);
 }
 
-QStringList PatchInfo::supportedConfigs(const QString &key) const
+std::string PatchInfo::patchedInit(const std::string &key) const
 {
-    Q_D(const PatchInfo);
-
-    const QStringList &def = d->supportedConfigs.value(Default);
-
-    if (key != Default && d->supportedConfigs.keys().contains(key)) {
-        return QStringList() << def << d->supportedConfigs[key];
+    if (m_impl->patchedInit.find(key) != m_impl->patchedInit.end()) {
+        return m_impl->patchedInit[key];
     }
 
-    return def;
+    return std::string();
 }
 
-void PatchInfo::setSupportedConfigs(const QString &key, const QStringList &configs)
+void PatchInfo::setPatchedInit(const std::string &key, std::string init)
 {
-    Q_D(PatchInfo);
+    m_impl->patchedInit[key] = std::move(init);
+}
 
-    d->supportedConfigs[key] = configs;
+bool PatchInfo::deviceCheck(const std::string &key) const
+{
+    if (m_impl->deviceCheck.find(key) != m_impl->deviceCheck.end()) {
+        return m_impl->deviceCheck[key];
+    }
+
+    return bool();
+}
+
+void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
+{
+    m_impl->deviceCheck[key] = deviceCheck;
+}
+
+std::vector<std::string> PatchInfo::supportedConfigs(const std::string &key) const
+{
+    bool hasKey = m_impl->supportedConfigs.find(key) != m_impl->supportedConfigs.end();
+    bool hasDefault = m_impl->supportedConfigs.find(Default) != m_impl->supportedConfigs.end();
+
+    std::vector<std::string> items;
+
+    if (hasDefault) {
+        auto &configs = m_impl->supportedConfigs[Default];
+        items.insert(items.end(), configs.begin(), configs.end());
+    }
+
+    if (key != Default && hasKey) {
+        auto &configs = m_impl->supportedConfigs[key];
+        items.insert(items.end(), configs.begin(), configs.end());
+    }
+
+    return items;
+}
+
+void PatchInfo::setSupportedConfigs(const std::string &key,
+                                    std::vector<std::string> configs)
+{
+    m_impl->supportedConfigs[key] = std::move(configs);
 }
 
 PatchInfo * PatchInfo::findMatchingPatchInfo(PatcherPaths *pp,
                                              Device *device,
-                                             const QString &filename)
+                                             const std::string &filename)
 {
     if (device == nullptr) {
         return nullptr;
     }
 
-    if (filename.isNull()) {
+    if (filename.empty()) {
         return nullptr;
     }
 
-    QString basename = QFileInfo(filename).fileName();
+    std::string noPath = boost::filesystem::path(filename).filename().string();
 
     for (PatchInfo *info : pp->patchInfos(device)) {
-        for (const QString &regex : info->regexes()) {
-            if (basename.contains(QRegularExpression(regex))) {
+        for (auto const &regex : info->regexes()) {
+            if (boost::regex_search(noPath, boost::regex(regex))) {
                 bool skipCurInfo = false;
 
                 // If the regex matches, make sure the filename isn't matched
                 // by one of the exclusion regexes
-                for (const QString &excludeRegex : info->excludeRegexes()) {
-                    if (basename.contains(QRegularExpression(excludeRegex))) {
+                for (auto const &excludeRegex : info->excludeRegexes()) {
+                    if (boost::regex_search(noPath, boost::regex(excludeRegex))) {
                         skipCurInfo = true;
                         break;
                     }

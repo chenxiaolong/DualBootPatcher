@@ -20,12 +20,14 @@
 #ifndef LIBDBP_GLOBAL_H
 #define LIBDBP_GLOBAL_H
 
-#include <QtCore/qglobal.h>
-
-#if defined(LIBDBP_LIBRARY)
-#  define LIBDBPSHARED_EXPORT Q_DECL_EXPORT
+#ifdef _WIN32
+#  if defined(LIBDBP_LIBRARY)
+#    define LIBDBPSHARED_EXPORT __declspec(dllexport)
+#  else
+#    define LIBDBPSHARED_EXPORT __declspec(dllimport)
+#  endif
 #else
-#  define LIBDBPSHARED_EXPORT Q_DECL_IMPORT
+#  define LIBDBPSHARED_EXPORT __attribute__ ((visibility ("default")))
 #endif
 
 #endif // LIBDBP_GLOBAL_H

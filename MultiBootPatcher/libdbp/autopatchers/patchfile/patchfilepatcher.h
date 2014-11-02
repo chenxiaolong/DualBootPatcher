@@ -20,44 +20,39 @@
 #ifndef PATCHFILEPATCHER_H
 #define PATCHFILEPATCHER_H
 
-#include <libdbp/patcherinterface.h>
+#include <memory>
+
+#include "patcherinterface.h"
 
 
-class PatchFilePatcherPrivate;
-
-class PatchFilePatcher : public QObject,
-                         public AutoPatcher
+class PatchFilePatcher : public AutoPatcher
 {
-    Q_OBJECT
-
 public:
     explicit PatchFilePatcher(const PatcherPaths * const pp,
                               const FileInfo * const info,
-                              const PatchInfo::AutoPatcherArgs &args,
-                              QObject *parent = 0);
+                              const PatchInfo::AutoPatcherArgs &args);
     ~PatchFilePatcher();
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
-    virtual QStringList newFiles() const override;
-    virtual QStringList existingFiles() const override;
+    virtual std::vector<std::string> newFiles() const override;
+    virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const QString &file,
-                           QByteArray * const contents,
-                           const QStringList &bootImages) override;
+    virtual bool patchFile(const std::string &file,
+                           std::vector<unsigned char> * const contents,
+                           const std::vector<std::string> &bootImages) override;
 
 private:
-    void skipNewlinesAndAdd(const QString &file,
-                            const QString &contents,
+    void skipNewlinesAndAdd(const std::string &file,
+                            const std::string &contents,
                             int begin, int end);
 
-    const QScopedPointer<PatchFilePatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(PatchFilePatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // PATCHFILEPATCHER_H

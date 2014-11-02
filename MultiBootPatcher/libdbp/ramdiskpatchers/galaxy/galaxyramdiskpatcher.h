@@ -20,15 +20,11 @@
 #ifndef GALAXYRAMDISKPATCHER_H
 #define GALAXYRAMDISKPATCHER_H
 
-#include "libdbp/libdbp_global.h"
+#include <memory>
 
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherinterface.h>
+#include "cpiofile.h"
+#include "patcherinterface.h"
 
-#include <QtCore/QObject>
-#include <QtCore/QVariant>
-
-class GalaxyRamdiskPatcherPrivate;
 
 class GalaxyRamdiskPatcher : public RamdiskPatcher
 {
@@ -36,16 +32,15 @@ public:
     explicit GalaxyRamdiskPatcher(const PatcherPaths * const pp,
                                   const FileInfo * const info,
                                   CpioFile * const cpio,
-                                  const QString &version);
+                                  const std::string &version);
     ~GalaxyRamdiskPatcher();
 
-    static const QString JellyBean;
-    static const QString KitKat;
+    static const std::string JellyBean;
+    static const std::string KitKat;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 
@@ -62,8 +57,8 @@ public:
     bool getwModifyMsm8960LpmRc();
 
 private:
-    const QScopedPointer<GalaxyRamdiskPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(GalaxyRamdiskPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // GALAXYRAMDISKPATCHER_H

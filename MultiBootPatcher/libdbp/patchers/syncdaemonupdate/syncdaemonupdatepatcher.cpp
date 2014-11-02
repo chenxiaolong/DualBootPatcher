@@ -17,81 +17,92 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "syncdaemonupdatepatcher.h"
-#include "syncdaemonupdatepatcher_p.h"
+#include "patchers/syncdaemonupdate/syncdaemonupdatepatcher.h"
 
+#include <fstream>
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/regex.hpp>
+
+#include "bootimage.h"
+#include "patcherpaths.h"
+#include "private/fileutils.h"
+#include "private/logging.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
-
-#include <libdbp/bootimage.h>
-#include <libdbp/patcherpaths.h>
-
-#include <QtCore/QDebug>
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QFileInfo>
-#include <QtCore/QRegularExpression>
-#include <QtCore/QStringBuilder>
 
 
 #define RETURN_IF_CANCELLED \
-    if (d->cancelled) { \
+    if (cancelled) { \
         return false; \
     }
 
 #define RETURN_ERROR_IF_CANCELLED \
-    if (d->cancelled) { \
-        d->errorCode = PatcherError::PatchingCancelled; \
-        d->errorString = PatcherError::errorString(d->errorCode); \
+    if (m_impl->cancelled) { \
+        m_impl->error = PatcherError::createCancelledError( \
+                PatcherError::PatchingCancelled); \
         return false; \
     }
 
 
-const QString SyncdaemonUpdatePatcher::Id =
-        QStringLiteral("SyncdaemonUpdatePatcher");
-const QString SyncdaemonUpdatePatcher::Name =
-        tr("Update syncdaemon");
+// TODO TODO TODO
+#define tr(x) (x)
+// TODO TODO TODO
 
-static const QChar Sep = QLatin1Char('/');
+
+class SyncdaemonUpdatePatcher::Impl
+{
+public:
+    Impl(SyncdaemonUpdatePatcher *parent) : m_parent(parent) {}
+
+    const PatcherPaths *pp;
+    const FileInfo *info;
+
+    bool cancelled;
+
+    PatcherError error;
+
+    bool patchImage();
+    std::string findPartConfigId(const CpioFile * const cpio) const;
+
+private:
+    SyncdaemonUpdatePatcher *m_parent;
+};
+
+
+const std::string SyncdaemonUpdatePatcher::Id = "SyncdaemonUpdatePatcher";
+const std::string SyncdaemonUpdatePatcher::Name = tr("Update syncdaemon");
 
 
 SyncdaemonUpdatePatcher::SyncdaemonUpdatePatcher(const PatcherPaths * const pp)
-    : d_ptr(new SyncdaemonUpdatePatcherPrivate())
+    : m_impl(new Impl(this))
 {
-    Q_D(SyncdaemonUpdatePatcher);
-
-    d->pp = pp;
+    m_impl->pp = pp;
 }
 
 SyncdaemonUpdatePatcher::~SyncdaemonUpdatePatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-QList<PartitionConfig *> SyncdaemonUpdatePatcher::partConfigs()
+std::vector<PartitionConfig *> SyncdaemonUpdatePatcher::partConfigs()
 {
-    return QList<PartitionConfig *>();
+    return std::vector<PartitionConfig *>();
 }
 
-PatcherError::Error SyncdaemonUpdatePatcher::error() const
+PatcherError SyncdaemonUpdatePatcher::error() const
 {
-    Q_D(const SyncdaemonUpdatePatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString SyncdaemonUpdatePatcher::errorString() const
-{
-    Q_D(const SyncdaemonUpdatePatcher);
-
-    return d->errorString;
-}
-
-QString SyncdaemonUpdatePatcher::id() const
+std::string SyncdaemonUpdatePatcher::id() const
 {
     return Id;
 }
 
-QString SyncdaemonUpdatePatcher::name() const
+std::string SyncdaemonUpdatePatcher::name() const
 {
     return Name;
 }
@@ -101,77 +112,80 @@ bool SyncdaemonUpdatePatcher::usesPatchInfo() const
     return false;
 }
 
-QStringList SyncdaemonUpdatePatcher::supportedPartConfigIds() const
+std::vector<std::string> SyncdaemonUpdatePatcher::supportedPartConfigIds() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
 void SyncdaemonUpdatePatcher::setFileInfo(const FileInfo * const info)
 {
-    Q_D(SyncdaemonUpdatePatcher);
-
-    d->info = info;
+    m_impl->info = info;
 }
 
-QString SyncdaemonUpdatePatcher::newFilePath()
+std::string SyncdaemonUpdatePatcher::newFilePath()
 {
-    Q_D(SyncdaemonUpdatePatcher);
-
-    if (d->info == nullptr) {
-        qWarning() << "d->info is null!";
-        d->errorCode = PatcherError::ImplementationError;
-        d->errorString = PatcherError::errorString(d->errorCode);
-        return QString();
+    if (m_impl->info == nullptr) {
+        Log::log(Log::Warning, "d->info is null!");
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
+        return std::string();
     }
 
-    QFileInfo fi(d->info->filename());
-    return fi.dir().filePath(fi.completeBaseName()
-            % QStringLiteral("_syncdaemon.") % fi.suffix());
+    boost::filesystem::path path(m_impl->info->filename());
+    boost::filesystem::path fileName = path.stem();
+    fileName += "_syncdaemon";
+    fileName += path.extension();
+
+    if (path.has_parent_path()) {
+        return (path.parent_path() / fileName).string();
+    } else {
+        return fileName.string();
+    }
 }
 
 void SyncdaemonUpdatePatcher::cancelPatching()
 {
-    Q_D(SyncdaemonUpdatePatcher);
-
-    d->cancelled = true;
+    m_impl->cancelled = true;
 }
 
-bool SyncdaemonUpdatePatcher::patchFile()
+bool SyncdaemonUpdatePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
+                                        ProgressUpdatedCallback progressCb,
+                                        DetailsUpdatedCallback detailsCb,
+                                        void *userData)
 {
-    Q_D(SyncdaemonUpdatePatcher);
+    (void) maxProgressCb;
+    (void) progressCb;
+    (void) detailsCb;
+    (void) userData;
 
-    if (d->info == nullptr) {
-        qWarning() << "d->info is null!";
-        d->errorCode = PatcherError::ImplementationError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (m_impl->info == nullptr) {
+        Log::log(Log::Warning, "d->info is null!");
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
         return false;
     }
 
-    bool isImg = d->info->filename().endsWith(
-            QStringLiteral(".img"), Qt::CaseInsensitive);
-    bool isLok = d->info->filename().endsWith(
-            QStringLiteral(".lok"), Qt::CaseInsensitive);
+    bool isImg = boost::iends_with(m_impl->info->filename(), ".img");
+    bool isLok = boost::iends_with(m_impl->info->filename(), ".lok");
+
     if (!isImg && !isLok) {
-        d->errorCode = PatcherError::OnlyBootImageSupported;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createSupportedFileError(
+                PatcherError::OnlyBootImageSupported, Id);
         return false;
     }
 
-    bool ret = patchImage();
+    bool ret = m_impl->patchImage();
 
     RETURN_ERROR_IF_CANCELLED
 
     return ret;
 }
 
-bool SyncdaemonUpdatePatcher::patchImage()
+bool SyncdaemonUpdatePatcher::Impl::patchImage()
 {
-    Q_D(SyncdaemonUpdatePatcher);
-
     BootImage bi;
-    if (!bi.load(d->info->filename())) {
-        d->errorCode = bi.error();
-        d->errorString = bi.errorString();
+    if (!bi.load(info->filename())) {
+        error = bi.error();
         return false;
     }
 
@@ -180,97 +194,93 @@ bool SyncdaemonUpdatePatcher::patchImage()
 
     RETURN_IF_CANCELLED
 
-    QString partConfigId = findPartConfigId(&cpio);
-    if (!partConfigId.isNull()) {
+    std::string partConfigId = findPartConfigId(&cpio);
+    if (!partConfigId.empty()) {
         PartitionConfig *config = nullptr;
 
-        for (PartitionConfig *c : d->pp->partitionConfigs()) {
+        for (PartitionConfig *c : pp->partitionConfigs()) {
             if (c->id() == partConfigId) {
                 config = c;
                 break;
             }
         }
 
-        QString mountScript = QStringLiteral("init.multiboot.mounting.sh");
+        const std::string mountScript("init.multiboot.mounting.sh");
         if (config != nullptr && cpio.exists(mountScript)) {
-            QFile mountScriptFile(d->pp->scriptsDirectory()
-                    % QLatin1Char('/') % mountScript);
-            if (!mountScriptFile.open(QFile::ReadOnly)) {
-                d->errorCode = PatcherError::FileOpenError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(mountScriptFile.fileName());
+            const std::string filename(
+                    pp->scriptsDirectory() + "/" + mountScript);
+            std::vector<unsigned char> contents;
+            auto ret = FileUtils::readToMemory(filename, &contents);
+            if (ret.errorCode() != PatcherError::NoError) {
+                error = ret;
                 return false;
             }
 
-            QByteArray mountScriptContents = mountScriptFile.readAll();
-            mountScriptFile.close();
-
-            config->replaceShellLine(&mountScriptContents, true);
+            config->replaceShellLine(&contents, true);
 
             if (cpio.exists(mountScript)) {
                 cpio.remove(mountScript);
             }
 
-            cpio.addFile(mountScriptContents, mountScript, 0750);
+            cpio.addFile(contents, mountScript, 0750);
         }
     }
 
     RETURN_IF_CANCELLED
 
     // Add syncdaemon to init.rc if it doesn't already exist
-    if (!cpio.exists(QStringLiteral("sbin/syncdaemon"))) {
-        CoreRamdiskPatcher crp(d->pp, d->info, &cpio);
+    if (!cpio.exists("sbin/syncdaemon")) {
+        CoreRamdiskPatcher crp(pp, info, &cpio);
         crp.addSyncdaemon();
     } else {
         // Make sure 'oneshot' (added by previous versions) is removed
-        QByteArray initRc = cpio.contents(QStringLiteral("init.rc"));
-        QStringList lines = QString::fromUtf8(initRc).split(QLatin1Char('\n'));
+        std::vector<unsigned char> initRc = cpio.contents("init.rc");
+
+        std::string strContents(initRc.begin(), initRc.end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
         bool inSyncdaemon = false;
 
-        QMutableStringListIterator iter(lines);
-        while (iter.hasNext()) {
-            QString &line = iter.next();
-
-            if (line.startsWith(QStringLiteral("service"))) {
-                inSyncdaemon = line.contains(
-                        QStringLiteral("/sbin/syncdaemon"));
-            } else if (inSyncdaemon
-                    && line.contains(QStringLiteral("oneshot"))) {
-                iter.remove();
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (boost::starts_with(*it, "service")) {
+                inSyncdaemon = it->find("/sbin/syncdaemon") != std::string::npos;
+            } else if (inSyncdaemon && it->find("oneshot") != std::string::npos) {
+                it = lines.erase(it);
+                it--;
             }
         }
 
-        cpio.setContents(QStringLiteral("init.rc"),
-                         lines.join(QLatin1Char('\n')).toUtf8());
+        strContents = boost::join(lines, "\n");
+        initRc.assign(strContents.begin(), strContents.end());
+        cpio.setContents("init.rc", std::move(initRc));
     }
 
     RETURN_IF_CANCELLED
 
-    QString syncdaemon = QStringLiteral("sbin/syncdaemon");
+    const std::string syncdaemon("sbin/syncdaemon");
 
     if (cpio.exists(syncdaemon)) {
         cpio.remove(syncdaemon);
     }
 
-    cpio.addFile(d->pp->binariesDirectory() % Sep
-            % QStringLiteral("android") % Sep
-            % d->info->device()->architecture() % Sep
-            % QStringLiteral("syncdaemon"), syncdaemon, 0750);
+    cpio.addFile(pp->binariesDirectory() + "/" + "android" + "/"
+            + info->device()->architecture() + "/" + "syncdaemon",
+            syncdaemon, 0750);
 
     RETURN_IF_CANCELLED
 
     bi.setRamdiskImage(cpio.createData(true));
 
-    QFile file(newFilePath());
-    if (!file.open(QFile::WriteOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(file.fileName());
+    std::ofstream file(m_parent->newFilePath(), std::ios::binary);
+    if (file.fail()) {
+        error = PatcherError::createIOError(
+                PatcherError::FileOpenError, m_parent->newFilePath());
         return false;
     }
 
-    file.write(bi.create());
+    auto out = bi.create();
+    file.write(reinterpret_cast<char *>(out.data()), out.size());
     file.close();
 
     RETURN_IF_CANCELLED
@@ -278,34 +288,43 @@ bool SyncdaemonUpdatePatcher::patchImage()
     return true;
 }
 
-QString SyncdaemonUpdatePatcher::findPartConfigId(const CpioFile * const cpio) const
+std::string SyncdaemonUpdatePatcher::Impl::findPartConfigId(const CpioFile * const cpio) const
 {
-    QByteArray defaultProp = cpio->contents(QStringLiteral("default.prop"));
-    if (!defaultProp.isNull()) {
-        QStringList lines = QString::fromUtf8(defaultProp).split(QLatin1Char('\n'));
+    std::vector<unsigned char> defaultProp = cpio->contents("default.prop");
+    if (!defaultProp.empty()) {
+        std::string strContents(defaultProp.begin(), defaultProp.end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        for (const QString &line : lines) {
-            if (line.startsWith(QStringLiteral("ro.patcher.patched"))) {
-                return line.split(QLatin1Char('='))[1];
-            }
-        }
-    }
+        for (auto const &line : lines) {
+            if (boost::starts_with(line, "ro.patcher.patched")) {
+                std::vector<std::string> split;
+                boost::split(split, line, boost::is_any_of("="));
 
-    QByteArray mountScript = cpio->contents(
-            QStringLiteral("init.multiboot.mounting.sh"));
-    if (!mountScript.isNull()) {
-        QStringList lines = QString::fromUtf8(mountScript).split(QLatin1Char('\n'));
-
-        for (const QString &line : lines) {
-            if (line.startsWith(QStringLiteral("TARGET_DATA="))) {
-                QRegularExpressionMatch match = QRegularExpression(
-                        QStringLiteral("/raw-data/([^/\"]+)")).match(line);
-                if (match.hasMatch()) {
-                    return match.captured(1);
+                if (split.size() > 1) {
+                    return split[1];
                 }
             }
         }
     }
 
-    return QString();
+    std::vector<unsigned char> mountScript = cpio->contents(
+            "init.multiboot.mounting.sh");
+    if (!mountScript.empty()) {
+        std::string strContents(mountScript.begin(), mountScript.end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
+
+        for (auto const &line : lines) {
+            if (boost::starts_with(line, "TARGET_DATA=")) {
+                boost::smatch what;
+
+                if (boost::regex_search(line, boost::regex("/raw-data/([^/\"]+)"))) {
+                    return what[1];
+                }
+            }
+        }
+    }
+
+    return std::string();
 }

@@ -22,47 +22,44 @@
 
 #include <libdbp/patcherinterface.h>
 
+#include <memory>
 
-class SyncdaemonUpdatePatcherPrivate;
 
 class SyncdaemonUpdatePatcher : public Patcher
 {
-    Q_OBJECT
-
 public:
     explicit SyncdaemonUpdatePatcher(const PatcherPaths * const pp);
     ~SyncdaemonUpdatePatcher();
 
-    static const QString Id;
-    static const QString Name;
+    static const std::string Id;
+    static const std::string Name;
 
-    static QList<PartitionConfig *> partConfigs();
+    static std::vector<PartitionConfig *> partConfigs();
 
     // Error reporting
-    virtual PatcherError::Error error() const;
-    virtual QString errorString() const;
+    virtual PatcherError error() const;
 
     // Patcher info
-    virtual QString id() const;
-    virtual QString name() const;
+    virtual std::string id() const;
+    virtual std::string name() const;
     virtual bool usesPatchInfo() const;
-    virtual QStringList supportedPartConfigIds() const;
+    virtual std::vector<std::string> supportedPartConfigIds() const;
 
     // Patching
     virtual void setFileInfo(const FileInfo * const info);
 
-    virtual QString newFilePath();
+    virtual std::string newFilePath();
 
-    virtual bool patchFile();
+    virtual bool patchFile(MaxProgressUpdatedCallback maxProgressCb,
+                           ProgressUpdatedCallback progressCb,
+                           DetailsUpdatedCallback detailsCb,
+                           void *userData);
 
     virtual void cancelPatching();
 
 private:
-    bool patchImage();
-    QString findPartConfigId(const CpioFile * const cpio) const;
-
-private:
-    const QScopedPointer<SyncdaemonUpdatePatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(SyncdaemonUpdatePatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
+
 #endif // SYNCDAEMONUPDATEPATCHER_H

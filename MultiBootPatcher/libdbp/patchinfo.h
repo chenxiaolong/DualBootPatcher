@@ -20,46 +20,50 @@
 #ifndef PATCHINFO_H
 #define PATCHINFO_H
 
+#include <memory>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "libdbp_global.h"
 
 #include "device.h"
 
-#include <QtCore/QObject>
-#include <QtCore/QScopedPointer>
 
-class PatchInfoPrivate;
 class PatcherPaths;
 
-class LIBDBPSHARED_EXPORT PatchInfo : public QObject
+class LIBDBPSHARED_EXPORT PatchInfo
 {
-    Q_OBJECT
-
-    friend class PatcherPaths;
-
 public:
-    static const QString Default;
-    static const QString NotMatched;
+    static const std::string Default;
+    static const std::string NotMatched;
 
-    explicit PatchInfo(QObject *parent = 0);
+    explicit PatchInfo();
     ~PatchInfo();
 
-    typedef QHash<QString, QString> AutoPatcherArgs;
-    typedef QPair<QString, AutoPatcherArgs> AutoPatcherItem;
-    typedef QList<AutoPatcherItem> AutoPatcherItems;
+    typedef std::unordered_map<std::string, std::string> AutoPatcherArgs;
+    typedef std::pair<std::string, AutoPatcherArgs> AutoPatcherItem;
+    typedef std::vector<AutoPatcherItem> AutoPatcherItems;
 
-    QString path() const;
-    void setPath(const QString &path);
+    std::string path() const;
+    void setPath(std::string path);
 
-    QString name() const;
-    void setName(const QString &name);
+    std::string name() const;
+    void setName(std::string name);
 
-    QString keyFromFilename(const QString &filename) const;
+    std::string keyFromFilename(const std::string &fileName) const;
 
-    QStringList regexes() const;
-    void setRegexes(const QStringList &regexes);
+    std::vector<std::string> regexes() const;
+    void setRegexes(std::vector<std::string> regexes);
 
-    QStringList excludeRegexes() const;
-    void setExcludeRegexes(const QStringList &regexes);
+    std::vector<std::string> excludeRegexes() const;
+    void setExcludeRegexes(std::vector<std::string> regexes);
+
+    std::vector<std::string> condRegexes() const;
+    void setCondRegexes(std::vector<std::string> regexes);
+
+    bool hasNotMatched() const;
+    void setHasNotMatched(bool hasElem);
 
     // ** For the variables below, use hashmap[Default] to get the default
     //    values and hashmap[regex] with the index in condRegexes to get
@@ -68,37 +72,39 @@ public:
     // NOTE: If the variable is a list, the "overridden" values are used
     //       in addition to the default values
 
-    AutoPatcherItems autoPatchers(const QString &key) const;
-    void setAutoPatchers(const QString &key, AutoPatcherItems autoPatchers);
+    AutoPatcherItems autoPatchers(const std::string &key) const;
+    void setAutoPatchers(const std::string &key, AutoPatcherItems autoPatchers);
 
-    bool hasBootImage(const QString &key) const;
-    void setHasBootImage(const QString &key, bool hasBootImage);
+    bool hasBootImage(const std::string &key) const;
+    void setHasBootImage(const std::string &key, bool hasBootImage);
 
-    bool autodetectBootImages(const QString &key) const;
-    void setAutoDetectBootImages(const QString &key, bool autoDetect);
+    bool autodetectBootImages(const std::string &key) const;
+    void setAutoDetectBootImages(const std::string &key, bool autoDetect);
 
-    QStringList bootImages(const QString &key) const;
-    void setBootImages(const QString &key, const QStringList &bootImages);
+    std::vector<std::string> bootImages(const std::string &key) const;
+    void setBootImages(const std::string &key,
+                       std::vector<std::string> bootImages);
 
-    QString ramdisk(const QString &key) const;
-    void setRamdisk(const QString &key, const QString &ramdisk);
+    std::string ramdisk(const std::string &key) const;
+    void setRamdisk(const std::string &key, std::string ramdisk);
 
-    QString patchedInit(const QString &key) const;
-    void setPatchedInit(const QString &key, const QString &init);
+    std::string patchedInit(const std::string &key) const;
+    void setPatchedInit(const std::string &key, std::string init);
 
-    bool deviceCheck(const QString &key) const;
-    void setDeviceCheck(const QString &key, bool deviceCheck);
+    bool deviceCheck(const std::string &key) const;
+    void setDeviceCheck(const std::string &key, bool deviceCheck);
 
-    QStringList supportedConfigs(const QString &key) const;
-    void setSupportedConfigs(const QString &key, const QStringList &configs);
+    std::vector<std::string> supportedConfigs(const std::string &key) const;
+    void setSupportedConfigs(const std::string &key,
+                             std::vector<std::string> configs);
 
     static PatchInfo * findMatchingPatchInfo(PatcherPaths *pp,
                                              Device *device,
-                                             const QString &filename);
+                                             const std::string &filename);
 
 private:
-    const QScopedPointer<PatchInfoPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(PatchInfo)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // PATCHINFO_H

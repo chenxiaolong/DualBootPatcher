@@ -20,15 +20,13 @@
 #ifndef STANDARDPATCHER_H
 #define STANDARDPATCHER_H
 
-#include <libdbp/libdbp_global.h>
+#include <memory>
 
-#include <libdbp/device.h>
-#include <libdbp/patcherinterface.h>
+#include "device.h"
+#include "patcherinterface.h"
 
 
-class StandardPatcherPrivate;
-
-class LIBDBPSHARED_EXPORT StandardPatcher : public AutoPatcher
+class StandardPatcher : public AutoPatcher
 {
 public:
     explicit StandardPatcher(const PatcherPaths * const pp,
@@ -36,51 +34,60 @@ public:
                              const PatchInfo::AutoPatcherArgs &args);
     ~StandardPatcher();
 
-    static const QString Id;
+    static const std::string Id;
 
-    static const QString ArgLegacyScript;
+    static const std::string ArgLegacyScript;
 
-    static const QString UpdaterScript;
+    static const std::string UpdaterScript;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
-    virtual QStringList newFiles() const override;
-    virtual QStringList existingFiles() const override;
+    virtual std::vector<std::string> newFiles() const override;
+    virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const QString &file,
-                           QByteArray * const contents,
-                           const QStringList &bootImages) override;
+    virtual bool patchFile(const std::string &file,
+                           std::vector<unsigned char> * const contents,
+                           const std::vector<std::string> &bootImages) override;
 
     // These are public so other patchers can use them
-    static void removeDeviceChecks(QStringList *lines);
-    static void insertDualBootSh(QStringList *lines, bool legacyScript);
-    static void insertWriteKernel(QStringList *lines, const QString &bootImage);
+    static void removeDeviceChecks(std::vector<std::string> *lines);
+    static void insertDualBootSh(std::vector<std::string> *lines, bool legacyScript);
+    static void insertWriteKernel(std::vector<std::string> *lines, const std::string &bootImage);
 
-    static void replaceMountLines(QStringList *lines, Device *device);
-    static void replaceUnmountLines(QStringList *lines, Device *device);
-    static void replaceFormatLines(QStringList *lines, Device *device);
+    static void replaceMountLines(std::vector<std::string> *lines, Device *device);
+    static void replaceUnmountLines(std::vector<std::string> *lines, Device *device);
+    static void replaceFormatLines(std::vector<std::string> *lines, Device *device);
 
-    static int insertMountSystem(int index, QStringList *lines);
-    static int insertMountCache(int index, QStringList *lines);
-    static int insertMountData(int index, QStringList *lines);
-    static int insertUnmountSystem(int index, QStringList *lines);
-    static int insertUnmountCache(int index, QStringList *lines);
-    static int insertUnmountData(int index, QStringList *lines);
-    static int insertUnmountEverything(int index, QStringList *lines);
-    static int insertFormatSystem(int index, QStringList *lines);
-    static int insertFormatCache(int index, QStringList *lines);
-    static int insertFormatData(int index, QStringList *lines);
+    static std::vector<std::string>::iterator
+    insertMountSystem(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertMountCache(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertMountData(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertUnmountSystem(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertUnmountCache(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertUnmountData(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertUnmountEverything(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertFormatSystem(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertFormatCache(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
+    static std::vector<std::string>::iterator
+    insertFormatData(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
 
-    static int insertSetPerms(int index, QStringList *lines,
-                              bool legacyScript, const QString &file,
-                              uint mode);
+    static std::vector<std::string>::iterator
+    insertSetPerms(std::vector<std::string>::iterator position, std::vector<std::string> *lines,
+                   bool legacyScript, const std::string &file, unsigned int mode);
 
 private:
-    const QScopedPointer<StandardPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(StandardPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // STANDARDPATCHER_H

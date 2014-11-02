@@ -17,141 +17,169 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "multibootpatcher.h"
-#include "multibootpatcher_p.h"
-
-#include <libdbp/bootimage.h>
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherpaths.h>
-
-#include <QtCore/QDebug>
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QFileInfo>
-#include <QtCore/QStringBuilder>
+#include "patchers/multiboot/multibootpatcher.h"
 
 #include <archive.h>
 #include <archive_entry.h>
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/format.hpp>
+
+#include "bootimage.h"
+#include "cpiofile.h"
+#include "patcherpaths.h"
+#include "private/fileutils.h"
+#include "private/logging.h"
+
 
 #define RETURN_IF_CANCELLED \
-    if (d->cancelled) { \
+    if (cancelled) { \
         return false; \
     }
 
 #define RETURN_IF_CANCELLED_AND_FREE_READ(x) \
-    if (d->cancelled) { \
+    if (cancelled) { \
         archive_read_free(x); \
         return false; \
     }
 
 #define RETURN_IF_CANCELLED_AND_FREE_WRITE(x) \
-    if (d->cancelled) { \
+    if (cancelled) { \
         archive_write_free(x); \
         return false; \
     }
 
 #define RETURN_ERROR_IF_CANCELLED \
-    if (d->cancelled) { \
-        d->errorCode = PatcherError::PatchingCancelled; \
-        d->errorString = PatcherError::errorString(d->errorCode); \
+    if (m_impl->cancelled) { \
+        m_impl->error = PatcherError::createCancelledError( \
+                PatcherError::PatchingCancelled); \
         return false; \
     }
 
+// TODO TODO TODO
+#define tr(x) (x)
+// TODO TODO TODO
 
-const QString MultiBootPatcher::Id =
-        QStringLiteral("MultiBootPatcher");
-const QString MultiBootPatcher::Name =
-        tr("Multi Boot Patcher");
 
-static const QChar Sep = QLatin1Char('/');
-
-MultiBootPatcher::MultiBootPatcher(const PatcherPaths * const pp,
-                                   QObject *parent) :
-    Patcher(parent), d_ptr(new MultiBootPatcherPrivate())
+class MultiBootPatcher::Impl
 {
-    Q_D(MultiBootPatcher);
+public:
+    Impl(MultiBootPatcher *parent) : m_parent(parent) {}
 
-    d->pp = pp;
+    const PatcherPaths *pp;
+    const FileInfo *info;
+
+    int progress;
+    volatile bool cancelled;
+
+    PatcherError error;
+
+    bool patchBootImage(std::vector<unsigned char> *data);
+    bool patchZip(MaxProgressUpdatedCallback maxProgressCb,
+                  ProgressUpdatedCallback progressCb,
+                  DetailsUpdatedCallback detailsCb,
+                  void *userData);
+
+    bool scanAndPatchBootImages(archive * const aOutput,
+                                std::vector<std::string> *bootImages,
+                                MaxProgressUpdatedCallback maxProgressCb,
+                                ProgressUpdatedCallback progressCb,
+                                DetailsUpdatedCallback detailsCb,
+                                void *userData);
+    bool scanAndPatchRemaining(archive * const aOutput,
+                               const std::vector<std::string> &bootImages,
+                               MaxProgressUpdatedCallback maxProgressCb,
+                               ProgressUpdatedCallback progressCb,
+                               DetailsUpdatedCallback detailsCb,
+                               void *userData);
+
+private:
+    MultiBootPatcher *m_parent;
+};
+
+
+const std::string MultiBootPatcher::Id("MultiBootPatcher");
+const std::string MultiBootPatcher::Name = tr("Multi Boot Patcher");
+
+
+MultiBootPatcher::MultiBootPatcher(const PatcherPaths * const pp)
+    : m_impl(new Impl(this))
+{
+    m_impl->pp = pp;
 }
 
 MultiBootPatcher::~MultiBootPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-QList<PartitionConfig *> MultiBootPatcher::partConfigs()
+std::vector<PartitionConfig *> MultiBootPatcher::partConfigs()
 {
-    QList<PartitionConfig *> configs;
+    std::vector<PartitionConfig *> configs;
 
     // Create supported partition configurations
-    QString romInstalled = tr("ROM installed to %1");
+    std::string romInstalled = tr("ROM installed to %1%");
 
     PartitionConfig *dual = new PartitionConfig();
 
-    dual->setId(QStringLiteral("dual"));
-    dual->setKernel(QStringLiteral("secondary"));
+    dual->setId("dual");
+    dual->setKernel("secondary");
     dual->setName(tr("Dual Boot"));
-    dual->setDescription(romInstalled.arg(QStringLiteral("/system/dual")));
+    dual->setDescription((boost::format(romInstalled) % "/system/dual").str());
 
-    dual->setTargetSystem(QStringLiteral("/raw-system/dual"));
-    dual->setTargetCache(QStringLiteral("/raw-cache/dual"));
-    dual->setTargetData(QStringLiteral("/raw-data/dual"));
+    dual->setTargetSystem("/raw-system/dual");
+    dual->setTargetCache("/raw-cache/dual");
+    dual->setTargetData("/raw-data/dual");
 
     dual->setTargetSystemPartition(PartitionConfig::System);
     dual->setTargetCachePartition(PartitionConfig::Cache);
     dual->setTargetDataPartition(PartitionConfig::Data);
 
-    configs << dual;
+    configs.push_back(dual);
 
     // Add multi-slots
-    QString multiSlotId = QStringLiteral("multi-slot-%1");
-    for (int i = 0; i < 3; i++) {
+    const std::string multiSlotId("multi-slot-%1$d");
+    for (int i = 0; i < 3; ++i) {
         PartitionConfig *multiSlot = new PartitionConfig();
 
-        multiSlot->setId(multiSlotId.arg(i + 1));
-        multiSlot->setKernel(multiSlotId.arg(i + 1));
-        multiSlot->setName(tr("Multi Boot Slot %1").arg(i + 1));
-        multiSlot->setDescription(romInstalled
-                .arg(QStringLiteral("/cache/multi-slot-%1/system").arg(i + 1)));
+        multiSlot->setId((boost::format(multiSlotId) % (i + 1)).str());
+        multiSlot->setKernel((boost::format(multiSlotId) % (i + 1)).str());
+        multiSlot->setName((boost::format(tr("Multi Boot Slot %1$d")) % (i + 1)).str());
+        multiSlot->setDescription((boost::format(romInstalled)
+                % (boost::format("/cache/multi-slot-%1$d/system")
+                % (i + 1)).str()).str());
 
         multiSlot->setTargetSystem(
-            QStringLiteral("/raw-cache/multi-slot-%1/system").arg(i + 1));
+                (boost::format("/raw-cache/multi-slot-%1$d/system") % (i + 1)).str());
         multiSlot->setTargetCache(
-            QStringLiteral("/raw-system/multi-slot-%1/cache").arg(i + 1));
+                (boost::format("/raw-system/multi-slot-%1$d/cache") % (i + 1)).str());
         multiSlot->setTargetData(
-            QStringLiteral("/raw-data/multi-slot-%1").arg(i + 1));
+                (boost::format("/raw-data/multi-slot-%1$d") % (i + 1)).str());
 
         multiSlot->setTargetSystemPartition(PartitionConfig::Cache);
         multiSlot->setTargetCachePartition(PartitionConfig::System);
         multiSlot->setTargetDataPartition(PartitionConfig::Data);
 
-        configs << multiSlot;
+        configs.push_back(multiSlot);
     }
 
     return configs;
 }
 
-PatcherError::Error MultiBootPatcher::error() const
+PatcherError MultiBootPatcher::error() const
 {
-    Q_D(const MultiBootPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString MultiBootPatcher::errorString() const
-{
-    Q_D(const MultiBootPatcher);
-
-    return d->errorString;
-}
-
-QString MultiBootPatcher::id() const
+std::string MultiBootPatcher::id() const
 {
     return Id;
 }
 
-QString MultiBootPatcher::name() const
+std::string MultiBootPatcher::name() const
 {
     return Name;
 }
@@ -161,93 +189,92 @@ bool MultiBootPatcher::usesPatchInfo() const
     return true;
 }
 
-QStringList MultiBootPatcher::supportedPartConfigIds() const
+std::vector<std::string> MultiBootPatcher::supportedPartConfigIds() const
 {
     // TODO: Loopify this
-    return QStringList()
-            << QStringLiteral("dual")
-            << QStringLiteral("multi-slot-1")
-            << QStringLiteral("multi-slot-2")
-            << QStringLiteral("multi-slot-3");
+    std::vector<std::string> configs;
+    configs.push_back("dual");
+    configs.push_back("multi-slot-1");
+    configs.push_back("multi-slot-2");
+    configs.push_back("multi-slot-3");
+    return configs;
 }
 
 void MultiBootPatcher::setFileInfo(const FileInfo * const info)
 {
-    Q_D(MultiBootPatcher);
-
-    d->info = info;
+    m_impl->info = info;
 }
 
-QString MultiBootPatcher::newFilePath()
+std::string MultiBootPatcher::newFilePath()
 {
-    Q_D(MultiBootPatcher);
-
-    if (d->info == nullptr) {
-        qWarning() << "d->info cannot be null!";
-        d->errorCode = PatcherError::ImplementationError;
-        d->errorString = PatcherError::errorString(d->errorCode);
-        return QString();
+    if (m_impl->info == nullptr) {
+        Log::log(Log::Warning, "d->info cannot be null!");
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
+        return std::string();
     }
 
-    QFileInfo fi(d->info->filename());
-    return fi.dir().filePath(fi.completeBaseName() % QLatin1Char('_')
-            % d->info->partConfig()->id() % QLatin1Char('.') % fi.suffix());
+    boost::filesystem::path path(m_impl->info->filename());
+    boost::filesystem::path fileName = path.stem();
+    fileName += "_";
+    fileName += m_impl->info->partConfig()->id();
+    fileName += path.extension();
+
+    if (path.has_parent_path()) {
+        return (path.parent_path() / fileName).string();
+    } else {
+        return fileName.string();
+    }
 }
 
 void MultiBootPatcher::cancelPatching()
 {
-    Q_D(MultiBootPatcher);
-
-    d->cancelled = true;
+    m_impl->cancelled = true;
 }
 
-bool MultiBootPatcher::patchFile()
+bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
+                                 ProgressUpdatedCallback progressCb,
+                                 DetailsUpdatedCallback detailsCb,
+                                 void *userData)
 {
-    Q_D(MultiBootPatcher);
+    m_impl->cancelled = false;
 
-    d->cancelled = false;
-
-    if (d->info == nullptr) {
-        qWarning() << "d->info cannot be null!";
-        d->errorCode = PatcherError::ImplementationError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (m_impl->info == nullptr) {
+        Log::log(Log::Warning, "d->info cannot be null!");
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
         return false;
     }
 
-    if (!d->info->filename().endsWith(
-            QStringLiteral(".zip"), Qt::CaseInsensitive)) {
-        d->errorCode = PatcherError::OnlyZipSupported;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
+        m_impl->error = PatcherError::createSupportedFileError(
+                PatcherError::OnlyZipSupported, Id);
         return false;
     }
 
-    bool ret = patchZip();
+    bool ret = m_impl->patchZip(maxProgressCb, progressCb, detailsCb, userData);
 
     RETURN_ERROR_IF_CANCELLED
 
     return ret;
 }
 
-bool MultiBootPatcher::patchBootImage(QByteArray *data)
+bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 {
-    Q_D(MultiBootPatcher);
-
     // Determine patchinfo key for the current file
-    QString key = d->info->patchInfo()->keyFromFilename(d->info->filename());
+    const std::string key = info->patchInfo()->keyFromFilename(info->filename());
 
     BootImage bi;
     if (!bi.load(*data)) {
-        d->errorCode = bi.error();
-        d->errorString = bi.errorString();
+        error = bi.error();
         return false;
     }
 
     // Change the SELinux mode according to the device config
-    QString cmdline = bi.kernelCmdline();
-    if (!d->info->device()->selinux().isNull()) {
+    const std::string cmdline = bi.kernelCmdline();
+    if (!info->device()->selinux().empty()) {
         bi.setKernelCmdline(cmdline
-                % QStringLiteral(" androidboot.selinux=")
-                % d->info->device()->selinux());
+                + " androidboot.selinux=" + info->device()->selinux());
     }
 
     // Load the ramdisk cpio
@@ -256,39 +283,33 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
 
     RETURN_IF_CANCELLED
 
-    QSharedPointer<RamdiskPatcher> rp = d->pp->createRamdiskPatcher(
-            d->info->patchInfo()->ramdisk(key), d->info, &cpio);
-    if (rp.isNull()) {
-        d->errorCode = PatcherError::RamdiskPatcherCreateError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(d->info->patchInfo()->ramdisk(key));
+    std::shared_ptr<RamdiskPatcher> rp = pp->createRamdiskPatcher(
+            info->patchInfo()->ramdisk(key), info, &cpio);
+    if (!rp) {
+        error = PatcherError::createPatcherCreationError(
+                PatcherError::RamdiskPatcherCreateError,
+                info->patchInfo()->ramdisk(key));
         return false;
     }
 
     if (!rp->patchRamdisk()) {
-        d->errorCode = rp->error();
-        d->errorString = rp->errorString();
+        error = rp->error();
         return false;
     }
 
     RETURN_IF_CANCELLED
 
-    QString mountScript = QStringLiteral("init.multiboot.mounting.sh");
-    QFile mountScriptFile(d->pp->scriptsDirectory()
-            % QLatin1Char('/') % mountScript);
-    if (!mountScriptFile.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(mountScriptFile.fileName());
+    const std::string mountScript("init.multiboot.mounting.sh");
+    const std::string mountScriptPath(pp->scriptsDirectory() + "/" + mountScript);
+
+    std::vector<unsigned char> mountScriptContents;
+    auto ret = FileUtils::readToMemory(mountScriptPath, &mountScriptContents);
+    if (ret.errorCode() != PatcherError::NoError) {
+        error = ret;
         return false;
     }
 
-    QByteArray mountScriptContents = mountScriptFile.readAll();
-    mountScriptFile.close();
-
-    RETURN_IF_CANCELLED
-
-    d->info->partConfig()->replaceShellLine(&mountScriptContents, true);
+    info->partConfig()->replaceShellLine(&mountScriptContents, true);
 
     if (cpio.exists(mountScript)) {
         cpio.remove(mountScript);
@@ -299,50 +320,47 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
     RETURN_IF_CANCELLED
 
     // Add busybox
-    QString busybox = QStringLiteral("sbin/busybox-static");
+    const std::string busybox("sbin/busybox-static");
 
     if (cpio.exists(busybox)) {
         cpio.remove(busybox);
     }
 
-    cpio.addFile(d->pp->binariesDirectory()
-            % QStringLiteral("/busybox-static"), busybox, 0750);
+    cpio.addFile(pp->binariesDirectory() + "/busybox-static", busybox, 0750);
 
     RETURN_IF_CANCELLED
 
     // Add syncdaemon
-    QString syncdaemon = QStringLiteral("sbin/syncdaemon");
+    const std::string syncdaemon("sbin/syncdaemon");
 
     if (cpio.exists(syncdaemon)) {
         cpio.remove(syncdaemon);
     }
 
-    cpio.addFile(d->pp->binariesDirectory() % Sep
-            % QStringLiteral("android") % Sep
-            % d->info->device()->architecture() % Sep
-            % QStringLiteral("syncdaemon"), syncdaemon, 0750);
+    cpio.addFile(pp->binariesDirectory() + "/"
+            + "android" + "/"
+            + info->device()->architecture() + "/"
+            + "syncdaemon", syncdaemon, 0750);
 
     RETURN_IF_CANCELLED
 
     // Add patched init binary if it was specified by the patchinfo
-    if (!d->info->patchInfo()->patchedInit(key).isEmpty()) {
-        if (cpio.exists(QStringLiteral("init"))) {
-            cpio.remove(QStringLiteral("init"));
+    if (!info->patchInfo()->patchedInit(key).empty()) {
+        if (cpio.exists("init")) {
+            cpio.remove("init");
         }
 
-        if (!cpio.addFile(d->pp->initsDirectory() % Sep
-                % d->info->patchInfo()->patchedInit(key),
-                QStringLiteral("init"), 0755)) {
-            d->errorCode = cpio.error();
-            d->errorString = cpio.errorString();
+        if (!cpio.addFile(pp->initsDirectory() + "/"
+                + info->patchInfo()->patchedInit(key), "init", 0755)) {
+            error = cpio.error();
             return false;
         }
     }
 
     RETURN_IF_CANCELLED
 
-    QByteArray newRamdisk = cpio.createData(true);
-    bi.setRamdiskImage(newRamdisk);
+    std::vector<unsigned char> newRamdisk = cpio.createData(true);
+    bi.setRamdiskImage(std::move(newRamdisk));
 
     *data = bi.create();
 
@@ -351,11 +369,12 @@ bool MultiBootPatcher::patchBootImage(QByteArray *data)
     return true;
 }
 
-bool MultiBootPatcher::patchZip()
+bool MultiBootPatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgressCb,
+                                      ProgressUpdatedCallback progressCb,
+                                      DetailsUpdatedCallback detailsCb,
+                                      void *userData)
 {
-    Q_D(MultiBootPatcher);
-
-    d->progress = 0;
+    progress = 0;
 
     // Open the input and output zips with libarchive
     archive *aOutput;
@@ -366,33 +385,41 @@ bool MultiBootPatcher::patchZip()
     archive_write_add_filter_none(aOutput);
 
     // Unlike the old patcher, we'll write directly to the new file
-    QString newPath = newFilePath();
-    int ret = archive_write_open_filename(
-            aOutput, newPath.toUtf8().constData());
+    const std::string newPath = m_parent->newFilePath();
+    int ret = archive_write_open_filename(aOutput, newPath.c_str());
     if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aOutput);
+        Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
         archive_write_free(aOutput);
 
-        d->errorCode = PatcherError::LibArchiveWriteOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(newPath);
+        error = PatcherError::createArchiveError(
+                PatcherError::ArchiveWriteOpenError, newPath);
         return false;
     }
 
     RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
 
-    emit detailsUpdated(tr("Counting number of files in zip file ..."));
+    if (detailsCb != nullptr) {
+        detailsCb(tr("Counting number of files in zip file ..."), userData);
+    }
 
-    int count = scanNumberOfFiles();
-    if (count < 0) {
+    unsigned int count;
+    auto result = FileUtils::laCountFiles(info->filename(), &count);
+    if (result.errorCode() != PatcherError::NoError) {
         archive_write_free(aOutput);
+
+        error = result;
         return false;
     }
 
     RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
 
     // +1 for dualboot.sh
-    emit maxProgressUpdated(count + 1);
-    emit progressUpdated(d->progress);
+    if (maxProgressCb != nullptr) {
+        maxProgressCb(count + 1, userData);
+    }
+    if (progressCb != nullptr) {
+        progressCb(progress, userData);
+    }
 
     // Rather than using the extract->patch->repack process, we'll start
     // creating the new zip immediately and then patch the files as we
@@ -400,9 +427,10 @@ bool MultiBootPatcher::patchZip()
 
     // On the initial pass, find all the boot images, patch them, and
     // write them to the new zip
-    QStringList bootImages;
+    std::vector<std::string> bootImages;
 
-    if (!scanAndPatchBootImages(aOutput, &bootImages)) {
+    if (!scanAndPatchBootImages(aOutput, &bootImages, maxProgressCb,
+                                progressCb, detailsCb, userData)) {
         archive_write_free(aOutput);
         return false;
     }
@@ -411,32 +439,35 @@ bool MultiBootPatcher::patchZip()
 
     // On the second pass, run the autopatchers on the rest of the files
 
-    if (!scanAndPatchRemaining(aOutput, bootImages)) {
+    if (!scanAndPatchRemaining(aOutput, bootImages, maxProgressCb,
+                               progressCb, detailsCb, userData)) {
         archive_write_free(aOutput);
         return false;
     }
 
     RETURN_IF_CANCELLED_AND_FREE_WRITE(aOutput)
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(QStringLiteral("dualboot.sh"));
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb("dualboot.sh", userData);
+    }
 
     // Add dualboot.sh
-    QFile dualbootsh(d->pp->scriptsDirectory()
-            % QStringLiteral("/dualboot.sh"));
-    if (!dualbootsh.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(dualbootsh.fileName());
+    const std::string dualbootshPath(pp->scriptsDirectory() + "/dualboot.sh");
+    std::vector<unsigned char> contents;
+    auto error = FileUtils::readToMemory(dualbootshPath, &contents);
+    if (error.errorCode() != PatcherError::NoError) {
+        error = error;
         return false;
     }
 
-    QByteArray contents = dualbootsh.readAll();
-    dualbootsh.close();
+    info->partConfig()->replaceShellLine(&contents);
 
-    d->info->partConfig()->replaceShellLine(&contents);
-
-    if (!addFile(aOutput, contents, QStringLiteral("dualboot.sh"))) {
+    error = FileUtils::laAddFile(aOutput, "dualboot.sh", contents);
+    if (error.errorCode() != PatcherError::NoError) {
+        error = error;
         return false;
     }
 
@@ -447,116 +478,22 @@ bool MultiBootPatcher::patchZip()
     return true;
 }
 
-bool MultiBootPatcher::addFile(archive * const a,
-                               const QString &path,
-                               const QString &name)
+#include <iostream>
+
+bool MultiBootPatcher::Impl::scanAndPatchBootImages(archive * const aOutput,
+                                                    std::vector<std::string> *bootImages,
+                                                    MaxProgressUpdatedCallback maxProgressCb,
+                                                    ProgressUpdatedCallback progressCb,
+                                                    DetailsUpdatedCallback detailsCb,
+                                                    void *userData)
 {
-    Q_D(MultiBootPatcher);
+    (void) maxProgressCb;
 
-    QFile file(path);
-    if (!file.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(path);
-        return false;
-    }
-
-    QByteArray contents = file.readAll();
-
-    bool ret = addFile(a, contents, name);
-
-    file.close();
-    return ret;
-}
-
-bool MultiBootPatcher::addFile(archive * const a,
-                               const QByteArray &contents,
-                               const QString &name)
-{
-    Q_D(MultiBootPatcher);
-
-    archive_entry *entry = archive_entry_new();
-
-    archive_entry_set_uid(entry, 0);
-    archive_entry_set_gid(entry, 0);
-    archive_entry_set_nlink(entry, 1);
-    archive_entry_set_mtime(entry, 0, 0);
-    archive_entry_set_devmajor(entry, 0);
-    archive_entry_set_devminor(entry, 0);
-    archive_entry_set_rdevmajor(entry, 0);
-    archive_entry_set_rdevminor(entry, 0);
-
-    archive_entry_set_pathname(entry, name.toLocal8Bit().constData());
-    archive_entry_set_size(entry, contents.size());
-
-    archive_entry_set_filetype(entry, AE_IFREG);
-    archive_entry_set_perm(entry, 0644);
-
-    // Write header to new file
-    if (archive_write_header(a, entry) != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(a);
-
-        d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(name);
-        return false;
-    }
-
-    // Write contents
-    archive_write_data(a, contents.constData(), contents.size());
-
-    archive_entry_free(entry);
-
-    return true;
-}
-
-bool MultiBootPatcher::readToByteArray(archive *aInput,
-                                       QByteArray *output) const
-{
-    QByteArray data;
-
-    int r;
-    __LA_INT64_T offset;
-    const void *buff;
-    size_t bytes_read;
-
-    while ((r = archive_read_data_block(aInput, &buff,
-            &bytes_read, &offset)) == ARCHIVE_OK) {
-        data.append(reinterpret_cast<const char *>(buff), bytes_read);
-    }
-
-    if (r < ARCHIVE_WARN) {
-        return false;
-    }
-
-    *output = data;
-    return true;
-}
-
-bool MultiBootPatcher::copyData(archive *aInput, archive *aOutput) const
-{
-    int r;
-    __LA_INT64_T offset;
-    const void *buff;
-    size_t bytes_read;
-
-    while ((r = archive_read_data_block(aInput, &buff,
-            &bytes_read, &offset)) == ARCHIVE_OK) {
-        archive_write_data(aOutput, buff, bytes_read);
-    }
-
-    return r >= ARCHIVE_WARN;
-}
-
-bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
-                                              QStringList *bootImages)
-{
-    Q_D(MultiBootPatcher);
-
-    QString key = d->info->patchInfo()->keyFromFilename(d->info->filename());
+    const std::string key = info->patchInfo()->keyFromFilename(
+            info->filename());
 
     // If we don't expect boot images, don't scan for them
-    if (!d->info->patchInfo()->hasBootImage(key)) {
+    if (!info->patchInfo()->hasBootImage(key)) {
         return true;
     }
 
@@ -565,14 +502,13 @@ bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
     archive_read_support_format_zip(aInput);
 
     int ret = archive_read_open_filename(
-            aInput, d->info->filename().toUtf8().constData(), 10240);
+            aInput, info->filename().c_str(), 10240);
     if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aInput);
+        Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
         archive_read_free(aInput);
 
-        d->errorCode = PatcherError::LibArchiveReadOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(d->info->filename());
+        error = PatcherError::createArchiveError(
+                PatcherError::ArchiveReadOpenError, info->filename());
         return false;
     }
 
@@ -583,33 +519,38 @@ bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
         RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
 
-        const QString curFile =
-                QString::fromLocal8Bit(archive_entry_pathname(entry));
+        const std::string curFile = archive_entry_pathname(entry);
 
         // Try to patch the patchinfo-defined boot images as well as
         // files that end in a common boot image extension
-        if (d->info->patchInfo()->bootImages(key).contains(curFile)
-                || curFile.endsWith(QStringLiteral(".img"))
-                || curFile.endsWith(QStringLiteral(".lok"))) {
-            emit progressUpdated(++d->progress);
-            emit detailsUpdated(curFile);
+        auto list = info->patchInfo()->bootImages(key);
 
-            QByteArray data;
+        if (std::find(list.begin(), list.end(), curFile) != list.end()
+                || boost::ends_with(curFile, ".img")
+                || boost::ends_with(curFile, ".lok")) {
+            if (progressCb != nullptr) {
+                progressCb(++progress, userData);
+            }
+            if (detailsCb != nullptr) {
+                detailsCb(curFile, userData);
+            }
 
-            if (!readToByteArray(aInput, &data)) {
-                qWarning() << "libarchive:" << archive_error_string(aInput);
+            std::vector<unsigned char> data;
+
+            if (!FileUtils::laReadToByteArray(aInput, entry, &data)) {
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
                 archive_read_free(aInput);
 
-                d->errorCode = PatcherError::LibArchiveReadDataError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveReadDataError, curFile);
                 return false;
             }
 
             // Make sure the file is a boot iamge and if it is, patch it
-            int pos = data.indexOf(QStringLiteral("ANDROID!").toLocal8Bit());
-            if (pos >= 0 && pos <= 512) {
-                *bootImages << curFile;
+            const char *magic = "ANDROID!";
+            auto it = std::search(data.begin(), data.end(), magic, magic + 8);
+            if (it != data.end() && it - data.begin() <= 512) {
+                bootImages->push_back(curFile);
 
                 if (!patchBootImage(&data)) {
                     archive_read_free(aInput);
@@ -621,16 +562,15 @@ bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
 
             // Write header to new file
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                qWarning() << "libarchive:" << archive_error_string(aOutput);
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
                 archive_read_free(aInput);
 
-                d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
-            archive_write_data(aOutput, data.constData(), data.size());
+            archive_write_data(aOutput, data.data(), data.size());
         } else {
             // Don't process any non-boot-image files
             archive_read_data_skip(aInput);
@@ -644,60 +584,62 @@ bool MultiBootPatcher::scanAndPatchBootImages(archive * const aOutput,
     return true;
 }
 
-bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
-                                             const QStringList &bootImages)
+bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
+                                                   const std::vector<std::string> &bootImages,
+                                                   MaxProgressUpdatedCallback maxProgressCb,
+                                                   ProgressUpdatedCallback progressCb,
+                                                   DetailsUpdatedCallback detailsCb,
+                                                   void *userData)
 {
-    Q_D(MultiBootPatcher);
+    (void) maxProgressCb;
 
-    QString key = d->info->patchInfo()->keyFromFilename(d->info->filename());
+    const std::string key = info->patchInfo()->keyFromFilename(
+            info->filename());
 
     archive *aInput = archive_read_new();
     archive_read_support_filter_none(aInput);
     archive_read_support_format_zip(aInput);
 
     int ret = archive_read_open_filename(
-            aInput, d->info->filename().toUtf8().constData(), 10240);
+            aInput, info->filename().c_str(), 10240);
     if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aInput);
+        Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
         archive_read_free(aInput);
 
-        d->errorCode = PatcherError::LibArchiveReadOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(d->info->filename());
+        error = PatcherError::createArchiveError(
+                PatcherError::ArchiveReadOpenError, info->filename());
         return false;
     }
 
     RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
 
-    QHash<QString, QList<QSharedPointer<AutoPatcher>>> patcherFromFile;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<AutoPatcher>>> patcherFromFile;
 
-    for (const PatchInfo::AutoPatcherItem &item :
-            d->info->patchInfo()->autoPatchers(key)) {
-        QSharedPointer<AutoPatcher> ap =
-                d->pp->createAutoPatcher(item.first, d->info, item.second);
-        if (ap.isNull()) {
+    for (auto const &item : info->patchInfo()->autoPatchers(key)) {
+        std::shared_ptr<AutoPatcher> ap = pp->createAutoPatcher(
+                item.first, info, item.second);
+        if (!ap) {
             archive_read_free(aInput);
 
-            d->errorCode = PatcherError::AutoPatcherCreateError;
-            d->errorString = PatcherError::errorString(d->errorCode)
-                    .arg(item.first);
+            error = PatcherError::createPatcherCreationError(
+                    PatcherError::AutoPatcherCreateError, item.first);
             return false;
         }
 
         // Insert autopatchers in the hash table to make it easier to
         // call them later on
 
-        QStringList existingFiles = ap->existingFiles();
-        if (existingFiles.isEmpty()) {
+        std::vector<std::string> existingFiles = ap->existingFiles();
+        if (existingFiles.empty()) {
             archive_read_free(aInput);
 
-            d->errorCode = PatcherError::CustomError;
-            d->errorString = tr("Failed to run autopatcher: The %1 patcher says no existing files in the zip file should be patched.").arg(item.first);
+            error = PatcherError::createGenericError(
+                    PatcherError::ImplementationError);
             return false;
         }
 
-        for (const QString &file : existingFiles) {
-            patcherFromFile[file] << ap;
+        for (auto const &file : existingFiles) {
+            patcherFromFile[file].push_back(ap);
         }
     }
 
@@ -708,40 +650,42 @@ bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
         RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
 
-        const QString curFile =
-                QString::fromLocal8Bit(archive_entry_pathname(entry));
+        const std::string curFile = archive_entry_pathname(entry);
 
-        if (d->info->patchInfo()->bootImages(key).contains(curFile)
-                || curFile.endsWith(QStringLiteral(".img"))
-                || curFile.endsWith(QStringLiteral(".lok"))) {
+        auto list = info->patchInfo()->bootImages(key);
+
+        if (std::find(list.begin(), list.end(), curFile) != list.end()
+                || boost::ends_with(curFile, ".img")
+                || boost::ends_with(curFile, ".lok")) {
             // These have already been handled by scanAndPatchBootImages()
             archive_read_data_skip(aInput);
             continue;
         }
 
-        emit progressUpdated(++d->progress);
-        emit detailsUpdated(curFile);
+        if (progressCb != nullptr) {
+            progressCb(++progress, userData);
+        }
+        if (detailsCb != nullptr) {
+            detailsCb(curFile, userData);
+        }
 
         // Go through all the autopatchers
-        if (patcherFromFile.contains(curFile)) {
-            QByteArray contents;
-            if (!readToByteArray(aInput, &contents)) {
-                qWarning() << "libarchive:" << archive_error_string(aInput);
+        if (patcherFromFile.find(curFile) != patcherFromFile.end()) {
+            std::vector<unsigned char> contents;
+            if (!FileUtils::laReadToByteArray(aInput, entry, &contents)) {
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
                 archive_read_free(aInput);
 
-                d->errorCode = PatcherError::LibArchiveReadDataError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveReadDataError, curFile);
                 return false;
             }
 
-            for (const QSharedPointer<AutoPatcher> &ap :
-                    patcherFromFile[curFile]) {
+            for (auto const &ap : patcherFromFile[curFile]) {
                 if (!ap->patchFile(curFile, &contents, bootImages)) {
                     archive_read_free(aInput);
 
-                    d->errorCode = ap->error();
-                    d->errorString = ap->errorString();
+                    error = ap->error();
                     return false;
                 }
             }
@@ -749,34 +693,31 @@ bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
             archive_entry_set_size(entry, contents.size());
 
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                qWarning() << "libarchive:" << archive_error_string(aOutput);
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
                 archive_read_free(aInput);
 
-                d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
-            archive_write_data(aOutput, contents.constData(), contents.size());
+            archive_write_data(aOutput, contents.data(), contents.size());
         } else {
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                qWarning() << "libarchive:" << archive_error_string(aOutput);
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
                 archive_read_free(aInput);
 
-                d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
-            if (!copyData(aInput, aOutput)) {
-                qWarning() << "libarchive:" << archive_error_string(aInput);
+            if (!FileUtils::laCopyData(aInput, aOutput)) {
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
                 archive_read_free(aInput);
 
-                d->errorCode = PatcherError::LibArchiveWriteDataError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveWriteDataError, curFile);
                 return false;
             }
         }
@@ -784,38 +725,4 @@ bool MultiBootPatcher::scanAndPatchRemaining(archive * const aOutput,
 
     archive_read_free(aInput);
     return true;
-}
-
-int MultiBootPatcher::scanNumberOfFiles()
-{
-    Q_D(MultiBootPatcher);
-
-    archive *aInput = archive_read_new();
-    archive_read_support_filter_none(aInput);
-    archive_read_support_format_zip(aInput);
-
-    int ret = archive_read_open_filename(
-            aInput, d->info->filename().toUtf8().constData(), 10240);
-    if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aInput);
-        archive_read_free(aInput);
-
-        d->errorCode = PatcherError::LibArchiveReadOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(d->info->filename());
-        return -1;
-    }
-
-    archive_entry *entry;
-
-    int count = 0;
-
-    while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
-        RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
-        count++;
-        archive_read_data_skip(aInput);
-    }
-
-    archive_read_free(aInput);
-    return count;
 }

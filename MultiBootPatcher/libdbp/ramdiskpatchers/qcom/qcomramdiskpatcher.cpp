@@ -17,91 +17,94 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "qcomramdiskpatcher.h"
-#include "qcomramdiskpatcher_p.h"
+#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/any.hpp>
+#include <boost/format.hpp>
+#include <boost/regex.hpp>
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
+#include "private/logging.h"
 
-#include <QtCore/QRegularExpression>
-#include <QtCore/QRegularExpressionMatch>
-#include <QtCore/QStringBuilder>
-#include <QtCore/QVector>
 
-const QString QcomRamdiskPatcher::SystemPartition =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/system");
-const QString QcomRamdiskPatcher::CachePartition =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/cache");
-const QString QcomRamdiskPatcher::DataPartition =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/userdata");
+class QcomRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
 
-const QString QcomRamdiskPatcher::ArgAdditionalFstabs =
-        QStringLiteral("AdditionalFstabs");
-const QString QcomRamdiskPatcher::ArgForceSystemRw =
-        QStringLiteral("ForceSystemRw");
-const QString QcomRamdiskPatcher::ArgForceCacheRw =
-        QStringLiteral("ForceCacheRw");
-const QString QcomRamdiskPatcher::ArgForceDataRw =
-        QStringLiteral("ForceDataRw");
-const QString QcomRamdiskPatcher::ArgKeepMountPoints =
-        QStringLiteral("KeepMountPoints");
-const QString QcomRamdiskPatcher::ArgSystemMountPoint =
-        QStringLiteral("SystemMountPoint");
-const QString QcomRamdiskPatcher::ArgCacheMountPoint =
-        QStringLiteral("CacheMountPoint");
-const QString QcomRamdiskPatcher::ArgDataMountPoint =
-        QStringLiteral("DataMountPoint");
-const QString QcomRamdiskPatcher::ArgDefaultSystemMountArgs =
-        QStringLiteral("DefaultSystemMountArgs");
-const QString QcomRamdiskPatcher::ArgDefaultSystemVoldArgs =
-        QStringLiteral("DefaultSystemVoldArgs");
-const QString QcomRamdiskPatcher::ArgDefaultCacheMountArgs =
-        QStringLiteral("DefaultCacheMountArgs");
-const QString QcomRamdiskPatcher::ArgDefaultCacheVoldArgs =
-        QStringLiteral("DefaultDataMountArgs");
+    PatcherError error;
+};
 
-static const QString RawSystem = QStringLiteral("/raw-system");
-static const QString RawCache = QStringLiteral("/raw-cache");
-static const QString RawData = QStringLiteral("/raw-data");
-static const QString System = QStringLiteral("/system");
-static const QString Cache = QStringLiteral("/cache");
-static const QString Data = QStringLiteral("/data");
 
-static const QChar Newline = QLatin1Char('\n');
+const std::string QcomRamdiskPatcher::SystemPartition =
+        "/dev/block/platform/msm_sdcc.1/by-name/system";
+const std::string QcomRamdiskPatcher::CachePartition =
+        "/dev/block/platform/msm_sdcc.1/by-name/cache";
+const std::string QcomRamdiskPatcher::DataPartition =
+        "/dev/block/platform/msm_sdcc.1/by-name/userdata";
+
+const std::string QcomRamdiskPatcher::ArgAdditionalFstabs =
+        "AdditionalFstabs";
+const std::string QcomRamdiskPatcher::ArgForceSystemRw =
+        "ForceSystemRw";
+const std::string QcomRamdiskPatcher::ArgForceCacheRw =
+        "ForceCacheRw";
+const std::string QcomRamdiskPatcher::ArgForceDataRw =
+        "ForceDataRw";
+const std::string QcomRamdiskPatcher::ArgKeepMountPoints =
+        "KeepMountPoints";
+const std::string QcomRamdiskPatcher::ArgSystemMountPoint =
+        "SystemMountPoint";
+const std::string QcomRamdiskPatcher::ArgCacheMountPoint =
+        "CacheMountPoint";
+const std::string QcomRamdiskPatcher::ArgDataMountPoint =
+        "DataMountPoint";
+const std::string QcomRamdiskPatcher::ArgDefaultSystemMountArgs =
+        "DefaultSystemMountArgs";
+const std::string QcomRamdiskPatcher::ArgDefaultSystemVoldArgs =
+        "DefaultSystemVoldArgs";
+const std::string QcomRamdiskPatcher::ArgDefaultCacheMountArgs =
+        "DefaultCacheMountArgs";
+const std::string QcomRamdiskPatcher::ArgDefaultCacheVoldArgs =
+        "DefaultDataMountArgs";
+
+static const std::string RawSystem = "/raw-system";
+static const std::string RawCache = "/raw-cache";
+static const std::string RawData = "/raw-data";
+static const std::string System = "/system";
+static const std::string Cache = "/cache";
+static const std::string Data = "/data";
+
 
 QcomRamdiskPatcher::QcomRamdiskPatcher(const PatcherPaths * const pp,
                                        const FileInfo * const info,
                                        CpioFile * const cpio) :
-    d_ptr(new QcomRamdiskPatcherPrivate())
+    m_impl(new Impl())
 {
-    Q_D(QcomRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 QcomRamdiskPatcher::~QcomRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error QcomRamdiskPatcher::error() const
+PatcherError QcomRamdiskPatcher::error() const
 {
-    Q_D(const QcomRamdiskPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString QcomRamdiskPatcher::errorString() const
+std::string QcomRamdiskPatcher::id() const
 {
-    Q_D(const QcomRamdiskPatcher);
-
-    return d->errorString;
-}
-
-QString QcomRamdiskPatcher::id() const
-{
-    return QString();
+    return std::string();
 }
 
 bool QcomRamdiskPatcher::patchRamdisk()
@@ -111,84 +114,77 @@ bool QcomRamdiskPatcher::patchRamdisk()
 
 bool QcomRamdiskPatcher::modifyInitRc()
 {
-    Q_D(QcomRamdiskPatcher);
+    static const std::string initRc("init.rc");
 
-    static const QString initRc = QStringLiteral("init.rc");
-
-    QByteArray contents = d->cpio->contents(initRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(initRc);
+    auto contents = m_impl->cpio->contents(initRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, initRc);
         return false;
     }
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        QString &line = iter.next();
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        if (line.contains(QRegularExpression(
-                QStringLiteral("mkdir /system(\\s|$)")))) {
-            iter.insert(QString(line).replace(System, RawSystem));
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("mkdir /cache(\\s|$)")))) {
-            iter.insert(QString(line).replace(Cache, RawCache));
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("mkdir /data(\\s|$)")))) {
-            iter.insert(QString(line).replace(Data, RawData));
-        } else if (line.contains(QStringLiteral("yaffs2"))) {
-            line.insert(0, QLatin1Char('#'));
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(*it, boost::regex("mkdir /system(\\s|$)"))) {
+            it = lines.insert(++it, boost::replace_all_copy(*it, System, RawSystem));
+        } else if (boost::regex_search(*it, boost::regex("mkdir /cache(\\s|$)"))) {
+            it = lines.insert(++it, boost::replace_all_copy(*it, Cache, RawCache));
+        } else if (boost::regex_search(*it, boost::regex("mkdir /data(\\s|$)"))) {
+            it = lines.insert(++it, boost::replace_all_copy(*it, Data, RawData));
+        } else if (it->find("yaffs2") != std::string::npos) {
+            it->insert(it->begin(), '#');
         }
     }
 
-    d->cpio->setContents(initRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(initRc, std::move(contents));
 
     return true;
 }
 
-bool QcomRamdiskPatcher::modifyInitQcomRc(QStringList additionalFiles)
+bool QcomRamdiskPatcher::modifyInitQcomRc(const std::vector<std::string> &additionalFiles)
 {
-    Q_D(QcomRamdiskPatcher);
+    static const std::string qcomRc("init.qcom.rc");
+    static const std::string qcomCommonRc("init.qcom-common.rc");
 
-    QString qcomRc(QStringLiteral("init.qcom.rc"));
-    QString qcomCommonRc(QStringLiteral("init.qcom-common.rc"));
-
-    QStringList files;
-    if (d->cpio->exists(qcomRc)) {
-        files << qcomRc;
-    } else if (d->cpio->exists(qcomCommonRc)) {
-        files << qcomCommonRc;
+    std::vector<std::string> files;
+    if (m_impl->cpio->exists(qcomRc)) {
+        files.push_back(qcomRc);
+    } else if (m_impl->cpio->exists(qcomCommonRc)) {
+        files.push_back(qcomCommonRc);
     } else {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(qcomRc % QStringLiteral(", ") % qcomCommonRc);
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError,
+                qcomRc + ", " + qcomCommonRc);
         return false;
     }
-    files << additionalFiles;
+    files.insert(files.end(), additionalFiles.begin(), additionalFiles.end());
 
-    for (const QString &file : files) {
-        QByteArray contents = d->cpio->contents(file);
-        if (contents.isNull()) {
-            d->errorCode = PatcherError::CpioFileNotExistError;
-            d->errorString = PatcherError::errorString(d->errorCode)
-                    .arg(file);
+    for (auto const &file : files) {
+        auto contents = m_impl->cpio->contents(file);
+        if (contents.empty()) {
+            m_impl->error = PatcherError::createCpioError(
+                    PatcherError::CpioFileNotExistError, file);
             return false;
         }
 
-        QStringList lines = QString::fromUtf8(contents).split(Newline);
-        QMutableStringListIterator iter(lines);
-        while (iter.hasNext()) {
-            QString &line = iter.next();
+        std::string strContents(contents.begin(), contents.end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-            if (line.contains(QRegularExpression(
-                    QStringLiteral("\\s/data/media(\\s|$)")))) {
-                line.replace(QStringLiteral("/data/media"),
-                             QStringLiteral("/raw-data/media"));
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (boost::regex_search(*it, boost::regex("\\s/data/media(\\s|$)"))) {
+                boost::replace_all(*it, "/data/media", "/raw-data/media");
             }
         }
 
-        d->cpio->setContents(file, lines.join(Newline).toUtf8());
+        strContents = boost::join(lines, "\n");
+        contents.assign(strContents.begin(), strContents.end());
+        m_impl->cpio->setContents(file, std::move(contents));
     }
 
     return true;
@@ -197,36 +193,38 @@ bool QcomRamdiskPatcher::modifyInitQcomRc(QStringList additionalFiles)
 // Qt port of the C++ Levenshtein implementation from WikiBooks:
 // http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
 template<class T>
-static uint levenshteinDistance(const T &s1, const T &s2)
+static unsigned int levenshteinDistance(const T &s1, const T &s2)
 {
-    const size_t len1 = s1.size();
-    const size_t len2 = s2.size();
+    const std::size_t len1 = s1.size();
+    const std::size_t len2 = s2.size();
 
-    QVector<uint> col(len2 + 1);
-    QVector<uint> prevCol(len2 + 1);
+    std::vector<unsigned int> col(len2 + 1);
+    std::vector<unsigned int> prevCol(len2 + 1);
 
-    for (int i = 0; i < prevCol.size(); i++) {
+    for (unsigned int i = 0; i < prevCol.size(); ++i) {
         prevCol[i] = i;
     }
 
-    for (uint i = 0; i < len1; i++) {
+    for (unsigned int i = 0; i < len1; ++i) {
         col[0] = i + 1;
-        for (uint j = 0; j < len2; j++)
-            col[j + 1] = qMin(qMin(prevCol[1 + j] + 1, col[j] + 1),
-                              prevCol[j] + (s1[i] == s2[j] ? 0 : 1));
+        for (unsigned int j = 0; j < len2; ++j) {
+            col[j + 1] = std::min(std::min(prevCol[1 + j] + 1, col[j] + 1),
+                                           prevCol[j] + (s1[i] == s2[j] ? 0 : 1));
+        }
         col.swap(prevCol);
     }
 
     return prevCol[len2];
 }
 
-static QString closestMatch(const QString &searchTerm, const QStringList &list)
+static std::string closestMatch(const std::string &searchTerm,
+                                const std::vector<std::string> &list)
 {
     int index = 0;
-    uint min = levenshteinDistance(searchTerm, list[0]);
+    unsigned int min = levenshteinDistance(searchTerm, list[0]);
 
-    for (int i = 1; i < list.size(); i++) {
-        uint distance = levenshteinDistance(searchTerm, list[i]);
+    for (unsigned int i = 1; i < list.size(); ++i) {
+        unsigned int distance = levenshteinDistance(searchTerm, list[i]);
         if (distance < min) {
             min = distance;
             index = i;
@@ -236,73 +234,100 @@ static QString closestMatch(const QString &searchTerm, const QStringList &list)
     return list[index];
 }
 
-bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts)
-{
-    return modifyFstab(QVariantMap(), removeModemMounts);
+template<class MapContainer>
+static std::vector<typename MapContainer::key_type> keys(const MapContainer &m) {
+    std::vector<typename MapContainer::key_type> keys;
+
+    for (auto const &p : m) {
+        keys.push_back(p.first);
+    }
+
+    return keys;
 }
 
-bool QcomRamdiskPatcher::modifyFstab(QVariantMap args,
+bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts)
+{
+    return modifyFstab(FstabArgs(), removeModemMounts);
+}
+
+bool QcomRamdiskPatcher::modifyFstab(FstabArgs args,
                                      bool removeModemMounts)
 {
-    QStringList additionalFstabs;
+    std::vector<std::string> additionalFstabs;
     bool forceSystemRw = false;
     bool forceCacheRw = false;
     bool forceDataRw = false;
     bool keepMountPoints = false;
-    QString systemMountPoint = System;
-    QString cacheMountPoint = Cache;
-    QString dataMountPoint = Data;
-    QString defaultSystemMountArgs = QStringLiteral("ro,barrier=1,errors=panic");
-    QString defaultSystemVoldArgs = QStringLiteral("wait");
-    QString defaultCacheMountArgs = QStringLiteral("nosuid,nodev,barrier=1");
-    QString defaultCacheVoldArgs = QStringLiteral("wait,check");
+    std::string systemMountPoint = System;
+    std::string cacheMountPoint = Cache;
+    std::string dataMountPoint = Data;
+    std::string defaultSystemMountArgs = "ro,barrier=1,errors=panic";
+    std::string defaultSystemVoldArgs = "wait";
+    std::string defaultCacheMountArgs = "nosuid,nodev,barrier=1";
+    std::string defaultCacheVoldArgs = "wait,check";
 
-    if (args.contains(ArgAdditionalFstabs)) {
-        additionalFstabs = args[ArgAdditionalFstabs].toStringList();
-    }
+    try {
+        if (args.find(ArgAdditionalFstabs) != args.end()) {
+            additionalFstabs = boost::any_cast<std::vector<std::string>>(
+                    args[ArgAdditionalFstabs]);
+        }
 
-    if (args.contains(ArgForceSystemRw)) {
-        forceSystemRw = args[ArgForceSystemRw].toBool();
-    }
+        if (args.find(ArgForceSystemRw) != args.end()) {
+            forceSystemRw = boost::any_cast<bool>(args[ArgForceSystemRw]);
+        }
 
-    if (args.contains(ArgForceCacheRw)) {
-        forceCacheRw = args[ArgForceCacheRw].toBool();
-    }
+        if (args.find(ArgForceCacheRw) != args.end()) {
+            forceCacheRw = boost::any_cast<bool>(args[ArgForceCacheRw]);
+        }
 
-    if (args.contains(ArgForceDataRw)) {
-        forceDataRw = args[ArgForceDataRw].toBool();
-    }
+        if (args.find(ArgForceDataRw) != args.end()) {
+            forceDataRw = boost::any_cast<bool>(args[ArgForceDataRw]);
+        }
 
-    if (args.contains(ArgKeepMountPoints)) {
-        keepMountPoints = args[ArgKeepMountPoints].toBool();
-    }
+        if (args.find(ArgKeepMountPoints) != args.end()) {
+            keepMountPoints = boost::any_cast<bool>(args[ArgKeepMountPoints]);
+        }
 
-    if (args.contains(ArgSystemMountPoint)) {
-        systemMountPoint = args[ArgSystemMountPoint].toString();
-    }
+        if (args.find(ArgSystemMountPoint) != args.end()) {
+            systemMountPoint = boost::any_cast<std::string>(
+                    args[ArgSystemMountPoint]);
+        }
 
-    if (args.contains(ArgCacheMountPoint)) {
-        cacheMountPoint = args[ArgCacheMountPoint].toString();
-    }
+        if (args.find(ArgCacheMountPoint) != args.end()) {
+            cacheMountPoint = boost::any_cast<std::string>(
+                    args[ArgCacheMountPoint]);
+        }
 
-    if (args.contains(ArgDataMountPoint)) {
-        dataMountPoint = args[ArgDataMountPoint].toString();
-    }
+        if (args.find(ArgDataMountPoint) != args.end()) {
+            dataMountPoint = boost::any_cast<std::string>(
+                    args[ArgDataMountPoint]);
+        }
 
-    if (args.contains(ArgDefaultSystemMountArgs)) {
-        defaultSystemMountArgs = args[ArgDefaultSystemMountArgs].toString();
-    }
+        if (args.find(ArgDefaultSystemMountArgs) != args.end()) {
+            defaultSystemMountArgs = boost::any_cast<std::string>(
+                    args[ArgDefaultSystemMountArgs]);
+        }
 
-    if (args.contains(ArgDefaultSystemVoldArgs)) {
-        defaultSystemVoldArgs = args[ArgDefaultSystemVoldArgs].toString();
-    }
+        if (args.find(ArgDefaultSystemVoldArgs) != args.end()) {
+            defaultSystemVoldArgs = boost::any_cast<std::string>(
+                    args[ArgDefaultSystemVoldArgs]);
+        }
 
-    if (args.contains(ArgDefaultCacheMountArgs)) {
-        defaultCacheMountArgs = args[ArgDefaultCacheMountArgs].toString();
-    }
+        if (args.find(ArgDefaultCacheMountArgs) != args.end()) {
+            defaultCacheMountArgs = boost::any_cast<std::string>(
+                    args[ArgDefaultCacheMountArgs]);
+        }
 
-    if (args.contains(ArgDefaultCacheVoldArgs)) {
-        defaultCacheVoldArgs = args[ArgDefaultCacheVoldArgs].toString();
+        if (args.find(ArgDefaultCacheVoldArgs) != args.end()) {
+            defaultCacheVoldArgs = boost::any_cast<std::string>(
+                    args[ArgDefaultCacheVoldArgs]);
+        }
+    } catch (const boost::bad_any_cast &e) {
+        Log::log(Log::Error, e.what());
+
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
+        return false;
     }
 
     return modifyFstab(removeModemMounts,
@@ -321,41 +346,42 @@ bool QcomRamdiskPatcher::modifyFstab(QVariantMap args,
 }
 
 bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
-                                     const QStringList &additionalFstabs,
+                                     const std::vector<std::string> &additionalFstabs,
                                      bool forceSystemRw,
                                      bool forceCacheRw,
                                      bool forceDataRw,
                                      bool keepMountPoints,
-                                     const QString &systemMountPoint,
-                                     const QString &cacheMountPoint,
-                                     const QString &dataMountPoint,
-                                     const QString &defaultSystemMountArgs,
-                                     const QString &defaultSystemVoldArgs,
-                                     const QString &defaultCacheMountArgs,
-                                     const QString &defaultCacheVoldArgs)
+                                     const std::string &systemMountPoint,
+                                     const std::string &cacheMountPoint,
+                                     const std::string &dataMountPoint,
+                                     const std::string &defaultSystemMountArgs,
+                                     const std::string &defaultSystemVoldArgs,
+                                     const std::string &defaultCacheMountArgs,
+                                     const std::string &defaultCacheVoldArgs)
 {
-    Q_D(QcomRamdiskPatcher);
-
-    QStringList fstabs;
-    for (const QString &file : d->cpio->filenames()) {
-        if (file.startsWith(QStringLiteral("fstab."))) {
-            fstabs << file;
+    std::vector<std::string> fstabs;
+    for (auto const &file : m_impl->cpio->filenames()) {
+        if (boost::starts_with(file, "fstab.")) {
+            fstabs.push_back(file);
         }
     }
 
-    fstabs << additionalFstabs;
+    fstabs.insert(fstabs.end(),
+                  additionalFstabs.begin(), additionalFstabs.end());
 
-    for (const QString &fstab : fstabs) {
-        QByteArray contents = d->cpio->contents(fstab);
-        if (contents.isNull()) {
-            d->errorCode = PatcherError::CpioFileNotExistError;
-            d->errorString = PatcherError::errorString(d->errorCode)
-                    .arg(fstab);
+    for (auto const &fstab : fstabs) {
+        auto contents = m_impl->cpio->contents(fstab);
+        if (contents.empty()) {
+            m_impl->error = PatcherError::createCpioError(
+                    PatcherError::CpioFileNotExistError, fstab);
             return false;
         }
 
-        QStringList lines = QString::fromUtf8(contents).split(Newline);
-        QString mountLine = QStringLiteral("%1%2 %3 %4 %5 %6");
+        std::string strContents(contents.begin(), contents.end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
+
+        static const std::string mountLine = "%1%%2% %3% %4% %5% %6%";
 
         // Some Android 4.2 ROMs mount the cache partition in the init
         // scripts, so the fstab has no cache line
@@ -363,22 +389,22 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
 
         // Find the mount and vold arguments for the system and cache
         // partitions
-        QHash<QString, QString> systemMountArgs;
-        QHash<QString, QString> systemVoldArgs;
-        QHash<QString, QString> cacheMountArgs;
-        QHash<QString, QString> cacheVoldArgs;
+        std::unordered_map<std::string, std::string> systemMountArgs;
+        std::unordered_map<std::string, std::string> systemVoldArgs;
+        std::unordered_map<std::string, std::string> cacheMountArgs;
+        std::unordered_map<std::string, std::string> cacheVoldArgs;
 
-        for (const QString &line : lines) {
-            QRegularExpressionMatch match;
+        for (auto const &line : lines) {
+            boost::smatch what;
 
-            if (line.contains(QRegularExpression(
-                    CoreRamdiskPatcher::FstabRegex), &match)) {
-                QString comment = match.captured(1);
-                QString blockDev = match.captured(2);
-                //QString mountPoint = match.captured(3);
-                //QString fsType = match.captured(4);
-                QString mountArgs = match.captured(5);
-                QString voldArgs = match.captured(6);
+            if (boost::regex_search(line, what,
+                    boost::regex(CoreRamdiskPatcher::FstabRegex))) {
+                std::string comment = what[1];
+                std::string blockDev = what[2];
+                //std::string mountPoint = what[3];
+                //std::string fsType = what[4];
+                std::string mountArgs = what[5];
+                std::string voldArgs = what[6];
 
                 if (blockDev == SystemPartition) {
                     systemMountArgs[comment] = mountArgs;
@@ -392,51 +418,52 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
 
         // In the unlikely case that we couldn't parse the mount arguments,
         // we'll just use the defaults
-        if (systemMountArgs.isEmpty()) {
-            systemMountArgs[QString()] = defaultSystemMountArgs;
+        if (systemMountArgs.empty()) {
+            systemMountArgs[std::string()] = defaultSystemMountArgs;
         }
-        if (systemVoldArgs.isEmpty()) {
-            systemVoldArgs[QString()] = defaultSystemVoldArgs;
+        if (systemVoldArgs.empty()) {
+            systemVoldArgs[std::string()] = defaultSystemVoldArgs;
         }
-        if (cacheMountArgs.isEmpty()) {
-            cacheMountArgs[QString()] = defaultCacheMountArgs;
+        if (cacheMountArgs.empty()) {
+            cacheMountArgs[std::string()] = defaultCacheMountArgs;
         }
-        if (cacheVoldArgs.isEmpty()) {
-            cacheVoldArgs[QString()] = defaultCacheVoldArgs;
+        if (cacheVoldArgs.empty()) {
+            cacheVoldArgs[std::string()] = defaultCacheVoldArgs;
         }
 
-        QMutableStringListIterator iter(lines);
-        while (iter.hasNext()) {
-            QString &line = iter.next();
-            QString comment;
-            QString blockDev;
-            QString mountPoint;
-            QString fsType;
-            QString mountArgs;
-            QString voldArgs;
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            auto &line = *it;
 
-            QRegularExpressionMatch match = QRegularExpression(
-                    CoreRamdiskPatcher::FstabRegex).match(line);
+            std::string comment;
+            std::string blockDev;
+            std::string mountPoint;
+            std::string fsType;
+            std::string mountArgs;
+            std::string voldArgs;
 
-            if (match.hasMatch()) {
-                comment = match.captured(1);
-                blockDev = match.captured(2);
-                mountPoint = match.captured(3);
-                fsType = match.captured(4);
-                mountArgs = match.captured(5);
-                voldArgs = match.captured(6);
+            boost::smatch what;
+            bool hasMatch = boost::regex_search(
+                    line, what, boost::regex(CoreRamdiskPatcher::FstabRegex));
+
+            if (hasMatch) {
+                comment = what[1];
+                blockDev = what[2];
+                mountPoint = what[3];
+                fsType = what[4];
+                mountArgs = what[5];
+                voldArgs = what[6];
             }
 
-            if (match.hasMatch() && blockDev == SystemPartition
+            if (hasMatch && blockDev == SystemPartition
                     && mountPoint == systemMountPoint) {
                 if (!keepMountPoints) {
                     mountPoint = RawSystem;
                 }
 
-                if (d->info->partConfig()->targetCache().contains(
-                        RawSystem)) {
-                    QString cacheComment =
-                            closestMatch(comment, cacheMountArgs.keys());
+                if (m_impl->info->partConfig()->targetCache().find(RawSystem)
+                        != std::string::npos) {
+                    std::string cacheComment =
+                            closestMatch(comment, keys(cacheMountArgs));
                     mountArgs = cacheMountArgs[cacheComment];
                     voldArgs = cacheVoldArgs[cacheComment];
                 }
@@ -445,9 +472,9 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
                     mountArgs = makeWritable(mountArgs);
                 }
 
-                line = mountLine.arg(comment).arg(blockDev).arg(mountPoint)
-                        .arg(fsType).arg(mountArgs).arg(voldArgs);
-            } else if (match.hasMatch() && blockDev == CachePartition
+                line = (boost::format(mountLine) % comment % blockDev
+                        % mountPoint % fsType % mountArgs % voldArgs).str();
+            } else if (hasMatch && blockDev == CachePartition
                     && mountPoint == cacheMountPoint) {
                 if (!keepMountPoints) {
                     mountPoint = RawCache;
@@ -455,10 +482,10 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
 
                 hasCacheLine = true;
 
-                if (d->info->partConfig()->targetSystem().contains(
-                        RawCache)) {
-                    QString systemComment =
-                            closestMatch(comment, systemMountArgs.keys());
+                if (m_impl->info->partConfig()->targetSystem().find(RawCache)
+                        != std::string::npos) {
+                    std::string systemComment =
+                            closestMatch(comment, keys(systemMountArgs));
                     mountArgs = systemMountArgs[systemComment];
                     voldArgs = systemVoldArgs[systemComment];
                 }
@@ -467,18 +494,18 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
                     mountArgs = makeWritable(mountArgs);
                 }
 
-                line = mountLine.arg(comment).arg(blockDev).arg(mountPoint)
-                        .arg(fsType).arg(mountArgs).arg(voldArgs);
-            } else if (match.hasMatch() && blockDev == DataPartition
+                line = (boost::format(mountLine) % comment % blockDev
+                        % mountPoint % fsType % mountArgs % voldArgs).str();
+            } else if (hasMatch && blockDev == DataPartition
                     && mountPoint == dataMountPoint) {
                 if (!keepMountPoints) {
                     mountPoint = RawData;
                 }
 
-                if (d->info->partConfig()->targetSystem().contains(
-                        RawData)) {
-                    QString systemComment =
-                            closestMatch(comment, systemMountArgs.keys());
+                if (m_impl->info->partConfig()->targetSystem().find(RawData)
+                        != std::string::npos) {
+                    std::string systemComment =
+                            closestMatch(comment, keys(systemMountArgs));
                     mountArgs = systemMountArgs[systemComment];
                     voldArgs = systemVoldArgs[systemComment];
                 }
@@ -487,111 +514,109 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
                     mountArgs = makeWritable(mountArgs);
                 }
 
-                line = mountLine.arg(comment).arg(blockDev).arg(mountPoint)
-                        .arg(fsType).arg(mountArgs).arg(voldArgs);
-            } else if (match.hasMatch() && removeModemMounts
-                    && (blockDev.contains(QStringLiteral("apnhlos"))
-                    || blockDev.contains(QStringLiteral("mdm"))
-                    || blockDev.contains(QStringLiteral("modem")))) {
-                iter.remove();
+                line = (boost::format(mountLine) % comment % blockDev
+                        % mountPoint % fsType % mountArgs % voldArgs).str();
+            } else if (hasMatch && removeModemMounts
+                    && (blockDev.find("apnhlos") != std::string::npos
+                    || blockDev.find("mdm") != std::string::npos
+                    || blockDev.find("modem") != std::string::npos)) {
+                it = lines.erase(it);
+                it--;
             }
         }
 
         if (!hasCacheLine) {
-            QString cacheLine = QStringLiteral("%1 /raw-cache ext4 %2 %3");
-            QString mountArgs;
-            QString voldArgs;
+            std::string cacheLine = "%1% /raw-cache ext4 %2% %3%";
+            std::string mountArgs;
+            std::string voldArgs;
 
-            if (d->info->partConfig()->targetSystem().contains(
-                    RawCache)) {
-                mountArgs = systemMountArgs[QString()];
-                voldArgs = systemVoldArgs[QString()];
+            if (m_impl->info->partConfig()->targetSystem().find(RawCache)
+                    != std::string::npos) {
+                mountArgs = systemMountArgs[std::string()];
+                voldArgs = systemVoldArgs[std::string()];
             } else {
-                mountArgs = systemMountArgs[QString()];
-                voldArgs = systemVoldArgs[QString()];
+                mountArgs = systemMountArgs[std::string()];
+                voldArgs = systemVoldArgs[std::string()];
             }
 
-            lines << cacheLine.arg(CachePartition).arg(mountArgs).arg(voldArgs);
+            lines.push_back((boost::format(cacheLine) % CachePartition
+                             % mountArgs % voldArgs).str());
         }
 
-        d->cpio->setContents(fstab, lines.join(Newline).toUtf8());
+        strContents = boost::join(lines, "\n");
+        contents.assign(strContents.begin(), strContents.end());
+        m_impl->cpio->setContents(fstab, std::move(contents));
     }
 
     return true;
 }
 
-static QString whitespace(const QString &str) {
-    int index = 0;
+static std::string whitespace(const std::string &str) {
+    auto nonSpace = std::find_if(str.begin(), str.end(),
+                                 std::not1(std::ptr_fun<int, int>(isspace)));
+    int count = std::distance(str.begin(), nonSpace);
 
-    for (QChar c : str) {
-        if (c.isSpace()) {
-            index++;
-        } else {
-            break;
-        }
-    }
-
-    return str.left(index);
+    return str.substr(0, count);
 }
 
 bool QcomRamdiskPatcher::modifyInitTargetRc()
 {
-    return modifyInitTargetRc(QStringLiteral("init.target.rc"));
+    return modifyInitTargetRc("init.target.rc");
 }
 
-bool QcomRamdiskPatcher::modifyInitTargetRc(QString filename)
+bool QcomRamdiskPatcher::modifyInitTargetRc(const std::string &filename)
 {
-    Q_D(QcomRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(filename);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(filename);
+    auto contents = m_impl->cpio->contents(filename);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, filename);
         return false;
     }
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        QString &line = iter.next();
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        if (line.contains(QRegularExpression(
-                QStringLiteral("^\\s+wait\\s+/dev/.*/cache.*$")))
-                || line.contains(QRegularExpression(
-                QStringLiteral("^\\s+check_fs\\s+/dev/.*/cache.*$")))
-                || line.contains(QRegularExpression(
-                QStringLiteral("^\\s+mount\\s+ext4\\s+/dev/.*/cache.*$")))) {
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(*it,
+                boost::regex("^\\s+wait\\s+/dev/.*/cache.*$"))
+                || boost::regex_search(*it,
+                boost::regex("^\\s+check_fs\\s+/dev/.*/cache.*$"))
+                || boost::regex_search(*it,
+                boost::regex("^\\s+mount\\s+ext4\\s+/dev/.*/cache.*$"))) {
             // Remove lines that mount /cache
-            line.insert(0, QLatin1Char('#'));
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("^\\s+mount_all\\s+(\\./)?fstab\\..*$")))) {
+            it->insert(it->begin(), '#');
+        } else if (boost::regex_search(*it,
+                boost::regex("^\\s+mount_all\\s+(\\./)?fstab\\..*$"))) {
             // Add command for our mount script
-            iter.insert(whitespace(line) % CoreRamdiskPatcher::ExecMount);
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("\\s/data/media(\\s|$)")))) {
-            line.replace(QStringLiteral("/data/media"),
-                         QStringLiteral("/raw-data/media"));
+            ++it;
+            it = lines.insert(
+                    it, whitespace(*it) + CoreRamdiskPatcher::ExecMount);
+        } else if (boost::regex_search(*it,
+                boost::regex("\\s/data/media(\\s|$)"))) {
+            boost::replace_all(*it, "/data/media", "/raw-data/media");
         }
     }
 
-
-    d->cpio->setContents(filename, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(filename, std::move(contents));
 
     return true;
 }
 
-QString QcomRamdiskPatcher::makeWritable(const QString &mountArgs)
+std::string QcomRamdiskPatcher::makeWritable(const std::string &mountArgs)
 {
-    static const QString PostRo = QStringLiteral("ro,");
-    static const QString PostRw = QStringLiteral("rw,");
-    static const QString PreRo = QStringLiteral(",ro");
-    static const QString PreRw = QStringLiteral(",rw");
+    static const std::string PostRo = "ro,";
+    static const std::string PostRw = "rw,";
+    static const std::string PreRo = ",ro";
+    static const std::string PreRw = ",rw";
 
-    if (mountArgs.contains(PostRo)) {
-        return QString(mountArgs).replace(PostRo, PostRw);
-    } else if (mountArgs.contains(PreRo)) {
-        return QString(mountArgs).replace(PreRo, PreRw);
+    if (mountArgs.find(PostRo) != std::string::npos) {
+        return boost::replace_all_copy(mountArgs, PostRo, PostRw);
+    } else if (mountArgs.find(PreRo) != std::string::npos) {
+        return boost::replace_all_copy(mountArgs, PreRo, PreRw);
     } else {
-        return PreRw % QString(mountArgs);
+        return PreRw + mountArgs;
     }
 }

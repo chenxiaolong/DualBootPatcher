@@ -20,13 +20,11 @@
 #ifndef KLTERAMDISKPATCHER_H
 #define KLTERAMDISKPATCHER_H
 
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
-#include <QtCore/QObject>
+#include "cpiofile.h"
+#include "patcherinterface.h"
 
-
-class KlteBaseRamdiskPatcherPrivate;
 
 class KlteBaseRamdiskPatcher : public RamdiskPatcher
 {
@@ -36,16 +34,15 @@ public:
                                     CpioFile * const cpio);
     virtual ~KlteBaseRamdiskPatcher();
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override = 0;
+    virtual std::string id() const override = 0;
 
     virtual bool patchRamdisk() override = 0;
 
 protected:
-    const QScopedPointer<KlteBaseRamdiskPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(KlteBaseRamdiskPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 
@@ -56,9 +53,9 @@ public:
                                     const FileInfo * const info,
                                     CpioFile * const cpio);
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 };
@@ -71,9 +68,9 @@ public:
                                         const FileInfo * const info,
                                         CpioFile * const cpio);
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 };

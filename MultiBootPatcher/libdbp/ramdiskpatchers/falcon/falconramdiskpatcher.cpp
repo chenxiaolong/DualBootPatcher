@@ -17,90 +17,82 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "falconramdiskpatcher.h"
-#include "falconramdiskpatcher_p.h"
+#include "ramdiskpatchers/falcon/falconramdiskpatcher.h"
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
-const QString FalconRamdiskPatcher::Id =
-        QStringLiteral("falcon/AOSP/AOSP");
+class FalconRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
+
+    PatcherError error;
+};
+
+
+const std::string FalconRamdiskPatcher::Id = "falcon/AOSP/AOSP";
 
 FalconRamdiskPatcher::FalconRamdiskPatcher(const PatcherPaths * const pp,
                                        const FileInfo * const info,
                                        CpioFile * const cpio)
-    : d_ptr(new FalconRamdiskPatcherPrivate())
+    : m_impl(new Impl())
 {
-    Q_D(FalconRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 FalconRamdiskPatcher::~FalconRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error FalconRamdiskPatcher::error() const
+PatcherError FalconRamdiskPatcher::error() const
 {
-    Q_D(const FalconRamdiskPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString FalconRamdiskPatcher::errorString() const
-{
-    Q_D(const FalconRamdiskPatcher);
-
-    return d->errorString;
-}
-
-QString FalconRamdiskPatcher::id() const
+std::string FalconRamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool FalconRamdiskPatcher::patchRamdisk()
 {
-    Q_D(FalconRamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitQcomRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    QVariantMap args;
-    args[QcomRamdiskPatcher::ArgAdditionalFstabs] =
-            QStringList() << QStringLiteral("gpe-fstab.qcom");
+    std::vector<std::string> fstabs;
+    fstabs.push_back("gpe-fstab.qcom");
+
+    QcomRamdiskPatcher::FstabArgs args;
+    args[QcomRamdiskPatcher::ArgAdditionalFstabs] = std::move(fstabs);
 
     if (!qcomPatcher.modifyFstab(args)) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitTargetRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 

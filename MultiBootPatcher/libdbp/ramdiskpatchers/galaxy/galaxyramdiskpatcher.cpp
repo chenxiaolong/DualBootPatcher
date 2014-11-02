@@ -17,30 +17,42 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "galaxyramdiskpatcher.h"
-#include "galaxyramdiskpatcher_p.h"
+#include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/regex.hpp>
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 
-#include <QtCore/QRegularExpression>
-#include <QtCore/QRegularExpressionMatch>
-#include <QtCore/QStringBuilder>
-#include <QtCore/QVector>
+
+class GalaxyRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
+
+    std::string version;
+
+    PatcherError error;
+};
 
 
 /*! \brief Android Jelly Bean */
-const QString GalaxyRamdiskPatcher::JellyBean = QStringLiteral("jb");
+const std::string GalaxyRamdiskPatcher::JellyBean("jb");
 /*! \brief Android Kit Kat */
-const QString GalaxyRamdiskPatcher::KitKat = QStringLiteral("kk");
+const std::string GalaxyRamdiskPatcher::KitKat("kk");
 
-static const QString InitRc = QStringLiteral("init.rc");
-static const QString InitTargetRc = QStringLiteral("init.target.rc");
-static const QString UeventdRc = QStringLiteral("ueventd.rc");
-static const QString UeventdQcomRc = QStringLiteral("ueventd.qcom.rc");
-static const QString Msm8960LpmRc = QStringLiteral("MSM8960_lpm.rc");
+static const std::string InitRc("init.rc");
+static const std::string InitTargetRc("init.target.rc");
+static const std::string UeventdRc("ueventd.rc");
+static const std::string UeventdQcomRc("ueventd.qcom.rc");
+static const std::string Msm8960LpmRc("MSM8960_lpm.rc");
 
-static const QChar Comment = QLatin1Char('#');
-static const QChar Newline = QLatin1Char('\n');
 
 /*!
     \class GalaxyRamdiskPatcher
@@ -60,39 +72,27 @@ static const QChar Newline = QLatin1Char('\n');
 GalaxyRamdiskPatcher::GalaxyRamdiskPatcher(const PatcherPaths * const pp,
                                            const FileInfo * const info,
                                            CpioFile * const cpio,
-                                           const QString &version) :
-    d_ptr(new GalaxyRamdiskPatcherPrivate())
+                                           const std::string &version) :
+    m_impl(new Impl())
 {
-    Q_D(GalaxyRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
-    d->version = version;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
+    m_impl->version = version;
 }
 
 GalaxyRamdiskPatcher::~GalaxyRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error GalaxyRamdiskPatcher::error() const
+PatcherError GalaxyRamdiskPatcher::error() const
 {
-    Q_D(const GalaxyRamdiskPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString GalaxyRamdiskPatcher::errorString() const
+std::string GalaxyRamdiskPatcher::id() const
 {
-    Q_D(const GalaxyRamdiskPatcher);
-
-    return d->errorString;
-}
-
-QString GalaxyRamdiskPatcher::id() const
-{
-    return QString();
+    return std::string();
 }
 
 bool GalaxyRamdiskPatcher::patchRamdisk()
@@ -100,18 +100,12 @@ bool GalaxyRamdiskPatcher::patchRamdisk()
     return false;
 }
 
-static QString whitespace(const QString &str) {
-    int index = 0;
+static std::string whitespace(const std::string &str) {
+    auto nonSpace = std::find_if(str.begin(), str.end(),
+                                 std::not1(std::ptr_fun<int, int>(isspace)));
+    int count = std::distance(str.begin(), nonSpace);
 
-    for (QChar c : str) {
-        if (c.isSpace()) {
-            index++;
-        } else {
-            break;
-        }
-    }
-
-    return str.left(index);
+    return str.substr(0, count);
 }
 
 /*!
@@ -132,34 +126,35 @@ static QString whitespace(const QString &str) {
  */
 bool GalaxyRamdiskPatcher::geModifyInitRc()
 {
-    Q_D(GalaxyRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(InitRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(InitRc);
+    auto contents = m_impl->cpio->contents(InitRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, InitRc);
         return false;
     }
 
-    QString previousLine;
+    std::string previousLine;
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        QString &line = iter.next();
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        if (line.contains(QRegularExpression(QStringLiteral("mount.*/system")))
-                && previousLine.contains(QRegularExpression(
-                        QStringLiteral("on\\s+charger")))) {
-            iter.remove();
-            iter.insert(QStringLiteral("    mount_all fstab.jgedlte"));
-            iter.insert(QStringLiteral("    ") % CoreRamdiskPatcher::ExecMount);
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(*it, boost::regex("mount.*/system"))
+                && boost::regex_search(
+                        previousLine, boost::regex("on\\s+charger"))) {
+            it = lines.erase(it);
+            it = lines.insert(it, "    mount_all fstab.jgedlte");
+            ++it;
+            it = lines.insert(it, "    " + CoreRamdiskPatcher::ExecMount);
         }
 
-        previousLine = line;
+        previousLine = *it;
     }
 
-    d->cpio->setContents(InitRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }
@@ -185,35 +180,37 @@ bool GalaxyRamdiskPatcher::geModifyInitRc()
  */
 bool GalaxyRamdiskPatcher::twModifyInitRc()
 {
-    Q_D(GalaxyRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(InitRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(InitRc);
+    auto contents = m_impl->cpio->contents(InitRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, InitRc);
         return false;
     }
 
     bool inMediaserver = false;
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        if (line.contains(QRegularExpression(
-                QStringLiteral("^.*setprop.*selinux.reload_policy.*$")))) {
-            line.insert(0, Comment);
-        } else if (line.contains(QStringLiteral("check_icd"))) {
-            line.insert(0, Comment);
-        } else if (d->version == KitKat
-                && line.startsWith(QStringLiteral("service"))) {
-            inMediaserver = line.contains(QStringLiteral(
-                    "/system/bin/mediaserver"));
-        } else if (inMediaserver && line.contains(QRegularExpression(
-                QStringLiteral("^\\s*user")))) {
-            line = whitespace(line) % QStringLiteral("user root");
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(*it, boost::regex(
+                "^.*setprop.*selinux.reload_policy.*$"))) {
+            it->insert(it->begin(), '#');
+        } else if (it->find("check_icd") != std::string::npos) {
+            it->insert(it->begin(), '#');
+        } else if (m_impl->version == KitKat
+                && boost::starts_with(*it, "service")) {
+            inMediaserver = it->find("/system/bin/mediaserver") != std::string::npos;
+        } else if (inMediaserver
+                && boost::regex_search(*it, boost::regex("^\\s*user"))) {
+            *it = whitespace(*it) + "user root";
         }
     }
 
-    d->cpio->setContents(InitRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }
@@ -247,33 +244,32 @@ bool GalaxyRamdiskPatcher::twModifyInitRc()
  */
 bool GalaxyRamdiskPatcher::twModifyInitTargetRc()
 {
-    Q_D(GalaxyRamdiskPatcher);
-
-    QByteArray contents = d->cpio->contents(InitTargetRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-        .arg(InitTargetRc);
+    auto contents = m_impl->cpio->contents(InitTargetRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, InitTargetRc);
         return false;
     }
 
     bool inQcam = false;
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        QString &line = iter.next();
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        if (d->version == KitKat && line.contains(QRegularExpression(
-                QStringLiteral("^on\\s+fs_selinux\\s*$")))) {
-            iter.insert(QStringLiteral("    mount_all fstab.qcom"));
-            iter.insert(QStringLiteral("    ") % CoreRamdiskPatcher::ExecMount);
-        } else if (line.contains(QRegularExpression(
-                QStringLiteral("^.*setprop.*selinux.reload_policy.*$")))) {
-            line.insert(0, Comment);
-        } else if (d->version == KitKat
-                && line.startsWith(QStringLiteral("service"))) {
-            inQcam = line.contains(QStringLiteral("qcamerasvr"));
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (m_impl->version == KitKat
+                && boost::regex_search(*it, boost::regex("^on\\s+fs_selinux\\s*$"))) {
+            ++it;
+            it = lines.insert(it, "    mount_all fstab.qcom");
+            ++it;
+            it = lines.insert(it, "    " + CoreRamdiskPatcher::ExecMount);
+        } else if (boost::regex_search(*it,
+                boost::regex("^.*setprop.*selinux.reload_policy.*$"))) {
+            it->insert(it->begin(), '#');
+        } else if (m_impl->version == KitKat
+                && boost::starts_with(*it, "service")) {
+            inQcam = it->find("qcamerasvr") != std::string::npos;
         }
 
         // This is not exactly safe, but it's the best we can do. TouchWiz is
@@ -283,16 +279,16 @@ bool GalaxyRamdiskPatcher::twModifyInitTargetRc()
         // process has multiple groups and root is not the primary group. Oh
         // well, I'm done debugging proprietary binaries.
 
-        else if (inQcam && line.contains(QRegularExpression(
-                QStringLiteral("^\\s*user")))) {
-            line = whitespace(line) % QStringLiteral("user root");
-        } else if (inQcam && line.contains(QRegularExpression(
-                QStringLiteral("^\\s*group")))) {
-            line = whitespace(line) % QStringLiteral("group root");
+        else if (inQcam && boost::regex_search(*it, boost::regex("^\\s*user"))) {
+            *it = whitespace(*it) + "user root";
+        } else if (inQcam && boost::regex_search(*it, boost::regex("^\\s*group"))) {
+            *it = whitespace(*it) + "group root";
         }
     }
 
-    d->cpio->setContents(InitTargetRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(InitTargetRc, std::move(contents));
 
     return true;
 }
@@ -309,28 +305,31 @@ bool GalaxyRamdiskPatcher::twModifyInitTargetRc()
  */
 bool GalaxyRamdiskPatcher::twModifyUeventdRc()
 {
-    Q_D(GalaxyRamdiskPatcher);
-
     // Only needs to be patched for Kit Kat
-    if (d->version != KitKat) {
+    if (m_impl->version != KitKat) {
         return true;
     }
 
-    QByteArray contents = d->cpio->contents(UeventdRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(UeventdRc);
+    auto contents = m_impl->cpio->contents(UeventdRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, UeventdRc);
         return false;
     }
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        if (line.contains(QStringLiteral("/dev/snd/*"))) {
-            line.replace(QStringLiteral("0660"), QStringLiteral("0666"));
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (it->find("/dev/snd/*") != std::string::npos) {
+            boost::replace_all(*it, "0660", "0666");
         }
     }
 
-    d->cpio->setContents(UeventdRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(UeventdRc, std::move(contents));
 
     return true;
 }
@@ -353,23 +352,23 @@ bool GalaxyRamdiskPatcher::twModifyUeventdRc()
  */
 bool GalaxyRamdiskPatcher::twModifyUeventdQcomRc()
 {
-    Q_D(GalaxyRamdiskPatcher);
-
     // Only needs to be patched for Kit Kat
-    if (d->version != KitKat) {
+    if (m_impl->version != KitKat) {
         return true;
     }
 
-    QByteArray contents = d->cpio->contents(UeventdQcomRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(UeventdQcomRc);
+    auto contents = m_impl->cpio->contents(UeventdQcomRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, UeventdQcomRc);
         return false;
     }
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
         // More funny business: even with mm-qcamera-daemon running as root,
         // the daemon and the default camera application are unable access the
         // camera hardware unless it's writable to everyone. Baffles me...
@@ -377,18 +376,20 @@ bool GalaxyRamdiskPatcher::twModifyUeventdQcomRc()
         // More, more funny business: chmod'ing the /dev/video* devices to
         // anything while mm-qcamera-daemon is running causes a kernel panic.
         // **Wonderful** /s
-        if (line.contains(QStringLiteral("/dev/video*"))
-                || line.contains(QStringLiteral("/dev/media*"))
-                || line.contains(QStringLiteral("/dev/v4l-subdev*"))
-                || line.contains(QStringLiteral("/dev/msm_camera/*"))
-                || line.contains(QStringLiteral("/dev/msm_vidc_enc"))) {
-            line.replace(QStringLiteral("0660"), QStringLiteral("0666"));
+        if (it->find("/dev/video*") != std::string::npos
+                || it->find("/dev/media*") != std::string::npos
+                || it->find("/dev/v4l-subdev*") != std::string::npos
+                || it->find("/dev/msm_camera/*") != std::string::npos
+                || it->find("/dev/msm_vidc_enc") != std::string::npos) {
+            boost::replace_all(*it, "0660", "0666");
         }
     }
 
-    lines << QStringLiteral("/dev/ion 0666 system system\n");
+    lines.push_back("/dev/ion 0666 system system\n");
 
-    d->cpio->setContents(UeventdQcomRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(UeventdQcomRc, std::move(contents));
 
     return true;
 }
@@ -405,30 +406,31 @@ bool GalaxyRamdiskPatcher::twModifyUeventdQcomRc()
  */
 bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
 {
-    Q_D(GalaxyRamdiskPatcher);
-
     // This file does not exist on Kit Kat ramdisks
-    if (d->version == KitKat) {
+    if (m_impl->version == KitKat) {
         return true;
     }
 
-    QByteArray contents = d->cpio->contents(Msm8960LpmRc);
-    if (contents.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(Msm8960LpmRc);
+    auto contents = m_impl->cpio->contents(Msm8960LpmRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, Msm8960LpmRc);
         return false;
     }
 
-    QStringList lines = QString::fromUtf8(contents).split(Newline);
-    for (QString &line : lines) {
-        if (line.contains(QRegularExpression(
-                QStringLiteral("^\\s+mount.*/cache.*$")))) {
-            line.insert(0, Comment);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(*it, boost::regex("^\\s+mount.*/cache.*$"))) {
+            it->insert(it->begin(), '#');
         }
     }
 
-    d->cpio->setContents(Msm8960LpmRc, lines.join(Newline).toUtf8());
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(Msm8960LpmRc, std::move(contents));
 
     return true;
 }

@@ -20,14 +20,11 @@
 #ifndef BACONRAMDISKPATCHER_H
 #define BACONRAMDISKPATCHER_H
 
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
-#include <QtCore/QObject>
-#include <QtCore/QSharedPointer>
+#include "cpiofile.h"
+#include "patcherinterface.h"
 
-
-class BaconRamdiskPatcherPrivate;
 
 class BaconRamdiskPatcher : public RamdiskPatcher
 {
@@ -37,18 +34,17 @@ public:
                                  CpioFile * const cpio);
     ~BaconRamdiskPatcher();
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 
 private:
-    const QScopedPointer<BaconRamdiskPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(BaconRamdiskPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // BACONRAMDISKPATCHER_H

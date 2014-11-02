@@ -20,34 +20,46 @@
 #ifndef PATCHERERROR_H
 #define PATCHERERROR_H
 
+#include <memory>
+
 #include "libdbp_global.h"
 
-#include <QtCore/QObject>
-#include <QtCore/QString>
 
-class LIBDBPSHARED_EXPORT PatcherError : public QObject
+class LIBDBPSHARED_EXPORT PatcherError
 {
-    Q_OBJECT
-
 public:
-    enum Error {
+    enum ErrorType {
+        GenericError,
+        PatcherCreationError,
+        IOError,
+        BootImageError,
+        CpioError,
+        ArchiveError,
+        XmlError,
+        SupportedFileError,
+        CancelledError,
+        PatchingError,
+    };
+
+    enum ErrorCode {
+        // Generic
         NoError,
-        CustomError,
+        //CustomError,
         UnknownError,
         ImplementationError,
 
-        // Patchers
+        // PatcherCreation
         PatcherCreateError,
         AutoPatcherCreateError,
         RamdiskPatcherCreateError,
 
-        // File access
+        // I/O
         FileOpenError,
-        FileMapError,
+        FileReadError,
         FileWriteError,
         DirectoryNotExistError,
 
-        // Boot Image
+        // Boot image
         BootImageSmallerThanHeaderError,
         BootImageNoAndroidHeaderError,
         BootImageNoRamdiskGzipHeaderError,
@@ -59,15 +71,15 @@ public:
         CpioFileAlreadyExistsError,
         CpioFileNotExistError,
 
-        // libarchive
-        LibArchiveReadOpenError,
-        LibArchiveReadDataError,
-        LibArchiveReadHeaderError,
-        LibArchiveWriteOpenError,
-        LibArchiveWriteDataError,
-        LibArchiveWriteHeaderError,
-        LibArchiveCloseError,
-        LibArchiveFreeError,
+        // Archive
+        ArchiveReadOpenError,
+        ArchiveReadDataError,
+        ArchiveReadHeaderError,
+        ArchiveWriteOpenError,
+        ArchiveWriteDataError,
+        ArchiveWriteHeaderError,
+        ArchiveCloseError,
+        ArchiveFreeError,
 
         // XML
         XmlParseFileError,
@@ -78,12 +90,43 @@ public:
 
         // Cancelled
         PatchingCancelled,
+
+        // Patching errors
+
+        // Primary upgrade patcher
+        SystemCacheFormatLinesNotFound,
     };
 
-    static QString errorString(Error error);
+    static PatcherError createGenericError(ErrorCode error);
+    static PatcherError createPatcherCreationError(ErrorCode error, std::string name);
+    static PatcherError createIOError(ErrorCode error, std::string filename);
+    static PatcherError createBootImageError(ErrorCode error);
+    static PatcherError createCpioError(ErrorCode error, std::string filename);
+    static PatcherError createArchiveError(ErrorCode error, std::string filename);
+    static PatcherError createXmlError(ErrorCode error, std::string filename);
+    static PatcherError createSupportedFileError(ErrorCode error, std::string name);
+    static PatcherError createCancelledError(ErrorCode error);
+    static PatcherError createPatchingError(ErrorCode error);
+
+    ErrorType errorType();
+    ErrorCode errorCode();
+
+    std::string patcherName();
+    std::string filename();
+
+    PatcherError();
+    PatcherError(const PatcherError &error);
+    PatcherError(PatcherError &&error);
+    ~PatcherError();
+    PatcherError & operator=(const PatcherError &other);
+    PatcherError & operator=(PatcherError &&other);
+
 
 private:
-    PatcherError();
+    PatcherError(ErrorType errorType, ErrorCode errorCode);
+
+    class Impl;
+    std::shared_ptr<Impl> m_impl;
 };
 
 #endif // PATCHERERROR_H

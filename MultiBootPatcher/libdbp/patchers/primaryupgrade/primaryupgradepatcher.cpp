@@ -17,161 +17,182 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "primaryupgradepatcher.h"
-#include "primaryupgradepatcher_p.h"
-
-#include <libdbp/patcherpaths.h>
-
-#include <QtCore/QDebug>
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QFileInfo>
-#include <QtCore/QRegularExpression>
-#include <QtCore/QStringBuilder>
+#include "patchers/primaryupgrade/primaryupgradepatcher.h"
 
 #include <archive.h>
 #include <archive_entry.h>
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/format.hpp>
+#include <boost/regex.hpp>
+
+#include "patcherpaths.h"
+#include "private/fileutils.h"
+#include "private/logging.h"
+
 
 #define RETURN_IF_CANCELLED \
-    if (d->cancelled) { \
+    if (cancelled) { \
         return false; \
     }
 
 #define RETURN_IF_CANCELLED_AND_FREE_READ(x) \
-    if (d->cancelled) { \
+    if (cancelled) { \
         archive_read_free(x); \
         return false; \
     }
 
 #define RETURN_IF_CANCELLED_AND_FREE_WRITE(x) \
-    if (d->cancelled) { \
+    if (cancelled) { \
         archive_write_free(x); \
         return false; \
     }
 
 #define RETURN_IF_CANCELLED_AND_FREE_READ_WRITE(x, y) \
-    if (d->cancelled) { \
+    if (cancelled) { \
         archive_read_free(x); \
         archive_write_free(y); \
         return false; \
     }
 
 #define RETURN_ERROR_IF_CANCELLED \
-    if (d->cancelled) { \
-        d->errorCode = PatcherError::PatchingCancelled; \
-        d->errorString = PatcherError::errorString(d->errorCode); \
+    if (m_impl->cancelled) { \
+        m_impl->error = PatcherError::createCancelledError( \
+                PatcherError::PatchingCancelled); \
         return false; \
     }
 
 
-const QString PrimaryUpgradePatcher::Id =
-        QStringLiteral("PrimaryUpgradePatcher");
-const QString PrimaryUpgradePatcher::Name =
-        tr("Primary Upgrade Patcher");
-
-const QString UpdaterScript =
-        QStringLiteral("META-INF/com/google/android/updater-script");
-// MSVC doens't allow split strings inside QStringLiteral ...
-const QString PrimaryUpgradePatcher::Format =
-        QStringLiteral("run_program(\"/sbin/busybox\", \"find\", \"%1\", \"-maxdepth\", \"1\", \"!\", \"-name\", \"multi-slot-*\", \"!\", \"-name\", \"dual\", \"-delete\");");
-const QString PrimaryUpgradePatcher::Mount =
-        QStringLiteral("run_program(\"/sbin/busybox\", \"mount\", \"%1\");");
-const QString PrimaryUpgradePatcher::Unmount =
-        QStringLiteral("run_program(\"/sbin/busybox\", \"umount\", \"%1\");");
-const QString PrimaryUpgradePatcher::TempDir =
-        QStringLiteral("/tmp/");
-const QString PrimaryUpgradePatcher::DualBootTool =
-        QStringLiteral("dualboot.sh");
-const QString PrimaryUpgradePatcher::SetFacl =
-        QStringLiteral("setfacl");
-const QString PrimaryUpgradePatcher::GetFacl =
-        QStringLiteral("getfacl");
-const QString PrimaryUpgradePatcher::SetFattr =
-        QStringLiteral("setfattr");
-const QString PrimaryUpgradePatcher::GetFattr =
-        QStringLiteral("getfattr");
-const QString PrimaryUpgradePatcher::PermTool =
-        QStringLiteral("backuppermtool.sh");
-const QString PrimaryUpgradePatcher::PermsBackup =
-        QStringLiteral("run_program(\"/tmp/%1\", \"backup\", \"%2\");");
-const QString PrimaryUpgradePatcher::PermsRestore =
-        QStringLiteral("run_program(\"/tmp/%1\", \"restore\", \"%2\");");
-const QString PrimaryUpgradePatcher::Extract =
-        QStringLiteral("package_extract_file(\"%1\", \"%2\");");
-//const QString PrimaryUpgradePatcher::MakeExecutable =
-//        QStringLiteral("set_perm(0, 0, 0777, \"%1\");");
-//const QString PrimaryUpgradePatcher::MakeExecutable =
-//        QStringLiteral("set_metadata(\"%1\", \"uid\", 0, \"gid\", 0, \"mode\", 0777);");
-const QString PrimaryUpgradePatcher::MakeExecutable =
-        QStringLiteral("run_program(\"/sbin/busybox\", \"chmod\", \"0777\", \"%1\");");
-const QString PrimaryUpgradePatcher::SetKernel =
-        QStringLiteral("run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");");
-
-static const QString System = QStringLiteral("/system");
-static const QString Cache = QStringLiteral("/cache");
-
-static const QString AndroidBins = QStringLiteral("android/%1");
-
-static const QChar Newline = QLatin1Char('\n');
-static const QChar Sep = QLatin1Char('/');
+// TODO TODO TODO
+#define tr(x) (x)
+// TODO TODO TODO
 
 
-PrimaryUpgradePatcher::PrimaryUpgradePatcher(const PatcherPaths * const pp,
-                                             QObject *parent) :
-    Patcher(parent), d_ptr(new PrimaryUpgradePatcherPrivate())
+class PrimaryUpgradePatcher::Impl
 {
-    Q_D(PrimaryUpgradePatcher);
+public:
+    Impl(PrimaryUpgradePatcher *parent) : m_parent(parent) {}
 
-    d->pp = pp;
+    const PatcherPaths *pp;
+    const FileInfo *info;
+
+    int progress;
+    bool cancelled;
+
+    std::vector<std::string> ignoreFiles;
+
+    PatcherError error;
+
+    bool patchZip(MaxProgressUpdatedCallback maxProgressCb,
+                  ProgressUpdatedCallback progressCb,
+                  DetailsUpdatedCallback detailsCb,
+                  void *userData);
+    bool patchUpdaterScript(std::vector<unsigned char> *contents);
+
+    std::vector<std::string>::iterator
+    insertFormatSystem(std::vector<std::string>::iterator position,
+                       std::vector<std::string> *lines, bool mount) const;
+
+    std::vector<std::string>::iterator
+    insertFormatCache(std::vector<std::string>::iterator position,
+                      std::vector<std::string> *lines, bool mount) const;
+
+private:
+    PrimaryUpgradePatcher *m_parent;
+};
+
+
+const std::string PrimaryUpgradePatcher::Id = "PrimaryUpgradePatcher";
+const std::string PrimaryUpgradePatcher::Name = tr("Primary Upgrade Patcher");
+
+const std::string UpdaterScript =
+        "META-INF/com/google/android/updater-script";
+const std::string Format =
+        "run_program(\"/sbin/busybox\", \"find\", \"%1%\", \"-maxdepth\", \"1\", \"!\", \"-name\", \"multi-slot-*\", \"!\", \"-name\", \"dual\", \"-delete\");";
+const std::string Mount =
+        "run_program(\"/sbin/busybox\", \"mount\", \"%1%\");";
+const std::string Unmount =
+        "run_program(\"/sbin/busybox\", \"umount\", \"%1%\");";
+const std::string TempDir = "/tmp/";
+const std::string DualBootTool = "dualboot.sh";
+const std::string SetFacl = "setfacl";
+const std::string GetFacl = "getfacl";
+const std::string SetFattr = "setfattr";
+const std::string GetFattr = "getfattr";
+const std::string PermTool = "backuppermtool.sh";
+const std::string PermsBackup = "run_program(\"/tmp/%1%\", \"backup\", \"%2%\");";
+const std::string PermsRestore = "run_program(\"/tmp/%1%\", \"restore\", \"%2%\");";
+const std::string Extract = "package_extract_file(\"%1%\", \"%2%\");";
+//const std::string MakeExecutable = "set_perm(0, 0, 0777, \"%1%\");";
+//const std::string MakeExecutable =
+//        "set_metadata(\"%1%\", \"uid\", 0, \"gid\", 0, \"mode\", 0777);";
+const std::string MakeExecutable =
+        "run_program(\"/sbin/busybox\", \"chmod\", \"0777\", \"%1%\");";
+const std::string SetKernel =
+        "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");";
+
+static const std::string System = "/system";
+static const std::string Cache = "/cache";
+
+static const std::string AndroidBins = "android/%1%";
+
+
+PrimaryUpgradePatcher::PrimaryUpgradePatcher(const PatcherPaths * const pp)
+    : Patcher(), m_impl(new Impl(this))
+{
+    m_impl->pp = pp;
+
+    m_impl->ignoreFiles.push_back(DualBootTool);
+    m_impl->ignoreFiles.push_back(PermTool);
+    m_impl->ignoreFiles.push_back(GetFacl);
+    m_impl->ignoreFiles.push_back(SetFacl);
+    m_impl->ignoreFiles.push_back(GetFattr);
+    m_impl->ignoreFiles.push_back(SetFattr);
 }
 
 PrimaryUpgradePatcher::~PrimaryUpgradePatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-QList<PartitionConfig *> PrimaryUpgradePatcher::partConfigs()
+std::vector<PartitionConfig *> PrimaryUpgradePatcher::partConfigs()
 {
     // Add primary upgrade partition configuration
     PartitionConfig *config = new PartitionConfig();
-    config->setId(QStringLiteral("primaryupgrade"));
-    config->setKernel(QStringLiteral("primary"));
+    config->setId("primaryupgrade");
+    config->setKernel("primary");
     config->setName(tr("Primary ROM Upgrade"));
     config->setDescription(
         tr("Upgrade primary ROM without wiping other ROMs"));
 
-    config->setTargetSystem(QStringLiteral("/system"));
-    config->setTargetCache(QStringLiteral("/cache"));
-    config->setTargetData(QStringLiteral("/data"));
+    config->setTargetSystem("/system");
+    config->setTargetCache("/cache");
+    config->setTargetData("/data");
 
     config->setTargetSystemPartition(PartitionConfig::System);
     config->setTargetCachePartition(PartitionConfig::Cache);
     config->setTargetDataPartition(PartitionConfig::Data);
 
-    return QList<PartitionConfig *>() << config;
+    std::vector<PartitionConfig *> configs;
+    configs.push_back(config);
+
+    return configs;
 }
 
-PatcherError::Error PrimaryUpgradePatcher::error() const
+PatcherError PrimaryUpgradePatcher::error() const
 {
-    Q_D(const PrimaryUpgradePatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString PrimaryUpgradePatcher::errorString() const
-{
-    Q_D(const PrimaryUpgradePatcher);
-
-    return d->errorString;
-}
-
-QString PrimaryUpgradePatcher::id() const
+std::string PrimaryUpgradePatcher::id() const
 {
     return Id;
 }
 
-QString PrimaryUpgradePatcher::name() const
+std::string PrimaryUpgradePatcher::name() const
 {
     return Name;
 }
@@ -181,86 +202,99 @@ bool PrimaryUpgradePatcher::usesPatchInfo() const
     return false;
 }
 
-QStringList PrimaryUpgradePatcher::supportedPartConfigIds() const
+std::vector<std::string> PrimaryUpgradePatcher::supportedPartConfigIds() const
 {
-    return QStringList() << QStringLiteral("primaryupgrade");
+    std::vector<std::string> configs;
+    configs.push_back("primaryupgrade");
+    return configs;
 }
 
 void PrimaryUpgradePatcher::setFileInfo(const FileInfo * const info)
 {
-    Q_D(PrimaryUpgradePatcher);
-
-    d->info = info;
+    m_impl->info = info;
 }
 
-QString PrimaryUpgradePatcher::newFilePath()
+std::string PrimaryUpgradePatcher::newFilePath()
 {
-    Q_D(PrimaryUpgradePatcher);
-
-    if (d->info == nullptr) {
-        qWarning() << "d->info is null!";
-        d->errorCode = PatcherError::ImplementationError;
-        d->errorString = PatcherError::errorString(d->errorCode);
-        return QString();
+    if (m_impl->info == nullptr) {
+        Log::log(Log::Warning, "d->info is null!");
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
+        return std::string();
     }
 
-    QFileInfo fi(d->info->filename());
-    return fi.dir().filePath(fi.completeBaseName()
-            % QLatin1String("_primaryupgrade.") % fi.suffix());
+    boost::filesystem::path path(m_impl->info->filename());
+    boost::filesystem::path fileName = path.stem();
+    fileName += "_primaryupgrade";
+    fileName += path.extension();
+
+    if (path.has_parent_path()) {
+        return (path.parent_path() / fileName).string();
+    } else {
+        return fileName.string();
+    }
 }
 
 void PrimaryUpgradePatcher::cancelPatching()
 {
-    Q_D(PrimaryUpgradePatcher);
-
-    d->cancelled = true;
+    m_impl->cancelled = true;
 }
 
-bool PrimaryUpgradePatcher::patchFile()
+bool PrimaryUpgradePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
+                                      ProgressUpdatedCallback progressCb,
+                                      DetailsUpdatedCallback detailsCb,
+                                      void *userData)
 {
-    Q_D(PrimaryUpgradePatcher);
+    m_impl->cancelled = false;
 
-    d->cancelled = false;
-
-    if (d->info == nullptr) {
-        qWarning() << "d->info is null!";
-        d->errorCode = PatcherError::ImplementationError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (m_impl->info == nullptr) {
+        Log::log(Log::Warning, "d->info is null!");
+        m_impl->error = PatcherError::createGenericError(
+                PatcherError::ImplementationError);
         return false;
     }
 
-    if (!d->info->filename().endsWith(
-            QStringLiteral(".zip"), Qt::CaseInsensitive)) {
-        d->errorCode = PatcherError::OnlyZipSupported;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
+        m_impl->error = PatcherError::createSupportedFileError(
+                PatcherError::OnlyZipSupported, Id);
         return false;
     }
 
-    bool ret = patchZip();
+    bool ret = m_impl->patchZip(maxProgressCb, progressCb, detailsCb, userData);
 
     RETURN_ERROR_IF_CANCELLED
 
     return ret;
 }
 
-bool PrimaryUpgradePatcher::patchZip()
+bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgressCb,
+                                           ProgressUpdatedCallback progressCb,
+                                           DetailsUpdatedCallback detailsCb,
+                                           void *userData)
 {
-    Q_D(PrimaryUpgradePatcher);
+    progress = 0;
 
-    d->progress = 0;
+    if (detailsCb != nullptr) {
+        detailsCb(tr("Counting number of files in zip file ..."), userData);
+    }
 
-    emit detailsUpdated(tr("Counting number of files in zip file ..."));
-
-    int count = scanNumberOfFiles();
-    if (count < 0) {
+    unsigned int count;
+    auto result = FileUtils::laCountFiles(info->filename(), &count,
+                                          ignoreFiles);
+    if (result.errorCode() != PatcherError::NoError) {
+        error = result;
         return false;
     }
 
     RETURN_IF_CANCELLED
 
     // 6 extra files
-    emit maxProgressUpdated(count + 6);
-    emit progressUpdated(d->progress);
+    if (maxProgressCb != nullptr) {
+        maxProgressCb(count + 6, userData);
+    }
+    if (progressCb != nullptr) {
+        progressCb(progress, userData);
+    }
 
     // Open the input and output zips with libarchive
     archive *aInput;
@@ -276,26 +310,25 @@ bool PrimaryUpgradePatcher::patchZip()
     archive_write_add_filter_none(aOutput);
 
     int ret = archive_read_open_filename(
-            aInput, d->info->filename().toUtf8().constData(), 10240);
+            aInput, info->filename().c_str(), 10240);
     if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aInput);
+        Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
         archive_read_free(aInput);
 
-        d->errorCode = PatcherError::LibArchiveReadOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(d->info->filename());
+        error = PatcherError::createArchiveError(
+                PatcherError::ArchiveReadOpenError, info->filename());
         return false;
     }
 
-    QString newPath = newFilePath();
-    ret = archive_write_open_filename(aOutput, newPath.toUtf8().constData());
+    const std::string newPath = m_parent->newFilePath();
+    ret = archive_write_open_filename(aOutput, newPath.c_str());
     if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aOutput);
+        Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
-        d->errorCode = PatcherError::LibArchiveWriteOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode).arg(newPath);
+        error = PatcherError::createArchiveError(
+                PatcherError::ArchiveWriteOpenError, newPath);
         return false;
     }
 
@@ -304,27 +337,30 @@ bool PrimaryUpgradePatcher::patchZip()
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
         RETURN_IF_CANCELLED_AND_FREE_READ_WRITE(aInput, aOutput)
 
-        const QString curFile =
-                QString::fromLocal8Bit(archive_entry_pathname(entry));
+        const std::string curFile = archive_entry_pathname(entry);
 
-        if (ignoreFile(curFile)) {
+        if (std::find(ignoreFiles.begin(), ignoreFiles.end(),
+                curFile) != ignoreFiles.end()) {
             archive_read_data_skip(aInput);
             continue;
         }
 
-        emit progressUpdated(++d->progress);
-        emit detailsUpdated(curFile);
+        if (progressCb != nullptr) {
+            progressCb(++progress, userData);
+        }
+        if (detailsCb != nullptr) {
+            detailsCb(curFile, userData);
+        }
 
         if (curFile == UpdaterScript) {
-            QByteArray contents;
-            if (!readToByteArray(aInput, &contents)) {
-                qWarning() << "libarchive:" << archive_error_string(aInput);
+            std::vector<unsigned char> contents;
+            if (!FileUtils::laReadToByteArray(aInput, entry, &contents)) {
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
                 archive_read_free(aInput);
                 archive_write_free(aOutput);
 
-                d->errorCode = PatcherError::LibArchiveReadDataError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveReadDataError, curFile);
                 return false;
             }
 
@@ -332,100 +368,156 @@ bool PrimaryUpgradePatcher::patchZip()
             archive_entry_set_size(entry, contents.size());
 
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                qWarning() << "libarchive:" << archive_error_string(aOutput);
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
+                archive_read_free(aInput);
+                archive_write_free(aOutput);
 
-                d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
-            archive_write_data(aOutput, contents.constData(), contents.size());
+            archive_write_data(aOutput, contents.data(), contents.size());
         } else {
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                qWarning() << "libarchive:" << archive_error_string(aOutput);
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
+                archive_read_free(aInput);
+                archive_write_free(aOutput);
 
-                d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
-            if (!copyData(aInput, aOutput)) {
-                qWarning() << "libarchive:" << archive_error_string(aInput);
+            if (!FileUtils::laCopyData(aInput, aOutput)) {
+                Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
+                archive_read_free(aInput);
+                archive_write_free(aOutput);
 
-                d->errorCode = PatcherError::LibArchiveReadDataError;
-                d->errorString = PatcherError::errorString(d->errorCode)
-                        .arg(curFile);
+                error = PatcherError::createArchiveError(
+                        PatcherError::ArchiveReadDataError, curFile);
                 return false;
             }
         }
     }
 
     // Add dualboot.sh
-    QFile dualbootsh(d->pp->scriptsDirectory() % Sep % DualBootTool);
-    if (!dualbootsh.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(dualbootsh.fileName());
+    const std::string filename = pp->scriptsDirectory() + "/" + DualBootTool;
+    std::vector<unsigned char> contents;
+    auto pe = FileUtils::readToMemory(filename, &contents);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
+
+        error = pe;
         return false;
     }
 
-    QByteArray contents = dualbootsh.readAll();
-    dualbootsh.close();
+    info->partConfig()->replaceShellLine(&contents);
 
-    d->info->partConfig()->replaceShellLine(&contents);
+    pe = FileUtils::laAddFile(aOutput, DualBootTool, contents);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
 
-    if (!addFile(aOutput, contents, DualBootTool)) {
+        error = pe;
         return false;
     }
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(DualBootTool);
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb(DualBootTool, userData);
+    }
 
-    if (!addFile(aOutput, d->pp->scriptsDirectory()
-            % Sep % PermTool, PermTool)) {
+    pe = FileUtils::laAddFile(aOutput, PermTool,
+                              pp->scriptsDirectory() + "/" + PermTool);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
+
+        error = pe;
         return false;
     }
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(PermTool);
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb(PermTool, userData);
+    }
 
-    if (!addFile(aOutput, d->pp->binariesDirectory()
-            % Sep % AndroidBins.arg(d->info->device()->architecture())
-            % Sep % SetFacl, SetFacl)) {
+    auto arch = (boost::format(AndroidBins)
+            % info->device()->architecture()).str();
+
+    pe = FileUtils::laAddFile(aOutput, SetFacl,
+            pp->binariesDirectory() + "/" + arch + "/" + SetFacl);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
+
+        error = pe;
         return false;
     }
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(SetFacl);
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb(SetFacl, userData);
+    }
 
-    if (!addFile(aOutput, d->pp->binariesDirectory()
-            % Sep % AndroidBins.arg(d->info->device()->architecture())
-            % Sep % GetFacl, GetFacl)) {
+    pe = FileUtils::laAddFile(aOutput, GetFacl,
+            pp->binariesDirectory() + "/" + arch + "/" + GetFacl);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
+
+        error = pe;
         return false;
     }
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(GetFacl);
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb(GetFacl, userData);
+    }
 
-    if (!addFile(aOutput, d->pp->binariesDirectory()
-            % Sep % AndroidBins.arg(d->info->device()->architecture())
-            % Sep % SetFattr, SetFattr)) {
+    pe = FileUtils::laAddFile(aOutput, SetFattr,
+            pp->binariesDirectory() + "/" + arch + "/" + SetFattr);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
+
+        error = pe;
         return false;
     }
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(SetFattr);
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb(SetFattr, userData);
+    }
 
-    if (!addFile(aOutput, d->pp->binariesDirectory()
-            % Sep % AndroidBins.arg(d->info->device()->architecture())
-            % Sep % GetFattr, GetFattr)) {
+    pe = FileUtils::laAddFile(aOutput, GetFattr,
+            pp->binariesDirectory() + "/" + arch + "/" + GetFattr);
+    if (pe.errorCode() != PatcherError::NoError) {
+        archive_read_free(aInput);
+        archive_write_free(aOutput);
+
+        error = pe;
         return false;
     }
 
-    emit progressUpdated(++d->progress);
-    emit detailsUpdated(GetFattr);
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb(GetFattr, userData);
+    }
 
     archive_read_free(aInput);
     archive_write_free(aOutput);
@@ -435,283 +527,131 @@ bool PrimaryUpgradePatcher::patchZip()
     return true;
 }
 
-bool PrimaryUpgradePatcher::patchUpdaterScript(QByteArray *contents)
+bool PrimaryUpgradePatcher::Impl::patchUpdaterScript(std::vector<unsigned char> *contents)
 {
-    Q_D(PrimaryUpgradePatcher);
+    std::string strContents(contents->begin(), contents->end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    QStringList lines = QString::fromUtf8(*contents).split(Newline);
+    auto it = lines.begin();
+    it = lines.insert(it, (boost::format(Extract) % PermTool % (TempDir + PermTool)).str()); ++it;
+    it = lines.insert(it, (boost::format(Extract) % DualBootTool % (TempDir + DualBootTool)).str()); ++it;
+    it = lines.insert(it, (boost::format(Extract) % SetFacl % (TempDir + SetFacl)).str()); ++it;
+    it = lines.insert(it, (boost::format(Extract) % GetFacl % (TempDir + GetFacl)).str()); ++it;
+    it = lines.insert(it, (boost::format(Extract) % SetFattr % (TempDir + SetFattr)).str()); ++it;
+    it = lines.insert(it, (boost::format(Extract) % GetFattr % (TempDir + GetFattr)).str()); ++it;
+    it = lines.insert(it, (boost::format(MakeExecutable) % (TempDir + PermTool)).str()); ++it;
+    it = lines.insert(it, (boost::format(MakeExecutable) % (TempDir + DualBootTool)).str()); ++it;
+    it = lines.insert(it, (boost::format(MakeExecutable) % (TempDir + SetFacl)).str()); ++it;
+    it = lines.insert(it, (boost::format(MakeExecutable) % (TempDir + GetFacl)).str()); ++it;
+    it = lines.insert(it, (boost::format(MakeExecutable) % (TempDir + SetFattr)).str()); ++it;
+    it = lines.insert(it, (boost::format(MakeExecutable) % (TempDir + GetFattr)).str()); ++it;
+    it = lines.insert(it, (boost::format(Mount) % System).str()); ++it;
+    it = lines.insert(it, (boost::format(PermsBackup) % PermTool % System).str()); ++it;
+    it = lines.insert(it, (boost::format(Unmount) % System).str()); ++it;
+    it = lines.insert(it, (boost::format(Mount) % Cache).str()); ++it;
+    it = lines.insert(it, (boost::format(PermsBackup) % PermTool % Cache).str()); ++it;
+    it = lines.insert(it, (boost::format(Unmount) % Cache).str()); ++it;
 
-    lines.insert(0, Extract.arg(PermTool, TempDir % PermTool));
-    lines.insert(1, Extract.arg(DualBootTool, TempDir % DualBootTool));
-    lines.insert(2, Extract.arg(SetFacl, TempDir % SetFacl));
-    lines.insert(3, Extract.arg(GetFacl, TempDir % GetFacl));
-    lines.insert(4, Extract.arg(SetFattr, TempDir % SetFattr));
-    lines.insert(5, Extract.arg(GetFattr, TempDir % GetFattr));
-    lines.insert(6, MakeExecutable.arg(TempDir % PermTool));
-    lines.insert(7, MakeExecutable.arg(TempDir % DualBootTool));
-    lines.insert(8, MakeExecutable.arg(TempDir % SetFacl));
-    lines.insert(9, MakeExecutable.arg(TempDir % GetFacl));
-    lines.insert(10, MakeExecutable.arg(TempDir % SetFattr));
-    lines.insert(11, MakeExecutable.arg(TempDir % GetFattr));
-    lines.insert(12, Mount.arg(System));
-    lines.insert(13, PermsBackup.arg(PermTool).arg(System));
-    lines.insert(14, Unmount.arg(System));
-    lines.insert(15, Mount.arg(Cache));
-    lines.insert(16, PermsBackup.arg(PermTool).arg(Cache));
-    lines.insert(17, Unmount.arg(Cache));
-
-    QString pSystem = d->info->device()->partition(QStringLiteral("system"));
-    QString pCache = d->info->device()->partition(QStringLiteral("cache"));
+    const std::string pSystem = info->device()->partition("system");
+    const std::string pCache = info->device()->partition("cache");
     bool replacedFormatSystem = false;
     bool replacedFormatCache = false;
 
-    for (int i = 0; i < lines.size(); i++) {
-        if (lines.at(i).contains(QRegularExpression(
-                QStringLiteral("^\\s*format\\s*\\(.*$")))) {
-            if (lines.at(i).contains(QStringLiteral("system"))
-                    || (!pSystem.isEmpty() && lines.at(i).contains(pSystem))) {
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(*it, boost::regex("^\\s*format\\s*\\(.*$"))) {
+            if (it->find("system") != std::string::npos
+                    || (!pSystem.empty() && it->find(pSystem) != std::string::npos)) {
                 replacedFormatSystem = true;
-                lines.removeAt(i);
-                i += insertFormatSystem(i, &lines, true);
-            } else if (lines.at(i).contains(QStringLiteral("cache"))
-                    || (!pCache.isEmpty() && lines.at(i).contains(pCache))) {
+                it = lines.erase(it);
+                it = insertFormatSystem(it, &lines, true);
+            } else if (it->find("cache") != std::string::npos
+                    || (!pCache.empty() && it->find(pCache) != std::string::npos)) {
                 replacedFormatCache = true;
-                lines.removeAt(i);
-                i += insertFormatCache(i, &lines, true);
+                it = lines.erase(it);
+                it = insertFormatCache(it, &lines, true);
             } else {
-                i++;
+                ++it;
             }
-        } else if (lines.at(i).contains(QRegularExpression(
-                QStringLiteral("delete_recursive\\s*\\([^\\)]*\"/system\"")))) {
+        } else if (boost::regex_search(*it, boost::regex(
+                "delete_recursive\\s*\\([^\\)]*\"/system\""))) {
             replacedFormatSystem = true;
-            lines.removeAt(i);
-            i += insertFormatSystem(i, &lines, false);
-        } else if (lines.at(i).contains(QRegularExpression(
-                QStringLiteral("delete_recursive\\s*\\([^\\)]*\"/cache\"")))) {
+            it = lines.erase(it);
+            it = insertFormatSystem(it, &lines, false);
+        } else if (boost::regex_search(*it, boost::regex(
+                "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
             replacedFormatCache = true;
-            lines.removeAt(i);
-            i += insertFormatCache(i, &lines, false);
+            it = lines.erase(it);
+            it = insertFormatCache(it, &lines, false);
         } else {
-            i++;
+            ++it;
         }
     }
 
     if (replacedFormatSystem && replacedFormatCache) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr("The patcher could not find any /system or /cache"
-                 "formatting lines in the updater-script file.\n\n"
-                 "If the file is a ROM, then something failed. If the"
-                 "file is not a ROM (eg. kernel or mod), it doesn't"
-                 "need to be patched.");
+        error = PatcherError::createPatchingError(
+                PatcherError::SystemCacheFormatLinesNotFound);
         return false;
     }
 
-    lines << Mount.arg(System);
-    lines << PermsRestore.arg(PermTool).arg(System);
-    lines << Unmount.arg(System);
-    lines << Mount.arg(Cache);
-    lines << PermsRestore.arg(PermTool).arg(Cache);
-    lines << Unmount.arg(Cache);
-    lines << SetKernel;
+    lines.push_back((boost::format(Mount) % System).str());
+    lines.push_back((boost::format(PermsRestore) % PermTool % System).str());
+    lines.push_back((boost::format(Unmount) % System).str());
+    lines.push_back((boost::format(Mount) % Cache).str());
+    lines.push_back((boost::format(PermsRestore) % PermTool % Cache).str());
+    lines.push_back((boost::format(Unmount) % Cache).str());
+    lines.push_back(SetKernel);
 
-    *contents = lines.join(Newline).toUtf8();
+    strContents = boost::join(lines, "\n");
+    contents->assign(strContents.begin(), strContents.end());
 
     return true;
 }
 
-int PrimaryUpgradePatcher::insertFormatSystem(int index,
-                                              QStringList *lines,
-                                              bool mount) const
+std::vector<std::string>::iterator
+PrimaryUpgradePatcher::Impl::insertFormatSystem(std::vector<std::string>::iterator position,
+                                                std::vector<std::string> *lines,
+                                                bool mount) const
 {
-    int i = 0;
+    if (mount) {
+        position = lines->insert(
+                position, (boost::format(Mount) % System).str());
+        ++position;
+    }
+
+    position = lines->insert(
+            position, (boost::format(Format) % System).str());
+    ++position;
 
     if (mount) {
-        lines->insert(index + i, Mount.arg(System));
-        i++;
+        position = lines->insert(
+                position, (boost::format(Unmount) % System).str());
+        ++position;
     }
 
-    lines->insert(index + i, Format.arg(System));
-    i++;
+    return position;
+}
+
+std::vector<std::string>::iterator
+PrimaryUpgradePatcher::Impl::insertFormatCache(std::vector<std::string>::iterator position,
+                                               std::vector<std::string> *lines,
+                                               bool mount) const
+{
+    if (mount) {
+        position = lines->insert(
+                position, (boost::format(Mount) % Cache).str());
+        ++position;
+    }
+
+    position = lines->insert(
+            position, (boost::format(Format) % Cache).str());
+    ++position;
 
     if (mount) {
-        lines->insert(index + i, Unmount.arg(System));
-        i++;
+        position = lines->insert(
+                position, (boost::format(Unmount) % Cache).str());
+        ++position;
     }
 
-    return i;
-}
-
-int PrimaryUpgradePatcher::insertFormatCache(int index,
-                                             QStringList *lines,
-                                             bool mount) const
-{
-    int i = 0;
-
-    if (mount) {
-        lines->insert(index + i, Mount.arg(Cache));
-        i++;
-    }
-
-    lines->insert(index + i, Format.arg(Cache));
-    i++;
-
-    if (mount) {
-        lines->insert(index + i, Unmount.arg(Cache));
-        i++;
-    }
-
-    return i;
-}
-
-bool PrimaryUpgradePatcher::addFile(archive * const a,
-                                    const QString &path,
-                                    const QString &name)
-{
-    Q_D(PrimaryUpgradePatcher);
-
-    QFile file(path);
-    if (!file.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(path);
-        return false;
-    }
-
-    QByteArray contents = file.readAll();
-
-    bool ret = addFile(a, contents, name);
-
-    file.close();
-    return ret;
-}
-
-bool PrimaryUpgradePatcher::addFile(archive * const a,
-                                    const QByteArray &contents,
-                                    const QString &name)
-{
-    Q_D(PrimaryUpgradePatcher);
-
-    archive_entry *entry = archive_entry_new();
-
-    archive_entry_set_uid(entry, 0);
-    archive_entry_set_gid(entry, 0);
-    archive_entry_set_nlink(entry, 1);
-    archive_entry_set_mtime(entry, 0, 0);
-    archive_entry_set_devmajor(entry, 0);
-    archive_entry_set_devminor(entry, 0);
-    archive_entry_set_rdevmajor(entry, 0);
-    archive_entry_set_rdevminor(entry, 0);
-
-    archive_entry_set_pathname(entry, name.toLocal8Bit().constData());
-    archive_entry_set_size(entry, contents.size());
-
-    archive_entry_set_filetype(entry, AE_IFREG);
-    archive_entry_set_perm(entry, 0644);
-
-    // Write header to new file
-    if (archive_write_header(a, entry) != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(a);
-
-        d->errorCode = PatcherError::LibArchiveWriteHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(name);
-        return false;
-    }
-
-    // Write contents
-    archive_write_data(a, contents.constData(), contents.size());
-
-    archive_entry_free(entry);
-
-    return true;
-}
-
-bool PrimaryUpgradePatcher::readToByteArray(archive *aInput,
-                                            QByteArray *output) const
-{
-    QByteArray data;
-
-    int r;
-    __LA_INT64_T offset;
-    const void *buff;
-    size_t bytes_read;
-
-    while ((r = archive_read_data_block(aInput, &buff,
-            &bytes_read, &offset)) == ARCHIVE_OK) {
-        data.append(reinterpret_cast<const char *>(buff), bytes_read);
-    }
-
-    if (r < ARCHIVE_WARN) {
-        return false;
-    }
-
-    *output = data;
-    return true;
-}
-
-bool PrimaryUpgradePatcher::copyData(archive *aInput, archive *aOutput) const
-{
-    int r;
-    __LA_INT64_T offset;
-    const void *buff;
-    size_t bytes_read;
-
-    while ((r = archive_read_data_block(aInput, &buff,
-            &bytes_read, &offset)) == ARCHIVE_OK) {
-        archive_write_data(aOutput, buff, bytes_read);
-    }
-
-    return r >= ARCHIVE_WARN;
-}
-
-int PrimaryUpgradePatcher::scanNumberOfFiles()
-{
-    Q_D(PrimaryUpgradePatcher);
-
-    archive *aInput = archive_read_new();
-    archive_read_support_filter_none(aInput);
-    archive_read_support_format_zip(aInput);
-
-    int ret = archive_read_open_filename(
-            aInput, d->info->filename().toUtf8().constData(), 10240);
-    if (ret != ARCHIVE_OK) {
-        qWarning() << "libarchive:" << archive_error_string(aInput);
-        archive_read_free(aInput);
-
-        d->errorCode = PatcherError::LibArchiveReadOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(d->info->filename());
-        return -1;
-    }
-
-    archive_entry *entry;
-
-    int count = 0;
-
-    while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
-        RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
-
-        const QString curFile =
-                QString::fromLocal8Bit(archive_entry_pathname(entry));
-        if (!ignoreFile(curFile)) {
-            count++;
-        }
-        archive_read_data_skip(aInput);
-    }
-
-    archive_read_free(aInput);
-
-    RETURN_IF_CANCELLED
-
-    return count;
-}
-
-bool PrimaryUpgradePatcher::ignoreFile(const QString& file) const
-{
-    return file == DualBootTool
-            || file == PermTool
-            || file == GetFacl
-            || file == SetFacl
-            || file == GetFattr
-            || file == SetFattr;
+    return position;
 }

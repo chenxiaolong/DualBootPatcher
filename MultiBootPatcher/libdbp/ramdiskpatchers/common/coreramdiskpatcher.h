@@ -20,11 +20,11 @@
 #ifndef CORERAMDISKPATCHER_H
 #define CORERAMDISKPATCHER_H
 
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
+#include "cpiofile.h"
+#include "patcherinterface.h"
 
-class CoreRamdiskPatcherPrivate;
 
 class CoreRamdiskPatcher : public RamdiskPatcher
 {
@@ -34,16 +34,15 @@ public:
                                 CpioFile * const cpio);
     ~CoreRamdiskPatcher();
 
-    static const QString FstabRegex;
-    static const QString ExecMount;
-    static const QString PropPartconfig;
-    static const QString PropVersion;
-    static const QString SyncdaemonService;
+    static const std::string FstabRegex;
+    static const std::string ExecMount;
+    static const std::string PropPartConfig;
+    static const std::string PropVersion;
+    static const std::string SyncdaemonService;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 
@@ -52,8 +51,8 @@ public:
     bool removeAndRelinkBusybox();
 
 private:
-    const QScopedPointer<CoreRamdiskPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(CoreRamdiskPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // CORERAMDISKPATCHER_H

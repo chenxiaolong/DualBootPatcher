@@ -18,127 +18,140 @@
  */
 
 #include "patchfilepatcher.h"
-#include "patchfilepatcher_p.h"
 
-#include <QtCore/QDebug>
-#include <QtCore/QProcess>
-#include <QtCore/QRegularExpression>
-#include <QtCore/QRegularExpressionMatch>
-#include <QtCore/QRegularExpressionMatchIterator>
-#include <QtCore/QStringBuilder>
-#include <QtCore/QTemporaryDir>
+#include <fstream>
+#include <unordered_map>
+
+//#include <boost/algorithm/string.hpp>
+//#include <boost/regex.hpp>
+
+
+class PatchFilePatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    PatchInfo::AutoPatcherArgs args;
+
+    std::vector<std::string> files;
+
+    PatcherError error;
+};
 
 
 #define PATCH_FAIL_MSG "Failed to run \"patch\" command"
 
-const QString PatchFilePatcher::Id = QStringLiteral("PatchFile");
+const std::string PatchFilePatcher::Id("PatchFile");
 
-static const QString ArgFile = QStringLiteral("file");
-static const QChar Newline = QLatin1Char('\n');
-static const QChar Sep = QLatin1Char('/');
+static const std::string ArgFile("file");
+
 
 PatchFilePatcher::PatchFilePatcher(const PatcherPaths * const pp,
                                    const FileInfo * const info,
-                                   const PatchInfo::AutoPatcherArgs &args,
-                                   QObject *parent)
-    : QObject(parent), d_ptr(new PatchFilePatcherPrivate())
+                                   const PatchInfo::AutoPatcherArgs &args)
+    : m_impl(new Impl())
 {
-    Q_D(PatchFilePatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->args = args;
+#if 0
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->args = args;
 
     // The arguments should have the patch to the file
-    if (!args.contains(ArgFile)) {
-        qWarning() << "Arguments does not contain the path to a patch file:" << args;
+    if (args.find(ArgFile) == args.end()) {
+        qWarning() << "Arguments does not contain the path to a patch file";
         return;
     }
 
-    QFile file(pp->patchesDirectory() % Sep % args[ArgFile]);
-    if (!file.open(QFile::ReadOnly)) {
-        qWarning() << "Failed to open" << file.fileName();
+    std::string fileName(pp->patchesDirectory() + "/" + args[ArgFile]);
+    std::ifstream file(fileName, std::ios::binary);
+
+    if (file.fail()) {
+        qWarning() << "Failed to open" << QString::fromStdString(fileName);
+        file.close();
         return;
     }
 
-    QByteArray patchContents = file.readAll();
+    file.seekg(0, std::ios::end);
+    auto size = file.tellg();
+    file.seekg(0, std::ios::beg);
 
-    // Assume the patch file is UTF-8 encoded
-    QString contents = QString::fromUtf8(patchContents);
+    std::vector<unsigned char> patchContents(size);
 
-    QRegularExpression reOrigFile(QStringLiteral(
-            "---\\s+(?<file>.+)(?:\n|\t)"));
-
-    QString curFile;
-    int begin = -1;
-
-    QRegularExpressionMatchIterator iter = reOrigFile.globalMatch(contents);
-    while (iter.hasNext()) {
-        QRegularExpressionMatch match = iter.next();
-        QString file = match.captured(QStringLiteral("file"));
-        if (file.startsWith(QLatin1Char('"')) && file.endsWith(QLatin1Char('"'))) {
-            file = file.mid(1, file.size() - 2);
-        }
-
-        if (begin != -1) {
-            skipNewlinesAndAdd(curFile, contents, begin,
-                               match.capturedStart() - 1);
-        }
-
-        // Skip files containing escaped characters
-        if (file.contains(QLatin1Char('\\'))) {
-            begin = -1;
-        } else {
-            curFile = file;
-            begin = match.capturedStart();
-        }
+    if (!file.read(reinterpret_cast<char *>(patchContents.data()), size)) {
+        qWarning() << "Failed to read" << QString::fromStdString(fileName);
+        file.close();
+        return;
     }
-
-    skipNewlinesAndAdd(curFile, contents, begin, contents.size() - 1);
 
     file.close();
+
+    // Assume the patch file is UTF-8 encoded
+    std::string contents(patchContents.begin(), patchContents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, contents, boost::is_any_of("\n"));
+
+    const boost::regex reOrigFile("---\\s+(?P<file>.+)(?:\n|\t)");
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        boost::smatch what;
+
+        if (boost::regex_search(*it, what, reOrigFile)) {
+            std::string file = what.str("file");
+            if (boost::starts_with(file, "\"") && boost::ends_with(file, "\"")) {
+                file.erase(file.begin());
+                file.erase(file.end() - 1);
+            }
+
+            // Skip files containing escaped characters
+            if (file.find("\\") != std::string::npos) {
+                continue;
+            }
+
+            // Strip leading slash (-p1)
+            auto it = file.find("/");
+            if (file.find("/") != std::string::npos) {
+                file.erase(file.begin(), it + 1);
+            }
+
+            m_impl->files.push_back(file);
+        }
+    }
+#else
+    (void) pp;
+    (void) info;
+    (void) args;
+#endif
 }
 
 PatchFilePatcher::~PatchFilePatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error PatchFilePatcher::error() const
+PatcherError PatchFilePatcher::error() const
 {
-    Q_D(const PatchFilePatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString PatchFilePatcher::errorString() const
-{
-    Q_D(const PatchFilePatcher);
-
-    return d->errorString;
-}
-
-QString PatchFilePatcher::id() const
+std::string PatchFilePatcher::id() const
 {
     return Id;
 }
 
-QStringList PatchFilePatcher::newFiles() const
+std::vector<std::string> PatchFilePatcher::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList PatchFilePatcher::existingFiles() const
+std::vector<std::string> PatchFilePatcher::existingFiles() const
 {
-    Q_D(const PatchFilePatcher);
-
-    return d->patches.keys();
+    return m_impl->files;
 }
 
-bool PatchFilePatcher::patchFile(const QString &file,
-                                 QByteArray * const contents,
-                                 const QStringList &bootImages)
+bool PatchFilePatcher::patchFile(const std::string &file,
+                                 std::vector<unsigned char> * const contents,
+                                 const std::vector<std::string> &bootImages)
 {
+#if 0
     Q_D(PatchFilePatcher);
     Q_UNUSED(bootImages);
 
@@ -221,30 +234,10 @@ bool PatchFilePatcher::patchFile(const QString &file,
     }
 
     return ret;
-}
-
-void PatchFilePatcher::skipNewlinesAndAdd(const QString &file,
-                                          const QString &contents,
-                                          int begin, int end)
-{
-    Q_D(PatchFilePatcher);
-
-    // Strip 1st component if possible
-    QString actualFile;
-    int slashPos = file.indexOf(Sep);
-    if (slashPos >= 0 && file.length() > slashPos) {
-        actualFile = file.mid(slashPos + 1);
-    } else {
-        actualFile = file;
-    }
-
-    // Skip two newlines (for '^---' and '^+++')
-    int newline1 = contents.indexOf(Newline, begin);
-    if (newline1 > 0 && (newline1 + 1) < contents.size()) {
-        int newline2 = contents.indexOf(Newline, newline1 + 1);
-        if (newline2 > 0 && (newline2 + 1) < contents.size()) {
-            d->patches[actualFile] =
-                    contents.mid(newline2 + 1, end - newline2).toUtf8();
-        }
-    }
+#else
+    (void) file;
+    (void) contents;
+    (void) bootImages;
+    return false;
+#endif
 }

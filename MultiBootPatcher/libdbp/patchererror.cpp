@@ -19,108 +19,234 @@
 
 #include "patchererror.h"
 
-PatcherError::PatcherError()
+#include <cassert>
+
+
+class PatcherError::Impl {
+public:
+    ErrorType errorType;
+    ErrorCode errorCode;
+
+    // Patcher creation error
+    std::string patcherName;
+
+    // IO error, cpio error
+    std::string filename;
+};
+
+
+PatcherError::PatcherError() : m_impl(new Impl())
+{
+    m_impl->errorType = ErrorType::GenericError;
+    m_impl->errorCode = ErrorCode::NoError;
+}
+
+PatcherError::PatcherError(const PatcherError &error) : m_impl(error.m_impl)
 {
 }
 
-QString PatcherError::errorString(Error error)
+PatcherError::PatcherError(PatcherError &&error) : m_impl(std::move(error.m_impl))
+{
+}
+
+PatcherError::PatcherError(ErrorType errorType, ErrorCode errorCode) : m_impl(new Impl())
+{
+    m_impl->errorType = errorType;
+    m_impl->errorCode = errorCode;
+}
+
+PatcherError::~PatcherError()
+{
+}
+
+PatcherError & PatcherError::operator=(const PatcherError &other)
+{
+    m_impl = other.m_impl;
+    return *this;
+}
+
+PatcherError & PatcherError::operator=(PatcherError &&other)
+{
+    m_impl = std::move(other.m_impl);
+    return *this;
+}
+
+PatcherError PatcherError::createGenericError(ErrorCode error)
 {
     switch (error) {
     case NoError:
-        return tr("No error has occurred");
-
-    case CustomError:
-        // String should be set by the code that produces the error
-        return QString();
-
+    //case CustomError:
     case UnknownError:
-        return tr("An unknown error has occurred");
-
     case ImplementationError:
-        return tr("The dualbootpatcher library wasn't called properly");
-
-    case PatcherCreateError:
-        return tr("Failed to create patcher: %1");
-
-    case AutoPatcherCreateError:
-        return tr("Failed to create autopatcher: %1");
-
-    case RamdiskPatcherCreateError:
-        return tr("Failed to create ramdisk patcher: %1");
-
-    case FileOpenError:
-        return tr("Failed to open file: %1");
-
-    case FileMapError:
-        return tr("Failed to map file to memory: %1");
-
-    case FileWriteError:
-        return tr("Failed to write to file: %1");
-
-    case DirectoryNotExistError:
-        return tr("Directory does not exist: %1");
-
-    case BootImageSmallerThanHeaderError:
-        return tr("The boot image file is smaller than the boot image header size");
-
-    case BootImageNoAndroidHeaderError:
-        return tr("Could not find the Android header in the boot image");
-
-    case BootImageNoRamdiskGzipHeaderError:
-        return tr("Could not find the ramdisk's gzip header");
-
-    case BootImageNoRamdiskSizeError:
-        return tr("Could not determine the ramdisk's size");
-
-    case BootImageNoKernelSizeError:
-        return tr("Could not determine the kernel's size");
-
-    case BootImageNoRamdiskAddressError:
-        return tr("Could not determine the ramdisk's memory address");
-
-    case CpioFileAlreadyExistsError:
-        return tr("File already exists in cpio archive: %1");
-
-    case CpioFileNotExistError:
-        return tr("File does not exist in cpio archive: %1");
-
-    case LibArchiveReadOpenError:
-        return tr("Failed to open archive for reading");
-
-    case LibArchiveReadDataError:
-        return tr("Failed to read archive data for file: %1");
-
-    case LibArchiveReadHeaderError:
-        return tr("Failed to read archive entry header");
-
-    case LibArchiveWriteOpenError:
-        return tr("Failed to open archive for writing");
-
-    case LibArchiveWriteDataError:
-        return tr("Failed to write archive data for file: %1");
-
-    case LibArchiveWriteHeaderError:
-        return tr("Failed to write archive header for file: %1");
-
-    case LibArchiveCloseError:
-        return tr("Failed to close archive");
-
-    case LibArchiveFreeError:
-        return tr("Failed to free archive header memory");
-
-    case XmlParseFileError:
-        return tr("Failed to parse XML file: %1");
-
-    case OnlyZipSupported:
-        return tr("Only ZIP files are supported by %1");
-
-    case OnlyBootImageSupported:
-        return tr("Only boot images are supported by %1");
-
-    case PatchingCancelled:
-        return tr("Patching was cancelled");
-
+        break;
     default:
-        return QString();
+        assert(false);
     }
+
+    PatcherError pe(ErrorType::GenericError, error);
+    return pe;
+}
+
+PatcherError PatcherError::createPatcherCreationError(ErrorCode error,
+                                                      std::string name)
+{
+    switch (error) {
+    case PatcherCreateError:
+    case AutoPatcherCreateError:
+    case RamdiskPatcherCreateError:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::PatcherCreationError, error);
+    pe.m_impl->patcherName = std::move(name);
+    return pe;
+}
+
+PatcherError PatcherError::createIOError(ErrorCode error, std::string filename)
+{
+    switch (error) {
+    case FileOpenError:
+    case FileReadError:
+    case FileWriteError:
+    case DirectoryNotExistError:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::IOError, error);
+    pe.m_impl->filename = std::move(filename);
+    return pe;
+}
+
+PatcherError PatcherError::createBootImageError(ErrorCode error)
+{
+    switch (error) {
+    case BootImageSmallerThanHeaderError:
+    case BootImageNoAndroidHeaderError:
+    case BootImageNoRamdiskGzipHeaderError:
+    case BootImageNoRamdiskSizeError:
+    case BootImageNoKernelSizeError:
+    case BootImageNoRamdiskAddressError:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::BootImageError, error);
+    return pe;
+}
+
+PatcherError PatcherError::createCpioError(ErrorCode error,
+                                           std::string filename)
+{
+    switch (error) {
+    case CpioFileAlreadyExistsError:
+    case CpioFileNotExistError:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::CpioError, error);
+    pe.m_impl->filename = std::move(filename);
+    return pe;
+}
+
+PatcherError PatcherError::createArchiveError(ErrorCode error,
+                                              std::string filename)
+{
+    switch (error) {
+    case ArchiveReadOpenError:
+    case ArchiveReadDataError:
+    case ArchiveReadHeaderError:
+    case ArchiveWriteOpenError:
+    case ArchiveWriteDataError:
+    case ArchiveWriteHeaderError:
+    case ArchiveCloseError:
+    case ArchiveFreeError:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::ArchiveError, error);
+    pe.m_impl->filename = std::move(filename);
+    return pe;
+}
+
+PatcherError PatcherError::createXmlError(ErrorCode error, std::string filename)
+{
+    switch (error) {
+    case XmlParseFileError:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::XmlError, error);
+    pe.m_impl->filename = std::move(filename);
+    return pe;
+}
+
+PatcherError PatcherError::createSupportedFileError(ErrorCode error,
+                                                    std::string name)
+{
+    switch (error) {
+    case OnlyZipSupported:
+    case OnlyBootImageSupported:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::SupportedFileError, error);
+    pe.m_impl->patcherName = std::move(name);
+    return pe;
+}
+
+PatcherError PatcherError::createCancelledError(ErrorCode error)
+{
+    switch (error) {
+    case PatchingCancelled:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::CancelledError, error);
+    return pe;
+}
+
+PatcherError PatcherError::createPatchingError(ErrorCode error)
+{
+    switch (error) {
+    case SystemCacheFormatLinesNotFound:
+        break;
+    default:
+        assert(false);
+    }
+
+    PatcherError pe(ErrorType::PatchingError, error);
+    return pe;
+}
+
+PatcherError::ErrorType PatcherError::errorType()
+{
+    return m_impl->errorType;
+}
+
+PatcherError::ErrorCode PatcherError::errorCode()
+{
+    return m_impl->errorCode;
+}
+
+std::string PatcherError::patcherName() {
+    return m_impl->patcherName;
+}
+
+std::string PatcherError::filename() {
+    return m_impl->filename;
 }

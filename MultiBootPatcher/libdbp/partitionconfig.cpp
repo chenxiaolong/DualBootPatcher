@@ -18,217 +18,200 @@
  */
 
 #include "partitionconfig.h"
-#include "partitionconfig_p.h"
 
-#include <QtCore/QStringList>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/format.hpp>
 
-const QString PartitionConfig::ReplaceLine =
-        QStringLiteral("# PATCHER REPLACE ME - DO NOT REMOVE");
+
+class PartitionConfig::Impl
+{
+public:
+    std::string name;
+    std::string description;
+    std::string kernel;
+    std::string id;
+
+    std::string targetSystem;
+    std::string targetCache;
+    std::string targetData;
+
+    std::string targetSystemPartition;
+    std::string targetCachePartition;
+    std::string targetDataPartition;
+};
+
+
+const std::string PartitionConfig::ReplaceLine
+        = "# PATCHER REPLACE ME - DO NOT REMOVE";
 
 // Device and mount point for the system, cache, and data filesystems
-const QString PartitionConfig::DevSystem =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/system::/raw-system");
-const QString PartitionConfig::DevCache =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/cache::/raw-cache");
-const QString PartitionConfig::DevData =
-        QStringLiteral("/dev/block/platform/msm_sdcc.1/by-name/userdata::/raw-data");
+const std::string PartitionConfig::DevSystem
+        = "/dev/block/platform/msm_sdcc.1/by-name/system::/raw-system";
+const std::string PartitionConfig::DevCache
+        = "/dev/block/platform/msm_sdcc.1/by-name/cache::/raw-cache";
+const std::string PartitionConfig::DevData
+        = "/dev/block/platform/msm_sdcc.1/by-name/userdata::/raw-data";
 
-const QString PartitionConfig::System = QStringLiteral("$DEV_SYSTEM");
-const QString PartitionConfig::Cache = QStringLiteral("$DEV_CACHE");
-const QString PartitionConfig::Data = QStringLiteral("$DEV_DATA");
+const std::string PartitionConfig::System = "$DEV_SYSTEM";
+const std::string PartitionConfig::Cache = "$DEV_CACHE";
+const std::string PartitionConfig::Data = "$DEV_DATA";
 
-PartitionConfig::PartitionConfig() : d_ptr(new PartitionConfigPrivate())
+PartitionConfig::PartitionConfig() : m_impl(new Impl())
 {
 }
 
 PartitionConfig::~PartitionConfig()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-QString PartitionConfig::name() const
+std::string PartitionConfig::name() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->name;
+    return m_impl->name;
 }
 
-void PartitionConfig::setName(const QString &name)
+void PartitionConfig::setName(std::string name)
 {
-    Q_D(PartitionConfig);
-
-    d->name = name;
+    m_impl->name = std::move(name);
 }
 
-QString PartitionConfig::description() const
+std::string PartitionConfig::description() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->description;
+    return m_impl->description;
 }
 
-void PartitionConfig::setDescription(const QString &description)
+void PartitionConfig::setDescription(std::string description)
 {
-    Q_D(PartitionConfig);
-
-    d->description = description;
+    m_impl->description = std::move(description);
 }
 
-QString PartitionConfig::kernel() const
+std::string PartitionConfig::kernel() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->kernel;
+    return m_impl->kernel;
 }
 
-void PartitionConfig::setKernel(const QString &kernel)
+void PartitionConfig::setKernel(std::string kernel)
 {
-    Q_D(PartitionConfig);
-
-    d->kernel = kernel;
+    m_impl->kernel = std::move(kernel);
 }
 
-QString PartitionConfig::id() const
+std::string PartitionConfig::id() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->id;
+    return m_impl->id;
 }
 
-void PartitionConfig::setId(const QString &id)
+void PartitionConfig::setId(std::string id)
 {
-    Q_D(PartitionConfig);
-
-    d->id = id;
+    m_impl->id = std::move(id);
 }
 
-QString PartitionConfig::targetSystem() const
+std::string PartitionConfig::targetSystem() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->targetSystem;
+    return m_impl->targetSystem;
 }
 
-void PartitionConfig::setTargetSystem(const QString &path)
+void PartitionConfig::setTargetSystem(std::string path)
 {
-    Q_D(PartitionConfig);
-
-    d->targetSystem = path;
+    m_impl->targetSystem = std::move(path);
 }
 
-QString PartitionConfig::targetCache() const
+std::string PartitionConfig::targetCache() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->targetCache;
+    return m_impl->targetCache;
 }
 
-void PartitionConfig::setTargetCache(const QString &path)
+void PartitionConfig::setTargetCache(std::string path)
 {
-    Q_D(PartitionConfig);
-
-    d->targetCache = path;
+    m_impl->targetCache = std::move(path);
 }
 
-QString PartitionConfig::targetData() const
+std::string PartitionConfig::targetData() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->targetData;
+    return m_impl->targetData;
 }
 
-void PartitionConfig::setTargetData(const QString &path)
+void PartitionConfig::setTargetData(std::string path)
 {
-    Q_D(PartitionConfig);
-
-    d->targetData = path;
+    m_impl->targetData = std::move(path);
 }
 
-QString PartitionConfig::targetSystemPartition() const
+std::string PartitionConfig::targetSystemPartition() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->targetSystemPartition;
+    return m_impl->targetSystemPartition;
 }
 
-void PartitionConfig::setTargetSystemPartition(const QString &partition)
+void PartitionConfig::setTargetSystemPartition(std::string partition)
 {
-    Q_D(PartitionConfig);
-
-    d->targetSystemPartition = partition;
+    m_impl->targetSystemPartition = std::move(partition);
 }
 
-QString PartitionConfig::targetCachePartition() const
+std::string PartitionConfig::targetCachePartition() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->targetCachePartition;
+    return m_impl->targetCachePartition;
 }
 
-void PartitionConfig::setTargetCachePartition(const QString &partition)
+void PartitionConfig::setTargetCachePartition(std::string partition)
 {
-    Q_D(PartitionConfig);
-
-    d->targetCachePartition = partition;
+    m_impl->targetCachePartition = std::move(partition);
 }
 
-QString PartitionConfig::targetDataPartition() const
+std::string PartitionConfig::targetDataPartition() const
 {
-    Q_D(const PartitionConfig);
-
-    return d->targetDataPartition;
+    return m_impl->targetDataPartition;
 }
 
-void PartitionConfig::setTargetDataPartition(const QString &partition)
+void PartitionConfig::setTargetDataPartition(std::string partition)
 {
-    Q_D(PartitionConfig);
-
-    d->targetDataPartition = partition;
+    m_impl->targetDataPartition = std::move(partition);
 }
 
-bool PartitionConfig::replaceShellLine(QByteArray *contents,
+bool PartitionConfig::replaceShellLine(std::vector<unsigned char> *contents,
                                        bool targetPathOnly) const
 {
-    Q_D(const PartitionConfig);
+    std::string strContents(contents->begin(), contents->end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    QStringList lines = QString::fromUtf8(*contents).split(QLatin1Char('\n'));
-
-    QMutableStringListIterator iter(lines);
-    while (iter.hasNext()) {
-        const QString &line = iter.next();
-
-        if (line.contains(ReplaceLine)) {
-            iter.remove();
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if ((*it).find(ReplaceLine) != std::string::npos) {
+            it = lines.erase(it);
 
             if (!targetPathOnly) {
-                iter.insert(QStringLiteral("KERNEL_NAME=\"%1\"")
-                        .arg(d->kernel));
+                it = lines.insert(it, (boost::format("KERNEL_NAME=\"%1%\"")
+                        % m_impl->kernel).str());
 
-                iter.insert(QStringLiteral("DEV_SYSTEM=\"%1\"")
-                        .arg(DevSystem));
-                iter.insert(QStringLiteral("DEV_CACHE=\"%1\"")
-                        .arg(DevCache));
-                iter.insert(QStringLiteral("DEV_DATA=\"%1\"")
-                        .arg(DevData));
+                it = lines.insert(++it,
+                        (boost::format("DEV_SYSTEM=\"%1%\"") % DevSystem).str());
+                it = lines.insert(++it,
+                        (boost::format("DEV_CACHE=\"%1%\"") % DevCache).str());
+                it = lines.insert(++it,
+                        (boost::format("DEV_DATA=\"%1%\"") % DevData).str());
 
-                iter.insert(QStringLiteral("TARGET_SYSTEM_PARTITION=\"%1\"")
-                        .arg(d->targetSystemPartition));
-                iter.insert(QStringLiteral("TARGET_CACHE_PARTITION=\"%1\"")
-                        .arg(d->targetCachePartition));
-                iter.insert(QStringLiteral("TARGET_DATA_PARTITION=\"%1\"")
-                        .arg(d->targetDataPartition));
+                it = lines.insert(++it,
+                        (boost::format("TARGET_SYSTEM_PARTITION=\"%1%\"")
+                        % m_impl->targetSystemPartition).str());
+                it = lines.insert(++it,
+                        (boost::format("TARGET_CACHE_PARTITION=\"%1%\"")
+                        % m_impl->targetCachePartition).str());
+                it = lines.insert(++it,
+                        (boost::format("TARGET_DATA_PARTITION=\"%1%\"")
+                        % m_impl->targetDataPartition).str());
+
+                ++it;
             }
 
-            iter.insert(QStringLiteral("TARGET_SYSTEM=\"%1\"")
-                    .arg(d->targetSystem));
-            iter.insert(QStringLiteral("TARGET_CACHE=\"%1\"")
-                    .arg(d->targetCache));
-            iter.insert(QStringLiteral("TARGET_DATA=\"%1\"")
-                    .arg(d->targetData));
+            it = lines.insert(it, (boost::format("TARGET_SYSTEM=\"%1%\"")
+                    % m_impl->targetSystem).str());
+            it = lines.insert(++it, (boost::format("TARGET_CACHE=\"%1%\"")
+                    % m_impl->targetCache).str());
+            it = lines.insert(++it, (boost::format("TARGET_DATA=\"%1%\"")
+                    % m_impl->targetData).str());
         }
     }
 
-    *contents = lines.join(QLatin1Char('\n')).toUtf8();
+    strContents = boost::join(lines, "\n");
+    contents->assign(strContents.begin(), strContents.end());
 
     return true;
 }

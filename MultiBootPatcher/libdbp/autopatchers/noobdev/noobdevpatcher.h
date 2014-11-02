@@ -20,10 +20,10 @@
 #ifndef NOOBDEVPATCHER_H
 #define NOOBDEVPATCHER_H
 
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
+#include "patcherinterface.h"
 
-class NoobdevBasePatcherPrivate;
 
 class NoobdevBasePatcher : public AutoPatcher
 {
@@ -32,21 +32,20 @@ public:
                                 const FileInfo * const info);
     virtual ~NoobdevBasePatcher();
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override = 0;
+    virtual std::string id() const override = 0;
 
-    virtual QStringList newFiles() const override = 0;
-    virtual QStringList existingFiles() const override = 0;
+    virtual std::vector<std::string> newFiles() const override = 0;
+    virtual std::vector<std::string> existingFiles() const override = 0;
 
-    virtual bool patchFile(const QString &file,
-                           QByteArray * const contents,
-                           const QStringList &bootImages) override = 0;
+    virtual bool patchFile(const std::string &file,
+                           std::vector<unsigned char> * const contents,
+                           const std::vector<std::string> &bootImages) override = 0;
 
 protected:
-    const QScopedPointer<NoobdevBasePatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(NoobdevBasePatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 
@@ -56,16 +55,16 @@ public:
     explicit NoobdevMultiBoot(const PatcherPaths * const pp,
                               const FileInfo * const info);
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
-    virtual QStringList newFiles() const override;
-    virtual QStringList existingFiles() const override;
+    virtual std::vector<std::string> newFiles() const override;
+    virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const QString &file,
-                           QByteArray * const contents,
-                           const QStringList &bootImages) override;
+    virtual bool patchFile(const std::string &file,
+                           std::vector<unsigned char> * const contents,
+                           const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -75,16 +74,16 @@ public:
     explicit NoobdevSystemProp(const PatcherPaths * const pp,
                                const FileInfo * const info);
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
-    virtual QStringList newFiles() const override;
-    virtual QStringList existingFiles() const override;
+    virtual std::vector<std::string> newFiles() const override;
+    virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const QString &file,
-                           QByteArray * const contents,
-                           const QStringList &bootImages) override;
+    virtual bool patchFile(const std::string &file,
+                           std::vector<unsigned char> * const contents,
+                           const std::vector<std::string> &bootImages) override;
 };
 
 #endif // NOOBDEVPATCHER_H

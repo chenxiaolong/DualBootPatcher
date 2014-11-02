@@ -17,56 +17,58 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "jfltepatcher.h"
-#include "jfltepatcher_p.h"
+#include "autopatchers/jflte/jfltepatcher.h"
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/regex.hpp>
 
 #include "autopatchers/standard/standardpatcher.h"
 
-#include <QtCore/QRegularExpression>
+
+class JflteBasePatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    std::string id;
+    const FileInfo *info;
+};
 
 
-static const QString AromaScript =
-        QStringLiteral("META-INF/com/google/android/aroma-config");
-static const QString BuildProp =
-        QStringLiteral("system/build.prop");
-static const QString QcomAudioScript =
-        QStringLiteral("system/etc/init.qcom.audio.sh");
+static const std::string AromaScript =
+        "META-INF/com/google/android/aroma-config";
+static const std::string BuildProp =
+        "system/build.prop";
+static const std::string QcomAudioScript =
+        "system/etc/init.qcom.audio.sh";
 
-static const QString System = QStringLiteral("/system");
-static const QString Cache = QStringLiteral("/cache");
-static const QString Data = QStringLiteral("/data");
+static const std::string System = "/system";
+static const std::string Cache = "/cache";
+static const std::string Data = "/data";
 
-static const QChar Newline = QLatin1Char('\n');
 
 JflteBasePatcher::JflteBasePatcher(const PatcherPaths * const pp,
                                    const FileInfo * const info)
-    : d_ptr(new JflteBasePatcherPrivate())
+    : m_impl(new Impl())
 {
-    Q_D(JflteBasePatcher);
-
-    d->pp = pp;
-    d->info = info;
+    m_impl->pp = pp;
+    m_impl->info = info;
 }
 
 JflteBasePatcher::~JflteBasePatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error JflteBasePatcher::error() const
+PatcherError JflteBasePatcher::error() const
 {
-    return PatcherError::NoError;
-}
-
-QString JflteBasePatcher::errorString() const
-{
-    return PatcherError::errorString(PatcherError::NoError);
+    return PatcherError();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteDalvikCachePatcher::Id
-        = QStringLiteral("DalvikCachePatcher");
+const std::string JflteDalvikCachePatcher::Id = "DalvikCachePatcher";
 
 JflteDalvikCachePatcher::JflteDalvikCachePatcher(const PatcherPaths* const pp,
                                                  const FileInfo* const info)
@@ -74,41 +76,43 @@ JflteDalvikCachePatcher::JflteDalvikCachePatcher(const PatcherPaths* const pp,
 {
 }
 
-QString JflteDalvikCachePatcher::id() const
+std::string JflteDalvikCachePatcher::id() const
 {
     return Id;
 }
 
-QStringList JflteDalvikCachePatcher::newFiles() const
+std::vector<std::string> JflteDalvikCachePatcher::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteDalvikCachePatcher::existingFiles() const
+std::vector<std::string> JflteDalvikCachePatcher::existingFiles() const
 {
-    return QStringList() << BuildProp;
+    std::vector<std::string> files;
+    files.push_back(BuildProp);
+    return files;
 }
 
-bool JflteDalvikCachePatcher::patchFile(const QString &file,
-                                        QByteArray * const contents,
-                                        const QStringList &bootImages)
+bool JflteDalvikCachePatcher::patchFile(const std::string &file,
+                                        std::vector<unsigned char> * const contents,
+                                        const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
+    (void) bootImages;
 
     if (file == BuildProp) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        QMutableStringListIterator iter(lines);
-        while (iter.hasNext()) {
-            QString &line = iter.next();
-
-            if (line.contains(QStringLiteral("dalvik.vm.dexopt-data-only"))) {
-                iter.remove();
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (it->find("dalvik.vm.dexopt-data-only") != std::string::npos) {
+                lines.erase(it);
                 break;
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -118,8 +122,7 @@ bool JflteDalvikCachePatcher::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteGoogleEditionPatcher::Id
-        = QStringLiteral("GoogleEditionPatcher");
+const std::string JflteGoogleEditionPatcher::Id = "GoogleEditionPatcher";
 
 JflteGoogleEditionPatcher::JflteGoogleEditionPatcher(const PatcherPaths* const pp,
                                                      const FileInfo* const info)
@@ -127,40 +130,42 @@ JflteGoogleEditionPatcher::JflteGoogleEditionPatcher(const PatcherPaths* const p
 {
 }
 
-QString JflteGoogleEditionPatcher::id() const
+std::string JflteGoogleEditionPatcher::id() const
 {
     return Id;
 }
 
-QStringList JflteGoogleEditionPatcher::newFiles() const
+std::vector<std::string> JflteGoogleEditionPatcher::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteGoogleEditionPatcher::existingFiles() const
+std::vector<std::string> JflteGoogleEditionPatcher::existingFiles() const
 {
-    return QStringList() << QcomAudioScript;
+    std::vector<std::string> files;
+    files.push_back(QcomAudioScript);
+    return files;
 }
 
-bool JflteGoogleEditionPatcher::patchFile(const QString &file,
-                                          QByteArray * const contents,
-                                          const QStringList &bootImages)
+bool JflteGoogleEditionPatcher::patchFile(const std::string &file,
+                                          std::vector<unsigned char> * const contents,
+                                          const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
+    (void) bootImages;
 
     if (file == QcomAudioScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        QMutableStringListIterator iter(lines);
-        while (iter.hasNext()) {
-            QString &line = iter.next();
-
-            if (line.contains(QStringLiteral("snd_soc_msm_2x_Fusion3_auxpcm"))) {
-                iter.remove();
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (it->find("snd_soc_msm_2x_Fusion3_auxpcm") != std::string::npos) {
+                it = lines.erase(it);
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -170,8 +175,7 @@ bool JflteGoogleEditionPatcher::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteSlimAromaBundledMount::Id
-        = QStringLiteral("SlimAromaBundledMount");
+const std::string JflteSlimAromaBundledMount::Id = "SlimAromaBundledMount";
 
 JflteSlimAromaBundledMount::JflteSlimAromaBundledMount(const PatcherPaths* const pp,
                                                        const FileInfo* const info)
@@ -179,49 +183,51 @@ JflteSlimAromaBundledMount::JflteSlimAromaBundledMount(const PatcherPaths* const
 {
 }
 
-QString JflteSlimAromaBundledMount::id() const
+std::string JflteSlimAromaBundledMount::id() const
 {
     return Id;
 }
 
-QStringList JflteSlimAromaBundledMount::newFiles() const
+std::vector<std::string> JflteSlimAromaBundledMount::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteSlimAromaBundledMount::existingFiles() const
+std::vector<std::string> JflteSlimAromaBundledMount::existingFiles() const
 {
-    return QStringList() << StandardPatcher::UpdaterScript;
+    std::vector<std::string> files;
+    files.push_back(StandardPatcher::UpdaterScript);
+    return files;
 }
 
-bool JflteSlimAromaBundledMount::patchFile(const QString &file,
-                                           QByteArray * const contents,
-                                           const QStringList &bootImages)
+bool JflteSlimAromaBundledMount::patchFile(const std::string &file,
+                                           std::vector<unsigned char> * const contents,
+                                           const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
+    (void) bootImages;
 
     if (file == StandardPatcher::UpdaterScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        for (int i = 0; i < lines.size();) {
-            if (lines[i].contains(QRegularExpression(
-                    QStringLiteral("/tmp/mount.*/system")))) {
-                lines.removeAt(i);
-                i += StandardPatcher::insertMountSystem(i, &lines);
-            } else if (lines[i].contains(QRegularExpression(
-                    QStringLiteral("/tmp/mount.*/cache")))) {
-                lines.removeAt(i);
-                i += StandardPatcher::insertMountCache(i, &lines);
-            } else if (lines[i].contains(QRegularExpression(
-                    QStringLiteral("/tmp/mount.*/data")))) {
-                lines.removeAt(i);
-                i += StandardPatcher::insertMountData(i, &lines);
+        for (auto it = lines.begin(); it != lines.end();) {
+            if (boost::regex_search(*it, boost::regex("/tmp/mount.*/system"))) {
+                it = lines.erase(it);
+                it = StandardPatcher::insertMountSystem(it, &lines);
+            } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/cache"))) {
+                it = lines.erase(it);
+                it = StandardPatcher::insertMountCache(it, &lines);
+            } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/data"))) {
+                it = lines.erase(it);
+                it = StandardPatcher::insertMountData(it, &lines);
             } else {
-                i++;
+                ++it;
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -231,8 +237,7 @@ bool JflteSlimAromaBundledMount::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteImperiumPatcher::Id
-        = QStringLiteral("ImperiumPatcher");
+const std::string JflteImperiumPatcher::Id = "ImperiumPatcher";
 
 JflteImperiumPatcher::JflteImperiumPatcher(const PatcherPaths* const pp,
                                            const FileInfo* const info)
@@ -240,49 +245,53 @@ JflteImperiumPatcher::JflteImperiumPatcher(const PatcherPaths* const pp,
 {
 }
 
-QString JflteImperiumPatcher::id() const
+std::string JflteImperiumPatcher::id() const
 {
     return Id;
 }
 
-QStringList JflteImperiumPatcher::newFiles() const
+std::vector<std::string> JflteImperiumPatcher::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteImperiumPatcher::existingFiles() const
+std::vector<std::string> JflteImperiumPatcher::existingFiles() const
 {
-    return QStringList() << StandardPatcher::UpdaterScript;
+    std::vector<std::string> files;
+    files.push_back(StandardPatcher::UpdaterScript);
+    return files;
 }
 
-bool JflteImperiumPatcher::patchFile(const QString &file,
-                                     QByteArray * const contents,
-                                     const QStringList &bootImages)
+bool JflteImperiumPatcher::patchFile(const std::string &file,
+                                     std::vector<unsigned char> * const contents,
+                                     const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
-
-    Q_D(JflteBasePatcher);
+    (void) bootImages;
 
     if (file == StandardPatcher::UpdaterScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
         StandardPatcher::insertDualBootSh(&lines, true);
-        StandardPatcher::replaceMountLines(&lines, d->info->device());
-        StandardPatcher::replaceUnmountLines(&lines, d->info->device());
-        StandardPatcher::replaceFormatLines(&lines, d->info->device());
-        StandardPatcher::insertUnmountEverything(lines.size(), &lines);
+        StandardPatcher::replaceMountLines(&lines, m_impl->info->device());
+        StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
+        StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
+        StandardPatcher::insertUnmountEverything(lines.end(), &lines);
 
         // Insert set kernel line
-        QString setKernelLine = QStringLiteral(
-                "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");");
-        for (int i = lines.size() - 1; i >= 0; i--) {
-            if (lines[i].contains(QStringLiteral("Umounting Partitions"))) {
-                lines.insert(i + 1, setKernelLine);
+        const std::string setKernelLine =
+                "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");";
+        for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
+            if (it->find("Umounting Partitions") != std::string::npos) {
+                auto fwdIt = (++it).base();
+                lines.insert(++fwdIt, setKernelLine);
                 break;
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -292,8 +301,7 @@ bool JflteImperiumPatcher::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteNegaliteNoWipeData::Id
-        = QStringLiteral("NegaliteNoWipeData");
+const std::string JflteNegaliteNoWipeData::Id = "NegaliteNoWipeData";
 
 JflteNegaliteNoWipeData::JflteNegaliteNoWipeData(const PatcherPaths* const pp,
                                                  const FileInfo* const info)
@@ -301,40 +309,45 @@ JflteNegaliteNoWipeData::JflteNegaliteNoWipeData(const PatcherPaths* const pp,
 {
 }
 
-QString JflteNegaliteNoWipeData::id() const
+std::string JflteNegaliteNoWipeData::id() const
 {
     return Id;
 }
 
-QStringList JflteNegaliteNoWipeData::newFiles() const
+std::vector<std::string> JflteNegaliteNoWipeData::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteNegaliteNoWipeData::existingFiles() const
+std::vector<std::string> JflteNegaliteNoWipeData::existingFiles() const
 {
-    return QStringList() << StandardPatcher::UpdaterScript;
+    std::vector<std::string> files;
+    files.push_back(StandardPatcher::UpdaterScript);
+    return files;
 }
 
-bool JflteNegaliteNoWipeData::patchFile(const QString &file,
-                                        QByteArray * const contents,
-                                        const QStringList &bootImages)
+bool JflteNegaliteNoWipeData::patchFile(const std::string &file,
+                                        std::vector<unsigned char> * const contents,
+                                        const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
+    (void) bootImages;
 
     if (file == StandardPatcher::UpdaterScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines[i].contains(QRegularExpression(
-                    QStringLiteral("run_program.*/tmp/wipedata.sh")))) {
-                lines.removeAt(i);
-                StandardPatcher::insertFormatData(i, &lines);
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (boost::regex_search(
+                    *it, boost::regex("run_program.*/tmp/wipedata.sh"))) {
+                it = lines.erase(it);
+                StandardPatcher::insertFormatData(it, &lines);
                 break;
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -344,8 +357,7 @@ bool JflteNegaliteNoWipeData::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteTriForceFixAroma::Id
-        = QStringLiteral("TriForceFixAroma");
+const std::string JflteTriForceFixAroma::Id = "TriForceFixAroma";
 
 JflteTriForceFixAroma::JflteTriForceFixAroma(const PatcherPaths* const pp,
                                              const FileInfo* const info)
@@ -353,46 +365,51 @@ JflteTriForceFixAroma::JflteTriForceFixAroma(const PatcherPaths* const pp,
 {
 }
 
-QString JflteTriForceFixAroma::id() const
+std::string JflteTriForceFixAroma::id() const
 {
     return Id;
 }
 
-QStringList JflteTriForceFixAroma::newFiles() const
+std::vector<std::string> JflteTriForceFixAroma::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteTriForceFixAroma::existingFiles() const
+std::vector<std::string> JflteTriForceFixAroma::existingFiles() const
 {
-    return QStringList() << AromaScript;
+    std::vector<std::string> files;
+    files.push_back(AromaScript);
+    return files;
 }
 
-bool JflteTriForceFixAroma::patchFile(const QString &file,
-                                      QByteArray * const contents,
-                                      const QStringList &bootImages)
+bool JflteTriForceFixAroma::patchFile(const std::string &file,
+                                      std::vector<unsigned char> * const contents,
+                                      const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
-    Q_D(JflteBasePatcher);
+    (void) bootImages;
 
     if (file == AromaScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines[i].contains(BuildProp)) {
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (it->find(BuildProp) != std::string::npos) {
                 // Remove 'raw-' since aroma mounts the partitions directly
-                QString targetDir = d->info->partConfig()->targetSystem()
-                        .replace(QStringLiteral("raw-"), QStringLiteral(""));
-                lines[i].replace(System, targetDir);
-            } else if (lines[i].contains(QRegularExpression(
-                    QStringLiteral("/sbin/mount.+/system")))) {
-                lines.insert(i + 1, lines[i].replace(System, Cache));
-                lines.insert(i + 2, lines[i].replace(System, Data));
-                i += 2;
+                std::string target = m_impl->info->partConfig()->targetSystem();
+                boost::replace_all(target, "raw-", "");
+                boost::replace_all(*it, System, target);
+            } else if (boost::regex_search(
+                    *it, boost::regex("/sbin/mount.+/system"))) {
+                it = lines.insert(it, boost::replace_all_copy(*it, System, Cache));
+                ++it;
+                it = lines.insert(it, boost::replace_all_copy(*it, System, Data));
+                ++it;
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -402,8 +419,7 @@ bool JflteTriForceFixAroma::patchFile(const QString &file,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString JflteTriForceFixUpdate::Id
-        = QStringLiteral("TriForceFixUpdate");
+const std::string JflteTriForceFixUpdate::Id = "TriForceFixUpdate";
 
 JflteTriForceFixUpdate::JflteTriForceFixUpdate(const PatcherPaths* const pp,
                                                const FileInfo* const info)
@@ -411,43 +427,47 @@ JflteTriForceFixUpdate::JflteTriForceFixUpdate(const PatcherPaths* const pp,
 {
 }
 
-QString JflteTriForceFixUpdate::id() const
+std::string JflteTriForceFixUpdate::id() const
 {
     return Id;
 }
 
-QStringList JflteTriForceFixUpdate::newFiles() const
+std::vector<std::string> JflteTriForceFixUpdate::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList JflteTriForceFixUpdate::existingFiles() const
+std::vector<std::string> JflteTriForceFixUpdate::existingFiles() const
 {
-    return QStringList() << StandardPatcher::UpdaterScript;
+    std::vector<std::string> files;
+    files.push_back(StandardPatcher::UpdaterScript);
+    return files;
 }
 
-bool JflteTriForceFixUpdate::patchFile(const QString &file,
-                                       QByteArray * const contents,
-                                       const QStringList &bootImages)
+bool JflteTriForceFixUpdate::patchFile(const std::string &file,
+                                       std::vector<unsigned char> * const contents,
+                                       const std::vector<std::string> &bootImages)
 {
-    Q_UNUSED(bootImages);
-    Q_D(JflteBasePatcher);
+    (void) bootImages;
 
     if (file == StandardPatcher::UpdaterScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines[i].contains(QRegularExpression(
-                    QStringLiteral("getprop.+/system/build.prop")))) {
-                i += StandardPatcher::insertMountSystem(i, &lines);
-                i += StandardPatcher::insertMountCache(i, &lines);
-                i += StandardPatcher::insertMountData(i, &lines);
-                lines[i] = lines[i].replace(
-                        System, d->info->partConfig()->targetSystem());
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            if (boost::regex_search(
+                    *it, boost::regex("getprop.+/system/build.prop"))) {
+                it = StandardPatcher::insertMountSystem(it, &lines);
+                it = StandardPatcher::insertMountCache(it, &lines);
+                it = StandardPatcher::insertMountData(it, &lines);
+                boost::replace_all(*it, System,
+                                   m_impl->info->partConfig()->targetSystem());
             }
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }

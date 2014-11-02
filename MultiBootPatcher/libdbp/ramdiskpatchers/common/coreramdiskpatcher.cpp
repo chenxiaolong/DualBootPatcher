@@ -18,65 +18,62 @@
  */
 
 #include "coreramdiskpatcher.h"
-#include "coreramdiskpatcher_p.h"
 
-#include <libdbp/patcherpaths.h>
+#include <boost/format.hpp>
+
+#include "patcherpaths.h"
 
 
-const QString CoreRamdiskPatcher::FstabRegex =
-        QStringLiteral("^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
-const QString CoreRamdiskPatcher::ExecMount =
-        QStringLiteral("exec /sbin/busybox-static sh /init.multiboot.mounting.sh");
-const QString CoreRamdiskPatcher::PropPartconfig =
-        QStringLiteral("ro.patcher.patched=%1\n");
-const QString CoreRamdiskPatcher::PropVersion =
-        QStringLiteral("ro.patcher.version=%1\n");
-const QString CoreRamdiskPatcher::SyncdaemonService =
-        QStringLiteral("\nservice syncdaemon /sbin/syncdaemon\n")
-        + QStringLiteral("    class main\n")
-        + QStringLiteral("    user root\n");
+class CoreRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
 
-static const QString DefaultProp =
-        QStringLiteral("default.prop");
-static const QString InitRc =
-        QStringLiteral("init.rc");
-static const QString Busybox =
-        QStringLiteral("sbin/busybox");
+    PatcherError error;
+};
+
+
+const std::string CoreRamdiskPatcher::FstabRegex
+        = "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
+const std::string CoreRamdiskPatcher::ExecMount
+        = "exec /sbin/busybox-static sh /init.multiboot.mounting.sh";
+const std::string CoreRamdiskPatcher::PropPartConfig
+        = "ro.patcher.patched=%1%\n";
+const std::string CoreRamdiskPatcher::PropVersion
+        = "ro.patcher.version=%1%\n";
+const std::string CoreRamdiskPatcher::SyncdaemonService
+        = "\nservice syncdaemon /sbin/syncdaemon\n"
+        "    class main\n"
+        "    user root\n";
+
+static const std::string DefaultProp = "default.prop";
+static const std::string InitRc = "init.rc";
+static const std::string Busybox = "sbin/busybox";
 
 CoreRamdiskPatcher::CoreRamdiskPatcher(const PatcherPaths * const pp,
                                        const FileInfo * const info,
                                        CpioFile * const cpio) :
-    d_ptr(new CoreRamdiskPatcherPrivate())
+    m_impl(new Impl())
 {
-    Q_D(CoreRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 CoreRamdiskPatcher::~CoreRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error CoreRamdiskPatcher::error() const
+PatcherError CoreRamdiskPatcher::error() const
 {
-    Q_D(const CoreRamdiskPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString CoreRamdiskPatcher::errorString() const
+std::string CoreRamdiskPatcher::id() const
 {
-    Q_D(const CoreRamdiskPatcher);
-
-    return d->errorString;
-}
-
-QString CoreRamdiskPatcher::id() const
-{
-    return QString();
+    return std::string();
 }
 
 bool CoreRamdiskPatcher::patchRamdisk()
@@ -95,58 +92,55 @@ bool CoreRamdiskPatcher::patchRamdisk()
 
 bool CoreRamdiskPatcher::modifyDefaultProp()
 {
-    Q_D(CoreRamdiskPatcher);
-
-    QByteArray defaultProp = d->cpio->contents(DefaultProp);
-    if (defaultProp.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(DefaultProp);
+    auto defaultProp = m_impl->cpio->contents(DefaultProp);
+    if (defaultProp.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, DefaultProp);
         return false;
     }
 
-    defaultProp.append('\n');
-    defaultProp.append(CoreRamdiskPatcher::PropPartconfig
-            .arg(d->info->partConfig()->id()).toUtf8());
-    defaultProp.append(CoreRamdiskPatcher::PropVersion
-            .arg(d->pp->version()).toUtf8());
+    defaultProp.insert(defaultProp.end(), '\n');
 
-    d->cpio->setContents(DefaultProp, defaultProp);
+    std::string propPartConfig = (boost::format(PropPartConfig)
+            % m_impl->info->partConfig()->id()).str();
+    defaultProp.insert(defaultProp.end(),
+                       propPartConfig.begin(), propPartConfig.end());
+
+    std::string propVersion = (boost::format(PropVersion)
+            % m_impl->pp->version()).str();
+    defaultProp.insert(defaultProp.end(),
+                       propVersion.begin(), propVersion.end());
+
+    m_impl->cpio->setContents(DefaultProp, std::move(defaultProp));
 
     return true;
 }
 
 bool CoreRamdiskPatcher::addSyncdaemon()
 {
-    Q_D(CoreRamdiskPatcher);
-
-    QByteArray initRc = d->cpio->contents(InitRc);
-    if (initRc.isNull()) {
-        d->errorCode = PatcherError::CpioFileNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(InitRc);
+    auto initRc = m_impl->cpio->contents(InitRc);
+    if (initRc.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                PatcherError::CpioFileNotExistError, InitRc);
         return false;
     }
 
-    initRc.append(SyncdaemonService.toUtf8());
+    initRc.insert(initRc.end(),
+                  SyncdaemonService.begin(), SyncdaemonService.end());
 
-    d->cpio->setContents(InitRc, initRc);
+    m_impl->cpio->setContents(InitRc, std::move(initRc));
 
     return true;
 }
 
 bool CoreRamdiskPatcher::removeAndRelinkBusybox()
 {
-    Q_D(CoreRamdiskPatcher);
-
-    if (d->cpio->exists(Busybox)) {
-        d->cpio->remove(Busybox);
-        bool ret = d->cpio->addSymlink(
-                QStringLiteral("busybox-static"), Busybox);
+    if (m_impl->cpio->exists(Busybox)) {
+        m_impl->cpio->remove(Busybox);
+        bool ret = m_impl->cpio->addSymlink("busybox-static", Busybox);
 
         if (!ret) {
-            d->errorCode = d->cpio->error();
-            d->errorString = d->cpio->errorString();
+            m_impl->error = m_impl->cpio->error();
         }
 
         return ret;

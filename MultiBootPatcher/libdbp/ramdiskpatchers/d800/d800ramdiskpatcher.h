@@ -20,13 +20,11 @@
 #ifndef D800RAMDISKPATCHER_H
 #define D800RAMDISKPATCHER_H
 
-#include <libdbp/cpiofile.h>
-#include <libdbp/patcherinterface.h>
+#include <memory>
 
-#include <QtCore/QObject>
+#include "cpiofile.h"
+#include "patcherinterface.h"
 
-
-class D800RamdiskPatcherPrivate;
 
 class D800RamdiskPatcher : public RamdiskPatcher
 {
@@ -36,18 +34,17 @@ public:
                                 CpioFile * const cpio);
     ~D800RamdiskPatcher();
 
-    static const QString Id;
+    static const std::string Id;
 
-    virtual PatcherError::Error error() const override;
-    virtual QString errorString() const override;
+    virtual PatcherError error() const override;
 
-    virtual QString id() const override;
+    virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
 
 private:
-    const QScopedPointer<D800RamdiskPatcherPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(D800RamdiskPatcher)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // D800RAMDISKPATCHER_H

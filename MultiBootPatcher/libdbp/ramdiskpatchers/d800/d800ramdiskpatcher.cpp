@@ -17,80 +17,71 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "d800ramdiskpatcher.h"
-#include "d800ramdiskpatcher_p.h"
+#include "ramdiskpatchers/d800/d800ramdiskpatcher.h"
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
-const QString D800RamdiskPatcher::Id =
-        QStringLiteral("d800/AOSP/AOSP");
+class D800RamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
+
+    PatcherError error;
+};
+
+
+const std::string D800RamdiskPatcher::Id = "d800/AOSP/AOSP";
 
 D800RamdiskPatcher::D800RamdiskPatcher(const PatcherPaths * const pp,
                                        const FileInfo * const info,
                                        CpioFile * const cpio) :
-    d_ptr(new D800RamdiskPatcherPrivate())
+    m_impl(new Impl())
 {
-    Q_D(D800RamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 D800RamdiskPatcher::~D800RamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error D800RamdiskPatcher::error() const
+PatcherError D800RamdiskPatcher::error() const
 {
-    Q_D(const D800RamdiskPatcher);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString D800RamdiskPatcher::errorString() const
-{
-    Q_D(const D800RamdiskPatcher);
-
-    return d->errorString;
-}
-
-QString D800RamdiskPatcher::id() const
+std::string D800RamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool D800RamdiskPatcher::patchRamdisk()
 {
-    Q_D(D800RamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyFstab()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyInitTargetRc(QStringLiteral("init.g2.rc"))) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+    if (!qcomPatcher.modifyInitTargetRc("init.g2.rc")) {
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 

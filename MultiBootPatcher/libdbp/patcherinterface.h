@@ -28,8 +28,6 @@
 #include "patcherpaths.h"
 #include "patchinfo.h"
 
-#include <QtCore/QStringList>
-
 
 /*!
     \class Patcher
@@ -39,44 +37,33 @@
     operations are performed here and the current patching progress is reported
     from this class as well.
  */
-class LIBDBPSHARED_EXPORT Patcher : public QObject
+class LIBDBPSHARED_EXPORT Patcher
 {
-    Q_OBJECT
-
 public:
-    explicit Patcher(QObject *parent = 0) : QObject(parent) {
-    }
+    typedef void (*MaxProgressUpdatedCallback) (int, void *);
+    typedef void (*ProgressUpdatedCallback) (int, void *);
+    typedef void (*DetailsUpdatedCallback) (const std::string &, void *);
 
     virtual ~Patcher() {}
 
     /*!
-        \brief The error code
+        \brief The error
 
-        Returns error code from PatcherError::Error. The value is invalid if
-        nothing has failed.
+        Returns a PatcherError. The value is invalid if nothing has failed.
 
-        \return PatcherError error code
+        \return PatcherError error
      */
-    virtual PatcherError::Error error() const = 0;
-
-    /*!
-        \brief The error message
-
-        Returns a translated string corresponding to the the error code.
-
-        \return Translated error message
-     */
-    virtual QString errorString() const = 0;
+    virtual PatcherError error() const = 0;
 
     /*!
         \brief The patcher's identifier
      */
-    virtual QString id() const = 0;
+    virtual std::string id() const = 0;
 
     /*!
         \brief The patcher's friendly name
      */
-    virtual QString name() const = 0;
+    virtual std::string name() const = 0;
 
     /*!
         \brief Whether or not the patcher uses patchinfo files
@@ -86,7 +73,7 @@ public:
     /*!
         \brief List of supported partition configuration IDs
      */
-    virtual QStringList supportedPartConfigIds() const = 0;
+    virtual std::vector<std::string> supportedPartConfigIds() const = 0;
 
     /*!
         \brief Sets the FileInfo object corresponding to the file to patch
@@ -96,20 +83,23 @@ public:
     /*!
         \brief The path of the newly patched file
      */
-    virtual QString newFilePath() = 0;
+    virtual std::string newFilePath() = 0;
 
     /*!
         \brief Start patching the file
 
         This method starts the patching operations for the current file. The
-        maxProgressUpdated() and progressUpdated() signals can be emitted to
-        indicate the overall progress of the patching operations and the
-        detailsUpdated() signal can be emitted to provide more details on the
-        current operation.
-     */
-    virtual bool patchFile() = 0;
+        callback parameters can be passed nullptr if they are not needed.
 
-public slots:
+        \param maxProgressCb Callback for receiving maximum progress value
+        \param progressCb Callback for receiving current progress value
+        \param detailsCb Callback for receiving detailed progress text
+     */
+    virtual bool patchFile(MaxProgressUpdatedCallback maxProgressCb,
+                           ProgressUpdatedCallback progressCb,
+                           DetailsUpdatedCallback detailsCb,
+                           void *userData) = 0;
+
     /*!
         \brief Cancel the patching of a file
 
@@ -117,11 +107,6 @@ public slots:
         useful if the patching operation is being done on a thread.
      */
     virtual void cancelPatching() = 0;
-
-signals:
-    void maxProgressUpdated(int max);
-    void progressUpdated(int max);
-    void detailsUpdated(const QString &details);
 };
 
 
@@ -141,28 +126,18 @@ public:
     virtual ~AutoPatcher() {}
 
     /*!
-        \brief The error code
+        \brief The error
 
-        Returns error code from PatcherError::Error. The value is invalid if
-        nothing has failed.
+        Returns a PatcherError. The value is invalid if nothing has failed.
 
-        \return PatcherError error code
+        \return PatcherError error
      */
-    virtual PatcherError::Error error() const = 0;
-
-    /*!
-        \brief The error message
-
-        Returns a translated string corresponding to the the error code.
-
-        \return Translated error message
-     */
-    virtual QString errorString() const = 0;
+    virtual PatcherError error() const = 0;
 
     /*!
         \brief The autopatcher's identifier
      */
-    virtual QString id() const = 0;
+    virtual std::string id() const = 0;
 
     /*!
         \brief List of new files added by the autopatcher
@@ -170,12 +145,12 @@ public:
         \warning Currently unimplemented. A valid list returned by a child class
                  will be ignored.
      */
-    virtual QStringList newFiles() const = 0;
+    virtual std::vector<std::string> newFiles() const = 0;
 
     /*!
         \brief List of existing files to be patched in the zip file
      */
-    virtual QStringList existingFiles() const = 0;
+    virtual std::vector<std::string> existingFiles() const = 0;
 
     /*!
         \brief Start patching the file
@@ -184,9 +159,9 @@ public:
         \param contents File contents of the file being patched
         \param bootImages List of boot image filenames in the zip file
      */
-    virtual bool patchFile(const QString &file,
-                           QByteArray * const contents,
-                           const QStringList &bootImages) = 0;
+    virtual bool patchFile(const std::string &file,
+                           std::vector<unsigned char> * const contents,
+                           const std::vector<std::string> &bootImages) = 0;
 };
 
 
@@ -206,28 +181,18 @@ public:
     virtual ~RamdiskPatcher() {}
 
     /*!
-        \brief The error code
+        \brief The error
 
-        Returns error code from PatcherError::Error. The value is invalid if
-        nothing has failed.
+        Returns a PatcherError. The value is invalid if nothing has failed.
 
-        \return PatcherError error code
+        \return PatcherError error
      */
-    virtual PatcherError::Error error() const = 0;
-
-    /*!
-        \brief The error message
-
-        Returns a translated string corresponding to the the error code.
-
-        \return Translated error message
-     */
-    virtual QString errorString() const = 0;
+    virtual PatcherError error() const = 0;
 
     /*!
         \brief The ramdisk patcher's identifier
      */
-    virtual QString id() const = 0;
+    virtual std::string id() const = 0;
 
     /*!
         \brief Start patching the ramdisk

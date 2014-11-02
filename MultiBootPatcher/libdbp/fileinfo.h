@@ -20,37 +20,34 @@
 #ifndef FILEINFO_H
 #define FILEINFO_H
 
+#include <memory>
+
 #include "libdbp_global.h"
 
 #include "device.h"
 #include "patchinfo.h"
 #include "partitionconfig.h"
 
-#include <QtCore/QObject>
-#include <QtCore/QScopedPointer>
 
-class FileInfoPrivate;
-
-class LIBDBPSHARED_EXPORT FileInfo : public QObject
+class LIBDBPSHARED_EXPORT FileInfo
 {
-    Q_OBJECT
 public:
-    explicit FileInfo(QObject *parent = 0);
+    explicit FileInfo();
     ~FileInfo();
 
-    void setFilename(const QString &path);
+    void setFilename(std::string path);
     void setPatchInfo(PatchInfo * const info);
     void setDevice(Device * const device);
     void setPartConfig(PartitionConfig * const config);
 
-    QString filename() const;
+    std::string filename() const;
     PatchInfo * patchInfo() const;
     Device * device() const;
     PartitionConfig * partConfig() const;
 
 private:
-    const QScopedPointer<FileInfoPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(FileInfo)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // FILEINFO_H

@@ -18,74 +18,63 @@
  */
 
 #include "fileinfo.h"
-#include "fileinfo_p.h"
 #include "patcherpaths.h"
 
-#include <QtCore/QFileInfo>
-#include <QtCore/QRegularExpression>
 
-FileInfo::FileInfo(QObject *parent) :
-    QObject(parent), d_ptr(new FileInfoPrivate())
+class FileInfo::Impl
+{
+public:
+    PatchInfo *patchinfo;
+    Device *device;
+    std::string filename;
+    PartitionConfig *partconfig;
+};
+
+
+FileInfo::FileInfo() : m_impl(new Impl())
 {
 }
 
 FileInfo::~FileInfo()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-void FileInfo::setFilename(const QString &path)
+void FileInfo::setFilename(std::string path)
 {
-    Q_D(FileInfo);
-
-    d->filename = path;
+    m_impl->filename = std::move(path);
 }
 
 void FileInfo::setPatchInfo(PatchInfo * const info)
 {
-    Q_D(FileInfo);
-
-    d->patchinfo = info;
+    m_impl->patchinfo = info;
 }
 
 void FileInfo::setDevice(Device * const device)
 {
-    Q_D(FileInfo);
-
-    d->device = device;
+    m_impl->device = device;
 }
 
 void FileInfo::setPartConfig(PartitionConfig * const config)
 {
-    Q_D(FileInfo);
-
-    d->partconfig = config;
+    m_impl->partconfig = config;
 }
 
-QString FileInfo::filename() const
+std::string FileInfo::filename() const
 {
-    Q_D(const FileInfo);
-
-    return d->filename;
+    return m_impl->filename;
 }
 
 PatchInfo * FileInfo::patchInfo() const
 {
-    Q_D(const FileInfo);
-
-    return d->patchinfo;
+    return m_impl->patchinfo;
 }
 
 Device * FileInfo::device() const
 {
-    Q_D(const FileInfo);
-
-    return d->device;
+    return m_impl->device;
 }
 
 PartitionConfig * FileInfo::partConfig() const
 {
-    Q_D(const FileInfo);
-
-    return d->partconfig;
+    return m_impl->partconfig;
 }

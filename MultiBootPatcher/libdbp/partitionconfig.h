@@ -20,80 +20,65 @@
 #ifndef PARTITIONCONFIG_H
 #define PARTITIONCONFIG_H
 
+#include <memory>
+#include <vector>
+
 #include "libdbp_global.h"
 
-#include <QtCore/QList>
-#include <QtCore/QObject>
-#include <QtCore/QScopedPointer>
-#include <QtCore/QString>
 
-class PartitionConfigPrivate;
-
-class LIBDBPSHARED_EXPORT PartitionConfig : public QObject
+class LIBDBPSHARED_EXPORT PartitionConfig
 {
-    Q_OBJECT
 public:
-    Q_PROPERTY(QString name READ name WRITE setName)
-    Q_PROPERTY(QString description READ description WRITE setDescription)
-    Q_PROPERTY(QString kernel READ kernel WRITE setKernel)
-    Q_PROPERTY(QString id READ id WRITE setId)
-    Q_PROPERTY(QString targetSystem READ targetSystem WRITE setTargetSystem)
-    Q_PROPERTY(QString targetCache READ targetCache WRITE setTargetCache)
-    Q_PROPERTY(QString targetData READ targetData WRITE setTargetData)
-    Q_PROPERTY(QString targetSystemPartition READ targetSystemPartition WRITE setTargetSystemPartition)
-    Q_PROPERTY(QString targetCachePartition READ targetCachePartition WRITE setTargetCachePartition)
-    Q_PROPERTY(QString targetDataPartition READ targetDataPartition WRITE setTargetDataPartition)
-
-    static const QString ReplaceLine;
+    static const std::string ReplaceLine;
 
     // Device and mount point for the system, cache, and data filesystems
-    static const QString DevSystem;
-    static const QString DevCache;
-    static const QString DevData;
+    static const std::string DevSystem;
+    static const std::string DevCache;
+    static const std::string DevData;
 
-    static const QString System;
-    static const QString Cache;
-    static const QString Data;
+    static const std::string System;
+    static const std::string Cache;
+    static const std::string Data;
 
     PartitionConfig();
     ~PartitionConfig();
 
-    QString name() const;
-    void setName(const QString &name);
+    std::string name() const;
+    void setName(std::string name);
 
-    QString description() const;
-    void setDescription(const QString &description);
+    std::string description() const;
+    void setDescription(std::string description);
 
-    QString kernel() const;
-    void setKernel(const QString &kernel);
+    std::string kernel() const;
+    void setKernel(std::string kernel);
 
-    QString id() const;
-    void setId(const QString &id);
+    std::string id() const;
+    void setId(std::string id);
 
-    QString targetSystem() const;
-    void setTargetSystem(const QString &path);
+    std::string targetSystem() const;
+    void setTargetSystem(std::string path);
 
-    QString targetCache() const;
-    void setTargetCache(const QString &path);
+    std::string targetCache() const;
+    void setTargetCache(std::string path);
 
-    QString targetData() const;
-    void setTargetData(const QString &path);
+    std::string targetData() const;
+    void setTargetData(std::string path);
 
-    QString targetSystemPartition() const;
-    void setTargetSystemPartition(const QString &partition);
+    std::string targetSystemPartition() const;
+    void setTargetSystemPartition(std::string partition);
 
-    QString targetCachePartition() const;
-    void setTargetCachePartition(const QString &partition);
+    std::string targetCachePartition() const;
+    void setTargetCachePartition(std::string partition);
 
-    QString targetDataPartition() const;
-    void setTargetDataPartition(const QString &partition);
+    std::string targetDataPartition() const;
+    void setTargetDataPartition(std::string partition);
 
-    bool replaceShellLine(QByteArray *contents,
+    bool replaceShellLine(std::vector<unsigned char> *contents,
                           bool targetPathOnly = false) const;
 
 private:
-    const QScopedPointer<PartitionConfigPrivate> d_ptr;
-    Q_DECLARE_PRIVATE(PartitionConfig)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // PARTITIONCONFIG_H

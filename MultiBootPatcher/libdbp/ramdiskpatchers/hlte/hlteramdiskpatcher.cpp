@@ -17,21 +17,23 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "hlteramdiskpatcher.h"
-#include "hlteramdiskpatcher_p.h"
+#include "ramdiskpatchers/hlte/hlteramdiskpatcher.h"
 
-#include <libdbp/patcherpaths.h>
-
+#include "patcherpaths.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
-#include <QtCore/QRegularExpression>
-#include <QtCore/QStringBuilder>
 
+class HlteBaseRamdiskPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
+    CpioFile *cpio;
 
-static const QChar Comment = QLatin1Char('#');
-static const QChar Newline = QLatin1Char('\n');
+    PatcherError error;
+};
 
 
 /*!
@@ -50,38 +52,25 @@ static const QChar Newline = QLatin1Char('\n');
 HlteBaseRamdiskPatcher::HlteBaseRamdiskPatcher(const PatcherPaths * const pp,
                                                const FileInfo * const info,
                                                CpioFile * const cpio)
-    : d_ptr(new HlteBaseRamdiskPatcherPrivate())
+    : m_impl(new Impl())
 {
-    Q_D(HlteBaseRamdiskPatcher);
-
-    d->pp = pp;
-    d->info = info;
-    d->cpio = cpio;
+    m_impl->pp = pp;
+    m_impl->info = info;
+    m_impl->cpio = cpio;
 }
 
 HlteBaseRamdiskPatcher::~HlteBaseRamdiskPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error HlteBaseRamdiskPatcher::error() const
+PatcherError HlteBaseRamdiskPatcher::error() const
 {
-    Q_D(const HlteBaseRamdiskPatcher);
-
-    return d->errorCode;
-}
-
-QString HlteBaseRamdiskPatcher::errorString() const
-{
-    Q_D(const HlteBaseRamdiskPatcher);
-
-    return d->errorString;
+    return m_impl->error;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString HlteAOSPRamdiskPatcher::Id
-        = QStringLiteral("hlte/AOSP/AOSP");
+const std::string HlteAOSPRamdiskPatcher::Id = "hlte/AOSP/AOSP";
 
 HlteAOSPRamdiskPatcher::HlteAOSPRamdiskPatcher(const PatcherPaths *const pp,
                                                const FileInfo *const info,
@@ -90,59 +79,51 @@ HlteAOSPRamdiskPatcher::HlteAOSPRamdiskPatcher(const PatcherPaths *const pp,
 {
 }
 
-QString HlteAOSPRamdiskPatcher::id() const
+std::string HlteAOSPRamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool HlteAOSPRamdiskPatcher::patchRamdisk()
 {
-    Q_D(HlteBaseRamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitQcomRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyFstab(true)) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitTargetRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    QString mountScript = d->pp->scriptsDirectory()
-            % QStringLiteral("/hlte/mount.modem.sh");
-    d->cpio->addFile(mountScript, QStringLiteral("init.additional.sh"), 0755);
+    std::string mountScript(m_impl->pp->scriptsDirectory()
+            + "/hlte/mount.modem.sh");
+    m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const QString HlteTouchWizRamdiskPatcher::Id
-        = QStringLiteral("hlte/TouchWiz/TouchWiz");
+const std::string HlteTouchWizRamdiskPatcher::Id = "hlte/TouchWiz/TouchWiz";
 
 HlteTouchWizRamdiskPatcher::HlteTouchWizRamdiskPatcher(const PatcherPaths *const pp,
                                                        const FileInfo *const info,
@@ -151,88 +132,75 @@ HlteTouchWizRamdiskPatcher::HlteTouchWizRamdiskPatcher(const PatcherPaths *const
 {
 }
 
-QString HlteTouchWizRamdiskPatcher::id() const
+std::string HlteTouchWizRamdiskPatcher::id() const
 {
     return Id;
 }
 
 bool HlteTouchWizRamdiskPatcher::patchRamdisk()
 {
-    Q_D(HlteBaseRamdiskPatcher);
-
-    CoreRamdiskPatcher corePatcher(d->pp, d->info, d->cpio);
-    QcomRamdiskPatcher qcomPatcher(d->pp, d->info, d->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(d->pp, d->info, d->cpio,
+    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pp, m_impl->info, m_impl->cpio,
                                        GalaxyRamdiskPatcher::KitKat);
 
     if (!corePatcher.patchRamdisk()) {
-        d->errorCode = corePatcher.error();
-        d->errorString = corePatcher.errorString();
+        m_impl->error = corePatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!galaxyPatcher.twModifyInitRc()) {
-        d->errorCode = galaxyPatcher.error();
-        d->errorString = galaxyPatcher.errorString();
+        m_impl->error = galaxyPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitQcomRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyFstab()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!qcomPatcher.modifyInitTargetRc()) {
-        d->errorCode = qcomPatcher.error();
-        d->errorString = qcomPatcher.errorString();
+        m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (!galaxyPatcher.twModifyInitTargetRc()) {
-        d->errorCode = galaxyPatcher.error();
-        d->errorString = galaxyPatcher.errorString();
+        m_impl->error = galaxyPatcher.error();
         return false;
     }
 
     if (!galaxyPatcher.twModifyUeventdRc()) {
-        d->errorCode = galaxyPatcher.error();
-        d->errorString = galaxyPatcher.errorString();
+        m_impl->error = galaxyPatcher.error();
         return false;
     }
 
     if (!galaxyPatcher.twModifyUeventdQcomRc()) {
-        d->errorCode = galaxyPatcher.error();
-        d->errorString = galaxyPatcher.errorString();
+        m_impl->error = galaxyPatcher.error();
         return false;
     }
 
-    QString mountScript = d->pp->scriptsDirectory()
-            % QStringLiteral("/hlte/mount.modem.sh");
-    d->cpio->addFile(mountScript, QStringLiteral("init.additional.sh"), 0755);
+    std::string mountScript(m_impl->pp->scriptsDirectory()
+            + "/hlte/mount.modem.sh");
+    m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
     // Samsung's init binary is pretty screwed up
-    d->cpio->remove(QStringLiteral("init"));
+    m_impl->cpio->remove("init");
 
-    QString newInit = d->pp->initsDirectory()
-            % QStringLiteral("/jflte/tw44-init");
-    d->cpio->addFile(newInit, QStringLiteral("init"), 0755);
+    std::string newInit(m_impl->pp->initsDirectory() + "/jflte/tw44-init");
+    m_impl->cpio->addFile(newInit, "init", 0755);
 
-    QString newAdbd = d->pp->initsDirectory()
-            % QStringLiteral("/jflte/tw44-adbd");
-    d->cpio->addFile(newAdbd, QStringLiteral("sbin/adbd"), 0755);
+    std::string newAdbd(m_impl->pp->initsDirectory() + "/jflte/tw44-adbd");
+    m_impl->cpio->addFile(newAdbd, "sbin/adbd", 0755);
 
     return true;
 }

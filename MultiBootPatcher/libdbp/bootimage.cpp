@@ -18,61 +18,153 @@
  */
 
 #include "bootimage.h"
-#include "bootimage_p.h"
-
-#include <QtCore/QByteArray>
-#include <QtCore/QCryptographicHash>
-#include <QtCore/QDebug>
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QStringBuilder>
-#include <QtCore/QTextStream>
 
 #include <cstring>
+#include <fstream>
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/format.hpp>
+#include <boost/uuid/sha1.hpp>
+
+#include "private/fileutils.h"
+#include "private/logging.h"
 
 
-BootImage::BootImage() : d_ptr(new BootImagePrivate())
+static const char *BOOT_MAGIC = "ANDROID!";
+static const int BOOT_MAGIC_SIZE = 8;
+static const int BOOT_NAME_SIZE = 16;
+static const int BOOT_ARGS_SIZE = 512;
+
+static const char *DEFAULT_BOARD = "";
+static const char *DEFAULT_CMDLINE = "";
+static const unsigned int DEFAULT_PAGE_SIZE = 2048u;
+static const unsigned int DEFAULT_BASE = 0x10000000u;
+static const unsigned int DEFAULT_KERNEL_OFFSET = 0x00008000u;
+static const unsigned int DEFAULT_RAMDISK_OFFSET = 0x01000000u;
+static const unsigned int DEFAULT_SECOND_OFFSET = 0x00f00000u;
+static const unsigned int DEFAULT_TAGS_OFFSET = 0x00000100u;
+
+struct BootImageHeader
+{
+    unsigned char magic[BOOT_MAGIC_SIZE];
+
+    unsigned kernel_size;   /* size in bytes */
+    unsigned kernel_addr;   /* physical load addr */
+
+    unsigned ramdisk_size;  /* size in bytes */
+    unsigned ramdisk_addr;  /* physical load addr */
+
+    unsigned second_size;   /* size in bytes */
+    unsigned second_addr;   /* physical load addr */
+
+    unsigned tags_addr;     /* physical addr for kernel tags */
+    unsigned page_size;     /* flash page size we assume */
+    unsigned dt_size;       /* device tree in bytes */
+    unsigned unused;        /* future expansion: should be 0 */
+    unsigned char name[BOOT_NAME_SIZE]; /* asciiz product name */
+
+    unsigned char cmdline[BOOT_ARGS_SIZE];
+
+    unsigned id[8]; /* timestamp / checksum / sha1 / etc */
+};
+
+
+static const char *LOKI_MAGIC = "LOKI";
+
+struct LokiHeader {
+    unsigned char magic[4]; /* 0x494b4f4c */
+    unsigned int recovery;  /* 0 = boot.img, 1 = recovery.img */
+    char build[128];        /* Build number */
+
+    unsigned int orig_kernel_size;
+    unsigned int orig_ramdisk_size;
+    unsigned int ramdisk_addr;
+};
+
+
+// From loki.h in the original source code:
+// https://raw.githubusercontent.com/djrbliss/loki/master/loki.h
+const char *SHELL_CODE =
+        "\xfe\xb5"
+        "\x0d\x4d"
+        "\xd5\xf8"
+        "\x88\x04"
+        "\xab\x68"
+        "\x98\x42"
+        "\x12\xd0"
+        "\xd5\xf8"
+        "\x90\x64"
+        "\x0a\x4c"
+        "\xd5\xf8"
+        "\x8c\x74"
+        "\x07\xf5\x80\x57"
+        "\x0f\xce"
+        "\x0f\xc4"
+        "\x10\x3f"
+        "\xfb\xdc"
+        "\xd5\xf8"
+        "\x88\x04"
+        "\x04\x49"
+        "\xd5\xf8"
+        "\x8c\x24"
+        "\xa8\x60"
+        "\x69\x61"
+        "\x2a\x61"
+        "\x00\x20"
+        "\xfe\xbd"
+        "\xff\xff\xff\xff"
+        "\xee\xee\xee\xee";
+
+
+class BootImage::Impl
+{
+public:
+    enum COMPRESSION_TYPES {
+        GZIP,
+        LZ4
+    };
+
+    // Android boot image header
+    BootImageHeader header;
+
+    // Various images stored in the boot image
+    std::vector<unsigned char> kernelImage;
+    std::vector<unsigned char> ramdiskImage;
+    std::vector<unsigned char> secondBootloaderImage;
+    std::vector<unsigned char> deviceTreeImage;
+
+    // Whether the ramdisk is LZ4 or gzip compressed
+    int ramdiskCompression = GZIP;
+
+    PatcherError error;
+};
+
+
+BootImage::BootImage() : m_impl(new Impl())
 {
 }
 
 BootImage::~BootImage()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error BootImage::error() const
+PatcherError BootImage::error() const
 {
-    Q_D(const BootImage);
-
-    return d->errorCode;
+    return m_impl->error;
 }
 
-QString BootImage::errorString() const
+bool BootImage::load(const std::vector<unsigned char> &data)
 {
-    Q_D(const BootImage);
-
-    return d->errorString;
-}
-
-bool BootImage::load(const char * const data, int size)
-{
-    Q_D(BootImage);
-
     // Check that the size of the boot image is okay
-    if (size < (qint64) (512 + sizeof(BootImageHeader))) {
-        d->errorCode = PatcherError::BootImageSmallerThanHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (data.size() < 512 + sizeof(BootImageHeader)) {
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageSmallerThanHeaderError);
         return false;
     }
 
-    const QByteArray expectedLoki =
-            QByteArray::fromRawData(LOKI_MAGIC, 4);
-    const QByteArray expectedAndroid =
-            QByteArray::fromRawData(BOOT_MAGIC, BOOT_MAGIC_SIZE);
-
     // Find the Loki magic string
-    QByteArray lokiMagic = QByteArray::fromRawData(data + 0x400, 4);
-    bool isLoki = lokiMagic == expectedLoki;
+    bool isLoki = std::memcmp(&data[0x400], LOKI_MAGIC, 4) == 0;
 
     // Find the Android magic string
     bool isAndroid = false;
@@ -85,10 +177,8 @@ bool BootImage::load(const char * const data, int size)
         searchRange = 512;
     }
 
-    for (int i = 0; i <= searchRange; i++) {
-        const QByteArray androidMagic = QByteArray::fromRawData(
-                data + i, BOOT_MAGIC_SIZE);
-        if (androidMagic == expectedAndroid) {
+    for (int i = 0; i <= searchRange; ++i) {
+        if (std::memcmp(&data[i], BOOT_MAGIC, BOOT_MAGIC_SIZE) == 0) {
             isAndroid = true;
             headerIndex = i;
             break;
@@ -96,103 +186,76 @@ bool BootImage::load(const char * const data, int size)
     }
 
     if (!isAndroid) {
-        d->errorCode = PatcherError::BootImageNoAndroidHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageNoAndroidHeaderError);
         return false;
     }
 
     bool ret;
 
     if (isLoki) {
-        ret = loadLokiHeader(data, size, headerIndex, isLoki);
+        ret = loadLokiHeader(data, headerIndex, isLoki);
     } else {
-        ret = loadAndroidHeader(data, size, headerIndex, isLoki);
+        ret = loadAndroidHeader(data, headerIndex, isLoki);
     }
 
     return ret;
 }
 
-bool BootImage::load(const QByteArray &data)
+bool BootImage::load(const std::string &filename)
 {
-    return load(data.constData(), data.size());
-}
-
-bool BootImage::load(const QString &filename)
-{
-    Q_D(BootImage);
-
-    QFile file(filename);
-    uchar *data = nullptr;
-
-    if (!file.open(QFile::ReadOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(file.fileName());
+    std::vector<unsigned char> data;
+    auto ret = FileUtils::readToMemory(filename, &data);
+    if (ret.errorCode() != PatcherError::NoError) {
+        m_impl->error = ret;
         return false;
     }
 
-    // Map the boot image
-    data = file.map(0, file.size());
-
-    if (!data) {
-        file.close();
-
-        d->errorCode = PatcherError::FileMapError;
-        d->errorString = PatcherError::errorString(d->errorCode)
-                .arg(file.fileName());
-        return false;
-    }
-
-    bool ret = load(reinterpret_cast<const char *>(data), file.size());
-
-    file.unmap(data);
-    file.close();
-
-    return ret;
+    return load(data);
 }
 
-bool BootImage::loadAndroidHeader(const char * const data,
-                                  int size,
+bool BootImage::loadAndroidHeader(const std::vector<unsigned char> &data,
                                   const int headerIndex,
                                   const bool isLoki)
 {
-    Q_D(BootImage);
-
     // Make sure the file is large enough to contain the header
-    if (size < (qint64) (headerIndex + sizeof(BootImageHeader))) {
-        d->errorCode = PatcherError::BootImageSmallerThanHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (data.size() < headerIndex + sizeof(BootImageHeader)) {
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageSmallerThanHeaderError);
         return false;
     }
 
     // Read the Android boot image header
-    const BootImageHeader *android =
-            reinterpret_cast<const BootImageHeader *>(data + headerIndex);
+    auto android = reinterpret_cast<const BootImageHeader *>(&data[headerIndex]);
 
-    qDebug() << "Found Android boot image header at" << headerIndex;
+    Log::log(Log::Debug, "Found Android boot image header at: %d", headerIndex);
 
     // Save the header struct
-    d->header = *android;
+    m_impl->header = *android;
 
     dumpHeader();
 
     // Don't try to read the various images inside the boot image if it's
     // Loki'd since some offsets and sizes need to be calculated
     if (!isLoki) {
-        uint pos = sizeof(BootImageHeader);
+        unsigned int pos = sizeof(BootImageHeader);
         pos += skipPadding(sizeof(BootImageHeader), android->page_size);
 
-        d->kernelImage = QByteArray(data + pos, android->kernel_size);
+        m_impl->kernelImage.assign(
+                data.begin() + pos,
+                data.begin() + pos + android->kernel_size);
 
         pos += android->kernel_size;
         pos += skipPadding(android->kernel_size, android->page_size);
 
-        d->ramdiskImage = QByteArray(data + pos, android->ramdisk_size);
+        m_impl->ramdiskImage.assign(
+                data.begin() + pos,
+                data.begin() + pos + android->ramdisk_size);
 
-        if (*(data + pos) == 0x02 && *(data + pos + 1) == 0x21) {
-            d->ramdiskCompression = BootImagePrivate::LZ4;
+        if (data[pos] == 0x02 && data[pos + 1] == 0x21) {
+            m_impl->ramdiskCompression = Impl::LZ4;
         } else {
-            d->ramdiskCompression = BootImagePrivate::GZIP;
+            m_impl->ramdiskCompression = Impl::GZIP;
         }
 
         pos += android->ramdisk_size;
@@ -200,10 +263,11 @@ bool BootImage::loadAndroidHeader(const char * const data,
 
         // The second bootloader may not exist
         if (android->second_size > 0) {
-            d->secondBootloaderImage = QByteArray(data + pos,
-                                                  android->second_size);
+            m_impl->secondBootloaderImage.assign(
+                    data.begin() + pos,
+                    data.begin() + pos + android->second_size);
         } else {
-            d->secondBootloaderImage.clear();
+            m_impl->secondBootloaderImage.clear();
         }
 
         pos += android->second_size;
@@ -211,121 +275,126 @@ bool BootImage::loadAndroidHeader(const char * const data,
 
         // The device tree image may not exist as well
         if (android->dt_size > 0) {
-            d->deviceTreeImage = QByteArray(data + pos, android->dt_size);
+            m_impl->deviceTreeImage.assign(
+                    data.begin() + pos,
+                    data.begin() + pos + android->dt_size);
         } else {
-            d->deviceTreeImage.clear();
+            m_impl->deviceTreeImage.clear();
         }
     }
 
     return true;
 }
 
-bool BootImage::loadLokiHeader(const char * const data,
-                               int size,
+bool BootImage::loadLokiHeader(const std::vector<unsigned char> &data,
                                const int headerIndex,
                                const bool isLoki)
 {
-    Q_D(BootImage);
-
     // Make sure the file is large enough to contain the Loki header
-    if (size < (qint64) (0x400 + sizeof(LokiHeader))) {
-        d->errorCode = PatcherError::BootImageSmallerThanHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (data.size() < 0x400 + sizeof(LokiHeader)) {
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageSmallerThanHeaderError);
         return false;
     }
 
-    if (!loadAndroidHeader(data, size, headerIndex, isLoki)) {
+    if (!loadAndroidHeader(data, headerIndex, isLoki)) {
         // Error code already set
         return false;
     }
 
     // The kernel tags address is invalid in the loki images
-    qDebug("Setting kernel tags address to default: 0x%08x",
-           d->header.tags_addr);
+    Log::log(Log::Debug, "Setting kernel tags address to default: 0x%08x",
+               m_impl->header.tags_addr);
     resetKernelTagsAddress();
 
-    const LokiHeader *loki = reinterpret_cast<const LokiHeader *>(data + 0x400);
+    const LokiHeader *loki = reinterpret_cast<const LokiHeader *>(&data[0x400]);
 
-    qDebug("Found Loki boot image header at 0x%x", 0x400);
-    qDebug("- magic:             %.*s", 4, loki->magic);
-    qDebug("- recovery:          %u", loki->recovery);
-    qDebug("- build:             %.*s", 128, loki->build);
-    qDebug("- orig_kernel_size:  %u", loki->orig_kernel_size);
-    qDebug("- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
-    qDebug("- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
+    Log::log(Log::Debug, "Found Loki boot image header at 0x%x", 0x400);
+    Log::log(Log::Debug, "- magic:             %s",
+             std::string(loki->magic, loki->magic + 4));
+    Log::log(Log::Debug, "- recovery:          %u", loki->recovery);
+    Log::log(Log::Debug, "- build:             %s",
+             std::string(loki->build, loki->build + 128));
+    Log::log(Log::Debug, "- orig_kernel_size:  %u", loki->orig_kernel_size);
+    Log::log(Log::Debug, "- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
+    Log::log(Log::Debug, "- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
 
-    int gzipOffset = lokiFindGzipOffset(data, size);
+    int gzipOffset = lokiFindGzipOffset(data);
     if (gzipOffset < 0) {
-        d->errorCode = PatcherError::BootImageNoRamdiskGzipHeaderError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageNoRamdiskGzipHeaderError);
         return false;
     }
 
-    int ramdiskSize = lokiFindRamdiskSize(data, size, loki, gzipOffset);
+    int ramdiskSize = lokiFindRamdiskSize(data, loki, gzipOffset);
     if (ramdiskSize < 0) {
-        d->errorCode = PatcherError::BootImageNoRamdiskSizeError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageNoRamdiskSizeError);
         return false;
     }
 
     int kernelSize = lokiFindKernelSize(data, loki);
     if (kernelSize < 0) {
-        d->errorCode = PatcherError::BootImageNoKernelSizeError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageNoKernelSizeError);
         return false;
     }
 
-    uint ramdiskAddr = lokiFindRamdiskAddress(data, size, loki);
+    unsigned int ramdiskAddr = lokiFindRamdiskAddress(data, loki);
     if (ramdiskAddr == 0) {
-        d->errorCode = PatcherError::BootImageNoRamdiskAddressError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createBootImageError(
+                PatcherError::BootImageNoRamdiskAddressError);
         return false;
     }
 
-    d->header.ramdisk_size = ramdiskSize;
-    d->header.kernel_size = kernelSize;
-    d->header.ramdisk_addr = ramdiskAddr;
+    m_impl->header.ramdisk_size = ramdiskSize;
+    m_impl->header.kernel_size = kernelSize;
+    m_impl->header.ramdisk_addr = ramdiskAddr;
 
-    d->kernelImage = QByteArray(data + d->header.page_size, kernelSize);
-    d->ramdiskImage = QByteArray(data + gzipOffset, ramdiskSize);
-    d->secondBootloaderImage.clear();
-    d->deviceTreeImage.clear();
+    m_impl->kernelImage.assign(
+            data.begin() + m_impl->header.page_size,
+            data.begin() + m_impl->header.page_size + kernelSize);
+    m_impl->ramdiskImage.assign(
+            data.begin() + gzipOffset,
+            data.begin() + gzipOffset + ramdiskSize);
+    m_impl->secondBootloaderImage.clear();
+    m_impl->deviceTreeImage.clear();
 
     return true;
 }
 
-int BootImage::lokiFindGzipOffset(const char * const data,
-                                  int size) const
+int BootImage::lokiFindGzipOffset(const std::vector<unsigned char> &data) const
 {
     // Find the location of the ramdisk inside the boot image
-    uint gzipOffset = 0x400 + sizeof(LokiHeader);
+    unsigned int gzipOffset = 0x400 + sizeof(LokiHeader);
 
-    // QByteArray::fromRawData does not copy the data
-    const QByteArray gzip1 = QByteArrayLiteral("\x1F\x8B\x08\x00");
-    const QByteArray gzip2 = QByteArrayLiteral("\x1F\x8B\x08\x08");
-    QByteArray dataArray = QByteArray::fromRawData(
-            data + gzipOffset,
-            size - gzipOffset);
+    const char *gzip1 = "\x1F\x8B\x08\x00";
+    const char *gzip2 = "\x1F\x8B\x08\x08";
 
-    QList<uint> offsets;
-    QList<bool> timestamps; // True if timestamp is not 0x00000000
+    std::vector<unsigned int> offsets;
+    std::vector<bool> timestamps; // True if timestamp is not 0x00000000
 
     // This is the offset on top of gzipOffset
-    int curOffset = -1;
-    QByteArray curTimestamp;
+    int curOffset = gzipOffset - 1;
 
     while (true) {
-        int newOffset = dataArray.indexOf(gzip1, curOffset + 1);
-        if (newOffset == -1) {
-            newOffset = dataArray.indexOf(gzip2, curOffset + 1);
+        // Try to find first gzip header
+        auto it = std::search(data.begin() + curOffset + 1, data.end(),
+                              gzip1, gzip1 + 4);
+
+        // Second gzip header
+        if (it == data.end()) {
+            it = std::search(data.begin() + curOffset + 1, data.end(),
+                             gzip2, gzip2 + 4);
         }
-        if (newOffset == -1) {
+
+        if (it == data.end()) {
             break;
         }
 
-        curOffset = newOffset;
+        curOffset = it - data.begin();
 
-        qDebug("Found a gzip header at 0x%x", gzipOffset + curOffset);
+        Log::log(Log::Debug, "Found a gzip header at 0x%x", curOffset);
 
         // Searching for 1F8B0800 wasn't enough for some boot images. Specifically,
         // ktoonsez's 20140319 kernels had another set of those four bytes before
@@ -333,22 +402,23 @@ int BootImage::lokiFindGzipOffset(const char * const data,
         // timestamp isn't zero (which is technically allowed, but the boot image
         // tools don't do that)
         // http://forum.xda-developers.com/showpost.php?p=51219628&postcount=3767
-        curTimestamp = dataArray.mid(curOffset, 4);
+        auto curTimestamp = &data[curOffset];
 
-        offsets.append(gzipOffset + curOffset);
-        timestamps.append(curTimestamp != QByteArrayLiteral("\x00\x00\x00\x00"));
+        offsets.push_back(curOffset);
+        timestamps.push_back(
+                std::memcmp(curTimestamp, "\x00\x00\x00\x00", 4) == 0);
     }
 
     if (offsets.empty()) {
-        qWarning() << "Could not find the ramdisk's gzip header";
+        Log::log(Log::Warning, "Could not find the ramdisk's gzip header");
         return -1;
     }
 
-    qDebug("Found %d gzip headers", offsets.size());
+    Log::log(Log::Debug, "Found %lu gzip headers", offsets.size());
 
     // Try gzip offset that is immediately followed by non-null timestamp first
     gzipOffset = 0;
-    for (int i = 0; i < offsets.size(); i++) {
+    for (unsigned int i = 0; i < offsets.size(); ++i) {
         if (timestamps[i]) {
             gzipOffset = offsets[i];
         }
@@ -362,13 +432,10 @@ int BootImage::lokiFindGzipOffset(const char * const data,
     return gzipOffset;
 }
 
-int BootImage::lokiFindRamdiskSize(const char * const data,
-                                   int size,
+int BootImage::lokiFindRamdiskSize(const std::vector<unsigned char> &data,
                                    const LokiHeader *loki,
                                    const int &ramdiskOffset) const
 {
-    Q_D(const BootImage);
-
     int ramdiskSize = -1;
 
     // If the boot image was patched with an old version of loki, the ramdisk
@@ -376,45 +443,43 @@ int BootImage::lokiFindRamdiskSize(const char * const data,
     if (loki->orig_ramdisk_size == 0) {
         // The ramdisk is supposed to be from the gzip header to EOF, but loki needs
         // to store a copy of aboot, so it is put in the last 0x200 bytes of the file.
-        ramdiskSize = size - ramdiskOffset - 0x200;
+        ramdiskSize = data.size() - ramdiskOffset - 0x200;
         // For LG kernels:
-        // ramdiskSize = size - ramdiskOffset - d->header->page_size;
+        // ramdiskSize = data.size() - ramdiskOffset - d->header->page_size;
 
         // The gzip file is zero padded, so we'll search backwards until we find a
         // non-zero byte
-        unsigned int begin = size - 0x200;
+        unsigned int begin = data.size() - 0x200;
         int found = -1;
 
-        if (begin < d->header.page_size) {
+        if (begin < m_impl->header.page_size) {
             return -1;
         }
 
-        for (unsigned int i = begin; i > begin - d->header.page_size; i--) {
-            if (*(data + i) != 0) {
+        for (unsigned int i = begin; i > begin - m_impl->header.page_size; i--) {
+            if (data[i] != 0) {
                 found = i;
                 break;
             }
         }
 
         if (found == -1) {
-            qDebug("Ramdisk size: %d (may include some padding)", ramdiskSize);
+            Log::log(Log::Debug, "Ramdisk size: %d (may include some padding)", ramdiskSize);
         } else {
             ramdiskSize = found - ramdiskOffset;
-            qDebug("Ramdisk size: %d (with padding removed)", ramdiskSize);
+            Log::log(Log::Debug, "Ramdisk size: %d (with padding removed)", ramdiskSize);
         }
     } else {
         ramdiskSize = loki->orig_ramdisk_size;
-        qDebug("Ramdisk size: %d", ramdiskSize);
+        Log::log(Log::Debug, "Ramdisk size: %d", ramdiskSize);
     }
 
     return ramdiskSize;
 }
 
-int BootImage::lokiFindKernelSize(const char * const data,
+int BootImage::lokiFindKernelSize(const std::vector<unsigned char> &data,
                                   const LokiHeader *loki) const
 {
-    Q_D(const BootImage);
-
     int kernelSize = -1;
 
     // If the boot image was patched with an early version of loki, the original
@@ -423,127 +488,122 @@ int BootImage::lokiFindKernelSize(const char * const data,
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
     if (loki->orig_kernel_size == 0) {
         kernelSize = *(reinterpret_cast<const int *>(
-                data + d->header.page_size + 0x2c));
+                &data[m_impl->header.page_size + 0x2c]));
     } else {
         kernelSize = loki->orig_kernel_size;
     }
 
-    qDebug("Kernel size: %d", kernelSize);
+    Log::log(Log::Debug, "Kernel size: %d", kernelSize);
 
     return kernelSize;
 }
 
-uint BootImage::lokiFindRamdiskAddress(const char * const data,
-                                       int size,
-                                       const LokiHeader *loki) const
+unsigned int BootImage::lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
+                                               const LokiHeader *loki) const
 {
-    Q_D(const BootImage);
-
     // If the boot image was patched with a newer version of loki, find the ramdisk
     // offset in the shell code
-    uint ramdiskAddr = 0;
+    unsigned int ramdiskAddr = 0;
 
     if (loki->ramdisk_addr != 0) {
-        const QByteArray shellCode =
-                QByteArray::fromRawData(SHELL_CODE, sizeof(SHELL_CODE));
+        auto size = data.size();
 
-        for (int i = 0; i < size - shellCode.size(); i++) {
-            QByteArray curData = QByteArray::fromRawData(
-                    data + i, sizeof(SHELL_CODE));
-            if (curData == shellCode) {
-                ramdiskAddr = *(reinterpret_cast<const uint *>(
-                        data + i + sizeof(SHELL_CODE) - 5));
+        for (unsigned int i = 0; i < size - (sizeof(SHELL_CODE) - 9); ++i) {
+            if (std::memcmp(&data[i], SHELL_CODE, sizeof(SHELL_CODE) - 9)) {
+                ramdiskAddr = *(reinterpret_cast<const unsigned char *>(
+                        &data[i] + sizeof(SHELL_CODE) - 5));
                 break;
             }
         }
 
         if (ramdiskAddr == 0) {
-            qWarning() << "Couldn't determine ramdisk offset";
+            Log::log(Log::Warning, "Couldn't determine ramdisk offset");
             return -1;
         }
 
-        qDebug("Original ramdisk address: 0x%08x", ramdiskAddr);
+        Log::log(Log::Debug, "Original ramdisk address: 0x%08x", ramdiskAddr);
     } else {
         // Otherwise, use the default for jflte
-        ramdiskAddr = d->header.kernel_addr - 0x00008000 + 0x02000000;
-        qDebug("Default ramdisk address: 0x%08x", ramdiskAddr);
+        ramdiskAddr = m_impl->header.kernel_addr - 0x00008000 + 0x02000000;
+        Log::log(Log::Debug, "Default ramdisk address: 0x%08x", ramdiskAddr);
     }
 
     return ramdiskAddr;
 }
 
-QByteArray BootImage::create() const
+std::vector<unsigned char> BootImage::create() const
 {
-    Q_D(const BootImage);
-
-    QByteArray data;
+    std::vector<unsigned char> data;
 
     // Header
-    data.append(reinterpret_cast<const char *>(&d->header),
-                sizeof(BootImageHeader));
+    unsigned char *headerBegin =
+            reinterpret_cast<unsigned char *>(&m_impl->header);
+    data.insert(data.end(), headerBegin, headerBegin + sizeof(BootImageHeader));
 
     // Padding
-    QByteArray padding(skipPadding(sizeof(BootImageHeader),
-                                   d->header.page_size), 0);
-    data.append(padding);
+    unsigned int paddingSize = skipPadding(
+            sizeof(BootImageHeader), m_impl->header.page_size);
+    data.insert(data.end(), paddingSize, 0);
 
     // Kernel image
-    data.append(d->kernelImage);
+    data.insert(data.end(), m_impl->kernelImage.begin(),
+                m_impl->kernelImage.end());
 
     // More padding
-    padding = QByteArray(skipPadding(d->kernelImage.size(),
-                                     d->header.page_size), 0);
-    data.append(padding);
+    paddingSize = skipPadding(
+            m_impl->kernelImage.size(), m_impl->header.page_size);
+    data.insert(data.end(), paddingSize, 0);
 
     // Ramdisk image
-    data.append(d->ramdiskImage);
+    data.insert(data.end(), m_impl->ramdiskImage.begin(),
+                m_impl->ramdiskImage.end());
 
     // Even more padding
-    padding = QByteArray(skipPadding(d->ramdiskImage.size(),
-                                     d->header.page_size), 0);
-    data.append(padding);
+    paddingSize = skipPadding(
+            m_impl->ramdiskImage.size(), m_impl->header.page_size);
+    data.insert(data.end(), paddingSize, 0);
 
     // Second bootloader image
-    if (!d->secondBootloaderImage.isEmpty()) {
-        data.append(d->secondBootloaderImage);
+    if (!m_impl->secondBootloaderImage.empty()) {
+        data.insert(data.end(), m_impl->secondBootloaderImage.begin(),
+                    m_impl->secondBootloaderImage.end());
 
         // Enough padding already!
-        padding = QByteArray(skipPadding(d->secondBootloaderImage.size(),
-                                         d->header.page_size), 0);
-        data.append(padding);
+        paddingSize = skipPadding(
+                m_impl->secondBootloaderImage.size(), m_impl->header.page_size);
+        data.insert(data.end(), paddingSize, 0);
     }
 
     // Device tree image
-    if (!d->deviceTreeImage.isEmpty()) {
-        data.append(d->deviceTreeImage);
+    if (!m_impl->deviceTreeImage.empty()) {
+        data.insert(data.end(), m_impl->deviceTreeImage.begin(),
+                    m_impl->deviceTreeImage.end());
 
         // Last bit of padding (I hope)
-        padding = QByteArray(skipPadding(d->deviceTreeImage.size(),
-                                         d->header.page_size), 0);
-        data.append(padding);
+        paddingSize = skipPadding(
+                m_impl->deviceTreeImage.size(), m_impl->header.page_size);
+        data.insert(data.end(), paddingSize, 0);
     }
 
     return data;
 }
 
-bool BootImage::createFile(const QString &path)
+bool BootImage::createFile(const std::string &path)
 {
-    Q_D(BootImage);
-
-    QFile file(path);
-    if (!file.open(QFile::WriteOnly)) {
-        d->errorCode = PatcherError::FileOpenError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    std::ofstream file(path, std::ios::binary);
+    if (file.fail()) {
+        m_impl->error = PatcherError::createIOError(
+                PatcherError::FileOpenError, path);
         return false;
     }
 
-    QByteArray data = create();
-    qint64 len = file.write(data);
-    if (len < data.size()) {
+    std::vector<unsigned char> data = create();
+    file.write(reinterpret_cast<const char *>(data.data()), data.size());
+    if (file.bad()) {
         file.close();
 
-        d->errorCode = PatcherError::FileWriteError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+        m_impl->error = PatcherError::createIOError(
+                PatcherError::FileWriteError, path);
         return false;
     }
 
@@ -551,111 +611,100 @@ bool BootImage::createFile(const QString &path)
     return true;
 }
 
-bool BootImage::extract(const QString &directory, const QString &prefix)
+bool BootImage::extract(const std::string &directory, const std::string &prefix)
 {
-    Q_D(BootImage);
-
-    QDir dir(directory);
-    if (!dir.exists()) {
-        d->errorCode = PatcherError::DirectoryNotExistError;
-        d->errorString = PatcherError::errorString(d->errorCode);
+    if (!boost::filesystem::exists(directory)) {
+        m_impl->error = PatcherError::createIOError(
+                PatcherError::DirectoryNotExistError, directory);
         return false;
     }
 
-    QString pathPrefix(directory % QLatin1Char('/') % prefix);
+    std::string pathPrefix(directory);
+    pathPrefix += "/";
+    pathPrefix += prefix;
 
     // Write kernel command line
-    QFile fileCmdline(pathPrefix % QStringLiteral("-cmdline"));
-    fileCmdline.open(QFile::WriteOnly);
-    QTextStream streamCmdline(&fileCmdline);
-    streamCmdline << QString::fromLocal8Bit(QByteArray(
-            reinterpret_cast<const char *>(d->header.cmdline), BOOT_ARGS_SIZE));
-    streamCmdline << '\n';
+    std::ofstream fileCmdline(pathPrefix + "-cmdline", std::ios::binary);
+    fileCmdline << std::string(reinterpret_cast<char *>(
+            m_impl->header.cmdline), BOOT_ARGS_SIZE);
+    fileCmdline << '\n';
     fileCmdline.close();
 
     // Write base address on which the offsets are applied
-    QFile fileBase(pathPrefix % QStringLiteral("-base"));
-    fileBase.open(QFile::WriteOnly);
-    QTextStream streamBase(&fileBase);
-    streamBase << QStringLiteral("%1").arg(
-            d->header.kernel_addr - 0x00008000, 8, 16, QLatin1Char('0'));
-    streamBase << '\n';
+    std::ofstream fileBase(pathPrefix + "-base", std::ios::binary);
+    fileBase << boost::format("%08x") % (m_impl->header.kernel_addr - 0x00008000);
+    fileBase << '\n';
     fileBase.close();
 
     // Write ramdisk offset
-    QFile fileRamdiskOffset(pathPrefix % QStringLiteral("-ramdisk_offset"));
-    fileRamdiskOffset.open(QFile::WriteOnly);
-    QTextStream streamRamdiskOffset(&fileRamdiskOffset);
-    streamRamdiskOffset << QStringLiteral("%1").arg(
-            d->header.ramdisk_addr - d->header.kernel_addr
-                    + 0x00008000, 8, 16, QLatin1Char('0'));
-    streamRamdiskOffset << '\n';
+    std::ofstream fileRamdiskOffset(pathPrefix + "-ramdisk_offset",
+                                    std::ios::binary);
+    fileRamdiskOffset << boost::format("%08x")
+            % (m_impl->header.ramdisk_addr - m_impl->header.kernel_addr
+                    + 0x00008000);
+    fileRamdiskOffset << '\n';
     fileRamdiskOffset.close();
 
     // Write second bootloader offset
-    if (d->header.second_size > 0) {
-        QFile fileSecondOffset(pathPrefix % QStringLiteral("-second_offset"));
-        fileSecondOffset.open(QFile::WriteOnly);
-        QTextStream streamSecondOffset(&fileSecondOffset);
-        streamSecondOffset << QStringLiteral("%1").arg(
-                d->header.second_addr - d->header.kernel_addr
-                        + 0x00008000, 8, 16, QLatin1Char('0'));
-        streamSecondOffset << '\n';
+    if (m_impl->header.second_size > 0) {
+        std::ofstream fileSecondOffset(pathPrefix + "-second_offset",
+                                       std::ios::binary);
+        fileSecondOffset << boost::format("%08x")
+                % (m_impl->header.second_addr - m_impl->header.kernel_addr
+                        + 0x00008000);
+        fileSecondOffset << '\n';
         fileSecondOffset.close();
     }
 
     // Write kernel tags offset
-    if (d->header.tags_addr != 0) {
-        QFile fileTagsOffset(pathPrefix % QStringLiteral("-tags_offset"));
-        fileTagsOffset.open(QFile::WriteOnly);
-        QTextStream streamTagsOffset(&fileTagsOffset);
-        streamTagsOffset << QStringLiteral("%1").arg(
-                d->header.tags_addr - d->header.kernel_addr
-                        + 0x00008000, 8, 16, QLatin1Char('0'));
-        streamTagsOffset << '\n';
+    if (m_impl->header.tags_addr != 0) {
+        std::ofstream fileTagsOffset(pathPrefix + "-tags_offset",
+                                     std::ios::binary);
+        fileTagsOffset << boost::format("%08x")
+                % (m_impl->header.tags_addr - m_impl->header.kernel_addr
+                        + 0x00008000);
+        fileTagsOffset << '\n';
         fileTagsOffset.close();
     }
 
     // Write page size
-    QFile filePageSize(pathPrefix % QStringLiteral("-pagesize"));
-    filePageSize.open(QFile::WriteOnly);
-    QTextStream streamPageSize(&filePageSize);
-    streamPageSize << d->header.page_size;
-    streamPageSize << '\n';
+    std::ofstream filePageSize(pathPrefix + "-pagesize", std::ios::binary);
+    filePageSize << m_impl->header.page_size;
+    filePageSize << '\n';
     filePageSize.close();
 
     // Write kernel image
-    QFile fileKernel(pathPrefix % QStringLiteral("-zImage"));
-    fileKernel.open(QFile::WriteOnly);
-    fileKernel.write(d->kernelImage);
+    std::ofstream fileKernel(pathPrefix + "-zImage", std::ios::binary);
+    fileKernel.write(reinterpret_cast<char *>(&m_impl->kernelImage),
+                     m_impl->kernelImage.size());
     fileKernel.close();
 
     // Write ramdisk image
-    QString ramdiskFilename;
-    if (d->ramdiskCompression == BootImagePrivate::LZ4) {
-        ramdiskFilename = pathPrefix % QStringLiteral("-ramdisk.lz4");
+    auto ramdiskFilename = pathPrefix;
+    if (m_impl->ramdiskCompression == Impl::LZ4) {
+        ramdiskFilename += "-ramdisk.lz4";
     } else {
-        ramdiskFilename = pathPrefix % QStringLiteral("-ramdisk.gz");
+        ramdiskFilename += "-ramdisk.gz";
     }
 
-    QFile fileRamdisk(ramdiskFilename);
-    fileRamdisk.open(QFile::WriteOnly);
-    fileRamdisk.write(d->ramdiskImage);
+    std::ofstream fileRamdisk(ramdiskFilename, std::ios::binary);
+    fileRamdisk.write(reinterpret_cast<char *>(&m_impl->ramdiskImage),
+                      m_impl->ramdiskImage.size());
     fileRamdisk.close();
 
     // Write second bootloader image
-    if (!d->secondBootloaderImage.isNull()) {
-        QFile fileSecond(pathPrefix % QStringLiteral("-second"));
-        fileSecond.open(QFile::WriteOnly);
-        fileSecond.write(d->secondBootloaderImage);
+    if (!m_impl->secondBootloaderImage.empty()) {
+        std::ofstream fileSecond(pathPrefix + "-second", std::ios::binary);
+        fileSecond.write(reinterpret_cast<char *>(&m_impl->secondBootloaderImage),
+                         m_impl->secondBootloaderImage.size());
         fileSecond.close();
     }
 
     // Write device tree image
-    if (!d->deviceTreeImage.isNull()) {
-        QFile fileDt(pathPrefix % QStringLiteral("-dt"));
-        fileDt.open(QFile::WriteOnly);
-        fileDt.write(d->deviceTreeImage);
+    if (!m_impl->deviceTreeImage.empty()) {
+        std::ofstream fileDt(pathPrefix + "-dt", std::ios::binary);
+        fileDt.write(reinterpret_cast<char *>(&m_impl->deviceTreeImage),
+                     m_impl->deviceTreeImage.size());
         fileDt.close();
     }
 
@@ -664,7 +713,7 @@ bool BootImage::extract(const QString &directory, const QString &prefix)
 
 int BootImage::skipPadding(const int &itemSize, const int &pageSize) const
 {
-    uint pageMask = pageSize - 1;
+    unsigned int pageMask = pageSize - 1;
 
     if ((itemSize & pageMask) == 0) {
         return 0;
@@ -673,296 +722,256 @@ int BootImage::skipPadding(const int &itemSize, const int &pageSize) const
     return pageSize - (itemSize & pageMask);
 }
 
+static std::string toHex(const unsigned char *data, unsigned int size) {
+    static const char digits[] = "0123456789abcdef";
+
+    std::string hex;
+    hex.reserve(2 * sizeof(size));
+    for (unsigned int i = 0; i < size; ++i) {
+        hex += digits[(data[i] >> 4) & 0xf];
+        hex += digits[data[i] & 0xF];
+    }
+
+    return hex;
+}
+
 void BootImage::updateSHA1Hash()
 {
-    Q_D(BootImage);
-
-    QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(d->kernelImage.constData(), d->kernelImage.size());
-    hash.addData(reinterpret_cast<char *>(&d->header.kernel_size),
-                 sizeof(d->header.kernel_size));
-    hash.addData(d->ramdiskImage.constData(), d->ramdiskImage.size());
-    hash.addData(reinterpret_cast<char *>(&d->header.ramdisk_size),
-                 sizeof(d->header.ramdisk_size));
-    if (!d->secondBootloaderImage.isEmpty()) {
-        hash.addData(d->secondBootloaderImage.constData(),
-                     d->secondBootloaderImage.size());
+    boost::uuids::detail::sha1 hash;
+    hash.process_bytes(m_impl->kernelImage.data(), m_impl->kernelImage.size());
+    hash.process_bytes(reinterpret_cast<char *>(&m_impl->header.kernel_size),
+                       sizeof(m_impl->header.kernel_size));
+    hash.process_bytes(m_impl->ramdiskImage.data(), m_impl->ramdiskImage.size());
+    hash.process_bytes(reinterpret_cast<char *>(&m_impl->header.ramdisk_size),
+                       sizeof(m_impl->header.ramdisk_size));
+    if (!m_impl->secondBootloaderImage.empty()) {
+        hash.process_bytes(m_impl->secondBootloaderImage.data(),
+                           m_impl->secondBootloaderImage.size());
     }
 
     // Bug in AOSP? AOSP's mkbootimg adds the second bootloader size to the SHA1
     // hash even if it's 0
-    hash.addData(reinterpret_cast<char *>(&d->header.second_size),
-                 sizeof(d->header.second_size));
+    hash.process_bytes(reinterpret_cast<char *>(&m_impl->header.second_size),
+                       sizeof(m_impl->header.second_size));
 
-    if (!d->deviceTreeImage.isEmpty()) {
-        hash.addData(d->deviceTreeImage.constData(),
-                     d->deviceTreeImage.size());
-        hash.addData(reinterpret_cast<char *>(&d->header.dt_size),
-                     sizeof(d->header.dt_size));
+    if (!m_impl->deviceTreeImage.empty()) {
+        hash.process_bytes(m_impl->deviceTreeImage.data(),
+                           m_impl->deviceTreeImage.size());
+        hash.process_bytes(reinterpret_cast<char *>(&m_impl->header.dt_size),
+                           sizeof(m_impl->header.dt_size));
     }
 
-    QByteArray result = hash.result();
-    std::memset(d->header.id, 0, sizeof(d->header.id));
-    std::memcpy(d->header.id, result.constData(),
-                result.size() > (int) sizeof(d->header.id)
-                ? sizeof(d->header.id) : result.size());
+    unsigned int digest[5];
+    hash.get_digest(digest);
 
-    qDebug() << "Computed new ID hash:" << result.toHex();
+    std::memset(m_impl->header.id, 0, sizeof(m_impl->header.id));
+    std::memcpy(m_impl->header.id, reinterpret_cast<char *>(&digest),
+                sizeof(digest) > sizeof(m_impl->header.id)
+                ? sizeof(m_impl->header.id) : sizeof(digest));
+
+    // Debug...
+    std::string hexDigest = toHex(
+            reinterpret_cast<const unsigned char *>(digest), sizeof(digest));
+
+    Log::log(Log::Debug, "Computed new ID hash: %s", hexDigest);
 }
 
 void BootImage::dumpHeader() const
 {
-    Q_D(const BootImage);
-
-    qDebug("- magic:        %.*s", BOOT_MAGIC_SIZE, d->header.magic);
-    qDebug("- kernel_size:  %u",     d->header.kernel_size);
-    qDebug("- kernel_addr:  0x%08x", d->header.kernel_addr);
-    qDebug("- ramdisk_size: %u",     d->header.ramdisk_size);
-    qDebug("- ramdisk_addr: 0x%08x", d->header.ramdisk_addr);
-    qDebug("- second_size:  %u",     d->header.second_size);
-    qDebug("- second_addr:  0x%08x", d->header.second_addr);
-    qDebug("- tags_addr:    0x%08x", d->header.tags_addr);
-    qDebug("- page_size:    %u",     d->header.page_size);
-    qDebug("- dt_size:      %u",     d->header.dt_size);
-    qDebug("- unused:       0x%08x", d->header.unused);
-    qDebug("- name:         %.*s", BOOT_NAME_SIZE, d->header.name);
-    qDebug("- cmdline:      %.*s", BOOT_ARGS_SIZE, d->header.cmdline);
-    //qDebug("- id:           %08x%08x%08x%08x%08x%08x%08x%08x",
-    //        d->header.id[0], d->header.id[1], d->header.id[2],
-    //        d->header.id[3], d->header.id[4], d->header.id[5],
-    //        d->header.id[6], d->header.id[7]);
-    QByteArray id = QByteArray::fromRawData(
-            reinterpret_cast<const char *>(d->header.id), 40);
-    qDebug("- id:           %40s", id.toHex().constData());
+    Log::log(Log::Debug, "- magic:        %s",
+             std::string(m_impl->header.magic, m_impl->header.magic + BOOT_MAGIC_SIZE));
+    Log::log(Log::Debug, "- kernel_size:  %u",     m_impl->header.kernel_size);
+    Log::log(Log::Debug, "- kernel_addr:  0x%08x", m_impl->header.kernel_addr);
+    Log::log(Log::Debug, "- ramdisk_size: %u",     m_impl->header.ramdisk_size);
+    Log::log(Log::Debug, "- ramdisk_addr: 0x%08x", m_impl->header.ramdisk_addr);
+    Log::log(Log::Debug, "- second_size:  %u",     m_impl->header.second_size);
+    Log::log(Log::Debug, "- second_addr:  0x%08x", m_impl->header.second_addr);
+    Log::log(Log::Debug, "- tags_addr:    0x%08x", m_impl->header.tags_addr);
+    Log::log(Log::Debug, "- page_size:    %u",     m_impl->header.page_size);
+    Log::log(Log::Debug, "- dt_size:      %u",     m_impl->header.dt_size);
+    Log::log(Log::Debug, "- unused:       0x%08x", m_impl->header.unused);
+    Log::log(Log::Debug, "- name:         %s",
+             std::string(m_impl->header.name, m_impl->header.name + BOOT_NAME_SIZE));
+    Log::log(Log::Debug, "- cmdline:      %s",
+             std::string(m_impl->header.cmdline, m_impl->header.cmdline + BOOT_ARGS_SIZE));
+    //Log::log(Log::Debug, "- id:           %08x%08x%08x%08x%08x%08x%08x%08x",
+    //         m_impl->header.id[0], m_impl->header.id[1], m_impl->header.id[2],
+    //         m_impl->header.id[3], m_impl->header.id[4], m_impl->header.id[5],
+    //         m_impl->header.id[6], m_impl->header.id[7]);
+    Log::log(Log::Debug, "- id:           %s",
+             toHex(reinterpret_cast<const unsigned char *>(m_impl->header.id), 40));
 }
 
-QString BootImage::boardName() const
+std::string BootImage::boardName() const
 {
-    Q_D(const BootImage);
-
     // The string may not be null terminated
-    return QString::fromLocal8Bit(QByteArray::fromRawData(
-            reinterpret_cast<const char *>(d->header.name), BOOT_NAME_SIZE));
+    return std::string(reinterpret_cast<char *>(m_impl->header.name),
+                       BOOT_NAME_SIZE);
 }
 
-void BootImage::setBoardName(QString name)
+void BootImage::setBoardName(const std::string &name)
 {
-    Q_D(BootImage);
-
     // -1 for null byte
-    qstrcpy(reinterpret_cast<char *>(d->header.name),
-            name.leftRef(BOOT_NAME_SIZE - 1).toLocal8Bit().constData());
+    std::strcpy(reinterpret_cast<char *>(m_impl->header.name),
+                name.substr(0, BOOT_NAME_SIZE - 1).c_str());
 }
 
 void BootImage::resetBoardName()
 {
-    Q_D(BootImage);
-
-    qstrcpy(reinterpret_cast<char *>(d->header.name), DEFAULT_BOARD);
+    std::strcpy(reinterpret_cast<char *>(m_impl->header.name), DEFAULT_BOARD);
 }
 
-QString BootImage::kernelCmdline() const
+std::string BootImage::kernelCmdline() const
 {
-    Q_D(const BootImage);
-
     // The string may not be null terminated
-    return QString::fromLocal8Bit(QByteArray::fromRawData(
-            reinterpret_cast<const char *>(d->header.cmdline), BOOT_ARGS_SIZE));
+    return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
+                       BOOT_ARGS_SIZE);
 }
 
-void BootImage::setKernelCmdline(QString cmdline)
+void BootImage::setKernelCmdline(const std::string &cmdline)
 {
-    Q_D(BootImage);
-
     // -1 for null byte
-    qstrcpy(reinterpret_cast<char *>(d->header.cmdline),
-            cmdline.leftRef(BOOT_ARGS_SIZE - 1).toLocal8Bit().constData());
+    std::strcpy(reinterpret_cast<char *>(m_impl->header.cmdline),
+                cmdline.substr(0, BOOT_ARGS_SIZE - 1).c_str());
 }
 
 void BootImage::resetKernelCmdline()
 {
-    Q_D(BootImage);
-
-    qstrcpy(reinterpret_cast<char *>(d->header.cmdline), DEFAULT_CMDLINE);
+    std::strcpy(reinterpret_cast<char *>(m_impl->header.cmdline),
+                DEFAULT_CMDLINE);
 }
 
-uint BootImage::pageSize() const
+unsigned int BootImage::pageSize() const
 {
-    Q_D(const BootImage);
-
-    return d->header.page_size;
+    return m_impl->header.page_size;
 }
 
-void BootImage::setPageSize(uint size)
+void BootImage::setPageSize(unsigned int size)
 {
-    Q_D(BootImage);
-
     // Size should be one of if 2048, 4096, 8192, 16384, 32768, 65536, or 131072
-    d->header.page_size = size;
+    m_impl->header.page_size = size;
 }
 
 void BootImage::resetPageSize()
 {
-    Q_D(BootImage);
-
-    d->header.page_size = DEFAULT_PAGE_SIZE;
+    m_impl->header.page_size = DEFAULT_PAGE_SIZE;
 }
 
-uint BootImage::kernelAddress() const
+unsigned int BootImage::kernelAddress() const
 {
-    Q_D(const BootImage);
-
-    return d->header.kernel_addr;
+    return m_impl->header.kernel_addr;
 }
 
-void BootImage::setKernelAddress(uint address)
+void BootImage::setKernelAddress(unsigned int address)
 {
-    Q_D(BootImage);
-
-    d->header.kernel_addr = address;
+    m_impl->header.kernel_addr = address;
 }
 
 void BootImage::resetKernelAddress()
 {
-    Q_D(BootImage);
-
-    d->header.kernel_addr = DEFAULT_BASE + DEFAULT_KERNEL_OFFSET;
+    m_impl->header.kernel_addr = DEFAULT_BASE + DEFAULT_KERNEL_OFFSET;
 }
 
-uint BootImage::ramdiskAddress() const
+unsigned int BootImage::ramdiskAddress() const
 {
-    Q_D(const BootImage);
-
-    return d->header.ramdisk_addr;
+    return m_impl->header.ramdisk_addr;
 }
 
-void BootImage::setRamdiskAddress(uint address)
+void BootImage::setRamdiskAddress(unsigned int address)
 {
-    Q_D(BootImage);
-
-    d->header.ramdisk_addr = address;
+    m_impl->header.ramdisk_addr = address;
 }
 
 void BootImage::resetRamdiskAddress()
 {
-    Q_D(BootImage);
-
-    d->header.ramdisk_addr = DEFAULT_BASE + DEFAULT_RAMDISK_OFFSET;
+    m_impl->header.ramdisk_addr = DEFAULT_BASE + DEFAULT_RAMDISK_OFFSET;
 }
 
-uint BootImage::secondBootloaderAddress() const
+unsigned int BootImage::secondBootloaderAddress() const
 {
-    Q_D(const BootImage);
-
-    return d->header.second_addr;
+    return m_impl->header.second_addr;
 }
 
-void BootImage::setSecondBootloaderAddress(uint address)
+void BootImage::setSecondBootloaderAddress(unsigned int address)
 {
-    Q_D(BootImage);
-
-    d->header.second_addr = address;
+    m_impl->header.second_addr = address;
 }
 
 void BootImage::resetSecondBootloaderAddress()
 {
-    Q_D(BootImage);
-
-    d->header.second_addr = DEFAULT_BASE + DEFAULT_SECOND_OFFSET;
+    m_impl->header.second_addr = DEFAULT_BASE + DEFAULT_SECOND_OFFSET;
 }
 
-uint BootImage::kernelTagsAddress() const
+unsigned int BootImage::kernelTagsAddress() const
 {
-    Q_D(const BootImage);
-
-    return d->header.tags_addr;
+    return m_impl->header.tags_addr;
 }
 
-void BootImage::setKernelTagsAddress(uint address)
+void BootImage::setKernelTagsAddress(unsigned int address)
 {
-    Q_D(BootImage);
-
-    d->header.tags_addr = address;
+    m_impl->header.tags_addr = address;
 }
 
 void BootImage::resetKernelTagsAddress()
 {
-    Q_D(BootImage);
-
-    d->header.tags_addr = DEFAULT_BASE + DEFAULT_TAGS_OFFSET;
+    m_impl->header.tags_addr = DEFAULT_BASE + DEFAULT_TAGS_OFFSET;
 }
 
-void BootImage::setAddresses(uint base, uint kernelOffset, uint ramdiskOffset,
-                             uint secondBootloaderOffset, uint kernelTagsOffset)
+void BootImage::setAddresses(unsigned int base, unsigned int kernelOffset,
+                             unsigned int ramdiskOffset,
+                             unsigned int secondBootloaderOffset,
+                             unsigned int kernelTagsOffset)
 {
-    Q_D(BootImage);
-
-    d->header.kernel_addr = base + kernelOffset;
-    d->header.ramdisk_addr = base + ramdiskOffset;
-    d->header.second_addr = base + secondBootloaderOffset;
-    d->header.tags_addr = base + kernelTagsOffset;
+    m_impl->header.kernel_addr = base + kernelOffset;
+    m_impl->header.ramdisk_addr = base + ramdiskOffset;
+    m_impl->header.second_addr = base + secondBootloaderOffset;
+    m_impl->header.tags_addr = base + kernelTagsOffset;
 }
 
-QByteArray BootImage::kernelImage() const
+std::vector<unsigned char> BootImage::kernelImage() const
 {
-    Q_D(const BootImage);
-
-    return d->kernelImage;
+    return m_impl->kernelImage;
 }
 
-void BootImage::setKernelImage(const QByteArray &data)
+void BootImage::setKernelImage(std::vector<unsigned char> data)
 {
-    Q_D(BootImage);
-
-    d->kernelImage = data;
-    d->header.kernel_size = data.size();
+    m_impl->header.kernel_size = data.size();
+    m_impl->kernelImage = std::move(data);
     updateSHA1Hash();
 }
 
-QByteArray BootImage::ramdiskImage() const
+std::vector<unsigned char> BootImage::ramdiskImage() const
 {
-    Q_D(const BootImage);
-
-    return d->ramdiskImage;
+    return m_impl->ramdiskImage;
 }
 
-void BootImage::setRamdiskImage(const QByteArray &data)
+void BootImage::setRamdiskImage(std::vector<unsigned char> data)
 {
-    Q_D(BootImage);
-
-    d->ramdiskImage = data;
-    d->header.ramdisk_size = data.size();
+    m_impl->header.ramdisk_size = data.size();
+    m_impl->ramdiskImage = std::move(data);
     updateSHA1Hash();
 }
 
-QByteArray BootImage::secondBootloaderImage() const
+std::vector<unsigned char> BootImage::secondBootloaderImage() const
 {
-    Q_D(const BootImage);
-
-    return d->secondBootloaderImage;
+    return m_impl->secondBootloaderImage;
 }
 
-void BootImage::setSecondBootloaderImage(const QByteArray &data)
+void BootImage::setSecondBootloaderImage(std::vector<unsigned char> data)
 {
-    Q_D(BootImage);
-
-    d->secondBootloaderImage = data;
-    d->header.second_size = data.size();
+    m_impl->header.second_size = data.size();
+    m_impl->secondBootloaderImage = std::move(data);
     updateSHA1Hash();
 }
 
-QByteArray BootImage::deviceTreeImage() const
+std::vector<unsigned char> BootImage::deviceTreeImage() const
 {
-    Q_D(const BootImage);
-
-    return d->deviceTreeImage;
+    return m_impl->deviceTreeImage;
 }
 
-void BootImage::setDeviceTreeImage(const QByteArray &data)
+void BootImage::setDeviceTreeImage(std::vector<unsigned char> data)
 {
-    Q_D(BootImage);
-
-    d->deviceTreeImage = data;
-    d->header.dt_size = data.size();
+    m_impl->header.dt_size = data.size();
+    m_impl->deviceTreeImage = std::move(data);
     updateSHA1Hash();
 }

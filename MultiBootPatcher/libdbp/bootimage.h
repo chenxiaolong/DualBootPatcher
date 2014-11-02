@@ -20,114 +20,101 @@
 #ifndef BOOTIMAGE_H
 #define BOOTIMAGE_H
 
+#include <memory>
+#include <vector>
+
 #include "libdbp_global.h"
 #include "patchererror.h"
 
-#include <QtCore/QFile>
-#include <QtCore/QScopedPointer>
 
-class BootImagePrivate;
 struct LokiHeader;
 
 class LIBDBPSHARED_EXPORT BootImage
 {
 public:
-    Q_PROPERTY(QString boardName READ boardName WRITE setBoardName RESET resetBoardName)
-    Q_PROPERTY(QString kernelCmdline READ kernelCmdline WRITE setKernelCmdline RESET resetKernelCmdline)
-    Q_PROPERTY(uint kernelAddress READ kernelAddress WRITE setKernelAddress RESET resetKernelAddress)
-    Q_PROPERTY(uint ramdiskAddress READ ramdiskAddress WRITE setRamdiskAddress RESET resetRamdiskAddress)
-    Q_PROPERTY(uint secondBootloaderAddress READ secondBootloaderAddress WRITE setSecondBootloaderAddress RESET resetSecondBootloaderAddress)
-    Q_PROPERTY(uint kernelTagsAddress READ kernelTagsAddress WRITE setKernelTagsAddress RESET resetKernelTagsAddress)
-    Q_PROPERTY(uint pageSize READ pageSize WRITE setPageSize RESET resetPageSize)
-
     BootImage();
     ~BootImage();
 
-    PatcherError::Error error() const;
-    QString errorString() const;
+    PatcherError error() const;
 
-    bool load(const char * const data, int size);
-    bool load(const QByteArray &data);
-    bool load(const QString &filename);
-    QByteArray create() const;
-    bool createFile(const QString &path);
-    bool extract(const QString &directory, const QString &prefix);
+    bool load(const std::vector<unsigned char> &data);
+    bool load(const std::string &filename);
+    std::vector<unsigned char> create() const;
+    bool createFile(const std::string &path);
+    bool extract(const std::string &directory, const std::string &prefix);
 
-    QString boardName() const;
-    void setBoardName(QString name);
+    std::string boardName() const;
+    void setBoardName(const std::string &name);
     void resetBoardName();
 
-    QString kernelCmdline() const;
-    void setKernelCmdline(QString cmdline);
+    std::string kernelCmdline() const;
+    void setKernelCmdline(const std::string &cmdline);
     void resetKernelCmdline();
 
-    uint pageSize() const;
-    void setPageSize(uint size);
+    unsigned int pageSize() const;
+    void setPageSize(unsigned int size);
     void resetPageSize();
 
-    uint kernelAddress() const;
-    void setKernelAddress(uint address);
+    unsigned int kernelAddress() const;
+    void setKernelAddress(unsigned int address);
     void resetKernelAddress();
 
-    uint ramdiskAddress() const;
-    void setRamdiskAddress(uint address);
+    unsigned int ramdiskAddress() const;
+    void setRamdiskAddress(unsigned int address);
     void resetRamdiskAddress();
 
-    uint secondBootloaderAddress() const;
-    void setSecondBootloaderAddress(uint address);
+    unsigned int secondBootloaderAddress() const;
+    void setSecondBootloaderAddress(unsigned int address);
     void resetSecondBootloaderAddress();
 
-    uint kernelTagsAddress() const;
-    void setKernelTagsAddress(uint address);
+    unsigned int kernelTagsAddress() const;
+    void setKernelTagsAddress(unsigned int address);
     void resetKernelTagsAddress();
 
     // Set addresses using a base and offsets
-    void setAddresses(uint base, uint kernelOffset, uint ramdiskOffset,
-                      uint secondBootloaderOffset, uint kernelTagsOffset);
+    void setAddresses(unsigned int base, unsigned int kernelOffset,
+                      unsigned int ramdiskOffset,
+                      unsigned int secondBootloaderOffset,
+                      unsigned int kernelTagsOffset);
 
     // For setting the various images
 
-    QByteArray kernelImage() const;
-    void setKernelImage(const QByteArray &data);
+    std::vector<unsigned char> kernelImage() const;
+    void setKernelImage(std::vector<unsigned char> data);
 
-    QByteArray ramdiskImage() const;
-    void setRamdiskImage(const QByteArray &data);
+    std::vector<unsigned char> ramdiskImage() const;
+    void setRamdiskImage(std::vector<unsigned char> data);
 
-    QByteArray secondBootloaderImage() const;
-    void setSecondBootloaderImage(const QByteArray &data);
+    std::vector<unsigned char> secondBootloaderImage() const;
+    void setSecondBootloaderImage(std::vector<unsigned char> data);
 
-    QByteArray deviceTreeImage() const;
-    void setDeviceTreeImage(const QByteArray &data);
+    std::vector<unsigned char> deviceTreeImage() const;
+    void setDeviceTreeImage(std::vector<unsigned char> data);
 
 
 private:
-    bool loadAndroidHeader(const char * const data,
-                           int size,
+    bool loadAndroidHeader(const std::vector<unsigned char> &data,
                            const int headerIndex,
                            const bool isLoki);
-    bool loadLokiHeader(const char * const data,
-                        int size,
+    bool loadLokiHeader(const std::vector< unsigned char> &data,
                         const int headerIndex,
                         const bool isLoki);
-    int lokiFindGzipOffset(const char * const data,
-                           int size) const;
-    int lokiFindRamdiskSize(const char * const data,
-                            int size,
+    int lokiFindGzipOffset(const std::vector<unsigned char> &data) const;
+    int lokiFindRamdiskSize(const std::vector<unsigned char> &data,
                             const LokiHeader *loki,
                             const int &ramdiskOffset) const;
-    int lokiFindKernelSize(const char * const data,
+    int lokiFindKernelSize(const std::vector<unsigned char> &data,
                            const LokiHeader *loki) const;
-    uint lokiFindRamdiskAddress(const char * const data,
-                                int size,
-                                const LokiHeader *loki) const;
+    unsigned int lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
+                                        const LokiHeader *loki) const;
     int skipPadding(const int &itemSize,
                     const int &pageSize) const;
     void updateSHA1Hash();
 
     void dumpHeader() const;
 
-    const QScopedPointer<BootImagePrivate> d_ptr;
-    Q_DECLARE_PRIVATE(BootImage)
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 #endif // BOOTIMAGE_H

@@ -18,108 +18,104 @@
  */
 
 #include "device.h"
-#include "device_p.h"
 
-const QString Device::SelinuxPermissive = QStringLiteral("permissive");
-const QString Device::SelinuxUnchanged = QStringLiteral("unchanged");
-const QString Device::SystemPartition = QStringLiteral("system");
-const QString Device::CachePartition = QStringLiteral("cache");
-const QString Device::DataPartition = QStringLiteral("data");
+#include <unordered_map>
 
-Device::Device() : d_ptr(new DevicePrivate())
+
+class Device::Impl
 {
-    Q_D(Device);
+public:
+    std::string codename;
+    std::string name;
+    std::string architecture;
+    std::string selinux;
 
+    std::unordered_map<std::string, std::string> partitions;
+};
+
+
+const std::string Device::SelinuxPermissive = "permissive";
+const std::string Device::SelinuxUnchanged = "unchanged";
+const std::string Device::SystemPartition = "system";
+const std::string Device::CachePartition = "cache";
+const std::string Device::DataPartition = "data";
+
+
+Device::Device() : m_impl(new Impl())
+{
     // Other architectures currently aren't supported
-    d->architecture = QStringLiteral("armeabi-v7a");
+    m_impl->architecture = "armeabi-v7a";
 }
 
 Device::~Device()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-QString Device::codename() const
+std::string Device::codename() const
 {
-    Q_D(const Device);
-
-    return d->codename;
+    return m_impl->codename;
 }
 
-void Device::setCodename(const QString& name)
+void Device::setCodename(std::string name)
 {
-    Q_D(Device);
-
-    d->codename = name;
+    m_impl->codename = std::move(name);
 }
 
-QString Device::name() const
+std::string Device::name() const
 {
-    Q_D(const Device);
-
-    return d->name;
+    return m_impl->name;
 }
 
-void Device::setName(const QString& name)
+void Device::setName(std::string name)
 {
-    Q_D(Device);
-
-    d->name = name;
+    m_impl->name = std::move(name);
 }
 
-QString Device::architecture() const
+std::string Device::architecture() const
 {
-    Q_D(const Device);
-
-    return d->architecture;
+    return m_impl->architecture;
 }
 
-void Device::setArchitecture(const QString& arch)
+void Device::setArchitecture(std::string arch)
 {
-    Q_D(Device);
-
-    d->architecture = arch;
+    m_impl->architecture = std::move(arch);
 }
 
-QString Device::selinux() const
+std::string Device::selinux() const
 {
-    Q_D(const Device);
-
-    if (d->selinux == SelinuxUnchanged) {
-        return QString();
+    if (m_impl->selinux == SelinuxUnchanged) {
+        return std::string();
     }
 
-    return d->selinux;
+    return m_impl->selinux;
 }
 
-void Device::setSelinux(const QString& selinux)
+void Device::setSelinux(std::string selinux)
 {
-    Q_D(Device);
-
-    d->selinux = selinux;
+    m_impl->selinux = std::move(selinux);
 }
 
-QString Device::partition(const QString &which) const
+std::string Device::partition(const std::string &which) const
 {
-    Q_D(const Device);
-
-    if (d->partitions.contains(which)) {
-        return d->partitions[which];
+    if (m_impl->partitions.find(which) != m_impl->partitions.end()) {
+        return m_impl->partitions[which];
     } else {
-        return QString();
+        return std::string();
     }
 }
 
-void Device::setPartition(const QString& which, const QString& partition)
+void Device::setPartition(const std::string &which, std::string partition)
 {
-    Q_D(Device);
-
-    d->partitions[which] = partition;
+    m_impl->partitions[which] = std::move(partition);
 }
 
-QStringList Device::partitionTypes() const
+std::vector<std::string> Device::partitionTypes() const
 {
-    Q_D(const Device);
+    std::vector<std::string> keys;
 
-    return d->partitions.keys();
+    for (auto const &p :  m_impl->partitions) {
+        keys.push_back(p.first);
+    }
+
+    return keys;
 }

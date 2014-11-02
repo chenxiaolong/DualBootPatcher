@@ -17,117 +17,121 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "standardpatcher.h"
-#include "standardpatcher_p.h"
+#include "autopatchers/standard/standardpatcher.h"
 
-#include <QtCore/QRegularExpression>
-#include <QtCore/QString>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/format.hpp>
+#include <boost/regex.hpp>
 
 
-const QString StandardPatcher::Id
-        = QStringLiteral("StandardPatcher");
+class StandardPatcher::Impl
+{
+public:
+    const PatcherPaths *pp;
+    const FileInfo *info;
 
-const QString StandardPatcher::ArgLegacyScript
-        = QStringLiteral("legacy-script");
+    bool legacyScript;
+};
 
-const QString StandardPatcher::UpdaterScript
-        = QStringLiteral("META-INF/com/google/android/updater-script");
-static const QString Mount
-        = QStringLiteral("run_program(\"/tmp/dualboot.sh\", \"mount-%1\");");
-static const QString Unmount
-        = QStringLiteral("run_program(\"/tmp/dualboot.sh\", \"unmount-%1\");");
-static const QString Format
-        = QStringLiteral("run_program(\"/tmp/dualboot.sh\", \"format-%1\");");
 
-static const QString System = QStringLiteral("system");
-static const QString Cache = QStringLiteral("cache");
-static const QString Data = QStringLiteral("data");
+const std::string StandardPatcher::Id
+        = "StandardPatcher";
 
-static const QChar Newline = QLatin1Char('\n');
+const std::string StandardPatcher::ArgLegacyScript
+        = "legacy-script";
+
+const std::string StandardPatcher::UpdaterScript
+        = "META-INF/com/google/android/updater-script";
+static const std::string Mount
+        = "run_program(\"/tmp/dualboot.sh\", \"mount-%1%\");";
+static const std::string Unmount
+        = "run_program(\"/tmp/dualboot.sh\", \"unmount-%1%\");";
+static const std::string Format
+        = "run_program(\"/tmp/dualboot.sh\", \"format-%1%\");";
+
+static const std::string System = "system";
+static const std::string Cache = "cache";
+static const std::string Data = "data";
 
 
 StandardPatcher::StandardPatcher(const PatcherPaths * const pp,
                                  const FileInfo * const info,
                                  const PatchInfo::AutoPatcherArgs &args) :
-    d_ptr(new StandardPatcherPrivate())
+    m_impl(new Impl())
 {
-    Q_D(StandardPatcher);
+    m_impl->pp = pp;
+    m_impl->info = info;
 
-    d->pp = pp;
-    d->info = info;
+    if (args.find(ArgLegacyScript) != args.end()) {
+        const std::string &value = args.at(ArgLegacyScript);
 
-    if (args.contains(ArgLegacyScript)) {
-        const QString &value = args[ArgLegacyScript];
-
-        if (value.toLower() == QStringLiteral("true")) {
-            d->legacyScript = true;
+        if (boost::iequals(value, "true")) {
+            m_impl->legacyScript = true;
         }
     }
 }
 
 StandardPatcher::~StandardPatcher()
 {
-    // Destructor so d_ptr is destroyed
 }
 
-PatcherError::Error StandardPatcher::error() const
+PatcherError StandardPatcher::error() const
 {
-    return PatcherError::NoError;
+    return PatcherError();
 }
 
-QString StandardPatcher::errorString() const
-{
-    return PatcherError::errorString(PatcherError::NoError);
-}
-
-QString StandardPatcher::id() const
+std::string StandardPatcher::id() const
 {
     return Id;
 }
 
-QStringList StandardPatcher::newFiles() const
+std::vector<std::string> StandardPatcher::newFiles() const
 {
-    return QStringList();
+    return std::vector<std::string>();
 }
 
-QStringList StandardPatcher::existingFiles() const
+std::vector<std::string> StandardPatcher::existingFiles() const
 {
-    Q_D(const StandardPatcher);
-
-    return QStringList() << UpdaterScript;
+    std::vector<std::string> files;
+    files.push_back(UpdaterScript);
+    return files;
 }
 
-bool StandardPatcher::patchFile(const QString &file,
-                                QByteArray * const contents,
-                                const QStringList &bootImages)
+bool StandardPatcher::patchFile(const std::string &file,
+                                std::vector<unsigned char> * const contents,
+                                const std::vector<std::string> &bootImages)
 {
-    Q_D(StandardPatcher);
-
     if (file == UpdaterScript) {
-        QStringList lines = QString::fromUtf8(*contents).split(Newline);
+        std::string strContents(contents->begin(), contents->end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        insertDualBootSh(&lines, d->legacyScript);
-        replaceMountLines(&lines, d->info->device());
-        replaceUnmountLines(&lines, d->info->device());
-        replaceFormatLines(&lines, d->info->device());
+        insertDualBootSh(&lines, m_impl->legacyScript);
+        replaceMountLines(&lines, m_impl->info->device());
+        replaceUnmountLines(&lines, m_impl->info->device());
+        replaceFormatLines(&lines, m_impl->info->device());
 
-        if (!bootImages.isEmpty()) {
-            for (const QString &bootImage : bootImages) {
+        if (!bootImages.empty()) {
+            for (auto const &bootImage : bootImages) {
                 insertWriteKernel(&lines, bootImage);
             }
         }
 
         // Too many ROMs don't unmount partitions after installation
-        insertUnmountEverything(lines.size(), &lines);
+        insertUnmountEverything(lines.end(), &lines);
 
         // Remove device check if requested
-        QString key = d->info->patchInfo()->keyFromFilename(
-                d->info->filename());
-        if (!d->info->patchInfo()->deviceCheck(key)) {
+        std::string key = m_impl->info->patchInfo()->keyFromFilename(
+                m_impl->info->filename());
+        if (!m_impl->info->patchInfo()->deviceCheck(key)) {
             removeDeviceChecks(&lines);
         }
 
-        *contents = lines.join(Newline).toUtf8();
+        strContents = boost::join(lines, "\n");
+        contents->assign(strContents.begin(), strContents.end());
 
         return true;
     }
@@ -135,54 +139,73 @@ bool StandardPatcher::patchFile(const QString &file,
     return false;
 }
 
-void StandardPatcher::removeDeviceChecks(QStringList *lines)
+/*!
+    \brief Disable assertions for device model/name in updater-script
+
+    \param lines Container holding strings of lines in updater-script file
+ */
+void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 {
-    QString reLine = QStringLiteral(
+    boost::regex reLine(
             "^\\s*assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
 
-    for (QString &line : *lines) {
-        if (line.contains(QRegularExpression(reLine))) {
-            line.replace(QRegularExpression(QStringLiteral("^(\\s*assert\\s*\\()")),
-                         QStringLiteral("\\1\"true\" == \"true\" || "));
+    for (auto &line : *lines) {
+        if (boost::regex_search(line, reLine)) {
+            boost::regex_replace(line, boost::regex("^(\\s*assert\\s*\\()"),
+                                 "\\1\"true\" == \"true\" || ");
         }
     }
 }
 
-void StandardPatcher::insertDualBootSh(QStringList *lines, bool legacyScript)
+/*!
+    \brief Insert boilerplate updater-script lines to initialize helper scripts
+
+    \param lines Container holding strings of lines in updater-script file
+    \param legacyScript Unimplemented
+ */
+void StandardPatcher::insertDualBootSh(std::vector<std::string> *lines,
+                                       bool legacyScript)
 {
-    int i = 0;
-    lines->insert(i++, QStringLiteral(
-            "package_extract_file(\"dualboot.sh\", \"/tmp/dualboot.sh\");"));
-    i += insertSetPerms(i, lines, legacyScript,
-            QStringLiteral("/tmp/dualboot.sh"), 0777);
-    lines->insert(i++, QStringLiteral(
-            "ui_print(\"NOT INSTALLING AS PRIMARY\");"));
-    insertUnmountEverything(i++, lines);
+    auto it = lines->begin();
+
+    it = lines->insert(it, "package_extract_file(\"dualboot.sh\", \"/tmp/dualboot.sh\");");
+    ++it;
+    it = insertSetPerms(it, lines, legacyScript, "/tmp/dualboot.sh", 0777);
+    it = lines->insert(it, "ui_print(\"NOT INSTALLING AS PRIMARY\");");
+    ++it;
+    it = insertUnmountEverything(it, lines);
 }
 
-void StandardPatcher::insertWriteKernel(QStringList *lines,
-                                        const QString &bootImage)
+/*!
+    \brief Insert line(s) to set multiboot kernel for a specific boot image
+
+    \param lines Container holding strings of lines in updater-script file
+    \param bootImage Filename of the boot image
+ */
+void StandardPatcher::insertWriteKernel(std::vector<std::string> *lines,
+                                        const std::string &bootImage)
 {
-    QString setKernelLine = QStringLiteral(
+    const std::string setKernelLine(
             "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");");
-    QStringList searchItems;
-    searchItems << QStringLiteral("loki.sh");
-    searchItems << QStringLiteral("flash_kernel.sh");
-    searchItems << bootImage;
+    std::vector<std::string> searchItems;
+    searchItems.push_back("loki.sh");
+    searchItems.push_back("flash_kernel.sh");
+    searchItems.push_back(bootImage);
 
     // Look for the last line containing the boot image string and insert
     // after that
-    for (const QString &item : searchItems) {
-        for (int i = lines->size() - 1; i > 0; i--) {
-            if (lines->at(i).contains(item)) {
+    for (auto const &item : searchItems) {
+        for (auto it = lines->rbegin(); it != lines->rend(); ++it) {
+            if (it->find(item) != std::string::npos) {
                 // Statements can be on multiple lines, so insert after a
                 // semicolon is found
-                while (i < lines->size()) {
-                    if (lines->at(i).contains(QStringLiteral(";"))) {
-                        lines->insert(i + 1, setKernelLine);
+                auto fwdIt = (++it).base();
+                while (fwdIt != lines->end()) {
+                    if (fwdIt->find(";") != std::string::npos) {
+                        lines->insert(fwdIt, setKernelLine);
                         return;
                     } else {
-                        i++;
+                        ++fwdIt;
                     }
                 }
 
@@ -192,198 +215,328 @@ void StandardPatcher::insertWriteKernel(QStringList *lines,
     }
 }
 
-void StandardPatcher::replaceMountLines(QStringList *lines,
+/*!
+    \brief Change partition mounting lines to be multiboot-compatible
+
+    \param lines Container holding strings of lines in updater-script file
+    \param device Target device (needed for /dev names)
+ */
+void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
                                         Device *device)
 {
-    QString pSystem = device->partition(System);
-    QString pCache = device->partition(Cache);
-    QString pData = device->partition(Data);
+    auto const pSystem = device->partition(System);
+    auto const pCache = device->partition(Cache);
+    auto const pData = device->partition(Data);
 
-    for (int i = 0; i < lines->size();) {
-        if (lines->at(i).contains(QRegularExpression(QStringLiteral(
-                "^\\s*mount\\s*\\(.*$")))
-                || lines->at(i).contains(QRegularExpression(QStringLiteral(
-                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$")))) {
-            if (lines->at(i).contains(System)
-                    || (!pSystem.isEmpty() && lines->at(i).contains(pSystem))) {
-                lines->removeAt(i);
-                i += insertMountSystem(i, lines);
-            } else if (lines->at(i).contains(Cache)
-                    || (!pCache.isEmpty() && lines->at(i).contains(pCache))) {
-                lines->removeAt(i);
-                i += insertMountCache(i, lines);
-            } else if (lines->at(i).contains(Data)
-                    || lines->at(i).contains(QStringLiteral("userdata"))
-                    || (!pData.isEmpty() && lines->at(i).contains(pData))) {
-                lines->removeAt(i);
-                i += insertMountData(i, lines);
+    for (auto it = lines->begin(); it != lines->end();) {
+        auto const &line = *it;
+
+        if (boost::regex_search(line, boost::regex("^\\s*mount\\s*\\(.*$"))
+                || boost::regex_search(line, boost::regex(
+                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$"))) {
+            if (line.find(System) != std::string::npos
+                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertMountSystem(it, lines);
+            } else if (line.find(Cache) != std::string::npos
+                    || (!pCache.empty() && line.find(pCache) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertMountCache(it, lines);
+            } else if (line.find(Data) != std::string::npos
+                    || line.find("userdata") != std::string::npos
+                    || (!pData.empty() && line.find(pData) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertMountData(it, lines);
             } else {
-                i++;
+                ++it;
             }
         } else {
-            i++;
+            ++it;
         }
     }
 }
 
-void StandardPatcher::replaceUnmountLines(QStringList *lines,
+/*!
+    \brief Change partition unmounting lines to be multiboot-compatible
+
+    \param lines Container holding strings of lines in updater-script file
+    \param device Target device (needed for /dev names)
+ */
+void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
                                           Device *device)
 {
-    QString pSystem = device->partition(System);
-    QString pCache = device->partition(Cache);
-    QString pData = device->partition(Data);
+    auto const pSystem = device->partition(System);
+    auto const pCache = device->partition(Cache);
+    auto const pData = device->partition(Data);
 
-    for (int i = 0; i < lines->size();) {
-        if (lines->at(i).contains(QRegularExpression(QStringLiteral(
-                "^\\s*unmount\\s*\\(.*$")))
-                || lines->at(i).contains(QRegularExpression(QStringLiteral(
-                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"umount\".*$")))) {
-            if (lines->at(i).contains(System)
-                    || (!pSystem.isEmpty() && lines->at(i).contains(pSystem))) {
-                lines->removeAt(i);
-                i += insertUnmountSystem(i, lines);
-            } else if (lines->at(i).contains(Cache)
-                    || (!pCache.isEmpty() && lines->at(i).contains(pCache))) {
-                lines->removeAt(i);
-                i += insertUnmountCache(i, lines);
-            } else if (lines->at(i).contains(Data)
-                    || lines->at(i).contains(QStringLiteral("userdata"))
-                    || (!pData.isEmpty() && lines->at(i).contains(pData))) {
-                lines->removeAt(i);
-                i += insertUnmountData(i, lines);
+    for (auto it = lines->begin(); it != lines->end();) {
+        auto const &line = *it;
+
+        if (boost::regex_search(line, boost::regex("^\\s*unmount\\s*\\(.*$"))
+                || boost::regex_search(line, boost::regex(
+                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"umount\".*$"))) {
+            if (line.find(System) != std::string::npos
+                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertUnmountSystem(it, lines);
+            } else if (line.find(Cache) != std::string::npos
+                    || (!pCache.empty() && line.find(pCache) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertUnmountCache(it, lines);
+            } else if (line.find(Data) != std::string::npos
+                    || line.find("userdata") != std::string::npos
+                    || (!pData.empty() && line.find(pData) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertUnmountData(it, lines);
             } else {
-                i++;
+                ++it;
             }
         } else {
-            i++;
+            ++it;
         }
     }
 }
 
-void StandardPatcher::replaceFormatLines(QStringList *lines,
+/*!
+    \brief Change partition formatting lines to be multiboot-compatible
+
+    \param lines Container holding strings of lines in updater-script file
+    \param device Target device (needed for /dev names)
+ */
+void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
                                          Device *device)
 {
-    QString pSystem = device->partition(System);
-    QString pCache = device->partition(Cache);
-    QString pData = device->partition(Data);
+    auto const pSystem = device->partition(System);
+    auto const pCache = device->partition(Cache);
+    auto const pData = device->partition(Data);
 
-    for (int i = 0; i < lines->size();) {
-        if (lines->at(i).contains(QRegularExpression(
-                QStringLiteral("^\\s*format\\s*\\(.*$")))) {
-            if (lines->at(i).contains(System)
-                    || (!pSystem.isEmpty() && lines->at(i).contains(pSystem))) {
-                lines->removeAt(i);
-                i += insertFormatSystem(i, lines);
-            } else if (lines->at(i).contains(Cache)
-                    || (!pCache.isEmpty() && lines->at(i).contains(pCache))) {
-                lines->removeAt(i);
-                i += insertFormatCache(i, lines);
-            } else if (lines->at(i).contains(QStringLiteral("userdata"))
-                    || (!pData.isEmpty() && lines->at(i).contains(pData))) {
-                lines->removeAt(i);
-                i += insertFormatData(i, lines);
+    for (auto it = lines->begin(); it != lines->end();) {
+        auto const &line = *it;
+
+        if (boost::regex_search(line, boost::regex(
+                "^\\s*format\\s*\\(.*$"))) {
+            if (line.find(System) != std::string::npos
+                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertFormatSystem(it, lines);
+            } else if (line.find(Cache) != std::string::npos
+                    || (!pCache.empty() && line.find(pCache) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertFormatCache(it, lines);
+            } else if (line.find("userdata") != std::string::npos
+                    || (!pData.empty() && line.find(pData) != std::string::npos)) {
+                it = lines->erase(it);
+                it = insertFormatData(it, lines);
             } else {
-                i++;
+                ++it;
             }
-        } else if (lines->at(i).contains(QRegularExpression(
-                QStringLiteral("delete_recursive\\s*\\([^\\)]*\"/system\"")))) {
-            lines->removeAt(i);
-            i += insertFormatSystem(i, lines);
-        } else if (lines->at(i).contains(QRegularExpression(
-                QStringLiteral("delete_recursive\\s*\\([^\\)]*\"/cache\"")))) {
-            lines->removeAt(i);
-            i += insertFormatCache(i, lines);
+        } else if (boost::regex_search(line, boost::regex(
+                "delete_recursive\\s*\\([^\\)]*\"/system\""))) {
+            it = lines->erase(it);
+            it = insertFormatSystem(it, lines);
+        } else if (boost::regex_search(line, boost::regex(
+                "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
+            it = lines->erase(it);
+            it = insertFormatCache(it, lines);
         } else {
-            i++;
+            ++it;
         }
     }
 }
 
-int StandardPatcher::insertMountSystem(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to mount the ROM's /system
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertMountSystem(std::vector<std::string>::iterator position,
+                                   std::vector<std::string> *lines)
 {
-    lines->insert(index, Mount.arg(System));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Mount) % System).str());
+    return ++position;
 }
 
-int StandardPatcher::insertMountCache(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to mount the ROM's /cache
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertMountCache(std::vector<std::string>::iterator position,
+                                  std::vector<std::string> *lines)
 {
-    lines->insert(index, Mount.arg(Cache));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Mount) % Cache).str());
+    return ++position;
 }
 
-int StandardPatcher::insertMountData(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to mount the ROM's /data
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertMountData(std::vector<std::string>::iterator position,
+                                 std::vector<std::string> *lines)
 {
-    lines->insert(index, Mount.arg(Data));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Mount) % Data).str());
+    return ++position;
 }
 
-int StandardPatcher::insertUnmountSystem(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to unmount the ROM's /system
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertUnmountSystem(std::vector<std::string>::iterator position,
+                                     std::vector<std::string> *lines)
 {
-    lines->insert(index, Unmount.arg(System));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Unmount) % System).str());
+    return ++position;
 }
 
-int StandardPatcher::insertUnmountCache(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to unmount the ROM's /cache
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertUnmountCache(std::vector<std::string>::iterator position,
+                                    std::vector<std::string> *lines)
 {
-    lines->insert(index, Unmount.arg(Cache));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Unmount) % Cache).str());
+    return ++position;
 }
 
-int StandardPatcher::insertUnmountData(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to unmount the ROM's /data
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertUnmountData(std::vector<std::string>::iterator position,
+                                   std::vector<std::string> *lines)
 {
-    lines->insert(index, Unmount.arg(Data));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Unmount) % Data).str());
+    return ++position;
 }
 
-int StandardPatcher::insertUnmountEverything(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to unmount all partitions
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertUnmountEverything(std::vector<std::string>::iterator position,
+                                         std::vector<std::string> *lines)
 {
-    lines->insert(index, Unmount.arg(QStringLiteral("everything")));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Unmount) % "everything").str());
+    return ++position;
 }
 
-int StandardPatcher::insertFormatSystem(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to format the ROM's /system
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertFormatSystem(std::vector<std::string>::iterator position,
+                                    std::vector<std::string> *lines)
 {
-    lines->insert(index, Format.arg(System));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Format) % System).str());
+    return ++position;
 }
 
-int StandardPatcher::insertFormatCache(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to format the ROM's /cache
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertFormatCache(std::vector<std::string>::iterator position,
+                                   std::vector<std::string> *lines)
 {
-    lines->insert(index, Format.arg(Cache));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Format) % Cache).str());
+    return ++position;
 }
 
-int StandardPatcher::insertFormatData(int index, QStringList *lines)
+/*!
+    \brief Insert updater-script line to format the ROM's /data
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertFormatData(std::vector<std::string>::iterator position,
+                                  std::vector<std::string> *lines)
 {
-    lines->insert(index, Format.arg(Data));
-    return 1;
+    position = lines->insert(
+            position, (boost::format(Format) % Data).str());
+    return ++position;
 }
 
-int StandardPatcher::insertSetPerms(int index, QStringList *lines,
-                                    bool legacyScript, const QString &file,
-                                    uint mode)
-{
-#if 0
-    if (legacyScript) {
-        lines->insert(index, QStringLiteral("set_perm(0, 0, %2, \"%1\");")
-                .arg(file)
-                .arg(mode, 5, 8, QLatin1Char('0')));
-    } else {
-        lines->insert(index, QStringLiteral(
-                "set_metadata(\"%1\", \"uid\", 0, \"gid\", 0, \"mode\", 0%2);")
-                .arg(file)
-                .arg(mode, 0, 8, QLatin1Char('0')));
-    }
-#else
-    Q_UNUSED(legacyScript);
-#endif
+/*!
+    \brief Insert updater-script line for setting permissions for a file
+
+    \param position Position to insert at
+    \param lines Container holding strings of lines in updater-script file
+    \param file File to change the permissions form
+    \param mode Octal unix permissions
+
+    \return Iterator to position after the inserted line(s)
+ */
+std::vector<std::string>::iterator
+StandardPatcher::insertSetPerms(std::vector<std::string>::iterator position,
+                                std::vector<std::string> *lines,
+                                bool legacyScript,
+                                const std::string &file,
+                                unsigned int mode) {
+
+    (void) legacyScript;
 
     // Don't feel like updating all the patchinfos right now to account for
     // all cases
-    lines->insert(index, QStringLiteral(
-            "run_program(\"/sbin/busybox\", \"chmod\", \"0%2\", \"%1\");")
-            .arg(file)
-            .arg(mode, 0, 8, QLatin1Char('0')));
-
-    return 1;
+    position = lines->insert(position, (boost::format(
+            "run_program(\"/sbin/busybox\", \"chmod\", \"0%2$o\", \"%1%\");")
+            % file % mode).str());
+    return ++position;
 }
