@@ -34,12 +34,30 @@ public:
 };
 
 
+/*! \brief SELinux permissive mode */
 const std::string Device::SelinuxPermissive = "permissive";
+/*! \brief Leave SELinux mode unchanged */
 const std::string Device::SelinuxUnchanged = "unchanged";
+/*! \brief System partition */
 const std::string Device::SystemPartition = "system";
+/*! \brief Cache partition */
 const std::string Device::CachePartition = "cache";
+/*! \brief Data partition */
 const std::string Device::DataPartition = "data";
 
+
+/*!
+ * \class Device
+ * \brief Simple class containing information about a supported device
+ *
+ * This class stores the following information:
+ *
+ * - Device codename (eg. jflte)
+ * - Device name (eg. Samsung Galaxy S 4)
+ * - CPU architecture (eg. armeabi-v7a)
+ * - SELinux mode (eg. enforcing)
+ * - Partition numbers for the system, cache, and data partitions
+ */
 
 Device::Device() : m_impl(new Impl())
 {
@@ -51,36 +69,75 @@ Device::~Device()
 {
 }
 
+/*!
+ * \brief Device's codename
+ *
+ * \return Device codename
+ */
 std::string Device::codename() const
 {
     return m_impl->codename;
 }
 
+/*!
+ * \brief Set the device's codename
+ *
+ * \param name Codename
+ */
 void Device::setCodename(std::string name)
 {
     m_impl->codename = std::move(name);
 }
 
+/*!
+ * \brief Device's full name
+ *
+ * \return Device name
+ */
 std::string Device::name() const
 {
     return m_impl->name;
 }
 
+/*!
+ * \brief Set the device's full name
+ *
+ * \param name Name
+ */
 void Device::setName(std::string name)
 {
     m_impl->name = std::move(name);
 }
 
+/*!
+ * \brief Device's CPU architecture
+ *
+ * \note The patcher only supports `armeabi-v7a` at the moment.
+ *
+ * \return Architecture
+ */
 std::string Device::architecture() const
 {
     return m_impl->architecture;
 }
 
+/*!
+ * \brief Set the device's CPU architecture
+ *
+ * \note The patcher only supports `armeabi-v7a` at the moment.
+ *
+ * \param arch Architecture
+ */
 void Device::setArchitecture(std::string arch)
 {
     m_impl->architecture = std::move(arch);
 }
 
+/*!
+ * \brief Device's SELinux mode
+ *
+ * \return SELinux mode
+ */
 std::string Device::selinux() const
 {
     if (m_impl->selinux == SelinuxUnchanged) {
@@ -90,11 +147,23 @@ std::string Device::selinux() const
     return m_impl->selinux;
 }
 
+/*!
+ * \brief Set the device's SELinux mode
+ *
+ * \param selinux SELinux mode
+ */
 void Device::setSelinux(std::string selinux)
 {
     m_impl->selinux = std::move(selinux);
 }
 
+/*!
+ * \brief Get partition number for a specific partition
+ *
+ * \param which Partition
+ *
+ * \return Partition
+ */
 std::string Device::partition(const std::string &which) const
 {
     if (m_impl->partitions.find(which) != m_impl->partitions.end()) {
@@ -104,11 +173,22 @@ std::string Device::partition(const std::string &which) const
     }
 }
 
+/*!
+ * \brief Set the partition number for a specific partition
+ *
+ * \param which Partition
+ * \param partition Partition number (eg. `mmcblk16`)
+ */
 void Device::setPartition(const std::string &which, std::string partition)
 {
     m_impl->partitions[which] = std::move(partition);
 }
 
+/*!
+ * \brief List of partition types with partition numbers assigned
+ *
+ * \return List of partition types
+ */
 std::vector<std::string> Device::partitionTypes() const
 {
     std::vector<std::string> keys;
