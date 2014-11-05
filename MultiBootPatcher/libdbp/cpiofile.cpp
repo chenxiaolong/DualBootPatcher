@@ -52,7 +52,20 @@ CpioFile::Impl::~Impl()
     }
 }
 
-// --------------------------------
+
+/*!
+ * \class CpioFile
+ *
+ * This is a very simple class that allows a cpio archive to be manipulated. It
+ * is meant for use with ramdisk cpio archives. The only supported operations
+ * are:
+ *
+ * - Adding regular files
+ * - Adding symlinks
+ * - Checking existence of files
+ * - Removing files
+ */
+
 
 CpioFile::CpioFile() : m_impl(new Impl())
 {
@@ -62,11 +75,31 @@ CpioFile::~CpioFile()
 {
 }
 
+/*!
+ * \brief Get error information
+ *
+ * \note The returned PatcherError contains valid information only if an
+ *       operation has failed.
+ *
+ * \return PatcherError containing information about the error
+ */
 PatcherError CpioFile::error() const
 {
     return m_impl->error;
 }
 
+/*!
+ * \brief Load a cpio archive from binary data
+ *
+ * This function loads a cpio archive from a vector containing the binary data.
+ * Each file's metadata and contents will be copied and stored.
+ *
+ * \warning If the cpio archive cannot be loaded, this CpioFile object may be
+ *          left in an inconsistent state. Create a new CpioFile to load another
+ *          cpio archive.
+ *
+ * \return Whether the cpio archive was successfully read
+ */
 bool CpioFile::load(const std::vector<unsigned char> &data)
 {
     archive *a;
@@ -175,6 +208,15 @@ static bool sortByName(const FilePair &p1, const FilePair &p2)
     return std::strcmp(cname1, cname2) < 0;
 }
 
+/*!
+ * \brief Constructs the cpio archive
+ *
+ * This function builds the `.cpio` file, optionally compressing it with gzip.
+ * The archive uses the `newc` format and files are written in lexographical
+ * order.
+ *
+ * \return Cpio archive binary data
+ */
 std::vector<unsigned char> CpioFile::createData(bool gzip)
 {
     archive *a;
@@ -250,6 +292,15 @@ std::vector<unsigned char> CpioFile::createData(bool gzip)
     return data;
 }
 
+/*!
+ * \brief Check if a file exists in the cpio archive
+ *
+ * \note A full path within the archive must be specified. For example, if the
+ *       archive contains `sbin/busybox`, calling this function with `busybox`
+ *       will return false.
+ *
+ * \return Whether or not the file exists
+ */
 bool CpioFile::exists(const std::string &name) const
 {
     for (auto const &p : m_impl->files) {
@@ -261,6 +312,17 @@ bool CpioFile::exists(const std::string &name) const
     return false;
 }
 
+/*!
+ * \brief Remove a file from the cpio archive
+ *
+ * \note The full path to the file within the archive should be specified.
+ *
+ * \warning This function does not perform any checks on what is being removed.
+ *          The behavior when creating an archive, if a directory containing
+ *          files is removed, is undefined.
+ *
+ * \return Whether the file was removed
+ */
 bool CpioFile::remove(const std::string &name)
 {
     for (auto it = m_impl->files.begin(); it != m_impl->files.end(); ++it) {
@@ -275,6 +337,11 @@ bool CpioFile::remove(const std::string &name)
     return false;
 }
 
+/*!
+ * \brief List of files in the cpio archive
+ *
+ * \return List of filesnames
+ */
 std::vector<std::string> CpioFile::filenames() const
 {
     std::vector<std::string> list;
@@ -286,6 +353,14 @@ std::vector<std::string> CpioFile::filenames() const
     return list;
 }
 
+/*!
+ * \brief Get contents of a file in the archive
+ *
+ * \todo This returned value is currently ambiguous as both an empty file and
+ *       a non-existant file will return an empty vector.
+ *
+ * \return Contents of specified file
+ */
 std::vector<unsigned char> CpioFile::contents(const std::string &name) const
 {
     for (auto const &p : m_impl->files) {
@@ -297,6 +372,14 @@ std::vector<unsigned char> CpioFile::contents(const std::string &name) const
     return std::vector<unsigned char>();
 }
 
+/*!
+ * \brief Set contents of a file in the archive
+ *
+ * \todo No error is reported if the client/user attempts to set the contents
+ *       for a file that doesn't exist in the archive.
+ *
+ * \note The contents of a symbolic link is the link's target path.
+ */
 void CpioFile::setContents(const std::string &name,
                            std::vector<unsigned char> data)
 {
@@ -309,6 +392,16 @@ void CpioFile::setContents(const std::string &name,
     }
 }
 
+/*!
+ * \brief Add a symbolic link to the archive
+ *
+ * \note This function will not overwrite an existing file.
+ *
+ * \param source Source path
+ * \param target Target path
+ *
+ * \return Whether the symlink was added
+ */
 bool CpioFile::addSymlink(const std::string &source, const std::string &target)
 {
     if (exists(target)) {
@@ -342,6 +435,17 @@ bool CpioFile::addSymlink(const std::string &source, const std::string &target)
     return true;
 }
 
+/*!
+ * \brief Add a file to the archive
+ *
+ * \note This function will not overwrite an existing file.
+ *
+ * \param path Path to file to add
+ * \param name Target path in archive
+ * \param perms Octal unix permissions
+ *
+ * \return Whether the file was added
+ */
 bool CpioFile::addFile(const std::string &path, const std::string &name,
                        unsigned int perms)
 {
@@ -361,6 +465,17 @@ bool CpioFile::addFile(const std::string &path, const std::string &name,
     return addFile(std::move(contents), name, perms);
 }
 
+/*!
+ * \brief Add a file (from binary data) to the archive
+ *
+ * \note This function will not overwrite an existing file.
+ *
+ * \param contents Binary contents of file
+ * \param name Target path in archive
+ * \param perms Octal unix permissions
+ *
+ * \return Whether the file was added
+ */
 bool CpioFile::addFile(std::vector<unsigned char> contents,
                        const std::string &name, unsigned int perms)
 {

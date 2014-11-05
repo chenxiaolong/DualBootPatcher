@@ -10,15 +10,16 @@ add_definitions(
 
 set(DBP_SOURCES
     bootimage.cpp
+    cpiofile.cpp
     partitionconfig.cpp
     patchinfo.cpp
-    cpiofile.cpp
     fileinfo.cpp
     patcherpaths.cpp
     device.cpp
     patchererror.cpp
     private/fileutils.cpp
     cwrapper/cbootimage.cpp
+    cwrapper/ccpiofile.cpp
 )
 
 set(DBP_HEADERS
