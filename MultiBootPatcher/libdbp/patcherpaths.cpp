@@ -23,6 +23,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/regex.hpp>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -298,13 +299,13 @@ std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) c
     std::vector<PatchInfo *> l;
 
     for (PatchInfo *info : m_impl->patchInfos) {
-        if (boost::starts_with(info->path(), device->codename())) {
+        if (boost::starts_with(info->id(), device->codename())) {
             l.push_back(info);
             continue;
         }
 
         for (auto const &include : m_impl->patchinfoIncludeDirs) {
-            if (boost::starts_with(info->path(), include)) {
+            if (boost::starts_with(info->id(), include)) {
                 l.push_back(info);
                 break;
             }
@@ -312,6 +313,45 @@ std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) c
     }
 
     return l;
+}
+
+PatchInfo * PatcherPaths::findMatchingPatchInfo(Device *device,
+                                                const std::string &filename)
+{
+    if (device == nullptr) {
+        return nullptr;
+    }
+
+    if (filename.empty()) {
+        return nullptr;
+    }
+
+    std::string noPath = boost::filesystem::path(filename).filename().string();
+
+    for (PatchInfo *info : patchInfos(device)) {
+        for (auto const &regex : info->regexes()) {
+            if (boost::regex_search(noPath, boost::regex(regex))) {
+                bool skipCurInfo = false;
+
+                // If the regex matches, make sure the filename isn't matched
+                // by one of the exclusion regexes
+                for (auto const &excludeRegex : info->excludeRegexes()) {
+                    if (boost::regex_search(noPath, boost::regex(excludeRegex))) {
+                        skipCurInfo = true;
+                        break;
+                    }
+                }
+
+                if (skipCurInfo) {
+                    break;
+                }
+
+                return info;
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 void PatcherPaths::loadDefaultDevices()
@@ -619,7 +659,7 @@ bool PatcherPaths::Impl::loadPatchInfoXml(const std::string &path,
         if (xmlStrcmp(curNode->name, PatchInfoTagPatchinfo) == 0) {
             PatchInfo *info = new PatchInfo();
             parsePatchInfoTagPatchinfo(curNode, info);
-            info->setPath(pathId);
+            info->setId(pathId);
             patchInfos.push_back(info);
         } else {
             Log::log(Log::Warning, "Unknown tag: %s", (char *) curNode->name);

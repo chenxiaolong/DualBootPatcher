@@ -66,6 +66,9 @@ public:
     std::vector<PatchInfo *> patchInfos() const;
     std::vector<PatchInfo *> patchInfos(const Device * const device) const;
 
+    PatchInfo * findMatchingPatchInfo(Device *device,
+                                      const std::string &filename);
+
     void loadDefaultDevices();
     void loadDefaultPatchers();
 
