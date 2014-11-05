@@ -27,12 +27,13 @@
 #include "patcherpaths.h"
 
 
+/*! \internal */
 class PatchInfo::Impl
 {
 public:
     Impl();
 
-    std::string path;
+    std::string id;
 
     // The name of the ROM
     std::string name;
@@ -84,7 +85,9 @@ public:
 };
 
 
+/*! \brief Key for getting the default values */
 const std::string PatchInfo::Default = "default";
+/*! \brief Key for getting the `<not-matched>` values */
 const std::string PatchInfo::NotMatched = "not-matched";
 
 PatchInfo::Impl::Impl()
@@ -105,7 +108,37 @@ PatchInfo::Impl::Impl()
     supportedConfigs[PatchInfo::Default].push_back("all");
 }
 
-// --------------------------------
+/*!
+ * \class PatchInfo
+ * \brief Holds information describing how a file should be patched
+ *
+ * This class holds the bits and pieces indicating which parts of the patcher
+ * should be used for patching a file as well as arguments for those components.
+ *
+ * The following types of regexes are used for matching files:
+ *
+ * - Regexes for matching a filename
+ * - Exclusion regexes (to avoid making the regexes too complicated)
+ *
+ * The following parameter keys are used for configuring the patching process
+ * for a particular group of files:
+ *
+ * - Default: Applies to all matched files
+ * - Conditional regexes: Applies to the subset of files that match these
+ *   conditional regexes
+ * - Not matched: Applies to files that don't match the conditional regexes
+ *
+ * The following parameters are used to configure that patcher:
+ *
+ * - List of AutoPatchers are their arguments
+ * - Whether the file contains a boot image
+ * - Whether to autodetect the boot images
+ * - List of manually specified boot images
+ * - Which ramdisk patcher to use
+ * - Which patched init binary to use (if needed)
+ * - Whether device model asserts in the updater-script file should be nullified
+ * - List of supported/unsupported partition configurations
+ */
 
 PatchInfo::PatchInfo() : m_impl(new Impl())
 {
@@ -115,26 +148,66 @@ PatchInfo::~PatchInfo()
 {
 }
 
-std::string PatchInfo::path() const
+/*!
+ * \brief PatchInfo identifier
+ *
+ * This is usually similar to eg.
+ * `[Device codename]/(ROMs|Kernels)/[ROM/Kernel Type]/[ROM/Kernel Name]`
+ *
+ * \return PatchInfo ID
+ */
+std::string PatchInfo::id() const
 {
-    return m_impl->path;
+    return m_impl->id;
 }
 
-void PatchInfo::setPath(std::string path)
+/*!
+ * \brief Set the PatchInfo ID
+ *
+ * The identifier should be unique inside whichever container is used to store
+ * the set of PatchInfo objects.
+ *
+ * \param id ID
+ */
+void PatchInfo::setId(std::string id)
 {
-    m_impl->path = std::move(path);
+    m_impl->id = std::move(id);
 }
 
+/*!
+ * \brief Name of ROM or kernel
+ *
+ * This is the full name of the ROM or kernel this PatchInfo describes.
+ *
+ * \return ROM or kernel name
+ */
 std::string PatchInfo::name() const
 {
     return m_impl->name;
 }
 
+/*!
+ * \brief Set name of ROM or kernel
+ *
+ * \param name Name of ROM or kernel
+ */
 void PatchInfo::setName(std::string name)
 {
     m_impl->name = std::move(name);
 }
 
+/*!
+ * \brief Get the parameter key for a filename
+ *
+ * This returns the corresponding conditional regex if one matches the filename.
+ * Otherwise, it will return PatchInfo::NotMatched if the PatchInfo has a
+ * <not-matched> element. If it doesn't have a <not-matched> element,
+ * PatchInfo::Default is returned.
+ *
+ * \param fileName Filename
+ *
+ * \return Conditional regex OR PatchInfo::NotMatched OR PatchInfo::Default
+ */
 std::string PatchInfo::keyFromFilename(const std::string &fileName) const
 {
     std::string noPath = boost::filesystem::path(fileName).filename().string();
@@ -156,46 +229,93 @@ std::string PatchInfo::keyFromFilename(const std::string &fileName) const
     return Default;
 }
 
+/*!
+ * \brief List of filename matching regexes
+ *
+ * \return Regexes
+ */
 std::vector<std::string> PatchInfo::regexes() const
 {
     return m_impl->regexes;
 }
 
+/*!
+ * \brief Set the list of filename matching regexes
+ *
+ * \param regexes Regexes
+ */
 void PatchInfo::setRegexes(std::vector<std::string> regexes)
 {
     m_impl->regexes = std::move(regexes);
 }
 
+/*!
+ * \brief List of filename excluding regexes
+ *
+ * \return Exclusion regexes
+ */
 std::vector<std::string> PatchInfo::excludeRegexes() const
 {
     return m_impl->excludeRegexes;
 }
 
+/*!
+ * \brief Set the list of filename excluding regexes
+ *
+ * \param regexes Exclusion regexes
+ */
 void PatchInfo::setExcludeRegexes(std::vector<std::string> regexes)
 {
     m_impl->excludeRegexes = std::move(regexes);
 }
 
+/*!
+ * \brief List of conditional regexes for parameters
+ *
+ * \return Conditional regexes
+ */
 std::vector<std::string> PatchInfo::condRegexes() const
 {
     return m_impl->condRegexes;
 }
 
+/*!
+ * \brief Set the list of conditional regexes
+ *
+ * \param regexes Conditional regexes
+ */
 void PatchInfo::setCondRegexes(std::vector<std::string> regexes)
 {
     m_impl->condRegexes = std::move(regexes);
 }
 
+/*!
+ * \brief Check if the PatchInfo has a <not-matched> element
+ *
+ * \return Whether the PatchInfo has a <not-matched> element
+ */
 bool PatchInfo::hasNotMatched() const
 {
     return m_impl->hasNotMatchedElement;
 }
 
+/*!
+ * \brief Set whether the PatchInfo has a <not-matched> element
+ *
+ * \param hasElem Has not matched element
+ */
 void PatchInfo::setHasNotMatched(bool hasElem)
 {
     m_impl->hasNotMatchedElement = hasElem;
 }
 
+/*!
+ * \brief Get list of autopatchers and their parameters
+ *
+ * \param key Parameter key
+ *
+ * \return List of autopatchers
+ */
 PatchInfo::AutoPatcherItems PatchInfo::autoPatchers(const std::string &key) const
 {
     bool hasKey = m_impl->autoPatchers.find(key) != m_impl->autoPatchers.end();
@@ -216,12 +336,25 @@ PatchInfo::AutoPatcherItems PatchInfo::autoPatchers(const std::string &key) cons
     return items;
 }
 
+/*!
+ * \brief Set list of autopatchers and their parameters
+ *
+ * \param key Parameter key
+ * \param autoPatchers List of autopatchers
+ */
 void PatchInfo::setAutoPatchers(const std::string &key,
                                 AutoPatcherItems autoPatchers)
 {
     m_impl->autoPatchers[key] = std::move(autoPatchers);
 }
 
+/*!
+ * \brief Whether the patched file has a boot image
+ *
+ * \param key Parameter key
+ *
+ * \return Whether the patched file has a boot image
+ */
 bool PatchInfo::hasBootImage(const std::string &key) const
 {
     if (m_impl->hasBootImage.find(key) != m_impl->hasBootImage.end()) {
@@ -231,11 +364,24 @@ bool PatchInfo::hasBootImage(const std::string &key) const
     return bool();
 }
 
+/*!
+ * \brief Set whether the patched file has a boot image
+ *
+ * \param key Parameter key
+ * \param hasBootImage Has boot image
+ */
 void PatchInfo::setHasBootImage(const std::string &key, bool hasBootImage)
 {
     m_impl->hasBootImage[key] = hasBootImage;
 }
 
+/*!
+ * \brief Whether boot images should be autodetected
+ *
+ * \param key Parameter key
+ *
+ * \return Whether boot images should be autodetected
+ */
 bool PatchInfo::autodetectBootImages(const std::string &key) const
 {
     if (m_impl->autodetectBootImages.find(key)
@@ -246,11 +392,24 @@ bool PatchInfo::autodetectBootImages(const std::string &key) const
     return bool();
 }
 
+/*!
+ * \brief Set whether boot images should be autodetected
+ *
+ * \param key Parameter key
+ * \param autoDetect Autodetect boot images
+ */
 void PatchInfo::setAutoDetectBootImages(const std::string &key, bool autoDetect)
 {
     m_impl->autodetectBootImages[key] = autoDetect;
 }
 
+/*!
+ * \brief List of manually specified boot images
+ *
+ * \param key Parameter key
+ *
+ * \return List of manually specified boot images
+ */
 std::vector<std::string> PatchInfo::bootImages(const std::string &key) const
 {
     bool hasKey = m_impl->bootImages.find(key) != m_impl->bootImages.end();
@@ -271,12 +430,25 @@ std::vector<std::string> PatchInfo::bootImages(const std::string &key) const
     return items;
 }
 
+/*!
+ * \brief Set list of manually specified boot images
+ *
+ * \param key Parameter key
+ * \param bootImages List of boot images
+ */
 void PatchInfo::setBootImages(const std::string &key,
                               std::vector<std::string> bootImages)
 {
     m_impl->bootImages[key] = std::move(bootImages);
 }
 
+/*!
+ * \brief Which ramdisk patcher to use
+ *
+ * \param key Parameter key
+ *
+ * \return Which ramdisk patcher to use
+ */
 std::string PatchInfo::ramdisk(const std::string &key) const
 {
     if (m_impl->ramdisk.find(key) != m_impl->ramdisk.end()) {
@@ -286,11 +458,25 @@ std::string PatchInfo::ramdisk(const std::string &key) const
     return std::string();
 }
 
+/*!
+ * \brief Set which ramdisk patcher to use
+ *
+ * \param key Parameter key
+ * \param ramdisk Which ramdisk patcher to use
+ */
 void PatchInfo::setRamdisk(const std::string &key, std::string ramdisk)
 {
     m_impl->ramdisk[key] = std::move(ramdisk);
 }
 
+/*!
+ * \brief Which patched init binary to use
+ *
+ * \param key Parameter key
+ *
+ * \return Which patched init binary to use or empty string if no patched init
+ *         binary should be used
+ */
 std::string PatchInfo::patchedInit(const std::string &key) const
 {
     if (m_impl->patchedInit.find(key) != m_impl->patchedInit.end()) {
@@ -300,11 +486,24 @@ std::string PatchInfo::patchedInit(const std::string &key) const
     return std::string();
 }
 
+/*!
+ * \brief Set which patched init binary to use
+ *
+ * \param key Parameter key
+ * \param init Patched init binary
+ */
 void PatchInfo::setPatchedInit(const std::string &key, std::string init)
 {
     m_impl->patchedInit[key] = std::move(init);
 }
 
+/*!
+ * \brief Whether device model checks should be kept
+ *
+ * \param key Parameter key
+ *
+ * \return Whether device model checks should be kept
+ */
 bool PatchInfo::deviceCheck(const std::string &key) const
 {
     if (m_impl->deviceCheck.find(key) != m_impl->deviceCheck.end()) {
@@ -314,11 +513,24 @@ bool PatchInfo::deviceCheck(const std::string &key) const
     return bool();
 }
 
+/*!
+ * \brief Set whether device model checks should be kept
+ *
+ * \param key Parameter key
+ * \param deviceCheck Keep device model checks
+ */
 void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
 {
     m_impl->deviceCheck[key] = deviceCheck;
 }
 
+/*!
+ * \brief List of supported partition configurations
+ *
+ * \param key Parameter key
+ *
+ * \return List of supported PartitionConfig IDs
+ */
 std::vector<std::string> PatchInfo::supportedConfigs(const std::string &key) const
 {
     bool hasKey = m_impl->supportedConfigs.find(key) != m_impl->supportedConfigs.end();
@@ -339,48 +551,14 @@ std::vector<std::string> PatchInfo::supportedConfigs(const std::string &key) con
     return items;
 }
 
+/*!
+ * \brief Set list of supported partition configurations
+ *
+ * \param key Parameter key
+ * \param configs List of supported PartitionConfig IDs
+ */
 void PatchInfo::setSupportedConfigs(const std::string &key,
                                     std::vector<std::string> configs)
 {
     m_impl->supportedConfigs[key] = std::move(configs);
-}
-
-PatchInfo * PatchInfo::findMatchingPatchInfo(PatcherPaths *pp,
-                                             Device *device,
-                                             const std::string &filename)
-{
-    if (device == nullptr) {
-        return nullptr;
-    }
-
-    if (filename.empty()) {
-        return nullptr;
-    }
-
-    std::string noPath = boost::filesystem::path(filename).filename().string();
-
-    for (PatchInfo *info : pp->patchInfos(device)) {
-        for (auto const &regex : info->regexes()) {
-            if (boost::regex_search(noPath, boost::regex(regex))) {
-                bool skipCurInfo = false;
-
-                // If the regex matches, make sure the filename isn't matched
-                // by one of the exclusion regexes
-                for (auto const &excludeRegex : info->excludeRegexes()) {
-                    if (boost::regex_search(noPath, boost::regex(excludeRegex))) {
-                        skipCurInfo = true;
-                        break;
-                    }
-                }
-
-                if (skipCurInfo) {
-                    break;
-                }
-
-                return info;
-            }
-        }
-    }
-
-    return nullptr;
 }
