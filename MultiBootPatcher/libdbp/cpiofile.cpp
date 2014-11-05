@@ -34,6 +34,7 @@
 
 typedef std::pair<archive_entry *, std::vector<unsigned char>> FilePair;
 
+/*! \internal */
 class CpioFile::Impl
 {
 public:

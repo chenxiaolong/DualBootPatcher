@@ -45,6 +45,8 @@ static const unsigned int DEFAULT_RAMDISK_OFFSET = 0x01000000u;
 static const unsigned int DEFAULT_SECOND_OFFSET = 0x00f00000u;
 static const unsigned int DEFAULT_TAGS_OFFSET = 0x00000100u;
 
+
+/*! \internal */
 struct BootImageHeader
 {
     unsigned char magic[BOOT_MAGIC_SIZE];
@@ -72,6 +74,7 @@ struct BootImageHeader
 
 static const char *LOKI_MAGIC = "LOKI";
 
+/*! \internal */
 struct LokiHeader {
     unsigned char magic[4]; /* 0x494b4f4c */
     unsigned int recovery;  /* 0 = boot.img, 1 = recovery.img */
@@ -117,6 +120,7 @@ const char *SHELL_CODE =
         "\xee\xee\xee\xee";
 
 
+/*! \internal */
 class BootImage::Impl
 {
 public:

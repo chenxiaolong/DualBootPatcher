@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 
+/*! \internal */
 class Device::Impl
 {
 public:
