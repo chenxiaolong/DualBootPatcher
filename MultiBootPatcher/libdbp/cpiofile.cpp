@@ -55,6 +55,7 @@ CpioFile::Impl::~Impl()
 
 /*!
  * \class CpioFile
+ * \brief Very simple class to manipulate cpio archives
  *
  * This is a very simple class that allows a cpio archive to be manipulated. It
  * is meant for use with ramdisk cpio archives. The only supported operations
