@@ -27,8 +27,6 @@
 #include "patchererror.h"
 
 
-struct LokiHeader;
-
 class LIBDBPSHARED_EXPORT BootImage
 {
 public:

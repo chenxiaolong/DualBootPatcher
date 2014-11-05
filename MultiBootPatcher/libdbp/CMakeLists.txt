@@ -18,6 +18,7 @@ set(DBP_SOURCES
     device.cpp
     patchererror.cpp
     private/fileutils.cpp
+    cwrapper/cbootimage.cpp
 )
 
 set(DBP_HEADERS

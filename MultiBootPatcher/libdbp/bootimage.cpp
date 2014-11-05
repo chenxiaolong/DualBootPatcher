@@ -166,6 +166,50 @@ private:
 };
 
 
+/*!
+ * \class BootImage
+ * \brief Handles the creation and manipulation of Android boot images
+ *
+ * BootImage provides a complete implementation of the Android boot image spec.
+ * BootImage supports plain Android boot images as well as boot images patched
+ * with both older and newer versions of Dan Rosenberg's loki tool. However,
+ * only plain boot images can be built from this class.
+ *
+ * The following parameters in the Android header can be changed:
+ *
+ * - Board name (truncated if length > 16)
+ * - Kernel cmdline (truncated if length > 512)
+ * - Page size
+ * - Kernel address [1]
+ * - Ramdisk address [1]
+ * - Second bootloader address [1]
+ * - Kernel tags address [1]
+ * - Kernel size [2]
+ * - Ramdisk size [2]
+ * - Second bootloader size [2]
+ * - Device tree size [2]
+ * - SHA1 identifier [3]
+ *
+ * [1] - Can be set using a base and an offset
+ *
+ * ]2] - Cannot be manually changed. This is automatically updated when the
+ *       corresponding image is set
+ *
+ * [3] - This is automatically computed when the images within the boot image
+ *       are changed
+ *
+ *
+ * If the boot image is patched with loki, the following parameters may be used:
+ *
+ * - Original kernel size
+ * - Original ramdisk size
+ * - Ramdisk address
+ *
+ * However, because some of these parameters were set to zero in early versions
+ * of loki, they are sometimes ignored and BootImage will search the file for
+ * the location of the kernel image and ramdisk image.
+ */
+
 BootImage::BootImage() : m_impl(new Impl(this))
 {
 }
@@ -174,11 +218,32 @@ BootImage::~BootImage()
 {
 }
 
+/*!
+ * \brief Get error information
+ *
+ * \note The returned PatcherError contains valid information only if an
+ *       operation has failed.
+ *
+ * \return PatcherError containing information about the error
+ */
 PatcherError BootImage::error() const
 {
     return m_impl->error;
 }
 
+/*!
+ * \brief Load a boot image from binary data
+ *
+ * This function loads a boot image from a vector containing the binary data.
+ * The boot image headers and other images (eg. kernel and ramdisk) will be
+ * copied and stored.
+ *
+ * \warning If the boot image cannot be loaded, do not use the same BootImage
+ *          object to load another boot image as it may contain partially
+ *          loaded data.
+ *
+ * \return Whether the boot image was successfully read and parsed.
+ */
 bool BootImage::load(const std::vector<unsigned char> &data)
 {
     // Check that the size of the boot image is okay
@@ -227,6 +292,20 @@ bool BootImage::load(const std::vector<unsigned char> &data)
     return ret;
 }
 
+/*!
+ * \brief Load a boot image file
+ *
+ * This function reads a boot image file and then calls
+ * BootImage::load(const std::vector<unsigned char> &)
+ *
+ * \warning If the boot image cannot be loaded, do not use the same BootImage
+ *          object to load another boot image as it may contain partially
+ *          loaded data.
+ *
+ * \sa BootImage::load(const std::vector<unsigned char> &)
+ *
+ * \return Whether the boot image was successfully read and parsed.
+ */
 bool BootImage::load(const std::string &filename)
 {
     std::vector<unsigned char> data;
@@ -555,6 +634,14 @@ unsigned int BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned 
     return ramdiskAddr;
 }
 
+/*!
+ * \brief Constructs the boot image binary data
+ *
+ * This function builds the bootable boot image binary data that the BootImage
+ * represents. This is equivalent to AOSP's \a mkbootimg tool.
+ *
+ * \return Boot image binary data
+ */
 std::vector<unsigned char> BootImage::create() const
 {
     std::vector<unsigned char> data;
@@ -612,6 +699,16 @@ std::vector<unsigned char> BootImage::create() const
     return data;
 }
 
+/*!
+ * \brief Constructs boot image and writes it to a file
+ *
+ * This is a convenience function that calls BootImage::create() and writes the
+ * data to the specified file.
+ *
+ * \return Whether the file was successfully written
+ *
+ * \sa BootImage::create()
+ */
 bool BootImage::createFile(const std::string &path)
 {
     std::ofstream file(path, std::ios::binary);
@@ -635,6 +732,37 @@ bool BootImage::createFile(const std::string &path)
     return true;
 }
 
+/*!
+ * \brief Extracts boot image header and data to a directory
+ *
+ * This function extracts and various pieces of header information and the
+ * images to a directory. The extracted data is complete and can be used to
+ * recreate the boot image.
+ *
+ * The files are extracted to `[directory]/[prefix]-[file]`, where \a directory
+ * and \a prefix are passed as parameters. ("boot.img" is the common prefix.)
+ *
+ * The following files will be written by this function:
+ *
+ * - `[prefix]-cmdline` : Kernel command line
+ * - `[prefix]-base` : Base address for offsets
+ * - `[prefix]-ramdisk_offset` : Address offset of the ramdisk image
+ * - `[prefix]-second_offset` : Address offset of the second bootloader image
+ *                             (if it exists)
+ * - `[prefix]-tags_offset` : Address offset of the kernel tags image
+ *                           (if it exists)
+ * - `[prefix]-pagesize` : Page size
+ * - `[prefix]-zImage` : Kernel image
+ * - `[prefix]-ramdisk.gz` : Ramdisk image (if compressed with gzip)
+ * - `[prefix]-ramdisk.lz4` : Ramdisk image (if compressed with LZ4)
+ * - `[prefix]-second` : Second bootloader image (if it exists)
+ * - `[prefix]-dt` : Device tree image (if it exists)
+ *
+ * \param directory Output directory
+ * \param prefix Filename prefix
+ *
+ * \return Whether extraction was successful
+ */
 bool BootImage::extract(const std::string &directory, const std::string &prefix)
 {
     if (!boost::filesystem::exists(directory)) {
@@ -825,6 +953,11 @@ void BootImage::Impl::dumpHeader() const
              toHex(reinterpret_cast<const unsigned char *>(header.id), 40));
 }
 
+/*!
+ * \brief Board name field in the boot image header
+ *
+ * \return Board name
+ */
 std::string BootImage::boardName() const
 {
     // The string may not be null terminated
@@ -838,6 +971,11 @@ std::string BootImage::boardName() const
     }
 }
 
+/*!
+ * \brief Set the board name field in the boot image header
+ *
+ * \param name Board name
+ */
 void BootImage::setBoardName(const std::string &name)
 {
     // -1 for null byte
@@ -845,11 +983,21 @@ void BootImage::setBoardName(const std::string &name)
                 name.substr(0, BOOT_NAME_SIZE - 1).c_str());
 }
 
+/*!
+ * \brief Resets the board name field in the boot image header to the default
+ *
+ * The board name field is empty by default.
+ */
 void BootImage::resetBoardName()
 {
     std::strcpy(reinterpret_cast<char *>(m_impl->header.name), DEFAULT_BOARD);
 }
 
+/*!
+ * \brief Kernel cmdline in the boot image header
+ *
+ * \return Kernel cmdline
+ */
 std::string BootImage::kernelCmdline() const
 {
     // The string may not be null terminated
@@ -863,6 +1011,11 @@ std::string BootImage::kernelCmdline() const
     }
 }
 
+/*!
+ * \brief Set the kernel cmdline in the boot image header
+ *
+ * \param cmdline Kernel cmdline
+ */
 void BootImage::setKernelCmdline(const std::string &cmdline)
 {
     // -1 for null byte
@@ -870,88 +1023,185 @@ void BootImage::setKernelCmdline(const std::string &cmdline)
                 cmdline.substr(0, BOOT_ARGS_SIZE - 1).c_str());
 }
 
+/*!
+ * \brief Resets the kernel cmdline to the default
+ *
+ * The kernel cmdline is empty by default.
+ */
 void BootImage::resetKernelCmdline()
 {
     std::strcpy(reinterpret_cast<char *>(m_impl->header.cmdline),
                 DEFAULT_CMDLINE);
 }
 
+/*!
+ * \brief Page size field in the boot image header
+ *
+ * \return Page size
+ */
 unsigned int BootImage::pageSize() const
 {
     return m_impl->header.page_size;
 }
 
+/*!
+ * \brief Set the page size field in the boot image header
+ *
+ * \note The page size should be one of if 2048, 4096, 8192, 16384, 32768,
+ *       65536, or 131072
+ *
+ * \param size Page size
+ */
 void BootImage::setPageSize(unsigned int size)
 {
     // Size should be one of if 2048, 4096, 8192, 16384, 32768, 65536, or 131072
     m_impl->header.page_size = size;
 }
 
+/*!
+ * \brief Resets the page size field in the header to the default
+ *
+ * The default page size is 2048 bytes.
+ */
 void BootImage::resetPageSize()
 {
     m_impl->header.page_size = DEFAULT_PAGE_SIZE;
 }
 
+/*!
+ * \brief Kernel address field in the boot image header
+ *
+ * \return Kernel address
+ */
 unsigned int BootImage::kernelAddress() const
 {
     return m_impl->header.kernel_addr;
 }
 
+/*!
+ * \brief Set the kernel address field in the boot image header
+ *
+ * \param address Kernel address
+ */
 void BootImage::setKernelAddress(unsigned int address)
 {
     m_impl->header.kernel_addr = address;
 }
 
+/*!
+ * \brief Resets the kernel address field in the header to the default
+ *
+ * The default kernel address is 0x10000000 + 0x00008000.
+ */
 void BootImage::resetKernelAddress()
 {
     m_impl->header.kernel_addr = DEFAULT_BASE + DEFAULT_KERNEL_OFFSET;
 }
 
+/*!
+ * \brief Ramdisk address field in the boot image header
+ *
+ * \return Ramdisk address
+ */
 unsigned int BootImage::ramdiskAddress() const
 {
     return m_impl->header.ramdisk_addr;
 }
 
+/*!
+ * \brief Set the ramdisk address field in the boot image header
+ *
+ * \param address Ramdisk address
+ */
 void BootImage::setRamdiskAddress(unsigned int address)
 {
     m_impl->header.ramdisk_addr = address;
 }
 
+/*!
+ * \brief Resets the ramdisk address field in the header to the default
+ *
+ * The default ramdisk address is 0x10000000 + 0x01000000.
+ */
 void BootImage::resetRamdiskAddress()
 {
     m_impl->header.ramdisk_addr = DEFAULT_BASE + DEFAULT_RAMDISK_OFFSET;
 }
 
+/*!
+ * \brief Second bootloader address field in the boot image header
+ *
+ * \return Second bootloader address
+ */
 unsigned int BootImage::secondBootloaderAddress() const
 {
     return m_impl->header.second_addr;
 }
 
+/*!
+ * \brief Set the second bootloader address field in the boot image header
+ *
+ * \param address Second bootloader address
+ */
 void BootImage::setSecondBootloaderAddress(unsigned int address)
 {
     m_impl->header.second_addr = address;
 }
 
+/*!
+ * \brief Resets the second bootloader address field in the header to the default
+ *
+ * The default second bootloader address is 0x10000000 + 0x00f00000.
+ */
 void BootImage::resetSecondBootloaderAddress()
 {
     m_impl->header.second_addr = DEFAULT_BASE + DEFAULT_SECOND_OFFSET;
 }
 
+/*!
+ * \brief Kernel tags address field in the boot image header
+ *
+ * \return Kernel tags address
+ */
 unsigned int BootImage::kernelTagsAddress() const
 {
     return m_impl->header.tags_addr;
 }
 
+/*!
+ * \brief Set the kernel tags address field in the boot image header
+ *
+ * \param address Kernel tags address
+ */
 void BootImage::setKernelTagsAddress(unsigned int address)
 {
     m_impl->header.tags_addr = address;
 }
 
+/*!
+ * \brief Resets the kernel tags address field in the header to the default
+ *
+ * The default kernel tags address is 0x10000000 + 0x00000100.
+ */
 void BootImage::resetKernelTagsAddress()
 {
     m_impl->header.tags_addr = DEFAULT_BASE + DEFAULT_TAGS_OFFSET;
 }
 
+/*!
+ * \brief Set all of the addresses using offsets and a base address
+ *
+ * - `[Kernel address] = [Base] + [Kernel offset]`
+ * - `[Ramdisk address] = [Base] + [Ramdisk offset]`
+ * - `[Second bootloader address] = [Base] + [Second bootloader offset]`
+ * - `[Kernel tags address] = [Base] + [Kernel tags offset]`
+ *
+ * \param base Base address
+ * \param kernelOffset Kernel offset
+ * \param ramdiskOffset Ramdisk offset
+ * \param secondBootloaderOffset Second bootloader offset
+ * \param kernelTagsOffset Kernel tags offset
+ */
 void BootImage::setAddresses(unsigned int base, unsigned int kernelOffset,
                              unsigned int ramdiskOffset,
                              unsigned int secondBootloaderOffset,
@@ -963,11 +1213,22 @@ void BootImage::setAddresses(unsigned int base, unsigned int kernelOffset,
     m_impl->header.tags_addr = base + kernelTagsOffset;
 }
 
+/*!
+ * \brief Kernel image
+ *
+ * \return Vector containing the kernel image binary data
+ */
 std::vector<unsigned char> BootImage::kernelImage() const
 {
     return m_impl->kernelImage;
 }
 
+/*!
+ * \brief Set the kernel image
+ *
+ * This will automatically update the kernel size in the boot image header and
+ * recalculate the SHA1 hash.
+ */
 void BootImage::setKernelImage(std::vector<unsigned char> data)
 {
     m_impl->header.kernel_size = data.size();
@@ -975,11 +1236,22 @@ void BootImage::setKernelImage(std::vector<unsigned char> data)
     m_impl->updateSHA1Hash();
 }
 
+/*!
+ * \brief Ramdisk image
+ *
+ * \return Vector containing the ramdisk image binary data
+ */
 std::vector<unsigned char> BootImage::ramdiskImage() const
 {
     return m_impl->ramdiskImage;
 }
 
+/*!
+ * \brief Set the ramdisk image
+ *
+ * This will automatically update the ramdisk size in the boot image header and
+ * recalculate the SHA1 hash.
+ */
 void BootImage::setRamdiskImage(std::vector<unsigned char> data)
 {
     m_impl->header.ramdisk_size = data.size();
@@ -987,11 +1259,22 @@ void BootImage::setRamdiskImage(std::vector<unsigned char> data)
     m_impl->updateSHA1Hash();
 }
 
+/*!
+ * \brief Second bootloader image
+ *
+ * \return Vector containing the second bootloader image binary data
+ */
 std::vector<unsigned char> BootImage::secondBootloaderImage() const
 {
     return m_impl->secondBootloaderImage;
 }
 
+/*!
+ * \brief Set the second bootloader image
+ *
+ * This will automatically update the second bootloader size in the boot image
+ * header and recalculate the SHA1 hash.
+ */
 void BootImage::setSecondBootloaderImage(std::vector<unsigned char> data)
 {
     m_impl->header.second_size = data.size();
@@ -999,11 +1282,22 @@ void BootImage::setSecondBootloaderImage(std::vector<unsigned char> data)
     m_impl->updateSHA1Hash();
 }
 
+/*!
+ * \brief Device tree image
+ *
+ * \return Vector containing the device tree image binary data
+ */
 std::vector<unsigned char> BootImage::deviceTreeImage() const
 {
     return m_impl->deviceTreeImage;
 }
 
+/*!
+ * \brief Set the device tree image
+ *
+ * This will automatically update the device tree size in the boot image
+ * header and recalculate the SHA1 hash.
+ */
 void BootImage::setDeviceTreeImage(std::vector<unsigned char> data)
 {
     m_impl->header.dt_size = data.size();
