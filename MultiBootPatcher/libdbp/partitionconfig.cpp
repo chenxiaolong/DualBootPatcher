@@ -25,6 +25,7 @@
 #include <boost/format.hpp>
 
 
+/*! \internal */
 class PartitionConfig::Impl
 {
 public:
@@ -43,20 +44,34 @@ public:
 };
 
 
-const std::string PartitionConfig::ReplaceLine
+static const std::string ReplaceLine
         = "# PATCHER REPLACE ME - DO NOT REMOVE";
 
 // Device and mount point for the system, cache, and data filesystems
-const std::string PartitionConfig::DevSystem
+static const std::string DevSystem
         = "/dev/block/platform/msm_sdcc.1/by-name/system::/raw-system";
-const std::string PartitionConfig::DevCache
+static const std::string DevCache
         = "/dev/block/platform/msm_sdcc.1/by-name/cache::/raw-cache";
-const std::string PartitionConfig::DevData
+static const std::string DevData
         = "/dev/block/platform/msm_sdcc.1/by-name/userdata::/raw-data";
 
+/*! \brief System partition */
 const std::string PartitionConfig::System = "$DEV_SYSTEM";
+/*! \brief Cache partition */
 const std::string PartitionConfig::Cache = "$DEV_CACHE";
+/*! \brief Data partition */
 const std::string PartitionConfig::Data = "$DEV_DATA";
+
+
+/*!
+ * \class PartitionConfig
+ * \brief Describes how a patched ROM or kernel should be installed
+ *
+ * This class tells the patcher how and where to install a patched ROM and
+ * kernel. The ROM's system and cache files can be set to install to a
+ * subdirectory within the device's /system or /cache partitions.
+ */
+
 
 PartitionConfig::PartitionConfig() : m_impl(new Impl())
 {
@@ -66,106 +81,236 @@ PartitionConfig::~PartitionConfig()
 {
 }
 
+/*!
+ * \brief Partition configuration name
+ *
+ * \return Name
+ */
 std::string PartitionConfig::name() const
 {
     return m_impl->name;
 }
 
+/*!
+ * \brief Set partition configuration name
+ *
+ * \param name Name
+ */
 void PartitionConfig::setName(std::string name)
 {
     m_impl->name = std::move(name);
 }
 
+/*!
+ * \brief Partition configuration description
+ *
+ * \return Description
+ */
 std::string PartitionConfig::description() const
 {
     return m_impl->description;
 }
 
+/*!
+ * \brief Set partition configuration description
+ *
+ * \param description Description
+ */
 void PartitionConfig::setDescription(std::string description)
 {
     m_impl->description = std::move(description);
 }
 
+/*!
+ * \brief Kernel identifier
+ *
+ * `[Kernel ID].img` is the name of the boot image that is installed to
+ * `/data/media/0/MultiKernels/`.
+ *
+ * \return Kernel ID
+ */
 std::string PartitionConfig::kernel() const
 {
     return m_impl->kernel;
 }
 
+/*!
+ * \brief Set kernel identifier
+ *
+ * \param kernel Kernel ID
+ */
 void PartitionConfig::setKernel(std::string kernel)
 {
     m_impl->kernel = std::move(kernel);
 }
 
+/*!
+ * \brief Partition configuration ID
+ *
+ * \return ID
+ */
 std::string PartitionConfig::id() const
 {
     return m_impl->id;
 }
 
+/*!
+ * \brief Set partition configuration ID
+ *
+ * The ID should be unique in whichever container the list of partition
+ * configurations are stored.
+ *
+ * \param id ID
+ */
 void PartitionConfig::setId(std::string id)
 {
     m_impl->id = std::move(id);
 }
 
+/*!
+ * \brief Source path for /system bind mount
+ *
+ * \return Source path
+ */
 std::string PartitionConfig::targetSystem() const
 {
     return m_impl->targetSystem;
 }
 
+/*!
+ * \brief Set source path for /system bind-mount
+ *
+ * \param path Source path
+ */
 void PartitionConfig::setTargetSystem(std::string path)
 {
     m_impl->targetSystem = std::move(path);
 }
 
+/*!
+ * \brief Source path for /cache bind mount
+ *
+ * \return Source path
+ */
 std::string PartitionConfig::targetCache() const
 {
     return m_impl->targetCache;
 }
 
+/*!
+ * \brief Set source path for /cache bind mount
+ *
+ * \param path Source path
+ */
 void PartitionConfig::setTargetCache(std::string path)
 {
     m_impl->targetCache = std::move(path);
 }
 
+/*!
+ * \brief Source path for /data bind mount
+ *
+ * \return Source path
+ */
 std::string PartitionConfig::targetData() const
 {
     return m_impl->targetData;
 }
 
+/*!
+ * \brief Set source path for /data bind mount
+ *
+ * \param path Source path
+ */
 void PartitionConfig::setTargetData(std::string path)
 {
     m_impl->targetData = std::move(path);
 }
 
+/*!
+ * \brief Source partition of /system bind mount
+ *
+ * \return PartitionConfig::System, PartitionConfig::Cache, or
+ *         PartitionConfig::Data
+ */
 std::string PartitionConfig::targetSystemPartition() const
 {
     return m_impl->targetSystemPartition;
 }
 
+/*!
+ * \brief Set source partition of /system bind mount
+ *
+ * \param partition Source partition
+ */
 void PartitionConfig::setTargetSystemPartition(std::string partition)
 {
     m_impl->targetSystemPartition = std::move(partition);
 }
 
+/*!
+ * \brief Source partition of /cache bind mount
+ *
+ * \return PartitionConfig::System, PartitionConfig::Cache, or
+ *         PartitionConfig::Data
+ */
 std::string PartitionConfig::targetCachePartition() const
 {
     return m_impl->targetCachePartition;
 }
 
+/*!
+ * \brief Set source partition of /cache bind mount
+ *
+ * \param partition Source partition
+ */
 void PartitionConfig::setTargetCachePartition(std::string partition)
 {
     m_impl->targetCachePartition = std::move(partition);
 }
 
+/*!
+ * \brief Source partition of /data bind mount
+ *
+ * \return PartitionConfig::System, PartitionConfig::Cache, or
+ *         PartitionConfig::Data
+ */
 std::string PartitionConfig::targetDataPartition() const
 {
     return m_impl->targetDataPartition;
 }
 
+/*!
+ * \brief Set source partition of /cache bind mount
+ *
+ * \param partition Source partition
+ */
 void PartitionConfig::setTargetDataPartition(std::string partition)
 {
     m_impl->targetDataPartition = std::move(partition);
 }
 
+/*!
+ * \brief Replace magic string in shell script with partition configuration
+ *        variables
+ *
+ * Any line containing the string, "`# PATCHER REPLACE ME - DO NOT REMOVE`",
+ * will be replaced with the following variables:
+ *
+ * - `KERNEL_NAME`: Kernel ID
+ * - `DEV_SYSTEM`: System partition and mount point
+ * - `DEV_CACHE`: Cache partition and mount point
+ * - `DEV_DATA`: Data partition and mount point
+ * - `TARGET_SYSTEM_PARTITION`: Set to `$DEV_SYSTEM`, `$DEV_CACHE`, or `$DEV_DATA`
+ * - `TARGET_CACHE_PARTITION`: Set to `$DEV_SYSTEM`, `$DEV_CACHE`, or `$DEV_DATA`
+ * - `TARGET_DATA_PARTITION`: Set to `$DEV_SYSTEM`, `$DEV_CACHE`, or `$DEV_DATA`
+ * - `TARGET_SYSTEM`: Source directory for /system bind mount
+ * - `TARGET_CACHE`: Source directory for /system bind mount
+ * - `TARGET_DATA`: Source directory for /system bind mount
+ *
+ * \param contents Vector containing shell script contents
+ * \param targetPathOnly Only insert `TARGET_*` variables
+ */
 bool PartitionConfig::replaceShellLine(std::vector<unsigned char> *contents,
                                        bool targetPathOnly) const
 {

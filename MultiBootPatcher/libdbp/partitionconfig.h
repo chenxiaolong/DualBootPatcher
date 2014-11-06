@@ -29,13 +29,6 @@
 class LIBDBPSHARED_EXPORT PartitionConfig
 {
 public:
-    static const std::string ReplaceLine;
-
-    // Device and mount point for the system, cache, and data filesystems
-    static const std::string DevSystem;
-    static const std::string DevCache;
-    static const std::string DevData;
-
     static const std::string System;
     static const std::string Cache;
     static const std::string Data;
