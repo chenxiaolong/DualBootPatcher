@@ -50,7 +50,6 @@ enum ErrorCode {
     NoError = 0,
     //CustomError,
     UnknownError,
-    ImplementationError,
 
     // PatcherCreation
     PatcherCreateError,

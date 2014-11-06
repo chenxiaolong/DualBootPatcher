@@ -19,6 +19,8 @@
 
 #include "patchers/primaryupgrade/primaryupgradepatcher.h"
 
+#include <cassert>
+
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -216,12 +218,7 @@ void PrimaryUpgradePatcher::setFileInfo(const FileInfo * const info)
 
 std::string PrimaryUpgradePatcher::newFilePath()
 {
-    if (m_impl->info == nullptr) {
-        Log::log(Log::Warning, "d->info is null!");
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return std::string();
-    }
+    assert(m_impl->info != nullptr);
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
@@ -247,12 +244,7 @@ bool PrimaryUpgradePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
 {
     m_impl->cancelled = false;
 
-    if (m_impl->info == nullptr) {
-        Log::log(Log::Warning, "d->info is null!");
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return false;
-    }
+    assert(m_impl->info != nullptr);
 
     if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
         m_impl->error = PatcherError::createSupportedFileError(

@@ -19,6 +19,8 @@
 
 #include "patchers/multiboot/multibootpatcher.h"
 
+#include <cassert>
+
 #include <unordered_map>
 
 #include <archive.h>
@@ -209,12 +211,7 @@ void MultiBootPatcher::setFileInfo(const FileInfo * const info)
 
 std::string MultiBootPatcher::newFilePath()
 {
-    if (m_impl->info == nullptr) {
-        Log::log(Log::Warning, "d->info cannot be null!");
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return std::string();
-    }
+    assert(m_impl->info != nullptr);
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
@@ -241,12 +238,7 @@ bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
 {
     m_impl->cancelled = false;
 
-    if (m_impl->info == nullptr) {
-        Log::log(Log::Warning, "d->info cannot be null!");
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return false;
-    }
+    assert(m_impl->info != nullptr);
 
     if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
         m_impl->error = PatcherError::createSupportedFileError(
@@ -634,10 +626,7 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
         std::vector<std::string> existingFiles = ap->existingFiles();
         if (existingFiles.empty()) {
             archive_read_free(aInput);
-
-            error = PatcherError::createGenericError(
-                    MBP::ErrorCode::ImplementationError);
-            return false;
+            assert(false);
         }
 
         for (auto const &file : existingFiles) {

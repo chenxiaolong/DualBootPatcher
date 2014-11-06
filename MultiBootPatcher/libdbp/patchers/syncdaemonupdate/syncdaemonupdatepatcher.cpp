@@ -19,6 +19,8 @@
 
 #include "patchers/syncdaemonupdate/syncdaemonupdatepatcher.h"
 
+#include <cassert>
+
 #include <fstream>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -124,12 +126,7 @@ void SyncdaemonUpdatePatcher::setFileInfo(const FileInfo * const info)
 
 std::string SyncdaemonUpdatePatcher::newFilePath()
 {
-    if (m_impl->info == nullptr) {
-        Log::log(Log::Warning, "d->info is null!");
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return std::string();
-    }
+    assert(m_impl->info != nullptr);
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
@@ -158,12 +155,7 @@ bool SyncdaemonUpdatePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb
     (void) detailsCb;
     (void) userData;
 
-    if (m_impl->info == nullptr) {
-        Log::log(Log::Warning, "d->info is null!");
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return false;
-    }
+    assert(m_impl->info != nullptr);
 
     bool isImg = boost::iends_with(m_impl->info->filename(), ".img");
     bool isLok = boost::iends_with(m_impl->info->filename(), ".lok");

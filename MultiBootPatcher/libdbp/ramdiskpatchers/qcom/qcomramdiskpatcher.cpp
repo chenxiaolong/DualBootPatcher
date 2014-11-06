@@ -19,6 +19,8 @@
 
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
+#include <cassert>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -325,9 +327,7 @@ bool QcomRamdiskPatcher::modifyFstab(FstabArgs args,
     } catch (const boost::bad_any_cast &e) {
         Log::log(Log::Error, e.what());
 
-        m_impl->error = PatcherError::createGenericError(
-                MBP::ErrorCode::ImplementationError);
-        return false;
+        assert(false);
     }
 
     return modifyFstab(removeModemMounts,

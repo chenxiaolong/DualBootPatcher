@@ -78,7 +78,6 @@ PatcherError PatcherError::createGenericError(MBP::ErrorCode error)
     case MBP::ErrorCode::NoError:
     //case MBP::ErrorCode::CustomError:
     case MBP::ErrorCode::UnknownError:
-    case MBP::ErrorCode::ImplementationError:
         break;
     default:
         assert(false);
