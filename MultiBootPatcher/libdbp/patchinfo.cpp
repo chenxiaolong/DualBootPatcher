@@ -27,7 +27,7 @@
 #include "patcherpaths.h"
 
 
-/*! \internal */
+/*! \cond INTERNAL */
 class PatchInfo::Impl
 {
 public:
@@ -83,6 +83,7 @@ public:
     // List of supported partition configurations
     std::unordered_map<std::string, std::vector<std::string>> supportedConfigs;
 };
+/*! \endcond */
 
 
 /*! \brief Key for getting the default values */

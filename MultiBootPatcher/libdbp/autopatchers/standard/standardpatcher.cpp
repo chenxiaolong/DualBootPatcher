@@ -27,6 +27,7 @@
 #include <boost/regex.hpp>
 
 
+/*! \cond INTERNAL */
 class StandardPatcher::Impl
 {
 public:
@@ -35,6 +36,7 @@ public:
 
     bool legacyScript;
 };
+/*! \endcond */
 
 
 const std::string StandardPatcher::Id

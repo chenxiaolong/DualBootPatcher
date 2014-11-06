@@ -25,7 +25,7 @@
 #include <boost/format.hpp>
 
 
-/*! \internal */
+/*! \cond INTERNAL */
 class PartitionConfig::Impl
 {
 public:
@@ -42,6 +42,7 @@ public:
     std::string targetCachePartition;
     std::string targetDataPartition;
 };
+/*! \endcond */
 
 
 static const std::string ReplaceLine

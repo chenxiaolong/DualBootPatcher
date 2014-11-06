@@ -22,6 +22,7 @@
 #include <cassert>
 
 
+/*! \cond INTERNAL */
 class PatcherError::Impl {
 public:
     MBP::ErrorType errorType;
@@ -33,6 +34,7 @@ public:
     // IO error, cpio error
     std::string filename;
 };
+/*! \endcond */
 
 
 PatcherError::PatcherError() : m_impl(new Impl())

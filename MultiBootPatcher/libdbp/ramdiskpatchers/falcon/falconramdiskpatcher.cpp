@@ -23,6 +23,7 @@
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class FalconRamdiskPatcher::Impl
 {
 public:
@@ -32,6 +33,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 const std::string FalconRamdiskPatcher::Id = "falcon/AOSP/AOSP";

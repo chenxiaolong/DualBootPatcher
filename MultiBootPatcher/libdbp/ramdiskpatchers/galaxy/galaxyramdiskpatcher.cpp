@@ -29,6 +29,7 @@
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class GalaxyRamdiskPatcher::Impl
 {
 public:
@@ -40,6 +41,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 /*! \brief Android Jelly Bean */

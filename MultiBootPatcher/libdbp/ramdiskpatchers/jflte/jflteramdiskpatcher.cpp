@@ -30,6 +30,7 @@
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class JflteBaseRamdiskPatcher::Impl
 {
 public:
@@ -41,6 +42,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 static const std::string InitRc = "init.rc";

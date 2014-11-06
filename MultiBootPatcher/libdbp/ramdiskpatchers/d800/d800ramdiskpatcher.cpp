@@ -23,6 +23,7 @@
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class D800RamdiskPatcher::Impl
 {
 public:
@@ -32,6 +33,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 const std::string D800RamdiskPatcher::Id = "d800/AOSP/AOSP";

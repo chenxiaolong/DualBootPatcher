@@ -25,6 +25,7 @@
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class KlteBaseRamdiskPatcher::Impl
 {
 public:
@@ -34,6 +35,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 /*!

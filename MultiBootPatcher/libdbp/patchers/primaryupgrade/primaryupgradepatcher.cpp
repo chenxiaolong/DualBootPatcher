@@ -74,6 +74,7 @@
 // TODO TODO TODO
 
 
+/*! \cond INTERNAL */
 class PrimaryUpgradePatcher::Impl
 {
 public:
@@ -106,6 +107,7 @@ public:
 private:
     PrimaryUpgradePatcher *m_parent;
 };
+/*! \endcond */
 
 
 const std::string PrimaryUpgradePatcher::Id = "PrimaryUpgradePatcher";

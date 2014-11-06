@@ -34,6 +34,7 @@
 #include "private/logging.h"
 
 
+/*! \cond INTERNAL */
 class QcomRamdiskPatcher::Impl
 {
 public:
@@ -43,6 +44,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 const std::string QcomRamdiskPatcher::SystemPartition =

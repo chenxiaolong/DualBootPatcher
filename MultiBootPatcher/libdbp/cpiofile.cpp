@@ -34,7 +34,7 @@
 
 typedef std::pair<archive_entry *, std::vector<unsigned char>> FilePair;
 
-/*! \internal */
+/*! \cond INTERNAL */
 class CpioFile::Impl
 {
 public:
@@ -44,6 +44,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 CpioFile::Impl::~Impl()

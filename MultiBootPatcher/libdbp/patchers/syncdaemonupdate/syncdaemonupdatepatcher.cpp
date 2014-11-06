@@ -55,6 +55,7 @@
 // TODO TODO TODO
 
 
+/*! \cond INTERNAL */
 class SyncdaemonUpdatePatcher::Impl
 {
 public:
@@ -73,6 +74,7 @@ public:
 private:
     SyncdaemonUpdatePatcher *m_parent;
 };
+/*! \endcond */
 
 
 const std::string SyncdaemonUpdatePatcher::Id = "SyncdaemonUpdatePatcher";

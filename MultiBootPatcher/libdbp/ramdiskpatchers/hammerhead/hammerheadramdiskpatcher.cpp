@@ -23,6 +23,7 @@
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class HammerheadBaseRamdiskPatcher::Impl
 {
 public:
@@ -32,6 +33,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherPaths * const pp,

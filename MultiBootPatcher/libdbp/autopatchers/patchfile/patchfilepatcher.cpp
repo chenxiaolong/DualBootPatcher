@@ -26,6 +26,7 @@
 //#include <boost/regex.hpp>
 
 
+/*! \cond INTERNAL */
 class PatchFilePatcher::Impl
 {
 public:
@@ -37,6 +38,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 #define PATCH_FAIL_MSG "Failed to run \"patch\" command"

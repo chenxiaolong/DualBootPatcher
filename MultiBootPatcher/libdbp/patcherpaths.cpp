@@ -50,6 +50,7 @@
 #include "ramdiskpatchers/klte/klteramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class PatcherPaths::Impl
 {
 public:
@@ -97,6 +98,7 @@ public:
     void parsePatchInfoTagExclude(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagInclude(xmlNode *node, PatchInfo * const info, const std::string &type);
 };
+/*! \endcond */
 
 
 static const std::string BinariesDirName = "binaries";

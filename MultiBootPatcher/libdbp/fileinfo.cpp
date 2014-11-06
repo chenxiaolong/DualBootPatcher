@@ -21,7 +21,7 @@
 #include "patcherpaths.h"
 
 
-/*! \internal */
+/*! \cond INTERNAL */
 class FileInfo::Impl
 {
 public:
@@ -30,6 +30,7 @@ public:
     std::string filename;
     PartitionConfig *partconfig;
 };
+/*! \endcond */
 
 
 /*!

@@ -25,12 +25,14 @@
 #include <boost/format.hpp>
 
 
+/*! \cond INTERNAL */
 class NoobdevBasePatcher::Impl
 {
 public:
     const PatcherPaths *pp;
     const FileInfo *info;
 };
+/*! \endcond */
 
 
 static const std::string UpdaterScript =

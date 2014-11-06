@@ -28,6 +28,7 @@
 #include "autopatchers/standard/standardpatcher.h"
 
 
+/*! \cond INTERNAL */
 class JflteBasePatcher::Impl
 {
 public:
@@ -35,6 +36,7 @@ public:
     std::string id;
     const FileInfo *info;
 };
+/*! \endcond */
 
 
 static const std::string AromaScript =

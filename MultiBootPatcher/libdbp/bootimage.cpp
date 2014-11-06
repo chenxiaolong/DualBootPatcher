@@ -46,7 +46,7 @@ static const unsigned int DEFAULT_SECOND_OFFSET = 0x00f00000u;
 static const unsigned int DEFAULT_TAGS_OFFSET = 0x00000100u;
 
 
-/*! \internal */
+/*! \cond INTERNAL */
 struct BootImageHeader
 {
     unsigned char magic[BOOT_MAGIC_SIZE];
@@ -70,11 +70,12 @@ struct BootImageHeader
 
     unsigned id[8]; /* timestamp / checksum / sha1 / etc */
 };
+/*! \endcond */
 
 
 static const char *LOKI_MAGIC = "LOKI";
 
-/*! \internal */
+/*! \cond INTERNAL */
 struct LokiHeader {
     unsigned char magic[4]; /* 0x494b4f4c */
     unsigned int recovery;  /* 0 = boot.img, 1 = recovery.img */
@@ -84,6 +85,7 @@ struct LokiHeader {
     unsigned int orig_ramdisk_size;
     unsigned int ramdisk_addr;
 };
+/*! \endcond */
 
 
 // From loki.h in the original source code:
@@ -120,7 +122,7 @@ const char *SHELL_CODE =
         "\xee\xee\xee\xee";
 
 
-/*! \internal */
+/*! \cond INTERNAL */
 class BootImage::Impl
 {
 public:
@@ -168,6 +170,7 @@ public:
 private:
     BootImage *m_parent;
 };
+/*! \endcond */
 
 
 /*!

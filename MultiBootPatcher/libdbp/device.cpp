@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 
-/*! \internal */
+/*! \cond INTERNAL */
 class Device::Impl
 {
 public:
@@ -33,6 +33,7 @@ public:
 
     std::unordered_map<std::string, std::string> partitions;
 };
+/*! \endcond */
 
 
 /*! \brief SELinux permissive mode */

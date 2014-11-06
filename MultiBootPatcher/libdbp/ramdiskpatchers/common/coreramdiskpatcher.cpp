@@ -24,6 +24,7 @@
 #include "patcherpaths.h"
 
 
+/*! \cond INTERNAL */
 class CoreRamdiskPatcher::Impl
 {
 public:
@@ -33,6 +34,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 const std::string CoreRamdiskPatcher::FstabRegex

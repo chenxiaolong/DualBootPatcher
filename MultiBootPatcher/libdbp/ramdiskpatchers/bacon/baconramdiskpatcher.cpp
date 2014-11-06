@@ -23,6 +23,7 @@
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
 
 
+/*! \cond INTERNAL */
 class BaconRamdiskPatcher::Impl
 {
 public:
@@ -32,6 +33,7 @@ public:
 
     PatcherError error;
 };
+/*! \endcond */
 
 
 const std::string BaconRamdiskPatcher::Id = "bacon/AOSP/AOSP";

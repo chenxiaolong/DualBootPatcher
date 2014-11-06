@@ -69,6 +69,7 @@
 // TODO TODO TODO
 
 
+/*! \cond INTERNAL */
 class MultiBootPatcher::Impl
 {
 public:
@@ -104,6 +105,7 @@ public:
 private:
     MultiBootPatcher *m_parent;
 };
+/*! \endcond */
 
 
 const std::string MultiBootPatcher::Id("MultiBootPatcher");
