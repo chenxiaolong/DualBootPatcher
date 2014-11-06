@@ -119,7 +119,7 @@ bool QcomRamdiskPatcher::modifyInitRc()
     auto contents = m_impl->cpio->contents(initRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, initRc);
+                MBP::ErrorCode::CpioFileNotExistError, initRc);
         return false;
     }
 
@@ -158,7 +158,7 @@ bool QcomRamdiskPatcher::modifyInitQcomRc(const std::vector<std::string> &additi
         files.push_back(qcomCommonRc);
     } else {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError,
+                MBP::ErrorCode::CpioFileNotExistError,
                 qcomRc + ", " + qcomCommonRc);
         return false;
     }
@@ -168,7 +168,7 @@ bool QcomRamdiskPatcher::modifyInitQcomRc(const std::vector<std::string> &additi
         auto contents = m_impl->cpio->contents(file);
         if (contents.empty()) {
             m_impl->error = PatcherError::createCpioError(
-                    PatcherError::CpioFileNotExistError, file);
+                    MBP::ErrorCode::CpioFileNotExistError, file);
             return false;
         }
 
@@ -326,7 +326,7 @@ bool QcomRamdiskPatcher::modifyFstab(FstabArgs args,
         Log::log(Log::Error, e.what());
 
         m_impl->error = PatcherError::createGenericError(
-                PatcherError::ImplementationError);
+                MBP::ErrorCode::ImplementationError);
         return false;
     }
 
@@ -373,7 +373,7 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
         auto contents = m_impl->cpio->contents(fstab);
         if (contents.empty()) {
             m_impl->error = PatcherError::createCpioError(
-                    PatcherError::CpioFileNotExistError, fstab);
+                    MBP::ErrorCode::CpioFileNotExistError, fstab);
             return false;
         }
 
@@ -569,7 +569,7 @@ bool QcomRamdiskPatcher::modifyInitTargetRc(const std::string &filename)
     auto contents = m_impl->cpio->contents(filename);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, filename);
+                MBP::ErrorCode::CpioFileNotExistError, filename);
         return false;
     }
 

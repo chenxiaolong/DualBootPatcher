@@ -43,7 +43,7 @@
 #define RETURN_ERROR_IF_CANCELLED \
     if (m_impl->cancelled) { \
         m_impl->error = PatcherError::createCancelledError( \
-                PatcherError::PatchingCancelled); \
+                MBP::ErrorCode::PatchingCancelled); \
         return false; \
     }
 
@@ -127,7 +127,7 @@ std::string SyncdaemonUpdatePatcher::newFilePath()
     if (m_impl->info == nullptr) {
         Log::log(Log::Warning, "d->info is null!");
         m_impl->error = PatcherError::createGenericError(
-                PatcherError::ImplementationError);
+                MBP::ErrorCode::ImplementationError);
         return std::string();
     }
 
@@ -161,7 +161,7 @@ bool SyncdaemonUpdatePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb
     if (m_impl->info == nullptr) {
         Log::log(Log::Warning, "d->info is null!");
         m_impl->error = PatcherError::createGenericError(
-                PatcherError::ImplementationError);
+                MBP::ErrorCode::ImplementationError);
         return false;
     }
 
@@ -170,7 +170,7 @@ bool SyncdaemonUpdatePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb
 
     if (!isImg && !isLok) {
         m_impl->error = PatcherError::createSupportedFileError(
-                PatcherError::OnlyBootImageSupported, Id);
+                MBP::ErrorCode::OnlyBootImageSupported, Id);
         return false;
     }
 
@@ -211,7 +211,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
                     pp->scriptsDirectory() + "/" + mountScript);
             std::vector<unsigned char> contents;
             auto ret = FileUtils::readToMemory(filename, &contents);
-            if (ret.errorCode() != PatcherError::NoError) {
+            if (ret.errorCode() != MBP::ErrorCode::NoError) {
                 error = ret;
                 return false;
             }
@@ -275,7 +275,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
     std::ofstream file(m_parent->newFilePath(), std::ios::binary);
     if (file.fail()) {
         error = PatcherError::createIOError(
-                PatcherError::FileOpenError, m_parent->newFilePath());
+                MBP::ErrorCode::FileOpenError, m_parent->newFilePath());
         return false;
     }
 

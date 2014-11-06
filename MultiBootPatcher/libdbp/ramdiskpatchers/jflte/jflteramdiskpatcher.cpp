@@ -270,7 +270,7 @@ bool JflteNoobdevRamdiskPatcher::cxlModifyInitTargetRc()
     auto contents = m_impl->cpio->contents(InitTargetRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, InitTargetRc);
+                MBP::ErrorCode::CpioFileNotExistError, InitTargetRc);
         return false;
     }
 

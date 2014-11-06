@@ -129,7 +129,7 @@ bool GalaxyRamdiskPatcher::geModifyInitRc()
     auto contents = m_impl->cpio->contents(InitRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, InitRc);
+                MBP::ErrorCode::CpioFileNotExistError, InitRc);
         return false;
     }
 
@@ -183,7 +183,7 @@ bool GalaxyRamdiskPatcher::twModifyInitRc()
     auto contents = m_impl->cpio->contents(InitRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, InitRc);
+                MBP::ErrorCode::CpioFileNotExistError, InitRc);
         return false;
     }
 
@@ -247,7 +247,7 @@ bool GalaxyRamdiskPatcher::twModifyInitTargetRc()
     auto contents = m_impl->cpio->contents(InitTargetRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, InitTargetRc);
+                MBP::ErrorCode::CpioFileNotExistError, InitTargetRc);
         return false;
     }
 
@@ -313,7 +313,7 @@ bool GalaxyRamdiskPatcher::twModifyUeventdRc()
     auto contents = m_impl->cpio->contents(UeventdRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, UeventdRc);
+                MBP::ErrorCode::CpioFileNotExistError, UeventdRc);
         return false;
     }
 
@@ -360,7 +360,7 @@ bool GalaxyRamdiskPatcher::twModifyUeventdQcomRc()
     auto contents = m_impl->cpio->contents(UeventdQcomRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, UeventdQcomRc);
+                MBP::ErrorCode::CpioFileNotExistError, UeventdQcomRc);
         return false;
     }
 
@@ -414,7 +414,7 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     auto contents = m_impl->cpio->contents(Msm8960LpmRc);
     if (contents.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, Msm8960LpmRc);
+                MBP::ErrorCode::CpioFileNotExistError, Msm8960LpmRc);
         return false;
     }
 

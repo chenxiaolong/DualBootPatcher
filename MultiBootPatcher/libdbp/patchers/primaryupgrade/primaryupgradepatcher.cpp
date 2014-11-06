@@ -62,7 +62,7 @@
 #define RETURN_ERROR_IF_CANCELLED \
     if (m_impl->cancelled) { \
         m_impl->error = PatcherError::createCancelledError( \
-                PatcherError::PatchingCancelled); \
+                MBP::ErrorCode::PatchingCancelled); \
         return false; \
     }
 
@@ -219,7 +219,7 @@ std::string PrimaryUpgradePatcher::newFilePath()
     if (m_impl->info == nullptr) {
         Log::log(Log::Warning, "d->info is null!");
         m_impl->error = PatcherError::createGenericError(
-                PatcherError::ImplementationError);
+                MBP::ErrorCode::ImplementationError);
         return std::string();
     }
 
@@ -250,13 +250,13 @@ bool PrimaryUpgradePatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
     if (m_impl->info == nullptr) {
         Log::log(Log::Warning, "d->info is null!");
         m_impl->error = PatcherError::createGenericError(
-                PatcherError::ImplementationError);
+                MBP::ErrorCode::ImplementationError);
         return false;
     }
 
     if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
         m_impl->error = PatcherError::createSupportedFileError(
-                PatcherError::OnlyZipSupported, Id);
+                MBP::ErrorCode::OnlyZipSupported, Id);
         return false;
     }
 
@@ -281,7 +281,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     unsigned int count;
     auto result = FileUtils::laCountFiles(info->filename(), &count,
                                           ignoreFiles);
-    if (result.errorCode() != PatcherError::NoError) {
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -316,7 +316,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
         archive_read_free(aInput);
 
         error = PatcherError::createArchiveError(
-                PatcherError::ArchiveReadOpenError, info->filename());
+                MBP::ErrorCode::ArchiveReadOpenError, info->filename());
         return false;
     }
 
@@ -328,7 +328,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
         archive_write_free(aOutput);
 
         error = PatcherError::createArchiveError(
-                PatcherError::ArchiveWriteOpenError, newPath);
+                MBP::ErrorCode::ArchiveWriteOpenError, newPath);
         return false;
     }
 
@@ -360,7 +360,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
                 archive_write_free(aOutput);
 
                 error = PatcherError::createArchiveError(
-                        PatcherError::ArchiveReadDataError, curFile);
+                        MBP::ErrorCode::ArchiveReadDataError, curFile);
                 return false;
             }
 
@@ -373,7 +373,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
                 archive_write_free(aOutput);
 
                 error = PatcherError::createArchiveError(
-                        PatcherError::ArchiveWriteHeaderError, curFile);
+                        MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
@@ -385,7 +385,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
                 archive_write_free(aOutput);
 
                 error = PatcherError::createArchiveError(
-                        PatcherError::ArchiveWriteHeaderError, curFile);
+                        MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
@@ -395,7 +395,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
                 archive_write_free(aOutput);
 
                 error = PatcherError::createArchiveError(
-                        PatcherError::ArchiveReadDataError, curFile);
+                        MBP::ErrorCode::ArchiveReadDataError, curFile);
                 return false;
             }
         }
@@ -405,7 +405,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     const std::string filename = pp->scriptsDirectory() + "/" + DualBootTool;
     std::vector<unsigned char> contents;
     auto pe = FileUtils::readToMemory(filename, &contents);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -416,7 +416,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     info->partConfig()->replaceShellLine(&contents);
 
     pe = FileUtils::laAddFile(aOutput, DualBootTool, contents);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -433,7 +433,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
 
     pe = FileUtils::laAddFile(aOutput, PermTool,
                               pp->scriptsDirectory() + "/" + PermTool);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -453,7 +453,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
 
     pe = FileUtils::laAddFile(aOutput, SetFacl,
             pp->binariesDirectory() + "/" + arch + "/" + SetFacl);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -470,7 +470,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
 
     pe = FileUtils::laAddFile(aOutput, GetFacl,
             pp->binariesDirectory() + "/" + arch + "/" + GetFacl);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -487,7 +487,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
 
     pe = FileUtils::laAddFile(aOutput, SetFattr,
             pp->binariesDirectory() + "/" + arch + "/" + SetFattr);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -504,7 +504,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
 
     pe = FileUtils::laAddFile(aOutput, GetFattr,
             pp->binariesDirectory() + "/" + arch + "/" + GetFattr);
-    if (pe.errorCode() != PatcherError::NoError) {
+    if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
 
@@ -590,7 +590,7 @@ bool PrimaryUpgradePatcher::Impl::patchUpdaterScript(std::vector<unsigned char> 
 
     if (replacedFormatSystem && replacedFormatCache) {
         error = PatcherError::createPatchingError(
-                PatcherError::SystemCacheFormatLinesNotFound);
+                MBP::ErrorCode::SystemCacheFormatLinesNotFound);
         return false;
     }
 

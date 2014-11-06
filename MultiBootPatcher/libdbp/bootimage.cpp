@@ -253,7 +253,7 @@ bool BootImage::load(const std::vector<unsigned char> &data)
     // Check that the size of the boot image is okay
     if (data.size() < 512 + sizeof(BootImageHeader)) {
         m_impl->error = PatcherError::createBootImageError(
-                PatcherError::BootImageSmallerThanHeaderError);
+                MBP::ErrorCode::BootImageSmallerThanHeaderError);
         return false;
     }
 
@@ -281,7 +281,7 @@ bool BootImage::load(const std::vector<unsigned char> &data)
 
     if (!isAndroid) {
         m_impl->error = PatcherError::createBootImageError(
-                PatcherError::BootImageNoAndroidHeaderError);
+                MBP::ErrorCode::BootImageNoAndroidHeaderError);
         return false;
     }
 
@@ -314,7 +314,7 @@ bool BootImage::load(const std::string &filename)
 {
     std::vector<unsigned char> data;
     auto ret = FileUtils::readToMemory(filename, &data);
-    if (ret.errorCode() != PatcherError::NoError) {
+    if (ret.errorCode() != MBP::ErrorCode::NoError) {
         m_impl->error = ret;
         return false;
     }
@@ -329,7 +329,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
     // Make sure the file is large enough to contain the header
     if (data.size() < headerIndex + sizeof(BootImageHeader)) {
         error = PatcherError::createBootImageError(
-                PatcherError::BootImageSmallerThanHeaderError);
+                MBP::ErrorCode::BootImageSmallerThanHeaderError);
         return false;
     }
 
@@ -401,7 +401,7 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     // Make sure the file is large enough to contain the Loki header
     if (data.size() < 0x400 + sizeof(LokiHeader)) {
         error = PatcherError::createBootImageError(
-                PatcherError::BootImageSmallerThanHeaderError);
+                MBP::ErrorCode::BootImageSmallerThanHeaderError);
         return false;
     }
 
@@ -430,28 +430,28 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     int gzipOffset = lokiFindGzipOffset(data);
     if (gzipOffset < 0) {
         error = PatcherError::createBootImageError(
-                PatcherError::BootImageNoRamdiskGzipHeaderError);
+                MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError);
         return false;
     }
 
     int ramdiskSize = lokiFindRamdiskSize(data, loki, gzipOffset);
     if (ramdiskSize < 0) {
         error = PatcherError::createBootImageError(
-                PatcherError::BootImageNoRamdiskSizeError);
+                MBP::ErrorCode::BootImageNoRamdiskSizeError);
         return false;
     }
 
     int kernelSize = lokiFindKernelSize(data, loki);
     if (kernelSize < 0) {
         error = PatcherError::createBootImageError(
-                PatcherError::BootImageNoKernelSizeError);
+                MBP::ErrorCode::BootImageNoKernelSizeError);
         return false;
     }
 
     unsigned int ramdiskAddr = lokiFindRamdiskAddress(data, loki);
     if (ramdiskAddr == 0) {
         error = PatcherError::createBootImageError(
-                PatcherError::BootImageNoRamdiskAddressError);
+                MBP::ErrorCode::BootImageNoRamdiskAddressError);
         return false;
     }
 
@@ -718,7 +718,7 @@ bool BootImage::createFile(const std::string &path)
     std::ofstream file(path, std::ios::binary);
     if (file.fail()) {
         m_impl->error = PatcherError::createIOError(
-                PatcherError::FileOpenError, path);
+                MBP::ErrorCode::FileOpenError, path);
         return false;
     }
 
@@ -728,7 +728,7 @@ bool BootImage::createFile(const std::string &path)
         file.close();
 
         m_impl->error = PatcherError::createIOError(
-                PatcherError::FileWriteError, path);
+                MBP::ErrorCode::FileWriteError, path);
         return false;
     }
 
@@ -771,7 +771,7 @@ bool BootImage::extract(const std::string &directory, const std::string &prefix)
 {
     if (!boost::filesystem::exists(directory)) {
         m_impl->error = PatcherError::createIOError(
-                PatcherError::DirectoryNotExistError, directory);
+                MBP::ErrorCode::DirectoryNotExistError, directory);
         return false;
     }
 

@@ -95,7 +95,7 @@ bool CoreRamdiskPatcher::modifyDefaultProp()
     auto defaultProp = m_impl->cpio->contents(DefaultProp);
     if (defaultProp.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, DefaultProp);
+                MBP::ErrorCode::CpioFileNotExistError, DefaultProp);
         return false;
     }
 
@@ -121,7 +121,7 @@ bool CoreRamdiskPatcher::addSyncdaemon()
     auto initRc = m_impl->cpio->contents(InitRc);
     if (initRc.empty()) {
         m_impl->error = PatcherError::createCpioError(
-                PatcherError::CpioFileNotExistError, InitRc);
+                MBP::ErrorCode::CpioFileNotExistError, InitRc);
         return false;
     }
 

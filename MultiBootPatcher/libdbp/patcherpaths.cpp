@@ -621,7 +621,8 @@ bool PatcherPaths::loadPatchInfos()
 
                 if (!m_impl->loadPatchInfoXml(it->path().string(), id)) {
                     m_impl->error = PatcherError::createXmlError(
-                            PatcherError::XmlParseFileError, it->path().string());
+                            MBP::ErrorCode::XmlParseFileError,
+                            it->path().string());
                     return false;
                 }
             }
@@ -645,7 +646,7 @@ bool PatcherPaths::Impl::loadPatchInfoXml(const std::string &path,
     xmlDoc *doc = xmlReadFile(path.c_str(), nullptr, 0);
     if (doc == nullptr) {
         error = PatcherError::createXmlError(
-                PatcherError::XmlParseFileError, path);
+                MBP::ErrorCode::XmlParseFileError, path);
         return false;
     }
 

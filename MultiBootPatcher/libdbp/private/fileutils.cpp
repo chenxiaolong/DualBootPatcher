@@ -39,7 +39,7 @@ PatcherError FileUtils::readToMemory(const std::string &path,
     std::ifstream file(path, std::ios::binary);
 
     if (file.fail()) {
-        return PatcherError::createIOError(PatcherError::FileOpenError, path);
+        return PatcherError::createIOError(MBP::ErrorCode::FileOpenError, path);
     }
 
     file.seekg(0, std::ios::end);
@@ -51,7 +51,7 @@ PatcherError FileUtils::readToMemory(const std::string &path,
     if (!file.read(reinterpret_cast<char *>(data.data()), size)) {
         file.close();
 
-        return PatcherError::createIOError(PatcherError::FileReadError, path);
+        return PatcherError::createIOError(MBP::ErrorCode::FileReadError, path);
     }
 
     file.close();
@@ -170,14 +170,14 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
         Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
 
         return PatcherError::createArchiveError(
-                PatcherError::ArchiveWriteHeaderError, name);
+                MBP::ErrorCode::ArchiveWriteHeaderError, name);
     }
 
     // Write contents
     unsigned int size = archive_write_data(aOutput, contents.data(), contents.size());
     if (size != contents.size()) {
         return PatcherError::createArchiveError(
-                PatcherError::ArchiveWriteDataError, name);
+                MBP::ErrorCode::ArchiveWriteDataError, name);
     }
 
     archive_entry_free(entry);
@@ -217,7 +217,7 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
     std::ifstream file(path, std::ios::binary);
     if (file.fail()) {
         return PatcherError::createIOError(
-                PatcherError::FileOpenError, path);
+                MBP::ErrorCode::FileOpenError, path);
     }
 
     file.seekg(0, std::ios::end);
@@ -246,7 +246,7 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
         Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
 
         return PatcherError::createArchiveError(
-                PatcherError::ArchiveWriteHeaderError, name);
+                MBP::ErrorCode::ArchiveWriteHeaderError, name);
     }
 
     // Write data to file
@@ -259,14 +259,14 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
         if (archive_write_data(aOutput, buf, n) != n) {
             file.close();
             return PatcherError::createArchiveError(
-                    PatcherError::ArchiveWriteDataError, name);
+                    MBP::ErrorCode::ArchiveWriteDataError, name);
         }
     }
 
     if (file.bad()) {
         file.close();
         return PatcherError::createIOError(
-                PatcherError::FileReadError, path);
+                MBP::ErrorCode::FileReadError, path);
     }
 
     file.close();
@@ -297,7 +297,7 @@ PatcherError FileUtils::laCountFiles(const std::string &path,
         archive_read_free(aInput);
 
         return PatcherError::createArchiveError(
-                PatcherError::ArchiveReadOpenError, path);
+                MBP::ErrorCode::ArchiveReadOpenError, path);
     }
 
     archive_entry *entry;
