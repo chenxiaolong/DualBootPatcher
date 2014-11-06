@@ -35,15 +35,17 @@ public:
     explicit FileInfo();
     ~FileInfo();
 
-    void setFilename(std::string path);
-    void setPatchInfo(PatchInfo * const info);
-    void setDevice(Device * const device);
-    void setPartConfig(PartitionConfig * const config);
-
     std::string filename() const;
+    void setFilename(std::string path);
+
     PatchInfo * patchInfo() const;
+    void setPatchInfo(PatchInfo * const info);
+
     Device * device() const;
+    void setDevice(Device * const device);
+
     PartitionConfig * partConfig() const;
+    void setPartConfig(PartitionConfig * const config);
 
 private:
     class Impl;

@@ -13,14 +13,15 @@ set(DBP_SOURCES
     cpiofile.cpp
     device.cpp
     fileinfo.cpp
-    patchinfo.cpp
     partitionconfig.cpp
-    patcherpaths.cpp
     patchererror.cpp
+    patcherpaths.cpp
+    patchinfo.cpp
     private/fileutils.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccpiofile.cpp
     cwrapper/cdevice.cpp
+    cwrapper/cfileinfo.cpp
     cwrapper/cpartitionconfig.h
     cwrapper/cpatchinfo.cpp
 )
@@ -34,8 +35,8 @@ set(DBP_HEADERS
     partitionconfig.h
     patchererror.h
     patcherpaths.h
-    patchinfo.h
     patcherinterface.h
+    patchinfo.h
 )
 
 ################################################################################
