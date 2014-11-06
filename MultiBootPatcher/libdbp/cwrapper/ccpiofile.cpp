@@ -35,6 +35,11 @@
  * \sa CpioFile
  */
 
+/*!
+ * \typedef CCpioFile
+ * \brief C wrapper for CpioFile object
+ */
+
 extern "C" {
 
     /*!
