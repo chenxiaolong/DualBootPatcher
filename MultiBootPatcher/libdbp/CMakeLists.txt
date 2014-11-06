@@ -23,6 +23,7 @@ set(DBP_SOURCES
     cwrapper/cdevice.cpp
     cwrapper/cfileinfo.cpp
     cwrapper/cpartitionconfig.h
+    cwrapper/cpatchererror.cpp
     cwrapper/cpatchinfo.cpp
 )
 

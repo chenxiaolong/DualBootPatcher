@@ -37,6 +37,14 @@ public:
 /*! \endcond */
 
 
+/*!
+ * \class PatcherError
+ * \brief Provides a simple way of holding error information
+ *
+ * See errors.h for a list of available error types and error codes.
+ */
+
+
 PatcherError::PatcherError() : m_impl(new Impl())
 {
     m_impl->errorType = MBP::ErrorType::GenericError;
@@ -74,6 +82,7 @@ PatcherError & PatcherError::operator=(PatcherError &&other)
     return *this;
 }
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createGenericError(MBP::ErrorCode error)
 {
     switch (error) {
@@ -88,7 +97,9 @@ PatcherError PatcherError::createGenericError(MBP::ErrorCode error)
     PatcherError pe(MBP::ErrorType::GenericError, error);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createPatcherCreationError(MBP::ErrorCode error,
                                                       std::string name)
 {
@@ -105,7 +116,9 @@ PatcherError PatcherError::createPatcherCreationError(MBP::ErrorCode error,
     pe.m_impl->patcherName = std::move(name);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createIOError(MBP::ErrorCode error,
                                          std::string filename)
 {
@@ -123,7 +136,9 @@ PatcherError PatcherError::createIOError(MBP::ErrorCode error,
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createBootImageError(MBP::ErrorCode error)
 {
     switch (error) {
@@ -141,7 +156,9 @@ PatcherError PatcherError::createBootImageError(MBP::ErrorCode error)
     PatcherError pe(MBP::ErrorType::BootImageError, error);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createCpioError(MBP::ErrorCode error,
                                            std::string filename)
 {
@@ -157,7 +174,9 @@ PatcherError PatcherError::createCpioError(MBP::ErrorCode error,
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createArchiveError(MBP::ErrorCode error,
                                               std::string filename)
 {
@@ -179,7 +198,9 @@ PatcherError PatcherError::createArchiveError(MBP::ErrorCode error,
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createXmlError(MBP::ErrorCode error,
                                           std::string filename)
 {
@@ -194,7 +215,9 @@ PatcherError PatcherError::createXmlError(MBP::ErrorCode error,
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createSupportedFileError(MBP::ErrorCode error,
                                                     std::string name)
 {
@@ -210,7 +233,9 @@ PatcherError PatcherError::createSupportedFileError(MBP::ErrorCode error,
     pe.m_impl->patcherName = std::move(name);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createCancelledError(MBP::ErrorCode error)
 {
     switch (error) {
@@ -223,7 +248,9 @@ PatcherError PatcherError::createCancelledError(MBP::ErrorCode error)
     PatcherError pe(MBP::ErrorType::CancelledError, error);
     return pe;
 }
+/*! \endcond */
 
+/*! \cond INTERNAL */
 PatcherError PatcherError::createPatchingError(MBP::ErrorCode error)
 {
     switch (error) {
@@ -236,21 +263,54 @@ PatcherError PatcherError::createPatchingError(MBP::ErrorCode error)
     PatcherError pe(MBP::ErrorType::PatchingError, error);
     return pe;
 }
+/*! \endcond */
 
-MBP::ErrorType PatcherError::errorType()
+/*!
+ * \brief Get error type
+ *
+ * \return Error type
+ *
+ * \sa errors.h
+ */
+MBP::ErrorType PatcherError::errorType() const
 {
     return m_impl->errorType;
 }
 
-MBP::ErrorCode PatcherError::errorCode()
+/*!
+ * \brief Get error code
+ *
+ * \return Error code
+ *
+ * \sa errors.h
+ */
+MBP::ErrorCode PatcherError::errorCode() const
 {
     return m_impl->errorCode;
 }
 
-std::string PatcherError::patcherName() {
+/*!
+ * \brief Name of patcher that caused the error
+ *
+ * \Note This is valid only if the error type is PatcherCreationError or
+ *       SupportedFileError.
+ *
+ * \return Patcher name
+ */
+std::string PatcherError::patcherName() const
+{
     return m_impl->patcherName;
 }
 
-std::string PatcherError::filename() {
+/*!
+ * \brief File the error refers to
+ *
+ * \Note This is valid only if the error type is IOError, CpioError,
+ *       ArchiveError, or XmlError.
+ *
+ * \return Filename
+ */
+std::string PatcherError::filename() const
+{
     return m_impl->filename;
 }

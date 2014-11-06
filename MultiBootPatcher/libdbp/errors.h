@@ -41,6 +41,8 @@ enum ErrorType {
     PatchingError,
 };
 
+typedef enum ErrorType ErrorType;
+
 #ifdef __cplusplus
 enum class ErrorCode : int {
 #else
@@ -99,6 +101,8 @@ enum ErrorCode {
     // Primary upgrade patcher
     SystemCacheFormatLinesNotFound,
 };
+
+typedef enum ErrorCode ErrorCode;
 
 #ifdef __cplusplus
 }

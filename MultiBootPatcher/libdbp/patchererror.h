@@ -40,11 +40,11 @@ public:
     static PatcherError createCancelledError(MBP::ErrorCode error);
     static PatcherError createPatchingError(MBP::ErrorCode error);
 
-    MBP::ErrorType errorType();
-    MBP::ErrorCode errorCode();
+    MBP::ErrorType errorType() const;
+    MBP::ErrorCode errorCode() const;
 
-    std::string patcherName();
-    std::string filename();
+    std::string patcherName() const;
+    std::string filename() const;
 
     PatcherError();
     PatcherError(const PatcherError &error);
