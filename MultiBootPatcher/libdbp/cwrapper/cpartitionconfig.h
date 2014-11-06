@@ -20,6 +20,8 @@
 #ifndef C_PARTITIONCONFIG_H
 #define C_PARTITIONCONFIG_H
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
