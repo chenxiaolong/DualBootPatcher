@@ -95,6 +95,9 @@ extern "C" {
     /*!
      * \brief Device's codename
      *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
+     *
      * \param device CDevice object
      *
      * \return Device codename
@@ -123,6 +126,9 @@ extern "C" {
 
     /*!
      * \brief Device's full name
+     *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
      *
      * \param device CDevice object
      *
@@ -153,6 +159,9 @@ extern "C" {
     /*!
      * \brief Device's CPU architecture
      *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
+     *
      * \param device CDevice object
      *
      * \return Architecture
@@ -182,6 +191,9 @@ extern "C" {
     /*!
      * \brief Device's SELinux mode
      *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
+     *
      * \param device CDevice object
      *
      * \return SELinux mode
@@ -210,6 +222,9 @@ extern "C" {
 
     /*!
      * \brief Get partition number for a specific partition
+     *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
      *
      * \param device CDevice object
      * \param which Partition

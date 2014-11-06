@@ -82,6 +82,9 @@ extern "C" {
     /*!
      * \brief PatchInfo identifier
      *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
+     *
      * \param info CPatchInfo object
      *
      * \return PatchInfo ID
@@ -111,6 +114,9 @@ extern "C" {
     /*!
      * \brief Name of ROM or kernel
      *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
+     *
      * \param info CPatchInfo object
      *
      * \return ROM or kernel name
@@ -139,6 +145,9 @@ extern "C" {
 
     /*!
      * \brief Get the parameter key for a filename
+     *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
      *
      * \param info CPatchInfo object
      * \param fileName Filename
@@ -460,6 +469,9 @@ extern "C" {
     /*!
      * \brief Which ramdisk patcher to use
      *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
+     *
      * \param info CPatchInfo object
      * \param key Parameter key
      *
@@ -491,6 +503,9 @@ extern "C" {
 
     /*!
      * \brief Which patched init binary to use
+     *
+     * \note The output data is dynamically allocated. It should be `free()`'d
+     *       when it is no longer needed.
      *
      * \param info CPatchInfo object
      * \param key Parameter key
