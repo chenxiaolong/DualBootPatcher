@@ -34,8 +34,7 @@ typedef struct CBootImage CBootImage;
 CBootImage * mbp_bootimage_create();
 void mbp_bootimage_destroy(CBootImage *bootImage);
 
-void mbp_bootimage_error(const CBootImage *bootImage,
-                         CPatcherError *error);
+CPatcherError * mbp_bootimage_error(const CBootImage *bootImage);
 
 int mbp_bootimage_load_data(CBootImage *bootImage,
                             const char *data, unsigned int size);

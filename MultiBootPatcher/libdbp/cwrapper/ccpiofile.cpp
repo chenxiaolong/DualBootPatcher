@@ -67,18 +67,23 @@ extern "C" {
     /*!
      * \brief Get the error information
      *
-     * \note \a error is filled with valid data only if a CCpioFile operation
-     *       has failed.
+     * \note The returned CPatcherError is filled with valid data only if a
+     *       CCpioFile operation has failed.
+     *
+     * \note The returned CPatcherError should be freed with mbp_error_destroy()
+     *       when it is no longer needed.
      *
      * \param cpio CCpioFile object
-     * \param error Pointer to CPatcherError
+     *
+     * \return CPatcherError
      *
      * \sa CpioFile::error()
      */
-    void mbp_cpiofile_error(const CCpioFile *cpio, CPatcherError *error)
+    CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
     {
-        PatcherError *pe = reinterpret_cast<PatcherError *>(error);
-        *pe = reinterpret_cast<const CpioFile *>(cpio)->error();
+        const CpioFile *bi = reinterpret_cast<const CpioFile *>(cpio);
+        PatcherError *pe = new PatcherError(bi->error());
+        return reinterpret_cast<CPatcherError *>(pe);
     }
 
     /*!

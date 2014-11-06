@@ -34,8 +34,7 @@ typedef struct CCpioFile CCpioFile;
 CCpioFile * mbp_cpiofile_create();
 void mbp_cpiofile_destroy(CCpioFile *cpio);
 
-void mbp_cpiofile_error(const CCpioFile *cpio,
-                        CPatcherError *error);
+CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio);
 
 int mbp_cpiofile_load_data(CCpioFile *cpio,
                            const char *data, unsigned int size);

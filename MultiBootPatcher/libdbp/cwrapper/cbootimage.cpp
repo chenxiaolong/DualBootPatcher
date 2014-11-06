@@ -66,18 +66,23 @@ extern "C" {
     /*!
      * \brief Get the error information
      *
-     * \note \a error is filled with valid data only if a CBootImage operation
-     *       has failed.
+     * \note The returned CPatcherError is filled with valid data only if a
+     *       CBootImage operation has failed.
+     *
+     * \note The returned CPatcherError should be freed with mbp_error_destroy()
+     *       when it is no longer needed.
      *
      * \param bootImage CBootImage object
-     * \param error Pointer to CPatcherError
+     *
+     * \return CPatcherError
      *
      * \sa BootImage::error()
      */
-    void mbp_bootimage_error(const CBootImage *bootImage, CPatcherError *error)
+    CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
     {
-        PatcherError *pe = reinterpret_cast<PatcherError *>(error);
-        *pe = reinterpret_cast<const BootImage *>(bootImage)->error();
+        const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
+        PatcherError *pe = new PatcherError(bi->error());
+        return reinterpret_cast<CPatcherError *>(pe);
     }
 
     /*!
