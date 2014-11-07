@@ -78,13 +78,17 @@ public:
 
     std::string patcherName(const std::string &id) const;
 
-    std::shared_ptr<Patcher> createPatcher(const std::string &id) const;
-    std::shared_ptr<AutoPatcher> createAutoPatcher(const std::string &id,
-                                                   const FileInfo * const info,
-                                                   const PatchInfo::AutoPatcherArgs &args) const;
-    std::shared_ptr<RamdiskPatcher> createRamdiskPatcher(const std::string &id,
-                                                         const FileInfo * const info,
-                                                         CpioFile * const cpio) const;
+    Patcher * createPatcher(const std::string &id);
+    AutoPatcher * createAutoPatcher(const std::string &id,
+                                    const FileInfo * const info,
+                                    const PatchInfo::AutoPatcherArgs &args);
+    RamdiskPatcher * createRamdiskPatcher(const std::string &id,
+                                          const FileInfo * const info,
+                                          CpioFile * const cpio);
+
+    void destroyPatcher(Patcher *patcher);
+    void destroyAutoPatcher(AutoPatcher *patcher);
+    void destroyRamdiskPatcher(RamdiskPatcher *patcher);
 
     std::vector<PartitionConfig *> partitionConfigs() const;
     PartitionConfig * partitionConfig(const std::string &id) const;

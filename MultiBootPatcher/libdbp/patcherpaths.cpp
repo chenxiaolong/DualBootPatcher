@@ -54,8 +54,6 @@
 class PatcherPaths::Impl
 {
 public:
-    ~Impl();
-
     // Directories
     std::string binariesDir;
     std::string dataDir;
@@ -78,6 +76,11 @@ public:
 
     // Errors
     PatcherError error;
+
+    // Created patchers
+    std::vector<Patcher *> allocPatchers;
+    std::vector<AutoPatcher *> allocAutoPatchers;
+    std::vector<RamdiskPatcher *> allocRamdiskPatchers;
 
     // XML parsing functions for the patchinfo files
     bool loadPatchInfoXml(const std::string &path, const std::string &pathId);
@@ -106,13 +109,6 @@ static const std::string InitsDirName = "inits";
 static const std::string PatchesDirName = "patches";
 static const std::string PatchInfosDirName = "patchinfos";
 static const std::string ScriptsDirName = "scripts";
-
-PatcherPaths::Impl::~Impl()
-{
-    for (Device *device : devices) {
-        delete device;
-    }
-}
 
 // --------------------------------
 
@@ -168,6 +164,21 @@ PatcherPaths::~PatcherPaths()
         delete config;
     }
     m_impl->partConfigs.clear();
+
+    for (Patcher *patcher : m_impl->allocPatchers) {
+        destroyPatcher(patcher);
+    }
+    m_impl->allocPatchers.clear();
+
+    for (AutoPatcher *patcher : m_impl->allocAutoPatchers) {
+        destroyAutoPatcher(patcher);
+    }
+    m_impl->allocAutoPatchers.clear();
+
+    for (RamdiskPatcher *patcher : m_impl->allocRamdiskPatchers) {
+        destroyRamdiskPatcher(patcher);
+    }
+    m_impl->allocRamdiskPatchers.clear();
 }
 
 PatcherError PatcherPaths::error() const
@@ -474,81 +485,134 @@ std::vector<std::string> PatcherPaths::ramdiskPatchers() const
     return list;
 }
 
-std::shared_ptr<Patcher> PatcherPaths::createPatcher(const std::string &id) const
+Patcher * PatcherPaths::createPatcher(const std::string &id)
 {
+    Patcher *p = nullptr;
+
     if (id == MultiBootPatcher::Id) {
-        return std::make_shared<MultiBootPatcher>(this);
+        p = new MultiBootPatcher(this);
     } else if (id == PrimaryUpgradePatcher::Id) {
-        return std::make_shared<PrimaryUpgradePatcher>(this);
+        p = new PrimaryUpgradePatcher(this);
     } else if (id == SyncdaemonUpdatePatcher::Id) {
-        return std::make_shared<SyncdaemonUpdatePatcher>(this);
+        p = new SyncdaemonUpdatePatcher(this);
     }
 
-    return std::shared_ptr<Patcher>();
+    if (p != nullptr) {
+        m_impl->allocPatchers.push_back(p);
+    }
+
+    return p;
 }
 
-std::shared_ptr<AutoPatcher> PatcherPaths::createAutoPatcher(const std::string &id,
-                                                             const FileInfo * const info,
-                                                             const PatchInfo::AutoPatcherArgs &args) const
+AutoPatcher * PatcherPaths::createAutoPatcher(const std::string &id,
+                                              const FileInfo * const info,
+                                              const PatchInfo::AutoPatcherArgs &args)
 {
+    AutoPatcher *ap = nullptr;
+
     if (id == JflteDalvikCachePatcher::Id) {
-        return std::make_shared<JflteDalvikCachePatcher>(this, info);
+        ap = new JflteDalvikCachePatcher(this, info);
     } else if (id == JflteGoogleEditionPatcher::Id) {
-        return std::make_shared<JflteGoogleEditionPatcher>(this, info);
+        ap = new JflteGoogleEditionPatcher(this, info);
     } else if (id == JflteSlimAromaBundledMount::Id) {
-        return std::make_shared<JflteSlimAromaBundledMount>(this, info);
+        ap = new JflteSlimAromaBundledMount(this, info);
     } else if (id == JflteImperiumPatcher::Id) {
-        return std::make_shared<JflteImperiumPatcher>(this, info);
+        ap = new JflteImperiumPatcher(this, info);
     } else if (id == JflteNegaliteNoWipeData::Id) {
-        return std::make_shared<JflteNegaliteNoWipeData>(this, info);
+        ap = new JflteNegaliteNoWipeData(this, info);
     } else if (id == JflteTriForceFixAroma::Id) {
-        return std::make_shared<JflteTriForceFixAroma>(this, info);
+        ap = new JflteTriForceFixAroma(this, info);
     } else if (id == JflteTriForceFixUpdate::Id) {
-        return std::make_shared<JflteTriForceFixUpdate>(this, info);
+        ap = new JflteTriForceFixUpdate(this, info);
     } else if (id == NoobdevMultiBoot::Id) {
-        return std::make_shared<NoobdevMultiBoot>(this, info);
+        ap = new NoobdevMultiBoot(this, info);
     } else if (id == NoobdevSystemProp::Id) {
-        return std::make_shared<NoobdevSystemProp>(this, info);
+        ap = new NoobdevSystemProp(this, info);
     } else if (id == PatchFilePatcher::Id) {
-        return std::make_shared<PatchFilePatcher>(this, info, args);
+        ap = new PatchFilePatcher(this, info, args);
     } else if (id == StandardPatcher::Id) {
-        return std::make_shared<StandardPatcher>(this, info, args);
+        ap = new StandardPatcher(this, info, args);
     }
 
-    return std::shared_ptr<AutoPatcher>();
+    if (ap != nullptr) {
+        m_impl->allocAutoPatchers.push_back(ap);
+    }
+
+    return ap;
 }
 
-std::shared_ptr<RamdiskPatcher> PatcherPaths::createRamdiskPatcher(const std::string &id,
-                                                                   const FileInfo * const info,
-                                                                   CpioFile * const cpio) const
+RamdiskPatcher * PatcherPaths::createRamdiskPatcher(const std::string &id,
+                                                    const FileInfo * const info,
+                                                    CpioFile * const cpio)
 {
+    RamdiskPatcher *rp = nullptr;
+
     if (id == BaconRamdiskPatcher::Id) {
-        return std::make_shared<BaconRamdiskPatcher>(this, info, cpio);
+        rp = new BaconRamdiskPatcher(this, info, cpio);
     } else if (id == D800RamdiskPatcher::Id) {
-        return std::make_shared<D800RamdiskPatcher>(this, info, cpio);
+        rp = new D800RamdiskPatcher(this, info, cpio);
     } else if (id == FalconRamdiskPatcher::Id) {
-        return std::make_shared<FalconRamdiskPatcher>(this, info, cpio);
+        rp = new FalconRamdiskPatcher(this, info, cpio);
     } else if (id == HammerheadAOSPRamdiskPatcher::Id) {
-        return std::make_shared<HammerheadAOSPRamdiskPatcher>(this, info, cpio);
+        rp = new HammerheadAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == HammerheadNoobdevRamdiskPatcher::Id) {
-        return std::make_shared<HammerheadNoobdevRamdiskPatcher>(this, info, cpio);
+        rp = new HammerheadNoobdevRamdiskPatcher(this, info, cpio);
     } else if (id == HlteAOSPRamdiskPatcher::Id) {
-        return std::make_shared<HlteAOSPRamdiskPatcher>(this, info, cpio);
+        rp = new HlteAOSPRamdiskPatcher(this, info, cpio);
+    } else if (id == HlteTouchWizRamdiskPatcher::Id) {
+        rp = new HlteTouchWizRamdiskPatcher(this, info, cpio);
     } else if (id == JflteAOSPRamdiskPatcher::Id) {
-        return std::make_shared<JflteAOSPRamdiskPatcher>(this, info, cpio);
+        rp = new JflteAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == JflteGoogleEditionRamdiskPatcher::Id) {
-        return std::make_shared<JflteGoogleEditionRamdiskPatcher>(this, info, cpio);
+        rp = new JflteGoogleEditionRamdiskPatcher(this, info, cpio);
     } else if (id == JflteNoobdevRamdiskPatcher::Id) {
-        return std::make_shared<JflteNoobdevRamdiskPatcher>(this, info, cpio);
+        rp = new JflteNoobdevRamdiskPatcher(this, info, cpio);
     } else if (id == JflteTouchWizRamdiskPatcher::Id) {
-        return std::make_shared<JflteTouchWizRamdiskPatcher>(this, info, cpio);
+        rp = new JflteTouchWizRamdiskPatcher(this, info, cpio);
     } else if (id == KlteAOSPRamdiskPatcher::Id) {
-        return std::make_shared<KlteAOSPRamdiskPatcher>(this, info, cpio);
+        rp = new KlteAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == KlteTouchWizRamdiskPatcher::Id) {
-        return std::make_shared<KlteTouchWizRamdiskPatcher>(this, info, cpio);
+        rp = new KlteTouchWizRamdiskPatcher(this, info, cpio);
     }
 
-    return std::shared_ptr<RamdiskPatcher>();
+    if (rp != nullptr) {
+        m_impl->allocRamdiskPatchers.push_back(rp);
+    }
+
+    return rp;
+}
+
+void PatcherPaths::destroyPatcher(Patcher *patcher)
+{
+    auto it = std::find(m_impl->allocPatchers.begin(),
+                        m_impl->allocPatchers.end(),
+                        patcher);
+
+    assert(it != m_impl->allocPatchers.end());
+
+    m_impl->allocPatchers.erase(it);
+}
+
+void PatcherPaths::destroyAutoPatcher(AutoPatcher *patcher)
+{
+    auto it = std::find(m_impl->allocAutoPatchers.begin(),
+                        m_impl->allocAutoPatchers.end(),
+                        patcher);
+
+    assert(it != m_impl->allocAutoPatchers.end());
+
+    m_impl->allocAutoPatchers.erase(it);
+}
+
+void PatcherPaths::destroyRamdiskPatcher(RamdiskPatcher *patcher)
+{
+    auto it = std::find(m_impl->allocRamdiskPatchers.begin(),
+                        m_impl->allocRamdiskPatchers.end(),
+                        patcher);
+
+    assert(it != m_impl->allocRamdiskPatchers.end());
+
+    m_impl->allocRamdiskPatchers.erase(it);
 }
 
 std::string PatcherPaths::patcherName(const std::string &id) const

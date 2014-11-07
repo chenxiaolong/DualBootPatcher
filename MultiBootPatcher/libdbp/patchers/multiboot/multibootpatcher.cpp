@@ -75,7 +75,7 @@ class MultiBootPatcher::Impl
 public:
     Impl(MultiBootPatcher *parent) : m_parent(parent) {}
 
-    const PatcherPaths *pp;
+    PatcherPaths *pp;
     const FileInfo *info;
 
     int progress;
@@ -112,7 +112,7 @@ const std::string MultiBootPatcher::Id("MultiBootPatcher");
 const std::string MultiBootPatcher::Name = tr("Multi Boot Patcher");
 
 
-MultiBootPatcher::MultiBootPatcher(const PatcherPaths * const pp)
+MultiBootPatcher::MultiBootPatcher(PatcherPaths * const pp)
     : m_impl(new Impl(this))
 {
     m_impl->pp = pp;
@@ -279,7 +279,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     RETURN_IF_CANCELLED
 
-    std::shared_ptr<RamdiskPatcher> rp = pp->createRamdiskPatcher(
+    auto *rp = pp->createRamdiskPatcher(
             info->patchInfo()->ramdisk(key), info, &cpio);
     if (!rp) {
         error = PatcherError::createPatcherCreationError(
@@ -292,6 +292,8 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         error = rp->error();
         return false;
     }
+
+    pp->destroyRamdiskPatcher(rp);
 
     RETURN_IF_CANCELLED
 
@@ -609,11 +611,11 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
 
     RETURN_IF_CANCELLED_AND_FREE_READ(aInput)
 
-    std::unordered_map<std::string, std::vector<std::shared_ptr<AutoPatcher>>> patcherFromFile;
+    std::unordered_map<std::string, std::vector<AutoPatcher *>> patcherFromFile;
+    std::vector<AutoPatcher *> autoPatchers;
 
     for (auto const &item : info->patchInfo()->autoPatchers(key)) {
-        std::shared_ptr<AutoPatcher> ap = pp->createAutoPatcher(
-                item.first, info, item.second);
+        auto *ap = pp->createAutoPatcher(item.first, info, item.second);
         if (!ap) {
             archive_read_free(aInput);
 
@@ -668,6 +670,7 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
             if (!FileUtils::laReadToByteArray(aInput, entry, &contents)) {
                 Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
                 archive_read_free(aInput);
+                for (auto *p : autoPatchers) { pp->destroyAutoPatcher(p); }
 
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveReadDataError, curFile);
@@ -677,6 +680,7 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
             for (auto const &ap : patcherFromFile[curFile]) {
                 if (!ap->patchFile(curFile, &contents, bootImages)) {
                     archive_read_free(aInput);
+                    for (auto *p : autoPatchers) { pp->destroyAutoPatcher(p); }
 
                     error = ap->error();
                     return false;
@@ -688,6 +692,7 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
                 Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
                 archive_read_free(aInput);
+                for (auto *p : autoPatchers) { pp->destroyAutoPatcher(p); }
 
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
@@ -699,6 +704,7 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
                 Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
                 archive_read_free(aInput);
+                for (auto *p : autoPatchers) { pp->destroyAutoPatcher(p); }
 
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
@@ -708,6 +714,7 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
             if (!FileUtils::laCopyData(aInput, aOutput)) {
                 Log::log(Log::Warning, "libarchive: %s", archive_error_string(aInput));
                 archive_read_free(aInput);
+                for (auto *p : autoPatchers) { pp->destroyAutoPatcher(p); }
 
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveWriteDataError, curFile);
@@ -715,6 +722,8 @@ bool MultiBootPatcher::Impl::scanAndPatchRemaining(archive * const aOutput,
             }
         }
     }
+
+    for (auto *p : autoPatchers) { pp->destroyAutoPatcher(p); }
 
     archive_read_free(aInput);
     return true;

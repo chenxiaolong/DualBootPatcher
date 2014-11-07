@@ -30,7 +30,7 @@
 class MultiBootPatcher : public Patcher
 {
 public:
-    explicit MultiBootPatcher(const PatcherPaths * const pp);
+    explicit MultiBootPatcher(PatcherPaths * const pp);
     ~MultiBootPatcher();
 
     static const std::string Id;
