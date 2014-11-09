@@ -26,6 +26,8 @@
 #include <libdbp/patcherpaths.h>
 #include <libdbp/patcherinterface.h>
 
+#include <memory>
+
 #include <QtCore/QThread>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -64,7 +66,7 @@ public:
 
     // Selected patcher
     QHash<QString, QString> reversePatcherMap;
-    QSharedPointer<Patcher> patcher;
+    Patcher *patcher = nullptr;
     PatchInfo *patchInfo = nullptr;
 
     // Level of support of the file
@@ -86,7 +88,7 @@ public:
     QList<PartitionConfig *> partConfigs;
 
     // List of available patchinfos
-    QList<PatchInfo *> patchInfos;
+    std::vector<PatchInfo *> patchInfos;
 
     QWidget *mainContainer;
     QWidget *progressContainer;

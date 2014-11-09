@@ -45,14 +45,15 @@ int main(int argc, char *argv[])
     PatcherPaths pp;
 
 #ifdef PORTABLE
-    pp.setDataDirectory(a.applicationDirPath() % Sep % QStringLiteral(LOCAL_DATA_DIR));
+    pp.setDataDirectory(a.applicationDirPath().toStdString() + "/" + LOCAL_DATA_DIR);
 #else
-    pp.setDataDirectory(QStringLiteral(DATA_DIR));
+    pp.setDataDirectory(DATA_DIR);
 #endif
 
     if (!pp.loadPatchInfos()) {
         QMessageBox::warning(nullptr, a.applicationName(),
-                             QObject::tr("Failed to load patchinfo files in: %1").arg(pp.patchInfosDirectory()));
+                             QObject::tr("Failed to load patchinfo files in: %1")
+                                    .arg(QString::fromStdString(pp.patchInfosDirectory())));
         return 1;
     }
 

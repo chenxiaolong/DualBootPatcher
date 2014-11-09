@@ -22,6 +22,9 @@
 
 #include <libdbp/partitionconfig.h>
 #include <libdbp/patchinfo.h>
+#include <libdbp/patchererror.h>
+
+#include <boost/algorithm/string.hpp>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>
@@ -70,6 +73,12 @@ MainWindow::MainWindow(PatcherPaths *pp, QWidget *parent)
             d->task, &PatcherTask::patch);
     connect(d->task, &PatcherTask::finished,
             this, &MainWindow::onPatchingFinished);
+    connect(d->task, &PatcherTask::maxProgressUpdated,
+            this, &MainWindow::onMaxProgressUpdated);
+    connect(d->task, &PatcherTask::progressUpdated,
+            this, &MainWindow::onProgressUpdated);
+    connect(d->task, &PatcherTask::detailsUpdated,
+            this, &MainWindow::onDetailsUpdated);
 
     d->thread->start();
 }
@@ -78,12 +87,16 @@ MainWindow::~MainWindow()
 {
     Q_D(MainWindow);
 
-    if (!d->patcher.isNull()) {
+    if (d->patcher) {
         d->patcher->cancelPatching();
+        d->pp->destroyPatcher(d->patcher);
+        d->patcher = nullptr;
     }
 
-    d->thread->quit();
-    d->thread->wait();
+    if (d->thread != nullptr) {
+        d->thread->quit();
+        d->thread->wait();
+    }
 }
 
 void MainWindow::onDeviceSelected(int index)
@@ -107,7 +120,11 @@ void MainWindow::onPatcherSelected(const QString &patcher)
     Q_D(MainWindow);
 
     QString patcherId = d->reversePatcherMap[patcher];
-    d->patcher = d->pp->createPatcher(patcherId);
+    if (d->patcher != nullptr) {
+        d->pp->destroyPatcher(d->patcher);
+        d->patcher = nullptr;
+    }
+    d->patcher = d->pp->createPatcher(patcherId.toStdString());
 
     refreshPartConfigs();
 
@@ -124,7 +141,8 @@ void MainWindow::onPartConfigSelected(int index)
     Q_D(MainWindow);
 
     if (index >= 0) {
-        d->partConfigDesc->setText(d->partConfigs[index]->description());
+        d->partConfigDesc->setText(QString::fromStdString(
+                d->partConfigs[index]->description()));
 
         if (d->state == MainWindowPrivate::FinishedPatching) {
             d->state = MainWindowPrivate::ChoseFile;
@@ -224,13 +242,6 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
 
     d->state = MainWindowPrivate::FinishedPatching;
     updateWidgetsVisibility();
-
-    disconnect(d->patcher.data(), &Patcher::maxProgressUpdated,
-               this, &MainWindow::onMaxProgressUpdated);
-    disconnect(d->patcher.data(), &Patcher::progressUpdated,
-               this, &MainWindow::onProgressUpdated);
-    disconnect(d->patcher.data(), &Patcher::detailsUpdated,
-               this, &MainWindow::onDetailsUpdated);
 }
 
 void MainWindow::addWidgets()
@@ -462,9 +473,9 @@ void MainWindow::setWidgetActions()
             this, &MainWindow::onPatchedInitToggled);
 }
 
-bool sortByPatchInfoPath(PatchInfo *pi1, PatchInfo *pi2)
+bool sortByPatchInfoId(PatchInfo *pi1, PatchInfo *pi2)
 {
-    return QString::compare(pi1->path(), pi2->path(), Qt::CaseInsensitive) < 0;
+    return boost::ilexicographical_compare(pi1->id(), pi2->id());
 }
 
 void MainWindow::populateWidgets()
@@ -474,29 +485,32 @@ void MainWindow::populateWidgets()
     // Populate devices
     for (Device *device : d->pp->devices()) {
         d->deviceSel->addItem(QStringLiteral("%1 (%2)")
-                .arg(device->codename()).arg(device->name()));
+                .arg(QString::fromStdString(device->codename()))
+                .arg(QString::fromStdString(device->name())));
     }
 
     // Populate patchers
     QStringList patcherNames;
-    for (const QString &id : d->pp->patchers()) {
-        QString name = d->pp->patcherName(id);
+    for (auto const &id : d->pp->patchers()) {
+        QString name = QString::fromStdString(d->pp->patcherName(id));
         patcherNames << name;
-        d->reversePatcherMap[name] = id;
+        d->reversePatcherMap[name] = QString::fromStdString(id);
     }
     patcherNames.sort();
     d->patcherSel->addItems(patcherNames);
 
     // Populate init binaries
-    d->initFileSel->addItems(d->pp->initBinaries());
+    for (auto const &initBinary : d->pp->initBinaries()) {
+        d->initFileSel->addItem(QString::fromStdString(initBinary));
+    }
 
     // Populate autopatchers
     QStringList autoPatchers;
-    for (const QString &id : d->pp->autoPatchers()) {
-        if (id == QStringLiteral("PatchFile")) {
+    for (auto const &id : d->pp->autoPatchers()) {
+        if (id == "PatchFile") {
             continue;
         }
-        autoPatchers << id;
+        autoPatchers << QString::fromStdString(id);
     }
     autoPatchers.sort();
     d->autoPatcherSel->addItems(autoPatchers);
@@ -527,11 +541,13 @@ void MainWindow::refreshPartConfigs()
     d->partConfigSel->clear();
     d->partConfigs.clear();
 
-    for (const QString &id : d->patcher->supportedPartConfigIds()) {
+    for (auto const &id : d->patcher->supportedPartConfigIds()) {
         PartitionConfig *config = d->pp->partitionConfig(id);
         if (config != nullptr) {
             d->partConfigs << config;
-            d->partConfigSel->addItem(config->name(), config->id());
+            d->partConfigSel->addItem(
+                    QString::fromStdString(config->name()),
+                    QString::fromStdString(config->id()));
         }
     }
 }
@@ -545,9 +561,9 @@ void MainWindow::refreshPresets()
 
     d->presetSel->addItem(tr("Custom"));
     d->patchInfos = d->pp->patchInfos(d->device);
-    std::sort(d->patchInfos.begin(), d->patchInfos.end(), sortByPatchInfoPath);
+    std::sort(d->patchInfos.begin(), d->patchInfos.end(), sortByPatchInfoId);
     for (PatchInfo *info : d->patchInfos) {
-        d->presetSel->addItem(info->path());
+        d->presetSel->addItem(QString::fromStdString(info->id()));
     }
 }
 
@@ -558,9 +574,9 @@ void MainWindow::refreshRamdisks()
     d->ramdiskSel->clear();
 
     QStringList ramdisks;
-    for (const QString &id : d->pp->ramdiskPatchers()) {
-        if (id.startsWith(d->device->codename())) {
-            ramdisks << id;
+    for (auto const &id : d->pp->ramdiskPatchers()) {
+        if (boost::starts_with(id, d->device->codename())) {
+            ramdisks << QString::fromStdString(id);
         }
     }
     ramdisks.sort();
@@ -627,18 +643,20 @@ void MainWindow::checkSupported()
         }
 
         // Otherwise, check if it really is supported
-        else if ((d->patchInfo = PatchInfo::findMatchingPatchInfo(
-                d->pp, d->device, d->fileName)) != nullptr) {
+        else if ((d->patchInfo = d->pp->findMatchingPatchInfo(
+                d->device, d->fileName.toStdString())) != nullptr) {
             d->supported |= MainWindowPrivate::SupportedFile;
 
-            QString key = d->patchInfo->keyFromFilename(d->fileName);
-            QStringList configs = d->patchInfo->supportedConfigs(key);
+            const std::string key = d->patchInfo->keyFromFilename(
+                    d->fileName.toStdString());
+            std::vector<std::string> configs =
+                    d->patchInfo->supportedConfigs(key);
             PartitionConfig *curConfig =
                     d->partConfigs[d->partConfigSel->currentIndex()];
 
-            if ((configs.contains(QStringLiteral("all"))
-                    || configs.contains(curConfig->id()))
-                    && !configs.contains(QLatin1Char('!') % curConfig->id())) {
+            if ((std::find(configs.begin(), configs.end(), "all") != configs.end()
+                    || std::find(configs.begin(), configs.end(), curConfig->id()) != configs.end())
+                    && std::find(configs.begin(), configs.end(), "!" + curConfig->id()) == configs.end()) {
                 d->supported |= MainWindowPrivate::SupportedPartConfig;
             }
         }
@@ -694,7 +712,8 @@ void MainWindow::updateWidgetsVisibility()
             // If the patcher uses patchinfo files, show the detected message
             if (d->patcher->usesPatchInfo()) {
                 message.append(newLines);
-                message.append(tr("Detected %1").arg(d->patchInfo->name()));
+                message.append(tr("Detected %1")
+                        .arg(QString::fromStdString(d->patchInfo->name())));
             }
 
             // Otherwise, if the partition configuration is not supported, then
@@ -737,9 +756,9 @@ void MainWindow::startPatching()
             PatchInfo::AutoPatcherItems items;
             for (int i = 0; i < d->autoPatcherSel->count(); i++) {
                 if (d->autoPatcherSel->isChecked(i)) {
-                    items << PatchInfo::AutoPatcherItem(
-                            d->autoPatcherSel->itemText(i),
-                                    PatchInfo::AutoPatcherArgs());
+                    items.push_back(PatchInfo::AutoPatcherItem(
+                            d->autoPatcherSel->itemText(i).toStdString(),
+                                    PatchInfo::AutoPatcherArgs()));
                 }
             }
 
@@ -749,16 +768,18 @@ void MainWindow::startPatching()
                                           d->hasBootImageCb->isChecked());
             if (d->patchInfo->hasBootImage(PatchInfo::Default)) {
                 d->patchInfo->setRamdisk(PatchInfo::Default,
-                                         d->ramdiskSel->currentText());
+                                         d->ramdiskSel->currentText().toStdString());
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
-                    d->patchInfo->setBootImages(PatchInfo::Default,
-                                                text.split(QLatin1Char(',')));
+                    const std::string textStdString = text.toStdString();
+                    std::vector<std::string> bootImages;
+                    boost::split(bootImages, textStdString, boost::is_any_of(","));
+                    d->patchInfo->setBootImages(PatchInfo::Default, bootImages);
                 }
 
                 if (d->patchedInitCb->isChecked()) {
                     d->patchInfo->setPatchedInit(PatchInfo::Default,
-                                                 d->initFileSel->currentText());
+                                                 d->initFileSel->currentText().toStdString());
                 }
             }
 
@@ -772,20 +793,13 @@ void MainWindow::startPatching()
     d->state = MainWindowPrivate::Patching;
     updateWidgetsVisibility();
 
-    FileInfoPtr fileInfo(new FileInfo());
-    fileInfo->setFilename(d->fileName);
+    FileInfoPtr fileInfo = new FileInfo();
+    fileInfo->setFilename(d->fileName.toStdString());
     fileInfo->setDevice(d->device);
     if (!d->partConfigs.isEmpty()) {
         fileInfo->setPartConfig(d->partConfigs[d->partConfigSel->currentIndex()]);
     }
     fileInfo->setPatchInfo(d->patchInfo);
-
-    connect(d->patcher.data(), &Patcher::maxProgressUpdated,
-            this, &MainWindow::onMaxProgressUpdated);
-    connect(d->patcher.data(), &Patcher::progressUpdated,
-            this, &MainWindow::onProgressUpdated);
-    connect(d->patcher.data(), &Patcher::detailsUpdated,
-            this, &MainWindow::onDetailsUpdated);
 
     emit runThread(d->patcher, fileInfo);
 }
@@ -799,17 +813,151 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
     return frame;
 }
 
+
+static QString errorToString(PatcherError error) {
+    switch (error.errorCode()) {
+    case MBP::ErrorCode::NoError:
+        return QObject::tr("No error has occurred");
+    case MBP::ErrorCode::UnknownError:
+        return QObject::tr("An unknown error has occurred");
+    case MBP::ErrorCode::PatcherCreateError:
+        return QObject::tr("Failed to create patcher: %1")
+                .arg(QString::fromStdString(error.patcherName()));
+    case MBP::ErrorCode::AutoPatcherCreateError:
+        return QObject::tr("Failed to create autopatcher: %1")
+                .arg(QString::fromStdString(error.patcherName()));
+    case MBP::ErrorCode::RamdiskPatcherCreateError:
+        return QObject::tr("Failed to create ramdisk patcher: %1")
+                .arg(QString::fromStdString(error.patcherName()));
+    case MBP::ErrorCode::FileOpenError:
+        return QObject::tr("Failed to open file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::FileReadError:
+        return QObject::tr("Failed to read from file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::FileWriteError:
+        return QObject::tr("Failed to write to file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::DirectoryNotExistError:
+        return QObject::tr("Directory does not exist: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::BootImageSmallerThanHeaderError:
+        return QObject::tr("The boot image file is smaller than the boot image header size");
+    case MBP::ErrorCode::BootImageNoAndroidHeaderError:
+        return QObject::tr("Could not find the Android header in the boot image");
+    case MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError:
+        return QObject::tr("Could not find the ramdisk's gzip header");
+    case MBP::ErrorCode::BootImageNoRamdiskSizeError:
+        return QObject::tr("Could not determine the ramdisk's size");
+    case MBP::ErrorCode::BootImageNoKernelSizeError:
+        return QObject::tr("Could not determine the kernel's size");
+    case MBP::ErrorCode::BootImageNoRamdiskAddressError:
+        return QObject::tr("Could not determine the ramdisk's memory address");
+    case MBP::ErrorCode::CpioFileAlreadyExistsError:
+        return QObject::tr("File already exists in cpio archive: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::CpioFileNotExistError:
+        return QObject::tr("File does not exist in cpio archive: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::ArchiveReadOpenError:
+        return QObject::tr("Failed to open archive for reading");
+    case MBP::ErrorCode::ArchiveReadDataError:
+        return QObject::tr("Failed to read archive data for file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::ArchiveReadHeaderError:
+        return QObject::tr("Failed to read archive entry header");
+    case MBP::ErrorCode::ArchiveWriteOpenError:
+        return QObject::tr("Failed to open archive for writing");
+    case MBP::ErrorCode::ArchiveWriteDataError:
+        return QObject::tr("Failed to write archive data for file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::ArchiveWriteHeaderError:
+        return QObject::tr("Failed to write archive header for file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::ArchiveCloseError:
+        return QObject::tr("Failed to close archive");
+    case MBP::ErrorCode::ArchiveFreeError:
+        return QObject::tr("Failed to free archive header memory");
+    case MBP::ErrorCode::XmlParseFileError:
+        return QObject::tr("Failed to parse XML file: %1")
+                .arg(QString::fromStdString(error.filename()));
+    case MBP::ErrorCode::OnlyZipSupported:
+        return QObject::tr("Only ZIP files are supported by %1")
+                .arg(QString::fromStdString(error.patcherName()));
+    case MBP::ErrorCode::OnlyBootImageSupported:
+        return QObject::tr("Only boot images are supported by %1")
+                .arg(QString::fromStdString(error.patcherName()));
+    case MBP::ErrorCode::PatchingCancelled:
+        return QObject::tr("Patching was cancelled");
+    case MBP::ErrorCode::SystemCacheFormatLinesNotFound:
+        return QObject::tr("The patcher could not find any /system or /cache"
+                           "formatting lines in the updater-script file.\n\n"
+                           "If the file is a ROM, then something failed. If the"
+                           "file is not a ROM (eg. kernel or mod), it doesn't"
+                           "need to be patched.");
+    default:
+        assert(false);
+    }
+
+    return QString();
+}
+
+
 PatcherTask::PatcherTask(QWidget *parent)
     : QObject(parent)
 {
 }
 
+static void maxProgressUpdatedCbWrapper(int max, void *userData)
+{
+    PatcherTask *task = static_cast<PatcherTask *>(userData);
+    task->maxProgressUpdatedCb(max);
+}
+
+static void progressUpdatedCbWrapper(int value, void *userData)
+{
+    PatcherTask *task = static_cast<PatcherTask *>(userData);
+    task->progressUpdatedCb(value);
+}
+
+static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
+{
+    PatcherTask *task = static_cast<PatcherTask *>(userData);
+    task->detailsUpdatedCb(text);
+}
+
 void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
-    patcher->setFileInfo(info.data());
-    if (!patcher->patchFile()) {
-        emit finished(QString(), true, patcher->errorString());
+    patcher->setFileInfo(info);
+
+    bool ret = patcher->patchFile(&maxProgressUpdatedCbWrapper,
+                                  &progressUpdatedCbWrapper,
+                                  &detailsUpdatedCbWrapper,
+                                  this);
+
+    QString newFile(QString::fromStdString(patcher->newFilePath()));
+
+    patcher->setFileInfo(nullptr);
+    delete info;
+
+    if (!ret) {
+        emit finished(QString(), true, errorToString(patcher->error()));
     } else {
-        emit finished(patcher->newFilePath(), false, QString());
+        emit finished(newFile, false, QString());
     }
+}
+
+void PatcherTask::maxProgressUpdatedCb(int max)
+{
+    emit maxProgressUpdated(max);
+}
+
+void PatcherTask::progressUpdatedCb(int value)
+{
+    emit progressUpdated(value);
+}
+
+void PatcherTask::detailsUpdatedCb(const std::string &text)
+{
+    emit detailsUpdated(QString::fromStdString(text));
 }

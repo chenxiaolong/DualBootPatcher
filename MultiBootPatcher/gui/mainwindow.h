@@ -28,9 +28,9 @@
 #include <QtWidgets/QWidget>
 
 
-typedef QSharedPointer<Patcher> PatcherPtr;
+typedef Patcher * PatcherPtr;
 Q_DECLARE_METATYPE(PatcherPtr)
-typedef QSharedPointer<FileInfo> FileInfoPtr;
+typedef FileInfo * FileInfoPtr;
 Q_DECLARE_METATYPE(FileInfoPtr)
 
 class MainWindowPrivate;
@@ -101,9 +101,16 @@ public:
 
     void patch(PatcherPtr patcher, FileInfoPtr info);
 
+    void maxProgressUpdatedCb(int max);
+    void progressUpdatedCb(int value);
+    void detailsUpdatedCb(const std::string &text);
+
 signals:
     void finished(const QString &newFile, bool failed,
                   const QString &errorMessage);
+    void maxProgressUpdated(int max);
+    void progressUpdated(int value);
+    void detailsUpdated(const QString &text);
 };
 
 #endif // MAINWINDOW_H
