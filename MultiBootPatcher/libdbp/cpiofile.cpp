@@ -360,7 +360,7 @@ std::vector<std::string> CpioFile::filenames() const
  * \brief Get contents of a file in the archive
  *
  * \todo This returned value is currently ambiguous as both an empty file and
- *       a non-existant file will return an empty vector.
+ *       a non-existent file will return an empty vector.
  *
  * \return Contents of specified file
  */
