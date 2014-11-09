@@ -22,6 +22,9 @@
 #include <algorithm>
 #include <fstream>
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+
 #include "private/logging.h"
 
 
@@ -145,6 +148,8 @@ bool FileUtils::laExtractFile(archive *aInput,
     size_t bytes_read;
 
     std::string fullPath = directory + "/" + archive_entry_pathname(entry);
+    boost::filesystem::path path(fullPath);
+    boost::filesystem::create_directories(path.parent_path());
 
     std::ofstream file(fullPath, std::ios::binary);
 
