@@ -44,6 +44,10 @@ public:
 
     static bool laCopyData(archive *aInput, archive *aOutput);
 
+    static bool laExtractFile(archive *aInput,
+                              archive_entry *entry,
+                              const std::string directory);
+
     static PatcherError laAddFile(archive * const aOutput,
                                   const std::string &name,
                                   const std::vector<unsigned char> &contents);

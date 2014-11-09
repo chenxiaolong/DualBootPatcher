@@ -135,6 +135,33 @@ bool FileUtils::laCopyData(archive *aInput, archive *aOutput)
     return r >= ARCHIVE_WARN;
 }
 
+bool FileUtils::laExtractFile(archive *aInput,
+                              archive_entry *entry,
+                              const std::string directory)
+{
+    int r;
+    __LA_INT64_T offset;
+    const void *buff;
+    size_t bytes_read;
+
+    std::string fullPath = directory + "/" + archive_entry_pathname(entry);
+
+    std::ofstream file(fullPath, std::ios::binary);
+
+    if (file.fail()) {
+        return false;
+    }
+
+    while ((r = archive_read_data_block(aInput, &buff,
+            &bytes_read, &offset)) == ARCHIVE_OK) {
+        file.write(reinterpret_cast<const char *>(buff), bytes_read);
+    }
+
+    file.close();
+
+    return r >= ARCHIVE_WARN;
+}
+
 /*!
     \brief Writes file to libarchive output file
 
