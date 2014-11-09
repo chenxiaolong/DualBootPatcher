@@ -300,7 +300,8 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
     char buf[32768];
     int n;
 
-    while (file.read(buf, 32768)) {
+    while (!file.eof()) {
+        file.read(buf, 32768);
         n = file.gcount();
 
         if (archive_write_data(aOutput, buf, n) != n) {
