@@ -42,9 +42,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 
 private:
     void skipNewlinesAndAdd(const std::string &file,

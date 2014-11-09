@@ -26,6 +26,8 @@
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 
+#include "private/fileutils.h"
+
 
 /*! \cond INTERNAL */
 class StandardPatcher::Impl
@@ -102,43 +104,44 @@ std::vector<std::string> StandardPatcher::existingFiles() const
     return files;
 }
 
-bool StandardPatcher::patchFile(const std::string &file,
-                                std::vector<unsigned char> * const contents,
-                                const std::vector<std::string> &bootImages)
+bool StandardPatcher::patchFiles(const std::string &directory,
+                                 const std::vector<std::string> &bootImages)
 {
-    if (file == UpdaterScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        insertDualBootSh(&lines, m_impl->legacyScript);
-        replaceMountLines(&lines, m_impl->info->device());
-        replaceUnmountLines(&lines, m_impl->info->device());
-        replaceFormatLines(&lines, m_impl->info->device());
+    // UpdaterScript begin
+    FileUtils::readToMemory(directory + "/" + UpdaterScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        if (!bootImages.empty()) {
-            for (auto const &bootImage : bootImages) {
-                insertWriteKernel(&lines, bootImage);
-            }
+    insertDualBootSh(&lines, m_impl->legacyScript);
+    replaceMountLines(&lines, m_impl->info->device());
+    replaceUnmountLines(&lines, m_impl->info->device());
+    replaceFormatLines(&lines, m_impl->info->device());
+
+    if (!bootImages.empty()) {
+        for (auto const &bootImage : bootImages) {
+            insertWriteKernel(&lines, bootImage);
         }
-
-        // Too many ROMs don't unmount partitions after installation
-        insertUnmountEverything(lines.end(), &lines);
-
-        // Remove device check if requested
-        std::string key = m_impl->info->patchInfo()->keyFromFilename(
-                m_impl->info->filename());
-        if (!m_impl->info->patchInfo()->deviceCheck(key)) {
-            removeDeviceChecks(&lines);
-        }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    // Too many ROMs don't unmount partitions after installation
+    insertUnmountEverything(lines.end(), &lines);
+
+    // Remove device check if requested
+    std::string key = m_impl->info->patchInfo()->keyFromFilename(
+            m_impl->info->filename());
+    if (!m_impl->info->patchInfo()->deviceCheck(key)) {
+        removeDeviceChecks(&lines);
+    }
+
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + UpdaterScript, contents);
+    // UpdaterScript end
+
+    return true;
 }
 
 /*!

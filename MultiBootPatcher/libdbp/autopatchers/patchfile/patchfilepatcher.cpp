@@ -149,9 +149,8 @@ std::vector<std::string> PatchFilePatcher::existingFiles() const
     return m_impl->files;
 }
 
-bool PatchFilePatcher::patchFile(const std::string &file,
-                                 std::vector<unsigned char> * const contents,
-                                 const std::vector<std::string> &bootImages)
+bool PatchFilePatcher::patchFiles(const std::string &directory,
+                                  const std::vector<std::string> &bootImages)
 {
 #if 0
     Q_D(PatchFilePatcher);
@@ -237,8 +236,7 @@ bool PatchFilePatcher::patchFile(const std::string &file,
 
     return ret;
 #else
-    (void) file;
-    (void) contents;
+    (void) directory;
     (void) bootImages;
     return false;
 #endif

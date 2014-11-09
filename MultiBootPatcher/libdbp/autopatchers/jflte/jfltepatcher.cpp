@@ -26,6 +26,7 @@
 #include <boost/regex.hpp>
 
 #include "autopatchers/standard/standardpatcher.h"
+#include "private/fileutils.h"
 
 
 /*! \cond INTERNAL */
@@ -95,31 +96,32 @@ std::vector<std::string> JflteDalvikCachePatcher::existingFiles() const
     return files;
 }
 
-bool JflteDalvikCachePatcher::patchFile(const std::string &file,
-                                        std::vector<unsigned char> * const contents,
-                                        const std::vector<std::string> &bootImages)
+bool JflteDalvikCachePatcher::patchFiles(const std::string &directory,
+                                         const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == BuildProp) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (it->find("dalvik.vm.dexopt-data-only") != std::string::npos) {
-                lines.erase(it);
-                break;
-            }
+    // BuildProp begin
+    FileUtils::readToMemory(directory + "/" + BuildProp, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (it->find("dalvik.vm.dexopt-data-only") != std::string::npos) {
+            lines.erase(it);
+            break;
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + BuildProp, contents);
+    // BuildProp end
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,30 +151,31 @@ std::vector<std::string> JflteGoogleEditionPatcher::existingFiles() const
     return files;
 }
 
-bool JflteGoogleEditionPatcher::patchFile(const std::string &file,
-                                          std::vector<unsigned char> * const contents,
-                                          const std::vector<std::string> &bootImages)
+bool JflteGoogleEditionPatcher::patchFiles(const std::string &directory,
+                                           const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == QcomAudioScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (it->find("snd_soc_msm_2x_Fusion3_auxpcm") != std::string::npos) {
-                it = lines.erase(it);
-            }
+    // QcomAudioScript begin
+    FileUtils::readToMemory(directory + "/" + QcomAudioScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (it->find("snd_soc_msm_2x_Fusion3_auxpcm") != std::string::npos) {
+            it = lines.erase(it);
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + QcomAudioScript, contents);
+    // QcomAudioScript end
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,39 +205,40 @@ std::vector<std::string> JflteSlimAromaBundledMount::existingFiles() const
     return files;
 }
 
-bool JflteSlimAromaBundledMount::patchFile(const std::string &file,
-                                           std::vector<unsigned char> * const contents,
-                                           const std::vector<std::string> &bootImages)
+bool JflteSlimAromaBundledMount::patchFiles(const std::string &directory,
+                                            const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == StandardPatcher::UpdaterScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end();) {
-            if (boost::regex_search(*it, boost::regex("/tmp/mount.*/system"))) {
-                it = lines.erase(it);
-                it = StandardPatcher::insertMountSystem(it, &lines);
-            } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/cache"))) {
-                it = lines.erase(it);
-                it = StandardPatcher::insertMountCache(it, &lines);
-            } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/data"))) {
-                it = lines.erase(it);
-                it = StandardPatcher::insertMountData(it, &lines);
-            } else {
-                ++it;
-            }
+    // StandardPatcher::UpdaterScript begin
+    FileUtils::readToMemory(directory + "/" + StandardPatcher::UpdaterScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end();) {
+        if (boost::regex_search(*it, boost::regex("/tmp/mount.*/system"))) {
+            it = lines.erase(it);
+            it = StandardPatcher::insertMountSystem(it, &lines);
+        } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/cache"))) {
+            it = lines.erase(it);
+            it = StandardPatcher::insertMountCache(it, &lines);
+        } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/data"))) {
+            it = lines.erase(it);
+            it = StandardPatcher::insertMountData(it, &lines);
+        } else {
+            ++it;
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
+    // StandardPatcher::UpdaterScript end
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -264,41 +268,42 @@ std::vector<std::string> JflteImperiumPatcher::existingFiles() const
     return files;
 }
 
-bool JflteImperiumPatcher::patchFile(const std::string &file,
-                                     std::vector<unsigned char> * const contents,
-                                     const std::vector<std::string> &bootImages)
+bool JflteImperiumPatcher::patchFiles(const std::string &directory,
+                                      const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == StandardPatcher::UpdaterScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        StandardPatcher::insertDualBootSh(&lines, true);
-        StandardPatcher::replaceMountLines(&lines, m_impl->info->device());
-        StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
-        StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
-        StandardPatcher::insertUnmountEverything(lines.end(), &lines);
+    // StandardPatcher::UpdaterScript begin
+    FileUtils::readToMemory(directory + "/" + StandardPatcher::UpdaterScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        // Insert set kernel line
-        const std::string setKernelLine =
-                "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");";
-        for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
-            if (it->find("Umounting Partitions") != std::string::npos) {
-                auto fwdIt = (++it).base();
-                lines.insert(++fwdIt, setKernelLine);
-                break;
-            }
+    StandardPatcher::insertDualBootSh(&lines, true);
+    StandardPatcher::replaceMountLines(&lines, m_impl->info->device());
+    StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
+    StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
+    StandardPatcher::insertUnmountEverything(lines.end(), &lines);
+
+    // Insert set kernel line
+    const std::string setKernelLine =
+            "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");";
+    for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
+        if (it->find("Umounting Partitions") != std::string::npos) {
+            auto fwdIt = (++it).base();
+            lines.insert(++fwdIt, setKernelLine);
+            break;
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
+    // StandardPatcher::UpdaterScript end
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -328,33 +333,34 @@ std::vector<std::string> JflteNegaliteNoWipeData::existingFiles() const
     return files;
 }
 
-bool JflteNegaliteNoWipeData::patchFile(const std::string &file,
-                                        std::vector<unsigned char> * const contents,
-                                        const std::vector<std::string> &bootImages)
+bool JflteNegaliteNoWipeData::patchFiles(const std::string &directory,
+                                         const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == StandardPatcher::UpdaterScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (boost::regex_search(
-                    *it, boost::regex("run_program.*/tmp/wipedata.sh"))) {
-                it = lines.erase(it);
-                StandardPatcher::insertFormatData(it, &lines);
-                break;
-            }
+    // StandardPatcher::UpdaterScript begin
+    FileUtils::readToMemory(directory + "/" + StandardPatcher::UpdaterScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(
+                *it, boost::regex("run_program.*/tmp/wipedata.sh"))) {
+            it = lines.erase(it);
+            StandardPatcher::insertFormatData(it, &lines);
+            break;
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
+    // StandardPatcher::UpdaterScript end
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -384,39 +390,40 @@ std::vector<std::string> JflteTriForceFixAroma::existingFiles() const
     return files;
 }
 
-bool JflteTriForceFixAroma::patchFile(const std::string &file,
-                                      std::vector<unsigned char> * const contents,
-                                      const std::vector<std::string> &bootImages)
+bool JflteTriForceFixAroma::patchFiles(const std::string &directory,
+                                       const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == AromaScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (it->find(BuildProp) != std::string::npos) {
-                // Remove 'raw-' since aroma mounts the partitions directly
-                std::string target = m_impl->info->partConfig()->targetSystem();
-                boost::replace_all(target, "raw-", "");
-                boost::replace_all(*it, System, target);
-            } else if (boost::regex_search(
-                    *it, boost::regex("/sbin/mount.+/system"))) {
-                it = lines.insert(it, boost::replace_all_copy(*it, System, Cache));
-                ++it;
-                it = lines.insert(it, boost::replace_all_copy(*it, System, Data));
-                ++it;
-            }
+    // AromaScript begin
+    FileUtils::readToMemory(directory + "/" + AromaScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (it->find(BuildProp) != std::string::npos) {
+            // Remove 'raw-' since aroma mounts the partitions directly
+            std::string target = m_impl->info->partConfig()->targetSystem();
+            boost::replace_all(target, "raw-", "");
+            boost::replace_all(*it, System, target);
+        } else if (boost::regex_search(
+                *it, boost::regex("/sbin/mount.+/system"))) {
+            it = lines.insert(it, boost::replace_all_copy(*it, System, Cache));
+            ++it;
+            it = lines.insert(it, boost::replace_all_copy(*it, System, Data));
+            ++it;
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + AromaScript, contents);
+    // AromaScript end
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -446,33 +453,34 @@ std::vector<std::string> JflteTriForceFixUpdate::existingFiles() const
     return files;
 }
 
-bool JflteTriForceFixUpdate::patchFile(const std::string &file,
-                                       std::vector<unsigned char> * const contents,
-                                       const std::vector<std::string> &bootImages)
+bool JflteTriForceFixUpdate::patchFiles(const std::string &directory,
+                                        const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == StandardPatcher::UpdaterScript) {
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (boost::regex_search(
-                    *it, boost::regex("getprop.+/system/build.prop"))) {
-                it = StandardPatcher::insertMountSystem(it, &lines);
-                it = StandardPatcher::insertMountCache(it, &lines);
-                it = StandardPatcher::insertMountData(it, &lines);
-                boost::replace_all(*it, System,
-                                   m_impl->info->partConfig()->targetSystem());
-            }
+    // StandardPatcher::UpdaterScript begin
+    FileUtils::readToMemory(directory + "/" + StandardPatcher::UpdaterScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::regex_search(
+                *it, boost::regex("getprop.+/system/build.prop"))) {
+            it = StandardPatcher::insertMountSystem(it, &lines);
+            it = StandardPatcher::insertMountCache(it, &lines);
+            it = StandardPatcher::insertMountData(it, &lines);
+            boost::replace_all(*it, System,
+                               m_impl->info->partConfig()->targetSystem());
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
+    // StandardPatcher::UpdaterScript end
+
+    return true;
 }

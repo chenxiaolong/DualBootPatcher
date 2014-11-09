@@ -39,9 +39,8 @@ public:
     virtual std::vector<std::string> newFiles() const override = 0;
     virtual std::vector<std::string> existingFiles() const override = 0;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override = 0;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override = 0;
 
 protected:
     class Impl;
@@ -62,9 +61,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -81,9 +79,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -100,9 +97,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -119,9 +115,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -138,9 +133,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -157,9 +151,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 
@@ -176,9 +169,8 @@ public:
     virtual std::vector<std::string> newFiles() const override;
     virtual std::vector<std::string> existingFiles() const override;
 
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) override;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) override;
 };
 
 #endif // JFLTEPATCHER_H

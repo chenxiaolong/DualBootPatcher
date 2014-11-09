@@ -24,6 +24,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/format.hpp>
 
+#include "private/fileutils.h"
+
 
 /*! \cond INTERNAL */
 class NoobdevBasePatcher::Impl
@@ -88,44 +90,47 @@ std::vector<std::string> NoobdevMultiBoot::existingFiles() const
     return files;
 }
 
-bool NoobdevMultiBoot::patchFile(const std::string &file,
-                                 std::vector<unsigned char> * const contents,
-                                 const std::vector<std::string> &bootImages)
+bool NoobdevMultiBoot::patchFiles(const std::string &directory,
+                                  const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == UpdaterScript) {
-        // My ROM has built-in dual boot support, so we'll hack around that to
-        // support triple, quadruple, ... boot
-        std::string strContents(contents->begin(), contents->end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+    std::vector<unsigned char> contents;
 
-        for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (it->find("system/bin/dualboot.sh") != std::string::npos) {
-                // Remove existing dualboot.sh lines
-                it = lines.erase(it);
-            } else if (it->find("boot installation is") != std::string::npos) {
-                // Remove confusing messages, but need to keep at least one
-                // statement in the if-block to keep update-binary happy
-                *it = PrintEmpty;
-            } else if (it->find("set-secondary") != std::string::npos) {
-                *it = PrintEmpty;
-            }
+    // My ROM has built-in dual boot support, so we'll hack around that to
+    // support triple, quadruple, ... boot
+
+    // UpdaterScript begin
+    FileUtils::readToMemory(directory + "/" + UpdaterScript, &contents);
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (it->find("system/bin/dualboot.sh") != std::string::npos) {
+            // Remove existing dualboot.sh lines
+            it = lines.erase(it);
+        } else if (it->find("boot installation is") != std::string::npos) {
+            // Remove confusing messages, but need to keep at least one
+            // statement in the if-block to keep update-binary happy
+            *it = PrintEmpty;
+        } else if (it->find("set-secondary") != std::string::npos) {
+            *it = PrintEmpty;
         }
-
-        strContents = boost::join(lines, "\n");
-        contents->assign(strContents.begin(), strContents.end());
-
-        return true;
-    } else if (file == DualBootSh) {
-        const std::string noDualBoot("echo 'ro.dualboot=0' > /tmp/dualboot.prop\n");
-        contents->insert(contents->end(), noDualBoot.begin(), noDualBoot.end());
-
-        return true;
     }
 
-    return false;
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    FileUtils::writeFromMemory(directory + "/" + UpdaterScript, contents);
+    // UpdaterScript end
+
+    // DualBootSh begin
+    FileUtils::readToMemory(directory + "/" + DualBootSh, &contents);
+    const std::string noDualBoot("echo 'ro.dualboot=0' > /tmp/dualboot.prop\n");
+    contents.insert(contents.end(), noDualBoot.begin(), noDualBoot.end());
+    FileUtils::writeFromMemory(directory + "/" + DualBootSh, contents);
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,20 +160,22 @@ std::vector<std::string> NoobdevSystemProp::existingFiles() const
     return files;
 }
 
-bool NoobdevSystemProp::patchFile(const std::string &file,
-                                  std::vector<unsigned char> * const contents,
-                                  const std::vector<std::string> &bootImages)
+bool NoobdevSystemProp::patchFiles(const std::string &directory,
+                                   const std::vector<std::string> &bootImages)
 {
     (void) bootImages;
 
-    if (file == BuildProp) {
-        // The auto-updater in my ROM needs to know if the ROM has been patched
-        const std::string prop = (boost::format("ro.chenxiaolong.patched=%1%\n")
-                % m_impl->info->partConfig()->id()).str();
-        contents->insert(contents->end(), prop.begin(), prop.end());
+    std::vector<unsigned char> contents;
 
-        return true;
-    }
+    // The auto-updater in my ROM needs to know if the ROM has been patched
 
-    return false;
+    // BuildProp begin
+    FileUtils::readToMemory(directory + "/" + BuildProp, &contents);
+    const std::string prop = (boost::format("ro.chenxiaolong.patched=%1%\n")
+            % m_impl->info->partConfig()->id()).str();
+    contents.insert(contents.end(), prop.begin(), prop.end());
+    FileUtils::writeFromMemory(directory + "/" + BuildProp, contents);
+    // BuildProp end
+
+    return true;
 }
