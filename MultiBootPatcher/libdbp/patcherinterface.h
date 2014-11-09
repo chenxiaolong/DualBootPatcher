@@ -155,13 +155,11 @@ public:
     /*!
         \brief Start patching the file
 
-        \param file Filename of the file being patched
-        \param contents File contents of the file being patched
+        \param directory Directory containing the files to be patched
         \param bootImages List of boot image filenames in the zip file
      */
-    virtual bool patchFile(const std::string &file,
-                           std::vector<unsigned char> * const contents,
-                           const std::vector<std::string> &bootImages) = 0;
+    virtual bool patchFiles(const std::string &directory,
+                            const std::vector<std::string> &bootImages) = 0;
 };
 
 
