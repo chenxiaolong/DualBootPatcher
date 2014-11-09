@@ -61,6 +61,21 @@ PatcherError FileUtils::readToMemory(const std::string &path,
     return PatcherError();
 }
 
+PatcherError FileUtils::writeFromMemory(const std::string &path,
+                                        const std::vector<unsigned char> &contents)
+{
+    std::ofstream file(path, std::ios::binary);
+
+    if (file.fail()) {
+        return PatcherError::createIOError(MBP::ErrorCode::FileOpenError, path);
+    }
+
+    file.write(reinterpret_cast<const char *>(contents.data()), contents.size());
+    file.close();
+
+    return PatcherError();
+}
+
 /*!
     \brief Read contents of a file from libarchive into memory
 
