@@ -255,6 +255,7 @@ PatcherError PatcherError::createPatchingError(MBP::ErrorCode error)
 {
     switch (error) {
     case MBP::ErrorCode::SystemCacheFormatLinesNotFound:
+    case MBP::ErrorCode::ApplyPatchFileError:
         break;
     default:
         assert(false);

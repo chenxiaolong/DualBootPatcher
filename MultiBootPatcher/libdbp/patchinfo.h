@@ -21,11 +21,7 @@
 #define PATCHINFO_H
 
 #include <memory>
-#if 0
 #include <unordered_map>
-#else
-#include <map>
-#endif
 #include <utility>
 #include <vector>
 
@@ -45,12 +41,7 @@ public:
     explicit PatchInfo();
     ~PatchInfo();
 
-    // Use std::map in the interface until swig supports std::unordered_map
-#if 0
     typedef std::unordered_map<std::string, std::string> AutoPatcherArgs;
-#else
-    typedef std::map<std::string, std::string> AutoPatcherArgs;
-#endif
     typedef std::pair<std::string, AutoPatcherArgs> AutoPatcherItem;
     typedef std::vector<AutoPatcherItem> AutoPatcherItems;
 

@@ -100,6 +100,9 @@ enum ErrorCode {
 
     // Primary upgrade patcher
     SystemCacheFormatLinesNotFound,
+
+    // Patch File patcher
+    ApplyPatchFileError,
 };
 
 typedef enum ErrorCode ErrorCode;

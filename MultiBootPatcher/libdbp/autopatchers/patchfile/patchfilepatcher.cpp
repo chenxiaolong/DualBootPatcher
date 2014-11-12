@@ -17,13 +17,24 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "patchfilepatcher.h"
+#include "autopatchers/patchfile/patchfilepatcher.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <stdio.h>
+#endif
 
 #include <fstream>
 #include <unordered_map>
 
-//#include <boost/algorithm/string.hpp>
-//#include <boost/regex.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/regex.hpp>
+
+#include "private/fileutils.h"
+#include "private/logging.h"
 
 
 /*! \cond INTERNAL */
@@ -34,14 +45,16 @@ public:
     const FileInfo *info;
     PatchInfo::AutoPatcherArgs args;
 
+    std::string patchFile;
     std::vector<std::string> files;
 
     PatcherError error;
+
+    bool runProcess(std::string program, std::vector<std::string> &progArgs,
+                    std::string *out, int *exitCode);
 };
 /*! \endcond */
 
-
-#define PATCH_FAIL_MSG "Failed to run \"patch\" command"
 
 const std::string PatchFilePatcher::Id("PatchFile");
 
@@ -53,52 +66,36 @@ PatchFilePatcher::PatchFilePatcher(const PatcherPaths * const pp,
                                    const PatchInfo::AutoPatcherArgs &args)
     : m_impl(new Impl())
 {
-#if 0
     m_impl->pp = pp;
     m_impl->info = info;
     m_impl->args = args;
 
     // The arguments should have the patch to the file
     if (args.find(ArgFile) == args.end()) {
-        qWarning() << "Arguments does not contain the path to a patch file";
+        Log::log(Log::Warning, "Arguments does not contain the path to a patch file");
         return;
     }
 
-    std::string fileName(pp->patchesDirectory() + "/" + args[ArgFile]);
-    std::ifstream file(fileName, std::ios::binary);
+    m_impl->patchFile = pp->patchesDirectory() + "/" + args.at(ArgFile);
 
-    if (file.fail()) {
-        qWarning() << "Failed to open" << QString::fromStdString(fileName);
-        file.close();
+    std::vector<unsigned char> contents;
+    auto ret = FileUtils::readToMemory(m_impl->patchFile, &contents);
+    if (ret.errorCode() != MBP::ErrorCode::NoError) {
+        Log::log(Log::Warning, "Failed to read patch file");
         return;
     }
 
-    file.seekg(0, std::ios::end);
-    auto size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    std::vector<unsigned char> patchContents(size);
-
-    if (!file.read(reinterpret_cast<char *>(patchContents.data()), size)) {
-        qWarning() << "Failed to read" << QString::fromStdString(fileName);
-        file.close();
-        return;
-    }
-
-    file.close();
-
-    // Assume the patch file is UTF-8 encoded
-    std::string contents(patchContents.begin(), patchContents.end());
+    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    const boost::regex reOrigFile("---\\s+(?P<file>.+)(?:\n|\t)");
+    const boost::regex reOrigFile("---\\s+(.+?)(?:$|\t)");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         boost::smatch what;
 
         if (boost::regex_search(*it, what, reOrigFile)) {
-            std::string file = what.str("file");
+            std::string file = what.str(1);
             if (boost::starts_with(file, "\"") && boost::ends_with(file, "\"")) {
                 file.erase(file.begin());
                 file.erase(file.end() - 1);
@@ -106,23 +103,23 @@ PatchFilePatcher::PatchFilePatcher(const PatcherPaths * const pp,
 
             // Skip files containing escaped characters
             if (file.find("\\") != std::string::npos) {
+                Log::log(Log::Warning,
+                         "Skipping file with escaped characters in filename: %s",
+                         file);
                 continue;
             }
 
             // Strip leading slash (-p1)
             auto it = file.find("/");
-            if (file.find("/") != std::string::npos) {
-                file.erase(file.begin(), it + 1);
+            if (it != std::string::npos) {
+                file.erase(file.begin(), file.begin() + it + 1);
             }
+
+            Log::log(Log::Debug, "Found file in patch: %s", file);
 
             m_impl->files.push_back(file);
         }
     }
-#else
-    (void) pp;
-    (void) info;
-    (void) args;
-#endif
 }
 
 PatchFilePatcher::~PatchFilePatcher()
@@ -152,92 +149,195 @@ std::vector<std::string> PatchFilePatcher::existingFiles() const
 bool PatchFilePatcher::patchFiles(const std::string &directory,
                                   const std::vector<std::string> &bootImages)
 {
-#if 0
-    Q_D(PatchFilePatcher);
-    Q_UNUSED(bootImages);
-
-    if (d->patches.isEmpty()) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr("Failed to parse patch file: %1").arg(d->args[ArgFile]);
-        return false;
-    }
-
-    // Write the file to be patched to a temporary file
-    QTemporaryDir tempDir;
-    if (!tempDir.isValid()) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr("Failed to create temporary directory");
-        return false;
-    }
-
-    if (d->patches.isEmpty()) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr("The patch file is empty");
-        return false;
-    }
-
-    QString path(tempDir.path() % QStringLiteral("/file"));
-    QFile f(path);
-    f.open(QFile::WriteOnly);
-    f.write(*contents);
-    f.close();
-
-#if defined(Q_OS_ANDROID)
-    QString patch = d->pp->binariesDirectory() % Sep
-            % QStringLiteral("android") % Sep
-            % d->info->device()->architecture() % Sep
-            % QStringLiteral("patch");
-#elif defined(Q_OS_WIN32)
-    QString patch = d->pp->binariesDirectory() % Sep
-            % QStringLiteral("windows") % Sep
-            % QStringLiteral("hctap.exe");
-#else
-    QString patch = QStringLiteral("patch");
-#endif
-
-    QProcess process;
-    process.setWorkingDirectory(tempDir.path());
-    process.start(patch,
-                  QStringList() << QStringLiteral("--no-backup-if-mismatch")
-                                << QStringLiteral("-p1")
-                                << QStringLiteral("-d")
-                                << tempDir.path());
-    if (!process.waitForStarted()) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr(PATCH_FAIL_MSG);
-        return false;
-    }
-
-    process.write(QStringLiteral("--- a/file\n").toUtf8());
-    process.write(QStringLiteral("+++ b/file\n").toUtf8());
-    process.write(d->patches[file]);
-    process.closeWriteChannel();
-
-    if (!process.waitForFinished()) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr(PATCH_FAIL_MSG);
-        return false;
-    }
-
-    // Print console output
-    qDebug() << process.readAll();
-
-    bool ret = process.exitStatus() == QProcess::NormalExit
-            && process.exitCode() == 0;
-
-    if (!ret) {
-        d->errorCode = PatcherError::CustomError;
-        d->errorString = tr(PATCH_FAIL_MSG);
-    } else {
-        f.open(QFile::ReadOnly);
-        *contents = f.readAll();
-        f.close();
-    }
-
-    return ret;
-#else
-    (void) directory;
     (void) bootImages;
-    return false;
+
+#if defined(__ANDROID__)
+    std::string patch = m_impl->pp->binariesDirectory();
+    patch += "/android/";
+    patch += m_impl->info->device()->architecture();
+    patch += "/patch";
+#elif defined(_WIN32)
+    std::string patch = m_impl->pp->binariesDirectory();
+    patch += "/windows/hctap.exe";
+#else
+    std::string patch = "patch";
 #endif
+
+    std::vector<std::string> args;
+    args.push_back("--no-backup-if-mismatch");
+    args.push_back("-p1");
+    args.push_back("-i");
+    args.push_back(m_impl->patchFile);
+    args.push_back("-d");
+    args.push_back(directory);
+
+    std::string output;
+    int exitCode = -1;
+
+    std::vector<std::string> lines;
+    boost::split(lines, output, boost::is_any_of("\n"));
+
+    if (!m_impl->runProcess(patch, args, &output, &exitCode) || exitCode != 0) {
+        for (auto &line : lines) {
+            Log::log(Log::Error, "patch output: %s", line);
+        }
+
+        m_impl->error = PatcherError::createPatchingError(
+                MBP::ErrorCode::ApplyPatchFileError);
+        return false;
+    }
+
+    for (auto &line : lines) {
+        Log::log(Log::Debug, "patch output: %s", line);
+    }
+
+    return true;
 }
+
+#ifdef _WIN32
+
+bool PatchFilePatcher::Impl::runProcess(std::string program,
+                                        std::vector<std::string> &progArgs,
+                                        std::string *out,
+                                        int *exitCode)
+{
+    std::string args;
+    args += "\"";
+    args += program;
+    args += "\"";
+
+    for (auto &arg : progArgs) {
+        args += " ";
+        args += "\"";
+        args += arg;
+        args += "\"";
+    }
+
+    SECURITY_ATTRIBUTES secAttr;
+    HANDLE hStdinRead;
+    HANDLE hStdinWrite;
+    HANDLE hStdoutRead;
+    HANDLE hStdoutWrite;
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    char command[1024];
+
+    if (args.size() >= 1024) {
+        return false;
+    }
+
+    // Setup secAttr struct
+    ZeroMemory(&secAttr, sizeof(secAttr));
+    secAttr.nLength = sizeof(secAttr);
+    secAttr.bInheritHandle = TRUE;
+    secAttr.lpSecurityDescriptor = NULL;
+
+    if (!CreatePipe(&hStdoutRead, &hStdoutWrite, &secAttr, 0)) {
+        return false;
+    }
+
+    if (!SetHandleInformation(hStdoutRead, HANDLE_FLAG_INHERIT, 0)) {
+        return false;
+    }
+
+    if (!CreatePipe(&hStdinRead, &hStdinWrite, &secAttr, 0)) {
+        return false;
+    }
+
+    if (!SetHandleInformation(hStdinWrite, HANDLE_FLAG_INHERIT, 0)) {
+        return false;
+    }
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb  = sizeof(si);
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdInput = hStdinRead;
+    si.hStdOutput = hStdoutWrite;
+    si.hStdError = hStdoutWrite;
+
+    ZeroMemory(&pi, sizeof(pi));
+
+    strcpy(command, args.c_str());
+
+    if (!CreateProcess(
+            nullptr,
+            command,
+            nullptr,
+            nullptr,
+            TRUE,
+            CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
+            nullptr,
+            nullptr,
+            &si,
+            &pi)) {
+        return false;
+    }
+
+    if (!CloseHandle(hStdoutWrite)) {
+        return false;
+    }
+
+    std::string output;
+    char c[1024];
+    DWORD cl;
+    while (ReadFile(hStdoutRead, &c, sizeof(c), &cl, nullptr)) {
+        if (!cl) {
+            break;
+        }
+
+        output.insert(output.end(), c, c + cl);
+    }
+    out->swap(output);
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    GetExitCodeProcess(pi.hProcess, (DWORD *) exitCode);
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return true;
+}
+
+#else
+
+bool PatchFilePatcher::Impl::runProcess(std::string program,
+                                        std::vector<std::string> &progArgs,
+                                        std::string *out,
+                                        int *exitCode)
+{
+    // No need to fork and exec when popen can just use shell io redirection
+
+    std::string args;
+    args += "\"";
+    args += program;
+    args += "\"";
+
+    for (auto &arg : progArgs) {
+        args += " ";
+        args += "\"";
+        args += arg;
+        args += "\"";
+    }
+
+    args += " 2>&1";
+
+    FILE *fp = popen(args.c_str(), "r");
+    if (fp == nullptr) {
+        return false;
+    }
+
+    std::string output;
+    char buf[1024];
+    while (!feof(fp)) {
+        if (fgets(buf, sizeof(buf), fp) != nullptr) {
+            output += buf;
+        }
+    }
+
+    out->swap(output);
+    *exitCode = pclose(fp);
+    return true;
+}
+
+#endif
