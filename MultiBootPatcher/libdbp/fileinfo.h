@@ -29,7 +29,7 @@
 #include "partitionconfig.h"
 
 
-class LIBDBPSHARED_EXPORT FileInfo
+class MBP_EXPORT FileInfo
 {
 public:
     explicit FileInfo();

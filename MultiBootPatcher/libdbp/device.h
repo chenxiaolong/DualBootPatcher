@@ -26,7 +26,7 @@
 #include "libdbp_global.h"
 
 
-class LIBDBPSHARED_EXPORT Device
+class MBP_EXPORT Device
 {
 public:
     static const std::string SelinuxPermissive;

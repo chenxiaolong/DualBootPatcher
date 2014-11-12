@@ -26,7 +26,7 @@
 #include "libdbp_global.h"
 
 
-class LIBDBPSHARED_EXPORT PartitionConfig
+class MBP_EXPORT PartitionConfig
 {
 public:
     static const std::string System;

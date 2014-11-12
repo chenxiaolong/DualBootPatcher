@@ -43,6 +43,7 @@ endif()
 find_package(Boost REQUIRED COMPONENTS filesystem regex system)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
 endif()
 
 find_package(Qt5Core 5.3 REQUIRED)

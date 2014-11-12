@@ -32,7 +32,7 @@
 
 class PatcherPaths;
 
-class LIBDBPSHARED_EXPORT PatchInfo
+class MBP_EXPORT PatchInfo
 {
 public:
     static const std::string Default;

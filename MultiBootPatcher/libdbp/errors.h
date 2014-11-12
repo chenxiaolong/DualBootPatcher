@@ -41,8 +41,6 @@ enum ErrorType {
     PatchingError,
 };
 
-typedef enum ErrorType ErrorType;
-
 #ifdef __cplusplus
 enum class ErrorCode : int {
 #else
@@ -104,8 +102,6 @@ enum ErrorCode {
     // Patch File patcher
     ApplyPatchFileError,
 };
-
-typedef enum ErrorCode ErrorCode;
 
 #ifdef __cplusplus
 }

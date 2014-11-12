@@ -22,12 +22,26 @@
 
 #ifdef _WIN32
 #  if defined(LIBDBP_LIBRARY)
-#    define LIBDBPSHARED_EXPORT __declspec(dllexport)
+#    define MBP_EXPORT __declspec(dllexport)
 #  else
-#    define LIBDBPSHARED_EXPORT __declspec(dllimport)
+#    define MBP_EXPORT __declspec(dllimport)
 #  endif
-#else
-#  define LIBDBPSHARED_EXPORT __attribute__ ((visibility ("default")))
+#endif
+
+#ifndef MBP_EXPORT
+#  if defined(__GNUC__)
+#    define MBP_EXPORT __attribute__ ((visibility ("default")))
+#  else
+#    define MBP_EXPORT
+#  endif
+#endif
+
+#ifdef _MSC_VER
+#  pragma warning(disable:4251) // class ... needs to have dll-interface ...
+#endif
+
+#ifdef _MSC_VER
+#  define strdup _strdup
 #endif
 
 #endif // LIBDBP_GLOBAL_H

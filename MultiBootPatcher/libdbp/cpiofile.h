@@ -27,7 +27,7 @@
 #include "patchererror.h"
 
 
-class LIBDBPSHARED_EXPORT CpioFile
+class MBP_EXPORT CpioFile
 {
 public:
     CpioFile();

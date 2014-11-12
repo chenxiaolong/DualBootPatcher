@@ -27,7 +27,7 @@
 #include "patchererror.h"
 
 
-class LIBDBPSHARED_EXPORT BootImage
+class MBP_EXPORT BootImage
 {
 public:
     BootImage();

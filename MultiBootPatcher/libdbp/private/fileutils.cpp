@@ -298,7 +298,7 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
 
     // Write data to file
     char buf[32768];
-    int n;
+    std::streamsize n;
 
     while (!file.eof()) {
         file.read(buf, 32768);

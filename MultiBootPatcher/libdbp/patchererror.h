@@ -21,12 +21,13 @@
 #define PATCHERERROR_H
 
 #include <memory>
+#include <string>
 
 #include "libdbp_global.h"
 #include "errors.h"
 
 
-class LIBDBPSHARED_EXPORT PatcherError
+class MBP_EXPORT PatcherError
 {
 public:
     static PatcherError createGenericError(MBP::ErrorCode error);

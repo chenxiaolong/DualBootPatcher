@@ -36,7 +36,7 @@ class Patcher;
 class AutoPatcher;
 class RamdiskPatcher;
 
-class LIBDBPSHARED_EXPORT PatcherPaths
+class MBP_EXPORT PatcherPaths
 {
 public:
     PatcherPaths();

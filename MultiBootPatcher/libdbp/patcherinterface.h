@@ -37,7 +37,7 @@
     operations are performed here and the current patching progress is reported
     from this class as well.
  */
-class LIBDBPSHARED_EXPORT Patcher
+class MBP_EXPORT Patcher
 {
 public:
     typedef void (*MaxProgressUpdatedCallback) (int, void *);
