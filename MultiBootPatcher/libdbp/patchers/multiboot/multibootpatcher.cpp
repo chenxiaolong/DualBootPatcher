@@ -477,7 +477,7 @@ bool MultiBootPatcher::Impl::patchZip()
     std::string tempDir = createTemporaryDir(parentPath.string());
 
     if (!pass1(aOutput, tempDir, excludeFromPass1, &bootImages)) {
-        //boost::filesystem::remove_all(tempDir);
+        boost::filesystem::remove_all(tempDir);
         return false;
     }
 
@@ -486,11 +486,11 @@ bool MultiBootPatcher::Impl::patchZip()
     // On the second pass, run the autopatchers on the rest of the files
 
     if (!pass2(aOutput, tempDir, excludeFromPass1, bootImages)) {
-        //boost::filesystem::remove_all(tempDir);
+        boost::filesystem::remove_all(tempDir);
         return false;
     }
 
-    //boost::filesystem::remove_all(tempDir);
+    boost::filesystem::remove_all(tempDir);
 
     RETURN_IF_CANCELLED
 
