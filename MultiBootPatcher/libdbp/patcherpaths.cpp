@@ -644,21 +644,53 @@ PartitionConfig * PatcherPaths::partitionConfig(const std::string &id) const
     return nullptr;
 }
 
+// Based on the code from:
+// [1] https://svn.boost.org/trac/boost/ticket/1976
+// [2] https://svn.boost.org/trac/boost/ticket/6249
+// [3] https://svn.boost.org/trac/boost/attachment/ticket/6249/make_relative_append_example.cpp
+static boost::filesystem::path makeRelative(boost::filesystem::path from,
+                                            boost::filesystem::path to)
+{
+    from = boost::filesystem::absolute(from);
+    to = boost::filesystem::absolute(to);
+    boost::filesystem::path ret;
+    boost::filesystem::path::const_iterator iterFrom(from.begin());
+    boost::filesystem::path::const_iterator iterTo(to.begin());
+
+    // Find common base
+    for (boost::filesystem::path::const_iterator toEnd(to.end()), fromEnd(from.end());
+            iterFrom != fromEnd && iterTo != toEnd && *iterFrom == *iterTo;
+            ++iterFrom, ++iterTo);
+
+    // Navigate backwards in directory to reach previously found base
+    for (boost::filesystem::path::const_iterator fromEnd(from.end());
+            iterFrom != fromEnd; ++iterFrom) {
+        if (*iterFrom != ".") {
+            ret /= "..";
+        }
+    }
+
+    // Now navigate down the directory branch
+    for (; iterTo != to.end(); ++iterTo) {
+        ret /= *iterTo;
+    }
+    return ret;
+}
+
 std::vector<std::string> PatcherPaths::initBinaries() const
 {
     std::vector<std::string> inits;
 
     try {
-        const std::string dir = initsDirectory() + "/";
+        const boost::filesystem::path dirPath(initsDirectory());
 
-        boost::filesystem::recursive_directory_iterator it(dir);
+        boost::filesystem::recursive_directory_iterator it(dirPath);
         boost::filesystem::recursive_directory_iterator end;
 
         for (; it != end; ++it) {
             if (boost::filesystem::is_regular_file(it->status())) {
-                std::string relPath = it->path().string();
-                boost::erase_first(relPath, dir);
-                inits.push_back(relPath);
+                boost::filesystem::path relPath = makeRelative(dirPath, it->path());
+                inits.push_back(relPath.string());
             }
         }
     } catch (std::exception &e) {
@@ -673,16 +705,16 @@ std::vector<std::string> PatcherPaths::initBinaries() const
 bool PatcherPaths::loadPatchInfos()
 {
     try {
-        const std::string dir = patchInfosDirectory() + "/";
+        const boost::filesystem::path dirPath(patchInfosDirectory());
 
-        boost::filesystem::recursive_directory_iterator it(dir);
+        boost::filesystem::recursive_directory_iterator it(dirPath);
         boost::filesystem::recursive_directory_iterator end;
 
         for (; it != end; ++it) {
             if (boost::filesystem::is_regular_file(it->status())
                     && it->path().extension() == ".xml") {
-                std::string id = it->path().string();
-                boost::erase_first(id, dir);
+                boost::filesystem::path relPath = makeRelative(dirPath, it->path());
+                std::string id = relPath.string();
                 boost::erase_tail(id, 4);
 
                 if (!m_impl->loadPatchInfoXml(it->path().string(), id)) {
