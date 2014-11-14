@@ -20,6 +20,8 @@
 #ifndef C_PATCHINFO_H
 #define C_PATCHINFO_H
 
+#include "cwrapper/cstringmap.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,8 +56,14 @@ void mbp_patchinfo_set_cond_regexes(CPatchInfo *info, const char **regexes);
 int mbp_patchinfo_has_not_matched(const CPatchInfo *info);
 void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, int hasElem);
 
-//AutoPatcherItems autoPatchers(const std::string &key) const;
-//void setAutoPatchers(const std::string &key, AutoPatcherItems autoPatchers);
+void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
+                                   const char *apName, CStringMap *args);
+void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
+                                      const char *apName);
+char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key);
+CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
+                                            const char *key,
+                                            const char *apName);
 
 int mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,

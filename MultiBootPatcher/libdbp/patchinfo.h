@@ -42,8 +42,6 @@ public:
     ~PatchInfo();
 
     typedef std::unordered_map<std::string, std::string> AutoPatcherArgs;
-    typedef std::pair<std::string, AutoPatcherArgs> AutoPatcherItem;
-    typedef std::vector<AutoPatcherItem> AutoPatcherItems;
 
     std::string id() const;
     void setId(std::string id);
@@ -72,8 +70,12 @@ public:
     // NOTE: If the variable is a list, the "overridden" values are used
     //       in addition to the default values
 
-    AutoPatcherItems autoPatchers(const std::string &key) const;
-    void setAutoPatchers(const std::string &key, AutoPatcherItems autoPatchers);
+    void addAutoPatcher(const std::string &key, const std::string &apName,
+                        AutoPatcherArgs args);
+    void removeAutoPatcher(const std::string &key, const std::string &apName);
+    std::vector<std::string> autoPatchers(const std::string &key) const;
+    AutoPatcherArgs autoPatcherArgs(const std::string &key,
+                                    const std::string &apName) const;
 
     bool hasBootImage(const std::string &key) const;
     void setHasBootImage(const std::string &key, bool hasBootImage);

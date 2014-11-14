@@ -20,13 +20,6 @@
 #ifndef C_STRINGMAP_H
 #define C_STRINGMAP_H
 
-#include "cwrapper/cpatchererror.h"
-
-#include <stddef.h>
-
-#include "cwrapper/cdevice.h"
-#include "cwrapper/cpatchinfo.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

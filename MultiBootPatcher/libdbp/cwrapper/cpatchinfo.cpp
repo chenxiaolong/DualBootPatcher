@@ -336,6 +336,91 @@ extern "C" {
     }
 
     /*!
+     * \brief Add AutoPatcher to PatchInfo
+     *
+     * \param info CPatchInfo object
+     * \param key Parameter key
+     * \param apName AutoPatcher name
+     * \param args AutoPatcher arguments
+     *
+     * \sa PatchInfo::addAutoPatcher()
+     */
+    void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
+                                       const char *apName, CStringMap *args)
+    {
+        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
+        PatchInfo::AutoPatcherArgs *apArgs =
+                reinterpret_cast<PatchInfo::AutoPatcherArgs *>(args);
+
+        pi->addAutoPatcher(key, apName, *apArgs);
+    }
+
+    /*!
+     * \brief Remove AutoPatcher from PatchInfo
+     *
+     * \param info CPatchInfo object
+     * \param key Parameter key
+     * \param apName AutoPatcher name
+     *
+     * \sa PatchInfo::removeAutoPatcher()
+     */
+    void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
+                                          const char *apName)
+    {
+        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
+        pi->removeAutoPatcher(key, apName);
+    }
+
+    /*!
+     * \brief Get list of AutoPatcher names
+     *
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
+     *
+     * \param info CPatchInfo object
+     * \param key Parameter key
+     *
+     * \return NULL-terminated list of AutoPatcher names
+     *
+     * \sa PatchInfo::autoPatchers()
+     */
+    char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key)
+    {
+        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
+        auto list = pi->autoPatchers(key);
+
+        char **names = (char **) std::malloc(
+                sizeof(char *) * (list.size() + 1));
+        for (unsigned int i = 0; i < list.size(); ++i) {
+            names[i] = strdup(list[i].c_str());
+        }
+        names[list.size()] = nullptr;
+
+        return names;
+    }
+
+    /*!
+     * \brief Get AutoPatcher arguments
+     *
+     * \param info CPatchInfo object
+     * \param key Parameter key
+     * \param apName AutoPatcher name
+     *
+     * \return Arguments
+     *
+     * \sa PatchInfo::autoPatcherArgs()
+     */
+    CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
+                                                const char *key,
+                                                const char *apName)
+    {
+        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
+        PatchInfo::AutoPatcherArgs *args =
+                new PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
+        return reinterpret_cast<CStringMap *>(args);
+    }
+
+    /*!
      * \brief Whether the patched file has a boot image
      *
      * \param info CPatchInfo object

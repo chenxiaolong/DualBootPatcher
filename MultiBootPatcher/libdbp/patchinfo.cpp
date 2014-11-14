@@ -31,6 +31,8 @@
 class PatchInfo::Impl
 {
 public:
+    typedef std::unordered_map<std::string, AutoPatcherArgs> AutoPatcherItems;
+
     Impl();
 
     std::string id;
@@ -60,7 +62,7 @@ public:
     //       in addition to the default values
 
     // List of autopatchers to use
-    std::unordered_map<std::string, PatchInfo::AutoPatcherItems> autoPatchers;
+    std::unordered_map<std::string, AutoPatcherItems> autoPatchers;
 
     // Whether or not the file contains (a) boot image(s)
     std::unordered_map<std::string, bool> hasBootImage;
@@ -311,42 +313,92 @@ void PatchInfo::setHasNotMatched(bool hasElem)
 }
 
 /*!
- * \brief Get list of autopatchers and their parameters
+ * \brief Add AutoPatcher to PatchInfo
+ *
+ * \param key Parameter key
+ * \param apName AutoPatcher name
+ * \param args AutoPatcher arguments
+ */
+void PatchInfo::addAutoPatcher(const std::string &key,
+                               const std::string &apName,
+                               PatchInfo::AutoPatcherArgs args)
+{
+    Impl::AutoPatcherItems &items = m_impl->autoPatchers[key];
+    items[apName] = std::move(args);
+}
+
+/*!
+ * \brief Remove AutoPatcher from PatchInfo
+ *
+ * \param key Parameter key
+ * \param apName AutoPatcher name
+ */
+void PatchInfo::removeAutoPatcher(const std::string &key,
+                                  const std::string &apName)
+{
+    if (m_impl->autoPatchers.find(key) == m_impl->autoPatchers.end()) {
+        return;
+    }
+
+    Impl::AutoPatcherItems &items = m_impl->autoPatchers[key];
+    auto it = items.find(apName);
+    if (it != items.end()) {
+        items.erase(it);
+    }
+}
+
+/*!
+ * \brief Get list of AutoPatcher names
  *
  * \param key Parameter key
  *
- * \return List of autopatchers
+ * \return List of AutoPatcher names
  */
-PatchInfo::AutoPatcherItems PatchInfo::autoPatchers(const std::string &key) const
+std::vector<std::string> PatchInfo::autoPatchers(const std::string &key) const
 {
     bool hasKey = m_impl->autoPatchers.find(key) != m_impl->autoPatchers.end();
     bool hasDefault = m_impl->autoPatchers.find(Default) != m_impl->autoPatchers.end();
 
-    AutoPatcherItems items;
+    std::vector<std::string> items;
 
     if (hasDefault) {
         auto &aps = m_impl->autoPatchers[Default];
-        items.insert(items.end(), aps.begin(), aps.end());
+        for (auto const &ap : aps) {
+            items.push_back(ap.first);
+        }
     }
 
     if (key != Default && hasKey) {
         auto &aps = m_impl->autoPatchers[key];
-        items.insert(items.end(), aps.begin(), aps.end());
+        for (auto const &ap : aps) {
+            items.push_back(ap.first);
+        }
     }
 
     return items;
 }
 
 /*!
- * \brief Set list of autopatchers and their parameters
+ * \brief Get AutoPatcher arguments
  *
  * \param key Parameter key
- * \param autoPatchers List of autopatchers
+ * \param apName AutoPatcher name
+ *
+ * \return Arguments (empty if AutoPatcher does not exist or if there are no
+ *         arguments)
  */
-void PatchInfo::setAutoPatchers(const std::string &key,
-                                AutoPatcherItems autoPatchers)
+PatchInfo::AutoPatcherArgs PatchInfo::autoPatcherArgs(const std::string &key,
+                                                      const std::string &apName) const
 {
-    m_impl->autoPatchers[key] = std::move(autoPatchers);
+    if (m_impl->autoPatchers.find(key) != m_impl->autoPatchers.end()) {
+        Impl::AutoPatcherItems &items = m_impl->autoPatchers[key];
+        auto it = items.find(apName);
+        if (it != items.end()) {
+            return it->second;
+        }
+    }
+
+    return AutoPatcherArgs();
 }
 
 /*!

@@ -753,16 +753,14 @@ void MainWindow::startPatching()
         if (d->presetSel->currentIndex() == 0) {
             d->patchInfo = new PatchInfo();
 
-            PatchInfo::AutoPatcherItems items;
             for (int i = 0; i < d->autoPatcherSel->count(); i++) {
                 if (d->autoPatcherSel->isChecked(i)) {
-                    items.push_back(PatchInfo::AutoPatcherItem(
+                    d->patchInfo->addAutoPatcher(
+                            PatchInfo::Default,
                             d->autoPatcherSel->itemText(i).toStdString(),
-                                    PatchInfo::AutoPatcherArgs()));
+                            PatchInfo::AutoPatcherArgs());
                 }
             }
-
-            d->patchInfo->setAutoPatchers(PatchInfo::Default, items);
 
             d->patchInfo->setHasBootImage(PatchInfo::Default,
                                           d->hasBootImageCb->isChecked());

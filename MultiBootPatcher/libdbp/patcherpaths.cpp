@@ -134,6 +134,13 @@ const xmlChar *PatchInfoAttrRegex = (xmlChar *) "regex";
 const xmlChar *XmlTextTrue = (xmlChar *) "true";
 const xmlChar *XmlTextFalse = (xmlChar *) "false";
 
+/*!
+ * \class PatcherPaths
+ *
+ * This is the main interface of the patcher.
+ * Blah blah documenting later ;)
+ */
+
 PatcherPaths::PatcherPaths() : m_impl(new Impl())
 {
     loadDefaultDevices();
@@ -1112,9 +1119,8 @@ void PatcherPaths::Impl::parsePatchInfoTagAutopatcher(xmlNode *node,
         }
 
         hasText = true;
-        auto aps = info->autoPatchers(type);
-        aps.push_back(std::make_pair(xmlStringToStdString(curNode->content), args));
-        info->setAutoPatchers(type, std::move(aps));
+        info->addAutoPatcher(type, xmlStringToStdString(curNode->content),
+                             std::move(args));
     }
 
     if (!hasText) {

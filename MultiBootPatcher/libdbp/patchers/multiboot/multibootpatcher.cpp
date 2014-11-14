@@ -414,10 +414,12 @@ bool MultiBootPatcher::Impl::patchZip()
     std::unordered_set<std::string> excludeFromPass1;
 
     for (auto const &item : info->patchInfo()->autoPatchers(key)) {
-        auto *ap = pp->createAutoPatcher(item.first, info, item.second);
+        auto args = info->patchInfo()->autoPatcherArgs(key, item);
+
+        auto *ap = pp->createAutoPatcher(item, info, args);
         if (!ap) {
             error = PatcherError::createPatcherCreationError(
-                    MBP::ErrorCode::AutoPatcherCreateError, item.first);
+                    MBP::ErrorCode::AutoPatcherCreateError, item);
             return false;
         }
 
