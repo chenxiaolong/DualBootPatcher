@@ -541,8 +541,18 @@ void MainWindow::refreshPartConfigs()
     d->partConfigSel->clear();
     d->partConfigs.clear();
 
+    auto configs = d->pp->partitionConfigs();
+
     for (auto const &id : d->patcher->supportedPartConfigIds()) {
-        PartitionConfig *config = d->pp->partitionConfig(id);
+        PartitionConfig *config = nullptr;
+
+        for (PartitionConfig *c : configs) {
+            if (c->id() == id) {
+                config = c;
+                break;
+            }
+        }
+
         if (config != nullptr) {
             d->partConfigs << config;
             d->partConfigSel->addItem(
