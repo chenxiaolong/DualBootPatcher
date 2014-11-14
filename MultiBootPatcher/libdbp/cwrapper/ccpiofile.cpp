@@ -174,12 +174,8 @@ extern "C" {
     /*!
      * \brief List of files in the cpio archive
      *
-     * \note A NULL-terminated array will always be returned, even if the
-     *       archive contains no files (ie. this returns { NULL } for empty
-     *       archives, and { "blah", ..., NULL } for non-empty archives).
-     *
-     * \warning Each string in the array and the array itself should be
-     *          `free()`'d when they are no longer needed.
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
      *
      * \return A NULL-terminated array containing the filenames
      *

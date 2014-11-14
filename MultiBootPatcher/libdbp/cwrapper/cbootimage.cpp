@@ -240,7 +240,7 @@ extern "C" {
      *
      * \sa BootImage::kernelCmdline()
      */
-    char *mbp_bootimage_kernel_cmdline(const CBootImage *bootImage)
+    char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage)
     {
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return strdup(bi->kernelCmdline().c_str());

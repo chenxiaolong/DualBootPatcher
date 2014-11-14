@@ -19,6 +19,7 @@ set(DBP_SOURCES
     patchinfo.cpp
     private/fileutils.cpp
     cwrapper/cbootimage.cpp
+    cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
     cwrapper/cdevice.cpp
     cwrapper/cfileinfo.cpp

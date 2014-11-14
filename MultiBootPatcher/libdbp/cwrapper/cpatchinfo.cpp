@@ -167,12 +167,8 @@ extern "C" {
     /*!
      * \brief List of filename matching regexes
      *
-     * \note A NULL-terminated array will always be returned, even if the
-     *       archive contains no files (ie. this returns { NULL } for empty
-     *       archives, and { "blah", ..., NULL } for non-empty archives).
-     *
-     * \warning Each string in the array and the array itself should be
-     *          `free()`'d when they are no longer needed.
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
      *
      * \param info CPatchInfo object
      *
@@ -218,12 +214,8 @@ extern "C" {
     /*!
      * \brief List of filename excluding regexes
      *
-     * \note A NULL-terminated array will always be returned, even if the
-     *       archive contains no files (ie. this returns { NULL } for empty
-     *       archives, and { "blah", ..., NULL } for non-empty archives).
-     *
-     * \warning Each string in the array and the array itself should be
-     *          `free()`'d when they are no longer needed.
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
      *
      * \param info CPatchInfo object
      *
@@ -270,12 +262,8 @@ extern "C" {
     /*!
      * \brief List of conditional regexes for parameters
      *
-     * \note A NULL-terminated array will always be returned, even if the
-     *       archive contains no files (ie. this returns { NULL } for empty
-     *       archives, and { "blah", ..., NULL } for non-empty archives).
-     *
-     * \warning Each string in the array and the array itself should be
-     *          `free()`'d when they are no longer needed.
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
      *
      * \param info CPatchInfo object
      *
@@ -415,12 +403,8 @@ extern "C" {
     /*!
      * \brief List of manually specified boot images
      *
-     * \note A NULL-terminated array will always be returned, even if the
-     *       archive contains no files (ie. this returns { NULL } for empty
-     *       archives, and { "blah", ..., NULL } for non-empty archives).
-     *
-     * \warning Each string in the array and the array itself should be
-     *          `free()`'d when they are no longer needed.
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
      *
      * \param info CPatchInfo object
      * \param key Parameter key
@@ -571,12 +555,8 @@ extern "C" {
     /*!
      * \brief List of supported partition configurations
      *
-     * \note A NULL-terminated array will always be returned, even if the
-     *       archive contains no files (ie. this returns { NULL } for empty
-     *       archives, and { "blah", ..., NULL } for non-empty archives).
-     *
-     * \warning Each string in the array and the array itself should be
-     *          `free()`'d when they are no longer needed.
+     * \note The returned array should be freed with `mbp_free_array()` when it
+     *       is no longer needed.
      *
      * \param info CPatchInfo object
      * \param key Parameter key
