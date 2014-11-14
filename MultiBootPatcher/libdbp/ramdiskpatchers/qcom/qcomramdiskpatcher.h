@@ -26,6 +26,7 @@
 #include <boost/any.hpp>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
@@ -51,7 +52,7 @@ public:
     static const std::string ArgDefaultCacheMountArgs;
     static const std::string ArgDefaultCacheVoldArgs;
 
-    explicit QcomRamdiskPatcher(const PatcherPaths * const pp,
+    explicit QcomRamdiskPatcher(const PatcherConfig * const pc,
                                 const FileInfo * const info,
                                 CpioFile * const cpio);
     ~QcomRamdiskPatcher();

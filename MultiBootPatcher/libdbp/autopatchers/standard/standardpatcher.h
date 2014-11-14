@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "device.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class StandardPatcher : public AutoPatcher
 {
 public:
-    explicit StandardPatcher(const PatcherPaths * const pp,
+    explicit StandardPatcher(const PatcherConfig * const pc,
                              const FileInfo * const info,
                              const PatchInfo::AutoPatcherArgs &args);
     ~StandardPatcher();

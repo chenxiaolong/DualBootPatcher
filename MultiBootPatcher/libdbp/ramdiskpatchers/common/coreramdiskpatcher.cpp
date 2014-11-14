@@ -21,14 +21,14 @@
 
 #include <boost/format.hpp>
 
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 
 
 /*! \cond INTERNAL */
 class CoreRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -54,12 +54,12 @@ static const std::string DefaultProp = "default.prop";
 static const std::string InitRc = "init.rc";
 static const std::string Busybox = "sbin/busybox";
 
-CoreRamdiskPatcher::CoreRamdiskPatcher(const PatcherPaths * const pp,
+CoreRamdiskPatcher::CoreRamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
                                        CpioFile * const cpio) :
     m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
@@ -109,7 +109,7 @@ bool CoreRamdiskPatcher::modifyDefaultProp()
                        propPartConfig.begin(), propPartConfig.end());
 
     std::string propVersion = (boost::format(PropVersion)
-            % m_impl->pp->version()).str();
+            % m_impl->pc->version()).str();
     defaultProp.insert(defaultProp.end(),
                        propVersion.begin(), propVersion.end());
 

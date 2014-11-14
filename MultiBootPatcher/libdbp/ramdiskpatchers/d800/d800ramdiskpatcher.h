@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class D800RamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit D800RamdiskPatcher(const PatcherPaths * const pp,
+    explicit D800RamdiskPatcher(const PatcherConfig * const pc,
                                 const FileInfo * const info,
                                 CpioFile * const cpio);
     ~D800RamdiskPatcher();

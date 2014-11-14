@@ -21,7 +21,7 @@
 
 #include <cstring>
 
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 
 
 /*!
@@ -46,7 +46,7 @@ extern "C" {
      */
     CPatcherConfig * mbp_config_create()
     {
-        return reinterpret_cast<CPatcherConfig *>(new PatcherPaths());
+        return reinterpret_cast<CPatcherConfig *>(new PatcherConfig());
     }
 
     /*!
@@ -56,7 +56,7 @@ extern "C" {
      */
     void mbp_config_destroy(CPatcherConfig *pc)
     {
-        delete reinterpret_cast<PatcherPaths *>(pc);
+        delete reinterpret_cast<PatcherConfig *>(pc);
     }
 
     /*!
@@ -72,12 +72,13 @@ extern "C" {
      *
      * \return CPatcherError
      *
-     * \sa PatcherPaths::error()
+     * \sa PatcherConfig::error()
      */
     CPatcherError * mbp_config_error(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        PatcherError *pe = new PatcherError(pp->error());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        PatcherError *pe = new PatcherError(config->error());
         return reinterpret_cast<CPatcherError *>(pe);
     }
 
@@ -90,12 +91,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return Binaries directory
      *
-     * \sa PatcherPaths::binariesDirectory()
+     * \sa PatcherConfig::binariesDirectory()
      */
     char * mbp_config_binaries_directory(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->binariesDirectory().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->binariesDirectory().c_str());
     }
 
     /*!
@@ -107,12 +109,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return Data directory
      *
-     * \sa PatcherPaths::dataDirectory()
+     * \sa PatcherConfig::dataDirectory()
      */
     char * mbp_config_data_directory(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->dataDirectory().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->dataDirectory().c_str());
     }
 
     /*!
@@ -124,12 +127,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return Init binaries directory
      *
-     * \sa PatcherPaths::initsDirectory()
+     * \sa PatcherConfig::initsDirectory()
      */
     char * mbp_config_inits_directory(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->initsDirectory().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->initsDirectory().c_str());
     }
 
     /*!
@@ -141,12 +145,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return Patch files directory
      *
-     * \sa PatcherPaths::patchesDirectory()
+     * \sa PatcherConfig::patchesDirectory()
      */
     char * mbp_config_patches_directory(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->patchesDirectory().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->patchesDirectory().c_str());
     }
 
     /*!
@@ -158,12 +163,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return PatchInfo files directory
      *
-     * \sa PatcherPaths::patchInfosDirectory()
+     * \sa PatcherConfig::patchInfosDirectory()
      */
     char * mbp_config_patchinfos_directory(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->patchInfosDirectory().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->patchInfosDirectory().c_str());
     }
 
     /*!
@@ -175,12 +181,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return Shell scripts directory
      *
-     * \sa PatcherPaths::scriptsDirectory()
+     * \sa PatcherConfig::scriptsDirectory()
      */
     char * mbp_config_scripts_directory(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->scriptsDirectory().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->scriptsDirectory().c_str());
     }
 
     /*!
@@ -189,12 +196,12 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param path Path to binaries directory
      *
-     * \sa PatcherPaths::setBinariesDirectory()
+     * \sa PatcherConfig::setBinariesDirectory()
      */
     void mbp_config_set_binaries_directory(CPatcherConfig *pc, char *path)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        pp->setBinariesDirectory(path);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setBinariesDirectory(path);
     }
 
     /*!
@@ -203,12 +210,12 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param path Path to data directory
      *
-     * \sa PatcherPaths::setDataDirectory()
+     * \sa PatcherConfig::setDataDirectory()
      */
     void mbp_config_set_data_directory(CPatcherConfig *pc, char *path)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        pp->setDataDirectory(path);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setDataDirectory(path);
     }
 
     /*!
@@ -217,12 +224,12 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param path Path to init binaries directory
      *
-     * \sa PatcherPaths::setInitsDirectory()
+     * \sa PatcherConfig::setInitsDirectory()
      */
     void mbp_config_set_inits_directory(CPatcherConfig *pc, char *path)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        pp->setInitsDirectory(path);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setInitsDirectory(path);
     }
 
     /*!
@@ -231,12 +238,12 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param path Path to patch files directory
      *
-     * \sa PatcherPaths::setPatchesDirectory()
+     * \sa PatcherConfig::setPatchesDirectory()
      */
     void mbp_config_set_patches_directory(CPatcherConfig *pc, char *path)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        pp->setPatchesDirectory(path);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setPatchesDirectory(path);
     }
 
     /*!
@@ -245,12 +252,12 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param path Path to PatchInfo files directory
      *
-     * \sa PatcherPaths::setPatchInfosDirectory()
+     * \sa PatcherConfig::setPatchInfosDirectory()
      */
     void mbp_config_set_patchinfos_directory(CPatcherConfig *pc, char *path)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        pp->setPatchInfosDirectory(path);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setPatchInfosDirectory(path);
     }
 
     /*!
@@ -259,12 +266,12 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param path Path to shell scripts directory
      *
-     * \sa PatcherPaths::setScriptsDirectory()
+     * \sa PatcherConfig::setScriptsDirectory()
      */
     void mbp_config_set_scripts_directory(CPatcherConfig *pc, char *path)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        pp->setScriptsDirectory(path);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setScriptsDirectory(path);
     }
 
     /*!
@@ -276,12 +283,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return Version number
      *
-     * \sa PatcherPaths::version()
+     * \sa PatcherConfig::version()
      */
     char * mbp_config_version(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->version().c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->version().c_str());
     }
 
     /*!
@@ -293,12 +301,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of supported devices
      *
-     * \sa PatcherPaths::devices()
+     * \sa PatcherConfig::devices()
      */
     CDevice ** mbp_config_devices(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const devices = pp->devices();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const devices = config->devices();
 
         CDevice **cDevices = (CDevice **) std::malloc(
                 sizeof(CDevice *) * (devices.size() + 1));
@@ -319,12 +328,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of PatchInfos
      *
-     * \sa PatcherPaths::patchInfos()
+     * \sa PatcherConfig::patchInfos()
      */
     CPatchInfo ** mbp_config_patchinfos(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const infos = pp->patchInfos();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const infos = config->patchInfos();
 
         CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
                 sizeof(CPatchInfo *) * (infos.size() + 1));
@@ -346,14 +356,15 @@ extern "C" {
      * \param device Supported device
      * \return NULL-terminated array of PatchInfos
      *
-     * \sa PatcherPaths::patchInfos(const Device * const) const
+     * \sa PatcherConfig::patchInfos(const Device * const) const
      */
     CPatchInfo ** mbp_config_patchinfos_for_device(const CPatcherConfig *pc,
                                                    const CDevice *device)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
         const Device *d = reinterpret_cast<const Device *>(device);
-        auto const infos = pp->patchInfos(d);
+        auto const infos = config->patchInfos(d);
 
         CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
             sizeof(CPatchInfo *) * (infos.size() + 1));
@@ -373,15 +384,16 @@ extern "C" {
      * \param filename Supported file
      * \return CPatchInfo if found, otherwise NULL
      *
-     * \sa PatcherPaths::findMatchingPatchInfo()
+     * \sa PatcherConfig::findMatchingPatchInfo()
      */
     CPatchInfo * mbp_config_find_matching_patchinfo(const CPatcherConfig *pc,
                                                     CDevice *device,
                                                     const char *filename)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
         Device *d = reinterpret_cast<Device *>(device);
-        PatchInfo *pi = pp->findMatchingPatchInfo(d, filename);
+        PatchInfo *pi = config->findMatchingPatchInfo(d, filename);
         return reinterpret_cast<CPatchInfo *>(pi);
     }
 
@@ -394,12 +406,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of Patcher IDs
      *
-     * \sa PatcherPaths::patchers()
+     * \sa PatcherConfig::patchers()
      */
     char ** mbp_config_patchers(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const ids = pp->patchers();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const ids = config->patchers();
 
         char **cIds = (char **) std::malloc(
                 sizeof(char *) * (ids.size() + 1));
@@ -420,12 +433,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of AutoPatcher IDs
      *
-     * \sa PatcherPaths::autoPatchers()
+     * \sa PatcherConfig::autoPatchers()
      */
     char **mbp_config_autopatchers(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const ids = pp->autoPatchers();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const ids = config->autoPatchers();
 
         char **cIds = (char **) std::malloc(
                 sizeof(char *) * (ids.size() + 1));
@@ -446,12 +460,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of RamdiskPatcher IDs
      *
-     * \sa PatcherPaths::ramdiskPatchers()
+     * \sa PatcherConfig::ramdiskPatchers()
      */
     char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const ids = pp->ramdiskPatchers();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const ids = config->ramdiskPatchers();
 
         char **cIds = (char **) std::malloc(
                 sizeof(char *) * (ids.size() + 1));
@@ -473,12 +488,13 @@ extern "C" {
      * \param id Patcher ID
      * \return Patcher's name
      *
-     * \sa PatcherPaths::patcherName()
+     * \sa PatcherConfig::patcherName()
      */
     char * mbp_config_patcher_name(const CPatcherConfig *pc, const char *id)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        return strdup(pp->patcherName(id).c_str());
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->patcherName(id).c_str());
     }
 
     /*!
@@ -488,13 +504,13 @@ extern "C" {
      * \param id Patcher ID
      * \return New Patcher
      *
-     * \sa PatcherPaths::createPatcher()
+     * \sa PatcherConfig::createPatcher()
      */
     CPatcher * mbp_config_create_patcher(CPatcherConfig *pc,
                                          const char *id)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        Patcher *p = pp->createPatcher(id);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        Patcher *p = config->createPatcher(id);
         return reinterpret_cast<CPatcher *>(p);
     }
 
@@ -507,18 +523,18 @@ extern "C" {
      * \param args AutoPatcher arguments
      * \return New AutoPatcher
      *
-     * \sa PatcherPaths::createAutoPatcher()
+     * \sa PatcherConfig::createAutoPatcher()
      */
     CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
                                                  const char *id,
                                                  const CFileInfo *info,
                                                  const CStringMap *args)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         const PatchInfo::AutoPatcherArgs *apArgs =
                 reinterpret_cast<const PatchInfo::AutoPatcherArgs *>(args);
-        AutoPatcher *ap = pp->createAutoPatcher(id, fi, *apArgs);
+        AutoPatcher *ap = config->createAutoPatcher(id, fi, *apArgs);
         return reinterpret_cast<CAutoPatcher *>(ap);
     }
 
@@ -531,17 +547,17 @@ extern "C" {
      * \param cpio CpioFile for the ramdisk archive
      * \return New RamdiskPatcher
      *
-     * \sa PatcherPaths::createRamdiskPatcher()
+     * \sa PatcherConfig::createRamdiskPatcher()
      */
     CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
                                                         const char *id,
                                                         const CFileInfo *info,
                                                         CCpioFile *cpio)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
-        RamdiskPatcher *rp = pp->createRamdiskPatcher(id, fi, cf);
+        RamdiskPatcher *rp = config->createRamdiskPatcher(id, fi, cf);
         return reinterpret_cast<CRamdiskPatcher *>(rp);
     }
 
@@ -551,13 +567,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param patcher CPatcher to destroy
      *
-     * \sa PatcherPaths::destroyPatcher()
+     * \sa PatcherConfig::destroyPatcher()
      */
     void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         Patcher *p = reinterpret_cast<Patcher *>(patcher);
-        pp->destroyPatcher(p);
+        config->destroyPatcher(p);
     }
 
     /*!
@@ -566,14 +582,14 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param patcher CAutoPatcher to destroy
      *
-     * \sa PatcherPaths::destroyAutoPatcher()
+     * \sa PatcherConfig::destroyAutoPatcher()
      */
     void mbp_config_destroy_autopatcher(CPatcherConfig *pc,
                                         CAutoPatcher *patcher)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         AutoPatcher *ap = reinterpret_cast<AutoPatcher *>(patcher);
-        pp->destroyAutoPatcher(ap);
+        config->destroyAutoPatcher(ap);
     }
 
     /*!
@@ -582,14 +598,14 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \param patcher CRamdiskPatcher to destroy
      *
-     * \sa PatcherPaths::destroyRamdiskPatcher()
+     * \sa PatcherConfig::destroyRamdiskPatcher()
      */
     void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
                                             CRamdiskPatcher *patcher)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         RamdiskPatcher *rp = reinterpret_cast<RamdiskPatcher *>(patcher);
-        pp->destroyRamdiskPatcher(rp);
+        config->destroyRamdiskPatcher(rp);
     }
 
     /*!
@@ -601,12 +617,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of PartitionConfigs
      *
-     * \sa PatcherPaths::partitionConfigs()
+     * \sa PatcherConfig::partitionConfigs()
      */
     CPartConfig ** mbp_config_partitionconfigs(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const configs = pp->partitionConfigs();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const configs = config->partitionConfigs();
 
         CPartConfig **cConfigs = (CPartConfig **) std::malloc(
                 sizeof(CPartConfig *) * (configs.size() + 1));
@@ -627,12 +644,13 @@ extern "C" {
      * \param pc CPatcherConfig object
      * \return NULL-terminated array of init binaries
      *
-     * \sa PatcherPaths::initBinaries()
+     * \sa PatcherConfig::initBinaries()
      */
     char ** mbp_config_init_binaries(const CPatcherConfig *pc)
     {
-        const PatcherPaths *pp = reinterpret_cast<const PatcherPaths *>(pc);
-        auto const inits = pp->initBinaries();
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        auto const inits = config->initBinaries();
 
         char **cInits = (char **) std::malloc(
                 sizeof(char *) * (inits.size() + 1));
@@ -651,12 +669,12 @@ extern "C" {
      * \return 0 if the XML files were successfully read, otherwise -1 (and the
      *         error set appropriately)
      *
-     * \sa PatcherPaths::loadPatchInfos()
+     * \sa PatcherConfig::loadPatchInfos()
      */
     int mbp_config_load_patchinfos(CPatcherConfig *pc)
     {
-        PatcherPaths *pp = reinterpret_cast<PatcherPaths *>(pc);
-        bool ret = pp->loadPatchInfos();
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        bool ret = config->loadPatchInfos();
         return ret ? 0 : -1;
     }
 

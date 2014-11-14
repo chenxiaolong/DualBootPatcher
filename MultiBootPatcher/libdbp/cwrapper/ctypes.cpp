@@ -33,7 +33,7 @@
 
 /*!
  * \typedef CPatcherConfig
- * \brief C wrapper for PatcherPaths object
+ * \brief C wrapper for PatcherConfig object
  */
 
 /*!

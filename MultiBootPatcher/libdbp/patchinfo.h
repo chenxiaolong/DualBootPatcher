@@ -30,8 +30,6 @@
 #include "device.h"
 
 
-class PatcherPaths;
-
 class MBP_EXPORT PatchInfo
 {
 public:

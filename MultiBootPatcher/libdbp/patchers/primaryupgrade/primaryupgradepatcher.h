@@ -22,13 +22,14 @@
 
 #include <memory>
 
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class PrimaryUpgradePatcher : public Patcher
 {
 public:
-    explicit PrimaryUpgradePatcher(const PatcherPaths * const pp);
+    explicit PrimaryUpgradePatcher(const PatcherConfig * const pc);
     ~PrimaryUpgradePatcher();
 
     static const std::string Id;

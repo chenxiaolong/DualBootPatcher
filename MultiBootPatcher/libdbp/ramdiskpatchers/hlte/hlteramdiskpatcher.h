@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class HlteBaseRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit HlteBaseRamdiskPatcher(const PatcherPaths * const pp,
+    explicit HlteBaseRamdiskPatcher(const PatcherConfig * const pc,
                                     const FileInfo * const info,
                                     CpioFile * const cpio);
     virtual ~HlteBaseRamdiskPatcher();
@@ -49,7 +50,7 @@ protected:
 class HlteAOSPRamdiskPatcher : public HlteBaseRamdiskPatcher
 {
 public:
-    explicit HlteAOSPRamdiskPatcher(const PatcherPaths * const pp,
+    explicit HlteAOSPRamdiskPatcher(const PatcherConfig * const pc,
                                     const FileInfo * const info,
                                     CpioFile * const cpio);
 
@@ -64,7 +65,7 @@ public:
 class HlteTouchWizRamdiskPatcher : public HlteBaseRamdiskPatcher
 {
 public:
-    explicit HlteTouchWizRamdiskPatcher(const PatcherPaths * const pp,
+    explicit HlteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
                                         const FileInfo * const info,
                                         CpioFile * const cpio);
 

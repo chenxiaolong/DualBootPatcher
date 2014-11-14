@@ -33,7 +33,7 @@
 class JflteBasePatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     std::string id;
     const FileInfo *info;
 };
@@ -52,11 +52,11 @@ static const std::string Cache = "/cache";
 static const std::string Data = "/data";
 
 
-JflteBasePatcher::JflteBasePatcher(const PatcherPaths * const pp,
+JflteBasePatcher::JflteBasePatcher(const PatcherConfig * const pc,
                                    const FileInfo * const info)
     : m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
 }
 
@@ -73,9 +73,9 @@ PatcherError JflteBasePatcher::error() const
 
 const std::string JflteDalvikCachePatcher::Id = "DalvikCachePatcher";
 
-JflteDalvikCachePatcher::JflteDalvikCachePatcher(const PatcherPaths* const pp,
+JflteDalvikCachePatcher::JflteDalvikCachePatcher(const PatcherConfig * const pc,
                                                  const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 
@@ -128,9 +128,9 @@ bool JflteDalvikCachePatcher::patchFiles(const std::string &directory,
 
 const std::string JflteGoogleEditionPatcher::Id = "GoogleEditionPatcher";
 
-JflteGoogleEditionPatcher::JflteGoogleEditionPatcher(const PatcherPaths* const pp,
+JflteGoogleEditionPatcher::JflteGoogleEditionPatcher(const PatcherConfig * const pc,
                                                      const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 
@@ -182,9 +182,9 @@ bool JflteGoogleEditionPatcher::patchFiles(const std::string &directory,
 
 const std::string JflteSlimAromaBundledMount::Id = "SlimAromaBundledMount";
 
-JflteSlimAromaBundledMount::JflteSlimAromaBundledMount(const PatcherPaths* const pp,
+JflteSlimAromaBundledMount::JflteSlimAromaBundledMount(const PatcherConfig * const pc,
                                                        const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 
@@ -245,9 +245,9 @@ bool JflteSlimAromaBundledMount::patchFiles(const std::string &directory,
 
 const std::string JflteImperiumPatcher::Id = "ImperiumPatcher";
 
-JflteImperiumPatcher::JflteImperiumPatcher(const PatcherPaths* const pp,
+JflteImperiumPatcher::JflteImperiumPatcher(const PatcherConfig * const pc,
                                            const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 
@@ -310,9 +310,9 @@ bool JflteImperiumPatcher::patchFiles(const std::string &directory,
 
 const std::string JflteNegaliteNoWipeData::Id = "NegaliteNoWipeData";
 
-JflteNegaliteNoWipeData::JflteNegaliteNoWipeData(const PatcherPaths* const pp,
+JflteNegaliteNoWipeData::JflteNegaliteNoWipeData(const PatcherConfig * const pc,
                                                  const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 
@@ -367,9 +367,9 @@ bool JflteNegaliteNoWipeData::patchFiles(const std::string &directory,
 
 const std::string JflteTriForceFixAroma::Id = "TriForceFixAroma";
 
-JflteTriForceFixAroma::JflteTriForceFixAroma(const PatcherPaths* const pp,
+JflteTriForceFixAroma::JflteTriForceFixAroma(const PatcherConfig * const pc,
                                              const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 
@@ -430,9 +430,9 @@ bool JflteTriForceFixAroma::patchFiles(const std::string &directory,
 
 const std::string JflteTriForceFixUpdate::Id = "TriForceFixUpdate";
 
-JflteTriForceFixUpdate::JflteTriForceFixUpdate(const PatcherPaths* const pp,
+JflteTriForceFixUpdate::JflteTriForceFixUpdate(const PatcherConfig * const pc,
                                                const FileInfo* const info)
-    : JflteBasePatcher(pp, info)
+    : JflteBasePatcher(pc, info)
 {
 }
 

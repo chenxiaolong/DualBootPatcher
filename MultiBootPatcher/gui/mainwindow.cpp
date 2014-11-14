@@ -37,7 +37,7 @@
 const int patcherPtrTypeId = qRegisterMetaType<PatcherPtr>("PatcherPtr");
 const int fileInfoPtrTypeId = qRegisterMetaType<FileInfoPtr>("FileInfoPtr");
 
-MainWindow::MainWindow(PatcherPaths *pp, QWidget *parent)
+MainWindow::MainWindow(PatcherConfig *pc, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
     Q_D(MainWindow);
@@ -54,7 +54,7 @@ MainWindow::MainWindow(PatcherPaths *pp, QWidget *parent)
         d->fileName.clear();
     }
 
-    d->pp = pp;
+    d->pc = pc;
 
     addWidgets();
     setWidgetActions();
@@ -89,7 +89,7 @@ MainWindow::~MainWindow()
 
     if (d->patcher) {
         d->patcher->cancelPatching();
-        d->pp->destroyPatcher(d->patcher);
+        d->pc->destroyPatcher(d->patcher);
         d->patcher = nullptr;
     }
 
@@ -102,7 +102,7 @@ MainWindow::~MainWindow()
 void MainWindow::onDeviceSelected(int index)
 {
     Q_D(MainWindow);
-    d->device = d->pp->devices()[index];
+    d->device = d->pc->devices()[index];
 
     refreshPresets();
     refreshRamdisks();
@@ -121,10 +121,10 @@ void MainWindow::onPatcherSelected(const QString &patcher)
 
     QString patcherId = d->reversePatcherMap[patcher];
     if (d->patcher != nullptr) {
-        d->pp->destroyPatcher(d->patcher);
+        d->pc->destroyPatcher(d->patcher);
         d->patcher = nullptr;
     }
-    d->patcher = d->pp->createPatcher(patcherId.toStdString());
+    d->patcher = d->pc->createPatcher(patcherId.toStdString());
 
     refreshPartConfigs();
 
@@ -483,7 +483,7 @@ void MainWindow::populateWidgets()
     Q_D(MainWindow);
 
     // Populate devices
-    for (Device *device : d->pp->devices()) {
+    for (Device *device : d->pc->devices()) {
         d->deviceSel->addItem(QStringLiteral("%1 (%2)")
                 .arg(QString::fromStdString(device->codename()))
                 .arg(QString::fromStdString(device->name())));
@@ -491,8 +491,8 @@ void MainWindow::populateWidgets()
 
     // Populate patchers
     QStringList patcherNames;
-    for (auto const &id : d->pp->patchers()) {
-        QString name = QString::fromStdString(d->pp->patcherName(id));
+    for (auto const &id : d->pc->patchers()) {
+        QString name = QString::fromStdString(d->pc->patcherName(id));
         patcherNames << name;
         d->reversePatcherMap[name] = QString::fromStdString(id);
     }
@@ -500,13 +500,13 @@ void MainWindow::populateWidgets()
     d->patcherSel->addItems(patcherNames);
 
     // Populate init binaries
-    for (auto const &initBinary : d->pp->initBinaries()) {
+    for (auto const &initBinary : d->pc->initBinaries()) {
         d->initFileSel->addItem(QString::fromStdString(initBinary));
     }
 
     // Populate autopatchers
     QStringList autoPatchers;
-    for (auto const &id : d->pp->autoPatchers()) {
+    for (auto const &id : d->pc->autoPatchers()) {
         if (id == "PatchFile") {
             continue;
         }
@@ -541,7 +541,7 @@ void MainWindow::refreshPartConfigs()
     d->partConfigSel->clear();
     d->partConfigs.clear();
 
-    auto configs = d->pp->partitionConfigs();
+    auto configs = d->pc->partitionConfigs();
 
     for (auto const &id : d->patcher->supportedPartConfigIds()) {
         PartitionConfig *config = nullptr;
@@ -570,7 +570,7 @@ void MainWindow::refreshPresets()
     d->patchInfos.clear();
 
     d->presetSel->addItem(tr("Custom"));
-    d->patchInfos = d->pp->patchInfos(d->device);
+    d->patchInfos = d->pc->patchInfos(d->device);
     std::sort(d->patchInfos.begin(), d->patchInfos.end(), sortByPatchInfoId);
     for (PatchInfo *info : d->patchInfos) {
         d->presetSel->addItem(QString::fromStdString(info->id()));
@@ -584,7 +584,7 @@ void MainWindow::refreshRamdisks()
     d->ramdiskSel->clear();
 
     QStringList ramdisks;
-    for (auto const &id : d->pp->ramdiskPatchers()) {
+    for (auto const &id : d->pc->ramdiskPatchers()) {
         if (boost::starts_with(id, d->device->codename())) {
             ramdisks << QString::fromStdString(id);
         }
@@ -653,7 +653,7 @@ void MainWindow::checkSupported()
         }
 
         // Otherwise, check if it really is supported
-        else if ((d->patchInfo = d->pp->findMatchingPatchInfo(
+        else if ((d->patchInfo = d->pc->findMatchingPatchInfo(
                 d->device, d->fileName.toStdString())) != nullptr) {
             d->supported |= MainWindowPrivate::SupportedFile;
 

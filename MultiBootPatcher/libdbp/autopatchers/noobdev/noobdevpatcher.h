@@ -22,13 +22,14 @@
 
 #include <memory>
 
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class NoobdevBasePatcher : public AutoPatcher
 {
 public:
-    explicit NoobdevBasePatcher(const PatcherPaths * const pp,
+    explicit NoobdevBasePatcher(const PatcherConfig * const pc,
                                 const FileInfo * const info);
     virtual ~NoobdevBasePatcher();
 
@@ -51,7 +52,7 @@ protected:
 class NoobdevMultiBoot : public NoobdevBasePatcher
 {
 public:
-    explicit NoobdevMultiBoot(const PatcherPaths * const pp,
+    explicit NoobdevMultiBoot(const PatcherConfig * const pc,
                               const FileInfo * const info);
 
     static const std::string Id;
@@ -69,7 +70,7 @@ public:
 class NoobdevSystemProp : public NoobdevBasePatcher
 {
 public:
-    explicit NoobdevSystemProp(const PatcherPaths * const pp,
+    explicit NoobdevSystemProp(const PatcherConfig * const pc,
                                const FileInfo * const info);
 
     static const std::string Id;

@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class JflteBaseRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit JflteBaseRamdiskPatcher(const PatcherPaths * const pp,
+    explicit JflteBaseRamdiskPatcher(const PatcherConfig * const pc,
                                      const FileInfo * const info,
                                      CpioFile * const cpio);
     virtual ~JflteBaseRamdiskPatcher();
@@ -49,7 +50,7 @@ protected:
 class JflteAOSPRamdiskPatcher : public JflteBaseRamdiskPatcher
 {
 public:
-    explicit JflteAOSPRamdiskPatcher(const PatcherPaths * const pp,
+    explicit JflteAOSPRamdiskPatcher(const PatcherConfig * const pc,
                                      const FileInfo * const info,
                                      CpioFile * const cpio);
 
@@ -64,7 +65,7 @@ public:
 class JflteGoogleEditionRamdiskPatcher : public JflteBaseRamdiskPatcher
 {
 public:
-    explicit JflteGoogleEditionRamdiskPatcher(const PatcherPaths * const pp,
+    explicit JflteGoogleEditionRamdiskPatcher(const PatcherConfig * const pc,
                                               const FileInfo * const info,
                                               CpioFile * const cpio);
 
@@ -79,7 +80,7 @@ public:
 class JflteNoobdevRamdiskPatcher : public JflteBaseRamdiskPatcher
 {
 public:
-    explicit JflteNoobdevRamdiskPatcher(const PatcherPaths * const pp,
+    explicit JflteNoobdevRamdiskPatcher(const PatcherConfig * const pc,
                                         const FileInfo * const info,
                                         CpioFile * const cpio);
 
@@ -97,7 +98,7 @@ private:
 class JflteTouchWizRamdiskPatcher : public JflteBaseRamdiskPatcher
 {
 public:
-    explicit JflteTouchWizRamdiskPatcher(const PatcherPaths * const pp,
+    explicit JflteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
                                          const FileInfo * const info,
                                          CpioFile * const cpio);
 

@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 
 #include <boost/algorithm/string/erase.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -51,7 +51,7 @@
 
 
 /*! \cond INTERNAL */
-class PatcherPaths::Impl
+class PatcherConfig::Impl
 {
 public:
     // Directories
@@ -138,13 +138,13 @@ const xmlChar *XmlTextTrue = (xmlChar *) "true";
 const xmlChar *XmlTextFalse = (xmlChar *) "false";
 
 /*!
- * \class PatcherPaths
+ * \class PatcherConfig
  *
  * This is the main interface of the patcher.
  * Blah blah documenting later ;)
  */
 
-PatcherPaths::PatcherPaths() : m_impl(new Impl())
+PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
     m_impl->loadDefaultDevices();
     m_impl->loadDefaultPatchers();
@@ -155,7 +155,7 @@ PatcherPaths::PatcherPaths() : m_impl(new Impl())
     m_impl->version = LIBDBP_VERSION;
 }
 
-PatcherPaths::~PatcherPaths()
+PatcherConfig::~PatcherConfig()
 {
     // Clean up devices
     for (Device *device : m_impl->devices) {
@@ -199,7 +199,7 @@ PatcherPaths::~PatcherPaths()
  *
  * \return PatcherError containing information about the error
  */
-PatcherError PatcherPaths::error() const
+PatcherError PatcherConfig::error() const
 {
     return m_impl->error;
 }
@@ -211,7 +211,7 @@ PatcherError PatcherPaths::error() const
  *
  * \return Binaries directory
  */
-std::string PatcherPaths::binariesDirectory() const
+std::string PatcherConfig::binariesDirectory() const
 {
     if (m_impl->binariesDir.empty()) {
         return dataDirectory() + "/" + BinariesDirName;
@@ -225,7 +225,7 @@ std::string PatcherPaths::binariesDirectory() const
  *
  * \return Data directory
  */
-std::string PatcherPaths::dataDirectory() const
+std::string PatcherConfig::dataDirectory() const
 {
     return m_impl->dataDir;
 }
@@ -237,7 +237,7 @@ std::string PatcherPaths::dataDirectory() const
  *
  * \return Init binaries directory
  */
-std::string PatcherPaths::initsDirectory() const
+std::string PatcherConfig::initsDirectory() const
 {
     if (m_impl->initsDir.empty()) {
         return dataDirectory() + "/" + InitsDirName;
@@ -253,7 +253,7 @@ std::string PatcherPaths::initsDirectory() const
  *
  * \return Patch files directory
  */
-std::string PatcherPaths::patchesDirectory() const
+std::string PatcherConfig::patchesDirectory() const
 {
     if (m_impl->patchesDir.empty()) {
         return dataDirectory() + "/" + PatchesDirName;
@@ -269,7 +269,7 @@ std::string PatcherPaths::patchesDirectory() const
  *
  * \return PatchInfo files directory
  */
-std::string PatcherPaths::patchInfosDirectory() const
+std::string PatcherConfig::patchInfosDirectory() const
 {
     if (m_impl->patchInfosDir.empty()) {
         return dataDirectory() + "/" + PatchInfosDirName;
@@ -285,7 +285,7 @@ std::string PatcherPaths::patchInfosDirectory() const
  *
  * \return Shell scripts directory
  */
-std::string PatcherPaths::scriptsDirectory() const
+std::string PatcherConfig::scriptsDirectory() const
 {
     if (m_impl->scriptsDir.empty()) {
         return dataDirectory() + "/" + ScriptsDirName;
@@ -302,7 +302,7 @@ std::string PatcherPaths::scriptsDirectory() const
  *
  * \param path Path to binaries directory
  */
-void PatcherPaths::setBinariesDirectory(std::string path)
+void PatcherConfig::setBinariesDirectory(std::string path)
 {
     m_impl->binariesDir = std::move(path);
 }
@@ -312,7 +312,7 @@ void PatcherPaths::setBinariesDirectory(std::string path)
  *
  * \param path Path to data directory
  */
-void PatcherPaths::setDataDirectory(std::string path)
+void PatcherConfig::setDataDirectory(std::string path)
 {
     m_impl->dataDir = std::move(path);
 }
@@ -325,7 +325,7 @@ void PatcherPaths::setDataDirectory(std::string path)
  *
  * \param path Path to init binaries directory
  */
-void PatcherPaths::setInitsDirectory(std::string path)
+void PatcherConfig::setInitsDirectory(std::string path)
 {
     m_impl->initsDir = std::move(path);
 }
@@ -338,7 +338,7 @@ void PatcherPaths::setInitsDirectory(std::string path)
  *
  * \param path Path to patch files directory
  */
-void PatcherPaths::setPatchesDirectory(std::string path)
+void PatcherConfig::setPatchesDirectory(std::string path)
 {
     m_impl->patchesDir = std::move(path);
 }
@@ -351,7 +351,7 @@ void PatcherPaths::setPatchesDirectory(std::string path)
  *
  * \param path Path to PatchInfo files directory
  */
-void PatcherPaths::setPatchInfosDirectory(std::string path)
+void PatcherConfig::setPatchInfosDirectory(std::string path)
 {
     m_impl->patchInfosDir = std::move(path);
 }
@@ -364,7 +364,7 @@ void PatcherPaths::setPatchInfosDirectory(std::string path)
  *
  * \param path Path to shell scripts directory
  */
-void PatcherPaths::setScriptsDirectory(std::string path)
+void PatcherConfig::setScriptsDirectory(std::string path)
 {
     m_impl->scriptsDir = std::move(path);
 }
@@ -374,7 +374,7 @@ void PatcherPaths::setScriptsDirectory(std::string path)
  *
  * \return Version number
  */
-std::string PatcherPaths::version() const
+std::string PatcherConfig::version() const
 {
     return m_impl->version;
 }
@@ -384,7 +384,7 @@ std::string PatcherPaths::version() const
  *
  * \return List of supported devices
  */
-std::vector<Device *> PatcherPaths::devices() const
+std::vector<Device *> PatcherConfig::devices() const
 {
     return m_impl->devices;
 }
@@ -394,7 +394,7 @@ std::vector<Device *> PatcherPaths::devices() const
  *
  * \return List of PatchInfos
  */
-std::vector<PatchInfo *> PatcherPaths::patchInfos() const
+std::vector<PatchInfo *> PatcherConfig::patchInfos() const
 {
     return m_impl->patchInfos;
 }
@@ -406,7 +406,7 @@ std::vector<PatchInfo *> PatcherPaths::patchInfos() const
  *
  * \return List of PatchInfos
  */
-std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
+std::vector<PatchInfo *> PatcherConfig::patchInfos(const Device * const device) const
 {
     std::vector<PatchInfo *> l;
 
@@ -435,8 +435,8 @@ std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) c
  *
  * \return PatchInfo if found, otherwise nullptr
  */
-PatchInfo * PatcherPaths::findMatchingPatchInfo(Device *device,
-                                                const std::string &filename) const
+PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
+                                                 const std::string &filename) const
 {
     if (device == nullptr) {
         return nullptr;
@@ -474,7 +474,7 @@ PatchInfo * PatcherPaths::findMatchingPatchInfo(Device *device,
     return nullptr;
 }
 
-void PatcherPaths::Impl::loadDefaultDevices()
+void PatcherConfig::Impl::loadDefaultDevices()
 {
     Device *device;
 
@@ -537,7 +537,7 @@ void PatcherPaths::Impl::loadDefaultDevices()
     devices.push_back(device);
 }
 
-void PatcherPaths::Impl::loadDefaultPatchers()
+void PatcherConfig::Impl::loadDefaultPatchers()
 {
     auto configs1 = MultiBootPatcher::partConfigs();
     auto configs2 = PrimaryUpgradePatcher::partConfigs();
@@ -551,7 +551,7 @@ void PatcherPaths::Impl::loadDefaultPatchers()
  *
  * \return List of Patcher names
  */
-std::vector<std::string> PatcherPaths::patchers() const
+std::vector<std::string> PatcherConfig::patchers() const
 {
     std::vector<std::string> list;
     list.push_back(MultiBootPatcher::Id);
@@ -565,7 +565,7 @@ std::vector<std::string> PatcherPaths::patchers() const
  *
  * \return List of AutoPatcher names
  */
-std::vector<std::string> PatcherPaths::autoPatchers() const
+std::vector<std::string> PatcherConfig::autoPatchers() const
 {
     std::vector<std::string> list;
     list.push_back(JflteDalvikCachePatcher::Id);
@@ -587,7 +587,7 @@ std::vector<std::string> PatcherPaths::autoPatchers() const
  *
  * \return List of RamdiskPatcher names
  */
-std::vector<std::string> PatcherPaths::ramdiskPatchers() const
+std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 {
     std::vector<std::string> list;
     list.push_back(BaconRamdiskPatcher::Id);
@@ -612,7 +612,7 @@ std::vector<std::string> PatcherPaths::ramdiskPatchers() const
  *
  * \return Patcher's name
  */
-std::string PatcherPaths::patcherName(const std::string &id) const
+std::string PatcherConfig::patcherName(const std::string &id) const
 {
     if (id == MultiBootPatcher::Id) {
         return MultiBootPatcher::Name;
@@ -632,7 +632,7 @@ std::string PatcherPaths::patcherName(const std::string &id) const
  *
  * \return New Patcher
  */
-Patcher * PatcherPaths::createPatcher(const std::string &id)
+Patcher * PatcherConfig::createPatcher(const std::string &id)
 {
     Patcher *p = nullptr;
 
@@ -660,9 +660,9 @@ Patcher * PatcherPaths::createPatcher(const std::string &id)
  *
  * \return New AutoPatcher
  */
-AutoPatcher * PatcherPaths::createAutoPatcher(const std::string &id,
-                                              const FileInfo * const info,
-                                              const PatchInfo::AutoPatcherArgs &args)
+AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
+                                               const FileInfo * const info,
+                                               const PatchInfo::AutoPatcherArgs &args)
 {
     AutoPatcher *ap = nullptr;
 
@@ -706,9 +706,9 @@ AutoPatcher * PatcherPaths::createAutoPatcher(const std::string &id,
  *
  * \return New RamdiskPatcher
  */
-RamdiskPatcher * PatcherPaths::createRamdiskPatcher(const std::string &id,
-                                                    const FileInfo * const info,
-                                                    CpioFile * const cpio)
+RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
+                                                     const FileInfo * const info,
+                                                     CpioFile * const cpio)
 {
     RamdiskPatcher *rp = nullptr;
 
@@ -752,7 +752,7 @@ RamdiskPatcher * PatcherPaths::createRamdiskPatcher(const std::string &id,
  *
  * \param patcher Patcher to destroy
  */
-void PatcherPaths::destroyPatcher(Patcher *patcher)
+void PatcherConfig::destroyPatcher(Patcher *patcher)
 {
     auto it = std::find(m_impl->allocPatchers.begin(),
                         m_impl->allocPatchers.end(),
@@ -768,7 +768,7 @@ void PatcherPaths::destroyPatcher(Patcher *patcher)
  *
  * \param patcher AutoPatcher to destroy
  */
-void PatcherPaths::destroyAutoPatcher(AutoPatcher *patcher)
+void PatcherConfig::destroyAutoPatcher(AutoPatcher *patcher)
 {
     auto it = std::find(m_impl->allocAutoPatchers.begin(),
                         m_impl->allocAutoPatchers.end(),
@@ -784,7 +784,7 @@ void PatcherPaths::destroyAutoPatcher(AutoPatcher *patcher)
  *
  * \param patcher RamdiskPatcher to destroy
  */
-void PatcherPaths::destroyRamdiskPatcher(RamdiskPatcher *patcher)
+void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
 {
     auto it = std::find(m_impl->allocRamdiskPatchers.begin(),
                         m_impl->allocRamdiskPatchers.end(),
@@ -800,7 +800,7 @@ void PatcherPaths::destroyRamdiskPatcher(RamdiskPatcher *patcher)
  *
  * \return List of partition configurations
  */
-std::vector<PartitionConfig *> PatcherPaths::partitionConfigs() const
+std::vector<PartitionConfig *> PatcherConfig::partitionConfigs() const
 {
     return m_impl->partConfigs;
 }
@@ -843,7 +843,7 @@ static boost::filesystem::path makeRelative(boost::filesystem::path from,
  *
  * \return List of init binaries
  */
-std::vector<std::string> PatcherPaths::initBinaries() const
+std::vector<std::string> PatcherConfig::initBinaries() const
 {
     std::vector<std::string> inits;
 
@@ -873,7 +873,7 @@ std::vector<std::string> PatcherPaths::initBinaries() const
  *
  * \return Whether or not the XML files were successfully read
  */
-bool PatcherPaths::loadPatchInfos()
+bool PatcherConfig::loadPatchInfos()
 {
     try {
         const boost::filesystem::path dirPath(patchInfosDirectory());
@@ -905,8 +905,8 @@ bool PatcherPaths::loadPatchInfos()
     return false;
 }
 
-bool PatcherPaths::Impl::loadPatchInfoXml(const std::string &path,
-                                          const std::string &pathId)
+bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
+                                           const std::string &pathId)
 {
     (void) pathId;
 
@@ -950,8 +950,8 @@ static std::string xmlStringToStdString(const xmlChar* xmlString) {
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
-                                                    PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
+                                                     PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagPatchinfo) == 0);
 
@@ -991,8 +991,8 @@ void PatcherPaths::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagMatches(xmlNode *node,
-                                                  PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
+                                                   PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagMatches) == 0);
 
@@ -1035,8 +1035,8 @@ void PatcherPaths::Impl::parsePatchInfoTagMatches(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
-                                                     PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
+                                                      PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagNotMatched) == 0);
 
@@ -1068,8 +1068,8 @@ void PatcherPaths::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagName(xmlNode *node,
-                                               PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagName(xmlNode *node,
+                                                PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagName) == 0);
 
@@ -1092,8 +1092,8 @@ void PatcherPaths::Impl::parsePatchInfoTagName(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagRegex(xmlNode *node,
-                                                PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagRegex(xmlNode *node,
+                                                 PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagRegex) == 0);
 
@@ -1114,8 +1114,8 @@ void PatcherPaths::Impl::parsePatchInfoTagRegex(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagExcludeRegex(xmlNode *node,
-                                                       PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagExcludeRegex(xmlNode *node,
+                                                        PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagExcludeRegex) == 0);
 
@@ -1136,8 +1136,8 @@ void PatcherPaths::Impl::parsePatchInfoTagExcludeRegex(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagRegexes(xmlNode *node,
-                                                  PatchInfo * const info)
+void PatcherConfig::Impl::parsePatchInfoTagRegexes(xmlNode *node,
+                                                   PatchInfo * const info)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagRegexes) == 0);
 
@@ -1159,9 +1159,9 @@ void PatcherPaths::Impl::parsePatchInfoTagRegexes(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagHasBootImage(xmlNode *node,
-                                                       PatchInfo * const info,
-                                                       const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagHasBootImage(xmlNode *node,
+                                                        PatchInfo * const info,
+                                                        const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagHasBootImage) == 0);
 
@@ -1187,9 +1187,9 @@ void PatcherPaths::Impl::parsePatchInfoTagHasBootImage(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagRamdisk(xmlNode *node,
-                                                  PatchInfo * const info,
-                                                  const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagRamdisk(xmlNode *node,
+                                                   PatchInfo * const info,
+                                                   const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagRamdisk) == 0);
 
@@ -1212,9 +1212,9 @@ void PatcherPaths::Impl::parsePatchInfoTagRamdisk(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagPatchedInit(xmlNode *node,
-                                                      PatchInfo * const info,
-                                                      const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagPatchedInit(xmlNode *node,
+                                                       PatchInfo * const info,
+                                                       const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagPatchedInit) == 0);
 
@@ -1237,9 +1237,9 @@ void PatcherPaths::Impl::parsePatchInfoTagPatchedInit(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagAutopatchers(xmlNode *node,
-                                                       PatchInfo * const info,
-                                                       const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagAutopatchers(xmlNode *node,
+                                                        PatchInfo * const info,
+                                                        const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagAutopatchers) == 0);
 
@@ -1259,9 +1259,9 @@ void PatcherPaths::Impl::parsePatchInfoTagAutopatchers(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagAutopatcher(xmlNode *node,
-                                                      PatchInfo * const info,
-                                                      const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagAutopatcher(xmlNode *node,
+                                                       PatchInfo * const info,
+                                                       const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagAutopatcher) == 0);
 
@@ -1292,9 +1292,9 @@ void PatcherPaths::Impl::parsePatchInfoTagAutopatcher(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
-                                                      PatchInfo * const info,
-                                                      const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
+                                                       PatchInfo * const info,
+                                                       const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagDeviceCheck) == 0);
 
@@ -1320,9 +1320,9 @@ void PatcherPaths::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagPartconfigs(xmlNode *node,
-                                                      PatchInfo * const info,
-                                                      const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagPartconfigs(xmlNode *node,
+                                                       PatchInfo * const info,
+                                                       const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagPartconfigs) == 0);
 
@@ -1350,9 +1350,9 @@ void PatcherPaths::Impl::parsePatchInfoTagPartconfigs(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagExclude(xmlNode *node,
-                                                  PatchInfo * const info,
-                                                  const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagExclude(xmlNode *node,
+                                                   PatchInfo * const info,
+                                                   const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagExclude) == 0);
 
@@ -1388,9 +1388,9 @@ void PatcherPaths::Impl::parsePatchInfoTagExclude(xmlNode *node,
     }
 }
 
-void PatcherPaths::Impl::parsePatchInfoTagInclude(xmlNode *node,
-                                                  PatchInfo * const info,
-                                                  const std::string &type)
+void PatcherConfig::Impl::parsePatchInfoTagInclude(xmlNode *node,
+                                                   PatchInfo * const info,
+                                                   const std::string &type)
 {
     assert(xmlStrcmp(node->name, PatchInfoTagInclude) == 0);
 

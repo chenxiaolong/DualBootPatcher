@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class GalaxyRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit GalaxyRamdiskPatcher(const PatcherPaths * const pp,
+    explicit GalaxyRamdiskPatcher(const PatcherConfig * const pc,
                                   const FileInfo * const info,
                                   CpioFile * const cpio,
                                   const std::string &version);

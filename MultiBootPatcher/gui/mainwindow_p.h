@@ -23,7 +23,7 @@
 #include "mainwindow.h"
 #include "qcombocheckbox.h"
 
-#include <libdbp/patcherpaths.h>
+#include <libdbp/patcherconfig.h>
 #include <libdbp/patcherinterface.h>
 
 #include <memory>
@@ -62,7 +62,7 @@ public:
     QString fileName;
     bool autoMode;
 
-    PatcherPaths *pp = nullptr;
+    PatcherConfig *pc = nullptr;
 
     // Selected patcher
     QHash<QString, QString> reversePatcherMap;

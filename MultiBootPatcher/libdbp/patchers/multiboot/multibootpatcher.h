@@ -24,13 +24,14 @@
 
 #include <archive.h>
 
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class MultiBootPatcher : public Patcher
 {
 public:
-    explicit MultiBootPatcher(PatcherPaths * const pp);
+    explicit MultiBootPatcher(PatcherConfig * const pc);
     ~MultiBootPatcher();
 
     static const std::string Id;

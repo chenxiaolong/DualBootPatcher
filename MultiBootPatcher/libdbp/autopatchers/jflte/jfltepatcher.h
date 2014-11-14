@@ -22,13 +22,14 @@
 
 #include <memory>
 
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class JflteBasePatcher : public AutoPatcher
 {
 public:
-    explicit JflteBasePatcher(const PatcherPaths * const pp,
+    explicit JflteBasePatcher(const PatcherConfig * const pc,
                               const FileInfo * const info);
     virtual ~JflteBasePatcher();
 
@@ -51,7 +52,7 @@ protected:
 class JflteDalvikCachePatcher : public JflteBasePatcher
 {
 public:
-    explicit JflteDalvikCachePatcher(const PatcherPaths * const pp,
+    explicit JflteDalvikCachePatcher(const PatcherConfig * const pc,
                                      const FileInfo * const info);
 
     static const std::string Id;
@@ -69,7 +70,7 @@ public:
 class JflteGoogleEditionPatcher : public JflteBasePatcher
 {
 public:
-    explicit JflteGoogleEditionPatcher(const PatcherPaths * const pp,
+    explicit JflteGoogleEditionPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info);
 
     static const std::string Id;
@@ -87,7 +88,7 @@ public:
 class JflteSlimAromaBundledMount : public JflteBasePatcher
 {
 public:
-    explicit JflteSlimAromaBundledMount(const PatcherPaths * const pp,
+    explicit JflteSlimAromaBundledMount(const PatcherConfig * const pc,
                                         const FileInfo * const info);
 
     static const std::string Id;
@@ -105,7 +106,7 @@ public:
 class JflteImperiumPatcher : public JflteBasePatcher
 {
 public:
-    explicit JflteImperiumPatcher(const PatcherPaths * const pp,
+    explicit JflteImperiumPatcher(const PatcherConfig * const pc,
                                   const FileInfo * const info);
 
     static const std::string Id;
@@ -123,7 +124,7 @@ public:
 class JflteNegaliteNoWipeData : public JflteBasePatcher
 {
 public:
-    explicit JflteNegaliteNoWipeData(const PatcherPaths * const pp,
+    explicit JflteNegaliteNoWipeData(const PatcherConfig * const pc,
                                      const FileInfo * const info);
 
     static const std::string Id;
@@ -141,7 +142,7 @@ public:
 class JflteTriForceFixAroma : public JflteBasePatcher
 {
 public:
-    explicit JflteTriForceFixAroma(const PatcherPaths * const pp,
+    explicit JflteTriForceFixAroma(const PatcherConfig * const pc,
                                    const FileInfo * const info);
 
     static const std::string Id;
@@ -159,7 +160,7 @@ public:
 class JflteTriForceFixUpdate : public JflteBasePatcher
 {
 public:
-    explicit JflteTriForceFixUpdate(const PatcherPaths * const pp,
+    explicit JflteTriForceFixUpdate(const PatcherConfig * const pc,
                                     const FileInfo * const info);
 
     static const std::string Id;

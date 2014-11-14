@@ -32,7 +32,7 @@
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
 
@@ -80,7 +80,7 @@ class PrimaryUpgradePatcher::Impl
 public:
     Impl(PrimaryUpgradePatcher *parent) : m_parent(parent) {}
 
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
 
     int progress;
@@ -145,10 +145,10 @@ static const std::string Cache = "/cache";
 static const std::string AndroidBins = "android/%1%";
 
 
-PrimaryUpgradePatcher::PrimaryUpgradePatcher(const PatcherPaths * const pp)
+PrimaryUpgradePatcher::PrimaryUpgradePatcher(const PatcherConfig * const pc)
     : Patcher(), m_impl(new Impl(this))
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
 
     m_impl->ignoreFiles.push_back(DualBootTool);
     m_impl->ignoreFiles.push_back(PermTool);
@@ -396,7 +396,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     }
 
     // Add dualboot.sh
-    const std::string filename = pp->scriptsDirectory() + "/" + DualBootTool;
+    const std::string filename = pc->scriptsDirectory() + "/" + DualBootTool;
     std::vector<unsigned char> contents;
     auto pe = FileUtils::readToMemory(filename, &contents);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {
@@ -426,7 +426,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     }
 
     pe = FileUtils::laAddFile(aOutput, PermTool,
-                              pp->scriptsDirectory() + "/" + PermTool);
+                              pc->scriptsDirectory() + "/" + PermTool);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
@@ -446,7 +446,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
             % info->device()->architecture()).str();
 
     pe = FileUtils::laAddFile(aOutput, SetFacl,
-            pp->binariesDirectory() + "/" + arch + "/" + SetFacl);
+            pc->binariesDirectory() + "/" + arch + "/" + SetFacl);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
@@ -463,7 +463,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     }
 
     pe = FileUtils::laAddFile(aOutput, GetFacl,
-            pp->binariesDirectory() + "/" + arch + "/" + GetFacl);
+            pc->binariesDirectory() + "/" + arch + "/" + GetFacl);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
@@ -480,7 +480,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     }
 
     pe = FileUtils::laAddFile(aOutput, SetFattr,
-            pp->binariesDirectory() + "/" + arch + "/" + SetFattr);
+            pc->binariesDirectory() + "/" + arch + "/" + SetFattr);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);
@@ -497,7 +497,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
     }
 
     pe = FileUtils::laAddFile(aOutput, GetFattr,
-            pp->binariesDirectory() + "/" + arch + "/" + GetFattr);
+            pc->binariesDirectory() + "/" + arch + "/" + GetFattr);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {
         archive_read_free(aInput);
         archive_write_free(aOutput);

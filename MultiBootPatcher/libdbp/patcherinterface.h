@@ -25,7 +25,6 @@
 #include "cpiofile.h"
 #include "fileinfo.h"
 #include "partitionconfig.h"
-#include "patcherpaths.h"
 #include "patchinfo.h"
 
 

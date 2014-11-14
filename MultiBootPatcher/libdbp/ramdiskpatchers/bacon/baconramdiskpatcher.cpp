@@ -27,7 +27,7 @@
 class BaconRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -38,12 +38,12 @@ public:
 
 const std::string BaconRamdiskPatcher::Id = "bacon/AOSP/AOSP";
 
-BaconRamdiskPatcher::BaconRamdiskPatcher(const PatcherPaths * const pp,
+BaconRamdiskPatcher::BaconRamdiskPatcher(const PatcherConfig * const pc,
                                          const FileInfo * const info,
                                          CpioFile * const cpio)
     : m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
@@ -64,8 +64,8 @@ std::string BaconRamdiskPatcher::id() const
 
 bool BaconRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();

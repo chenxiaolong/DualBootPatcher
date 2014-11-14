@@ -41,7 +41,7 @@
 class PatchFilePatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     PatchInfo::AutoPatcherArgs args;
 
@@ -61,12 +61,12 @@ const std::string PatchFilePatcher::Id("PatchFile");
 static const std::string ArgFile("file");
 
 
-PatchFilePatcher::PatchFilePatcher(const PatcherPaths * const pp,
+PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
                                    const FileInfo * const info,
                                    const PatchInfo::AutoPatcherArgs &args)
     : m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->args = args;
 
@@ -76,7 +76,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherPaths * const pp,
         return;
     }
 
-    m_impl->patchFile = pp->patchesDirectory() + "/" + args.at(ArgFile);
+    m_impl->patchFile = pc->patchesDirectory() + "/" + args.at(ArgFile);
 
     std::vector<unsigned char> contents;
     auto ret = FileUtils::readToMemory(m_impl->patchFile, &contents);
@@ -152,12 +152,12 @@ bool PatchFilePatcher::patchFiles(const std::string &directory,
     (void) bootImages;
 
 #if defined(__ANDROID__)
-    std::string patch = m_impl->pp->binariesDirectory();
+    std::string patch = m_impl->pc->binariesDirectory();
     patch += "/android/";
     patch += m_impl->info->device()->architecture();
     patch += "/patch";
 #elif defined(_WIN32)
-    std::string patch = m_impl->pp->binariesDirectory();
+    std::string patch = m_impl->pc->binariesDirectory();
     patch += "/windows/hctap.exe";
 #else
     std::string patch = "patch";

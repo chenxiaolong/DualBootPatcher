@@ -18,7 +18,6 @@
  */
 
 #include "fileinfo.h"
-#include "patcherpaths.h"
 
 
 /*! \cond INTERNAL */

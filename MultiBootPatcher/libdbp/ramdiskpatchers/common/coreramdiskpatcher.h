@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class CoreRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit CoreRamdiskPatcher(const PatcherPaths * const pp,
+    explicit CoreRamdiskPatcher(const PatcherConfig * const pc,
                                 const FileInfo * const info,
                                 CpioFile * const cpio);
     ~CoreRamdiskPatcher();

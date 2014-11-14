@@ -33,7 +33,7 @@
 class GalaxyRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -71,13 +71,13 @@ static const std::string Msm8960LpmRc("MSM8960_lpm.rc");
     version the ramdisk is from (GalaxyRamdiskPatcher::JellyBean,
     GalaxyRamdiskPatcher::KitKat, etc.).
  */
-GalaxyRamdiskPatcher::GalaxyRamdiskPatcher(const PatcherPaths * const pp,
+GalaxyRamdiskPatcher::GalaxyRamdiskPatcher(const PatcherConfig * const pc,
                                            const FileInfo * const info,
                                            CpioFile * const cpio,
                                            const std::string &version) :
     m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
     m_impl->version = version;

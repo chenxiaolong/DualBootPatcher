@@ -17,8 +17,8 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PATCHERPATHS_H
-#define PATCHERPATHS_H
+#ifndef PATCHERCONFIG_H
+#define PATCHERCONFIG_H
 
 #include <memory>
 
@@ -36,11 +36,11 @@ class Patcher;
 class AutoPatcher;
 class RamdiskPatcher;
 
-class MBP_EXPORT PatcherPaths
+class MBP_EXPORT PatcherConfig
 {
 public:
-    PatcherPaths();
-    ~PatcherPaths();
+    PatcherConfig();
+    ~PatcherConfig();
 
     PatcherError error() const;
 
@@ -95,4 +95,4 @@ private:
     std::unique_ptr<Impl> m_impl;
 };
 
-#endif // PATCHERPATHS_H
+#endif // PATCHERCONFIG_H

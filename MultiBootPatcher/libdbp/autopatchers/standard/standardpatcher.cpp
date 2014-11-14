@@ -33,7 +33,7 @@
 class StandardPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
 
     bool legacyScript;
@@ -61,12 +61,12 @@ static const std::string Cache = "cache";
 static const std::string Data = "data";
 
 
-StandardPatcher::StandardPatcher(const PatcherPaths * const pp,
+StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
                                  const FileInfo * const info,
                                  const PatchInfo::AutoPatcherArgs &args) :
     m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
 
     if (args.find(ArgLegacyScript) != args.end()) {

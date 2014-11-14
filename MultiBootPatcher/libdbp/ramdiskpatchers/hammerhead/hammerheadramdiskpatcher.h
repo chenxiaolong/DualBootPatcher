@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class HammerheadBaseRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit HammerheadBaseRamdiskPatcher(const PatcherPaths * const pp,
+    explicit HammerheadBaseRamdiskPatcher(const PatcherConfig * const pc,
                                           const FileInfo * const info,
                                           CpioFile * const cpio);
     virtual ~HammerheadBaseRamdiskPatcher();
@@ -49,7 +50,7 @@ protected:
 class HammerheadAOSPRamdiskPatcher : public HammerheadBaseRamdiskPatcher
 {
 public:
-    explicit HammerheadAOSPRamdiskPatcher(const PatcherPaths * const pp,
+    explicit HammerheadAOSPRamdiskPatcher(const PatcherConfig * const pc,
                                           const FileInfo * const info,
                                           CpioFile * const cpio);
 
@@ -64,7 +65,7 @@ public:
 class HammerheadNoobdevRamdiskPatcher : public HammerheadBaseRamdiskPatcher
 {
 public:
-    explicit HammerheadNoobdevRamdiskPatcher(const PatcherPaths * const pp,
+    explicit HammerheadNoobdevRamdiskPatcher(const PatcherConfig * const pc,
                                              const FileInfo * const info,
                                              CpioFile * const cpio);
 

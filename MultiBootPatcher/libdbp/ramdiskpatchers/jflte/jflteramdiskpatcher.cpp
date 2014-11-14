@@ -24,7 +24,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
@@ -34,7 +34,7 @@
 class JflteBaseRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -66,12 +66,12 @@ static const std::string Msm8960LpmRc = "MSM8960_lpm.rc";
  */
 
 
-JflteBaseRamdiskPatcher::JflteBaseRamdiskPatcher(const PatcherPaths * const pp,
+JflteBaseRamdiskPatcher::JflteBaseRamdiskPatcher(const PatcherConfig * const pc,
                                                  const FileInfo * const info,
                                                  CpioFile * const cpio)
     : m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
@@ -89,10 +89,10 @@ PatcherError JflteBaseRamdiskPatcher::error() const
 
 const std::string JflteAOSPRamdiskPatcher::Id = "jflte/AOSP/AOSP";
 
-JflteAOSPRamdiskPatcher::JflteAOSPRamdiskPatcher(const PatcherPaths *const pp,
+JflteAOSPRamdiskPatcher::JflteAOSPRamdiskPatcher(const PatcherConfig * const pc,
                                                  const FileInfo *const info,
                                                  CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pp, info, cpio)
+    : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
@@ -103,8 +103,8 @@ std::string JflteAOSPRamdiskPatcher::id() const
 
 bool JflteAOSPRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
@@ -131,7 +131,7 @@ bool JflteAOSPRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    std::string mountScript(m_impl->pp->scriptsDirectory()
+    std::string mountScript(m_impl->pc->scriptsDirectory()
             + "/jflte/mount.modem.sh");
     m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
@@ -143,10 +143,10 @@ bool JflteAOSPRamdiskPatcher::patchRamdisk()
 const std::string JflteGoogleEditionRamdiskPatcher::Id
         = "jflte/GoogleEdition/GoogleEdition";
 
-JflteGoogleEditionRamdiskPatcher::JflteGoogleEditionRamdiskPatcher(const PatcherPaths *const pp,
+JflteGoogleEditionRamdiskPatcher::JflteGoogleEditionRamdiskPatcher(const PatcherConfig * const pc,
                                                                    const FileInfo *const info,
                                                                    CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pp, info, cpio)
+    : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
     if (m_impl->cpio->exists(Msm8960LpmRc)) {
         m_impl->getwVersion = GalaxyRamdiskPatcher::JellyBean;
@@ -162,9 +162,9 @@ std::string JflteGoogleEditionRamdiskPatcher::id() const
 
 bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pp, m_impl->info, m_impl->cpio,
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio,
                                        m_impl->getwVersion);
 
     if (!corePatcher.patchRamdisk()) {
@@ -209,7 +209,7 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
     if (m_impl->getwVersion == GalaxyRamdiskPatcher::KitKat) {
         m_impl->cpio->remove("init");
 
-        std::string newInit(m_impl->pp->initsDirectory() + "/init-kk44");
+        std::string newInit(m_impl->pc->initsDirectory() + "/init-kk44");
         m_impl->cpio->addFile(newInit, "init", 0755);
     }
 
@@ -220,10 +220,10 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
 
 const std::string JflteNoobdevRamdiskPatcher::Id = "jflte/AOSP/cxl";
 
-JflteNoobdevRamdiskPatcher::JflteNoobdevRamdiskPatcher(const PatcherPaths *const pp,
+JflteNoobdevRamdiskPatcher::JflteNoobdevRamdiskPatcher(const PatcherConfig * const pc,
                                                        const FileInfo *const info,
                                                        CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pp, info, cpio)
+    : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
@@ -234,8 +234,8 @@ std::string JflteNoobdevRamdiskPatcher::id() const
 
 bool JflteNoobdevRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
@@ -260,7 +260,7 @@ bool JflteNoobdevRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    std::string mountScript(m_impl->pp->scriptsDirectory()
+    std::string mountScript(m_impl->pc->scriptsDirectory()
             + "/jflte/mount.modem.sh");
     m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
@@ -300,10 +300,10 @@ bool JflteNoobdevRamdiskPatcher::cxlModifyInitTargetRc()
 
 const std::string JflteTouchWizRamdiskPatcher::Id = "jflte/TouchWiz/TouchWiz";
 
-JflteTouchWizRamdiskPatcher::JflteTouchWizRamdiskPatcher(const PatcherPaths *const pp,
+JflteTouchWizRamdiskPatcher::JflteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
                                                          const FileInfo *const info,
                                                          CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pp, info, cpio)
+    : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
     if (m_impl->cpio->exists(Msm8960LpmRc)) {
         m_impl->getwVersion = GalaxyRamdiskPatcher::JellyBean;
@@ -319,9 +319,9 @@ std::string JflteTouchWizRamdiskPatcher::id() const
 
 bool JflteTouchWizRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pp, m_impl->info, m_impl->cpio,
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio,
                                        m_impl->getwVersion);
 
     if (!corePatcher.patchRamdisk()) {
@@ -374,7 +374,7 @@ bool JflteTouchWizRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    std::string mountScript(m_impl->pp->scriptsDirectory()
+    std::string mountScript(m_impl->pc->scriptsDirectory()
             + "/jflte/mount.modem.sh");
     m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
@@ -382,10 +382,10 @@ bool JflteTouchWizRamdiskPatcher::patchRamdisk()
     if (m_impl->getwVersion == GalaxyRamdiskPatcher::KitKat) {
         m_impl->cpio->remove("init");
 
-        std::string newInit(m_impl->pp->initsDirectory() + "/jflte/tw44-init");
+        std::string newInit(m_impl->pc->initsDirectory() + "/jflte/tw44-init");
         m_impl->cpio->addFile(newInit, "init", 0755);
 
-        std::string newAdbd(m_impl->pp->initsDirectory() + "/jflte/tw44-adbd");
+        std::string newAdbd(m_impl->pc->initsDirectory() + "/jflte/tw44-adbd");
         m_impl->cpio->addFile(newAdbd, "sbin/adbd", 0755);
     }
 

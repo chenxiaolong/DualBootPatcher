@@ -21,6 +21,7 @@
 #define MAINWINDOW_H
 
 #include <libdbp/fileinfo.h>
+#include <libdbp/patcherconfig.h>
 #include <libdbp/patcherinterface.h>
 
 #include <QtCore/QMetaType>
@@ -40,7 +41,7 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    MainWindow(PatcherPaths* pp, QWidget* parent = 0);
+    MainWindow(PatcherConfig *pc, QWidget* parent = 0);
     ~MainWindow();
 
 signals:

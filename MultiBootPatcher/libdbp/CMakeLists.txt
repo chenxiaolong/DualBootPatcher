@@ -14,8 +14,8 @@ set(DBP_SOURCES
     device.cpp
     fileinfo.cpp
     partitionconfig.cpp
+    patcherconfig.cpp
     patchererror.cpp
-    patcherpaths.cpp
     patchinfo.cpp
     private/fileutils.cpp
     cwrapper/cbootimage.cpp
@@ -37,8 +37,8 @@ set(DBP_HEADERS
     fileinfo.h
     libdbp_global.h
     partitionconfig.h
+    patcherconfig.h
     patchererror.h
-    patcherpaths.h
     patcherinterface.h
     patchinfo.h
 )

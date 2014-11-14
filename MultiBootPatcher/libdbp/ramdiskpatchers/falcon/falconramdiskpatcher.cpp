@@ -27,7 +27,7 @@
 class FalconRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -38,12 +38,12 @@ public:
 
 const std::string FalconRamdiskPatcher::Id = "falcon/AOSP/AOSP";
 
-FalconRamdiskPatcher::FalconRamdiskPatcher(const PatcherPaths * const pp,
+FalconRamdiskPatcher::FalconRamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
                                        CpioFile * const cpio)
     : m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
@@ -64,8 +64,8 @@ std::string FalconRamdiskPatcher::id() const
 
 bool FalconRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();

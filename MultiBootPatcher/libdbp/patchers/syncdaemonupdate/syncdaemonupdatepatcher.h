@@ -20,15 +20,16 @@
 #ifndef SYNCDAEMONUPDATEPATCHER_H
 #define SYNCDAEMONUPDATEPATCHER_H
 
-#include <libdbp/patcherinterface.h>
-
 #include <memory>
+
+#include "patcherconfig.h"
+#include "patcherinterface.h"
 
 
 class SyncdaemonUpdatePatcher : public Patcher
 {
 public:
-    explicit SyncdaemonUpdatePatcher(const PatcherPaths * const pp);
+    explicit SyncdaemonUpdatePatcher(const PatcherConfig * const pc);
     ~SyncdaemonUpdatePatcher();
 
     static const std::string Id;

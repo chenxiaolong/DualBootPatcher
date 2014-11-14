@@ -23,6 +23,8 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 
+#include <libdbp/patcherconfig.h>
+
 #ifdef PORTABLE
 #  if defined(DATA_DIR)
 #    error DATA_DIR should not be defined for portable builds
@@ -42,22 +44,22 @@ int main(int argc, char *argv[])
 
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
 
-    PatcherPaths pp;
+    PatcherConfig pc;
 
 #ifdef PORTABLE
-    pp.setDataDirectory(a.applicationDirPath().toStdString() + "/" + LOCAL_DATA_DIR);
+    pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + LOCAL_DATA_DIR);
 #else
-    pp.setDataDirectory(DATA_DIR);
+    pc.setDataDirectory(DATA_DIR);
 #endif
 
-    if (!pp.loadPatchInfos()) {
+    if (!pc.loadPatchInfos()) {
         QMessageBox::warning(nullptr, a.applicationName(),
                              QObject::tr("Failed to load patchinfo files in: %1")
-                                    .arg(QString::fromStdString(pp.patchInfosDirectory())));
+                                    .arg(QString::fromStdString(pc.patchInfosDirectory())));
         return 1;
     }
 
-    MainWindow w(&pp);
+    MainWindow w(&pc);
     w.show();
 
     return a.exec();

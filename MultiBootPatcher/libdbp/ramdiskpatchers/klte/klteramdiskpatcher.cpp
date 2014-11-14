@@ -19,7 +19,7 @@
 
 #include "ramdiskpatchers/klte/klteramdiskpatcher.h"
 
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
@@ -29,7 +29,7 @@
 class KlteBaseRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -50,12 +50,12 @@ public:
  */
 
 
-KlteBaseRamdiskPatcher::KlteBaseRamdiskPatcher(const PatcherPaths * const pp,
+KlteBaseRamdiskPatcher::KlteBaseRamdiskPatcher(const PatcherConfig * const pc,
                                                const FileInfo * const info,
                                                CpioFile * const cpio) :
     m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
@@ -73,10 +73,10 @@ PatcherError KlteBaseRamdiskPatcher::error() const
 
 const std::string KlteAOSPRamdiskPatcher::Id = "klte/AOSP/AOSP";
 
-KlteAOSPRamdiskPatcher::KlteAOSPRamdiskPatcher(const PatcherPaths *const pp,
+KlteAOSPRamdiskPatcher::KlteAOSPRamdiskPatcher(const PatcherConfig * const pc,
                                                const FileInfo *const info,
                                                CpioFile *const cpio)
-    : KlteBaseRamdiskPatcher(pp, info, cpio)
+    : KlteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
@@ -87,8 +87,8 @@ std::string KlteAOSPRamdiskPatcher::id() const
 
 bool KlteAOSPRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
@@ -122,7 +122,7 @@ bool KlteAOSPRamdiskPatcher::patchRamdisk()
         }
     }
 
-    std::string mountScript(m_impl->pp->scriptsDirectory()
+    std::string mountScript(m_impl->pc->scriptsDirectory()
             + "/klte/mount.modem.aosp.sh");
     m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
@@ -133,10 +133,10 @@ bool KlteAOSPRamdiskPatcher::patchRamdisk()
 
 const std::string KlteTouchWizRamdiskPatcher::Id = "klte/TouchWiz/TouchWiz";
 
-KlteTouchWizRamdiskPatcher::KlteTouchWizRamdiskPatcher(const PatcherPaths *const pp,
+KlteTouchWizRamdiskPatcher::KlteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
                                                        const FileInfo *const info,
                                                        CpioFile *const cpio)
-    : KlteBaseRamdiskPatcher(pp, info, cpio)
+    : KlteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
@@ -147,9 +147,9 @@ std::string KlteTouchWizRamdiskPatcher::id() const
 
 bool KlteTouchWizRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pp, m_impl->info, m_impl->cpio,
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio,
                                        GalaxyRamdiskPatcher::KitKat);
 
     if (!corePatcher.patchRamdisk()) {
@@ -197,17 +197,17 @@ bool KlteTouchWizRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    std::string mountScript(m_impl->pp->scriptsDirectory()
+    std::string mountScript(m_impl->pc->scriptsDirectory()
             + "/klte/mount.modem.touchwiz.sh");
     m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
     // Samsung's init binary is pretty screwed up
     m_impl->cpio->remove("init");
 
-    std::string newInit = m_impl->pp->initsDirectory() + "/jflte/tw44-init";
+    std::string newInit = m_impl->pc->initsDirectory() + "/jflte/tw44-init";
     m_impl->cpio->addFile(newInit, "init", 0755);
 
-    std::string newAdbd = m_impl->pp->initsDirectory() + "/jflte/tw44-adbd";
+    std::string newAdbd = m_impl->pc->initsDirectory() + "/jflte/tw44-adbd";
     m_impl->cpio->addFile(newAdbd, "sbin/adbd", 0755);
 
     return true;

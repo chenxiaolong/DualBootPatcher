@@ -31,7 +31,7 @@
 #include <boost/regex.hpp>
 
 #include "bootimage.h"
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
@@ -61,7 +61,7 @@ class SyncdaemonUpdatePatcher::Impl
 public:
     Impl(SyncdaemonUpdatePatcher *parent) : m_parent(parent) {}
 
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
 
     bool cancelled;
@@ -81,10 +81,10 @@ const std::string SyncdaemonUpdatePatcher::Id = "SyncdaemonUpdatePatcher";
 const std::string SyncdaemonUpdatePatcher::Name = tr("Update syncdaemon");
 
 
-SyncdaemonUpdatePatcher::SyncdaemonUpdatePatcher(const PatcherPaths * const pp)
+SyncdaemonUpdatePatcher::SyncdaemonUpdatePatcher(const PatcherConfig * const pc)
     : m_impl(new Impl(this))
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
 }
 
 SyncdaemonUpdatePatcher::~SyncdaemonUpdatePatcher()
@@ -192,7 +192,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
     if (!partConfigId.empty()) {
         PartitionConfig *config = nullptr;
 
-        for (PartitionConfig *c : pp->partitionConfigs()) {
+        for (PartitionConfig *c : pc->partitionConfigs()) {
             if (c->id() == partConfigId) {
                 config = c;
                 break;
@@ -202,7 +202,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
         const std::string mountScript("init.multiboot.mounting.sh");
         if (config != nullptr && cpio.exists(mountScript)) {
             const std::string filename(
-                    pp->scriptsDirectory() + "/" + mountScript);
+                    pc->scriptsDirectory() + "/" + mountScript);
             std::vector<unsigned char> contents;
             auto ret = FileUtils::readToMemory(filename, &contents);
             if (ret.errorCode() != MBP::ErrorCode::NoError) {
@@ -224,7 +224,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
 
     // Add syncdaemon to init.rc if it doesn't already exist
     if (!cpio.exists("sbin/syncdaemon")) {
-        CoreRamdiskPatcher crp(pp, info, &cpio);
+        CoreRamdiskPatcher crp(pc, info, &cpio);
         crp.addSyncdaemon();
     } else {
         // Make sure 'oneshot' (added by previous versions) is removed
@@ -258,7 +258,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
         cpio.remove(syncdaemon);
     }
 
-    cpio.addFile(pp->binariesDirectory() + "/" + "android" + "/"
+    cpio.addFile(pc->binariesDirectory() + "/" + "android" + "/"
             + info->device()->architecture() + "/" + "syncdaemon",
             syncdaemon, 0750);
 

@@ -36,7 +36,7 @@
 
 #include "bootimage.h"
 #include "cpiofile.h"
-#include "patcherpaths.h"
+#include "patcherconfig.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
 
@@ -64,7 +64,7 @@ class MultiBootPatcher::Impl
 public:
     Impl(MultiBootPatcher *parent) : m_parent(parent) {}
 
-    PatcherPaths *pp;
+    PatcherConfig *pc;
     const FileInfo *info;
 
     int progress;
@@ -109,10 +109,10 @@ const std::string MultiBootPatcher::Id("MultiBootPatcher");
 const std::string MultiBootPatcher::Name = tr("Multi Boot Patcher");
 
 
-MultiBootPatcher::MultiBootPatcher(PatcherPaths * const pp)
+MultiBootPatcher::MultiBootPatcher(PatcherConfig * const pc)
     : m_impl(new Impl(this))
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
 }
 
 MultiBootPatcher::~MultiBootPatcher()
@@ -258,7 +258,7 @@ bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
     m_impl->userData = nullptr;
 
     for (auto *p : m_impl->autoPatchers) {
-        m_impl->pp->destroyAutoPatcher(p);
+        m_impl->pc->destroyAutoPatcher(p);
     }
     m_impl->autoPatchers.clear();
 
@@ -298,7 +298,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     RETURN_IF_CANCELLED
 
-    auto *rp = pp->createRamdiskPatcher(
+    auto *rp = pc->createRamdiskPatcher(
             info->patchInfo()->ramdisk(key), info, &cpio);
     if (!rp) {
         error = PatcherError::createPatcherCreationError(
@@ -309,16 +309,16 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     if (!rp->patchRamdisk()) {
         error = rp->error();
-        pp->destroyRamdiskPatcher(rp);
+        pc->destroyRamdiskPatcher(rp);
         return false;
     }
 
-    pp->destroyRamdiskPatcher(rp);
+    pc->destroyRamdiskPatcher(rp);
 
     RETURN_IF_CANCELLED
 
     const std::string mountScript("init.multiboot.mounting.sh");
-    const std::string mountScriptPath(pp->scriptsDirectory() + "/" + mountScript);
+    const std::string mountScriptPath(pc->scriptsDirectory() + "/" + mountScript);
 
     std::vector<unsigned char> mountScriptContents;
     auto ret = FileUtils::readToMemory(mountScriptPath, &mountScriptContents);
@@ -344,7 +344,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         cpio.remove(busybox);
     }
 
-    cpio.addFile(pp->binariesDirectory() + "/busybox-static", busybox, 0750);
+    cpio.addFile(pc->binariesDirectory() + "/busybox-static", busybox, 0750);
 
     RETURN_IF_CANCELLED
 
@@ -355,7 +355,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         cpio.remove(syncdaemon);
     }
 
-    cpio.addFile(pp->binariesDirectory() + "/"
+    cpio.addFile(pc->binariesDirectory() + "/"
             + "android" + "/"
             + info->device()->architecture() + "/"
             + "syncdaemon", syncdaemon, 0750);
@@ -368,7 +368,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
             cpio.remove("init");
         }
 
-        if (!cpio.addFile(pp->initsDirectory() + "/"
+        if (!cpio.addFile(pc->initsDirectory() + "/"
                 + info->patchInfo()->patchedInit(key), "init", 0755)) {
             error = cpio.error();
             return false;
@@ -416,7 +416,7 @@ bool MultiBootPatcher::Impl::patchZip()
     for (auto const &item : info->patchInfo()->autoPatchers(key)) {
         auto args = info->patchInfo()->autoPatcherArgs(key, item);
 
-        auto *ap = pp->createAutoPatcher(item, info, args);
+        auto *ap = pc->createAutoPatcher(item, info, args);
         if (!ap) {
             error = PatcherError::createPatcherCreationError(
                     MBP::ErrorCode::AutoPatcherCreateError, item);
@@ -427,7 +427,7 @@ bool MultiBootPatcher::Impl::patchZip()
 
         std::vector<std::string> existingFiles = ap->existingFiles();
         if (existingFiles.empty()) {
-            pp->destroyAutoPatcher(ap);
+            pc->destroyAutoPatcher(ap);
             continue;
         }
 
@@ -504,7 +504,7 @@ bool MultiBootPatcher::Impl::patchZip()
     }
 
     // Add dualboot.sh
-    const std::string dualbootshPath(pp->scriptsDirectory() + "/dualboot.sh");
+    const std::string dualbootshPath(pc->scriptsDirectory() + "/dualboot.sh");
     std::vector<unsigned char> contents;
     result = FileUtils::readToMemory(dualbootshPath, &contents);
     if (error.errorCode() != MBP::ErrorCode::NoError) {

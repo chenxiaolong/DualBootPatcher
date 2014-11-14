@@ -31,7 +31,7 @@
 class NoobdevBasePatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
 };
 /*! \endcond */
@@ -45,11 +45,11 @@ static const std::string BuildProp = "system/build.prop";
 static const std::string PrintEmpty = "ui_print(\"\");";
 
 
-NoobdevBasePatcher::NoobdevBasePatcher(const PatcherPaths * const pp,
+NoobdevBasePatcher::NoobdevBasePatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info)
     : m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
 }
 
@@ -66,9 +66,9 @@ PatcherError NoobdevBasePatcher::error() const
 
 const std::string NoobdevMultiBoot::Id = "NoobdevMultiBoot";
 
-NoobdevMultiBoot::NoobdevMultiBoot(const PatcherPaths* const pp,
+NoobdevMultiBoot::NoobdevMultiBoot(const PatcherConfig * const pc,
                                    const FileInfo* const info)
-    : NoobdevBasePatcher(pp, info)
+    : NoobdevBasePatcher(pc, info)
 {
 }
 
@@ -137,9 +137,9 @@ bool NoobdevMultiBoot::patchFiles(const std::string &directory,
 
 const std::string NoobdevSystemProp::Id = "NoobdevSystemProp";
 
-NoobdevSystemProp::NoobdevSystemProp(const PatcherPaths* const pp,
+NoobdevSystemProp::NoobdevSystemProp(const PatcherConfig * const pc,
                                      const FileInfo* const info)
-    : NoobdevBasePatcher(pp, info)
+    : NoobdevBasePatcher(pc, info)
 {
 }
 

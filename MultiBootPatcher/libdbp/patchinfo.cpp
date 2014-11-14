@@ -24,8 +24,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/regex.hpp>
 
-#include "patcherpaths.h"
-
 
 /*! \cond INTERNAL */
 class PatchInfo::Impl

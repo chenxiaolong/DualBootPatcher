@@ -27,7 +27,7 @@
 class HammerheadBaseRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -36,12 +36,12 @@ public:
 /*! \endcond */
 
 
-HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherPaths * const pp,
+HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherConfig * const pc,
                                                            const FileInfo * const info,
                                                            CpioFile * const cpio) :
     m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
@@ -59,10 +59,10 @@ PatcherError HammerheadBaseRamdiskPatcher::error() const
 
 const std::string HammerheadAOSPRamdiskPatcher::Id = "hammerhead/AOSP/AOSP";
 
-HammerheadAOSPRamdiskPatcher::HammerheadAOSPRamdiskPatcher(const PatcherPaths *const pp,
+HammerheadAOSPRamdiskPatcher::HammerheadAOSPRamdiskPatcher(const PatcherConfig *const pc,
                                                            const FileInfo *const info,
                                                            CpioFile *const cpio)
-    : HammerheadBaseRamdiskPatcher(pp, info, cpio)
+    : HammerheadBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
@@ -73,8 +73,8 @@ std::string HammerheadAOSPRamdiskPatcher::id() const
 
 bool HammerheadAOSPRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
@@ -103,10 +103,10 @@ bool HammerheadAOSPRamdiskPatcher::patchRamdisk()
 
 const std::string HammerheadNoobdevRamdiskPatcher::Id = "hammerhead/AOSP/cxl";
 
-HammerheadNoobdevRamdiskPatcher::HammerheadNoobdevRamdiskPatcher(const PatcherPaths *const pp,
+HammerheadNoobdevRamdiskPatcher::HammerheadNoobdevRamdiskPatcher(const PatcherConfig *const pc,
                                                                  const FileInfo *const info,
                                                                  CpioFile *const cpio)
-    : HammerheadBaseRamdiskPatcher(pp, info, cpio)
+    : HammerheadBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
@@ -117,8 +117,8 @@ std::string HammerheadNoobdevRamdiskPatcher::id() const
 
 bool HammerheadNoobdevRamdiskPatcher::patchRamdisk()
 {
-    CoreRamdiskPatcher corePatcher(m_impl->pp, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pp, m_impl->info, m_impl->cpio);
+    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();

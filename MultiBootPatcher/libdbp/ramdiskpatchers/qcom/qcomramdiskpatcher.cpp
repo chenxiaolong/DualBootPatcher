@@ -38,7 +38,7 @@
 class QcomRamdiskPatcher::Impl
 {
 public:
-    const PatcherPaths *pp;
+    const PatcherConfig *pc;
     const FileInfo *info;
     CpioFile *cpio;
 
@@ -87,12 +87,12 @@ static const std::string Cache = "/cache";
 static const std::string Data = "/data";
 
 
-QcomRamdiskPatcher::QcomRamdiskPatcher(const PatcherPaths * const pp,
+QcomRamdiskPatcher::QcomRamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
                                        CpioFile * const cpio) :
     m_impl(new Impl())
 {
-    m_impl->pp = pp;
+    m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }

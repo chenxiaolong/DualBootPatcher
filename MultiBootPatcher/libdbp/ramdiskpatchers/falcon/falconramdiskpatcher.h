@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class FalconRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit FalconRamdiskPatcher(const PatcherPaths * const pp,
+    explicit FalconRamdiskPatcher(const PatcherConfig * const pc,
                                   const FileInfo * const info,
                                   CpioFile * const cpio);
     ~FalconRamdiskPatcher();

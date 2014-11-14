@@ -23,13 +23,14 @@
 #include <memory>
 
 #include "cpiofile.h"
+#include "patcherconfig.h"
 #include "patcherinterface.h"
 
 
 class BaconRamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit BaconRamdiskPatcher(const PatcherPaths * const pp,
+    explicit BaconRamdiskPatcher(const PatcherConfig * const pc,
                                  const FileInfo * const info,
                                  CpioFile * const cpio);
     ~BaconRamdiskPatcher();
