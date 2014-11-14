@@ -77,8 +77,6 @@ void QComboCheckBox::paintEvent(QPaintEvent *event)
 
 void QComboCheckBox::addItem(const QString& text, const QVariant& userData)
 {
-    Q_D(QComboCheckBox);
-
     QComboBox::addItem(text, userData);
 
     updateItems();
@@ -86,8 +84,6 @@ void QComboCheckBox::addItem(const QString& text, const QVariant& userData)
 
 void QComboCheckBox::addItems(const QStringList& texts)
 {
-    Q_D(QComboCheckBox);
-
     QComboBox::addItems(texts);
 
     updateItems();
@@ -95,15 +91,11 @@ void QComboCheckBox::addItems(const QStringList& texts)
 
 bool QComboCheckBox::isChecked(int index) const
 {
-    Q_D(const QComboCheckBox);
-
     return itemData(index).toBool();
 }
 
 void QComboCheckBox::setChecked(int index, bool checked)
 {
-    Q_D(QComboCheckBox);
-
     setItemData(index, QVariant(checked));
 
     updateItems();
