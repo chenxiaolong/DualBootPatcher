@@ -20,16 +20,13 @@
 #ifndef C_BOOTIMAGE_H
 #define C_BOOTIMAGE_H
 
-#include "cwrapper/cpatchererror.h"
-
 #include <stddef.h>
+
+#include "cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct CBootImage;
-typedef struct CBootImage CBootImage;
 
 CBootImage * mbp_bootimage_create();
 void mbp_bootimage_destroy(CBootImage *bootImage);

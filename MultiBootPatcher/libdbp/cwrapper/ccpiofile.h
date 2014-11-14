@@ -20,16 +20,13 @@
 #ifndef C_CPIOFILE_H
 #define C_CPIOFILE_H
 
-#include "cwrapper/cpatchererror.h"
-
 #include <stddef.h>
+
+#include "cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct CCpioFile;
-typedef struct CCpioFile CCpioFile;
 
 CCpioFile * mbp_cpiofile_create();
 void mbp_cpiofile_destroy(CCpioFile *cpio);

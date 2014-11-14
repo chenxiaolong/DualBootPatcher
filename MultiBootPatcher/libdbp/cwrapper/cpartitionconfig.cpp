@@ -36,11 +36,6 @@
  * \sa PartitionConfig
  */
 
-/*!
- * \typedef CPartConfig
- * \brief C wrapper for PartitionConfig object
- */
-
 extern "C" {
 
     // Static constants

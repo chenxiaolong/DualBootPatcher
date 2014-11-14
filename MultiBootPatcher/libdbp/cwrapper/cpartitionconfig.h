@@ -22,6 +22,8 @@
 
 #include <stddef.h>
 
+#include "cwrapper/ctypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,9 +31,6 @@ extern "C" {
 const char * mbp_partconfig_system();
 const char * mbp_partconfig_cache();
 const char * mbp_partconfig_data();
-
-struct CPartConfig;
-typedef struct CPartConfig CPartConfig;
 
 CPartConfig * mbp_partconfig_create();
 void mbp_partconfig_destroy(CPartConfig *config);

@@ -20,12 +20,11 @@
 #ifndef C_DEVICE_H
 #define C_DEVICE_H
 
+#include "cwrapper/ctypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct CDevice;
-typedef struct CDevice CDevice;
 
 const char * mbp_device_selinux_permissive();
 const char * mbp_device_selinux_unchanged();

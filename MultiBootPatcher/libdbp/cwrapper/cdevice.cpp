@@ -35,11 +35,6 @@
  * \sa Device
  */
 
-/*!
- * \typedef CDevice
- * \brief C wrapper for Device object
- */
-
 extern "C" {
 
     // Static constants

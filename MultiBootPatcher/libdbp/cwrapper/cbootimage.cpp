@@ -34,11 +34,6 @@
  * \sa BootImage
  */
 
-/*!
- * \typedef CBootImage
- * \brief C wrapper for BootImage object
- */
-
 extern "C" {
 
     /*!

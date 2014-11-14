@@ -20,12 +20,11 @@
 #ifndef C_STRINGMAP_H
 #define C_STRINGMAP_H
 
+#include "cwrapper/ctypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct CStringMap;
-typedef struct CStringMap CStringMap;
 
 CStringMap * mbp_stringmap_create();
 void mbp_stringmap_destroy(CStringMap *map);

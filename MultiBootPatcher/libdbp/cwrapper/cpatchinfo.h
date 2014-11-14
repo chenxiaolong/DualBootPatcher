@@ -20,7 +20,7 @@
 #ifndef C_PATCHINFO_H
 #define C_PATCHINFO_H
 
-#include "cwrapper/cstringmap.h"
+#include "cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,9 +28,6 @@ extern "C" {
 
 const char * mbp_patchinfo_default();
 const char * mbp_patchinfo_notmatched();
-
-struct CPatchInfo;
-typedef struct CPatchInfo CPatchInfo;
 
 CPatchInfo * mbp_patchinfo_create();
 void mbp_patchinfo_destroy(CPatchInfo *info);

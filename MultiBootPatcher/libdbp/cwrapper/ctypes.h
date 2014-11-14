@@ -17,28 +17,49 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_PATCHERERROR_H
-#define C_PATCHERERROR_H
-
-#include "cwrapper/ctypes.h"
-#include "errors.h"
+#ifndef C_PATCHERCONFIG_H
+#define C_PATCHERCONFIG_H
 
 #ifdef __cplusplus
-using namespace MBP;
-
 extern "C" {
 #endif
 
-void mbp_error_destroy(CPatcherError *error);
+struct CBootImage;
+typedef struct CBootImage CBootImage;
 
-ErrorType mbp_error_error_type(const CPatcherError *error);
-ErrorCode mbp_error_error_code(const CPatcherError *error);
+struct CCpioFile;
+typedef struct CCpioFile CCpioFile;
 
-char * mbp_error_patcher_name(const CPatcherError *error);
-char * mbp_error_filename(const CPatcherError *error);
+struct CDevice;
+typedef struct CDevice CDevice;
+
+struct CFileInfo;
+typedef struct CFileInfo CFileInfo;
+
+struct CPartConfig;
+typedef struct CPartConfig CPartConfig;
+
+struct CPatcherConfig;
+typedef struct CPatcherConfig CPatcherConfig;
+
+struct CPatcherError;
+typedef struct CPatcherError CPatcherError;
+
+struct CPatchInfo;
+typedef struct CPatchInfo CPatchInfo;
+
+struct CStringMap;
+typedef struct CStringMap CStringMap;
+
+struct CPatcher;
+typedef struct CPatcher CPatcher;
+struct CAutoPatcher;
+typedef struct CAutoPatcher CAutoPatcher;
+struct CRamdiskPatcher;
+typedef struct CRamdiskPatcher CRamdiskPatcher;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // C_PATCHERERROR_H
+#endif // C_PATCHERCONFIG_H

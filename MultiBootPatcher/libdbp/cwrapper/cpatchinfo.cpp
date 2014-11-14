@@ -35,11 +35,6 @@
  * \sa PatchInfo
  */
 
-/*!
- * \typedef CPatchInfo
- * \brief C wrapper for PatchInfo object
- */
-
 extern "C" {
 
     // Static constants

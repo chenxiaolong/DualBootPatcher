@@ -20,16 +20,11 @@
 #ifndef C_FILEINFO_H
 #define C_FILEINFO_H
 
-#include "cwrapper/cdevice.h"
-#include "cwrapper/cpatchinfo.h"
-#include "cwrapper/cpartitionconfig.h"
+#include "cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct CFileInfo;
-typedef struct CFileInfo CFileInfo;
 
 CFileInfo * mbp_fileinfo_create();
 void mbp_fileinfo_destroy(CFileInfo *info);

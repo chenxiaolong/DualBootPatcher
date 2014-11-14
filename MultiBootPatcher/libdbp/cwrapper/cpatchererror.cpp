@@ -36,11 +36,6 @@
  * \sa PatcherError
  */
 
-/*!
- * \typedef CPatcherError
- * \brief C wrapper for PatcherError object
- */
-
 extern "C" {
 
     /*!

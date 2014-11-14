@@ -35,11 +35,6 @@
  * \sa FileInfo
  */
 
-/*!
- * \typedef CFileInfo
- * \brief C wrapper for FileInfo object
- */
-
 extern "C" {
 
     /*!

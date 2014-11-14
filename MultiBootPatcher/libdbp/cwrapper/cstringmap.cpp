@@ -29,11 +29,6 @@
  * \brief C Wrapper for a C++ map with string keys and values
  */
 
-/*!
- * \typedef CStringMap
- * \brief C wrapper for C++ map
- */
-
 extern "C" {
 
     typedef std::unordered_map<std::string, std::string> MapType;
