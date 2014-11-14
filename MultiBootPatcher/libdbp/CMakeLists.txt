@@ -25,6 +25,7 @@ set(DBP_SOURCES
     cwrapper/cpartitionconfig.h
     cwrapper/cpatchererror.cpp
     cwrapper/cpatchinfo.cpp
+    cwrapper/cstringmap.cpp
 )
 
 set(DBP_HEADERS
