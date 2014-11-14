@@ -58,19 +58,13 @@ public:
     void setPatchInfosDirectory(std::string path);
     void setScriptsDirectory(std::string path);
 
-    void reset();
-
     std::string version() const;
     std::vector<Device *> devices() const;
-    Device * deviceFromCodename(const std::string &codename) const;
     std::vector<PatchInfo *> patchInfos() const;
     std::vector<PatchInfo *> patchInfos(const Device * const device) const;
 
     PatchInfo * findMatchingPatchInfo(Device *device,
-                                      const std::string &filename);
-
-    void loadDefaultDevices();
-    void loadDefaultPatchers();
+                                      const std::string &filename) const;
 
     std::vector<std::string> patchers() const;
     std::vector<std::string> autoPatchers() const;
@@ -91,7 +85,6 @@ public:
     void destroyRamdiskPatcher(RamdiskPatcher *patcher);
 
     std::vector<PartitionConfig *> partitionConfigs() const;
-    PartitionConfig * partitionConfig(const std::string &id) const;
 
     std::vector<std::string> initBinaries() const;
 

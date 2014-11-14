@@ -82,6 +82,9 @@ public:
     std::vector<AutoPatcher *> allocAutoPatchers;
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
 
+    void loadDefaultDevices();
+    void loadDefaultPatchers();
+
     // XML parsing functions for the patchinfo files
     bool loadPatchInfoXml(const std::string &path, const std::string &pathId);
     void parsePatchInfoTagPatchinfo(xmlNode *node, PatchInfo * const info);
@@ -143,8 +146,8 @@ const xmlChar *XmlTextFalse = (xmlChar *) "false";
 
 PatcherPaths::PatcherPaths() : m_impl(new Impl())
 {
-    loadDefaultDevices();
-    loadDefaultPatchers();
+    m_impl->loadDefaultDevices();
+    m_impl->loadDefaultPatchers();
 
     m_impl->patchinfoIncludeDirs.push_back("Google_Apps");
     m_impl->patchinfoIncludeDirs.push_back("Other");
@@ -188,11 +191,26 @@ PatcherPaths::~PatcherPaths()
     m_impl->allocRamdiskPatchers.clear();
 }
 
+/*!
+ * \brief Get error information
+ *
+ * \note The returned PatcherError contains valid information only if an
+ *       operation has failed.
+ *
+ * \return PatcherError containing information about the error
+ */
 PatcherError PatcherPaths::error() const
 {
     return m_impl->error;
 }
 
+/*!
+ * \brief Get binaries directory
+ *
+ * The detault binaries directory is `<datadir>/binaries/`
+ *
+ * \return Binaries directory
+ */
 std::string PatcherPaths::binariesDirectory() const
 {
     if (m_impl->binariesDir.empty()) {
@@ -202,11 +220,23 @@ std::string PatcherPaths::binariesDirectory() const
     }
 }
 
+/*!
+ * \brief Get top-level data directory
+ *
+ * \return Data directory
+ */
 std::string PatcherPaths::dataDirectory() const
 {
     return m_impl->dataDir;
 }
 
+/*!
+ * \brief Get init binaries directory
+ *
+ * The detault binaries directory is `<datadir>/inits/`
+ *
+ * \return Init binaries directory
+ */
 std::string PatcherPaths::initsDirectory() const
 {
     if (m_impl->initsDir.empty()) {
@@ -216,6 +246,13 @@ std::string PatcherPaths::initsDirectory() const
     }
 }
 
+/*!
+ * \brief Get patch files directory
+ *
+ * The detault binaries directory is `<datadir>/patches/`
+ *
+ * \return Patch files directory
+ */
 std::string PatcherPaths::patchesDirectory() const
 {
     if (m_impl->patchesDir.empty()) {
@@ -225,6 +262,13 @@ std::string PatcherPaths::patchesDirectory() const
     }
 }
 
+/*!
+ * \brief Get PatchInfo files directory
+ *
+ * The detault binaries directory is `<datadir>/patchinfos/`
+ *
+ * \return PatchInfo files directory
+ */
 std::string PatcherPaths::patchInfosDirectory() const
 {
     if (m_impl->patchInfosDir.empty()) {
@@ -234,6 +278,13 @@ std::string PatcherPaths::patchInfosDirectory() const
     }
 }
 
+/*!
+ * \brief Get shell scripts directory
+ *
+ * The detault binaries directory is `<datadir>/scripts/`
+ *
+ * \return Shell scripts directory
+ */
 std::string PatcherPaths::scriptsDirectory() const
 {
     if (m_impl->scriptsDir.empty()) {
@@ -243,77 +294,118 @@ std::string PatcherPaths::scriptsDirectory() const
     }
 }
 
+/*!
+ * \brief Set binaries directory
+ *
+ * \note This should only be changed if the default data directory structure is
+ *       desired.
+ *
+ * \param path Path to binaries directory
+ */
 void PatcherPaths::setBinariesDirectory(std::string path)
 {
     m_impl->binariesDir = std::move(path);
 }
 
+/*!
+ * \brief Set top-level data directory
+ *
+ * \param path Path to data directory
+ */
 void PatcherPaths::setDataDirectory(std::string path)
 {
     m_impl->dataDir = std::move(path);
 }
 
+/*!
+ * \brief Set init binaries directory
+ *
+ * \note This should only be changed if the default data directory structure is
+ *       desired.
+ *
+ * \param path Path to init binaries directory
+ */
 void PatcherPaths::setInitsDirectory(std::string path)
 {
     m_impl->initsDir = std::move(path);
 }
 
+/*!
+ * \brief Set patch files directory
+ *
+ * \note This should only be changed if the default data directory structure is
+ *       desired.
+ *
+ * \param path Path to patch files directory
+ */
 void PatcherPaths::setPatchesDirectory(std::string path)
 {
     m_impl->patchesDir = std::move(path);
 }
 
+/*!
+ * \brief Set PatchInfo files directory
+ *
+ * \note This should only be changed if the default data directory structure is
+ *       desired.
+ *
+ * \param path Path to PatchInfo files directory
+ */
 void PatcherPaths::setPatchInfosDirectory(std::string path)
 {
     m_impl->patchInfosDir = std::move(path);
 }
 
+/*!
+ * \brief Set shell scripts directory
+ *
+ * \note This should only be changed if the default data directory structure is
+ *       desired.
+ *
+ * \param path Path to shell scripts directory
+ */
 void PatcherPaths::setScriptsDirectory(std::string path)
 {
     m_impl->scriptsDir = std::move(path);
 }
 
-void PatcherPaths::reset()
-{
-    // Paths
-    m_impl->dataDir.clear();
-    m_impl->initsDir.clear();
-    m_impl->patchesDir.clear();
-    m_impl->patchInfosDir.clear();
-
-    for (Device *device : m_impl->devices) {
-        delete device;
-    }
-
-    m_impl->devices.clear();
-}
-
+/*!
+ * \brief Get version number of the patcher
+ *
+ * \return Version number
+ */
 std::string PatcherPaths::version() const
 {
     return m_impl->version;
 }
 
+/*!
+ * \brief Get list of supported devices
+ *
+ * \return List of supported devices
+ */
 std::vector<Device *> PatcherPaths::devices() const
 {
     return m_impl->devices;
 }
 
-Device * PatcherPaths::deviceFromCodename(const std::string &codename) const
-{
-    for (Device * device : m_impl->devices) {
-        if (device->codename() == codename) {
-            return device;
-        }
-    }
-
-    return nullptr;
-}
-
+/*!
+ * \brief Get list of PatchInfos
+ *
+ * \return List of PatchInfos
+ */
 std::vector<PatchInfo *> PatcherPaths::patchInfos() const
 {
     return m_impl->patchInfos;
 }
 
+/*!
+ * \brief Get list of PatchInfos for a device
+ *
+ * \param device Supported device
+ *
+ * \return List of PatchInfos
+ */
 std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) const
 {
     std::vector<PatchInfo *> l;
@@ -335,8 +427,16 @@ std::vector<PatchInfo *> PatcherPaths::patchInfos(const Device * const device) c
     return l;
 }
 
+/*!
+ * \brief Find matching PatchInfo for a file
+ *
+ * \param device Supported device
+ * \param filename Supported file
+ *
+ * \return PatchInfo if found, otherwise nullptr
+ */
 PatchInfo * PatcherPaths::findMatchingPatchInfo(Device *device,
-                                                const std::string &filename)
+                                                const std::string &filename) const
 {
     if (device == nullptr) {
         return nullptr;
@@ -374,7 +474,7 @@ PatchInfo * PatcherPaths::findMatchingPatchInfo(Device *device,
     return nullptr;
 }
 
-void PatcherPaths::loadDefaultDevices()
+void PatcherPaths::Impl::loadDefaultDevices()
 {
     Device *device;
 
@@ -386,7 +486,7 @@ void PatcherPaths::loadDefaultDevices()
     device->setPartition(Device::SystemPartition, "mmcblk0p16");
     device->setPartition(Device::CachePartition, "mmcblk0p18");
     device->setPartition(Device::DataPartition, "mmcblk0p29");
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 
     // Samsung Galaxy S 5
     device = new Device();
@@ -396,7 +496,7 @@ void PatcherPaths::loadDefaultDevices()
     device->setPartition(Device::SystemPartition, "mmcblk0p23");
     device->setPartition(Device::CachePartition, "mmcblk0p24");
     device->setPartition(Device::DataPartition, "mmcblk0p26");
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 
     // Samsung Galaxy Note 3
     device = new Device();
@@ -406,48 +506,51 @@ void PatcherPaths::loadDefaultDevices()
     device->setPartition(Device::SystemPartition, "mmcblk0p23");
     device->setPartition(Device::CachePartition, "mmcblk0p24");
     device->setPartition(Device::DataPartition, "mmcblk0p26");
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 
     // Google/LG Nexus 5
     device = new Device();
     device->setCodename("hammerhead");
     device->setName("Google/LG Nexus 5");
     device->setSelinux(Device::SelinuxUnchanged);
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 
     // OnePlus One
     device = new Device();
     device->setCodename("bacon");
     device->setName("OnePlus One");
     device->setSelinux(Device::SelinuxUnchanged);
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 
     // LG G2
     device = new Device();
     device->setCodename("d800");
     device->setName("LG G2");
     device->setSelinux(Device::SelinuxUnchanged);
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 
     // Falcon
     device = new Device();
     device->setCodename("falcon");
     device->setName("Motorola Moto G");
     device->setSelinux(Device::SelinuxUnchanged);
-    m_impl->devices.push_back(device);
+    devices.push_back(device);
 }
 
-void PatcherPaths::loadDefaultPatchers()
+void PatcherPaths::Impl::loadDefaultPatchers()
 {
     auto configs1 = MultiBootPatcher::partConfigs();
     auto configs2 = PrimaryUpgradePatcher::partConfigs();
 
-    m_impl->partConfigs.insert(m_impl->partConfigs.end(),
-                               configs1.begin(), configs1.end());
-    m_impl->partConfigs.insert(m_impl->partConfigs.end(),
-                               configs2.begin(), configs2.end());
+    partConfigs.insert(partConfigs.end(), configs1.begin(), configs1.end());
+    partConfigs.insert(partConfigs.end(), configs2.begin(), configs2.end());
 }
 
+/*!
+ * \brief Get list of Patcher IDs
+ *
+ * \return List of Patcher names
+ */
 std::vector<std::string> PatcherPaths::patchers() const
 {
     std::vector<std::string> list;
@@ -457,6 +560,11 @@ std::vector<std::string> PatcherPaths::patchers() const
     return list;
 }
 
+/*!
+ * \brief Get list of AutoPatcher IDs
+ *
+ * \return List of AutoPatcher names
+ */
 std::vector<std::string> PatcherPaths::autoPatchers() const
 {
     std::vector<std::string> list;
@@ -474,6 +582,11 @@ std::vector<std::string> PatcherPaths::autoPatchers() const
     return list;
 }
 
+/*!
+ * \brief Get list of RamdiskPatcher IDs
+ *
+ * \return List of RamdiskPatcher names
+ */
 std::vector<std::string> PatcherPaths::ramdiskPatchers() const
 {
     std::vector<std::string> list;
@@ -492,6 +605,33 @@ std::vector<std::string> PatcherPaths::ramdiskPatchers() const
     return list;
 }
 
+/*!
+ * \brief Get Patcher's friendly name
+ *
+ * \param id Patcher ID
+ *
+ * \return Patcher's name
+ */
+std::string PatcherPaths::patcherName(const std::string &id) const
+{
+    if (id == MultiBootPatcher::Id) {
+        return MultiBootPatcher::Name;
+    } else if (id == PrimaryUpgradePatcher::Id) {
+        return PrimaryUpgradePatcher::Name;
+    } else if (id == SyncdaemonUpdatePatcher::Id) {
+        return SyncdaemonUpdatePatcher::Name;
+    }
+
+    return std::string();
+}
+
+/*!
+ * \brief Create new Patcher
+ *
+ * \param id Patcher ID
+ *
+ * \return New Patcher
+ */
 Patcher * PatcherPaths::createPatcher(const std::string &id)
 {
     Patcher *p = nullptr;
@@ -511,6 +651,15 @@ Patcher * PatcherPaths::createPatcher(const std::string &id)
     return p;
 }
 
+/*!
+ * \brief Create new AutoPatcher
+ *
+ * \param id AutoPatcher ID
+ * \param info FileInfo describing file to be patched
+ * \param args AutoPatcher arguments
+ *
+ * \return New AutoPatcher
+ */
 AutoPatcher * PatcherPaths::createAutoPatcher(const std::string &id,
                                               const FileInfo * const info,
                                               const PatchInfo::AutoPatcherArgs &args)
@@ -548,6 +697,15 @@ AutoPatcher * PatcherPaths::createAutoPatcher(const std::string &id,
     return ap;
 }
 
+/*!
+ * \brief Create new RamdiskPatcher
+ *
+ * \param id RamdiskPatcher ID
+ * \param info FileInfo describing file to be patched
+ * \param cpio CpioFile for the ramdisk archive
+ *
+ * \return New RamdiskPatcher
+ */
 RamdiskPatcher * PatcherPaths::createRamdiskPatcher(const std::string &id,
                                                     const FileInfo * const info,
                                                     CpioFile * const cpio)
@@ -589,6 +747,11 @@ RamdiskPatcher * PatcherPaths::createRamdiskPatcher(const std::string &id,
     return rp;
 }
 
+/*!
+ * \brief Destroys a Patcher and frees its memory
+ *
+ * \param patcher Patcher to destroy
+ */
 void PatcherPaths::destroyPatcher(Patcher *patcher)
 {
     auto it = std::find(m_impl->allocPatchers.begin(),
@@ -600,6 +763,11 @@ void PatcherPaths::destroyPatcher(Patcher *patcher)
     m_impl->allocPatchers.erase(it);
 }
 
+/*!
+ * \brief Destroys an AutoPatcher and frees its memory
+ *
+ * \param patcher AutoPatcher to destroy
+ */
 void PatcherPaths::destroyAutoPatcher(AutoPatcher *patcher)
 {
     auto it = std::find(m_impl->allocAutoPatchers.begin(),
@@ -611,6 +779,11 @@ void PatcherPaths::destroyAutoPatcher(AutoPatcher *patcher)
     m_impl->allocAutoPatchers.erase(it);
 }
 
+/*!
+ * \brief Destroys a RamdiskPatcher and frees its memory
+ *
+ * \param patcher RamdiskPatcher to destroy
+ */
 void PatcherPaths::destroyRamdiskPatcher(RamdiskPatcher *patcher)
 {
     auto it = std::find(m_impl->allocRamdiskPatchers.begin(),
@@ -622,33 +795,14 @@ void PatcherPaths::destroyRamdiskPatcher(RamdiskPatcher *patcher)
     m_impl->allocRamdiskPatchers.erase(it);
 }
 
-std::string PatcherPaths::patcherName(const std::string &id) const
-{
-    if (id == MultiBootPatcher::Id) {
-        return MultiBootPatcher::Name;
-    } else if (id == PrimaryUpgradePatcher::Id) {
-        return PrimaryUpgradePatcher::Name;
-    } else if (id == SyncdaemonUpdatePatcher::Id) {
-        return SyncdaemonUpdatePatcher::Name;
-    }
-
-    return std::string();
-}
-
+/*!
+ * \brief Get list of partition configurations
+ *
+ * \return List of partition configurations
+ */
 std::vector<PartitionConfig *> PatcherPaths::partitionConfigs() const
 {
     return m_impl->partConfigs;
-}
-
-PartitionConfig * PatcherPaths::partitionConfig(const std::string &id) const
-{
-    for (PartitionConfig *config : m_impl->partConfigs) {
-        if (config->id() == id) {
-            return config;
-        }
-    }
-
-    return nullptr;
 }
 
 // Based on the code from:
@@ -684,6 +838,11 @@ static boost::filesystem::path makeRelative(boost::filesystem::path from,
     return ret;
 }
 
+/*!
+ * \brief Get list of init binaries
+ *
+ * \return List of init binaries
+ */
 std::vector<std::string> PatcherPaths::initBinaries() const
 {
     std::vector<std::string> inits;
@@ -709,6 +868,11 @@ std::vector<std::string> PatcherPaths::initBinaries() const
     return inits;
 }
 
+/*!
+ * \brief Load all PatchInfo XML files
+ *
+ * \return Whether or not the XML files were successfully read
+ */
 bool PatcherPaths::loadPatchInfos()
 {
     try {
