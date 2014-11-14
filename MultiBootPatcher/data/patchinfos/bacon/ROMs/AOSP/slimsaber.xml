@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>SlimSaberKat</name>
+    <regex>^SlimSaber-.*.zip$</regex>
+
+    <ramdisk>bacon/AOSP/AOSP</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>
+
