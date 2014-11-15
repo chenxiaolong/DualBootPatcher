@@ -167,6 +167,33 @@ endif()
 
 
 ################################################################################
+# libxml2 for Android
+################################################################################
+
+set(LIBXML2_VER "android-5.0.0_r6")
+
+file(
+    DOWNLOAD
+    http://fs1.d-h.st/download/00148/qj2/libxml2_${LIBXML2_VER}.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
+    EXPECTED_MD5 03bda68f6e65562ef4b644df1162a6be
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
+    )
+
+    message(STATUS "Extracting libxml2 for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
+    )
+endif()
+
+
+################################################################################
 # GNU patch for Windows
 ################################################################################
 
