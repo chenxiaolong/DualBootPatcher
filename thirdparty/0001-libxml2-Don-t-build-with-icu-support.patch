@@ -1,0 +1,25 @@
+From d46a62590b2c7c4bbc3acfd6ebecfad6cda21792 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sat, 15 Nov 2014 15:33:52 -0500
+Subject: [PATCH] libxml2: Don't build with icu support
+
+---
+ include/libxml/xmlversion.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/libxml/xmlversion.h b/include/libxml/xmlversion.h
+index 4e408a9..93c03c7 100644
+--- a/include/libxml/xmlversion.h
++++ b/include/libxml/xmlversion.h
+@@ -282,7 +282,7 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);
+  *
+  * Whether icu support is available
+  */
+-#if 1
++#if 0
+ #define LIBXML_ICU_ENABLED
+ #endif
+ 
+-- 
+2.1.3
+

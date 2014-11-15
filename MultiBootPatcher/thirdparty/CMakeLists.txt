@@ -123,9 +123,9 @@ set(LIBXML2_VER "android-5.0.0_r6")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00148/qj2/libxml2_${LIBXML2_VER}.tar.bz2
+    http://fs1.d-h.st/download/00148/Tbx/libxml2_${LIBXML2_VER}.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
-    EXPECTED_MD5 03bda68f6e65562ef4b644df1162a6be
+    EXPECTED_MD5 0aac4e63d031745c01b73bedaa1458e2
     SHOW_PROGRESS
 )
 

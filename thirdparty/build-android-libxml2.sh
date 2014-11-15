@@ -22,7 +22,6 @@ aosp_ver=android-5.0.0_r6
 clone=(
     build::${aosp}/platform/build::${aosp_ver}
     bionic::${aosp}/platform/bionic::${aosp_ver}
-    external/icu::${aosp}/platform/external/icu::${aosp_ver}
     external/libxml2::${aosp}/platform/external/libxml2::${aosp_ver}
     external/stlport::${aosp}/platform/external/stlport::${aosp_ver}
     prebuilts/gcc/linux-x86/arm/arm-eabi-4.8::${aosp}/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8::${aosp_ver}
@@ -62,6 +61,10 @@ pushd build
 git am ../../0001-Don-t-fail-when-GNU-make-isn-t-desired-version.patch
 git am ../../0002-Use-Python-2-AOSP.patch
 git am ../../0003-Remove-all-Java-checks-AOSP.patch
+popd
+
+pushd external/libxml2
+git am ../../../0001-libxml2-Don-t-build-with-icu-support.patch
 popd
 
 . build/envsetup.sh
