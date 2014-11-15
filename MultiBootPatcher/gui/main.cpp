@@ -23,8 +23,6 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 
-#include <libdbp/patcherconfig.h>
-
 #ifdef PORTABLE
 #  if defined(DATA_DIR)
 #    error DATA_DIR should not be defined for portable builds
