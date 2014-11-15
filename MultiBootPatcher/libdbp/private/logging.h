@@ -60,7 +60,7 @@ public:
     static void log(LogLevel level, const boost::format &fmt)
     {
         #ifdef ANDROID
-        android_LogPriority priority;
+        android_LogPriority priority = ANDROID_LOG_DEBUG;
 
         switch (level) {
         case Debug:
