@@ -1,0 +1,52 @@
+From bedfb0ef123e4049b484ae5627431f5d3d3328fb Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sun, 28 Sep 2014 15:29:12 -0400
+Subject: [PATCH 3/3] Remove all Java checks (AOSP)
+
+---
+ core/main.mk | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/core/main.mk b/core/main.mk
+index fd5fe3d..2b8fc14 100644
+--- a/core/main.mk
++++ b/core/main.mk
+@@ -164,7 +164,7 @@ $(info $(space))
+ $(info Please follow the machine setup instructions at)
+ $(info $(space)$(space)$(space)$(space)https://source.android.com/source/initializing.html)
+ $(info ************************************************************)
+-$(error stop)
++#$(error stop)
+ endif
+ 
+ # Check for the current JDK.
+@@ -188,7 +188,7 @@ $(info ************************************************************)
+ $(info You asked for an OpenJDK 7 build but your version is)
+ $(info $(java_version_str).)
+ $(info ************************************************************)
+-$(error stop)
++#$(error stop)
+ endif # java version is not OpenJdk
+ else # if requires_openjdk
+ ifneq ($(shell echo '$(java_version_str)' | grep -i openjdk),)
+@@ -199,7 +199,7 @@ $(info You use OpenJDK but only Sun/Oracle JDK is supported.)
+ $(info Please follow the machine setup instructions at)
+ $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
+ $(info ************************************************************)
+-$(error stop)
++#$(error stop)
+ endif # java version is not Sun Oracle JDK
+ endif # if requires_openjdk
+ 
+@@ -215,7 +215,7 @@ $(info $(space))
+ $(info Please follow the machine setup instructions at)
+ $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
+ $(info ************************************************************)
+-$(error stop)
++#$(error stop)
+ endif
+ 
+ 
+-- 
+2.1.3
+

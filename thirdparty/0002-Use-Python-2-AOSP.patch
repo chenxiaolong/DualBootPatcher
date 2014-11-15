@@ -1,0 +1,289 @@
+From 639886a54746273c15d6f2c0677a4a56f4a0f042 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sun, 28 Sep 2014 16:02:02 -0400
+Subject: [PATCH 2/3] Use Python 2 (AOSP)
+
+---
+ core/checktree                                   | 2 +-
+ core/dumpvar.mk                                  | 2 +-
+ core/tasks/check_boot_jars/check_boot_jars.py    | 2 +-
+ tools/adbs                                       | 2 +-
+ tools/check_radio_versions.py                    | 2 +-
+ tools/compare_fileslist.py                       | 2 +-
+ tools/diff_package_overlays.py                   | 2 +-
+ tools/fileslist.py                               | 2 +-
+ tools/filter-product-graph.py                    | 2 +-
+ tools/findleaves.py                              | 2 +-
+ tools/generate-notice-files.py                   | 2 +-
+ tools/java-event-log-tags.py                     | 2 +-
+ tools/java-layers.py                             | 2 +-
+ tools/merge-event-log-tags.py                    | 2 +-
+ tools/parsedeps.py                               | 2 +-
+ tools/post_process_props.py                      | 2 +-
+ tools/product_debug.py                           | 2 +-
+ tools/releasetools/add_img_to_target_files.py    | 2 +-
+ tools/releasetools/build_image.py                | 2 +-
+ tools/releasetools/check_target_files_signatures | 2 +-
+ tools/releasetools/img_from_target_files.py      | 2 +-
+ tools/releasetools/make_recovery_patch           | 2 +-
+ tools/releasetools/ota_from_target_files         | 2 +-
+ tools/releasetools/sign_target_files_apks        | 2 +-
+ tools/warn.py                                    | 2 +-
+ 25 files changed, 25 insertions(+), 25 deletions(-)
+
+diff --git a/core/checktree b/core/checktree
+index b0b9cfa..532e907 100755
+--- a/core/checktree
++++ b/core/checktree
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python -E
++#!/usr/bin/python2 -E
+ 
+ import sys, os, re
+ 
+diff --git a/core/dumpvar.mk b/core/dumpvar.mk
+index 510bc7d..479f0d4 100644
+--- a/core/dumpvar.mk
++++ b/core/dumpvar.mk
+@@ -63,7 +63,7 @@ endif # CALLED_FROM_SETUP
+ 
+ 
+ ifneq ($(PRINT_BUILD_CONFIG),)
+-HOST_OS_EXTRA:=$(shell python -c "import platform; print(platform.platform())")
++HOST_OS_EXTRA:=$(shell python2 -c "import platform; print(platform.platform())")
+ $(info ============================================)
+ $(info   PLATFORM_VERSION_CODENAME=$(PLATFORM_VERSION_CODENAME))
+ $(info   PLATFORM_VERSION=$(PLATFORM_VERSION))
+diff --git a/core/tasks/check_boot_jars/check_boot_jars.py b/core/tasks/check_boot_jars/check_boot_jars.py
+index 89d9ee8..6ecd4bc 100755
+--- a/core/tasks/check_boot_jars/check_boot_jars.py
++++ b/core/tasks/check_boot_jars/check_boot_jars.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ 
+ """
+ Check boot jars.
+diff --git a/tools/adbs b/tools/adbs
+index a8f06c0..48feb94 100755
+--- a/tools/adbs
++++ b/tools/adbs
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ 
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/check_radio_versions.py b/tools/check_radio_versions.py
+index ebe621f..37d7273 100755
+--- a/tools/check_radio_versions.py
++++ b/tools/check_radio_versions.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2012 The Android Open Source Project
+ #
+diff --git a/tools/compare_fileslist.py b/tools/compare_fileslist.py
+index 1f507d8..70498f7 100755
+--- a/tools/compare_fileslist.py
++++ b/tools/compare_fileslist.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/diff_package_overlays.py b/tools/diff_package_overlays.py
+index 0e2c773..dcf9fdc 100755
+--- a/tools/diff_package_overlays.py
++++ b/tools/diff_package_overlays.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2012 The Android Open Source Project
+ #
+diff --git a/tools/fileslist.py b/tools/fileslist.py
+index a11efaa..581215b 100755
+--- a/tools/fileslist.py
++++ b/tools/fileslist.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/filter-product-graph.py b/tools/filter-product-graph.py
+index b3a5b42..88f1d3c 100755
+--- a/tools/filter-product-graph.py
++++ b/tools/filter-product-graph.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ # vim: ts=2 sw=2 nocindent
+ 
+ import re
+diff --git a/tools/findleaves.py b/tools/findleaves.py
+index 3a9e508..aa8f525 100755
+--- a/tools/findleaves.py
++++ b/tools/findleaves.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/generate-notice-files.py b/tools/generate-notice-files.py
+index 4571b70..d474439 100755
+--- a/tools/generate-notice-files.py
++++ b/tools/generate-notice-files.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2012 The Android Open Source Project
+ #
+diff --git a/tools/java-event-log-tags.py b/tools/java-event-log-tags.py
+index 846d9cf..e1a9def 100755
+--- a/tools/java-event-log-tags.py
++++ b/tools/java-event-log-tags.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/java-layers.py b/tools/java-layers.py
+index b3aec2b..7b43159 100755
+--- a/tools/java-layers.py
++++ b/tools/java-layers.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ 
+ import os
+ import re
+diff --git a/tools/merge-event-log-tags.py b/tools/merge-event-log-tags.py
+index 64bad3f..c8f308f 100755
+--- a/tools/merge-event-log-tags.py
++++ b/tools/merge-event-log-tags.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/parsedeps.py b/tools/parsedeps.py
+index 32d8ad7..c07be00 100755
+--- a/tools/parsedeps.py
++++ b/tools/parsedeps.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ # vim: ts=2 sw=2
+ 
+ import optparse
+diff --git a/tools/post_process_props.py b/tools/post_process_props.py
+index 030826d..75dc44a 100755
+--- a/tools/post_process_props.py
++++ b/tools/post_process_props.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/product_debug.py b/tools/product_debug.py
+index 661c5b7..51b42d4 100755
+--- a/tools/product_debug.py
++++ b/tools/product_debug.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2012 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/add_img_to_target_files.py b/tools/releasetools/add_img_to_target_files.py
+index bf217e0..6b4a4a3 100755
+--- a/tools/releasetools/add_img_to_target_files.py
++++ b/tools/releasetools/add_img_to_target_files.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2014 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
+index a010e84..0bd5136 100755
+--- a/tools/releasetools/build_image.py
++++ b/tools/releasetools/build_image.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2011 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/check_target_files_signatures b/tools/releasetools/check_target_files_signatures
+index b2f46c1..2d605c1 100755
+--- a/tools/releasetools/check_target_files_signatures
++++ b/tools/releasetools/check_target_files_signatures
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2009 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/img_from_target_files.py b/tools/releasetools/img_from_target_files.py
+index 4b88e73..04a5c19 100755
+--- a/tools/releasetools/img_from_target_files.py
++++ b/tools/releasetools/img_from_target_files.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2008 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/make_recovery_patch b/tools/releasetools/make_recovery_patch
+index 08d1450..32d3216 100755
+--- a/tools/releasetools/make_recovery_patch
++++ b/tools/releasetools/make_recovery_patch
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2014 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/ota_from_target_files b/tools/releasetools/ota_from_target_files
+index 755e5c2..ad743cf 100755
+--- a/tools/releasetools/ota_from_target_files
++++ b/tools/releasetools/ota_from_target_files
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2008 The Android Open Source Project
+ #
+diff --git a/tools/releasetools/sign_target_files_apks b/tools/releasetools/sign_target_files_apks
+index 075c925..249cb2d 100755
+--- a/tools/releasetools/sign_target_files_apks
++++ b/tools/releasetools/sign_target_files_apks
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # Copyright (C) 2008 The Android Open Source Project
+ #
+diff --git a/tools/warn.py b/tools/warn.py
+index 8097123..ce2e2a7 100755
+--- a/tools/warn.py
++++ b/tools/warn.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ # This file uses the following encoding: utf-8
+ 
+ import sys
+-- 
+2.1.3
+
