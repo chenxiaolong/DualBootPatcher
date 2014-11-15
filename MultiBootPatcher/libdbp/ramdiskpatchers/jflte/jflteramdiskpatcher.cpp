@@ -247,9 +247,9 @@ bool JflteNoobdevRamdiskPatcher::patchRamdisk()
     QcomRamdiskPatcher::FstabArgs args;
     args[QcomRamdiskPatcher::ArgForceCacheRw] = true;
     args[QcomRamdiskPatcher::ArgKeepMountPoints] = true;
-    args[QcomRamdiskPatcher::ArgSystemMountPoint] = "/raw-system";
-    args[QcomRamdiskPatcher::ArgCacheMountPoint] = "/raw-cache";
-    args[QcomRamdiskPatcher::ArgDataMountPoint] = "/raw-data";
+    args[QcomRamdiskPatcher::ArgSystemMountPoint] = std::string("/raw-system");
+    args[QcomRamdiskPatcher::ArgCacheMountPoint] = std::string("/raw-cache");
+    args[QcomRamdiskPatcher::ArgDataMountPoint] = std::string("/raw-data");
 
     if (!qcomPatcher.modifyFstab(args)) {
         m_impl->error = qcomPatcher.error();
