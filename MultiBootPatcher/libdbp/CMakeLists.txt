@@ -88,6 +88,19 @@ if(BUILD_ANDROID)
     include(ExternalProject)
     include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
+    # Wordaround semicolon separated list issue
+    set(DBP_SOURCES_STR "")
+    foreach(_source ${DBP_SOURCES})
+        set(DBP_SOURCES_STR "${DBP_SOURCES_STR} ${_source}")
+    endforeach()
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
+        #${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+        ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk
+        @ONLY
+    )
+
     ExternalProject_Add(
         dbp
         SOURCE_DIR ${CMAKE_SOURCE_DIR}/libdbp
@@ -95,6 +108,9 @@ if(BUILD_ANDROID)
         BUILD_COMMAND ${NDK_BUILD}
                       -C <SOURCE_DIR>
                       -j${PROCESSOR_COUNT}
+                      #APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+                      NDK_PROJECT_PATH=.
+                      NDK_APPLICATION_MK=Application.mk
                       NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libdbp/out
                       NDK_OUT=<TMP_DIR>
                       # Only armv7 is supported at the moment
@@ -104,7 +120,7 @@ if(BUILD_ANDROID)
 
     # Always rebuild since files may have changed
     ExternalProject_Add_Step(
-        libdbp
+        dbp
         forcerebuild
         DEPENDEES update
         DEPENDERS configure
