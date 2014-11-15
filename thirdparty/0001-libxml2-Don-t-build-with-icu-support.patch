@@ -1,14 +1,14 @@
-From d46a62590b2c7c4bbc3acfd6ebecfad6cda21792 Mon Sep 17 00:00:00 2001
+From b0f32cbd79fe2de63750d37b8c55089d801ecf43 Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Sat, 15 Nov 2014 15:33:52 -0500
-Subject: [PATCH] libxml2: Don't build with icu support
+Subject: [PATCH 1/2] libxml2: Don't build with icu support
 
 ---
  include/libxml/xmlversion.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/include/libxml/xmlversion.h b/include/libxml/xmlversion.h
-index 4e408a9..93c03c7 100644
+index 1264867..702efa7 100644
 --- a/include/libxml/xmlversion.h
 +++ b/include/libxml/xmlversion.h
 @@ -282,7 +282,7 @@ XMLPUBFUN void XMLCALL xmlCheckVersion(int version);

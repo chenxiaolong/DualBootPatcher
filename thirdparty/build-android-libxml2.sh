@@ -15,88 +15,53 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aosp="https://android.googlesource.com"
-
-aosp_ver=android-5.0.0_r6
-
-clone=(
-    build::${aosp}/platform/build::${aosp_ver}
-    bionic::${aosp}/platform/bionic::${aosp_ver}
-    external/libxml2::${aosp}/platform/external/libxml2::${aosp_ver}
-    external/stlport::${aosp}/platform/external/stlport::${aosp_ver}
-    prebuilts/gcc/linux-x86/arm/arm-eabi-4.8::${aosp}/platform/prebuilts/gcc/linux-x86/arm/arm-eabi-4.8::${aosp_ver}
-    prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.8::${aosp}/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.8::${aosp_ver}
-)
+url="https://android.googlesource.com/platform/external/libxml2"
+ver='android-5.0.0_r6'
 
 set -e
 cd "$(dirname "${0}")"
 
-mkdir -p aosp-libxml2/
-pushd aosp-libxml2/
-
-for i in "${clone[@]}"; do
-    dir="$(awk -F:: '{print $1}' <<< ${i})"
-    repo="$(awk -F:: '{print $2}' <<< ${i})"
-    revision="$(awk -F:: '{print $3}' <<< ${i})"
-
-    if [ ! -d "${dir}" ]; then
-        git clone "${repo}" "${dir}"
-    else
-        pushd "${dir}"
-        if git show-ref --verify --quiet refs/heads/${revision}; then
-            git reset --hard "origin/${revision}"
-            git pull
-        fi
-        popd
-    fi
-
-    pushd "${dir}"
-    ${revision:+git checkout "${revision}"}
+if [ ! -d libxml2 ]; then
+    git clone "${url}" libxml2
+else
+    pushd libxml2
+    git checkout master
+    git pull
     popd
-done
+fi
 
-cp build/core/root.mk Makefile
+pushd libxml2
+git checkout "${ver}"
+git am ../0001-libxml2-Don-t-build-with-icu-support.patch
+git am ../0002-libxml2-Remove-BUILD_HOST_STATIC_LIBRARY.patch
 
-pushd build
-git am ../../0001-Don-t-fail-when-GNU-make-isn-t-desired-version.patch
-git am ../../0002-Use-Python-2-AOSP.patch
-git am ../../0003-Remove-all-Java-checks-AOSP.patch
-popd
-
-pushd external/libxml2
-git am ../../../0001-libxml2-Don-t-build-with-icu-support.patch
-popd
-
-. build/envsetup.sh
-lunch aosp_arm-eng
-make -j8 libxml2 WITHOUT_LIBCOMPILER_RT=true
-
-popd
+arches=(armeabi-v7a arm64-v8a x86 x86_64)
+ndk-build \
+    NDK_PROJECT_PATH=. \
+    APP_BUILD_SCRIPT=./Android.mk \
+    APP_ABI="${arches[*]}" \
+    -j4
 
 outdir="$(mktemp -d)"
 
-# Static library
-mkdir -p "${outdir}"/lib_armeabi-v7a/
-cp aosp-libxml2/out/target/product/generic/obj/STATIC_LIBRARIES/libxml2_intermediates/libxml2.a \
-    "${outdir}"/lib_armeabi-v7a/
-
 # Header files
 mkdir -p "${outdir}"/include/libxml2/
-cp -r aosp-libxml2/external/libxml2/include/libxml/ \
-    "${outdir}"/include/libxml2/
+cp -r include/libxml/ "${outdir}"/include/libxml2/
 
+# Static libraries
+for arch in "${arches[@]}"; do
+    mkdir "${outdir}"/lib_${arch}/
+    cp obj/local/${arch}/libxml2.a "${outdir}"/lib_${arch}/
+done
 
-################################################################################
-# Build tarballs
-################################################################################
-
-# "cmake -E tar" (CMake 3.0.1) doesn't like xz on Windows, so we'll use bz2
-if [ ! -f libxml2_${aosp_ver}.tar.bz2 ]; then
+if [ ! -f ../libxml2_${ver}.tar.bz2 ]; then
     curdir="$(pwd)"
     pushd "${outdir}"
-    tar jcvf "${curdir}"/libxml2_${aosp_ver}.tar.bz2 \
-        lib_*/ include/
+    tar jcvf "${curdir}"/../libxml2_${ver}.tar.bz2 lib_*/ include/
     popd
 fi
 
 rm -rf "${outdir}"
+
+popd
+
