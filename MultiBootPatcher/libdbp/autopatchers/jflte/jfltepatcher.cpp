@@ -23,10 +23,10 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/regex.hpp>
 
 #include "autopatchers/standard/standardpatcher.h"
 #include "private/fileutils.h"
+#include "private/regex.h"
 
 
 /*! \cond INTERNAL */
@@ -219,13 +219,13 @@ bool JflteSlimAromaBundledMount::patchFiles(const std::string &directory,
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end();) {
-        if (boost::regex_search(*it, boost::regex("/tmp/mount.*/system"))) {
+        if (MBP_regex_search(*it, MBP_regex("/tmp/mount.*/system"))) {
             it = lines.erase(it);
             it = StandardPatcher::insertMountSystem(it, &lines);
-        } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/cache"))) {
+        } else if (MBP_regex_search(*it, MBP_regex("/tmp/mount.*/cache"))) {
             it = lines.erase(it);
             it = StandardPatcher::insertMountCache(it, &lines);
-        } else if (boost::regex_search(*it, boost::regex("/tmp/mount.*/data"))) {
+        } else if (MBP_regex_search(*it, MBP_regex("/tmp/mount.*/data"))) {
             it = lines.erase(it);
             it = StandardPatcher::insertMountData(it, &lines);
         } else {
@@ -347,8 +347,7 @@ bool JflteNegaliteNoWipeData::patchFiles(const std::string &directory,
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(
-                *it, boost::regex("run_program.*/tmp/wipedata.sh"))) {
+        if (MBP_regex_search(*it, MBP_regex("run_program.*/tmp/wipedata.sh"))) {
             it = lines.erase(it);
             StandardPatcher::insertFormatData(it, &lines);
             break;
@@ -409,8 +408,7 @@ bool JflteTriForceFixAroma::patchFiles(const std::string &directory,
             std::string target = m_impl->info->partConfig()->targetSystem();
             boost::replace_all(target, "raw-", "");
             boost::replace_all(*it, System, target);
-        } else if (boost::regex_search(
-                *it, boost::regex("/sbin/mount.+/system"))) {
+        } else if (MBP_regex_search(*it, MBP_regex("/sbin/mount.+/system"))) {
             it = lines.insert(it, boost::replace_all_copy(*it, System, Cache));
             ++it;
             it = lines.insert(it, boost::replace_all_copy(*it, System, Data));
@@ -467,8 +465,7 @@ bool JflteTriForceFixUpdate::patchFiles(const std::string &directory,
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(
-                *it, boost::regex("getprop.+/system/build.prop"))) {
+        if (MBP_regex_search(*it, MBP_regex("getprop.+/system/build.prop"))) {
             it = StandardPatcher::insertMountSystem(it, &lines);
             it = StandardPatcher::insertMountCache(it, &lines);
             it = StandardPatcher::insertMountData(it, &lines);

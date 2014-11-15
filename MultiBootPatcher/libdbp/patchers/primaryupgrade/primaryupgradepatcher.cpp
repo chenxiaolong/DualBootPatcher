@@ -30,11 +30,11 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
 
 #include "patcherconfig.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
+#include "private/regex.h"
 
 
 #define RETURN_IF_CANCELLED \
@@ -553,7 +553,7 @@ bool PrimaryUpgradePatcher::Impl::patchUpdaterScript(std::vector<unsigned char> 
     bool replacedFormatCache = false;
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(*it, boost::regex("^\\s*format\\s*\\(.*$"))) {
+        if (MBP_regex_search(*it, MBP_regex("^\\s*format\\s*\\(.*$"))) {
             if (it->find("system") != std::string::npos
                     || (!pSystem.empty() && it->find(pSystem) != std::string::npos)) {
                 replacedFormatSystem = true;
@@ -567,12 +567,12 @@ bool PrimaryUpgradePatcher::Impl::patchUpdaterScript(std::vector<unsigned char> 
             } else {
                 ++it;
             }
-        } else if (boost::regex_search(*it, boost::regex(
+        } else if (MBP_regex_search(*it, MBP_regex(
                 "delete_recursive\\s*\\([^\\)]*\"/system\""))) {
             replacedFormatSystem = true;
             it = lines.erase(it);
             it = insertFormatSystem(it, &lines, false);
-        } else if (boost::regex_search(*it, boost::regex(
+        } else if (MBP_regex_search(*it, MBP_regex(
                 "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
             replacedFormatCache = true;
             it = lines.erase(it);

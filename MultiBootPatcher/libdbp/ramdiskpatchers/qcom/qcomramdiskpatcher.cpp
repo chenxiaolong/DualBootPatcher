@@ -28,10 +28,10 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/any.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "private/logging.h"
+#include "private/regex.h"
 
 
 /*! \cond INTERNAL */
@@ -132,12 +132,15 @@ bool QcomRamdiskPatcher::modifyInitRc()
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(*it, boost::regex("mkdir /system(\\s|$)"))) {
-            it = lines.insert(++it, boost::replace_all_copy(*it, System, RawSystem));
-        } else if (boost::regex_search(*it, boost::regex("mkdir /cache(\\s|$)"))) {
-            it = lines.insert(++it, boost::replace_all_copy(*it, Cache, RawCache));
-        } else if (boost::regex_search(*it, boost::regex("mkdir /data(\\s|$)"))) {
-            it = lines.insert(++it, boost::replace_all_copy(*it, Data, RawData));
+        if (MBP_regex_search(*it, MBP_regex("mkdir /system(\\s|$)"))) {
+            auto newLine = boost::replace_all_copy(*it, System, RawSystem);
+            it = lines.insert(++it, newLine);
+        } else if (MBP_regex_search(*it, MBP_regex("mkdir /cache(\\s|$)"))) {
+            auto newLine = boost::replace_all_copy(*it, Cache, RawCache);
+            it = lines.insert(++it, newLine);
+        } else if (MBP_regex_search(*it, MBP_regex("mkdir /data(\\s|$)"))) {
+            auto newLine = boost::replace_all_copy(*it, Data, RawData);
+            it = lines.insert(++it, newLine);
         } else if (it->find("yaffs2") != std::string::npos) {
             it->insert(it->begin(), '#');
         }
@@ -181,7 +184,7 @@ bool QcomRamdiskPatcher::modifyInitQcomRc(const std::vector<std::string> &additi
         boost::split(lines, strContents, boost::is_any_of("\n"));
 
         for (auto it = lines.begin(); it != lines.end(); ++it) {
-            if (boost::regex_search(*it, boost::regex("\\s/data/media(\\s|$)"))) {
+            if (MBP_regex_search(*it, MBP_regex("\\s/data/media(\\s|$)"))) {
                 boost::replace_all(*it, "/data/media", "/raw-data/media");
             }
         }
@@ -397,10 +400,10 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
         std::unordered_map<std::string, std::string> cacheVoldArgs;
 
         for (auto const &line : lines) {
-            boost::smatch what;
+            MBP_smatch what;
 
-            if (boost::regex_search(line, what,
-                    boost::regex(CoreRamdiskPatcher::FstabRegex))) {
+            if (MBP_regex_search(line, what,
+                    MBP_regex(CoreRamdiskPatcher::FstabRegex))) {
                 std::string comment = what[1];
                 std::string blockDev = what[2];
                 //std::string mountPoint = what[3];
@@ -443,9 +446,9 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
             std::string mountArgs;
             std::string voldArgs;
 
-            boost::smatch what;
-            bool hasMatch = boost::regex_search(
-                    line, what, boost::regex(CoreRamdiskPatcher::FstabRegex));
+            MBP_smatch what;
+            bool hasMatch = MBP_regex_search(
+                    line, what, MBP_regex(CoreRamdiskPatcher::FstabRegex));
 
             if (hasMatch) {
                 comment = what[1];
@@ -580,21 +583,21 @@ bool QcomRamdiskPatcher::modifyInitTargetRc(const std::string &filename)
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(*it,
-                boost::regex("^\\s+wait\\s+/dev/.*/cache.*$"))
-                || boost::regex_search(*it,
-                boost::regex("^\\s+check_fs\\s+/dev/.*/cache.*$"))
-                || boost::regex_search(*it,
-                boost::regex("^\\s+mount\\s+ext4\\s+/dev/.*/cache.*$"))) {
+        if (MBP_regex_search(*it,
+                MBP_regex("^\\s+wait\\s+/dev/.*/cache.*$"))
+                || MBP_regex_search(*it,
+                MBP_regex("^\\s+check_fs\\s+/dev/.*/cache.*$"))
+                || MBP_regex_search(*it,
+                MBP_regex("^\\s+mount\\s+ext4\\s+/dev/.*/cache.*$"))) {
             // Remove lines that mount /cache
             it->insert(it->begin(), '#');
-        } else if (boost::regex_search(*it,
-                boost::regex("^\\s+mount_all\\s+(\\./)?fstab\\..*$"))) {
+        } else if (MBP_regex_search(*it,
+                MBP_regex("^\\s+mount_all\\s+(\\./)?fstab\\..*$"))) {
             // Add command for our mount script
             std::string spaces = whitespace(*it);
             it = lines.insert(++it, spaces + CoreRamdiskPatcher::ExecMount);
-        } else if (boost::regex_search(*it,
-                boost::regex("\\s/data/media(\\s|$)"))) {
+        } else if (MBP_regex_search(*it,
+                MBP_regex("\\s/data/media(\\s|$)"))) {
             boost::replace_all(*it, "/data/media", "/raw-data/media");
         }
     }

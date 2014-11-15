@@ -24,9 +24,9 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
 
 #include "private/fileutils.h"
+#include "private/regex.h"
 
 
 /*! \cond INTERNAL */
@@ -151,13 +151,12 @@ bool StandardPatcher::patchFiles(const std::string &directory,
  */
 void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 {
-    boost::regex reLine(
-            "^\\s*assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
+    MBP_regex reLine("^\\s*assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
 
     for (auto &line : *lines) {
-        if (boost::regex_search(line, reLine)) {
-            boost::regex_replace(line, boost::regex("^(\\s*assert\\s*\\()"),
-                                 "\\1\"true\" == \"true\" || ");
+        if (MBP_regex_search(line, reLine)) {
+            MBP_regex_replace(line, MBP_regex("^(\\s*assert\\s*\\()"),
+                              "\\1\"true\" == \"true\" || ");
         }
     }
 }
@@ -236,8 +235,8 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
     for (auto it = lines->begin(); it != lines->end();) {
         auto const &line = *it;
 
-        if (boost::regex_search(line, boost::regex("^\\s*mount\\s*\\(.*$"))
-                || boost::regex_search(line, boost::regex(
+        if (MBP_regex_search(line, MBP_regex("^\\s*mount\\s*\\(.*$"))
+                || MBP_regex_search(line, MBP_regex(
                 "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$"))) {
             if (line.find(System) != std::string::npos
                     || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
@@ -277,8 +276,8 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
     for (auto it = lines->begin(); it != lines->end();) {
         auto const &line = *it;
 
-        if (boost::regex_search(line, boost::regex("^\\s*unmount\\s*\\(.*$"))
-                || boost::regex_search(line, boost::regex(
+        if (MBP_regex_search(line, MBP_regex("^\\s*unmount\\s*\\(.*$"))
+                || MBP_regex_search(line, MBP_regex(
                 "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"umount\".*$"))) {
             if (line.find(System) != std::string::npos
                     || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
@@ -318,8 +317,7 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
     for (auto it = lines->begin(); it != lines->end();) {
         auto const &line = *it;
 
-        if (boost::regex_search(line, boost::regex(
-                "^\\s*format\\s*\\(.*$"))) {
+        if (MBP_regex_search(line, MBP_regex("^\\s*format\\s*\\(.*$"))) {
             if (line.find(System) != std::string::npos
                     || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
                 it = lines->erase(it);
@@ -335,11 +333,11 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
             } else {
                 ++it;
             }
-        } else if (boost::regex_search(line, boost::regex(
+        } else if (MBP_regex_search(line, MBP_regex(
                 "delete_recursive\\s*\\([^\\)]*\"/system\""))) {
             it = lines->erase(it);
             it = insertFormatSystem(it, lines);
-        } else if (boost::regex_search(line, boost::regex(
+        } else if (MBP_regex_search(line, MBP_regex(
                 "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
             it = lines->erase(it);
             it = insertFormatCache(it, lines);

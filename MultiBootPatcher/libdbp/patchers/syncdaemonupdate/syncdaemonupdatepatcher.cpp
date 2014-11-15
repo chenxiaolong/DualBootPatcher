@@ -28,12 +28,12 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/regex.hpp>
 
 #include "bootimage.h"
 #include "patcherconfig.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
+#include "private/regex.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 
 
@@ -311,9 +311,9 @@ std::string SyncdaemonUpdatePatcher::Impl::findPartConfigId(const CpioFile * con
 
         for (auto const &line : lines) {
             if (boost::starts_with(line, "TARGET_DATA=")) {
-                boost::smatch what;
+                MBP_smatch what;
 
-                if (boost::regex_search(line, boost::regex("/raw-data/([^/\"]+)"))) {
+                if (MBP_regex_search(line, MBP_regex("/raw-data/([^/\"]+)"))) {
                     return what[1];
                 }
             }

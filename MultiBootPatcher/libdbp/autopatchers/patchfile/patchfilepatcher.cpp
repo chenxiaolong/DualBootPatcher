@@ -31,10 +31,10 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/regex.hpp>
 
 #include "private/fileutils.h"
 #include "private/logging.h"
+#include "private/regex.h"
 
 
 /*! \cond INTERNAL */
@@ -89,12 +89,12 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
     std::vector<std::string> lines;
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    const boost::regex reOrigFile("---\\s+(.+?)(?:$|\t)");
+    const MBP_regex reOrigFile("---\\s+(.+?)(?:$|\t)");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        boost::smatch what;
+        MBP_smatch what;
 
-        if (boost::regex_search(*it, what, reOrigFile)) {
+        if (MBP_regex_search(*it, what, reOrigFile)) {
             std::string file = what.str(1);
             if (boost::starts_with(file, "\"") && boost::ends_with(file, "\"")) {
                 file.erase(file.begin());

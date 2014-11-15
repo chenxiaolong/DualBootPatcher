@@ -24,8 +24,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/regex.hpp>
 
+#include "private/regex.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 
 
@@ -142,9 +142,8 @@ bool GalaxyRamdiskPatcher::geModifyInitRc()
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(*it, boost::regex("mount.*/system"))
-                && boost::regex_search(
-                        previousLine, boost::regex("on\\s+charger"))) {
+        if (MBP_regex_search(*it, MBP_regex("mount.*/system"))
+                && MBP_regex_search(previousLine, MBP_regex("on\\s+charger"))) {
             it = lines.erase(it);
             it = lines.insert(it, "    mount_all fstab.jgedlte");
             ++it;
@@ -196,7 +195,7 @@ bool GalaxyRamdiskPatcher::twModifyInitRc()
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(*it, boost::regex(
+        if (MBP_regex_search(*it, MBP_regex(
                 "^.*setprop.*selinux.reload_policy.*$"))) {
             it->insert(it->begin(), '#');
         } else if (it->find("check_icd") != std::string::npos) {
@@ -205,7 +204,7 @@ bool GalaxyRamdiskPatcher::twModifyInitRc()
                 && boost::starts_with(*it, "service")) {
             inMediaserver = it->find("/system/bin/mediaserver") != std::string::npos;
         } else if (inMediaserver
-                && boost::regex_search(*it, boost::regex("^\\s*user"))) {
+                && MBP_regex_search(*it, MBP_regex("^\\s*user"))) {
             *it = whitespace(*it) + "user root";
         }
     }
@@ -261,13 +260,13 @@ bool GalaxyRamdiskPatcher::twModifyInitTargetRc()
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (m_impl->version == KitKat
-                && boost::regex_search(*it, boost::regex("^on\\s+fs_selinux\\s*$"))) {
+                && MBP_regex_search(*it, MBP_regex("^on\\s+fs_selinux\\s*$"))) {
             ++it;
             it = lines.insert(it, "    mount_all fstab.qcom");
             ++it;
             it = lines.insert(it, "    " + CoreRamdiskPatcher::ExecMount);
-        } else if (boost::regex_search(*it,
-                boost::regex("^.*setprop.*selinux.reload_policy.*$"))) {
+        } else if (MBP_regex_search(*it,
+                MBP_regex("^.*setprop.*selinux.reload_policy.*$"))) {
             it->insert(it->begin(), '#');
         } else if (m_impl->version == KitKat
                 && boost::starts_with(*it, "service")) {
@@ -281,9 +280,9 @@ bool GalaxyRamdiskPatcher::twModifyInitTargetRc()
         // process has multiple groups and root is not the primary group. Oh
         // well, I'm done debugging proprietary binaries.
 
-        else if (inQcam && boost::regex_search(*it, boost::regex("^\\s*user"))) {
+        else if (inQcam && MBP_regex_search(*it, MBP_regex("^\\s*user"))) {
             *it = whitespace(*it) + "user root";
-        } else if (inQcam && boost::regex_search(*it, boost::regex("^\\s*group"))) {
+        } else if (inQcam && MBP_regex_search(*it, MBP_regex("^\\s*group"))) {
             *it = whitespace(*it) + "group root";
         }
     }
@@ -425,7 +424,7 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::regex_search(*it, boost::regex("^\\s+mount.*/cache.*$"))) {
+        if (MBP_regex_search(*it, MBP_regex("^\\s+mount.*/cache.*$"))) {
             it->insert(it->begin(), '#');
         }
     }

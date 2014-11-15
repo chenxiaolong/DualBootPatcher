@@ -23,7 +23,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/regex.hpp>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -32,6 +31,7 @@
 #include "patcherinterface.h"
 #include "patchinfo.h"
 #include "private/logging.h"
+#include "private/regex.h"
 
 // Patchers
 #include "patchers/multiboot/multibootpatcher.h"
@@ -450,13 +450,13 @@ PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
 
     for (PatchInfo *info : patchInfos(device)) {
         for (auto const &regex : info->regexes()) {
-            if (boost::regex_search(noPath, boost::regex(regex))) {
+            if (MBP_regex_search(noPath, MBP_regex(regex))) {
                 bool skipCurInfo = false;
 
                 // If the regex matches, make sure the filename isn't matched
                 // by one of the exclusion regexes
                 for (auto const &excludeRegex : info->excludeRegexes()) {
-                    if (boost::regex_search(noPath, boost::regex(excludeRegex))) {
+                    if (MBP_regex_search(noPath, MBP_regex(excludeRegex))) {
                         skipCurInfo = true;
                         break;
                     }

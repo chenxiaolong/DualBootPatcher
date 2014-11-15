@@ -22,7 +22,8 @@
 #include <unordered_map>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/regex.hpp>
+
+#include "private/regex.h"
 
 
 /*! \cond INTERNAL */
@@ -216,7 +217,7 @@ std::string PatchInfo::keyFromFilename(const std::string &fileName) const
     // The conditional regex is the key if <matches> elements are used
     // in the patchinfo xml files
     for (auto &regex : m_impl->condRegexes) {
-        if (boost::regex_search(noPath, boost::regex(regex))) {
+        if (MBP_regex_search(noPath, MBP_regex(regex))) {
             return regex;
         }
     }
