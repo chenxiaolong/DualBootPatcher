@@ -96,72 +96,21 @@ set(BOOST_VER "1.53.0")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00148/Rac/boost-${BOOST_VER}_armeabi-v7a.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_armeabi-v7a.tar.bz2
-    EXPECTED_MD5 9fea4e9ac32701fd3d3911cfc7ea6d4c
+    http://fs1.d-h.st/download/00148/K7d/boost-${BOOST_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
+    EXPECTED_MD5 08455c888ddd5e43018efe633ab3c1fc
     SHOW_PROGRESS
 )
 
-file(
-    DOWNLOAD
-    http://fs1.d-h.st/download/00148/7ow/boost-${BOOST_VER}_arm64-v8a.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_arm64-v8a.tar.bz2
-    EXPECTED_MD5 7b22592dd8873803f7a00b43114aa766
-    SHOW_PROGRESS
-)
-
-file(
-    DOWNLOAD
-    http://fs1.d-h.st/download/00148/rQa/boost-${BOOST_VER}_x86.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_x86.tar.bz2
-    EXPECTED_MD5 bf0541af4a2c4d522b76b369415026b1
-    SHOW_PROGRESS
-)
-
-file(
-    DOWNLOAD
-    http://fs1.d-h.st/download/00148/0El/boost-${BOOST_VER}_x86_64.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_x86_64.tar.bz2
-    EXPECTED_MD5 2361e0b6048a2571226b2e3f3637bc17
-    SHOW_PROGRESS
-)
-
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_armeabi-v7a
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_arm64-v8a
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_x86
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_x86_64
-)
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_armeabi-v7a/lib/)
-    message(STATUS "Extracting boost for Android (armeabi-v7a) ...")
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/boost)
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_armeabi-v7a.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_armeabi-v7a
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/boost
     )
-endif()
 
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_arm64-v8a/lib/)
-    message(STATUS "Extracting boost for Android (arm64-v8a) ...")
+    message(STATUS "Extracting boost for Android ...")
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_arm64-v8a.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_arm64-v8a
-    )
-endif()
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_x86/lib/)
-    message(STATUS "Extracting boost for Android (x86) ...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_x86.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_x86
-    )
-endif()
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_x86_64/lib/)
-    message(STATUS "Extracting boost for Android (x86_64) ...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_x86_64.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/boost-${BOOST_VER}_x86_64
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/boost
     )
 endif()
 
