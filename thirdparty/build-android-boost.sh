@@ -42,32 +42,38 @@ build() {
         --boost="${version}"
 }
 
-if [ ! -f ../boost-${version}_armeabi-v7a.tar.bz2 ]; then
+if [ ! -d build_armeabi-v7a/lib/ ]; then
     BUILD_DIR=build_armeabi-v7a build --toolchain=arm-linux-androideabi-4.9
-    pushd build_armeabi-v7a
-    tar jcvf ../../boost-${version}_armeabi-v7a.tar.bz2 include/ lib/
-    popd
 fi
 
-if [ ! -f ../boost-${version}_arm64-v8a.tar.bz2 ]; then
+if [ ! -d build_arm64-v8a/lib/ ]; then
     BUILD_DIR=build_arm64-v8a build --toolchain=aarch64-linux-android-4.9
-    pushd build_arm64-v8a
-    tar jcvf ../../boost-${version}_arm64-v8a.tar.bz2 include/ lib/
-    popd
 fi
   
-if [ ! -f ../boost-${version}_x86.tar.bz2 ]; then
+if [ ! -d build_x86/lib/ ]; then
     BUILD_DIR=build_x86 build --toolchain=x86-4.9
-    pushd build_x86
-    tar jcvf ../../boost-${version}_x86.tar.bz2 include/ lib/
-    popd
 fi
 
-if [ ! -f ../boost-${version}_x86_64.tar.bz2 ]; then
+if [ ! -d build_x86_64/lib/ ]; then
     BUILD_DIR=build_x86_64 build --toolchain=x86_64-4.9
-    pushd build_x86_64
-    tar jcvf ../../boost-${version}_x86_64.tar.bz2 include/ lib/
-    popd
 fi
+
+outdir="$(mktemp -d)"
+
+mkdir "${outdir}"/include/
+
+# The headers are the same for each architecture
+cp -r build_armeabi-v7a/include/boost-*/boost/ "${outdir}"/include/
+
+cp -r build_armeabi-v7a/lib/ "${outdir}"/lib_armeabi-v7a/
+cp -r build_arm64-v8a/lib/ "${outdir}"/lib_arm64-v8a/
+cp -r build_x86/lib/ "${outdir}"/lib_x86/
+cp -r build_x86_64/lib/ "${outdir}"/lib_x86_64/
+
+curdir="$(pwd)"
+pushd "${outdir}"
+tar jcvf "${curdir}"/../boost-${version}_android.tar.bz2 \
+    include/ lib_*/
+popd
 
 popd
