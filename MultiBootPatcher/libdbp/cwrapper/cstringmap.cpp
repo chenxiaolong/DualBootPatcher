@@ -19,6 +19,7 @@
 
 #include "cwrapper/cstringmap.h"
 
+#include <cstdlib>
 #include <cstring>
 
 #include <unordered_map>
@@ -70,7 +71,7 @@ extern "C" {
         const MapType *m = reinterpret_cast<const MapType *>(map);
 
         unsigned int i = 0;
-        char **keys = (char **) malloc(sizeof(char *) * (m->size() + 1));
+        char **keys = (char **) std::malloc(sizeof(char *) * (m->size() + 1));
         for (auto const &p : *m) {
             keys[i] = strdup(p.first.c_str());
         }

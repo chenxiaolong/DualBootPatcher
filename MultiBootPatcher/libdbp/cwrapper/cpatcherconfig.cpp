@@ -19,6 +19,7 @@
 
 #include "cwrapper/cpatcherconfig.h"
 
+#include <cstdlib>
 #include <cstring>
 
 #include "patcherconfig.h"
@@ -309,7 +310,7 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const devices = config->devices();
 
-        CDevice **cDevices = (CDevice **) malloc(
+        CDevice **cDevices = (CDevice **) std::malloc(
                 sizeof(CDevice *) * (devices.size() + 1));
         for (unsigned int i = 0; i < devices.size(); ++i) {
             cDevices[i] = reinterpret_cast<CDevice *>(devices[i]);
@@ -336,7 +337,7 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const infos = config->patchInfos();
 
-        CPatchInfo **cInfos = (CPatchInfo **) malloc(
+        CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
                 sizeof(CPatchInfo *) * (infos.size() + 1));
         for (unsigned int i = 0; i < infos.size(); ++i) {
             cInfos[i] = reinterpret_cast<CPatchInfo *>(infos[i]);
@@ -366,7 +367,7 @@ extern "C" {
         const Device *d = reinterpret_cast<const Device *>(device);
         auto const infos = config->patchInfos(d);
 
-        CPatchInfo **cInfos = (CPatchInfo **) malloc(
+        CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
             sizeof(CPatchInfo *) * (infos.size() + 1));
         for (unsigned int i = 0; i < infos.size(); ++i) {
             cInfos[i] = reinterpret_cast<CPatchInfo *>(infos[i]);
@@ -414,7 +415,7 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const ids = config->patchers();
 
-        char **cIds = (char **) malloc(sizeof(char *) * (ids.size() + 1));
+        char **cIds = (char **) std::malloc(sizeof(char *) * (ids.size() + 1));
         for (unsigned int i = 0; i < ids.size(); ++i) {
             cIds[i] = strdup(ids[i].c_str());
         }
@@ -440,7 +441,7 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const ids = config->autoPatchers();
 
-        char **cIds = (char **) malloc(sizeof(char *) * (ids.size() + 1));
+        char **cIds = (char **) std::malloc(sizeof(char *) * (ids.size() + 1));
         for (unsigned int i = 0; i < ids.size(); ++i) {
             cIds[i] = strdup(ids[i].c_str());
         }
@@ -466,7 +467,7 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const ids = config->ramdiskPatchers();
 
-        char **cIds = (char **) malloc(sizeof(char *) * (ids.size() + 1));
+        char **cIds = (char **) std::malloc(sizeof(char *) * (ids.size() + 1));
         for (unsigned int i = 0; i < ids.size(); ++i) {
             cIds[i] = strdup(ids[i].c_str());
         }
@@ -622,7 +623,7 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const configs = config->partitionConfigs();
 
-        CPartConfig **cConfigs = (CPartConfig **) malloc(
+        CPartConfig **cConfigs = (CPartConfig **) std::malloc(
                 sizeof(CPartConfig *) * (configs.size() + 1));
         for (unsigned int i = 0; i < configs.size(); ++i) {
             cConfigs[i] = reinterpret_cast<CPartConfig *>(configs[i]);
@@ -649,7 +650,8 @@ extern "C" {
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const inits = config->initBinaries();
 
-        char **cInits = (char **) malloc(sizeof(char *) * (inits.size() + 1));
+        char **cInits = (char **) std::malloc(
+                sizeof(char *) * (inits.size() + 1));
         for (unsigned int i = 0; i < inits.size(); ++i) {
             cInits[i] = strdup(inits[i].c_str());
         }
