@@ -1,0 +1,25 @@
+From 4544dc6ff486c43ab052cac9456dcd00f877336a Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Fri, 14 Nov 2014 21:37:10 -0500
+Subject: [PATCH] Allow build directory to be changed
+
+---
+ build-android.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build-android.sh b/build-android.sh
+index 90ff16c..f50c233 100755
+--- a/build-android.sh
++++ b/build-android.sh
+@@ -118,7 +118,7 @@ echo "Building boost version: $BOOST_VER1.$BOOST_VER2.$BOOST_VER3"
+ BOOST_DOWNLOAD_LINK="http://downloads.sourceforge.net/project/boost/boost/$BOOST_VER1.$BOOST_VER2.$BOOST_VER3/boost_${BOOST_VER1}_${BOOST_VER2}_${BOOST_VER3}.tar.bz2?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fboost%2Ffiles%2Fboost%2F${BOOST_VER1}.${BOOST_VER2}.${BOOST_VER3}%2F&ts=1291326673&use_mirror=garr"
+ BOOST_TAR="boost_${BOOST_VER1}_${BOOST_VER2}_${BOOST_VER3}.tar.bz2"
+ BOOST_DIR="boost_${BOOST_VER1}_${BOOST_VER2}_${BOOST_VER3}"
+-BUILD_DIR="./build/"
++BUILD_DIR="${BUILD_DIR:-"./build/"}"
+ 
+ # -----------------------
+ 
+-- 
+2.1.3
+
