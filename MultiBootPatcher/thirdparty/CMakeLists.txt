@@ -96,9 +96,9 @@ set(BOOST_VER "1.53.0")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00148/K7d/boost-${BOOST_VER}_android.tar.bz2
+    http://fs1.d-h.st/download/00148/bjJ/boost-${BOOST_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
-    EXPECTED_MD5 08455c888ddd5e43018efe633ab3c1fc
+    EXPECTED_MD5 f129d680f5ea0ada18dd2422290026a7
     SHOW_PROGRESS
 )
 

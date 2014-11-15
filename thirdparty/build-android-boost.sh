@@ -34,11 +34,12 @@ pushd Boost-for-Android
 
 git checkout "${commit}"
 git am ../0001-Allow-build-directory-to-be-changed.patch
+git am ../0001-boost-Build-with-NDK-10c.patch
 
 build() {
     ./build-android.sh \
         --progress \
-        --with-libraries=filesystem,regex,system \
+        --with-libraries=filesystem,system \
         --boost="${version}"
 }
 
