@@ -74,6 +74,7 @@ extern "C" {
         char **keys = (char **) std::malloc(sizeof(char *) * (m->size() + 1));
         for (auto const &p : *m) {
             keys[i] = strdup(p.first.c_str());
+            ++i;
         }
         keys[m->size()] = nullptr;
 
