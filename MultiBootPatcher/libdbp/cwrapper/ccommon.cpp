@@ -26,7 +26,7 @@ extern "C" {
 
     void mbp_free_array(void **array)
     {
-        for (void **temp = array; array != nullptr; temp++) {
+        for (void **temp = array; *temp != nullptr; ++temp) {
             std::free(*temp);
         }
         std::free(array);
