@@ -1,0 +1,30 @@
+import os ;
+local ndkhome = [ os.environ ANDROID_NDK_HOME ] ;
+
+using gcc : android : x86_64-linux-android-g++ :
+<archiver>x86_64-linux-android-ar
+
+<compileflags>-std=c++11
+<compileflags>-fexceptions
+<compileflags>-frtti
+
+<compileflags>-ffunction-sections
+<compileflags>-funwind-tables
+<compileflags>-fstack-protector
+<compileflags>-no-canonical-prefixes
+<linkflags>-no-canonical-prefixes
+
+<compileflags>-O2
+<compileflags>-DNDEBUG
+<compileflags>-fomit-frame-pointer
+<compileflags>-fstrict-aliasing
+<compileflags>-funswitch-loops
+<compileflags>-finline-limit=300
+
+<compileflags>-I$(ndkhome)/platforms/android-21/arch-x86_64/usr/include
+<compileflags>-I$(ndkhome)/sources/cxx-stl/gnu-libstdc++/4.9/include
+<compileflags>-I$(ndkhome)/sources/cxx-stl/gnu-libstdc++/4.9/libs/x86_64/include
+
+<architecture>x86
+
+;

@@ -17,54 +17,88 @@
 
 set -e
 
-url='https://github.com/MysticTreeGames/Boost-for-Android.git'
-commit='8fd5469a492c621b604c4e85231b328f3a62c487'
-version='1.53.0'
+ver=1.57.0
 
-if [ ! -d Boost-for-Android ]; then
-    git clone "${url}" Boost-for-Android
-else
-    pushd Boost-for-Android
-    git checkout master
-    git pull
-    popd
+name="boost_${ver//./_}"
+tarball="${name}.tar.bz2"
+url="http://downloads.sourceforge.net/project/boost/boost/${ver}/${tarball}"
+
+mkdir -p boost
+cd boost
+
+if [ ! -f "${tarball}" ]; then
+    wget "${url}" -O "${tarball}"
 fi
 
-pushd Boost-for-Android
-
-git checkout "${commit}"
-git am ../0001-Allow-build-directory-to-be-changed.patch
-git am ../0001-boost-Build-with-NDK-10c.patch
+if [ ! -d "${name}" ]; then
+    tar xvf "${tarball}"
+fi
 
 build() {
-    ./build-android.sh \
-        --progress \
-        --with-libraries=filesystem,system \
-        --boost="${version}"
+    local abi="${1}"
+    local toolchain="${2}"
+
+    if [[ "${toolchain}" == "x86-4.9" ]]; then
+        toolchain_prefix=i686-linux-android-
+    elif [[ "${toolchain}" == "x86_64-4.9" ]]; then
+        toolchain_prefix=x86_64-linux-android-
+    else
+        toolchain_prefix="${toolchain%-*}-"
+    fi
+
+    local toolchain_dir=${ANDROID_NDK_HOME}/toolchains/${toolchain}/prebuilt/linux-x86_64/bin
+
+    rm -rf bin.v2/libs
+
+    cp ../../user-config_${abi}.jam tools/build/src/user-config.jam
+
+    PATH="${toolchain_dir}:${PATH}" \
+    NO_BZIP2=1                      \
+    ./b2 -q                         \
+        `# --debug-configuration `  \
+        target-os=android           \
+        toolset=gcc-android         \
+        link=static                 \
+        threading=multi             \
+        --layout=tagged             \
+        --prefix="../build_${abi}"  \
+        --with-filesystem           \
+        --with-system               \
+        install
+
+    rm tools/build/src/user-config.jam
 }
 
-if [ ! -d build_armeabi-v7a/lib/ ]; then
-    BUILD_DIR=build_armeabi-v7a build --toolchain=arm-linux-androideabi-4.9
+pushd "${name}"
+
+if [ ! -f bjam ]; then
+    ./bootstrap.sh
 fi
 
-if [ ! -d build_arm64-v8a/lib/ ]; then
-    BUILD_DIR=build_arm64-v8a build --toolchain=aarch64-linux-android-4.9
-fi
-  
-if [ ! -d build_x86/lib/ ]; then
-    BUILD_DIR=build_x86 build --toolchain=x86-4.9
+if [ ! -d ../build_armeabi-v7a/ ]; then
+    build armeabi-v7a arm-linux-androideabi-4.9
 fi
 
-if [ ! -d build_x86_64/lib/ ]; then
-    BUILD_DIR=build_x86_64 build --toolchain=x86_64-4.9
+if [ ! -d ../build_arm64-v8a ]; then
+    build arm64-v8a aarch64-linux-android-4.9
 fi
+
+if [ ! -d ../build_x86 ]; then
+    build x86 x86-4.9
+fi
+
+if [ ! -d ../build_x86_64 ]; then
+    build x86_64 x86_64-4.9
+fi
+
+popd
 
 outdir="$(mktemp -d)"
 
 mkdir "${outdir}"/include/
 
 # The headers are the same for each architecture
-cp -r build_armeabi-v7a/include/boost-*/boost/ "${outdir}"/include/
+cp -r build_armeabi-v7a/include/boost/ "${outdir}"/include/
 
 cp -r build_armeabi-v7a/lib/ "${outdir}"/lib_armeabi-v7a/
 cp -r build_arm64-v8a/lib/ "${outdir}"/lib_arm64-v8a/
@@ -73,8 +107,5 @@ cp -r build_x86_64/lib/ "${outdir}"/lib_x86_64/
 
 curdir="$(pwd)"
 pushd "${outdir}"
-tar jcvf "${curdir}"/../boost-${version}_android.tar.bz2 \
-    include/ lib_*/
-popd
-
+tar jcvf "${curdir}"/../boost-${ver}_android.tar.bz2 include/ lib_*/
 popd
