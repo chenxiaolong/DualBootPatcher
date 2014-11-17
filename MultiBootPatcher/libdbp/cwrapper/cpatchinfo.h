@@ -50,8 +50,8 @@ void mbp_patchinfo_set_exclude_regexes(CPatchInfo *info, const char **regexes);
 char ** mbp_patchinfo_cond_regexes(const CPatchInfo *info);
 void mbp_patchinfo_set_cond_regexes(CPatchInfo *info, const char **regexes);
 
-int mbp_patchinfo_has_not_matched(const CPatchInfo *info);
-void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, int hasElem);
+bool mbp_patchinfo_has_not_matched(const CPatchInfo *info);
+void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, bool hasElem);
 
 void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
                                    const char *apName, CStringMap *args);
@@ -62,14 +62,14 @@ CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
                                             const char *key,
                                             const char *apName);
 
-int mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key);
+bool mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,
-                                      const char *key, int hasBootImage);
+                                      const char *key, bool hasBootImage);
 
-int mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
-                                         const char *key);
+bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
+                                          const char *key);
 void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
-                                              const char *key, int autoDetect);
+                                              const char *key, bool autoDetect);
 
 char ** mbp_patchinfo_boot_images(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_boot_images(CPatchInfo *info,
@@ -83,9 +83,9 @@ char * mbp_patchinfo_patched_init(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_patched_init(CPatchInfo *info,
                                     const char *key, const char *init);
 
-int mbp_patchinfo_device_check(const CPatchInfo *info, const char *key);
+bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_device_check(CPatchInfo *info,
-                                    const char *key, int deviceCheck);
+                                    const char *key, bool deviceCheck);
 
 char ** mbp_patchinfo_supported_configs(const CPatchInfo *info,
                                         const char *key);

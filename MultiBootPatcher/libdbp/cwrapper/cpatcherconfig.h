@@ -79,7 +79,7 @@ CPartConfig ** mbp_config_partitionconfigs(const CPatcherConfig *pc);
 
 char ** mbp_config_init_binaries(const CPatcherConfig *pc);
 
-int mbp_config_load_patchinfos(CPatcherConfig *pc);
+bool mbp_config_load_patchinfos(CPatcherConfig *pc);
 
 #ifdef __cplusplus
 }

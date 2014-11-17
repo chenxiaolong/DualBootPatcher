@@ -664,16 +664,15 @@ extern "C" {
      * \brief Load all PatchInfo XML files
      *
      * \param pc CPatcherConfig object
-     * \return 0 if the XML files were successfully read, otherwise -1 (and the
-     *         error set appropriately)
+     * \return Whther the XML files were successfully read (with the error set
+     *         appropriately)
      *
      * \sa PatcherConfig::loadPatchInfos()
      */
-    int mbp_config_load_patchinfos(CPatcherConfig *pc)
+    bool mbp_config_load_patchinfos(CPatcherConfig *pc)
     {
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
-        bool ret = config->loadPatchInfos();
-        return ret ? 0 : -1;
+        return config->loadPatchInfos();
     }
 
 }

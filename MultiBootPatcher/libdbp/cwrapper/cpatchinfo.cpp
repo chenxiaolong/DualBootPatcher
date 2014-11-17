@@ -306,14 +306,14 @@ extern "C" {
      *
      * \param info CPatchInfo object
      *
-     * \return 0 if PatchInfo has a <not-matched> element, otherwise -1
+     * \return Whether PatchInfo has a <not-matched> element
      *
      * \sa PatchInfo::hasNotMatched()
      */
-    int mbp_patchinfo_has_not_matched(const CPatchInfo *info)
+    bool mbp_patchinfo_has_not_matched(const CPatchInfo *info)
     {
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->hasNotMatched() ? 0 : -1;
+        return pi->hasNotMatched();
     }
 
     /*!
@@ -324,10 +324,10 @@ extern "C" {
      *
      * \sa PatchInfo::setHasNotMatched()
      */
-    void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, int hasElem)
+    void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, bool hasElem)
     {
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setHasNotMatched(hasElem != 0);
+        pi->setHasNotMatched(hasElem);
     }
 
     /*!
@@ -421,14 +421,14 @@ extern "C" {
      * \param info CPatchInfo object
      * \param key Parameter key
      *
-     * \return 0 if the patched file has a boot image, otherwise -1
+     * \return Whether the patched file has a boot image
      *
      * \sa PatchInfo::hasBootImage()
      */
-    int mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key)
+    bool mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key)
     {
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->hasBootImage(key) ? 0 : -1;
+        return pi->hasBootImage(key);
     }
 
     /*!
@@ -441,10 +441,10 @@ extern "C" {
      * \sa PatchInfo::setHasBootImage()
      */
     void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,
-                                          const char *key, int hasBootImage)
+                                          const char *key, bool hasBootImage)
     {
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setHasBootImage(key, hasBootImage != 0);
+        pi->setHasBootImage(key, hasBootImage);
     }
 
     /*!
@@ -453,15 +453,15 @@ extern "C" {
      * \param info CPatchInfo object
      * \param key Parameter key
      *
-     * \return 0 if boot images should be autodetected, otherwise -1
+     * \return Whether boot images should be autodetected
      *
      * \sa PatchInfo::autodetectBootImages()
      */
-    int mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
+    bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
                                              const char *key)
     {
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->autodetectBootImages(key) ? 0 : -1;
+        return pi->autodetectBootImages(key);
     }
 
     /*!
@@ -474,10 +474,10 @@ extern "C" {
      * \sa PatchInfo::setAutoDetectBootImages()
      */
     void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
-                                                  const char *key, int autoDetect)
+                                                  const char *key, bool autoDetect)
     {
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setAutoDetectBootImages(key, autoDetect != 0);
+        pi->setAutoDetectBootImages(key, autoDetect);
     }
 
     /*!
@@ -606,14 +606,14 @@ extern "C" {
      * \param info CPatchInfo object
      * \param key Parameter key
      *
-     * \return 0 if the device model checks should be kept, otherwise -1
+     * \return Whether device model checks should be kept
      *
      * \sa PatchInfo::deviceCheck()
      */
-    int mbp_patchinfo_device_check(const CPatchInfo *info, const char *key)
+    bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key)
     {
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->deviceCheck(key) ? 0 : -1;
+        return pi->deviceCheck(key);
     }
 
     /*!
@@ -626,10 +626,10 @@ extern "C" {
      * \sa PatchInfo::setDeviceCheck()
      */
     void mbp_patchinfo_set_device_check(CPatchInfo *info,
-                                        const char *key, int deviceCheck)
+                                        const char *key, bool deviceCheck)
     {
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setDeviceCheck(key, deviceCheck != 0);
+        pi->setDeviceCheck(key, deviceCheck);
     }
 
     /*!

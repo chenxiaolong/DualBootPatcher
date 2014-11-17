@@ -107,7 +107,7 @@ extern "C" {
      *       when it is no longer needed.
      *
      * \param cpio CCpioFile object
-     * \param gzip Set to 1 if archive should be gzip-compressed
+     * \param gzip Whether archive should be gzip-compressed
      * \param data Output data
      * \param size Size of output data
      *
@@ -116,10 +116,10 @@ extern "C" {
      * \sa CpioFile::createData()
      */
     int mbp_cpiofile_create_data(CCpioFile *cpio,
-                                 int gzip, char **data, size_t *size)
+                                 bool gzip, char **data, size_t *size)
     {
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
-        std::vector<unsigned char> vData = cf->createData(gzip != 0);
+        std::vector<unsigned char> vData = cf->createData(gzip);
 
         if (vData.empty()) {
             return -1;
