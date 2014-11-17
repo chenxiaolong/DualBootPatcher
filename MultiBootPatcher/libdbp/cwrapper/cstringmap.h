@@ -33,6 +33,7 @@ char ** mbp_stringmap_keys(const CStringMap *map);
 char * mbp_stringmap_get(const CStringMap *map, const char *key);
 void mbp_stringmap_set(CStringMap *map, const char *key, const char *value);
 void mbp_stringmap_remove(CStringMap *map, const char *key);
+void mbp_stringmap_clear(CStringMap *map);
 
 #ifdef __cplusplus
 }

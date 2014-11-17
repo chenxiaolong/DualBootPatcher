@@ -126,4 +126,15 @@ extern "C" {
         }
     }
 
+    /*!
+     * \brief Clear CStringMap
+     *
+     * \param map CStringMap object
+     */
+    void mbp_stringmap_clear(CStringMap *map)
+    {
+        MapType *m = reinterpret_cast<MapType *>(map);
+        m->clear();
+    }
+
 }
