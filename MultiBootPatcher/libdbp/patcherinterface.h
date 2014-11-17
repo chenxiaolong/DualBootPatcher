@@ -93,6 +93,7 @@ public:
         \param maxProgressCb Callback for receiving maximum progress value
         \param progressCb Callback for receiving current progress value
         \param detailsCb Callback for receiving detailed progress text
+        \param userData Pointer to pass to callback functions
      */
     virtual bool patchFile(MaxProgressUpdatedCallback maxProgressCb,
                            ProgressUpdatedCallback progressCb,

@@ -21,6 +21,7 @@ set(DBP_SOURCES
     cwrapper/cpartitionconfig.cpp
     cwrapper/cpatcherconfig.cpp
     cwrapper/cpatchererror.cpp
+    cwrapper/cpatcherinterface.cpp
     cwrapper/cpatchinfo.cpp
     cwrapper/cstringmap.cpp
     # Autopatchers
