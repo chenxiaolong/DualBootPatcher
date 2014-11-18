@@ -1,6 +1,5 @@
 LOCAL_PATH := $(call my-dir)
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
-BOOST_SUFFIX := 1_53
 BOOST_DIR := $(THIRD_PARTY)/android/boost
 LIBXML2_DIR := $(THIRD_PARTY)/android/libxml2
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
@@ -8,13 +7,13 @@ LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := boost_filesystem
-LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_filesystem-gcc-mt-$(BOOST_SUFFIX).a
+LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_filesystem-mt.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := boost_system
-LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_system-gcc-mt-$(BOOST_SUFFIX).a
+LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_system-mt.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
