@@ -108,7 +108,7 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            jniLibs.srcDirs = ['jni-libloki/libs', 'jni-libmountpoint/libs']
+            jniLibs.srcDirs = ['jni/libs']
         }
 
         debug {
@@ -118,17 +118,5 @@ android {
         ci {
             manifest.srcFile 'manifests/ci.xml'
         }
-    }
-
-    task build_libloki(type: Exec) {
-        commandLine 'ndk-build', '-C', file('jni-libloki').absolutePath
-    }
-
-    task build_libmountpoint(type: Exec) {
-        commandLine 'ndk-build', '-C', file('jni-libmountpoint').absolutePath
-    }
-
-    tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn build_libloki, build_libmountpoint
     }
 }
