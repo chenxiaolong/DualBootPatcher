@@ -211,6 +211,7 @@ void MultiBootPatcher::setFileInfo(const FileInfo * const info)
 std::string MultiBootPatcher::newFilePath()
 {
     assert(m_impl->info != nullptr);
+    assert(m_impl->info->partConfig() != nullptr);
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
