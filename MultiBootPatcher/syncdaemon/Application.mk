@@ -1,8 +1,6 @@
 APP_BUILD_SCRIPT := Android.mk
 
-# The patcher only supports ARM devices at the moment
-APP_ABI := all
-#APP_ABI := armeabi-v7a
+APP_ABI := armeabi-v7a arm64-v8a x86 x86_64
 
 APP_PLATFORM := android-17
 
