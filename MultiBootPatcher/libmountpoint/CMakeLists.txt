@@ -10,8 +10,6 @@ ExternalProject_Add(
                   -j${PROCESSOR_COUNT}
                   NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmountpoint/out
                   NDK_OUT=<TMP_DIR>
-                  # Only armv7 is supported at the moment
-                  APP_ABI=armeabi-v7a
     INSTALL_COMMAND ""
 )
 
