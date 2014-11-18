@@ -92,13 +92,13 @@ install(
 # boost for Android
 ################################################################################
 
-set(BOOST_VER "1.53.0")
+set(BOOST_VER "1.57.0")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00148/bjJ/boost-${BOOST_VER}_android.tar.bz2
+    http://fs1.d-h.st/download/00148/zQG/boost-${BOOST_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
-    EXPECTED_MD5 f129d680f5ea0ada18dd2422290026a7
+    EXPECTED_MD5 ab35effea3638135b618d0d8de298471
     SHOW_PROGRESS
 )
 
