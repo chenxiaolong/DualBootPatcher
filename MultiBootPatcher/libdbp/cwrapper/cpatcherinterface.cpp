@@ -19,6 +19,7 @@
 
 #include "cwrapper/cpatcherinterface.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -84,6 +85,7 @@ extern "C" {
      */
     CPatcherError * mbp_patcher_error(const CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const Patcher *p = reinterpret_cast<const Patcher *>(patcher);
         PatcherError *pe = new PatcherError(p->error());
         return reinterpret_cast<CPatcherError *>(pe);
@@ -102,6 +104,7 @@ extern "C" {
      */
     char * mbp_patcher_id(const CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const Patcher *p = reinterpret_cast<const Patcher *>(patcher);
         return strdup(p->id().c_str());
     }
@@ -119,6 +122,7 @@ extern "C" {
      */
     char * mbp_patcher_name(const CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const Patcher *p = reinterpret_cast<const Patcher *>(patcher);
         return strdup(p->name().c_str());
     }
@@ -133,6 +137,7 @@ extern "C" {
      */
     bool mbp_patcher_uses_patchinfo(const CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const Patcher *p = reinterpret_cast<const Patcher *>(patcher);
         return p->usesPatchInfo();
     }
@@ -150,6 +155,7 @@ extern "C" {
      */
     char ** mbp_patcher_supported_partconfig_ids(const CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const Patcher *p = reinterpret_cast<const Patcher *>(patcher);
         auto const ids = p->supportedPartConfigIds();
 
@@ -173,6 +179,7 @@ extern "C" {
      */
     void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info)
     {
+        assert(patcher != nullptr);
         Patcher *p = reinterpret_cast<Patcher *>(patcher);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         p->setFileInfo(fi);
@@ -188,6 +195,7 @@ extern "C" {
      */
     char * mbp_patcher_new_file_path(CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         Patcher *p = reinterpret_cast<Patcher *>(patcher);
         return strdup(p->newFilePath().c_str());
     }
@@ -210,6 +218,7 @@ extern "C" {
                                DetailsUpdatedCallback detailsCb,
                                void *userData)
     {
+        assert(patcher != nullptr);
         Patcher *p = reinterpret_cast<Patcher *>(patcher);
 
         CallbackWrapper wrapper;
@@ -233,6 +242,7 @@ extern "C" {
      */
     void mbp_patcher_cancel_patching(CPatcher *patcher)
     {
+        assert(patcher != nullptr);
         Patcher *p = reinterpret_cast<Patcher *>(patcher);
         p->cancelPatching();
     }
@@ -254,6 +264,7 @@ extern "C" {
      */
     CPatcherError * mbp_autopatcher_error(const CAutoPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const AutoPatcher *p = reinterpret_cast<const AutoPatcher *>(patcher);
         PatcherError *pe = new PatcherError(p->error());
         return reinterpret_cast<CPatcherError *>(pe);
@@ -272,6 +283,7 @@ extern "C" {
      */
     char * mbp_autopatcher_id(const CAutoPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const AutoPatcher *p = reinterpret_cast<const AutoPatcher *>(patcher);
         return strdup(p->id().c_str());
     }
@@ -289,6 +301,7 @@ extern "C" {
      */
     char ** mbp_autopatcher_new_files(const CAutoPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const AutoPatcher *p = reinterpret_cast<const AutoPatcher *>(patcher);
         auto const files = p->newFiles();
 
@@ -315,6 +328,7 @@ extern "C" {
      */
     char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const AutoPatcher *p = reinterpret_cast<const AutoPatcher *>(patcher);
         auto const files = p->existingFiles();
 
@@ -341,6 +355,7 @@ extern "C" {
     int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory,
                                     char **bootImages)
     {
+        assert(patcher != nullptr);
         AutoPatcher *p = reinterpret_cast<AutoPatcher *>(patcher);
 
         std::vector<std::string> list;
@@ -370,6 +385,7 @@ extern "C" {
      */
     CPatcherError * mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const RamdiskPatcher *p = reinterpret_cast<const RamdiskPatcher *>(patcher);
         PatcherError *pe = new PatcherError(p->error());
         return reinterpret_cast<CPatcherError *>(pe);
@@ -388,6 +404,7 @@ extern "C" {
      */
     char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher)
     {
+        assert(patcher != nullptr);
         const RamdiskPatcher *p = reinterpret_cast<const RamdiskPatcher *>(patcher);
         return strdup(p->id().c_str());
     }
@@ -402,6 +419,7 @@ extern "C" {
      */
     int mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher)
     {
+        assert(patcher != nullptr);
         RamdiskPatcher *p = reinterpret_cast<RamdiskPatcher *>(patcher);
         bool ret = p->patchRamdisk();
         return ret ? 0 : -1;

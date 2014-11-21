@@ -19,6 +19,7 @@
 
 #include "cwrapper/cpatcherconfig.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -57,6 +58,7 @@ extern "C" {
      */
     void mbp_config_destroy(CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         delete reinterpret_cast<PatcherConfig *>(pc);
     }
 
@@ -77,6 +79,7 @@ extern "C" {
      */
     CPatcherError * mbp_config_error(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         PatcherError *pe = new PatcherError(config->error());
@@ -96,6 +99,7 @@ extern "C" {
      */
     char * mbp_config_binaries_directory(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->binariesDirectory().c_str());
@@ -114,6 +118,7 @@ extern "C" {
      */
     char * mbp_config_data_directory(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->dataDirectory().c_str());
@@ -132,6 +137,7 @@ extern "C" {
      */
     char * mbp_config_inits_directory(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->initsDirectory().c_str());
@@ -150,6 +156,7 @@ extern "C" {
      */
     char * mbp_config_patches_directory(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->patchesDirectory().c_str());
@@ -168,6 +175,7 @@ extern "C" {
      */
     char * mbp_config_patchinfos_directory(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->patchInfosDirectory().c_str());
@@ -186,6 +194,7 @@ extern "C" {
      */
     char * mbp_config_scripts_directory(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->scriptsDirectory().c_str());
@@ -201,6 +210,7 @@ extern "C" {
      */
     void mbp_config_set_binaries_directory(CPatcherConfig *pc, char *path)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setBinariesDirectory(path);
     }
@@ -215,6 +225,7 @@ extern "C" {
      */
     void mbp_config_set_data_directory(CPatcherConfig *pc, char *path)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setDataDirectory(path);
     }
@@ -229,6 +240,7 @@ extern "C" {
      */
     void mbp_config_set_inits_directory(CPatcherConfig *pc, char *path)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setInitsDirectory(path);
     }
@@ -243,6 +255,7 @@ extern "C" {
      */
     void mbp_config_set_patches_directory(CPatcherConfig *pc, char *path)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setPatchesDirectory(path);
     }
@@ -257,6 +270,7 @@ extern "C" {
      */
     void mbp_config_set_patchinfos_directory(CPatcherConfig *pc, char *path)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setPatchInfosDirectory(path);
     }
@@ -271,6 +285,7 @@ extern "C" {
      */
     void mbp_config_set_scripts_directory(CPatcherConfig *pc, char *path)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setScriptsDirectory(path);
     }
@@ -288,6 +303,7 @@ extern "C" {
      */
     char * mbp_config_version(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->version().c_str());
@@ -306,6 +322,7 @@ extern "C" {
      */
     CDevice ** mbp_config_devices(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const devices = config->devices();
@@ -333,6 +350,7 @@ extern "C" {
      */
     CPatchInfo ** mbp_config_patchinfos(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const infos = config->patchInfos();
@@ -362,6 +380,7 @@ extern "C" {
     CPatchInfo ** mbp_config_patchinfos_for_device(const CPatcherConfig *pc,
                                                    const CDevice *device)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         const Device *d = reinterpret_cast<const Device *>(device);
@@ -391,6 +410,7 @@ extern "C" {
                                                     CDevice *device,
                                                     const char *filename)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         Device *d = reinterpret_cast<Device *>(device);
@@ -411,6 +431,7 @@ extern "C" {
      */
     char ** mbp_config_patchers(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const ids = config->patchers();
@@ -437,6 +458,7 @@ extern "C" {
      */
     char **mbp_config_autopatchers(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const ids = config->autoPatchers();
@@ -463,6 +485,7 @@ extern "C" {
      */
     char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const ids = config->ramdiskPatchers();
@@ -490,6 +513,7 @@ extern "C" {
      */
     char * mbp_config_patcher_name(const CPatcherConfig *pc, const char *id)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         return strdup(config->patcherName(id).c_str());
@@ -507,6 +531,7 @@ extern "C" {
     CPatcher * mbp_config_create_patcher(CPatcherConfig *pc,
                                          const char *id)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         Patcher *p = config->createPatcher(id);
         return reinterpret_cast<CPatcher *>(p);
@@ -528,6 +553,7 @@ extern "C" {
                                                  const CFileInfo *info,
                                                  const CStringMap *args)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         const PatchInfo::AutoPatcherArgs *apArgs =
@@ -552,6 +578,7 @@ extern "C" {
                                                         const CFileInfo *info,
                                                         CCpioFile *cpio)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
@@ -569,6 +596,7 @@ extern "C" {
      */
     void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         Patcher *p = reinterpret_cast<Patcher *>(patcher);
         config->destroyPatcher(p);
@@ -585,6 +613,7 @@ extern "C" {
     void mbp_config_destroy_autopatcher(CPatcherConfig *pc,
                                         CAutoPatcher *patcher)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         AutoPatcher *ap = reinterpret_cast<AutoPatcher *>(patcher);
         config->destroyAutoPatcher(ap);
@@ -601,6 +630,7 @@ extern "C" {
     void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
                                             CRamdiskPatcher *patcher)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         RamdiskPatcher *rp = reinterpret_cast<RamdiskPatcher *>(patcher);
         config->destroyRamdiskPatcher(rp);
@@ -619,6 +649,7 @@ extern "C" {
      */
     CPartConfig ** mbp_config_partitionconfigs(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const configs = config->partitionConfigs();
@@ -646,6 +677,7 @@ extern "C" {
      */
     char ** mbp_config_init_binaries(const CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         const PatcherConfig *config =
                 reinterpret_cast<const PatcherConfig *>(pc);
         auto const inits = config->initBinaries();
@@ -671,6 +703,7 @@ extern "C" {
      */
     bool mbp_config_load_patchinfos(CPatcherConfig *pc)
     {
+        assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         return config->loadPatchInfos();
     }

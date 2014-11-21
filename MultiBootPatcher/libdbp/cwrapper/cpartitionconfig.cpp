@@ -19,6 +19,7 @@
 
 #include "cwrapper/cpartitionconfig.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -78,6 +79,7 @@ extern "C" {
      */
     void mbp_partconfig_destroy(CPartConfig *config)
     {
+        assert(config != nullptr);
         delete reinterpret_cast<PartitionConfig *>(config);
     }
 
@@ -95,6 +97,7 @@ extern "C" {
      */
     char * mbp_partconfig_name(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->name().c_str());
@@ -110,6 +113,7 @@ extern "C" {
      */
     void mbp_partconfig_set_name(CPartConfig *config, const char *name)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setName(name);
     }
@@ -128,6 +132,7 @@ extern "C" {
      */
     char * mbp_partconfig_description(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->description().c_str());
@@ -144,6 +149,7 @@ extern "C" {
     void mbp_partconfig_set_description(CPartConfig *config,
                                         const char *description)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setDescription(description);
     }
@@ -162,6 +168,7 @@ extern "C" {
      */
     char * mbp_partconfig_kernel(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->kernel().c_str());
@@ -177,6 +184,7 @@ extern "C" {
      */
     void mbp_partconfig_set_kernel(CPartConfig *config, const char *kernel)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setKernel(kernel);
     }
@@ -195,6 +203,7 @@ extern "C" {
      */
     char * mbp_partconfig_id(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->id().c_str());
@@ -210,6 +219,7 @@ extern "C" {
      */
     void mbp_partconfig_set_id(CPartConfig *config, const char *id)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setId(id);
     }
@@ -228,6 +238,7 @@ extern "C" {
      */
     char * mbp_partconfig_target_system(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->targetSystem().c_str());
@@ -243,6 +254,7 @@ extern "C" {
      */
     void mbp_partconfig_set_target_system(CPartConfig *config, const char *path)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setTargetSystem(path);
     }
@@ -261,6 +273,7 @@ extern "C" {
      */
     char * mbp_partconfig_target_cache(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->targetCache().c_str());
@@ -276,6 +289,7 @@ extern "C" {
      */
     void mbp_partconfig_set_target_cache(CPartConfig *config, const char *path)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setTargetCache(path);
     }
@@ -294,6 +308,7 @@ extern "C" {
      */
     char * mbp_partconfig_target_data(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->targetData().c_str());
@@ -309,6 +324,7 @@ extern "C" {
      */
     void mbp_partconfig_set_target_data(CPartConfig *config, const char *path)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setTargetData(path);
     }
@@ -328,6 +344,7 @@ extern "C" {
      */
     char * mbp_partconfig_target_system_partition(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->targetSystemPartition().c_str());
@@ -344,6 +361,7 @@ extern "C" {
     void mbp_partconfig_set_target_system_partition(CPartConfig *config,
                                                     const char *path)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setTargetSystemPartition(path);
     }
@@ -363,6 +381,7 @@ extern "C" {
      */
     char * mbp_partconfig_target_cache_partition(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->targetCachePartition().c_str());
@@ -379,6 +398,7 @@ extern "C" {
     void mbp_partconfig_set_target_cache_partition(CPartConfig *config,
                                                    const char *path)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setTargetCachePartition(path);
     }
@@ -398,6 +418,7 @@ extern "C" {
      */
     char * mbp_partconfig_target_data_partition(const CPartConfig *config)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         return strdup(pc->targetDataPartition().c_str());
@@ -414,6 +435,7 @@ extern "C" {
     void mbp_partconfig_set_target_data_partition(CPartConfig *config,
                                                   const char *path)
     {
+        assert(config != nullptr);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         pc->setTargetDataPartition(path);
     }
@@ -440,6 +462,7 @@ extern "C" {
                                            char **dataOut, size_t *sizeOut,
                                            bool targetPathOnly)
     {
+        assert(config != nullptr);
         const PartitionConfig *pc =
                 reinterpret_cast<const PartitionConfig *>(config);
         std::vector<unsigned char> contents(dataIn, dataIn + sizeIn);

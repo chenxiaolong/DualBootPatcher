@@ -19,6 +19,7 @@
 
 #include "cwrapper/cpatchinfo.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -71,6 +72,7 @@ extern "C" {
      */
     void mbp_patchinfo_destroy(CPatchInfo *info)
     {
+        assert(info != nullptr);
         delete reinterpret_cast<PatchInfo *>(info);
     }
 
@@ -88,6 +90,7 @@ extern "C" {
      */
     char * mbp_patchinfo_id(const CPatchInfo *info)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return strdup(pi->id().c_str());
     }
@@ -102,6 +105,7 @@ extern "C" {
      */
     void mbp_patchinfo_set_id(CPatchInfo *info, const char *id)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setId(id);
     }
@@ -120,6 +124,7 @@ extern "C" {
      */
     char * mbp_patchinfo_name(const CPatchInfo *info)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return strdup(pi->name().c_str());
     }
@@ -134,6 +139,7 @@ extern "C" {
      */
     void mbp_patchinfo_set_name(CPatchInfo *info, const char *name)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setName(name);
     }
@@ -155,6 +161,7 @@ extern "C" {
     char * mbp_patchinfo_key_from_filename(const CPatchInfo *info,
                                            const char *fileName)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return strdup(pi->keyFromFilename(fileName).c_str());
     }
@@ -173,6 +180,7 @@ extern "C" {
      */
     char ** mbp_patchinfo_regexes(const CPatchInfo *info)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         auto const regexes = pi->regexes();
 
@@ -196,6 +204,7 @@ extern "C" {
      */
     void mbp_patchinfo_set_regexes(CPatchInfo *info, const char **regexes)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         std::vector<std::string> list;
 
@@ -220,6 +229,7 @@ extern "C" {
      */
     char ** mbp_patchinfo_exclude_regexes(const CPatchInfo *info)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         auto const regexes = pi->excludeRegexes();
 
@@ -244,6 +254,7 @@ extern "C" {
     void mbp_patchinfo_set_exclude_regexes(CPatchInfo *info,
                                            const char **regexes)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         std::vector<std::string> list;
 
@@ -268,6 +279,7 @@ extern "C" {
      */
     char ** mbp_patchinfo_cond_regexes(const CPatchInfo *info)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         auto const regexes = pi->condRegexes();
 
@@ -291,6 +303,7 @@ extern "C" {
      */
     void mbp_patchinfo_set_cond_regexes(CPatchInfo *info, const char **regexes)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         std::vector<std::string> list;
 
@@ -312,6 +325,7 @@ extern "C" {
      */
     bool mbp_patchinfo_has_not_matched(const CPatchInfo *info)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return pi->hasNotMatched();
     }
@@ -326,6 +340,7 @@ extern "C" {
      */
     void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, bool hasElem)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setHasNotMatched(hasElem);
     }
@@ -343,6 +358,7 @@ extern "C" {
     void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
                                        const char *apName, CStringMap *args)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         PatchInfo::AutoPatcherArgs *apArgs =
                 reinterpret_cast<PatchInfo::AutoPatcherArgs *>(args);
@@ -362,6 +378,7 @@ extern "C" {
     void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
                                           const char *apName)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->removeAutoPatcher(key, apName);
     }
@@ -381,6 +398,7 @@ extern "C" {
      */
     char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         auto list = pi->autoPatchers(key);
 
@@ -409,6 +427,7 @@ extern "C" {
                                                 const char *key,
                                                 const char *apName)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         PatchInfo::AutoPatcherArgs *args =
                 new PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
@@ -427,6 +446,7 @@ extern "C" {
      */
     bool mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return pi->hasBootImage(key);
     }
@@ -443,6 +463,7 @@ extern "C" {
     void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,
                                           const char *key, bool hasBootImage)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setHasBootImage(key, hasBootImage);
     }
@@ -460,6 +481,7 @@ extern "C" {
     bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
                                              const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return pi->autodetectBootImages(key);
     }
@@ -476,6 +498,7 @@ extern "C" {
     void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
                                                   const char *key, bool autoDetect)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setAutoDetectBootImages(key, autoDetect);
     }
@@ -496,6 +519,7 @@ extern "C" {
      */
     char ** mbp_patchinfo_boot_images(const CPatchInfo *info, const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         auto const bootImages = pi->bootImages(key);
 
@@ -520,6 +544,7 @@ extern "C" {
     void mbp_patchinfo_set_boot_images(CPatchInfo *info,
                                        const char *key, const char **bootImages)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         std::vector<std::string> list;
 
@@ -545,6 +570,7 @@ extern "C" {
      */
     char * mbp_patchinfo_ramdisk(const CPatchInfo *info, const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return strdup(pi->ramdisk(key).c_str());
     }
@@ -561,6 +587,7 @@ extern "C" {
     void mbp_patchinfo_set_ramdisk(CPatchInfo *info,
                                    const char *key, const char *ramdisk)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setRamdisk(key, ramdisk);
     }
@@ -580,6 +607,7 @@ extern "C" {
      */
     char * mbp_patchinfo_patched_init(const CPatchInfo *info, const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return strdup(pi->patchedInit(key).c_str());
     }
@@ -596,6 +624,7 @@ extern "C" {
     void mbp_patchinfo_set_patched_init(CPatchInfo *info,
                                         const char *key, const char *init)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setPatchedInit(key, init);
     }
@@ -612,6 +641,7 @@ extern "C" {
      */
     bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         return pi->deviceCheck(key);
     }
@@ -628,6 +658,7 @@ extern "C" {
     void mbp_patchinfo_set_device_check(CPatchInfo *info,
                                         const char *key, bool deviceCheck)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         pi->setDeviceCheck(key, deviceCheck);
     }
@@ -649,6 +680,7 @@ extern "C" {
     char ** mbp_patchinfo_supported_configs(const CPatchInfo *info,
                                             const char *key)
     {
+        assert(info != nullptr);
         const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
         auto const configs = pi->supportedConfigs(key);
 
@@ -674,6 +706,7 @@ extern "C" {
     void mbp_patchinfo_set_supported_configs(CPatchInfo *info,
                                              const char *key, char **configs)
     {
+        assert(info != nullptr);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
         std::vector<std::string> list;
 

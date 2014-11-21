@@ -19,6 +19,7 @@
 
 #include "cwrapper/cbootimage.h"
 
+#include <cassert>
 #include <cstring>
 
 #include "bootimage.h"
@@ -55,6 +56,7 @@ extern "C" {
      */
     void mbp_bootimage_destroy(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         delete reinterpret_cast<BootImage *>(bootImage);
     }
 
@@ -75,6 +77,7 @@ extern "C" {
      */
     CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         PatcherError *pe = new PatcherError(bi->error());
         return reinterpret_cast<CPatcherError *>(pe);
@@ -94,6 +97,7 @@ extern "C" {
     int mbp_bootimage_load_data(CBootImage *bootImage,
                                 const char *data, unsigned int size)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bool ret = bi->load(std::vector<unsigned char>(data, data + size));
         return ret ? 0 : -1;
@@ -112,6 +116,7 @@ extern "C" {
     int mbp_bootimage_load_file(CBootImage *bootImage,
                                 const char *filename)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bool ret = bi->load(filename);
         return ret ? 0 : -1;
@@ -132,6 +137,7 @@ extern "C" {
      */
     size_t mbp_bootimage_create_data(const CBootImage *bootImage, char **data)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         std::vector<unsigned char> vData = bi->create();
         *data = new char[vData.size()];
@@ -152,6 +158,7 @@ extern "C" {
     int mbp_bootimage_create_file(CBootImage *bootImage,
                                   const char *filename)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bool ret = bi->createFile(filename);
         return ret ? 0 : -1;
@@ -171,6 +178,7 @@ extern "C" {
     int mbp_bootimage_extract(CBootImage *bootImage,
                               const char *directory, const char *prefix)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bool ret = bi->extract(directory, prefix);
         return ret ? 0 : -1;
@@ -190,6 +198,7 @@ extern "C" {
      */
     char * mbp_bootimage_boardname(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return strdup(bi->boardName().c_str());
     }
@@ -205,6 +214,7 @@ extern "C" {
     void mbp_bootimage_set_boardname(CBootImage *bootImage,
                                      const char *name)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setBoardName(name);
     }
@@ -219,6 +229,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_boardname(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetBoardName();
     }
@@ -237,6 +248,7 @@ extern "C" {
      */
     char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return strdup(bi->kernelCmdline().c_str());
     }
@@ -252,6 +264,7 @@ extern "C" {
     void mbp_bootimage_set_kernel_cmdline(CBootImage *bootImage,
                                           const char *cmdline)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setKernelCmdline(cmdline);
     }
@@ -265,6 +278,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_kernel_cmdline(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetKernelCmdline();
     }
@@ -280,6 +294,7 @@ extern "C" {
      */
     unsigned int mbp_bootimage_page_size(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return bi->pageSize();
     }
@@ -295,6 +310,7 @@ extern "C" {
     void mbp_bootimage_set_page_size(CBootImage *bootImage,
                                      unsigned int pageSize)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setPageSize(pageSize);
     }
@@ -308,6 +324,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_page_size(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetPageSize();
     }
@@ -323,6 +340,7 @@ extern "C" {
      */
     unsigned int mbp_bootimage_kernel_address(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return bi->kernelAddress();
     }
@@ -338,6 +356,7 @@ extern "C" {
     void mbp_bootimage_set_kernel_address(CBootImage *bootImage,
                                           unsigned int address)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setKernelAddress(address);
     }
@@ -351,6 +370,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_kernel_address(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetKernelAddress();
     }
@@ -366,6 +386,7 @@ extern "C" {
      */
     unsigned int mbp_bootimage_ramdisk_address(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return bi->ramdiskAddress();
     }
@@ -381,6 +402,7 @@ extern "C" {
     void mbp_bootimage_set_ramdisk_address(CBootImage *bootImage,
                                            unsigned int address)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setRamdiskAddress(address);
     }
@@ -394,6 +416,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_ramdisk_address(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetRamdiskAddress();
     }
@@ -409,6 +432,7 @@ extern "C" {
      */
     unsigned int mbp_bootimage_second_bootloader_address(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return bi->secondBootloaderAddress();
     }
@@ -424,6 +448,7 @@ extern "C" {
     void mbp_bootimage_set_second_bootloader_address(CBootImage *bootImage,
                                                      unsigned int address)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setSecondBootloaderAddress(address);
     }
@@ -438,6 +463,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_second_bootloader_address(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetSecondBootloaderAddress();
     }
@@ -453,6 +479,7 @@ extern "C" {
      */
     unsigned int mbp_bootimage_kernel_tags_address(const CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         return bi->kernelTagsAddress();
     }
@@ -468,6 +495,7 @@ extern "C" {
     void mbp_bootimage_set_kernel_tags_address(CBootImage *bootImage,
                                                unsigned int address)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setKernelTagsAddress(address);
     }
@@ -481,6 +509,7 @@ extern "C" {
      */
     void mbp_bootimage_reset_kernel_tags_address(CBootImage *bootImage)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->resetKernelTagsAddress();
     }
@@ -504,6 +533,7 @@ extern "C" {
                                      unsigned int secondBootloaderOffset,
                                      unsigned int kernelTagsOffset)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setAddresses(base, kernelOffset, ramdiskOffset,
                          secondBootloaderOffset, kernelTagsOffset);
@@ -524,6 +554,7 @@ extern "C" {
      */
     size_t mbp_bootimage_kernel_image(const CBootImage *bootImage, char **data)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         std::vector<unsigned char> vData = bi->kernelImage();
         *data = new char[vData.size()];
@@ -543,6 +574,7 @@ extern "C" {
     void mbp_bootimage_set_kernel_image(CBootImage *bootImage,
                                         const char *data, unsigned int size)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setKernelImage(std::vector<unsigned char>(data, data + size));
     }
@@ -562,6 +594,7 @@ extern "C" {
      */
     size_t mbp_bootimage_ramdisk_image(const CBootImage *bootImage, char **data)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         std::vector<unsigned char> vData = bi->ramdiskImage();
         *data = new char[vData.size()];
@@ -581,6 +614,7 @@ extern "C" {
     void mbp_bootimage_set_ramdisk_image(CBootImage *bootImage,
                                          const char *data, unsigned int size)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setRamdiskImage(std::vector<unsigned char>(data, data + size));
     }
@@ -601,6 +635,7 @@ extern "C" {
     size_t mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
                                                  char **data)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         std::vector<unsigned char> vData = bi->secondBootloaderImage();
         *data = new char[vData.size()];
@@ -621,6 +656,7 @@ extern "C" {
                                                    const char *data,
                                                    unsigned int size)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setSecondBootloaderImage(
                 std::vector<unsigned char>(data, data + size));
@@ -642,6 +678,7 @@ extern "C" {
     size_t mbp_bootimage_device_tree_image(const CBootImage *bootImage,
                                            char **data)
     {
+        assert(bootImage != nullptr);
         const BootImage *bi = reinterpret_cast<const BootImage *>(bootImage);
         std::vector<unsigned char> vData = bi->deviceTreeImage();
         *data = new char[vData.size()];
@@ -662,6 +699,7 @@ extern "C" {
                                              const char *data,
                                              unsigned int size)
     {
+        assert(bootImage != nullptr);
         BootImage *bi = reinterpret_cast<BootImage *>(bootImage);
         bi->setDeviceTreeImage(std::vector<unsigned char>(data, data + size));
     }

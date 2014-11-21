@@ -19,6 +19,7 @@
 
 #include "cwrapper/cfileinfo.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -56,6 +57,7 @@ extern "C" {
      */
     void mbp_fileinfo_destroy(CFileInfo *info)
     {
+        assert(info != nullptr);
         delete reinterpret_cast<FileInfo *>(info);
     }
 
@@ -73,6 +75,7 @@ extern "C" {
      */
     char * mbp_fileinfo_filename(const CFileInfo *info)
     {
+        assert(info != nullptr);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         return strdup(fi->filename().c_str());
     }
@@ -87,6 +90,7 @@ extern "C" {
      */
     void mbp_fileinfo_set_filename(CFileInfo *info, const char *path)
     {
+        assert(info != nullptr);
         FileInfo *fi = reinterpret_cast<FileInfo *>(info);
         fi->setFilename(path);
     }
@@ -102,6 +106,7 @@ extern "C" {
      */
     CPatchInfo * mbp_fileinfo_patchinfo(const CFileInfo *info)
     {
+        assert(info != nullptr);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         CPatchInfo *cpi = reinterpret_cast<CPatchInfo *>(fi->patchInfo());
         return cpi;
@@ -117,6 +122,7 @@ extern "C" {
      */
     void mbp_fileinfo_set_patchinfo(CFileInfo *info, CPatchInfo *pInfo)
     {
+        assert(info != nullptr);
         FileInfo *fi = reinterpret_cast<FileInfo *>(info);
         PatchInfo *pi = reinterpret_cast<PatchInfo *>(pInfo);
         fi->setPatchInfo(pi);
@@ -133,6 +139,7 @@ extern "C" {
      */
     CDevice * mbp_fileinfo_device(const CFileInfo *info)
     {
+        assert(info != nullptr);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         CDevice *device = reinterpret_cast<CDevice *>(fi->device());
         return device;
@@ -148,6 +155,7 @@ extern "C" {
      */
     void mbp_fileinfo_set_device(CFileInfo *info, CDevice *device)
     {
+        assert(info != nullptr);
         FileInfo *fi = reinterpret_cast<FileInfo *>(info);
         Device *d = reinterpret_cast<Device *>(device);
         fi->setDevice(d);
@@ -164,6 +172,7 @@ extern "C" {
      */
     CPartConfig * mbp_fileinfo_partconfig(const CFileInfo *info)
     {
+        assert(info != nullptr);
         const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
         CPartConfig *cpc = reinterpret_cast<CPartConfig *>(fi->partConfig());
         return cpc;
@@ -179,6 +188,7 @@ extern "C" {
      */
     void mbp_fileinfo_set_partconfig(CFileInfo *info, CPartConfig *config)
     {
+        assert(info != nullptr);
         FileInfo *fi = reinterpret_cast<FileInfo *>(info);
         PartitionConfig *pc = reinterpret_cast<PartitionConfig *>(config);
         fi->setPartConfig(pc);

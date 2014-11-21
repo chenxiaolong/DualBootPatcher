@@ -19,6 +19,7 @@
 
 #include "cwrapper/cpatchererror.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -45,6 +46,7 @@ extern "C" {
      */
     void mbp_error_destroy(CPatcherError *error)
     {
+        assert(error != nullptr);
         delete reinterpret_cast<PatcherError *>(error);
     }
 
@@ -57,6 +59,7 @@ extern "C" {
      */
     ErrorType mbp_error_error_type(const CPatcherError *error)
     {
+        assert(error != nullptr);
         return reinterpret_cast<const PatcherError *>(error)->errorType();
     }
 
@@ -69,6 +72,7 @@ extern "C" {
      */
     ErrorCode mbp_error_error_code(const CPatcherError *error)
     {
+        assert(error != nullptr);
         return reinterpret_cast<const PatcherError *>(error)->errorCode();
     }
 
@@ -84,6 +88,7 @@ extern "C" {
      */
     char * mbp_error_patcher_name(const CPatcherError *error)
     {
+        assert(error != nullptr);
         const PatcherError *pe = reinterpret_cast<const PatcherError *>(error);
         return strdup(pe->patcherName().c_str());
     }
@@ -100,6 +105,7 @@ extern "C" {
      */
     char * mbp_error_filename(const CPatcherError *error)
     {
+        assert(error != nullptr);
         const PatcherError *pe = reinterpret_cast<const PatcherError *>(error);
         return strdup(pe->filename().c_str());
     }

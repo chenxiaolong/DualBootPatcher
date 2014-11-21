@@ -19,6 +19,7 @@
 
 #include "cwrapper/cstringmap.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -53,6 +54,7 @@ extern "C" {
      */
     void mbp_stringmap_destroy(CStringMap *map)
     {
+        assert(map != nullptr);
         delete reinterpret_cast<MapType *>(map);
     }
 
@@ -68,6 +70,7 @@ extern "C" {
      */
     char ** mbp_stringmap_keys(const CStringMap *map)
     {
+        assert(map != nullptr);
         const MapType *m = reinterpret_cast<const MapType *>(map);
 
         unsigned int i = 0;
@@ -90,6 +93,7 @@ extern "C" {
      */
     char * mbp_stringmap_get(const CStringMap *map, const char *key)
     {
+        assert(map != nullptr);
         const MapType *m = reinterpret_cast<const MapType *>(map);
 
         if (m->find(key) != m->end()) {
@@ -108,6 +112,7 @@ extern "C" {
      */
     void mbp_stringmap_set(CStringMap *map, const char *key, const char *value)
     {
+        assert(map != nullptr);
         MapType *m = reinterpret_cast<MapType *>(map);
         (*m)[key] = value;
     }
@@ -120,6 +125,7 @@ extern "C" {
      */
     void mbp_stringmap_remove(CStringMap *map, const char *key)
     {
+        assert(map != nullptr);
         MapType *m = reinterpret_cast<MapType *>(map);
         auto it = m->find(key);
         if (it != m->end()) {
@@ -134,6 +140,7 @@ extern "C" {
      */
     void mbp_stringmap_clear(CStringMap *map)
     {
+        assert(map != nullptr);
         MapType *m = reinterpret_cast<MapType *>(map);
         m->clear();
     }

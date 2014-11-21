@@ -19,6 +19,7 @@
 
 #include "cwrapper/ccommon.h"
 
+#include <cassert>
 #include <cstdlib>
 
 
@@ -26,6 +27,7 @@ extern "C" {
 
     void mbp_free_array(void **array)
     {
+        assert(array != nullptr);
         for (void **temp = array; *temp != nullptr; ++temp) {
             std::free(*temp);
         }

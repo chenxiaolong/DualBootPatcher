@@ -19,6 +19,7 @@
 
 #include "cwrapper/ccpiofile.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -56,6 +57,7 @@ extern "C" {
      */
     void mbp_cpiofile_destroy(CCpioFile *cpio)
     {
+        assert(cpio != nullptr);
         delete reinterpret_cast<CpioFile *>(cpio);
     }
 
@@ -76,6 +78,7 @@ extern "C" {
      */
     CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
     {
+        assert(cpio != nullptr);
         const CpioFile *bi = reinterpret_cast<const CpioFile *>(cpio);
         PatcherError *pe = new PatcherError(bi->error());
         return reinterpret_cast<CPatcherError *>(pe);
@@ -95,6 +98,7 @@ extern "C" {
     int mbp_cpiofile_load_data(CCpioFile *cpio,
                                const char *data, unsigned int size)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         bool ret = cf->load(std::vector<unsigned char>(data, data + size));
         return ret ? 0 : -1;
@@ -118,6 +122,7 @@ extern "C" {
     int mbp_cpiofile_create_data(CCpioFile *cpio,
                                  bool gzip, char **data, size_t *size)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         std::vector<unsigned char> vData = cf->createData(gzip);
 
@@ -144,6 +149,7 @@ extern "C" {
      */
     int mbp_cpiofile_exists(const CCpioFile *cpio, const char *filename)
     {
+        assert(cpio != nullptr);
         const CpioFile *cf = reinterpret_cast<const CpioFile *>(cpio);
         bool ret = cf->exists(filename);
         return ret ? 0 : -1;
@@ -161,6 +167,7 @@ extern "C" {
      */
     int mbp_cpiofile_remove(CCpioFile *cpio, const char *filename)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         bool ret = cf->remove(filename);
         return ret ? 0 : -1;
@@ -178,6 +185,7 @@ extern "C" {
      */
     char ** mbp_cpiofile_filenames(const CCpioFile *cpio)
     {
+        assert(cpio != nullptr);
         const CpioFile *cf = reinterpret_cast<const CpioFile *>(cpio);
         auto const files = cf->filenames();
 
@@ -210,6 +218,7 @@ extern "C" {
                               const char *filename,
                               char **data, size_t *size)
     {
+        assert(cpio != nullptr);
         const CpioFile *cf = reinterpret_cast<const CpioFile *>(cpio);
         std::vector<unsigned char> vData = cf->contents(filename);
 
@@ -240,6 +249,7 @@ extern "C" {
                                   const char *filename,
                                   char *data, size_t size)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         /* bool ret = */ cf->setContents(
                 filename, std::vector<unsigned char>(data, data + size));
@@ -262,6 +272,7 @@ extern "C" {
     int mbp_cpiofile_add_symlink(CCpioFile *cpio,
                                  const char *source, const char *target)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         bool ret = cf->addSymlink(source, target);
         return ret ? 0 : -1;
@@ -284,6 +295,7 @@ extern "C" {
                               const char *path, const char *name,
                               unsigned int perms)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         bool ret = cf->addFile(path, name, perms);
         return ret ? 0 : -1;
@@ -307,6 +319,7 @@ extern "C" {
                                         char *data, size_t size,
                                         const char *name, unsigned int perms)
     {
+        assert(cpio != nullptr);
         CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
         bool ret = cf->addFile(std::vector<unsigned char>(data, data + size),
                                name, perms);

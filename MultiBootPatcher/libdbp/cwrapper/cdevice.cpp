@@ -19,6 +19,7 @@
 
 #include "cwrapper/cdevice.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -89,6 +90,7 @@ extern "C" {
      */
     void mbp_device_destroy(CDevice *device)
     {
+        assert(device != nullptr);
         delete reinterpret_cast<Device *>(device);
     }
 
@@ -106,6 +108,7 @@ extern "C" {
      */
     char * mbp_device_codename(const CDevice *device)
     {
+        assert(device != nullptr);
         const Device *d = reinterpret_cast<const Device *>(device);
         return strdup(d->codename().c_str());
     }
@@ -120,6 +123,7 @@ extern "C" {
      */
     void mbp_device_set_codename(CDevice *device, const char *name)
     {
+        assert(device != nullptr);
         Device *d = reinterpret_cast<Device *>(device);
         d->setCodename(name);
     }
@@ -138,6 +142,7 @@ extern "C" {
      */
     char *mbp_device_name(const CDevice *device)
     {
+        assert(device != nullptr);
         const Device *d = reinterpret_cast<const Device *>(device);
         return strdup(d->name().c_str());
     }
@@ -152,6 +157,7 @@ extern "C" {
      */
     void mbp_device_set_name(CDevice *device, const char *name)
     {
+        assert(device != nullptr);
         Device *d = reinterpret_cast<Device *>(device);
         d->setName(name);
     }
@@ -170,6 +176,7 @@ extern "C" {
      */
     char *mbp_device_architecture(const CDevice *device)
     {
+        assert(device != nullptr);
         const Device *d = reinterpret_cast<const Device *>(device);
         return strdup(d->name().c_str());
     }
@@ -184,6 +191,7 @@ extern "C" {
      */
     void mbp_device_set_architecture(CDevice *device, const char *arch)
     {
+        assert(device != nullptr);
         Device *d = reinterpret_cast<Device *>(device);
         d->setArchitecture(arch);
     }
@@ -202,6 +210,7 @@ extern "C" {
      */
     char *mbp_device_selinux(const CDevice *device)
     {
+        assert(device != nullptr);
         const Device *d = reinterpret_cast<const Device *>(device);
         return strdup(d->selinux().c_str());
     }
@@ -216,6 +225,7 @@ extern "C" {
      */
     void mbp_device_set_selinux(CDevice *device, const char *selinux)
     {
+        assert(device != nullptr);
         Device *d = reinterpret_cast<Device *>(device);
         d->setSelinux(selinux);
     }
@@ -235,6 +245,7 @@ extern "C" {
      */
     char *mbp_device_partition(const CDevice *device, const char *which)
     {
+        assert(device != nullptr);
         const Device *d = reinterpret_cast<const Device *>(device);
         return strdup(d->partition(which).c_str());
     }
@@ -251,6 +262,7 @@ extern "C" {
     void mbp_device_set_partition(CDevice *device,
                                   const char *which, const char *partition)
     {
+        assert(device != nullptr);
         Device *d = reinterpret_cast<Device *>(device);
         d->setPartition(which, partition);
     }
@@ -267,6 +279,7 @@ extern "C" {
      */
     char **mbp_device_partition_types(const CDevice *device)
     {
+        assert(device != nullptr);
         const Device *d = reinterpret_cast<const Device *>(device);
         auto const types = d->partitionTypes();
 
