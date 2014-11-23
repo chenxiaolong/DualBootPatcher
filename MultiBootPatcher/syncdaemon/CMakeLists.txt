@@ -30,6 +30,7 @@ ExternalProject_Add(
                   SYNCDAEMON_VERSION=${DBP_VERSION}
                   # Only armv7 is supported at the moment
                   APP_ABI=armeabi-v7a
+                  ${NDK_ARGS}
     INSTALL_COMMAND ""
 )
 

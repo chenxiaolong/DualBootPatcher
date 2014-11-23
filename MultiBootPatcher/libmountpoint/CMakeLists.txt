@@ -10,6 +10,7 @@ ExternalProject_Add(
                   -j${PROCESSOR_COUNT}
                   NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmountpoint/out
                   NDK_OUT=<TMP_DIR>
+                  ${NDK_ARGS}
     INSTALL_COMMAND ""
 )
 

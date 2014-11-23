@@ -114,6 +114,7 @@ if(BUILD_ANDROID)
                       NDK_APPLICATION_MK=Application.mk
                       NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libdbp/out
                       NDK_OUT=<TMP_DIR>
+                      ${NDK_ARGS}
         INSTALL_COMMAND ""
     )
 
