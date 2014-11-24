@@ -17,3 +17,6 @@ set(NDK_ARGS "")
 if(ANDROID_DEBUG)
     set(NDK_ARGS "${NDK_ARGS} NDK_DEBUG=1")
 endif()
+
+# Install paths
+set(DATA_INSTALL_DIR .)
