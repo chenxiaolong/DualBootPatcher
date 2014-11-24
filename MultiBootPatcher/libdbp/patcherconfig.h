@@ -50,6 +50,7 @@ public:
     std::string patchesDirectory() const;
     std::string patchInfosDirectory() const;
     std::string scriptsDirectory() const;
+    std::string tempDirectory() const;
 
     void setBinariesDirectory(std::string path);
     void setDataDirectory(std::string path);
@@ -57,6 +58,7 @@ public:
     void setPatchesDirectory(std::string path);
     void setPatchInfosDirectory(std::string path);
     void setScriptsDirectory(std::string path);
+    void setTempDirectory(std::string path);
 
     std::string version() const;
     std::vector<Device *> devices() const;

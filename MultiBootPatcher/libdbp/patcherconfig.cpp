@@ -61,6 +61,7 @@ public:
     std::string patchesDir;
     std::string patchInfosDir;
     std::string scriptsDir;
+    std::string tempDir;
 
     std::string version;
     std::vector<Device *> devices;
@@ -295,6 +296,22 @@ std::string PatcherConfig::scriptsDirectory() const
 }
 
 /*!
+ * \brief Get the temporary directory
+ *
+ * The default directory is the system's (OS-dependent) temporary directory.
+ *
+ * \return Temporary directory
+ */
+std::string PatcherConfig::tempDirectory() const
+{
+    if (m_impl->tempDir.empty()) {
+        return boost::filesystem::temp_directory_path().string();
+    } else {
+        return m_impl->tempDir;
+    }
+}
+
+/*!
  * \brief Set binaries directory
  *
  * \note This should only be changed if the default data directory structure is
@@ -321,7 +338,7 @@ void PatcherConfig::setDataDirectory(std::string path)
  * \brief Set init binaries directory
  *
  * \note This should only be changed if the default data directory structure is
- *       desired.
+ *       not desired.
  *
  * \param path Path to init binaries directory
  */
@@ -334,7 +351,7 @@ void PatcherConfig::setInitsDirectory(std::string path)
  * \brief Set patch files directory
  *
  * \note This should only be changed if the default data directory structure is
- *       desired.
+ *       not desired.
  *
  * \param path Path to patch files directory
  */
@@ -347,7 +364,7 @@ void PatcherConfig::setPatchesDirectory(std::string path)
  * \brief Set PatchInfo files directory
  *
  * \note This should only be changed if the default data directory structure is
- *       desired.
+ *       not desired.
  *
  * \param path Path to PatchInfo files directory
  */
@@ -360,13 +377,26 @@ void PatcherConfig::setPatchInfosDirectory(std::string path)
  * \brief Set shell scripts directory
  *
  * \note This should only be changed if the default data directory structure is
- *       desired.
+ *       not desired.
  *
  * \param path Path to shell scripts directory
  */
 void PatcherConfig::setScriptsDirectory(std::string path)
 {
     m_impl->scriptsDir = std::move(path);
+}
+
+/*!
+ * \brief Set the temporary directory
+ *
+ * \note This should only be changed if the system's temporary directory is not
+ *       desired.
+ *
+ * \param path Path to temporary directory
+ */
+void PatcherConfig::setTempDirectory(std::string path)
+{
+    m_impl->tempDir = std::move(path);
 }
 
 /*!

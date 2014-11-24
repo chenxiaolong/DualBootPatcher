@@ -201,6 +201,25 @@ extern "C" {
     }
 
     /*!
+     * \brief Get the temporary directory
+     *
+     * \note The returned string is dynamically allocated. It should be free()'d
+     *       when it is no longer needed.
+     *
+     * \param pc CPatcherConfig object
+     * \return Temporary directory
+     *
+     * \sa PatcherConfig::tempDirectory()
+     */
+    char * mbp_config_temp_directory(const CPatcherConfig *pc)
+    {
+        assert(pc != nullptr);
+        const PatcherConfig *config =
+                reinterpret_cast<const PatcherConfig *>(pc);
+        return strdup(config->tempDirectory().c_str());
+    }
+
+    /*!
      * \brief Set binaries directory
      *
      * \param pc CPatcherConfig object
@@ -288,6 +307,21 @@ extern "C" {
         assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setScriptsDirectory(path);
+    }
+
+    /*!
+     * \brief Set the temporary directory
+     *
+     * \param pc CPatcherConfig object
+     * \param path Path to temporary directory
+     *
+     * \sa PatcherConfig::setTempDirectory()
+     */
+    void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path)
+    {
+        assert(pc != nullptr);
+        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
+        config->setTempDirectory(path);
     }
 
     /*!

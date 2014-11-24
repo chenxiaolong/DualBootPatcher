@@ -37,6 +37,7 @@ char * mbp_config_inits_directory(const CPatcherConfig *pc);
 char * mbp_config_patches_directory(const CPatcherConfig *pc);
 char * mbp_config_patchinfos_directory(const CPatcherConfig *pc);
 char * mbp_config_scripts_directory(const CPatcherConfig *pc);
+char * mbp_config_temp_directory(const CPatcherConfig *pc);
 
 void mbp_config_set_binaries_directory(CPatcherConfig *pc, char *path);
 void mbp_config_set_data_directory(CPatcherConfig *pc, char *path);
@@ -44,6 +45,7 @@ void mbp_config_set_inits_directory(CPatcherConfig *pc, char *path);
 void mbp_config_set_patches_directory(CPatcherConfig *pc, char *path);
 void mbp_config_set_patchinfos_directory(CPatcherConfig *pc, char *path);
 void mbp_config_set_scripts_directory(CPatcherConfig *pc, char *path);
+void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path);
 
 char * mbp_config_version(const CPatcherConfig *pc);
 CDevice ** mbp_config_devices(const CPatcherConfig *pc);
