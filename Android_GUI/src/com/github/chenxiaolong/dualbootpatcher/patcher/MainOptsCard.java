@@ -1,0 +1,248 @@
+/*
+ * Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.github.chenxiaolong.dualbootpatcher.patcher;
+
+import android.content.Context;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PartConfig;
+
+import java.util.ArrayList;
+
+import it.gmariotti.cardslib.library.internal.Card;
+
+public class MainOptsCard extends Card {
+    public static interface MainOptsSelectedListener {
+        public void onPatcherSelected(String patcherName);
+
+        public void onDeviceSelected(Device device);
+
+        public void onPartConfigSelected(PartConfig config);
+    }
+
+    private static final String EXTRA_SELECTED_PARTCONFIG = "selected_partconfig";
+
+    private PatcherConfigState mPCS;
+    private MainOptsSelectedListener mListener;
+
+    private int mSelectedPartConfig;
+
+    private TextView mTitle;
+    private ArrayAdapter<String> mPatcherAdapter;
+    private Spinner mPatcherSpinner;
+    private ArrayAdapter<String> mDeviceAdapter;
+    private Spinner mDeviceSpinner;
+    private ArrayAdapter<String> mPartConfigAdapter;
+    private Spinner mPartConfigSpinner;
+    private TextView mPartConfigDesc;
+
+    public MainOptsCard(Context context, PatcherConfigState pcs,
+                        MainOptsSelectedListener listener) {
+        this(context, R.layout.cardcontent_mainopts);
+        mPCS = pcs;
+        mListener = listener;
+    }
+
+    public MainOptsCard(Context context, int innerLayout) {
+        super(context, innerLayout);
+    }
+
+    @Override
+    public void setupInnerViewElements(ViewGroup parent, View view) {
+        if (view != null) {
+            mTitle = (TextView) view.findViewById(R.id.card_title);
+            mPatcherSpinner = (Spinner) view.findViewById(R.id.spinner_patcher);
+            mDeviceSpinner = (Spinner) view.findViewById(R.id.spinner_device);
+            mPartConfigSpinner = (Spinner) view.findViewById(R.id.spinner_partconfig);
+            mPartConfigDesc = (TextView) view.findViewById(R.id.partconfig_desc);
+        }
+
+        initControls();
+    }
+
+    private void initControls() {
+        // Patchers
+
+        mPatcherAdapter = new ArrayAdapter<String>(getContext(),
+                android.R.layout.simple_spinner_item, android.R.id.text1);
+        mPatcherAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mPatcherSpinner.setAdapter(mPatcherAdapter);
+
+        mPatcherSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mListener != null) {
+                    mListener.onPatcherSelected(mPatcherSpinner.getSelectedItem().toString());
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        // Devices
+
+        mDeviceAdapter = new ArrayAdapter<String>(getContext(),
+                android.R.layout.simple_spinner_item, android.R.id.text1);
+        mDeviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mDeviceSpinner.setAdapter(mDeviceAdapter);
+
+        mDeviceSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mListener != null) {
+                    mListener.onDeviceSelected(PatcherUtils.sPC.getDevices()[position]);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        // Partition configurations
+
+        mPartConfigAdapter = new ArrayAdapter<String>(getContext(),
+                android.R.layout.simple_spinner_item, android.R.id.text1);
+        mPartConfigAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mPartConfigSpinner.setAdapter(mPartConfigAdapter);
+
+        mPartConfigSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mSelectedPartConfig = position;
+
+                PartConfig config = mPCS.mPartConfigs.get(position);
+                mPartConfigDesc.setText(config.getDescription());
+
+                if (mListener != null) {
+                    mListener.onPartConfigSelected(config);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    public void refreshPatchers() {
+        ArrayList<String> patchers = new ArrayList<String>();
+        for (String patcherId : PatcherUtils.sPC.getPatchers()) {
+            patchers.add(PatcherUtils.sPC.getPatcherName(patcherId));
+        }
+
+        mPatcherAdapter.addAll(patchers.toArray(new String[0]));
+        mPatcherAdapter.notifyDataSetChanged();
+    }
+
+    public void refreshDevices() {
+        for (Device device : PatcherUtils.sPC.getDevices()) {
+            String text = String.format("%s (%s)", device.getCodename(), device.getName());
+            mDeviceAdapter.add(text);
+        }
+        mDeviceAdapter.notifyDataSetChanged();
+    }
+
+    public void refreshPartConfigs(boolean changedPatcher) {
+        if (changedPatcher || mPartConfigAdapter.getCount() == 0) {
+            mPartConfigAdapter.clear();
+
+            for (PartConfig config : mPCS.mPartConfigs) {
+                mPartConfigAdapter.add(config.getName());
+            }
+
+            mPartConfigAdapter.notifyDataSetChanged();
+        }
+
+        // Restore position on orientation change
+        if (!changedPatcher) {
+            mPartConfigSpinner.setSelection(mSelectedPartConfig);
+        }
+
+        // Update description
+        if (mPCS.mPartConfigs.isEmpty()) {
+            mPartConfigDesc.setText("");
+        } else {
+            if (mSelectedPartConfig >= 0) {
+                mPartConfigDesc.setText(
+                        mPCS.mPartConfigs.get(mSelectedPartConfig).getDescription());
+            }
+        }
+    }
+
+    public Device getDevice() {
+        int position = mDeviceSpinner.getSelectedItemPosition();
+        if (position < 0) {
+            position = 0;
+        }
+        return PatcherUtils.sPC.getDevices()[position];
+    }
+
+    public PartConfig getPartConfig() {
+        int position = mPartConfigSpinner.getSelectedItemPosition();
+        if (position < 0) {
+            position = 0;
+        }
+        return mPCS.mPartConfigs.get(position);
+    }
+
+    public void setEnabled(boolean enabled) {
+        mTitle.setEnabled(enabled);
+        mPatcherSpinner.setEnabled(enabled);
+        mDeviceSpinner.setEnabled(enabled);
+        mPartConfigSpinner.setEnabled(enabled);
+        mPartConfigDesc.setEnabled(enabled);
+    }
+
+    public void onSaveInstanceState(Bundle outState) {
+        // Need to save the selected position since the partconfig spinner is dynamically
+        // populated based on the selected patcher
+        outState.putInt(EXTRA_SELECTED_PARTCONFIG, mSelectedPartConfig);
+    }
+
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        mSelectedPartConfig = savedInstanceState.getInt(EXTRA_SELECTED_PARTCONFIG);
+        mPartConfigSpinner.setSelection(mSelectedPartConfig);
+    }
+
+    public void refreshState() {
+        // Disable when patching
+        switch (mPCS.mState) {
+        case PatcherConfigState.STATE_PATCHING:
+            setEnabled(false);
+            break;
+
+        case PatcherConfigState.STATE_INITIAL:
+        case PatcherConfigState.STATE_CHOSE_FILE:
+        case PatcherConfigState.STATE_FINISHED:
+            setEnabled(true);
+            break;
+        }
+    }
+}

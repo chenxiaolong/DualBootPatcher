@@ -30,7 +30,6 @@ import android.os.Build;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.AlertDialogFragment;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -41,7 +40,6 @@ public class PatcherEventCollector extends EventCollector {
     public static final String TAG = PatcherEventCollector.class.getSimpleName();
 
     private static final int REQUEST_FILE = 1234;
-    private static final int REQUEST_DIFF_FILE = 2345;
 
     private Context mContext;
 
@@ -53,22 +51,9 @@ public class PatcherEventCollector extends EventCollector {
             if (bundle != null) {
                 String state = bundle.getString(PatcherService.STATE);
 
-                if (PatcherService.STATE_ADD_TASK.equals(state)) {
-                    String task = bundle.getString(PatcherService.RESULT_TASK);
-                    sendEvent(new AddTaskEvent(task));
-                } else if (PatcherService.STATE_UPDATE_TASK.equals(state)) {
-                    String task = bundle.getString(PatcherService.RESULT_TASK);
-                    sendEvent(new UpdateTaskEvent(task));
-                } else if (PatcherService.STATE_UPDATE_DETAILS.equals(state)) {
+                if (PatcherService.STATE_UPDATE_DETAILS.equals(state)) {
                     String details = bundle.getString(PatcherService.RESULT_DETAILS);
                     sendEvent(new UpdateDetailsEvent(details));
-                } else if (PatcherService.STATE_NEW_OUTPUT_LINE.equals(state)) {
-                    String line = bundle.getString(PatcherService.RESULT_LINE);
-                    String stream = bundle.getString(PatcherService.RESULT_STREAM);
-
-                    if (stream.equals(CommandUtils.STREAM_STDOUT)) {
-                        sendEvent(new UpdateDetailsEvent(line));
-                    }
                 } else if (PatcherService.STATE_SET_PROGRESS_MAX.equals(state)) {
                     int maxProgress = bundle.getInt(PatcherService.RESULT_MAX_PROGRESS);
                     sendEvent(new SetMaxProgressEvent(maxProgress));
@@ -84,15 +69,7 @@ public class PatcherEventCollector extends EventCollector {
                     String newFile = bundle.getString(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE);
 
                     sendEvent(new FinishedPatchingEvent(failed, message, newFile));
-                } else if (PatcherService.STATE_CHECKED_SUPPORTED.equals(state)) {
-                    String zipFile = bundle.getString(PatcherService.RESULT_FILENAME);
-                    boolean supported = bundle.getBoolean(PatcherService.RESULT_SUPPORTED);
-
-                    sendEvent(new CheckedSupportedEvent(zipFile, supported));
                 }
-
-                // Ignored:
-                // PatcherService.STATE_FETCHED_PATCHER_INFO
             }
         }
     };
@@ -124,13 +101,6 @@ public class PatcherEventCollector extends EventCollector {
                 sendEvent(new RequestedFileEvent(file));
             }
             break;
-
-        case REQUEST_DIFF_FILE:
-            if (data != null && result == Activity.RESULT_OK) {
-                final String file = FileUtils.getPathFromUri(mContext, data.getData());
-
-                sendEvent(new RequestedDiffFileEvent(file));
-            }
         }
 
         super.onActivityResult(request, result, data);
@@ -171,36 +141,7 @@ public class PatcherEventCollector extends EventCollector {
         startActivityForResult(fileIntent, REQUEST_FILE);
     }
 
-    public void startFileChooserDiff() {
-        Intent fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        if (Build.VERSION.SDK_INT < 19) {
-            fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        }
-        // Android does not recognize any of the following:
-        // - application/x-patch
-        // - text/x-diff
-        // - text/x-patch
-        fileIntent.setType("*/*");
-        startActivityForResult(fileIntent, REQUEST_DIFF_FILE);
-    }
-
     // Events
-
-    public class AddTaskEvent extends BaseEvent {
-        String task;
-
-        public AddTaskEvent(String task) {
-            this.task = task;
-        }
-    }
-
-    public class UpdateTaskEvent extends BaseEvent {
-        String task;
-
-        public UpdateTaskEvent(String task) {
-            this.task = task;
-        }
-    }
 
     public class UpdateDetailsEvent extends BaseEvent {
         String text;
@@ -238,28 +179,10 @@ public class PatcherEventCollector extends EventCollector {
         }
     }
 
-    public class CheckedSupportedEvent extends BaseEvent {
-        String zipFile;
-        boolean supported;
-
-        public CheckedSupportedEvent(String zipFile, boolean supported) {
-            this.zipFile = zipFile;
-            this.supported = supported;
-        }
-    }
-
     public class RequestedFileEvent extends BaseEvent {
         String file;
 
         public RequestedFileEvent(String file) {
-            this.file = file;
-        }
-    }
-
-    public class RequestedDiffFileEvent extends BaseEvent {
-        String file;
-
-        public RequestedDiffFileEvent(String file) {
             this.file = file;
         }
     }

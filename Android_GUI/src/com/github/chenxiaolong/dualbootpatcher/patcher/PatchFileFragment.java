@@ -17,108 +17,75 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.AddTaskEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.CheckedSupportedEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.CustomOptsCard.CustomOptsSelectedListener;
+import com.github.chenxiaolong.dualbootpatcher.patcher.MainOptsCard.MainOptsSelectedListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.RequestedDiffFileEvent;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateTaskEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PresetCard.PresetSelectedListener;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PartConfig;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 
 import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
 import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
 import it.gmariotti.cardslib.library.view.CardView;
 
-public class PatchFileFragment extends Fragment implements EventCollectorListener {
+public class PatchFileFragment extends Fragment implements EventCollectorListener,
+        MainOptsSelectedListener, CustomOptsSelectedListener, PresetSelectedListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
-    private static final int STATE_READY = 0;
-    private static final int STATE_CHOSE_FILE = 1;
-    private static final int STATE_PATCHING = 2;
-
-    private static final String ARG_FILENAME_OLD = "zipFile";
-    private static final String ARG_FILENAME = "filename";
-    private static final String ARG_DEVICE = "device";
-    private static final String ARG_PARTCONFIG = "partConfig";
-
-    private static final String RESULT_FILENAME_OLD = "newZipFile";
-    private static final String RESULT_FILENAME = "filename";
-    private static final String RESULT_MESSAGE = "message";
-    private static final String RESULT_FAILED = "failed";
+    private static final String EXTRA_CONFIG_STATE = "config_state";
 
     private boolean mShowingProgress;
-    private int mState;
-    private boolean mAutomated;
 
     private PatcherEventCollector mEventCollector;
+
+    private Bundle mSavedInstanceState;
 
     private ScrollView mScrollView;
     private ProgressBar mProgressBar;
 
-    private PatcherInformation mInfo;
-    private DevicePartConfigCard mDevicePartConfigCard;
+    private MainOptsCard mMainOptsCard;
     private FileChooserCard mFileChooserCard;
     private PresetCard mPresetCard;
     private CustomOptsCard mCustomOptsCard;
-    private TasksCard mTasksCard;
     private DetailsCard mDetailsCard;
     private ProgressCard mProgressCard;
 
-    private CardView mDevicePartConfigCardView;
+    private CardView mMainOptsCardView;
     private CardView mFileChooserCardView;
     private CardView mPresetCardView;
     private CardView mCustomOptsCardView;
-    private CardView mTasksCardView;
     private CardView mDetailsCardView;
     private CardView mProgressCardView;
 
-    // Work around onItemSelected() being called on initialization
-    private boolean mDeviceSpinnerChanged;
+    private PatcherConfigState mPCS;
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
-    }
-
-    public static PatchFileFragment newAutomatedInstance(Bundle data) {
-        PatchFileFragment f = new PatchFileFragment();
-
-        Bundle args = (Bundle) data.clone();
-        args.putBoolean("automated", true);
-        if (args.containsKey(ARG_FILENAME_OLD)
-                && !args.containsKey(ARG_FILENAME)) {
-            args.putString(ARG_FILENAME, args.getString(ARG_FILENAME_OLD));
-        }
-
-        f.setArguments(args);
-
-        return f;
     }
 
     @Override
@@ -132,22 +99,23 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             mEventCollector = new PatcherEventCollector();
             fm.beginTransaction().add(mEventCollector, PatcherEventCollector.TAG).commit();
         }
+
+        if (savedInstanceState != null) {
+            mPCS = savedInstanceState.getParcelable(EXTRA_CONFIG_STATE);
+        } else {
+            mPCS = new PatcherConfigState();
+        }
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        mSavedInstanceState = savedInstanceState;
 
-        if (getArguments() != null) {
-            mAutomated = getArguments().getBoolean("automated");
-        }
+        mScrollView = (ScrollView) getActivity().findViewById(R.id.card_scrollview);
+        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_loading_patch_file);
 
-        mScrollView = (ScrollView) getActivity().findViewById(
-                R.id.card_scrollview);
-        mProgressBar = (ProgressBar) getActivity().findViewById(
-                R.id.card_loading_patch_file);
-
-        initCards(savedInstanceState);
+        initCards();
     }
 
     @Override
@@ -156,136 +124,113 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         return inflater.inflate(R.layout.fragment_patch_file, container, false);
     }
 
-    private void initCards(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            mInfo = savedInstanceState.getParcelable("info");
-            mState = savedInstanceState.getInt("state");
-        }
-
-        mShowingProgress = true;
-        updateMainUI();
-
+    private void initMainOptsCard() {
         // Card for selecting the device and partition configuration
-        mDevicePartConfigCard = new DevicePartConfigCard(getActivity());
+        mMainOptsCard = new MainOptsCard(getActivity(), mPCS, this);
+        mMainOptsCardView = (CardView) getActivity().findViewById(R.id.card_mainopts);
+        mMainOptsCardView.setCard(mMainOptsCard);
+    }
 
-        mDevicePartConfigCardView = (CardView) getActivity().findViewById(
-                R.id.card_device_partconfig);
-        mDevicePartConfigCardView.setCard(mDevicePartConfigCard);
-
+    private void initFileChooserCard() {
         // Card for choosing the file to patch, starting the patching
         // process, and resetting the patching process
-        mFileChooserCard = new FileChooserCard(getActivity());
+        mFileChooserCard = new FileChooserCard(getActivity(), mPCS);
         mFileChooserCard.setClickable(true);
 
-        if (savedInstanceState != null) {
-            mFileChooserCard.onRestoreInstanceState(savedInstanceState);
-        }
-
-        if (mFileChooserCard.isFileSelected()) {
+        if (mPCS.mState == PatcherConfigState.STATE_CHOSE_FILE) {
             setTapActionPatchFile();
         } else {
             setTapActionChooseFile();
         }
 
-        mFileChooserCardView = (CardView) getActivity().findViewById(
-                R.id.card_file_chooser);
+        mFileChooserCardView = (CardView) getActivity().findViewById(R.id.card_file_chooser);
         mFileChooserCardView.setCard(mFileChooserCard);
+    }
 
-        // Card that allows the user to select a preset patchinfo to patch an
-        // unsupported file
-        mPresetCard = new PresetCard(getActivity());
-
-        mPresetCardView = (CardView) getActivity().findViewById(
-                R.id.card_preset);
+    private void initPresetCard() {
+        // Card that allows the user to select a preset patchinfo to patch an unsupported file
+        mPresetCard = new PresetCard(getActivity(), mPCS, this);
+        mPresetCardView = (CardView) getActivity().findViewById(R.id.card_preset);
         mPresetCardView.setCard(mPresetCard);
+    }
 
-        // Card that allows the user to manually change the patcher options when
-        // patching an unsupported file
-        mCustomOptsCard = new CustomOptsCard(getActivity());
-
-        if (savedInstanceState != null) {
-            mCustomOptsCard.onRestoreInstanceState(savedInstanceState);
-        }
-
-        mCustomOptsCardView = (CardView) getActivity().findViewById(
-                R.id.card_customopts);
+    private void initCustomOptsCard() {
+        // Card that allows the user to manually change the patcher options when patching an
+        // unsupported file
+        mCustomOptsCard = new CustomOptsCard(getActivity(), mPCS, this);
+        mCustomOptsCardView = (CardView) getActivity().findViewById(R.id.card_customopts);
         mCustomOptsCardView.setCard(mCustomOptsCard);
+    }
 
-        // Card to show the list of tasks to perform during the patching
-        // process
-        mTasksCard = new TasksCard(getActivity());
-
-        if (savedInstanceState != null) {
-            mTasksCard.onRestoreInstanceState(savedInstanceState);
-        }
-
-        mTasksCardView = (CardView) getActivity().findViewById(R.id.card_tasks);
-        mTasksCardView.setCard(mTasksCard);
-
-        // Card to show more details on the current task (eg. files being
-        // patched and copied, etc)
-        mDetailsCard = new DetailsCard(getActivity());
-
-        if (savedInstanceState != null) {
-            mDetailsCard.onRestoreInstanceState(savedInstanceState);
-        }
-
-        mDetailsCardView = (CardView) getActivity().findViewById(
-                R.id.card_details);
+    private void initDetailsCard() {
+        // Card to show patching details
+        mDetailsCard = new DetailsCard(getActivity(), mPCS);
+        mDetailsCardView = (CardView) getActivity().findViewById(R.id.card_details);
         mDetailsCardView.setCard(mDetailsCard);
+    }
 
+    private void initProgressCard() {
         // Card to show a progress bar for the patching process (really only
         // the compression part though, since that takes the longest)
-        mProgressCard = new ProgressCard(getActivity());
-
-        if (savedInstanceState != null) {
-            mProgressCard.onRestoreInstanceState(savedInstanceState);
-        }
-
-        mProgressCardView = (CardView) getActivity().findViewById(
-                R.id.card_progress);
+        mProgressCard = new ProgressCard(getActivity(), mPCS);
+        mProgressCardView = (CardView) getActivity().findViewById(R.id.card_progress);
         mProgressCardView.setCard(mProgressCard);
+    }
+
+    private void initCards() {
+        mShowingProgress = true;
+        updateMainUI();
+
+        initMainOptsCard();
+        initFileChooserCard();
+        initPresetCard();
+        initCustomOptsCard();
+        initDetailsCard();
+        initProgressCard();
 
         // Update UI based on patch state
         updateCardUI();
 
-        if (mAutomated) {
-            startAutomatedPatching();
-            return;
-        }
-
-        // Load patcher information
-        if (mInfo == null) {
+        // Initialize patcher
+        if (PatcherUtils.sPC == null) {
             Context context = getActivity().getApplicationContext();
-            new CardLoaderTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new PatcherInitializationTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         } else {
-            // Ensures that everything is needed right away (needed for, eg.
-            // orientation change)
-            gotPatcherInformation();
+            // Ensures that everything is needed right away (needed for, eg. orientation change)
+            patcherInitialized();
         }
     }
 
-    private class CardLoaderTask extends AsyncTask<Void, Void, PatcherInformation> {
+    private void restoreCardStates() {
+        if (mSavedInstanceState != null) {
+            mMainOptsCard.onRestoreInstanceState(mSavedInstanceState);
+            mFileChooserCard.onRestoreInstanceState(mSavedInstanceState);
+            mDetailsCard.onRestoreInstanceState(mSavedInstanceState);
+            mProgressCard.onRestoreInstanceState(mSavedInstanceState);
+        }
+    }
+
+    private class PatcherInitializationTask extends AsyncTask<Void, Void, Void> {
         private final Context mContext;
 
-        public CardLoaderTask(Context context) {
+        public PatcherInitializationTask(Context context) {
             mContext = context;
         }
 
         @Override
-        protected PatcherInformation doInBackground(Void... params) {
-            return PatcherUtils.getPatcherInformation(mContext);
+        protected Void doInBackground(Void... params) {
+            PatcherUtils.initializePatcher(mContext);
+            return null;
         }
 
         @Override
-        protected void onPostExecute(PatcherInformation result) {
+        protected void onPostExecute(Void result) {
             // Don't die on a configuration change
             if (getActivity() == null) {
                 return;
             }
 
-            mInfo = result;
-            gotPatcherInformation();
+            patcherInitialized();
         }
     }
 
@@ -304,12 +249,11 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable("info", mInfo);
-        outState.putInt("state", mState);
 
+        outState.putParcelable(EXTRA_CONFIG_STATE, mPCS);
+
+        mMainOptsCard.onSaveInstanceState(outState);
         mFileChooserCard.onSaveInstanceState(outState);
-        mCustomOptsCard.onSaveInstanceState(outState);
-        mTasksCard.onSaveInstanceState(outState);
         mDetailsCard.onSaveInstanceState(outState);
         mProgressCard.onSaveInstanceState(outState);
     }
@@ -325,150 +269,56 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     }
 
     private void updateCardUI() {
-        switch (mState) {
-        case STATE_PATCHING:
+        mMainOptsCard.refreshState();
+        mFileChooserCard.refreshState();
+        mPresetCard.refreshState();
+        mCustomOptsCard.refreshState();
+        mDetailsCard.refreshState();
+        mProgressCard.refreshState();
+
+        switch (mPCS.mState) {
+        case PatcherConfigState.STATE_PATCHING:
             // Keep screen on
-            getActivity().getWindow().addFlags(
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
             // Show progress spinner in navigation bar
-            ((MainActivity) getActivity()).showProgress(
-                    MainActivity.FRAGMENT_PATCH_FILE, true);
-
-            // Disable all configuration cards
-            mDevicePartConfigCard.setEnabled(false);
-            mFileChooserCard.setEnabled(false);
-            mFileChooserCardView.refreshCard(mFileChooserCard);
-            mPresetCard.setEnabled(false);
-            mCustomOptsCard.setEnabled(false);
-
-            if (mFileChooserCard.isSupported()) {
-                mPresetCardView.setVisibility(View.GONE);
-                mCustomOptsCardView.setVisibility(View.GONE);
-            } else {
-                mPresetCardView.setVisibility(View.VISIBLE);
-                mCustomOptsCardView.setVisibility(View.VISIBLE);
-            }
-
-            // Show progress cards
-            mTasksCardView.setVisibility(View.VISIBLE);
-            mDetailsCardView.setVisibility(View.VISIBLE);
-            mProgressCardView.setVisibility(View.VISIBLE);
+            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_PATCH_FILE, true);
 
             break;
 
-        case STATE_CHOSE_FILE:
-            mDevicePartConfigCard.setEnabled(true);
-            mFileChooserCard.setEnabled(true);
-            mFileChooserCardView.refreshCard(mFileChooserCard);
-            mPresetCard.setEnabled(true);
-            mCustomOptsCard.setEnabled(true);
-
-            if (mFileChooserCard.isSupported()) {
-                mPresetCardView.setVisibility(View.GONE);
-                mCustomOptsCardView.setVisibility(View.GONE);
-            } else {
-                mPresetCardView.setVisibility(View.VISIBLE);
-                mCustomOptsCardView.setVisibility(View.VISIBLE);
-            }
-
-            // Hide progress cards
-            mTasksCardView.setVisibility(View.GONE);
-            mDetailsCardView.setVisibility(View.GONE);
-            mProgressCardView.setVisibility(View.GONE);
-
-            break;
-
-        case STATE_READY:
+        case PatcherConfigState.STATE_INITIAL:
+        case PatcherConfigState.STATE_FINISHED:
             // Don't keep screen on
-            getActivity().getWindow().clearFlags(
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
             // Hide progress spinner in navigation bar
-            ((MainActivity) getActivity()).showProgress(
-                    MainActivity.FRAGMENT_PATCH_FILE, false);
-
-            // Enable configuration cards again
-            mDevicePartConfigCard.setEnabled(true);
-            mFileChooserCard.setEnabled(true);
-            mFileChooserCardView.refreshCard(mFileChooserCard);
-            mPresetCard.setEnabled(true);
-            mCustomOptsCard.setEnabled(true);
-
-            // Hide unsupported file cards
-            mPresetCardView.setVisibility(View.GONE);
-            mCustomOptsCardView.setVisibility(View.GONE);
-
-            // Hide progress cards
-            mTasksCardView.setVisibility(View.GONE);
-            mDetailsCardView.setVisibility(View.GONE);
-            mProgressCardView.setVisibility(View.GONE);
+            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_PATCH_FILE, false);
 
             break;
         }
-
-        // Always hide configuration cards in automated mode
-        if (mAutomated) {
-            mDevicePartConfigCardView.setVisibility(View.GONE);
-            mFileChooserCardView.setVisibility(View.GONE);
-            mPresetCardView.setVisibility(View.GONE);
-            mCustomOptsCardView.setVisibility(View.GONE);
-        }
     }
 
-    private void gotPatcherInformation() {
-        mDevicePartConfigCard.setPatcherInfo(mInfo);
-        mPresetCard.setPatcherInfo(mInfo, mDevicePartConfigCard.getDevice());
-        mCustomOptsCard
-                .setPatcherInfo(mInfo, mDevicePartConfigCard.getDevice());
-        setDevicePartConfigActions();
-        setPresetActions();
-        setCustomOptsActions();
+    private void patcherInitialized() {
+        mPCS.setupInitial();
+
+        mMainOptsCard.refreshPatchers();
+        mMainOptsCard.refreshDevices();
+        // PartConfigs are initialized when a patcher is selected
+
+        mCustomOptsCard.refreshAutoPatchers();
+        mCustomOptsCard.refreshRamdisks();
+        mCustomOptsCard.refreshInits();
+
+        mPresetCard.refreshPresets();
+
+        restoreCardStates();
 
         mShowingProgress = false;
         updateMainUI();
-    }
-
-    private void startAutomatedPatching() {
-        mShowingProgress = false;
-        updateMainUI();
-
-        mState = STATE_PATCHING;
-        updateCardUI();
-
-        // Scroll to the bottom
-        mScrollView.post(new Runnable() {
-            @Override
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
-
-        Context context = getActivity().getApplicationContext();
-        Intent intent = new Intent(context, PatcherService.class);
-        intent.putExtra(PatcherService.ACTION, PatcherService.ACTION_PATCH_FILE);
-
-        String filename = getArguments().getString(ARG_FILENAME);
-
-        intent.putExtra(PatcherUtils.PARAM_FILENAME, filename);
-
-        String device = getArguments().getString(ARG_DEVICE);
-        if (device == null) {
-            device = Build.DEVICE;
-        }
-
-        intent.putExtra(PatcherUtils.PARAM_DEVICE, device);
-
-        String partConfig = getArguments().getString(ARG_PARTCONFIG);
-        intent.putExtra(PatcherUtils.PARAM_PARTCONFIG, partConfig);
-
-        intent.putExtra(PatcherUtils.PARAM_SUPPORTED, true);
-
-        context.startService(intent);
     }
 
     private void startPatching() {
-        mState = STATE_PATCHING;
+        mPCS.mState = PatcherConfigState.STATE_PATCHING;
         updateCardUI();
 
         // Scroll to the bottom
@@ -479,80 +329,102 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             }
         });
 
-        Context context = getActivity().getApplicationContext();
-        Intent intent = new Intent(context, PatcherService.class);
-        intent.putExtra(PatcherService.ACTION, PatcherService.ACTION_PATCH_FILE);
+        if (mPCS.mSupported == PatcherConfigState.NOT_SUPPORTED) {
+            if (mPCS.mPatchInfo == null) {
+                mPCS.mPatchInfo = new PatchInfo();
 
-        intent.putExtra(PatcherUtils.PARAM_FILENAME,
-                mFileChooserCard.getFilename());
-        intent.putExtra(PatcherUtils.PARAM_DEVICE,
-                mDevicePartConfigCard.getDevice().mCodeName);
-        intent.putExtra(PatcherUtils.PARAM_PARTCONFIG,
-                mDevicePartConfigCard.getPartConfig().mId);
+                mPCS.mPatchInfo.addAutoPatcher(PatchInfo.Default(), mPCS.mAutoPatcherId, null);
 
-        boolean supported = mFileChooserCard.isSupported();
-        intent.putExtra(PatcherUtils.PARAM_SUPPORTED, supported);
+                mPCS.mPatchInfo.setHasBootImage(PatchInfo.Default(),
+                        mCustomOptsCard.isHasBootImageEnabled());
 
-        if (!supported) {
-            PatchInfo preset = mPresetCard.getPreset();
-            if (preset != null) {
-                intent.putExtra(PatcherUtils.PARAM_PRESET, preset);
-            }
+                if (mPCS.mPatchInfo.hasBootImage(PatchInfo.Default())) {
+                    mPCS.mPatchInfo.setRamdisk(PatchInfo.Default(), mPCS.mRamdiskId);
 
-            boolean useAutopatcher = mCustomOptsCard.isUsingAutopatcher();
-            intent.putExtra(PatcherUtils.PARAM_USE_AUTOPATCHER, useAutopatcher);
-            if (useAutopatcher) {
-                intent.putExtra(PatcherUtils.PARAM_AUTOPATCHER,
-                        mCustomOptsCard.getAutopatcher());
-            }
+                    String bootImagesText = mCustomOptsCard.getBootImage();
+                    if (bootImagesText != null) {
+                        String[] bootImages = bootImagesText.split(",");
+                        mPCS.mPatchInfo.setBootImages(PatchInfo.Default(), bootImages);
+                    }
 
-            boolean usePatch = mCustomOptsCard.isUsingPatch();
-            intent.putExtra(PatcherUtils.PARAM_USE_PATCH, usePatch);
-            if (usePatch) {
-                intent.putExtra(PatcherUtils.PARAM_PATCH,
-                        mCustomOptsCard.getPatch());
-            }
-
-            intent.putExtra(PatcherUtils.PARAM_DEVICE_CHECK,
-                    mCustomOptsCard.isDeviceCheckEnabled());
-
-            boolean hasBootImage = mCustomOptsCard.isHasBootImageEnabled();
-            intent.putExtra(PatcherUtils.PARAM_HAS_BOOT_IMAGE, hasBootImage);
-            if (hasBootImage) {
-                intent.putExtra(PatcherUtils.PARAM_RAMDISK,
-                        mCustomOptsCard.getRamdisk());
-
-                String init = mCustomOptsCard.getPatchedInit();
-                if (init != null) {
-                    intent.putExtra(PatcherUtils.PARAM_PATCHED_INIT, init);
+                    String patchedInit = mPCS.mPatchedInit;
+                    if (patchedInit != null) {
+                        mPCS.mPatchInfo.setPatchedInit(PatchInfo.Default(), patchedInit);
+                    }
                 }
 
-                intent.putExtra(PatcherUtils.PARAM_BOOT_IMAGE,
-                        mCustomOptsCard.getBootImage());
+                mPCS.mPatchInfo.setDeviceCheck(PatchInfo.Default(),
+                        mCustomOptsCard.isDeviceCheckEnabled());
             }
         }
 
-        context.startService(intent);
-    }
-
-    private void checkSupported(String filename) {
-        // Show progress on file chooser card
-        mFileChooserCard.setProgressShowing(true);
-
-        String device = mDevicePartConfigCard.getDevice().mCodeName;
-        String partConfig = mDevicePartConfigCard.getPartConfig().mId;
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setFilename(mPCS.mFilename);
+        fileInfo.setDevice(mMainOptsCard.getDevice());
+        fileInfo.setPartConfig(mMainOptsCard.getPartConfig());
+        fileInfo.setPatchInfo(mPCS.mPatchInfo);
 
         Context context = getActivity().getApplicationContext();
         Intent intent = new Intent(context, PatcherService.class);
-        intent.putExtra(PatcherService.ACTION,
-                PatcherService.ACTION_CHECK_SUPPORTED);
-        intent.putExtra(PatcherUtils.PARAM_FILENAME, filename);
-        intent.putExtra(PatcherUtils.PARAM_PARTCONFIG, partConfig);
-        intent.putExtra(PatcherUtils.PARAM_DEVICE, device);
+        intent.putExtra(PatcherService.ACTION, PatcherService.ACTION_PATCH_FILE);
+        intent.putExtra(PatcherUtils.PARAM_PATCHER, mPCS.mPatcher);
+        intent.putExtra(PatcherUtils.PARAM_FILEINFO, fileInfo);
+
         context.startService(intent);
     }
 
+    private void checkSupported() {
+        if (mPCS.mState != PatcherConfigState.STATE_CHOSE_FILE) {
+            return;
+        }
 
+        // Show progress on file chooser card
+        mFileChooserCard.setProgressShowing(true);
+
+        mPCS.mSupported = PatcherConfigState.NOT_SUPPORTED;
+
+        // If the patcher doesn't use the patchinfo files, then just assume everything is supported.
+
+        if (!mPCS.mPatcher.usesPatchInfo()) {
+            mPCS.mSupported |= PatcherConfigState.SUPPORTED_FILE;
+            mPCS.mSupported |= PatcherConfigState.SUPPORTED_PARTCONFIG;
+        }
+
+        // Otherwise, check if it really is supported
+        else if ((mPCS.mPatchInfo = PatcherUtils.sPC.findMatchingPatchInfo(
+                mMainOptsCard.getDevice(), mPCS.mFilename)) != null) {
+            mPCS.mSupported |= PatcherConfigState.SUPPORTED_FILE;
+
+            final String key = mPCS.mPatchInfo.keyFromFilename(mPCS.mFilename);
+            String[] configs = mPCS.mPatchInfo.getSupportedConfigs(key);
+            PartConfig curConfig = mMainOptsCard.getPartConfig();
+
+            boolean hasAll = false;
+            boolean hasCurConfig = false;
+            boolean hasNotCurConfig = false;
+
+            for (String config : configs) {
+                if (config.equals("all")) {
+                    hasAll = true;
+                } else if (config.equals(curConfig.getId())) {
+                    hasCurConfig = true;
+                } else if (config.equals("!" + curConfig.getId())) {
+                    hasNotCurConfig = true;
+                }
+            }
+
+            if ((hasAll || hasCurConfig) && !hasNotCurConfig) {
+                mPCS.mSupported |= PatcherConfigState.SUPPORTED_PARTCONFIG;
+            }
+        }
+
+        setTapActionPatchFile();
+
+        mFileChooserCard.onFileChosen();
+        mFileChooserCard.setProgressShowing(false);
+
+        updateCardUI();
+    }
 
     private void setTapActionChooseFile() {
         mFileChooserCard.setOnClickListener(new OnCardClickListener() {
@@ -582,76 +454,87 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         });
     }
 
-    private void setDevicePartConfigActions() {
-        mDevicePartConfigCard.mDeviceSpinner
-                .setOnItemSelectedListener(new OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent,
-                            View view, int position, long id) {
-                        // Work around onItemSelected() being called on
-                        // initialization
-                        if (mDeviceSpinnerChanged) {
-                            // Recheck to determine if the file is supported
-                            // when the target device is changed
-                            String file = mFileChooserCard.getFilename();
-                            if (file != null) {
-                                checkSupported(file);
-                            }
-                        }
+    @Override
+    public void onPatcherSelected(String patcherName) {
+        String patcherId = mPCS.mReversePatcherMap.get(patcherName);
 
-                        // Reload presets specific to the device
-                        mPresetCard.reloadPresets(mDevicePartConfigCard
-                                .getDevice());
+        // Destroy the native C object when the patcher is switched
+        if (mPCS.mPatcher != null && !mPCS.mPatcher.getId().equals(patcherId)) {
+            PatcherUtils.sPC.destroyPatcher(mPCS.mPatcher);
+            mPCS.mPatcher = null;
+        }
 
-                        // Reload ramdisks specific to the device
-                        mCustomOptsCard.reloadRamdisks(mDevicePartConfigCard
-                                .getDevice());
+        boolean changedPatcher = false;
 
-                        mDeviceSpinnerChanged = true;
-                    }
+        if (mPCS.mPatcher == null) {
+            mPCS.mPatcher = PatcherUtils.sPC.createPatcher(patcherId);
+            changedPatcher = true;
+        }
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                    }
-                });
+        // Rebuild list of partconfigs supported by the patcher and recheck to see if the
+        // selected file is supported
+        refreshPartConfigs(changedPatcher);
+        checkSupported();
     }
 
-    private void setPresetActions() {
-        mPresetCard.mPresetSpinner
-                .setOnItemSelectedListener(new OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent,
-                            View view, int position, long id) {
-                        mPresetCard.updatePresetDescription(position);
-                        mCustomOptsCard.setUsingPreset(position != 0);
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                    }
-                });
+    /**
+     * Refresh partition configuration after a patcher has been selected.
+     */
+    private void refreshPartConfigs(boolean changedPatcher) {
+        if (changedPatcher) {
+            mPCS.refreshPartConfigs();
+        }
+        mMainOptsCard.refreshPartConfigs(changedPatcher);
     }
 
-    private void setCustomOptsActions() {
-        mCustomOptsCard.mChoosePatchButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mEventCollector.startFileChooserDiff();
-            }
-        });
+    @Override
+    public void onDeviceSelected(Device device) {
+        mPCS.mDevice = device;
+        mPCS.mPatchInfos = PatcherUtils.sPC.getPatchInfos(mPCS.mDevice);
+
+        checkSupported();
+
+        // Reload presets specific to the device
+        mPresetCard.refreshPresets();
+
+        // Reload ramdisks specific to the device
+        mCustomOptsCard.refreshRamdisks();
+    }
+
+    @Override
+    public void onPartConfigSelected(PartConfig config) {
+        mPCS.mPartConfig = config;
+
+        // Recheck to see if the partition configuration is supported for the selected file
+        checkSupported();
+    }
+
+    @Override
+    public void onPresetSelected(PatchInfo info) {
+        // Disable custom options if a preset is selected
+        mCustomOptsCard.setUsingPreset(info != null);
+
+        mPCS.mPatchInfo = info;
+    }
+
+    @Override
+    public void onAutoPatcherSelected(String autoPatcherId) {
+        mPCS.mAutoPatcherId = autoPatcherId;
+    }
+
+    @Override
+    public void onRamdiskSelected(String ramdisk) {
+        mPCS.mRamdiskId = ramdisk;
+    }
+
+    @Override
+    public void onPatchedInitSelected(String init) {
+        mPCS.mPatchedInit = init;
     }
 
     @Override
     public void onEventReceived(BaseEvent event) {
-        if (event instanceof AddTaskEvent) {
-            AddTaskEvent e = (AddTaskEvent) event;
-
-            mTasksCard.addTask(e.task);
-        } else if (event instanceof UpdateTaskEvent) {
-            UpdateTaskEvent e = (UpdateTaskEvent) event;
-
-            mTasksCard.updateTask(e.task);
-        } else if (event instanceof UpdateDetailsEvent) {
+        if (event instanceof UpdateDetailsEvent) {
             UpdateDetailsEvent e = (UpdateDetailsEvent) event;
 
             mDetailsCard.setDetails(e.text);
@@ -666,24 +549,13 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         } else if (event instanceof FinishedPatchingEvent) {
             FinishedPatchingEvent e = (FinishedPatchingEvent) event;
 
-            mState = STATE_READY;
+            mPCS.mState = PatcherConfigState.STATE_FINISHED;
             updateCardUI();
 
             // Update MTP cache
             if (!e.failed) {
                 MediaScannerConnection.scanFile(getActivity(),
                         new String[] { e.newFile }, null, null);
-            }
-
-            if (mAutomated) {
-                Intent data = new Intent();
-                data.putExtra(RESULT_FILENAME_OLD, e.newFile);
-                data.putExtra(RESULT_FILENAME, e.newFile);
-                data.putExtra(RESULT_MESSAGE, e.message);
-                data.putExtra(RESULT_FAILED, e.failed);
-                getActivity().setResult(Activity.RESULT_OK, data);
-                getActivity().finish();
-                return;
             }
 
             // Scroll back to the top
@@ -700,29 +572,18 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             // Reset for next round of patching
             mPresetCard.reset();
             mCustomOptsCard.reset();
-            mTasksCard.reset();
             mDetailsCard.reset();
             mProgressCard.reset();
 
             // Tap to choose the next file
             setTapActionChooseFile();
             mFileChooserCardView.refreshCard(mFileChooserCard);
-        } else if (event instanceof CheckedSupportedEvent) {
-            CheckedSupportedEvent e = (CheckedSupportedEvent) event;
-
-            mFileChooserCard.onFileChosen(e.zipFile, e.supported);
-            setTapActionPatchFile();
-            mFileChooserCardView.refreshCard(mFileChooserCard);
-            mFileChooserCard.setProgressShowing(false);
-
-            mState = STATE_CHOSE_FILE;
-            updateCardUI();
         } else if (event instanceof RequestedFileEvent) {
+            mPCS.mState = PatcherConfigState.STATE_CHOSE_FILE;
+
             RequestedFileEvent e = (RequestedFileEvent) event;
-            checkSupported(e.file);
-        } else if (event instanceof RequestedDiffFileEvent) {
-            RequestedDiffFileEvent e = (RequestedDiffFileEvent) event;
-            mCustomOptsCard.onDiffFileSelected(e.file);
+            mPCS.mFilename = e.file;
+            checkSupported();
         }
     }
 }

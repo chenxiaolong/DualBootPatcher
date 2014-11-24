@@ -300,4 +300,44 @@
         <item>Other</item>
     </string-array>
 
+    <!-- Errors -->
+    <string name="no_error">No error has occurred</string>
+    <string name="unknown_error">An unknown error has occurred</string>
+    <string name="patcher_create_error">Failed to create patcher: %s</string>
+    <string name="autopatcher_create_error">Failed to create autopatcher: %s</string>
+    <string name="ramdisk_patcher_create_error">Failed to create ramdisk patcher: %s</string>
+    <string name="file_open_error">Failed to open file: %s</string>
+    <string name="file_read_error">Failed to read from file: %s</string>
+    <string name="file_write_error">Failed to write to file: %s</string>
+    <string name="directory_not_exist_error">Directory does not exist: %s</string>
+    <string name="boot_image_smaller_than_header_error">The boot image file is smaller than the
+        boot image header size</string>
+    <string name="boot_image_no_android_header_error">Could not find the Android header in the
+        boot image</string>
+    <string name="boot_image_no_ramdisk_gzip_header_error">Could not find the ramdisk\'s gzip
+        header</string>
+    <string name="boot_image_no_ramdisk_size_error">Could not determine the ramdisk\'s size</string>
+    <string name="boot_image_no_kernel_size_error">Could not determine the kernel\'s size</string>
+    <string name="boot_image_no_ramdisk_address_error">Could not determine the ramdisk\'s memory
+        address</string>
+    <string name="cpio_file_already_exists_error">File already exists in cpio archive: %s</string>
+    <string name="cpio_file_not_exist_error">File does not exist in cpio archive: %s</string>
+    <string name="archive_read_open_error">Failed to open archive for reading</string>
+    <string name="archive_read_data_error">Failed to read archive data for file: %s</string>
+    <string name="archive_read_header_error">Failed to read archive entry header</string>
+    <string name="archive_write_open_error">Failed to open archive for writing</string>
+    <string name="archive_write_data_error">Failed to write archive data for file: %s</string>
+    <string name="archive_write_header_error">Failed to write archive header for file: %s</string>
+    <string name="archive_close_error">Failed to close archive</string>
+    <string name="archive_free_error">Failed to free archive header memory</string>
+    <string name="xml_parse_file_error">Failed to parse XML file: %s</string>
+    <string name="only_zip_supported">Only ZIP files are supported by %s</string>
+    <string name="only_boot_image_supported">Only boot images are supported by %s</string>
+    <string name="patching_cancelled">Patching was cancelled</string>
+    <string name="system_cache_format_lines_not_found">The patcher could not find any /system or
+        /cache formatting lines in the updater-script file.\n\nIf the file is a ROM,
+        then something failed. If the file is not a ROM (eg. kernel or mod), it doesn\'t need to be
+        patched.</string>
+    <string name="apply_patch_file_error">Failed to apply patch file</string>
+
 </resources>

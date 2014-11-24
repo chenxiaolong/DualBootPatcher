@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.+'
+        classpath 'com.android.tools.build:gradle:0.13.+'
     }
 }
 
@@ -13,18 +13,19 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    compile 'com.android.support:support-v4:19.0.+'
-    compile 'com.github.gabrielemariotti.cards:library:1.6.0'
+    compile 'com.android.support:support-v4:21.0.+'
+    compile 'com.github.gabrielemariotti.cards:cardslib-core:2.0.1'
     compile 'com.squareup.picasso:picasso:2.3.2'
     compile 'com.nhaarman.listviewanimations:library:2.6.0'
     compile 'org.apache.commons:commons-lang3:+'
     compile 'commons-io:commons-io:2.4+'
+    compile files('libs/jna.jar')
     compile files('libs/RootTools-3.4.jar')
 }
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "20.0.0"
+    compileSdkVersion 21
+    buildToolsVersion "21.1.1"
 
     packagingOptions {
         // Both commons-lang3 and common-io want to include these file
@@ -39,7 +40,7 @@ android {
     defaultConfig {
         applicationId "com.github.chenxiaolong.dualbootpatcher"
         minSdkVersion 17
-        targetSdkVersion 19
+        targetSdkVersion 21
         versionCode 1
         versionName "@VERSION@"
     }
@@ -108,7 +109,7 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            jniLibs.srcDirs = ['jni/libs']
+            jniLibs.srcDirs = ['cmakelibs']
         }
 
         debug {

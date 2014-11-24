@@ -32,37 +32,10 @@
         android:paddingBottom="10dp"
         android:text="@string/customopts_title" />
 
-    <RadioGroup
-        android:id="@+id/customopts_radiogroup"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-
-        <RadioButton
-            android:id="@+id/customopts_autopatch_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/customopts_autopatcher" />
-
-        <RadioButton
-            android:id="@+id/customopts_patch_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/customopts_patchfile" />
-    </RadioGroup>
-
     <Spinner
         android:id="@+id/spinner_autopatch"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-
-    <Button
-        android:id="@+id/customopts_choosepatch"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="middle"
-        android:singleLine="true"
-        android:text="@string/customopts_choosepatch" />
 
     <CheckBox
         android:id="@+id/customopts_devicecheck"

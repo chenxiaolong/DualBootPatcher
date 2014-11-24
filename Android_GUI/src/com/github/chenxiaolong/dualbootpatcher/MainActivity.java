@@ -52,8 +52,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import java.util.ArrayList;
 
 public class MainActivity extends Activity {
-    private static final String PATCH_FILE = "com.github.chenxiaolong.dualbootpatcher.PATCH_FILE";
-
     private static final int[] RES_NAV_TITLES = new int[] {
             R.string.title_choose_rom, R.string.title_set_kernel,
             R.string.title_patch_zip, R.string.title_free_space, R.string.title_rom_settings,
@@ -88,9 +86,6 @@ public class MainActivity extends Activity {
     private Handler mHandler;
     private Runnable mPending;
 
-    private boolean mAutomated;
-    private Bundle mAutomatedData;
-
     public static final int FRAGMENT_CHOOSE_ROM = 1;
     public static final int FRAGMENT_SET_KERNEL = 2;
     public static final int FRAGMENT_PATCH_FILE = 3;
@@ -107,13 +102,6 @@ public class MainActivity extends Activity {
         mHandler = new Handler();
 
         mPrefs = getSharedPreferences("settings", 0);
-
-        // Get the intent that started this activity
-        Intent intent = getIntent();
-        if (PATCH_FILE.equals(intent.getAction())) {
-            mAutomated = true;
-            mAutomatedData = intent.getExtras();
-        }
 
         if (savedInstanceState != null) {
             mTitle = savedInstanceState.getInt("title");
@@ -159,15 +147,6 @@ public class MainActivity extends Activity {
         mDrawerItems.add(NAV_ABOUT);
         mDrawerItems.add(NAV_EXIT);
         createNavigationViews();
-
-        if (mAutomated) {
-            // Don't allow navigating to other parts of the app
-            lockNavigation();
-
-            mFragment = FRAGMENT_PATCH_FILE;
-            showFragment();
-            return;
-        }
 
         if (savedInstanceState != null) {
             mFragment = savedInstanceState.getInt("fragment");
@@ -543,12 +522,7 @@ public class MainActivity extends Activity {
             updateTitle();
 
             if (prevPatchFile == null) {
-                Fragment f;
-                if (mAutomated) {
-                    f = PatchFileFragment.newAutomatedInstance(mAutomatedData);
-                } else {
-                    f = PatchFileFragment.newInstance();
-                }
+                Fragment f = PatchFileFragment.newInstance();
                 ft.add(R.id.content_frame, f, PatchFileFragment.TAG);
             } else {
                 ft.show(prevPatchFile);

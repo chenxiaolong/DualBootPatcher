@@ -133,7 +133,8 @@ public class RomCard extends Card {
         mSubtitle.setEnabled(mEnabled);
         setClickable(mEnabled);
         setLongClickable(mEnabled);
-        getCardView().setClickable(mEnabled);
+
+        //getCardView().setClickable(mEnabled);
         getCardView().setLongClickable(mEnabled);
     }
 

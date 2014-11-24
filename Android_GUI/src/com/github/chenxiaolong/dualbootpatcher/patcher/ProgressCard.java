@@ -18,6 +18,8 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.view.CardView;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
@@ -28,6 +30,8 @@ import android.widget.TextView;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ProgressCard extends Card {
+    private PatcherConfigState mPCS;
+
     private TextView mPercentage;
     private TextView mFiles;
     private ProgressBar mProgress;
@@ -35,8 +39,9 @@ public class ProgressCard extends Card {
     private int mCurProgress = 0;
     private int mMaxProgress = 0;
 
-    public ProgressCard(Context context) {
+    public ProgressCard(Context context, PatcherConfigState pcs) {
         this(context, R.layout.cardcontent_progress);
+        mPCS = pcs;
     }
 
     public ProgressCard(Context context, int innerLayout) {
@@ -99,5 +104,24 @@ public class ProgressCard extends Card {
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         mMaxProgress = savedInstanceState.getInt("progress_max");
         mCurProgress = savedInstanceState.getInt("progress_current");
+        updateProgress();
+    }
+
+    public void refreshState() {
+        switch (mPCS.mState) {
+        case PatcherConfigState.STATE_PATCHING:
+            if (getCardView() != null) {
+                ((CardView) getCardView()).setVisibility(View.VISIBLE);
+            }
+            break;
+
+        case PatcherConfigState.STATE_CHOSE_FILE:
+        case PatcherConfigState.STATE_INITIAL:
+        case PatcherConfigState.STATE_FINISHED:
+            if (getCardView() != null) {
+                ((CardView) getCardView()).setVisibility(View.GONE);
+            }
+            break;
+        }
     }
 }

@@ -20,20 +20,20 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent">
 
     <ScrollView
         android:id="@+id/card_scrollview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:orientation="vertical">
 
             <it.gmariotti.cardslib.library.view.CardView
-                android:id="@+id/card_device_partconfig"
+                android:id="@+id/card_mainopts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="12dp"
@@ -71,15 +71,6 @@
                 card:card_layout_resourceID="@layout/card_layout" />
 
             <!-- Cards to show patching progress -->
-
-            <it.gmariotti.cardslib.library.view.CardView
-                android:id="@+id/card_tasks"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
 
             <it.gmariotti.cardslib.library.view.CardView
                 android:id="@+id/card_details"

@@ -17,33 +17,38 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import it.gmariotti.cardslib.library.internal.Card;
-
-import java.util.ArrayList;
-
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.Device;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
+
+import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.view.CardView;
 
 public class PresetCard extends Card {
+    public static interface PresetSelectedListener {
+        public void onPresetSelected(PatchInfo info);
+    }
+
+    private PatcherConfigState mPCS;
+    private PresetSelectedListener mListener;
+
     private TextView mTitle;
-    Spinner mPresetSpinner;
-    ArrayAdapter<String> mPresetAdapter;
+    private Spinner mPresetSpinner;
+    private ArrayAdapter<String> mPresetAdapter;
     private TextView mPresetName;
 
-    private PatcherInformation mInfo;
-    private final ArrayList<PatchInfo> mPresets = new ArrayList<PatchInfo>();
-
-    public PresetCard(Context context) {
+    public PresetCard(Context context, PatcherConfigState pcs, PresetSelectedListener listener) {
         this(context, R.layout.cardcontent_preset);
+        mPCS = pcs;
+        mListener = listener;
     }
 
     public PresetCard(Context context, int innerLayout) {
@@ -57,62 +62,51 @@ public class PresetCard extends Card {
             mPresetSpinner = (Spinner) view.findViewById(R.id.spinner_preset);
             mPresetName = (TextView) view.findViewById(R.id.preset_name);
         }
+
+        initControls();
     }
 
-    private void populatePresets(Device device) {
+    private void initControls() {
         mPresetAdapter = new ArrayAdapter<String>(getContext(),
                 android.R.layout.simple_spinner_item, android.R.id.text1);
-        mPresetAdapter
-                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mPresetAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mPresetSpinner.setAdapter(mPresetAdapter);
 
-        reloadPresets(device);
+        mPresetSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updatePresetDescription(position);
+
+                if (mListener != null) {
+                    mListener.onPresetSelected(getPreset());
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
     }
 
-    public void reloadPresets(Device device) {
+    public void refreshPresets() {
         mPresetAdapter.clear();
-        mPresets.clear();
 
         // Default to using custom options
         mPresetAdapter.add(getContext().getString(R.string.preset_custom));
 
-        // Only add valid presets for the device
-        String[] dirs = getContext().getResources().getStringArray(
-                R.array.preset_dirs);
-
-        for (int i = 0; i < mInfo.mPatchInfos.length; i++) {
-            PatcherInformation.PatchInfo info = mInfo.mPatchInfos[i];
-
-            if (info.mPath.startsWith(device.mCodeName + "/")) {
-                mPresetAdapter.add(info.mPath);
-                mPresets.add(info);
-                continue;
-            }
-
-            for (String dir : dirs) {
-                if (info.mPath.startsWith(dir + "/")) {
-                    mPresetAdapter.add(info.mPath);
-                    mPresets.add(info);
-                }
-            }
+        for (PatchInfo info : mPCS.mPatchInfos) {
+            mPresetAdapter.add(info.getId());
         }
+
         mPresetAdapter.notifyDataSetChanged();
     }
 
-    void updatePresetDescription(int position) {
+    private void updatePresetDescription(int position) {
         if (position == 0) {
-            mPresetName.setText(getContext().getString(
-                    R.string.preset_custom_desc));
+            mPresetName.setText(getContext().getString(R.string.preset_custom_desc));
         } else {
-            // mPresetName.setText(mInfo.mPatchInfos[position - 1].mName);
-            mPresetName.setText(mPresets.get(position - 1).mName);
+            mPresetName.setText(mPCS.mPatchInfos[position - 1].getName());
         }
-    }
-
-    public void setPatcherInfo(PatcherInformation info, Device device) {
-        mInfo = info;
-
-        populatePresets(device);
     }
 
     public PatchInfo getPreset() {
@@ -122,8 +116,7 @@ public class PresetCard extends Card {
             // Custom options
             return null;
         } else {
-            // return mInfo.mPatchInfos[pos - 1];
-            return mPresets.get(pos - 1);
+            return mPCS.mPatchInfos[pos - 1];
         }
     }
 
@@ -135,5 +128,47 @@ public class PresetCard extends Card {
 
     public void reset() {
         mPresetSpinner.setSelection(0);
+    }
+
+    public void refreshState() {
+        switch (mPCS.mState) {
+        case PatcherConfigState.STATE_PATCHING:
+            setEnabled(false);
+
+            if (getCardView() != null) {
+                if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0
+                        && (mPCS.mSupported & PatcherConfigState.SUPPORTED_PARTCONFIG) != 0) {
+                    ((CardView) getCardView()).setVisibility(View.GONE);
+                } else {
+                    ((CardView) getCardView()).setVisibility(View.VISIBLE);
+                }
+            }
+
+            break;
+
+        case PatcherConfigState.STATE_CHOSE_FILE:
+            setEnabled(true);
+
+            if (getCardView() != null) {
+                if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0
+                        && (mPCS.mSupported & PatcherConfigState.SUPPORTED_PARTCONFIG) != 0) {
+                    ((CardView) getCardView()).setVisibility(View.GONE);
+                } else {
+                    ((CardView) getCardView()).setVisibility(View.VISIBLE);
+                }
+            }
+
+            break;
+
+        case PatcherConfigState.STATE_INITIAL:
+        case PatcherConfigState.STATE_FINISHED:
+            setEnabled(true);
+
+            if (getCardView() != null) {
+                ((CardView) getCardView()).setVisibility(View.GONE);
+            }
+
+            break;
+        }
     }
 }

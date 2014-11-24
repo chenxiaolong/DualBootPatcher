@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import it.gmariotti.cardslib.library.internal.Card;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
@@ -27,16 +26,18 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class FileChooserCard extends Card {
-    public static final int STATE_INITIAL = 0;
-    public static final int STATE_CHOSE_FILE = 1;
-    public static final int STATE_FINISHED_PATCHING = 2;
+import it.gmariotti.cardslib.library.internal.Card;
 
-    private int mState;
+public class FileChooserCard extends Card {
+    private static final String EXTRA_PROGRESS = "filechooser_progress";
+    private static final String EXTRA_FAILED = "filechooser_failed";
+    private static final String EXTRA_MESSAGE = "filechooser_message";
+    private static final String EXTRA_NEWFILE = "filechooser_newfile";
+
+    private PatcherConfigState mPCS;
+
     private boolean mShowProgress;
 
-    private String mFilename;
-    private boolean mSupported;
     private boolean mFailed;
     private String mMessage;
     private String mNewFile;
@@ -45,13 +46,13 @@ public class FileChooserCard extends Card {
     private TextView mDescView;
     private ProgressBar mProgressBar;
 
-    public FileChooserCard(Context context) {
+    public FileChooserCard(Context context, PatcherConfigState pcs) {
         this(context, R.layout.cardcontent_file_chooser);
+        mPCS = pcs;
     }
 
     public FileChooserCard(Context context, int innerLayout) {
         super(context, innerLayout);
-        mState = STATE_INITIAL;
     }
 
     @Override
@@ -80,17 +81,19 @@ public class FileChooserCard extends Card {
     }
 
     private void displayMessage() {
-        switch (mState) {
-        case STATE_INITIAL:
+        switch (mPCS.mState) {
+        case PatcherConfigState.STATE_INITIAL:
             mTitleView.setText(R.string.filechooser_initial_title);
             mDescView.setText(R.string.filechooser_initial_desc);
             break;
 
-        case STATE_CHOSE_FILE:
+        case PatcherConfigState.STATE_PATCHING:
+        case PatcherConfigState.STATE_CHOSE_FILE:
             int titleId;
             int descId;
 
-            if (mSupported) {
+            // TODO: PARTCONFIG
+            if (mPCS.mSupported != PatcherConfigState.NOT_SUPPORTED) {
                 titleId = R.string.filechooser_ready_title;
                 descId = R.string.filechooser_ready_desc;
             } else {
@@ -99,11 +102,10 @@ public class FileChooserCard extends Card {
             }
 
             mTitleView.setText(titleId);
-            mDescView.setText(String.format(getContext().getString(descId),
-                    mFilename));
+            mDescView.setText(String.format(getContext().getString(descId), mPCS.mFilename));
             break;
 
-        case STATE_FINISHED_PATCHING:
+        case PatcherConfigState.STATE_FINISHED:
             if (mFailed) {
                 mTitleView.setText(R.string.filechooser_failure_title);
                 mDescView.setText(String.format(
@@ -119,16 +121,16 @@ public class FileChooserCard extends Card {
         }
     }
 
-    public void onFileChosen(String filename, boolean supported) {
-        mState = STATE_CHOSE_FILE;
-        mFilename = filename;
-        mSupported = supported;
+    public void onFileChosen() {
         displayMessage();
+
+        if (getCardView() != null) {
+            getCardView().refreshCard(this);
+        }
     }
 
     public void onFinishedPatching(boolean failed, String message,
             String newFile) {
-        mState = STATE_FINISHED_PATCHING;
         mFailed = failed;
         mMessage = message;
         mNewFile = newFile;
@@ -140,6 +142,10 @@ public class FileChooserCard extends Card {
         mDescView.setEnabled(enabled);
         setClickable(enabled);
         setLongClickable(enabled);
+
+        if (getCardView() != null) {
+            getCardView().refreshCard(this);
+        }
     }
 
     public void setProgressShowing(boolean show) {
@@ -147,35 +153,33 @@ public class FileChooserCard extends Card {
         displayProgress();
     }
 
-    public boolean isFileSelected() {
-        return mState == STATE_CHOSE_FILE;
-    }
-
-    public String getFilename() {
-        return mFilename;
-    }
-
-    public boolean isSupported() {
-        return mSupported;
-    }
-
     public void onSaveInstanceState(Bundle outState) {
-        outState.putInt("filechooser_state", mState);
-        outState.putBoolean("filechooser_progress", mShowProgress);
-        outState.putString("filechooser_filename", mFilename);
-        outState.putBoolean("filechooser_supported", mSupported);
-        outState.putBoolean("filechooser_failed", mFailed);
-        outState.putString("filechooser_message", mMessage);
-        outState.putString("filechooser_newfile", mNewFile);
+        outState.putBoolean(EXTRA_PROGRESS, mShowProgress);
+        outState.putBoolean(EXTRA_FAILED, mFailed);
+        outState.putString(EXTRA_MESSAGE, mMessage);
+        outState.putString(EXTRA_NEWFILE, mNewFile);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mState = savedInstanceState.getInt("filechooser_state");
-        mShowProgress = savedInstanceState.getBoolean("filechooser_progress");
-        mFilename = savedInstanceState.getString("filechooser_filename");
-        mSupported = savedInstanceState.getBoolean("filechooser_supported");
-        mFailed = savedInstanceState.getBoolean("filechooser_failed");
-        mMessage = savedInstanceState.getString("filechooser_message");
-        mNewFile = savedInstanceState.getString("filechooser_newfile");
+        mShowProgress = savedInstanceState.getBoolean(EXTRA_PROGRESS);
+        mFailed = savedInstanceState.getBoolean(EXTRA_FAILED);
+        mMessage = savedInstanceState.getString(EXTRA_MESSAGE);
+        mNewFile = savedInstanceState.getString(EXTRA_NEWFILE);
+
+        displayMessage();
+    }
+
+    public void refreshState() {
+        switch (mPCS.mState) {
+        case PatcherConfigState.STATE_PATCHING:
+            setEnabled(false);
+            break;
+
+        case PatcherConfigState.STATE_INITIAL:
+        case PatcherConfigState.STATE_CHOSE_FILE:
+        case PatcherConfigState.STATE_FINISHED:
+            setEnabled(true);
+            break;
+        }
     }
 }

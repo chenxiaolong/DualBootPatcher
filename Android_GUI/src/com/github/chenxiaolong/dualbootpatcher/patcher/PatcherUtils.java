@@ -22,253 +22,174 @@ import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandListener;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.LiveOutputFilter;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation;
-import com.github.chenxiaolong.dualbootpatcher.PatcherInformation.PatchInfo;
+import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError.ErrorCode;
 
-import org.json.JSONException;
-
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class PatcherUtils {
     public static final String TAG = PatcherUtils.class.getSimpleName();
-    private static final String FILENAME = "DualBootPatcherAndroid-%s.tar.xz";
-    private static final String DIRNAME = "DualBootPatcherAndroid-%s";
+    private static final String FILENAME = "data-%s.zip";
+    private static final String DIRNAME = "data-%s";
 
-    public static final String PARAM_FILENAME = "filename";
-    public static final String PARAM_SUPPORTED = "supported";
-    public static final String PARAM_DEVICE = "device";
-    public static final String PARAM_PARTCONFIG = "partconfig";
-    public static final String PARAM_PRESET = "preset";
-    public static final String PARAM_USE_AUTOPATCHER = "use_autopatcher";
-    public static final String PARAM_AUTOPATCHER = "autopatcher";
-    public static final String PARAM_USE_PATCH = "use_patch";
-    public static final String PARAM_PATCH = "patch";
-    public static final String PARAM_DEVICE_CHECK = "device_check";
-    public static final String PARAM_HAS_BOOT_IMAGE = "has_boot_image";
-    public static final String PARAM_RAMDISK = "ramdisk";
-    public static final String PARAM_PATCHED_INIT = "patched_init";
-    public static final String PARAM_BOOT_IMAGE = "boot_image";
+    public static final String PARAM_PATCHER = "patcher";
+    public static final String PARAM_FILEINFO = "fileinfo";
 
     public static final String RESULT_PATCH_FILE_NEW_FILE = "new_file";
     public static final String RESULT_PATCH_FILE_MESSAGE = "message";
     public static final String RESULT_PATCH_FILE_FAILED = "failed";
 
-    private static PatcherInformation mInfo;
+    static PatcherConfig sPC;
 
-    /** Filename of the tar.xz archive */
-    private static String mFileName;
+    private static String sTargetFile;
+    private static String sTargetDir;
 
-    /** Patcher's tar.xz archive in the cache directory */
-    private static File mTargetFile;
-
-    /** Directory of extracted patcher */
-    private static File mTargetDir;
-
-    private static String getFilename() {
-        if (mFileName == null) {
-            String version = BuildConfig.VERSION_NAME.split("-")[0];
-            mFileName = String.format(FILENAME, version);
-        }
-
-        return mFileName;
+    static {
+        String version = BuildConfig.VERSION_NAME.split("-")[0];
+        sTargetFile = String.format(FILENAME, version);
+        sTargetDir = String.format(DIRNAME, version);
     }
 
     private static File getTargetFile(Context context) {
-        if (mTargetFile == null) {
-            String fileName = getFilename();
-            mTargetFile = new File(context.getCacheDir() + "/" + fileName);
-        }
-
-        return mTargetFile;
+        return new File(context.getCacheDir() + File.separator + sTargetFile);
     }
 
     static File getTargetDirectory(Context context) {
-        if (mTargetDir == null) {
-            String version = BuildConfig.VERSION_NAME.split("-")[0];
-            String dirName = String.format(DIRNAME, version);
-            mTargetDir = new File(context.getFilesDir() + "/" + dirName);
-        }
-
-        return mTargetDir;
+        return new File(context.getFilesDir() + File.separator + sTargetDir);
     }
 
-    private static class FullOutputListener implements CommandListener {
-        private final StringBuilder mOutput = new StringBuilder();
+    public synchronized static void initializePatcher(Context context) {
+        extractPatcher(context);
 
-        @Override
-        public void onNewOutputLine(String line, String stream) {
-            if (stream.equals(CommandUtils.STREAM_STDOUT)) {
-                mOutput.append(line);
-                mOutput.append(System.getProperty("line.separator"));
-            }
-        }
-
-        @Override
-        public void onCommandCompletion(CommandResult result) {
-        }
-
-        public String getOutput() {
-            return mOutput.toString();
-        }
+        sPC = new PatcherConfig();
+        sPC.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
+        sPC.setTempDirectory(context.getCacheDir().getAbsolutePath());
+        sPC.loadPatchInfos();
+        // TODO: Throw exception if patchinfo loading fails
     }
 
-    private static class PatcherOutputFilter implements LiveOutputFilter {
-        public static final String RESULT_MESSAGE = "message";
-        public static final String RESULT_FAILED = "failed";
-
-        @Override
-        public void onStdoutLine(CommandParams params, CommandResult result,
-                String line) {
-        }
-
-        @Override
-        public void onStderrLine(CommandParams params, CommandResult result,
-                String line) {
-            if (line.contains("EXITFAIL:")) {
-                String message = line.replace("EXITFAIL:", "");
-
-                result.data.putString(RESULT_MESSAGE, message);
-                result.data.putBoolean(RESULT_FAILED, true);
-            } else if (line.contains("EXITSUCCESS:")) {
-                String message = line.replace("EXITSUCCESS:", "");
-
-                result.data.putString(RESULT_MESSAGE, message);
-                result.data.putBoolean(RESULT_FAILED, false);
-            }
-        }
-    }
-
-    public synchronized static Bundle patchFile(Context context,
-            CommandListener listener, Bundle data) {
+    public synchronized static Bundle patchFile(Context context, Bundle data,
+                                                ProgressListener listener) {
         // Make sure patcher is extracted first
         extractPatcher(context);
 
-        // Setup command
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("pythonportable/bin/python3");
-        args.add("-B");
-        args.add("scripts/patchfile.py");
-        args.add("--noquestions");
+        Patcher patcher = data.getParcelable(PARAM_PATCHER);
+        FileInfo fileInfo = data.getParcelable(PARAM_FILEINFO);
 
-        // Filename
-        String filename = data.getString(PARAM_FILENAME);
-        args.add(filename);
+        patcher.setFileInfo(fileInfo);
+        boolean ret = patcher.patchFile(listener);
 
-        // Device
-        String device = data.getString(PARAM_DEVICE);
-        args.add("--device");
-        args.add(device);
+        Bundle bundle = new Bundle();
+        bundle.putString(RESULT_PATCH_FILE_NEW_FILE, patcher.newFilePath());
+        bundle.putString(RESULT_PATCH_FILE_MESSAGE, getErrorMessage(context, patcher.getError()));
+        bundle.putBoolean(RESULT_PATCH_FILE_FAILED, !ret);
+        return bundle;
+    }
 
-        // Partition configuration
-        String partConfig = data.getString(PARAM_PARTCONFIG);
-        args.add("--partconfig");
-        args.add(partConfig);
-
-        // Whether the file is supported
-        boolean supported = data.getBoolean(PARAM_SUPPORTED);
-        if (!supported) {
-            args.add("--unsupported");
-
-            PatchInfo preset = data.getParcelable(PARAM_PRESET);
-            if (preset != null) {
-                args.add("--preset");
-                args.add(preset.mPath);
-            } else {
-                boolean useAutopatcher = data.getBoolean(PARAM_USE_AUTOPATCHER);
-                if (useAutopatcher) {
-                    String autopatcher = data.getString(PARAM_AUTOPATCHER);
-
-                    args.add("--autopatcher");
-                    args.add(autopatcher);
-                }
-
-                boolean usePatch = data.getBoolean(PARAM_USE_PATCH);
-                if (usePatch) {
-                    String patch = data.getString(PARAM_PATCH);
-
-                    args.add("--patch");
-                    args.add(patch);
-                }
-
-                boolean hasBootImage = data.getBoolean(PARAM_HAS_BOOT_IMAGE);
-                if (!hasBootImage) {
-                    args.add("--nobootimage");
-                } else {
-                    args.add("--hasbootimage");
-
-                    String bootImage = data.getString(PARAM_BOOT_IMAGE);
-                    args.add("--bootimage");
-                    if (bootImage == null) {
-                        args.add("auto");
-                    } else {
-                        args.add(bootImage);
-                    }
-
-                    String ramdisk = data.getString(PARAM_RAMDISK);
-                    args.add("--ramdisk");
-                    args.add(ramdisk);
-
-                    String init = data.getString(PARAM_PATCHED_INIT);
-                    if (init != null) {
-                        args.add("--patchedinit");
-                        args.add(init);
-                    }
-                }
-            }
-
-            boolean deviceCheck = data.getBoolean(PARAM_DEVICE_CHECK);
-            if (!deviceCheck) {
-                args.add("--nodevicecheck");
-            }
+    private static String getErrorMessage(Context context, PatcherError error) {
+        switch (error.getErrorCode()) {
+        case ErrorCode.NO_ERROR:
+            return context.getString(R.string.no_error);
+        case ErrorCode.UNKNOWN_ERROR:
+            return context.getString(R.string.unknown_error);
+        case ErrorCode.PATCHER_CREATE_ERROR:
+            return String.format(context.getString(R.string.patcher_create_error),
+                    error.getPatcherName());
+        case ErrorCode.AUTOPATCHER_CREATE_ERROR:
+            return String.format(context.getString(R.string.autopatcher_create_error),
+                    error.getPatcherName());
+        case ErrorCode.RAMDISK_PATCHER_CREATE_ERROR:
+            return String.format(context.getString(R.string.ramdisk_patcher_create_error),
+                    error.getPatcherName());
+        case ErrorCode.FILE_OPEN_ERROR:
+            return String.format(context.getString(R.string.file_open_error), error.getFilename());
+        case ErrorCode.FILE_READ_ERROR:
+            return String.format(context.getString(R.string.file_read_error), error.getFilename());
+        case ErrorCode.FILE_WRITE_ERROR:
+            return String.format(context.getString(R.string.file_write_error), error.getFilename());
+        case ErrorCode.DIRECTORY_NOT_EXIST_ERROR:
+            return String.format(context.getString(R.string.directory_not_exist_error),
+                    error.getFilename());
+        case ErrorCode.BOOT_IMAGE_SMALLER_THAN_HEADER_ERROR:
+            return context.getString(R.string.boot_image_smaller_than_header_error);
+        case ErrorCode.BOOT_IMAGE_NO_ANDROID_HEADER_ERROR:
+            return context.getString(R.string.boot_image_no_android_header_error);
+        case ErrorCode.BOOT_IMAGE_NO_RAMDISK_GZIP_HEADER_ERROR:
+            return context.getString(R.string.boot_image_no_ramdisk_gzip_header_error);
+        case ErrorCode.BOOT_IMAGE_NO_RAMDISK_SIZE_ERROR:
+            return context.getString(R.string.boot_image_no_ramdisk_size_error);
+        case ErrorCode.BOOT_IMAGE_NO_KERNEL_SIZE_ERROR:
+            return context.getString(R.string.boot_image_no_kernel_size_error);
+        case ErrorCode.BOOT_IMAGE_NO_RAMDISK_ADDRESS_ERROR:
+            return context.getString(R.string.boot_image_no_ramdisk_address_error);
+        case ErrorCode.CPIO_FILE_ALREADY_EXIST_ERROR:
+            return String.format(context.getString(R.string.cpio_file_already_exists_error),
+                    error.getFilename());
+        case ErrorCode.CPIO_FILE_NOT_EXIST_ERROR:
+            return String.format(context.getString(R.string.cpio_file_not_exist_error),
+                    error.getFilename());
+        case ErrorCode.ARCHIVE_READ_OPEN_ERROR:
+            return context.getString(R.string.archive_read_open_error);
+        case ErrorCode.ARCHIVE_READ_DATA_ERROR:
+            return String.format(context.getString(R.string.archive_read_data_error),
+                    error.getFilename());
+        case ErrorCode.ARCHIVE_READ_HEADER_ERROR:
+            return context.getString(R.string.archive_read_header_error);
+        case ErrorCode.ARCHIVE_WRITE_OPEN_ERROR:
+            return context.getString(R.string.archive_write_open_error);
+        case ErrorCode.ARCHIVE_WRITE_DATA_ERROR:
+            return String.format(context.getString(R.string.archive_write_data_error),
+                    error.getFilename());
+        case ErrorCode.ARCHIVE_WRITE_HEADER_ERROR:
+            return String.format(context.getString(R.string.archive_write_header_error),
+                    error.getFilename());
+        case ErrorCode.ARCHIVE_CLOSE_ERROR:
+            return context.getString(R.string.archive_close_error);
+        case ErrorCode.ARCHIVE_FREE_ERROR:
+            return context.getString(R.string.archive_free_error);
+        case ErrorCode.XML_PARSE_FILE_ERROR:
+            return String.format(context.getString(R.string.xml_parse_file_error),
+                    error.getFilename());
+        case ErrorCode.ONLY_ZIP_SUPPORTED:
+            return String.format(context.getString(R.string.only_zip_supported),
+                    error.getPatcherName());
+        case ErrorCode.ONLY_BOOT_IMAGE_SUPPORTED:
+            return String.format(context.getString(R.string.only_boot_image_supported),
+                    error.getPatcherName());
+        case ErrorCode.PATCHING_CANCELLED:
+            return context.getString(R.string.patching_cancelled);
+        case ErrorCode.SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND:
+            return context.getString(R.string.system_cache_format_lines_not_found);
+        case ErrorCode.APPLY_PATCH_FILE_ERROR:
+            return context.getString(R.string.apply_patch_file_error);
+        default:
+            throw new IllegalStateException("Unknown error code!");
         }
-
-        File targetDir = getTargetDirectory(context);
-
-        CommandParams params = new CommandParams();
-        params.listener = listener;
-        params.filter = new PatcherOutputFilter();
-        CommandRunner cmd;
-
-        params.command = args.toArray(new String[args.size()]);
-        params.environment = new String[] { "PYTHONUNBUFFERED=true",
-                "TMPDIR=" + context.getCacheDir() };
-        params.cwd = targetDir;
-
-        cmd = new CommandRunner(params);
-        cmd.start();
-        final CommandResult result;
-
-        try {
-            cmd.join();
-            result = cmd.getResult();
-
-            // TODO: Fix support for .img and .lok files
-            final String newFile = filename.replace(".zip", "_" + partConfig + ".zip");
-
-            String message = result.data.getString(PatcherOutputFilter.RESULT_MESSAGE, "");
-            boolean failed = result.data.getBoolean(PatcherOutputFilter.RESULT_FAILED, true);
-
-            Bundle ret = new Bundle();
-            ret.putString(RESULT_PATCH_FILE_NEW_FILE, newFile);
-            ret.putString(RESULT_PATCH_FILE_MESSAGE, message);
-            ret.putBoolean(RESULT_PATCH_FILE_FAILED, failed);
-            return ret;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return null;
     }
 
     public synchronized static boolean updateSyncdaemon(Context context, String bootimg) {
+        // TODO: Need to update for new API
+        if (Math.sin(0) < 1) {
+            return false;
+        }
+
         // Make sure patcher is extracted first
         extractPatcher(context);
 
@@ -295,6 +216,11 @@ public class PatcherUtils {
     }
 
     public synchronized static boolean isLokiBootImage(Context context, String bootimg) {
+        // TODO: Need to fix still
+        if (Math.sin(0) < 1) {
+            return false;
+        }
+
         // Make sure patcher is extracted first
         extractPatcher(context);
 
@@ -322,111 +248,11 @@ public class PatcherUtils {
         }
     }
 
-    public synchronized static boolean isFileSupported(Context context,
-            Bundle data) {
-        // Make sure patcher is extracted first
-        // extractPatcher(context);
-
-        // Setup command
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("pythonportable/bin/python3");
-        args.add("-B");
-        args.add("scripts/patchfile.py");
-        args.add("--is-supported");
-
-        // Filename
-        String filename = data.getString(PARAM_FILENAME);
-        args.add(filename);
-
-        // Device
-        String device = data.getString(PARAM_DEVICE);
-        args.add("--device");
-        args.add(device);
-
-        // Partition configuration
-        String partConfig = data.getString(PARAM_PARTCONFIG);
-        args.add("--partconfig");
-        args.add(partConfig);
-
-        File targetDir = getTargetDirectory(context);
-
-        FullOutputListener listener = new FullOutputListener();
-
-        CommandParams params = new CommandParams();
-        params.listener = listener;
-        CommandRunner cmd;
-
-        params.command = args.toArray(new String[args.size()]);
-        params.environment = new String[] { "PYTHONUNBUFFERED=true" };
-        params.cwd = targetDir;
-
-        cmd = new CommandRunner(params);
-        cmd.start();
-
-        try {
-            cmd.join();
-
-            String output = listener.getOutput();
-
-            return output.startsWith("supported");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        // Uh-oh
-        return false;
-    }
-
-    public synchronized static PatcherInformation getPatcherInformation(
-            Context context) {
-        if (mInfo == null) {
-            // Make sure patcher is extracted first
-            extractPatcher(context);
-
-            File targetDir = getTargetDirectory(context);
-
-            FullOutputListener listener = new FullOutputListener();
-
-            CommandParams params = new CommandParams();
-            params.listener = listener;
-            CommandRunner cmd;
-
-            params.command = new String[] { "pythonportable/bin/python3", "-B",
-                    "scripts/jsondump.py" };
-            params.environment = new String[] { "PYTHONUNBUFFERED=true" };
-            params.cwd = targetDir;
-            params.logStdout = false;
-
-            cmd = new CommandRunner(params);
-            cmd.start();
-
-            try {
-                cmd.join();
-                PatcherInformation info = new PatcherInformation();
-                info.loadJson(listener.getOutput());
-                mInfo = info;
-                return mInfo;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            // Hopefully we never hit this
-            return null;
-        }
-
-        return mInfo;
-    }
-
     private synchronized static void extractPatcher(Context context) {
-        /*
-         * Remove temporary files in case the script crashes and doesn't clean
-         * itself up properly - cacheDir|* - filesDir|*|tmp*
-         */
         for (File d : context.getCacheDir().listFiles()) {
             if (d.getName().startsWith("DualBootPatcherAndroid")
-                    || d.getName().startsWith("tmp")) {
+                    || d.getName().startsWith("tmp")
+                    || d.getName().startsWith("data-")) {
                 new RootFile(d.getAbsolutePath()).recursiveDelete();
             }
         }
@@ -444,33 +270,63 @@ public class PatcherUtils {
         File targetDir = getTargetDirectory(context);
 
         if (!targetDir.exists()) {
-            FileUtils.extractAsset(context, mFileName, targetFile);
+            FileUtils.extractAsset(context, sTargetFile, targetFile);
 
             // Remove all previous files
             for (File d : context.getFilesDir().listFiles()) {
                 new RootFile(d.getAbsolutePath()).recursiveDelete();
             }
 
-            CommandParams params = new CommandParams();
-            CommandRunner cmd;
+            //extractZip(targetFile.getAbsolutePath(), targetDir.getAbsolutePath());
+            extractZip(targetFile.getAbsolutePath(), context.getFilesDir().getAbsolutePath());
 
-            // Extract patcher
-            params.command = CommandUtils.getBusyboxCommand(context, "tar",
-                    "-J", "-x", "-v", "-f", targetFile.getPath());
-            params.environment = null;
-            params.cwd = context.getFilesDir();
-
-            cmd = new CommandRunner(params);
-            cmd.start();
-            CommandUtils.waitForCommand(cmd);
-
-            // Make Python executable
-            RootFile f = new RootFile(targetDir.getAbsolutePath() + "/pythonportable/bin/python3");
-            f.setAttemptRoot(false);
-            f.chmod(0755);
-
-            // Delete archive and tar binary
+            // Delete archive
             targetFile.delete();
         }
+    }
+
+    /* http://stackoverflow.com/questions/3382996/how-to-unzip-files-programmatically-in-android */
+    private static boolean extractZip(String zipPath, String outputDir) {
+        InputStream is;
+        ZipInputStream zis;
+
+        try {
+            String filename;
+            is = new FileInputStream(zipPath);
+            zis = new ZipInputStream(new BufferedInputStream(is));
+            ZipEntry ze;
+            byte[] buffer = new byte[1024];
+            int count;
+
+            while ((ze = zis.getNextEntry()) != null) {
+                filename = ze.getName();
+
+                if (ze.isDirectory()) {
+                    new File(outputDir + File.separator + filename).mkdirs();
+                    continue;
+                }
+
+                FileOutputStream fos = new FileOutputStream(outputDir + File.separator + filename);
+
+                while ((count = zis.read(buffer)) != -1) {
+                    fos.write(buffer, 0, count);
+                }
+
+                fos.close();
+                zis.closeEntry();
+
+                RootFile newFile = new RootFile(outputDir + File.separator + filename, false);
+                if (newFile.mFile.getName().equals("patch")) {
+                    new RootFile(outputDir + File.separator + filename, false).chmod(0700);
+                }
+            }
+
+            zis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
     }
 }
