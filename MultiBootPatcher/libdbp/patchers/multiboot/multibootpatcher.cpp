@@ -475,9 +475,7 @@ bool MultiBootPatcher::Impl::patchZip()
     }
 
     // Create temporary dir for extracted files for autopatchers
-    boost::filesystem::path parentPath(info->filename());
-    parentPath = boost::filesystem::system_complete(parentPath).parent_path();
-    std::string tempDir = createTemporaryDir(parentPath.string());
+    std::string tempDir = createTemporaryDir(pc->tempDirectory());
 
     if (!pass1(aOutput, tempDir, excludeFromPass1, &bootImages)) {
         boost::filesystem::remove_all(tempDir);
