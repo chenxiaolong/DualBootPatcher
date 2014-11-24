@@ -552,7 +552,7 @@ bool PrimaryUpgradePatcher::Impl::patchUpdaterScript(std::vector<unsigned char> 
     bool replacedFormatSystem = false;
     bool replacedFormatCache = false;
 
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
+    for (auto it = lines.begin(); it != lines.end();) {
         if (MBP_regex_search(*it, MBP_regex("^\\s*format\\s*\\(.*$"))) {
             if (it->find("system") != std::string::npos
                     || (!pSystem.empty() && it->find(pSystem) != std::string::npos)) {
