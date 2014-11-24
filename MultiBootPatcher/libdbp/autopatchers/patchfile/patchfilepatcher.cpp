@@ -175,23 +175,22 @@ bool PatchFilePatcher::patchFiles(const std::string &directory,
     int exitCode = -1;
 
     std::vector<std::string> lines;
+
+    bool error = !m_impl->runProcess(patch, args, &output, &exitCode)
+            || exitCode != 0;
+
     boost::split(lines, output, boost::is_any_of("\n"));
+    for (auto &line : lines) {
+        Log::log(Log::Error, "patch output: %s", line);
+    }
 
-    if (!m_impl->runProcess(patch, args, &output, &exitCode) || exitCode != 0) {
-        for (auto &line : lines) {
-            Log::log(Log::Error, "patch output: %s", line);
-        }
-
+    if (error) {
         m_impl->error = PatcherError::createPatchingError(
                 MBP::ErrorCode::ApplyPatchFileError);
         return false;
+    } else {
+        return true;
     }
-
-    for (auto &line : lines) {
-        Log::log(Log::Debug, "patch output: %s", line);
-    }
-
-    return true;
 }
 
 #ifdef _WIN32
