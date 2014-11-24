@@ -2,13 +2,13 @@
 # getfacl, setfacl, getfattr, setfattr, and patch for Android
 ################################################################################
 
-set(PREBUILTS_VER "20140913")
+set(PREBUILTS_VER "20141123")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00140/EKv/prebuilts-android-${PREBUILTS_VER}.tar.xz
-    ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-${PREBUILTS_VER}.tar.xz
-    EXPECTED_MD5 3b740aa9ca5f8f191d0ed6d600c78ffb
+    http://fs1.d-h.st/download/00149/V91/prebuilts-android-${PREBUILTS_VER}.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-${PREBUILTS_VER}.tar.bz2
+    EXPECTED_MD5 881af483d2d58fa3d5f5b84b6f335c65
     SHOW_PROGRESS
 )
 
@@ -19,7 +19,7 @@ if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/output/PREBUILTS_VERSION_ANDRO
 
     message(STATUS "Extracting Android prebuilt binaries ...")
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-${PREBUILTS_VER}.tar.xz
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-${PREBUILTS_VER}.tar.bz2
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android
     )
 endif()

@@ -20,7 +20,7 @@ set -e
 cd "$(dirname "${0}")"
 
 gcc_ver=4.9
-linaro_ver=14.08
+linaro_ver=14.09
 
 url_base="http://releases.linaro.org/${linaro_ver}/components/toolchain/binaries"
 name_arm="gcc-linaro-arm-linux-gnueabihf-${gcc_ver}-20${linaro_ver}_linux"
@@ -255,7 +255,7 @@ build_acl x86_64 ${toolchain_host} ${temp_prefix_x86_64}
 # Build GNU patch
 ################################################################################
 
-ver_patch="2.7"
+ver_patch="2.7.1"
 name_patch="patch-${ver_patch}"
 tar_patch="${name_patch}.tar.xz"
 url_patch="ftp://ftp.gnu.org/gnu/patch/${tar_patch}"
@@ -292,12 +292,12 @@ build_patch() {
         local cc="${toolchain}-gcc"
     fi
 
-    CC="${cc}" ./configure \
+    CC="${cc} -static" ./configure \
         --host=${toolchain} \
         --build=${toolchain_host} \
         --prefix="${prefix}"
 
-    CC="${cc}" make
+    CC="${cc} -static" make
 
     cp src/patch ../output/${arch}/patch
 
