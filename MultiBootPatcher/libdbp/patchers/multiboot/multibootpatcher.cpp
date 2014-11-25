@@ -390,6 +390,24 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
 static std::string createTemporaryDir(const std::string &directory)
 {
+#ifdef __ANDROID__
+    // For whatever reason boost::filesystem::unique_path() returns an empty
+    // path on pre-lollipop ROMs
+
+    boost::filesystem::path dir(directory);
+    dir /= "mbp-XXXXXX";
+    const std::string dirTemplate = dir.string();
+
+    // mkdtemp modifies buffer
+    std::vector<char> buf(dirTemplate.begin(), dirTemplate.end());
+    buf.push_back('\0');
+
+    if (mkdtemp(buf.data())) {
+        return std::string(buf.data());
+    }
+
+    return std::string();
+#else
     int count = 256;
 
     while (count > 0) {
@@ -404,6 +422,7 @@ static std::string createTemporaryDir(const std::string &directory)
 
     // Like Qt, we'll assume that 256 tries is enough ...
     return std::string();
+#endif
 }
 
 bool MultiBootPatcher::Impl::patchZip()
