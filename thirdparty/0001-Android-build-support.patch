@@ -1,0 +1,125 @@
+From 2aca19fedad6fbf14b8cfd8ef2e9770a6506a270 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Thu, 27 Nov 2014 17:32:09 -0500
+Subject: [PATCH] Android build support
+
+---
+ Android.mk                | 49 +++++++++++++++++++++++++++++++++++++++++++++++
+ Application.mk            |  7 +++++++
+ contrib/minizip/ioapi.c   |  2 +-
+ contrib/minizip/miniunz.c |  2 +-
+ contrib/minizip/minizip.c |  2 +-
+ 5 files changed, 59 insertions(+), 3 deletions(-)
+ create mode 100644 Android.mk
+ create mode 100644 Application.mk
+
+diff --git a/Android.mk b/Android.mk
+new file mode 100644
+index 0000000..b0d2ea3
+--- /dev/null
++++ b/Android.mk
+@@ -0,0 +1,49 @@
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_SRC_FILES := \
++	adler32.c \
++	compress.c \
++	crc32.c \
++	deflate.c \
++	gzclose.c \
++	gzlib.c \
++	gzread.c \
++	gzwrite.c \
++	inflate.c \
++	infback.c \
++	inftrees.c \
++	inffast.c \
++	trees.c \
++	uncompr.c \
++	zutil.c
++
++LOCAL_MODULE := zlib
++LOCAL_CFLAGS := -O3 -DUSE_MMAP
++include $(BUILD_STATIC_LIBRARY)
++
++
++include $(CLEAR_VARS)
++LOCAL_SRC_FILES := \
++	contrib/minizip/ioapi.c \
++	contrib/minizip/mztools.c \
++	contrib/minizip/unzip.c \
++	contrib/minizip/zip.c
++
++LOCAL_MODULE := libminizip
++LOCAL_STATIC_LIBRARIES := zlib
++include $(BUILD_STATIC_LIBRARY)
++
++
++include $(CLEAR_VARS)
++LOCAL_SRC_FILES := \
++	contrib/minizip/miniunz.c
++
++LOCAL_MODULE := miniunzip
++LOCAL_STATIC_LIBRARIES := libminizip
++
++# Not sure why it tries to compile the binary with g++
++TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
++
++LOCAL_LDFLAGS := -static
++include $(BUILD_EXECUTABLE)
+diff --git a/Application.mk b/Application.mk
+new file mode 100644
+index 0000000..8736c52
+--- /dev/null
++++ b/Application.mk
+@@ -0,0 +1,7 @@
++APP_BUILD_SCRIPT := Android.mk
++
++APP_ABI := armeabi-v7a arm64-v8a x86 x86_64
++
++APP_PLATFORM := android-21
++
++NDK_TOOLCHAIN_VERSION := 4.9
+diff --git a/contrib/minizip/ioapi.c b/contrib/minizip/ioapi.c
+index 7f5c191..51af4a7 100644
+--- a/contrib/minizip/ioapi.c
++++ b/contrib/minizip/ioapi.c
+@@ -14,7 +14,7 @@
+         #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ 
+-#if defined(__APPLE__) || defined(IOAPI_NO_64)
++#if defined(__APPLE__) || defined(__ANDROID__) || defined(IOAPI_NO_64)
+ // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
+ #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
+ #define FTELLO_FUNC(stream) ftello(stream)
+diff --git a/contrib/minizip/miniunz.c b/contrib/minizip/miniunz.c
+index 3d65401..d28f568 100644
+--- a/contrib/minizip/miniunz.c
++++ b/contrib/minizip/miniunz.c
+@@ -27,7 +27,7 @@
+         #endif
+ #endif
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) || defined(__ANDROID__)
+ // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
+ #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
+ #define FTELLO_FUNC(stream) ftello(stream)
+diff --git a/contrib/minizip/minizip.c b/contrib/minizip/minizip.c
+index 4288962..0f94370 100644
+--- a/contrib/minizip/minizip.c
++++ b/contrib/minizip/minizip.c
+@@ -28,7 +28,7 @@
+         #endif
+ #endif
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) || defined(__ANDROID__)
+ // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
+ #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
+ #define FTELLO_FUNC(stream) ftello(stream)
+-- 
+2.1.3
+
