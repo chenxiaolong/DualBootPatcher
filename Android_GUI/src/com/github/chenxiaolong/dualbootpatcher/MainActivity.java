@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -29,8 +28,10 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceActivity;
-import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -38,7 +39,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,7 +52,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 import java.util.ArrayList;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ActionBarActivity {
     private static final int[] RES_NAV_TITLES = new int[] {
             R.string.title_choose_rom, R.string.title_set_kernel,
             R.string.title_patch_zip, R.string.title_free_space, R.string.title_rom_settings,
@@ -74,7 +75,7 @@ public class MainActivity extends Activity {
     private SharedPreferences mPrefs;
 
     private DrawerLayout mDrawerLayout;
-    private RelativeLayout mDrawerView;
+    private ScrollView mDrawerView;
     private ActionBarDrawerToggle mDrawerToggle;
 
     private final ArrayList<Integer> mDrawerItems = new ArrayList<Integer>();
@@ -107,10 +108,12 @@ public class MainActivity extends Activity {
             mTitle = savedInstanceState.getInt("title");
         }
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                R.drawable.ic_drawer, R.string.drawer_open,
-                R.string.drawer_close) {
+                R.string.drawer_open, R.string.drawer_close) {
             @Override
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
@@ -131,10 +134,10 @@ public class MainActivity extends Activity {
 
         mDrawerLayout.setDrawerListener(mDrawerToggle);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, Gravity.START);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        getActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
 
-        mDrawerView = (RelativeLayout) findViewById(R.id.left_drawer);
+        mDrawerView = (ScrollView) findViewById(R.id.left_drawer);
 
         mDrawerItems.clear();
         mDrawerItems.add(NAV_CHOOSE_ROM);
@@ -246,9 +249,9 @@ public class MainActivity extends Activity {
 
     private void updateTitle() {
         if (mDrawerLayout.isDrawerOpen(mDrawerView) || mTitle == 0) {
-            getActionBar().setTitle(BuildConfig.APP_NAME_RESOURCE);
+            getSupportActionBar().setTitle(BuildConfig.APP_NAME_RESOURCE);
         } else {
-            getActionBar().setTitle(mTitle);
+            getSupportActionBar().setTitle(mTitle);
         }
     }
 
@@ -562,15 +565,15 @@ public class MainActivity extends Activity {
 
     public void lockNavigation() {
         mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        getActionBar().setDisplayHomeAsUpEnabled(false);
-        getActionBar().setHomeButtonEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setHomeButtonEnabled(false);
     }
 
     @SuppressWarnings("unused")
     public void unlockNavigation() {
         mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        getActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
     }
 
     public void showProgress(int fragment, boolean show) {
