@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
+import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,6 +33,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -138,6 +140,19 @@ public class MainActivity extends ActionBarActivity {
         getSupportActionBar().setHomeButtonEnabled(true);
 
         mDrawerView = (ScrollView) findViewById(R.id.left_drawer);
+
+        // Nav drawer width according to material design guidelines
+        // http://www.google.com/design/spec/patterns/navigation-drawer.html
+        // https://medium.com/sebs-top-tips/material-navigation-drawer-sizing-558aea1ad266
+        final Display display = getWindowManager().getDefaultDisplay();
+        final Point size = new Point();
+        display.getSize(size);
+
+        final ViewGroup.LayoutParams params = mDrawerView.getLayoutParams();
+        int toolbarHeight = getResources().getDimensionPixelSize(
+                R.dimen.abc_action_bar_default_height_material);
+        params.width = Math.min(size.x - toolbarHeight, size.y - toolbarHeight);
+        mDrawerView.setLayoutParams(params);
 
         mDrawerItems.clear();
         mDrawerItems.add(NAV_CHOOSE_ROM);
