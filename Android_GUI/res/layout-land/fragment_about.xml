@@ -57,6 +57,7 @@
             android:layout_marginTop="20dp"
             android:gravity="center"
             android:lineSpacingExtra="5sp"
+            android:textColorLink="@color/primary_dark"
             android:textSize="16sp" />
     </LinearLayout>
 

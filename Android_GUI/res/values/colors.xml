@@ -19,6 +19,12 @@
 
 <resources>
 
+    <color name="primary">#ff1e88e5</color>
+    <color name="primary_dark">#ff1976d2</color>
+    <color name="accent">#ff0d47a1</color>
+    <color name="text_color_primary">#d9ffffff</color>
+    <color name="text_color">#d9000000</color>
+
     <color name="navigation_background">#ffffffff</color>
     <color name="navigation_separator">#ffdddddd</color>
     <color name="nav_item_text_color">#de000000</color>
