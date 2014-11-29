@@ -17,16 +17,9 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<View xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical" >
-
-    <View style="@style/navigation_separator" />
-    <!--
-         <include
-        android:id="@+id/list_item_section_text"
-        layout="@android:layout/preference_category" />
-    -->
-
-</LinearLayout>
+    android:layout_height="@dimen/nav_item_separator_height"
+    android:layout_marginBottom="@dimen/nav_item_separator_padding"
+    android:layout_marginTop="@dimen/nav_item_separator_padding"
+    android:background="@color/navigation_separator" />

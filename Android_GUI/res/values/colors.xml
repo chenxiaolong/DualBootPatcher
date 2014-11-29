@@ -19,9 +19,9 @@
 
 <resources>
 
-    <color name="navigation_background">#ffeeeeee</color>
+    <color name="navigation_background">#ffffffff</color>
     <color name="navigation_separator">#ffdddddd</color>
-    <color name="navigation_item_text">#ff333333</color>
+    <color name="nav_item_text_color">#de000000</color>
 
     <!-- All caps button -->
     <!-- <color name="all_caps_button_text_color">#ffffffff</color> -->

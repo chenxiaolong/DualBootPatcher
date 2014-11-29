@@ -19,34 +19,37 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="@dimen/nav_item_height"
     android:background="?android:attr/selectableItemBackground"
-    android:minHeight="@dimen/navigation_item_height" >
+    android:paddingStart="@dimen/nav_item_side_padding">
 
     <ImageView
-        android:id="@+id/drawer_icon"
-        style="@style/navigation_image"
+        android:id="@+id/nav_item_icon"
+        android:layout_width="@dimen/nav_item_icon_size"
+        android:layout_height="@dimen/nav_item_icon_size"
         android:layout_centerVertical="true"
         android:contentDescription="@string/switcher_rom_image" />
 
     <TextView
-        android:id="@+id/drawer_text"
-        style="@style/navigation_text"
-        android:layout_width="wrap_content"
-        android:layout_toRightOf="@id/drawer_icon"
-        android:gravity="center_vertical"
-        android:minHeight="?android:attr/listPreferredItemHeightSmall"
-        android:textAppearance="?android:attr/textAppearanceListItemSmall"
-        android:textColor="@color/navigation_item_text" />
+        android:id="@+id/nav_item_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/nav_item_progress"
+        android:ellipsize="end"
+        android:gravity="center_vertical|start"
+        android:paddingStart="@dimen/nav_item_text_left_padding"
+        android:singleLine="true"
+        android:textColor="@color/nav_item_text_color"
+        android:textSize="@dimen/nav_item_text_size" />
 
     <ProgressBar
-        android:id="@+id/drawer_progress"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentRight="true"
+        android:id="@+id/nav_item_progress"
+        android:layout_width="@dimen/nav_item_progress_size"
+        android:layout_height="@dimen/nav_item_progress_size"
+        android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:gravity="center_vertical"
-        android:indeterminate="true"
-        android:paddingRight="10dp" />
+        android:indeterminate="true" />
 
 </RelativeLayout>

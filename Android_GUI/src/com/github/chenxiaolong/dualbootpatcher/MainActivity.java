@@ -293,9 +293,9 @@ public class MainActivity extends ActionBarActivity {
         int layout;
 
         if (isSeparator(type)) {
-            layout = R.layout.drawer_list_separator_item;
+            layout = R.layout.nav_separator_item;
         } else {
-            layout = R.layout.drawer_list_item;
+            layout = R.layout.nav_item;
         }
 
         View view = getLayoutInflater().inflate(layout, container, false);
@@ -306,9 +306,8 @@ public class MainActivity extends ActionBarActivity {
             return view;
         }
 
-        final TextView textView = (TextView) view
-                .findViewById(R.id.drawer_text);
-        ImageView imageView = (ImageView) view.findViewById(R.id.drawer_icon);
+        final TextView textView = (TextView) view.findViewById(R.id.nav_item_text);
+        final ImageView imageView = (ImageView) view.findViewById(R.id.nav_item_icon);
 
         int titleId = RES_NAV_TITLES[type];
         int iconId = RES_NAV_ICONS[type];
@@ -371,9 +370,8 @@ public class MainActivity extends ActionBarActivity {
         case NAV_FREE_SPACE:
         case NAV_ABOUT:
             View view = mDrawerItemViews[item];
-            TextView textView = (TextView) view.findViewById(R.id.drawer_text);
-            textView.setTypeface(null, selected ? Typeface.BOLD
-                    : Typeface.NORMAL);
+            TextView textView = (TextView) view.findViewById(R.id.nav_item_text);
+            textView.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
             break;
         }
     }
@@ -606,7 +604,7 @@ public class MainActivity extends ActionBarActivity {
 
         View view = mDrawerItemViews[item];
         ProgressBar progressBar = (ProgressBar) view
-                .findViewById(R.id.drawer_progress);
+                .findViewById(R.id.nav_item_progress);
 
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
@@ -618,7 +616,7 @@ public class MainActivity extends ActionBarActivity {
             if (!isSeparator(type)) {
                 View view = mDrawerItemViews[i];
                 ProgressBar progressBar = (ProgressBar) view
-                        .findViewById(R.id.drawer_progress);
+                        .findViewById(R.id.nav_item_progress);
 
                 if (mDrawerItemsProgress[i]) {
                     progressBar.setVisibility(View.VISIBLE);

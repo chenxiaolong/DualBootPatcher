@@ -26,8 +26,16 @@
     <dimen name="activity_vertical_margin">0dp</dimen>
 
     <!-- Navigation Drawer -->
-    <dimen name="navigation_item_height">49.0dip</dimen>
-    <dimen name="navigation_divider_height">1.0dip</dimen>
+    <!-- See http://www.google.com/design/spec/layout/metrics-keylines.html#metrics-keylines-keylines-spacing -->
+    <dimen name="nav_item_height">48dp</dimen>
+    <dimen name="nav_item_side_padding">16dp</dimen>
+    <dimen name="nav_item_icon_size">24dp</dimen>
+    <!-- 72dp relative to edge of screen (16dp + 56dp) -->
+    <dimen name="nav_item_text_left_padding">56dp</dimen>
+    <dimen name="nav_item_text_size">14sp</dimen>
+    <dimen name="nav_item_separator_height">1dp</dimen>
+    <dimen name="nav_item_separator_padding">8dp</dimen>
+    <dimen name="nav_item_progress_size">48dp</dimen>
 
     <!-- All caps button -->
     <dimen name="all_caps_button_width">120dp</dimen>
