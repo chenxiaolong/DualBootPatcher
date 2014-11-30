@@ -20,9 +20,9 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent">
 
-    <it.gmariotti.cardslib.library.view.CardView
+    <it.gmariotti.cardslib.library.view.CardViewNative
         android:id="@+id/card_noroot_set_kernel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -36,7 +36,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/card_noroot_set_kernel"
-        card:list_card_layout_resourceID="@layout/cardlistlayout_switcher" />
+        android:paddingLeft="@dimen/card_outside_side_padding"
+        android:paddingRight="@dimen/card_outside_side_padding"
+        card:list_card_layout_resourceID="@layout/card_list_layout_padded_thumbnail" />
 
     <ProgressBar
         android:id="@+id/card_list_loading_set_kernel"

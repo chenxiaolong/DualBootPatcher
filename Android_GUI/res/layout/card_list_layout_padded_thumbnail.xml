@@ -17,10 +17,16 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<it.gmariotti.cardslib.library.view.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/list_cardId"
-    style="@style/list_card.thumbnail"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    card:card_layout_resourceID="@layout/cardlayout_switcher" />
+    android:layout_height="wrap_content">
+
+    <it.gmariotti.cardslib.library.view.CardViewNative
+        android:id="@+id/list_cardId"
+        style="@style/native_list_card.base"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        card:card_layout_resourceID="@layout/card_layout_padded_thumbnail" />
+
+</LinearLayout>
