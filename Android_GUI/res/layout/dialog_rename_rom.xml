@@ -28,7 +28,7 @@
         android:layout_height="@dimen/nav_item_separator_height"
         android:background="@color/navigation_separator" />
 
-    <it.gmariotti.cardslib.library.view.CardView
+    <it.gmariotti.cardslib.library.view.CardViewNative
         android:id="@+id/rom_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -36,6 +36,6 @@
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="5dp"
-        card:card_layout_resourceID="@layout/cardlayout_romdialog" />
+        card:card_layout_resourceID="@layout/card_layout_padded_thumbnail" />
 
 </LinearLayout>
