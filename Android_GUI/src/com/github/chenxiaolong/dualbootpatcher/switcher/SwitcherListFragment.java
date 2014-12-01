@@ -66,7 +66,7 @@ import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
 import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
 import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
 import it.gmariotti.cardslib.library.view.CardListView;
-import it.gmariotti.cardslib.library.view.CardView;
+import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class SwitcherListFragment extends Fragment implements OnDismissListener,
         EventCollectorListener {
@@ -97,7 +97,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private int mCardListResId;
 
     private NoRootCard mNoRootCard;
-    private CardView mNoRootCardView;
+    private CardViewNative mNoRootCardView;
     private ArrayList<Card> mCards;
     private CardArrayAdapter mCardArrayAdapter;
     private CardListView mCardListView;
@@ -345,7 +345,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             id = R.id.card_noroot_set_kernel;
         }
 
-        mNoRootCardView = (CardView) getActivity().findViewById(id);
+        mNoRootCardView = (CardViewNative) getActivity().findViewById(id);
         mNoRootCardView.setCard(mNoRootCard);
     }
 
@@ -544,7 +544,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             mRomDialogCard = new RomDialogCard(getActivity(), mSelectedRom,
                     name, imageResId, listener);
 
-            CardView cardView = (CardView) v.findViewById(R.id.rom_card);
+            CardViewNative cardView = (CardViewNative) v.findViewById(R.id.rom_card);
             cardView.setCard(mRomDialogCard);
 
             builder.setView(v);
@@ -609,7 +609,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private void refreshRenameDialog() {
         if (mRenameDialog != null) {
-            CardView cardView = (CardView) mRenameDialog.findViewById(R.id.rom_card);
+            CardViewNative cardView = (CardViewNative) mRenameDialog.findViewById(R.id.rom_card);
             cardView.refreshCard(mRomDialogCard);
         }
     }
