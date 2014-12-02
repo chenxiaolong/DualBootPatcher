@@ -17,91 +17,76 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:CircularProgressBar="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginLeft="10dp"
-    android:layout_marginRight="10dp"
-    android:layout_marginBottom="10dp"
-    android:layout_marginTop="10dp"
-    android:gravity="center_vertical" >
+    android:gravity="center_vertical"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/mount_point"
+        style="@style/free_space_main_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/nav_item_separator_height"
+        android:layout_marginBottom="@dimen/card_separator_padding"
+        android:layout_marginTop="@dimen/card_separator_padding"
+        android:background="@color/navigation_separator" />
 
     <LinearLayout
-        android:id="@+id/size_info"
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_toLeftOf="@+id/mountpoint_usage">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
                 style="@style/free_space_title"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/free_space_mount_point" />
+                android:text="@string/free_space_total_size" />
 
             <TextView
+                android:id="@+id/size_total"
                 style="@style/free_space_size_text"
-                android:id="@+id/mount_point"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-            <LinearLayout
-                android:orientation="vertical"
+            <TextView
+                style="@style/free_space_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1">
+                android:text="@string/free_space_free_size" />
 
-                <TextView
-                    style="@style/free_space_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/free_space_total_size" />
-
-                <TextView
-                    style="@style/free_space_size_text"
-                    android:id="@+id/size_total"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:orientation="vertical"
+            <TextView
+                android:id="@+id/size_free"
+                style="@style/free_space_size_text"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1">
-
-                <TextView
-                    style="@style/free_space_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/free_space_free_size" />
-
-                <TextView
-                    style="@style/free_space_size_text"
-                    android:id="@+id/size_free"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:layout_height="wrap_content" />
         </LinearLayout>
+
+        <com.github.chenxiaolong.dualbootpatcher.freespace.CircularProgressBar
+            android:id="@+id/mountpoint_usage"
+            android:layout_width="@dimen/circular_progress_bar_size"
+            android:layout_height="@dimen/circular_progress_bar_size"
+            CircularProgressBar:progress_color="@android:color/black"
+            CircularProgressBar:progress_width="@dimen/circular_progress_bar_thickness"
+            CircularProgressBar:random_rotation="true" />
     </LinearLayout>
-
-    <com.github.chenxiaolong.dualbootpatcher.freespace.CircularProgressBar
-        android:id="@+id/mountpoint_usage"
-        style="@style/usage_bar"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true" />
-
-</RelativeLayout>
+</LinearLayout>

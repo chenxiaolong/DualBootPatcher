@@ -39,13 +39,14 @@ public class FreeSpaceFragment extends Fragment {
     public static final String TAG = FreeSpaceFragment.class.getSimpleName();
 
     private static final int[] COLORS = new int[] {
-            Color.rgb(198, 247, 124), // Light greenish
-            Color.rgb(96, 0, 186),    // Purplish
-            Color.rgb(248, 255, 38),  // Yellowish
-            Color.rgb(21, 140, 0),    // Greenish
-            Color.rgb(235, 182, 26),  // Orangish
-            Color.rgb(181, 0, 13),    // Redish
-            Color.rgb(6, 0, 179)      // Bluish
+            Color.parseColor("#F44336"),
+            Color.parseColor("#8E24AA"),
+            Color.parseColor("#3F51B5"),
+            Color.parseColor("#2196F3"),
+            Color.parseColor("#4CAF50"),
+            Color.parseColor("#FBC02D"),
+            Color.parseColor("#E65100"),
+            Color.parseColor("#607D8B")
     };
 
     private CardListView mList;

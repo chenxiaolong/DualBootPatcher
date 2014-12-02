@@ -47,6 +47,11 @@
     <!-- Cards -->
     <dimen name="card_outside_side_padding">8dp</dimen>
     <dimen name="card_thumbnail_padding">8dp</dimen>
+    <dimen name="card_separator_padding">16dp</dimen>
+
+    <!-- Free space card -->
+    <dimen name="circular_progress_bar_size">72dp</dimen>
+    <dimen name="circular_progress_bar_thickness">16dp</dimen>
 
     <!-- Card expand section -->
     <dimen name="card_expand_padding_horiz">8dp</dimen>

@@ -23,10 +23,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
-import android.graphics.RadialGradient;
 import android.graphics.RectF;
-import android.graphics.Shader;
-import android.graphics.Shader.TileMode;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -41,25 +38,15 @@ public class CircularProgressBar extends View {
     // Paint
     private Paint mBackgroundPaint = new Paint();
     private Paint mProgressPaint = new Paint();
-    private Paint mShadowPaint = new Paint();
     private Paint mBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private final RectF mMainBounds = new RectF();
 
-    private float mShadowWidth = -1;
     private float mBorderWidth = -1;
     private float mProgressWidth = -1;
 
     private float mOuterBorderRadius = 0;
     private float mInnerBorderRadius = 0;
-
-    private float mOuterShadowStart = 0;
-    private float mOuterShadowEnd = 0;
-    private float mOuterShadowRadius = 0;
-
-    private float mInnerShadowStart = 0;
-    private float mInnerShadowEnd = 0;
-    private float mInnerShadowRadius = 0;
 
     // Colors
     private int mBackgroundColor;
@@ -70,6 +57,8 @@ public class CircularProgressBar extends View {
 
     private float mTranslationOffsetX;
     private float mTranslationOffsetY;
+
+    private Random mRandom = new Random();
 
     public CircularProgressBar(final Context context) {
         this(context, null);
@@ -94,8 +83,6 @@ public class CircularProgressBar extends View {
         setProgress(attributes.getFloat(
                 R.styleable.CircularProgressBar_progress, 0.0f));
 
-        mShadowWidth = attributes.getDimension(
-                R.styleable.CircularProgressBar_shadow_width, dpi2px(10));
         mBorderWidth = attributes.getDimension(
                 R.styleable.CircularProgressBar_border_width, dpi2px(1));
         mProgressWidth = attributes.getDimension(
@@ -149,25 +136,6 @@ public class CircularProgressBar extends View {
 
         final float progressRotation = getCurrentRotation();
 
-        // Draw shadows
-        mShadowPaint.setDither(true);
-        mShadowPaint.setStyle(Style.STROKE);
-        mShadowPaint.setStrokeWidth(mShadowWidth);
-
-        Shader outerGradient = new RadialGradient(0, 0, getMeasuredWidth() / 2,
-                new int[] {mProgressColor, Color.TRANSPARENT},
-                new float[]{mOuterShadowStart, mOuterShadowEnd}, TileMode.CLAMP);
-        mShadowPaint.setShader(outerGradient);
-
-        canvas.drawCircle(0, 0, mOuterShadowRadius, mShadowPaint);
-
-        Shader innerGradient = new RadialGradient(0, 0, getMeasuredWidth() / 2,
-                new int[]{Color.TRANSPARENT, mProgressColor},
-                new float[]{mInnerShadowStart, mInnerShadowEnd}, TileMode.CLAMP);
-        mShadowPaint.setShader(innerGradient);
-
-        canvas.drawCircle(0, 0, mInnerShadowRadius, mShadowPaint);
-
         // Draw the borders
         mBorderPaint.setColor(mProgressColor);
         mBorderPaint.setStyle(Style.STROKE);
@@ -178,7 +146,7 @@ public class CircularProgressBar extends View {
 
         int startAngle = 270;
         if (mRandomRotation) {
-            startAngle = new Random().nextInt(360);
+            startAngle = mRandom.nextInt(360);
         }
 
         // Draw the background
@@ -198,14 +166,6 @@ public class CircularProgressBar extends View {
         final float halfWidth = min * 0.5f;
         float max = halfWidth;
 
-        // Outer shadow ends at the edge of the view (the value is the proportion of the radius to
-        // half of the view's width)
-        mOuterShadowEnd = 1.0f;
-        // Make shadow 10dp large
-        mOuterShadowStart = (halfWidth - mShadowWidth) / halfWidth;
-        mOuterShadowRadius = halfWidth - mShadowWidth / 2;
-        max -= mShadowWidth;
-
         // Outer border
         mOuterBorderRadius = max - mBorderWidth / 2;
         max -= mBorderWidth;
@@ -218,12 +178,6 @@ public class CircularProgressBar extends View {
         // Inner border
         mInnerBorderRadius = max - mBorderWidth / 2;
         max -= mBorderWidth;
-
-        // Inner shadow
-        mInnerShadowEnd = max / halfWidth;
-        mInnerShadowStart = (max - mShadowWidth) / halfWidth;
-        mInnerShadowRadius = max - mShadowWidth / 2;
-        //max -= mShadowWidth;
 
         mTranslationOffsetX = halfWidth;
         mTranslationOffsetY = halfWidth;
