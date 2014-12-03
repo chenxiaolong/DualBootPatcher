@@ -17,12 +17,13 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
     style="@style/card_layout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/card_title"
@@ -32,10 +33,23 @@
         android:paddingBottom="10dp"
         android:text="@string/customopts_title" />
 
+    <TextView
+        android:id="@+id/customopts_autopatcher"
+        style="@style/patcher_card_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/customopts_autopatcher" />
+
     <Spinner
         android:id="@+id/spinner_autopatch"
+        style="@style/patcher_card_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <View
+        style="@style/separator"
+        android:layout_marginBottom="@dimen/card_internal_separator_padding"
+        android:layout_marginTop="@dimen/card_internal_separator_padding" />
 
     <CheckBox
         android:id="@+id/customopts_devicecheck"
@@ -50,33 +64,50 @@
         android:checked="true"
         android:text="@string/customopts_hasbootimage" />
 
+    <View
+        style="@style/separator"
+        android:layout_marginBottom="@dimen/card_internal_separator_padding"
+        android:layout_marginTop="@dimen/card_internal_separator_padding" />
+
     <TextView
         android:id="@+id/customopts_ramdisk"
-        style="@style/card_section_title"
+        style="@style/patcher_card_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/customopts_ramdisk" />
 
     <Spinner
         android:id="@+id/spinner_ramdisk"
+        style="@style/patcher_card_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <View
+        style="@style/separator"
+        android:layout_marginBottom="@dimen/card_internal_separator_padding"
+        android:layout_marginTop="@dimen/card_internal_separator_padding" />
+
     <TextView
         android:id="@+id/customopts_patchedinit"
-        style="@style/card_section_title"
+        style="@style/patcher_card_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/customopts_patchedinit" />
 
     <Spinner
         android:id="@+id/spinner_patchedinit"
+        style="@style/patcher_card_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <View
+        style="@style/separator"
+        android:layout_marginBottom="@dimen/card_internal_separator_padding"
+        android:layout_marginTop="@dimen/card_internal_separator_padding" />
+
     <TextView
         android:id="@+id/customopts_bootimage_title"
-        style="@style/card_section_title"
+        style="@style/patcher_card_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:labelFor="@+id/customopts_bootimage"
@@ -96,7 +127,7 @@
         android:id="@+id/customopts_bootimage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textNoSuggestions"
-        android:hint="@string/customopts_bootimage_hint" />
+        android:hint="@string/customopts_bootimage_hint"
+        android:inputType="textNoSuggestions" />
 
 </LinearLayout>

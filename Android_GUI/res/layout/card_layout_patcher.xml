@@ -17,22 +17,26 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    style="@style/card.native"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <View style="@style/separator" />
-
-    <it.gmariotti.cardslib.library.view.CardViewNative
-        android:id="@+id/rom_card"
+    <it.gmariotti.cardslib.library.view.ForegroundLinearLayout
+        android:id="@+id/card_main_layout"
+        style="@style/card.native.main_layout_foreground"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="5dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginRight="5dp"
-        android:layout_marginTop="5dp"
-        card:card_layout_resourceID="@layout/card_layout_padded_thumbnail" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
+        <FrameLayout
+            android:id="@+id/card_main_content_layout"
+            style="@style/card_content_minimal_padding"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </it.gmariotti.cardslib.library.view.ForegroundLinearLayout>
 </LinearLayout>

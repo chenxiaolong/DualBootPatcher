@@ -17,12 +17,13 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
     style="@style/card_layout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="100dp"
+    android:layout_height="wrap_content"
     android:gravity="top"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/card_title"
@@ -34,6 +35,7 @@
 
     <Spinner
         android:id="@+id/spinner_preset"
+        style="@style/patcher_card_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

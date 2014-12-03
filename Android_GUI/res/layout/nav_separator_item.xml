@@ -17,9 +17,8 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<View xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="@dimen/nav_item_separator_height"
+<View
+    style="@style/separator"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_marginBottom="@dimen/nav_item_separator_padding"
-    android:layout_marginTop="@dimen/nav_item_separator_padding"
-    android:background="@color/navigation_separator" />
+    android:layout_marginTop="@dimen/nav_item_separator_padding" />

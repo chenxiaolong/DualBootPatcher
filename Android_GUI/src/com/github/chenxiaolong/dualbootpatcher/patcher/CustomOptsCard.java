@@ -35,7 +35,7 @@ import android.widget.TextView;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 import it.gmariotti.cardslib.library.internal.Card;
-import it.gmariotti.cardslib.library.view.CardView;
+import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class CustomOptsCard extends Card {
     public static interface CustomOptsSelectedListener {
@@ -306,9 +306,9 @@ public class CustomOptsCard extends Card {
             if (getCardView() != null) {
                 if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0
                         && (mPCS.mSupported & PatcherConfigState.SUPPORTED_PARTCONFIG) != 0) {
-                    ((CardView) getCardView()).setVisibility(View.GONE);
+                    ((CardViewNative) getCardView()).setVisibility(View.GONE);
                 } else {
-                    ((CardView) getCardView()).setVisibility(View.VISIBLE);
+                    ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
                 }
             }
 
@@ -320,9 +320,9 @@ public class CustomOptsCard extends Card {
             if (getCardView() != null) {
                 if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0
                         && (mPCS.mSupported & PatcherConfigState.SUPPORTED_PARTCONFIG) != 0) {
-                    ((CardView) getCardView()).setVisibility(View.GONE);
+                    ((CardViewNative) getCardView()).setVisibility(View.GONE);
                 } else {
-                    ((CardView) getCardView()).setVisibility(View.VISIBLE);
+                    ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
                 }
             }
 
@@ -333,7 +333,7 @@ public class CustomOptsCard extends Card {
             setEnabled(true);
 
             if (getCardView() != null) {
-                ((CardView) getCardView()).setVisibility(View.GONE);
+                ((CardViewNative) getCardView()).setVisibility(View.GONE);
             }
 
             break;

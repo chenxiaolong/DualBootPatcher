@@ -32,63 +32,51 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <it.gmariotti.cardslib.library.view.CardView
+            <it.gmariotti.cardslib.library.view.CardViewNative
                 android:id="@+id/card_mainopts"
+                style="@style/card_external_minimal_margins"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
+                card:card_layout_resourceID="@layout/card_layout_patcher" />
 
-            <it.gmariotti.cardslib.library.view.CardView
+            <it.gmariotti.cardslib.library.view.CardViewNative
                 android:id="@+id/card_file_chooser"
+                style="@style/card_external_minimal_margins"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
+                card:card_layout_resourceID="@layout/card_layout_patcher" />
 
             <!-- Cards to configure patcher for unsupported file -->
 
-            <it.gmariotti.cardslib.library.view.CardView
+            <it.gmariotti.cardslib.library.view.CardViewNative
                 android:id="@+id/card_preset"
+                style="@style/card_external_minimal_margins"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
+                card:card_layout_resourceID="@layout/card_layout_patcher" />
 
-            <it.gmariotti.cardslib.library.view.CardView
+            <it.gmariotti.cardslib.library.view.CardViewNative
                 android:id="@+id/card_customopts"
+                style="@style/card_external_minimal_margins"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
+                card:card_layout_resourceID="@layout/card_layout_patcher" />
 
             <!-- Cards to show patching progress -->
 
-            <it.gmariotti.cardslib.library.view.CardView
+            <it.gmariotti.cardslib.library.view.CardViewNative
                 android:id="@+id/card_details"
+                style="@style/card_external_minimal_margins"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
+                card:card_layout_resourceID="@layout/card_layout_patcher" />
 
-            <it.gmariotti.cardslib.library.view.CardView
+            <it.gmariotti.cardslib.library.view.CardViewNative
                 android:id="@+id/card_progress"
+                style="@style/card_external_minimal_margins"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="12dp"
-                android:layout_marginRight="12dp"
-                android:layout_marginTop="12dp"
-                card:card_layout_resourceID="@layout/card_layout" />
+                card:card_layout_resourceID="@layout/card_layout_patcher" />
         </LinearLayout>
     </ScrollView>
 

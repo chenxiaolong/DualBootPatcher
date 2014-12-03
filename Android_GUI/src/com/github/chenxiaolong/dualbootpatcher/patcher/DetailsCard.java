@@ -17,9 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import it.gmariotti.cardslib.library.internal.Card;
-import it.gmariotti.cardslib.library.view.CardView;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
@@ -27,6 +24,9 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+
+import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class DetailsCard extends Card {
     private PatcherConfigState mPCS;
@@ -76,7 +76,7 @@ public class DetailsCard extends Card {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
             if (getCardView() != null) {
-                ((CardView) getCardView()).setVisibility(View.VISIBLE);
+                ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
             }
             break;
 
@@ -84,7 +84,7 @@ public class DetailsCard extends Card {
         case PatcherConfigState.STATE_INITIAL:
         case PatcherConfigState.STATE_FINISHED:
             if (getCardView() != null) {
-                ((CardView) getCardView()).setVisibility(View.GONE);
+                ((CardViewNative) getCardView()).setVisibility(View.GONE);
             }
             break;
         }

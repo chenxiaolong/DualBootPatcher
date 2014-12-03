@@ -25,8 +25,9 @@
     <color name="text_color_primary">#d9ffffff</color>
     <color name="text_color">#d9000000</color>
 
+    <color name="separator">#ffdddddd</color>
+
     <color name="navigation_background">#ffffffff</color>
-    <color name="navigation_separator">#ffdddddd</color>
     <color name="nav_item_text_color">#de000000</color>
 
     <!-- All caps button -->

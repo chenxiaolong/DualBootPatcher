@@ -51,7 +51,7 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
 import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
-import it.gmariotti.cardslib.library.view.CardView;
+import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class PatchFileFragment extends Fragment implements EventCollectorListener,
         MainOptsSelectedListener, CustomOptsSelectedListener, PresetSelectedListener {
@@ -75,12 +75,12 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private DetailsCard mDetailsCard;
     private ProgressCard mProgressCard;
 
-    private CardView mMainOptsCardView;
-    private CardView mFileChooserCardView;
-    private CardView mPresetCardView;
-    private CardView mCustomOptsCardView;
-    private CardView mDetailsCardView;
-    private CardView mProgressCardView;
+    private CardViewNative mMainOptsCardView;
+    private CardViewNative mFileChooserCardView;
+    private CardViewNative mPresetCardView;
+    private CardViewNative mCustomOptsCardView;
+    private CardViewNative mDetailsCardView;
+    private CardViewNative mProgressCardView;
 
     private PatcherConfigState mPCS;
 
@@ -127,7 +127,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private void initMainOptsCard() {
         // Card for selecting the device and partition configuration
         mMainOptsCard = new MainOptsCard(getActivity(), mPCS, this);
-        mMainOptsCardView = (CardView) getActivity().findViewById(R.id.card_mainopts);
+        mMainOptsCardView = (CardViewNative) getActivity().findViewById(R.id.card_mainopts);
         mMainOptsCardView.setCard(mMainOptsCard);
     }
 
@@ -143,14 +143,14 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             setTapActionChooseFile();
         }
 
-        mFileChooserCardView = (CardView) getActivity().findViewById(R.id.card_file_chooser);
+        mFileChooserCardView = (CardViewNative) getActivity().findViewById(R.id.card_file_chooser);
         mFileChooserCardView.setCard(mFileChooserCard);
     }
 
     private void initPresetCard() {
         // Card that allows the user to select a preset patchinfo to patch an unsupported file
         mPresetCard = new PresetCard(getActivity(), mPCS, this);
-        mPresetCardView = (CardView) getActivity().findViewById(R.id.card_preset);
+        mPresetCardView = (CardViewNative) getActivity().findViewById(R.id.card_preset);
         mPresetCardView.setCard(mPresetCard);
     }
 
@@ -158,14 +158,14 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         // Card that allows the user to manually change the patcher options when patching an
         // unsupported file
         mCustomOptsCard = new CustomOptsCard(getActivity(), mPCS, this);
-        mCustomOptsCardView = (CardView) getActivity().findViewById(R.id.card_customopts);
+        mCustomOptsCardView = (CardViewNative) getActivity().findViewById(R.id.card_customopts);
         mCustomOptsCardView.setCard(mCustomOptsCard);
     }
 
     private void initDetailsCard() {
         // Card to show patching details
         mDetailsCard = new DetailsCard(getActivity(), mPCS);
-        mDetailsCardView = (CardView) getActivity().findViewById(R.id.card_details);
+        mDetailsCardView = (CardViewNative) getActivity().findViewById(R.id.card_details);
         mDetailsCardView.setCard(mDetailsCard);
     }
 
@@ -173,7 +173,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         // Card to show a progress bar for the patching process (really only
         // the compression part though, since that takes the longest)
         mProgressCard = new ProgressCard(getActivity(), mPCS);
-        mProgressCardView = (CardView) getActivity().findViewById(R.id.card_progress);
+        mProgressCardView = (CardViewNative) getActivity().findViewById(R.id.card_progress);
         mProgressCardView.setCard(mProgressCard);
     }
 
