@@ -89,6 +89,9 @@ public:
     bool modifyInitTargetRc();
     bool modifyInitTargetRc(const std::string &filename);
 
+    bool stripManualCacheMounts(const std::string &filename);
+    bool useGeneratedFstab(const std::string &filename);
+
 private:
     static std::string makeWritable(const std::string &mountArgs);
 
