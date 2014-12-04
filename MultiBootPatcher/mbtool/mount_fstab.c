@@ -325,7 +325,7 @@ static int create_dir_and_mount(struct fstab_rec *rec,
     } else {
         KLOG_WARNING("%s found in fstab, but %s does not exist",
                      rec->mount_point, rec->mount_point);
-        perms = 0700;
+        perms = 0771;
     }
 
     if (stat(mount_point, &st) == 0) {
@@ -548,6 +548,17 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
         goto error;
     }
 
+    // Prevent installd from dying because it can't unmount /data/media for
+    // multi-user migration. Since Gingerbread devices aren't supported anyway,
+    // we'll bypass this.
+    FILE* lv = fopen("/data/.layout_version", "wb");
+    if (lv) {
+        fwrite("2", 1, 1, lv);
+        fclose(lv);
+    } else {
+        KLOG_ERROR("Failed to open /data/.layout_version to disable migration");
+    }
+
     // Global app sharing
     share_app = stat("/data/patcher.share-app", &st) == 0;
     share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
@@ -578,6 +589,9 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     fclose(out);
     free_fstab(fstab);
     kmsg_cleanup();
+
+    KLOG_INFO("Successfully mounted partitions");
+
     return 0;
 
 error:
