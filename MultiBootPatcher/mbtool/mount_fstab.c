@@ -98,6 +98,7 @@ static int options_to_flags(char *args, char *new_args, int size);
 static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
                                 char *mount_point);
+static int mkdirs(const char *dir, mode_t mode);
 static int bind_mount(const char *source, const char *target);
 static struct partconfig * find_partconfig();
 
@@ -353,12 +354,58 @@ static int create_dir_and_mount(struct fstab_rec *rec,
     return 0;
 }
 
+static int mkdirs(const char *dir, mode_t mode) {
+    struct stat st;
+    char *p;
+    char *save_ptr;
+    char *temp;
+    char *copy;
+    int len;
+
+    if (!dir || strlen(dir) == 0) {
+        return -1;
+    }
+
+    copy = strdup(dir);
+    len = strlen(dir);
+    temp = malloc(len + 2);
+    temp[0] = '\0';
+
+    if (dir[0] == '/') {
+        strcat(temp, "/");
+    }
+
+    p = strtok_r(copy, "/", &save_ptr);
+    while (p != NULL) {
+        strcat(temp, p);
+        strcat(temp, "/");
+
+        printf("Creating %s\n", temp);
+        if (stat(temp, &st) < 0 && mkdir(temp, mode) < 0) {
+            KLOG_ERROR("Failed to create directory %s: %s\n",
+                       temp, strerror(errno));
+            free(copy);
+            free(temp);
+            return -1;
+        }
+
+        p = strtok_r(NULL, "/", &save_ptr);
+    }
+
+    free(copy);
+    free(temp);
+    return 0;
+}
+
 static int bind_mount(const char *source, const char *target)
 {
-    struct stat st;
+    if (mkdirs(source, 0771)) {
+        KLOG_ERROR("Failed to create %s", source);
+        return -1;
+    }
 
-    if (stat(target, &st) < 0 && mkdir(target, 0771) < 0) {
-        KLOG_ERROR("Failed to create %s: %s", target, strerror(errno));
+    if (mkdirs(target, 0771) < 0) {
+        KLOG_ERROR("Failed to create %s", target);
         return -1;
     }
 
