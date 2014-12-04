@@ -46,6 +46,8 @@ set(DBP_SOURCES
     ramdiskpatchers/jflte/jflteramdiskpatcher.cpp
     ramdiskpatchers/klte/klteramdiskpatcher.cpp
     ramdiskpatchers/qcom/qcomramdiskpatcher.cpp
+    # jsoncpp
+    jsoncpp-dist/jsoncpp.cpp
 )
 
 set(DBP_HEADERS
