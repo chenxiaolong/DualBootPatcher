@@ -318,6 +318,20 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     RETURN_IF_CANCELLED
 
+    // Add mbtool
+    const std::string mbtool("mbtool");
+
+    if (cpio.exists(mbtool)) {
+        cpio.remove(mbtool);
+    }
+
+    cpio.addFile(pc->binariesDirectory() + "/"
+            + "android" + "/"
+            + info->device()->architecture() + "/"
+            + "mbtool", mbtool, 0750);
+
+    RETURN_IF_CANCELLED
+
     const std::string mountScript("init.multiboot.mounting.sh");
     const std::string mountScriptPath(pc->scriptsDirectory() + "/" + mountScript);
 
