@@ -50,6 +50,7 @@ public:
     bool modifyDefaultProp();
     bool addSyncdaemon();
     bool removeAndRelinkBusybox();
+    bool addConfigJson();
 
 private:
     class Impl;
