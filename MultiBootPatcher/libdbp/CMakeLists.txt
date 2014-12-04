@@ -28,7 +28,6 @@ set(DBP_SOURCES
     cwrapper/cstringmap.cpp
     # Autopatchers
     autopatchers/jflte/jfltepatcher.cpp
-    autopatchers/noobdev/noobdevpatcher.cpp
     autopatchers/patchfile/patchfilepatcher.cpp
     autopatchers/standard/standardpatcher.cpp
     # Patchers
@@ -66,7 +65,6 @@ set(DBP_HEADERS
 set(DBP_NOINST_HEADERS
     # Autopatchers
     autopatchers/jflte/jfltepatcher.h
-    autopatchers/noobdev/noobdevpatcher.h
     autopatchers/patchfile/patchfilepatcher.h
     autopatchers/standard/standardpatcher.h
     # Patchers

@@ -62,7 +62,6 @@ static const std::string Msm8960LpmRc = "MSM8960_lpm.rc";
     1. AOSP or AOSP-derived ramdisks
     2. Google Edition (Google Play Edition) ramdisks
     3. TouchWiz (Android 4.2-4.4) ramdisks
-    4. noobdev (built-in dual booting) ramdisks
  */
 
 
@@ -212,86 +211,6 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
         std::string newInit(m_impl->pc->initsDirectory() + "/init-kk44");
         m_impl->cpio->addFile(newInit, "init", 0755);
     }
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string JflteNoobdevRamdiskPatcher::Id = "jflte/AOSP/cxl";
-
-JflteNoobdevRamdiskPatcher::JflteNoobdevRamdiskPatcher(const PatcherConfig * const pc,
-                                                       const FileInfo *const info,
-                                                       CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string JflteNoobdevRamdiskPatcher::id() const
-{
-    return Id;
-}
-
-bool JflteNoobdevRamdiskPatcher::patchRamdisk()
-{
-    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-
-    if (!corePatcher.patchRamdisk()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
-    // /raw-cache needs to always be mounted rw so OpenDelta can write to
-    // /cache/recovery
-    QcomRamdiskPatcher::FstabArgs args;
-    args[QcomRamdiskPatcher::ArgForceCacheRw] = true;
-    args[QcomRamdiskPatcher::ArgKeepMountPoints] = true;
-    args[QcomRamdiskPatcher::ArgSystemMountPoint] = std::string("/raw-system");
-    args[QcomRamdiskPatcher::ArgCacheMountPoint] = std::string("/raw-cache");
-    args[QcomRamdiskPatcher::ArgDataMountPoint] = std::string("/raw-data");
-
-    if (!qcomPatcher.modifyFstab(args)) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!cxlModifyInitTargetRc()) {
-        return false;
-    }
-
-    std::string mountScript(m_impl->pc->scriptsDirectory()
-            + "/jflte/mount.modem.sh");
-    m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
-
-    return true;
-}
-
-bool JflteNoobdevRamdiskPatcher::cxlModifyInitTargetRc()
-{
-    auto contents = m_impl->cpio->contents(InitTargetRc);
-    if (contents.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, InitTargetRc);
-        return false;
-    }
-
-    std::string dualBootScript = "init.dualboot.mounting.sh";
-    std::string multiBootScript = "init.multiboot.mounting.sh";
-
-    std::string strContents(contents.begin(), contents.end());
-    std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
-
-    for (auto &line : lines) {
-        if (line.find(dualBootScript) != std::string::npos) {
-            boost::replace_all(line, dualBootScript, multiBootScript);
-        }
-    }
-
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    m_impl->cpio->setContents(InitTargetRc, std::move(contents));
 
     return true;
 }

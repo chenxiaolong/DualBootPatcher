@@ -38,7 +38,6 @@
 #include "patchers/primaryupgrade/primaryupgradepatcher.h"
 #include "patchers/syncdaemonupdate/syncdaemonupdatepatcher.h"
 #include "autopatchers/jflte/jfltepatcher.h"
-#include "autopatchers/noobdev/noobdevpatcher.h"
 #include "autopatchers/patchfile/patchfilepatcher.h"
 #include "autopatchers/standard/standardpatcher.h"
 #include "ramdiskpatchers/bacon/baconramdiskpatcher.h"
@@ -605,8 +604,6 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
     list.push_back(JflteNegaliteNoWipeData::Id);
     list.push_back(JflteTriForceFixAroma::Id);
     list.push_back(JflteTriForceFixUpdate::Id);
-    list.push_back(NoobdevMultiBoot::Id);
-    list.push_back(NoobdevSystemProp::Id);
     list.push_back(PatchFilePatcher::Id);
     list.push_back(StandardPatcher::Id);
     return list;
@@ -627,7 +624,6 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
     list.push_back(HlteAOSPRamdiskPatcher::Id);
     list.push_back(JflteAOSPRamdiskPatcher::Id);
     list.push_back(JflteGoogleEditionRamdiskPatcher::Id);
-    list.push_back(JflteNoobdevRamdiskPatcher::Id);
     list.push_back(JflteTouchWizRamdiskPatcher::Id);
     list.push_back(KlteAOSPRamdiskPatcher::Id);
     list.push_back(KlteTouchWizRamdiskPatcher::Id);
@@ -709,10 +705,6 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
         ap = new JflteTriForceFixAroma(this, info);
     } else if (id == JflteTriForceFixUpdate::Id) {
         ap = new JflteTriForceFixUpdate(this, info);
-    } else if (id == NoobdevMultiBoot::Id) {
-        ap = new NoobdevMultiBoot(this, info);
-    } else if (id == NoobdevSystemProp::Id) {
-        ap = new NoobdevSystemProp(this, info);
     } else if (id == PatchFilePatcher::Id) {
         ap = new PatchFilePatcher(this, info, args);
     } else if (id == StandardPatcher::Id) {
@@ -757,8 +749,6 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new JflteAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == JflteGoogleEditionRamdiskPatcher::Id) {
         rp = new JflteGoogleEditionRamdiskPatcher(this, info, cpio);
-    } else if (id == JflteNoobdevRamdiskPatcher::Id) {
-        rp = new JflteNoobdevRamdiskPatcher(this, info, cpio);
     } else if (id == JflteTouchWizRamdiskPatcher::Id) {
         rp = new JflteTouchWizRamdiskPatcher(this, info, cpio);
     } else if (id == KlteAOSPRamdiskPatcher::Id) {

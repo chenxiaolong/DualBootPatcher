@@ -77,24 +77,6 @@ public:
 };
 
 
-class JflteNoobdevRamdiskPatcher : public JflteBaseRamdiskPatcher
-{
-public:
-    explicit JflteNoobdevRamdiskPatcher(const PatcherConfig * const pc,
-                                        const FileInfo * const info,
-                                        CpioFile * const cpio);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual bool patchRamdisk() override;
-
-private:
-    bool cxlModifyInitTargetRc();
-};
-
-
 class JflteTouchWizRamdiskPatcher : public JflteBaseRamdiskPatcher
 {
 public:
