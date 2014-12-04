@@ -19,6 +19,7 @@ include (cmake/AndroidNDK.cmake)
 # Main patcher
 add_subdirectory(libdbp)
 add_subdirectory(data)
+add_subdirectory(mbtool)
 add_subdirectory(syncdaemon)
 
 if(BUILD_ANDROID)
