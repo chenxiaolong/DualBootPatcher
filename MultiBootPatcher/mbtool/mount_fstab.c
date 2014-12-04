@@ -549,7 +549,7 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     }
 
     // Prevent installd from dying because it can't unmount /data/media for
-    // multi-user migration. Since Gingerbread devices aren't supported anyway,
+    // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
     FILE* lv = fopen("/data/.layout_version", "wb");
     if (lv) {
