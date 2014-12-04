@@ -1,0 +1,22 @@
+From 3080f6c454e6d3d1c8e9ad63f03736c74717c1ba Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Thu, 4 Dec 2014 02:31:44 -0500
+Subject: [PATCH] jansson: Build static library on Android
+
+---
+ Android.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index e3b09e7..eddd149 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -27,4 +27,4 @@ LOCAL_CFLAGS += -O3 -DHAVE_STDINT_H=1
+ 
+ LOCAL_MODULE:= libjansson
+ 
+-include $(BUILD_SHARED_LIBRARY)
++include $(BUILD_STATIC_LIBRARY)
+-- 
+2.1.3
+
