@@ -30,19 +30,22 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES := @DBP_SOURCES_STR@
+LOCAL_SRC_FILES := jsoncpp-dist/jsoncpp.cpp @DBP_SOURCES_STR@
 
 LOCAL_MODULE := libdbp
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
+	jsoncpp-dist \
 	$(BOOST_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
 	$(LIBARCHIVE_DIR)/include
 
-LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
-LOCAL_CFLAGS += -fstack-protector-all -D_FORTIFY_SOURCE=2
-LOCAL_CFLAGS += -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -pie
+#LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
+LOCAL_CFLAGS := -Wall -Wextra -pedantic
+#LOCAL_CFLAGS += -fstack-protector-all -D_FORTIFY_SOURCE=2
+#LOCAL_CFLAGS += -Wl,-z,noexecstack -Wl,-z,now -Wl,-z,relro -pie
+LOCAL_CFLAGS += -pie
 LOCAL_CFLAGS += -Wl,--no-undefined
 LOCAL_CFLAGS += -fexceptions -frtti
 # Boost has some unused typedefs

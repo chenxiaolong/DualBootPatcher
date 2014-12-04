@@ -3,6 +3,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Allow libdbp headers to be found
 include_directories(${CMAKE_SOURCE_DIR})
 
+include_directories(jsoncpp-dist)
+
 set(DBP_SOURCES
     bootimage.cpp
     cpiofile.cpp
