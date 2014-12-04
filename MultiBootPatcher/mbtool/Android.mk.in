@@ -1,0 +1,30 @@
+LOCAL_PATH := $(call my-dir)
+THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
+JANSSON_DIR := $(THIRD_PARTY)/android/jansson
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libjansson
+LOCAL_SRC_FILES := $(JANSSON_DIR)/lib_$(TARGET_ARCH_ABI)/libjansson.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := \
+	common.c \
+	config.c \
+	logging.c \
+	mount_fstab.c \
+	main.c
+
+LOCAL_MODULE := mbtool
+LOCAL_STATIC_LIBRARIES := libjansson
+
+LOCAL_C_INCLUDES := \
+	$(JANSSON_DIR)/include
+
+# Not sure why it tries to compile the binary with g++
+TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
+
+LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
+LOCAL_LDFLAGS := -static
+include $(BUILD_EXECUTABLE)
