@@ -72,30 +72,16 @@ bool FalconRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitQcomRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    std::vector<std::string> fstabs;
-    fstabs.push_back("gpe-fstab.qcom");
-
-    QcomRamdiskPatcher::FstabArgs args;
-    args[QcomRamdiskPatcher::ArgAdditionalFstabs] = std::move(fstabs);
-
-    if (!qcomPatcher.modifyFstab(args)) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitTargetRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
+    if (m_impl->cpio->exists("init.target.rc")) {
+        if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
+    } else {
+        if (!qcomPatcher.useGeneratedFstab("init.qcom.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
     }
 
     return true;
