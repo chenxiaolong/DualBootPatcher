@@ -1,0 +1,545 @@
+/*
+ * Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+ *
+ * This file is part of MultiBootPatcher
+ *
+ * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MultiBootPatcher is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "mount_fstab.h"
+
+#ifndef __ANDROID__
+#include <bsd/string.h>
+#endif
+#include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include "common.h"
+#include "config.h"
+#include "logging.h"
+
+
+struct fstab
+{
+    int num_entries;
+    struct fstab_rec *recs;
+    char *fstab_filename;
+};
+
+struct fstab_rec
+{
+    char *blk_device;
+    char *mount_point;
+    char *fs_type;
+    unsigned long flags;
+    char *fs_options;
+    char *vold_args;
+    char *orig_line;
+};
+
+struct mount_flag
+{
+    const char *name;
+    unsigned int flag;
+};
+
+static struct mount_flag mount_flags[] =
+{
+    { "active",         MS_ACTIVE },
+    { "bind",           MS_BIND },
+    { "dirsync",        MS_DIRSYNC },
+    { "mandlock",       MS_MANDLOCK },
+    { "move",           MS_MOVE },
+    { "noatime",        MS_NOATIME },
+    { "nodev",          MS_NODEV },
+    { "nodiratime",     MS_NODIRATIME },
+    { "noexec",         MS_NOEXEC },
+    { "nosuid",         MS_NOSUID },
+    { "nouser",         MS_NOUSER },
+    { "posixacl",       MS_POSIXACL },
+    { "rec",            MS_REC },
+    { "ro",             MS_RDONLY },
+    { "relatime",       MS_RELATIME },
+    { "remount",        MS_REMOUNT },
+    { "silent",         MS_SILENT },
+    { "strictatime",    MS_STRICTATIME },
+    { "sync",           MS_SYNCHRONOUS },
+    { "unbindable",     MS_UNBINDABLE },
+    { "private",        MS_PRIVATE },
+    { "slave",          MS_SLAVE },
+    { "shared",         MS_SHARED },
+    // Flags that should be ignored
+    { "ro",             0 },
+    { "defaults",       0 },
+    { NULL,             0 }
+};
+
+
+static struct fstab * read_fstab(const char *path);
+static void free_fstab(struct fstab *fstab);
+static int options_to_flags(char *args, char *new_args, int size);
+static int create_dir_and_mount(struct fstab_rec *rec,
+                                struct fstab_rec *flags_from_rec,
+                                char *mount_point);
+static int bind_mount(const char *source, const char *target);
+static struct partconfig * find_partconfig();
+
+
+// Much simplified version of fs_mgr's fstab parsing code
+static struct fstab * read_fstab(const char *path)
+{
+    FILE *fp;
+    int count, entries;
+    char *line = NULL;
+    size_t len = 0; // allocated memory size
+    ssize_t bytes_read; // number of bytes read
+    char *temp;
+    char *save_ptr;
+    const char *delim = " \t";
+    struct fstab *fstab = NULL;
+    char temp_mount_args[1024];
+
+    fp = fopen(path, "rb");
+    if (!fp) {
+        KLOG_ERROR("Failed to open file %s", path);
+        return NULL;
+    }
+
+    entries = 0;
+    while ((bytes_read = getline(&line, &len, fp)) != -1) {
+        // Strip newlines
+        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
+            line[bytes_read - 1] = '\0';
+        }
+
+        // Strip leading
+        temp = line;
+        while (isspace(*temp)) {
+            ++temp;
+        }
+
+        // Skip empty lines and comments
+        if (*temp == '\0' || *temp == '#') {
+            continue;
+        }
+
+        ++entries;
+    }
+
+    if (entries == 0) {
+        KLOG_ERROR("fstab contains no entries");
+        goto error;
+    }
+
+    fstab = calloc(1, sizeof(struct fstab));
+    fstab->num_entries = entries;
+    fstab->fstab_filename = strdup(path);
+    fstab->recs = calloc(fstab->num_entries, sizeof(struct fstab_rec));
+
+    fseek(fp, 0, SEEK_SET);
+
+    count = 0;
+    while ((bytes_read = getline(&line, &len, fp)) != -1) {
+        // Strip newlines
+        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
+            line[bytes_read - 1] = '\0';
+        }
+
+        // Strip leading
+        temp = line;
+        while (isspace(*temp)) {
+            ++temp;
+        }
+
+        // Skip empty lines and comments
+        if (*temp == '\0' || *temp == '#') {
+            continue;
+        }
+
+        // Avoid possible overflow if the file was changed
+        if (count >= entries) {
+            KLOG_ERROR("Found more fstab entries on second read than first read");
+            break;
+        }
+
+        struct fstab_rec *rec = &fstab->recs[count];
+
+        rec->orig_line = strdup(line);
+
+        if ((temp = strtok_r(line, delim, &save_ptr)) == NULL) {
+            KLOG_ERROR("No source path/device found in entry: %s", line);
+            goto error;
+        }
+        rec->blk_device = strdup(temp);
+
+        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+            KLOG_ERROR("No mount point found in entry: %s", line);
+            goto error;
+        }
+        rec->mount_point = strdup(temp);
+
+        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+            KLOG_ERROR("No filesystem type found in entry: %s", line);
+            goto error;
+        }
+        rec->fs_type = strdup(temp);
+
+        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+            KLOG_ERROR("No mount options found in entry: %s", line);
+            goto error;
+        }
+        rec->flags = options_to_flags(temp, temp_mount_args, 1024);
+
+        if (temp_mount_args[0]) {
+            rec->fs_options = strdup(temp_mount_args);
+        } else {
+            rec->fs_options = NULL;
+        }
+
+        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+            KLOG_ERROR("No fs_mgr/vold options found in entry: %s", line);
+            goto error;
+        }
+        rec->vold_args = strdup(temp);
+
+        ++count;
+    }
+
+    fclose(fp);
+    free(line);
+    return fstab;
+
+error:
+    fclose(fp);
+    free(line);
+    if (fstab) {
+        free_fstab(fstab);
+    }
+    return NULL;
+}
+
+static void free_fstab(struct fstab *fstab)
+{
+    if (!fstab) {
+        return;
+    }
+
+    for (int i = 0; i < fstab->num_entries; ++i) {
+        struct fstab_rec *rec = &fstab->recs[i];
+
+        if (rec->blk_device) {
+            free(rec->blk_device);
+        }
+        if (rec->mount_point) {
+            free(rec->mount_point);
+        }
+        if (rec->fs_type) {
+            free(rec->fs_type);
+        }
+        if (rec->fs_options) {
+            free(rec->fs_options);
+        }
+        if (rec->vold_args) {
+            free(rec->vold_args);
+        }
+        if (rec->orig_line) {
+            free(rec->orig_line);
+        }
+    }
+
+    free(fstab->recs);
+    free(fstab->fstab_filename);
+    free(fstab);
+}
+
+static int options_to_flags(char *args, char *new_args, int size)
+{
+    char *temp;
+    char *save_ptr;
+    int flags = 0;
+    int i;
+
+    if (new_args && size > 0) {
+        new_args[0] = '\0';
+    }
+
+    temp = strtok_r(args, ",", &save_ptr);
+    while (temp) {
+        for (i = 0; mount_flags[i].name; ++i) {
+            if (strcmp(temp, mount_flags[i].name) == 0) {
+                flags |= 0;
+                break;
+            }
+        }
+
+        if (!mount_flags[i].name) {
+            if (new_args) {
+                strlcat(new_args, temp, size);
+                strlcat(new_args, ",", size);
+            } else {
+                KLOG_WARNING("Only universal mount options expected, but found %s", temp);
+            }
+        }
+
+        temp = strtok_r(NULL, ",", &save_ptr);
+    }
+
+    if (new_args && new_args[0]) {
+        new_args[strlen(new_args) - 1] = '\0';
+    }
+
+    return flags;
+}
+
+static int create_dir_and_mount(struct fstab_rec *rec,
+                                struct fstab_rec *flags_from_rec,
+                                char *mount_point) {
+    struct stat st;
+    int ret;
+    mode_t perms;
+
+    if (!rec) {
+        return -1;
+    }
+
+    if (stat(rec->mount_point, &st) == 0) {
+        perms = st.st_mode & 0xfff;
+    } else {
+        KLOG_WARNING("%s found in fstab, but %s does not exist",
+                     rec->mount_point, rec->mount_point);
+        perms = 0700;
+    }
+
+    if (stat(mount_point, &st) == 0) {
+        if (chmod(mount_point, perms) < 0) {
+            KLOG_ERROR("Failed to chmod %s: %s", mount_point, strerror(errno));
+            return -1;
+        }
+    } else {
+        if (mkdir(mount_point, perms) < 0) {
+            KLOG_ERROR("Failed to create %s: %s", mount_point, strerror(errno));
+            return -1;
+        }
+    }
+
+    ret = mount(rec->blk_device,
+                mount_point,
+                rec->fs_type,
+                flags_from_rec->flags,
+                flags_from_rec->fs_options);
+    if (ret < 0) {
+        KLOG_ERROR("Failed to mount %s at %s: %s",
+                   rec->blk_device, mount_point, strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
+static int bind_mount(const char *source, const char *target)
+{
+    struct stat st;
+
+    if (stat(target, &st) < 0 && mkdir(target, 0771) < 0) {
+        KLOG_ERROR("Failed to create %s: %s", target, strerror(errno));
+        return -1;
+    }
+
+    if (mount(source, target, NULL, MS_BIND, NULL) < 0) {
+        KLOG_ERROR("Failed to bind mount %s to %s: %s",
+                   source, target, strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
+static struct partconfig * find_partconfig()
+{
+    struct mainconfig *config = get_mainconfig();
+
+    for (int i = 0; i < config->partconfigs_len; ++i) {
+       if (strcmp(config->installed, config->partconfigs[i].id) == 0) {
+           return &config->partconfigs[i];
+       }
+    }
+
+    return NULL;
+}
+
+int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
+{
+    struct fstab *fstab = NULL;
+    FILE *out = NULL;
+    struct fstab_rec *rec_system = NULL;
+    struct fstab_rec *rec_cache = NULL;
+    struct fstab_rec *rec_data = NULL;
+    struct fstab_rec *flags_system = NULL;
+    struct fstab_rec *flags_cache = NULL;
+    struct fstab_rec *flags_data = NULL;
+    struct stat st;
+    int share_app = 0;
+    int share_app_asec = 0;
+
+    // Use the kernel log since logcat hasn't run yet
+    kmsg_init();
+
+    fstab = read_fstab(argv[1]); // TODO: Temporary hack until multi-call is done
+    if (!fstab) {
+        KLOG_ERROR("Failed to read %s", argv[1]);
+        goto error;
+    }
+
+    out = fopen("fstab.gen", "wb");
+    if (!out) {
+        KLOG_ERROR("Failed to open fstab.gen for writing");
+        goto error;
+    }
+
+    if (fstab != NULL) {
+        for (int i = 0; i < fstab->num_entries; ++i) {
+            struct fstab_rec *rec = &fstab->recs[i];
+
+            if (strcmp(rec->mount_point, "/system") == 0) {
+                rec_system = rec;
+            } else if (strcmp(rec->mount_point, "/cache") == 0) {
+                rec_cache = rec;
+            } else if (strcmp(rec->mount_point, "/data") == 0) {
+                rec_data = rec;
+#if 0
+                fprintf(stderr, "mount(%s, %s, %s, %d, %s)\n",
+                        rec->blk_device,
+                        rec->mount_point,
+                        rec->fs_type,
+                        rec->flags,
+                        rec->fs_options);
+#endif
+            } else {
+                fprintf(out, "%s\n", rec->orig_line);
+            }
+        }
+    }
+
+    if (!rec_system || !rec_cache || !rec_data) {
+        KLOG_ERROR("fstab does not contain all of /system, /cache, and /data!");
+        goto error;
+    }
+
+    // Mount raw partitions
+    struct partconfig *partconfig = find_partconfig();
+    if (!partconfig) {
+        KLOG_ERROR("Could not determine partition configuration");
+        goto error;
+    }
+
+    // Because of how Android deals with partitions, if, say, the source path
+    // for the /system bind mount resides on /cache, then the cache partition
+    // must be mounted with the system partition's flags. In this future, this
+    // may be avoided by mounting every partition with some more liberal flags,
+    // since the current setup does not allow two bind mounted locations to
+    // reside on the same partition.
+
+    if (strcmp(partconfig->target_system_partition, "/cache") == 0) {
+        flags_system = rec_cache;
+    } else {
+        flags_system = rec_system;
+    }
+
+    if (strcmp(partconfig->target_cache_partition, "/system") == 0) {
+        flags_cache = rec_system;
+    } else {
+        flags_cache = rec_cache;
+    }
+
+    flags_data = rec_data;
+
+    if (create_dir_and_mount(rec_system, flags_system, "/raw-system") < 0) {
+        KLOG_ERROR("Failed to mount /raw-system");
+        goto error;
+    }
+    if (create_dir_and_mount(rec_cache, flags_cache, "/raw-cache") < 0) {
+        KLOG_ERROR("Failed to mount /raw-cache");
+        goto error;
+    }
+    if (create_dir_and_mount(rec_data, flags_data, "/raw-data") < 0) {
+        KLOG_ERROR("Failed to mount /raw-data");
+        goto error;
+    }
+
+    // Bind mount directories to /system, /cache, and /data
+    if (bind_mount("/raw-cache/multi-slot-1/system", "/system") < 0) {
+        goto error;
+    }
+
+    if (bind_mount("/raw-system/multi-slot-1/cache", "/cache") < 0) {
+        goto error;
+    }
+
+    if (bind_mount("/raw-data/multi-slot-1", "/data") < 0) {
+        goto error;
+    }
+
+    // Bind mount internal SD directory
+    if (bind_mount("/raw-data/media", "/data/media")) {
+        goto error;
+    }
+
+    // Global app sharing
+    share_app = stat("/data/patcher.share-app", &st) == 0;
+    share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
+
+    if (share_app || share_app_asec) {
+        if (bind_mount("/raw-data/app-lib", "/data/app-lib") < 0) {
+            goto error;
+        }
+    }
+
+    if (share_app) {
+        if (bind_mount("/raw-data/app", "/data/app") < 0) {
+            goto error;
+        }
+    }
+
+    if (share_app_asec) {
+        if (bind_mount("/raw-data/app-asec", "/data/app-asec") < 0) {
+            goto error;
+        }
+    }
+
+    // TODO: Hack to run additional script
+    if (stat("/init.additional.sh", &st) == 0) {
+        system("sh /init.additional.sh");
+    }
+
+    fclose(out);
+    free_fstab(fstab);
+    kmsg_cleanup();
+    return 0;
+
+error:
+    if (out) {
+        fclose(out);
+    }
+    if (fstab) {
+        free_fstab(fstab);
+    }
+    kmsg_cleanup();
+    return 1;
+}
