@@ -72,22 +72,7 @@ bool BaconRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitQcomRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyFstab()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitTargetRc("init.bacon.rc")) {
+    if (!qcomPatcher.useGeneratedFstab("init.bacon.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
