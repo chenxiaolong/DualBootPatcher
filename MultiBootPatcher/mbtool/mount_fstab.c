@@ -531,15 +531,15 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     }
 
     // Bind mount directories to /system, /cache, and /data
-    if (bind_mount("/raw-cache/multi-slot-1/system", "/system") < 0) {
+    if (bind_mount(partconfig->target_system, "/system") < 0) {
         goto error;
     }
 
-    if (bind_mount("/raw-system/multi-slot-1/cache", "/cache") < 0) {
+    if (bind_mount(partconfig->target_cache, "/cache") < 0) {
         goto error;
     }
 
-    if (bind_mount("/raw-data/multi-slot-1", "/data") < 0) {
+    if (bind_mount(partconfig->target_data, "/data") < 0) {
         goto error;
     }
 
