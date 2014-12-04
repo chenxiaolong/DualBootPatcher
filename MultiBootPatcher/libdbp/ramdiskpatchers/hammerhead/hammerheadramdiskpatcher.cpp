@@ -81,17 +81,12 @@ bool HammerheadAOSPRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
+    if (!qcomPatcher.stripManualCacheMounts("init.hammerhead.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyFstab()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitTargetRc("init.hammerhead.rc")) {
+    if (!qcomPatcher.useGeneratedFstab("init.hammerhead.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
