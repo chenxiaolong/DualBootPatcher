@@ -14,12 +14,14 @@ else()
     include(cmake/ConfigDesktop.cmake)
 endif()
 
+include (cmake/AndroidNDK.cmake)
+
 # Main patcher
 add_subdirectory(libdbp)
 add_subdirectory(data)
+add_subdirectory(syncdaemon)
 
 if(BUILD_ANDROID)
-    add_subdirectory(syncdaemon)
     add_subdirectory(libmountpoint)
     add_subdirectory(libloki)
 else()
