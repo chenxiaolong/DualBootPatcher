@@ -130,21 +130,12 @@ bool FileUtils::laCopyData(archive *aInput, archive *aOutput)
     const void *buff;
     size_t bytes_read;
 
-    while ((r = archive_read_data_block(
-            aInput, &buff, &bytes_read, &offset)) == ARCHIVE_OK) {
-        if (r == ARCHIVE_EOF) {
-            return true;
-        }
-        if (r != ARCHIVE_OK) {
-            return false;
-        }
-        r = archive_write_data_block(aOutput, buff, bytes_read, offset);
-        if (r != ARCHIVE_OK) {
-            return false;
-        }
+    while ((r = archive_read_data_block(aInput, &buff,
+            &bytes_read, &offset)) == ARCHIVE_OK) {
+        archive_write_data(aOutput, buff, bytes_read);
     }
 
-    return true;
+    return r >= ARCHIVE_WARN;
 }
 
 bool FileUtils::laExtractFile(archive *aInput,
