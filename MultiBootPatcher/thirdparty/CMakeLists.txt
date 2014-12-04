@@ -170,6 +170,33 @@ endif()
 
 
 ################################################################################
+# jansson for Android
+################################################################################
+
+set(JANSSON_VER "2.7")
+
+file(
+    DOWNLOAD
+    http://fs1.d-h.st/download/00152/KDP/jansson_v${JANSSON_VER}.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/jansson_v${JANSSON_VER}.tar.bz2
+    EXPECTED_MD5 fbc60a91f4d9a8a25a978a085c3a6661
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/jansson)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/jansson
+    )
+
+    message(STATUS "Extracting jansson for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/jansson_v${JANSSON_VER}.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/jansson
+    )
+endif()
+
+
+################################################################################
 # GNU patch for Windows
 ################################################################################
 
