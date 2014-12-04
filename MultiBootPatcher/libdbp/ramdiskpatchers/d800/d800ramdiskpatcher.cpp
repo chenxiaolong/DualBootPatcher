@@ -72,17 +72,7 @@ bool D800RamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyFstab()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitTargetRc("init.g2.rc")) {
+    if (!qcomPatcher.useGeneratedFstab("init.g2.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
