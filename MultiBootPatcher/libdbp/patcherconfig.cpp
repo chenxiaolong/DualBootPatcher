@@ -624,7 +624,6 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
     list.push_back(D800RamdiskPatcher::Id);
     list.push_back(FalconRamdiskPatcher::Id);
     list.push_back(HammerheadAOSPRamdiskPatcher::Id);
-    list.push_back(HammerheadNoobdevRamdiskPatcher::Id);
     list.push_back(HlteAOSPRamdiskPatcher::Id);
     list.push_back(JflteAOSPRamdiskPatcher::Id);
     list.push_back(JflteGoogleEditionRamdiskPatcher::Id);
@@ -750,8 +749,6 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new FalconRamdiskPatcher(this, info, cpio);
     } else if (id == HammerheadAOSPRamdiskPatcher::Id) {
         rp = new HammerheadAOSPRamdiskPatcher(this, info, cpio);
-    } else if (id == HammerheadNoobdevRamdiskPatcher::Id) {
-        rp = new HammerheadNoobdevRamdiskPatcher(this, info, cpio);
     } else if (id == HlteAOSPRamdiskPatcher::Id) {
         rp = new HlteAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == HlteTouchWizRamdiskPatcher::Id) {

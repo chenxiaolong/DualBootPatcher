@@ -61,19 +61,4 @@ public:
     virtual bool patchRamdisk() override;
 };
 
-
-class HammerheadNoobdevRamdiskPatcher : public HammerheadBaseRamdiskPatcher
-{
-public:
-    explicit HammerheadNoobdevRamdiskPatcher(const PatcherConfig * const pc,
-                                             const FileInfo * const info,
-                                             CpioFile * const cpio);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual bool patchRamdisk() override;
-};
-
 #endif // HAMMERHEADRAMDISKPATCHER_H
