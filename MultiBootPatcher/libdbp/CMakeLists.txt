@@ -39,6 +39,7 @@ set(DBP_SOURCES
     ramdiskpatchers/common/coreramdiskpatcher.cpp
     ramdiskpatchers/d800/d800ramdiskpatcher.cpp
     ramdiskpatchers/falcon/falconramdiskpatcher.cpp
+    ramdiskpatchers/flo/floramdiskpatcher.cpp
     ramdiskpatchers/galaxy/galaxyramdiskpatcher.cpp
     ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.cpp
     ramdiskpatchers/hlte/hlteramdiskpatcher.cpp
@@ -76,6 +77,7 @@ set(DBP_NOINST_HEADERS
     ramdiskpatchers/common/coreramdiskpatcher.h
     ramdiskpatchers/d800/d800ramdiskpatcher.h
     ramdiskpatchers/falcon/falconramdiskpatcher.h
+    ramdiskpatchers/flo/floramdiskpatcher.h
     ramdiskpatchers/galaxy/galaxyramdiskpatcher.h
     ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h
     ramdiskpatchers/hlte/hlteramdiskpatcher.h

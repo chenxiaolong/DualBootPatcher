@@ -43,6 +43,7 @@
 #include "ramdiskpatchers/bacon/baconramdiskpatcher.h"
 #include "ramdiskpatchers/d800/d800ramdiskpatcher.h"
 #include "ramdiskpatchers/falcon/falconramdiskpatcher.h"
+#include "ramdiskpatchers/flo/floramdiskpatcher.h"
 #include "ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h"
 #include "ramdiskpatchers/hlte/hlteramdiskpatcher.h"
 #include "ramdiskpatchers/jflte/jflteramdiskpatcher.h"
@@ -544,6 +545,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setSelinux(Device::SelinuxUnchanged);
     devices.push_back(device);
 
+    // Google/ASUS Nexus 7 (2013)
+    device = new Device();
+    device->setCodename("flo");
+    device->setName("Google/ASUS Nexus 7 (2013)");
+    device->setSelinux(Device::SelinuxUnchanged);
+    devices.push_back(device);
+
     // OnePlus One
     device = new Device();
     device->setCodename("bacon");
@@ -620,6 +628,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
     list.push_back(BaconRamdiskPatcher::Id);
     list.push_back(D800RamdiskPatcher::Id);
     list.push_back(FalconRamdiskPatcher::Id);
+    list.push_back(FloAOSPRamdiskPatcher::Id);
     list.push_back(HammerheadAOSPRamdiskPatcher::Id);
     list.push_back(HlteAOSPRamdiskPatcher::Id);
     list.push_back(JflteAOSPRamdiskPatcher::Id);
@@ -739,6 +748,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new D800RamdiskPatcher(this, info, cpio);
     } else if (id == FalconRamdiskPatcher::Id) {
         rp = new FalconRamdiskPatcher(this, info, cpio);
+    } else if (id == FloAOSPRamdiskPatcher::Id) {
+        rp = new FloAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == HammerheadAOSPRamdiskPatcher::Id) {
         rp = new HammerheadAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == HlteAOSPRamdiskPatcher::Id) {
