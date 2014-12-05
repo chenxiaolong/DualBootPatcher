@@ -588,9 +588,10 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
 
     fclose(out);
     free_fstab(fstab);
-    kmsg_cleanup();
 
     KLOG_INFO("Successfully mounted partitions");
+
+    kmsg_cleanup();
 
     return 0;
 
