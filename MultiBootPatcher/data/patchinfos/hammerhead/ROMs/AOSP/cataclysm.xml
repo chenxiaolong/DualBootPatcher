@@ -3,7 +3,6 @@
     <regex>^Cataclysm.*\.zip$</regex>
 
     <ramdisk>hammerhead/AOSP/AOSP</ramdisk>
-    <patched-init>init-kk44</patched-init>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
