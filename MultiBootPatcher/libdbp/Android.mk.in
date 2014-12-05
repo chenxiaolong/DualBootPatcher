@@ -30,7 +30,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES := jsoncpp-dist/jsoncpp.cpp @DBP_SOURCES_STR@
+LOCAL_SRC_FILES := @DBP_SOURCES_STR@
 
 LOCAL_MODULE := libdbp
 LOCAL_MODULE_TAGS := eng
