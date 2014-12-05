@@ -556,6 +556,65 @@ bool QcomRamdiskPatcher::modifyFstab(bool removeModemMounts,
     return true;
 }
 
+bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &additionalFstabs)
+{
+    std::vector<std::string> fstabs;
+    for (auto const &file : m_impl->cpio->filenames()) {
+        if (boost::starts_with(file, "fstab.")) {
+            fstabs.push_back(file);
+        }
+    }
+
+    fstabs.insert(fstabs.end(),
+                  additionalFstabs.begin(), additionalFstabs.end());
+
+    for (auto const &fstab : fstabs) {
+        auto contents = m_impl->cpio->contents(fstab);
+        if (contents.empty()) {
+            m_impl->error = PatcherError::createCpioError(
+                    MBP::ErrorCode::CpioFileNotExistError, fstab);
+            return false;
+        }
+
+        std::string strContents(contents.begin(), contents.end());
+        std::vector<std::string> lines;
+        boost::split(lines, strContents, boost::is_any_of("\n"));
+
+        static const std::string mountLine = "%1%%2% %3% %4% %5% %6%";
+
+        // Some Android 4.2 ROMs mount the cache partition in the init
+        // scripts, so the fstab has no cache line
+        bool hasCacheLine = false;
+
+        for (auto it = lines.begin(); it != lines.end(); ++it) {
+            auto &line = *it;
+
+            MBP_smatch what;
+            bool hasMatch = MBP_regex_search(
+                    line, what, MBP_regex(CoreRamdiskPatcher::FstabRegex));
+
+            if (hasMatch && what[3] == Cache) {
+                hasCacheLine = true;
+            }
+        }
+
+        if (!hasCacheLine) {
+            std::string cacheLine = "%1% /cache ext4 %2% %3%";
+            std::string mountArgs = "nosuid,nodev,barrier=1";
+            std::string voldArgs = "wait,check";
+
+            lines.push_back((boost::format(cacheLine) % CachePartition
+                             % mountArgs % voldArgs).str());
+        }
+
+        strContents = boost::join(lines, "\n");
+        contents.assign(strContents.begin(), strContents.end());
+        m_impl->cpio->setContents(fstab, std::move(contents));
+    }
+
+    return true;
+}
+
 static std::string whitespace(const std::string &str) {
     auto nonSpace = std::find_if(str.begin(), str.end(),
                                  std::not1(std::ptr_fun<int, int>(isspace)));

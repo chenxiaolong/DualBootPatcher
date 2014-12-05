@@ -86,6 +86,8 @@ public:
                      const std::string &defaultCacheMountArgs,
                      const std::string &defaultCacheVoldArgs);
 
+    bool addMissingCacheInFstab(const std::vector<std::string> &additionalFstabs);
+
     bool modifyInitTargetRc();
     bool modifyInitTargetRc(const std::string &filename);
 
