@@ -3,7 +3,6 @@
     <regex>^Kernel-Alucard.*AOSP.*\.zip$</regex>
 
     <ramdisk>jflte/AOSP/AOSP</ramdisk>
-    <patched-init>init-kk44</patched-init>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
