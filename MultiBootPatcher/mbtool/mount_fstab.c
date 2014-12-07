@@ -677,5 +677,5 @@ int mount_fstab_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    return mount_fstab(argv[1]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mount_fstab(argv[optind]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
