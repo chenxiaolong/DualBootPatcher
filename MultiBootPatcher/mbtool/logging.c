@@ -73,6 +73,10 @@ void klog_cleanup(void)
 {
     if (kmsg_fd >= 0) {
         close(kmsg_fd);
+
+        if (log_output == KERNEL) {
+            use_default_log_output();
+        }
     }
 }
 
