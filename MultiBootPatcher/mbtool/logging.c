@@ -101,7 +101,7 @@ void logmsg(int prio, const char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
 
-    if (log_output == STANDARD) {
+    if (log_output == KERNEL) {
         const char *kmsg_prio = NULL;
         char newfmt[100];
 
@@ -137,7 +137,7 @@ void logmsg(int prio, const char *fmt, ...)
 
         __android_log_vprint(logcat_prio, LOG_TAG, fmt, va);
 #endif
-    } else if (log_output == KERNEL) {
+    } else if (log_output == STANDARD) {
         FILE *stream = NULL;
         const char *stdlog_prio = NULL;
         const char newfmt[100];
