@@ -32,7 +32,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "common.h"
 #include "config.h"
 #include "logging.h"
 
@@ -598,7 +597,7 @@ error:
     return -1;
 }
 
-void mount_fstab_usage(int error)
+static void mount_fstab_usage(int error)
 {
     FILE *stream = error ? stderr : stdout;
 
