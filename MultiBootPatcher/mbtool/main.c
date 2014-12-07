@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "config.h"
 #include "logging.h"
@@ -39,6 +40,7 @@ struct tool {
 
 struct tool tools[] = {
     TOOL(mbtool),
+    // Tools
     TOOL(mount_fstab),
     { NULL, NULL }
 };
@@ -95,6 +97,8 @@ int main(int argc, char *argv[])
     } else {
         name = argv[0];
     }
+
+    umask(0);
 
     struct tool *tool = find_tool(name);
     if (tool) {
