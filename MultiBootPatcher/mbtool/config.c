@@ -105,7 +105,7 @@ int mainconfig_init()
         goto error;
     }
 
-    LOGV("Successfully loaded configuration file (version %d", version);
+    LOGV("Successfully loaded configuration file (version %d)", version);
 
     return 0;
 
