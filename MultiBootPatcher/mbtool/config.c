@@ -98,13 +98,16 @@ int mainconfig_init()
         if (parse_config_v1(root) < 0) {
             goto error;
         }
-
-        return 0;
+        break;
 
     default:
         LOGE("Unsupported config file version: %d", version);
         goto error;
     }
+
+    LOGV("Successfully loaded configuration file (version %d", version);
+
+    return 0;
 
 error:
     if (root) {
