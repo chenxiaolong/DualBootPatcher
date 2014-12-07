@@ -62,14 +62,14 @@ static int log_output = STANDARD;
 
 static int kmsg_fd = -1;
 
-void klog_init()
+void klog_init(void)
 {
     if (kmsg_fd < 0) {
         kmsg_fd = open("/dev/kmsg", O_WRONLY);
     }
 }
 
-void klog_cleanup()
+void klog_cleanup(void)
 {
     if (kmsg_fd >= 0) {
         close(kmsg_fd);
@@ -151,24 +151,24 @@ void logmsg(int prio, const char *fmt, ...)
             stream = stdout;
         }
 
-        snprintf((char *) newfmt, 100, "%s %s", stdlog_prio, fmt);
+        snprintf((char *) newfmt, 100, "%s %s\n", stdlog_prio, fmt);
         vfprintf(stream, newfmt, ap);
     }
 
     va_end(ap);
 }
 
-void use_default_log_output()
+void use_default_log_output(void)
 {
     log_output = DEFAULT_LOG_OUTPUT;
 }
 
-void use_standard_log_output()
+void use_standard_log_output(void)
 {
     log_output = STANDARD;
 }
 
-void use_logcat_log_output()
+void use_logcat_log_output(void)
 {
 #ifdef USE_ANDROID_LOG
     log_output = LOGCAT;
@@ -177,7 +177,7 @@ void use_logcat_log_output()
 #endif
 }
 
-void use_kernel_log_output()
+void use_kernel_log_output(void)
 {
     log_output = KERNEL;
 }

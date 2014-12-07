@@ -33,12 +33,12 @@ enum loglevels {
     LOG_VERBOSE
 };
 
-void klog_init();
-void klog_cleanup();
+void klog_init(void);
+void klog_cleanup(void);
 
 void logmsg(int prio, const char *fmt, ...);
 
-void use_default_log_output();
-void use_standard_log_output();
-void use_logcat_log_output();
-void use_kernel_log_output();
+void use_default_log_output(void);
+void use_standard_log_output(void);
+void use_logcat_log_output(void);
+void use_kernel_log_output(void);
