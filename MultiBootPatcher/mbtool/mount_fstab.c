@@ -35,6 +35,10 @@
 #include "config.h"
 #include "logging.h"
 
+#define GENERATED_FSTAB "fstab.gen"
+#define MOUNT_COMPLETED_FILE "/.mount_completed"
+#define MOUNT_FAILED_FILE "/.mount_failed"
+
 
 struct fstab
 {
@@ -99,6 +103,7 @@ static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
                                 char *mount_point);
 static int mkdirs(const char *dir, mode_t mode);
+static int create_file(const char *path);
 static int bind_mount(const char *source, const char *target);
 static struct partconfig * find_partconfig();
 
@@ -398,6 +403,16 @@ static int mkdirs(const char *dir, mode_t mode)
     return 0;
 }
 
+static int create_file(const char *path)
+{
+    FILE *fp = fopen(path, "wb");
+    if (fp) {
+        fclose(fp);
+        return 0;
+    }
+    return -1;
+}
+
 static int bind_mount(const char *source, const char *target)
 {
     if (mkdirs(source, 0771)) {
@@ -446,6 +461,17 @@ int mount_fstab(const char *fstab_path)
     int share_app = 0;
     int share_app_asec = 0;
 
+    // This is a oneshot operation
+    if (stat(MOUNT_COMPLETED_FILE, &st) == 0) {
+        LOGV("Filesystems already successfully mounted");
+        return 0;
+    }
+
+    if (stat(MOUNT_FAILED_FILE, &st) == 0) {
+        LOGE("Failed to mount partitions ealier. No further attempts will be made");
+        return -1;
+    }
+
     // Read original fstab
     fstab = read_fstab(fstab_path);
     if (!fstab) {
@@ -454,9 +480,9 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Generate new fstab without /system, /cache, or /data entries
-    out = fopen("fstab.gen", "wb");
+    out = fopen(GENERATED_FSTAB, "wb");
     if (!out) {
-        LOGE("Failed to open fstab.gen for writing");
+        LOGE("Failed to open " GENERATED_FSTAB " for writing");
         goto error;
     }
 
@@ -585,6 +611,8 @@ int mount_fstab(const char *fstab_path)
 
     free_fstab(fstab);
 
+    create_file(MOUNT_COMPLETED_FILE);
+
     LOGI("Successfully mounted partitions");
 
     return 0;
@@ -593,6 +621,8 @@ error:
     if (fstab) {
         free_fstab(fstab);
     }
+
+    create_file(MOUNT_FAILED_FILE);
 
     return -1;
 }
@@ -604,7 +634,7 @@ static void mount_fstab_usage(int error)
     fprintf(stream,
             "Usage: mount_fstab [fstab file]\n\n"
             "This takes only one argument, the path to the fstab file. If the\n"
-            "mounting succeeds, the generated fstab.gen file should be passed\n"
+            "mounting succeeds, the generated " GENERATED_FSTAB " file should be passed\n"
             "to the Android init's mount_all command.\n");
 }
 
