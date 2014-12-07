@@ -647,9 +647,5 @@ int mount_fstab_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    int ret = mount_fstab(argv[1]);
-
-    klog_cleanup();
-
-    return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mount_fstab(argv[1]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

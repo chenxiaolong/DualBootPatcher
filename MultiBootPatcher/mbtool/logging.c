@@ -23,6 +23,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #ifdef USE_ANDROID_LOG
@@ -64,18 +65,22 @@ static int kmsg_fd = -1;
 
 void klog_init(void)
 {
+    static int open_mode = O_WRONLY | O_NOCTTY | O_CLOEXEC;
+    static const char *kmsg = "/dev/kmsg";
+    static const char *kmsg2 = "/dev/kmsg.mbtool";
+
     if (kmsg_fd < 0) {
-        kmsg_fd = open("/dev/kmsg", O_WRONLY);
+        kmsg_fd = open(kmsg, open_mode);
     }
-}
-
-void klog_cleanup(void)
-{
-    if (kmsg_fd >= 0) {
-        close(kmsg_fd);
-
-        if (log_output == KERNEL) {
-            use_default_log_output();
+    if (kmsg_fd < 0) {
+        // If /dev/kmsg hasn't been created yet, then create our own
+        // Character device mode: S_IFCHR | 0600
+        //
+        if (mknod(kmsg2, S_IFCHR | 0600, makedev(1, 11)) == 0) {
+            kmsg_fd = open(kmsg2, open_mode);
+            if (kmsg_fd >= 0) {
+                unlink(kmsg2);
+            }
         }
     }
 }

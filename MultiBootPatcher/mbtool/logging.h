@@ -34,7 +34,6 @@ enum loglevels {
 };
 
 void klog_init(void);
-void klog_cleanup(void);
 
 void logmsg(int prio, const char *fmt, ...);
 
