@@ -19,4 +19,5 @@
 
 #pragma once
 
+int mount_fstab(const char *fstab_path);
 int mount_fstab_main(int argc, char *argv[]);

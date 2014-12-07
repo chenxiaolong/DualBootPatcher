@@ -24,6 +24,7 @@
 #endif
 #include <ctype.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -430,7 +431,7 @@ static struct partconfig * find_partconfig()
     return NULL;
 }
 
-int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
+int mount_fstab(const char *fstab_path)
 {
     struct fstab *fstab = NULL;
     FILE *out = NULL;
@@ -444,16 +445,14 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     int share_app = 0;
     int share_app_asec = 0;
 
-    // Use the kernel log since logcat hasn't run yet
-    klog_init();
-    use_kernel_log_output();
-
-    fstab = read_fstab(argv[1]); // TODO: Temporary hack until multi-call is done
+    // Read original fstab
+    fstab = read_fstab(fstab_path);
     if (!fstab) {
-        LOGE("Failed to read %s", argv[1]);
+        LOGE("Failed to read %s", fstab_path);
         goto error;
     }
 
+    // Generate new fstab without /system, /cache, or /data entries
     out = fopen("fstab.gen", "wb");
     if (!out) {
         LOGE("Failed to open fstab.gen for writing");
@@ -470,26 +469,23 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
                 rec_cache = rec;
             } else if (strcmp(rec->mount_point, "/data") == 0) {
                 rec_data = rec;
-#if 0
-                fprintf(stderr, "mount(%s, %s, %s, %d, %s)\n",
-                        rec->blk_device,
-                        rec->mount_point,
-                        rec->fs_type,
-                        rec->flags,
-                        rec->fs_options);
-#endif
             } else {
                 fprintf(out, "%s\n", rec->orig_line);
             }
         }
     }
 
+    fclose(out);
+
+    // /system and /data are always in the fstab. The patcher should create
+    // an entry for /cache for the ROMs that mount it manually in one of the
+    // init scripts
     if (!rec_system || !rec_cache || !rec_data) {
         LOGE("fstab does not contain all of /system, /cache, and /data!");
         goto error;
     }
 
-    // Mount raw partitions
+    // Mount raw partitions to /raw-*
     struct partconfig *partconfig = find_partconfig();
     if (!partconfig) {
         LOGE("Could not determine partition configuration");
@@ -586,22 +582,73 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
         system("sh /init.additional.sh");
     }
 
-    fclose(out);
     free_fstab(fstab);
 
     LOGI("Successfully mounted partitions");
 
-    klog_cleanup();
-
     return 0;
 
 error:
-    if (out) {
-        fclose(out);
-    }
     if (fstab) {
         free_fstab(fstab);
     }
+
+    return -1;
+}
+
+void mount_fstab_usage(int error)
+{
+    FILE *stream = error ? stderr : stdout;
+
+    fprintf(stream,
+            "Usage: mount_fstab [fstab file]\n\n"
+            "This takes only one argument, the path to the fstab file. If the\n"
+            "mounting succeeds, the generated fstab.gen file should be passed\n"
+            "to the Android init's mount_all command.\n");
+}
+
+int mount_fstab_main(int argc, char *argv[])
+{
+    int opt;
+
+    static struct option long_options[] = {
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    int long_index = 0;
+
+    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+        switch (opt) {
+        case 'h':
+            mount_fstab_usage(0);
+            return EXIT_SUCCESS;
+
+        default:
+            mount_fstab_usage(1);
+            return EXIT_FAILURE;
+        }
+    }
+
+    // We only expect one argument
+    if (argc - optind != 1) {
+        mount_fstab_usage(1);
+        return EXIT_FAILURE;
+    }
+
+    // Use the kernel log since logcat hasn't run yet
+    klog_init();
+    use_kernel_log_output();
+
+    // Read configuration file
+    if (mainconfig_init() < 0) {
+        LOGE("Failed to load main configuration file");
+        return EXIT_FAILURE;
+    }
+
+    int ret = mount_fstab(argv[1]);
+
     klog_cleanup();
-    return 1;
+
+    return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

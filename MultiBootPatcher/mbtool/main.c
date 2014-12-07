@@ -18,20 +18,89 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "config.h"
 #include "logging.h"
 #include "mount_fstab.h"
 
-int main(int argc, char *argv[])
-{
-    // TODO: This is just a quick hack. This will soon be a multi-call binary
-    //       and a daemon.
 
-    if (mainconfig_init() < 0) {
-        KLOG_ERROR("Failed to load main configuration file");
-        return 1;
+int main(int argc, char *argv[]);
+static int mbtool_main(int argc, char *argv[]);
+
+
+#define TOOL(name) { #name, name##_main }
+
+struct tool {
+    const char *name;
+    int (*func)(int, char **);
+};
+
+struct tool tools[] = {
+    TOOL(mbtool),
+    TOOL(mount_fstab),
+    { NULL, NULL }
+};
+
+
+static void mbtool_usage(int error)
+{
+    FILE *stream = error ? stderr : stdout;
+
+    fprintf(stream,
+            "Usage: mbtool [tool] [tool arguments ...]\n\n"
+            "This is a multicall binary. The individual tools can be invoked\n"
+            "by passing the tool name as the first argument to mbtool or by\n"
+            "creating a symbolic link with from the tool name to mbtool.\n\n"
+            "To see the usage and other help text for a tool, pass --help to\n"
+            "the tool.\n\n"
+            "Available tools:\n");
+    for (int i = 0; tools[i].name; ++i) {
+        if (strcmp(tools[i].name, "mbtool") != 0) {
+            fprintf(stream, "  %s\n", tools[i].name);
+        }
+    }
+}
+
+static int mbtool_main(int argc, char *argv[])
+{
+    if (argc > 1) {
+        return main(argc - 1, argv + 1);
+    } else {
+        mbtool_usage(1);
+        return EXIT_FAILURE;
+    }
+}
+
+struct tool * find_tool(const char *name)
+{
+    for (int i = 0; tools[i].name; ++i) {
+        if (strcmp(tools[i].name, name) == 0) {
+            return &tools[i];
+        }
     }
 
-    mount_fstab_main(argc, argv);
+    return NULL;
+}
+
+int main(int argc, char *argv[])
+{
+    char *name;
+    char *prog;
+
+    prog = strrchr(argv[0], '/');
+    if (prog) {
+        name = prog + 1;
+    } else {
+        name = argv[0];
+    }
+
+    struct tool *tool = find_tool(name);
+    if (tool) {
+        return tool->func(argc, argv);
+    } else {
+        fprintf(stderr, "%s: tool not found\n", name);
+        return EXIT_FAILURE;
+    }
 }
