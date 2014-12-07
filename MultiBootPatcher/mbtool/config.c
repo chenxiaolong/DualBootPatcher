@@ -54,7 +54,7 @@ void free_partconfig(struct partconfig *config);
 struct mainconfig * get_mainconfig()
 {
     if (!loaded) {
-        KLOG_WARNING("mainconfig_init() should be called before get_mainconfig()");
+        LOGW("mainconfig_init() should be called before get_mainconfig()");
         mainconfig_init();
     }
 
@@ -64,7 +64,7 @@ struct mainconfig * get_mainconfig()
 int mainconfig_init()
 {
     if (loaded) {
-        KLOG_WARNING("Main config file has already been loaded");
+        LOGW("Main config file has already been loaded");
         return 0;
     }
 
@@ -76,19 +76,19 @@ int mainconfig_init()
 
     root = json_load_file(MAIN_CONFIG, 0, &error);
     if (!root) {
-        KLOG_ERROR("Failed to parse " MAIN_CONFIG " (line %d): %s",
-                   error.line, error.text);
+        LOGE("Failed to parse " MAIN_CONFIG " (line %d): %s",
+             error.line, error.text);
         goto error;
     }
 
     if (!json_is_object(root)) {
-        KLOG_ERROR("Config root is not an object");
+        LOGE("Config root is not an object");
         goto error;
     }
 
     json_t *json_version = json_object_get(root, TAG_VERSION);
     if (!json_is_integer(json_version)) {
-        KLOG_ERROR("Config file does not specify a version");
+        LOGE("Config file does not specify a version");
         goto error;
     }
 
@@ -102,7 +102,7 @@ int mainconfig_init()
         return 0;
 
     default:
-        KLOG_ERROR("Unsupported config file version: %d", version);
+        LOGE("Unsupported config file version: %d", version);
         goto error;
     }
 
@@ -119,13 +119,13 @@ int parse_config_v1(json_t *root)
 
     partconfigs = json_object_get(root, TAG_PARTCONFIGS);
     if (!json_is_array(partconfigs)) {
-        KLOG_ERROR("mainconfig[partconfigs] is not an array");
+        LOGE("mainconfig[partconfigs] is not an array");
         goto error;
     }
 
     config.partconfigs_len = json_array_size(partconfigs);
     if (config.partconfigs_len == 0) {
-        KLOG_ERROR("mainconfig[partconfigs] is an empty array");
+        LOGE("mainconfig[partconfigs] is an empty array");
         goto error;
     }
 
@@ -136,14 +136,14 @@ int parse_config_v1(json_t *root)
         json_t *cur = json_array_get(partconfigs, i);
 
         if (parse_partconfig_v1(cur, &config.partconfigs[i]) < 0) {
-            KLOG_ERROR("Failed to parse mainconfig[partconfigs]");
+            LOGE("Failed to parse mainconfig[partconfigs]");
             goto error;
         }
     }
 
     installed = json_object_get(root, TAG_INSTALLED);
     if (!json_is_string(installed)) {
-        KLOG_ERROR("mainconfig[installed] is not a string");
+        LOGE("mainconfig[installed] is not a string");
         goto error;
     }
 
@@ -165,43 +165,43 @@ int parse_partconfig_v1(json_t *cur, struct partconfig *partconfig)
     }
 
     temp = json_object_get(cur, TAG_PC_ID);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[id]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[id]"); return -1; }
     partconfig->id = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_KERNEL_ID);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[kernel-id]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[kernel-id]"); return -1; }
     partconfig->kernel_id = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_NAME);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[name]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[name]"); return -1; }
     partconfig->name = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_DESC);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[description]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[description]"); return -1; }
     partconfig->description = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_TARGET_SYSTEM);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[target-system]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[target-system]"); return -1; }
     partconfig->target_system = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_TARGET_CACHE);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[target-cache]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[target-cache]"); return -1; }
     partconfig->target_cache = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_TARGET_DATA);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[target-data]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[target-data]"); return -1; }
     partconfig->target_data = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_TARGET_SYSTEM_PARTITION);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[target-system-partition]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[target-system-partition]"); return -1; }
     partconfig->target_system_partition = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_TARGET_CACHE_PARTITION);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[target-cache-partition]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[target-cache-partition]"); return -1; }
     partconfig->target_cache_partition = strdup(json_string_value(temp));
 
     temp = json_object_get(cur, TAG_PC_TARGET_DATA_PARTITION);
-    if (!json_is_string(temp)) { KLOG_ERROR("partconfig[target-data-partition]"); return -1; }
+    if (!json_is_string(temp)) { LOGE("partconfig[target-data-partition]"); return -1; }
     partconfig->target_data_partition = strdup(json_string_value(temp));
 
     return 0;

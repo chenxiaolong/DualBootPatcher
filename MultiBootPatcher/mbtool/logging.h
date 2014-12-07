@@ -19,39 +19,26 @@
 
 #pragma once
 
-#include <stdio.h>
-#ifdef USE_ANDROID_LOG
-#include <android/log.h>
-#endif
+#define LOGE(...) logmsg(LOG_ERROR,   __VA_ARGS__)
+#define LOGW(...) logmsg(LOG_WARNING, __VA_ARGS__)
+#define LOGI(...) logmsg(LOG_INFO,    __VA_ARGS__)
+#define LOGD(...) logmsg(LOG_DEBUG,   __VA_ARGS__)
+#define LOGV(...) logmsg(LOG_VERBOSE, __VA_ARGS__)
 
+enum loglevels {
+    LOG_ERROR,
+    LOG_WARNING,
+    LOG_INFO,
+    LOG_DEBUG,
+    LOG_VERBOSE
+};
 
-// Standard logging
-#define LOG_TAG "mbtool"
+void klog_init();
+void klog_cleanup();
 
-#ifdef USE_ANDROID_LOG
-#  define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,   LOG_TAG, __VA_ARGS__)
-#  define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   LOG_TAG, __VA_ARGS__)
-#  define LOGI(...) __android_log_print(ANDROID_LOG_INFO,    LOG_TAG, __VA_ARGS__)
-#  define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
-#  define LOGW(...) __android_log_print(ANDROID_LOG_WARN,    LOG_TAG, __VA_ARGS__)
-#else
-#  define LOGD(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
-#  define LOGE(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
-#  define LOGI(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
-#  define LOGV(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
-#  define LOGW(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
-#endif
+void logmsg(int prio, const char *fmt, ...);
 
-
-// Kernel logging (http://elinux.org/Debugging_by_printing#Log_Levels)
-#define KLOG_ERROR(...)   kmsg_write("<3>" LOG_TAG ": " __VA_ARGS__)
-#define KLOG_WARNING(...) kmsg_write("<4>" LOG_TAG ": " __VA_ARGS__)
-#define KLOG_NOTICE(...)  kmsg_write("<5>" LOG_TAG ": " __VA_ARGS__)
-#define KLOG_INFO(...)    kmsg_write("<6>" LOG_TAG ": " __VA_ARGS__)
-#define KLOG_DEBUG(...)   kmsg_write("<7>" LOG_TAG ": " __VA_ARGS__)
-#define KLOG_DEFAULT(...) kmsg_write("<d>" LOG_TAG ": " __VA_ARGS__)
-#define KLOG_CONT(...)    kmsg_write(__VA_ARGS__)
-
-void kmsg_init();
-void kmsg_cleanup();
-void kmsg_write(const char *fmt, ...);
+void use_default_log_output();
+void use_standard_log_output();
+void use_logcat_log_output();
+void use_kernel_log_output();

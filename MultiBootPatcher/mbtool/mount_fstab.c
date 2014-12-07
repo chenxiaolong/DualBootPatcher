@@ -119,7 +119,7 @@ static struct fstab * read_fstab(const char *path)
 
     fp = fopen(path, "rb");
     if (!fp) {
-        KLOG_ERROR("Failed to open file %s", path);
+        LOGE("Failed to open file %s", path);
         return NULL;
     }
 
@@ -145,7 +145,7 @@ static struct fstab * read_fstab(const char *path)
     }
 
     if (entries == 0) {
-        KLOG_ERROR("fstab contains no entries");
+        LOGE("fstab contains no entries");
         goto error;
     }
 
@@ -176,7 +176,7 @@ static struct fstab * read_fstab(const char *path)
 
         // Avoid possible overflow if the file was changed
         if (count >= entries) {
-            KLOG_ERROR("Found more fstab entries on second read than first read");
+            LOGE("Found more fstab entries on second read than first read");
             break;
         }
 
@@ -185,25 +185,25 @@ static struct fstab * read_fstab(const char *path)
         rec->orig_line = strdup(line);
 
         if ((temp = strtok_r(line, delim, &save_ptr)) == NULL) {
-            KLOG_ERROR("No source path/device found in entry: %s", line);
+            LOGE("No source path/device found in entry: %s", line);
             goto error;
         }
         rec->blk_device = strdup(temp);
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            KLOG_ERROR("No mount point found in entry: %s", line);
+            LOGE("No mount point found in entry: %s", line);
             goto error;
         }
         rec->mount_point = strdup(temp);
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            KLOG_ERROR("No filesystem type found in entry: %s", line);
+            LOGE("No filesystem type found in entry: %s", line);
             goto error;
         }
         rec->fs_type = strdup(temp);
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            KLOG_ERROR("No mount options found in entry: %s", line);
+            LOGE("No mount options found in entry: %s", line);
             goto error;
         }
         rec->flags = options_to_flags(temp, temp_mount_args, 1024);
@@ -215,7 +215,7 @@ static struct fstab * read_fstab(const char *path)
         }
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            KLOG_ERROR("No fs_mgr/vold options found in entry: %s", line);
+            LOGE("No fs_mgr/vold options found in entry: %s", line);
             goto error;
         }
         rec->vold_args = strdup(temp);
@@ -295,7 +295,7 @@ static int options_to_flags(char *args, char *new_args, int size)
                 strlcat(new_args, temp, size);
                 strlcat(new_args, ",", size);
             } else {
-                KLOG_WARNING("Only universal mount options expected, but found %s", temp);
+                LOGW("Only universal mount options expected, but found %s", temp);
             }
         }
 
@@ -323,19 +323,19 @@ static int create_dir_and_mount(struct fstab_rec *rec,
     if (stat(rec->mount_point, &st) == 0) {
         perms = st.st_mode & 0xfff;
     } else {
-        KLOG_WARNING("%s found in fstab, but %s does not exist",
-                     rec->mount_point, rec->mount_point);
+        LOGW("%s found in fstab, but %s does not exist",
+             rec->mount_point, rec->mount_point);
         perms = 0771;
     }
 
     if (stat(mount_point, &st) == 0) {
         if (chmod(mount_point, perms) < 0) {
-            KLOG_ERROR("Failed to chmod %s: %s", mount_point, strerror(errno));
+            LOGE("Failed to chmod %s: %s", mount_point, strerror(errno));
             return -1;
         }
     } else {
         if (mkdir(mount_point, perms) < 0) {
-            KLOG_ERROR("Failed to create %s: %s", mount_point, strerror(errno));
+            LOGE("Failed to create %s: %s", mount_point, strerror(errno));
             return -1;
         }
     }
@@ -346,8 +346,8 @@ static int create_dir_and_mount(struct fstab_rec *rec,
                 flags_from_rec->flags,
                 flags_from_rec->fs_options);
     if (ret < 0) {
-        KLOG_ERROR("Failed to mount %s at %s: %s",
-                   rec->blk_device, mount_point, strerror(errno));
+        LOGE("Failed to mount %s at %s: %s",
+             rec->blk_device, mount_point, strerror(errno));
         return -1;
     }
 
@@ -382,8 +382,7 @@ static int mkdirs(const char *dir, mode_t mode) {
 
         printf("Creating %s\n", temp);
         if (stat(temp, &st) < 0 && mkdir(temp, mode) < 0) {
-            KLOG_ERROR("Failed to create directory %s: %s\n",
-                       temp, strerror(errno));
+            LOGE("Failed to create directory %s: %s\n", temp, strerror(errno));
             free(copy);
             free(temp);
             return -1;
@@ -400,18 +399,18 @@ static int mkdirs(const char *dir, mode_t mode) {
 static int bind_mount(const char *source, const char *target)
 {
     if (mkdirs(source, 0771)) {
-        KLOG_ERROR("Failed to create %s", source);
+        LOGE("Failed to create %s", source);
         return -1;
     }
 
     if (mkdirs(target, 0771) < 0) {
-        KLOG_ERROR("Failed to create %s", target);
+        LOGE("Failed to create %s", target);
         return -1;
     }
 
     if (mount(source, target, NULL, MS_BIND, NULL) < 0) {
-        KLOG_ERROR("Failed to bind mount %s to %s: %s",
-                   source, target, strerror(errno));
+        LOGE("Failed to bind mount %s to %s: %s",
+             source, target, strerror(errno));
         return -1;
     }
 
@@ -446,17 +445,18 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     int share_app_asec = 0;
 
     // Use the kernel log since logcat hasn't run yet
-    kmsg_init();
+    klog_init();
+    use_kernel_log_output();
 
     fstab = read_fstab(argv[1]); // TODO: Temporary hack until multi-call is done
     if (!fstab) {
-        KLOG_ERROR("Failed to read %s", argv[1]);
+        LOGE("Failed to read %s", argv[1]);
         goto error;
     }
 
     out = fopen("fstab.gen", "wb");
     if (!out) {
-        KLOG_ERROR("Failed to open fstab.gen for writing");
+        LOGE("Failed to open fstab.gen for writing");
         goto error;
     }
 
@@ -485,14 +485,14 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     }
 
     if (!rec_system || !rec_cache || !rec_data) {
-        KLOG_ERROR("fstab does not contain all of /system, /cache, and /data!");
+        LOGE("fstab does not contain all of /system, /cache, and /data!");
         goto error;
     }
 
     // Mount raw partitions
     struct partconfig *partconfig = find_partconfig();
     if (!partconfig) {
-        KLOG_ERROR("Could not determine partition configuration");
+        LOGE("Could not determine partition configuration");
         goto error;
     }
 
@@ -518,15 +518,15 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     flags_data = rec_data;
 
     if (create_dir_and_mount(rec_system, flags_system, "/raw-system") < 0) {
-        KLOG_ERROR("Failed to mount /raw-system");
+        LOGE("Failed to mount /raw-system");
         goto error;
     }
     if (create_dir_and_mount(rec_cache, flags_cache, "/raw-cache") < 0) {
-        KLOG_ERROR("Failed to mount /raw-cache");
+        LOGE("Failed to mount /raw-cache");
         goto error;
     }
     if (create_dir_and_mount(rec_data, flags_data, "/raw-data") < 0) {
-        KLOG_ERROR("Failed to mount /raw-data");
+        LOGE("Failed to mount /raw-data");
         goto error;
     }
 
@@ -556,7 +556,7 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
         fwrite("2", 1, 1, lv);
         fclose(lv);
     } else {
-        KLOG_ERROR("Failed to open /data/.layout_version to disable migration");
+        LOGE("Failed to open /data/.layout_version to disable migration");
     }
 
     // Global app sharing
@@ -589,9 +589,9 @@ int mount_fstab_main(int argc UNUSED_PARAM, char *argv[])
     fclose(out);
     free_fstab(fstab);
 
-    KLOG_INFO("Successfully mounted partitions");
+    LOGI("Successfully mounted partitions");
 
-    kmsg_cleanup();
+    klog_cleanup();
 
     return 0;
 
@@ -602,6 +602,6 @@ error:
     if (fstab) {
         free_fstab(fstab);
     }
-    kmsg_cleanup();
+    klog_cleanup();
     return 1;
 }
