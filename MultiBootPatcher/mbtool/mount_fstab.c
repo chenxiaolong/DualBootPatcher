@@ -312,7 +312,8 @@ static int options_to_flags(char *args, char *new_args, int size)
 
 static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
-                                char *mount_point) {
+                                char *mount_point)
+{
     struct stat st;
     int ret;
     mode_t perms;
@@ -355,7 +356,8 @@ static int create_dir_and_mount(struct fstab_rec *rec,
     return 0;
 }
 
-static int mkdirs(const char *dir, mode_t mode) {
+static int mkdirs(const char *dir, mode_t mode)
+{
     struct stat st;
     char *p;
     char *save_ptr;
