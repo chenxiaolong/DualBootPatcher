@@ -346,21 +346,6 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     RETURN_IF_CANCELLED
 
-    // Add patched init binary if it was specified by the patchinfo
-    if (!info->patchInfo()->patchedInit(key).empty()) {
-        if (cpio.exists("init")) {
-            cpio.remove("init");
-        }
-
-        if (!cpio.addFile(pc->initsDirectory() + "/"
-                + info->patchInfo()->patchedInit(key), "init", 0755)) {
-            error = cpio.error();
-            return false;
-        }
-    }
-
-    RETURN_IF_CANCELLED
-
     std::vector<unsigned char> newRamdisk = cpio.createData(true);
     bi.setRamdiskImage(std::move(newRamdisk));
 

@@ -87,9 +87,6 @@ public:
     std::string ramdisk(const std::string &key) const;
     void setRamdisk(const std::string &key, std::string ramdisk);
 
-    std::string patchedInit(const std::string &key) const;
-    void setPatchedInit(const std::string &key, std::string init);
-
     bool deviceCheck(const std::string &key) const;
     void setDeviceCheck(const std::string &key, bool deviceCheck);
 

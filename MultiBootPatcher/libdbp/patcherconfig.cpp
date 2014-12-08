@@ -57,7 +57,6 @@ public:
     // Directories
     std::string binariesDir;
     std::string dataDir;
-    std::string initsDir;
     std::string patchesDir;
     std::string patchInfosDir;
     std::string scriptsDir;
@@ -97,7 +96,6 @@ public:
     void parsePatchInfoTagRegexes(xmlNode *node, PatchInfo * const info);
     void parsePatchInfoTagHasBootImage(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagRamdisk(xmlNode *node, PatchInfo * const info, const std::string &type);
-    void parsePatchInfoTagPatchedInit(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagAutopatchers(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagAutopatcher(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagDeviceCheck(xmlNode *node, PatchInfo * const info, const std::string &type);
@@ -109,7 +107,6 @@ public:
 
 
 static const std::string BinariesDirName = "binaries";
-static const std::string InitsDirName = "inits";
 static const std::string PatchesDirName = "patches";
 static const std::string PatchInfosDirName = "patchinfos";
 static const std::string ScriptsDirName = "scripts";
@@ -125,7 +122,6 @@ const xmlChar *PatchInfoTagExcludeRegex = (xmlChar *) "exclude-regex";
 const xmlChar *PatchInfoTagRegexes = (xmlChar *) "regexes";
 const xmlChar *PatchInfoTagHasBootImage = (xmlChar *) "has-boot-image";
 const xmlChar *PatchInfoTagRamdisk = (xmlChar *) "ramdisk";
-const xmlChar *PatchInfoTagPatchedInit = (xmlChar *) "patched-init";
 const xmlChar *PatchInfoTagAutopatchers = (xmlChar *) "autopatchers";
 const xmlChar *PatchInfoTagAutopatcher = (xmlChar *) "autopatcher";
 const xmlChar *PatchInfoTagDeviceCheck = (xmlChar *) "device-check";
@@ -232,22 +228,6 @@ std::string PatcherConfig::dataDirectory() const
 }
 
 /*!
- * \brief Get init binaries directory
- *
- * The detault binaries directory is `<datadir>/inits/`
- *
- * \return Init binaries directory
- */
-std::string PatcherConfig::initsDirectory() const
-{
-    if (m_impl->initsDir.empty()) {
-        return dataDirectory() + "/" + InitsDirName;
-    } else {
-        return m_impl->initsDir;
-    }
-}
-
-/*!
  * \brief Get patch files directory
  *
  * The detault binaries directory is `<datadir>/patches/`
@@ -332,19 +312,6 @@ void PatcherConfig::setBinariesDirectory(std::string path)
 void PatcherConfig::setDataDirectory(std::string path)
 {
     m_impl->dataDir = std::move(path);
-}
-
-/*!
- * \brief Set init binaries directory
- *
- * \note This should only be changed if the default data directory structure is
- *       not desired.
- *
- * \param path Path to init binaries directory
- */
-void PatcherConfig::setInitsDirectory(std::string path)
-{
-    m_impl->initsDir = std::move(path);
 }
 
 /*!
@@ -867,36 +834,6 @@ static boost::filesystem::path makeRelative(boost::filesystem::path from,
 }
 
 /*!
- * \brief Get list of init binaries
- *
- * \return List of init binaries
- */
-std::vector<std::string> PatcherConfig::initBinaries() const
-{
-    std::vector<std::string> inits;
-
-    try {
-        const boost::filesystem::path dirPath(initsDirectory());
-
-        boost::filesystem::recursive_directory_iterator it(dirPath);
-        boost::filesystem::recursive_directory_iterator end;
-
-        for (; it != end; ++it) {
-            if (boost::filesystem::is_regular_file(it->status())) {
-                boost::filesystem::path relPath = makeRelative(dirPath, it->path());
-                inits.push_back(relPath.string());
-            }
-        }
-    } catch (std::exception &e) {
-        Log::log(Log::Warning, e.what());
-    }
-
-    std::sort(inits.begin(), inits.end());
-
-    return inits;
-}
-
-/*!
  * \brief Load all PatchInfo XML files
  *
  * \return Whether or not the XML files were successfully read
@@ -1004,8 +941,6 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
             parsePatchInfoTagHasBootImage(curNode, info, PatchInfo::Default);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
             parsePatchInfoTagRamdisk(curNode, info, PatchInfo::Default);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagPatchedInit) == 0) {
-            parsePatchInfoTagPatchedInit(curNode, info, PatchInfo::Default);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
             parsePatchInfoTagAutopatchers(curNode, info, PatchInfo::Default);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
@@ -1048,8 +983,6 @@ void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
             parsePatchInfoTagHasBootImage(curNode, info, regex);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
             parsePatchInfoTagRamdisk(curNode, info, regex);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagPatchedInit) == 0) {
-            parsePatchInfoTagPatchedInit(curNode, info, regex);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
             parsePatchInfoTagAutopatchers(curNode, info, regex);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
@@ -1081,8 +1014,6 @@ void PatcherConfig::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
             parsePatchInfoTagHasBootImage(curNode, info, PatchInfo::NotMatched);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
             parsePatchInfoTagRamdisk(curNode, info, PatchInfo::NotMatched);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagPatchedInit) == 0) {
-            parsePatchInfoTagPatchedInit(curNode, info, PatchInfo::NotMatched);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
             parsePatchInfoTagAutopatchers(curNode, info, PatchInfo::NotMatched);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
@@ -1237,31 +1168,6 @@ void PatcherConfig::Impl::parsePatchInfoTagRamdisk(xmlNode *node,
 
     if (!hasText) {
         Log::log(Log::Warning, "<ramdisk> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagPatchedInit(xmlNode *node,
-                                                       PatchInfo * const info,
-                                                       const std::string &type)
-{
-    assert(xmlStrcmp(node->name, PatchInfoTagPatchedInit) == 0);
-
-    bool hasText = false;
-    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
-        if (curNode->type != XML_TEXT_NODE) {
-            continue;
-        }
-
-        hasText = true;
-        if (info->patchedInit(type).empty()) {
-            info->setPatchedInit(type, xmlStringToStdString(curNode->content));
-        } else {
-            Log::log(Log::Warning, "Ignoring additional <patched-init> elements");
-        }
-    }
-
-    if (!hasText) {
-        Log::log(Log::Warning, "<patched-init> tag has no text");
     }
 }
 

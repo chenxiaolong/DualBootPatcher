@@ -593,43 +593,6 @@ extern "C" {
     }
 
     /*!
-     * \brief Which patched init binary to use
-     *
-     * \note The output data is dynamically allocated. It should be `free()`'d
-     *       when it is no longer needed.
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return Which patched init binary to use
-     *
-     * \sa PatchInfo::patchedInit()
-     */
-    char * mbp_patchinfo_patched_init(const CPatchInfo *info, const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return strdup(pi->patchedInit(key).c_str());
-    }
-
-    /*!
-     * \brief Set which patched init binary to use
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param init Patched init binary
-     *
-     * \sa PatchInfo::setPatchedInit()
-     */
-    void mbp_patchinfo_set_patched_init(CPatchInfo *info,
-                                        const char *key, const char *init)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setPatchedInit(key, init);
-    }
-
-    /*!
      * \brief Whether device model checks should be kept
      *
      * \param info CPatchInfo object

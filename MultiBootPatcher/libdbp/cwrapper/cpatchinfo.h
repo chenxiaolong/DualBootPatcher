@@ -78,10 +78,6 @@ char * mbp_patchinfo_ramdisk(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_ramdisk(CPatchInfo *info,
                                const char *key, const char *ramdisk);
 
-char * mbp_patchinfo_patched_init(const CPatchInfo *info, const char *key);
-void mbp_patchinfo_set_patched_init(CPatchInfo *info,
-                                    const char *key, const char *init);
-
 bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_device_check(CPatchInfo *info,
                                     const char *key, bool deviceCheck);

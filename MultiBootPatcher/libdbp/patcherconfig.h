@@ -45,7 +45,6 @@ public:
 
     std::string binariesDirectory() const;
     std::string dataDirectory() const;
-    std::string initsDirectory() const;
     std::string patchesDirectory() const;
     std::string patchInfosDirectory() const;
     std::string scriptsDirectory() const;
@@ -53,7 +52,6 @@ public:
 
     void setBinariesDirectory(std::string path);
     void setDataDirectory(std::string path);
-    void setInitsDirectory(std::string path);
     void setPatchesDirectory(std::string path);
     void setPatchInfosDirectory(std::string path);
     void setScriptsDirectory(std::string path);
@@ -86,8 +84,6 @@ public:
     void destroyRamdiskPatcher(RamdiskPatcher *patcher);
 
     std::vector<PartitionConfig *> partitionConfigs() const;
-
-    std::vector<std::string> initBinaries() const;
 
     bool loadPatchInfos();
 

@@ -75,9 +75,6 @@ public:
     // Ramdisk patcher to use
     std::unordered_map<std::string, std::string> ramdisk;
 
-    // Name of alternative binary to use
-    std::unordered_map<std::string, std::string> patchedInit;
-
     // Whether or not device checks/asserts should be kept
     std::unordered_map<std::string, bool> deviceCheck;
 
@@ -137,7 +134,6 @@ PatchInfo::Impl::Impl()
  * - Whether to autodetect the boot images
  * - List of manually specified boot images
  * - Which ramdisk patcher to use
- * - Which patched init binary to use (if needed)
  * - Whether device model asserts in the updater-script file should be nullified
  * - List of supported/unsupported partition configurations
  */
@@ -519,34 +515,6 @@ std::string PatchInfo::ramdisk(const std::string &key) const
 void PatchInfo::setRamdisk(const std::string &key, std::string ramdisk)
 {
     m_impl->ramdisk[key] = std::move(ramdisk);
-}
-
-/*!
- * \brief Which patched init binary to use
- *
- * \param key Parameter key
- *
- * \return Which patched init binary to use or empty string if no patched init
- *         binary should be used
- */
-std::string PatchInfo::patchedInit(const std::string &key) const
-{
-    if (m_impl->patchedInit.find(key) != m_impl->patchedInit.end()) {
-        return m_impl->patchedInit[key];
-    }
-
-    return std::string();
-}
-
-/*!
- * \brief Set which patched init binary to use
- *
- * \param key Parameter key
- * \param init Patched init binary
- */
-void PatchInfo::setPatchedInit(const std::string &key, std::string init)
-{
-    m_impl->patchedInit[key] = std::move(init);
 }
 
 /*!

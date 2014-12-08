@@ -36,9 +36,6 @@
     <!-- This is the type of ramdisk -->
     <ramdisk>jflte/AOSP/AOSP</ramdisk>
 
-    <!-- Patched init binary. You probably don't want this, so just omit it -->
-    <patched-init>init-jb42</patched-init>
-
     <!-- TODO: Document this -->
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>

@@ -125,25 +125,6 @@ extern "C" {
     }
 
     /*!
-     * \brief Get init binaries directory
-     *
-     * \note The returned string is dynamically allocated. It should be free()'d
-     *       when it is no longer needed.
-     *
-     * \param pc CPatcherConfig object
-     * \return Init binaries directory
-     *
-     * \sa PatcherConfig::initsDirectory()
-     */
-    char * mbp_config_inits_directory(const CPatcherConfig *pc)
-    {
-        assert(pc != nullptr);
-        const PatcherConfig *config =
-                reinterpret_cast<const PatcherConfig *>(pc);
-        return strdup(config->initsDirectory().c_str());
-    }
-
-    /*!
      * \brief Get patch files directory
      *
      * \note The returned string is dynamically allocated. It should be free()'d
@@ -247,21 +228,6 @@ extern "C" {
         assert(pc != nullptr);
         PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
         config->setDataDirectory(path);
-    }
-
-    /*!
-     * \brief Set init binaries directory
-     *
-     * \param pc CPatcherConfig object
-     * \param path Path to init binaries directory
-     *
-     * \sa PatcherConfig::setInitsDirectory()
-     */
-    void mbp_config_set_inits_directory(CPatcherConfig *pc, char *path)
-    {
-        assert(pc != nullptr);
-        PatcherConfig *config = reinterpret_cast<PatcherConfig *>(pc);
-        config->setInitsDirectory(path);
     }
 
     /*!
@@ -696,34 +662,6 @@ extern "C" {
         cConfigs[configs.size()] = nullptr;
 
         return cConfigs;
-    }
-
-    /*!
-     * \brief Get list of init binaries
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param pc CPatcherConfig object
-     * \return NULL-terminated array of init binaries
-     *
-     * \sa PatcherConfig::initBinaries()
-     */
-    char ** mbp_config_init_binaries(const CPatcherConfig *pc)
-    {
-        assert(pc != nullptr);
-        const PatcherConfig *config =
-                reinterpret_cast<const PatcherConfig *>(pc);
-        auto const inits = config->initBinaries();
-
-        char **cInits = (char **) std::malloc(
-                sizeof(char *) * (inits.size() + 1));
-        for (unsigned int i = 0; i < inits.size(); ++i) {
-            cInits[i] = strdup(inits[i].c_str());
-        }
-        cInits[inits.size()] = nullptr;
-
-        return cInits;
     }
 
     /*!
