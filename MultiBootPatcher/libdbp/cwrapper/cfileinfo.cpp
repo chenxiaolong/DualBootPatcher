@@ -45,7 +45,7 @@ extern "C" {
      *
      * \return New CFileInfo
      */
-    CFileInfo * mbp_fileinfo_create()
+    CFileInfo * mbp_fileinfo_create(void)
     {
         return reinterpret_cast<CFileInfo *>(new FileInfo());
     }

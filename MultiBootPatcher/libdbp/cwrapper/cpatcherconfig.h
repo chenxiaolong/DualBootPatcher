@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-CPatcherConfig * mbp_config_create();
+CPatcherConfig * mbp_config_create(void);
 void mbp_config_destroy(CPatcherConfig *pc);
 
 CPatcherError * mbp_config_error(const CPatcherConfig *pc);

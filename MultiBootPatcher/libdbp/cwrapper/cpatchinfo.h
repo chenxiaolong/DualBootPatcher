@@ -26,10 +26,10 @@
 extern "C" {
 #endif
 
-const char * mbp_patchinfo_default();
-const char * mbp_patchinfo_notmatched();
+const char * mbp_patchinfo_default(void);
+const char * mbp_patchinfo_notmatched(void);
 
-CPatchInfo * mbp_patchinfo_create();
+CPatchInfo * mbp_patchinfo_create(void);
 void mbp_patchinfo_destroy(CPatchInfo *info);
 
 char * mbp_patchinfo_id(const CPatchInfo *info);

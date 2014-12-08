@@ -101,7 +101,7 @@ static int create_dir_and_mount(struct fstab_rec *rec,
 static int mkdirs(const char *dir, mode_t mode);
 static int create_file(const char *path);
 static int bind_mount(const char *source, const char *target);
-static struct partconfig * find_partconfig();
+static struct partconfig * find_partconfig(void);
 
 
 // Much simplified version of fs_mgr's fstab parsing code
@@ -430,7 +430,7 @@ static int bind_mount(const char *source, const char *target)
     return 0;
 }
 
-static struct partconfig * find_partconfig()
+static struct partconfig * find_partconfig(void)
 {
     struct mainconfig *config = get_mainconfig();
 

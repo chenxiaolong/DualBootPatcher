@@ -41,13 +41,13 @@ extern "C" {
     // Static constants
 
     /*! \brief Key for getting the default values */
-    const char * mbp_patchinfo_default()
+    const char * mbp_patchinfo_default(void)
     {
         return PatchInfo::Default.c_str();
     }
 
     /*! \brief Key for getting the `<not-matched>` values */
-    const char *mbp_patchinfo_notmatched()
+    const char *mbp_patchinfo_notmatched(void)
     {
         return PatchInfo::NotMatched.c_str();
     }
@@ -60,7 +60,7 @@ extern "C" {
      *
      * \return New CPatchInfo
      */
-    CPatchInfo * mbp_patchinfo_create()
+    CPatchInfo * mbp_patchinfo_create(void)
     {
         return reinterpret_cast<CPatchInfo *>(new PatchInfo());
     }

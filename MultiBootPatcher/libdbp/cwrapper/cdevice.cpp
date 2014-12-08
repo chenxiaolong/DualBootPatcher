@@ -41,31 +41,31 @@ extern "C" {
     // Static constants
 
     /*! \brief SELinux permissive mode constant */
-    const char * mbp_device_selinux_permissive()
+    const char * mbp_device_selinux_permissive(void)
     {
         return Device::SelinuxPermissive.c_str();
     }
 
     /*! \brief Leave SELinux mode unchanged constant */
-    const char * mbp_device_selinux_unchanged()
+    const char * mbp_device_selinux_unchanged(void)
     {
         return Device::SelinuxUnchanged.c_str();
     }
 
     /*! \brief System partition constant */
-    const char * mbp_device_system_partition()
+    const char * mbp_device_system_partition(void)
     {
         return Device::SystemPartition.c_str();
     }
 
     /*! \brief Cache partition constant */
-    const char * mbp_device_cache_partition()
+    const char * mbp_device_cache_partition(void)
     {
         return Device::CachePartition.c_str();
     }
 
     /*! \brief Data partition */
-    const char * mbp_device_data_partition()
+    const char * mbp_device_data_partition(void)
     {
         return Device::DataPartition.c_str();
     }
@@ -78,7 +78,7 @@ extern "C" {
      *
      * \return New CDevice
      */
-    CDevice * mbp_device_create()
+    CDevice * mbp_device_create(void)
     {
         return reinterpret_cast<CDevice *>(new Device());
     }

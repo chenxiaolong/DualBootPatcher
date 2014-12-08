@@ -45,7 +45,7 @@ extern "C" {
      *
      * \return New CCpioFile
      */
-    CCpioFile * mbp_cpiofile_create()
+    CCpioFile * mbp_cpiofile_create(void)
     {
         return reinterpret_cast<CCpioFile *>(new CpioFile());
     }

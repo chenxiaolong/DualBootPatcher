@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-CStringMap * mbp_stringmap_create();
+CStringMap * mbp_stringmap_create(void);
 void mbp_stringmap_destroy(CStringMap *map);
 
 char ** mbp_stringmap_keys(const CStringMap *map);

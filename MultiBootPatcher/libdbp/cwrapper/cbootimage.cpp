@@ -44,7 +44,7 @@ extern "C" {
      *
      * \return New CBootImage
      */
-    CBootImage * mbp_bootimage_create()
+    CBootImage * mbp_bootimage_create(void)
     {
         return reinterpret_cast<CBootImage *>(new BootImage());
     }

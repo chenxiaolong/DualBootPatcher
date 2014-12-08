@@ -42,19 +42,19 @@ extern "C" {
     // Static constants
 
     /*! \brief System partition constant */
-    const char * mbp_partconfig_system()
+    const char * mbp_partconfig_system(void)
     {
         return PartitionConfig::System.c_str();
     }
 
     /*! \brief Cache partition constant */
-    const char * mbp_partconfig_cache()
+    const char * mbp_partconfig_cache(void)
     {
         return PartitionConfig::Cache.c_str();
     }
 
     /*! \brief Data partition constant */
-    const char * mbp_partconfig_data()
+    const char * mbp_partconfig_data(void)
     {
         return PartitionConfig::Data.c_str();
     }
@@ -67,7 +67,7 @@ extern "C" {
      *
      * \return New CPartConfig
      */
-    CPartConfig * mbp_partconfig_create()
+    CPartConfig * mbp_partconfig_create(void)
     {
         return reinterpret_cast<CPartConfig *>(new PartitionConfig());
     }

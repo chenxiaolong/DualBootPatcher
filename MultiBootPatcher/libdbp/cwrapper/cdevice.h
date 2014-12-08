@@ -26,13 +26,13 @@
 extern "C" {
 #endif
 
-const char * mbp_device_selinux_permissive();
-const char * mbp_device_selinux_unchanged();
-const char * mbp_device_system_partition();
-const char * mbp_device_cache_partition();
-const char * mbp_device_data_partition();
+const char * mbp_device_selinux_permissive(void);
+const char * mbp_device_selinux_unchanged(void);
+const char * mbp_device_system_partition(void);
+const char * mbp_device_cache_partition(void);
+const char * mbp_device_data_partition(void);
 
-CDevice * mbp_device_create();
+CDevice * mbp_device_create(void);
 void mbp_device_destroy(CDevice *device);
 
 char * mbp_device_codename(const CDevice *device);

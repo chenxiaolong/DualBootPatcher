@@ -28,11 +28,11 @@
 extern "C" {
 #endif
 
-const char * mbp_partconfig_system();
-const char * mbp_partconfig_cache();
-const char * mbp_partconfig_data();
+const char * mbp_partconfig_system(void);
+const char * mbp_partconfig_cache(void);
+const char * mbp_partconfig_data(void);
 
-CPartConfig * mbp_partconfig_create();
+CPartConfig * mbp_partconfig_create(void);
 void mbp_partconfig_destroy(CPartConfig *config);
 
 char * mbp_partconfig_name(const CPartConfig *config);

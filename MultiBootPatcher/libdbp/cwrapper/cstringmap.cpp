@@ -42,7 +42,7 @@ extern "C" {
      *
      * \return New CStringMap
      */
-    CStringMap * mbp_stringmap_create()
+    CStringMap * mbp_stringmap_create(void)
     {
         return reinterpret_cast<CStringMap *>(new MapType());
     }

@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-CBootImage * mbp_bootimage_create();
+CBootImage * mbp_bootimage_create(void);
 void mbp_bootimage_destroy(CBootImage *bootImage);
 
 CPatcherError * mbp_bootimage_error(const CBootImage *bootImage);

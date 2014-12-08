@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-CCpioFile * mbp_cpiofile_create();
+CCpioFile * mbp_cpiofile_create(void);
 void mbp_cpiofile_destroy(CCpioFile *cpio);
 
 CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio);

@@ -51,7 +51,7 @@ int parse_partconfig_v1(json_t *cur, struct partconfig *partconfig);
 void free_partconfig(struct partconfig *config);
 
 
-struct mainconfig * get_mainconfig()
+struct mainconfig * get_mainconfig(void)
 {
     if (!loaded) {
         LOGW("mainconfig_init() should be called before get_mainconfig()");
@@ -61,7 +61,7 @@ struct mainconfig * get_mainconfig()
     return &config;
 }
 
-int mainconfig_init()
+int mainconfig_init(void)
 {
     if (loaded) {
         LOGW("Main config file has already been loaded");
@@ -214,7 +214,7 @@ int parse_partconfig_v1(json_t *cur, struct partconfig *partconfig)
     return 0;
 }
 
-void mainconfig_cleanup()
+void mainconfig_cleanup(void)
 {
     if (config.partconfigs) {
         for (int i = 0; i < config.partconfigs_len; ++i) {

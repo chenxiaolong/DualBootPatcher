@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-CFileInfo * mbp_fileinfo_create();
+CFileInfo * mbp_fileinfo_create(void);
 void mbp_fileinfo_destroy(CFileInfo *info);
 
 char * mbp_fileinfo_filename(const CFileInfo *info);

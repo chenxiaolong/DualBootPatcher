@@ -38,6 +38,6 @@ struct mainconfig {
     char *installed;
 };
 
-int mainconfig_init();
-void mainconfig_cleanup();
-struct mainconfig * get_mainconfig();
+int mainconfig_init(void);
+void mainconfig_cleanup(void);
+struct mainconfig * get_mainconfig(void);

@@ -46,7 +46,7 @@ extern "C" {
      *
      * \return New CPatcherConfig
      */
-    CPatcherConfig * mbp_config_create()
+    CPatcherConfig * mbp_config_create(void)
     {
         return reinterpret_cast<CPatcherConfig *>(new PatcherConfig());
     }
