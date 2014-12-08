@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 
 project(DualBootPatcher)
-set(DBP_VERSION_MAJOR 9)
-set(DBP_VERSION_MINOR 0)
-set(DBP_VERSION_PATCH 0Alpha6)
-set(DBP_VERSION "${DBP_VERSION_MAJOR}.${DBP_VERSION_MINOR}.${DBP_VERSION_PATCH}")
+set(MBP_VERSION_MAJOR 9)
+set(MBP_VERSION_MINOR 0)
+set(MBP_VERSION_PATCH 0Alpha6)
+set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
 option(BUILD_ANDROID "Build for Android" OFF)
 
@@ -17,7 +17,7 @@ endif()
 include (cmake/AndroidNDK.cmake)
 
 # Main patcher
-add_subdirectory(libdbp)
+add_subdirectory(libmbp)
 add_subdirectory(data)
 add_subdirectory(mbtool)
 add_subdirectory(syncdaemon)

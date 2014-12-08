@@ -16,8 +16,8 @@
 # Third party
 /thirdparty/*.tar*
 
-# libdbp
-/libdbp/Android.mk
+# libmbp
+/libmbp/Android.mk
 
 # mbtool
 /mbtool/Android.mk
@@ -27,3 +27,6 @@
 
 # syncdaemon
 /syncdaemon/jsoncpp/
+
+# Android GUI
+/Android_GUI/cmakelibs/

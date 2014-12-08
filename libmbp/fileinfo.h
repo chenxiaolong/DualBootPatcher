@@ -19,26 +19,34 @@
 
 #pragma once
 
-#ifdef _WIN32
-#  if defined(LIBDBP_LIBRARY)
-#    define MBP_EXPORT __declspec(dllexport)
-#  else
-#    define MBP_EXPORT __declspec(dllimport)
-#  endif
-#endif
+#include <memory>
 
-#ifndef MBP_EXPORT
-#  if defined(__GNUC__)
-#    define MBP_EXPORT __attribute__ ((visibility ("default")))
-#  else
-#    define MBP_EXPORT
-#  endif
-#endif
+#include "libmbp_global.h"
 
-#ifdef _MSC_VER
-#  pragma warning(disable:4251) // class ... needs to have dll-interface ...
-#endif
+#include "device.h"
+#include "patchinfo.h"
+#include "partitionconfig.h"
 
-#ifdef _MSC_VER
-#  define strdup _strdup
-#endif
+
+class MBP_EXPORT FileInfo
+{
+public:
+    explicit FileInfo();
+    ~FileInfo();
+
+    std::string filename() const;
+    void setFilename(std::string path);
+
+    PatchInfo * patchInfo() const;
+    void setPatchInfo(PatchInfo * const info);
+
+    Device * device() const;
+    void setDevice(Device * const device);
+
+    PartitionConfig * partConfig() const;
+    void setPartConfig(PartitionConfig * const config);
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
+};

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "libdbp_global.h"
+#include "libmbp_global.h"
 
 #include "cpiofile.h"
 #include "fileinfo.h"

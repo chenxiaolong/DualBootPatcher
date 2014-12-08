@@ -22,7 +22,7 @@
 #include <memory>
 #include <vector>
 
-#include "libdbp_global.h"
+#include "libmbp_global.h"
 
 
 class MBP_EXPORT PartitionConfig

@@ -22,7 +22,7 @@
 #include <memory>
 #include <string>
 
-#include "libdbp_global.h"
+#include "libmbp_global.h"
 #include "errors.h"
 
 

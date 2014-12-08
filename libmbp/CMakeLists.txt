@@ -1,11 +1,11 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# Allow libdbp headers to be found
+# Allow libmbp headers to be found
 include_directories(${CMAKE_SOURCE_DIR})
 
 include_directories(jsoncpp-dist)
 
-set(DBP_SOURCES
+set(MBP_SOURCES
     bootimage.cpp
     cpiofile.cpp
     device.cpp
@@ -50,12 +50,12 @@ set(DBP_SOURCES
     jsoncpp-dist/jsoncpp.cpp
 )
 
-set(DBP_HEADERS
+set(MBP_HEADERS
     bootimage.h
     cpiofile.h
     device.h
     fileinfo.h
-    libdbp_global.h
+    libmbp_global.h
     partitionconfig.h
     patcherconfig.h
     patchererror.h
@@ -63,7 +63,7 @@ set(DBP_HEADERS
     patchinfo.h
 )
 
-set(DBP_NOINST_HEADERS
+set(MBP_NOINST_HEADERS
     # Autopatchers
     autopatchers/jflte/jfltepatcher.h
     autopatchers/patchfile/patchfilepatcher.h
@@ -94,9 +94,9 @@ if(BUILD_ANDROID)
     include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
     # Wordaround semicolon separated list issue
-    set(DBP_SOURCES_STR "")
-    foreach(_source ${DBP_SOURCES})
-        set(DBP_SOURCES_STR "${DBP_SOURCES_STR} ${_source}")
+    set(MBP_SOURCES_STR "")
+    foreach(_source ${MBP_SOURCES})
+        set(MBP_SOURCES_STR "${MBP_SOURCES_STR} ${_source}")
     endforeach()
 
     configure_file(
@@ -107,16 +107,16 @@ if(BUILD_ANDROID)
     )
 
     ExternalProject_Add(
-        dbp
-        SOURCE_DIR ${CMAKE_SOURCE_DIR}/libdbp
-        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/libdbp/out/
+        mbp
+        SOURCE_DIR ${CMAKE_SOURCE_DIR}/libmbp
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/libmbp/out/
         BUILD_COMMAND ${NDK_BUILD}
                       -C <SOURCE_DIR>
                       -j${PROCESSOR_COUNT}
                       #APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
                       NDK_PROJECT_PATH=.
                       NDK_APPLICATION_MK=Application.mk
-                      NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libdbp/out
+                      NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmbp/out
                       NDK_OUT=<TMP_DIR>
                       ${NDK_ARGS}
         INSTALL_COMMAND ""
@@ -124,7 +124,7 @@ if(BUILD_ANDROID)
 
     # Always rebuild since files may have changed
     ExternalProject_Add_Step(
-        dbp
+        mbp
         forcerebuild
         DEPENDEES update
         DEPENDERS configure
@@ -135,18 +135,18 @@ else()
     # For desktop machines, we'll build with cmake
 
     add_definitions(
-        -DLIBDBP_LIBRARY
-        -DLIBDBP_VERSION="${DBP_VERSION}"
+        -DLIBMBP_LIBRARY
+        -DLIBMBP_VERSION="${MBP_VERSION}"
     )
 
-    add_library(dbp SHARED ${DBP_SOURCES})
+    add_library(mbp SHARED ${MBP_SOURCES})
 
-    set_target_properties(dbp PROPERTIES
+    set_target_properties(mbp PROPERTIES
         VERSION 1.0.0
         SOVERSION 1
     )
 
-    target_link_libraries(dbp
+    target_link_libraries(mbp
         ${Boost_LIBRARIES}
         ${LibArchive_LIBRARIES}
         ${LIBXML2_LIBRARIES}
@@ -154,7 +154,7 @@ else()
 
     # Install library
     install(
-        TARGETS dbp
+        TARGETS mbp
         LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
@@ -162,8 +162,8 @@ else()
 
     # Install headers
     install(
-        FILES ${DBP_HEADERS}
-        DESTINATION ${HEADERS_INSTALL_DIR}/libdbp
+        FILES ${MBP_HEADERS}
+        DESTINATION ${HEADERS_INSTALL_DIR}/libmbp
         COMPONENT Development
     )
 endif()

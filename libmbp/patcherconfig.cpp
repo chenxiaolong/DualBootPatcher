@@ -149,7 +149,7 @@ PatcherConfig::PatcherConfig() : m_impl(new Impl())
     m_impl->patchinfoIncludeDirs.push_back("Google_Apps");
     m_impl->patchinfoIncludeDirs.push_back("Other");
 
-    m_impl->version = LIBDBP_VERSION;
+    m_impl->version = LIBMBP_VERSION;
 }
 
 PatcherConfig::~PatcherConfig()

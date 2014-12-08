@@ -27,7 +27,7 @@ ExternalProject_Add(
                   NDK_APPLICATION_MK=Application.mk
                   NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/syncdaemon/out
                   NDK_OUT=<TMP_DIR>
-                  SYNCDAEMON_VERSION=${DBP_VERSION}
+                  SYNCDAEMON_VERSION=${MBP_VERSION}
                   # Only armv7 is supported at the moment
                   APP_ABI=armeabi-v7a
                   ${NDK_ARGS}

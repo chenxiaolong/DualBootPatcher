@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-#include "libdbp_global.h"
+#include "libmbp_global.h"
 
 #include "device.h"
 

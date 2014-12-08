@@ -21,7 +21,7 @@ add_definitions(
     -DQT_NO_CAST_FROM_BYTEARRAY
 )
 
-# Allow libdbp headers to be found
+# Allow libmbp headers to be found
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(GUI_SOURCES
@@ -60,7 +60,7 @@ add_executable(gui WIN32 ${GUI_SOURCES} ${GUI_RESOURCES_RCC})
 target_link_libraries(gui
     Qt5::Core
     Qt5::Widgets
-    dbp
+    mbp
 )
 
 # Set rpath for portable build

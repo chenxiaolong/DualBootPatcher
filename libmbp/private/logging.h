@@ -29,7 +29,7 @@
 
 #ifdef ANDROID
 #  include <android/log.h>
-#  define LOG_TAG "libdbp"
+#  define LOG_TAG "libmbp"
 #else
 #  include <cstdio>
 #endif

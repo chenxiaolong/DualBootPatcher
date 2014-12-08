@@ -20,9 +20,9 @@
 #include "mainwindow.h"
 #include "mainwindow_p.h"
 
-#include <libdbp/partitionconfig.h>
-#include <libdbp/patchinfo.h>
-#include <libdbp/patchererror.h>
+#include <libmbp/partitionconfig.h>
+#include <libmbp/patchinfo.h>
+#include <libmbp/patchererror.h>
 
 #include <boost/algorithm/string.hpp>
 

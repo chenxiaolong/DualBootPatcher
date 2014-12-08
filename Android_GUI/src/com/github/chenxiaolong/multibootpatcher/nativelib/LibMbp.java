@@ -34,11 +34,11 @@ import java.util.Map;
 
 public class LibMbp {
     /** Log (almost) all native method calls and their parameters */
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     static class CWrapper {
         static {
-            Native.register(CWrapper.class, "dbp");
+            Native.register(CWrapper.class, "mbp");
         }
 
         // BEGIN: ctypes.h

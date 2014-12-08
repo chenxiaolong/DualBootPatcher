@@ -23,8 +23,8 @@
 #include "mainwindow.h"
 #include "qcombocheckbox.h"
 
-#include <libdbp/patcherconfig.h>
-#include <libdbp/patcherinterface.h>
+#include <libmbp/patcherconfig.h>
+#include <libmbp/patcherinterface.h>
 
 #include <memory>
 

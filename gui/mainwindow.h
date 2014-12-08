@@ -20,9 +20,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <libdbp/fileinfo.h>
-#include <libdbp/patcherconfig.h>
-#include <libdbp/patcherinterface.h>
+#include <libmbp/fileinfo.h>
+#include <libmbp/patcherconfig.h>
+#include <libmbp/patcherinterface.h>
 
 #include <QtCore/QMetaType>
 #include <QtWidgets/QAbstractButton>

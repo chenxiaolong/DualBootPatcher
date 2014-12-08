@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "libdbp_global.h"
+#include "libmbp_global.h"
 
 #include "cpiofile.h"
 #include "device.h"
