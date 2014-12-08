@@ -1,10 +1,3 @@
-# init binaries
-install(
-    DIRECTORY inits/
-    DESTINATION ${DATA_INSTALL_DIR}/inits
-    COMPONENT Libraries
-)
-
 # patch/diff files
 install(
     DIRECTORY patches/
