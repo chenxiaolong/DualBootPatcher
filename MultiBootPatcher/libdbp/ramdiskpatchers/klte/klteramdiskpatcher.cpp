@@ -95,36 +95,32 @@ bool KlteAOSPRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitQcomRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyFstab(true)) {
+    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
     if (m_impl->cpio->exists("init.target.rc")) {
-        if (!qcomPatcher.modifyInitTargetRc()) {
+        if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
+
+        if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
             m_impl->error = qcomPatcher.error();
             return false;
         }
     } else {
-        if (!qcomPatcher.modifyInitTargetRc("init.qcom.rc")) {
+        if (!qcomPatcher.stripManualCacheMounts("init.qcom.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
+
+        if (!qcomPatcher.useGeneratedFstab("init.qcom.rc")) {
             m_impl->error = qcomPatcher.error();
             return false;
         }
     }
-
-    std::string mountScript(m_impl->pc->scriptsDirectory()
-            + "/klte/mount.modem.aosp.sh");
-    m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
 
     return true;
 }
@@ -157,58 +153,20 @@ bool KlteTouchWizRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
+    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!galaxyPatcher.twModifyInitRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitQcomRc()) {
+    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyFstab()) {
+    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
-
-    if (!qcomPatcher.modifyInitTargetRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.twModifyInitTargetRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.twModifyUeventdRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.twModifyUeventdQcomRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    std::string mountScript(m_impl->pc->scriptsDirectory()
-            + "/klte/mount.modem.touchwiz.sh");
-    m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
-
-    // Samsung's init binary is pretty screwed up
-    m_impl->cpio->remove("init");
-
-    std::string newInit = m_impl->pc->initsDirectory() + "/jflte/tw44-init";
-    m_impl->cpio->addFile(newInit, "init", 0755);
-
-    std::string newAdbd = m_impl->pc->initsDirectory() + "/jflte/tw44-adbd";
-    m_impl->cpio->addFile(newAdbd, "sbin/adbd", 0755);
 
     return true;
 }
