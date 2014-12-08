@@ -332,37 +332,6 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     RETURN_IF_CANCELLED
 
-    const std::string mountScript("init.multiboot.mounting.sh");
-    const std::string mountScriptPath(pc->scriptsDirectory() + "/" + mountScript);
-
-    std::vector<unsigned char> mountScriptContents;
-    auto ret = FileUtils::readToMemory(mountScriptPath, &mountScriptContents);
-    if (ret.errorCode() != MBP::ErrorCode::NoError) {
-        error = ret;
-        return false;
-    }
-
-    info->partConfig()->replaceShellLine(&mountScriptContents, true);
-
-    if (cpio.exists(mountScript)) {
-        cpio.remove(mountScript);
-    }
-
-    cpio.addFile(mountScriptContents, mountScript, 0750);
-
-    RETURN_IF_CANCELLED
-
-    // Add busybox
-    const std::string busybox("sbin/busybox-static");
-
-    if (cpio.exists(busybox)) {
-        cpio.remove(busybox);
-    }
-
-    cpio.addFile(pc->binariesDirectory() + "/busybox-static", busybox, 0750);
-
-    RETURN_IF_CANCELLED
-
     // Add syncdaemon
     const std::string syncdaemon("sbin/syncdaemon");
 

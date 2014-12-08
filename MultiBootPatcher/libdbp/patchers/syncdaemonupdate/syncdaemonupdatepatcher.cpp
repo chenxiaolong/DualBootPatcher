@@ -188,6 +188,7 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
 
     RETURN_IF_CANCELLED
 
+#if 0
     std::string partConfigId = findPartConfigId(&cpio);
     if (!partConfigId.empty()) {
         PartitionConfig *config = nullptr;
@@ -198,29 +199,10 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
                 break;
             }
         }
-
-        const std::string mountScript("init.multiboot.mounting.sh");
-        if (config != nullptr && cpio.exists(mountScript)) {
-            const std::string filename(
-                    pc->scriptsDirectory() + "/" + mountScript);
-            std::vector<unsigned char> contents;
-            auto ret = FileUtils::readToMemory(filename, &contents);
-            if (ret.errorCode() != MBP::ErrorCode::NoError) {
-                error = ret;
-                return false;
-            }
-
-            config->replaceShellLine(&contents, true);
-
-            if (cpio.exists(mountScript)) {
-                cpio.remove(mountScript);
-            }
-
-            cpio.addFile(contents, mountScript, 0750);
-        }
     }
 
     RETURN_IF_CANCELLED
+#endif
 
     // Add syncdaemon to init.rc if it doesn't already exist
     if (!cpio.exists("sbin/syncdaemon")) {
@@ -297,24 +279,6 @@ std::string SyncdaemonUpdatePatcher::Impl::findPartConfigId(const CpioFile * con
 
                 if (split.size() > 1) {
                     return split[1];
-                }
-            }
-        }
-    }
-
-    std::vector<unsigned char> mountScript = cpio->contents(
-            "init.multiboot.mounting.sh");
-    if (!mountScript.empty()) {
-        std::string strContents(mountScript.begin(), mountScript.end());
-        std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
-
-        for (auto const &line : lines) {
-            if (boost::starts_with(line, "TARGET_DATA=")) {
-                MBP_smatch what;
-
-                if (MBP_regex_search(line, what, MBP_regex("/raw-data/([^/\"]+)"))) {
-                    return what[1];
                 }
             }
         }

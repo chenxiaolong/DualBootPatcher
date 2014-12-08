@@ -40,8 +40,6 @@ public:
 
 const std::string CoreRamdiskPatcher::FstabRegex
         = "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
-const std::string CoreRamdiskPatcher::ExecMount
-        = "exec /sbin/busybox-static sh /init.multiboot.mounting.sh";
 const std::string CoreRamdiskPatcher::PropPartConfig
         = "ro.patcher.patched=%1%\n";
 const std::string CoreRamdiskPatcher::PropVersion
@@ -53,7 +51,6 @@ const std::string CoreRamdiskPatcher::SyncdaemonService
 
 static const std::string DefaultProp = "default.prop";
 static const std::string InitRc = "init.rc";
-static const std::string Busybox = "sbin/busybox";
 
 static const std::string TagVersion = "version";
 static const std::string TagPartConfigs = "partconfigs";
@@ -101,9 +98,6 @@ bool CoreRamdiskPatcher::patchRamdisk()
     if (!addSyncdaemon()) {
         return false;
     }
-    if (!removeAndRelinkBusybox()) {
-        return false;
-    }
     if (!addConfigJson()) {
         return false;
     }
@@ -149,22 +143,6 @@ bool CoreRamdiskPatcher::addSyncdaemon()
                   SyncdaemonService.begin(), SyncdaemonService.end());
 
     m_impl->cpio->setContents(InitRc, std::move(initRc));
-
-    return true;
-}
-
-bool CoreRamdiskPatcher::removeAndRelinkBusybox()
-{
-    if (m_impl->cpio->exists(Busybox)) {
-        m_impl->cpio->remove(Busybox);
-        bool ret = m_impl->cpio->addSymlink("busybox-static", Busybox);
-
-        if (!ret) {
-            m_impl->error = m_impl->cpio->error();
-        }
-
-        return ret;
-    }
 
     return true;
 }

@@ -45,12 +45,6 @@ public:
 
     virtual bool patchRamdisk() override;
 
-    // TouchWiz
-    bool twModifyInitRc();
-    bool twModifyInitTargetRc();
-    bool twModifyUeventdRc();
-    bool twModifyUeventdQcomRc();
-
     // Google Edition and TouchWiz
     bool getwModifyMsm8960LpmRc();
 

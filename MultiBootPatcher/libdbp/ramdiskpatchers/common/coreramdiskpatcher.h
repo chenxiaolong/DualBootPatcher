@@ -36,7 +36,6 @@ public:
     ~CoreRamdiskPatcher();
 
     static const std::string FstabRegex;
-    static const std::string ExecMount;
     static const std::string PropPartConfig;
     static const std::string PropVersion;
     static const std::string SyncdaemonService;
@@ -49,7 +48,6 @@ public:
 
     bool modifyDefaultProp();
     bool addSyncdaemon();
-    bool removeAndRelinkBusybox();
     bool addConfigJson();
 
 private:
