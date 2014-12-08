@@ -111,56 +111,6 @@ static std::string whitespace(const std::string &str) {
 }
 
 /*!
-    \brief Patches init.rc in Google Edition ramdisks
-
-    This method performs the following modifications on the init.rc file:
-
-    1. Finds the /system mounting line for the charger mode:
-
-           mount /system
-
-       and replaces it with lines to mount the multiboot paths:
-
-           mount_all fstab.jgedlte
-           exec /sbin/busybox-static sh /init.multiboot.mounting.sh
-
-    \return Succeeded or not
- */
-bool GalaxyRamdiskPatcher::geModifyInitRc()
-{
-    auto contents = m_impl->cpio->contents(InitRc);
-    if (contents.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, InitRc);
-        return false;
-    }
-
-    std::string previousLine;
-
-    std::string strContents(contents.begin(), contents.end());
-    std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (MBP_regex_search(*it, MBP_regex("mount.*/system"))
-                && MBP_regex_search(previousLine, MBP_regex("on\\s+charger"))) {
-            it = lines.erase(it);
-            it = lines.insert(it, "    mount_all fstab.jgedlte");
-            ++it;
-            it = lines.insert(it, "    " + CoreRamdiskPatcher::ExecMount);
-        }
-
-        previousLine = *it;
-    }
-
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    m_impl->cpio->setContents(InitRc, std::move(contents));
-
-    return true;
-}
-
-/*!
     \brief Patches init.rc in TouchWiz ramdisks
 
     This method performs the following modifications on the init.rc file:

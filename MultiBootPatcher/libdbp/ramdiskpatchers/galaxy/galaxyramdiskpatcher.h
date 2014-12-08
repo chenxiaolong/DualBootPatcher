@@ -45,9 +45,6 @@ public:
 
     virtual bool patchRamdisk() override;
 
-    // Google Edition
-    bool geModifyInitRc();
-
     // TouchWiz
     bool twModifyInitRc();
     bool twModifyInitTargetRc();

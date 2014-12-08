@@ -25,6 +25,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 #include "patcherconfig.h"
+#include "private/regex.h"
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
 #include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
 #include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
@@ -162,30 +163,21 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
+    if (!geChargerModeMount()) {
+        return false;
+    }
+
+    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!galaxyPatcher.geModifyInitRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    std::vector<std::string> qcomRcFiles;
-    qcomRcFiles.push_back("init.jgedlte.rc");
-
-    if (!qcomPatcher.modifyInitQcomRc(qcomRcFiles)) {
+    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyFstab()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitTargetRc()) {
+    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
@@ -195,13 +187,43 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    // Samsung's init binary is pretty screwed up
-    if (m_impl->getwVersion == GalaxyRamdiskPatcher::KitKat) {
-        m_impl->cpio->remove("init");
+    return true;
+}
 
-        std::string newInit(m_impl->pc->initsDirectory() + "/init-kk44");
-        m_impl->cpio->addFile(newInit, "init", 0755);
+bool JflteGoogleEditionRamdiskPatcher::geChargerModeMount()
+{
+    auto contents = m_impl->cpio->contents(InitRc);
+    if (contents.empty()) {
+        m_impl->error = PatcherError::createCpioError(
+                MBP::ErrorCode::CpioFileNotExistError, InitRc);
+        return false;
     }
+
+    std::string previousLine;
+
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (MBP_regex_search(*it, MBP_regex("mount.*/system"))
+                && MBP_regex_search(previousLine, MBP_regex("on\\s+charger"))) {
+            it = lines.insert(it, "    start mbtool-charger");
+            ++it;
+            *it = "    wait /.fstab.jgedlte.completed 15";
+        }
+
+        previousLine = *it;
+    }
+
+    lines.push_back("service mbtool-charger /mbtool mount_fstab /fstab.jgedlte");
+    lines.push_back("    class core");
+    lines.push_back("    critical");
+    lines.push_back("    oneshot");
+
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }
