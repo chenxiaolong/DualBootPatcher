@@ -1,5 +1,5 @@
-# Binary releases
-/dist/
+# Build directories
+/build*/
 
 # KDevelop
 .kdev_include_paths
@@ -13,18 +13,17 @@
 # Transifex
 /translations/
 
-# JNI
-/Android_GUI/jni-*/
-
 # Third party
-/thirdparty/*/
 /thirdparty/*.tar*
-/MultiBootPatcher/thirdparty/*.tar*
+
+# libdbp
+/libdbp/Android.mk
+
+# mbtool
+/mbtool/Android.mk
 
 # libloki
-/MultiBootPatcher/libloki/loki/
+/libloki/loki/
 
 # syncdaemon
-/MultiBootPatcher/syncdaemon/jsoncpp/
-/MultiBootPatcher/syncdaemon/libs/
-/MultiBootPatcher/syncdaemon/obj/
+/syncdaemon/jsoncpp/
