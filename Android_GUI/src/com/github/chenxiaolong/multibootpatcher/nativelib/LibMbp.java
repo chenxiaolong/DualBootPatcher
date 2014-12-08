@@ -2080,7 +2080,7 @@ public class LibMbp {
         }
 
         public void setRegexes(String[] regexes) {
-            log(mCPatchInfo, PatchInfo.class, "setRegexes", regexes);
+            log(mCPatchInfo, PatchInfo.class, "setRegexes", (Object) regexes);
             ensureNotNull(regexes);
 
             CWrapper.mbp_patchinfo_set_regexes(mCPatchInfo, new StringArray(regexes));
@@ -2093,7 +2093,7 @@ public class LibMbp {
         }
 
         public void setExcludeRegexes(String[] regexes) {
-            log(mCPatchInfo, PatchInfo.class, "setExcludeRegexes", regexes);
+            log(mCPatchInfo, PatchInfo.class, "setExcludeRegexes", (Object) regexes);
             ensureNotNull(regexes);
 
             CWrapper.mbp_patchinfo_set_exclude_regexes(mCPatchInfo, new StringArray(regexes));
@@ -2106,7 +2106,7 @@ public class LibMbp {
         }
 
         public void setCondRegexes(String[] regexes) {
-            log(mCPatchInfo, PatchInfo.class, "setCondRegexes", regexes);
+            log(mCPatchInfo, PatchInfo.class, "setCondRegexes", (Object) regexes);
             ensureNotNull(regexes);
 
             CWrapper.mbp_patchinfo_set_cond_regexes(mCPatchInfo, new StringArray(regexes));
