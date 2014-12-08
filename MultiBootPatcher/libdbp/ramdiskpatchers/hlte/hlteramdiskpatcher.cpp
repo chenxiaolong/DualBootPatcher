@@ -157,10 +157,5 @@ bool HlteTouchWizRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
     return true;
 }
