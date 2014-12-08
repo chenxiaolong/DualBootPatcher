@@ -35,10 +35,6 @@
 #include "config.h"
 #include "logging.h"
 
-#define GENERATED_FSTAB "fstab.gen"
-#define MOUNT_COMPLETED_FILE "/.mount_completed"
-#define MOUNT_FAILED_FILE "/.mount_failed"
-
 
 struct fstab
 {
@@ -449,6 +445,10 @@ static struct partconfig * find_partconfig()
 
 int mount_fstab(const char *fstab_path)
 {
+    static const char *fmt_fstab_gen = "/.%s.gen";
+    static const char *fmt_completed = "/.%s.completed";
+    static const char *fmt_failed = "/.%s.failed";
+
     struct fstab *fstab = NULL;
     FILE *out = NULL;
     struct fstab_rec *rec_system = NULL;
@@ -457,18 +457,43 @@ int mount_fstab(const char *fstab_path)
     struct fstab_rec *flags_system = NULL;
     struct fstab_rec *flags_cache = NULL;
     struct fstab_rec *flags_data = NULL;
+    char *path_gen = NULL;
+    char *path_completed = NULL;
+    char *path_failed = NULL;
+    int path_gen_len;
+    int path_completed_len;
+    int path_failed_len;
     struct stat st;
     int share_app = 0;
     int share_app_asec = 0;
 
+    // Build paths (len(fmt) - len(%s) + len(fstab) + len(\0))
+    path_gen_len = strlen(fmt_fstab_gen) - 2 + strlen(fstab_path) + 1;
+    path_completed_len = strlen(fmt_completed) - 2 + strlen(fstab_path) + 1;
+    path_failed_len = strlen(fmt_failed) - 2 + strlen(fstab_path) + 1;
+
+    path_gen = malloc(path_gen_len);
+    path_completed = malloc(path_completed_len);
+    path_failed = malloc(path_failed_len);
+
+    snprintf(path_gen, path_gen_len, fmt_fstab_gen, fstab_path);
+    snprintf(path_completed, path_completed_len, fmt_completed, fstab_path);
+    snprintf(path_failed, path_failed_len, fmt_failed, fstab_path);
+
     // This is a oneshot operation
-    if (stat(MOUNT_COMPLETED_FILE, &st) == 0) {
+    if (stat(path_completed, &st) == 0) {
         LOGV("Filesystems already successfully mounted");
+        free(path_gen);
+        free(path_completed);
+        free(path_failed);
         return 0;
     }
 
-    if (stat(MOUNT_FAILED_FILE, &st) == 0) {
+    if (stat(path_failed, &st) == 0) {
         LOGE("Failed to mount partitions ealier. No further attempts will be made");
+        free(path_gen);
+        free(path_completed);
+        free(path_failed);
         return -1;
     }
 
@@ -480,9 +505,9 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Generate new fstab without /system, /cache, or /data entries
-    out = fopen(GENERATED_FSTAB, "wb");
+    out = fopen(path_gen, "wb");
     if (!out) {
-        LOGE("Failed to open " GENERATED_FSTAB " for writing");
+        LOGE("Failed to open %s for writing", path_gen);
         goto error;
     }
 
@@ -611,7 +636,11 @@ int mount_fstab(const char *fstab_path)
 
     free_fstab(fstab);
 
-    create_file(MOUNT_COMPLETED_FILE);
+    create_file(path_completed);
+
+    free(path_gen);
+    free(path_completed);
+    free(path_failed);
 
     LOGI("Successfully mounted partitions");
 
@@ -622,7 +651,11 @@ error:
         free_fstab(fstab);
     }
 
-    create_file(MOUNT_FAILED_FILE);
+    create_file(path_failed);
+
+    free(path_gen);
+    free(path_completed);
+    free(path_failed);
 
     return -1;
 }
@@ -634,8 +667,8 @@ static void mount_fstab_usage(int error)
     fprintf(stream,
             "Usage: mount_fstab [fstab file]\n\n"
             "This takes only one argument, the path to the fstab file. If the\n"
-            "mounting succeeds, the generated " GENERATED_FSTAB " file should be passed\n"
-            "to the Android init's mount_all command.\n");
+            "mounting succeeds, the generated \"/.<orig fstab>.gen\" file should\n"
+            "be passed to the Android init's mount_all command.\n");
 }
 
 int mount_fstab_main(int argc, char *argv[])
