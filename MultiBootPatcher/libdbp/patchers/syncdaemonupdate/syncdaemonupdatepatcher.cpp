@@ -313,7 +313,7 @@ std::string SyncdaemonUpdatePatcher::Impl::findPartConfigId(const CpioFile * con
             if (boost::starts_with(line, "TARGET_DATA=")) {
                 MBP_smatch what;
 
-                if (MBP_regex_search(line, MBP_regex("/raw-data/([^/\"]+)"))) {
+                if (MBP_regex_search(line, what, MBP_regex("/raw-data/([^/\"]+)"))) {
                     return what[1];
                 }
             }
