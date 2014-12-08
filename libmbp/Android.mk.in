@@ -48,6 +48,7 @@ LOCAL_CFLAGS := -Wall -Wextra -pedantic
 LOCAL_CFLAGS += -pie
 LOCAL_CFLAGS += -Wl,--no-undefined
 LOCAL_CFLAGS += -fexceptions -frtti
+LOCAL_CFLAGS += -fvisibility=hidden
 # Boost has some unused typedefs
 LOCAL_CFLAGS += -Wno-error=unused-local-typedefs -Wno-unused-local-typedefs
 # There are some '/*' in doxygen comment blocks
