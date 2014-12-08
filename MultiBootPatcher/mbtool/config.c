@@ -107,6 +107,10 @@ int mainconfig_init()
 
     LOGV("Successfully loaded configuration file (version %d)", version);
 
+    if (root) {
+        json_decref(root);
+    }
+
     return 0;
 
 error:
