@@ -3,12 +3,12 @@ include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
 ExternalProject_Add(
     libmountpoint
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/libmountpoint
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/libmountpoint/out/
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
     BUILD_COMMAND ${NDK_BUILD}
                   -C <SOURCE_DIR>
                   -j${PROCESSOR_COUNT}
-                  NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmountpoint/out
+                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
                   NDK_OUT=<TMP_DIR>
                   ${NDK_ARGS}
     INSTALL_COMMAND ""

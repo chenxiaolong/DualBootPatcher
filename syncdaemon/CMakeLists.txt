@@ -18,18 +18,16 @@ include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 ExternalProject_Add(
     syncdaemon
 #    DEPENDS jsoncpp
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/syncdaemon
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/syncdaemon/out/
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
     BUILD_COMMAND ${NDK_BUILD}
                   -C <SOURCE_DIR>
                   -j${PROCESSOR_COUNT}
                   NDK_PROJECT_PATH=.
                   NDK_APPLICATION_MK=Application.mk
-                  NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/syncdaemon/out
+                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
                   NDK_OUT=<TMP_DIR>
                   SYNCDAEMON_VERSION=${MBP_VERSION}
-                  # Only armv7 is supported at the moment
-                  APP_ABI=armeabi-v7a
                   ${NDK_ARGS}
     INSTALL_COMMAND ""
 )
@@ -45,7 +43,7 @@ ExternalProject_Add_Step(
 )
 
 install(
-    DIRECTORY ${CMAKE_BINARY_DIR}/syncdaemon/out/
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out/
     DESTINATION ${DATA_INSTALL_DIR}/binaries/android
     COMPONENT Libraries
 )

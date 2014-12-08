@@ -4,7 +4,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    #${CMAKE_CURRENT_BINARY_DIR}/Android.mk
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk
     @ONLY
 )
@@ -35,7 +34,7 @@ ExternalProject_Add_Step(
 )
 
 install(
-    DIRECTORY ${CMAKE_BINARY_DIR}/mbtool/out/
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out/
     DESTINATION ${DATA_INSTALL_DIR}/binaries/android
     COMPONENT Libraries
 )

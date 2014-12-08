@@ -101,19 +101,17 @@ if(BUILD_ANDROID)
 
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-        #${CMAKE_CURRENT_BINARY_DIR}/Android.mk
         ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk
         @ONLY
     )
 
     ExternalProject_Add(
         mbp
-        SOURCE_DIR ${CMAKE_SOURCE_DIR}/libmbp
-        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/libmbp/out/
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
         BUILD_COMMAND ${NDK_BUILD}
                       -C <SOURCE_DIR>
                       -j${PROCESSOR_COUNT}
-                      #APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
                       NDK_PROJECT_PATH=.
                       NDK_APPLICATION_MK=Application.mk
                       NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmbp/out

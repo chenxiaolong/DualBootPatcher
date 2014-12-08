@@ -110,7 +110,11 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            jniLibs.srcDirs = ['cmakelibs']
+            jniLibs.srcDirs = [
+                '@CMAKE_BINARY_DIR@/libmbp/out/',
+                '@CMAKE_BINARY_DIR@/libloki/out/',
+                '@CMAKE_BINARY_DIR@/libmountpoint/out/'
+            ]
         }
 
         debug {
