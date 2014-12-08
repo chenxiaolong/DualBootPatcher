@@ -261,64 +261,24 @@ bool JflteTouchWizRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.modifyInitRc()) {
+    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!galaxyPatcher.twModifyInitRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitQcomRc()) {
+    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
 
-    if (!qcomPatcher.modifyFstab()) {
+    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.modifyInitTargetRc()) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.twModifyInitTargetRc()) {
-        m_impl->error = galaxyPatcher.error();
         return false;
     }
 
     if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
         m_impl->error = galaxyPatcher.error();
         return false;
-    }
-
-    if (!galaxyPatcher.twModifyUeventdRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.twModifyUeventdQcomRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
-
-    std::string mountScript(m_impl->pc->scriptsDirectory()
-            + "/jflte/mount.modem.sh");
-    m_impl->cpio->addFile(mountScript, "init.additional.sh", 0755);
-
-    // Samsung's init binary is pretty screwed up
-    if (m_impl->getwVersion == GalaxyRamdiskPatcher::KitKat) {
-        m_impl->cpio->remove("init");
-
-        std::string newInit(m_impl->pc->initsDirectory() + "/jflte/tw44-init");
-        m_impl->cpio->addFile(newInit, "init", 0755);
-
-        std::string newAdbd(m_impl->pc->initsDirectory() + "/jflte/tw44-adbd");
-        m_impl->cpio->addFile(newAdbd, "sbin/adbd", 0755);
     }
 
     return true;
