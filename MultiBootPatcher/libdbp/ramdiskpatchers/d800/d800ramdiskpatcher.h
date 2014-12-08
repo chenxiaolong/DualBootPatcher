@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef D800RAMDISKPATCHER_H
-#define D800RAMDISKPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -47,5 +46,3 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
-
-#endif // D800RAMDISKPATCHER_H

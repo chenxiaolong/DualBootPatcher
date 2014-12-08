@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FILEUTILS_H
-#define FILEUTILS_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -60,5 +59,3 @@ public:
                                      unsigned int *count,
                                      std::vector<std::string> ignore = std::vector<std::string>());
 };
-
-#endif // FILEUTILS_H

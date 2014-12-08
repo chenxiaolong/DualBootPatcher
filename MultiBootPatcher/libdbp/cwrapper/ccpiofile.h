@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_CPIOFILE_H
-#define C_CPIOFILE_H
+#pragma once
 
 #include <stddef.h>
 
@@ -65,5 +64,3 @@ int mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_CPIOFILE_H

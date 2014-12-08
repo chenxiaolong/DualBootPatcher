@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PATCHERERROR_H
-#define PATCHERERROR_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -61,5 +60,3 @@ private:
     class Impl;
     std::shared_ptr<Impl> m_impl;
 };
-
-#endif // PATCHERERROR_H

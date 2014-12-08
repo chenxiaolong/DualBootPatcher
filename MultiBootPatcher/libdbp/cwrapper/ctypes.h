@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_TYPES_H
-#define C_TYPES_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,5 +60,3 @@ typedef struct CRamdiskPatcher CRamdiskPatcher;
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_TYPES_H

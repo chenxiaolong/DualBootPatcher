@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KLTERAMDISKPATCHER_H
-#define KLTERAMDISKPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -75,5 +74,3 @@ public:
 
     virtual bool patchRamdisk() override;
 };
-
-#endif // KLTERAMDISKPATCHER_H

@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SYNCDAEMONUPDATEPATCHER_H
-#define SYNCDAEMONUPDATEPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -62,5 +61,3 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
-
-#endif // SYNCDAEMONUPDATEPATCHER_H

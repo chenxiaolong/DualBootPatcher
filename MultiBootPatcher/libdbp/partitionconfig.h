@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PARTITIONCONFIG_H
-#define PARTITIONCONFIG_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -73,5 +72,3 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
-
-#endif // PARTITIONCONFIG_H

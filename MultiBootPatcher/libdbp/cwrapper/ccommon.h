@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_COMMON_H
-#define C_COMMON_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,5 +28,3 @@ void mbp_free_array(void **array);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_COMMON_H

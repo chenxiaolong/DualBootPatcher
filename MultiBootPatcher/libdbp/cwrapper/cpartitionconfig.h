@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_PARTITIONCONFIG_H
-#define C_PARTITIONCONFIG_H
+#pragma once
 
 #include <stddef.h>
 
@@ -77,5 +76,3 @@ bool mbp_partconfig_replace_shell_line(const CPartConfig *config,
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_PARTITIONCONFIG_H

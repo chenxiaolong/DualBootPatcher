@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef JFLTEPATCHER_H
-#define JFLTEPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -173,5 +172,3 @@ public:
     virtual bool patchFiles(const std::string &directory,
                             const std::vector<std::string> &bootImages) override;
 };
-
-#endif // JFLTEPATCHER_H

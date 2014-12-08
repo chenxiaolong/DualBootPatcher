@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_PATCHERERROR_H
-#define C_PATCHERERROR_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 #include "errors.h"
@@ -40,5 +39,3 @@ char * mbp_error_filename(const CPatcherError *error);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_PATCHERERROR_H

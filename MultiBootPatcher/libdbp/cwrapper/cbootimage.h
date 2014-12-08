@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_BOOTIMAGE_H
-#define C_BOOTIMAGE_H
+#pragma once
 
 #include <stddef.h>
 
@@ -109,5 +108,3 @@ void mbp_bootimage_set_device_tree_image(CBootImage *bootImage,
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_BOOTIMAGE_H

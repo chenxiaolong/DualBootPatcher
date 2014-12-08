@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBDBP_GLOBAL_H
-#define LIBDBP_GLOBAL_H
+#pragma once
 
 #ifdef _WIN32
 #  if defined(LIBDBP_LIBRARY)
@@ -43,5 +42,3 @@
 #ifdef _MSC_VER
 #  define strdup _strdup
 #endif
-
-#endif // LIBDBP_GLOBAL_H

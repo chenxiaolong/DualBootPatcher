@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PATCHERINTERFACE_H
-#define PATCHERINTERFACE_H
+#pragma once
 
 #include "libdbp_global.h"
 
@@ -197,5 +196,3 @@ public:
      */
     virtual bool patchRamdisk() = 0;
 };
-
-#endif // PATCHERINTERFACE_H

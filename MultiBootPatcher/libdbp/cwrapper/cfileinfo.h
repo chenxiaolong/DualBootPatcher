@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_FILEINFO_H
-#define C_FILEINFO_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 
@@ -44,5 +43,3 @@ void mbp_fileinfo_set_partconfig(CFileInfo *info, CPartConfig *config);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_FILEINFO_H

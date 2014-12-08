@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MULTIBOOTPATCHER_H
-#define MULTIBOOTPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -63,5 +62,3 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
-
-#endif // MULTIBOOTPATCHER_H

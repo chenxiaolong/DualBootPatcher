@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BOOTIMAGE_H
-#define BOOTIMAGE_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -94,5 +93,3 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
-
-#endif // BOOTIMAGE_H

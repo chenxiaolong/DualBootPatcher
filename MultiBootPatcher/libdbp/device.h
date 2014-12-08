@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DEVICE_H
-#define DEVICE_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -54,5 +53,3 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
-
-#endif // DEVICE_H

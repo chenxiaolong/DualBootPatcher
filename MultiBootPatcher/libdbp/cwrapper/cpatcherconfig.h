@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_PATCHERCONFIG_H
-#define C_PATCHERCONFIG_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 
@@ -86,5 +85,3 @@ bool mbp_config_load_patchinfos(CPatcherConfig *pc);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_PATCHERCONFIG_H

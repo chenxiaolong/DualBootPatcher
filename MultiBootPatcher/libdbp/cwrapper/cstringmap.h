@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_STRINGMAP_H
-#define C_STRINGMAP_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 
@@ -38,5 +37,3 @@ void mbp_stringmap_clear(CStringMap *map);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_STRINGMAP_H

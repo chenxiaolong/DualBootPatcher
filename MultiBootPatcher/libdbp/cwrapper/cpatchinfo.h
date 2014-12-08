@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_PATCHINFO_H
-#define C_PATCHINFO_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 
@@ -95,5 +94,3 @@ void mbp_patchinfo_set_supported_configs(CPatchInfo *info,
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_FILEINFO_H

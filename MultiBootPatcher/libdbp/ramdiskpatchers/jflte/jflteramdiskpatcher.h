@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef JFLTERAMDISKPATCHER_H
-#define JFLTERAMDISKPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -93,5 +92,3 @@ public:
 
     virtual bool patchRamdisk() override;
 };
-
-#endif // JFLTERAMDISKPATCHER_H

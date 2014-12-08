@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HAMMERHEADRAMDISKPATCHER_H
-#define HAMMERHEADRAMDISKPATCHER_H
+#pragma once
 
 #include <memory>
 
@@ -60,5 +59,3 @@ public:
 
     virtual bool patchRamdisk() override;
 };
-
-#endif // HAMMERHEADRAMDISKPATCHER_H

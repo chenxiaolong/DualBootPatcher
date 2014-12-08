@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MBP_REGEX_H
-#define MBP_REGEX_H
+#pragma once
 
 #ifdef USE_BOOST_REGEX
 
@@ -39,5 +38,3 @@
 #define MBP_smatch std::smatch
 
 #endif
-
-#endif // MBP_REGEX_H

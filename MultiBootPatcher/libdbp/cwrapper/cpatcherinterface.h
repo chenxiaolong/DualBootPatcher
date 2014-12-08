@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_PATCHERINTERFACE_H
-#define C_PATCHERINTERFACE_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 
@@ -62,5 +61,3 @@ int mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_PATCHERINTERFACE_H

@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LOGGING_H
-#define LOGGING_H
+#pragma once
 
 #include <cassert>
 
@@ -132,5 +131,3 @@ private:
     Log(const Log &) = delete;
     Log(Log &&) = delete;
 };
-
-#endif // LOGGING_H

@@ -17,8 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef C_DEVICE_H
-#define C_DEVICE_H
+#pragma once
 
 #include "cwrapper/ctypes.h"
 
@@ -55,5 +54,3 @@ char ** mbp_device_partition_types(const CDevice *device);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // C_DEVICE_H
