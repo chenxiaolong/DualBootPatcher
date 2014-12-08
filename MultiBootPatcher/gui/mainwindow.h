@@ -56,7 +56,6 @@ private slots:
     // Unsupported files
     void onPresetSelected(const QString &preset);
     void onHasBootImageToggled();
-    void onPatchedInitToggled();
 
     // Progress
     void onMaxProgressUpdated(int max);

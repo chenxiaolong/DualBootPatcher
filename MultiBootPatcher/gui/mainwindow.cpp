@@ -191,8 +191,6 @@ void MainWindow::onHasBootImageToggled()
         for (QWidget *widget : d->bootImageWidgets) {
             widget->setEnabled(true);
         }
-
-        onPatchedInitToggled();
     } else {
         for (QWidget *widget : d->bootImageWidgets) {
             widget->setEnabled(false);
@@ -200,14 +198,6 @@ void MainWindow::onHasBootImageToggled()
     }
 
     updateBootImageTextBox();
-}
-
-void MainWindow::onPatchedInitToggled()
-{
-    Q_D(MainWindow);
-
-    d->initFileLbl->setEnabled(d->patchedInitCb->isChecked());
-    d->initFileSel->setEnabled(d->patchedInitCb->isChecked());
 }
 
 void MainWindow::onMaxProgressUpdated(int max)
@@ -291,10 +281,6 @@ void MainWindow::addWidgets()
     d->bootImageLbl = new QLabel(tr("Boot image"), d->mainContainer);
     d->bootImageLe = new QLineEdit(d->mainContainer);
     d->bootImageLe->setPlaceholderText(tr("Leave blank to autodetect"));
-    d->patchedInitLbl = new QLabel(tr("Needs patched init"), d->mainContainer);
-    d->patchedInitCb = new QCheckBox(d->mainContainer);
-    d->initFileLbl = new QLabel(tr("Init file"), d->mainContainer);
-    d->initFileSel = new QComboBox(d->mainContainer);
     d->ramdiskLbl = new QLabel(tr("Ramdisk"), d->mainContainer);
     d->ramdiskSel = new QComboBox(d->mainContainer);
 
@@ -310,7 +296,6 @@ void MainWindow::addWidgets()
     QWidget *horiz1 = newHorizLine(d->mainContainer);
     QWidget *horiz2 = newHorizLine(d->mainContainer);
     QWidget *horiz3 = newHorizLine(d->mainContainer);
-    QWidget *horiz4 = newHorizLine(d->mainContainer);
 
     layout->setColumnStretch(0, 0);
     layout->setColumnStretch(1, 0);
@@ -331,11 +316,6 @@ void MainWindow::addWidgets()
     layout->addWidget(d->hasBootImageCb,    i, 1, 1,  1);
     layout->addWidget(d->bootImageLbl,      i, 2, 1,  1);
     layout->addWidget(d->bootImageLe,       i, 3, 1, -1);
-    layout->addWidget(horiz4,             ++i, 0, 1, -1);
-    layout->addWidget(d->patchedInitLbl,  ++i, 0, 1,  1);
-    layout->addWidget(d->patchedInitCb,     i, 1, 1,  1);
-    layout->addWidget(d->initFileLbl,       i, 2, 1,  1);
-    layout->addWidget(d->initFileSel,       i, 3, 1, -1);
     layout->addWidget(d->ramdiskLbl,      ++i, 2, 1,  1);
     layout->addWidget(d->ramdiskSel,        i, 3, 1, -1);
 
@@ -354,7 +334,6 @@ void MainWindow::addWidgets()
     // List of unsupported widgets
     d->unsupportedWidgets << horiz2;
     d->unsupportedWidgets << horiz3;
-    d->unsupportedWidgets << horiz4;
     d->unsupportedWidgets << d->presetLbl;
     d->unsupportedWidgets << d->presetSel;
     d->unsupportedWidgets << d->autoPatcherLbl;
@@ -365,10 +344,6 @@ void MainWindow::addWidgets()
     d->unsupportedWidgets << d->hasBootImageCb;
     d->unsupportedWidgets << d->bootImageLbl;
     d->unsupportedWidgets << d->bootImageLe;
-    d->unsupportedWidgets << d->patchedInitLbl;
-    d->unsupportedWidgets << d->patchedInitCb;
-    d->unsupportedWidgets << d->initFileLbl;
-    d->unsupportedWidgets << d->initFileSel;
     d->unsupportedWidgets << d->ramdiskLbl;
     d->unsupportedWidgets << d->ramdiskSel;
 
@@ -381,20 +356,12 @@ void MainWindow::addWidgets()
     d->customPresetWidgets << d->hasBootImageCb;
     d->customPresetWidgets << d->bootImageLbl;
     d->customPresetWidgets << d->bootImageLe;
-    d->customPresetWidgets << d->patchedInitLbl;
-    d->customPresetWidgets << d->patchedInitCb;
-    d->customPresetWidgets << d->initFileLbl;
-    d->customPresetWidgets << d->initFileSel;
     d->customPresetWidgets << d->ramdiskLbl;
     d->customPresetWidgets << d->ramdiskSel;
 
     // List of boot image-related widgets
     d->bootImageWidgets << d->bootImageLbl;
     d->bootImageWidgets << d->bootImageLe;
-    d->bootImageWidgets << d->patchedInitLbl;
-    d->bootImageWidgets << d->patchedInitCb;
-    d->bootImageWidgets << d->initFileLbl;
-    d->bootImageWidgets << d->initFileSel;
     d->bootImageWidgets << d->ramdiskLbl;
     d->bootImageWidgets << d->ramdiskSel;
 
@@ -467,10 +434,6 @@ void MainWindow::setWidgetActions()
     // Has boot image checkbox
     connect(d->hasBootImageCb, &QCheckBox::toggled,
             this, &MainWindow::onHasBootImageToggled);
-
-    // Needs patched init checkbox
-    connect(d->patchedInitCb, &QCheckBox::toggled,
-            this, &MainWindow::onPatchedInitToggled);
 }
 
 bool sortByPatchInfoId(PatchInfo *pi1, PatchInfo *pi2)
@@ -499,11 +462,6 @@ void MainWindow::populateWidgets()
     patcherNames.sort();
     d->patcherSel->addItems(patcherNames);
 
-    // Populate init binaries
-    for (auto const &initBinary : d->pc->initBinaries()) {
-        d->initFileSel->addItem(QString::fromStdString(initBinary));
-    }
-
     // Populate autopatchers
     QStringList autoPatchers;
     for (auto const &id : d->pc->autoPatchers()) {
@@ -526,10 +484,6 @@ void MainWindow::setWidgetDefaults()
     // Assume boot image exists
     d->hasBootImageCb->setChecked(true);
     onHasBootImageToggled();
-
-    // No patched init binary
-    d->patchedInitCb->setChecked(false);
-    onPatchedInitToggled();
 
     resetAutoPatchers();
 }
@@ -783,11 +737,6 @@ void MainWindow::startPatching()
                     std::vector<std::string> bootImages;
                     boost::split(bootImages, textStdString, boost::is_any_of(","));
                     d->patchInfo->setBootImages(PatchInfo::Default, bootImages);
-                }
-
-                if (d->patchedInitCb->isChecked()) {
-                    d->patchInfo->setPatchedInit(PatchInfo::Default,
-                                                 d->initFileSel->currentText().toStdString());
                 }
             }
 

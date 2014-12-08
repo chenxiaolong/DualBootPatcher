@@ -120,10 +120,6 @@ public:
     QCheckBox *hasBootImageCb;
     QLabel *bootImageLbl;
     QLineEdit *bootImageLe;
-    QLabel *patchedInitLbl;
-    QCheckBox *patchedInitCb;
-    QLabel *initFileLbl;
-    QComboBox *initFileSel;
     QLabel *ramdiskLbl;
     QComboBox *ramdiskSel;
 
