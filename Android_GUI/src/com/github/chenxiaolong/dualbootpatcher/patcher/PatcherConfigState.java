@@ -50,7 +50,6 @@ public class PatcherConfigState implements Parcelable {
         out.writeParcelable(mPatchInfo, 0);
         out.writeString(mAutoPatcherId);
         out.writeString(mRamdiskId);
-        out.writeString(mPatchedInit);
         out.writeString(mPatcherNewFile);
         out.writeInt(mPatcherFailed ? 1 : 0);
         out.writeString(mPatcherError);
@@ -70,7 +69,6 @@ public class PatcherConfigState implements Parcelable {
         mPatchInfo = in.readParcelable(PatchInfo.class.getClassLoader());
         mAutoPatcherId = in.readString();
         mRamdiskId = in.readString();
-        mPatchedInit = in.readString();
         mPatcherNewFile = in.readString();
         mPatcherFailed = in.readInt() != 0;
         mPatcherError = in.readString();
@@ -209,8 +207,6 @@ public class PatcherConfigState implements Parcelable {
     public String mAutoPatcherId;
     // Selected ramdisk patcher
     public String mRamdiskId;
-    // Selected patched init binary
-    public String mPatchedInit;
 
     public String mPatcherNewFile;
     public boolean mPatcherFailed;

@@ -42,8 +42,6 @@ public class CustomOptsCard extends Card {
         public void onAutoPatcherSelected(String autoPatcherId);
 
         public void onRamdiskSelected(String ramdisk);
-
-        public void onPatchedInitSelected(String init);
     }
 
     private PatcherConfigState mPCS;
@@ -57,9 +55,6 @@ public class CustomOptsCard extends Card {
     private TextView mRamdiskTitle;
     private ArrayAdapter<String> mRamdiskAdapter;
     private Spinner mRamdiskSpinner;
-    private TextView mInitTitle;
-    private ArrayAdapter<String> mInitAdapter;
-    private Spinner mInitSpinner;
     private TextView mBootImageTitle;
     private EditText mBootImageText;
 
@@ -90,10 +85,6 @@ public class CustomOptsCard extends Card {
             mRamdiskTitle = (TextView) view
                     .findViewById(R.id.customopts_ramdisk);
             mRamdiskSpinner = (Spinner) view.findViewById(R.id.spinner_ramdisk);
-            mInitTitle = (TextView) view
-                    .findViewById(R.id.customopts_patchedinit);
-            mInitSpinner = (Spinner) view
-                    .findViewById(R.id.spinner_patchedinit);
             mBootImageTitle = (TextView) view
                     .findViewById(R.id.customopts_bootimage_title);
             mBootImageText = (EditText) view
@@ -165,29 +156,6 @@ public class CustomOptsCard extends Card {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-
-        mInitAdapter = new ArrayAdapter<String>(getContext(),
-                android.R.layout.simple_spinner_item, android.R.id.text1);
-        mInitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mInitSpinner.setAdapter(mInitAdapter);
-
-        mInitSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int positions, long id) {
-                if (mListener != null) {
-                    int position = mInitSpinner.getSelectedItemPosition();
-                    if (position == 0) {
-                        mListener.onPatchedInitSelected(null);
-                    } else {
-                        mListener.onPatchedInitSelected(mInitSpinner.getSelectedItem().toString());
-                    }
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
     }
 
     public void refreshAutoPatchers() {
@@ -212,13 +180,6 @@ public class CustomOptsCard extends Card {
         mRamdiskAdapter.notifyDataSetChanged();
     }
 
-    public void refreshInits() {
-        // Default to no patched init
-        mInitAdapter.add(getContext().getString(R.string.none));
-        mInitAdapter.addAll(PatcherUtils.sPC.getInitBinaries());
-        mInitAdapter.notifyDataSetChanged();
-    }
-
     private void updateViews() {
         if (mUsingPreset || mDisable) {
             mTitle.setEnabled(false);
@@ -227,8 +188,6 @@ public class CustomOptsCard extends Card {
             mHasBootImageBox.setEnabled(false);
             mRamdiskTitle.setEnabled(false);
             mRamdiskSpinner.setEnabled(false);
-            mInitTitle.setEnabled(false);
-            mInitSpinner.setEnabled(false);
             mBootImageTitle.setEnabled(false);
             mBootImageText.setEnabled(false);
             return;
@@ -239,8 +198,6 @@ public class CustomOptsCard extends Card {
             mHasBootImageBox.setEnabled(true);
             mRamdiskTitle.setEnabled(true);
             mRamdiskSpinner.setEnabled(true);
-            mInitTitle.setEnabled(true);
-            mInitSpinner.setEnabled(true);
             mBootImageTitle.setEnabled(true);
             mBootImageText.setEnabled(true);
         }
@@ -248,15 +205,11 @@ public class CustomOptsCard extends Card {
         if (mHasBootImageBox.isChecked()) {
             mRamdiskTitle.setEnabled(true);
             mRamdiskSpinner.setEnabled(true);
-            mInitTitle.setEnabled(true);
-            mInitSpinner.setEnabled(true);
             mBootImageTitle.setEnabled(true);
             mBootImageText.setEnabled(true);
         } else {
             mRamdiskTitle.setEnabled(false);
             mRamdiskSpinner.setEnabled(false);
-            mInitTitle.setEnabled(false);
-            mInitSpinner.setEnabled(false);
             mBootImageTitle.setEnabled(false);
             mBootImageText.setEnabled(false);
         }
@@ -294,7 +247,6 @@ public class CustomOptsCard extends Card {
         mDeviceCheckBox.setChecked(false);
         mHasBootImageBox.setChecked(true);
         mRamdiskSpinner.setSelection(0);
-        mInitSpinner.setSelection(0);
         mBootImageText.setText("");
     }
 

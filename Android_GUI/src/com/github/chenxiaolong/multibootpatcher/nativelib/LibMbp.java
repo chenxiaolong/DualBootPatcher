@@ -187,14 +187,12 @@ public class LibMbp {
         static native CPatcherError mbp_config_error(CPatcherConfig pc);
         static native Pointer mbp_config_binaries_directory(CPatcherConfig pc);
         static native Pointer mbp_config_data_directory(CPatcherConfig pc);
-        static native Pointer mbp_config_inits_directory(CPatcherConfig pc);
         static native Pointer mbp_config_patches_directory(CPatcherConfig pc);
         static native Pointer mbp_config_patchinfos_directory(CPatcherConfig pc);
         static native Pointer mbp_config_scripts_directory(CPatcherConfig pc);
         static native Pointer mbp_config_temp_directory(CPatcherConfig pc);
         static native void mbp_config_set_binaries_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_data_directory(CPatcherConfig pc, String path);
-        static native void mbp_config_set_inits_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_patches_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_patchinfos_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_scripts_directory(CPatcherConfig pc, String path);
@@ -215,7 +213,6 @@ public class LibMbp {
         static native void mbp_config_destroy_autopatcher(CPatcherConfig pc, CAutoPatcher patcher);
         static native void mbp_config_destroy_ramdisk_patcher(CPatcherConfig pc, CRamdiskPatcher patcher);
         static native Pointer mbp_config_partitionconfigs(CPatcherConfig pc);
-        static native Pointer mbp_config_init_binaries(CPatcherConfig pc);
         static native boolean mbp_config_load_patchinfos(CPatcherConfig pc);
         // END: cpatcherconfig.h
 
@@ -257,8 +254,6 @@ public class LibMbp {
         static native void mbp_patchinfo_set_boot_images(CPatchInfo info, String key, StringArray bootImages);
         static native Pointer mbp_patchinfo_ramdisk(CPatchInfo info, String key);
         static native void mbp_patchinfo_set_ramdisk(CPatchInfo info, String key, String ramdisk);
-        static native Pointer mbp_patchinfo_patched_init(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_patched_init(CPatchInfo info, String key, String init);
         static native boolean mbp_patchinfo_device_check(CPatchInfo info, String key);
         static native void mbp_patchinfo_set_device_check(CPatchInfo info, String key, boolean deviceCheck);
         static native Pointer mbp_patchinfo_supported_configs(CPatchInfo info, String key);
@@ -1574,12 +1569,6 @@ public class LibMbp {
             return getStringAndFree(p);
         }
 
-        public String getInitsDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getInitsDirectory");
-            Pointer p = CWrapper.mbp_config_inits_directory(mCPatcherConfig);
-            return getStringAndFree(p);
-        }
-
         public String getPatchesDirectory() {
             log(mCPatcherConfig, PatcherConfig.class, "getPatchesDirectory");
             Pointer p = CWrapper.mbp_config_patches_directory(mCPatcherConfig);
@@ -1616,13 +1605,6 @@ public class LibMbp {
             ensureNotNull(path);
 
             CWrapper.mbp_config_set_data_directory(mCPatcherConfig, path);
-        }
-
-        public void setInitsDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setInitsDirectory", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_config_set_inits_directory(mCPatcherConfig, path);
         }
 
         public void setPatchesDirectory(String path) {
@@ -1811,12 +1793,6 @@ public class LibMbp {
             }
 
             return configs;
-        }
-
-        public String[] getInitBinaries() {
-            log(mCPatcherConfig, PatcherConfig.class, "getInitBinaries");
-            Pointer p = CWrapper.mbp_config_init_binaries(mCPatcherConfig);
-            return getStringArrayAndFree(p);
         }
 
         public boolean loadPatchInfos() {
@@ -2242,22 +2218,6 @@ public class LibMbp {
             ensureNotNull(ramdisk);
 
             CWrapper.mbp_patchinfo_set_ramdisk(mCPatchInfo, key, ramdisk);
-        }
-
-        public String getPatchedInit(String key) {
-            log(mCPatchInfo, PatchInfo.class, "getPatchedInit", key);
-            ensureNotNull(key);
-
-            Pointer p = CWrapper.mbp_patchinfo_patched_init(mCPatchInfo, key);
-            return getStringAndFree(p);
-        }
-
-        public void setPatchedInit(String key, String init) {
-            log(mCPatchInfo, PatchInfo.class, "setPatchedInit", key, init);
-            ensureNotNull(key);
-            ensureNotNull(init);
-
-            CWrapper.mbp_patchinfo_set_patched_init(mCPatchInfo, key, init);
         }
 
         public boolean deviceCheck(String key) {

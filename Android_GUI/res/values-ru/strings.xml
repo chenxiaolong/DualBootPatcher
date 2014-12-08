@@ -123,8 +123,6 @@
   <string name="customopts_hasbootimage">Образ загрузочного диска присытствует</string>
   <!--Name for the ramdisks combobox-->
   <string name="customopts_ramdisk">Виртуальный диск</string>
-  <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">Прошитый инициатор</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Образ загрузочного диска</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->

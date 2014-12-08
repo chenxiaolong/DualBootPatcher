@@ -307,7 +307,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         mCustomOptsCard.refreshAutoPatchers();
         mCustomOptsCard.refreshRamdisks();
-        mCustomOptsCard.refreshInits();
 
         mPresetCard.refreshPresets();
 
@@ -345,11 +344,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                     if (bootImagesText != null) {
                         String[] bootImages = bootImagesText.split(",");
                         mPCS.mPatchInfo.setBootImages(PatchInfo.Default(), bootImages);
-                    }
-
-                    String patchedInit = mPCS.mPatchedInit;
-                    if (patchedInit != null) {
-                        mPCS.mPatchInfo.setPatchedInit(PatchInfo.Default(), patchedInit);
                     }
                 }
 
@@ -525,11 +519,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public void onRamdiskSelected(String ramdisk) {
         mPCS.mRamdiskId = ramdisk;
-    }
-
-    @Override
-    public void onPatchedInitSelected(String init) {
-        mPCS.mPatchedInit = init;
     }
 
     @Override

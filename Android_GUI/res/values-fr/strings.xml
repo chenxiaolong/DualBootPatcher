@@ -123,8 +123,6 @@
   <string name="customopts_hasbootimage">A une image boot</string>
   <!--Name for the ramdisks combobox-->
   <string name="customopts_ramdisk">Disque virtuel</string>
-  <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">init patché</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Image boot</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->

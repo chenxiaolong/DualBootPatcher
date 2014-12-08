@@ -123,8 +123,6 @@
   <string name="customopts_hasbootimage">È presente un kernel</string>
   <!--Name for the ramdisks combobox-->
   <string name="customopts_ramdisk">Ramdisk</string>
-  <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">Init patchato</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Kernel</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
