@@ -291,10 +291,13 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
     // Write header to new file
     if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
         Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
+        archive_entry_free(entry);
 
         return PatcherError::createArchiveError(
                 MBP::ErrorCode::ArchiveWriteHeaderError, name);
     }
+
+    archive_entry_free(entry);
 
     // Write data to file
     char buf[32768];
