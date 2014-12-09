@@ -25,7 +25,6 @@
 #include <stdio.h>
 #endif
 
-#include <fstream>
 #include <unordered_map>
 
 #include <boost/algorithm/string/classification.hpp>
