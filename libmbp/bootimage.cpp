@@ -834,7 +834,7 @@ bool BootImage::extract(const std::string &directory, const std::string &prefix)
 
     // Write kernel image
     std::ofstream fileKernel(pathPrefix + "-zImage", std::ios::binary);
-    fileKernel.write(reinterpret_cast<char *>(&m_impl->kernelImage),
+    fileKernel.write(reinterpret_cast<char *>(m_impl->kernelImage.data()),
                      m_impl->kernelImage.size());
     fileKernel.close();
 
@@ -847,14 +847,14 @@ bool BootImage::extract(const std::string &directory, const std::string &prefix)
     }
 
     std::ofstream fileRamdisk(ramdiskFilename, std::ios::binary);
-    fileRamdisk.write(reinterpret_cast<char *>(&m_impl->ramdiskImage),
+    fileRamdisk.write(reinterpret_cast<char *>(m_impl->ramdiskImage.data()),
                       m_impl->ramdiskImage.size());
     fileRamdisk.close();
 
     // Write second bootloader image
     if (!m_impl->secondBootloaderImage.empty()) {
         std::ofstream fileSecond(pathPrefix + "-second", std::ios::binary);
-        fileSecond.write(reinterpret_cast<char *>(&m_impl->secondBootloaderImage),
+        fileSecond.write(reinterpret_cast<char *>(m_impl->secondBootloaderImage.data()),
                          m_impl->secondBootloaderImage.size());
         fileSecond.close();
     }
@@ -862,7 +862,7 @@ bool BootImage::extract(const std::string &directory, const std::string &prefix)
     // Write device tree image
     if (!m_impl->deviceTreeImage.empty()) {
         std::ofstream fileDt(pathPrefix + "-dt", std::ios::binary);
-        fileDt.write(reinterpret_cast<char *>(&m_impl->deviceTreeImage),
+        fileDt.write(reinterpret_cast<char *>(m_impl->deviceTreeImage.data()),
                      m_impl->deviceTreeImage.size());
         fileDt.close();
     }
