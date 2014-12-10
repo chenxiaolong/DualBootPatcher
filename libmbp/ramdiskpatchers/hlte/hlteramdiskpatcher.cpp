@@ -134,8 +134,7 @@ bool HlteTouchWizRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio,
-                                       GalaxyRamdiskPatcher::KitKat);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();

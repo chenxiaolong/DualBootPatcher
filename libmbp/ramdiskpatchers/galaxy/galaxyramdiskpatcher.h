@@ -31,12 +31,8 @@ class GalaxyRamdiskPatcher : public RamdiskPatcher
 public:
     explicit GalaxyRamdiskPatcher(const PatcherConfig * const pc,
                                   const FileInfo * const info,
-                                  CpioFile * const cpio,
-                                  const std::string &version);
+                                  CpioFile * const cpio);
     ~GalaxyRamdiskPatcher();
-
-    static const std::string JellyBean;
-    static const std::string KitKat;
 
     virtual PatcherError error() const override;
 

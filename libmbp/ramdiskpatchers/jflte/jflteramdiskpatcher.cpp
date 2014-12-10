@@ -39,8 +39,6 @@ public:
     const FileInfo *info;
     CpioFile *cpio;
 
-    std::string getwVersion;
-
     PatcherError error;
 };
 /*! \endcond */
@@ -139,11 +137,6 @@ JflteGoogleEditionRamdiskPatcher::JflteGoogleEditionRamdiskPatcher(const Patcher
                                                                    CpioFile *const cpio)
     : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
-    if (m_impl->cpio->exists(Msm8960LpmRc)) {
-        m_impl->getwVersion = GalaxyRamdiskPatcher::JellyBean;
-    } else {
-        m_impl->getwVersion = GalaxyRamdiskPatcher::KitKat;
-    }
 }
 
 std::string JflteGoogleEditionRamdiskPatcher::id() const
@@ -155,8 +148,7 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio,
-                                       m_impl->getwVersion);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
@@ -237,11 +229,6 @@ JflteTouchWizRamdiskPatcher::JflteTouchWizRamdiskPatcher(const PatcherConfig * c
                                                          CpioFile *const cpio)
     : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
-    if (m_impl->cpio->exists(Msm8960LpmRc)) {
-        m_impl->getwVersion = GalaxyRamdiskPatcher::JellyBean;
-    } else {
-        m_impl->getwVersion = GalaxyRamdiskPatcher::KitKat;
-    }
 }
 
 std::string JflteTouchWizRamdiskPatcher::id() const
@@ -253,8 +240,7 @@ bool JflteTouchWizRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio,
-                                       m_impl->getwVersion);
+    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
