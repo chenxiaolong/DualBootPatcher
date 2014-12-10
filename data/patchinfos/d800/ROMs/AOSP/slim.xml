@@ -2,7 +2,7 @@
     <name>SlimRoms</name>
     <regex>^Slim-.*.zip$</regex>
 
-    <ramdisk>d800/AOSP/AOSP</ramdisk>
+    <ramdisk>d800/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -36,7 +36,7 @@ public:
 /*! \endcond */
 
 
-const std::string D800RamdiskPatcher::Id = "d800/AOSP/AOSP";
+const std::string D800RamdiskPatcher::Id = "d800/default";
 
 D800RamdiskPatcher::D800RamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
