@@ -6,6 +6,12 @@ set(MBP_VERSION_MINOR 0)
 set(MBP_VERSION_PATCH 0Alpha6)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
+# Allow version to be overridden in Jenkins
+set(CI_VERSION "" CACHE STRING "Override version (continuous integration)")
+if(CI_VERSION)
+    set(MBP_VERSION ${CI_VERSION})
+endif()
+
 option(BUILD_ANDROID "Build for Android" OFF)
 
 if(BUILD_ANDROID)
@@ -33,5 +39,10 @@ endif()
 
 # Third party binaries
 add_subdirectory(thirdparty)
+
+set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
 
 include(CPack)
