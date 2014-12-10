@@ -45,10 +45,6 @@ public:
 
 
 static const std::string InitRc = "init.rc";
-static const std::string InitTargetRc = "init.target.rc";
-static const std::string UeventdRc = "ueventd.rc";
-static const std::string UeventdQcomRc = "ueventd.qcom.rc";
-static const std::string Msm8960LpmRc = "MSM8960_lpm.rc";
 
 
 /*!
@@ -56,11 +52,7 @@ static const std::string Msm8960LpmRc = "MSM8960_lpm.rc";
     \brief Handles common ramdisk patching operations for the Samsung Galaxy S 4
 
     This patcher handles the patching of ramdisks for the Samsung Galaxy S 4.
-    The currently supported ramdisk types are:
-
-    1. AOSP or AOSP-derived ramdisks
-    2. Google Edition (Google Play Edition) ramdisks
-    3. TouchWiz (Android 4.2-4.4) ramdisks
+    Starting from version 9.0.0, every Android ramdisk is supported.
  */
 
 
@@ -85,66 +77,21 @@ PatcherError JflteBaseRamdiskPatcher::error() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string JflteAOSPRamdiskPatcher::Id = "jflte/AOSP/AOSP";
+const std::string JflteDefaultRamdiskPatcher::Id = "jflte/default";
 
-JflteAOSPRamdiskPatcher::JflteAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                                 const FileInfo *const info,
-                                                 CpioFile *const cpio)
+JflteDefaultRamdiskPatcher::JflteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                                       const FileInfo *const info,
+                                                       CpioFile *const cpio)
     : JflteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
-std::string JflteAOSPRamdiskPatcher::id() const
+std::string JflteDefaultRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool JflteAOSPRamdiskPatcher::patchRamdisk()
-{
-    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-
-    if (!corePatcher.patchRamdisk()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string JflteGoogleEditionRamdiskPatcher::Id
-        = "jflte/GoogleEdition/GoogleEdition";
-
-JflteGoogleEditionRamdiskPatcher::JflteGoogleEditionRamdiskPatcher(const PatcherConfig * const pc,
-                                                                   const FileInfo *const info,
-                                                                   CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string JflteGoogleEditionRamdiskPatcher::id() const
-{
-    return Id;
-}
-
-bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
+bool JflteDefaultRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -182,7 +129,7 @@ bool JflteGoogleEditionRamdiskPatcher::patchRamdisk()
     return true;
 }
 
-bool JflteGoogleEditionRamdiskPatcher::geChargerModeMount()
+bool JflteDefaultRamdiskPatcher::geChargerModeMount()
 {
     auto contents = m_impl->cpio->contents(InitRc);
     if (contents.empty()) {
@@ -216,56 +163,6 @@ bool JflteGoogleEditionRamdiskPatcher::geChargerModeMount()
     strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     m_impl->cpio->setContents(InitRc, std::move(contents));
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string JflteTouchWizRamdiskPatcher::Id = "jflte/TouchWiz/TouchWiz";
-
-JflteTouchWizRamdiskPatcher::JflteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
-                                                         const FileInfo *const info,
-                                                         CpioFile *const cpio)
-    : JflteBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string JflteTouchWizRamdiskPatcher::id() const
-{
-    return Id;
-}
-
-bool JflteTouchWizRamdiskPatcher::patchRamdisk()
-{
-    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-
-    if (!corePatcher.patchRamdisk()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
-        m_impl->error = galaxyPatcher.error();
-        return false;
-    }
 
     return true;
 }

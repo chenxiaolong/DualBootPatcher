@@ -46,27 +46,12 @@ protected:
 };
 
 
-class JflteAOSPRamdiskPatcher : public JflteBaseRamdiskPatcher
+class JflteDefaultRamdiskPatcher : public JflteBaseRamdiskPatcher
 {
 public:
-    explicit JflteAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                     const FileInfo * const info,
-                                     CpioFile * const cpio);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual bool patchRamdisk() override;
-};
-
-
-class JflteGoogleEditionRamdiskPatcher : public JflteBaseRamdiskPatcher
-{
-public:
-    explicit JflteGoogleEditionRamdiskPatcher(const PatcherConfig * const pc,
-                                              const FileInfo * const info,
-                                              CpioFile * const cpio);
+    explicit JflteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                        const FileInfo * const info,
+                                        CpioFile * const cpio);
 
     static const std::string Id;
 
@@ -76,19 +61,4 @@ public:
 
 private:
     bool geChargerModeMount();
-};
-
-
-class JflteTouchWizRamdiskPatcher : public JflteBaseRamdiskPatcher
-{
-public:
-    explicit JflteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
-                                         const FileInfo * const info,
-                                         CpioFile * const cpio);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual bool patchRamdisk() override;
 };

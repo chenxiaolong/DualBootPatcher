@@ -598,9 +598,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
     list.push_back(FloAOSPRamdiskPatcher::Id);
     list.push_back(HammerheadAOSPRamdiskPatcher::Id);
     list.push_back(HlteAOSPRamdiskPatcher::Id);
-    list.push_back(JflteAOSPRamdiskPatcher::Id);
-    list.push_back(JflteGoogleEditionRamdiskPatcher::Id);
-    list.push_back(JflteTouchWizRamdiskPatcher::Id);
+    list.push_back(JflteDefaultRamdiskPatcher::Id);
     list.push_back(KlteAOSPRamdiskPatcher::Id);
     list.push_back(KlteTouchWizRamdiskPatcher::Id);
     return list;
@@ -723,12 +721,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new HlteAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == HlteTouchWizRamdiskPatcher::Id) {
         rp = new HlteTouchWizRamdiskPatcher(this, info, cpio);
-    } else if (id == JflteAOSPRamdiskPatcher::Id) {
-        rp = new JflteAOSPRamdiskPatcher(this, info, cpio);
-    } else if (id == JflteGoogleEditionRamdiskPatcher::Id) {
-        rp = new JflteGoogleEditionRamdiskPatcher(this, info, cpio);
-    } else if (id == JflteTouchWizRamdiskPatcher::Id) {
-        rp = new JflteTouchWizRamdiskPatcher(this, info, cpio);
+    } else if (id == JflteDefaultRamdiskPatcher::Id) {
+        rp = new JflteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == KlteAOSPRamdiskPatcher::Id) {
         rp = new KlteAOSPRamdiskPatcher(this, info, cpio);
     } else if (id == KlteTouchWizRamdiskPatcher::Id) {
