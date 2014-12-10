@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -445,9 +446,9 @@ static struct partconfig * find_partconfig(void)
 
 int mount_fstab(const char *fstab_path)
 {
-    static const char *fmt_fstab_gen = "/.%s.gen";
-    static const char *fmt_completed = "/.%s.completed";
-    static const char *fmt_failed = "/.%s.failed";
+    static const char *fmt_fstab_gen = "%s/.%s.gen";
+    static const char *fmt_completed = "%s/.%s.completed";
+    static const char *fmt_failed = "%s/.%s.failed";
 
     struct fstab *fstab = NULL;
     FILE *out = NULL;
@@ -457,43 +458,35 @@ int mount_fstab(const char *fstab_path)
     struct fstab_rec *flags_system = NULL;
     struct fstab_rec *flags_cache = NULL;
     struct fstab_rec *flags_data = NULL;
-    char *path_gen = NULL;
-    char *path_completed = NULL;
-    char *path_failed = NULL;
-    int path_gen_len;
-    int path_completed_len;
-    int path_failed_len;
+    char copy1[256];
+    char copy2[256];
+    char path_fstab_gen[256];
+    char path_completed[256];
+    char path_failed[256];
+    char *base_name;
+    char *dir_name;
     struct stat st;
     int share_app = 0;
     int share_app_asec = 0;
 
-    // Build paths (len(fmt) - len(%s) + len(fstab) + len(\0))
-    path_gen_len = strlen(fmt_fstab_gen) - 2 + strlen(fstab_path) + 1;
-    path_completed_len = strlen(fmt_completed) - 2 + strlen(fstab_path) + 1;
-    path_failed_len = strlen(fmt_failed) - 2 + strlen(fstab_path) + 1;
+    // basename() and dirname() modify the source string
+    strlcpy(copy1, fstab_path, sizeof(copy1));
+    strlcpy(copy2, fstab_path, sizeof(copy2));
+    base_name = basename(fstab_path);
+    dir_name = dirname(fstab_path);
 
-    path_gen = malloc(path_gen_len);
-    path_completed = malloc(path_completed_len);
-    path_failed = malloc(path_failed_len);
-
-    snprintf(path_gen, path_gen_len, fmt_fstab_gen, fstab_path);
-    snprintf(path_completed, path_completed_len, fmt_completed, fstab_path);
-    snprintf(path_failed, path_failed_len, fmt_failed, fstab_path);
+    snprintf(path_fstab_gen, sizeof(path_fstab_gen), fmt_fstab_gen, dir_name, base_name);
+    snprintf(path_completed, sizeof(path_completed), fmt_completed, dir_name, base_name);
+    snprintf(path_failed, sizeof(path_failed), fmt_failed, dir_name, base_name);
 
     // This is a oneshot operation
     if (stat(path_completed, &st) == 0) {
         LOGV("Filesystems already successfully mounted");
-        free(path_gen);
-        free(path_completed);
-        free(path_failed);
         return 0;
     }
 
     if (stat(path_failed, &st) == 0) {
         LOGE("Failed to mount partitions ealier. No further attempts will be made");
-        free(path_gen);
-        free(path_completed);
-        free(path_failed);
         return -1;
     }
 
@@ -505,9 +498,9 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Generate new fstab without /system, /cache, or /data entries
-    out = fopen(path_gen, "wb");
+    out = fopen(path_fstab_gen, "wb");
     if (!out) {
-        LOGE("Failed to open %s for writing", path_gen);
+        LOGE("Failed to open %s for writing", path_fstab_gen);
         goto error;
     }
 
@@ -638,10 +631,6 @@ int mount_fstab(const char *fstab_path)
 
     create_file(path_completed);
 
-    free(path_gen);
-    free(path_completed);
-    free(path_failed);
-
     LOGI("Successfully mounted partitions");
 
     return 0;
@@ -652,10 +641,6 @@ error:
     }
 
     create_file(path_failed);
-
-    free(path_gen);
-    free(path_completed);
-    free(path_failed);
 
     return -1;
 }

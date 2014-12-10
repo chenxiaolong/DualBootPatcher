@@ -23,6 +23,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
 
 #include "ramdiskpatchers/common/coreramdiskpatcher.h"
@@ -206,8 +207,11 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
             std::string spaces = whitespace(*it);
 
             std::string fstab = what[1];
-            std::string completed = "/." + fstab + ".completed";
-            std::string generated = "/." + fstab + ".gen";
+            boost::filesystem::path fstab_path(fstab);
+            std::string dir_name = fstab_path.parent_path().string();
+            std::string base_name = fstab_path.filename().string();
+            std::string completed = dir_name + "/." + base_name + ".completed";
+            std::string generated = dir_name + "/." + base_name + ".gen";
 
             // Debugging this: "- exec '/system/bin/sh' failed: No such file or directory (2) -"
             // sure was fun... Turns out service names > 16 characters are rejected
