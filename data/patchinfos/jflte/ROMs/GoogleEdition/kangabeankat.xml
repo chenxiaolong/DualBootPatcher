@@ -2,7 +2,7 @@
     <name>Kangabean/Kangakat</name>
     <regex>^K[BK]-.*\.zip$</regex>
 
-    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
 
     <matches regex="KK.*">
         <autopatchers>

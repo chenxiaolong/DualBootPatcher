@@ -2,7 +2,7 @@
     <name>SkyFall</name>
     <regex>^SF-.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -2,7 +2,7 @@
     <name>PAC-Man nightly</name>
     <regex>^pac_[a-z0-9]+-nightly-[0-9]+.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

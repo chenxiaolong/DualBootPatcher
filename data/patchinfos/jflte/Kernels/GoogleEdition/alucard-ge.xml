@@ -2,7 +2,7 @@
     <name>Alucard Google Edition kernel</name>
     <regex>^Kernel-Alucard.*GE.*\.zip$</regex>
 
-    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

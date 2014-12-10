@@ -2,7 +2,7 @@
     <name>PhoeniX</name>
     <regex>^PhoeniX.ROM.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

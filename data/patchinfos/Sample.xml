@@ -34,7 +34,7 @@
     </bootimages>
 
     <!-- This is the type of ramdisk -->
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
 
     <!-- TODO: Document this -->
     <autopatchers>

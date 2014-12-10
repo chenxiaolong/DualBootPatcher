@@ -2,7 +2,7 @@
     <name>Metaiiica's PAC-Man</name>
     <regex>^pac_.*-Black-Power-Edition(_NG)?[-_][0-9]+\.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

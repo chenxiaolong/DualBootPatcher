@@ -2,7 +2,7 @@
     <name>GoogyMax3 TouchWiz Kernel</name>
     <regex>GoogyMax3_TW.+\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

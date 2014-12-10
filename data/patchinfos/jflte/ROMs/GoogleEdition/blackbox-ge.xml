@@ -2,7 +2,7 @@
     <name>BlackBox Google Edition</name>
     <regex>^[a-zA-Z0-9]+BlackBoxGE[0-9]+\.zip$</regex>
 
-    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher>GoogleEditionPatcher</autopatcher>

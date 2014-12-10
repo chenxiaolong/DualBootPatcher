@@ -2,7 +2,7 @@
     <name>AOSB/ProBAM</name>
     <regex>^(aosb|probam).*\.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

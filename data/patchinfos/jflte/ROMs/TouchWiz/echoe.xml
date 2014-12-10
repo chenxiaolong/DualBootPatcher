@@ -7,7 +7,7 @@
         <regex>^S4_Echoe_v2[0].*\.zip$</regex>
     </regexes>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

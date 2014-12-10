@@ -2,7 +2,7 @@
     <name>FoxHound</name>
     <regex>^FoxHound_.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher file="jflte/ROMs/TouchWiz/foxhound.dualboot.patch">PatchFile</autopatcher>

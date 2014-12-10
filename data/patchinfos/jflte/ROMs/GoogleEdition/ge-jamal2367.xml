@@ -3,14 +3,14 @@
     <regex>^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$</regex>
 
     <matches regex="^I9505_-_Google_Edition_v6_by_Jamal2367\.zip$">
-        <ramdisk>jflte/AOSP/AOSP</ramdisk>
+        <ramdisk>jflte/default</ramdisk>
         <autopatchers>
             <autopatcher>StandardPatcher</autopatcher>
         </autopatchers>
     </matches>
 
     <not-matched>
-        <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+        <ramdisk>jflte/default</ramdisk>
         <autopatchers>
             <autopatcher>StandardPatcher</autopatcher>
             <autopatcher>GoogleEditionPatcher</autopatcher>

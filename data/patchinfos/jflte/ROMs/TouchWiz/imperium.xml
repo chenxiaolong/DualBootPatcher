@@ -2,7 +2,7 @@
     <name>Imperium</name>
     <regex>^Imperium_.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>ImperiumPatcher</autopatcher>
     </autopatchers>

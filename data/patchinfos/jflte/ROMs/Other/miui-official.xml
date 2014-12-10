@@ -2,7 +2,7 @@
     <name>Official MIUI</name>
     <regex>^miui_i9505_shiro_.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -2,7 +2,7 @@
     <name>Broodplank's AOSP</name>
     <regex>^aosp[0-9]+-i9505-.*\.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

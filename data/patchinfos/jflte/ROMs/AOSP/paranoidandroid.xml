@@ -5,7 +5,7 @@
     	<exclude-regex>gapps</exclude-regex>
 	</regexes>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

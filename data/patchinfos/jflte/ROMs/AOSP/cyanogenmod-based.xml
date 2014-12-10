@@ -5,7 +5,7 @@
     	<exclude-regex>noobdev</exclude-regex>
 	</regexes>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher>DalvikCachePatcher</autopatcher>

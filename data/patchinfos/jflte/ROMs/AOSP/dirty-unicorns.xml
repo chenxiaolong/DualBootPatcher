@@ -2,7 +2,7 @@
     <name>Dirty Unicorns</name>
     <regex>^DUv[0-9\.]+-SGS4.*\.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

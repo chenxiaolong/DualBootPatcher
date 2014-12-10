@@ -2,7 +2,7 @@
     <name>GoogyMax3 Google Edition Kernel</name>
     <regex>GoogyMax3_GE.+\.zip$</regex>
 
-    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -2,7 +2,7 @@
     <name>Infamous kernel</name>
     <regex>^Infamous_S4_Kernel.v.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -2,7 +2,7 @@
     <name>Dandroid</name>
     <regex>^([Dd]anvdh-GE|Dandroid).*\.zip$</regex>
 
-    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher>GoogleEditionPatcher</autopatcher>

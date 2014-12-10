@@ -2,7 +2,7 @@
     <name>Evil UnWizzed</name>
     <regex>^Evil_UnWizzed_v[0-9]+\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher file="jflte/ROMs/TouchWiz/unwizzed.dualboot.patch">PatchFile</autopatcher>

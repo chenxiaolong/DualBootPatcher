@@ -2,7 +2,7 @@
     <name>MIUI</name>
     <regex>^miuiandroid_(multi_)?jflte.*\.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

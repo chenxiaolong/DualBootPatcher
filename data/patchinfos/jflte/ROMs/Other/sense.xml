@@ -2,7 +2,7 @@
     <name>geiti94's HTC Sense 5 port</name>
     <regex>^(sense5port|4\.3 official port|ALPHA V1\.5)\.zip$</regex>
 
-    <ramdisk>jflte/AOSP/AOSP</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -2,7 +2,7 @@
     <name>TriForceROM Update</name>
     <regex>^TriForceROM[0-9\.]+Update\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher>TriForceFixUpdate</autopatcher>

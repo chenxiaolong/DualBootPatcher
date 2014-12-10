@@ -2,7 +2,7 @@
     <name>Eclipse TouchWiz</name>
     <regex>^EclipseTW.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

@@ -2,7 +2,7 @@
     <name>BoBCaTROM</name>
     <regex>^.*BoBCaTROM_GE.*\.zip$</regex>
 
-    <ramdisk>jflte/GoogleEdition/GoogleEdition</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
         <autopatcher>GoogleEditionPatcher</autopatcher>

@@ -2,7 +2,7 @@
     <name>Ausdim kernel</name>
     <regex>^v[0-9\.]+-(TW|Google)-[Ee]dition-ausdim-Kernel-.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

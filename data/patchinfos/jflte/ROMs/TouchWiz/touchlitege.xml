@@ -2,7 +2,7 @@
     <name>TouchliteGE TouchWiz</name>
     <regex>^touchliteGE.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

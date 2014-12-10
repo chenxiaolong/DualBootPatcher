@@ -2,7 +2,7 @@
     <name>Ktoonsez TouchWiz kernel</name>
     <regex>^KT-SGS4-(JB|KK)4.[2-4]-TW-.*\.zip$</regex>
 
-    <ramdisk>jflte/TouchWiz/TouchWiz</ramdisk>
+    <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
