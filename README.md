@@ -44,7 +44,7 @@ Compiling from Source
 
     If building for Android, make sure that the environment variables for the SDK and NDK are set to the appropriate directories.
 
-        export ANDROID_SDK_HOME=/path/to/android-sdk
+        export ANDROID_HOME=/path/to/android-sdk
         export ANDROID_NDK_HOME=/path/to/android-ndk
 
 3. Configure the build
