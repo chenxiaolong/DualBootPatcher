@@ -36,7 +36,7 @@ public:
 /*! \endcond */
 
 
-const std::string FalconRamdiskPatcher::Id = "falcon/AOSP/AOSP";
+const std::string FalconRamdiskPatcher::Id = "falcon/default";
 
 FalconRamdiskPatcher::FalconRamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
