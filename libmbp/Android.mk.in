@@ -56,8 +56,8 @@ LOCAL_CFLAGS += -Wno-error=comment
 # Version number
 LOCAL_CFLAGS += -DLIBMBP_VERSION=\"@MBP_VERSION@\"
 
-LOCAL_CFLAGS += -ffunction-sections -fdata-sections
-LOCAL_LDFLAGS := -Wl,--gc-sections
+LOCAL_CFLAGS += -ffunction-sections -fdata-sections -Os
+LOCAL_LDFLAGS := -Wl,--gc-sections -Os
 
 LOCAL_LDLIBS := -llog -lz
 
