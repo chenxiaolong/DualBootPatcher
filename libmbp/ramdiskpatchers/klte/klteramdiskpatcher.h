@@ -46,27 +46,12 @@ protected:
 };
 
 
-class KlteAOSPRamdiskPatcher : public KlteBaseRamdiskPatcher
+class KlteDefaultRamdiskPatcher : public KlteBaseRamdiskPatcher
 {
 public:
-    explicit KlteAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                    const FileInfo * const info,
-                                    CpioFile * const cpio);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual bool patchRamdisk() override;
-};
-
-
-class KlteTouchWizRamdiskPatcher : public KlteBaseRamdiskPatcher
-{
-public:
-    explicit KlteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
-                                        const FileInfo * const info,
-                                        CpioFile * const cpio);
+    explicit KlteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                       const FileInfo * const info,
+                                       CpioFile * const cpio);
 
     static const std::string Id;
 

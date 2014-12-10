@@ -599,8 +599,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
     list.push_back(HammerheadAOSPRamdiskPatcher::Id);
     list.push_back(HlteDefaultRamdiskPatcher::Id);
     list.push_back(JflteDefaultRamdiskPatcher::Id);
-    list.push_back(KlteAOSPRamdiskPatcher::Id);
-    list.push_back(KlteTouchWizRamdiskPatcher::Id);
+    list.push_back(KlteDefaultRamdiskPatcher::Id);
     return list;
 }
 
@@ -721,10 +720,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new HlteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == JflteDefaultRamdiskPatcher::Id) {
         rp = new JflteDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == KlteAOSPRamdiskPatcher::Id) {
-        rp = new KlteAOSPRamdiskPatcher(this, info, cpio);
-    } else if (id == KlteTouchWizRamdiskPatcher::Id) {
-        rp = new KlteTouchWizRamdiskPatcher(this, info, cpio);
+    } else if (id == KlteDefaultRamdiskPatcher::Id) {
+        rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
     }
 
     if (rp != nullptr) {

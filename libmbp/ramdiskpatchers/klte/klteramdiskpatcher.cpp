@@ -43,10 +43,7 @@ public:
     \brief Handles common ramdisk patching operations for the Samsung Galaxy S 5
 
     This patcher handles the patching of ramdisks for the Samsung Galaxy S 5.
-    The currently supported ramdisk types are:
-
-    1. AOSP or AOSP-derived ramdisks
-    2. TouchWiz ramdisks
+    Starting from version 9.0.0, every Android ramdisk is supported.
  */
 
 
@@ -71,21 +68,21 @@ PatcherError KlteBaseRamdiskPatcher::error() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string KlteAOSPRamdiskPatcher::Id = "klte/AOSP/AOSP";
+const std::string KlteDefaultRamdiskPatcher::Id = "klte/default";
 
-KlteAOSPRamdiskPatcher::KlteAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                               const FileInfo *const info,
-                                               CpioFile *const cpio)
+KlteDefaultRamdiskPatcher::KlteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                                     const FileInfo *const info,
+                                                     CpioFile *const cpio)
     : KlteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
-std::string KlteAOSPRamdiskPatcher::id() const
+std::string KlteDefaultRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool KlteAOSPRamdiskPatcher::patchRamdisk()
+bool KlteDefaultRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -120,51 +117,6 @@ bool KlteAOSPRamdiskPatcher::patchRamdisk()
             m_impl->error = qcomPatcher.error();
             return false;
         }
-    }
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string KlteTouchWizRamdiskPatcher::Id = "klte/TouchWiz/TouchWiz";
-
-KlteTouchWizRamdiskPatcher::KlteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
-                                                       const FileInfo *const info,
-                                                       CpioFile *const cpio)
-    : KlteBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string KlteTouchWizRamdiskPatcher::id() const
-{
-    return Id;
-}
-
-bool KlteTouchWizRamdiskPatcher::patchRamdisk()
-{
-    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-
-    if (!corePatcher.patchRamdisk()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
     }
 
     return true;
