@@ -46,27 +46,12 @@ protected:
 };
 
 
-class HlteAOSPRamdiskPatcher : public HlteBaseRamdiskPatcher
+class HlteDefaultRamdiskPatcher : public HlteBaseRamdiskPatcher
 {
 public:
-    explicit HlteAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                    const FileInfo * const info,
-                                    CpioFile * const cpio);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual bool patchRamdisk() override;
-};
-
-
-class HlteTouchWizRamdiskPatcher : public HlteBaseRamdiskPatcher
-{
-public:
-    explicit HlteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
-                                        const FileInfo * const info,
-                                        CpioFile * const cpio);
+    explicit HlteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                       const FileInfo * const info,
+                                       CpioFile * const cpio);
 
     static const std::string Id;
 

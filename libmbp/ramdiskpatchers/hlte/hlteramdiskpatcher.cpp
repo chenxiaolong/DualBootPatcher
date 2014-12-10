@@ -44,10 +44,7 @@ public:
            Note 3
 
     This patcher handles the patching of ramdisks for the Samsung Galaxy Note 3.
-    The currently supported ramdisk types are:
-
-    1. AOSP or AOSP-derived ramdisks
-    2. TouchWiz ramdisks
+    Starting from version 9.0.0, every Android ramdisk is supported.
  */
 
 
@@ -72,69 +69,24 @@ PatcherError HlteBaseRamdiskPatcher::error() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string HlteAOSPRamdiskPatcher::Id = "hlte/AOSP/AOSP";
+const std::string HlteDefaultRamdiskPatcher::Id = "hlte/default";
 
-HlteAOSPRamdiskPatcher::HlteAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                               const FileInfo *const info,
-                                               CpioFile *const cpio)
+HlteDefaultRamdiskPatcher::HlteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                                     const FileInfo *const info,
+                                                     CpioFile *const cpio)
     : HlteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
-std::string HlteAOSPRamdiskPatcher::id() const
+std::string HlteDefaultRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool HlteAOSPRamdiskPatcher::patchRamdisk()
+bool HlteDefaultRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-
-    if (!corePatcher.patchRamdisk()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string HlteTouchWizRamdiskPatcher::Id = "hlte/TouchWiz/TouchWiz";
-
-HlteTouchWizRamdiskPatcher::HlteTouchWizRamdiskPatcher(const PatcherConfig * const pc,
-                                                       const FileInfo *const info,
-                                                       CpioFile *const cpio)
-    : HlteBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string HlteTouchWizRamdiskPatcher::id() const
-{
-    return Id;
-}
-
-bool HlteTouchWizRamdiskPatcher::patchRamdisk()
-{
-    CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRamdiskPatcher galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
