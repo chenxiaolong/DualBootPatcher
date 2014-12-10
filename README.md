@@ -21,6 +21,8 @@ Continuous integration build statuses can be found at the build status link abov
 
 Compiling from Source
 ---------------------
+WARNING: THIS SECTION IS CURRENTLY OUTDATED.
+
 1. Clone git repository from GitHub:
 
         git clone https://github.com/chenxiaolong/DualBootPatcher.git
