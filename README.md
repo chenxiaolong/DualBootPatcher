@@ -21,48 +21,69 @@ Continuous integration build statuses can be found at the build status link abov
 
 Compiling from Source
 ---------------------
-WARNING: THIS SECTION IS CURRENTLY OUTDATED.
-
 1. Clone git repository from GitHub:
 
         git clone https://github.com/chenxiaolong/DualBootPatcher.git
 
 2. Install needed dependencies
 
-    The following packages are needed for compiling:
+    The following packages are needed for compiling for PC:
 
-    - wget (or axel)
-    - p7zip
-    - patch
+    - cmake
     - gcc-multilib
+    - libarchive
+    - boost
     - zip
-    - upx
+    - qt5
 
-    On *Fedora*, run:
+    The following packages are needed for compiling for Android:
 
-    `sudo yum install axel p7zip-plugins patch gcc-c++ zip upx glibc-static.i686 glibc-devel.i686`
+    - Android SDK
+    - Android NDK
+    - cmake
 
-    On *Arch Linux*, run:
+    If building for Android, make sure that the environment variables for the SDK and NDK are set to the appropriate directories.
 
-    `sudo pacman -Sy axel p7zip patch gcc-multilib zip upx`
+        export ANDROID_SDK_HOME=/path/to/android-sdk
+        export ANDROID_NDK_HOME=/path/to/android-ndk
 
-    On *Ubuntu*, run:
+3. Configure the build
 
-    `sudo apt-get install axel p7zip-full patch g++ zip upx-ucl`
+    (TODO: Instructions for compiling with VS2013)
 
-3. Create a configuration file `build/build.custom.conf` (or copy `build/build.conf`) for your system. Any options set here will override `build.conf`.
+    Linux:
 
-        [builder]
-        android-ndk = /opt/android-ndk
-        android-sdk = /opt/android-sdk
+        mkdir build && cd build
+        cmake ..
+        make
+        make install
 
-4. Compile!
+    Linux (portable):
 
-    The build script is used like this:
+        mkdir build && cd build
+        cmake ..  -DPORTABLE=ON
+        make
+        cpack -G ZIP # Or TBZ2, TGZ, TZ, etc.
 
-        ./build/makedist.py [--debug] [--release] [--android] [--no-pc]
+    Android (release):
 
-    Running the command with no arguments is equivalent to passing `--debug`. If you want to build the Android app, pass `--android`, and if you don't want to build the PC program, pass `--no-pc`. At the moment, the debug and release build types are used for the Android app only. Release mode requires that a signing key is set up.
+        mkdir build && cd build
+        cmake .. -DBUILD_ANDROID=ON
+        make
+        rm -rf assets && cpack -G ZIP
+        cd ../Android_GUI
+        ./gradlew assembleRelease
+
+    Android (debug):
+
+        mkdir build && cd build
+        cmake .. -DBUILD_ANDROID=ON -DANDROID_DEBUG=ON
+        make
+        rm -rf assets && cpack -G ZIP
+        cd ../Android_GUI
+        ./gradlew assembleDebug
+        
+    Note that by passing `-DBUILD_ANDROID=ON` to CMake, it will build only the Android version of the patcher. If you want to build both the PC and Android versions of the patcher, create one build directory for each.
 
 License
 -------
