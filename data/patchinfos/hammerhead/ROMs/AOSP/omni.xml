@@ -2,7 +2,7 @@
     <name>Official Omni ROM</name>
     <regex>^omni-[0-9\.]+-[0-9]+.*\.zip$</regex>
 
-    <ramdisk>hammerhead/AOSP/AOSP</ramdisk>
+    <ramdisk>hammerhead/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

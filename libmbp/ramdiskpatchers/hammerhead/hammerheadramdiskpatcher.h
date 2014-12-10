@@ -46,12 +46,12 @@ protected:
 };
 
 
-class HammerheadAOSPRamdiskPatcher : public HammerheadBaseRamdiskPatcher
+class HammerheadDefaultRamdiskPatcher : public HammerheadBaseRamdiskPatcher
 {
 public:
-    explicit HammerheadAOSPRamdiskPatcher(const PatcherConfig * const pc,
-                                          const FileInfo * const info,
-                                          CpioFile * const cpio);
+    explicit HammerheadDefaultRamdiskPatcher(const PatcherConfig * const pc,
+                                             const FileInfo * const info,
+                                             CpioFile * const cpio);
 
     static const std::string Id;
 

@@ -57,21 +57,21 @@ PatcherError HammerheadBaseRamdiskPatcher::error() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string HammerheadAOSPRamdiskPatcher::Id = "hammerhead/AOSP/AOSP";
+const std::string HammerheadDefaultRamdiskPatcher::Id = "hammerhead/default";
 
-HammerheadAOSPRamdiskPatcher::HammerheadAOSPRamdiskPatcher(const PatcherConfig *const pc,
-                                                           const FileInfo *const info,
-                                                           CpioFile *const cpio)
+HammerheadDefaultRamdiskPatcher::HammerheadDefaultRamdiskPatcher(const PatcherConfig *const pc,
+                                                                 const FileInfo *const info,
+                                                                 CpioFile *const cpio)
     : HammerheadBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
-std::string HammerheadAOSPRamdiskPatcher::id() const
+std::string HammerheadDefaultRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool HammerheadAOSPRamdiskPatcher::patchRamdisk()
+bool HammerheadDefaultRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);

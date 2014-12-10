@@ -2,7 +2,7 @@
     <name>AOKP</name>
     <regex>^aokp_hammerhead_.*\.zip$</regex>
 
-    <ramdisk>hammerhead/AOSP/AOSP</ramdisk>
+    <ramdisk>hammerhead/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
