@@ -36,7 +36,7 @@ public:
 /*! \endcond */
 
 
-const std::string BaconRamdiskPatcher::Id = "bacon/AOSP/AOSP";
+const std::string BaconRamdiskPatcher::Id = "bacon/default";
 
 BaconRamdiskPatcher::BaconRamdiskPatcher(const PatcherConfig * const pc,
                                          const FileInfo * const info,

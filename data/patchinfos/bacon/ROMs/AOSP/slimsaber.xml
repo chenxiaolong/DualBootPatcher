@@ -2,7 +2,7 @@
     <name>SlimSaberKat</name>
     <regex>^SlimSaber-.*.zip$</regex>
 
-    <ramdisk>bacon/AOSP/AOSP</ramdisk>
+    <ramdisk>bacon/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>

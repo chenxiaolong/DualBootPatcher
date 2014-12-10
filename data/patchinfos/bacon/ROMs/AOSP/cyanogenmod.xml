@@ -2,7 +2,7 @@
     <name>Official CyanogenMod</name>
     <regex>^cm-[0-9\.]+(-[0-9]+-NIGHTLY)?-[a-z0-9]+\.zip$</regex>
 
-    <ramdisk>bacon/AOSP/AOSP</ramdisk>
+    <ramdisk>bacon/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
