@@ -23,12 +23,11 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 
 name = 'Dual Boot Patcher'
 github = 'https://github.com/chenxiaolong/DualBootPatcher'
-outdir = '/var/lib/jenkins/Dropbox/Public/Snapshots/DualBootPatcher'
-html = os.path.join(outdir, 'index.html')
-maxbuilds = 5
+maxbuilds = 10
 
 
 class Version():
@@ -97,6 +96,43 @@ class Version():
         return hash(self.ver)
 
 
+class HTMLWriter():
+    def __init__(self):
+        self._file = None
+        self._stack = list()
+
+    def open(self, filename):
+        self._file = open(filename, 'w')
+
+    def close(self):
+        self._file.close()
+        self._file = None
+        if self._stack:
+            raise Exception('Tag stack not empty when closing HTML file: %s'
+                            % self._stack)
+
+    def push(self, tag, attrs=None):
+        self._stack.append(tag)
+        if attrs:
+            attrs_str = ' '.join('%s="%s"' % (i, attrs[i]) for i in attrs)
+            self._file.write('<%s %s>' % (tag, attrs_str))
+        else:
+            self._file.write('<%s>' % tag)
+
+    def pop(self, tag):
+        top_tag = self._stack.pop()
+        if top_tag != tag:
+            raise ValueError('Tag <%s> does not match tag at top of'
+                             'stack: <%s>' % (tag, top_tag))
+        self._file.write('</%s>' % tag)
+
+    def write_tag(self, tag):
+        self._file.write('<%s />' % tag)
+
+    def write(self, string):
+        self._file.write(string)
+
+
 def quicksort(l):
     if l == []:
         return []
@@ -107,91 +143,105 @@ def quicksort(l):
         return left + [pivot] + right
 
 
-if not os.path.exists(outdir):
-    os.makedirs(outdir)
+if len(sys.argv) != 2:
+    print('Usage: %s [files directory]' % sys.argv[0])
+    sys.exit(1)
 
-files = os.listdir(outdir)
 
+# Files directory
+filesdir = sys.argv[1]
+if not os.path.exists(filesdir):
+    os.makedirs(filesdir)
+
+
+# HTML output
+writer = HTMLWriter()
+writer.open(os.path.join(filesdir, 'index.html'))
+
+
+# List of patcher files and versions
+files = list()
 versions = list()
-for i in files:
-    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', i)
+
+for f in os.listdir(filesdir):
+    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', f)
     if not r:
-        print('Skipping %s ...' % i)
+        print('Skipping %s ...' % f)
         continue
+    files.append(f)
     versions.append(Version(r.group(1)))
 
 versions = quicksort(list(set(versions)))
 
-html_file = open(html, 'w')
 
-def write_html(string):
-  html_file.write(string + '\n')
+# HTML header boilerplate
+writer.push('html')
+writer.push('head')
+writer.push('title')
+writer.write('%s snapshots' % name)
+writer.pop('title')
+writer.pop('head')
+writer.push('body')
+writer.push('h1')
+writer.write('%s Snapshots (Unstable Builds)' % name)
+writer.pop('h1')
 
-html_header = """
-<html>
-  <head>
-    <title>%s snapshots</title>
-  </head>
-  <body>
-    <h1>%s Snapshots (Unstable Builds)</h1>
-""" % (name, name)
-
-html_footer = """
-  </body>
-</html>
-"""
-
-write_html(html_header)
 
 # Remove old builds
 if len(versions) >= maxbuilds:
     for i in range(maxbuilds, len(versions)):
         for f in files:
             if versions[i].ver in f:
-                print("Removing old build %s ..." % f)
-                os.remove(os.path.join(outdir, f))
+                print('Removing old build %s ...' % f)
+                os.remove(os.path.join(filesdir, f))
     del versions[maxbuilds:]
 
+
+# Write file list and changelog
 for i in range(0, len(versions)):
     version = versions[i]
 
-    write_html('<p>')
+    # Separator
+    writer.write_tag('hr')
 
     # Get commit log
     process = subprocess.Popen(
-        [ 'git', 'show', '-s',
-            '--format="%cD"',
-            version.commit ],
-        stdout = subprocess.PIPE,
-        universal_newlines = True
+        ['git', 'show', '-s', '--format="%cD"', version.commit],
+        stdout=subprocess.PIPE,
+        universal_newlines=True
     )
     timestamp = process.communicate()[0].split('\n')[0]
-    timestamp = re.sub(r'"', '', timestamp)
+    timestamp = timestamp.replace('"', '')
 
-    write_html('<b>%s<br /><br /></b>' % timestamp)
+    if not timestamp:
+        writer.write('Failed to determine timestamp for commit: %s'
+                     % version.commit)
 
-    android = list()
-    pc = list()
+    # Write timestamp
+    writer.push('b')
+    writer.write(timestamp)
+    writer.pop('b')
+
+    writer.write_tag('br')
+    writer.write_tag('br')
+    writer.push('b')
+    writer.write('Files:')
+    writer.pop('b')
+    writer.write_tag('br')
+
+    # Write files list
+    writer.push('ul')
     for f in files:
         if version.ver in f:
-            if f.endswith('apk'):
-                android.append(f)
-            elif f.endswith('zip') or f.endswith('7z'):
-                pc.append(f)
-
-    android.sort()
-    pc.sort()
-
-    for f in android:
-        write_html('Android: <a href="%s">%s</a><br />' % (f, f))
-
-    for f in pc:
-        write_html('PC: <a href="%s">%s</a><br />' % (f, f))
-
-    write_html('</p>')
+            writer.push('li')
+            writer.push('a', attrs={'href': f})
+            writer.write(f)
+            writer.pop('a')
+            writer.pop('li')
+    writer.pop('ul')
 
     if i == len(versions) - 1:
-        write_html('An earlier build is needed to generate a changelog')
+        writer.write('An earlier build is needed to generate a changelog')
         continue
 
     new_commit = version.commit
@@ -199,29 +249,37 @@ for i in range(0, len(versions)):
 
     # Get commit log
     process = subprocess.Popen(
-        [ 'git', 'log',
-            '--pretty=format:%H\n%s',
-            '%s..%s' % (old_commit, new_commit) ],
-        stdout = subprocess.PIPE,
-        universal_newlines = True
+        ['git', 'log', '--pretty=format:%H\n%s',
+            '%s..%s' % (old_commit, new_commit)],
+        stdout=subprocess.PIPE,
+        universal_newlines=True
     )
     log = process.communicate()[0].split('\n')
 
-    write_html('<ul>')
-
     if len(log) <= 1:
-        write_html("WTF something went wrong with the script ...")
+        writer.write('WTF?? Failed to generate changelog')
         continue
 
+    writer.push('b')
+    writer.write('Changelog:')
+    writer.pop('b')
+    writer.write_tag('br')
+
+    # Write commit list
+    writer.push('ul')
     for j in range(0, len(log) - 1, 2):
         commit = log[j]
         subject = log[j + 1]
-        write_html('<li><a href="%s/commit/%s">%s</a>: %s</li>'
-            % (github, commit, commit[0:7], subject))
+        writer.push('li')
+        writer.push('a', attrs={'href': '%s/commit/%s' % (github, commit)})
+        writer.write(commit[0:7])
+        writer.pop('a')
+        writer.write(': %s' % subject)
+        writer.pop('li')
+    writer.pop('ul')
 
-    write_html('</ul>')
 
-    write_html('<hr />')
-
-write_html(html_footer)
-html_file.close()
+# HTML footer boilerplate
+writer.pop('body')
+writer.pop('html')
+writer.close()
