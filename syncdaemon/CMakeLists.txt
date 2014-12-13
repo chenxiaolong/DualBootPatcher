@@ -1,5 +1,4 @@
 include(ExternalProject)
-include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
 # To update jsoncpp, use get-jsoncpp.sh or uncomment the lines below
 # cmake's external project feature is not used by default for jsoncpp

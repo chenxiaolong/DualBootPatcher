@@ -25,7 +25,8 @@ else()
     include(cmake/ConfigDesktop.cmake)
 endif()
 
-include (cmake/AndroidNDK.cmake)
+include(cmake/AndroidNDK.cmake)
+include(cmake/LogicalCoreCount.cmake)
 
 # Main patcher
 add_subdirectory(libmbp)

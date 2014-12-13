@@ -8,16 +8,19 @@ set(LogicalCoreCount_included TRUE)
 
 if(NOT DEFINED PROCESSOR_COUNT)
     # Unknown:
-    set(PROCESSOR_COUNT 0)
+    set(PROCESSOR_COUNT 1)
 
     # Linux:
-    set(cpuinfo_file "/proc/cpuinfo")
-    if(EXISTS "${cpuinfo_file}")
-        file(
-            STRINGS "${cpuinfo_file}" procs
-            REGEX "^processor.: [0-9]+$"
-        )
-        list(LENGTH procs PROCESSOR_COUNT)
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        set(cpuinfo_file "/proc/cpuinfo")
+        if(EXISTS "${cpuinfo_file}")
+            file(
+                STRINGS "${cpuinfo_file}" procs
+                REGEX "^core id"
+            )
+            list(REMOVE_DUPLICATES procs)
+            list(LENGTH procs PROCESSOR_COUNT)
+        endif()
     endif()
 
     # Mac:
@@ -35,4 +38,6 @@ if(NOT DEFINED PROCESSOR_COUNT)
     if(WIN32)
         set(PROCESSOR_COUNT "$ENV{NUMBER_OF_PROCESSORS}")
     endif()
+
+    message(STATUS "Processor count: ${PROCESSOR_COUNT}")
 endif()

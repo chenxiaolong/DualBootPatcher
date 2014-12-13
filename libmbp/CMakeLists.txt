@@ -91,7 +91,6 @@ set(MBP_NOINST_HEADERS
 
 if(BUILD_ANDROID)
     include(ExternalProject)
-    include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
     # Wordaround semicolon separated list issue
     set(MBP_SOURCES_STR "")

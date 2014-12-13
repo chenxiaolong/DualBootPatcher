@@ -1,5 +1,4 @@
 include(ExternalProject)
-include(${CMAKE_SOURCE_DIR}/cmake/LogicalCoreCount.cmake)
 
 ExternalProject_Add(
     libloki
