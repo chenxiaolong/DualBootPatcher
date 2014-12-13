@@ -73,7 +73,6 @@ private:
 
     void refreshPartConfigs();
     void refreshPresets();
-    void refreshRamdisks();
     void updateBootImageTextBox();
 
     void resetAutoPatchers();

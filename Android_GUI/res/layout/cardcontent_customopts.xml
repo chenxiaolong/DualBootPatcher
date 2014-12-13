@@ -70,29 +70,6 @@
         android:layout_marginTop="@dimen/card_internal_separator_padding" />
 
     <TextView
-        android:id="@+id/customopts_ramdisk"
-        style="@style/patcher_card_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/customopts_ramdisk" />
-
-    <Spinner
-        android:id="@+id/spinner_ramdisk"
-        style="@style/patcher_card_spinner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <View
-        style="@style/separator"
-        android:layout_marginBottom="@dimen/card_internal_separator_padding"
-        android:layout_marginTop="@dimen/card_internal_separator_padding" />
-
-    <View
-        style="@style/separator"
-        android:layout_marginBottom="@dimen/card_internal_separator_padding"
-        android:layout_marginTop="@dimen/card_internal_separator_padding" />
-
-    <TextView
         android:id="@+id/customopts_bootimage_title"
         style="@style/patcher_card_label"
         android:layout_width="match_parent"

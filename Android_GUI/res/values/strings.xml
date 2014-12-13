@@ -174,8 +174,6 @@
     <string name="customopts_devicecheck">Remove device check</string>
     <!-- Name for the option telling the patcher that the file has a boot image -->
     <string name="customopts_hasbootimage">Has boot image</string>
-    <!-- Name for the ramdisks combobox -->
-    <string name="customopts_ramdisk">Ramdisk</string>
     <!-- Name for the boot image text box -->
     <string name="customopts_bootimage">Boot image</string>
     <!-- Default text for the boot image text box indicating that leaving the box blank will enable autodetection -->

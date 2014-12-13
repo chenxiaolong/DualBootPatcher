@@ -120,8 +120,6 @@ public:
     QCheckBox *hasBootImageCb;
     QLabel *bootImageLbl;
     QLineEdit *bootImageLe;
-    QLabel *ramdiskLbl;
-    QComboBox *ramdiskSel;
 
     // Progress
     QLabel *detailsLbl;

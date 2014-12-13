@@ -105,7 +105,6 @@ void MainWindow::onDeviceSelected(int index)
     d->device = d->pc->devices()[index];
 
     refreshPresets();
-    refreshRamdisks();
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
         d->state = MainWindowPrivate::ChoseFile;
@@ -281,8 +280,6 @@ void MainWindow::addWidgets()
     d->bootImageLbl = new QLabel(tr("Boot image"), d->mainContainer);
     d->bootImageLe = new QLineEdit(d->mainContainer);
     d->bootImageLe->setPlaceholderText(tr("Leave blank to autodetect"));
-    d->ramdiskLbl = new QLabel(tr("Ramdisk"), d->mainContainer);
-    d->ramdiskSel = new QComboBox(d->mainContainer);
 
     d->chooseFileBtn = new QPushButton(tr("Choose file"), d->mainContainer);
     d->chooseAnotherFileBtn = new QPushButton(tr("Choose another file"), d->mainContainer);
@@ -316,8 +313,6 @@ void MainWindow::addWidgets()
     layout->addWidget(d->hasBootImageCb,    i, 1, 1,  1);
     layout->addWidget(d->bootImageLbl,      i, 2, 1,  1);
     layout->addWidget(d->bootImageLe,       i, 3, 1, -1);
-    layout->addWidget(d->ramdiskLbl,      ++i, 2, 1,  1);
-    layout->addWidget(d->ramdiskSel,        i, 3, 1, -1);
 
 
     layout->addWidget(newHorizLine(d->mainContainer), ++i, 0, 1, -1);
@@ -344,8 +339,6 @@ void MainWindow::addWidgets()
     d->unsupportedWidgets << d->hasBootImageCb;
     d->unsupportedWidgets << d->bootImageLbl;
     d->unsupportedWidgets << d->bootImageLe;
-    d->unsupportedWidgets << d->ramdiskLbl;
-    d->unsupportedWidgets << d->ramdiskSel;
 
     // List of custom preset widgets
     d->customPresetWidgets << d->autoPatcherLbl;
@@ -356,14 +349,10 @@ void MainWindow::addWidgets()
     d->customPresetWidgets << d->hasBootImageCb;
     d->customPresetWidgets << d->bootImageLbl;
     d->customPresetWidgets << d->bootImageLe;
-    d->customPresetWidgets << d->ramdiskLbl;
-    d->customPresetWidgets << d->ramdiskSel;
 
     // List of boot image-related widgets
     d->bootImageWidgets << d->bootImageLbl;
     d->bootImageWidgets << d->bootImageLe;
-    d->bootImageWidgets << d->ramdiskLbl;
-    d->bootImageWidgets << d->ramdiskSel;
 
     // Buttons
     d->progressContainer = new QWidget(this);
@@ -529,22 +518,6 @@ void MainWindow::refreshPresets()
     for (PatchInfo *info : d->patchInfos) {
         d->presetSel->addItem(QString::fromStdString(info->id()));
     }
-}
-
-void MainWindow::refreshRamdisks()
-{
-    Q_D(MainWindow);
-
-    d->ramdiskSel->clear();
-
-    QStringList ramdisks;
-    for (auto const &id : d->pc->ramdiskPatchers()) {
-        if (boost::starts_with(id, d->device->codename())) {
-            ramdisks << QString::fromStdString(id);
-        }
-    }
-    ramdisks.sort();
-    d->ramdiskSel->addItems(ramdisks);
 }
 
 void MainWindow::updateBootImageTextBox()
@@ -730,7 +703,7 @@ void MainWindow::startPatching()
                                           d->hasBootImageCb->isChecked());
             if (d->patchInfo->hasBootImage(PatchInfo::Default)) {
                 d->patchInfo->setRamdisk(PatchInfo::Default,
-                                         d->ramdiskSel->currentText().toStdString());
+                                         d->device->codename() + "/default");
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
                     const std::string textStdString = text.toStdString();
