@@ -19,6 +19,10 @@
 
 #include "coreramdiskpatcher.h"
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <boost/format.hpp>
 #include <json/json.h>
 
@@ -49,8 +53,12 @@ const std::string CoreRamdiskPatcher::SyncdaemonService
         "    class main\n"
         "    user root\n";
 
+static const std::string DataMediaContext =
+        "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
+
 static const std::string DefaultProp = "default.prop";
 static const std::string InitRc = "init.rc";
+static const std::string FileContexts = "file_contexts";
 
 static const std::string TagVersion = "version";
 static const std::string TagPartConfigs = "partconfigs";
@@ -99,6 +107,9 @@ bool CoreRamdiskPatcher::patchRamdisk()
         return false;
     }
     if (!addConfigJson()) {
+        return false;
+    }
+    if (!fixDataMediaContext()) {
         return false;
     }
     return true;
@@ -207,6 +218,44 @@ bool CoreRamdiskPatcher::addConfigJson()
     std::string json = root.toStyledString();
     std::vector<unsigned char> data(json.begin(), json.end());
     m_impl->cpio->addFile(std::move(data), "config.json", 0640);
+
+    return true;
+}
+
+/*!
+ * Some ROMs omit the line in /file_contexts that sets the context of
+ * /data/media/* to u:object_r:media_rw_data_file:s0. This is fine if SELinux
+ * is set to permissive mode or if the SELinux policy has no restriction on
+ * the u:object_r:device:s0 context (inherited from /data), but after restorecon
+ * is run, the incorrect context may affect ROMs that have a stricter policy.
+ */
+bool CoreRamdiskPatcher::fixDataMediaContext()
+{
+    if (!m_impl->cpio->exists(FileContexts)) {
+        return true;
+    }
+
+    bool hasDataMediaContext = false;
+
+    auto contents = m_impl->cpio->contents(FileContexts);
+
+    std::string strContents(contents.begin(), contents.end());
+    std::vector<std::string> lines;
+    boost::split(lines, strContents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::starts_with(*it, "/data/media")) {
+            hasDataMediaContext = true;
+        }
+    }
+
+    if (!hasDataMediaContext) {
+        lines.push_back(DataMediaContext);
+    }
+
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(FileContexts, std::move(contents));
 
     return true;
 }

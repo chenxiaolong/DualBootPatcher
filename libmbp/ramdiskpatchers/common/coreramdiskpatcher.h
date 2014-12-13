@@ -48,6 +48,7 @@ public:
     bool modifyDefaultProp();
     bool addSyncdaemon();
     bool addConfigJson();
+    bool fixDataMediaContext();
 
 private:
     class Impl;
