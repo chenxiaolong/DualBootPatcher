@@ -20,7 +20,7 @@ dependencies {
     compile 'com.nhaarman.listviewanimations:library:2.6.0'
     compile 'org.apache.commons:commons-lang3:+'
     compile 'commons-io:commons-io:2.4+'
-    compile files('libs/jna.jar')
+    compile files('@CMAKE_BINARY_DIR@/thirdparty/android/jna/jna.jar')
     compile files('libs/RootTools-3.4.jar')
 }
 
@@ -118,7 +118,7 @@ android {
                 '@CMAKE_BINARY_DIR@/libmbp/out/',
                 '@CMAKE_BINARY_DIR@/libloki/out/',
                 '@CMAKE_BINARY_DIR@/libmountpoint/out/',
-                'cmakelibs/'
+                '@CMAKE_BINARY_DIR@/thirdparty/android/jna/lib/'
             ]
         }
 

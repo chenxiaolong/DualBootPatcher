@@ -203,6 +203,35 @@ endif()
 
 
 ################################################################################
+# jna for Android
+################################################################################
+
+if(BUILD_ANDROID)
+    set(JNA_VER "4.1.0")
+
+    file(
+        DOWNLOAD
+        http://fs1.d-h.st/download/00154/vtO/jna-${JNA_VER}_android.tar.bz2
+        ${CMAKE_CURRENT_SOURCE_DIR}/jna-${JNA_VER}_android.tar.bz2
+        EXPECTED_MD5 ab22d3d2ff7f6cacd5b35a1fde79bd29
+        SHOW_PROGRESS
+    )
+
+    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/jna)
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/jna
+        )
+
+        message(STATUS "Extracting jna for Android ...")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/jna-${JNA_VER}_android.tar.bz2
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/jna
+        )
+    endif()
+endif()
+
+
+################################################################################
 # GNU patch for Windows
 ################################################################################
 
