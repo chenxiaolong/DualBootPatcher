@@ -34,7 +34,7 @@ import java.util.Map;
 
 public class LibMbp {
     /** Log (almost) all native method calls and their parameters */
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     static class CWrapper {
         static {
