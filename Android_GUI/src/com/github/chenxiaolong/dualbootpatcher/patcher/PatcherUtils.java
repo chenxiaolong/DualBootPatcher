@@ -302,9 +302,10 @@ public class PatcherUtils {
                 filename = ze.getName();
 
                 if (ze.isDirectory()) {
-                    new File(outputDir + File.separator + filename).mkdirs();
                     continue;
                 }
+
+                new File(outputDir + File.separator + filename).getParentFile().mkdirs();
 
                 FileOutputStream fos = new FileOutputStream(outputDir + File.separator + filename);
 
