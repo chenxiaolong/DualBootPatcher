@@ -1,0 +1,31 @@
+From 9f6ac5e094d924770d305d62e336bc2256642a36 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Mon, 15 Dec 2014 21:27:34 -0500
+Subject: [PATCH] Build static library
+
+---
+ libsepol/Android.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libsepol/Android.mk b/libsepol/Android.mk
+index 52b1982..2b30921 100644
+--- a/libsepol/Android.mk
++++ b/libsepol/Android.mk
+@@ -53,7 +53,7 @@ common_includes := \
+ 	$(LOCAL_PATH)/src/
+ 
+ ##
+-# libsepol.so
++# libsepol.a
+ #
+ include $(CLEAR_VARS)
+ 
+@@ -64,4 +64,4 @@ LOCAL_CFLAGS := $(common_cflags)
+ LOCAL_SRC_FILES := $(common_src_files)
+ LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+ 
+-include $(BUILD_SHARED_LIBRARY)
++include $(BUILD_STATIC_LIBRARY)
+-- 
+2.1.3
+
