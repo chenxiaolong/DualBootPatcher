@@ -203,6 +203,33 @@ endif()
 
 
 ################################################################################
+# libsepol for Android
+################################################################################
+
+set(LIBSEPOL_VER "20141215")
+
+file(
+    DOWNLOAD
+    http://fs1.d-h.st/download/00154/iOwE/libsepol_${LIBSEPOL_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/libsepol_${LIBSEPOL_VER}_android.tar.bz2
+    EXPECTED_MD5 7b096e7cdaff4041974145123ee555f1
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libsepol)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libsepol
+    )
+
+    message(STATUS "Extracting libsepol for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libsepol_${LIBSEPOL_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libsepol
+    )
+endif()
+
+
+################################################################################
 # jna for Android
 ################################################################################
 
