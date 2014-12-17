@@ -489,6 +489,11 @@ int mount_fstab(const char *fstab_path)
         return -1;
     }
 
+    // Remount rootfs as read-write so a new fstab file can be written
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        LOGE("Failed to remount rootfs as rw: %s", strerror(errno));
+    }
+
     // Read original fstab
     fstab = read_fstab(fstab_path);
     if (!fstab) {
