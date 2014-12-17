@@ -384,7 +384,6 @@ static int mkdirs(const char *dir, mode_t mode)
         strcat(temp, p);
         strcat(temp, "/");
 
-        printf("Creating %s\n", temp);
         if (stat(temp, &st) < 0 && mkdir(temp, mode) < 0) {
             LOGE("Failed to create directory %s: %s\n", temp, strerror(errno));
             free(copy);
@@ -500,7 +499,7 @@ int mount_fstab(const char *fstab_path)
     // Generate new fstab without /system, /cache, or /data entries
     out = fopen(path_fstab_gen, "wb");
     if (!out) {
-        LOGE("Failed to open %s for writing", path_fstab_gen);
+        LOGE("Failed to open %s for writing: %s", path_fstab_gen, strerror(errno));
         goto error;
     }
 
