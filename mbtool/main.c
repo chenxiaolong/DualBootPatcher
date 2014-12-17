@@ -25,6 +25,7 @@
 #include "config.h"
 #include "logging.h"
 #include "mount_fstab.h"
+#include "sepolpatch.h"
 
 
 int main(int argc, char *argv[]);
@@ -42,6 +43,7 @@ struct tool tools[] = {
     TOOL(mbtool),
     // Tools
     TOOL(mount_fstab),
+    TOOL(sepolpatch),
     { NULL, NULL }
 };
 

@@ -1,10 +1,17 @@
 LOCAL_PATH := $(call my-dir)
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
+LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libjansson
 LOCAL_SRC_FILES := $(JANSSON_DIR)/lib_$(TARGET_ARCH_ABI)/libjansson.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libsepol
+LOCAL_SRC_FILES := $(LIBSEPOL_DIR)/lib_$(TARGET_ARCH_ABI)/libsepol.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -14,13 +21,15 @@ LOCAL_SRC_FILES := \
 	config.c \
 	logging.c \
 	mount_fstab.c \
-	main.c
+	main.c \
+	sepolpatch.c
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libjansson
+LOCAL_STATIC_LIBRARIES := libjansson libsepol
 
 LOCAL_C_INCLUDES := \
-	$(JANSSON_DIR)/include
+	$(JANSSON_DIR)/include \
+	$(LIBSEPOL_DIR)/include
 
 # Not sure why it tries to compile the binary with g++
 TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
