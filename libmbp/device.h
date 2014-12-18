@@ -28,8 +28,6 @@
 class MBP_EXPORT Device
 {
 public:
-    static const std::string SelinuxPermissive;
-    static const std::string SelinuxUnchanged;
     static const std::string SystemPartition;
     static const std::string CachePartition;
     static const std::string DataPartition;
@@ -43,8 +41,6 @@ public:
     void setName(std::string name);
     std::string architecture() const;
     void setArchitecture(std::string arch);
-    std::string selinux() const;
-    void setSelinux(std::string selinux);
     std::string partition(const std::string &which) const;
     void setPartition(const std::string &which, std::string partition);
     std::vector<std::string> partitionTypes() const;

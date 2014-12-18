@@ -29,17 +29,12 @@ public:
     std::string codename;
     std::string name;
     std::string architecture;
-    std::string selinux;
 
     std::unordered_map<std::string, std::string> partitions;
 };
 /*! \endcond */
 
 
-/*! \brief SELinux permissive mode */
-const std::string Device::SelinuxPermissive = "permissive";
-/*! \brief Leave SELinux mode unchanged */
-const std::string Device::SelinuxUnchanged = "unchanged";
 /*! \brief System partition */
 const std::string Device::SystemPartition = "system";
 /*! \brief Cache partition */
@@ -57,7 +52,6 @@ const std::string Device::DataPartition = "data";
  * - Device codename (eg. jflte)
  * - Device name (eg. Samsung Galaxy S 4)
  * - CPU architecture (eg. armeabi-v7a)
- * - SELinux mode (eg. enforcing)
  * - Partition numbers for the system, cache, and data partitions
  */
 
@@ -133,30 +127,6 @@ std::string Device::architecture() const
 void Device::setArchitecture(std::string arch)
 {
     m_impl->architecture = std::move(arch);
-}
-
-/*!
- * \brief Device's SELinux mode
- *
- * \return SELinux mode
- */
-std::string Device::selinux() const
-{
-    if (m_impl->selinux == SelinuxUnchanged) {
-        return std::string();
-    }
-
-    return m_impl->selinux;
-}
-
-/*!
- * \brief Set the device's SELinux mode
- *
- * \param selinux SELinux mode
- */
-void Device::setSelinux(std::string selinux)
-{
-    m_impl->selinux = std::move(selinux);
 }
 
 /*!

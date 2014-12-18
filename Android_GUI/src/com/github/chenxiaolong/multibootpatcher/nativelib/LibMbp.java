@@ -119,8 +119,6 @@ public class LibMbp {
         // END: ccpiofile.h
 
         // BEGIN: cdevice.h
-        static native String mbp_device_selinux_permissive();
-        static native String mbp_device_selinux_unchanged();
         static native String mbp_device_system_partition();
         static native String mbp_device_cache_partition();
         static native String mbp_device_data_partition();
@@ -132,8 +130,6 @@ public class LibMbp {
         static native void mbp_device_set_name(CDevice device, String name);
         static native Pointer mbp_device_architecture(CDevice device);
         static native void mbp_device_set_architecture(CDevice device, String arch);
-        static native Pointer mbp_device_selinux(CDevice device);
-        static native void mbp_device_set_selinux(CDevice device, String selinux);
         static native Pointer mbp_device_partition(CDevice device, String which);
         static native void mbp_device_set_partition(CDevice device, String which, String partition);
         static native Pointer mbp_device_partition_types(CDevice device);
@@ -986,14 +982,6 @@ public class LibMbp {
             }
         };
 
-        public static String SelinuxPermissive() {
-            return CWrapper.mbp_device_selinux_permissive();
-        }
-
-        public static String SelinuxUnchanged() {
-            return CWrapper.mbp_device_selinux_unchanged();
-        }
-
         public static String SystemPartition() {
             return CWrapper.mbp_device_system_partition();
         }
@@ -1043,19 +1031,6 @@ public class LibMbp {
             ensureNotNull(arch);
 
             CWrapper.mbp_device_set_architecture(mCDevice, arch);
-        }
-
-        public String getSelinux() {
-            log(mCDevice, Device.class, "getSelinux");
-            Pointer p = CWrapper.mbp_device_selinux(mCDevice);
-            return getStringAndFree(p);
-        }
-
-        public void setSelinux(String selinux) {
-            log(mCDevice, Device.class, "setSelinux", selinux);
-            ensureNotNull(selinux);
-
-            CWrapper.mbp_device_set_selinux(mCDevice, selinux);
         }
 
         public String getPartition(String which) {

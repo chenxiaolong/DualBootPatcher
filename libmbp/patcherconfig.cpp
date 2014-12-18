@@ -479,7 +479,6 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device = new Device();
     device->setCodename("jflte");
     device->setName("Samsung Galaxy S 4");
-    device->setSelinux(Device::SelinuxPermissive);
     device->setPartition(Device::SystemPartition, "mmcblk0p16");
     device->setPartition(Device::CachePartition, "mmcblk0p18");
     device->setPartition(Device::DataPartition, "mmcblk0p29");
@@ -489,7 +488,6 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device = new Device();
     device->setCodename("klte");
     device->setName("Samsung Galaxy S 5");
-    device->setSelinux(Device::SelinuxPermissive);
     device->setPartition(Device::SystemPartition, "mmcblk0p23");
     device->setPartition(Device::CachePartition, "mmcblk0p24");
     device->setPartition(Device::DataPartition, "mmcblk0p26");
@@ -499,7 +497,6 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device = new Device();
     device->setCodename("hlte");
     device->setName("Samsung Galaxy Note 3");
-    device->setSelinux(Device::SelinuxPermissive);
     device->setPartition(Device::SystemPartition, "mmcblk0p23");
     device->setPartition(Device::CachePartition, "mmcblk0p24");
     device->setPartition(Device::DataPartition, "mmcblk0p26");
@@ -509,35 +506,30 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device = new Device();
     device->setCodename("hammerhead");
     device->setName("Google/LG Nexus 5");
-    device->setSelinux(Device::SelinuxUnchanged);
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2013)
     device = new Device();
     device->setCodename("flo");
     device->setName("Google/ASUS Nexus 7 (2013)");
-    device->setSelinux(Device::SelinuxUnchanged);
     devices.push_back(device);
 
     // OnePlus One
     device = new Device();
     device->setCodename("bacon");
     device->setName("OnePlus One");
-    device->setSelinux(Device::SelinuxUnchanged);
     devices.push_back(device);
 
     // LG G2
     device = new Device();
     device->setCodename("d800");
     device->setName("LG G2");
-    device->setSelinux(Device::SelinuxUnchanged);
     devices.push_back(device);
 
     // Falcon
     device = new Device();
     device->setCodename("falcon");
     device->setName("Motorola Moto G");
-    device->setSelinux(Device::SelinuxUnchanged);
     devices.push_back(device);
 }
 

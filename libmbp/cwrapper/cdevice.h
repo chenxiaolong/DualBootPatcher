@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-const char * mbp_device_selinux_permissive(void);
-const char * mbp_device_selinux_unchanged(void);
 const char * mbp_device_system_partition(void);
 const char * mbp_device_cache_partition(void);
 const char * mbp_device_data_partition(void);
@@ -42,9 +40,6 @@ void mbp_device_set_name(CDevice *device, const char *name);
 
 char * mbp_device_architecture(const CDevice *device);
 void mbp_device_set_architecture(CDevice *device, const char *arch);
-
-char * mbp_device_selinux(const CDevice *device);
-void mbp_device_set_selinux(CDevice *device, const char *selinux);
 
 char * mbp_device_partition(const CDevice *device, const char *which);
 void mbp_device_set_partition(CDevice *device,

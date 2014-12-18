@@ -286,13 +286,6 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         return false;
     }
 
-    // Change the SELinux mode according to the device config
-    const std::string cmdline = bi.kernelCmdline();
-    if (!info->device()->selinux().empty()) {
-        bi.setKernelCmdline(cmdline
-                + " androidboot.selinux=" + info->device()->selinux());
-    }
-
     // Load the ramdisk cpio
     CpioFile cpio;
     cpio.load(bi.ramdiskImage());

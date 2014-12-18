@@ -40,18 +40,6 @@ extern "C" {
 
     // Static constants
 
-    /*! \brief SELinux permissive mode constant */
-    const char * mbp_device_selinux_permissive(void)
-    {
-        return Device::SelinuxPermissive.c_str();
-    }
-
-    /*! \brief Leave SELinux mode unchanged constant */
-    const char * mbp_device_selinux_unchanged(void)
-    {
-        return Device::SelinuxUnchanged.c_str();
-    }
-
     /*! \brief System partition constant */
     const char * mbp_device_system_partition(void)
     {
@@ -194,40 +182,6 @@ extern "C" {
         assert(device != nullptr);
         Device *d = reinterpret_cast<Device *>(device);
         d->setArchitecture(arch);
-    }
-
-    /*!
-     * \brief Device's SELinux mode
-     *
-     * \note The output data is dynamically allocated. It should be `free()`'d
-     *       when it is no longer needed.
-     *
-     * \param device CDevice object
-     *
-     * \return SELinux mode
-     *
-     * \sa Device::selinux()
-     */
-    char *mbp_device_selinux(const CDevice *device)
-    {
-        assert(device != nullptr);
-        const Device *d = reinterpret_cast<const Device *>(device);
-        return strdup(d->selinux().c_str());
-    }
-
-    /*!
-     * \brief Set the device's SELinux mode
-     *
-     * \param device CDevice object
-     * \param selinux SELinux mode
-     *
-     * \sa Device::setSelinux()
-     */
-    void mbp_device_set_selinux(CDevice *device, const char *selinux)
-    {
-        assert(device != nullptr);
-        Device *d = reinterpret_cast<Device *>(device);
-        d->setSelinux(selinux);
     }
 
     /*!
