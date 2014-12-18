@@ -35,17 +35,12 @@ class StandardPatcher::Impl
 public:
     const PatcherConfig *pc;
     const FileInfo *info;
-
-    bool legacyScript;
 };
 /*! \endcond */
 
 
 const std::string StandardPatcher::Id
         = "StandardPatcher";
-
-const std::string StandardPatcher::ArgLegacyScript
-        = "legacy-script";
 
 const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
@@ -66,16 +61,10 @@ StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
                                  const PatchInfo::AutoPatcherArgs &args) :
     m_impl(new Impl())
 {
+    (void) args;
+
     m_impl->pc = pc;
     m_impl->info = info;
-
-    if (args.find(ArgLegacyScript) != args.end()) {
-        const std::string &value = args.at(ArgLegacyScript);
-
-        if (boost::iequals(value, "true")) {
-            m_impl->legacyScript = true;
-        }
-    }
 }
 
 StandardPatcher::~StandardPatcher()
@@ -115,7 +104,7 @@ bool StandardPatcher::patchFiles(const std::string &directory,
     std::vector<std::string> lines;
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    insertDualBootSh(&lines, m_impl->legacyScript);
+    insertDualBootSh(&lines);
     replaceMountLines(&lines, m_impl->info->device());
     replaceUnmountLines(&lines, m_impl->info->device());
     replaceFormatLines(&lines, m_impl->info->device());
@@ -165,16 +154,14 @@ void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
     \brief Insert boilerplate updater-script lines to initialize helper scripts
 
     \param lines Container holding strings of lines in updater-script file
-    \param legacyScript Unimplemented
  */
-void StandardPatcher::insertDualBootSh(std::vector<std::string> *lines,
-                                       bool legacyScript)
+void StandardPatcher::insertDualBootSh(std::vector<std::string> *lines)
 {
     auto it = lines->begin();
 
     it = lines->insert(it, "package_extract_file(\"dualboot.sh\", \"/tmp/dualboot.sh\");");
     ++it;
-    it = insertSetPerms(it, lines, legacyScript, "/tmp/dualboot.sh", 0777);
+    it = insertSetPerms(it, lines, "/tmp/dualboot.sh", 0777);
     it = lines->insert(it, "ui_print(\"NOT INSTALLING AS PRIMARY\");");
     ++it;
     it = insertUnmountEverything(it, lines);
@@ -530,14 +517,9 @@ StandardPatcher::insertFormatData(std::vector<std::string>::iterator position,
 std::vector<std::string>::iterator
 StandardPatcher::insertSetPerms(std::vector<std::string>::iterator position,
                                 std::vector<std::string> *lines,
-                                bool legacyScript,
                                 const std::string &file,
-                                unsigned int mode) {
-
-    (void) legacyScript;
-
-    // Don't feel like updating all the patchinfos right now to account for
-    // all cases
+                                unsigned int mode)
+{
     position = lines->insert(position, (boost::format(
             "run_program(\"/sbin/busybox\", \"chmod\", \"0%2$o\", \"%1%\");")
             % file % mode).str());

@@ -36,8 +36,6 @@ public:
 
     static const std::string Id;
 
-    static const std::string ArgLegacyScript;
-
     static const std::string UpdaterScript;
 
     virtual PatcherError error() const override;
@@ -52,7 +50,7 @@ public:
 
     // These are public so other patchers can use them
     static void removeDeviceChecks(std::vector<std::string> *lines);
-    static void insertDualBootSh(std::vector<std::string> *lines, bool legacyScript);
+    static void insertDualBootSh(std::vector<std::string> *lines);
     static void insertWriteKernel(std::vector<std::string> *lines, const std::string &bootImage);
 
     static void replaceMountLines(std::vector<std::string> *lines, Device *device);
@@ -82,7 +80,7 @@ public:
 
     static std::vector<std::string>::iterator
     insertSetPerms(std::vector<std::string>::iterator position, std::vector<std::string> *lines,
-                   bool legacyScript, const std::string &file, unsigned int mode);
+                   const std::string &file, unsigned int mode);
 
 private:
     class Impl;
