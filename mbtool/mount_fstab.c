@@ -32,9 +32,11 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include "config.h"
 #include "logging.h"
+#include "sepolpatch.h"
 
 
 struct fstab
@@ -697,6 +699,14 @@ int mount_fstab_main(int argc, char *argv[])
     if (mainconfig_init() < 0) {
         LOGE("Failed to load main configuration file");
         return EXIT_FAILURE;
+    }
+
+    // Patch SELinux policy
+    if (patch_loaded_sepolicy() < 0) {
+        LOGE("Failed to patch loaded SELinux policy. Continuing anyway");
+    } else {
+        LOGV("SELinux policy patching completed. Waiting 1 second for policy reload");
+        sleep(1);
     }
 
     return mount_fstab(argv[optind]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
