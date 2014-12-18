@@ -1,3 +1,10 @@
+# All of the files here are built from the scripts thirdparty/*/build_android_*.sh
+# If you don't trust me or my binaries, you can use your own builds by copying
+# the tarballs to thirdparty/ and changing the md5sums here (CMake will not
+# download anything if the files exist and the md5sums match)
+
+set(URL_BASE "https://dl.dropboxusercontent.com/u/486665/MultiBootPatcher/prebuilts")
+
 ################################################################################
 # getfattr, setfattr for Android
 ################################################################################
@@ -6,7 +13,7 @@ set(ATTR_VER "2.4.47")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00154/CQc/attr-${ATTR_VER}_android.tar.bz2
+    ${URL_BASE}/attr-${ATTR_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/attr-${ATTR_VER}_android.tar.bz2
     EXPECTED_MD5 298f033dc00617fb6a48b035f4b8ef27
     SHOW_PROGRESS
@@ -42,7 +49,7 @@ set(ACL_VER "2.2.52")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00154/AJd/acl-${ACL_VER}_android.tar.bz2
+    ${URL_BASE}/acl-${ACL_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/acl-${ACL_VER}_android.tar.bz2
     EXPECTED_MD5 c5e6c38582342c6a75a4c2a00ceebb08
     SHOW_PROGRESS
@@ -78,7 +85,7 @@ set(PATCH_VER "2.7.1")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00154/3gPd/patch-${PATCH_VER}_android.tar.bz2
+    ${URL_BASE}/patch-${PATCH_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/patch-${PATCH_VER}_android.tar.bz2
     EXPECTED_MD5 1ff85704c4906d86c52090a990f9062c
     SHOW_PROGRESS
@@ -113,7 +120,7 @@ set(BUSYBOX_VER "20140928")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00142/syi/prebuilts-android-busybox-${BUSYBOX_VER}.tar
+    ${URL_BASE}/prebuilts-android-busybox-${BUSYBOX_VER}.tar
     ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-busybox-${BUSYBOX_VER}.tar
     EXPECTED_MD5 6c418ec985a4d93e4afbe3194bb5534e
     SHOW_PROGRESS
@@ -142,7 +149,7 @@ if(BUILD_ANDROID)
 
     file(
         DOWNLOAD
-        http://fs1.d-h.st/download/00148/zQG/boost-${BOOST_VER}_android.tar.bz2
+        ${URL_BASE}/boost-${BOOST_VER}_android.tar.bz2
         ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
         EXPECTED_MD5 ab35effea3638135b618d0d8de298471
         SHOW_PROGRESS
@@ -171,7 +178,7 @@ if(BUILD_ANDROID)
 
     file(
         DOWNLOAD
-        http://fs1.d-h.st/download/00148/9K1/libxml2_${LIBXML2_VER}.tar.bz2
+        ${URL_BASE}/libxml2_${LIBXML2_VER}.tar.bz2
         ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
         EXPECTED_MD5 83181acfdac6089b1d44d77b242cb4b5
         SHOW_PROGRESS
@@ -200,7 +207,7 @@ if(BUILD_ANDROID)
 
     file(
         DOWNLOAD
-        http://fs1.d-h.st/download/00148/rKB/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
+        ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
         ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
         EXPECTED_MD5 0e3e3065853dceef8a0827b8915dfe95
         SHOW_PROGRESS
@@ -228,7 +235,7 @@ set(JANSSON_VER "2.7")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00152/KDP/jansson_v${JANSSON_VER}.tar.bz2
+    ${URL_BASE}/jansson_v${JANSSON_VER}.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/jansson_v${JANSSON_VER}.tar.bz2
     EXPECTED_MD5 fbc60a91f4d9a8a25a978a085c3a6661
     SHOW_PROGRESS
@@ -255,7 +262,7 @@ set(LIBSEPOL_VER "2.3")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00154/GW0/libsepol-${LIBSEPOL_VER}_android.tar.bz2
+    ${URL_BASE}/libsepol-${LIBSEPOL_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libsepol-${LIBSEPOL_VER}_android.tar.bz2
     EXPECTED_MD5 73e618c7c075936e67544c332edb7055
     SHOW_PROGRESS
@@ -283,7 +290,7 @@ if(BUILD_ANDROID)
 
     file(
         DOWNLOAD
-        http://fs1.d-h.st/download/00154/vtO/jna-${JNA_VER}_android.tar.bz2
+        ${URL_BASE}/jna-${JNA_VER}_android.tar.bz2
         ${CMAKE_CURRENT_SOURCE_DIR}/jna-${JNA_VER}_android.tar.bz2
         EXPECTED_MD5 ab22d3d2ff7f6cacd5b35a1fde79bd29
         SHOW_PROGRESS
