@@ -330,6 +330,10 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
                 "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
             it = lines->erase(it);
             it = insertFormatCache(it, lines);
+        } else if (MBP_regex_search(line, MBP_regex(
+                "^\\s*run_program\\s*\\(\\s*\"[^\",]*/format.sh\".*$"))) {
+            it = lines->erase(it);
+            it = insertFormatSystem(it, lines);
         } else {
             ++it;
         }
