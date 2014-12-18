@@ -57,7 +57,7 @@ PatcherError FloBaseRamdiskPatcher::error() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string FloAOSPRamdiskPatcher::Id = "flo/AOSP/AOSP";
+const std::string FloAOSPRamdiskPatcher::Id = "flo/default";
 
 FloAOSPRamdiskPatcher::FloAOSPRamdiskPatcher(const PatcherConfig *const pc,
                                              const FileInfo *const info,
