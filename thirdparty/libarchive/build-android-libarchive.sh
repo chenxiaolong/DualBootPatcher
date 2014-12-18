@@ -39,8 +39,7 @@ git am ../../0001-Change-statfs.f_flag-statfs.f_flags.patch
 popd
 
 if [ ! -f android.toolchain.cmake ]; then
-#    wget 'https://github.com/taka-no-me/android-cmake/raw/master/android.toolchain.cmake'
-    wget 'https://github.com/taka-no-me/android-cmake/raw/ndk-r10c/android.toolchain.cmake'
+    wget 'https://github.com/taka-no-me/android-cmake/raw/master/android.toolchain.cmake'
 fi
 
 build() {

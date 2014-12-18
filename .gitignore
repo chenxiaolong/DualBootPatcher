@@ -15,21 +15,3 @@
 
 # Transifex
 /translations/
-
-# Third party
-/thirdparty/*.tar*
-
-# libmbp
-/libmbp/Android.mk
-
-# mbtool
-/mbtool/Android.mk
-
-# libloki
-/libloki/loki/
-
-# syncdaemon
-/syncdaemon/jsoncpp/
-
-# Android GUI
-/Android_GUI/cmakelibs/
