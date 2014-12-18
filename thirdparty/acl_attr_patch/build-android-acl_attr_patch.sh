@@ -19,6 +19,11 @@ set -e
 
 cd "$(dirname "${0}")"
 
+mkdir -p build
+cd build
+
+topdir="$(pwd)"
+
 gcc_ver=4.9
 linaro_ver=14.09
 
@@ -51,22 +56,37 @@ fi
 
 push_linaro() {
     linaro_old_path="${PATH}"
-    export PATH="${PATH}:$(pwd)/${name_arm}/bin"
-    export PATH="${PATH}:$(pwd)/${name_aarch64}/bin"
+    export PATH="${PATH}:${topdir}/${name_arm}/bin"
+    export PATH="${PATH}:${topdir}/${name_aarch64}/bin"
 }
 
 pop_linaro() {
     export PATH="${linaro_old_path}"
 }
 
-# Output and temp dirs
+android-strip() {
+    local arch="${1}"
+    local toolchain="${2}"
+    shift
+    shift
 
-temp_prefix_arm="$(pwd)/temp_prefix_arm"
-temp_prefix_aarch64="$(pwd)/temp_prefix_aarch64"
-temp_prefix_x86="$(pwd)/temp_prefix_x86"
-temp_prefix_x86_64="$(pwd)/temp_prefix_x86_64"
+    if [[ "${arch}" == "x86" ]] || [[ "${arch}" == "x86_64" ]]; then
+        strip "${@}"
+    else
+        ${toolchain}-strip "${@}"
+    fi
+}
 
-mkdir -p output
+android-upx() {
+    local arch="${1}"
+    shift
+
+    if [[ "${arch}" != "arm64-v8a" ]]; then
+        upx --lzma "${@}"
+    fi
+}
+
+outdir="$(mktemp -d)"
 
 
 ################################################################################
@@ -90,27 +110,23 @@ if [ ! -f "${tar_acl}" ]; then
     wget "${url_acl}"
 fi
 
+if [ ! -d "${name_attr}" ]; then
+    tar xvf "${tar_attr}"
+fi
+
+if [ ! -d "${name_acl}" ]; then
+    tar xvf "${tar_acl}"
+fi
+
 build_attr() {
     local arch="${1}"
     local toolchain="${2}"
-    local prefix="${3}"
-
-    if [ -f output/${arch}/getfattr ] && [ -f output/${arch}/setfattr ]; then
-        return
-    fi
 
     push_linaro
 
-    mkdir -p output/${arch}/
-
-    if [ -d "${name_attr}_${arch}" ]; then
-        rm -rf "${name_attr}_${arch}"
-    fi
-    mkdir "${name_attr}_${arch}"
-
-    tar xvf "${tar_attr}" --strip-components=1 -C "${name_attr}_${arch}"
-
-    pushd "${name_attr}_${arch}"
+    rm -rf build_attr_${arch}/
+    cp -r ${name_attr} build_attr_${arch}
+    pushd build_attr_${arch}/
 
     if [ "${arch}" = "x86" ]; then
         local cc="${toolchain}-gcc -m32"
@@ -121,7 +137,7 @@ build_attr() {
     CC="${cc}" ./configure \
         --host=${toolchain} \
         --build=${toolchain_host} \
-        --prefix="${prefix}" \
+        --prefix="$(pwd)/../inst_attr_${arch}" \
         --enable-shared \
         --enable-static \
         --disable-lib64 \
@@ -129,14 +145,15 @@ build_attr() {
 
     CC="${cc}" make
 
-    make install-dev
-    make install-lib
+    make install-dev install-lib
+
+    mkdir -p "${outdir}"/${arch}/
 
     for tool in getfattr setfattr; do
         pushd ${tool}
         ${cc} \
             -static \
-            -o ../../output/${arch}/${tool} \
+            -o "${outdir}"/${arch}/${tool} \
             ${tool}.o \
             ../libmisc/.libs/libmisc.a \
             ../libattr/.libs/libattr.a
@@ -145,15 +162,8 @@ build_attr() {
 
     popd
 
-    if [ "${arch}" = "x86" ] || [ "${arch}" = "x86_64" ]; then
-        strip output/${arch}/{get,set}fattr
-    else
-        ${toolchain}-strip output/${arch}/{get,set}fattr
-    fi
-
-    if [ "${arch}" != "arm64-v8a" ]; then
-        upx --lzma output/${arch}/{get,set}fattr
-    fi
+    android-strip ${arch} ${toolchain} "${outdir}"/${arch}/{get,set}fattr
+    android-upx ${arch} "${outdir}"/${arch}/{get,set}fattr
 
     pop_linaro
 }
@@ -161,27 +171,15 @@ build_attr() {
 build_acl() {
     local arch="${1}"
     local toolchain="${2}"
-    local prefix="${3}"
 
-    local attr_cflags="-I${prefix}/include"
-    local attr_ldflags="-L${prefix}/lib"
-
-    if [ -f output/${arch}/getfacl ] && [ -f output/${arch}/setfacl ]; then
-        return
-    fi
+    local attr_cflags="-I$(pwd)/inst_attr_${arch}/include"
+    local attr_ldflags="-L$(pwd)/inst_attr_${arch}/lib"
 
     push_linaro
 
-    mkdir -p output/${arch}/
-
-    if [ -d "${name_acl}_${arch}" ]; then
-        rm -rf "${name_acl}_${arch}"
-    fi
-    mkdir "${name_acl}_${arch}"
-
-    tar xvf "${tar_acl}" --strip-components=1 -C "${name_acl}_${arch}"
-
-    pushd "${name_acl}_${arch}"
+    rm -rf build_acl_${arch}/
+    cp -r ${name_acl} build_acl_${arch}
+    pushd build_acl_${arch}/
 
     if [ "${arch}" = "x86" ]; then
         local cc="${toolchain}-gcc -m32"
@@ -192,7 +190,7 @@ build_acl() {
     CC="${cc}" CFLAGS="${attr_cflags}" LDFLAGS="${attr_ldflags}" ./configure \
         --host=${toolchain} \
         --build=${toolchain_host} \
-        --prefix="${prefix}" \
+        --prefix="$(pwd)/../inst_acl_${arch}" \
         --disable-shared \
         --enable-static \
         --disable-lib64 \
@@ -200,11 +198,13 @@ build_acl() {
 
     CC="${cc}" CFLAGS="${attr_cflags}" LDFLAGS="${attr_ldflags}" make
 
+    mkdir -p "${outdir}"/${arch}/
+
     pushd getfacl
     ${cc} \
         ${x86_flags} ${attr_cflags} ${attr_ldflags} \
         -static \
-        -o ../../output/${arch}/getfacl \
+        -o "${outdir}"/${arch}/getfacl \
         getfacl.o \
         user_group.o \
         ../libmisc/.libs/libmisc.a \
@@ -216,7 +216,7 @@ build_acl() {
     ${cc} \
         ${x86_flags} ${attr_cflags} ${attr_ldflags} \
         -static \
-        -o ../../output/${arch}/setfacl \
+        -o "${outdir}"/${arch}/setfacl \
         setfacl.o \
         do_set.o \
         sequence.o \
@@ -228,27 +228,20 @@ build_acl() {
 
     popd
 
-    if [ "${arch}" = "x86" ] || [ "${arch}" = "x86_64" ]; then
-        strip output/${arch}/{get,set}facl
-    else
-        ${toolchain}-strip output/${arch}/{get,set}facl
-    fi
-
-    if [ "${arch}" != "arm64-v8a" ]; then
-        upx --lzma output/${arch}/{get,set}facl
-    fi
+    android-strip ${arch} ${toolchain} "${outdir}"/${arch}/{get,set}facl
+    android-upx ${arch} "${outdir}"/${arch}/{get,set}facl
 
     pop_linaro
 }
 
-build_attr armeabi-v7a ${toolchain_arm} ${temp_prefix_arm}
-build_attr arm64-v8a ${toolchain_aarch64} ${temp_prefix_aarch64}
-build_attr x86 ${toolchain_host} ${temp_prefix_x86}
-build_attr x86_64 ${toolchain_host} ${temp_prefix_x86_64}
-build_acl armeabi-v7a ${toolchain_arm} ${temp_prefix_arm}
-build_acl arm64-v8a ${toolchain_aarch64} ${temp_prefix_aarch64}
-build_acl x86 ${toolchain_host} ${temp_prefix_x86}
-build_acl x86_64 ${toolchain_host} ${temp_prefix_x86_64}
+build_attr armeabi-v7a ${toolchain_arm}
+build_attr arm64-v8a ${toolchain_aarch64}
+build_attr x86 ${toolchain_host}
+build_attr x86_64 ${toolchain_host}
+build_acl armeabi-v7a ${toolchain_arm}
+build_acl arm64-v8a ${toolchain_aarch64}
+build_acl x86 ${toolchain_host}
+build_acl x86_64 ${toolchain_host}
 
 
 ################################################################################
@@ -264,27 +257,19 @@ if [ ! -f "${tar_patch}" ]; then
     wget "${url_patch}"
 fi
 
+if [ ! -d "${name_patch}" ]; then
+    tar xvf "${tar_patch}"
+fi
+
 build_patch() {
     local arch="${1}"
     local toolchain="${2}"
-    local prefix="${3}"
-
-    if [ -f output/${arch}/patch ]; then
-        return
-    fi
 
     push_linaro
 
-    mkdir -p output/${arch}/
-
-    if [ -d "${name_patch}_${arch}" ]; then
-        rm -rf "${name_patch}_${arch}"
-    fi
-    mkdir "${name_patch}_${arch}"
-
-    tar xvf "${tar_patch}" --strip-components=1 -C "${name_patch}_${arch}"
-
-    pushd "${name_patch}_${arch}"
+    rm -rf build_patch_${arch}/
+    mkdir build_patch_${arch}/
+    pushd build_patch_${arch}/
 
     if [ "${arch}" = "x86" ]; then
         local cc="${toolchain}-gcc -m32"
@@ -292,45 +277,43 @@ build_patch() {
         local cc="${toolchain}-gcc"
     fi
 
-    CC="${cc} -static" ./configure \
+    CC="${cc} -static" ../${name_patch}/configure \
         --host=${toolchain} \
-        --build=${toolchain_host} \
-        --prefix="${prefix}"
+        --build=${toolchain_host}
 
     CC="${cc} -static" make
 
-    cp src/patch ../output/${arch}/patch
+    mkdir -p "${outdir}"/${arch}/
+    cp src/patch "${outdir}"/${arch}/patch
 
     popd
 
-    if [ "${arch}" = "x86" ] || [ "${arch}" = "x86_64" ]; then
-        strip output/${arch}/patch
-    else
-        ${toolchain}-strip output/${arch}/patch
-    fi
-
-    if [ "${arch}" != "arm64-v8a" ]; then
-        upx --lzma output/${arch}/patch
-    fi
+    android-strip ${arch} ${toolchain} "${outdir}"/${arch}/patch
+    android-upx ${arch} "${outdir}"/${arch}/patch
 
     pop_linaro
 }
 
-build_patch armeabi-v7a ${toolchain_arm} ${temp_prefix_arm}
-build_patch arm64-v8a ${toolchain_aarch64} ${temp_prefix_aarch64}
-build_patch x86 ${toolchain_host} ${temp_prefix_x86}
-build_patch x86_64 ${toolchain_host} ${temp_prefix_x86_64}
+build_patch armeabi-v7a ${toolchain_arm}
+build_patch arm64-v8a ${toolchain_aarch64}
+build_patch x86 ${toolchain_host}
+build_patch x86_64 ${toolchain_host}
 
 
 ################################################################################
 # Build tarballs
 ################################################################################
-curdate="$(date +'%Y%m%d')"
-echo "${curdate}" > output/PREBUILTS_VERSION_ANDROID.txt
+curdir="$(pwd)"
 
-# "cmake -E tar" (CMake 3.0.1) doesn't like xz on Windows, so we'll use bz2
-if [ ! -f prebuilts-android-${curdate}.tar.bz2 ]; then
-    tar jcvf prebuilts-android-${curdate}.tar.bz2 \
-        output/PREBUILTS_VERSION_ANDROID.txt \
-        output/*/{patch,{g,s}etf{acl,attr}}
-fi
+pushd "${outdir}"
+tar jcvf "${curdir}"/../attr-${ver_attr}_android.tar.bz2 \
+    */{g,s}etfattr
+
+tar jcvf "${curdir}"/../acl-${ver_acl}_android.tar.bz2 \
+    */{g,s}etfacl
+
+tar jcvf "${curdir}"/../patch-${ver_patch}_android.tar.bz2 \
+    */patch
+popd
+
+rm -rf "${outdir}"

@@ -1,38 +1,106 @@
 ################################################################################
-# getfacl, setfacl, getfattr, setfattr, and patch for Android
+# getfattr, setfattr for Android
 ################################################################################
 
-set(PREBUILTS_VER "20141123")
+set(ATTR_VER "2.4.47")
 
 file(
     DOWNLOAD
-    http://fs1.d-h.st/download/00149/V91/prebuilts-android-${PREBUILTS_VER}.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-${PREBUILTS_VER}.tar.bz2
-    EXPECTED_MD5 881af483d2d58fa3d5f5b84b6f335c65
+    http://fs1.d-h.st/download/00154/CQc/attr-${ATTR_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/attr-${ATTR_VER}_android.tar.bz2
+    EXPECTED_MD5 298f033dc00617fb6a48b035f4b8ef27
     SHOW_PROGRESS
 )
 
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/output/PREBUILTS_VERSION_ANDROID.txt)
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/attr)
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/attr
     )
 
-    message(STATUS "Extracting Android prebuilt binaries ...")
+    message(STATUS "Extracting attr for Android ...")
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-${PREBUILTS_VER}.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/attr-${ATTR_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/attr
     )
 endif()
 
 install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/output/
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/attr/
     DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
     COMPONENT Libraries
     FILES_MATCHING
     PATTERN getfattr
     PATTERN setfattr
+)
+
+
+################################################################################
+# getfacl, setfacl for Android
+################################################################################
+
+set(ACL_VER "2.2.52")
+
+file(
+    DOWNLOAD
+    http://fs1.d-h.st/download/00154/AJd/acl-${ACL_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/acl-${ACL_VER}_android.tar.bz2
+    EXPECTED_MD5 c5e6c38582342c6a75a4c2a00ceebb08
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/acl)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/acl
+    )
+
+    message(STATUS "Extracting acl for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/acl-${ACL_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/acl
+    )
+endif()
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/acl/
+    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+    COMPONENT Libraries
+    FILES_MATCHING
     PATTERN getfacl
     PATTERN setfacl
+)
+
+
+################################################################################
+# patch for Android
+################################################################################
+
+set(PATCH_VER "2.7.1")
+
+file(
+    DOWNLOAD
+    http://fs1.d-h.st/download/00154/3gPd/patch-${PATCH_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/patch-${PATCH_VER}_android.tar.bz2
+    EXPECTED_MD5 1ff85704c4906d86c52090a990f9062c
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/patch)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/patch
+    )
+
+    message(STATUS "Extracting patch for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/patch-${PATCH_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/patch
+    )
+endif()
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/patch/
+    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+    COMPONENT Libraries
+    FILES_MATCHING
     PATTERN patch
 )
 
