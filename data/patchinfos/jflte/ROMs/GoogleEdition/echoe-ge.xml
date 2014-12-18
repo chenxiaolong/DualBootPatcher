@@ -8,6 +8,5 @@
     <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
-        <autopatcher>GoogleEditionPatcher</autopatcher>
     </autopatchers>
 </patchinfo>

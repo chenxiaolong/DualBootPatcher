@@ -7,7 +7,6 @@
     <matches regex="KK.*">
         <autopatchers>
             <autopatcher>StandardPatcher</autopatcher>
-            <autopatcher>GoogleEditionPatcher</autopatcher>
         </autopatchers>
     </matches>
 

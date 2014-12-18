@@ -13,7 +13,6 @@
         <ramdisk>jflte/default</ramdisk>
         <autopatchers>
             <autopatcher>StandardPatcher</autopatcher>
-            <autopatcher>GoogleEditionPatcher</autopatcher>
         </autopatchers>
     </not-matched>
 </patchinfo>

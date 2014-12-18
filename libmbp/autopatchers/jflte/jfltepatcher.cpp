@@ -126,60 +126,6 @@ bool JflteDalvikCachePatcher::patchFiles(const std::string &directory,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string JflteGoogleEditionPatcher::Id = "GoogleEditionPatcher";
-
-JflteGoogleEditionPatcher::JflteGoogleEditionPatcher(const PatcherConfig * const pc,
-                                                     const FileInfo* const info)
-    : JflteBasePatcher(pc, info)
-{
-}
-
-std::string JflteGoogleEditionPatcher::id() const
-{
-    return Id;
-}
-
-std::vector<std::string> JflteGoogleEditionPatcher::newFiles() const
-{
-    return std::vector<std::string>();
-}
-
-std::vector<std::string> JflteGoogleEditionPatcher::existingFiles() const
-{
-    std::vector<std::string> files;
-    files.push_back(QcomAudioScript);
-    return files;
-}
-
-bool JflteGoogleEditionPatcher::patchFiles(const std::string &directory,
-                                           const std::vector<std::string> &bootImages)
-{
-    (void) bootImages;
-
-    std::vector<unsigned char> contents;
-
-    // QcomAudioScript begin
-    FileUtils::readToMemory(directory + "/" + QcomAudioScript, &contents);
-    std::string strContents(contents.begin(), contents.end());
-    std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (it->find("snd_soc_msm_2x_Fusion3_auxpcm") != std::string::npos) {
-            it = lines.erase(it);
-        }
-    }
-
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    FileUtils::writeFromMemory(directory + "/" + QcomAudioScript, contents);
-    // QcomAudioScript end
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 const std::string JflteSlimAromaBundledMount::Id = "SlimAromaBundledMount";
 
 JflteSlimAromaBundledMount::JflteSlimAromaBundledMount(const PatcherConfig * const pc,
