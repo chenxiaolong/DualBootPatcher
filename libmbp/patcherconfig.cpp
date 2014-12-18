@@ -575,8 +575,6 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
     list.push_back(JflteDalvikCachePatcher::Id);
     list.push_back(JflteImperiumPatcher::Id);
     list.push_back(JflteNegaliteNoWipeData::Id);
-    list.push_back(JflteTriForceFixAroma::Id);
-    list.push_back(JflteTriForceFixUpdate::Id);
     list.push_back(PatchFilePatcher::Id);
     list.push_back(StandardPatcher::Id);
     return list;
@@ -668,10 +666,6 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
         ap = new JflteImperiumPatcher(this, info);
     } else if (id == JflteNegaliteNoWipeData::Id) {
         ap = new JflteNegaliteNoWipeData(this, info);
-    } else if (id == JflteTriForceFixAroma::Id) {
-        ap = new JflteTriForceFixAroma(this, info);
-    } else if (id == JflteTriForceFixUpdate::Id) {
-        ap = new JflteTriForceFixUpdate(this, info);
     } else if (id == PatchFilePatcher::Id) {
         ap = new PatchFilePatcher(this, info, args);
     } else if (id == StandardPatcher::Id) {

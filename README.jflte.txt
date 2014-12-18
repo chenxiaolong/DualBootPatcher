@@ -80,7 +80,6 @@ ROMs:
     - Evil UnWizzed
     - Negalite
     - iNTriNsiC (20130806 version)
-    - TriForceROM
     - Omnifarious
     - Echoe
     - BlackBox

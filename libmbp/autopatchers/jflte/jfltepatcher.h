@@ -100,39 +100,3 @@ public:
     virtual bool patchFiles(const std::string &directory,
                             const std::vector<std::string> &bootImages) override;
 };
-
-
-class JflteTriForceFixAroma : public JflteBasePatcher
-{
-public:
-    explicit JflteTriForceFixAroma(const PatcherConfig * const pc,
-                                   const FileInfo * const info);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual std::vector<std::string> newFiles() const override;
-    virtual std::vector<std::string> existingFiles() const override;
-
-    virtual bool patchFiles(const std::string &directory,
-                            const std::vector<std::string> &bootImages) override;
-};
-
-
-class JflteTriForceFixUpdate : public JflteBasePatcher
-{
-public:
-    explicit JflteTriForceFixUpdate(const PatcherConfig * const pc,
-                                    const FileInfo * const info);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual std::vector<std::string> newFiles() const override;
-    virtual std::vector<std::string> existingFiles() const override;
-
-    virtual bool patchFiles(const std::string &directory,
-                            const std::vector<std::string> &bootImages) override;
-};
