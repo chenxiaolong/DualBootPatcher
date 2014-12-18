@@ -38,29 +38,6 @@ install(
 
 
 ################################################################################
-# valgrind for Android
-################################################################################
-
-#set(VALGRIND_VER "20140913")
-#
-#file(
-#    DOWNLOAD
-#    http://fs1.d-h.st/download/00140/33H/prebuilts-android-valgrind-${VALGRIND_VER}.tar
-#    ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-valgrind-${VALGRIND_VER}.tar
-#    EXPECTED_MD5 235011c66908e631c0fa40fac13be9fa
-#    SHOW_PROGRESS
-#)
-#
-#if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/output/PREBUILTS_VERSION_ANDROID_VALGRIND.txt)
-#    message(STATUS "Extracting valgrind for Android ...")
-#    execute_process(
-#        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-valgrind-${VALGRIND_VER}.tar
-#        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android
-#    )
-#endif()
-
-
-################################################################################
 # busybox for Android
 ################################################################################
 
