@@ -1,0 +1,140 @@
+From 2a31a2ce4ab90c0b60d1ae69ccda385ef4573299 Mon Sep 17 00:00:00 2001
+From: Jorrit Jongma <git@jongma.org>
+Date: Wed, 29 Oct 2014 17:18:15 +0100
+Subject: [PATCH] Build for Android targets
+
+---
+ libsepol/.gitignore     |  2 ++
+ libsepol/Android.mk     | 40 +++++-----------------------------------
+ libsepol/README.md      |  3 +++
+ libsepol/src/genbools.c |  4 ++--
+ libsepol/src/genusers.c |  8 ++++++--
+ 5 files changed, 18 insertions(+), 39 deletions(-)
+ create mode 100644 libsepol/README.md
+
+diff --git a/libsepol/.gitignore b/libsepol/.gitignore
+index a74c98b..c60736e 100644
+--- a/libsepol/.gitignore
++++ b/libsepol/.gitignore
+@@ -1 +1,3 @@
+ utils/chkcon
++obj/
++libs/
+diff --git a/libsepol/Android.mk b/libsepol/Android.mk
+index e193765..52b1982 100644
+--- a/libsepol/Android.mk
++++ b/libsepol/Android.mk
+@@ -41,13 +41,12 @@ common_src_files := \
+ 	src/write.c
+ 
+ common_cflags := \
+-	-Wall -W -Wundef \
++	-Wall -W \
+ 	-Wshadow -Wmissing-noreturn \
+-	-Wmissing-format-attribute
++	-Wmissing-format-attribute \
++	-Wno-unused-variable -Wno-unused-but-set-variable -Wno-maybe-uninitialized
+ 
+-ifeq ($(HOST_OS), darwin)
+-common_cflags += -DDARWIN
+-endif
++common_cflags += -fno-builtin
+ 
+ common_includes := \
+ 	$(LOCAL_PATH)/include/ \
+@@ -65,33 +64,4 @@ LOCAL_CFLAGS := $(common_cflags)
+ LOCAL_SRC_FILES := $(common_src_files)
+ LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+ 
+-include $(BUILD_HOST_SHARED_LIBRARY)
+-
+-##
+-# libsepol.a
+-#
+-include $(CLEAR_VARS)
+-
+-LOCAL_MODULE := libsepol
+-LOCAL_MODULE_TAGS := optional
+-LOCAL_C_INCLUDES := $(common_includes) 
+-LOCAL_CFLAGS := $(common_cflags)
+-LOCAL_SRC_FILES := $(common_src_files)
+-LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+-
+-include $(BUILD_HOST_STATIC_LIBRARY)
+-
+-##
+-# chkcon
+-#
+-include $(CLEAR_VARS)
+-
+-LOCAL_MODULE := chkcon
+-LOCAL_MODULE_TAGS := optional
+-LOCAL_C_INCLUDES := $(common_includes) 
+-LOCAL_CFLAGS := $(common_cflags)
+-LOCAL_SRC_FILES := utils/chkcon.c
+-LOCAL_SHARED_LIBRARIES := libsepol
+-LOCAL_MODULE_CLASS := EXECUTABLES
+-
+-include $(BUILD_HOST_EXECUTABLE)
++include $(BUILD_SHARED_LIBRARY)
+diff --git a/libsepol/README.md b/libsepol/README.md
+new file mode 100644
+index 0000000..03e1c3e
+--- /dev/null
++++ b/libsepol/README.md
+@@ -0,0 +1,3 @@
++Android builds with ndk r10c:
++
++ndk-build -B NDK_PROJECT_PATH=. NDK_TOOLCHAIN_VERSION=4.9 APP_BUILD_SCRIPT=Android.mk APP_ABI=all APP_PLATFORM=android-14 APP_PIE=true
+\ No newline at end of file
+diff --git a/libsepol/src/genbools.c b/libsepol/src/genbools.c
+index 6a06ec9..8828c33 100644
+--- a/libsepol/src/genbools.c
++++ b/libsepol/src/genbools.c
+@@ -79,7 +79,7 @@ static int load_booleans(struct policydb *policydb, const char *path,
+ 	if (boolf == NULL)
+ 		goto localbool;
+ 
+-#ifdef DARWIN
++#if defined(DARWIN) || defined(ANDROID)
+         if ((buffer = (char *)malloc(255 * sizeof(char))) == NULL) {
+           ERR(NULL, "out of memory");
+ 	  return -1;
+@@ -111,7 +111,7 @@ static int load_booleans(struct policydb *policydb, const char *path,
+ 	boolf = fopen(localbools, "r");
+ 	if (boolf != NULL) {
+ 
+-#ifdef DARWIN
++#if defined(DARWIN) || defined(ANDROID)
+ 
+ 	  while(fgets(buffer, 255, boolf) != NULL) {
+ #else
+diff --git a/libsepol/src/genusers.c b/libsepol/src/genusers.c
+index 7826b71..9522834 100644
+--- a/libsepol/src/genusers.c
++++ b/libsepol/src/genusers.c
+@@ -7,7 +7,11 @@
+ 
+ #include <sepol/policydb/policydb.h>
+ 
+-#ifndef DARWIN
++#if defined(DARWIN) || defined(ANDROID)
++#define NO_STDIO_EXT
++#endif
++
++#ifndef NO_STDIO_EXT
+ #include <stdio_ext.h>
+ #endif
+ 
+@@ -47,7 +51,7 @@ static int load_users(struct policydb *policydb, const char *path)
+ 	if (fp == NULL)
+ 		return -1;
+ 
+-#ifdef DARWIN
++#ifdef NO_STDIO_EXT
+ 	if ((buffer = (char *)malloc(255 * sizeof(char))) == NULL) {
+ 	  ERR(NULL, "out of memory");
+ 	  return -1;
+-- 
+2.1.3
+
