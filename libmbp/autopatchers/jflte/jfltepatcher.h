@@ -66,24 +66,6 @@ public:
 };
 
 
-class JflteSlimAromaBundledMount : public JflteBasePatcher
-{
-public:
-    explicit JflteSlimAromaBundledMount(const PatcherConfig * const pc,
-                                        const FileInfo * const info);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual std::vector<std::string> newFiles() const override;
-    virtual std::vector<std::string> existingFiles() const override;
-
-    virtual bool patchFiles(const std::string &directory,
-                            const std::vector<std::string> &bootImages) override;
-};
-
-
 class JflteImperiumPatcher : public JflteBasePatcher
 {
 public:

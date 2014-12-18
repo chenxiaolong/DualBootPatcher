@@ -126,69 +126,6 @@ bool JflteDalvikCachePatcher::patchFiles(const std::string &directory,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string JflteSlimAromaBundledMount::Id = "SlimAromaBundledMount";
-
-JflteSlimAromaBundledMount::JflteSlimAromaBundledMount(const PatcherConfig * const pc,
-                                                       const FileInfo* const info)
-    : JflteBasePatcher(pc, info)
-{
-}
-
-std::string JflteSlimAromaBundledMount::id() const
-{
-    return Id;
-}
-
-std::vector<std::string> JflteSlimAromaBundledMount::newFiles() const
-{
-    return std::vector<std::string>();
-}
-
-std::vector<std::string> JflteSlimAromaBundledMount::existingFiles() const
-{
-    std::vector<std::string> files;
-    files.push_back(StandardPatcher::UpdaterScript);
-    return files;
-}
-
-bool JflteSlimAromaBundledMount::patchFiles(const std::string &directory,
-                                            const std::vector<std::string> &bootImages)
-{
-    (void) bootImages;
-
-    std::vector<unsigned char> contents;
-
-    // StandardPatcher::UpdaterScript begin
-    FileUtils::readToMemory(directory + "/" + StandardPatcher::UpdaterScript, &contents);
-    std::string strContents(contents.begin(), contents.end());
-    std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
-
-    for (auto it = lines.begin(); it != lines.end();) {
-        if (MBP_regex_search(*it, MBP_regex("/tmp/mount.*/system"))) {
-            it = lines.erase(it);
-            it = StandardPatcher::insertMountSystem(it, &lines);
-        } else if (MBP_regex_search(*it, MBP_regex("/tmp/mount.*/cache"))) {
-            it = lines.erase(it);
-            it = StandardPatcher::insertMountCache(it, &lines);
-        } else if (MBP_regex_search(*it, MBP_regex("/tmp/mount.*/data"))) {
-            it = lines.erase(it);
-            it = StandardPatcher::insertMountData(it, &lines);
-        } else {
-            ++it;
-        }
-    }
-
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
-    // StandardPatcher::UpdaterScript end
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 const std::string JflteImperiumPatcher::Id = "ImperiumPatcher";
 
 JflteImperiumPatcher::JflteImperiumPatcher(const PatcherConfig * const pc,
