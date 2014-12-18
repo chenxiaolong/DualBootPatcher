@@ -281,7 +281,7 @@ bool JflteImperiumPatcher::patchFiles(const std::string &directory,
     std::vector<std::string> lines;
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    StandardPatcher::insertDualBootSh(&lines, true);
+    StandardPatcher::insertDualBootSh(&lines);
     StandardPatcher::replaceMountLines(&lines, m_impl->info->device());
     StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
     StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
