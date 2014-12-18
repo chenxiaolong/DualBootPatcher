@@ -224,7 +224,9 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
 
         if (MBP_regex_search(line, MBP_regex("^\\s*mount\\s*\\(.*$"))
                 || MBP_regex_search(line, MBP_regex(
-                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$"))) {
+                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$"))
+                || MBP_regex_search(line, MBP_regex(
+                "^\\s*run_program\\s*\\(\\s*\"[^\",]*/mount\".*$"))) {
             if (line.find(System) != std::string::npos
                     || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
                 it = lines->erase(it);
