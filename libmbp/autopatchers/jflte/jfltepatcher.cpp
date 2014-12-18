@@ -40,16 +40,7 @@ public:
 /*! \endcond */
 
 
-static const std::string AromaScript =
-        "META-INF/com/google/android/aroma-config";
-static const std::string BuildProp =
-        "system/build.prop";
-static const std::string QcomAudioScript =
-        "system/etc/init.qcom.audio.sh";
-
-static const std::string System = "/system";
-static const std::string Cache = "/cache";
-static const std::string Data = "/data";
+static const std::string BuildProp = "system/build.prop";
 
 
 JflteBasePatcher::JflteBasePatcher(const PatcherConfig * const pc,
