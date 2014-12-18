@@ -113,34 +113,6 @@ install(
 
 
 ################################################################################
-# busybox for Android
-################################################################################
-
-set(BUSYBOX_VER "20140928")
-
-file(
-    DOWNLOAD
-    ${URL_BASE}/prebuilts-android-busybox-${BUSYBOX_VER}.tar
-    ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-busybox-${BUSYBOX_VER}.tar
-    EXPECTED_MD5 6c418ec985a4d93e4afbe3194bb5534e
-    SHOW_PROGRESS
-)
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/output/PREBUILTS_VERSION_ANDROID_BUSYBOX.txt)
-    message(STATUS "Extracting busybox for Android ...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/prebuilts-android-busybox-${BUSYBOX_VER}.tar
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android
-    )
-endif()
-
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/android/output/armeabi-v7a/busybox-static
-    DESTINATION ${DATA_INSTALL_DIR}/binaries/
-)
-
-
-################################################################################
 # boost for Android
 ################################################################################
 
