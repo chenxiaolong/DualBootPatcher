@@ -26,7 +26,7 @@ dependencies {
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.1"
+    buildToolsVersion "21.1.2"
 
     packagingOptions {
         // Both commons-lang3 and common-io want to include these file
