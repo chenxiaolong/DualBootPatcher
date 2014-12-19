@@ -19,14 +19,24 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
-public class SettingsActivity extends PreferenceActivity {
+import com.github.chenxiaolong.dualbootpatcher.R;
+
+public class SettingsActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.rom_settings);
 
-        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, new RomSettingsFragment()).commit();
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
     @Override
@@ -37,10 +47,5 @@ public class SettingsActivity extends PreferenceActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected boolean isValidFragment(String fragmentName) {
-        return RomSettingsFragment.class.getName().equals(fragmentName);
     }
 }
