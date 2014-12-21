@@ -1,0 +1,52 @@
+--- a/META-INF/com/google/android/update-binary
++++ b/META-INF/com/google/android/update-binary
+@@ -1,4 +1,7 @@
+ #!/sbin/sh
++unzip -o "$3" dualboot.sh -d /tmp
++chmod 777 /tmp/dualboot.sh
++/tmp/dualboot.sh unmount-everything
+ #
+ # PA GApps 2.0 Shell Script Installer
+ # Created by @TKruzze with MAJOR script contributions by @osm0sis
+@@ -88,13 +91,14 @@
+         tar -cz -f "$log_folder/pa_gapps_debug_info.tar.gz" *;
+         cd /;
+     fi;
+-    rm -rf /tmp;
++    #rm -rf /tmp;
+     set_progress 1.0;
+     ui_print "- Unmounting /system, /data, /cache";
+     ui_print " ";
+-    umount /system;
+-    umount /data;
+-    umount /cache;
++    /tmp/dualboot.sh unmount-system
++    /tmp/dualboot.sh unmount-data
++    /tmp/dualboot.sh unmount-cache
++    /tmp/dualboot.sh unmount-everything
+     exit $1;
+ }
+ 
+@@ -223,10 +227,9 @@
+ ui_print "- Mounting /system, /data, /cache";
+ ui_print " ";
+ set_progress 0.01;
+-busybox mount /system;
+-busybox mount /data;
+-busybox mount /cache;
+-busybox mount -o rw,remount /system;
++/tmp/dualboot.sh mount-system
++/tmp/dualboot.sh mount-data
++/tmp/dualboot.sh mount-cache
+ # _____________________________________________________________________________________________________________________
+ #                                                  Gather Device & GApps Package Information
+ # Locate gapps-config (if used)
+@@ -663,7 +666,7 @@
+ eval "playgames_size=\$pg_${gms}_size"; # Determine size of PlayGames
+ 
+ # Read and save system partition size details
+-df=$(busybox df -k /system | tail -n 1);
++df=$(busybox df -k | grep '[ \t]/system$' | tail -n 1);
+ case $df in
+     /dev/block/*) df=$(echo $df | awk '{ print substr($0, index($0,$2)) }');;
+ esac;
