@@ -15,8 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-set -x
+#set -x
 #set -u
+
+mbprint() {
+    echo "MultiBoot: $*"
+}
 
 FIELD_FILE=/tmp/fields.sh
 
@@ -101,7 +105,8 @@ mount_raw_partition() {
     mkdir -p "$MNT"
     chmod 0755 "$MNT"
     chown 0:0 "$MNT"
-    mount -t "$FS" "$DEV" "$MNT"
+    mount -t "$FS" "$DEV" "$MNT" && \
+      mbprint "Mounted $DEV (filesystem: $FS) at $MNT"
   fi
 
   let "TIMES_MOUNTED += 1"
@@ -113,7 +118,8 @@ mount_system() {
     mount_raw_partition $TARGET_SYSTEM_PARTITION
 
     mkdir -p /system $TARGET_SYSTEM
-    mount -o bind $TARGET_SYSTEM /system
+    mount -o bind $TARGET_SYSTEM /system && \
+      mbprint "Bind mounted $TARGET_SYSTEM to /system"
 
     set_field SYSTEM_MOUNTED true
   fi
@@ -124,7 +130,8 @@ mount_cache() {
     mount_raw_partition $TARGET_CACHE_PARTITION
 
     mkdir -p /cache $TARGET_CACHE
-    mount -o bind $TARGET_CACHE /cache
+    mount -o bind $TARGET_CACHE /cache && \
+      mbprint "Bind mounted $TARGET_CACHE to /cache"
 
     set_field CACHE_MOUNTED true
   fi
@@ -139,8 +146,10 @@ mount_data() {
     local MNT=$(echo $DEV_DATA | awk -F:: '{print $2}')
 
     mkdir -p /data $TARGET_DATA $TARGET_DATA/media "$MNT"/media
-    mount -o bind $TARGET_DATA /data
-    mount -o bind "$MNT"/media /data/media
+    mount -o bind $TARGET_DATA /data && \
+      mbprint "Bind mounted $TARGET_DATA to /data"
+    mount -o bind "$MNT"/media /data/media && \
+      mbprint "Bind mounted $MNT/media to /data/media"
 
     set_field DATA_MOUNTED true
   fi
@@ -160,7 +169,7 @@ unmount_raw_partition() {
   fi
 
   if [ $TIMES_MOUNTED -eq 1 ] || [ "x$2" = "xforce" ]; then
-    umount "$MNT"
+    umount "$MNT" && mbprint "Unmounted $MNT"
   fi
 
   if [ $TIMES_MOUNTED -gt 0 ]; then
@@ -170,20 +179,20 @@ unmount_raw_partition() {
 }
 
 unmount_system() {
-  umount /system
+  umount /system && mbprint "Unmounted bind mount at /system"
   unmount_raw_partition $TARGET_SYSTEM_PARTITION
   set_field SYSTEM_MOUNTED false
 }
 
 unmount_cache() {
-  umount /cache
+  umount /cache && mbprint "Unmounted bind mount at /cache"
   unmount_raw_partition $TARGET_CACHE_PARTITION
   set_field CACHE_MOUNTED false
 }
 
 unmount_data() {
-  umount /data/media
-  umount /data
+  umount /data/media && mbprint "Unmounted bind mount at /data/media"
+  umount /data && mbprint "Unmounted bind mount at /data"
   unmount_raw_partition $TARGET_DATA_PARTITION
   set_field DATA_MOUNTED false
 }
@@ -214,6 +223,8 @@ format_system() {
     fi
     unmount_system
   fi
+
+  mbprint "Formatted /system"
 }
 
 format_cache() {
@@ -231,6 +242,8 @@ format_cache() {
     fi
     unmount_cache
   fi
+
+  mbprint "Formatted /cache"
 }
 
 format_data() {
@@ -248,6 +261,8 @@ format_data() {
     fi
     unmount_data
   fi
+
+  mbprint "Formatted /data (excluding /data/media)"
 }
 
 ################################################################
@@ -260,7 +275,7 @@ set_multi_kernel() {
     MOUNT=true
   fi
 
-  if [ "x${MOUNT}" = "xtrue" ]; then
+  if [ "x$MOUNT" = "xtrue" ]; then
     mount_raw_partition $DEV_DATA
   fi
 
@@ -270,9 +285,11 @@ set_multi_kernel() {
   dd if=$DEV_BOOT of="$KERNELS_DIR"/$KERNEL_NAME.img
   chmod 775 "$KERNELS_DIR"/$KERNEL_NAME.img
 
-  if [ "x${MOUNT}" = "xtrue" ]; then
+  if [ "x$MOUNT" = "xtrue" ]; then
     unmount_raw_partition $DEV_DATA
   fi
+
+  mbprint "Copied kernel to $KERNELS_DIR/$KERNEL_NAME.img"
 }
 
 ################################################################
