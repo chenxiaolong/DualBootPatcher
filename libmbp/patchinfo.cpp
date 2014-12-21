@@ -27,11 +27,38 @@
 
 
 /*! \cond INTERNAL */
+class SubPatchInfo {
+public:
+    typedef std::vector<std::pair<std::string, PatchInfo::AutoPatcherArgs>> AutoPatcherItems;
+
+    // List of autopatchers to use
+    std::vector<std::pair<std::string, PatchInfo::AutoPatcherArgs>> autoPatchers;
+
+    // Whether or not the file contains (a) boot image(s)
+    bool hasBootImage;
+
+    // Attempt to autodetect boot images (finds .img files and checks their headers)
+    bool autoDetectBootImages;
+
+    // List of manually specified boot images
+    std::vector<std::string> bootImages;
+
+    // Ramdisk patcher to use
+    std::string ramdiskPatcher;
+
+    // Whether or not device checks/asserts should be kept
+    bool deviceCheck;
+
+    // List of supported partition configurations
+    std::vector<std::string> supportedConfigs;
+};
+/*! \endcond */
+
+
+/*! \cond INTERNAL */
 class PatchInfo::Impl
 {
 public:
-    typedef std::unordered_map<std::string, AutoPatcherArgs> AutoPatcherItems;
-
     Impl();
 
     std::string id;
@@ -60,26 +87,7 @@ public:
     // NOTE: If the variable is a list, the "overridden" values are used
     //       in addition to the default values
 
-    // List of autopatchers to use
-    std::unordered_map<std::string, AutoPatcherItems> autoPatchers;
-
-    // Whether or not the file contains (a) boot image(s)
-    std::unordered_map<std::string, bool> hasBootImage;
-
-    // Attempt to autodetect boot images (finds .img files and checks their headers)
-    std::unordered_map<std::string, bool> autodetectBootImages;
-
-    // List of manually specified boot images
-    std::unordered_map<std::string, std::vector<std::string>> bootImages;
-
-    // Ramdisk patcher to use
-    std::unordered_map<std::string, std::string> ramdisk;
-
-    // Whether or not device checks/asserts should be kept
-    std::unordered_map<std::string, bool> deviceCheck;
-
-    // List of supported partition configurations
-    std::unordered_map<std::string, std::vector<std::string>> supportedConfigs;
+    std::unordered_map<std::string, SubPatchInfo> subPatchInfos;
 };
 /*! \endcond */
 
@@ -95,16 +103,16 @@ PatchInfo::Impl::Impl()
     hasNotMatchedElement = false;
 
     // Default to having a boot image
-    hasBootImage[PatchInfo::Default] = true;
+    subPatchInfos[PatchInfo::Default].hasBootImage = true;
 
     // Default to autodetecting boot images in the zip file
-    autodetectBootImages[PatchInfo::Default] = true;
+    subPatchInfos[PatchInfo::Default].autoDetectBootImages = true;
 
     // Don't remove device checks
-    deviceCheck[PatchInfo::Default] = true;
+    subPatchInfos[PatchInfo::Default].deviceCheck = true;
 
     // Allow all configs
-    supportedConfigs[PatchInfo::Default].push_back("all");
+    subPatchInfos[PatchInfo::Default].supportedConfigs.push_back("all");
 }
 
 /*!
@@ -307,6 +315,20 @@ void PatchInfo::setHasNotMatched(bool hasElem)
     m_impl->hasNotMatchedElement = hasElem;
 }
 
+/*! \cond INTERNAL */
+struct ByKey
+{
+    ByKey(std::string key) : mKey(key) {
+    }
+
+    bool operator()(const std::pair<std::string, PatchInfo::AutoPatcherArgs> &elem) const {
+        return mKey == elem.first;
+    }
+private:
+    std::string mKey;
+};
+/*! \endcond */
+
 /*!
  * \brief Add AutoPatcher to PatchInfo
  *
@@ -318,8 +340,8 @@ void PatchInfo::addAutoPatcher(const std::string &key,
                                const std::string &apName,
                                PatchInfo::AutoPatcherArgs args)
 {
-    Impl::AutoPatcherItems &items = m_impl->autoPatchers[key];
-    items[apName] = std::move(args);
+    m_impl->subPatchInfos[key].autoPatchers.push_back(
+            std::make_pair(apName, std::move(args)));
 }
 
 /*!
@@ -331,14 +353,14 @@ void PatchInfo::addAutoPatcher(const std::string &key,
 void PatchInfo::removeAutoPatcher(const std::string &key,
                                   const std::string &apName)
 {
-    if (m_impl->autoPatchers.find(key) == m_impl->autoPatchers.end()) {
+    if (m_impl->subPatchInfos.find(key) == m_impl->subPatchInfos.end()) {
         return;
     }
 
-    Impl::AutoPatcherItems &items = m_impl->autoPatchers[key];
-    auto it = items.find(apName);
-    if (it != items.end()) {
-        items.erase(it);
+    auto &autoPatchers = m_impl->subPatchInfos[key].autoPatchers;
+    auto it = std::find_if(autoPatchers.begin(), autoPatchers.end(), ByKey(apName));
+    if (it != autoPatchers.end()) {
+        autoPatchers.erase(it);
     }
 }
 
@@ -351,20 +373,20 @@ void PatchInfo::removeAutoPatcher(const std::string &key,
  */
 std::vector<std::string> PatchInfo::autoPatchers(const std::string &key) const
 {
-    bool hasKey = m_impl->autoPatchers.find(key) != m_impl->autoPatchers.end();
-    bool hasDefault = m_impl->autoPatchers.find(Default) != m_impl->autoPatchers.end();
+    bool hasKey = m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end();
+    bool hasDefault = m_impl->subPatchInfos.find(Default) != m_impl->subPatchInfos.end();
 
     std::vector<std::string> items;
 
     if (hasDefault) {
-        auto &aps = m_impl->autoPatchers[Default];
+        auto &aps = m_impl->subPatchInfos[Default].autoPatchers;
         for (auto const &ap : aps) {
             items.push_back(ap.first);
         }
     }
 
     if (key != Default && hasKey) {
-        auto &aps = m_impl->autoPatchers[key];
+        auto &aps = m_impl->subPatchInfos[key].autoPatchers;
         for (auto const &ap : aps) {
             items.push_back(ap.first);
         }
@@ -385,9 +407,9 @@ std::vector<std::string> PatchInfo::autoPatchers(const std::string &key) const
 PatchInfo::AutoPatcherArgs PatchInfo::autoPatcherArgs(const std::string &key,
                                                       const std::string &apName) const
 {
-    if (m_impl->autoPatchers.find(key) != m_impl->autoPatchers.end()) {
-        Impl::AutoPatcherItems &items = m_impl->autoPatchers[key];
-        auto it = items.find(apName);
+    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
+        auto &items = m_impl->subPatchInfos[key].autoPatchers;
+        auto it = std::find_if(items.begin(), items.end(), ByKey(apName));
         if (it != items.end()) {
             return it->second;
         }
@@ -405,8 +427,8 @@ PatchInfo::AutoPatcherArgs PatchInfo::autoPatcherArgs(const std::string &key,
  */
 bool PatchInfo::hasBootImage(const std::string &key) const
 {
-    if (m_impl->hasBootImage.find(key) != m_impl->hasBootImage.end()) {
-        return m_impl->hasBootImage[key];
+    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
+        return m_impl->subPatchInfos[key].hasBootImage;
     }
 
     return bool();
@@ -420,7 +442,7 @@ bool PatchInfo::hasBootImage(const std::string &key) const
  */
 void PatchInfo::setHasBootImage(const std::string &key, bool hasBootImage)
 {
-    m_impl->hasBootImage[key] = hasBootImage;
+    m_impl->subPatchInfos[key].hasBootImage = hasBootImage;
 }
 
 /*!
@@ -432,9 +454,8 @@ void PatchInfo::setHasBootImage(const std::string &key, bool hasBootImage)
  */
 bool PatchInfo::autodetectBootImages(const std::string &key) const
 {
-    if (m_impl->autodetectBootImages.find(key)
-            != m_impl->autodetectBootImages.end()) {
-        return m_impl->autodetectBootImages[key];
+    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
+        return m_impl->subPatchInfos[key].autoDetectBootImages;
     }
 
     return bool();
@@ -448,7 +469,7 @@ bool PatchInfo::autodetectBootImages(const std::string &key) const
  */
 void PatchInfo::setAutoDetectBootImages(const std::string &key, bool autoDetect)
 {
-    m_impl->autodetectBootImages[key] = autoDetect;
+    m_impl->subPatchInfos[key].autoDetectBootImages = autoDetect;
 }
 
 /*!
@@ -460,18 +481,18 @@ void PatchInfo::setAutoDetectBootImages(const std::string &key, bool autoDetect)
  */
 std::vector<std::string> PatchInfo::bootImages(const std::string &key) const
 {
-    bool hasKey = m_impl->bootImages.find(key) != m_impl->bootImages.end();
-    bool hasDefault = m_impl->bootImages.find(Default) != m_impl->bootImages.end();
+    bool hasKey = m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end();
+    bool hasDefault = m_impl->subPatchInfos.find(Default) != m_impl->subPatchInfos.end();
 
     std::vector<std::string> items;
 
     if (hasDefault) {
-        auto &imgs = m_impl->bootImages[Default];
+        auto &imgs = m_impl->subPatchInfos[Default].bootImages;
         items.insert(items.end(), imgs.begin(), imgs.end());
     }
 
     if (key != Default && hasKey) {
-        auto &imgs = m_impl->bootImages[key];
+        auto &imgs = m_impl->subPatchInfos[key].bootImages;
         items.insert(items.end(), imgs.begin(), imgs.end());
     }
 
@@ -487,7 +508,7 @@ std::vector<std::string> PatchInfo::bootImages(const std::string &key) const
 void PatchInfo::setBootImages(const std::string &key,
                               std::vector<std::string> bootImages)
 {
-    m_impl->bootImages[key] = std::move(bootImages);
+    m_impl->subPatchInfos[key].bootImages = std::move(bootImages);
 }
 
 /*!
@@ -499,8 +520,8 @@ void PatchInfo::setBootImages(const std::string &key,
  */
 std::string PatchInfo::ramdisk(const std::string &key) const
 {
-    if (m_impl->ramdisk.find(key) != m_impl->ramdisk.end()) {
-        return m_impl->ramdisk[key];
+    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
+        return m_impl->subPatchInfos[key].ramdiskPatcher;
     }
 
     return std::string();
@@ -514,7 +535,7 @@ std::string PatchInfo::ramdisk(const std::string &key) const
  */
 void PatchInfo::setRamdisk(const std::string &key, std::string ramdisk)
 {
-    m_impl->ramdisk[key] = std::move(ramdisk);
+    m_impl->subPatchInfos[key].ramdiskPatcher = std::move(ramdisk);
 }
 
 /*!
@@ -526,8 +547,8 @@ void PatchInfo::setRamdisk(const std::string &key, std::string ramdisk)
  */
 bool PatchInfo::deviceCheck(const std::string &key) const
 {
-    if (m_impl->deviceCheck.find(key) != m_impl->deviceCheck.end()) {
-        return m_impl->deviceCheck[key];
+    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
+        return m_impl->subPatchInfos[key].deviceCheck;
     }
 
     return bool();
@@ -541,7 +562,7 @@ bool PatchInfo::deviceCheck(const std::string &key) const
  */
 void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
 {
-    m_impl->deviceCheck[key] = deviceCheck;
+    m_impl->subPatchInfos[key].deviceCheck = deviceCheck;
 }
 
 /*!
@@ -553,18 +574,18 @@ void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
  */
 std::vector<std::string> PatchInfo::supportedConfigs(const std::string &key) const
 {
-    bool hasKey = m_impl->supportedConfigs.find(key) != m_impl->supportedConfigs.end();
-    bool hasDefault = m_impl->supportedConfigs.find(Default) != m_impl->supportedConfigs.end();
+    bool hasKey = m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end();
+    bool hasDefault = m_impl->subPatchInfos.find(Default) != m_impl->subPatchInfos.end();
 
     std::vector<std::string> items;
 
     if (hasDefault) {
-        auto &configs = m_impl->supportedConfigs[Default];
+        auto &configs = m_impl->subPatchInfos[Default].supportedConfigs;
         items.insert(items.end(), configs.begin(), configs.end());
     }
 
     if (key != Default && hasKey) {
-        auto &configs = m_impl->supportedConfigs[key];
+        auto &configs = m_impl->subPatchInfos[key].supportedConfigs;
         items.insert(items.end(), configs.begin(), configs.end());
     }
 
@@ -580,5 +601,5 @@ std::vector<std::string> PatchInfo::supportedConfigs(const std::string &key) con
 void PatchInfo::setSupportedConfigs(const std::string &key,
                                     std::vector<std::string> configs)
 {
-    m_impl->supportedConfigs[key] = std::move(configs);
+    m_impl->subPatchInfos[key].supportedConfigs = std::move(configs);
 }
