@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/flo/floramdiskpatcher.h"
+#include "ramdiskpatchers/baconramdiskpatcher.h"
 
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
-#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */
-class FloBaseRamdiskPatcher::Impl
+class BaconRamdiskPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -36,42 +36,33 @@ public:
 /*! \endcond */
 
 
-FloBaseRamdiskPatcher::FloBaseRamdiskPatcher(const PatcherConfig * const pc,
-                                             const FileInfo * const info,
-                                             CpioFile * const cpio) :
-    m_impl(new Impl())
+const std::string BaconRamdiskPatcher::Id = "bacon/default";
+
+BaconRamdiskPatcher::BaconRamdiskPatcher(const PatcherConfig * const pc,
+                                         const FileInfo * const info,
+                                         CpioFile * const cpio)
+    : m_impl(new Impl())
 {
     m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
 
-FloBaseRamdiskPatcher::~FloBaseRamdiskPatcher()
+BaconRamdiskPatcher::~BaconRamdiskPatcher()
 {
 }
 
-PatcherError FloBaseRamdiskPatcher::error() const
+PatcherError BaconRamdiskPatcher::error() const
 {
     return m_impl->error;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string FloAOSPRamdiskPatcher::Id = "flo/default";
-
-FloAOSPRamdiskPatcher::FloAOSPRamdiskPatcher(const PatcherConfig *const pc,
-                                             const FileInfo *const info,
-                                             CpioFile *const cpio)
-    : FloBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string FloAOSPRamdiskPatcher::id() const
+std::string BaconRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool FloAOSPRamdiskPatcher::patchRamdisk()
+bool BaconRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -81,7 +72,7 @@ bool FloAOSPRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.useGeneratedFstab("init.flo.rc")) {
+    if (!qcomPatcher.useGeneratedFstab("init.bacon.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

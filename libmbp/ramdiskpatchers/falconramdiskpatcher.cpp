@@ -17,10 +17,10 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/falcon/falconramdiskpatcher.h"
+#include "ramdiskpatchers/falconramdiskpatcher.h"
 
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
-#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */

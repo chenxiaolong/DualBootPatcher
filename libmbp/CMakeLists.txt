@@ -27,25 +27,25 @@ set(MBP_SOURCES
     cwrapper/cpatchinfo.cpp
     cwrapper/cstringmap.cpp
     # Autopatchers
-    autopatchers/jflte/jfltepatcher.cpp
-    autopatchers/patchfile/patchfilepatcher.cpp
-    autopatchers/standard/standardpatcher.cpp
+    autopatchers/jfltepatcher.cpp
+    autopatchers/patchfilepatcher.cpp
+    autopatchers/standardpatcher.cpp
     # Patchers
-    patchers/multiboot/multibootpatcher.cpp
-    patchers/primaryupgrade/primaryupgradepatcher.cpp
-    patchers/syncdaemonupdate/syncdaemonupdatepatcher.cpp
+    patchers/multibootpatcher.cpp
+    patchers/primaryupgradepatcher.cpp
+    patchers/syncdaemonupdatepatcher.cpp
     # Ramdisk patchers
-    ramdiskpatchers/bacon/baconramdiskpatcher.cpp
-    ramdiskpatchers/common/coreramdiskpatcher.cpp
-    ramdiskpatchers/d800/d800ramdiskpatcher.cpp
-    ramdiskpatchers/falcon/falconramdiskpatcher.cpp
-    ramdiskpatchers/flo/floramdiskpatcher.cpp
-    ramdiskpatchers/galaxy/galaxyramdiskpatcher.cpp
-    ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.cpp
-    ramdiskpatchers/hlte/hlteramdiskpatcher.cpp
-    ramdiskpatchers/jflte/jflteramdiskpatcher.cpp
-    ramdiskpatchers/klte/klteramdiskpatcher.cpp
-    ramdiskpatchers/qcom/qcomramdiskpatcher.cpp
+    ramdiskpatchers/baconramdiskpatcher.cpp
+    ramdiskpatchers/coreramdiskpatcher.cpp
+    ramdiskpatchers/d800ramdiskpatcher.cpp
+    ramdiskpatchers/falconramdiskpatcher.cpp
+    ramdiskpatchers/floramdiskpatcher.cpp
+    ramdiskpatchers/galaxyramdiskpatcher.cpp
+    ramdiskpatchers/hammerheadramdiskpatcher.cpp
+    ramdiskpatchers/hlteramdiskpatcher.cpp
+    ramdiskpatchers/jflteramdiskpatcher.cpp
+    ramdiskpatchers/klteramdiskpatcher.cpp
+    ramdiskpatchers/qcomramdiskpatcher.cpp
     # jsoncpp
     jsoncpp-dist/jsoncpp.cpp
 )
@@ -65,25 +65,25 @@ set(MBP_HEADERS
 
 set(MBP_NOINST_HEADERS
     # Autopatchers
-    autopatchers/jflte/jfltepatcher.h
-    autopatchers/patchfile/patchfilepatcher.h
-    autopatchers/standard/standardpatcher.h
+    autopatchers/jfltepatcher.h
+    autopatchers/patchfilepatcher.h
+    autopatchers/standardpatcher.h
     # Patchers
-    patchers/multiboot/multibootpatcher.h
-    patchers/primaryupgrade/primaryupgradepatcher.h
-    patchers/syncdaemonupdate/syncdaemonupdatepatcher.h
+    patchers/multibootpatcher.h
+    patchers/primaryupgradepatcher.h
+    patchers/syncdaemonupdatepatcher.h
     # Ramdisk patchers
-    ramdiskpatchers/bacon/baconramdiskpatcher.h
-    ramdiskpatchers/common/coreramdiskpatcher.h
-    ramdiskpatchers/d800/d800ramdiskpatcher.h
-    ramdiskpatchers/falcon/falconramdiskpatcher.h
-    ramdiskpatchers/flo/floramdiskpatcher.h
-    ramdiskpatchers/galaxy/galaxyramdiskpatcher.h
-    ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h
-    ramdiskpatchers/hlte/hlteramdiskpatcher.h
-    ramdiskpatchers/jflte/jflteramdiskpatcher.h
-    ramdiskpatchers/klte/klteramdiskpatcher.h
-    ramdiskpatchers/qcom/qcomramdiskpatcher.h
+    ramdiskpatchers/baconramdiskpatcher.h
+    ramdiskpatchers/coreramdiskpatcher.h
+    ramdiskpatchers/d800ramdiskpatcher.h
+    ramdiskpatchers/falconramdiskpatcher.h
+    ramdiskpatchers/floramdiskpatcher.h
+    ramdiskpatchers/galaxyramdiskpatcher.h
+    ramdiskpatchers/hammerheadramdiskpatcher.h
+    ramdiskpatchers/hlteramdiskpatcher.h
+    ramdiskpatchers/jflteramdiskpatcher.h
+    ramdiskpatchers/klteramdiskpatcher.h
+    ramdiskpatchers/qcomramdiskpatcher.h
 )
 
 # If we're building for Android, then compile with ndk-build since it can easily

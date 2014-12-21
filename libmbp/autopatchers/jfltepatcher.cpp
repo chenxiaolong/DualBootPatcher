@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "autopatchers/jflte/jfltepatcher.h"
+#include "autopatchers/jfltepatcher.h"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-#include "autopatchers/standard/standardpatcher.h"
+#include "autopatchers/standardpatcher.h"
 #include "private/fileutils.h"
 #include "private/regex.h"
 

@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/hammerhead/hammerheadramdiskpatcher.h"
+#include "ramdiskpatchers/d800ramdiskpatcher.h"
 
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
-#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */
-class HammerheadBaseRamdiskPatcher::Impl
+class D800RamdiskPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -36,9 +36,11 @@ public:
 /*! \endcond */
 
 
-HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherConfig * const pc,
-                                                           const FileInfo * const info,
-                                                           CpioFile * const cpio) :
+const std::string D800RamdiskPatcher::Id = "d800/default";
+
+D800RamdiskPatcher::D800RamdiskPatcher(const PatcherConfig * const pc,
+                                       const FileInfo * const info,
+                                       CpioFile * const cpio) :
     m_impl(new Impl())
 {
     m_impl->pc = pc;
@@ -46,32 +48,21 @@ HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherConfig *
     m_impl->cpio = cpio;
 }
 
-HammerheadBaseRamdiskPatcher::~HammerheadBaseRamdiskPatcher()
+D800RamdiskPatcher::~D800RamdiskPatcher()
 {
 }
 
-PatcherError HammerheadBaseRamdiskPatcher::error() const
+PatcherError D800RamdiskPatcher::error() const
 {
     return m_impl->error;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string HammerheadDefaultRamdiskPatcher::Id = "hammerhead/default";
-
-HammerheadDefaultRamdiskPatcher::HammerheadDefaultRamdiskPatcher(const PatcherConfig *const pc,
-                                                                 const FileInfo *const info,
-                                                                 CpioFile *const cpio)
-    : HammerheadBaseRamdiskPatcher(pc, info, cpio)
-{
-}
-
-std::string HammerheadDefaultRamdiskPatcher::id() const
+std::string D800RamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool HammerheadDefaultRamdiskPatcher::patchRamdisk()
+bool D800RamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -81,12 +72,7 @@ bool HammerheadDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.stripManualCacheMounts("init.hammerhead.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab("init.hammerhead.rc")) {
+    if (!qcomPatcher.useGeneratedFstab("init.g2.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

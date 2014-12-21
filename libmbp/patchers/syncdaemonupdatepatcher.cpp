@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "patchers/syncdaemonupdate/syncdaemonupdatepatcher.h"
+#include "patchers/syncdaemonupdatepatcher.h"
 
 #include <cassert>
 
@@ -34,7 +34,7 @@
 #include "private/fileutils.h"
 #include "private/logging.h"
 #include "private/regex.h"
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
 #define RETURN_IF_CANCELLED \

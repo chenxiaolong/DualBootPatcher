@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
+#include "ramdiskpatchers/galaxyramdiskpatcher.h"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -26,7 +26,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 #include "private/regex.h"
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */

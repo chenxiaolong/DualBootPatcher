@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/d800/d800ramdiskpatcher.h"
+#include "ramdiskpatchers/floramdiskpatcher.h"
 
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
-#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */
-class D800RamdiskPatcher::Impl
+class FloBaseRamdiskPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -36,11 +36,9 @@ public:
 /*! \endcond */
 
 
-const std::string D800RamdiskPatcher::Id = "d800/default";
-
-D800RamdiskPatcher::D800RamdiskPatcher(const PatcherConfig * const pc,
-                                       const FileInfo * const info,
-                                       CpioFile * const cpio) :
+FloBaseRamdiskPatcher::FloBaseRamdiskPatcher(const PatcherConfig * const pc,
+                                             const FileInfo * const info,
+                                             CpioFile * const cpio) :
     m_impl(new Impl())
 {
     m_impl->pc = pc;
@@ -48,21 +46,32 @@ D800RamdiskPatcher::D800RamdiskPatcher(const PatcherConfig * const pc,
     m_impl->cpio = cpio;
 }
 
-D800RamdiskPatcher::~D800RamdiskPatcher()
+FloBaseRamdiskPatcher::~FloBaseRamdiskPatcher()
 {
 }
 
-PatcherError D800RamdiskPatcher::error() const
+PatcherError FloBaseRamdiskPatcher::error() const
 {
     return m_impl->error;
 }
 
-std::string D800RamdiskPatcher::id() const
+////////////////////////////////////////////////////////////////////////////////
+
+const std::string FloAOSPRamdiskPatcher::Id = "flo/default";
+
+FloAOSPRamdiskPatcher::FloAOSPRamdiskPatcher(const PatcherConfig *const pc,
+                                             const FileInfo *const info,
+                                             CpioFile *const cpio)
+    : FloBaseRamdiskPatcher(pc, info, cpio)
+{
+}
+
+std::string FloAOSPRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool D800RamdiskPatcher::patchRamdisk()
+bool FloAOSPRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -72,7 +81,7 @@ bool D800RamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.useGeneratedFstab("init.g2.rc")) {
+    if (!qcomPatcher.useGeneratedFstab("init.flo.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

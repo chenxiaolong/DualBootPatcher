@@ -17,16 +17,15 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/hlte/hlteramdiskpatcher.h"
+#include "ramdiskpatchers/klteramdiskpatcher.h"
 
 #include "patcherconfig.h"
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
-#include "ramdiskpatchers/galaxy/galaxyramdiskpatcher.h"
-#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */
-class HlteBaseRamdiskPatcher::Impl
+class KlteBaseRamdiskPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -39,51 +38,50 @@ public:
 
 
 /*!
-    \class HlteRamdiskPatcher
-    \brief Handles common ramdisk patching operations for the Samsung Galaxy
-           Note 3
+    \class KlteRamdiskPatcher
+    \brief Handles common ramdisk patching operations for the Samsung Galaxy S 5
 
-    This patcher handles the patching of ramdisks for the Samsung Galaxy Note 3.
+    This patcher handles the patching of ramdisks for the Samsung Galaxy S 5.
     Starting from version 9.0.0, every Android ramdisk is supported.
  */
 
 
-HlteBaseRamdiskPatcher::HlteBaseRamdiskPatcher(const PatcherConfig * const pc,
+KlteBaseRamdiskPatcher::KlteBaseRamdiskPatcher(const PatcherConfig * const pc,
                                                const FileInfo * const info,
-                                               CpioFile * const cpio)
-    : m_impl(new Impl())
+                                               CpioFile * const cpio) :
+    m_impl(new Impl())
 {
     m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
 
-HlteBaseRamdiskPatcher::~HlteBaseRamdiskPatcher()
+KlteBaseRamdiskPatcher::~KlteBaseRamdiskPatcher()
 {
 }
 
-PatcherError HlteBaseRamdiskPatcher::error() const
+PatcherError KlteBaseRamdiskPatcher::error() const
 {
     return m_impl->error;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string HlteDefaultRamdiskPatcher::Id = "hlte/default";
+const std::string KlteDefaultRamdiskPatcher::Id = "klte/default";
 
-HlteDefaultRamdiskPatcher::HlteDefaultRamdiskPatcher(const PatcherConfig * const pc,
+KlteDefaultRamdiskPatcher::KlteDefaultRamdiskPatcher(const PatcherConfig * const pc,
                                                      const FileInfo *const info,
                                                      CpioFile *const cpio)
-    : HlteBaseRamdiskPatcher(pc, info, cpio)
+    : KlteBaseRamdiskPatcher(pc, info, cpio)
 {
 }
 
-std::string HlteDefaultRamdiskPatcher::id() const
+std::string KlteDefaultRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool HlteDefaultRamdiskPatcher::patchRamdisk()
+bool KlteDefaultRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -98,14 +96,26 @@ bool HlteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
+    if (m_impl->cpio->exists("init.target.rc")) {
+        if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
 
-    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
+        if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
+    } else {
+        if (!qcomPatcher.stripManualCacheMounts("init.qcom.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
+
+        if (!qcomPatcher.useGeneratedFstab("init.qcom.rc")) {
+            m_impl->error = qcomPatcher.error();
+            return false;
+        }
     }
 
     return true;

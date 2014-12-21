@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "autopatchers/patchfile/patchfilepatcher.h"
+#include "autopatchers/patchfilepatcher.h"
 
 #ifdef _WIN32
 #include <windows.h>

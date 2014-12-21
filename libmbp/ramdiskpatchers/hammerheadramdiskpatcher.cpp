@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/bacon/baconramdiskpatcher.h"
+#include "ramdiskpatchers/hammerheadramdiskpatcher.h"
 
-#include "ramdiskpatchers/common/coreramdiskpatcher.h"
-#include "ramdiskpatchers/qcom/qcomramdiskpatcher.h"
+#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */
-class BaconRamdiskPatcher::Impl
+class HammerheadBaseRamdiskPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -36,33 +36,42 @@ public:
 /*! \endcond */
 
 
-const std::string BaconRamdiskPatcher::Id = "bacon/default";
-
-BaconRamdiskPatcher::BaconRamdiskPatcher(const PatcherConfig * const pc,
-                                         const FileInfo * const info,
-                                         CpioFile * const cpio)
-    : m_impl(new Impl())
+HammerheadBaseRamdiskPatcher::HammerheadBaseRamdiskPatcher(const PatcherConfig * const pc,
+                                                           const FileInfo * const info,
+                                                           CpioFile * const cpio) :
+    m_impl(new Impl())
 {
     m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
 
-BaconRamdiskPatcher::~BaconRamdiskPatcher()
+HammerheadBaseRamdiskPatcher::~HammerheadBaseRamdiskPatcher()
 {
 }
 
-PatcherError BaconRamdiskPatcher::error() const
+PatcherError HammerheadBaseRamdiskPatcher::error() const
 {
     return m_impl->error;
 }
 
-std::string BaconRamdiskPatcher::id() const
+////////////////////////////////////////////////////////////////////////////////
+
+const std::string HammerheadDefaultRamdiskPatcher::Id = "hammerhead/default";
+
+HammerheadDefaultRamdiskPatcher::HammerheadDefaultRamdiskPatcher(const PatcherConfig *const pc,
+                                                                 const FileInfo *const info,
+                                                                 CpioFile *const cpio)
+    : HammerheadBaseRamdiskPatcher(pc, info, cpio)
+{
+}
+
+std::string HammerheadDefaultRamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool BaconRamdiskPatcher::patchRamdisk()
+bool HammerheadDefaultRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
@@ -72,7 +81,12 @@ bool BaconRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.useGeneratedFstab("init.bacon.rc")) {
+    if (!qcomPatcher.stripManualCacheMounts("init.hammerhead.rc")) {
+        m_impl->error = qcomPatcher.error();
+        return false;
+    }
+
+    if (!qcomPatcher.useGeneratedFstab("init.hammerhead.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

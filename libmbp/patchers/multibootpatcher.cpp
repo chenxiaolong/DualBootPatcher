@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "patchers/multiboot/multibootpatcher.h"
+#include "patchers/multibootpatcher.h"
 
 #include <cassert>
 
