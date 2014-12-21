@@ -35,7 +35,20 @@ tar xvf "${tar}"
 pushd "${name}"
 patch -p1 -i ../../0001-Android-build-support.patch
 ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=Application.mk
-tar cvf - libs | xz -9 -c - > ../../miniunzip.tar.xz
 popd
 
-base64 ../miniunzip.tar.xz > ../miniunzip.tar.xz.base64
+add_miniunzip() {
+    local script="${1}"
+    local abi="${2}"
+
+    echo "BEGIN_${abi}" >> "${script}"
+    base64 "${name}/libs/${abi}/miniunzip" >> "${script}"
+    echo "END_${abi}" >> "${script}"
+}
+
+cp ../unzip.in ../unzip
+
+add_miniunzip ../unzip armeabi-v7a
+add_miniunzip ../unzip arm64-v8a
+add_miniunzip ../unzip x86
+add_miniunzip ../unzip x86_64

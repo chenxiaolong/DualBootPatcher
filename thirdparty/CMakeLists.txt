@@ -283,6 +283,25 @@ endif()
 
 
 ################################################################################
+# miniunzip for Android
+################################################################################
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/unzip
+    ${CMAKE_CURRENT_SOURCE_DIR}/unzip
+    EXPECTED_MD5 73df7b0c0804e58721a10ef4f07a0289
+    SHOW_PROGRESS
+)
+
+install(
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/unzip
+    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+    COMPONENT Libraries
+)
+
+
+################################################################################
 # GNU patch for Windows
 ################################################################################
 
