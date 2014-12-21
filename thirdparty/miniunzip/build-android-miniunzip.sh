@@ -52,3 +52,6 @@ add_miniunzip ../unzip armeabi-v7a
 add_miniunzip ../unzip arm64-v8a
 add_miniunzip ../unzip x86
 add_miniunzip ../unzip x86_64
+
+xz -9 ../unzip
+base64 ../unzip.xz > ../unzip.xz.base64

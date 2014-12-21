@@ -288,14 +288,14 @@ endif()
 
 file(
     DOWNLOAD
-    ${URL_BASE}/unzip
-    ${CMAKE_CURRENT_SOURCE_DIR}/unzip
-    EXPECTED_MD5 73df7b0c0804e58721a10ef4f07a0289
+    ${URL_BASE}/unzip.xz.base64
+    ${CMAKE_CURRENT_SOURCE_DIR}/unzip.xz.base64
+    EXPECTED_MD5 205628aa73fc272f68a7347dcdf80861
     SHOW_PROGRESS
 )
 
 install(
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/unzip
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/unzip.xz.base64
     DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
     COMPONENT Libraries
 )
