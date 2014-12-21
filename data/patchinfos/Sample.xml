@@ -36,24 +36,47 @@
     <!-- This is the type of ramdisk -->
     <ramdisk>jflte/default</ramdisk>
 
-    <!-- TODO: Document this -->
+    <!-- Autopatchers handle non-ramdisk patching operations. This is most
+         often used for patching installer scripts, so the ROM is installed
+         to the correct locations.
+
+         Note that autopatchers are always run in the order listed. -->
     <autopatchers>
+        <!-- StandardPatcher attempts to replace every mount, unmount, and
+             format line in META-INF/com/google/android/updater-script file
+             with the equivalent dualboot-safe call to 'dualboot.sh'. In
+             addition, it will try to dump the kernel partition to
+             /data/media/0/MultiKernels/ after it's been written, so the user
+             won't need to use the Set Kernel function in the DualBootPatcher
+             app.
+
+             NOTE: This only supports edify updater-script files. Do NOT use
+             this if updater-script is a shell script, binary, or any other type
+             of file. -->
         <autopatcher>StandardPatcher</autopatcher>
-        <!-- patch/diff file -->
+        <!-- This autopatcher allows the input zip to be patched using a
+             patch/diff file. It is generally a good idea to list this
+             autopatcher first if it modifies files that other autopatchers
+             also modify. -->
         <autopatcher file="something.patch">PatchFile</autopatcher>
     </autopatchers>
 
-    <!-- If set to false, the patcher will try to remove the device checks/asserts
-         inside updater-script. This defaults to true, so it can usually be omitted -->
+    <!-- If set to false, the patcher will try to remove the device checks/
+         asserts inside the updater-script file. This defaults to true, so it
+         can usually be omitted.
+
+         The assert statements are effectively disabled by prepending
+         '"true" == "true" ||' to the beginning of the boolean expression. -->
     <device-check>true</device-check>
 
-    <!-- If the parameters above need to be changed based on the filename (say, a
-         certain version requires some tweaks, they can be overridden here. Every
-         parameter besides <name>, <regex>, and <regexes> can be overridden.
+    <!-- If the parameters above need to be changed based on the filename (say,
+         a certain version requires some tweaks, they can be overridden here.
+         Every parameter besides <name>, <regex>, and <regexes> can be
+         overridden.
 
-         NOTE: List parameters, like <bootimages> and <autopatchres> are appended
-         to the global parameter. If you don't want that to happen, move the global
-         parameter to <not-matched> -->
+         NOTE: List parameters, like <bootimages> and <autopatchres> are
+         appended to the global parameter. If you don't want that to happen,
+         move the global parameter to <not-matched> -->
     <matches regex="Blahblah-2.0\.zip">
         <bootimages>
             <bootimage>onlyinversion2.0.bin</bootimage>
