@@ -35,7 +35,6 @@ import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.patcher.CustomOptsCard.CustomOptsSelectedListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.MainOptsCard.MainOptsSelectedListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
@@ -54,7 +53,7 @@ import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
 import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class PatchFileFragment extends Fragment implements EventCollectorListener,
-        MainOptsSelectedListener, CustomOptsSelectedListener, PresetSelectedListener {
+        MainOptsSelectedListener, PresetSelectedListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final String EXTRA_CONFIG_STATE = "config_state";
@@ -157,7 +156,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private void initCustomOptsCard() {
         // Card that allows the user to manually change the patcher options when patching an
         // unsupported file
-        mCustomOptsCard = new CustomOptsCard(getActivity(), mPCS, this);
+        mCustomOptsCard = new CustomOptsCard(getActivity(), mPCS);
         mCustomOptsCardView = (CardViewNative) getActivity().findViewById(R.id.card_customopts);
         mCustomOptsCardView.setCard(mCustomOptsCard);
     }
@@ -305,8 +304,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mMainOptsCard.refreshDevices();
         // PartConfigs are initialized when a patcher is selected
 
-        mCustomOptsCard.refreshAutoPatchers();
-
         mPresetCard.refreshPresets();
 
         restoreCardStates();
@@ -331,7 +328,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             if (mPCS.mPatchInfo == null) {
                 mPCS.mPatchInfo = new PatchInfo();
 
-                mPCS.mPatchInfo.addAutoPatcher(PatchInfo.Default(), mPCS.mAutoPatcherId, null);
+                mPCS.mPatchInfo.addAutoPatcher(PatchInfo.Default(), "StandardPatcher", null);
 
                 mPCS.mPatchInfo.setHasBootImage(PatchInfo.Default(),
                         mCustomOptsCard.isHasBootImageEnabled());
@@ -506,11 +503,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mCustomOptsCard.setUsingPreset(info != null);
 
         mPCS.mPatchInfo = info;
-    }
-
-    @Override
-    public void onAutoPatcherSelected(String autoPatcherId) {
-        mPCS.mAutoPatcherId = autoPatcherId;
     }
 
     @Override

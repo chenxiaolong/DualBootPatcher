@@ -164,8 +164,6 @@
 
     <!-- Title for the custom options card -->
     <string name="customopts_title">Custom options</string>
-    <!-- Name for the autopatcher radio button -->
-    <string name="customopts_autopatcher">Autopatcher</string>
     <!-- Name for the patch file radio button -->
     <string name="customopts_patchfile">Patch file</string>
     <!-- Name for the button to select a .patch or .diff file -->

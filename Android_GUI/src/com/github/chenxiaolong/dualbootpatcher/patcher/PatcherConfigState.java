@@ -48,7 +48,6 @@ public class PatcherConfigState implements Parcelable {
         out.writeParcelable(mPartConfig, 0);
         out.writeParcelableArray(mPatchInfos, 0);
         out.writeParcelable(mPatchInfo, 0);
-        out.writeString(mAutoPatcherId);
         out.writeString(mPatcherNewFile);
         out.writeInt(mPatcherFailed ? 1 : 0);
         out.writeString(mPatcherError);
@@ -66,7 +65,6 @@ public class PatcherConfigState implements Parcelable {
         mPartConfig = in.readParcelable(PartConfig.class.getClassLoader());
         mPatchInfos = (PatchInfo[]) in.readParcelableArray(PatchInfo.class.getClassLoader());
         mPatchInfo = in.readParcelable(PatchInfo.class.getClassLoader());
-        mAutoPatcherId = in.readString();
         mPatcherNewFile = in.readString();
         mPatcherFailed = in.readInt() != 0;
         mPatcherError = in.readString();
@@ -92,7 +90,7 @@ public class PatcherConfigState implements Parcelable {
 
     private <T extends Parcelable> ArrayList<T> readParcelableArrayList(Parcel in, Class<T> clazz) {
         int size = in.readInt();
-        ArrayList<T> array = new ArrayList<T>(size);
+        ArrayList<T> array = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             array.add((T) in.readParcelable(clazz.getClassLoader()));
         }
@@ -109,7 +107,7 @@ public class PatcherConfigState implements Parcelable {
 
     private HashMap<String, String> readStringHashMap(Parcel in) {
         int size = in.readInt();
-        HashMap<String, String> map = new HashMap<String, String>();
+        HashMap<String, String> map = new HashMap<>();
         for (int i = 0; i < size; i++) {
             String key = in.readString();
             String value = in.readString();
@@ -184,7 +182,7 @@ public class PatcherConfigState implements Parcelable {
     public int mSupported;
 
     // Maps patcher name to patcher ID
-    public HashMap<String, String> mReversePatcherMap = new HashMap<String, String>();
+    public HashMap<String, String> mReversePatcherMap = new HashMap<>();
     // Selected patcher
     public Patcher mPatcher;
 
@@ -192,7 +190,7 @@ public class PatcherConfigState implements Parcelable {
     public Device mDevice;
 
     // List of partconfigs for selected patcher
-    public ArrayList<PartConfig> mPartConfigs = new ArrayList<PartConfig>();
+    public ArrayList<PartConfig> mPartConfigs = new ArrayList<>();
     // Selected partconfig
     public PartConfig mPartConfig;
 
@@ -200,9 +198,6 @@ public class PatcherConfigState implements Parcelable {
     public PatchInfo[] mPatchInfos;
     // Selected patchinfo
     public PatchInfo mPatchInfo;
-
-    // Selected autopatcher
-    public String mAutoPatcherId;
 
     public String mPatcherNewFile;
     public boolean mPatcherFailed;

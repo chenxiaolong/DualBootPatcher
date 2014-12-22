@@ -23,13 +23,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -38,16 +34,9 @@ import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class CustomOptsCard extends Card {
-    public static interface CustomOptsSelectedListener {
-        public void onAutoPatcherSelected(String autoPatcherId);
-    }
-
     private PatcherConfigState mPCS;
-    private CustomOptsSelectedListener mListener;
 
     private TextView mTitle;
-    private ArrayAdapter<String> mAutoPatcherAdapter;
-    private Spinner mAutoPatcherSpinner;
     private CheckBox mDeviceCheckBox;
     private CheckBox mHasBootImageBox;
     private TextView mBootImageTitle;
@@ -56,11 +45,9 @@ public class CustomOptsCard extends Card {
     private boolean mUsingPreset;
     private boolean mDisable;
 
-    public CustomOptsCard(Context context, PatcherConfigState pcs,
-                          CustomOptsSelectedListener listener) {
+    public CustomOptsCard(Context context, PatcherConfigState pcs) {
         this(context, R.layout.cardcontent_customopts);
         mPCS = pcs;
-        mListener = listener;
     }
 
     public CustomOptsCard(Context context, int innerLayout) {
@@ -71,8 +58,6 @@ public class CustomOptsCard extends Card {
     public void setupInnerViewElements(ViewGroup parent, View view) {
         if (view != null) {
             mTitle = (TextView) view.findViewById(R.id.card_title);
-            mAutoPatcherSpinner = (Spinner) view
-                    .findViewById(R.id.spinner_autopatch);
             mDeviceCheckBox = (CheckBox) view
                     .findViewById(R.id.customopts_devicecheck);
             mHasBootImageBox = (CheckBox) view
@@ -108,44 +93,11 @@ public class CustomOptsCard extends Card {
 
             updateViews();
         }
-
-        initControls();
-    }
-
-    private void initControls() {
-        mAutoPatcherAdapter = new ArrayAdapter<String>(getContext(),
-                android.R.layout.simple_spinner_item, android.R.id.text1);
-        mAutoPatcherAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mAutoPatcherSpinner.setAdapter(mAutoPatcherAdapter);
-
-        mAutoPatcherSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (mListener != null){
-                    mListener.onAutoPatcherSelected(mAutoPatcherSpinner.getSelectedItem().toString());
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-    }
-
-    public void refreshAutoPatchers() {
-        for (String ap : PatcherUtils.sPC.getAutoPatchers()) {
-            if (ap.equals("PatchFile")) {
-                continue;
-            }
-            mAutoPatcherAdapter.add(ap);
-        }
-        mAutoPatcherAdapter.notifyDataSetChanged();
     }
 
     private void updateViews() {
         if (mUsingPreset || mDisable) {
             mTitle.setEnabled(false);
-            mAutoPatcherSpinner.setEnabled(false);
             mDeviceCheckBox.setEnabled(false);
             mHasBootImageBox.setEnabled(false);
             mBootImageTitle.setEnabled(false);
@@ -153,7 +105,6 @@ public class CustomOptsCard extends Card {
             return;
         } else {
             mTitle.setEnabled(true);
-            mAutoPatcherSpinner.setEnabled(true);
             mDeviceCheckBox.setEnabled(true);
             mHasBootImageBox.setEnabled(true);
             mBootImageTitle.setEnabled(true);
@@ -197,7 +148,6 @@ public class CustomOptsCard extends Card {
     }
 
     public void reset() {
-        mAutoPatcherSpinner.setSelection(0);
         mDeviceCheckBox.setChecked(false);
         mHasBootImageBox.setChecked(true);
         mBootImageText.setText("");

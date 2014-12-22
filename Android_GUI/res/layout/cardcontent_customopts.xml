@@ -33,24 +33,6 @@
         android:paddingBottom="10dp"
         android:text="@string/customopts_title" />
 
-    <TextView
-        android:id="@+id/customopts_autopatcher"
-        style="@style/patcher_card_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/customopts_autopatcher" />
-
-    <Spinner
-        android:id="@+id/spinner_autopatch"
-        style="@style/patcher_card_spinner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <View
-        style="@style/separator"
-        android:layout_marginBottom="@dimen/card_internal_separator_padding"
-        android:layout_marginTop="@dimen/card_internal_separator_padding" />
-
     <CheckBox
         android:id="@+id/customopts_devicecheck"
         android:layout_width="wrap_content"
