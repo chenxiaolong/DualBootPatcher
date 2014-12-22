@@ -283,14 +283,14 @@ endif()
 
 
 ################################################################################
-# miniunzip for Android
+# busybox unzip for Android
 ################################################################################
 
 file(
     DOWNLOAD
     ${URL_BASE}/unzip.xz.base64
     ${CMAKE_CURRENT_SOURCE_DIR}/unzip.xz.base64
-    EXPECTED_MD5 62304add3c27041493302abfe0483e77
+    EXPECTED_MD5 0a35428abcda7e29e5b08738174b881a
     SHOW_PROGRESS
 )
 
