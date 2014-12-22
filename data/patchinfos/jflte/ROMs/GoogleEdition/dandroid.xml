@@ -1,6 +1,6 @@
 <patchinfo>
     <name>Dandroid</name>
-    <regex>^([Dd]anvdh-GE|Dandroid).*\.zip$</regex>
+    <regex>^([Dd]anvdh-GP?E|Dandroid).*\.zip$</regex>
 
     <ramdisk>jflte/default</ramdisk>
     <autopatchers>
