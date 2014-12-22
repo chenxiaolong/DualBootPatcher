@@ -27,8 +27,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 set(GUI_SOURCES
     main.cpp
     mainwindow.cpp
-    qcombocheckbox.cpp
-    qcheckboxlistdelegate.cpp
 )
 
 if(WIN32)
@@ -40,13 +38,10 @@ endif()
 
 set(GUI_PRIVATE_HEADERS
     mainwindow_p.h
-    qcombocheckbox_p.h
 )
 
 set(GUI_HEADERS
     mainwindow.h
-    qcombocheckbox.h
-    qcheckboxlistdelegate.h
 )
 
 set(GUI_RESOURCES

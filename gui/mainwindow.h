@@ -75,8 +75,6 @@ private:
     void refreshPresets();
     void updateBootImageTextBox();
 
-    void resetAutoPatchers();
-
     void chooseFile();
     void checkSupported();
     void startPatching();

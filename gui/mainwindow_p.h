@@ -21,7 +21,6 @@
 #define MAINWINDOW_P_H
 
 #include "mainwindow.h"
-#include "qcombocheckbox.h"
 
 #include <libmbp/patcherconfig.h>
 #include <libmbp/patcherinterface.h>
@@ -112,8 +111,6 @@ public:
     // Unsupported file widgets
     QLabel *presetLbl;
     QComboBox *presetSel;
-    QLabel *autoPatcherLbl;
-    QComboCheckBox *autoPatcherSel;
     QLabel *deviceCheckLbl;
     QCheckBox *deviceCheckCb;
     QLabel *hasBootImageLbl;

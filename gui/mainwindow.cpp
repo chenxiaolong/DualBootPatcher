@@ -269,10 +269,6 @@ void MainWindow::addWidgets()
     d->messageLbl->setMaximumWidth(550);
     d->presetLbl = new QLabel(tr("Preset:"), d->mainContainer);
     d->presetSel = new QComboBox(d->mainContainer);
-    d->autoPatcherLbl = new QLabel(tr("Auto-patcher"), d->mainContainer);
-    d->autoPatcherSel = new QComboCheckBox(d->mainContainer);
-    d->autoPatcherSel->setAutoUpdateDisplayText(true);
-    d->autoPatcherSel->setNothingSelectedText(tr("No autopatchers selected"));
     d->deviceCheckLbl = new QLabel(tr("Remove device check"), d->mainContainer);
     d->deviceCheckCb = new QCheckBox(d->mainContainer);
     d->hasBootImageLbl = new QLabel(tr("Has boot image"), d->mainContainer);
@@ -305,8 +301,6 @@ void MainWindow::addWidgets()
     layout->addWidget(d->presetLbl,       ++i, 0, 1,  1);
     layout->addWidget(d->presetSel,         i, 2, 1, -1);
     layout->addWidget(horiz3,             ++i, 0, 1, -1);
-    layout->addWidget(d->autoPatcherLbl,  ++i, 0, 1,  1);
-    layout->addWidget(d->autoPatcherSel,    i, 2, 1, -1);
     layout->addWidget(d->deviceCheckLbl,  ++i, 0, 1,  1);
     layout->addWidget(d->deviceCheckCb,     i, 1, 1,  1);
     layout->addWidget(d->hasBootImageLbl, ++i, 0, 1,  1);
@@ -331,8 +325,6 @@ void MainWindow::addWidgets()
     d->unsupportedWidgets << horiz3;
     d->unsupportedWidgets << d->presetLbl;
     d->unsupportedWidgets << d->presetSel;
-    d->unsupportedWidgets << d->autoPatcherLbl;
-    d->unsupportedWidgets << d->autoPatcherSel;
     d->unsupportedWidgets << d->deviceCheckLbl;
     d->unsupportedWidgets << d->deviceCheckCb;
     d->unsupportedWidgets << d->hasBootImageLbl;
@@ -341,8 +333,6 @@ void MainWindow::addWidgets()
     d->unsupportedWidgets << d->bootImageLe;
 
     // List of custom preset widgets
-    d->customPresetWidgets << d->autoPatcherLbl;
-    d->customPresetWidgets << d->autoPatcherSel;
     d->customPresetWidgets << d->deviceCheckLbl;
     d->customPresetWidgets << d->deviceCheckCb;
     d->customPresetWidgets << d->hasBootImageLbl;
@@ -450,17 +440,6 @@ void MainWindow::populateWidgets()
     }
     patcherNames.sort();
     d->patcherSel->addItems(patcherNames);
-
-    // Populate autopatchers
-    QStringList autoPatchers;
-    for (auto const &id : d->pc->autoPatchers()) {
-        if (id == "PatchFile") {
-            continue;
-        }
-        autoPatchers << QString::fromStdString(id);
-    }
-    autoPatchers.sort();
-    d->autoPatcherSel->addItems(autoPatchers);
 }
 
 void MainWindow::setWidgetDefaults()
@@ -473,8 +452,6 @@ void MainWindow::setWidgetDefaults()
     // Assume boot image exists
     d->hasBootImageCb->setChecked(true);
     onHasBootImageToggled();
-
-    resetAutoPatchers();
 }
 
 void MainWindow::refreshPartConfigs()
@@ -531,19 +508,6 @@ void MainWindow::updateBootImageTextBox()
         bool isLok = d->fileName.endsWith(
             QStringLiteral(".lok"), Qt::CaseInsensitive);
         d->bootImageLe->setEnabled(!isImg && !isLok);
-    }
-}
-
-void MainWindow::resetAutoPatchers()
-{
-    Q_D(MainWindow);
-
-    for (int i = 0; i < d->autoPatcherSel->count(); i++) {
-        // Select StandardPatcher by default
-        bool isStandardPatcher = d->autoPatcherSel->itemText(i)
-                == QStringLiteral("StandardPatcher");
-
-        d->autoPatcherSel->setChecked(i, isStandardPatcher);
     }
 }
 
@@ -690,15 +654,9 @@ void MainWindow::startPatching()
         if (d->presetSel->currentIndex() == 0) {
             d->patchInfo = new PatchInfo();
 
-            for (int i = 0; i < d->autoPatcherSel->count(); i++) {
-                if (d->autoPatcherSel->isChecked(i)) {
-                    d->patchInfo->addAutoPatcher(
-                            PatchInfo::Default,
-                            d->autoPatcherSel->itemText(i).toStdString(),
-                            PatchInfo::AutoPatcherArgs());
-                }
-            }
-
+            d->patchInfo->addAutoPatcher(PatchInfo::Default,
+                                         "StandardPatcher",
+                                         PatchInfo::AutoPatcherArgs());
             d->patchInfo->setHasBootImage(PatchInfo::Default,
                                           d->hasBootImageCb->isChecked());
             if (d->patchInfo->hasBootImage(PatchInfo::Default)) {
