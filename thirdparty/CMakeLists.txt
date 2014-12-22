@@ -290,7 +290,7 @@ file(
     DOWNLOAD
     ${URL_BASE}/unzip.xz.base64
     ${CMAKE_CURRENT_SOURCE_DIR}/unzip.xz.base64
-    EXPECTED_MD5 0a35428abcda7e29e5b08738174b881a
+    EXPECTED_MD5 0af568f77d558a8c5fc39f4a35a1d563
     SHOW_PROGRESS
 )
 
