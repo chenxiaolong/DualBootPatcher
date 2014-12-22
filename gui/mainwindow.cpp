@@ -540,26 +540,12 @@ void MainWindow::checkSupported()
         // assume everything is supported.
         if (!d->patcher->usesPatchInfo()) {
             d->supported |= MainWindowPrivate::SupportedFile;
-            d->supported |= MainWindowPrivate::SupportedPartConfig;
         }
 
         // Otherwise, check if it really is supported
         else if ((d->patchInfo = d->pc->findMatchingPatchInfo(
                 d->device, d->fileName.toStdString())) != nullptr) {
             d->supported |= MainWindowPrivate::SupportedFile;
-
-            const std::string key = d->patchInfo->keyFromFilename(
-                    d->fileName.toStdString());
-            std::vector<std::string> configs =
-                    d->patchInfo->supportedConfigs(key);
-            PartitionConfig *curConfig =
-                    d->partConfigs[d->partConfigSel->currentIndex()];
-
-            if ((std::find(configs.begin(), configs.end(), "all") != configs.end()
-                    || std::find(configs.begin(), configs.end(), curConfig->id()) != configs.end())
-                    && std::find(configs.begin(), configs.end(), "!" + curConfig->id()) == configs.end()) {
-                d->supported |= MainWindowPrivate::SupportedPartConfig;
-            }
         }
     }
 }
@@ -615,14 +601,6 @@ void MainWindow::updateWidgetsVisibility()
                 message.append(newLines);
                 message.append(tr("Detected %1")
                         .arg(QString::fromStdString(d->patchInfo->name())));
-            }
-
-            // Otherwise, if the partition configuration is not supported, then
-            // warn the user
-            else if ((d->supported & MainWindowPrivate::SupportedPartConfig) == 0) {
-                message.append(newLines);
-                message.append(tr("The current partition configuration is not supported for this file"));
-                d->startPatchingBtn->setEnabled(false);
             }
         }
 

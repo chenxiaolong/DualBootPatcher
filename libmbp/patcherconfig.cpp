@@ -100,9 +100,6 @@ public:
     void parsePatchInfoTagAutopatchers(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagAutopatcher(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagDeviceCheck(xmlNode *node, PatchInfo * const info, const std::string &type);
-    void parsePatchInfoTagPartconfigs(xmlNode *node, PatchInfo * const info, const std::string &type);
-    void parsePatchInfoTagExclude(xmlNode *node, PatchInfo * const info, const std::string &type);
-    void parsePatchInfoTagInclude(xmlNode *node, PatchInfo * const info, const std::string &type);
 };
 /*! \endcond */
 
@@ -126,9 +123,6 @@ const xmlChar *PatchInfoTagRamdisk = (xmlChar *) "ramdisk";
 const xmlChar *PatchInfoTagAutopatchers = (xmlChar *) "autopatchers";
 const xmlChar *PatchInfoTagAutopatcher = (xmlChar *) "autopatcher";
 const xmlChar *PatchInfoTagDeviceCheck = (xmlChar *) "device-check";
-const xmlChar *PatchInfoTagPartconfigs = (xmlChar *) "partconfigs";
-const xmlChar *PatchInfoTagInclude = (xmlChar *) "include";
-const xmlChar *PatchInfoTagExclude = (xmlChar *) "exclude";
 
 const xmlChar *PatchInfoAttrRegex = (xmlChar *) "regex";
 
@@ -918,8 +912,6 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
             parsePatchInfoTagAutopatchers(curNode, info, PatchInfo::Default);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::Default);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
-            parsePatchInfoTagPartconfigs(curNode, info, PatchInfo::Default);
         } else {
             Log::log(Log::Warning, "Unrecognized tag within <patchinfo>: %s",
                      (char *) curNode->name);
@@ -960,8 +952,6 @@ void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
             parsePatchInfoTagAutopatchers(curNode, info, regex);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, regex);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
-            parsePatchInfoTagPartconfigs(curNode, info, regex);
         } else {
             Log::log(Log::Warning, "Unrecognized tag within <matches>: %s",
                      (char *) curNode->name);
@@ -991,8 +981,6 @@ void PatcherConfig::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
             parsePatchInfoTagAutopatchers(curNode, info, PatchInfo::NotMatched);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::NotMatched);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
-            parsePatchInfoTagPartconfigs(curNode, info, PatchInfo::NotMatched);
         } else {
             Log::log(Log::Warning, "Unrecognized tag within <not-matched>: %s",
                      (char *) curNode->name);
@@ -1224,111 +1212,5 @@ void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
 
     if (!hasText) {
         Log::log(Log::Warning, "<device-check> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagPartconfigs(xmlNode *node,
-                                                       PatchInfo * const info,
-                                                       const std::string &type)
-{
-    assert(xmlStrcmp(node->name, PatchInfoTagPartconfigs) == 0);
-
-    auto configs = info->supportedConfigs(type);
-    if (configs.empty()) {
-        configs.push_back("all");
-    }
-    info->setSupportedConfigs(type, std::move(configs));
-
-    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
-        if (curNode->type != XML_ELEMENT_NODE) {
-            continue;
-        }
-
-        if (xmlStrcmp(curNode->name, PatchInfoTagPartconfigs) == 0) {
-            Log::log(Log::Warning, "Nested <partconfigs> is not allowed");
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagExclude) == 0) {
-            parsePatchInfoTagExclude(curNode, info, type);
-        } else if (xmlStrcmp(curNode->name, PatchInfoTagInclude) == 0) {
-            parsePatchInfoTagInclude(curNode, info, type);
-        } else {
-            Log::log(Log::Warning, "Unrecognized tag within <partconfigs>: %s",
-                     (char *) curNode->name);
-        }
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagExclude(xmlNode *node,
-                                                   PatchInfo * const info,
-                                                   const std::string &type)
-{
-    assert(xmlStrcmp(node->name, PatchInfoTagExclude) == 0);
-
-    bool hasText = false;
-    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
-        if (curNode->type != XML_TEXT_NODE) {
-            continue;
-        }
-
-        hasText = true;
-
-        const std::string text = xmlStringToStdString(curNode->content);
-        const std::string negated = "!" + text;
-
-        auto configs = info->supportedConfigs(type);
-
-        auto itYes = std::find(configs.begin(), configs.end(), text);
-        if (itYes != configs.end()) {
-            configs.erase(itYes);
-        }
-
-        auto itNo = std::find(configs.begin(), configs.end(), negated);
-        if (itNo != configs.end()) {
-            configs.erase(itNo);
-        }
-
-        configs.push_back(negated);
-        info->setSupportedConfigs(type, std::move(configs));
-    }
-
-    if (!hasText) {
-        Log::log(Log::Warning, "<exclude> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagInclude(xmlNode *node,
-                                                   PatchInfo * const info,
-                                                   const std::string &type)
-{
-    assert(xmlStrcmp(node->name, PatchInfoTagInclude) == 0);
-
-    bool hasText = false;
-    for (auto *curNode = node->children; curNode; curNode = curNode->next) {
-        if (curNode->type != XML_TEXT_NODE) {
-            continue;
-        }
-
-        hasText = true;
-
-        const std::string text = xmlStringToStdString(curNode->content);
-        const std::string negated = "!" + text;
-
-        auto configs = info->supportedConfigs(type);
-
-        auto itYes = std::find(configs.begin(), configs.end(), text);
-        if (itYes != configs.end()) {
-            configs.erase(itYes);
-        }
-
-        auto itNo = std::find(configs.begin(), configs.end(), negated);
-        if (itNo != configs.end()) {
-            configs.erase(itNo);
-        }
-
-        configs.push_back(text);
-        info->setSupportedConfigs(type, std::move(configs));
-    }
-
-    if (!hasText) {
-        Log::log(Log::Warning, "<include> tag has no text");
     }
 }

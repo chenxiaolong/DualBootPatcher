@@ -163,7 +163,6 @@ public class PatcherConfigState implements Parcelable {
 
     public static final int NOT_SUPPORTED = 0x0;
     public static final int SUPPORTED_FILE = 0x1;
-    public static final int SUPPORTED_PARTCONFIG = 0x2;
 
     public static final int STATE_INITIAL = 0;
     public static final int STATE_CHOSE_FILE = 1;

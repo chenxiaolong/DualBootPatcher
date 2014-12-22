@@ -82,11 +82,6 @@ bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key);
 void mbp_patchinfo_set_device_check(CPatchInfo *info,
                                     const char *key, bool deviceCheck);
 
-char ** mbp_patchinfo_supported_configs(const CPatchInfo *info,
-                                        const char *key);
-void mbp_patchinfo_set_supported_configs(CPatchInfo *info,
-                                         const char *key, char ** configs);
-
 #ifdef __cplusplus
 }
 #endif

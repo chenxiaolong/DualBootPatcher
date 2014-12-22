@@ -48,9 +48,6 @@ public:
 
     // Whether or not device checks/asserts should be kept
     bool deviceCheck;
-
-    // List of supported partition configurations
-    std::vector<std::string> supportedConfigs;
 };
 /*! \endcond */
 
@@ -110,9 +107,6 @@ PatchInfo::Impl::Impl()
 
     // Don't remove device checks
     subPatchInfos[PatchInfo::Default].deviceCheck = true;
-
-    // Allow all configs
-    subPatchInfos[PatchInfo::Default].supportedConfigs.push_back("all");
 }
 
 /*!
@@ -563,43 +557,4 @@ bool PatchInfo::deviceCheck(const std::string &key) const
 void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
 {
     m_impl->subPatchInfos[key].deviceCheck = deviceCheck;
-}
-
-/*!
- * \brief List of supported partition configurations
- *
- * \param key Parameter key
- *
- * \return List of supported PartitionConfig IDs
- */
-std::vector<std::string> PatchInfo::supportedConfigs(const std::string &key) const
-{
-    bool hasKey = m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end();
-    bool hasDefault = m_impl->subPatchInfos.find(Default) != m_impl->subPatchInfos.end();
-
-    std::vector<std::string> items;
-
-    if (hasDefault) {
-        auto &configs = m_impl->subPatchInfos[Default].supportedConfigs;
-        items.insert(items.end(), configs.begin(), configs.end());
-    }
-
-    if (key != Default && hasKey) {
-        auto &configs = m_impl->subPatchInfos[key].supportedConfigs;
-        items.insert(items.end(), configs.begin(), configs.end());
-    }
-
-    return items;
-}
-
-/*!
- * \brief Set list of supported partition configurations
- *
- * \param key Parameter key
- * \param configs List of supported PartitionConfig IDs
- */
-void PatchInfo::setSupportedConfigs(const std::string &key,
-                                    std::vector<std::string> configs)
-{
-    m_impl->subPatchInfos[key].supportedConfigs = std::move(configs);
 }

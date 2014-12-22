@@ -90,10 +90,6 @@ public:
     bool deviceCheck(const std::string &key) const;
     void setDeviceCheck(const std::string &key, bool deviceCheck);
 
-    std::vector<std::string> supportedConfigs(const std::string &key) const;
-    void setSupportedConfigs(const std::string &key,
-                             std::vector<std::string> configs);
-
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

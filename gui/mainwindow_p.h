@@ -49,8 +49,7 @@ public:
 
     enum SupportedFlag {
         NotSupported = 0x0,
-        SupportedFile = 0x1,
-        SupportedPartConfig = 0x2
+        SupportedFile = 0x1
     };
     Q_DECLARE_FLAGS(SupportedFlags, SupportedFlag)
 

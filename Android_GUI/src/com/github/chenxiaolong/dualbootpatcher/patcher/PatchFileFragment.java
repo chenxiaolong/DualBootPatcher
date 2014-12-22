@@ -378,35 +378,12 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         if (!mPCS.mPatcher.usesPatchInfo()) {
             mPCS.mSupported |= PatcherConfigState.SUPPORTED_FILE;
-            mPCS.mSupported |= PatcherConfigState.SUPPORTED_PARTCONFIG;
         }
 
         // Otherwise, check if it really is supported
         else if ((mPCS.mPatchInfo = PatcherUtils.sPC.findMatchingPatchInfo(
                 mMainOptsCard.getDevice(), mPCS.mFilename)) != null) {
             mPCS.mSupported |= PatcherConfigState.SUPPORTED_FILE;
-
-            final String key = mPCS.mPatchInfo.keyFromFilename(mPCS.mFilename);
-            String[] configs = mPCS.mPatchInfo.getSupportedConfigs(key);
-            PartConfig curConfig = mMainOptsCard.getPartConfig();
-
-            boolean hasAll = false;
-            boolean hasCurConfig = false;
-            boolean hasNotCurConfig = false;
-
-            for (String config : configs) {
-                if (config.equals("all")) {
-                    hasAll = true;
-                } else if (config.equals(curConfig.getId())) {
-                    hasCurConfig = true;
-                } else if (config.equals("!" + curConfig.getId())) {
-                    hasNotCurConfig = true;
-                }
-            }
-
-            if ((hasAll || hasCurConfig) && !hasNotCurConfig) {
-                mPCS.mSupported |= PatcherConfigState.SUPPORTED_PARTCONFIG;
-            }
         }
 
         setTapActionPatchFile();

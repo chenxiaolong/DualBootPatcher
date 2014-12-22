@@ -252,8 +252,6 @@ public class LibMbp {
         static native void mbp_patchinfo_set_ramdisk(CPatchInfo info, String key, String ramdisk);
         static native boolean mbp_patchinfo_device_check(CPatchInfo info, String key);
         static native void mbp_patchinfo_set_device_check(CPatchInfo info, String key, boolean deviceCheck);
-        static native Pointer mbp_patchinfo_supported_configs(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_supported_configs(CPatchInfo info, String key, StringArray configs);
         // END: cpatchinfo.h
 
         // BEGIN: cstringmap.h
@@ -2207,23 +2205,6 @@ public class LibMbp {
             ensureNotNull(key);
 
             CWrapper.mbp_patchinfo_set_device_check(mCPatchInfo, key, deviceCheck);
-        }
-
-        public String[] getSupportedConfigs(String key) {
-            log(mCPatchInfo, PatchInfo.class, "getSupportedConfigs", key);
-            ensureNotNull(key);
-
-            Pointer p = CWrapper.mbp_patchinfo_supported_configs(mCPatchInfo, key);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setSupportedConfigs(String key, String[] configs) {
-            log(mCPatchInfo, PatchInfo.class, "setSupportedConfigs", key, configs);
-            ensureNotNull(key);
-            ensureNotNull(configs);
-
-            CWrapper.mbp_patchinfo_set_supported_configs(
-                    mCPatchInfo, key, new StringArray(configs));
         }
     }
 

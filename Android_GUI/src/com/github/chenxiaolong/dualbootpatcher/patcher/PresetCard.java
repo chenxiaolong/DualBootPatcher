@@ -136,8 +136,7 @@ public class PresetCard extends Card {
             setEnabled(false);
 
             if (getCardView() != null) {
-                if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0
-                        && (mPCS.mSupported & PatcherConfigState.SUPPORTED_PARTCONFIG) != 0) {
+                if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0) {
                     ((CardViewNative) getCardView()).setVisibility(View.GONE);
                 } else {
                     ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
@@ -150,8 +149,7 @@ public class PresetCard extends Card {
             setEnabled(true);
 
             if (getCardView() != null) {
-                if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0
-                        && (mPCS.mSupported & PatcherConfigState.SUPPORTED_PARTCONFIG) != 0) {
+                if ((mPCS.mSupported & PatcherConfigState.SUPPORTED_FILE) != 0) {
                     ((CardViewNative) getCardView()).setVisibility(View.GONE);
                 } else {
                     ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
