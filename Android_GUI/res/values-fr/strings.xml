@@ -26,9 +26,11 @@
   <!--Title for the card shown in the switcher when root access could not be obtained-->
   <string name="noroot_title">Pas d\'accès root</string>
   <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_switcher_desc">L\'application n\'a pas pu obtenir un accès root.\nL\'accès root est nécessaire pour écrire dans la partition boot/ kernel  afin de basculer entre les firmwares\nAppuyez  à nouveau pour tenter d\'obtenir un accès root.</string>
+  <string name="noroot_switcher_desc">L\'application n\'a pas pu obtenir d\'accès root. Le Root. accès est nécessaire pour l\'écriture sur la partition de l\'image kernel / boot pour basculer entre eux. firmware.
+Appuyez pour tenter d\'obtenir un accès root à nouveau.</string>
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
-  <string name="noroot_settings_desc">L\'application n\'a pas pu obtenir un accès root.\nL\'accès root est nécessaire pour modifier les paramètres de partage des applications\nAppuyez  à nouveau sur pour tenter d\'obtenir un accès root.</string>
+  <string name="noroot_settings_desc">L\'application n\'a pas pu obtenir d\'accès root. Le Root est nécessaire pour changer les paramètres de partage d\'application.
+Appuyez pour tenter d\'obtenir un accès root à nouveau.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_choose_rom">Choisir une ROM</string>
   <!--Navigation drawer item for setting the kernel-->
@@ -86,23 +88,28 @@
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Appuyer pour choisir un fichier à patcher</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">Les fichiers Zip et images de démarrage (boot.img, boot.lok) sont \npris en charge par le Patcher. Si un fichier non pris en charge est choisi, des options supplémentaires apparaitront, lesquels permettront au processus de patchage\nd\'être personnalisé.</string>
+  <string name="filechooser_initial_desc">Les fichiers Zip et images de démarrage (boot.img, boot.lok) sont pris en charge par le Patcher. Si un fichier non pris en charge est choisi, des options supplémentaires apparaîtront, lesquels permettront au processus de patchage d\'être personnalisé.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Taper pour commencer le patchage</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
-  <string name="filechooser_ready_desc">Fichier sélectionné: %s\n\nAppuyer et maintenir pour choisir un autre fichier.</string>
+  <string name="filechooser_ready_desc">Fichier sélectionné: %s
+Appuyez et maintenez pour choisir un fichier different.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Appuyer pour commencer le patchage</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s\n\nLe fichier que vous avez sélectionné  n\'est pas supporté. \nVous pouvez tout de même essayer de patcher le fichier en utilisant les options ci-dessous.\n\nAppuyer et maintenir pour choisir un fichier différent.\n</string>
+  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s 
+Le fichier que vous avez sélectionné n\'est pas supporté. Vous pouvez essayer de patcher le fichier de toute façon en utilisant les options ci-dessous.
+Tapez et maintenez pour choisir un fichier différent.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Fichier patché avec succès</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_success_desc">Nouveau fichier: %s\n\nAppuyer pour choisir un autre fichier à patcher.</string>
+  <string name="filechooser_success_desc">Nouveau fichier: %s
+Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Impossible de patcher le fichier</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_failure_desc">%s\n\nAppuyer pour choisir un autre fichier à patcher.</string>
+  <string name="filechooser_failure_desc">%s 
+Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Title for the preset card-->
   <string name="preset_title">Préréglage</string>
   <!--Name for the custom preset item-->
@@ -123,6 +130,8 @@
   <string name="customopts_hasbootimage">A une image boot</string>
   <!--Name for the ramdisks combobox-->
   <string name="customopts_ramdisk">Disque virtuel</string>
+  <!--Name for the patched init binary combobox-->
+  <string name="customopts_patchedinit">init patché</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Image boot</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
@@ -158,14 +167,16 @@
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
   <string name="rom_settings_share_paid_apps_title">Partager les applications payantes</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
+  <string name="rom_settings_share_paid_apps_desc">
+<![CDATA[
 Partager les applications de la ROM primaire avec la ROM actuelle (requiert un redémarrage).
 <strong>Peut ne pas travailler du au DRM.</strong>
 ]]></string>
   <!--Title for the preference to share individual applications-->
   <string name="rom_settings_indiv_app_sharing_title">Partager des applications individuelles</string>
   <!--Description for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_desc">Partager les applications individuelles à travers les ROMs\n(requiert un redémarrage).</string>
+  <string name="rom_settings_indiv_app_sharing_desc">Partager les applications individuelles à travers les ROMs
+(requiert un redémarrage).</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Mettre à jour le disque virtuel</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
@@ -177,7 +188,8 @@ Partager les applications de la ROM primaire avec la ROM actuelle (requiert un r
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Impossible de mettre à jour le disque virtuel</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
-  <string name="update_ramdisk_failure_desc">Le disque virtuel n\'a pu être mis à jour.\nLe partage ne fonctionnera probablement pas correctement.</string>
+  <string name="update_ramdisk_failure_desc">Le disque virtuel n\'a pu être mis à jour.
+Le partage ne fonctionnera probablement pas correctement.</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -187,9 +199,12 @@ Partager les applications de la ROM primaire avec la ROM actuelle (requiert un r
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_dialog_desc">Le partage de l\'application individuelle permet à l\'appareil de conserver une copie d\'une application pour chaque ROM sélectionnée afin de gagner de la place. Il s\'assure également que l\'application est mise à jour dans chaque ROM\n\nQuand une application est installée, mise à jour, ou désinstallée, le patcher demandera parfois un accès root pour démarrer le service \'syncdaemon\'. SVP, autoriser la requête pour que la synchronisation soit réussie.</string>
+  <string name="indiv_app_sharing_dialog_desc">Le partage d\'application individuelle permet à l\'appareil de conserver une copie d\'une application pour chaque ROM sélectionnée pour économiser de l\'espace. Il assure également que l\'application est mise à jour dans chaque ROM.
+Quand une application est installée, mise à niveau, ou retiré, le patcher demandera parfois un accès root pour démarrer le service «syncdaemon \'. 
+S\'il vous plaît autoriser la demande de synchronisation pour réussir.</string>
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
-  <string name="indiv_app_sharing_incompat_global">Ne peut être utilisé en application globale\nle partage est activé.</string>
+  <string name="indiv_app_sharing_incompat_global">Ne peut être utilisé en application globale
+le partage est activé.</string>
   <!--Description in the app sharing list showing which ROMs the application is installed in-->
   <string name="installed_in_roms">Actuellement installée dans:</string>
   <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
@@ -211,4 +226,37 @@ Partager les applications de la ROM primaire avec la ROM actuelle (requiert un r
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Veuillez attendre s\'il vous plait</string>
   <!--Presets that should always be visible-->
+  <!--Errors-->
+  <string name="no_error">Aucune erreur ne s\'est produite</string>
+  <string name="unknown_error">Une erreur inconnue s\'est produite</string>
+  <string name="patcher_create_error">Impossible de créer le patch: %s</string>
+  <string name="autopatcher_create_error">Impossible de créer le patch auto: %s</string>
+  <string name="ramdisk_patcher_create_error">Impossible de créer le patch du disque virtuel: %s</string>
+  <string name="file_open_error">Impossible d\'ouvrir le fichier: %s</string>
+  <string name="file_read_error">Impossible de lire le fichier: %s</string>
+  <string name="file_write_error">Impossible d\'écrire le fichier: %s</string>
+  <string name="directory_not_exist_error">Le répertoire n\'existe pas: %s</string>
+  <string name="boot_image_smaller_than_header_error">Le fichier de l\'image de démarrage est plus petit que la taille de l\'image de démarrage du chargeur</string>
+  <string name="boot_image_no_android_header_error">Impossible de trouver le chargeur Android dans l\'image de démarrage</string>
+  <string name="boot_image_no_ramdisk_gzip_header_error">Impossible de trouver le chargeur de gzip du disque virtuel</string>
+  <string name="boot_image_no_ramdisk_size_error">Impossible de déterminer la taille du disque virtuel</string>
+  <string name="boot_image_no_kernel_size_error">Impossible de déterminer la taille du kernel</string>
+  <string name="boot_image_no_ramdisk_address_error">Impossible de déterminer l\'adresse mémoire du disque virtuel</string>
+  <string name="cpio_file_already_exists_error">Fichier déjà existant dans l\'archive cpio: %s</string>
+  <string name="cpio_file_not_exist_error">Le fichier n\' existe pas dans l\'archive cpio: %s</string>
+  <string name="archive_read_open_error">Impossible d\'ouvrir les archives pour la lecture</string>
+  <string name="archive_read_data_error">Impossible de lire les données d\'archive pour le fichier: %s</string>
+  <string name="archive_read_header_error">Impossible de lire les archives du chargeur d\'entrée</string>
+  <string name="archive_write_open_error">Impossible d\'ouvrir les archives pour l\'écriture</string>
+  <string name="archive_write_data_error">Impossible d\'écrire des données d\'archives pour le fichier: %s</string>
+  <string name="archive_write_header_error">Échec de l\'écriture du chargeur d\'archive pour le fichier: %s</string>
+  <string name="archive_close_error">Impossible de fermer les archives</string>
+  <string name="archive_free_error">Echec pour libérer la mémoire du chargeur d\'archive</string>
+  <string name="xml_parse_file_error">Impossible d\'analyser le fichier XML: %s</string>
+  <string name="only_zip_supported">Seuls les fichiers ZIP sont pris en charge par %s</string>
+  <string name="only_boot_image_supported">Seuls les images de démarrage sont supportées par %s</string>
+  <string name="patching_cancelled">Le patchage a été annulé</string>
+  <string name="system_cache_format_lines_not_found">Le patcher n\'a pas pu trouver de lignes /system ou /cache formatting dans le fichier updater-script.
+Si le fichier est une ROM, alors quelque chose a échoué. Si le fichier n\'est pas une ROM (ex. Noyau ou mod), il n\'a pas besoin d\'être patché.</string>
+  <string name="apply_patch_file_error">Impossible d\'appliquer le fichier patch</string>
 </resources>

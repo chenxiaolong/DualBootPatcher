@@ -1,0 +1,287 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Dual Boot Patcher</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Dual Boot Patcher (Depanare)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Dual Boot patcher (Instantaneu)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Asteptati pana la terminarea tuturor operatiilor.</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Versiunea %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Sursa codului.</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">XDA Topic</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Licente.</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Mulțumiri speciale tuturor celor care au ajutat la functionarea patch-ului.</string>
+  <!--Message in ROM Settings screen indicating that it's waiting for root access-->
+  <string name="waiting_for_root">În așteptare pentru acces root.</string>
+  <!--Title for the card shown in the switcher when root access could not be obtained-->
+  <string name="noroot_title">Fara acces la root.</string>
+  <!--Message for the card shown in the switcher when root access could not be obtained-->
+  <string name="noroot_switcher_desc">Cererea a fost în imposibilitatea de a obține acces root. Root
+
+este necesar accesul pentru scris la partiția imaginii de kernel / boot pentru a comuta intre
+
+firmware. \ n \ nTap pentru a încerca să obțină acces root din nou.</string>
+  <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
+  <string name="noroot_settings_desc">Cererea a fost în imposibilitatea de a obține acces root. Este necesar accesul Root
+
+pentru a modifica setările de partajare a aplicației. \ N \ nTap pentru a încerca să obțină acces root
+
+din nou.</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_choose_rom">Alege ROM-ul</string>
+  <!--Navigation drawer item for setting the kernel-->
+  <string name="title_set_kernel">Setati Kernelul.</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Patch fisierul ZIP.</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Spatiul liber.</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Setari ROM.</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Repornire.</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">Despre.</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Iesire.</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Deschideti sertarul de navigatie.</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Inchideti sertarul de navigatie.</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">Principal.</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">Secundar.</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">Sloturi multiple %s</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">Nu pot detecta versiunea ROM-ului.</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">Schimbare reusita,</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">Schimbarea ROM-ului esuata.</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Setarea Kernel reusita.</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Setare Kernel esuata.</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">Stema ROM.</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Setati Kernel?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">Kernel-ul care ruleaza va fi salvat
+ca kernel pentru %s</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">Redenumire %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Introduceti nume nou pentru %s. Lasati spatiu liber pentru
+denumire standard. Click pe iconita ROM-ului pentru schimbarea ei.</string>
+  <!--Dialog button text for resetting the ROM icon-->
+  <string name="reset_icon">Resetare iconita.</string>
+  <!--Title for the patcher card asking for the device and partition configuration-->
+  <string name="devpartconfig_title">Configurarea partitiei si a dispozitivului.</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Lipsa manager fisiere.</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Nu există nici un manager de fișiere potrivit instalat. Va rugam
+
+instalati un manager de fișiere pentru a putea alege fișierele de patch-uri.</string>
+  <!--Title for the file chooser card telling the user to tap to choose a file-->
+  <string name="filechooser_initial_title">Click pentru a alege fisierul de patch-uit.</string>
+  <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <string name="filechooser_initial_desc">Fișiere Zip și imagini de boot (boot.img, boot.lok) sunt
+
+sprijinite de patcher. În cazul în care un fișier neacceptat este ales, opțiuni suplimentare vor apare
+
+care permit procesul de patch sa fie personalizat.</string>
+  <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
+  <string name="filechooser_ready_title">Click pentru a incepe patch.</string>
+  <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
+  <string name="filechooser_ready_desc">Fisier selectat %s\n\nTap tineti apasat pentru alegere altui
+fisier</string>
+  <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
+  <string name="filechooser_unsupported_title">Click pentru a incepe patch.</string>
+  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
+  <string name="filechooser_unsupported_desc">Fisierul selectat: %s\n\n Fisierul care a fost ales
+nu este suportat. Puteti incerca sa patch fisierul oricum folosind optiunile
+de mai jos.\n\nTap si tineti pentru alegerea altui fisier.</string>
+  <!--Title for the file chooser card indicating that the file was successfully patched-->
+  <string name="filechooser_success_title">Fisier Patch-uit cu succes.</string>
+  <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_success_desc">Fisier nou: %s\n\nTap pentru alegerea altui fisier
+de patch-uit.</string>
+  <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
+  <string name="filechooser_failure_title">Patch-uire esuata a fisierului.</string>
+  <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_failure_desc">%s\n\nTap pentru alegerea altui fisier.</string>
+  <!--Title for the preset card-->
+  <string name="preset_title">Setare.</string>
+  <!--Name for the custom preset item-->
+  <string name="preset_custom">Modificat.</string>
+  <!--Description for the custom preset item indicating that further options can be modified-->
+  <string name="preset_custom_desc">Customizati patch-ul folosind optiunile de mai jos.</string>
+  <!--Title for the custom options card-->
+  <string name="customopts_title">Optiuni modificate.</string>
+  <!--Name for the autopatcher radio button-->
+  <string name="customopts_autopatcher">Patch automat.</string>
+  <!--Name for the patch file radio button-->
+  <string name="customopts_patchfile">Patch fisier</string>
+  <!--Name for the button to select a .patch or .diff file-->
+  <string name="customopts_choosepatch">Alegeti fisierul patch</string>
+  <!--Name for the option to disable checks for the device's model-->
+  <string name="customopts_devicecheck">Eliminați verificare dispozitiv.</string>
+  <!--Name for the option telling the patcher that the file has a boot image-->
+  <string name="customopts_hasbootimage">Are imagine boot</string>
+  <!--Name for the ramdisks combobox-->
+  <string name="customopts_ramdisk">Ramdisk</string>
+  <!--Name for the patched init binary combobox-->
+  <string name="customopts_patchedinit">Patch-uri init</string>
+  <!--Name for the boot image text box-->
+  <string name="customopts_bootimage">Imagine de boot</string>
+  <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
+  <string name="customopts_bootimage_hint">Lasati liber pentru autodetectare</string>
+  <!--Accessibility text for the checkbox in the progress box-->
+  <string name="task_checkbox_image">Casetă sarcina de finalizare</string>
+  <!--Title for the details card-->
+  <string name="details_title">Detalii:</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Terminat</string>
+  <!--Title for the progress card-->
+  <string name="overall_progress">Proces general:</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">%1$s/%2$s file</string>
+  <!--Title for the partition's mount point-->
+  <string name="free_space_mount_point">Punct de montare:</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">Spatiu total:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Ocupat:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">Liber:</string>
+  <!--Format string for gigabytes-->
+  <!--Format string for megabytes-->
+  <!--Format string for kilobytes-->
+  <!--Format string for bytes-->
+  <!--Title for the application sharing section of the ROM Settings-->
+  <string name="rom_settings_app_sharing_title">Partajare aplicatii (EXPERIMENTAL)</string>
+  <!--Name of the preference for globally sharing free applications from the primary ROM-->
+  <string name="rom_settings_share_apps_title">Partajare aplicatii</string>
+  <!--Description of the preference for globally shareing free applications from the primary ROM-->
+  <string name="rom_settings_share_apps_desc">Partajarea aplicatiilor din ROM-ul principal cu
+ROM-ul curent (necesita repornire)</string>
+  <!--Name of the preference for globally sharing paid applications from the primary ROM-->
+  <string name="rom_settings_share_paid_apps_title">Partajare aplicatii platite</string>
+  <!--Description of the preference for globally shareing paid applications from the primary ROM-->
+  <string name="rom_settings_share_paid_apps_desc">
+<![CDATA[
+Partajarea aplicatiilor platite din primul ROM cu ROM-ul curent (necesita restart)
+<strong>POSIBIL SA NU FUNCTIONEZE CU DRM</strong>
+]]></string>
+  <!--Title for the preference to share individual applications-->
+  <string name="rom_settings_indiv_app_sharing_title">Partajati aplicatiile individuale</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="rom_settings_indiv_app_sharing_desc">Partajare aplicatii individuale intre ROM-uri
+(necesita repornire)</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Actualizati ramdisk</string>
+  <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
+  <string name="update_ramdisk_desc">Ramdisk-ul necesita actualizare pentru a putea utiliza
+caracteristicile de partajare a aplicatiilor.
+</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Ramdisk actualizat cu succes</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">Ramdisk-ul a fost cu succes actualizat. Doriti sa
+restartati acum?</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Esuare in actualizarea ramdisk-ului</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Ramdisk-ul a esuat actualizarea. Aplicatiile
+partajate mai mult ca sigur nu vor functiona corect.</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Patcher</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Arata butonul de iesire</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Arata butonul de repornire</string>
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_dialog_title">Partajare app individuale</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_dialog_desc">App individuale partajate permite dispozitivului să pastreze
+o copie a unei aplicații pentru fiecare ROM selectate în scopul de a economisi spațiu. De asemenea, asigură faptul că app este
+actualizata in fiecare ROM.n\n\ Cand o app este instalata, actualizata, eliminata, patch-erul va
+cere acces la root uneori pentru a porni serviciul \'syncdaemon\'. Permiteti
+cererea pentru succesul sincronizarii.</string>
+  <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
+  <string name="indiv_app_sharing_incompat_global">App globale nu pot fi folosite
+partajarea este pornita</string>
+  <!--Description in the app sharing list showing which ROMs the application is installed in-->
+  <string name="installed_in_roms">Instalare curenta in:</string>
+  <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
+  <string name="share_apks_across_title">Folositi aceleasi apk peste:</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">Niciuna</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">OK</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">Anulare</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Continua</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Repornire acum</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Repornire mai tarziu</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Nu mai arata</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Asteptati</string>
+  <!--Presets that should always be visible-->
+  <!--Errors-->
+  <string name="no_error">Fara erori</string>
+  <string name="unknown_error">O eroare necunoscuta sa intamplat</string>
+  <string name="patcher_create_error">Crearea patch-erului esuata: %s</string>
+  <string name="autopatcher_create_error">Crearea autopatch-erului esuata: %s</string>
+  <string name="ramdisk_patcher_create_error">Crearea patch-erului ramdisk esuata: %s</string>
+  <string name="file_open_error">Deschidere fisier esuata: %s</string>
+  <string name="file_read_error">Citirea din fisier esuata: %s</string>
+  <string name="file_write_error">Scrierea in fisier esuata: %s</string>
+  <string name="directory_not_exist_error">Directorul nu exista: %s</string>
+  <string name="boot_image_smaller_than_header_error">Imaginea fisierului de boot este mai mica decat
+imaginea antetului de boot</string>
+  <string name="boot_image_no_android_header_error">Nu am putut găsi antetul Android în
+imagini de boot</string>
+  <string name="boot_image_no_ramdisk_gzip_header_error">Nu am gasit antetul ramdisk in
+gzip</string>
+  <string name="boot_image_no_ramdisk_size_error">Nu pot determina marimea ramdisk-ului</string>
+  <string name="boot_image_no_kernel_size_error">Nu pot determina marimea kernel-ului</string>
+  <string name="boot_image_no_ramdisk_address_error">Nu pot determina adresa memoriei
+ramdisk-ului</string>
+  <string name="cpio_file_already_exists_error">Fisierul exista deja in arhiva cpio: %s</string>
+  <string name="cpio_file_not_exist_error">Fisierul nu exista in arhiva cpio: %s</string>
+  <string name="archive_read_open_error">Eroare in deschiderea arhivei pentru citire</string>
+  <string name="archive_read_data_error">Eroare in citirea datelor din arhiva: %s</string>
+  <string name="archive_read_header_error">Eroare in citirea antetului de intrare in arhiva</string>
+  <string name="archive_write_open_error">Eroare in deschiderea scrieri in arhiva</string>
+  <string name="archive_write_data_error">Eroare in scrierea datelor din arhiva in fisier: %s</string>
+  <string name="archive_write_header_error">Eroare in scrierea antetului de arhivare a fisierului: %s</string>
+  <string name="archive_close_error">Eroare la inchiderea arhivei</string>
+  <string name="archive_free_error">Eroare in eliberare memoriei arhivei</string>
+  <string name="xml_parse_file_error">Eroare de analizare fisier XML: %s</string>
+  <string name="only_zip_supported">Doar fisiere ZIP suportate de %s</string>
+  <string name="only_boot_image_supported">Doar imagine boot este suportata de %s</string>
+  <string name="patching_cancelled">Patch-ul anulat</string>
+  <string name="system_cache_format_lines_not_found">Patch-erul nu a gasit nici un /system sau
+/cache formatarea liniilor din fișierul updater-script.\n\nlf fisierul este un ROM
+care uneori esueaza.Dacă fișierul nu este un ROM (de ex. Kernel sau mod), nu este nevoie să fie
+patch-uit.</string>
+  <string name="apply_patch_file_error">Eroare in aplicarea patch-ului</string>
+</resources>

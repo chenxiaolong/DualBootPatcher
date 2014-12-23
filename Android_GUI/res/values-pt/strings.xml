@@ -26,9 +26,7 @@
   <!--Title for the card shown in the switcher when root access could not be obtained-->
   <string name="noroot_title">Não há acesso root</string>
   <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_switcher_desc">O aplicativo não conseguiu obter o acesso root. O acesso root é necessário para escrever o kernel/boot e alterar entre os firmwares.\n\nClique para tentar obter o acesso root novamente.</string>
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
-  <string name="noroot_settings_desc">O aplicativo não conseguiu obter o acesso root. O acesso root é necessário para alterar as definições de compartilhamento.\n\nClique para tentar obter o acesso root novamente.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_choose_rom">Escolher a ROM</string>
   <!--Navigation drawer item for setting the kernel-->
@@ -81,7 +79,9 @@
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Sem gerenciador de arquivos</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
-  <string name="filemanager_missing_desc">Não há um gerenciador de arquivos instalado. Por favor,\ninstale um gerenciador de arquivo para poder escolher os\narquivos a serem adaptados.</string>
+  <string name="filemanager_missing_desc">Não há um gerenciador de arquivos instalado. Por favor,
+instale um gerenciador de arquivo para poder escolher os
+arquivos a serem adaptados.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Toque para escolher um arquivo a ser adaptado</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
@@ -89,19 +89,15 @@
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Toque para começar a adaptação</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
-  <string name="filechooser_ready_desc">Arquivo selecionado: %s\n\nToque e segure para escolher um arquivo diferente.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Toque para começar a adaptação</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Arquivo selecionado: %s\n\nO arquivo que você selecionou não é suportado. Você pode tentar mesmo assim utilizando as opções abaixo.\n\nToque e segure para escolher um arquivo diferente.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Arquivo adaptado com sucesso</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_success_desc">Novo arquivo: %s\n\nToque para escolher outro arquivo a ser adaptado.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Falha ao adaptar o arquivo</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_failure_desc">%s\n\nToque para escolher outro arquivo a ser adaptado.</string>
   <!--Title for the preset card-->
   <string name="preset_title">Pré-configurações</string>
   <!--Name for the custom preset item-->
@@ -122,6 +118,8 @@
   <string name="customopts_hasbootimage">Possui imagem de boot</string>
   <!--Name for the ramdisks combobox-->
   <string name="customopts_ramdisk">Ramdisk</string>
+  <!--Name for the patched init binary combobox-->
+  <string name="customopts_patchedinit">Init adaptado</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Imagem de boot</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
@@ -153,7 +151,8 @@
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
   <string name="rom_settings_share_paid_apps_title">Compartilhar aplicativos pagos</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
+  <string name="rom_settings_share_paid_apps_desc">
+<![CDATA[
 Compartilhar aplicativos pagos da ROM primária com a ROM atual (requer reinício).
 <strong>Pode não funcionar devido à DRM.</strong>
 ]]></string>
@@ -168,7 +167,8 @@ Compartilhar aplicativos pagos da ROM primária com a ROM atual (requer reiníci
   <!--Title when ramdisk is successfully updated-->
   <string name="update_ramdisk_success_title">Ramdisk atualizado com sucesso</string>
   <!--Message asking user to reboot when the ramdisk updating succeeds-->
-  <string name="update_ramdisk_reboot_desc">O Ramdisk foi atualizado com sucesso.\nVocê deseja reiniciar agora?</string>
+  <string name="update_ramdisk_reboot_desc">O Ramdisk foi atualizado com sucesso.
+Você deseja reiniciar agora?</string>
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Falha ao atualizar o Ramdisk</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
@@ -182,7 +182,6 @@ Compartilhar aplicativos pagos da ROM primária com a ROM atual (requer reiníci
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_dialog_title">Compartilhar aplicativos específicos</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_dialog_desc">O compartilhamento de aplicativos específicos permite manter uma cópia do aplicativo em cada ROM selecionada. Também permite que o aplicativo seja atualizado em cada ROM.\n\nQuando o aplicativo for instalado, atualizado ou desinstalado, o adaptador poderá solicitar o acesso root para iniciar o serviço  \'syncdaemon\'. Por favor, permita este acesso para que a sincronização ocorra.</string>
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
   <string name="indiv_app_sharing_incompat_global">Não pode ser utilizado quando o compartilhamento global de aplicativos estiver habilitado.</string>
   <!--Description in the app sharing list showing which ROMs the application is installed in-->
@@ -206,4 +205,5 @@ Compartilhar aplicativos pagos da ROM primária com a ROM atual (requer reiníci
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Por favor, aguarde</string>
   <!--Presets that should always be visible-->
+  <!--Errors-->
 </resources>
