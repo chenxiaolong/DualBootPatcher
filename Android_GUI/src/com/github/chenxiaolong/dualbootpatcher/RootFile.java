@@ -41,6 +41,15 @@ public class RootFile {
     public boolean mAttemptRoot = true;
     public File mFile;
 
+    public RootFile(File f) {
+        mFile = f;
+    }
+
+    public RootFile(File f, boolean attemptRoot) {
+        mFile = f;
+        mAttemptRoot = attemptRoot;
+    }
+
     public RootFile(String path) {
         mFile = new File(path);
     }

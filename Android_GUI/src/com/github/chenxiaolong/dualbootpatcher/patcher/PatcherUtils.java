@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -287,47 +286,77 @@ public class PatcherUtils {
 
     /* http://stackoverflow.com/questions/3382996/how-to-unzip-files-programmatically-in-android */
     private static boolean extractZip(String zipPath, String outputDir) {
-        InputStream is;
-        ZipInputStream zis;
+        FileInputStream fis = null;
+        ZipInputStream zis = null;
 
         try {
-            String filename;
-            is = new FileInputStream(zipPath);
-            zis = new ZipInputStream(new BufferedInputStream(is));
+            fis = new FileInputStream(zipPath);
+            zis = new ZipInputStream(new BufferedInputStream(fis));
             ZipEntry ze;
+
             byte[] buffer = new byte[1024];
-            int count;
+            int length;
 
             while ((ze = zis.getNextEntry()) != null) {
-                filename = ze.getName();
+                File target = new File(outputDir + File.separator + ze.getName());
 
                 if (ze.isDirectory()) {
-                    continue;
+                    target.mkdirs();
+                } else {
+                    File parent = target.getParentFile();
+                    if (parent != null) {
+                        parent.mkdirs();
+                    }
+
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(target);
+
+                        while ((length = zis.read(buffer)) >= 0) {
+                            fos.write(buffer, 0, length);
+                        }
+
+                        fos.close();
+                        fos = null;
+                    } finally {
+                        if (fos != null) {
+                            try {
+                                fos.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
 
-                new File(outputDir + File.separator + filename).getParentFile().mkdirs();
-
-                FileOutputStream fos = new FileOutputStream(outputDir + File.separator + filename);
-
-                while ((count = zis.read(buffer)) != -1) {
-                    fos.write(buffer, 0, count);
-                }
-
-                fos.close();
                 zis.closeEntry();
 
-                RootFile newFile = new RootFile(outputDir + File.separator + filename, false);
-                if (newFile.mFile.getName().equals("patch")) {
-                    new RootFile(outputDir + File.separator + filename, false).chmod(0700);
+                if (target.getName().equals("patch")) {
+                    new RootFile(target, false).chmod(0700);
                 }
             }
 
             zis.close();
+
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
+        } finally {
+            if (zis != null) {
+                try {
+                    zis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-        return true;
+        return false;
     }
 }
