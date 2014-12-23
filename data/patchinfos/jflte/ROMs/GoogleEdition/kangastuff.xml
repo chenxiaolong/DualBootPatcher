@@ -1,0 +1,10 @@
+<patchinfo>
+    <name>Kanga(bean|kat|pop)</name>
+    <regex>^(K[BK]|KANGAPOP)-.*\.zip$</regex>
+
+    <ramdisk>jflte/default</ramdisk>
+
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
+</patchinfo>
