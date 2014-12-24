@@ -499,7 +499,7 @@ bool MultiBootPatcher::Impl::patchZip()
     const std::string dualbootshPath(pc->scriptsDirectory() + "/dualboot.sh");
     std::vector<unsigned char> contents;
     result = FileUtils::readToMemory(dualbootshPath, &contents);
-    if (error.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -507,7 +507,7 @@ bool MultiBootPatcher::Impl::patchZip()
     info->partConfig()->replaceShellLine(&contents);
 
     result = FileUtils::laAddFile(aOutput, "dualboot.sh", contents);
-    if (error.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
     }
