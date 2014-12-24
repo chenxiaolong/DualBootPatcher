@@ -153,7 +153,8 @@ public:
     bool loadLokiHeader(const std::vector< unsigned char> &data,
                         const int headerIndex,
                         const bool isLoki);
-    int lokiFindGzipOffset(const std::vector<unsigned char> &data) const;
+    int lokiFindGzipOffset(const std::vector<unsigned char> &data,
+                           const unsigned int startOffset) const;
     int lokiFindRamdiskSize(const std::vector<unsigned char> &data,
                             const LokiHeader *loki,
                             const int &ramdiskOffset) const;
@@ -430,7 +431,16 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     Log::log(Log::Debug, "- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
     Log::log(Log::Debug, "- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
 
-    int gzipOffset = lokiFindGzipOffset(data);
+    int kernelSize = lokiFindKernelSize(data, loki);
+    if (kernelSize < 0) {
+        error = PatcherError::createBootImageError(
+            MBP::ErrorCode::BootImageNoKernelSizeError);
+        return false;
+    }
+
+    // The ramdisk always comes after the kernel in boot images, so start the
+    // search there
+    int gzipOffset = lokiFindGzipOffset(data, header.page_size + kernelSize);
     if (gzipOffset < 0) {
         error = PatcherError::createBootImageError(
                 MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError);
@@ -441,13 +451,6 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     if (ramdiskSize < 0) {
         error = PatcherError::createBootImageError(
                 MBP::ErrorCode::BootImageNoRamdiskSizeError);
-        return false;
-    }
-
-    int kernelSize = lokiFindKernelSize(data, loki);
-    if (kernelSize < 0) {
-        error = PatcherError::createBootImageError(
-                MBP::ErrorCode::BootImageNoKernelSizeError);
         return false;
     }
 
@@ -474,29 +477,28 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     return true;
 }
 
-int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data) const
+int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data,
+                                        const unsigned int startOffset) const
 {
-    // Find the location of the ramdisk inside the boot image
-    const unsigned int startOffset = 0x400 + sizeof(LokiHeader);
+    // gzip header:
+    // byte 0-1 : magic bytes 0x1f, 0x8b
+    // byte 2   : compression (0x08 = deflate)
+    // byte 3   : flags
+    // byte 4-7 : modification timestamp
+    // byte 8   : compression flags
+    // byte 9   : operating system
 
-    static const unsigned char gzip1[] = { 0x1F, 0x8B, 0x08, 0x00 };
-    static const unsigned char gzip2[] = { 0x1F, 0x8B, 0x08, 0x08 };
+    static const unsigned char gzipDeflate[] = { 0x1f, 0x8b, 0x08 };
 
-    std::vector<unsigned int> offsets;
-    std::vector<bool> timestamps; // True if timestamp is not 0x00000000
+    std::vector<unsigned int> offsetsFlag8; // Has original file name
+    std::vector<unsigned int> offsetsFlag0; // No flags
 
     unsigned int curOffset = startOffset - 1;
 
     while (true) {
         // Try to find first gzip header
         auto it = std::search(data.begin() + curOffset + 1, data.end(),
-                              gzip1, gzip1 + 4);
-
-        // Second gzip header
-        if (it == data.end()) {
-            it = std::search(data.begin() + curOffset + 1, data.end(),
-                             gzip2, gzip2 + 4);
-        }
+                              gzipDeflate, gzipDeflate + 3);
 
         if (it == data.end()) {
             break;
@@ -504,40 +506,45 @@ int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data) 
 
         curOffset = it - data.begin();
 
-        Log::log(Log::Debug, "Found a gzip header at 0x%x", curOffset);
+        // We're checking 1 more byte so make sure it's within bounds
+        if (curOffset + 1 >= data.size()) {
+            break;
+        }
 
-        // Searching for 1F8B0800 wasn't enough for some boot images. Specifically,
-        // ktoonsez's 20140319 kernels had another set of those four bytes before
-        // the "real" gzip header. We'll work around that by checking that the
-        // timestamp isn't zero (which is technically allowed, but the boot image
-        // tools don't do that)
-        // http://forum.xda-developers.com/showpost.php?p=51219628&postcount=3767
-        auto curTimestamp = &data[curOffset];
-
-        offsets.push_back(curOffset);
-        timestamps.push_back(
-                std::memcmp(curTimestamp, "\x00\x00\x00\x00", 4) == 0);
-    }
-
-    if (offsets.empty()) {
-        Log::log(Log::Warning, "Could not find the ramdisk's gzip header");
-        return -1;
-    }
-
-    Log::log(Log::Debug, "Found %lu gzip headers", offsets.size());
-
-    // Try gzip offset that is immediately followed by non-null timestamp first
-    unsigned int gzipOffset = 0;
-    for (unsigned int i = 0; i < offsets.size(); ++i) {
-        if (timestamps[i]) {
-            gzipOffset = offsets[i];
+        if (data[curOffset + 3] == '\x08') {
+            Log::log(Log::Debug, "Found a gzip header (flag 0x08) at 0x%x", curOffset);
+            offsetsFlag8.push_back(curOffset);
+        } else if (data[curOffset + 3] == '\x00') {
+            Log::log(Log::Debug, "Found a gzip header (flag 0x00) at 0x%x", curOffset);
+            offsetsFlag0.push_back(curOffset);
+        } else {
+            Log::log(Log::Warning, "Unexpected flag 0x%02x found in gzip header at 0x%x",
+                     static_cast<int>(data[curOffset + 3]), curOffset);
+            continue;
         }
     }
 
-    // Otherwise, just choose the first one
-    if (gzipOffset == 0) {
-        gzipOffset = offsets[0];
+    Log::log(Log::Debug, "Found %lu total gzip headers",
+             offsetsFlag8.size() + offsetsFlag0.size());
+
+    unsigned int gzipOffset = 0;
+
+    // Prefer gzip headers with original filename flag since most loki'd boot
+    // images will have probably been compressed manually using the gzip tool
+    if (!offsetsFlag8.empty()) {
+        gzipOffset = offsetsFlag8[0];
     }
+
+    if (gzipOffset == 0) {
+        if (offsetsFlag0.empty()) {
+            Log::log(Log::Warning, "Could not find the ramdisk's gzip header");
+            return -1;
+        } else {
+            gzipOffset = offsetsFlag0[0];
+        }
+    }
+
+    Log::log(Log::Debug, "Using offset 0x%x", gzipOffset);
 
     return gzipOffset;
 }
