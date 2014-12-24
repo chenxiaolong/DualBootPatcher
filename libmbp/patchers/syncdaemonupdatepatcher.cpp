@@ -210,7 +210,8 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
         crp.addSyncdaemon();
     } else {
         // Make sure 'oneshot' (added by previous versions) is removed
-        std::vector<unsigned char> initRc = cpio.contents("init.rc");
+        std::vector<unsigned char> initRc;
+        cpio.contents("init.rc", &initRc);
 
         std::string strContents(initRc.begin(), initRc.end());
         std::vector<std::string> lines;
@@ -246,7 +247,12 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
 
     RETURN_IF_CANCELLED
 
-    bi.setRamdiskImage(cpio.createData(true));
+    std::vector<unsigned char> cpioData;
+    if (!cpio.createData(&cpioData, true)) {
+        error = cpio.error();
+        return false;
+    }
+    bi.setRamdiskImage(cpioData);
 
     std::ofstream file(m_parent->newFilePath(), std::ios::binary);
     if (file.fail()) {
@@ -266,8 +272,8 @@ bool SyncdaemonUpdatePatcher::Impl::patchImage()
 
 std::string SyncdaemonUpdatePatcher::Impl::findPartConfigId(const CpioFile * const cpio) const
 {
-    std::vector<unsigned char> defaultProp = cpio->contents("default.prop");
-    if (!defaultProp.empty()) {
+    std::vector<unsigned char> defaultProp;;
+    if (cpio->contents("default.prop", &defaultProp)) {
         std::string strContents(defaultProp.begin(), defaultProp.end());
         std::vector<std::string> lines;
         boost::split(lines, strContents, boost::is_any_of("\n"));

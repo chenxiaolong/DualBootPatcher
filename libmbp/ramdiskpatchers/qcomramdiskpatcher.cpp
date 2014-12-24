@@ -97,10 +97,9 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
                   additionalFstabs.begin(), additionalFstabs.end());
 
     for (auto const &fstab : fstabs) {
-        auto contents = m_impl->cpio->contents(fstab);
-        if (contents.empty()) {
-            m_impl->error = PatcherError::createCpioError(
-                    MBP::ErrorCode::CpioFileNotExistError, fstab);
+        std::vector<unsigned char> contents;
+        if (!m_impl->cpio->contents(fstab, &contents)) {
+            m_impl->error = m_impl->cpio->error();
             return false;
         }
 
@@ -153,10 +152,9 @@ static std::string whitespace(const std::string &str) {
 
 bool QcomRamdiskPatcher::stripManualCacheMounts(const std::string &filename)
 {
-    auto contents = m_impl->cpio->contents(filename);
-    if (contents.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, filename);
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(filename, &contents)) {
+        m_impl->error = m_impl->cpio->error();
         return false;
     }
 
@@ -185,10 +183,9 @@ bool QcomRamdiskPatcher::stripManualCacheMounts(const std::string &filename)
 
 bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
 {
-    auto contents = m_impl->cpio->contents(filename);
-    if (contents.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, filename);
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(filename, &contents)) {
+        m_impl->error = m_impl->cpio->error();
         return false;
     }
 

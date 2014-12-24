@@ -30,8 +30,8 @@ extern "C" {
 
 void mbp_error_destroy(CPatcherError *error);
 
-ErrorType mbp_error_error_type(const CPatcherError *error);
-ErrorCode mbp_error_error_code(const CPatcherError *error);
+enum ErrorType mbp_error_error_type(const CPatcherError *error);
+enum ErrorCode mbp_error_error_code(const CPatcherError *error);
 
 char * mbp_error_patcher_name(const CPatcherError *error);
 char * mbp_error_filename(const CPatcherError *error);

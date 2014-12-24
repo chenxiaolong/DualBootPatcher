@@ -36,7 +36,7 @@ int mbp_cpiofile_load_data(CCpioFile *cpio,
                            const char *data, unsigned int size);
 
 int mbp_cpiofile_create_data(CCpioFile *cpio,
-                             bool gzip, char **data, size_t *size);
+                             int gzip, void **data, size_t *size);
 
 int mbp_cpiofile_exists(const CCpioFile *cpio,
                         const char *filename);
@@ -47,7 +47,7 @@ char ** mbp_cpiofile_filenames(const CCpioFile *cpio);
 
 int mbp_cpiofile_contents(const CCpioFile *cpio,
                           const char *filename,
-                          char **data, size_t *size);
+                          void **data, size_t *size);
 int mbp_cpiofile_set_contents(CCpioFile *cpio,
                               const char *filename,
                               char *data, size_t size);

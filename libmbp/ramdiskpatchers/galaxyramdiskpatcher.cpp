@@ -109,7 +109,8 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
         return true;
     }
 
-    auto contents = m_impl->cpio->contents(Msm8960LpmRc);
+    std::vector<unsigned char> contents;
+    m_impl->cpio->contents(Msm8960LpmRc, &contents);
 
     std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;

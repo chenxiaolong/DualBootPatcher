@@ -19,13 +19,17 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <string>
+#include <vector>
 
-void mbp_free(void *data);
-void mbp_free_array(void **array);
+char * string_to_cstring(const std::string &str);
 
-#ifdef __cplusplus
-}
-#endif
+char ** vector_to_cstring_array(const std::vector<std::string> &array);
+std::vector<std::string> cstring_array_to_vector(const char **array);
+
+void vector_to_data(const std::vector<unsigned char> &data,
+                    void **data_out, size_t *size_out);
+size_t vector_to_data2(const std::vector<unsigned char> &data,
+                       void **data_out);
+
+std::vector<unsigned char> data_to_vector(const void *data, size_t size);

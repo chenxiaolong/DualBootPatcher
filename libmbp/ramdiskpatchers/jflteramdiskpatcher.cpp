@@ -131,10 +131,9 @@ bool JflteDefaultRamdiskPatcher::patchRamdisk()
 
 bool JflteDefaultRamdiskPatcher::geChargerModeMount()
 {
-    auto contents = m_impl->cpio->contents(InitRc);
-    if (contents.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, InitRc);
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitRc, &contents)) {
+        m_impl->error = m_impl->cpio->error();
         return false;
     }
 

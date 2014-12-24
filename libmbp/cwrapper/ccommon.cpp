@@ -25,13 +25,25 @@
 
 extern "C" {
 
-    void mbp_free_array(void **array)
-    {
-        assert(array != nullptr);
-        for (void **temp = array; *temp != nullptr; ++temp) {
-            std::free(*temp);
-        }
-        std::free(array);
+void mbp_free(void *data)
+{
+    if (data == nullptr) {
+        return;
     }
+
+    std::free(data);
+}
+
+void mbp_free_array(void **array)
+{
+    if (array == nullptr) {
+        return;
+    }
+
+    for (void **temp = array; *temp != nullptr; ++temp) {
+        std::free(*temp);
+    }
+    std::free(array);
+}
 
 }

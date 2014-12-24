@@ -35,7 +35,7 @@ public:
     PatcherError error() const;
 
     bool load(const std::vector<unsigned char> &data);
-    std::vector<unsigned char> createData(bool gzip);
+    bool createData(std::vector<unsigned char> *dataOut, bool gzip);
 
     bool exists(const std::string &name) const;
     bool remove(const std::string &name);
@@ -44,8 +44,9 @@ public:
 
     // File contents
 
-    std::vector<unsigned char> contents(const std::string &name) const;
-    void setContents(const std::string &name,
+    bool contents(const std::string &name,
+                  std::vector<unsigned char> *dataOut) const;
+    bool setContents(const std::string &name,
                      std::vector<unsigned char> data);
 
     // Adding new files

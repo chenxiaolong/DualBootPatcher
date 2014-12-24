@@ -68,10 +68,10 @@ char * mbp_partconfig_target_data_partition(const CPartConfig *config);
 void mbp_partconfig_set_target_data_partition(CPartConfig *config,
                                               const char *partition);
 
-bool mbp_partconfig_replace_shell_line(const CPartConfig *config,
-                                       char *dataIn, size_t sizeIn,
-                                       char **dataOut, size_t *sizeOut,
-                                       bool targetPathOnly);
+int mbp_partconfig_replace_shell_line(const CPartConfig *config,
+                                      void *dataIn, size_t sizeIn,
+                                      void **dataOut, size_t *sizeOut,
+                                      bool targetPathOnly);
 
 #ifdef __cplusplus
 }

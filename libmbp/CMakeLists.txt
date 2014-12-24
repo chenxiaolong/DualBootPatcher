@@ -26,6 +26,7 @@ set(MBP_SOURCES
     cwrapper/cpatcherinterface.cpp
     cwrapper/cpatchinfo.cpp
     cwrapper/cstringmap.cpp
+    cwrapper/private/util.cpp
     # Autopatchers
     autopatchers/jfltepatcher.cpp
     autopatchers/patchfilepatcher.cpp

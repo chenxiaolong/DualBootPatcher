@@ -20,10 +20,18 @@
 #include "cwrapper/cpatchinfo.h"
 
 #include <cassert>
-#include <cstdlib>
-#include <cstring>
+
+#include "cwrapper/private/util.h"
 
 #include "patchinfo.h"
+
+
+#define CAST(x) \
+    assert(x != nullptr); \
+    PatchInfo *pi = reinterpret_cast<PatchInfo *>(x);
+#define CCAST(x) \
+    assert(x != nullptr); \
+    const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(x);
 
 
 /*!
@@ -38,592 +46,496 @@
 
 extern "C" {
 
-    // Static constants
+// Static constants
 
-    /*! \brief Key for getting the default values */
-    const char * mbp_patchinfo_default(void)
-    {
-        return PatchInfo::Default.c_str();
-    }
+/*! \brief Key for getting the default values */
+const char * mbp_patchinfo_default(void)
+{
+    return PatchInfo::Default.c_str();
+}
 
-    /*! \brief Key for getting the `<not-matched>` values */
-    const char *mbp_patchinfo_notmatched(void)
-    {
-        return PatchInfo::NotMatched.c_str();
-    }
+/*! \brief Key for getting the `<not-matched>` values */
+const char *mbp_patchinfo_notmatched(void)
+{
+    return PatchInfo::NotMatched.c_str();
+}
 
 
-    /*!
-     * \brief Create a new PatchInfo object.
-     *
-     * \note The returned object must be freed with mbp_patchinfo_destroy().
-     *
-     * \return New CPatchInfo
-     */
-    CPatchInfo * mbp_patchinfo_create(void)
-    {
-        return reinterpret_cast<CPatchInfo *>(new PatchInfo());
-    }
+/*!
+ * \brief Create a new PatchInfo object.
+ *
+ * \note The returned object must be freed with mbp_patchinfo_destroy().
+ *
+ * \return New CPatchInfo
+ */
+CPatchInfo * mbp_patchinfo_create(void)
+{
+    return reinterpret_cast<CPatchInfo *>(new PatchInfo());
+}
 
-    /*!
-     * \brief Destroys a CPatchInfo object.
-     *
-     * \param info CPatchInfo to destroy
-     */
-    void mbp_patchinfo_destroy(CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        delete reinterpret_cast<PatchInfo *>(info);
-    }
+/*!
+ * \brief Destroys a CPatchInfo object.
+ *
+ * \param info CPatchInfo to destroy
+ */
+void mbp_patchinfo_destroy(CPatchInfo *info)
+{
+    CAST(info);
+    delete pi;
+}
 
-    /*!
-     * \brief PatchInfo identifier
-     *
-     * \note The output data is dynamically allocated. It should be `free()`'d
-     *       when it is no longer needed.
-     *
-     * \param info CPatchInfo object
-     *
-     * \return PatchInfo ID
-     *
-     * \sa PatchInfo::id()
-     */
-    char * mbp_patchinfo_id(const CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return strdup(pi->id().c_str());
-    }
+/*!
+ * \brief PatchInfo identifier
+ *
+ * \note The output data is dynamically allocated. It should be `free()`'d
+ *       when it is no longer needed.
+ *
+ * \param info CPatchInfo object
+ *
+ * \return PatchInfo ID
+ *
+ * \sa PatchInfo::id()
+ */
+char * mbp_patchinfo_id(const CPatchInfo *info)
+{
+    CCAST(info);
+    return string_to_cstring(pi->id());
+}
 
-    /*!
-     * \brief Set the PatchInfo ID
-     *
-     * \param info CPatchInfo object
-     * \param id ID
-     *
-     * \sa PatchInfo::setId()
-     */
-    void mbp_patchinfo_set_id(CPatchInfo *info, const char *id)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setId(id);
-    }
+/*!
+ * \brief Set the PatchInfo ID
+ *
+ * \param info CPatchInfo object
+ * \param id ID
+ *
+ * \sa PatchInfo::setId()
+ */
+void mbp_patchinfo_set_id(CPatchInfo *info, const char *id)
+{
+    CAST(info);
+    pi->setId(id);
+}
 
-    /*!
-     * \brief Name of ROM or kernel
-     *
-     * \note The output data is dynamically allocated. It should be `free()`'d
-     *       when it is no longer needed.
-     *
-     * \param info CPatchInfo object
-     *
-     * \return ROM or kernel name
-     *
-     * \sa PatchInfo::name()
-     */
-    char * mbp_patchinfo_name(const CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return strdup(pi->name().c_str());
-    }
+/*!
+ * \brief Name of ROM or kernel
+ *
+ * \note The output data is dynamically allocated. It should be `free()`'d
+ *       when it is no longer needed.
+ *
+ * \param info CPatchInfo object
+ *
+ * \return ROM or kernel name
+ *
+ * \sa PatchInfo::name()
+ */
+char * mbp_patchinfo_name(const CPatchInfo *info)
+{
+    CCAST(info);
+    return string_to_cstring(pi->name());
+}
 
-    /*!
-     * \brief Set name of ROM or kernel
-     *
-     * \param info CPatchInfo object
-     * \param name Name of ROM or kernel
-     *
-     * \sa PatchInfo::setName()
-     */
-    void mbp_patchinfo_set_name(CPatchInfo *info, const char *name)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setName(name);
-    }
+/*!
+ * \brief Set name of ROM or kernel
+ *
+ * \param info CPatchInfo object
+ * \param name Name of ROM or kernel
+ *
+ * \sa PatchInfo::setName()
+ */
+void mbp_patchinfo_set_name(CPatchInfo *info, const char *name)
+{
+    CAST(info);
+    pi->setName(name);
+}
 
-    /*!
-     * \brief Get the parameter key for a filename
-     *
-     * \note The output data is dynamically allocated. It should be `free()`'d
-     *       when it is no longer needed.
-     *
-     * \param info CPatchInfo object
-     * \param fileName Filename
-     *
-     * \return Conditional regex OR mbp_patchinfo_notmatched() OR
-     *         mbp_patchinfo_default()
-     *
-     * \sa PatchInfo::keyFromFilename()
-     */
-    char * mbp_patchinfo_key_from_filename(const CPatchInfo *info,
-                                           const char *fileName)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return strdup(pi->keyFromFilename(fileName).c_str());
-    }
+/*!
+ * \brief Get the parameter key for a filename
+ *
+ * \note The output data is dynamically allocated. It should be `free()`'d
+ *       when it is no longer needed.
+ *
+ * \param info CPatchInfo object
+ * \param fileName Filename
+ *
+ * \return Conditional regex OR mbp_patchinfo_notmatched() OR
+ *         mbp_patchinfo_default()
+ *
+ * \sa PatchInfo::keyFromFilename()
+ */
+char * mbp_patchinfo_key_from_filename(const CPatchInfo *info,
+                                       const char *fileName)
+{
+    CCAST(info);
+    return string_to_cstring(pi->keyFromFilename(fileName));
+}
 
-    /*!
-     * \brief List of filename matching regexes
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param info CPatchInfo object
-     *
-     * \return A NULL-terminated array containing the regexes
-     *
-     * \sa PatchInfo::regexes()
-     */
-    char ** mbp_patchinfo_regexes(const CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        auto const regexes = pi->regexes();
+/*!
+ * \brief List of filename matching regexes
+ *
+ * \note The returned array should be freed with `mbp_free_array()` when it
+ *       is no longer needed.
+ *
+ * \param info CPatchInfo object
+ *
+ * \return A NULL-terminated array containing the regexes
+ *
+ * \sa PatchInfo::regexes()
+ */
+char ** mbp_patchinfo_regexes(const CPatchInfo *info)
+{
+    CCAST(info);
+    return vector_to_cstring_array(pi->regexes());
+}
 
-        char **cRegexes = (char **) std::malloc(
-                sizeof(char *) * (regexes.size() + 1));
-        for (unsigned int i = 0; i < regexes.size(); ++i) {
-            cRegexes[i] = strdup(regexes[i].c_str());
-        }
-        cRegexes[regexes.size()] = nullptr;
+/*!
+ * \brief Set the list of filename matching regexes
+ *
+ * \param info CPatchInfo object
+ * \param regexes NULL-terminated list of regexes
+ *
+ * \sa PatchInfo::setRegexes()
+ */
+void mbp_patchinfo_set_regexes(CPatchInfo *info, const char **regexes)
+{
+    CAST(info);
+    pi->setRegexes(cstring_array_to_vector(regexes));
+}
 
-        return cRegexes;
-    }
+/*!
+ * \brief List of filename excluding regexes
+ *
+ * \note The returned array should be freed with `mbp_free_array()` when it
+ *       is no longer needed.
+ *
+ * \param info CPatchInfo object
+ *
+ * \return A NULL-terminated array containing the exclusion regexes
+ *
+ * \sa PatchInfo::excludeRegexes()
+ */
+char ** mbp_patchinfo_exclude_regexes(const CPatchInfo *info)
+{
+    CCAST(info);
+    return vector_to_cstring_array(pi->excludeRegexes());
+}
 
-    /*!
-     * \brief Set the list of filename matching regexes
-     *
-     * \param info CPatchInfo object
-     * \param regexes NULL-terminated list of regexes
-     *
-     * \sa PatchInfo::setRegexes()
-     */
-    void mbp_patchinfo_set_regexes(CPatchInfo *info, const char **regexes)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        std::vector<std::string> list;
+/*!
+ * \brief Set the list of filename excluding regexes
+ *
+ * \param info CPatchInfo object
+ * \param regexes NULL-terminated list of exclusion regexes
+ *
+ * \sa PatchInfo::setExcludeRegexes()
+ */
+void mbp_patchinfo_set_exclude_regexes(CPatchInfo *info,
+                                       const char **regexes)
+{
+    CAST(info);
+    pi->setExcludeRegexes(cstring_array_to_vector(regexes));
+}
 
-        for (; *regexes != NULL; ++regexes) {
-            list.push_back(*regexes);
-        }
+/*!
+ * \brief List of conditional regexes for parameters
+ *
+ * \note The returned array should be freed with `mbp_free_array()` when it
+ *       is no longer needed.
+ *
+ * \param info CPatchInfo object
+ *
+ * \return A NULL-terminated array containing the conditional regexes
+ *
+ * \sa PatchInfo::condRegexes()
+ */
+char ** mbp_patchinfo_cond_regexes(const CPatchInfo *info)
+{
+    CCAST(info);
+    return vector_to_cstring_array(pi->condRegexes());
+}
 
-        pi->setRegexes(std::move(list));
-    }
+/*!
+ * \brief Set the list of conditional regexes
+ *
+ * \param info CPatchInfo object
+ * \param regexes NULL-terminated list of conditional regexes
+ *
+ * \sa PatchInfo::setCondRegexes()
+ */
+void mbp_patchinfo_set_cond_regexes(CPatchInfo *info, const char **regexes)
+{
+    CAST(info);
+    pi->setCondRegexes(cstring_array_to_vector(regexes));
+}
 
-    /*!
-     * \brief List of filename excluding regexes
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param info CPatchInfo object
-     *
-     * \return A NULL-terminated array containing the exclusion regexes
-     *
-     * \sa PatchInfo::excludeRegexes()
-     */
-    char ** mbp_patchinfo_exclude_regexes(const CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        auto const regexes = pi->excludeRegexes();
+/*!
+ * \brief Check if the PatchInfo has a <not-matched> element
+ *
+ * \param info CPatchInfo object
+ *
+ * \return Whether PatchInfo has a <not-matched> element
+ *
+ * \sa PatchInfo::hasNotMatched()
+ */
+bool mbp_patchinfo_has_not_matched(const CPatchInfo *info)
+{
+    CCAST(info);
+    return pi->hasNotMatched();
+}
 
-        char **cRegexes = (char **) std::malloc(
-                sizeof(char *) * (regexes.size() + 1));
-        for (unsigned int i = 0; i < regexes.size(); ++i) {
-            cRegexes[i] = strdup(regexes[i].c_str());
-        }
-        cRegexes[regexes.size()] = nullptr;
+/*!
+ * \brief Set whether the PatchInfo has a <not-matched> element
+ *
+ * \param info CPatchInfo object
+ * \param hasElem Has not matched element
+ *
+ * \sa PatchInfo::setHasNotMatched()
+ */
+void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, bool hasElem)
+{
+    CAST(info);
+    pi->setHasNotMatched(hasElem);
+}
 
-        return cRegexes;
-    }
+/*!
+ * \brief Add AutoPatcher to PatchInfo
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param apName AutoPatcher name
+ * \param args AutoPatcher arguments
+ *
+ * \sa PatchInfo::addAutoPatcher()
+ */
+void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
+                                   const char *apName, CStringMap *args)
+{
+    CAST(info);
+    PatchInfo::AutoPatcherArgs *apArgs =
+            reinterpret_cast<PatchInfo::AutoPatcherArgs *>(args);
 
-    /*!
-     * \brief Set the list of filename excluding regexes
-     *
-     * \param info CPatchInfo object
-     * \param regexes NULL-terminated list of exclusion regexes
-     *
-     * \sa PatchInfo::setExcludeRegexes()
-     */
-    void mbp_patchinfo_set_exclude_regexes(CPatchInfo *info,
-                                           const char **regexes)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        std::vector<std::string> list;
+    pi->addAutoPatcher(key, apName, *apArgs);
+}
 
-        for (; *regexes != NULL; ++regexes) {
-            list.push_back(*regexes);
-        }
+/*!
+ * \brief Remove AutoPatcher from PatchInfo
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param apName AutoPatcher name
+ *
+ * \sa PatchInfo::removeAutoPatcher()
+ */
+void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
+                                      const char *apName)
+{
+    CAST(info);
+    pi->removeAutoPatcher(key, apName);
+}
 
-        pi->setExcludeRegexes(std::move(list));
-    }
+/*!
+ * \brief Get list of AutoPatcher names
+ *
+ * \note The returned array should be freed with `mbp_free_array()` when it
+ *       is no longer needed.
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ *
+ * \return NULL-terminated list of AutoPatcher names
+ *
+ * \sa PatchInfo::autoPatchers()
+ */
+char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key)
+{
+    CCAST(info);
+    return vector_to_cstring_array(pi->autoPatchers(key));
+}
 
-    /*!
-     * \brief List of conditional regexes for parameters
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param info CPatchInfo object
-     *
-     * \return A NULL-terminated array containing the conditional regexes
-     *
-     * \sa PatchInfo::condRegexes()
-     */
-    char ** mbp_patchinfo_cond_regexes(const CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        auto const regexes = pi->condRegexes();
+/*!
+ * \brief Get AutoPatcher arguments
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param apName AutoPatcher name
+ *
+ * \return Arguments
+ *
+ * \sa PatchInfo::autoPatcherArgs()
+ */
+CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
+                                            const char *key,
+                                            const char *apName)
+{
+    CCAST(info);
+    PatchInfo::AutoPatcherArgs *args =
+            new PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
+    return reinterpret_cast<CStringMap *>(args);
+}
 
-        char **cRegexes = (char **) std::malloc(
-                sizeof(char *) * (regexes.size() + 1));
-        for (unsigned int i = 0; i < regexes.size(); ++i) {
-            cRegexes[i] = strdup(regexes[i].c_str());
-        }
-        cRegexes[regexes.size()] = nullptr;
+/*!
+ * \brief Whether the patched file has a boot image
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ *
+ * \return Whether the patched file has a boot image
+ *
+ * \sa PatchInfo::hasBootImage()
+ */
+bool mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key)
+{
+    CCAST(info);
+    return pi->hasBootImage(key);
+}
 
-        return cRegexes;
-    }
+/*!
+ * \brief Set whether the patched file has a boot image
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param hasBootImage Has boot image
+ *
+ * \sa PatchInfo::setHasBootImage()
+ */
+void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,
+                                      const char *key, bool hasBootImage)
+{
+    CAST(info);
+    pi->setHasBootImage(key, hasBootImage);
+}
 
-    /*!
-     * \brief Set the list of conditional regexes
-     *
-     * \param info CPatchInfo object
-     * \param regexes NULL-terminated list of conditional regexes
-     *
-     * \sa PatchInfo::setCondRegexes()
-     */
-    void mbp_patchinfo_set_cond_regexes(CPatchInfo *info, const char **regexes)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        std::vector<std::string> list;
+/*!
+ * \brief Whether boot images should be autodetected
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ *
+ * \return Whether boot images should be autodetected
+ *
+ * \sa PatchInfo::autodetectBootImages()
+ */
+bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
+                                          const char *key)
+{
+    CCAST(info);
+    return pi->autodetectBootImages(key);
+}
 
-        for (; *regexes != NULL; ++regexes) {
-            list.push_back(*regexes);
-        }
+/*!
+ * \brief Set whether boot images should be autodetected
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param autoDetect Autodetect boot images
+ *
+ * \sa PatchInfo::setAutoDetectBootImages()
+ */
+void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
+                                              const char *key, bool autoDetect)
+{
+    CAST(info);
+    pi->setAutoDetectBootImages(key, autoDetect);
+}
 
-        pi->setCondRegexes(std::move(list));
-    }
+/*!
+ * \brief List of manually specified boot images
+ *
+ * \note The returned array should be freed with `mbp_free_array()` when it
+ *       is no longer needed.
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ *
+ * \return A NULL-terminated array containing the manually specified boot
+ *         images
+ *
+ * \sa PatchInfo::bootImages()
+ */
+char ** mbp_patchinfo_boot_images(const CPatchInfo *info, const char *key)
+{
+    CCAST(info);
+    return vector_to_cstring_array(pi->bootImages(key));
+}
 
-    /*!
-     * \brief Check if the PatchInfo has a <not-matched> element
-     *
-     * \param info CPatchInfo object
-     *
-     * \return Whether PatchInfo has a <not-matched> element
-     *
-     * \sa PatchInfo::hasNotMatched()
-     */
-    bool mbp_patchinfo_has_not_matched(const CPatchInfo *info)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->hasNotMatched();
-    }
+/*!
+ * \brief Set list of manually specified boot images
+ *
+ * \param info CPatchInfo object
+ * \param bootImages NULL-terminated list of boot images
+ *
+ * \sa PatchInfo::setBootImages()
+ */
+void mbp_patchinfo_set_boot_images(CPatchInfo *info,
+                                   const char *key, const char **bootImages)
+{
+    CAST(info);
+    pi->setBootImages(key, cstring_array_to_vector(bootImages));
+}
 
-    /*!
-     * \brief Set whether the PatchInfo has a <not-matched> element
-     *
-     * \param info CPatchInfo object
-     * \param hasElem Has not matched element
-     *
-     * \sa PatchInfo::setHasNotMatched()
-     */
-    void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, bool hasElem)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setHasNotMatched(hasElem);
-    }
+/*!
+ * \brief Which ramdisk patcher to use
+ *
+ * \note The output data is dynamically allocated. It should be `free()`'d
+ *       when it is no longer needed.
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ *
+ * \return Which ramdisk patcher to use
+ *
+ * \sa PatchInfo::ramdisk()
+ */
+char * mbp_patchinfo_ramdisk(const CPatchInfo *info, const char *key)
+{
+    CCAST(info);
+    return string_to_cstring(pi->ramdisk(key));
+}
 
-    /*!
-     * \brief Add AutoPatcher to PatchInfo
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param apName AutoPatcher name
-     * \param args AutoPatcher arguments
-     *
-     * \sa PatchInfo::addAutoPatcher()
-     */
-    void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
-                                       const char *apName, CStringMap *args)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        PatchInfo::AutoPatcherArgs *apArgs =
-                reinterpret_cast<PatchInfo::AutoPatcherArgs *>(args);
+/*!
+ * \brief Set which ramdisk patcher to use
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param ramdisk Which ramdisk patcher to use
+ *
+ * \sa PatchInfo::setRamdisk()
+ */
+void mbp_patchinfo_set_ramdisk(CPatchInfo *info,
+                               const char *key, const char *ramdisk)
+{
+    CAST(info);
+    pi->setRamdisk(key, ramdisk);
+}
 
-        pi->addAutoPatcher(key, apName, *apArgs);
-    }
+/*!
+ * \brief Whether device model checks should be kept
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ *
+ * \return Whether device model checks should be kept
+ *
+ * \sa PatchInfo::deviceCheck()
+ */
+bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key)
+{
+    CCAST(info);
+    return pi->deviceCheck(key);
+}
 
-    /*!
-     * \brief Remove AutoPatcher from PatchInfo
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param apName AutoPatcher name
-     *
-     * \sa PatchInfo::removeAutoPatcher()
-     */
-    void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
-                                          const char *apName)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->removeAutoPatcher(key, apName);
-    }
-
-    /*!
-     * \brief Get list of AutoPatcher names
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return NULL-terminated list of AutoPatcher names
-     *
-     * \sa PatchInfo::autoPatchers()
-     */
-    char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        auto list = pi->autoPatchers(key);
-
-        char **names = (char **) std::malloc(
-                sizeof(char *) * (list.size() + 1));
-        for (unsigned int i = 0; i < list.size(); ++i) {
-            names[i] = strdup(list[i].c_str());
-        }
-        names[list.size()] = nullptr;
-
-        return names;
-    }
-
-    /*!
-     * \brief Get AutoPatcher arguments
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param apName AutoPatcher name
-     *
-     * \return Arguments
-     *
-     * \sa PatchInfo::autoPatcherArgs()
-     */
-    CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
-                                                const char *key,
-                                                const char *apName)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        PatchInfo::AutoPatcherArgs *args =
-                new PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
-        return reinterpret_cast<CStringMap *>(args);
-    }
-
-    /*!
-     * \brief Whether the patched file has a boot image
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return Whether the patched file has a boot image
-     *
-     * \sa PatchInfo::hasBootImage()
-     */
-    bool mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->hasBootImage(key);
-    }
-
-    /*!
-     * \brief Set whether the patched file has a boot image
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param hasBootImage Has boot image
-     *
-     * \sa PatchInfo::setHasBootImage()
-     */
-    void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,
-                                          const char *key, bool hasBootImage)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setHasBootImage(key, hasBootImage);
-    }
-
-    /*!
-     * \brief Whether boot images should be autodetected
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return Whether boot images should be autodetected
-     *
-     * \sa PatchInfo::autodetectBootImages()
-     */
-    bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
-                                             const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->autodetectBootImages(key);
-    }
-
-    /*!
-     * \brief Set whether boot images should be autodetected
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param autoDetect Autodetect boot images
-     *
-     * \sa PatchInfo::setAutoDetectBootImages()
-     */
-    void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
-                                                  const char *key, bool autoDetect)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setAutoDetectBootImages(key, autoDetect);
-    }
-
-    /*!
-     * \brief List of manually specified boot images
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return A NULL-terminated array containing the manually specified boot
-     *         images
-     *
-     * \sa PatchInfo::bootImages()
-     */
-    char ** mbp_patchinfo_boot_images(const CPatchInfo *info, const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        auto const bootImages = pi->bootImages(key);
-
-        char **cBootImages = (char **) std::malloc(
-                sizeof(char *) * (bootImages.size() + 1));
-        for (unsigned int i = 0; i < bootImages.size(); ++i) {
-            cBootImages[i] = strdup(bootImages[i].c_str());
-        }
-        cBootImages[bootImages.size()] = nullptr;
-
-        return cBootImages;
-    }
-
-    /*!
-     * \brief Set list of manually specified boot images
-     *
-     * \param info CPatchInfo object
-     * \param bootImages NULL-terminated list of boot images
-     *
-     * \sa PatchInfo::setBootImages()
-     */
-    void mbp_patchinfo_set_boot_images(CPatchInfo *info,
-                                       const char *key, const char **bootImages)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        std::vector<std::string> list;
-
-        for (; *bootImages != NULL; ++bootImages) {
-            list.push_back(*bootImages);
-        }
-
-        pi->setBootImages(key, std::move(list));
-    }
-
-    /*!
-     * \brief Which ramdisk patcher to use
-     *
-     * \note The output data is dynamically allocated. It should be `free()`'d
-     *       when it is no longer needed.
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return Which ramdisk patcher to use
-     *
-     * \sa PatchInfo::ramdisk()
-     */
-    char * mbp_patchinfo_ramdisk(const CPatchInfo *info, const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return strdup(pi->ramdisk(key).c_str());
-    }
-
-    /*!
-     * \brief Set which ramdisk patcher to use
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param ramdisk Which ramdisk patcher to use
-     *
-     * \sa PatchInfo::setRamdisk()
-     */
-    void mbp_patchinfo_set_ramdisk(CPatchInfo *info,
-                                   const char *key, const char *ramdisk)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setRamdisk(key, ramdisk);
-    }
-
-    /*!
-     * \brief Whether device model checks should be kept
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     *
-     * \return Whether device model checks should be kept
-     *
-     * \sa PatchInfo::deviceCheck()
-     */
-    bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key)
-    {
-        assert(info != nullptr);
-        const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(info);
-        return pi->deviceCheck(key);
-    }
-
-    /*!
-     * \brief Set whether device model checks should be kept
-     *
-     * \param info CPatchInfo object
-     * \param key Parameter key
-     * \param deviceCheck Keep device model checks
-     *
-     * \sa PatchInfo::setDeviceCheck()
-     */
-    void mbp_patchinfo_set_device_check(CPatchInfo *info,
-                                        const char *key, bool deviceCheck)
-    {
-        assert(info != nullptr);
-        PatchInfo *pi = reinterpret_cast<PatchInfo *>(info);
-        pi->setDeviceCheck(key, deviceCheck);
-    }
+/*!
+ * \brief Set whether device model checks should be kept
+ *
+ * \param info CPatchInfo object
+ * \param key Parameter key
+ * \param deviceCheck Keep device model checks
+ *
+ * \sa PatchInfo::setDeviceCheck()
+ */
+void mbp_patchinfo_set_device_check(CPatchInfo *info,
+                                    const char *key, bool deviceCheck)
+{
+    CAST(info);
+    pi->setDeviceCheck(key, deviceCheck);
+}
 
 }

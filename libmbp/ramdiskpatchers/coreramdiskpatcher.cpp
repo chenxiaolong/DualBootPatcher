@@ -117,10 +117,9 @@ bool CoreRamdiskPatcher::patchRamdisk()
 
 bool CoreRamdiskPatcher::modifyDefaultProp()
 {
-    auto defaultProp = m_impl->cpio->contents(DefaultProp);
-    if (defaultProp.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, DefaultProp);
+    std::vector<unsigned char> defaultProp;
+    if (!m_impl->cpio->contents(DefaultProp, &defaultProp)) {
+        m_impl->error = m_impl->cpio->error();
         return false;
     }
 
@@ -143,10 +142,9 @@ bool CoreRamdiskPatcher::modifyDefaultProp()
 
 bool CoreRamdiskPatcher::addSyncdaemon()
 {
-    auto initRc = m_impl->cpio->contents(InitRc);
-    if (initRc.empty()) {
-        m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileNotExistError, InitRc);
+    std::vector<unsigned char> initRc;
+    if (!m_impl->cpio->contents(InitRc, &initRc)) {
+        m_impl->error = m_impl->cpio->error();
         return false;
     }
 
@@ -237,7 +235,8 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
 
     bool hasDataMediaContext = false;
 
-    auto contents = m_impl->cpio->contents(FileContexts);
+    std::vector<unsigned char> contents;
+    m_impl->cpio->contents(FileContexts, &contents);
 
     std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;

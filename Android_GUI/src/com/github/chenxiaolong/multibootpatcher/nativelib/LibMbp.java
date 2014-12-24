@@ -63,7 +63,7 @@ public class LibMbp {
         static native CPatcherError mbp_bootimage_error(CBootImage bi);
         static native int mbp_bootimage_load_data(CBootImage bi, Pointer data, int size);
         static native int mbp_bootimage_load_file(CBootImage bi, String filename);
-        static native /* size_t */ int mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native int mbp_bootimage_create_file(CBootImage bi, String filename);
         static native int mbp_bootimage_extract(CBootImage bi, String directory, String prefix);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
@@ -89,16 +89,17 @@ public class LibMbp {
         static native void mbp_bootimage_reset_kernel_tags_address(CBootImage bi);
         static native void mbp_bootimage_set_addresses(CBootImage bi, int base, int kernelOffset, int ramdiskOffset, int secondBootloaderOffset, int kernelTagsOffset);
         static native /* size_t */ int mbp_bootimage_kernel_image(CBootImage bi, PointerByReference dataReturn);
-        static native void mbp_bootimage_set_kernel_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_set_kernel_image(CBootImage bi, Pointer data, /* size_t */ int size);
         static native /* size_t */ int mbp_bootimage_ramdisk_image(CBootImage bi, PointerByReference dataReturn);
-        static native void mbp_bootimage_set_ramdisk_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_set_ramdisk_image(CBootImage bi, Pointer data, /* size_t */ int size);
         static native /* size_t */ int mbp_bootimage_second_bootloader_image(CBootImage bi, PointerByReference dataReturn);
-        static native void mbp_bootimage_set_second_bootloader_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_set_second_bootloader_image(CBootImage bi, Pointer data, /* size_t */ int size);
         static native /* size_t */ int mbp_bootimage_device_tree_image(CBootImage bi, PointerByReference dataReturn);
         static native void mbp_bootimage_set_device_tree_image(CBootImage bi, Pointer data, int size);
         // END: cbootimage.h
 
         // BEGIN: ccommon.h
+        static native void mbp_free(Pointer data);
         static native void mbp_free_array(Pointer array);
         // END: ccommon.h
 
@@ -302,13 +303,12 @@ public class LibMbp {
     private static String[] getStringArrayAndFree(Pointer p) {
         String[] array = p.getStringArray(0);
         CWrapper.mbp_free_array(p);
-        //Native.free(Pointer.nativeValue(p));
         return array;
     }
 
     private static String getStringAndFree(Pointer p) {
         String str = p.getString(0);
-        Native.free(Pointer.nativeValue(p));
+        CWrapper.mbp_free(p);
         return str;
     }
 
@@ -483,10 +483,14 @@ public class LibMbp {
         public byte[] create() {
             log(mCBootImage, BootImage.class, "create");
             PointerByReference pData = new PointerByReference();
-            int size = CWrapper.mbp_bootimage_create_data(mCBootImage, pData);
+            IntByReference pSize = new IntByReference();
+
+            CWrapper.mbp_bootimage_create_data(mCBootImage, pData, pSize);
+
+            int size = pSize.getValue();
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -630,7 +634,7 @@ public class LibMbp {
             int size = CWrapper.mbp_bootimage_kernel_image(mCBootImage, pData);
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -649,7 +653,7 @@ public class LibMbp {
             int size = CWrapper.mbp_bootimage_ramdisk_image(mCBootImage, pData);
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -659,7 +663,7 @@ public class LibMbp {
 
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
-            CWrapper.mbp_bootimage_set_kernel_image(mCBootImage, mem, data.length);
+            CWrapper.mbp_bootimage_set_ramdisk_image(mCBootImage, mem, data.length);
         }
 
         public byte[] getSecondBootloaderImage() {
@@ -668,7 +672,7 @@ public class LibMbp {
             int size = CWrapper.mbp_bootimage_second_bootloader_image(mCBootImage, pData);
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -687,7 +691,7 @@ public class LibMbp {
             int size = CWrapper.mbp_bootimage_device_tree_image(mCBootImage, pData);
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -811,7 +815,7 @@ public class LibMbp {
             int size = pSize.getValue();
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -851,7 +855,7 @@ public class LibMbp {
             int size = pSize.getValue();
             Pointer data = pData.getValue();
             byte[] out = data.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(data));
+            CWrapper.mbp_free(data);
             return out;
         }
 
@@ -1437,7 +1441,7 @@ public class LibMbp {
             int size = pSize.getValue();
             Pointer newData = pNewData.getValue();
             byte[] out = newData.getByteArray(0, size);
-            Native.free(Pointer.nativeValue(newData));
+            CWrapper.mbp_free(newData);
             return out;
         }
     }

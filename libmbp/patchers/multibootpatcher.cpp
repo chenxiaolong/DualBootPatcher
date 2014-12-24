@@ -288,7 +288,10 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     // Load the ramdisk cpio
     CpioFile cpio;
-    cpio.load(bi.ramdiskImage());
+    if (!cpio.load(bi.ramdiskImage())) {
+        error = cpio.error();
+        return false;
+    }
 
     RETURN_IF_CANCELLED
 
@@ -318,10 +321,13 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         cpio.remove(mbtool);
     }
 
-    cpio.addFile(pc->binariesDirectory() + "/"
+    if (!cpio.addFile(pc->binariesDirectory() + "/"
             + "android" + "/"
             + info->device()->architecture() + "/"
-            + "mbtool", mbtool, 0750);
+            + "mbtool", mbtool, 0750)) {
+        error = cpio.error();
+        return false;
+    }
 
     RETURN_IF_CANCELLED
 
@@ -332,14 +338,21 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         cpio.remove(syncdaemon);
     }
 
-    cpio.addFile(pc->binariesDirectory() + "/"
+    if (!cpio.addFile(pc->binariesDirectory() + "/"
             + "android" + "/"
             + info->device()->architecture() + "/"
-            + "syncdaemon", syncdaemon, 0750);
+            + "syncdaemon", syncdaemon, 0750)) {
+        error = cpio.error();
+        return false;
+    }
 
     RETURN_IF_CANCELLED
 
-    std::vector<unsigned char> newRamdisk = cpio.createData(true);
+    std::vector<unsigned char> newRamdisk;
+    if (!cpio.createData(&newRamdisk, true)) {
+        error = cpio.error();
+        return false;
+    }
     bi.setRamdiskImage(std::move(newRamdisk));
 
     *data = bi.create();

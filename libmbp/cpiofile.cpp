@@ -220,12 +220,10 @@ static bool sortByName(const FilePair &p1, const FilePair &p2)
  *
  * \return Cpio archive binary data
  */
-std::vector<unsigned char> CpioFile::createData(bool gzip)
+bool CpioFile::createData(std::vector<unsigned char> *dataOut, bool gzip)
 {
-    archive *a;
     std::vector<unsigned char> data;
-
-    a = archive_write_new();
+    archive *a = archive_write_new();
 
     archive_write_set_format_cpio_newc(a);
 
@@ -248,7 +246,7 @@ std::vector<unsigned char> CpioFile::createData(bool gzip)
 
         m_impl->error = PatcherError::createArchiveError(
                 MBP::ErrorCode::ArchiveWriteOpenError, "<memory>");
-        return std::vector<unsigned char>();
+        return false;
     }
 
     for (auto const &p : m_impl->files) {
@@ -263,7 +261,7 @@ std::vector<unsigned char> CpioFile::createData(bool gzip)
             m_impl->error = PatcherError::createArchiveError(
                     MBP::ErrorCode::ArchiveWriteHeaderError,
                     archive_entry_pathname(p.first));
-            return std::vector<unsigned char>();
+            return false;
         }
 
         if (archive_write_data(a, p.second.data(), p.second.size())
@@ -274,7 +272,7 @@ std::vector<unsigned char> CpioFile::createData(bool gzip)
             m_impl->error = PatcherError::createArchiveError(
                     MBP::ErrorCode::ArchiveWriteDataError,
                     archive_entry_pathname(p.first));
-            return std::vector<unsigned char>();
+            return false;
         }
     }
 
@@ -287,12 +285,14 @@ std::vector<unsigned char> CpioFile::createData(bool gzip)
 
         m_impl->error = PatcherError::createArchiveError(
                 MBP::ErrorCode::ArchiveCloseError, std::string());
-        return std::vector<unsigned char>();
+        return false;
     }
 
     archive_write_free(a);
 
-    return data;
+    dataOut->swap(data);
+
+    return true;
 }
 
 /*!
@@ -359,20 +359,21 @@ std::vector<std::string> CpioFile::filenames() const
 /*!
  * \brief Get contents of a file in the archive
  *
- * \todo This returned value is currently ambiguous as both an empty file and
- *       a non-existent file will return an empty vector.
- *
  * \return Contents of specified file
  */
-std::vector<unsigned char> CpioFile::contents(const std::string &name) const
+bool CpioFile::contents(const std::string &name,
+                        std::vector<unsigned char> *dataOut) const
 {
     for (auto const &p : m_impl->files) {
         if (name == archive_entry_pathname(p.first)) {
-            return p.second;
+            *dataOut = p.second;
+            return true;
         }
     }
 
-    return std::vector<unsigned char>();
+    m_impl->error = PatcherError::createCpioError(
+            MBP::ErrorCode::CpioFileNotExistError, name);
+    return false;
 }
 
 /*!
@@ -383,16 +384,20 @@ std::vector<unsigned char> CpioFile::contents(const std::string &name) const
  *
  * \note The contents of a symbolic link is the link's target path.
  */
-void CpioFile::setContents(const std::string &name,
+bool CpioFile::setContents(const std::string &name,
                            std::vector<unsigned char> data)
 {
     for (auto &p : m_impl->files) {
         if (name == archive_entry_pathname(p.first)) {
             archive_entry_set_size(p.first, data.size());
             p.second = std::move(data);
-            break;
+            return true;
         }
     }
+
+    m_impl->error = PatcherError::createCpioError(
+            MBP::ErrorCode::CpioFileNotExistError, name);
+    return false;
 }
 
 /*!

@@ -20,10 +20,18 @@
 #include "cwrapper/cstringmap.h"
 
 #include <cassert>
-#include <cstdlib>
-#include <cstring>
+
+#include "cwrapper/private/util.h"
 
 #include <unordered_map>
+
+
+#define CAST(x) \
+    assert(x != nullptr); \
+    MapType *m = reinterpret_cast<MapType *>(x);
+#define CCAST(x) \
+    assert(x != nullptr); \
+    const MapType *m = reinterpret_cast<const MapType *>(x);
 
 
 /*!
@@ -33,116 +41,108 @@
 
 extern "C" {
 
-    typedef std::unordered_map<std::string, std::string> MapType;
+typedef std::unordered_map<std::string, std::string> MapType;
 
-    /*!
-     * \brief Create a new map
-     *
-     * \note The returned object must be freed with mbp_stringmap_destroy().
-     *
-     * \return New CStringMap
-     */
-    CStringMap * mbp_stringmap_create(void)
-    {
-        return reinterpret_cast<CStringMap *>(new MapType());
+/*!
+ * \brief Create a new map
+ *
+ * \note The returned object must be freed with mbp_stringmap_destroy().
+ *
+ * \return New CStringMap
+ */
+CStringMap * mbp_stringmap_create(void)
+{
+    return reinterpret_cast<CStringMap *>(new MapType());
+}
+
+/*!
+ * \brief Destroys a CStringMap object.
+ *
+ * \param map CStringMap to destroy
+ */
+void mbp_stringmap_destroy(CStringMap *map)
+{
+    CAST(map);
+    delete m;
+}
+
+/*!
+ * \brief Get list of keys in CStringMap
+ *
+ * \note The returned array should be freed with `mbp_free_array()` when it
+ *       is no longer needed.
+ *
+ * \param map CStringMap object
+ *
+ * \return NULL-terminated list of keys
+ */
+char ** mbp_stringmap_keys(const CStringMap *map)
+{
+    CCAST(map);
+
+    std::vector<std::string> keys;
+    for (auto const &p : *m) {
+        keys.push_back(p.first);
     }
 
-    /*!
-     * \brief Destroys a CStringMap object.
-     *
-     * \param map CStringMap to destroy
-     */
-    void mbp_stringmap_destroy(CStringMap *map)
-    {
-        assert(map != nullptr);
-        delete reinterpret_cast<MapType *>(map);
+    return vector_to_cstring_array(keys);
+}
+
+/*!
+ * \brief Get value for key in CStringMap
+ *
+ * \param map CStringMap object
+ *
+ * \return Value or NULL if key is not in the map
+ */
+char * mbp_stringmap_get(const CStringMap *map, const char *key)
+{
+    CCAST(map);
+
+    if (m->find(key) != m->end()) {
+        return string_to_cstring(m->at(key));
     }
 
-    /*!
-     * \brief Get list of keys in CStringMap
-     *
-     * \note The returned array should be freed with `mbp_free_array()` when it
-     *       is no longer needed.
-     *
-     * \param map CStringMap object
-     *
-     * \return NULL-terminated list of keys
-     */
-    char ** mbp_stringmap_keys(const CStringMap *map)
-    {
-        assert(map != nullptr);
-        const MapType *m = reinterpret_cast<const MapType *>(map);
+    return nullptr;
+}
 
-        unsigned int i = 0;
-        char **keys = (char **) std::malloc(sizeof(char *) * (m->size() + 1));
-        for (auto const &p : *m) {
-            keys[i] = strdup(p.first.c_str());
-            ++i;
-        }
-        keys[m->size()] = nullptr;
+/*!
+ * \brief Add or set value in CStringMap
+ *
+ * \param map CStringMap object
+ * \param key Key
+ * \param value Value
+ */
+void mbp_stringmap_set(CStringMap *map, const char *key, const char *value)
+{
+    CAST(map);
+    (*m)[key] = value;
+}
 
-        return keys;
+/*!
+ * \brief Remove key from CStringMap
+ *
+ * \param map CStringMap object
+ * \param key Key
+ */
+void mbp_stringmap_remove(CStringMap *map, const char *key)
+{
+    CAST(map);
+    auto it = m->find(key);
+    if (it != m->end()) {
+        m->erase(it);
     }
+}
 
-    /*!
-     * \brief Get value for key in CStringMap
-     *
-     * \param map CStringMap object
-     *
-     * \return Value or NULL if key is not in the map
-     */
-    char * mbp_stringmap_get(const CStringMap *map, const char *key)
-    {
-        assert(map != nullptr);
-        const MapType *m = reinterpret_cast<const MapType *>(map);
-
-        if (m->find(key) != m->end()) {
-            return strdup(m->at(key).c_str());
-        }
-
-        return nullptr;
-    }
-
-    /*!
-     * \brief Add or set value in CStringMap
-     *
-     * \param map CStringMap object
-     * \param key Key
-     * \param value Value
-     */
-    void mbp_stringmap_set(CStringMap *map, const char *key, const char *value)
-    {
-        assert(map != nullptr);
-        MapType *m = reinterpret_cast<MapType *>(map);
-        (*m)[key] = value;
-    }
-
-    /*!
-     * \brief Remove key from CStringMap
-     *
-     * \param map CStringMap object
-     * \param key Key
-     */
-    void mbp_stringmap_remove(CStringMap *map, const char *key)
-    {
-        assert(map != nullptr);
-        MapType *m = reinterpret_cast<MapType *>(map);
-        auto it = m->find(key);
-        if (it != m->end()) {
-            m->erase(it);
-        }
-    }
-
-    /*!
-     * \brief Clear CStringMap
-     *
-     * \param map CStringMap object
-     */
-    void mbp_stringmap_clear(CStringMap *map)
-    {
-        assert(map != nullptr);
-        MapType *m = reinterpret_cast<MapType *>(map);
-        m->clear();
-    }
+/*!
+ * \brief Clear CStringMap
+ *
+ * \param map CStringMap object
+ */
+void mbp_stringmap_clear(CStringMap *map)
+{
+    CAST(map);
+    m->clear();
+}
 
 }
