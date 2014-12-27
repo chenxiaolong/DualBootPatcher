@@ -331,23 +331,6 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     RETURN_IF_CANCELLED
 
-    // Add syncdaemon
-    const std::string syncdaemon("sbin/syncdaemon");
-
-    if (cpio.exists(syncdaemon)) {
-        cpio.remove(syncdaemon);
-    }
-
-    if (!cpio.addFile(pc->binariesDirectory() + "/"
-            + "android" + "/"
-            + info->device()->architecture() + "/"
-            + "syncdaemon", syncdaemon, 0750)) {
-        error = cpio.error();
-        return false;
-    }
-
-    RETURN_IF_CANCELLED
-
     std::vector<unsigned char> newRamdisk;
     if (!cpio.createData(&newRamdisk, true)) {
         error = cpio.error();

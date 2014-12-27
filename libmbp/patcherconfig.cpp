@@ -36,7 +36,6 @@
 // Patchers
 #include "patchers/multibootpatcher.h"
 #include "patchers/primaryupgradepatcher.h"
-#include "patchers/syncdaemonupdatepatcher.h"
 #include "autopatchers/jfltepatcher.h"
 #include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
@@ -547,7 +546,6 @@ std::vector<std::string> PatcherConfig::patchers() const
     std::vector<std::string> list;
     list.push_back(MultiBootPatcher::Id);
     list.push_back(PrimaryUpgradePatcher::Id);
-    list.push_back(SyncdaemonUpdatePatcher::Id);
     return list;
 }
 
@@ -600,8 +598,6 @@ std::string PatcherConfig::patcherName(const std::string &id) const
         return MultiBootPatcher::Name;
     } else if (id == PrimaryUpgradePatcher::Id) {
         return PrimaryUpgradePatcher::Name;
-    } else if (id == SyncdaemonUpdatePatcher::Id) {
-        return SyncdaemonUpdatePatcher::Name;
     }
 
     return std::string();
@@ -622,8 +618,6 @@ Patcher * PatcherConfig::createPatcher(const std::string &id)
         p = new MultiBootPatcher(this);
     } else if (id == PrimaryUpgradePatcher::Id) {
         p = new PrimaryUpgradePatcher(this);
-    } else if (id == SyncdaemonUpdatePatcher::Id) {
-        p = new SyncdaemonUpdatePatcher(this);
     }
 
     if (p != nullptr) {

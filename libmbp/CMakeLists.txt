@@ -35,7 +35,6 @@ set(MBP_SOURCES
     # Patchers
     patchers/multibootpatcher.cpp
     patchers/primaryupgradepatcher.cpp
-    patchers/syncdaemonupdatepatcher.cpp
     # Ramdisk patchers
     ramdiskpatchers/baconramdiskpatcher.cpp
     ramdiskpatchers/coreramdiskpatcher.cpp
@@ -74,7 +73,6 @@ set(MBP_NOINST_HEADERS
     # Patchers
     patchers/multibootpatcher.h
     patchers/primaryupgradepatcher.h
-    patchers/syncdaemonupdatepatcher.h
     # Ramdisk patchers
     ramdiskpatchers/baconramdiskpatcher.h
     ramdiskpatchers/coreramdiskpatcher.h

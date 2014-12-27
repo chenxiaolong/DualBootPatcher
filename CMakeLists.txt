@@ -32,7 +32,6 @@ include(cmake/LogicalCoreCount.cmake)
 add_subdirectory(libmbp)
 add_subdirectory(data)
 add_subdirectory(mbtool)
-add_subdirectory(syncdaemon)
 
 if(BUILD_ANDROID)
     add_subdirectory(libmountpoint)

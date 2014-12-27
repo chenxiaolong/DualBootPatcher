@@ -48,10 +48,12 @@ const std::string CoreRamdiskPatcher::PropPartConfig
         = "ro.patcher.patched=%1%\n";
 const std::string CoreRamdiskPatcher::PropVersion
         = "ro.patcher.version=%1%\n";
+#if 0
 const std::string CoreRamdiskPatcher::SyncdaemonService
         = "\nservice syncdaemon /sbin/syncdaemon\n"
         "    class main\n"
         "    user root\n";
+#endif
 
 static const std::string DataMediaContext =
         "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
@@ -103,9 +105,11 @@ bool CoreRamdiskPatcher::patchRamdisk()
     if (!modifyDefaultProp()) {
         return false;
     }
+#if 0
     if (!addSyncdaemon()) {
         return false;
     }
+#endif
     if (!addConfigJson()) {
         return false;
     }
@@ -140,6 +144,7 @@ bool CoreRamdiskPatcher::modifyDefaultProp()
     return true;
 }
 
+#if 0
 bool CoreRamdiskPatcher::addSyncdaemon()
 {
     std::vector<unsigned char> initRc;
@@ -155,6 +160,7 @@ bool CoreRamdiskPatcher::addSyncdaemon()
 
     return true;
 }
+#endif
 
 bool CoreRamdiskPatcher::addConfigJson()
 {

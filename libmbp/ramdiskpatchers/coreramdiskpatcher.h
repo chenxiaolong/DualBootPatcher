@@ -37,7 +37,9 @@ public:
     static const std::string FstabRegex;
     static const std::string PropPartConfig;
     static const std::string PropVersion;
+#if 0
     static const std::string SyncdaemonService;
+#endif
 
     virtual PatcherError error() const override;
 
@@ -46,7 +48,9 @@ public:
     virtual bool patchRamdisk() override;
 
     bool modifyDefaultProp();
+#if 0
     bool addSyncdaemon();
+#endif
     bool addConfigJson();
     bool fixDataMediaContext();
 
