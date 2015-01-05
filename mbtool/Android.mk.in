@@ -30,6 +30,7 @@ LOCAL_SRC_FILES := \
 	mount_fstab.c \
 	main.c \
 	sepolpatch.c \
+	external/mntent.c \
 	util/archive.c \
 	util/command.c \
 	util/copy.c \
@@ -37,6 +38,7 @@ LOCAL_SRC_FILES := \
 	util/directory.c \
 	util/file.c \
 	util/fstab.c \
+	util/mount.c \
 
 LOCAL_MODULE := mbtool
 LOCAL_STATIC_LIBRARIES := libjansson libsepol libxml2 libarchive
