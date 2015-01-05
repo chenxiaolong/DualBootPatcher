@@ -24,7 +24,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-int mb_run_command(const char *command)
+int mb_run_shell_command(const char *command)
 {
     // If /sbin/sh exists (eg. in recovery), then fork and run that. Otherwise,
     // just call system().
@@ -46,4 +46,27 @@ int mb_run_command(const char *command)
     } else {
         return system(command);
     }
+}
+
+int mb_run_command(char * const argv[])
+{
+    if (!argv) {
+        return -1;
+    }
+    if (!argv[0]) {
+        return -1;
+    }
+
+    int status;
+    pid_t pid;
+    if ((pid = fork()) >= 0) {
+        if (pid == 0) {
+            execvp(argv[0], argv);
+            exit(127);
+        } else {
+            pid = waitpid(pid, &status, 0);
+        }
+    }
+
+    return pid == -1 ? -1 : status;
 }

@@ -19,4 +19,5 @@
 
 #pragma once
 
-int mb_run_command(const char *command);
+int mb_run_shell_command(const char *command);
+int mb_run_command(char * const argv[]);
