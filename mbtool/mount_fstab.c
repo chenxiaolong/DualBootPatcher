@@ -19,10 +19,6 @@
 
 #include "mount_fstab.h"
 
-#ifndef __ANDROID__
-#include <bsd/string.h>
-#endif
-#include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
@@ -31,287 +27,22 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "config.h"
 #include "logging.h"
 #include "sepolpatch.h"
+#include "util/directory.h"
+#include "util/file.h"
+#include "util/fstab.h"
+#include "util/mount.h"
 
 
-struct fstab
-{
-    int num_entries;
-    struct fstab_rec *recs;
-    char *fstab_filename;
-};
-
-struct fstab_rec
-{
-    char *blk_device;
-    char *mount_point;
-    char *fs_type;
-    unsigned long flags;
-    char *fs_options;
-    char *vold_args;
-    char *orig_line;
-};
-
-struct mount_flag
-{
-    const char *name;
-    unsigned int flag;
-};
-
-static struct mount_flag mount_flags[] =
-{
-    { "active",         MS_ACTIVE },
-    { "bind",           MS_BIND },
-    { "dirsync",        MS_DIRSYNC },
-    { "mandlock",       MS_MANDLOCK },
-    { "move",           MS_MOVE },
-    { "noatime",        MS_NOATIME },
-    { "nodev",          MS_NODEV },
-    { "nodiratime",     MS_NODIRATIME },
-    { "noexec",         MS_NOEXEC },
-    { "nosuid",         MS_NOSUID },
-    { "nouser",         MS_NOUSER },
-    { "posixacl",       MS_POSIXACL },
-    { "rec",            MS_REC },
-    { "ro",             MS_RDONLY },
-    { "relatime",       MS_RELATIME },
-    { "remount",        MS_REMOUNT },
-    { "silent",         MS_SILENT },
-    { "strictatime",    MS_STRICTATIME },
-    { "sync",           MS_SYNCHRONOUS },
-    { "unbindable",     MS_UNBINDABLE },
-    { "private",        MS_PRIVATE },
-    { "slave",          MS_SLAVE },
-    { "shared",         MS_SHARED },
-    // Flags that should be ignored
-    { "ro",             0 },
-    { "defaults",       0 },
-    { NULL,             0 }
-};
-
-
-static struct fstab * read_fstab(const char *path);
-static void free_fstab(struct fstab *fstab);
-static int options_to_flags(char *args, char *new_args, int size);
 static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
                                 char *mount_point);
-static int mkdirs(const char *dir, mode_t mode);
-static int create_file(const char *path);
-static int bind_mount(const char *source, const char *target);
 static struct partconfig * find_partconfig(void);
 
-
-// Much simplified version of fs_mgr's fstab parsing code
-static struct fstab * read_fstab(const char *path)
-{
-    FILE *fp;
-    int count, entries;
-    char *line = NULL;
-    size_t len = 0; // allocated memory size
-    ssize_t bytes_read; // number of bytes read
-    char *temp;
-    char *save_ptr;
-    const char *delim = " \t";
-    struct fstab *fstab = NULL;
-    char temp_mount_args[1024];
-
-    fp = fopen(path, "rb");
-    if (!fp) {
-        LOGE("Failed to open file %s", path);
-        return NULL;
-    }
-
-    entries = 0;
-    while ((bytes_read = getline(&line, &len, fp)) != -1) {
-        // Strip newlines
-        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
-            line[bytes_read - 1] = '\0';
-        }
-
-        // Strip leading
-        temp = line;
-        while (isspace(*temp)) {
-            ++temp;
-        }
-
-        // Skip empty lines and comments
-        if (*temp == '\0' || *temp == '#') {
-            continue;
-        }
-
-        ++entries;
-    }
-
-    if (entries == 0) {
-        LOGE("fstab contains no entries");
-        goto error;
-    }
-
-    fstab = calloc(1, sizeof(struct fstab));
-    fstab->num_entries = entries;
-    fstab->fstab_filename = strdup(path);
-    fstab->recs = calloc(fstab->num_entries, sizeof(struct fstab_rec));
-
-    fseek(fp, 0, SEEK_SET);
-
-    count = 0;
-    while ((bytes_read = getline(&line, &len, fp)) != -1) {
-        // Strip newlines
-        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
-            line[bytes_read - 1] = '\0';
-        }
-
-        // Strip leading
-        temp = line;
-        while (isspace(*temp)) {
-            ++temp;
-        }
-
-        // Skip empty lines and comments
-        if (*temp == '\0' || *temp == '#') {
-            continue;
-        }
-
-        // Avoid possible overflow if the file was changed
-        if (count >= entries) {
-            LOGE("Found more fstab entries on second read than first read");
-            break;
-        }
-
-        struct fstab_rec *rec = &fstab->recs[count];
-
-        rec->orig_line = strdup(line);
-
-        if ((temp = strtok_r(line, delim, &save_ptr)) == NULL) {
-            LOGE("No source path/device found in entry: %s", line);
-            goto error;
-        }
-        rec->blk_device = strdup(temp);
-
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            LOGE("No mount point found in entry: %s", line);
-            goto error;
-        }
-        rec->mount_point = strdup(temp);
-
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            LOGE("No filesystem type found in entry: %s", line);
-            goto error;
-        }
-        rec->fs_type = strdup(temp);
-
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            LOGE("No mount options found in entry: %s", line);
-            goto error;
-        }
-        rec->flags = options_to_flags(temp, temp_mount_args, 1024);
-
-        if (temp_mount_args[0]) {
-            rec->fs_options = strdup(temp_mount_args);
-        } else {
-            rec->fs_options = NULL;
-        }
-
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
-            LOGE("No fs_mgr/vold options found in entry: %s", line);
-            goto error;
-        }
-        rec->vold_args = strdup(temp);
-
-        ++count;
-    }
-
-    fclose(fp);
-    free(line);
-    return fstab;
-
-error:
-    fclose(fp);
-    free(line);
-    if (fstab) {
-        free_fstab(fstab);
-    }
-    return NULL;
-}
-
-static void free_fstab(struct fstab *fstab)
-{
-    if (!fstab) {
-        return;
-    }
-
-    for (int i = 0; i < fstab->num_entries; ++i) {
-        struct fstab_rec *rec = &fstab->recs[i];
-
-        if (rec->blk_device) {
-            free(rec->blk_device);
-        }
-        if (rec->mount_point) {
-            free(rec->mount_point);
-        }
-        if (rec->fs_type) {
-            free(rec->fs_type);
-        }
-        if (rec->fs_options) {
-            free(rec->fs_options);
-        }
-        if (rec->vold_args) {
-            free(rec->vold_args);
-        }
-        if (rec->orig_line) {
-            free(rec->orig_line);
-        }
-    }
-
-    free(fstab->recs);
-    free(fstab->fstab_filename);
-    free(fstab);
-}
-
-static int options_to_flags(char *args, char *new_args, int size)
-{
-    char *temp;
-    char *save_ptr;
-    int flags = 0;
-    int i;
-
-    if (new_args && size > 0) {
-        new_args[0] = '\0';
-    }
-
-    temp = strtok_r(args, ",", &save_ptr);
-    while (temp) {
-        for (i = 0; mount_flags[i].name; ++i) {
-            if (strcmp(temp, mount_flags[i].name) == 0) {
-                flags |= 0;
-                break;
-            }
-        }
-
-        if (!mount_flags[i].name) {
-            if (new_args) {
-                strlcat(new_args, temp, size);
-                strlcat(new_args, ",", size);
-            } else {
-                LOGW("Only universal mount options expected, but found %s", temp);
-            }
-        }
-
-        temp = strtok_r(NULL, ",", &save_ptr);
-    }
-
-    if (new_args && new_args[0]) {
-        new_args[strlen(new_args) - 1] = '\0';
-    }
-
-    return flags;
-}
 
 static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
@@ -353,79 +84,6 @@ static int create_dir_and_mount(struct fstab_rec *rec,
     if (ret < 0) {
         LOGE("Failed to mount %s at %s: %s",
              rec->blk_device, mount_point, strerror(errno));
-        return -1;
-    }
-
-    return 0;
-}
-
-static int mkdirs(const char *dir, mode_t mode)
-{
-    struct stat st;
-    char *p;
-    char *save_ptr;
-    char *temp;
-    char *copy;
-    int len;
-
-    if (!dir || strlen(dir) == 0) {
-        return -1;
-    }
-
-    copy = strdup(dir);
-    len = strlen(dir);
-    temp = malloc(len + 2);
-    temp[0] = '\0';
-
-    if (dir[0] == '/') {
-        strcat(temp, "/");
-    }
-
-    p = strtok_r(copy, "/", &save_ptr);
-    while (p != NULL) {
-        strcat(temp, p);
-        strcat(temp, "/");
-
-        if (stat(temp, &st) < 0 && mkdir(temp, mode) < 0) {
-            LOGE("Failed to create directory %s: %s\n", temp, strerror(errno));
-            free(copy);
-            free(temp);
-            return -1;
-        }
-
-        p = strtok_r(NULL, "/", &save_ptr);
-    }
-
-    free(copy);
-    free(temp);
-    return 0;
-}
-
-static int create_file(const char *path)
-{
-    FILE *fp = fopen(path, "wb");
-    if (fp) {
-        fclose(fp);
-        return 0;
-    }
-    return -1;
-}
-
-static int bind_mount(const char *source, const char *target)
-{
-    if (mkdirs(source, 0771)) {
-        LOGE("Failed to create %s", source);
-        return -1;
-    }
-
-    if (mkdirs(target, 0771) < 0) {
-        LOGE("Failed to create %s", target);
-        return -1;
-    }
-
-    if (mount(source, target, NULL, MS_BIND, NULL) < 0) {
-        LOGE("Failed to bind mount %s to %s: %s",
-             source, target, strerror(errno));
         return -1;
     }
 
@@ -497,7 +155,7 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Read original fstab
-    fstab = read_fstab(fstab_path);
+    fstab = mb_read_fstab(fstab_path);
     if (!fstab) {
         LOGE("Failed to read %s", fstab_path);
         goto error;
@@ -578,20 +236,20 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Bind mount directories to /system, /cache, and /data
-    if (bind_mount(partconfig->target_system, "/system") < 0) {
+    if (mb_bind_mount(partconfig->target_system, 0771, "/system", 0771) < 0) {
         goto error;
     }
 
-    if (bind_mount(partconfig->target_cache, "/cache") < 0) {
+    if (mb_bind_mount(partconfig->target_cache, 0771, "/cache", 0771) < 0) {
         goto error;
     }
 
-    if (bind_mount(partconfig->target_data, "/data") < 0) {
+    if (mb_bind_mount(partconfig->target_data, 0771, "/data", 0771) < 0) {
         goto error;
     }
 
     // Bind mount internal SD directory
-    if (bind_mount("/raw-data/media", "/data/media")) {
+    if (mb_bind_mount("/raw-data/media", 0771, "/data/media", 0771)) {
         goto error;
     }
 
@@ -611,19 +269,22 @@ int mount_fstab(const char *fstab_path)
     share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
 
     if (share_app || share_app_asec) {
-        if (bind_mount("/raw-data/app-lib", "/data/app-lib") < 0) {
+        if (mb_bind_mount("/raw-data/app-lib", 0771,
+                          "/data/app-lib", 0771) < 0) {
             goto error;
         }
     }
 
     if (share_app) {
-        if (bind_mount("/raw-data/app", "/data/app") < 0) {
+        if (mb_bind_mount("/raw-data/app", 0771,
+                          "/data/app", 0771) < 0) {
             goto error;
         }
     }
 
     if (share_app_asec) {
-        if (bind_mount("/raw-data/app-asec", "/data/app-asec") < 0) {
+        if (mb_bind_mount("/raw-data/app-asec", 0771,
+                          "/data/app-asec", 0771) < 0) {
             goto error;
         }
     }
@@ -633,9 +294,9 @@ int mount_fstab(const char *fstab_path)
         system("sh /init.additional.sh");
     }
 
-    free_fstab(fstab);
+    mb_free_fstab(fstab);
 
-    create_file(path_completed);
+    mb_create_empty_file(path_completed);
 
     LOGI("Successfully mounted partitions");
 
@@ -643,10 +304,10 @@ int mount_fstab(const char *fstab_path)
 
 error:
     if (fstab) {
-        free_fstab(fstab);
+        mb_free_fstab(fstab);
     }
 
-    create_file(path_failed);
+    mb_create_empty_file(path_failed);
 
     return -1;
 }
