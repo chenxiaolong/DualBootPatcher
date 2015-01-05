@@ -32,6 +32,7 @@ LOCAL_SRC_FILES := \
 	sepolpatch.c \
 	util/archive.c \
 	util/command.c \
+	util/copy.c \
 
 LOCAL_MODULE := mbtool
 LOCAL_STATIC_LIBRARIES := libjansson libsepol libxml2 libarchive
