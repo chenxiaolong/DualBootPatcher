@@ -34,6 +34,7 @@ LOCAL_SRC_FILES := \
 	util/command.c \
 	util/copy.c \
 	util/delete.c \
+	util/directory.c \
 
 LOCAL_MODULE := mbtool
 LOCAL_STATIC_LIBRARIES := libjansson libsepol libxml2 libarchive
