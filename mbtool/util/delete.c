@@ -20,25 +20,11 @@
 #include "util/delete.h"
 
 #include <errno.h>
-#include <ftw.h>
-#include <stdio.h>
+#include <fts.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include "logging.h"
-
-static int nftw_delete_cb(const char *fpath, const struct stat *sb,
-                          int typeflag, struct FTW *ftwbuf)
-{
-    (void) sb;
-    (void) typeflag;
-    (void) ftwbuf;
-
-    int ret;
-    if ((ret = remove(fpath)) < 0) {
-        LOGE("Failed to remove: %s", fpath);
-    }
-
-    return ret;
-}
 
 int mb_delete_recursive(const char *path)
 {
@@ -48,7 +34,57 @@ int mb_delete_recursive(const char *path)
         return 0;
     }
 
-    // Recursively delete directory without crossing mountpoint boundaries
-    return nftw(path, nftw_delete_cb, 64,
-                FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
+    int ret = 0;
+    FTS *ftsp = NULL;
+    FTSENT *curr;
+
+    char *files[] = { (char *) path, NULL };
+
+    ftsp = fts_open(files, FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV, NULL);
+    if (!ftsp) {
+        LOGE("%s: fts_open failed: %s", path, strerror(errno));
+        ret = -1;
+        goto finish;
+    }
+
+    while ((curr = fts_read(ftsp))) {
+        switch (curr->fts_info) {
+        case FTS_NS:
+        case FTS_DNR:
+        case FTS_ERR:
+            LOGW("%s: fts_read error: %s",
+                 curr->fts_accpath, strerror(curr->fts_errno));
+            break;
+
+        case FTS_DC:
+        case FTS_DOT:
+        case FTS_NSOK:
+            // Not reached
+            break;
+
+        case FTS_D:
+            // Do nothing. Need depth-first search, so directories are deleted
+            // in FTS_DP
+            break;
+
+        case FTS_DP:
+        case FTS_F:
+        case FTS_SL:
+        case FTS_SLNONE:
+        case FTS_DEFAULT:
+            if (remove(curr->fts_accpath) < 0) {
+                LOGW("%s: Failed to remove: %s",
+                     curr->fts_path, strerror(errno));
+                ret = -1;
+            }
+            break;
+        }
+    }
+
+finish:
+    if (ftsp) {
+        fts_close(ftsp);
+    }
+
+    return ret;
 }
