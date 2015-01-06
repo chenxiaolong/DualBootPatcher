@@ -29,6 +29,7 @@ LOCAL_SRC_FILES := \
 	mount_fstab.c \
 	main.c \
 	sepolpatch.c \
+	update_binary_tool.c \
 	external/mntent.c \
 	util/archive.c \
 	util/command.c \

@@ -25,6 +25,7 @@
 #include "config.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
+#include "update_binary_tool.h"
 
 #include "util/logging.h"
 
@@ -45,6 +46,7 @@ struct tool tools[] = {
     // Tools
     TOOL(mount_fstab),
     TOOL(sepolpatch),
+    { "update-binary-tool", update_binary_tool_main },
     { NULL, NULL }
 };
 
