@@ -4,6 +4,6 @@
 
     <ramdisk>jflte/default</ramdisk>
     <autopatchers>
-        <autopatcher>ImperiumPatcher</autopatcher>
+        <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
 </patchinfo>

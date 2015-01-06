@@ -64,23 +64,6 @@ public:
 };
 
 
-class JflteImperiumPatcher : public JflteBasePatcher
-{
-public:
-    explicit JflteImperiumPatcher(const PatcherConfig * const pc,
-                                  const FileInfo * const info);
-
-    static const std::string Id;
-
-    virtual std::string id() const override;
-
-    virtual std::vector<std::string> newFiles() const override;
-    virtual std::vector<std::string> existingFiles() const override;
-
-    virtual bool patchFiles(const std::string &directory) override;
-};
-
-
 class JflteNegaliteNoWipeData : public JflteBasePatcher
 {
 public:

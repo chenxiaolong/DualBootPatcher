@@ -114,55 +114,6 @@ bool JflteDalvikCachePatcher::patchFiles(const std::string &directory)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::string JflteImperiumPatcher::Id = "ImperiumPatcher";
-
-JflteImperiumPatcher::JflteImperiumPatcher(const PatcherConfig * const pc,
-                                           const FileInfo* const info)
-    : JflteBasePatcher(pc, info)
-{
-}
-
-std::string JflteImperiumPatcher::id() const
-{
-    return Id;
-}
-
-std::vector<std::string> JflteImperiumPatcher::newFiles() const
-{
-    return std::vector<std::string>();
-}
-
-std::vector<std::string> JflteImperiumPatcher::existingFiles() const
-{
-    std::vector<std::string> files;
-    files.push_back(StandardPatcher::UpdaterScript);
-    return files;
-}
-
-bool JflteImperiumPatcher::patchFiles(const std::string &directory)
-{
-    std::vector<unsigned char> contents;
-
-    // StandardPatcher::UpdaterScript begin
-    FileUtils::readToMemory(directory + "/" + StandardPatcher::UpdaterScript, &contents);
-    std::string strContents(contents.begin(), contents.end());
-    std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
-
-    StandardPatcher::replaceMountLines(&lines, m_impl->info->device());
-    StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
-    StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
-
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
-    // StandardPatcher::UpdaterScript end
-
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 const std::string JflteNegaliteNoWipeData::Id = "NegaliteNoWipeData";
 
 JflteNegaliteNoWipeData::JflteNegaliteNoWipeData(const PatcherConfig * const pc,
