@@ -47,9 +47,6 @@ public:
 static const std::string CachePartition =
         "/dev/block/platform/msm_sdcc.1/by-name/cache";
 
-static const std::string RawSystem = "/raw-system";
-static const std::string RawCache = "/raw-cache";
-static const std::string RawData = "/raw-data";
 static const std::string System = "/system";
 static const std::string Cache = "/cache";
 static const std::string Data = "/data";
