@@ -82,9 +82,6 @@ public:
     // Selected device
     Device *device = nullptr;
 
-    // List of partition configs for current patcher
-    QList<PartitionConfig *> partConfigs;
-
     // List of available patchinfos
     std::vector<PatchInfo *> patchInfos;
 
@@ -99,11 +96,8 @@ public:
     // Main widgets
     QLabel *deviceLbl;
     QLabel *patcherLbl;
-    QLabel *partConfigLbl;
     QComboBox *deviceSel;
     QComboBox *patcherSel;
-    QComboBox *partConfigSel;
-    QLabel *partConfigDesc;
 
     QLabel *messageLbl;
 

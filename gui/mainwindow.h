@@ -50,7 +50,6 @@ signals:
 private slots:
     void onDeviceSelected(int index);
     void onPatcherSelected(const QString &patcher);
-    void onPartConfigSelected(int index);
     void onButtonClicked(QAbstractButton *button);
 
     // Unsupported files
@@ -71,7 +70,6 @@ private:
     void populateWidgets();
     void setWidgetDefaults();
 
-    void refreshPartConfigs();
     void refreshPresets();
     void updateBootImageTextBox();
 

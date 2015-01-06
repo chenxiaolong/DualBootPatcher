@@ -20,7 +20,6 @@
 #include "mainwindow.h"
 #include "mainwindow_p.h"
 
-#include <libmbp/partitionconfig.h>
 #include <libmbp/patchinfo.h>
 #include <libmbp/patchererror.h>
 
@@ -125,31 +124,12 @@ void MainWindow::onPatcherSelected(const QString &patcher)
     }
     d->patcher = d->pc->createPatcher(patcherId.toStdString());
 
-    refreshPartConfigs();
-
     if (d->state == MainWindowPrivate::FinishedPatching) {
         d->state = MainWindowPrivate::ChoseFile;
     }
 
     checkSupported();
     updateWidgetsVisibility();
-}
-
-void MainWindow::onPartConfigSelected(int index)
-{
-    Q_D(MainWindow);
-
-    if (index >= 0) {
-        d->partConfigDesc->setText(QString::fromStdString(
-                d->partConfigs[index]->description()));
-
-        if (d->state == MainWindowPrivate::FinishedPatching) {
-            d->state = MainWindowPrivate::ChoseFile;
-        }
-
-        checkSupported();
-        updateWidgetsVisibility();
-    }
 }
 
 void MainWindow::onButtonClicked(QAbstractButton *button)
@@ -244,13 +224,10 @@ void MainWindow::addWidgets()
     // Selectors and file chooser
     d->patcherSel = new QComboBox(d->mainContainer);
     d->deviceSel = new QComboBox(d->mainContainer);
-    d->partConfigSel = new QComboBox(d->mainContainer);
-    d->partConfigDesc = new QLabel(d->mainContainer);
 
     // Labels
     d->deviceLbl = new QLabel(tr("Device:"), d->mainContainer);
     d->patcherLbl = new QLabel(tr("Patcher:"), d->mainContainer);
-    d->partConfigLbl = new QLabel(tr("Configuration:"), d->mainContainer);
 
     QGridLayout *layout = new QGridLayout(d->mainContainer);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -258,9 +235,6 @@ void MainWindow::addWidgets()
     layout->addWidget(d->deviceSel, i, 1, 1, -1);
     layout->addWidget(d->patcherLbl, ++i, 0);
     layout->addWidget(d->patcherSel, i, 1, 1, -1);
-    layout->addWidget(d->partConfigLbl, ++i, 0);
-    layout->addWidget(d->partConfigSel, i, 1, 1, -1);
-    layout->addWidget(d->partConfigDesc, ++i, 1, 1, -1);
 
     // Add items for unsupported files
     d->messageLbl = new QLabel(d->mainContainer);
@@ -398,10 +372,6 @@ void MainWindow::setWidgetActions()
     connect(d->patcherSel, indexChangedQString,
             this, &MainWindow::onPatcherSelected);
 
-    // Partition config
-    connect(d->partConfigSel, indexChangedInt,
-            this, &MainWindow::onPartConfigSelected);
-
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
             this, &MainWindow::onButtonClicked);
@@ -452,34 +422,6 @@ void MainWindow::setWidgetDefaults()
     // Assume boot image exists
     d->hasBootImageCb->setChecked(true);
     onHasBootImageToggled();
-}
-
-void MainWindow::refreshPartConfigs()
-{
-    Q_D(MainWindow);
-
-    d->partConfigSel->clear();
-    d->partConfigs.clear();
-
-    auto configs = d->pc->partitionConfigs();
-
-    for (auto const &id : d->patcher->supportedPartConfigIds()) {
-        PartitionConfig *config = nullptr;
-
-        for (PartitionConfig *c : configs) {
-            if (c->id() == id) {
-                config = c;
-                break;
-            }
-        }
-
-        if (config != nullptr) {
-            d->partConfigs << config;
-            d->partConfigSel->addItem(
-                    QString::fromStdString(config->name()),
-                    QString::fromStdString(config->id()));
-        }
-    }
 }
 
 void MainWindow::refreshPresets()
@@ -558,16 +500,6 @@ void MainWindow::updateWidgetsVisibility()
             d->state != MainWindowPrivate::Patching);
     d->progressContainer->setVisible(
             d->state == MainWindowPrivate::Patching);
-
-    if (d->partConfigs.size() <= 1) {
-        d->partConfigLbl->setVisible(false);
-        d->partConfigSel->setVisible(false);
-        d->partConfigDesc->setVisible(false);
-    } else {
-        d->partConfigLbl->setVisible(true);
-        d->partConfigSel->setVisible(true);
-        d->partConfigDesc->setVisible(true);
-    }
 
     for (QWidget *widget : d->unsupportedWidgets) {
         widget->setVisible(d->state == MainWindowPrivate::ChoseFile
@@ -662,9 +594,6 @@ void MainWindow::startPatching()
     FileInfoPtr fileInfo = new FileInfo();
     fileInfo->setFilename(d->fileName.toStdString());
     fileInfo->setDevice(d->device);
-    if (!d->partConfigs.isEmpty()) {
-        fileInfo->setPartConfig(d->partConfigs[d->partConfigSel->currentIndex()]);
-    }
     fileInfo->setPatchInfo(d->patchInfo);
 
     emit runThread(d->patcher, fileInfo);
