@@ -30,11 +30,11 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "logging.h"
 #include "sepolpatch.h"
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/fstab.h"
+#include "util/logging.h"
 #include "util/mount.h"
 
 
@@ -353,8 +353,8 @@ int mount_fstab_main(int argc, char *argv[])
     }
 
     // Use the kernel log since logcat hasn't run yet
-    klog_init();
-    use_kernel_log_output();
+    mb_klog_init();
+    mb_log_use_kernel_output();
 
     // Read configuration file
     if (mainconfig_init() < 0) {

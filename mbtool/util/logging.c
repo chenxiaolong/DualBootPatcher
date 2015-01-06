@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logging.h"
+#include "util/logging.h"
 
 #include <fcntl.h>
 #include <stdarg.h>
@@ -60,11 +60,18 @@ enum log_outputs {
 static int log_output = STANDARD;
 
 
+static FILE *std_stream_error = stderr;
+static FILE *std_stream_warning = stderr;
+static FILE *std_stream_info = stdout;
+static FILE *std_stream_debug = stdout;
+static FILE *std_stream_verbose = stdout;
+
+
 #define KMSG_BUF_SIZE 512
 
 static int kmsg_fd = -1;
 
-void klog_init(void)
+void mb_klog_init(void)
 {
     static int open_mode = O_WRONLY | O_NOCTTY | O_CLOEXEC;
     static const char *kmsg = "/dev/kmsg";
@@ -86,10 +93,10 @@ void klog_init(void)
     }
 }
 
-void kmsg_write(const char *fmt, va_list ap)
+static void kmsg_write(const char *fmt, va_list ap)
 {
     if (kmsg_fd < 0) {
-        klog_init();
+        mb_klog_init();
     }
     if (kmsg_fd < 0) {
         // error...
@@ -102,7 +109,7 @@ void kmsg_write(const char *fmt, va_list ap)
     write(kmsg_fd, buf, strlen(buf));
 }
 
-void logmsg(int prio, const char *fmt, ...)
+void mb_logmsg(int prio, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -112,11 +119,11 @@ void logmsg(int prio, const char *fmt, ...)
         char newfmt[100];
 
         switch (prio) {
-        case LOG_ERROR:   kmsg_prio = KMSG_LEVEL_ERROR;   break;
-        case LOG_WARNING: kmsg_prio = KMSG_LEVEL_WARNING; break;
-        case LOG_INFO:    kmsg_prio = KMSG_LEVEL_INFO;    break;
-        case LOG_DEBUG:   kmsg_prio = KMSG_LEVEL_DEBUG;   break;
-        case LOG_VERBOSE: kmsg_prio = KMSG_LEVEL_DEFAULT; break;
+        case MB_LOG_ERROR:   kmsg_prio = KMSG_LEVEL_ERROR;   break;
+        case MB_LOG_WARNING: kmsg_prio = KMSG_LEVEL_WARNING; break;
+        case MB_LOG_INFO:    kmsg_prio = KMSG_LEVEL_INFO;    break;
+        case MB_LOG_DEBUG:   kmsg_prio = KMSG_LEVEL_DEBUG;   break;
+        case MB_LOG_VERBOSE: kmsg_prio = KMSG_LEVEL_DEFAULT; break;
         }
 
         if (!kmsg_prio) {
@@ -130,11 +137,11 @@ void logmsg(int prio, const char *fmt, ...)
         int logcat_prio = -1;
 
         switch (prio) {
-        case LOG_ERROR: logcat_prio = ANDROID_LOG_ERROR;     break;
-        case LOG_WARNING: logcat_prio = ANDROID_LOG_WARN;    break;
-        case LOG_INFO:    logcat_prio = ANDROID_LOG_INFO;    break;
-        case LOG_DEBUG:   logcat_prio = ANDROID_LOG_DEBUG;   break;
-        case LOG_VERBOSE: logcat_prio = ANDROID_LOG_VERBOSE; break;
+        case MB_LOG_ERROR:   logcat_prio = ANDROID_LOG_ERROR;   break;
+        case MB_LOG_WARNING: logcat_prio = ANDROID_LOG_WARN;    break;
+        case MB_LOG_INFO:    logcat_prio = ANDROID_LOG_INFO;    break;
+        case MB_LOG_DEBUG:   logcat_prio = ANDROID_LOG_DEBUG;   break;
+        case MB_LOG_VERBOSE: logcat_prio = ANDROID_LOG_VERBOSE; break;
         }
 
         if (logcat_prio < 0) {
@@ -149,11 +156,11 @@ void logmsg(int prio, const char *fmt, ...)
         const char newfmt[100];
 
         switch (prio) {
-        case LOG_ERROR:   stdlog_prio = STDLOG_LEVEL_ERROR;   stream = stderr; break;
-        case LOG_WARNING: stdlog_prio = STDLOG_LEVEL_WARNING; stream = stderr; break;
-        case LOG_INFO:    stdlog_prio = STDLOG_LEVEL_INFO;    stream = stdout; break;
-        case LOG_DEBUG:   stdlog_prio = STDLOG_LEVEL_DEBUG;   stream = stdout; break;
-        case LOG_VERBOSE: stdlog_prio = STDLOG_LEVEL_VERBOSE; stream = stdout; break;
+        case MB_LOG_ERROR:   stdlog_prio = STDLOG_LEVEL_ERROR;   stream = std_stream_error;   break;
+        case MB_LOG_WARNING: stdlog_prio = STDLOG_LEVEL_WARNING; stream = std_stream_warning; break;
+        case MB_LOG_INFO:    stdlog_prio = STDLOG_LEVEL_INFO;    stream = std_stream_info;    break;
+        case MB_LOG_DEBUG:   stdlog_prio = STDLOG_LEVEL_DEBUG;   stream = std_stream_debug;   break;
+        case MB_LOG_VERBOSE: stdlog_prio = STDLOG_LEVEL_VERBOSE; stream = std_stream_verbose; break;
         }
 
         if (!stdlog_prio) {
@@ -168,17 +175,17 @@ void logmsg(int prio, const char *fmt, ...)
     va_end(ap);
 }
 
-void use_default_log_output(void)
+void mb_log_use_default_output(void)
 {
     log_output = DEFAULT_LOG_OUTPUT;
 }
 
-void use_standard_log_output(void)
+void mb_log_use_standard_output(void)
 {
     log_output = STANDARD;
 }
 
-void use_logcat_log_output(void)
+void mb_log_use_logcat_output(void)
 {
 #ifdef USE_ANDROID_LOG
     log_output = LOGCAT;
@@ -187,7 +194,47 @@ void use_logcat_log_output(void)
 #endif
 }
 
-void use_kernel_log_output(void)
+void mb_log_use_kernel_output(void)
 {
     log_output = KERNEL;
+}
+
+void mb_log_set_standard_stream(int prio, FILE *stream)
+{
+    switch (prio) {
+    case MB_LOG_ERROR:   std_stream_error = stream;   break;
+    case MB_LOG_WARNING: std_stream_warning = stream; break;
+    case MB_LOG_INFO:    std_stream_info = stream;    break;
+    case MB_LOG_DEBUG:   std_stream_debug = stream;   break;
+    case MB_LOG_VERBOSE: std_stream_verbose = stream; break;
+    }
+}
+
+void mb_log_set_default_standard_stream(int prio)
+{
+    switch (prio) {
+    case MB_LOG_ERROR:   std_stream_error = stderr;   break;
+    case MB_LOG_WARNING: std_stream_warning = stderr; break;
+    case MB_LOG_INFO:    std_stream_info = stdout;    break;
+    case MB_LOG_DEBUG:   std_stream_debug = stdout;   break;
+    case MB_LOG_VERBOSE: std_stream_verbose = stdout; break;
+    }
+}
+
+void mb_log_set_standard_stream_all(FILE *stream)
+{
+    std_stream_error = stream;
+    std_stream_warning = stream;
+    std_stream_info = stream;
+    std_stream_debug = stream;
+    std_stream_verbose = stream;
+}
+
+void mb_log_set_default_standard_stream_all(void)
+{
+    std_stream_error = stderr;
+    std_stream_warning = stderr;
+    std_stream_info = stdout;
+    std_stream_debug = stdout;
+    std_stream_verbose = stdout;
 }

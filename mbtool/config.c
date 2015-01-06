@@ -23,7 +23,7 @@
 
 #include <jansson.h>
 
-#include "logging.h"
+#include "util/logging.h"
 
 #define MAIN_CONFIG "/config.json"
 

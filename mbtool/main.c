@@ -23,9 +23,10 @@
 #include <sys/stat.h>
 
 #include "config.h"
-#include "logging.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
+
+#include "util/logging.h"
 
 
 int main(int argc, char *argv[]);

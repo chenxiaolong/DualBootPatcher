@@ -28,7 +28,7 @@
 #include <sepol/policydb/policydb.h>
 #include <sepol/sepol.h>
 
-#include "logging.h"
+#include "util/logging.h"
 
 
 #define SELINUX_ENFORCE_FILE "/sys/fs/selinux/enforce"

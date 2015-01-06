@@ -26,7 +26,6 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
 	common.c \
 	config.c \
-	logging.c \
 	mount_fstab.c \
 	main.c \
 	sepolpatch.c \
@@ -38,6 +37,7 @@ LOCAL_SRC_FILES := \
 	util/directory.c \
 	util/file.c \
 	util/fstab.c \
+	util/logging.c \
 	util/mount.c \
 	util/properties.c
 
