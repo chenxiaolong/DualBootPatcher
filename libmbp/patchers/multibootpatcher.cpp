@@ -436,7 +436,7 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    // +1 for dualboot.sh
+    // +1 for mbtool (update-binary)
     if (maxProgressCb != nullptr) {
         maxProgressCb(count + 1, userData);
     }
@@ -475,21 +475,14 @@ bool MultiBootPatcher::Impl::patchZip()
         progressCb(++progress, userData);
     }
     if (detailsCb != nullptr) {
-        detailsCb("dualboot.sh", userData);
+        detailsCb("META-INF/com/google/android/update-binary", userData);
     }
 
-    // Add dualboot.sh
-    const std::string dualbootshPath(pc->scriptsDirectory() + "/dualboot.sh");
-    std::vector<unsigned char> contents;
-    result = FileUtils::readToMemory(dualbootshPath, &contents);
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    info->partConfig()->replaceShellLine(&contents);
-
-    result = FileUtils::laAddFile(aOutput, "dualboot.sh", contents);
+    // Add mbtool
+    result = FileUtils::laAddFile(
+            aOutput, "META-INF/com/google/android/update-binary",
+            pc->binariesDirectory() + "/android/"
+                    + info->device()->architecture() + "/mbtool");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
@@ -589,6 +582,13 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             archive_write_data(aOutput, data.data(), data.size());
         } else {
             // Directly copy other files to the output zip
+
+            // Rename the installer for mbtool
+            if (archive_entry_pathname(entry) ==
+                    std::string("META-INF/com/google/android/update-binary")) {
+                archive_entry_set_pathname(
+                        entry, "META-INF/com/google/android/update-binary.orig");
+            }
 
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
                 Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
