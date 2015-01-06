@@ -50,37 +50,11 @@ public:
 
     // These are public so other patchers can use them
     static void removeDeviceChecks(std::vector<std::string> *lines);
-    static void insertDualBootSh(std::vector<std::string> *lines);
     static void insertWriteKernel(std::vector<std::string> *lines, const std::string &bootImage);
 
     static void replaceMountLines(std::vector<std::string> *lines, Device *device);
     static void replaceUnmountLines(std::vector<std::string> *lines, Device *device);
     static void replaceFormatLines(std::vector<std::string> *lines, Device *device);
-
-    static std::vector<std::string>::iterator
-    insertMountSystem(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertMountCache(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertMountData(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertUnmountSystem(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertUnmountCache(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertUnmountData(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertUnmountEverything(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertFormatSystem(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertFormatCache(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-    static std::vector<std::string>::iterator
-    insertFormatData(std::vector<std::string>::iterator position, std::vector<std::string> *lines);
-
-    static std::vector<std::string>::iterator
-    insertSetPerms(std::vector<std::string>::iterator position, std::vector<std::string> *lines,
-                   const std::string &file, unsigned int mode);
 
 private:
     class Impl;

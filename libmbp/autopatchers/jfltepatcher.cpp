@@ -155,15 +155,13 @@ bool JflteImperiumPatcher::patchFiles(const std::string &directory,
     std::vector<std::string> lines;
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    StandardPatcher::insertDualBootSh(&lines);
     StandardPatcher::replaceMountLines(&lines, m_impl->info->device());
     StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
     StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
-    StandardPatcher::insertUnmountEverything(lines.end(), &lines);
 
     // Insert set kernel line
     const std::string setKernelLine =
-            "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");";
+            "run_program(\"/update-binary-tool\", \"set-kernel\"};";
     for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
         if (it->find("Umounting Partitions") != std::string::npos) {
             auto fwdIt = (++it).base();
@@ -223,7 +221,7 @@ bool JflteNegaliteNoWipeData::patchFiles(const std::string &directory,
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (MBP_regex_search(*it, MBP_regex("run_program.*/tmp/wipedata.sh"))) {
             it = lines.erase(it);
-            StandardPatcher::insertFormatData(it, &lines);
+            lines.insert(it, "run_program(\"/update-binary-tool\", \"format\", \"/data\"};");
             break;
         }
     }

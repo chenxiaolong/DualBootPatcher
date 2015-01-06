@@ -45,11 +45,13 @@ const std::string StandardPatcher::Id
 const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
 static const std::string Mount
-        = "run_program(\"/tmp/dualboot.sh\", \"mount-%1%\");";
+        = "run_program(\"/update-binary-tool\", \"mount\", \"%1%\"};";
 static const std::string Unmount
-        = "run_program(\"/tmp/dualboot.sh\", \"unmount-%1%\");";
+        = "run_program(\"/update-binary-tool\", \"unmount\", \"%1%\"};";
 static const std::string Format
-        = "run_program(\"/tmp/dualboot.sh\", \"format-%1%\");";
+        = "run_program(\"/update-binary-tool\", \"format\", \"%1%\"};";
+static const std::string SetKernel
+        = "run_program(\"/update-binary-tool\", \"set-kernel\"};";
 
 static const std::string System = "system";
 static const std::string Cache = "cache";
@@ -104,7 +106,6 @@ bool StandardPatcher::patchFiles(const std::string &directory,
     std::vector<std::string> lines;
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    insertDualBootSh(&lines);
     replaceMountLines(&lines, m_impl->info->device());
     replaceUnmountLines(&lines, m_impl->info->device());
     replaceFormatLines(&lines, m_impl->info->device());
@@ -114,9 +115,6 @@ bool StandardPatcher::patchFiles(const std::string &directory,
             insertWriteKernel(&lines, bootImage);
         }
     }
-
-    // Too many ROMs don't unmount partitions after installation
-    insertUnmountEverything(lines.end(), &lines);
 
     // Remove device check if requested
     std::string key = m_impl->info->patchInfo()->keyFromFilename(
@@ -151,23 +149,6 @@ void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 }
 
 /*!
-    \brief Insert boilerplate updater-script lines to initialize helper scripts
-
-    \param lines Container holding strings of lines in updater-script file
- */
-void StandardPatcher::insertDualBootSh(std::vector<std::string> *lines)
-{
-    auto it = lines->begin();
-
-    it = lines->insert(it, "package_extract_file(\"dualboot.sh\", \"/tmp/dualboot.sh\");");
-    ++it;
-    it = insertSetPerms(it, lines, "/tmp/dualboot.sh", 0777);
-    it = lines->insert(it, "ui_print(\"NOT INSTALLING AS PRIMARY\");");
-    ++it;
-    it = insertUnmountEverything(it, lines);
-}
-
-/*!
     \brief Insert line(s) to set multiboot kernel for a specific boot image
 
     \param lines Container holding strings of lines in updater-script file
@@ -176,8 +157,6 @@ void StandardPatcher::insertDualBootSh(std::vector<std::string> *lines)
 void StandardPatcher::insertWriteKernel(std::vector<std::string> *lines,
                                         const std::string &bootImage)
 {
-    const std::string setKernelLine(
-            "run_program(\"/tmp/dualboot.sh\", \"set-multi-kernel\");");
     std::vector<std::string> searchItems;
     searchItems.push_back("loki.sh");
     searchItems.push_back("flash_kernel.sh");
@@ -193,7 +172,7 @@ void StandardPatcher::insertWriteKernel(std::vector<std::string> *lines,
                 auto fwdIt = (++it).base();
                 while (fwdIt != lines->end()) {
                     if (fwdIt->find(";") != std::string::npos) {
-                        lines->insert(++fwdIt, setKernelLine);
+                        lines->insert(++fwdIt, SetKernel);
                         return;
                     } else {
                         ++fwdIt;
@@ -219,32 +198,38 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
     auto const pCache = device->partition(Cache);
     auto const pData = device->partition(Data);
 
-    for (auto it = lines->begin(); it != lines->end();) {
+    static auto const re1 = MBP_regex("^\\s*mount\\s*\\(.*$");
+    static auto const re2 =
+            MBP_regex("^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$");
+    static auto const re3 =
+            MBP_regex("^\\s*run_program\\s*\\(\\s*\"[^\",]*/mount\".*$");
+
+    for (auto it = lines->begin(); it != lines->end(); ++it) {
         auto const &line = *it;
 
-        if (MBP_regex_search(line, MBP_regex("^\\s*mount\\s*\\(.*$"))
-                || MBP_regex_search(line, MBP_regex(
-                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$"))
-                || MBP_regex_search(line, MBP_regex(
-                "^\\s*run_program\\s*\\(\\s*\"[^\",]*/mount\".*$"))) {
-            if (line.find(System) != std::string::npos
-                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
-                it = lines->erase(it);
-                it = insertMountSystem(it, lines);
-            } else if (line.find(Cache) != std::string::npos
-                    || (!pCache.empty() && line.find(pCache) != std::string::npos)) {
-                it = lines->erase(it);
-                it = insertMountCache(it, lines);
-            } else if (line.find(Data) != std::string::npos
+        bool isMountLine = MBP_regex_search(line, re1)
+                || MBP_regex_search(line, re2)
+                || MBP_regex_search(line, re3);
+
+        if (isMountLine) {
+            bool isSystem = line.find(System) != std::string::npos
+                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos);
+            bool isCache = line.find(Cache) != std::string::npos
+                    || (!pCache.empty() && line.find(pCache) != std::string::npos);
+            bool isData = line.find(Data) != std::string::npos
                     || line.find("userdata") != std::string::npos
-                    || (!pData.empty() && line.find(pData) != std::string::npos)) {
+                    || (!pData.empty() && line.find(pData) != std::string::npos);
+
+            if (isSystem) {
                 it = lines->erase(it);
-                it = insertMountData(it, lines);
-            } else {
-                ++it;
+                it = lines->insert(it, (boost::format(Mount) % "/system").str());
+            } else if (isCache) {
+                it = lines->erase(it);
+                it = lines->insert(it, (boost::format(Mount) % "/cache").str());
+            } else if (isData) {
+                it = lines->erase(it);
+                it = lines->insert(it, (boost::format(Mount) % "/data").str());
             }
-        } else {
-            ++it;
         }
     }
 }
@@ -262,30 +247,35 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
     auto const pCache = device->partition(Cache);
     auto const pData = device->partition(Data);
 
-    for (auto it = lines->begin(); it != lines->end();) {
+    static auto const re1 = MBP_regex("^\\s*unmount\\s*\\(.*$");
+    static auto const re2 =
+            MBP_regex("^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"umount\".*$");
+
+    for (auto it = lines->begin(); it != lines->end(); ++it) {
         auto const &line = *it;
 
-        if (MBP_regex_search(line, MBP_regex("^\\s*unmount\\s*\\(.*$"))
-                || MBP_regex_search(line, MBP_regex(
-                "^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"umount\".*$"))) {
-            if (line.find(System) != std::string::npos
-                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
-                it = lines->erase(it);
-                it = insertUnmountSystem(it, lines);
-            } else if (line.find(Cache) != std::string::npos
-                    || (!pCache.empty() && line.find(pCache) != std::string::npos)) {
-                it = lines->erase(it);
-                it = insertUnmountCache(it, lines);
-            } else if (line.find(Data) != std::string::npos
+        bool isUnmountLine = MBP_regex_search(line, re1)
+                || MBP_regex_search(line, re2);
+
+        if (isUnmountLine) {
+            bool isSystem = line.find(System) != std::string::npos
+                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos);
+            bool isCache = line.find(Cache) != std::string::npos
+                    || (!pCache.empty() && line.find(pCache) != std::string::npos);
+            bool isData = line.find(Data) != std::string::npos
                     || line.find("userdata") != std::string::npos
-                    || (!pData.empty() && line.find(pData) != std::string::npos)) {
+                    || (!pData.empty() && line.find(pData) != std::string::npos);
+
+            if (isSystem) {
                 it = lines->erase(it);
-                it = insertUnmountData(it, lines);
-            } else {
-                ++it;
+                it = lines->insert(it, (boost::format(Unmount) % "/system").str());
+            } else if (isCache) {
+                it = lines->erase(it);
+                it = lines->insert(it, (boost::format(Unmount) % "/cache").str());
+            } else if (isData) {
+                it = lines->erase(it);
+                it = lines->insert(it, (boost::format(Unmount) % "/data").str());
             }
-        } else {
-            ++it;
         }
     }
 }
@@ -303,231 +293,40 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
     auto const pCache = device->partition(Cache);
     auto const pData = device->partition(Data);
 
-    for (auto it = lines->begin(); it != lines->end();) {
+    for (auto it = lines->begin(); it != lines->end(); ++it) {
         auto const &line = *it;
 
         if (MBP_regex_search(line, MBP_regex("^\\s*format\\s*\\(.*$"))) {
-            if (line.find(System) != std::string::npos
-                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos)) {
+            bool isSystem = line.find(System) != std::string::npos
+                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos);
+            bool isCache = line.find(Cache) != std::string::npos
+                    || (!pCache.empty() && line.find(pCache) != std::string::npos);
+            bool isData = line.find(Data) != std::string::npos
+                    || line.find("userdata") != std::string::npos
+                    || (!pData.empty() && line.find(pData) != std::string::npos);
+
+            if (isSystem) {
                 it = lines->erase(it);
-                it = insertFormatSystem(it, lines);
-            } else if (line.find(Cache) != std::string::npos
-                    || (!pCache.empty() && line.find(pCache) != std::string::npos)) {
+                it = lines->insert(it, (boost::format(Format) % "/system").str());
+            } else if (isCache) {
                 it = lines->erase(it);
-                it = insertFormatCache(it, lines);
-            } else if (line.find("userdata") != std::string::npos
-                    || (!pData.empty() && line.find(pData) != std::string::npos)) {
+                it = lines->insert(it, (boost::format(Format) % "/cache").str());
+            } else if (isData) {
                 it = lines->erase(it);
-                it = insertFormatData(it, lines);
-            } else {
-                ++it;
+                it = lines->insert(it, (boost::format(Format) % "/data").str());
             }
         } else if (MBP_regex_search(line, MBP_regex(
                 "delete_recursive\\s*\\([^\\)]*\"/system\""))) {
             it = lines->erase(it);
-            it = insertFormatSystem(it, lines);
+            it = lines->insert(it, (boost::format(Format) % "/system").str());
         } else if (MBP_regex_search(line, MBP_regex(
                 "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
             it = lines->erase(it);
-            it = insertFormatCache(it, lines);
+            it = lines->insert(it, (boost::format(Format) % "/cache").str());
         } else if (MBP_regex_search(line, MBP_regex(
                 "^\\s*run_program\\s*\\(\\s*\"[^\",]*/format.sh\".*$"))) {
             it = lines->erase(it);
-            it = insertFormatSystem(it, lines);
-        } else {
-            ++it;
+            it = lines->insert(it, (boost::format(Format) % "/data").str());
         }
     }
-}
-
-/*!
-    \brief Insert updater-script line to mount the ROM's /system
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertMountSystem(std::vector<std::string>::iterator position,
-                                   std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Mount) % System).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to mount the ROM's /cache
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertMountCache(std::vector<std::string>::iterator position,
-                                  std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Mount) % Cache).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to mount the ROM's /data
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertMountData(std::vector<std::string>::iterator position,
-                                 std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Mount) % Data).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to unmount the ROM's /system
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertUnmountSystem(std::vector<std::string>::iterator position,
-                                     std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Unmount) % System).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to unmount the ROM's /cache
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertUnmountCache(std::vector<std::string>::iterator position,
-                                    std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Unmount) % Cache).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to unmount the ROM's /data
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertUnmountData(std::vector<std::string>::iterator position,
-                                   std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Unmount) % Data).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to unmount all partitions
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertUnmountEverything(std::vector<std::string>::iterator position,
-                                         std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Unmount) % "everything").str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to format the ROM's /system
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertFormatSystem(std::vector<std::string>::iterator position,
-                                    std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Format) % System).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to format the ROM's /cache
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertFormatCache(std::vector<std::string>::iterator position,
-                                   std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Format) % Cache).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line to format the ROM's /data
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertFormatData(std::vector<std::string>::iterator position,
-                                  std::vector<std::string> *lines)
-{
-    position = lines->insert(
-            position, (boost::format(Format) % Data).str());
-    return ++position;
-}
-
-/*!
-    \brief Insert updater-script line for setting permissions for a file
-
-    \param position Position to insert at
-    \param lines Container holding strings of lines in updater-script file
-    \param file File to change the permissions form
-    \param mode Octal unix permissions
-
-    \return Iterator to position after the inserted line(s)
- */
-std::vector<std::string>::iterator
-StandardPatcher::insertSetPerms(std::vector<std::string>::iterator position,
-                                std::vector<std::string> *lines,
-                                const std::string &file,
-                                unsigned int mode)
-{
-    position = lines->insert(position, (boost::format(
-            "run_program(\"/sbin/busybox\", \"chmod\", \"0%2$o\", \"%1%\");")
-            % file % mode).str());
-    return ++position;
 }
