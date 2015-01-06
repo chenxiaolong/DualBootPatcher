@@ -150,9 +150,6 @@ public class LibMbp {
         // END: cfileinfo.h
 
         // BEGIN: cpartitionconfig.h
-        static native String mbp_partconfig_system();
-        static native String mbp_partconfig_cache();
-        static native String mbp_partconfig_data();
         static native CPartConfig mbp_partconfig_create();
         static native void mbp_partconfig_destroy(CPartConfig config);
         static native Pointer mbp_partconfig_name(CPartConfig config);
@@ -169,12 +166,6 @@ public class LibMbp {
         static native void mbp_partconfig_set_target_cache(CPartConfig config, String path);
         static native Pointer mbp_partconfig_target_data(CPartConfig config);
         static native void mbp_partconfig_set_target_data(CPartConfig config, String path);
-        static native Pointer mbp_partconfig_target_system_partition(CPartConfig config);
-        static native void mbp_partconfig_set_target_system_partition(CPartConfig config, String partition);
-        static native Pointer mbp_partconfig_target_cache_partition(CPartConfig config);
-        static native void mbp_partconfig_set_target_cache_partition(CPartConfig config, String partition);
-        static native Pointer mbp_partconfig_target_data_partition(CPartConfig config);
-        static native void mbp_partconfig_set_target_data_partition(CPartConfig config, String partition);
         // END: cpartitionconfig.h
 
         // BEGIN: cpatcherconfig.h
@@ -1277,18 +1268,6 @@ public class LibMbp {
             }
         };
 
-        public static String System() {
-            return CWrapper.mbp_partconfig_system();
-        }
-
-        public static String Cache() {
-            return CWrapper.mbp_partconfig_cache();
-        }
-
-        public static String Data() {
-            return CWrapper.mbp_partconfig_data();
-        }
-
         public String getName() {
             log(mCPartConfig, PartConfig.class, "getName");
             Pointer p = CWrapper.mbp_partconfig_name(mCPartConfig);
@@ -1380,43 +1359,11 @@ public class LibMbp {
             CWrapper.mbp_partconfig_set_target_data(mCPartConfig, path);
         }
 
-        public String getTargetSystemPartition() {
-            log(mCPartConfig, PartConfig.class, "getTargetSystemPartition");
-            Pointer p = CWrapper.mbp_partconfig_target_system_partition(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
         public void setTargetSystemPartition(String partition) {
             log(mCPartConfig, PartConfig.class, "setTargetSystemPartition", partition);
             ensureNotNull(partition);
 
             CWrapper.mbp_partconfig_set_target_system_partition(mCPartConfig, partition);
-        }
-
-        public String getTargetCachePartition() {
-            log(mCPartConfig, PartConfig.class, "getTargetCachePartition");
-            Pointer p = CWrapper.mbp_partconfig_target_cache_partition(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setTargetCachePartition(String partition) {
-            log(mCPartConfig, PartConfig.class, "setTargetCachePartition", partition);
-            ensureNotNull(partition);
-
-            CWrapper.mbp_partconfig_set_target_cache_partition(mCPartConfig, partition);
-        }
-
-        public String getTargetDataPartition() {
-            log(mCPartConfig, PartConfig.class, "getTargetDataPartition");
-            Pointer p = CWrapper.mbp_partconfig_target_data_partition(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setTargetDataPartition(String partition) {
-            log(mCPartConfig, PartConfig.class, "setTargetDataPartition", partition);
-            ensureNotNull(partition);
-
-            CWrapper.mbp_partconfig_set_target_data_partition(mCPartConfig, partition);
         }
     }
 

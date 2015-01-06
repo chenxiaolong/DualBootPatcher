@@ -47,27 +47,6 @@
 
 extern "C" {
 
-// Static constants
-
-/*! \brief System partition constant */
-const char * mbp_partconfig_system(void)
-{
-    return PartitionConfig::System.c_str();
-}
-
-/*! \brief Cache partition constant */
-const char * mbp_partconfig_cache(void)
-{
-    return PartitionConfig::Cache.c_str();
-}
-
-/*! \brief Data partition constant */
-const char * mbp_partconfig_data(void)
-{
-    return PartitionConfig::Data.c_str();
-}
-
-
 /*!
  * \brief Create a new CPartConfig object.
  *
@@ -314,108 +293,6 @@ void mbp_partconfig_set_target_data(CPartConfig *config, const char *path)
 {
     CAST(config);
     pc->setTargetData(path);
-}
-
-/*!
- * \brief Source partition of /system bind mount
- *
- * \param config CPartConfig object
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \return mbp_partconfig_system(), mbp_partconfig_cache(), or
- *         mbp_partconfig_data()
- *
- * \sa PartitionConfig::targetSystemPartition()
- */
-char * mbp_partconfig_target_system_partition(const CPartConfig *config)
-{
-    CCAST(config);
-    return string_to_cstring(pc->targetSystemPartition());
-}
-
-/*!
- * \brief Set source partition of /system bind mount
- *
- * \param config CPartConfig object
- * \param partition Source partition
- *
- * \sa PartitionConfig::setTargetSystemPartition()
- */
-void mbp_partconfig_set_target_system_partition(CPartConfig *config,
-                                                const char *path)
-{
-    CAST(config);
-    pc->setTargetSystemPartition(path);
-}
-
-/*!
- * \brief Source partition of /cache bind mount
- *
- * \param config CPartConfig object
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \return mbp_partconfig_system(), mbp_partconfig_cache(), or
- *         mbp_partconfig_data()
- *
- * \sa PartitionConfig::targetCachePartition()
- */
-char * mbp_partconfig_target_cache_partition(const CPartConfig *config)
-{
-    CCAST(config);
-    return string_to_cstring(pc->targetCachePartition());
-}
-
-/*!
- * \brief Set source partition of /cache bind mount
- *
- * \param config CPartConfig object
- * \param partition Source partition
- *
- * \sa PartitionConfig::setTargetCachePartition()
- */
-void mbp_partconfig_set_target_cache_partition(CPartConfig *config,
-                                               const char *path)
-{
-    CAST(config);
-    pc->setTargetCachePartition(path);
-}
-
-/*!
- * \brief Source partition of /data bind mount
- *
- * \param config CPartConfig object
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \return mbp_partconfig_system(), mbp_partconfig_cache(), or
- *         mbp_partconfig_data()
- *
- * \sa PartitionConfig::targetDataPartition()
- */
-char * mbp_partconfig_target_data_partition(const CPartConfig *config)
-{
-    CCAST(config);
-    return string_to_cstring(pc->targetDataPartition());
-}
-
-/*!
- * \brief Set source partition of /data bind mount
- *
- * \param config CPartConfig object
- * \param partition Source partition
- *
- * \sa PartitionConfig::setTargetDataPartition()
- */
-void mbp_partconfig_set_target_data_partition(CPartConfig *config,
-                                              const char *path)
-{
-    CAST(config);
-    pc->setTargetDataPartition(path);
 }
 
 }

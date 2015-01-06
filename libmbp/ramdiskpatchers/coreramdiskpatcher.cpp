@@ -72,9 +72,6 @@ static const std::string TagPcDescription = "description";
 static const std::string TagPcTargetSystem = "target-system";
 static const std::string TagPcTargetCache = "target-cache";
 static const std::string TagPcTargetData = "target-data";
-static const std::string TagPcTargetSystemPartition = "target-system-partition";
-static const std::string TagPcTargetCachePartition = "target-cache-partition";
-static const std::string TagPcTargetDataPartition = "target-data-partition";
 
 CoreRamdiskPatcher::CoreRamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
@@ -177,41 +174,6 @@ bool CoreRamdiskPatcher::addConfigJson()
         jsonPc[TagPcTargetSystem] = config->targetSystem();
         jsonPc[TagPcTargetCache] = config->targetCache();
         jsonPc[TagPcTargetData] = config->targetData();
-
-        // TODO: Temporary hack
-        std::string tpSystem(config->targetSystemPartition());
-        std::string tpCache(config->targetCachePartition());
-        std::string tpData(config->targetDataPartition());
-
-        if (tpSystem == PartitionConfig::System) {
-            jsonPc[TagPcTargetSystemPartition] = "/system";
-        } else if (tpSystem == PartitionConfig::Cache) {
-            jsonPc[TagPcTargetSystemPartition] = "/cache";
-        } else if (tpSystem == PartitionConfig::Data) {
-            jsonPc[TagPcTargetSystemPartition] = "/data";
-        } else {
-            jsonPc[TagPcTargetSystemPartition] = tpSystem;
-        }
-
-        if (tpCache == PartitionConfig::System) {
-            jsonPc[TagPcTargetCachePartition] = "/system";
-        } else if (tpCache == PartitionConfig::Cache) {
-            jsonPc[TagPcTargetCachePartition] = "/cache";
-        } else if (tpCache == PartitionConfig::Data) {
-            jsonPc[TagPcTargetCachePartition] = "/data";
-        } else {
-            jsonPc[TagPcTargetCachePartition] = tpCache;
-        }
-
-        if (tpData == PartitionConfig::System) {
-            jsonPc[TagPcTargetDataPartition] = "/system";
-        } else if (tpData == PartitionConfig::Cache) {
-            jsonPc[TagPcTargetDataPartition] = "/cache";
-        } else if (tpData == PartitionConfig::Data) {
-            jsonPc[TagPcTargetDataPartition] = "/data";
-        } else {
-            jsonPc[TagPcTargetDataPartition] = tpData;
-        }
 
         jsonPcs.append(jsonPc);
     }

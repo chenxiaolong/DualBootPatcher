@@ -27,10 +27,6 @@
 extern "C" {
 #endif
 
-const char * mbp_partconfig_system(void);
-const char * mbp_partconfig_cache(void);
-const char * mbp_partconfig_data(void);
-
 CPartConfig * mbp_partconfig_create(void);
 void mbp_partconfig_destroy(CPartConfig *config);
 
@@ -55,18 +51,6 @@ void mbp_partconfig_set_target_cache(CPartConfig *config, const char *path);
 
 char * mbp_partconfig_target_data(const CPartConfig *config);
 void mbp_partconfig_set_target_data(CPartConfig *config, const char *path);
-
-char * mbp_partconfig_target_system_partition(const CPartConfig *config);
-void mbp_partconfig_set_target_system_partition(CPartConfig *config,
-                                                const char *partition);
-
-char * mbp_partconfig_target_cache_partition(const CPartConfig *config);
-void mbp_partconfig_set_target_cache_partition(CPartConfig *config,
-                                               const char *partition);
-
-char * mbp_partconfig_target_data_partition(const CPartConfig *config);
-void mbp_partconfig_set_target_data_partition(CPartConfig *config,
-                                              const char *partition);
 
 #ifdef __cplusplus
 }

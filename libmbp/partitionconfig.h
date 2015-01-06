@@ -28,10 +28,6 @@
 class MBP_EXPORT PartitionConfig
 {
 public:
-    static const std::string System;
-    static const std::string Cache;
-    static const std::string Data;
-
     PartitionConfig();
     ~PartitionConfig();
 
@@ -55,15 +51,6 @@ public:
 
     std::string targetData() const;
     void setTargetData(std::string path);
-
-    std::string targetSystemPartition() const;
-    void setTargetSystemPartition(std::string partition);
-
-    std::string targetCachePartition() const;
-    void setTargetCachePartition(std::string partition);
-
-    std::string targetDataPartition() const;
-    void setTargetDataPartition(std::string partition);
 
 private:
     class Impl;

@@ -133,13 +133,9 @@ std::vector<PartitionConfig *> MultiBootPatcher::partConfigs()
     dual->setName(tr("Dual Boot"));
     dual->setDescription((boost::format(romInstalled) % "/system/dual").str());
 
-    dual->setTargetSystem("/raw-system/dual");
-    dual->setTargetCache("/raw-cache/dual");
-    dual->setTargetData("/raw-data/dual");
-
-    dual->setTargetSystemPartition(PartitionConfig::System);
-    dual->setTargetCachePartition(PartitionConfig::Cache);
-    dual->setTargetDataPartition(PartitionConfig::Data);
+    dual->setTargetSystem("/system/dual");
+    dual->setTargetCache("/cache/dual");
+    dual->setTargetData("/data/dual");
 
     configs.push_back(dual);
 
@@ -156,15 +152,11 @@ std::vector<PartitionConfig *> MultiBootPatcher::partConfigs()
                 % (i + 1)).str()).str());
 
         multiSlot->setTargetSystem(
-                (boost::format("/raw-cache/multi-slot-%1$d/system") % (i + 1)).str());
+                (boost::format("/cache/multi-slot-%1$d/system") % (i + 1)).str());
         multiSlot->setTargetCache(
-                (boost::format("/raw-system/multi-slot-%1$d/cache") % (i + 1)).str());
+                (boost::format("/system/multi-slot-%1$d/cache") % (i + 1)).str());
         multiSlot->setTargetData(
-                (boost::format("/raw-data/multi-slot-%1$d") % (i + 1)).str());
-
-        multiSlot->setTargetSystemPartition(PartitionConfig::Cache);
-        multiSlot->setTargetCachePartition(PartitionConfig::System);
-        multiSlot->setTargetDataPartition(PartitionConfig::Data);
+                (boost::format("/data/multi-slot-%1$d") % (i + 1)).str());
 
         configs.push_back(multiSlot);
     }

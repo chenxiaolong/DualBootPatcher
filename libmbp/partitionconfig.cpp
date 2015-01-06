@@ -37,20 +37,8 @@ public:
     std::string targetSystem;
     std::string targetCache;
     std::string targetData;
-
-    std::string targetSystemPartition;
-    std::string targetCachePartition;
-    std::string targetDataPartition;
 };
 /*! \endcond */
-
-
-/*! \brief System partition */
-const std::string PartitionConfig::System = "$DEV_SYSTEM";
-/*! \brief Cache partition */
-const std::string PartitionConfig::Cache = "$DEV_CACHE";
-/*! \brief Data partition */
-const std::string PartitionConfig::Data = "$DEV_DATA";
 
 
 /*!
@@ -215,67 +203,4 @@ std::string PartitionConfig::targetData() const
 void PartitionConfig::setTargetData(std::string path)
 {
     m_impl->targetData = std::move(path);
-}
-
-/*!
- * \brief Source partition of /system bind mount
- *
- * \return PartitionConfig::System, PartitionConfig::Cache, or
- *         PartitionConfig::Data
- */
-std::string PartitionConfig::targetSystemPartition() const
-{
-    return m_impl->targetSystemPartition;
-}
-
-/*!
- * \brief Set source partition of /system bind mount
- *
- * \param partition Source partition
- */
-void PartitionConfig::setTargetSystemPartition(std::string partition)
-{
-    m_impl->targetSystemPartition = std::move(partition);
-}
-
-/*!
- * \brief Source partition of /cache bind mount
- *
- * \return PartitionConfig::System, PartitionConfig::Cache, or
- *         PartitionConfig::Data
- */
-std::string PartitionConfig::targetCachePartition() const
-{
-    return m_impl->targetCachePartition;
-}
-
-/*!
- * \brief Set source partition of /cache bind mount
- *
- * \param partition Source partition
- */
-void PartitionConfig::setTargetCachePartition(std::string partition)
-{
-    m_impl->targetCachePartition = std::move(partition);
-}
-
-/*!
- * \brief Source partition of /data bind mount
- *
- * \return PartitionConfig::System, PartitionConfig::Cache, or
- *         PartitionConfig::Data
- */
-std::string PartitionConfig::targetDataPartition() const
-{
-    return m_impl->targetDataPartition;
-}
-
-/*!
- * \brief Set source partition of /cache bind mount
- *
- * \param partition Source partition
- */
-void PartitionConfig::setTargetDataPartition(std::string partition)
-{
-    m_impl->targetDataPartition = std::move(partition);
 }

@@ -176,10 +176,6 @@ std::vector<PartitionConfig *> PrimaryUpgradePatcher::partConfigs()
     config->setTargetCache("/cache");
     config->setTargetData("/data");
 
-    config->setTargetSystemPartition(PartitionConfig::System);
-    config->setTargetCachePartition(PartitionConfig::Cache);
-    config->setTargetDataPartition(PartitionConfig::Data);
-
     std::vector<PartitionConfig *> configs;
     configs.push_back(config);
 
