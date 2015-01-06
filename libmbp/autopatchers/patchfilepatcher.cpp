@@ -145,11 +145,8 @@ std::vector<std::string> PatchFilePatcher::existingFiles() const
     return m_impl->files;
 }
 
-bool PatchFilePatcher::patchFiles(const std::string &directory,
-                                  const std::vector<std::string> &bootImages)
+bool PatchFilePatcher::patchFiles(const std::string &directory)
 {
-    (void) bootImages;
-
 #if defined(__ANDROID__)
     std::string patch = m_impl->pc->binariesDirectory();
     patch += "/android/";

@@ -48,8 +48,7 @@ CPatcherError * mbp_autopatcher_error(const CAutoPatcher *patcher);
 char * mbp_autopatcher_id(const CAutoPatcher *patcher);
 char ** mbp_autopatcher_new_files(const CAutoPatcher *patcher);
 char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher);
-int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory,
-                                const char **bootImages);
+int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
 
 CPatcherError * mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);

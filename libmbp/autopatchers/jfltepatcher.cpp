@@ -87,11 +87,8 @@ std::vector<std::string> JflteDalvikCachePatcher::existingFiles() const
     return files;
 }
 
-bool JflteDalvikCachePatcher::patchFiles(const std::string &directory,
-                                         const std::vector<std::string> &bootImages)
+bool JflteDalvikCachePatcher::patchFiles(const std::string &directory)
 {
-    (void) bootImages;
-
     std::vector<unsigned char> contents;
 
     // BuildProp begin
@@ -142,11 +139,8 @@ std::vector<std::string> JflteImperiumPatcher::existingFiles() const
     return files;
 }
 
-bool JflteImperiumPatcher::patchFiles(const std::string &directory,
-                                      const std::vector<std::string> &bootImages)
+bool JflteImperiumPatcher::patchFiles(const std::string &directory)
 {
-    (void) bootImages;
-
     std::vector<unsigned char> contents;
 
     // StandardPatcher::UpdaterScript begin
@@ -194,11 +188,8 @@ std::vector<std::string> JflteNegaliteNoWipeData::existingFiles() const
     return files;
 }
 
-bool JflteNegaliteNoWipeData::patchFiles(const std::string &directory,
-                                         const std::vector<std::string> &bootImages)
+bool JflteNegaliteNoWipeData::patchFiles(const std::string &directory)
 {
-    (void) bootImages;
-
     std::vector<unsigned char> contents;
 
     // StandardPatcher::UpdaterScript begin

@@ -88,12 +88,10 @@ public:
 
     bool pass1(archive * const aOutput,
                const std::string &temporaryDir,
-               const std::unordered_set<std::string> &exclude,
-               std::vector<std::string> *bootImages);
+               const std::unordered_set<std::string> &exclude);
     bool pass2(archive * const aOutput,
                const std::string &temporaryDir,
-               const std::unordered_set<std::string> &files,
-               const std::vector<std::string> &bootImages);
+               const std::unordered_set<std::string> &files);
     bool openInputArchive();
     void closeInputArchive();
     bool openOutputArchive();
@@ -378,8 +376,6 @@ bool MultiBootPatcher::Impl::patchZip()
         progressCb(progress, userData);
     }
 
-    std::vector<std::string> bootImages;
-
     if (!openInputArchive()) {
         return false;
     }
@@ -387,7 +383,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // Create temporary dir for extracted files for autopatchers
     std::string tempDir = createTemporaryDir(pc->tempDirectory());
 
-    if (!pass1(aOutput, tempDir, excludeFromPass1, &bootImages)) {
+    if (!pass1(aOutput, tempDir, excludeFromPass1)) {
         boost::filesystem::remove_all(tempDir);
         return false;
     }
@@ -396,7 +392,7 @@ bool MultiBootPatcher::Impl::patchZip()
 
     // On the second pass, run the autopatchers on the rest of the files
 
-    if (!pass2(aOutput, tempDir, excludeFromPass1, bootImages)) {
+    if (!pass2(aOutput, tempDir, excludeFromPass1)) {
         boost::filesystem::remove_all(tempDir);
         return false;
     }
@@ -439,8 +435,7 @@ bool MultiBootPatcher::Impl::patchZip()
  */
 bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
                                    const std::string &temporaryDir,
-                                   const std::unordered_set<std::string> &exclude,
-                                   std::vector<std::string> *bootImages)
+                                   const std::unordered_set<std::string> &exclude)
 {
     const std::string key = info->patchInfo()->keyFromFilename(info->filename());
 
@@ -496,8 +491,6 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             static const char *magic = "ANDROID!";
             auto it = std::search(data.begin(), data.end(), magic, magic + 8);
             if (it != data.end() && it - data.begin() <= 512) {
-                bootImages->push_back(curFile);
-
                 if (!patchBootImage(&data)) {
                     return false;
                 }
@@ -555,12 +548,11 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
  */
 bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
                                    const std::string &temporaryDir,
-                                   const std::unordered_set<std::string> &files,
-                                   const std::vector<std::string> &bootImages)
+                                   const std::unordered_set<std::string> &files)
 {
     for (auto *ap : autoPatchers) {
         RETURN_IF_CANCELLED
-        if (!ap->patchFiles(temporaryDir, bootImages)) {
+        if (!ap->patchFiles(temporaryDir)) {
             error = ap->error();
             return false;
         }

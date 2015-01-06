@@ -257,7 +257,7 @@ public class LibMbp {
         static native Pointer mbp_autopatcher_id(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_new_files(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_existing_files(CAutoPatcher patcher);
-        static native int mbp_autopatcher_patch_files(CAutoPatcher patcher, String directory, StringArray bootImages);
+        static native int mbp_autopatcher_patch_files(CAutoPatcher patcher, String directory);
 
         static native CPatcherError mbp_ramdiskpatcher_error(CRamdiskPatcher patcher);
         static native Pointer mbp_ramdiskpatcher_id(CRamdiskPatcher patcher);
@@ -2199,13 +2199,12 @@ public class LibMbp {
             return getStringArrayAndFree(p);
         }
 
-        public boolean patchFiles(String directory, String[] bootImages) {
-            log(mCAutoPatcher, AutoPatcher.class, "patchFiles", directory, bootImages);
+        public boolean patchFiles(String directory) {
+            log(mCAutoPatcher, AutoPatcher.class, "patchFiles", directory);
             ensureNotNull(directory);
-            ensureNotNull(bootImages);
 
             int ret = CWrapper.mbp_autopatcher_patch_files(
-                    mCAutoPatcher, directory, new StringArray(bootImages));
+                    mCAutoPatcher, directory);
             return ret == 0;
         }
     }

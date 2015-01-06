@@ -93,11 +93,8 @@ std::vector<std::string> StandardPatcher::existingFiles() const
     return files;
 }
 
-bool StandardPatcher::patchFiles(const std::string &directory,
-                                 const std::vector<std::string> &bootImages)
+bool StandardPatcher::patchFiles(const std::string &directory)
 {
-    (void) bootImages;
-
     std::vector<unsigned char> contents;
 
     // UpdaterScript begin

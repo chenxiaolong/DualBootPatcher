@@ -309,16 +309,14 @@ char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher)
  *
  * \param patcher CAutoPatcher object
  * \param directory Directory containing the files to be patched
- * \param bootImages List of boot image filenames in the zip file
  * \return 0 on success, otherwise -1 (and error set appropriately)
  *
  * \sa AutoPatcher::patchFiles()
  */
-int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory,
-                                const char **bootImages)
+int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory)
 {
     CASTAP(patcher);
-    bool ret = ap->patchFiles(directory, cstring_array_to_vector(bootImages));
+    bool ret = ap->patchFiles(directory);
     return ret ? 0 : -1;
 }
 

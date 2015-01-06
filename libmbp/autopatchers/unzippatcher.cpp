@@ -117,11 +117,8 @@ std::vector<std::string> UnzipPatcher::existingFiles() const
     return m_impl->files;
 }
 
-bool UnzipPatcher::patchFiles(const std::string &directory,
-                              const std::vector<std::string> &bootImages)
+bool UnzipPatcher::patchFiles(const std::string &directory)
 {
-    (void) bootImages;
-
     if (m_impl->files.empty()) {
         return true;
     }
