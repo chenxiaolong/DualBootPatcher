@@ -18,7 +18,7 @@
 #define __UCLIBC_MUTEX_UNLOCK(M)    pthread_mutex_unlock(&(M))
 #endif
 
-#ifdef __ANDROID_API__
+#ifdef __ANDROID__
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
 
