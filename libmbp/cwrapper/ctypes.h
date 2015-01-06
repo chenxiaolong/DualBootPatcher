@@ -35,9 +35,6 @@ typedef struct CDevice CDevice;
 struct CFileInfo;
 typedef struct CFileInfo CFileInfo;
 
-struct CPartConfig;
-typedef struct CPartConfig CPartConfig;
-
 struct CPatcherConfig;
 typedef struct CPatcherConfig CPatcherConfig;
 

@@ -69,9 +69,6 @@ public:
     // PatchInfos
     std::vector<PatchInfo *> patchInfos;
 
-    // Partition configurations
-    std::vector<PartitionConfig *> partConfigs;
-
     bool loadedConfig;
 
     // Errors
@@ -83,7 +80,6 @@ public:
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
 
     void loadDefaultDevices();
-    void loadDefaultPatchers();
 
     // XML parsing functions for the patchinfo files
     bool loadPatchInfoXml(const std::string &path, const std::string &pathId);
@@ -138,7 +134,6 @@ const xmlChar *XmlTextFalse = (xmlChar *) "false";
 PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
     m_impl->loadDefaultDevices();
-    m_impl->loadDefaultPatchers();
 
     m_impl->patchinfoIncludeDirs.push_back("Google_Apps");
     m_impl->patchinfoIncludeDirs.push_back("Other");
@@ -159,12 +154,6 @@ PatcherConfig::~PatcherConfig()
         delete info;
     }
     m_impl->patchInfos.clear();
-
-    // Clean up partconfigs
-    for (PartitionConfig *config : m_impl->partConfigs) {
-        delete config;
-    }
-    m_impl->partConfigs.clear();
 
     for (Patcher *patcher : m_impl->allocPatchers) {
         destroyPatcher(patcher);
@@ -527,15 +516,6 @@ void PatcherConfig::Impl::loadDefaultDevices()
     devices.push_back(device);
 }
 
-void PatcherConfig::Impl::loadDefaultPatchers()
-{
-    auto configs1 = MultiBootPatcher::partConfigs();
-    auto configs2 = PrimaryUpgradePatcher::partConfigs();
-
-    partConfigs.insert(partConfigs.end(), configs1.begin(), configs1.end());
-    partConfigs.insert(partConfigs.end(), configs2.begin(), configs2.end());
-}
-
 /*!
  * \brief Get list of Patcher IDs
  *
@@ -749,16 +729,6 @@ void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
     assert(it != m_impl->allocRamdiskPatchers.end());
 
     m_impl->allocRamdiskPatchers.erase(it);
-}
-
-/*!
- * \brief Get list of partition configurations
- *
- * \return List of partition configurations
- */
-std::vector<PartitionConfig *> PatcherConfig::partitionConfigs() const
-{
-    return m_impl->partConfigs;
 }
 
 // Based on the code from:

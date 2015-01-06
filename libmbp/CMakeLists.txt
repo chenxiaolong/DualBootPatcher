@@ -10,7 +10,6 @@ set(MBP_SOURCES
     cpiofile.cpp
     device.cpp
     fileinfo.cpp
-    partitionconfig.cpp
     patcherconfig.cpp
     patchererror.cpp
     patchinfo.cpp
@@ -20,7 +19,6 @@ set(MBP_SOURCES
     cwrapper/ccpiofile.cpp
     cwrapper/cdevice.cpp
     cwrapper/cfileinfo.cpp
-    cwrapper/cpartitionconfig.cpp
     cwrapper/cpatcherconfig.cpp
     cwrapper/cpatchererror.cpp
     cwrapper/cpatcherinterface.cpp
@@ -57,7 +55,6 @@ set(MBP_HEADERS
     device.h
     fileinfo.h
     libmbp_global.h
-    partitionconfig.h
     patcherconfig.h
     patchererror.h
     patcherinterface.h

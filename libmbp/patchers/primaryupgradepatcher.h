@@ -34,8 +34,6 @@ public:
     static const std::string Id;
     static const std::string Name;
 
-    static std::vector<PartitionConfig *> partConfigs();
-
     // Error reporting
     virtual PatcherError error() const;
 
@@ -43,7 +41,6 @@ public:
     virtual std::string id() const;
     virtual std::string name() const;
     virtual bool usesPatchInfo() const;
-    virtual std::vector<std::string> supportedPartConfigIds() const;
 
     // Patching
     virtual void setFileInfo(const FileInfo * const info);

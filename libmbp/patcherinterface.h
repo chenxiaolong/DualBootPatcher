@@ -23,7 +23,6 @@
 
 #include "cpiofile.h"
 #include "fileinfo.h"
-#include "partitionconfig.h"
 #include "patchinfo.h"
 
 
@@ -67,11 +66,6 @@ public:
         \brief Whether or not the patcher uses patchinfo files
      */
     virtual bool usesPatchInfo() const = 0;
-
-    /*!
-        \brief List of supported partition configuration IDs
-     */
-    virtual std::vector<std::string> supportedPartConfigIds() const = 0;
 
     /*!
         \brief Sets the FileInfo object corresponding to the file to patch

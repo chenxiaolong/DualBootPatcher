@@ -162,26 +162,6 @@ PrimaryUpgradePatcher::~PrimaryUpgradePatcher()
 {
 }
 
-std::vector<PartitionConfig *> PrimaryUpgradePatcher::partConfigs()
-{
-    // Add primary upgrade partition configuration
-    PartitionConfig *config = new PartitionConfig();
-    config->setId("primaryupgrade");
-    config->setKernel("primary");
-    config->setName(tr("Primary ROM Upgrade"));
-    config->setDescription(
-        tr("Upgrade primary ROM without wiping other ROMs"));
-
-    config->setTargetSystem("/system");
-    config->setTargetCache("/cache");
-    config->setTargetData("/data");
-
-    std::vector<PartitionConfig *> configs;
-    configs.push_back(config);
-
-    return configs;
-}
-
 PatcherError PrimaryUpgradePatcher::error() const
 {
     return m_impl->error;
@@ -200,13 +180,6 @@ std::string PrimaryUpgradePatcher::name() const
 bool PrimaryUpgradePatcher::usesPatchInfo() const
 {
     return false;
-}
-
-std::vector<std::string> PrimaryUpgradePatcher::supportedPartConfigIds() const
-{
-    std::vector<std::string> configs;
-    configs.push_back("primaryupgrade");
-    return configs;
 }
 
 void PrimaryUpgradePatcher::setFileInfo(const FileInfo * const info)
@@ -402,8 +375,6 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
         error = pe;
         return false;
     }
-
-    //info->partConfig()->replaceShellLine(&contents);
 
     pe = FileUtils::laAddFile(aOutput, DualBootTool, contents);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {

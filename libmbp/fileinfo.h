@@ -25,7 +25,6 @@
 
 #include "device.h"
 #include "patchinfo.h"
-#include "partitionconfig.h"
 
 
 class MBP_EXPORT FileInfo
@@ -42,9 +41,6 @@ public:
 
     Device * device() const;
     void setDevice(Device * const device);
-
-    PartitionConfig * partConfig() const;
-    void setPartConfig(PartitionConfig * const config);
 
 private:
     class Impl;

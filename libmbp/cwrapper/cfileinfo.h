@@ -37,9 +37,6 @@ void mbp_fileinfo_set_patchinfo(CFileInfo *info, CPatchInfo *pInfo);
 CDevice * mbp_fileinfo_device(const CFileInfo *info);
 void mbp_fileinfo_set_device(CFileInfo *info, CDevice * device);
 
-CPartConfig * mbp_fileinfo_partconfig(const CFileInfo *info);
-void mbp_fileinfo_set_partconfig(CFileInfo *info, CPartConfig *config);
-
 #ifdef __cplusplus
 }
 #endif

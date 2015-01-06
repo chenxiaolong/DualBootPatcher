@@ -9,7 +9,6 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CBootI
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CCpioFile;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CDevice;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CFileInfo;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CPartConfig;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CPatchInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CPatcher;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CWrapper.CPatcherConfig;
@@ -46,7 +45,6 @@ public class LibMbp {
         public static class CCpioFile extends PointerType {}
         public static class CDevice extends PointerType {}
         public static class CFileInfo extends PointerType {}
-        public static class CPartConfig extends PointerType {}
         public static class CPatcherConfig extends PointerType {}
         public static class CPatcherError extends PointerType {}
         public static class CPatchInfo extends PointerType {}
@@ -145,28 +143,7 @@ public class LibMbp {
         static native void mbp_fileinfo_set_patchinfo(CFileInfo info, CPatchInfo pInfo);
         static native CDevice mbp_fileinfo_device(CFileInfo info);
         static native void mbp_fileinfo_set_device(CFileInfo info, CDevice device);
-        static native CPartConfig mbp_fileinfo_partconfig(CFileInfo info);
-        static native void mbp_fileinfo_set_partconfig(CFileInfo info, CPartConfig config);
         // END: cfileinfo.h
-
-        // BEGIN: cpartitionconfig.h
-        static native CPartConfig mbp_partconfig_create();
-        static native void mbp_partconfig_destroy(CPartConfig config);
-        static native Pointer mbp_partconfig_name(CPartConfig config);
-        static native void mbp_partconfig_set_name(CPartConfig config, String name);
-        static native Pointer mbp_partconfig_description(CPartConfig config);
-        static native void mbp_partconfig_set_description(CPartConfig config, String description);
-        static native Pointer mbp_partconfig_kernel(CPartConfig config);
-        static native void mbp_partconfig_set_kernel(CPartConfig config, String kernel);
-        static native Pointer mbp_partconfig_id(CPartConfig config);
-        static native void mbp_partconfig_set_id(CPartConfig config, String id);
-        static native Pointer mbp_partconfig_target_system(CPartConfig config);
-        static native void mbp_partconfig_set_target_system(CPartConfig config, String path);
-        static native Pointer mbp_partconfig_target_cache(CPartConfig config);
-        static native void mbp_partconfig_set_target_cache(CPartConfig config, String path);
-        static native Pointer mbp_partconfig_target_data(CPartConfig config);
-        static native void mbp_partconfig_set_target_data(CPartConfig config, String path);
-        // END: cpartitionconfig.h
 
         // BEGIN: cpatcherconfig.h
         static native CPatcherConfig mbp_config_create();
@@ -199,7 +176,6 @@ public class LibMbp {
         static native void mbp_config_destroy_patcher(CPatcherConfig pc, CPatcher patcher);
         static native void mbp_config_destroy_autopatcher(CPatcherConfig pc, CAutoPatcher patcher);
         static native void mbp_config_destroy_ramdisk_patcher(CPatcherConfig pc, CRamdiskPatcher patcher);
-        static native Pointer mbp_config_partitionconfigs(CPatcherConfig pc);
         static native boolean mbp_config_load_patchinfos(CPatcherConfig pc);
         // END: cpatcherconfig.h
 
@@ -272,7 +248,6 @@ public class LibMbp {
         static native Pointer mbp_patcher_id(CPatcher patcher);
         static native Pointer mbp_patcher_name(CPatcher patcher);
         static native boolean mbp_patcher_uses_patchinfo(CPatcher patcher);
-        static native Pointer mbp_patcher_supported_partconfig_ids(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
         static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
         static native int mbp_patcher_patch_file(CPatcher patcher, MaxProgressUpdatedCallback maxProgressCb, ProgressUpdatedCallback progressCb, DetailsUpdatedCallback detailsCb, Pointer userData);
@@ -1166,205 +1141,6 @@ public class LibMbp {
 
             CWrapper.mbp_fileinfo_set_device(mCFileInfo, device.getPointer());
         }
-
-        public PartConfig getPartConfig() {
-            log(mCFileInfo, FileInfo.class, "getPartConfig");
-            CPartConfig cPc = CWrapper.mbp_fileinfo_partconfig(mCFileInfo);
-            return cPc == null ? null : new PartConfig(cPc, false);
-        }
-
-        public void setPartConfig(PartConfig config) {
-            log(mCFileInfo, FileInfo.class, "setPartConfig", config);
-            ensureNotNull(config);
-
-            CWrapper.mbp_fileinfo_set_partconfig(mCFileInfo, config.getPointer());
-        }
-    }
-
-    public static class PartConfig implements Parcelable {
-        private static HashMap<CPartConfig, Integer> sInstances =
-                new HashMap<CPartConfig, Integer>();
-        private CPartConfig mCPartConfig;
-        private boolean mDestroyable;
-
-        public PartConfig() {
-            mCPartConfig = CWrapper.mbp_partconfig_create();
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPartConfig);
-            }
-            mDestroyable = true;
-            log(mCPartConfig, PartConfig.class, "(Constructor)");
-        }
-
-        PartConfig(CPartConfig cPartConfig, boolean destroyable) {
-            ensureNotNull(cPartConfig);
-
-            mCPartConfig = cPartConfig;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPartConfig);
-            }
-            mDestroyable = destroyable;
-            log(mCPartConfig, PartConfig.class, "(Constructor)");
-        }
-
-        public void destroy() {
-            log(mCPartConfig, PartConfig.class, "destroy");
-            synchronized (sInstances) {
-                if (mCPartConfig != null && decrementRefCount(sInstances, mCPartConfig)
-                        && mDestroyable) {
-                    log(mCPartConfig, PartConfig.class, "(Destroyed)");
-                    CWrapper.mbp_partconfig_destroy(mCPartConfig);
-                }
-                mCPartConfig = null;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof PartConfig && mCPartConfig.equals(((PartConfig) o).mCPartConfig);
-        }
-
-        @Override
-        public void finalize() {
-            destroy();
-        }
-
-        CPartConfig getPointer() {
-            log(mCPartConfig, PartConfig.class, "getPointer");
-            return mCPartConfig;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            long peer = Pointer.nativeValue(mCPartConfig.getPointer());
-            out.writeLong(peer);
-            out.writeInt(mDestroyable ? 1 : 0);
-        }
-
-        private PartConfig(Parcel in) {
-            long peer = in.readLong();
-            mCPartConfig = new CPartConfig();
-            mCPartConfig.setPointer(new Pointer(peer));
-            mDestroyable = in.readInt() != 0;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPartConfig);
-            }
-            log(mCPartConfig, PartConfig.class, "(Constructor)");
-        }
-
-        public static final Parcelable.Creator<PartConfig> CREATOR
-                = new Parcelable.Creator<PartConfig>() {
-            public PartConfig createFromParcel(Parcel in) {
-                return new PartConfig(in);
-            }
-
-            public PartConfig[] newArray(int size) {
-                return new PartConfig[size];
-            }
-        };
-
-        public String getName() {
-            log(mCPartConfig, PartConfig.class, "getName");
-            Pointer p = CWrapper.mbp_partconfig_name(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setName(String name) {
-            log(mCPartConfig, PartConfig.class, "setName", name);
-            ensureNotNull(name);
-
-            CWrapper.mbp_partconfig_set_name(mCPartConfig, name);
-        }
-
-        public String getDescription() {
-            log(mCPartConfig, PartConfig.class, "getDescription");
-            Pointer p = CWrapper.mbp_partconfig_description(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setDescription(String description) {
-            log(mCPartConfig, PartConfig.class, "setDescription", description);
-            ensureNotNull(description);
-
-            CWrapper.mbp_partconfig_set_description(mCPartConfig, description);
-        }
-
-        public String getKernel() {
-            log(mCPartConfig, PartConfig.class, "getKernel");
-            Pointer p = CWrapper.mbp_partconfig_kernel(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setKernel(String kernel) {
-            log(mCPartConfig, PartConfig.class, "setKernel", kernel);
-            ensureNotNull(kernel);
-
-            CWrapper.mbp_partconfig_set_kernel(mCPartConfig, kernel);
-        }
-
-        public String getId() {
-            log(mCPartConfig, PartConfig.class, "getId");
-            Pointer p = CWrapper.mbp_partconfig_id(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setId(String id) {
-            log(mCPartConfig, PartConfig.class, "setId", id);
-            ensureNotNull(id);
-
-            CWrapper.mbp_partconfig_set_id(mCPartConfig, id);
-        }
-
-        public String getTargetSystem() {
-            log(mCPartConfig, PartConfig.class, "getTargetSystem");
-            Pointer p = CWrapper.mbp_partconfig_target_system(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setTargetSystem(String path) {
-            log(mCPartConfig, PartConfig.class, "setTargetSystem", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_partconfig_set_target_system(mCPartConfig, path);
-        }
-
-        public String getTargetCache() {
-            log(mCPartConfig, PartConfig.class, "getTargetCache");
-            Pointer p = CWrapper.mbp_partconfig_target_cache(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setTargetCache(String path) {
-            log(mCPartConfig, PartConfig.class, "setTargetCache", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_partconfig_set_target_cache(mCPartConfig, path);
-        }
-
-        public String getTargetData() {
-            log(mCPartConfig, PartConfig.class, "getTargetData");
-            Pointer p = CWrapper.mbp_partconfig_target_data(mCPartConfig);
-            return getStringAndFree(p);
-        }
-
-        public void setTargetData(String path) {
-            log(mCPartConfig, PartConfig.class, "setTargetData", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_partconfig_set_target_data(mCPartConfig, path);
-        }
-
-        public void setTargetSystemPartition(String partition) {
-            log(mCPartConfig, PartConfig.class, "setTargetSystemPartition", partition);
-            ensureNotNull(partition);
-
-            CWrapper.mbp_partconfig_set_target_system_partition(mCPartConfig, partition);
-        }
     }
 
     public static class PatcherConfig implements Parcelable {
@@ -1675,22 +1451,6 @@ public class LibMbp {
             ensureNotNull(patcher);
 
             CWrapper.mbp_config_destroy_ramdisk_patcher(mCPatcherConfig, patcher.getPointer());
-        }
-
-        public PartConfig[] getPartitionConfigs() {
-            log(mCPatcherConfig, PatcherConfig.class, "getPartitionConfigs");
-            Pointer p = CWrapper.mbp_config_partitionconfigs(mCPatcherConfig);
-            Pointer[] ps = p.getPointerArray(0);
-
-            PartConfig[] configs = new PartConfig[ps.length];
-
-            for (int i = 0; i < configs.length; i++) {
-                CPartConfig cConfig = new CPartConfig();
-                cConfig.setPointer(ps[i]);
-                configs[i] = new PartConfig(cConfig, false);
-            }
-
-            return configs;
         }
 
         public boolean loadPatchInfos() {
@@ -2305,12 +2065,6 @@ public class LibMbp {
         public boolean usesPatchInfo() {
             log(mCPatcher, Patcher.class, "usesPatchInfo");
             return CWrapper.mbp_patcher_uses_patchinfo(mCPatcher);
-        }
-
-        public String[] getSupportedPartConfigIds() {
-            log(mCPatcher, Patcher.class, "getSupportedPartConfigIds");
-            Pointer p = CWrapper.mbp_patcher_supported_partconfig_ids(mCPatcher);
-            return getStringArrayAndFree(p);
         }
 
         public void setFileInfo(FileInfo info) {

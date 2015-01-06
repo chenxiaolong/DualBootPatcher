@@ -26,7 +26,6 @@
 #include "cpiofile.h"
 #include "device.h"
 #include "fileinfo.h"
-#include "partitionconfig.h"
 #include "patchererror.h"
 #include "patchinfo.h"
 
@@ -82,8 +81,6 @@ public:
     void destroyPatcher(Patcher *patcher);
     void destroyAutoPatcher(AutoPatcher *patcher);
     void destroyRamdiskPatcher(RamdiskPatcher *patcher);
-
-    std::vector<PartitionConfig *> partitionConfigs() const;
 
     bool loadPatchInfos();
 

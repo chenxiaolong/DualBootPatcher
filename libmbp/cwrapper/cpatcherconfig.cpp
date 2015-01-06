@@ -578,32 +578,6 @@ void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
 }
 
 /*!
- * \brief Get list of partition configurations
- *
- * \note The returned array should be freed with `free()` when it
- *       is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return NULL-terminated array of PartitionConfigs
- *
- * \sa PatcherConfig::partitionConfigs()
- */
-CPartConfig ** mbp_config_partitionconfigs(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    auto const configs = config->partitionConfigs();
-
-    CPartConfig **cConfigs = (CPartConfig **) std::malloc(
-            sizeof(CPartConfig *) * (configs.size() + 1));
-    for (unsigned int i = 0; i < configs.size(); ++i) {
-        cConfigs[i] = reinterpret_cast<CPartConfig *>(configs[i]);
-    }
-    cConfigs[configs.size()] = nullptr;
-
-    return cConfigs;
-}
-
-/*!
  * \brief Load all PatchInfo XML files
  *
  * \param pc CPatcherConfig object

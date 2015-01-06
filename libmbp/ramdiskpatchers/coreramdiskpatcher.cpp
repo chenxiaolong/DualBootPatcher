@@ -24,7 +24,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/format.hpp>
-#include <json/json.h>
 
 #include "patcherconfig.h"
 
@@ -44,8 +43,6 @@ public:
 
 const std::string CoreRamdiskPatcher::FstabRegex
         = "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
-const std::string CoreRamdiskPatcher::PropPartConfig
-        = "ro.patcher.patched=%1%\n";
 const std::string CoreRamdiskPatcher::PropVersion
         = "ro.patcher.version=%1%\n";
 #if 0
@@ -63,7 +60,6 @@ static const std::string InitRc = "init.rc";
 static const std::string FileContexts = "file_contexts";
 
 static const std::string TagVersion = "version";
-static const std::string TagPartConfigs = "partconfigs";
 static const std::string TagInstalled = "installed";
 static const std::string TagPcId = "id";
 static const std::string TagPcKernelId = "kernel-id";
@@ -107,9 +103,6 @@ bool CoreRamdiskPatcher::patchRamdisk()
         return false;
     }
 #endif
-    if (!addConfigJson()) {
-        return false;
-    }
     if (!fixDataMediaContext()) {
         return false;
     }
@@ -125,11 +118,6 @@ bool CoreRamdiskPatcher::modifyDefaultProp()
     }
 
     defaultProp.insert(defaultProp.end(), '\n');
-
-    std::string propPartConfig = (boost::format(PropPartConfig)
-            % m_impl->info->partConfig()->id()).str();
-    defaultProp.insert(defaultProp.end(),
-                       propPartConfig.begin(), propPartConfig.end());
 
     std::string propVersion = (boost::format(PropVersion)
             % m_impl->pc->version()).str();
@@ -158,35 +146,6 @@ bool CoreRamdiskPatcher::addSyncdaemon()
     return true;
 }
 #endif
-
-bool CoreRamdiskPatcher::addConfigJson()
-{
-    Json::Value root;
-    root[TagVersion] = 1;
-
-    Json::Value jsonPcs(Json::arrayValue);
-    for (PartitionConfig *config : m_impl->pc->partitionConfigs()) {
-        Json::Value jsonPc;
-        jsonPc[TagPcId] = config->id();
-        jsonPc[TagPcKernelId] = config->kernel();
-        jsonPc[TagPcName] = config->name();
-        jsonPc[TagPcDescription] = config->description();
-        jsonPc[TagPcTargetSystem] = config->targetSystem();
-        jsonPc[TagPcTargetCache] = config->targetCache();
-        jsonPc[TagPcTargetData] = config->targetData();
-
-        jsonPcs.append(jsonPc);
-    }
-    root[TagPartConfigs] = jsonPcs;
-
-    root[TagInstalled] = m_impl->info->partConfig()->id();
-
-    std::string json = root.toStyledString();
-    std::vector<unsigned char> data(json.begin(), json.end());
-    m_impl->cpio->addFile(std::move(data), "config.json", 0640);
-
-    return true;
-}
 
 /*!
  * Some ROMs omit the line in /file_contexts that sets the context of

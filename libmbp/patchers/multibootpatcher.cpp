@@ -119,51 +119,6 @@ MultiBootPatcher::~MultiBootPatcher()
 {
 }
 
-std::vector<PartitionConfig *> MultiBootPatcher::partConfigs()
-{
-    std::vector<PartitionConfig *> configs;
-
-    // Create supported partition configurations
-    std::string romInstalled = tr("ROM installed to %1%");
-
-    PartitionConfig *dual = new PartitionConfig();
-
-    dual->setId("dual");
-    dual->setKernel("secondary");
-    dual->setName(tr("Dual Boot"));
-    dual->setDescription((boost::format(romInstalled) % "/system/dual").str());
-
-    dual->setTargetSystem("/system/dual");
-    dual->setTargetCache("/cache/dual");
-    dual->setTargetData("/data/dual");
-
-    configs.push_back(dual);
-
-    // Add multi-slots
-    const std::string multiSlotId("multi-slot-%1$d");
-    for (int i = 0; i < 3; ++i) {
-        PartitionConfig *multiSlot = new PartitionConfig();
-
-        multiSlot->setId((boost::format(multiSlotId) % (i + 1)).str());
-        multiSlot->setKernel((boost::format(multiSlotId) % (i + 1)).str());
-        multiSlot->setName((boost::format(tr("Multi Boot Slot %1$d")) % (i + 1)).str());
-        multiSlot->setDescription((boost::format(romInstalled)
-                % (boost::format("/cache/multi-slot-%1$d/system")
-                % (i + 1)).str()).str());
-
-        multiSlot->setTargetSystem(
-                (boost::format("/cache/multi-slot-%1$d/system") % (i + 1)).str());
-        multiSlot->setTargetCache(
-                (boost::format("/system/multi-slot-%1$d/cache") % (i + 1)).str());
-        multiSlot->setTargetData(
-                (boost::format("/data/multi-slot-%1$d") % (i + 1)).str());
-
-        configs.push_back(multiSlot);
-    }
-
-    return configs;
-}
-
 PatcherError MultiBootPatcher::error() const
 {
     return m_impl->error;
@@ -184,17 +139,6 @@ bool MultiBootPatcher::usesPatchInfo() const
     return true;
 }
 
-std::vector<std::string> MultiBootPatcher::supportedPartConfigIds() const
-{
-    // TODO: Loopify this
-    std::vector<std::string> configs;
-    configs.push_back("dual");
-    configs.push_back("multi-slot-1");
-    configs.push_back("multi-slot-2");
-    configs.push_back("multi-slot-3");
-    return configs;
-}
-
 void MultiBootPatcher::setFileInfo(const FileInfo * const info)
 {
     m_impl->info = info;
@@ -203,12 +147,10 @@ void MultiBootPatcher::setFileInfo(const FileInfo * const info)
 std::string MultiBootPatcher::newFilePath()
 {
     assert(m_impl->info != nullptr);
-    assert(m_impl->info->partConfig() != nullptr);
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
-    fileName += "_";
-    fileName += m_impl->info->partConfig()->id();
+    fileName += "_patched";
     fileName += path.extension();
 
     if (path.has_parent_path()) {

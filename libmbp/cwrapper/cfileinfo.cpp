@@ -159,33 +159,4 @@ void mbp_fileinfo_set_device(CFileInfo *info, CDevice *device)
     fi->setDevice(reinterpret_cast<Device *>(device));
 }
 
-/*!
- * \brief Target partition configuration
- *
- * \param info CFileInfo object
- *
- * \return Target PartitionConfig
- *
- * \sa FileInfo::partConfig()
- */
-CPartConfig * mbp_fileinfo_partconfig(const CFileInfo *info)
-{
-    CCAST(info);
-    return reinterpret_cast<CPartConfig *>(fi->partConfig());
-}
-
-/*!
- * \brief Set target partition configuration
- *
- * \param info CFileInfo object
- * \param config Target PartitionConfig
- *
- * \sa FileInfo::setPartConfig()
- */
-void mbp_fileinfo_set_partconfig(CFileInfo *info, CPartConfig *config)
-{
-    CAST(info);
-    fi->setPartConfig(reinterpret_cast<PartitionConfig *>(config));
-}
-
 }

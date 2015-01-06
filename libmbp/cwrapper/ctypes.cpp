@@ -27,11 +27,6 @@
  */
 
 /*!
- * \typedef CPartConfig
- * \brief C wrapper for PartitionConfig object
- */
-
-/*!
  * \typedef CPatcherConfig
  * \brief C wrapper for PatcherConfig object
  */

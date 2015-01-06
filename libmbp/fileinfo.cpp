@@ -27,7 +27,6 @@ public:
     PatchInfo *patchinfo;
     Device *device;
     std::string filename;
-    PartitionConfig *partconfig;
 };
 /*! \endcond */
 
@@ -42,7 +41,6 @@ public:
  * - File path
  * - PatchInfo to use for patching
  * - Target Device
- * - Target PartitionConfig
  */
 
 
@@ -112,24 +110,4 @@ Device * FileInfo::device() const
 void FileInfo::setDevice(Device * const device)
 {
     m_impl->device = device;
-}
-
-/*!
- * \brief Target partition configuration
- *
- * \return Target PartitionConfig
- */
-PartitionConfig * FileInfo::partConfig() const
-{
-    return m_impl->partconfig;
-}
-
-/*!
- * \brief Set target partition configuration
- *
- * \param config Target PartitionConfig
- */
-void FileInfo::setPartConfig(PartitionConfig * const config)
-{
-    m_impl->partconfig = config;
 }

@@ -34,7 +34,6 @@ CPatcherError * mbp_patcher_error(const CPatcher *patcher);
 char * mbp_patcher_id(const CPatcher *patcher);
 char * mbp_patcher_name(const CPatcher *patcher);
 bool mbp_patcher_uses_patchinfo(const CPatcher *patcher);
-char ** mbp_patcher_supported_partconfig_ids(const CPatcher *patcher);
 void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
 char * mbp_patcher_new_file_path(CPatcher *patcher);
 int mbp_patcher_patch_file(CPatcher *patcher,

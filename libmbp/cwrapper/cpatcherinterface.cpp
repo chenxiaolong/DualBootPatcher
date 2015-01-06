@@ -159,23 +159,6 @@ bool mbp_patcher_uses_patchinfo(const CPatcher *patcher)
 }
 
 /*!
- * \brief List of supported partition configuration IDs
- *
- * \note The returned array should be freed with `mbp_free_array()` when it
- *       is no longer needed.
- *
- * \param patcher CPatcher object
- * \return A NULL-terminated array containing the IDs
- *
- * \sa Patcher::supportedPartConfigIds()
- */
-char ** mbp_patcher_supported_partconfig_ids(const CPatcher *patcher)
-{
-    CCASTP(patcher);
-    return vector_to_cstring_array(p->supportedPartConfigIds());
-}
-
-/*!
  * \brief Sets the FileInfo object corresponding to the file to patch
  *
  * \param patcher CPatcher object

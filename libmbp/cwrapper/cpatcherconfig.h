@@ -74,8 +74,6 @@ void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher);
 void mbp_config_destroy_autopatcher(CPatcherConfig *pc, CAutoPatcher *patcher);
 void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc, CRamdiskPatcher *patcher);
 
-CPartConfig ** mbp_config_partitionconfigs(const CPatcherConfig *pc);
-
 bool mbp_config_load_patchinfos(CPatcherConfig *pc);
 
 #ifdef __cplusplus
