@@ -175,7 +175,6 @@ public class LibMbp {
         static native void mbp_partconfig_set_target_cache_partition(CPartConfig config, String partition);
         static native Pointer mbp_partconfig_target_data_partition(CPartConfig config);
         static native void mbp_partconfig_set_target_data_partition(CPartConfig config, String partition);
-        static native boolean mbp_partconfig_replace_shell_line(CPartConfig config, Pointer dataIn, /* size_t */ int sizeIn, PointerByReference dataOut, /* size_t */ IntByReference sizeOut, boolean targetPathOnly);
         // END: cpartitionconfig.h
 
         // BEGIN: cpatcherconfig.h
@@ -1418,31 +1417,6 @@ public class LibMbp {
             ensureNotNull(partition);
 
             CWrapper.mbp_partconfig_set_target_data_partition(mCPartConfig, partition);
-        }
-
-        public byte[] replaceShellLine(byte[] contents, boolean targetPathOnly) {
-            log(mCPartConfig, PartConfig.class, "replaceShellLine", contents.length,
-                    targetPathOnly);
-            ensureNotNull(contents);
-
-            Memory origData = new Memory(contents.length);
-            origData.write(0, contents, 0, contents.length);
-
-            IntByReference pSize = new IntByReference();
-            PointerByReference pNewData = new PointerByReference();
-
-            boolean ret = CWrapper.mbp_partconfig_replace_shell_line(
-                    mCPartConfig, origData, contents.length, pNewData, pSize, targetPathOnly);
-
-            if (!ret) {
-                return null;
-            }
-
-            int size = pSize.getValue();
-            Pointer newData = pNewData.getValue();
-            byte[] out = newData.getByteArray(0, size);
-            CWrapper.mbp_free(newData);
-            return out;
         }
     }
 

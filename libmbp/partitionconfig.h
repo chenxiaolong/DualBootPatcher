@@ -65,9 +65,6 @@ public:
     std::string targetDataPartition() const;
     void setTargetDataPartition(std::string partition);
 
-    bool replaceShellLine(std::vector<unsigned char> *contents,
-                          bool targetPathOnly = false) const;
-
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

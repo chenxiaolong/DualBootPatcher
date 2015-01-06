@@ -45,17 +45,6 @@ public:
 /*! \endcond */
 
 
-static const std::string ReplaceLine
-        = "# PATCHER REPLACE ME - DO NOT REMOVE";
-
-// Device and mount point for the system, cache, and data filesystems
-static const std::string DevSystem
-        = "/dev/block/platform/msm_sdcc.1/by-name/system::/raw-system";
-static const std::string DevCache
-        = "/dev/block/platform/msm_sdcc.1/by-name/cache::/raw-cache";
-static const std::string DevData
-        = "/dev/block/platform/msm_sdcc.1/by-name/userdata::/raw-data";
-
 /*! \brief System partition */
 const std::string PartitionConfig::System = "$DEV_SYSTEM";
 /*! \brief Cache partition */
@@ -289,75 +278,4 @@ std::string PartitionConfig::targetDataPartition() const
 void PartitionConfig::setTargetDataPartition(std::string partition)
 {
     m_impl->targetDataPartition = std::move(partition);
-}
-
-/*!
- * \brief Replace magic string in shell script with partition configuration
- *        variables
- *
- * Any line containing the string, "`# PATCHER REPLACE ME - DO NOT REMOVE`",
- * will be replaced with the following variables:
- *
- * - `KERNEL_NAME`: Kernel ID
- * - `DEV_SYSTEM`: System partition and mount point
- * - `DEV_CACHE`: Cache partition and mount point
- * - `DEV_DATA`: Data partition and mount point
- * - `TARGET_SYSTEM_PARTITION`: Set to `$DEV_SYSTEM`, `$DEV_CACHE`, or `$DEV_DATA`
- * - `TARGET_CACHE_PARTITION`: Set to `$DEV_SYSTEM`, `$DEV_CACHE`, or `$DEV_DATA`
- * - `TARGET_DATA_PARTITION`: Set to `$DEV_SYSTEM`, `$DEV_CACHE`, or `$DEV_DATA`
- * - `TARGET_SYSTEM`: Source directory for /system bind mount
- * - `TARGET_CACHE`: Source directory for /system bind mount
- * - `TARGET_DATA`: Source directory for /system bind mount
- *
- * \param contents Vector containing shell script contents
- * \param targetPathOnly Only insert `TARGET_*` variables
- */
-bool PartitionConfig::replaceShellLine(std::vector<unsigned char> *contents,
-                                       bool targetPathOnly) const
-{
-    std::string strContents(contents->begin(), contents->end());
-    std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if ((*it).find(ReplaceLine) != std::string::npos) {
-            it = lines.erase(it);
-
-            if (!targetPathOnly) {
-                it = lines.insert(it, (boost::format("KERNEL_NAME=\"%1%\"")
-                        % m_impl->kernel).str());
-
-                it = lines.insert(++it,
-                        (boost::format("DEV_SYSTEM=\"%1%\"") % DevSystem).str());
-                it = lines.insert(++it,
-                        (boost::format("DEV_CACHE=\"%1%\"") % DevCache).str());
-                it = lines.insert(++it,
-                        (boost::format("DEV_DATA=\"%1%\"") % DevData).str());
-
-                it = lines.insert(++it,
-                        (boost::format("TARGET_SYSTEM_PARTITION=\"%1%\"")
-                        % m_impl->targetSystemPartition).str());
-                it = lines.insert(++it,
-                        (boost::format("TARGET_CACHE_PARTITION=\"%1%\"")
-                        % m_impl->targetCachePartition).str());
-                it = lines.insert(++it,
-                        (boost::format("TARGET_DATA_PARTITION=\"%1%\"")
-                        % m_impl->targetDataPartition).str());
-
-                ++it;
-            }
-
-            it = lines.insert(it, (boost::format("TARGET_SYSTEM=\"%1%\"")
-                    % m_impl->targetSystem).str());
-            it = lines.insert(++it, (boost::format("TARGET_CACHE=\"%1%\"")
-                    % m_impl->targetCache).str());
-            it = lines.insert(++it, (boost::format("TARGET_DATA=\"%1%\"")
-                    % m_impl->targetData).str());
-        }
-    }
-
-    strContents = boost::join(lines, "\n");
-    contents->assign(strContents.begin(), strContents.end());
-
-    return true;
 }

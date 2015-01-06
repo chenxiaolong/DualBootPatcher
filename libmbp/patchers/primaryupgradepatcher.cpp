@@ -407,7 +407,7 @@ bool PrimaryUpgradePatcher::Impl::patchZip(MaxProgressUpdatedCallback maxProgres
         return false;
     }
 
-    info->partConfig()->replaceShellLine(&contents);
+    //info->partConfig()->replaceShellLine(&contents);
 
     pe = FileUtils::laAddFile(aOutput, DualBootTool, contents);
     if (pe.errorCode() != MBP::ErrorCode::NoError) {

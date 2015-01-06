@@ -418,33 +418,4 @@ void mbp_partconfig_set_target_data_partition(CPartConfig *config,
     pc->setTargetDataPartition(path);
 }
 
-/*!
- * \brief Replace magic string in shell script with partition configuration
- *        variables
- *
- * \note The output data is dynamically allocated. It should be `free()`'d
- *       when it is no longer needed.
- *
- * \param dataIn Input shell script data
- * \param sizeIn Size of input data
- * \param dataOut Output shell script data
- * \param sizeOut Size of output data
- * \param targetPathOnly Only insert `TARGET_*` variables
- *
- * \return Always returns 0
- *
- * \sa PartitionConfig::replaceShellLine()
- */
-int mbp_partconfig_replace_shell_line(const CPartConfig *config,
-                                      void *dataIn, size_t sizeIn,
-                                      void **dataOut, size_t *sizeOut,
-                                      bool targetPathOnly)
-{
-    CCAST(config);
-    auto contents = data_to_vector(dataIn, sizeIn);
-    bool ret = pc->replaceShellLine(&contents, targetPathOnly);
-    vector_to_data(contents, dataOut, sizeOut);
-    return ret ? 0 : -1;
-}
-
 }
