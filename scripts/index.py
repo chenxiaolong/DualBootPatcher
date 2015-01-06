@@ -27,7 +27,7 @@ import sys
 
 name = 'Dual Boot Patcher'
 github = 'https://github.com/chenxiaolong/DualBootPatcher'
-maxbuilds = 25
+maxbuilds = 100
 
 
 class Version():
@@ -185,6 +185,15 @@ writer.push('body')
 writer.push('h1')
 writer.write('%s Snapshots (Unstable Builds)' % name)
 writer.pop('h1')
+
+# TODO: Remove when complete
+writer.push('style')
+writer.write('.warning { color: red; font-size: 30px; font-weight: bold; }')
+writer.pop('style')
+writer.write('''
+<a class="warning">WARNING:</a> Any builds newer than <b>8.0.0.r436.g41f104b</b> will (most likely) <i>NOT WORK</i>. The patcher is going through a series of changes needed to better support bash script installers (such as PA Gapps) and Android 5.0 ROMs that use the system.new.img block image installers. <b>You have been warned!</b>
+''')
+# TODO: Remove when complete
 
 
 # Remove old builds
