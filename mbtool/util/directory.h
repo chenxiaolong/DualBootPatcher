@@ -22,3 +22,4 @@
 #include <sys/types.h>
 
 int mb_mkdir_recursive(const char *dir, mode_t mode);
+int mb_mkdir_parent(const char *path, mode_t perms);

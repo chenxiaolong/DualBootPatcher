@@ -20,6 +20,7 @@
 #include "util/directory.h"
 
 #include <errno.h>
+#include <libgen.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -66,5 +67,45 @@ int mb_mkdir_recursive(const char *dir, mode_t mode)
 error:
     free(copy);
     free(temp);
+    return -1;
+}
+
+int mb_mkdir_parent(const char *path, mode_t perms)
+{
+    struct stat sb;
+    char *dup = NULL;
+    char *dir;
+
+    if (!path) {
+        errno = EINVAL;
+        goto error;
+    }
+
+    dup = strdup(path);
+    if (!dup) {
+        errno = ENOMEM;
+        goto error;
+    }
+
+    dir = dirname(dup);
+
+    if (mkdir(dir, perms) < 0 && errno != EEXIST) {
+        goto error;
+    }
+
+    if (stat(dir, &sb) < 0) {
+        goto error;
+    }
+
+    if (!S_ISDIR(sb.st_mode)) {
+        errno = ENOTDIR;
+        goto error;
+    }
+
+    free(dup);
+    return 0;
+
+error:
+    free(dup);
     return -1;
 }
