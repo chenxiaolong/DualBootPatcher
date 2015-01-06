@@ -17,6 +17,8 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "main.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,6 +30,10 @@
 #include "update_binary_tool.h"
 
 #include "util/logging.h"
+
+
+const char *main_argv0 = NULL;
+static int first_run = 1;
 
 
 int main(int argc, char *argv[]);
@@ -93,6 +99,11 @@ struct tool * find_tool(const char *name)
 
 int main(int argc, char *argv[])
 {
+    if (first_run) {
+        main_argv0 = argv[0];
+        first_run = 0;
+    }
+
     char *name;
     char *prog;
 
@@ -112,4 +123,9 @@ int main(int argc, char *argv[])
         fprintf(stderr, "%s: tool not found\n", name);
         return EXIT_FAILURE;
     }
+}
+
+const char * mb_self_get_path(void)
+{
+    return main_argv0;
 }
