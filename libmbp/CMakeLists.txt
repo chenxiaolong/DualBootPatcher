@@ -3,8 +3,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Allow libmbp headers to be found
 include_directories(${CMAKE_SOURCE_DIR})
 
-include_directories(jsoncpp-dist)
-
 set(MBP_SOURCES
     bootimage.cpp
     cpiofile.cpp
@@ -45,8 +43,6 @@ set(MBP_SOURCES
     ramdiskpatchers/jflteramdiskpatcher.cpp
     ramdiskpatchers/klteramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
-    # jsoncpp
-    jsoncpp-dist/jsoncpp.cpp
 )
 
 set(MBP_HEADERS

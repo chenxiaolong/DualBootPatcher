@@ -36,7 +36,6 @@ LOCAL_MODULE := libmbp
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
-	jsoncpp-dist \
 	$(BOOST_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
 	$(LIBARCHIVE_DIR)/include
