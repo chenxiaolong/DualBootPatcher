@@ -50,8 +50,6 @@ static const std::string Unmount
         = "run_program(\"/update-binary-tool\", \"unmount\", \"%1%\"};";
 static const std::string Format
         = "run_program(\"/update-binary-tool\", \"format\", \"%1%\"};";
-static const std::string SetKernel
-        = "run_program(\"/update-binary-tool\", \"set-kernel\"};";
 
 static const std::string System = "system";
 static const std::string Cache = "cache";
@@ -98,6 +96,8 @@ std::vector<std::string> StandardPatcher::existingFiles() const
 bool StandardPatcher::patchFiles(const std::string &directory,
                                  const std::vector<std::string> &bootImages)
 {
+    (void) bootImages;
+
     std::vector<unsigned char> contents;
 
     // UpdaterScript begin
@@ -109,12 +109,6 @@ bool StandardPatcher::patchFiles(const std::string &directory,
     replaceMountLines(&lines, m_impl->info->device());
     replaceUnmountLines(&lines, m_impl->info->device());
     replaceFormatLines(&lines, m_impl->info->device());
-
-    if (!bootImages.empty()) {
-        for (auto const &bootImage : bootImages) {
-            insertWriteKernel(&lines, bootImage);
-        }
-    }
 
     // Remove device check if requested
     std::string key = m_impl->info->patchInfo()->keyFromFilename(
@@ -144,43 +138,6 @@ void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
         if (MBP_regex_search(line, reLine)) {
             MBP_regex_replace(line, MBP_regex("^(\\s*assert\\s*\\()"),
                               "\\1\"true\" == \"true\" || ");
-        }
-    }
-}
-
-/*!
-    \brief Insert line(s) to set multiboot kernel for a specific boot image
-
-    \param lines Container holding strings of lines in updater-script file
-    \param bootImage Filename of the boot image
- */
-void StandardPatcher::insertWriteKernel(std::vector<std::string> *lines,
-                                        const std::string &bootImage)
-{
-    std::vector<std::string> searchItems;
-    searchItems.push_back("loki.sh");
-    searchItems.push_back("flash_kernel.sh");
-    searchItems.push_back(bootImage);
-
-    // Look for the last line containing the boot image string and insert
-    // after that
-    for (auto const &item : searchItems) {
-        for (auto it = lines->rbegin(); it != lines->rend(); ++it) {
-            if (it->find(item) != std::string::npos) {
-                // Statements can be on multiple lines, so insert after a
-                // semicolon is found
-                auto fwdIt = (++it).base();
-                while (fwdIt != lines->end()) {
-                    if (fwdIt->find(";") != std::string::npos) {
-                        lines->insert(++fwdIt, SetKernel);
-                        return;
-                    } else {
-                        ++fwdIt;
-                    }
-                }
-
-                break;
-            }
         }
     }
 }

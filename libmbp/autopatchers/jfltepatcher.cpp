@@ -159,17 +159,6 @@ bool JflteImperiumPatcher::patchFiles(const std::string &directory,
     StandardPatcher::replaceUnmountLines(&lines, m_impl->info->device());
     StandardPatcher::replaceFormatLines(&lines, m_impl->info->device());
 
-    // Insert set kernel line
-    const std::string setKernelLine =
-            "run_program(\"/update-binary-tool\", \"set-kernel\"};";
-    for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
-        if (it->find("Umounting Partitions") != std::string::npos) {
-            auto fwdIt = (++it).base();
-            lines.insert(++fwdIt, setKernelLine);
-            break;
-        }
-    }
-
     strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     FileUtils::writeFromMemory(directory + "/" + StandardPatcher::UpdaterScript, contents);
