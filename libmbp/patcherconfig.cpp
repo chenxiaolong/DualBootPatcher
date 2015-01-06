@@ -870,7 +870,7 @@ bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
 
 static std::string xmlStringToStdString(const xmlChar* xmlString) {
     if (xmlString) {
-        return std::string(reinterpret_cast<const char*>(xmlString));
+        return std::string(reinterpret_cast<const char *>(xmlString));
     } else {
         return std::string();
     }
