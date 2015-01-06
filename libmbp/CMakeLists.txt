@@ -30,7 +30,6 @@ set(MBP_SOURCES
     autopatchers/unzippatcher.cpp
     # Patchers
     patchers/multibootpatcher.cpp
-    patchers/primaryupgradepatcher.cpp
     # Ramdisk patchers
     ramdiskpatchers/baconramdiskpatcher.cpp
     ramdiskpatchers/coreramdiskpatcher.cpp
@@ -65,7 +64,6 @@ set(MBP_NOINST_HEADERS
     autopatchers/unzippatcher.h
     # Patchers
     patchers/multibootpatcher.h
-    patchers/primaryupgradepatcher.h
     # Ramdisk patchers
     ramdiskpatchers/baconramdiskpatcher.h
     ramdiskpatchers/coreramdiskpatcher.h
