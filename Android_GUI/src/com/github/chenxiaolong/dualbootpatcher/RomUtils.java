@@ -114,36 +114,9 @@ public class RomUtils {
     }
 
     public static RomInformation getCurrentRom(Context context) {
-        RomInformation romProp = getCurrentRomViaProp(context);
-        RomInformation romInode = getCurrentRomViaInode(context);
-
-        if (romProp != romInode) {
-            Log.e(TAG, "The default.prop and inode methods returned different ROMs!");
-        }
-
-        if (romInode != null) {
-            return romInode;
-        } else {
-            return romProp;
-        }
+        return getCurrentRomViaInode(context);
     }
 
-    private static RomInformation getCurrentRomViaProp(Context context) {
-        String curPartConfig = MiscUtils.getPartitionConfig();
-        RomInformation[] roms = getRoms(context);
-
-        for (RomInformation rom : roms) {
-            if (rom.id.equals(PRIMARY_KERNEL_ID) && curPartConfig == null) {
-                return rom;
-            } else if (rom.id.equals(curPartConfig)) {
-                return rom;
-            }
-        }
-
-        return null;
-    }
-
-    @SuppressWarnings("unused")
     private static RomInformation getCurrentRomViaInode(Context context) {
         RomInformation[] roms = getRoms(context);
 

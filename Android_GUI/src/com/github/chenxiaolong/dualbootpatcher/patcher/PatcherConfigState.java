@@ -21,7 +21,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PartConfig;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher;
 
@@ -44,8 +43,6 @@ public class PatcherConfigState implements Parcelable {
         writeStringHashMap(out, mReversePatcherMap);
         out.writeParcelable(mPatcher, 0);
         out.writeParcelable(mDevice, 0);
-        writeParcelableArrayList(out, mPartConfigs);
-        out.writeParcelable(mPartConfig, 0);
         out.writeParcelableArray(mPatchInfos, 0);
         out.writeParcelable(mPatchInfo, 0);
         out.writeString(mPatcherNewFile);
@@ -61,8 +58,6 @@ public class PatcherConfigState implements Parcelable {
         mReversePatcherMap = readStringHashMap(in);
         mPatcher = in.readParcelable(Patcher.class.getClassLoader());
         mDevice = in.readParcelable(Device.class.getClassLoader());
-        mPartConfigs = readParcelableArrayList(in, PartConfig.class);
-        mPartConfig = in.readParcelable(PartConfig.class.getClassLoader());
         mPatchInfos = (PatchInfo[]) in.readParcelableArray(PatchInfo.class.getClassLoader());
         mPatchInfo = in.readParcelable(PatchInfo.class.getClassLoader());
         mPatcherNewFile = in.readString();
@@ -123,7 +118,6 @@ public class PatcherConfigState implements Parcelable {
     public void setupInitial() {
         if (!mInitialized) {
             //mPatcher = PatcherUtils.sPC.createPatcher(DEFAULT_PATCHER);
-            //refreshPartConfigs();
 
             for (String patcherId : PatcherUtils.sPC.getPatchers()) {
                 String patcherName = PatcherUtils.sPC.getPatcherName(patcherId);
@@ -135,27 +129,6 @@ public class PatcherConfigState implements Parcelable {
             mPatchInfos = PatcherUtils.sPC.getPatchInfos(mDevice);
 
             mInitialized = true;
-        }
-    }
-
-    public void refreshPartConfigs() {
-        mPartConfigs.clear();
-
-        PartConfig[] configs = PatcherUtils.sPC.getPartitionConfigs();
-
-        for (String id : mPatcher.getSupportedPartConfigIds()) {
-            PartConfig config = null;
-
-            for (PartConfig c : configs) {
-                if (c.getId().equals(id)) {
-                    config = c;
-                    break;
-                }
-            }
-
-            if (config != null) {
-                mPartConfigs.add(config);
-            }
         }
     }
 
@@ -187,11 +160,6 @@ public class PatcherConfigState implements Parcelable {
 
     // Selected device
     public Device mDevice;
-
-    // List of partconfigs for selected patcher
-    public ArrayList<PartConfig> mPartConfigs = new ArrayList<>();
-    // Selected partconfig
-    public PartConfig mPartConfig;
 
     // List of patchinfos for selected device
     public PatchInfo[] mPatchInfos;

@@ -29,7 +29,6 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PartConfig;
 
 import java.util.ArrayList;
 
@@ -40,25 +39,16 @@ public class MainOptsCard extends Card {
         public void onPatcherSelected(String patcherName);
 
         public void onDeviceSelected(Device device);
-
-        public void onPartConfigSelected(PartConfig config);
     }
-
-    private static final String EXTRA_SELECTED_PARTCONFIG = "selected_partconfig";
 
     private PatcherConfigState mPCS;
     private MainOptsSelectedListener mListener;
-
-    private int mSelectedPartConfig;
 
     private TextView mTitle;
     private ArrayAdapter<String> mPatcherAdapter;
     private Spinner mPatcherSpinner;
     private ArrayAdapter<String> mDeviceAdapter;
     private Spinner mDeviceSpinner;
-    private ArrayAdapter<String> mPartConfigAdapter;
-    private Spinner mPartConfigSpinner;
-    private TextView mPartConfigDesc;
 
     public MainOptsCard(Context context, PatcherConfigState pcs,
                         MainOptsSelectedListener listener) {
@@ -77,8 +67,6 @@ public class MainOptsCard extends Card {
             mTitle = (TextView) view.findViewById(R.id.card_title);
             mPatcherSpinner = (Spinner) view.findViewById(R.id.spinner_patcher);
             mDeviceSpinner = (Spinner) view.findViewById(R.id.spinner_device);
-            mPartConfigSpinner = (Spinner) view.findViewById(R.id.spinner_partconfig);
-            mPartConfigDesc = (TextView) view.findViewById(R.id.partconfig_desc);
         }
 
         initControls();
@@ -124,31 +112,6 @@ public class MainOptsCard extends Card {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-
-        // Partition configurations
-
-        mPartConfigAdapter = new ArrayAdapter<String>(getContext(),
-                android.R.layout.simple_spinner_item, android.R.id.text1);
-        mPartConfigAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mPartConfigSpinner.setAdapter(mPartConfigAdapter);
-
-        mPartConfigSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                mSelectedPartConfig = position;
-
-                PartConfig config = mPCS.mPartConfigs.get(position);
-                mPartConfigDesc.setText(config.getDescription());
-
-                if (mListener != null) {
-                    mListener.onPartConfigSelected(config);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
     }
 
     public void refreshPatchers() {
@@ -169,33 +132,6 @@ public class MainOptsCard extends Card {
         mDeviceAdapter.notifyDataSetChanged();
     }
 
-    public void refreshPartConfigs(boolean changedPatcher) {
-        if (changedPatcher || mPartConfigAdapter.getCount() == 0) {
-            mPartConfigAdapter.clear();
-
-            for (PartConfig config : mPCS.mPartConfigs) {
-                mPartConfigAdapter.add(config.getName());
-            }
-
-            mPartConfigAdapter.notifyDataSetChanged();
-        }
-
-        // Restore position on orientation change
-        if (!changedPatcher) {
-            mPartConfigSpinner.setSelection(mSelectedPartConfig);
-        }
-
-        // Update description
-        if (mPCS.mPartConfigs.isEmpty()) {
-            mPartConfigDesc.setText("");
-        } else {
-            if (mSelectedPartConfig >= 0) {
-                mPartConfigDesc.setText(
-                        mPCS.mPartConfigs.get(mSelectedPartConfig).getDescription());
-            }
-        }
-    }
-
     public Device getDevice() {
         int position = mDeviceSpinner.getSelectedItemPosition();
         if (position < 0) {
@@ -204,31 +140,10 @@ public class MainOptsCard extends Card {
         return PatcherUtils.sPC.getDevices()[position];
     }
 
-    public PartConfig getPartConfig() {
-        int position = mPartConfigSpinner.getSelectedItemPosition();
-        if (position < 0) {
-            position = 0;
-        }
-        return mPCS.mPartConfigs.get(position);
-    }
-
     public void setEnabled(boolean enabled) {
         mTitle.setEnabled(enabled);
         mPatcherSpinner.setEnabled(enabled);
         mDeviceSpinner.setEnabled(enabled);
-        mPartConfigSpinner.setEnabled(enabled);
-        mPartConfigDesc.setEnabled(enabled);
-    }
-
-    public void onSaveInstanceState(Bundle outState) {
-        // Need to save the selected position since the partconfig spinner is dynamically
-        // populated based on the selected patcher
-        outState.putInt(EXTRA_SELECTED_PARTCONFIG, mSelectedPartConfig);
-    }
-
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mSelectedPartConfig = savedInstanceState.getInt(EXTRA_SELECTED_PARTCONFIG);
-        mPartConfigSpinner.setSelection(mSelectedPartConfig);
     }
 
     public void refreshState() {

@@ -92,7 +92,6 @@ public class FileChooserCard extends Card {
             int titleId;
             int descId;
 
-            // TODO: PARTCONFIG
             if (mPCS.mSupported != PatcherConfigState.NOT_SUPPORTED) {
                 titleId = R.string.filechooser_ready_title;
                 descId = R.string.filechooser_ready_desc;

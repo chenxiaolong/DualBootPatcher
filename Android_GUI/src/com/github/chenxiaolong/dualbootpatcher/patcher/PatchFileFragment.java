@@ -44,7 +44,6 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.Upd
 import com.github.chenxiaolong.dualbootpatcher.patcher.PresetCard.PresetSelectedListener;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PartConfig;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 
 import it.gmariotti.cardslib.library.internal.Card;
@@ -202,7 +201,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
     private void restoreCardStates() {
         if (mSavedInstanceState != null) {
-            mMainOptsCard.onRestoreInstanceState(mSavedInstanceState);
             mFileChooserCard.onRestoreInstanceState(mSavedInstanceState);
             mDetailsCard.onRestoreInstanceState(mSavedInstanceState);
             mProgressCard.onRestoreInstanceState(mSavedInstanceState);
@@ -251,7 +249,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         outState.putParcelable(EXTRA_CONFIG_STATE, mPCS);
 
-        mMainOptsCard.onSaveInstanceState(outState);
         mFileChooserCard.onSaveInstanceState(outState);
         mDetailsCard.onSaveInstanceState(outState);
         mProgressCard.onSaveInstanceState(outState);
@@ -302,7 +299,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         mMainOptsCard.refreshPatchers();
         mMainOptsCard.refreshDevices();
-        // PartConfigs are initialized when a patcher is selected
 
         mPresetCard.refreshPresets();
 
@@ -352,7 +348,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         FileInfo fileInfo = new FileInfo();
         fileInfo.setFilename(mPCS.mFilename);
         fileInfo.setDevice(mMainOptsCard.getDevice());
-        fileInfo.setPartConfig(mMainOptsCard.getPartConfig());
         fileInfo.setPatchInfo(mPCS.mPatchInfo);
 
         Context context = getActivity().getApplicationContext();
@@ -439,20 +434,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             changedPatcher = true;
         }
 
-        // Rebuild list of partconfigs supported by the patcher and recheck to see if the
-        // selected file is supported
-        refreshPartConfigs(changedPatcher);
+        // Recheck to see if the selected file is supported
         checkSupported();
-    }
-
-    /**
-     * Refresh partition configuration after a patcher has been selected.
-     */
-    private void refreshPartConfigs(boolean changedPatcher) {
-        if (changedPatcher) {
-            mPCS.refreshPartConfigs();
-        }
-        mMainOptsCard.refreshPartConfigs(changedPatcher);
     }
 
     @Override
@@ -464,14 +447,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         // Reload presets specific to the device
         mPresetCard.refreshPresets();
-    }
-
-    @Override
-    public void onPartConfigSelected(PartConfig config) {
-        mPCS.mPartConfig = config;
-
-        // Recheck to see if the partition configuration is supported for the selected file
-        checkSupported();
     }
 
     @Override
