@@ -230,6 +230,28 @@ install(
 
 
 ################################################################################
+# e2fsprogs for Android
+################################################################################
+
+set(E2FSPROGS_VER "android-5.0.2_r1")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/e2fsprogs-${E2FSPROGS_VER}_android.tar.xz
+    ${CMAKE_CURRENT_SOURCE_DIR}/e2fsprogs-${E2FSPROGS_VER}_android.tar.xz
+    EXPECTED_MD5 1522c99c9444a7f0b920a5edd0660641
+    SHOW_PROGRESS
+)
+
+install(
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/e2fsprogs-${E2FSPROGS_VER}_android.tar.xz
+    DESTINATION ${DATA_INSTALL_DIR}/
+    COMPONENT Libraries
+    RENAME e2fsprogs.tar.xz
+)
+
+
+################################################################################
 # GNU patch for Windows
 ################################################################################
 
