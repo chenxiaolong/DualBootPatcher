@@ -1,0 +1,33 @@
+﻿#
+# Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+#
+# This file is part of MultiBootPatcher
+#
+# MultiBootPatcher is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# MultiBootPatcher is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+installtype.title=Installation type
+installtype.desc=Choose an installation type
+config_primary.name=Primary ROM Upgrade
+config_primary.desc=Upgrade primary ROM without affecting other ROMs
+config_dual.name=Secondary
+config_dual.desc=Installs to /system/multiboot/dual/
+config_multislot1.name=Multi-slot 1
+config_multislot1.desc=Installs to /cache/multiboot/multi-slot-1/
+config_multislot2.name=Multi-slot 2
+config_multislot2.desc=Installs to /cache/multiboot/multi-slot-2/
+config_multislot3.name=Multi-slot 3
+config_multislot3.desc=Installs to /cache/multiboot/multi-slot-3/
+cancel.name=Cancel installation
+cancel.desc=Exit to recovery without installing anything

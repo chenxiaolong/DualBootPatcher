@@ -1,0 +1,62 @@
+﻿#
+# Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+#
+# This file is part of MultiBootPatcher
+#
+# MultiBootPatcher is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# MultiBootPatcher is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# English only for right now
+loadlang("langs/en.lang");
+
+fontresload("0", "ttf/Roboto-Regular.ttf", "12");
+fontresload("1", "ttf/Roboto-Regular.ttf", "14");
+
+menubox(
+    "<~installtype.title>",
+    "<~installtype.desc>",
+    "@personalize",
+    "installtype.prop",
+
+    "<~config_primary.name>",    "<~config_primary.desc>",    "@default",
+    "<~config_dual.name>",       "<~config_dual.desc>",       "@default",
+    "<~config_multislot1.name>", "<~config_multislot1.desc>", "@default",
+    "<~config_multislot2.name>", "<~config_multislot1.desc>", "@default",
+    "<~config_multislot3.name>", "<~config_multislot1.desc>", "@default",
+    "<~cancel.name>",            "<~cancel.desc>",            "@alert"
+);
+
+if prop("installtype.prop","selected") == "1" then
+    write("/tmp/installtype", "primary");
+endif;
+
+if prop("installtype.prop","selected") == "2" then
+    write("/tmp/installtype", "dual");
+endif;
+
+if prop("installtype.prop","selected") == "3" then
+    write("/tmp/installtype", "multi-slot-1");
+endif;
+
+if prop("installtype.prop","selected") == "4" then
+    write("/tmp/installtype", "multi-slot-2");
+endif;
+
+if prop("installtype.prop","selected") == "5" then
+    write("/tmp/installtype", "multi-slot-3");
+endif;
+
+if prop("installtype.prop","selected") == "6" then
+  exit("");
+endif;
