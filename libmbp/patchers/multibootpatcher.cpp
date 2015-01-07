@@ -370,8 +370,9 @@ bool MultiBootPatcher::Impl::patchZip()
 
     // +1 for mbtool (update-binary)
     // +1 for aromawrapper.sh
+    // +1 for e2fsprogs.tar.xz
     if (maxProgressCb != nullptr) {
-        maxProgressCb(count + 2, userData);
+        maxProgressCb(count + 3, userData);
     }
     if (progressCb != nullptr) {
         progressCb(progress, userData);
@@ -432,6 +433,24 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/aromawrapper.zip",
             pc->dataDirectory() + "/aromawrapper.zip");
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    RETURN_IF_CANCELLED
+
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb("multiboot/e2fsprogs.tar.xz", userData);
+    }
+
+    // Add e2fsprogs.tar.xz
+    result = FileUtils::laAddFile(
+            aOutput, "multiboot/e2fsprogs.tar.xz",
+            pc->dataDirectory() + "/e2fsprogs.tar.xz");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
