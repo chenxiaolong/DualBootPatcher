@@ -19,10 +19,13 @@
 
 #include "util/command.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include "util/logging.h"
 
 int mb_run_shell_command(const char *command)
 {
@@ -50,17 +53,47 @@ int mb_run_shell_command(const char *command)
 
 int mb_run_command(char * const argv[])
 {
-    if (!argv) {
-        return -1;
-    }
-    if (!argv[0]) {
+    if (!argv || !argv[0]) {
+        errno = EINVAL;
         return -1;
     }
 
     int status;
     pid_t pid;
+
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
+            execvp(argv[0], argv);
+            exit(127);
+        } else {
+            pid = waitpid(pid, &status, 0);
+        }
+    }
+
+    return pid == -1 ? -1 : status;
+}
+
+int mb_run_command_chroot(const char *dir, char * const argv[])
+{
+    if (!dir || !argv || !argv[0]) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    int status;
+    pid_t pid;
+
+    if ((pid = fork()) >= 0) {
+        if (pid == 0) {
+            if (chdir(dir) < 0) {
+                LOGE("%s: Failed to chdir: %s", dir, strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            if (chroot(dir) < 0) {
+                LOGE("%s: Failed to chroot: %s", dir, strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+
             execvp(argv[0], argv);
             exit(127);
         } else {

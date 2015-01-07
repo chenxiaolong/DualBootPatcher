@@ -21,3 +21,4 @@
 
 int mb_run_shell_command(const char *command);
 int mb_run_command(char * const argv[]);
+int mb_run_command_chroot(const char *dir, char * const argv[]);
