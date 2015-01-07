@@ -20,3 +20,4 @@
 #pragma once
 
 int mb_create_empty_file(const char *path);
+int mb_file_first_line(const char *path, char **line_out);

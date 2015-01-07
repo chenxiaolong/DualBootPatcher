@@ -21,10 +21,10 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include "logging.h"
 
 int mb_create_empty_file(const char *path)
 {
@@ -32,10 +32,44 @@ int mb_create_empty_file(const char *path)
     if ((fd = open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR |
                                            S_IRGRP | S_IWGRP |
                                            S_IROTH | S_IWOTH)) < 0) {
-        LOGE("Failed to create file: %s: %s", path, strerror(errno));
         return -1;
     }
 
     close(fd);
     return 0;
+}
+
+int mb_file_first_line(const char *path, char **line_out)
+{
+    FILE *fp = NULL;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    fp = fopen(path, "rb");
+    if (!fp) {
+        goto error;
+    }
+
+    if ((read = getline(&line, &len, fp)) < 0) {
+        goto error;
+    }
+
+    if (line[read - 1] == '\n') {
+        line[read - 1] = '\0';
+        --read;
+    }
+
+    fclose(fp);
+
+    *line_out = line;
+    return 0;
+
+error:
+    if (fp) {
+        fclose(fp);
+    }
+
+    free(line);
+    return -1;
 }
