@@ -58,5 +58,6 @@ if prop("installtype.prop","selected") == "5" then
 endif;
 
 if prop("installtype.prop","selected") == "6" then
-  exit("");
+    write("/tmp/installtype", "cancelled");
+    exit("");
 endif;
