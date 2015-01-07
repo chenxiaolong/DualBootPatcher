@@ -369,8 +369,9 @@ bool MultiBootPatcher::Impl::patchZip()
     RETURN_IF_CANCELLED
 
     // +1 for mbtool (update-binary)
+    // +1 for aromawrapper.sh
     if (maxProgressCb != nullptr) {
-        maxProgressCb(count + 1, userData);
+        maxProgressCb(count + 2, userData);
     }
     if (progressCb != nullptr) {
         progressCb(progress, userData);
@@ -413,6 +414,24 @@ bool MultiBootPatcher::Impl::patchZip()
             aOutput, "META-INF/com/google/android/update-binary",
             pc->binariesDirectory() + "/android/"
                     + info->device()->architecture() + "/mbtool");
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    RETURN_IF_CANCELLED
+
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb("multiboot/aromawrapper.zip", userData);
+    }
+
+    // Add aromawrapper.zip
+    result = FileUtils::laAddFile(
+            aOutput, "multiboot/aromawrapper.zip",
+            pc->dataDirectory() + "/aromawrapper.zip");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
