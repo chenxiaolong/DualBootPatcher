@@ -38,7 +38,6 @@
 #include "autopatchers/jfltepatcher.h"
 #include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
-#include "autopatchers/unzippatcher.h"
 #include "ramdiskpatchers/baconramdiskpatcher.h"
 #include "ramdiskpatchers/d800ramdiskpatcher.h"
 #include "ramdiskpatchers/falconramdiskpatcher.h"
@@ -566,7 +565,6 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
     list.push_back(JflteDalvikCachePatcher::Id);
     list.push_back(PatchFilePatcher::Id);
     list.push_back(StandardPatcher::Id);
-    list.push_back(UnzipPatcher::Id);
     return list;
 }
 
@@ -648,8 +646,6 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
         ap = new PatchFilePatcher(this, info, args);
     } else if (id == StandardPatcher::Id) {
         ap = new StandardPatcher(this, info, args);
-    } else if (id == UnzipPatcher::Id) {
-        ap = new UnzipPatcher(this, info, args);
     }
 
     if (ap != nullptr) {

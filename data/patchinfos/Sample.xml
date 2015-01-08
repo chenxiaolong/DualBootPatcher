@@ -60,42 +60,6 @@
              autopatcher first if it modifies files that other autopatchers
              also modify. -->
         <autopatcher file="something.patch">PatchFile</autopatcher>
-
-        <!-- This is a specialized patcher that is not needed unless the input
-             file has a script that runs during installation that calls the
-             "unzip" command. This is needed because the recovery's "unzip"
-             program is not compiled with support for data descriptors, which
-             are present in zip files created by the patcher.
-
-             This command will make the following changes to the specified
-             script:
-
-             1. After the shebang line (eg. #!/bin/bash), the patcher will
-                insert:
-
-                  sed '1,/UNZIP_MAGIC/d' "${0}" | base64 -d | xz -d > /tmp/unzip
-                  chmod 777 /tmp/unzip
-
-             2. At the end of the script, the patcher will insert:
-
-                  exit 0
-                  UNZIP_MAGIC
-                  <base64 encoded data of unzip binary>
-
-             3. The specified unzip command will be replaced with /tmp/unzip.
-
-             This effectively makes the script extract the miniunzip binary,
-             and run that instead of the recovery's own unzip program.
-
-             Two parameters are required:
-             - file: Path in zip file to the script that runs 'unzip'
-             - command: The command that will be replaced with /tmp/unzip. If
-                        not specified, only steps (1) and (2) above will be
-                        performed.
-
-             Multiple files and commands can be specified by separating them
-             with a semicolon. -->
-        <autopatcher file="META-INF/com/google/android/updater-script" command="/sbin/unzip">UnzipPatcher</autopatcher>
     </autopatchers>
 
     <!-- If set to false, the patcher will try to remove the device checks/

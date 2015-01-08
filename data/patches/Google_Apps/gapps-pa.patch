@@ -1,14 +1,6 @@
 --- a/META-INF/com/google/android/update-binary
 +++ b/META-INF/com/google/android/update-binary
-@@ -1,4 +1,7 @@
- #!/sbin/sh
-+unzip -o "$3" dualboot.sh -d /tmp
-+chmod 777 /tmp/dualboot.sh
-+/tmp/dualboot.sh unmount-everything
- #
- # PA GApps 2.0 Shell Script Installer
- # Created by @TKruzze with MAJOR script contributions by @osm0sis
-@@ -88,13 +91,14 @@
+@@ -88,13 +88,13 @@
          tar -cz -f "$log_folder/pa_gapps_debug_info.tar.gz" *;
          cd /;
      fi;
@@ -20,14 +12,13 @@
 -    umount /system;
 -    umount /data;
 -    umount /cache;
-+    /tmp/dualboot.sh unmount-system
-+    /tmp/dualboot.sh unmount-data
-+    /tmp/dualboot.sh unmount-cache
-+    /tmp/dualboot.sh unmount-everything
++    /update-binary-tool unmount /system
++    /update-binary-tool unmount /data
++    /update-binary-tool unmount /cache
      exit $1;
  }
  
-@@ -223,10 +227,9 @@
+@@ -223,10 +223,9 @@
  ui_print "- Mounting /system, /data, /cache";
  ui_print " ";
  set_progress 0.01;
@@ -35,13 +26,13 @@
 -busybox mount /data;
 -busybox mount /cache;
 -busybox mount -o rw,remount /system;
-+/tmp/dualboot.sh mount-system
-+/tmp/dualboot.sh mount-data
-+/tmp/dualboot.sh mount-cache
++/update-binary-tool mount /system
++/update-binary-tool mount /data
++/update-binary-tool mount /cache
  # _____________________________________________________________________________________________________________________
  #                                                  Gather Device & GApps Package Information
  # Locate gapps-config (if used)
-@@ -663,7 +666,7 @@
+@@ -663,7 +662,7 @@
  eval "playgames_size=\$pg_${gms}_size"; # Determine size of PlayGames
  
  # Read and save system partition size details

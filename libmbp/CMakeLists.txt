@@ -27,7 +27,6 @@ set(MBP_SOURCES
     autopatchers/jfltepatcher.cpp
     autopatchers/patchfilepatcher.cpp
     autopatchers/standardpatcher.cpp
-    autopatchers/unzippatcher.cpp
     # Patchers
     patchers/multibootpatcher.cpp
     # Ramdisk patchers
@@ -61,7 +60,6 @@ set(MBP_NOINST_HEADERS
     autopatchers/jfltepatcher.h
     autopatchers/patchfilepatcher.h
     autopatchers/standardpatcher.h
-    autopatchers/unzippatcher.h
     # Patchers
     patchers/multibootpatcher.h
     # Ramdisk patchers

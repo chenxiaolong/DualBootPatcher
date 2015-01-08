@@ -5,6 +5,5 @@
     <has-boot-image>false</has-boot-image>
     <autopatchers>
         <autopatcher file="Other/supersu.dualboot.patch">PatchFile</autopatcher>
-        <autopatcher file="META-INF/com/google/android/update-binary" command="unzip">UnzipPatcher</autopatcher>
     </autopatchers>
 </patchinfo>

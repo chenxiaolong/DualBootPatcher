@@ -1,25 +1,13 @@
 --- a/META-INF/com/google/android/update-binary
 +++ b/META-INF/com/google/android/update-binary
-@@ -1,6 +1,7 @@
- #!/sbin/sh
- 
- RECOVERY_SCRIPT_FD=$2
-+ZIP=$3
- 
- ui_print() {
-     echo "ui_print $1" > /proc/self/fd/$RECOVERY_SCRIPT_FD
-@@ -20,9 +21,12 @@
+@@ -20,9 +20,8 @@
  ui_print "---------------------"
  ui_print ""
  
-+cd /tmp
-+unzip -o "$ZIP"
-+chmod 777 /tmp/dualboot.sh
-+
  ui_print "Mounting /system partition"
 -mount /system
 -mount -o rw,remount /system
-+/tmp/dualboot.sh mount-system
++/update-binary-tool mount /system
  
  {
  if [ -f /system/bin/app_process.orig ]

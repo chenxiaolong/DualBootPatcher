@@ -6,6 +6,5 @@
 
     <autopatchers>
         <autopatcher file="Google_Apps/gapps-pa.patch">PatchFile</autopatcher>
-        <autopatcher file="META-INF/com/google/android/update-binary" command="unzip">UnzipPatcher</autopatcher>
     </autopatchers>
 </patchinfo>

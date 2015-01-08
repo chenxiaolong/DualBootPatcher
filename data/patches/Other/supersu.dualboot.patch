@@ -1,38 +1,26 @@
 --- a/META-INF/com/google/android/update-binary
 +++ b/META-INF/com/google/android/update-binary
-@@ -139,11 +139,7 @@
- ui_print "SuperSU installer ZIP"
+@@ -140,10 +140,8 @@
  ui_print "*********************"
  
--ui_print "- Mounting /system, /data and rootfs"
+ ui_print "- Mounting /system, /data and rootfs"
 -mount /system
 -mount /data
 -mount -o rw,remount /system
 -mount -o rw,remount /system /system
-+ui_print "- Mounting rootfs"
++/update-binary-tool mount /system
++/update-binary-tool mount /data
  mount -o rw,remount /
  mount -o rw,remount / /
  
-@@ -208,6 +204,11 @@
- cd supersu
- unzip -o "$ZIP"
- 
-+ui_print "- Installing for non-primary ROM"
-+set_perm 0 0 0777 /tmp/supersu/dualboot.sh
-+/tmp/supersu/dualboot.sh mount-system
-+/tmp/supersu/dualboot.sh mount-data
-+
- BIN=/tmp/supersu/$ARCH
- COM=/tmp/supersu/common
- 
-@@ -397,8 +398,8 @@
+@@ -397,8 +395,8 @@
  LD_LIBRARY_PATH=$SYSTEMLIB /system/xbin/su --install
  
  ui_print "- Unmounting /system and /data"
 -umount /system
 -umount /data
-+/tmp/supersu/dualboot.sh unmount-data
-+/tmp/supersu/dualboot.sh unmount-system
++/update-binary-tool unmount /system
++/update-binary-tool unmount /data
  
  ui_print "- Done !"
  exit 0
