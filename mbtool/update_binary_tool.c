@@ -52,7 +52,7 @@ static int do_mount(const char *mountpoint)
             return 0;
         }
 
-        if (mount("/chroot/tmp/system.img", SYSTEM,
+        if (mount("/tmp/system.img", SYSTEM,
                   "ext4", MS_NOSUID, "") < 0) {
             LOGE(TAG "Failed to mount %s: %s", mountpoint, strerror(errno));
             return -1;
