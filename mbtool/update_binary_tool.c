@@ -221,6 +221,11 @@ int update_binary_tool_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (access("/.chroot", F_OK) < 0) {
+        fprintf(stderr, "update-binary-tool must be run inside the chroot\n");
+        return EXIT_FAILURE;
+    }
+
     int ret = 0;
 
     if (strcmp(action, ACTION_MOUNT) == 0) {
