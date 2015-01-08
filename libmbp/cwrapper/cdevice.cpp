@@ -46,27 +46,6 @@
 
 extern "C" {
 
-// Static constants
-
-/*! \brief System partition constant */
-const char * mbp_device_system_partition(void)
-{
-    return Device::SystemPartition.c_str();
-}
-
-/*! \brief Cache partition constant */
-const char * mbp_device_cache_partition(void)
-{
-    return Device::CachePartition.c_str();
-}
-
-/*! \brief Data partition */
-const char * mbp_device_data_partition(void)
-{
-    return Device::DataPartition.c_str();
-}
-
-
 /*!
  * \brief Create a new Device object.
  *
@@ -186,55 +165,52 @@ void mbp_device_set_architecture(CDevice *device, const char *arch)
     d->setArchitecture(arch);
 }
 
-/*!
- * \brief Get partition number for a specific partition
- *
- * \note The output data is dynamically allocated. It should be `free()`'d
- *       when it is no longer needed.
- *
- * \param device CDevice object
- * \param which Partition
- *
- * \return Partition number
- *
- * \sa Device::partition()
- */
-char *mbp_device_partition(const CDevice *device, const char *which)
+char ** mbp_device_system_block_devs(const CDevice *device)
 {
     CCAST(device);
-    return string_to_cstring(d->partition(which));
+    return vector_to_cstring_array(d->systemBlockDevs());
 }
 
-/*!
- * \brief Set the partition number for a specific partition
- *
- * \param device CDevice object
- * \param which Partition
- * \param partition Partition number
- *
- * \sa Device::setPartition()
- */
-void mbp_device_set_partition(CDevice *device,
-                              const char *which, const char *partition)
+void mbp_device_set_system_block_devs(CDevice *device, const char **block_devs)
 {
     CAST(device);
-    d->setPartition(which, partition);
+    d->setSystemBlockDevs(cstring_array_to_vector(block_devs));
 }
 
-/*!
- * \brief List of partition types with partition numbers assigned
- *
- * \note The returned array should be freed with `mbp_free_array()` when it
- *       is no longer needed.
- *
- * \return A NULL-terminated array containing the partition types
- *
- * \sa Device::partitionTypes()
- */
-char ** mbp_device_partition_types(const CDevice *device)
+char ** mbp_device_cache_block_devs(const CDevice *device)
 {
     CCAST(device);
-    return vector_to_cstring_array(d->partitionTypes());
+    return vector_to_cstring_array(d->cacheBlockDevs());
+}
+
+void mbp_device_set_cache_block_devs(CDevice *device, const char **block_devs)
+{
+    CAST(device);
+    d->setCacheBlockDevs(cstring_array_to_vector(block_devs));
+}
+
+char ** mbp_device_data_block_devs(const CDevice *device)
+{
+    CCAST(device);
+    return vector_to_cstring_array(d->dataBlockDevs());
+}
+
+void mbp_device_set_data_block_devs(CDevice *device, const char **block_devs)
+{
+    CAST(device);
+    d->setDataBlockDevs(cstring_array_to_vector(block_devs));
+}
+
+char ** mbp_device_boot_block_devs(const CDevice *device)
+{
+    CCAST(device);
+    return vector_to_cstring_array(d->bootBlockDevs());
+}
+
+void mbp_device_set_boot_block_devs(CDevice *device, const char **block_devs)
+{
+    CAST(device);
+    d->setBootBlockDevs(cstring_array_to_vector(block_devs));
 }
 
 }

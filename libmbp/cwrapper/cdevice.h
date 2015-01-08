@@ -25,10 +25,6 @@
 extern "C" {
 #endif
 
-const char * mbp_device_system_partition(void);
-const char * mbp_device_cache_partition(void);
-const char * mbp_device_data_partition(void);
-
 CDevice * mbp_device_create(void);
 void mbp_device_destroy(CDevice *device);
 
@@ -41,10 +37,14 @@ void mbp_device_set_name(CDevice *device, const char *name);
 char * mbp_device_architecture(const CDevice *device);
 void mbp_device_set_architecture(CDevice *device, const char *arch);
 
-char * mbp_device_partition(const CDevice *device, const char *which);
-void mbp_device_set_partition(CDevice *device,
-                              const char *which, const char *partition);
-char ** mbp_device_partition_types(const CDevice *device);
+char ** mbp_device_system_block_devs(const CDevice *device);
+void mbp_device_set_system_block_devs(CDevice *device, const char **block_devs);
+char ** mbp_device_cache_block_devs(const CDevice *device);
+void mbp_device_set_cache_block_devs(CDevice *device, const char **block_devs);
+char ** mbp_device_data_block_devs(const CDevice *device);
+void mbp_device_set_data_block_devs(CDevice *device, const char **block_devs);
+char ** mbp_device_boot_block_devs(const CDevice *device);
+void mbp_device_set_boot_block_devs(CDevice *device, const char **block_devs);
 
 #ifdef __cplusplus
 }

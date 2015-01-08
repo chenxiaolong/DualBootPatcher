@@ -45,15 +45,11 @@ const std::string StandardPatcher::Id
 const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
 static const std::string Mount
-        = "run_program(\"/update-binary-tool\", \"mount\", \"%1%\"};";
+        = "run_program(\"/update-binary-tool\", \"mount\", \"%1%\");";
 static const std::string Unmount
-        = "run_program(\"/update-binary-tool\", \"unmount\", \"%1%\"};";
+        = "run_program(\"/update-binary-tool\", \"unmount\", \"%1%\");";
 static const std::string Format
-        = "run_program(\"/update-binary-tool\", \"format\", \"%1%\"};";
-
-static const std::string System = "system";
-static const std::string Cache = "cache";
-static const std::string Data = "data";
+        = "run_program(\"/update-binary-tool\", \"format\", \"%1%\");";
 
 
 StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
@@ -129,7 +125,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
  */
 void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 {
-    MBP_regex reLine("^\\s*assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
+    MBP_regex reLine("assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
 
     for (auto &line : *lines) {
         if (MBP_regex_search(line, reLine)) {
@@ -138,6 +134,23 @@ void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
         }
     }
 }
+
+static bool findItemsInString(const std::string &haystack,
+                              const std::vector<std::string> &needles)
+{
+    for (auto const &needle : needles) {
+        if (haystack.find(needle) != std::string::npos) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+#define RE_FUNC(name, args)     "(^|[^a-z])" name "\\s*\\(\\s*" args "[^\\)]*\\)\\s*;"
+#define RE_ARG(x)               "\"" x "\""
+#define RE_ARG_ANY              "[^\"]*"
+#define RE_ARG_SEP              "\\s*,\\s*"
 
 /*!
     \brief Change partition mounting lines to be multiboot-compatible
@@ -148,15 +161,20 @@ void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
                                         Device *device)
 {
-    auto const pSystem = device->partition(System);
-    auto const pCache = device->partition(Cache);
-    auto const pData = device->partition(Data);
+    auto const systemDevs = device->systemBlockDevs();
+    auto const cacheDevs = device->cacheBlockDevs();
+    auto const dataDevs = device->dataBlockDevs();
 
-    static auto const re1 = MBP_regex("^\\s*mount\\s*\\(.*$");
-    static auto const re2 =
-            MBP_regex("^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"mount\".*$");
-    static auto const re3 =
-            MBP_regex("^\\s*run_program\\s*\\(\\s*\"[^\",]*/mount\".*$");
+    static auto const re1 = MBP_regex(
+            RE_FUNC("mount", ""));
+    static auto const re2 = MBP_regex(
+            RE_FUNC("run_program",
+                    RE_ARG(RE_ARG_ANY "busybox")
+                    RE_ARG_SEP
+                    RE_ARG("mount")));
+    static auto const re3 = MBP_regex(
+            RE_FUNC("run_program",
+                    RE_ARG(RE_ARG_ANY "/mount")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
         auto const &line = *it;
@@ -166,13 +184,13 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
                 || MBP_regex_search(line, re3);
 
         if (isMountLine) {
-            bool isSystem = line.find(System) != std::string::npos
-                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos);
-            bool isCache = line.find(Cache) != std::string::npos
-                    || (!pCache.empty() && line.find(pCache) != std::string::npos);
-            bool isData = line.find(Data) != std::string::npos
-                    || line.find("userdata") != std::string::npos
-                    || (!pData.empty() && line.find(pData) != std::string::npos);
+            bool isSystem = line.find("/system") != std::string::npos
+                    || findItemsInString(line, systemDevs);
+            bool isCache = line.find("/cache") != std::string::npos
+                    || findItemsInString(line, cacheDevs);
+            bool isData = line.find("/data") != std::string::npos
+                    || line.find("/userdata") != std::string::npos
+                    || findItemsInString(line, dataDevs);
 
             if (isSystem) {
                 it = lines->erase(it);
@@ -197,13 +215,17 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
 void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
                                           Device *device)
 {
-    auto const pSystem = device->partition(System);
-    auto const pCache = device->partition(Cache);
-    auto const pData = device->partition(Data);
+    auto const systemDevs = device->systemBlockDevs();
+    auto const cacheDevs = device->cacheBlockDevs();
+    auto const dataDevs = device->dataBlockDevs();
 
-    static auto const re1 = MBP_regex("^\\s*unmount\\s*\\(.*$");
-    static auto const re2 =
-            MBP_regex("^\\s*run_program\\s*\\(\\s*\"[^\"]*busybox\"\\s*,\\s*\"umount\".*$");
+    static auto const re1 = MBP_regex(
+            RE_FUNC("unmount", ""));
+    static auto const re2 = MBP_regex(
+            RE_FUNC("run_program",
+                    RE_ARG(RE_ARG_ANY "busybox")
+                    RE_ARG_SEP
+                    RE_ARG("umount")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
         auto const &line = *it;
@@ -212,13 +234,13 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
                 || MBP_regex_search(line, re2);
 
         if (isUnmountLine) {
-            bool isSystem = line.find(System) != std::string::npos
-                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos);
-            bool isCache = line.find(Cache) != std::string::npos
-                    || (!pCache.empty() && line.find(pCache) != std::string::npos);
-            bool isData = line.find(Data) != std::string::npos
-                    || line.find("userdata") != std::string::npos
-                    || (!pData.empty() && line.find(pData) != std::string::npos);
+            bool isSystem = line.find("/system") != std::string::npos
+                    || findItemsInString(line, systemDevs);
+            bool isCache = line.find("/cache") != std::string::npos
+                    || findItemsInString(line, cacheDevs);
+            bool isData = line.find("/data") != std::string::npos
+                    || line.find("/userdata") != std::string::npos
+                    || findItemsInString(line, dataDevs);
 
             if (isSystem) {
                 it = lines->erase(it);
@@ -243,21 +265,21 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
 void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
                                          Device *device)
 {
-    auto const pSystem = device->partition(System);
-    auto const pCache = device->partition(Cache);
-    auto const pData = device->partition(Data);
+    auto const systemDevs = device->systemBlockDevs();
+    auto const cacheDevs = device->cacheBlockDevs();
+    auto const dataDevs = device->dataBlockDevs();
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
         auto const &line = *it;
 
-        if (MBP_regex_search(line, MBP_regex("^\\s*format\\s*\\(.*$"))) {
-            bool isSystem = line.find(System) != std::string::npos
-                    || (!pSystem.empty() && line.find(pSystem) != std::string::npos);
-            bool isCache = line.find(Cache) != std::string::npos
-                    || (!pCache.empty() && line.find(pCache) != std::string::npos);
-            bool isData = line.find(Data) != std::string::npos
-                    || line.find("userdata") != std::string::npos
-                    || (!pData.empty() && line.find(pData) != std::string::npos);
+        if (MBP_regex_search(line, MBP_regex(RE_FUNC("format", "")))) {
+            bool isSystem = line.find("/system") != std::string::npos
+                    || findItemsInString(line, systemDevs);
+            bool isCache = line.find("/cache") != std::string::npos
+                    || findItemsInString(line, cacheDevs);
+            bool isData = line.find("/data") != std::string::npos
+                    || line.find("/userdata") != std::string::npos
+                    || findItemsInString(line, dataDevs);
 
             if (isSystem) {
                 it = lines->erase(it);
@@ -270,15 +292,15 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
                 it = lines->insert(it, (boost::format(Format) % "/data").str());
             }
         } else if (MBP_regex_search(line, MBP_regex(
-                "delete_recursive\\s*\\([^\\)]*\"/system\""))) {
+                RE_FUNC("delete_recursive", RE_ARG("/system"))))) {
             it = lines->erase(it);
             it = lines->insert(it, (boost::format(Format) % "/system").str());
         } else if (MBP_regex_search(line, MBP_regex(
-                "delete_recursive\\s*\\([^\\)]*\"/cache\""))) {
+                RE_FUNC("delete_recursive", RE_ARG("/cache"))))) {
             it = lines->erase(it);
             it = lines->insert(it, (boost::format(Format) % "/cache").str());
         } else if (MBP_regex_search(line, MBP_regex(
-                "^\\s*run_program\\s*\\(\\s*\"[^\",]*/format.sh\".*$"))) {
+                RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh"))))) {
             it = lines->erase(it);
             it = lines->insert(it, (boost::format(Format) % "/data").str());
         }

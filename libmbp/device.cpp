@@ -30,29 +30,17 @@ public:
     std::string name;
     std::string architecture;
 
-    std::unordered_map<std::string, std::string> partitions;
+    std::vector<std::string> systemDevs;
+    std::vector<std::string> cacheDevs;
+    std::vector<std::string> dataDevs;
+    std::vector<std::string> bootDevs;
 };
 /*! \endcond */
-
-
-/*! \brief System partition */
-const std::string Device::SystemPartition = "system";
-/*! \brief Cache partition */
-const std::string Device::CachePartition = "cache";
-/*! \brief Data partition */
-const std::string Device::DataPartition = "data";
 
 
 /*!
  * \class Device
  * \brief Simple class containing information about a supported device
- *
- * This class stores the following information:
- *
- * - Device codename (eg. jflte)
- * - Device name (eg. Samsung Galaxy S 4)
- * - CPU architecture (eg. armeabi-v7a)
- * - Partition numbers for the system, cache, and data partitions
  */
 
 Device::Device() : m_impl(new Impl())
@@ -129,45 +117,42 @@ void Device::setArchitecture(std::string arch)
     m_impl->architecture = std::move(arch);
 }
 
-/*!
- * \brief Get partition number for a specific partition
- *
- * \param which Partition
- *
- * \return Partition
- */
-std::string Device::partition(const std::string &which) const
+std::vector<std::string> Device::systemBlockDevs() const
 {
-    if (m_impl->partitions.find(which) != m_impl->partitions.end()) {
-        return m_impl->partitions[which];
-    } else {
-        return std::string();
-    }
+    return m_impl->systemDevs;
 }
 
-/*!
- * \brief Set the partition number for a specific partition
- *
- * \param which Partition
- * \param partition Partition number (eg. `mmcblk16`)
- */
-void Device::setPartition(const std::string &which, std::string partition)
+void Device::setSystemBlockDevs(std::vector<std::string> blockDevs)
 {
-    m_impl->partitions[which] = std::move(partition);
+    m_impl->systemDevs = std::move(blockDevs);
 }
 
-/*!
- * \brief List of partition types with partition numbers assigned
- *
- * \return List of partition types
- */
-std::vector<std::string> Device::partitionTypes() const
+std::vector<std::string> Device::cacheBlockDevs() const
 {
-    std::vector<std::string> keys;
+    return m_impl->cacheDevs;
+}
 
-    for (auto const &p :  m_impl->partitions) {
-        keys.push_back(p.first);
-    }
+void Device::setCacheBlockDevs(std::vector<std::string> blockDevs)
+{
+    m_impl->cacheDevs = std::move(blockDevs);
+}
 
-    return keys;
+std::vector<std::string> Device::dataBlockDevs() const
+{
+    return m_impl->dataDevs;
+}
+
+void Device::setDataBlockDevs(std::vector<std::string> blockDevs)
+{
+    m_impl->dataDevs = std::move(blockDevs);
+}
+
+std::vector<std::string> Device::bootBlockDevs() const
+{
+    return m_impl->bootDevs;
+}
+
+void Device::setBootBlockDevs(std::vector<std::string> blockDevs)
+{
+    m_impl->bootDevs = std::move(blockDevs);
 }

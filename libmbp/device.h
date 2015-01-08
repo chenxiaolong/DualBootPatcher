@@ -28,10 +28,6 @@
 class MBP_EXPORT Device
 {
 public:
-    static const std::string SystemPartition;
-    static const std::string CachePartition;
-    static const std::string DataPartition;
-
     Device();
     ~Device();
 
@@ -41,9 +37,14 @@ public:
     void setName(std::string name);
     std::string architecture() const;
     void setArchitecture(std::string arch);
-    std::string partition(const std::string &which) const;
-    void setPartition(const std::string &which, std::string partition);
-    std::vector<std::string> partitionTypes() const;
+    std::vector<std::string> systemBlockDevs() const;
+    void setSystemBlockDevs(std::vector<std::string> blockDevs);
+    std::vector<std::string> cacheBlockDevs() const;
+    void setCacheBlockDevs(std::vector<std::string> blockDevs);
+    std::vector<std::string> dataBlockDevs() const;
+    void setDataBlockDevs(std::vector<std::string> blockDevs);
+    std::vector<std::string> bootBlockDevs() const;
+    void setBootBlockDevs(std::vector<std::string> blockDevs);
 
 private:
     class Impl;

@@ -457,61 +457,89 @@ void PatcherConfig::Impl::loadDefaultDevices()
 {
     Device *device;
 
+    const std::string qcomSystem("/dev/block/platform/msm_sdcc.1/by-name/system");
+    const std::string qcomCache("/dev/block/platform/msm_sdcc.1/by-name/cache");
+    const std::string qcomData("/dev/block/platform/msm_sdcc.1/by-name/userdata");
+    const std::string qcomBoot("/dev/block/platform/msm_sdcc.1/by-name/boot");
+
     // Samsung Galaxy S 4
     device = new Device();
     device->setCodename("jflte");
     device->setName("Samsung Galaxy S 4");
-    device->setPartition(Device::SystemPartition, "mmcblk0p16");
-    device->setPartition(Device::CachePartition, "mmcblk0p18");
-    device->setPartition(Device::DataPartition, "mmcblk0p29");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p16" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p29" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p20" });
     devices.push_back(device);
 
     // Samsung Galaxy S 5
     device = new Device();
     device->setCodename("klte");
     device->setName("Samsung Galaxy S 5");
-    device->setPartition(Device::SystemPartition, "mmcblk0p23");
-    device->setPartition(Device::CachePartition, "mmcblk0p24");
-    device->setPartition(Device::DataPartition, "mmcblk0p26");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p15" });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3
     device = new Device();
     device->setCodename("hlte");
     device->setName("Samsung Galaxy Note 3");
-    device->setPartition(Device::SystemPartition, "mmcblk0p23");
-    device->setPartition(Device::CachePartition, "mmcblk0p24");
-    device->setPartition(Device::DataPartition, "mmcblk0p26");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
 
     // Google/LG Nexus 5
     device = new Device();
     device->setCodename("hammerhead");
     device->setName("Google/LG Nexus 5");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p25" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p27" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p19" });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2013)
     device = new Device();
     device->setCodename("flo");
     device->setName("Google/ASUS Nexus 7 (2013)");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p30" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
 
     // OnePlus One
     device = new Device();
     device->setCodename("bacon");
     device->setName("OnePlus One");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
     devices.push_back(device);
 
     // LG G2
     device = new Device();
     device->setCodename("d800");
     device->setName("LG G2");
+    device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
+    device->setCacheBlockDevs({ qcomCache /*, TODO */ });
+    device->setDataBlockDevs({ qcomData /*, TODO */ });
+    device->setBootBlockDevs({ qcomBoot /*, TODO */ });
     devices.push_back(device);
 
     // Falcon
     device = new Device();
     device->setCodename("falcon");
     device->setName("Motorola Moto G");
+    device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
+    device->setCacheBlockDevs({ qcomCache /*, TODO */ });
+    device->setDataBlockDevs({ qcomData /*, TODO */ });
+    device->setBootBlockDevs({ qcomBoot /*, TODO */ });
     devices.push_back(device);
 }
 

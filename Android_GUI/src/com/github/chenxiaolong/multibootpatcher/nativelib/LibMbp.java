@@ -118,9 +118,6 @@ public class LibMbp {
         // END: ccpiofile.h
 
         // BEGIN: cdevice.h
-        static native String mbp_device_system_partition();
-        static native String mbp_device_cache_partition();
-        static native String mbp_device_data_partition();
         static native CDevice mbp_device_create();
         static native void mbp_device_destroy(CDevice device);
         static native Pointer mbp_device_codename(CDevice device);
@@ -129,9 +126,14 @@ public class LibMbp {
         static native void mbp_device_set_name(CDevice device, String name);
         static native Pointer mbp_device_architecture(CDevice device);
         static native void mbp_device_set_architecture(CDevice device, String arch);
-        static native Pointer mbp_device_partition(CDevice device, String which);
-        static native void mbp_device_set_partition(CDevice device, String which, String partition);
-        static native Pointer mbp_device_partition_types(CDevice device);
+        static native Pointer mbp_device_system_block_devs(CDevice device);
+        static native void mbp_device_set_system_block_devs(CDevice device, StringArray block_devs);
+        static native Pointer mbp_device_cache_block_devs(CDevice device);
+        static native void mbp_device_set_cache_block_devs(CDevice device, StringArray block_devs);
+        static native Pointer mbp_device_data_block_devs(CDevice device);
+        static native void mbp_device_set_data_block_devs(CDevice device, StringArray block_devs);
+        static native Pointer mbp_device_boot_block_devs(CDevice device);
+        static native void mbp_device_set_boot_block_devs(CDevice device, StringArray block_devs);
         // END: cdevice.h
 
         // BEGIN: cfileinfo.h
@@ -949,18 +951,6 @@ public class LibMbp {
             }
         };
 
-        public static String SystemPartition() {
-            return CWrapper.mbp_device_system_partition();
-        }
-
-        public static String CachePartition() {
-            return CWrapper.mbp_device_cache_partition();
-        }
-
-        public static String DataPartition() {
-            return CWrapper.mbp_device_data_partition();
-        }
-
         public String getCodename() {
             log(mCDevice, Device.class, "getCodename");
             Pointer p = CWrapper.mbp_device_codename(mCDevice);
@@ -1000,26 +990,56 @@ public class LibMbp {
             CWrapper.mbp_device_set_architecture(mCDevice, arch);
         }
 
-        public String getPartition(String which) {
-            log(mCDevice, Device.class, "getPartition", which);
-            ensureNotNull(which);
-
-            Pointer p = CWrapper.mbp_device_partition(mCDevice, which);
-            return getStringAndFree(p);
-        }
-
-        public void setPartition(String which, String partition) {
-            log(mCDevice, Device.class, "setPartition", which, partition);
-            ensureNotNull(which);
-            ensureNotNull(partition);
-
-            CWrapper.mbp_device_set_partition(mCDevice, which, partition);
-        }
-
-        String[] getPartitionTypes() {
-            log(mCDevice, Device.class, "getPartitionTypes");
-            Pointer p = CWrapper.mbp_device_partition_types(mCDevice);
+        public String[] getSystemBlockDevs() {
+            log(mCDevice, Device.class, "getSystemBlockDevs");
+            Pointer p = CWrapper.mbp_device_system_block_devs(mCDevice);
             return getStringArrayAndFree(p);
+        }
+
+        public void setSystemBlockDevs(String[] blockDevs) {
+            log(mCDevice, Device.class, "setSystemBlockDevs", (Object) blockDevs);
+            ensureNotNull(blockDevs);
+
+            CWrapper.mbp_device_set_system_block_devs(mCDevice, new StringArray(blockDevs));
+        }
+
+        public String[] getCacheBlockDevs() {
+            log(mCDevice, Device.class, "getCacheBlockDevs");
+            Pointer p = CWrapper.mbp_device_cache_block_devs(mCDevice);
+            return getStringArrayAndFree(p);
+        }
+
+        public void setCacheBlockDevs(String[] blockDevs) {
+            log(mCDevice, Device.class, "setCacheBlockDevs", (Object) blockDevs);
+            ensureNotNull(blockDevs);
+
+            CWrapper.mbp_device_set_cache_block_devs(mCDevice, new StringArray(blockDevs));
+        }
+
+        public String[] getDataBlockDevs() {
+            log(mCDevice, Device.class, "getDataBlockDevs");
+            Pointer p = CWrapper.mbp_device_data_block_devs(mCDevice);
+            return getStringArrayAndFree(p);
+        }
+
+        public void setDataBlockDevs(String[] blockDevs) {
+            log(mCDevice, Device.class, "setDataBlockDevs", (Object) blockDevs);
+            ensureNotNull(blockDevs);
+
+            CWrapper.mbp_device_set_data_block_devs(mCDevice, new StringArray(blockDevs));
+        }
+
+        public String[] getBootBlockDevs() {
+            log(mCDevice, Device.class, "getBootBlockDevs");
+            Pointer p = CWrapper.mbp_device_boot_block_devs(mCDevice);
+            return getStringArrayAndFree(p);
+        }
+
+        public void setBootBlockDevs(String[] blockDevs) {
+            log(mCDevice, Device.class, "setBootBlockDevs", (Object) blockDevs);
+            ensureNotNull(blockDevs);
+
+            CWrapper.mbp_device_set_boot_block_devs(mCDevice, new StringArray(blockDevs));
         }
     }
 
