@@ -22,6 +22,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/format.hpp>
 
@@ -93,7 +94,6 @@ bool StandardPatcher::patchFiles(const std::string &directory)
 {
     std::vector<unsigned char> contents;
 
-    // UpdaterScript begin
     FileUtils::readToMemory(directory + "/" + UpdaterScript, &contents);
     std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
@@ -102,6 +102,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     replaceMountLines(&lines, m_impl->info->device());
     replaceUnmountLines(&lines, m_impl->info->device());
     replaceFormatLines(&lines, m_impl->info->device());
+    fixBlockUpdateLines(&lines, m_impl->info->device());
 
     // Remove device check if requested
     std::string key = m_impl->info->patchInfo()->keyFromFilename(
@@ -113,7 +114,6 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     FileUtils::writeFromMemory(directory + "/" + UpdaterScript, contents);
-    // UpdaterScript end
 
     return true;
 }
@@ -177,30 +177,25 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
                     RE_ARG(RE_ARG_ANY "/mount")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        auto const &line = *it;
-
-        bool isMountLine = MBP_regex_search(line, re1)
-                || MBP_regex_search(line, re2)
-                || MBP_regex_search(line, re3);
+        bool isMountLine = MBP_regex_search(*it, re1)
+                || MBP_regex_search(*it, re2)
+                || MBP_regex_search(*it, re3);
 
         if (isMountLine) {
-            bool isSystem = line.find("/system") != std::string::npos
-                    || findItemsInString(line, systemDevs);
-            bool isCache = line.find("/cache") != std::string::npos
-                    || findItemsInString(line, cacheDevs);
-            bool isData = line.find("/data") != std::string::npos
-                    || line.find("/userdata") != std::string::npos
-                    || findItemsInString(line, dataDevs);
+            bool isSystem = it->find("/system") != std::string::npos
+                    || findItemsInString(*it, systemDevs);
+            bool isCache = it->find("/cache") != std::string::npos
+                    || findItemsInString(*it, cacheDevs);
+            bool isData = it->find("/data") != std::string::npos
+                    || it->find("/userdata") != std::string::npos
+                    || findItemsInString(*it, dataDevs);
 
             if (isSystem) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Mount) % "/system").str());
+                *it = (boost::format(Mount) % "/system").str();
             } else if (isCache) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Mount) % "/cache").str());
+                *it = (boost::format(Mount) % "/cache").str();
             } else if (isData) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Mount) % "/data").str());
+                *it = (boost::format(Mount) % "/data").str();
             }
         }
     }
@@ -228,29 +223,24 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
                     RE_ARG("umount")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        auto const &line = *it;
-
-        bool isUnmountLine = MBP_regex_search(line, re1)
-                || MBP_regex_search(line, re2);
+        bool isUnmountLine = MBP_regex_search(*it, re1)
+                || MBP_regex_search(*it, re2);
 
         if (isUnmountLine) {
-            bool isSystem = line.find("/system") != std::string::npos
-                    || findItemsInString(line, systemDevs);
-            bool isCache = line.find("/cache") != std::string::npos
-                    || findItemsInString(line, cacheDevs);
-            bool isData = line.find("/data") != std::string::npos
-                    || line.find("/userdata") != std::string::npos
-                    || findItemsInString(line, dataDevs);
+            bool isSystem = it->find("/system") != std::string::npos
+                    || findItemsInString(*it, systemDevs);
+            bool isCache = it->find("/cache") != std::string::npos
+                    || findItemsInString(*it, cacheDevs);
+            bool isData = it->find("/data") != std::string::npos
+                    || it->find("/userdata") != std::string::npos
+                    || findItemsInString(*it, dataDevs);
 
             if (isSystem) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Unmount) % "/system").str());
+                *it = (boost::format(Unmount) % "/system").str();
             } else if (isCache) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Unmount) % "/cache").str());
+                *it = (boost::format(Unmount) % "/cache").str();
             } else if (isData) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Unmount) % "/data").str());
+                *it = (boost::format(Unmount) % "/data").str();
             }
         }
     }
@@ -270,39 +260,48 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
     auto const dataDevs = device->dataBlockDevs();
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        auto const &line = *it;
-
-        if (MBP_regex_search(line, MBP_regex(RE_FUNC("format", "")))) {
-            bool isSystem = line.find("/system") != std::string::npos
-                    || findItemsInString(line, systemDevs);
-            bool isCache = line.find("/cache") != std::string::npos
-                    || findItemsInString(line, cacheDevs);
-            bool isData = line.find("/data") != std::string::npos
-                    || line.find("/userdata") != std::string::npos
-                    || findItemsInString(line, dataDevs);
+        if (MBP_regex_search(*it, MBP_regex(RE_FUNC("format", "")))) {
+            bool isSystem = it->find("/system") != std::string::npos
+                    || findItemsInString(*it, systemDevs);
+            bool isCache = it->find("/cache") != std::string::npos
+                    || findItemsInString(*it, cacheDevs);
+            bool isData = it->find("/data") != std::string::npos
+                    || it->find("/userdata") != std::string::npos
+                    || findItemsInString(*it, dataDevs);
 
             if (isSystem) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Format) % "/system").str());
+                *it = (boost::format(Format) % "/system").str();
             } else if (isCache) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Format) % "/cache").str());
+                *it = (boost::format(Format) % "/cache").str();
             } else if (isData) {
-                it = lines->erase(it);
-                it = lines->insert(it, (boost::format(Format) % "/data").str());
+                *it = (boost::format(Format) % "/data").str();
             }
-        } else if (MBP_regex_search(line, MBP_regex(
+        } else if (MBP_regex_search(*it, MBP_regex(
                 RE_FUNC("delete_recursive", RE_ARG("/system"))))) {
-            it = lines->erase(it);
-            it = lines->insert(it, (boost::format(Format) % "/system").str());
-        } else if (MBP_regex_search(line, MBP_regex(
+            *it = (boost::format(Format) % "/system").str();
+        } else if (MBP_regex_search(*it, MBP_regex(
                 RE_FUNC("delete_recursive", RE_ARG("/cache"))))) {
-            it = lines->erase(it);
-            it = lines->insert(it, (boost::format(Format) % "/cache").str());
-        } else if (MBP_regex_search(line, MBP_regex(
+            *it = (boost::format(Format) % "/cache").str();
+        } else if (MBP_regex_search(*it, MBP_regex(
                 RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh"))))) {
-            it = lines->erase(it);
-            it = lines->insert(it, (boost::format(Format) % "/data").str());
+            *it = (boost::format(Format) % "/data").str();
+        }
+    }
+}
+
+#include "private/logging.h"
+void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
+                                          Device *device)
+{
+    auto const systemDevs = device->systemBlockDevs();
+
+    for (auto it = lines->begin(); it != lines->end(); ++it) {
+        if (it->find("block_image_update") != std::string::npos) {
+            // References to the system partition should become /tmp/system.img
+            for (auto const &dev : systemDevs) {
+Log::log(Log::Warning, "SYSTEM: %s", dev);
+                boost::replace_all(*it, dev, "/tmp/system.img");
+            }
         }
     }
 }

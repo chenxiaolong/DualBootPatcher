@@ -53,6 +53,7 @@ public:
     static void replaceMountLines(std::vector<std::string> *lines, Device *device);
     static void replaceUnmountLines(std::vector<std::string> *lines, Device *device);
     static void replaceFormatLines(std::vector<std::string> *lines, Device *device);
+    static void fixBlockUpdateLines(std::vector<std::string> *lines, Device *device);
 
 private:
     class Impl;
