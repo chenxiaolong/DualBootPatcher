@@ -26,7 +26,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mount.h>
+#include <unistd.h>
 
+#include "util/file.h"
 #include "util/logging.h"
 
 
@@ -39,15 +41,24 @@
 
 #define TAG "update-binary-tool: "
 
+#define STAMP_FILE "/.system-mounted"
+
 
 static int do_mount(const char *mountpoint)
 {
     if (strcmp(mountpoint, SYSTEM) == 0) {
+        if (access(STAMP_FILE, F_OK) == 0) {
+            LOGV(TAG "/system already mounted. Skipping");
+            return 0;
+        }
+
         if (mount("/chroot/tmp/system.img", SYSTEM,
                   "ext4", MS_NOSUID, "") < 0) {
             LOGE(TAG "Failed to mount %s: %s", mountpoint, strerror(errno));
             return -1;
         }
+
+        mb_create_empty_file(STAMP_FILE);
     } else {
         LOGV(TAG "Ignoring mount command for %s", mountpoint);
     }
@@ -62,6 +73,8 @@ static int do_unmount(const char *mountpoint)
             LOGE(TAG "Failed to unmount %s: %s", mountpoint, strerror(errno));
             return -1;
         }
+
+        remove(STAMP_FILE);
     } else {
         LOGV(TAG "Ignoring unmount command for %s", mountpoint);
     }
