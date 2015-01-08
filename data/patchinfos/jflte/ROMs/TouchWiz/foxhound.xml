@@ -5,6 +5,5 @@
     <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
-        <autopatcher file="jflte/ROMs/TouchWiz/foxhound.dualboot.patch">PatchFile</autopatcher>
     </autopatchers>
 </patchinfo>
