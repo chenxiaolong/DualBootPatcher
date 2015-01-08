@@ -49,7 +49,6 @@ public:
 
     // These are public so other patchers can use them
     static void removeDeviceChecks(std::vector<std::string> *lines);
-    static void insertWriteKernel(std::vector<std::string> *lines, const std::string &bootImage);
 
     static void replaceMountLines(std::vector<std::string> *lines, Device *device);
     static void replaceUnmountLines(std::vector<std::string> *lines, Device *device);
