@@ -45,23 +45,20 @@ args=(
 
 ndk-build "${args[@]}" busybox_prepare
 ndk-build "${args[@]}"
+
+outdir="$(mktemp -d)"
+cp -a libs/. "${outdir}"
+rm "${outdir}"/*/busybox_shared
+rename busybox_static unzip "${outdir}"/*/busybox_static
+
+if [ ! -f ../unzip-${branch}_android.tar.xz ]; then
+    curdir="$(pwd)"
+    pushd "${outdir}"
+    tar Jcvf "${curdir}"/../unzip-${branch}_android.tar.xz \
+        "${arches[@]}"
+    popd
+fi
+
+rm -rf "${outdir}"
+
 popd
-
-add_unzip() {
-    local script="${1}"
-    local abi="${2}"
-
-    echo "BEGIN_${abi}" >> "${script}"
-    base64 "busybox/libs/${abi}/busybox_static" >> "${script}"
-    echo "END_${abi}" >> "${script}"
-}
-
-cp unzip.in unzip
-
-for arch in "${arches[@]}"; do
-    add_unzip unzip "${arch}"
-done
-
-rm -f unzip.xz
-xz -9 unzip
-base64 unzip.xz > unzip.xz.base64

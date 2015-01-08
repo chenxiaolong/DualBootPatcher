@@ -214,18 +214,21 @@ endif()
 # busybox unzip for Android
 ################################################################################
 
+set(UNZIP_VER "cm-12.0")
+
 file(
     DOWNLOAD
-    ${URL_BASE}/unzip.xz.base64
-    ${CMAKE_CURRENT_SOURCE_DIR}/unzip.xz.base64
-    EXPECTED_MD5 0af568f77d558a8c5fc39f4a35a1d563
+    ${URL_BASE}/unzip-${UNZIP_VER}_android.tar.xz
+    ${CMAKE_CURRENT_SOURCE_DIR}/unzip-${UNZIP_VER}_android.tar.xz
+    EXPECTED_MD5 0e246213d75492a20b36dc601dcb93dc
     SHOW_PROGRESS
 )
 
 install(
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/unzip.xz.base64
-    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/unzip-${UNZIP_VER}_android.tar.xz
+    DESTINATION ${DATA_INSTALL_DIR}/
     COMPONENT Libraries
+    RENAME unzip.tar.xz
 )
 
 
