@@ -289,7 +289,6 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
     }
 }
 
-#include "private/logging.h"
 void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
                                           Device *device)
 {
@@ -299,7 +298,6 @@ void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
         if (it->find("block_image_update") != std::string::npos) {
             // References to the system partition should become /tmp/system.img
             for (auto const &dev : systemDevs) {
-Log::log(Log::Warning, "SYSTEM: %s", dev);
                 boost::replace_all(*it, dev, "/tmp/system.img");
             }
         }
