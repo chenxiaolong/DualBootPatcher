@@ -4,6 +4,6 @@
 
     <has-boot-image>false</has-boot-image>
     <autopatchers>
-        <autopatcher file="jflte/Other/comadose.dualboot.patch">PatchFile</autopatcher>
+        <autopatcher>StandardPatcher</autopatcher>
     </autopatchers>
 </patchinfo>
