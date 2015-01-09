@@ -115,7 +115,7 @@ int mb_bind_mount(const char *source, mode_t source_perms,
         return -1;
     }
 
-    if (mount(source, target, NULL, MS_BIND, NULL) < 0) {
+    if (mount(source, target, "", MS_BIND, "") < 0) {
         LOGE("Failed to bind mount %s to %s: %s",
              source, target, strerror(errno));
         return -1;
