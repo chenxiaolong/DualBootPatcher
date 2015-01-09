@@ -53,6 +53,19 @@
         return false; \
     }
 
+#define MAX_PROGRESS_CB(x) \
+    if (maxProgressCb != nullptr) { \
+        maxProgressCb(x, userData); \
+    }
+#define PROGRESS_CB(x) \
+    if (progressCb != nullptr) { \
+        progressCb(x, userData); \
+    }
+#define DETAILS_CB(x) \
+    if (detailsCb != nullptr) { \
+        detailsCb(x, userData); \
+    }
+
 // TODO TODO TODO
 #define tr(x) (x)
 // TODO TODO TODO
@@ -355,9 +368,7 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (detailsCb != nullptr) {
-        detailsCb(tr("Counting number of files in zip file ..."), userData);
-    }
+    DETAILS_CB(tr("Counting number of files in zip file ..."));
 
     unsigned int count;
     auto result = FileUtils::laCountFiles(info->filename(), &count);
@@ -374,12 +385,8 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for resize2fs
     // +1 for unzip
     // +1 for device
-    if (maxProgressCb != nullptr) {
-        maxProgressCb(count + 6, userData);
-    }
-    if (progressCb != nullptr) {
-        progressCb(progress, userData);
-    }
+    MAX_PROGRESS_CB(count + 6);
+    PROGRESS_CB(progress);
 
     if (!openInputArchive()) {
         return false;
@@ -406,12 +413,8 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (progressCb != nullptr) {
-        progressCb(++progress, userData);
-    }
-    if (detailsCb != nullptr) {
-        detailsCb("META-INF/com/google/android/update-binary", userData);
-    }
+    PROGRESS_CB(++progress);
+    DETAILS_CB("META-INF/com/google/android/update-binary");
 
     // Add mbtool
     result = FileUtils::laAddFile(
@@ -425,12 +428,8 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (progressCb != nullptr) {
-        progressCb(++progress, userData);
-    }
-    if (detailsCb != nullptr) {
-        detailsCb("multiboot/aromawrapper.zip", userData);
-    }
+    PROGRESS_CB(++progress);
+    DETAILS_CB("multiboot/aromawrapper.zip");
 
     // Add aromawrapper.zip
     result = FileUtils::laAddFile(
@@ -443,12 +442,8 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (progressCb != nullptr) {
-        progressCb(++progress, userData);
-    }
-    if (detailsCb != nullptr) {
-        detailsCb("multiboot/e2fsck", userData);
-    }
+    PROGRESS_CB(++progress);
+    DETAILS_CB("multiboot/e2fsck");
 
     // Add e2fsck
     result = FileUtils::laAddFile(
@@ -462,12 +457,8 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (progressCb != nullptr) {
-        progressCb(++progress, userData);
-    }
-    if (detailsCb != nullptr) {
-        detailsCb("multiboot/resize2fs", userData);
-    }
+    PROGRESS_CB(++progress);
+    DETAILS_CB("multiboot/resize2fs");
 
     // Add resize2fs
     result = FileUtils::laAddFile(
@@ -481,12 +472,8 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (progressCb != nullptr) {
-        progressCb(++progress, userData);
-    }
-    if (detailsCb != nullptr) {
-        detailsCb("multiboot/unzip", userData);
-    }
+    PROGRESS_CB(++progress);
+    DETAILS_CB("multiboot/unzip");
 
     // Add unzip.tar.xz
     result = FileUtils::laAddFile(
@@ -500,12 +487,8 @@ bool MultiBootPatcher::Impl::patchZip()
 
     RETURN_IF_CANCELLED
 
-    if (progressCb != nullptr) {
-        progressCb(++progress, userData);
-    }
-    if (detailsCb != nullptr) {
-        detailsCb("multiboot/device", userData);
-    }
+    PROGRESS_CB(++progress);
+    DETAILS_CB("multiboot/device");
 
     // In the future, we may add more to the device file, but for now, we write
     // the codename and mbtool will dlopen() libmbp to retrieve additional
@@ -551,12 +534,8 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
 
         const std::string curFile = archive_entry_pathname(entry);
 
-        if (progressCb != nullptr) {
-            progressCb(++progress, userData);
-        }
-        if (detailsCb != nullptr) {
-            detailsCb(curFile, userData);
-        }
+        PROGRESS_CB(++progress);
+        DETAILS_CB(curFile);
 
         // Skip files that should be patched and added in pass 2
         if (exclude.find(curFile) != exclude.end()) {
