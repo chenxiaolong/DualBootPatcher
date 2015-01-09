@@ -171,7 +171,7 @@ static int patch_sepolicy_internal(const char *source, const char *target)
         return -1;
     }
 
-    LOGD("Policy version: %lu", pdb.policyvers);
+    LOGD("Policy version: %u", pdb.policyvers);
 
     make_permissive(&pdb, permissive_types);
 
