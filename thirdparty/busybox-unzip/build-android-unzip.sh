@@ -51,10 +51,10 @@ cp -a libs/. "${outdir}"
 rm "${outdir}"/*/busybox_shared
 rename busybox_static unzip "${outdir}"/*/busybox_static
 
-if [ ! -f ../unzip-${branch}_android.tar.xz ]; then
+if [ ! -f ../unzip-${branch}_android.tar.bz2 ]; then
     curdir="$(pwd)"
     pushd "${outdir}"
-    tar Jcvf "${curdir}"/../unzip-${branch}_android.tar.xz \
+    tar jcvf "${curdir}"/../unzip-${branch}_android.tar.bz2 \
         "${arches[@]}"
     popd
 fi

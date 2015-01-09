@@ -371,7 +371,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for mbtool (update-binary)
     // +1 for aromawrapper.sh
     // +1 for e2fsprogs.tar.xz
-    // +1 for unzip.tar.xz
+    // +1 for unzip
     // +1 for device
     if (maxProgressCb != nullptr) {
         maxProgressCb(count + 5, userData);
@@ -464,13 +464,14 @@ bool MultiBootPatcher::Impl::patchZip()
         progressCb(++progress, userData);
     }
     if (detailsCb != nullptr) {
-        detailsCb("multiboot/unzip.tar.xz", userData);
+        detailsCb("multiboot/unzip", userData);
     }
 
     // Add unzip.tar.xz
     result = FileUtils::laAddFile(
-            aOutput, "multiboot/unzip.tar.xz",
-            pc->dataDirectory() + "/unzip.tar.xz");
+            aOutput, "multiboot/unzip",
+            pc->binariesDirectory() + "/android/"
+                    + info->device()->architecture() + "/unzip");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;

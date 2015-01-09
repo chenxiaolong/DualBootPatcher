@@ -218,17 +218,28 @@ set(UNZIP_VER "cm-12.0")
 
 file(
     DOWNLOAD
-    ${URL_BASE}/unzip-${UNZIP_VER}_android.tar.xz
-    ${CMAKE_CURRENT_SOURCE_DIR}/unzip-${UNZIP_VER}_android.tar.xz
-    EXPECTED_MD5 0e246213d75492a20b36dc601dcb93dc
+    ${URL_BASE}/unzip-${UNZIP_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/unzip-${UNZIP_VER}_android.tar.bz2
+    EXPECTED_MD5 bce798d56defb33138df4ec936c64c67
     SHOW_PROGRESS
 )
 
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/unzip)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/unzip
+    )
+
+    message(STATUS "Extracting patch for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/unzip-${UNZIP_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/unzip
+    )
+endif()
+
 install(
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/unzip-${UNZIP_VER}_android.tar.xz
-    DESTINATION ${DATA_INSTALL_DIR}/
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/unzip/
+    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
     COMPONENT Libraries
-    RENAME unzip.tar.xz
 )
 
 
