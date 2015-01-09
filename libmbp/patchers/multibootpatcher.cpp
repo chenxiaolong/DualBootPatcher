@@ -372,8 +372,9 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for aromawrapper.sh
     // +1 for e2fsprogs.tar.xz
     // +1 for unzip.tar.xz
+    // +1 for device
     if (maxProgressCb != nullptr) {
-        maxProgressCb(count + 4, userData);
+        maxProgressCb(count + 5, userData);
     }
     if (progressCb != nullptr) {
         progressCb(progress, userData);
@@ -470,6 +471,27 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/unzip.tar.xz",
             pc->dataDirectory() + "/unzip.tar.xz");
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    RETURN_IF_CANCELLED
+
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb("multiboot/device", userData);
+    }
+
+    // In the future, we may add more to the device file, but for now, we write
+    // the codename and mbtool will dlopen() libmbp to retrieve additional
+    // information
+    const std::string codename = info->device()->codename();
+    result = FileUtils::laAddFile(
+            aOutput, "multiboot/device",
+            std::vector<unsigned char>(codename.begin(), codename.end()));
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
