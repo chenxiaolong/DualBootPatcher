@@ -370,11 +370,12 @@ bool MultiBootPatcher::Impl::patchZip()
 
     // +1 for mbtool (update-binary)
     // +1 for aromawrapper.sh
-    // +1 for e2fsprogs.tar.xz
+    // +1 for e2fsck
+    // +1 for resize2fs
     // +1 for unzip
     // +1 for device
     if (maxProgressCb != nullptr) {
-        maxProgressCb(count + 5, userData);
+        maxProgressCb(count + 6, userData);
     }
     if (progressCb != nullptr) {
         progressCb(progress, userData);
@@ -446,13 +447,33 @@ bool MultiBootPatcher::Impl::patchZip()
         progressCb(++progress, userData);
     }
     if (detailsCb != nullptr) {
-        detailsCb("multiboot/e2fsprogs.tar.xz", userData);
+        detailsCb("multiboot/e2fsck", userData);
     }
 
-    // Add e2fsprogs.tar.xz
+    // Add e2fsck
     result = FileUtils::laAddFile(
-            aOutput, "multiboot/e2fsprogs.tar.xz",
-            pc->dataDirectory() + "/e2fsprogs.tar.xz");
+            aOutput, "multiboot/e2fsck",
+            pc->binariesDirectory() + "/android/"
+                    + info->device()->architecture() + "/e2fsck");
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    RETURN_IF_CANCELLED
+
+    if (progressCb != nullptr) {
+        progressCb(++progress, userData);
+    }
+    if (detailsCb != nullptr) {
+        detailsCb("multiboot/resize2fs", userData);
+    }
+
+    // Add resize2fs
+    result = FileUtils::laAddFile(
+            aOutput, "multiboot/resize2fs",
+            pc->binariesDirectory() + "/android/"
+                    + info->device()->architecture() + "/resize2fs");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;

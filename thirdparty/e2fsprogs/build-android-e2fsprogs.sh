@@ -45,10 +45,10 @@ ndk-build \
 outdir="$(mktemp -d)"
 cp -a libs/. "${outdir}"
 
-if [ ! -f ../e2fsprogs-${tag}_android.tar.xz ]; then
+if [ ! -f ../e2fsprogs-${tag}_android.tar.bz2 ]; then
     curdir="$(pwd)"
     pushd "${outdir}"
-    tar Jcvf "${curdir}"/../e2fsprogs-${tag}_android.tar.xz \
+    tar jcvf "${curdir}"/../e2fsprogs-${tag}_android.tar.bz2 \
         "${arches[@]}"
     popd
 fi
