@@ -37,6 +37,7 @@ enum loglevels {
 
 void mb_klog_init(void);
 
+__attribute__((format(printf, 2, 3)))
 void mb_logmsg(int prio, const char *fmt, ...);
 
 void mb_log_use_default_output(void);
