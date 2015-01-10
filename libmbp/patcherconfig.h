@@ -25,14 +25,20 @@
 
 #include "cpiofile.h"
 #include "device.h"
+#ifndef LIBMBP_MINI
 #include "fileinfo.h"
+#endif
 #include "patchererror.h"
+#ifndef LIBMBP_MINI
 #include "patchinfo.h"
+#endif
 
 
+#ifndef LIBMBP_MINI
 class Patcher;
 class AutoPatcher;
 class RamdiskPatcher;
+#endif
 
 class MBP_EXPORT PatcherConfig
 {
@@ -58,6 +64,7 @@ public:
 
     std::string version() const;
     std::vector<Device *> devices() const;
+#ifndef LIBMBP_MINI
     std::vector<PatchInfo *> patchInfos() const;
     std::vector<PatchInfo *> patchInfos(const Device * const device) const;
 
@@ -83,6 +90,7 @@ public:
     void destroyRamdiskPatcher(RamdiskPatcher *patcher);
 
     bool loadPatchInfos();
+#endif
 
 private:
     class Impl;

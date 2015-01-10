@@ -24,16 +24,21 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+#ifndef LIBMBP_MINI
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#endif
 
 #include "device.h"
+#ifndef LIBMBP_MINI
 #include "patcherinterface.h"
 #include "patchinfo.h"
+#endif
 #include "private/logging.h"
 #include "private/regex.h"
 
 // Patchers
+#ifndef LIBMBP_MINI
 #include "patchers/multibootpatcher.h"
 #include "autopatchers/jfltepatcher.h"
 #include "autopatchers/patchfilepatcher.h"
@@ -46,6 +51,7 @@
 #include "ramdiskpatchers/hlteramdiskpatcher.h"
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
 #include "ramdiskpatchers/klteramdiskpatcher.h"
+#endif
 
 
 /*! \cond INTERNAL */
@@ -64,21 +70,26 @@ public:
     std::vector<Device *> devices;
     std::vector<std::string> patchinfoIncludeDirs;
 
+#ifndef LIBMBP_MINI
     // PatchInfos
     std::vector<PatchInfo *> patchInfos;
+#endif
 
     bool loadedConfig;
 
     // Errors
     PatcherError error;
 
+#ifndef LIBMBP_MINI
     // Created patchers
     std::vector<Patcher *> allocPatchers;
     std::vector<AutoPatcher *> allocAutoPatchers;
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
+#endif
 
     void loadDefaultDevices();
 
+#ifndef LIBMBP_MINI
     // XML parsing functions for the patchinfo files
     bool loadPatchInfoXml(const std::string &path, const std::string &pathId);
     void parsePatchInfoTagPatchinfo(xmlNode *node, PatchInfo * const info);
@@ -93,6 +104,7 @@ public:
     void parsePatchInfoTagAutopatchers(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagAutopatcher(xmlNode *node, PatchInfo * const info, const std::string &type);
     void parsePatchInfoTagDeviceCheck(xmlNode *node, PatchInfo * const info, const std::string &type);
+#endif
 };
 /*! \endcond */
 
@@ -104,6 +116,7 @@ static const std::string ScriptsDirName = "scripts";
 
 // --------------------------------
 
+#ifndef LIBMBP_MINI
 const xmlChar *PatchInfoTagPatchinfo = (xmlChar *) "patchinfo";
 const xmlChar *PatchInfoTagMatches = (xmlChar *) "matches";
 const xmlChar *PatchInfoTagNotMatched = (xmlChar *) "not-matched";
@@ -121,6 +134,7 @@ const xmlChar *PatchInfoAttrRegex = (xmlChar *) "regex";
 
 const xmlChar *XmlTextTrue = (xmlChar *) "true";
 const xmlChar *XmlTextFalse = (xmlChar *) "false";
+#endif
 
 /*!
  * \class PatcherConfig
@@ -147,6 +161,7 @@ PatcherConfig::~PatcherConfig()
     }
     m_impl->devices.clear();
 
+#ifndef LIBMBP_MINI
     // Clean up patchinfos
     for (PatchInfo *info : m_impl->patchInfos) {
         delete info;
@@ -167,6 +182,7 @@ PatcherConfig::~PatcherConfig()
         destroyRamdiskPatcher(patcher);
     }
     m_impl->allocRamdiskPatchers.clear();
+#endif
 }
 
 /*!
@@ -367,6 +383,8 @@ std::vector<Device *> PatcherConfig::devices() const
     return m_impl->devices;
 }
 
+#ifndef LIBMBP_MINI
+
 /*!
  * \brief Get list of PatchInfos
  *
@@ -451,6 +469,8 @@ PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
 
     return nullptr;
 }
+
+#endif
 
 void PatcherConfig::Impl::loadDefaultDevices()
 {
@@ -541,6 +561,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ qcomBoot /*, TODO */ });
     devices.push_back(device);
 }
+
+#ifndef LIBMBP_MINI
 
 /*!
  * \brief Get list of Patcher IDs
@@ -1190,3 +1212,5 @@ void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
         Log::log(Log::Warning, "<device-check> tag has no text");
     }
 }
+
+#endif

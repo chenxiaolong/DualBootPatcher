@@ -1,3 +1,5 @@
+include(ExternalProject)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Allow libmbp headers to be found
@@ -91,8 +93,6 @@ set(MBP_NOINST_HEADERS
 # handle building for multiple architectures
 
 if(BUILD_ANDROID)
-    include(ExternalProject)
-
     # Wordaround semicolon separated list issue
     set(MBP_SOURCES_STR "")
     foreach(_source ${MBP_SOURCES})
@@ -116,6 +116,7 @@ if(BUILD_ANDROID)
                       NDK_APPLICATION_MK=Application.mk
                       NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmbp/out
                       NDK_OUT=<TMP_DIR>
+                      APP_BUILD_SCRIPT=Android.mk
                       ${NDK_ARGS}
         INSTALL_COMMAND ""
     )
@@ -165,3 +166,66 @@ else()
         COMPONENT Development
     )
 endif()
+
+
+################################################################################
+# libmbp-mini for Android
+################################################################################
+
+set(MBP_MINI_SOURCES
+    bootimage.cpp
+    cpiofile.cpp
+    device.cpp
+    patcherconfig.cpp
+    patchererror.cpp
+    #patchinfo.cpp
+    private/fileutils.cpp
+    cwrapper/cbootimage.cpp
+    cwrapper/ccommon.cpp
+    cwrapper/ccpiofile.cpp
+    cwrapper/cdevice.cpp
+    cwrapper/cpatcherconfig.cpp
+    cwrapper/cpatchererror.cpp
+    #cwrapper/cpatchinfo.cpp
+    cwrapper/cstringmap.cpp
+    cwrapper/private/util.cpp
+)
+
+# Wordaround semicolon separated list issue
+set(MBP_SOURCES_STR "")
+foreach(_source ${MBP_MINI_SOURCES})
+    set(MBP_SOURCES_STR "${MBP_SOURCES_STR} ${_source}")
+endforeach()
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android-mini.mk
+    @ONLY
+)
+
+ExternalProject_Add(
+    mbp-mini
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out-mini/
+    BUILD_COMMAND ${NDK_BUILD}
+                  -C <SOURCE_DIR>
+                  -j${PROCESSOR_COUNT}
+                  NDK_PROJECT_PATH=.
+                  NDK_APPLICATION_MK=Application.mk
+                  NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmbp/out-mini
+                  NDK_OUT=<TMP_DIR>
+                  APP_BUILD_SCRIPT=Android-mini.mk
+                  ${NDK_ARGS}
+                  MBP_MINI=true
+    INSTALL_COMMAND ""
+)
+
+# Always rebuild since files may have changed
+ExternalProject_Add_Step(
+    mbp-mini
+    forcerebuild
+    DEPENDEES update
+    DEPENDERS configure
+    ALWAYS 1
+    COMMAND ""
+)

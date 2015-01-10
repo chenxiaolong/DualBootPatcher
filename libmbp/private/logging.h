@@ -27,7 +27,7 @@
 #include <boost/format.hpp>
 
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(LIBMBP_MINI)
 #  include <android/log.h>
 #  define LOG_TAG "libmbp"
 #else
@@ -58,7 +58,7 @@ public:
 
     static void log(LogLevel level, const boost::format &fmt)
     {
-        #ifdef ANDROID
+#if defined(ANDROID) && !defined(LIBMBP_MINI)
         android_LogPriority priority = ANDROID_LOG_DEBUG;
 
         switch (level) {
@@ -82,7 +82,7 @@ public:
         }
 
         __android_log_print(priority, LOG_TAG, "%s", fmt.str().c_str());
-        #else
+#else
         switch (level) {
         case Debug:
             std::fprintf(stderr, "[Debug]: %s\n", fmt.str().c_str());
@@ -102,7 +102,7 @@ public:
         default:
             assert(false);
         }
-        #endif
+#endif
     }
 
     static void log(LogLevel level, const std::string &str)

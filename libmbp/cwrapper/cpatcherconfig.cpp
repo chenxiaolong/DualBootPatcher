@@ -322,6 +322,8 @@ CDevice ** mbp_config_devices(const CPatcherConfig *pc)
     return cDevices;
 }
 
+#ifndef LIBMBP_MINI
+
 /*!
  * \brief Get list of PatchInfos
  *
@@ -591,5 +593,7 @@ bool mbp_config_load_patchinfos(CPatcherConfig *pc)
     CAST(pc);
     return config->loadPatchInfos();
 }
+
+#endif
 
 }
