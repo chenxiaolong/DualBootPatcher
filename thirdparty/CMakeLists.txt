@@ -133,7 +133,7 @@ file(
     DOWNLOAD
     ${URL_BASE}/liblzma-${LIBLZMA_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/liblzma-${LIBLZMA_VER}_android.tar.bz2
-    EXPECTED_MD5 bb6637d939db109ad63c512e03c6af85
+    EXPECTED_MD5 eab12196d906ee4ecfa447ea435b4fe7
     SHOW_PROGRESS
 )
 
