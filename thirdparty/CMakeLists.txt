@@ -124,6 +124,33 @@ endif()
 
 
 ################################################################################
+# liblzma for Android
+################################################################################
+
+set(LIBLZMA_VER "5.2.0")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/liblzma-${LIBLZMA_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/liblzma-${LIBLZMA_VER}_android.tar.bz2
+    EXPECTED_MD5 bb6637d939db109ad63c512e03c6af85
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/liblzma)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/liblzma
+    )
+
+    message(STATUS "Extracting liblzma for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/liblzma-${LIBLZMA_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/liblzma
+    )
+endif()
+
+
+################################################################################
 # jansson for Android
 ################################################################################
 
