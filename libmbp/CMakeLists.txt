@@ -229,3 +229,11 @@ ExternalProject_Add_Step(
     ALWAYS 1
     COMMAND ""
 )
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out-mini/
+    DESTINATION ${DATA_INSTALL_DIR}/libraries/
+    COMPONENT Libraries
+    FILES_MATCHING
+    PATTERN libmbp-mini.so
+)
