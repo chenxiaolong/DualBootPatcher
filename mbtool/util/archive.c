@@ -83,7 +83,6 @@ static int setup_input(struct archive **in, const char *filename)
     //archive_read_support_filter_all(a);
     archive_read_support_format_tar(a);
     archive_read_support_format_zip(a);
-    // We currently don't have liblzma on Android
     //archive_read_support_filter_xz(a);
 
     if (archive_read_open_filename(a, filename, 10240) != ARCHIVE_OK) {
