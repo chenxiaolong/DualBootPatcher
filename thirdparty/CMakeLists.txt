@@ -109,7 +109,7 @@ if(BUILD_ANDROID)
         DOWNLOAD
         ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
         ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-        EXPECTED_MD5 0e3e3065853dceef8a0827b8915dfe95
+        EXPECTED_MD5 d72d5a3e44fa50070acc1f9ced6a346f
         SHOW_PROGRESS
     )
 
