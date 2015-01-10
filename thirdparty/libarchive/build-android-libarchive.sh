@@ -80,9 +80,9 @@ build() {
     popd
 }
 
-build armeabi-v7a android-21 arm-linux-androideabi-4.9
+build armeabi-v7a android-17 arm-linux-androideabi-4.9
 build arm64-v8a android-21 aarch64-linux-android-4.9
-build x86 android-21 x86-4.9
+build x86 android-17 x86-4.9
 build x86_64 android-21 x86_64-4.9
 
 
