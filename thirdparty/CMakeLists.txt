@@ -73,28 +73,26 @@ endif()
 # libxml2 for Android
 ################################################################################
 
-if(BUILD_ANDROID)
-    set(LIBXML2_VER "android-5.0.0_r6")
+set(LIBXML2_VER "android-5.0.0_r6")
 
-    file(
-        DOWNLOAD
-        ${URL_BASE}/libxml2_${LIBXML2_VER}.tar.bz2
-        ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
-        EXPECTED_MD5 83181acfdac6089b1d44d77b242cb4b5
-        SHOW_PROGRESS
+file(
+    DOWNLOAD
+    ${URL_BASE}/libxml2_${LIBXML2_VER}.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
+    EXPECTED_MD5 83181acfdac6089b1d44d77b242cb4b5
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
     )
 
-    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2)
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
-        )
-
-        message(STATUS "Extracting libxml2 for Android ...")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
-        )
-    endif()
+    message(STATUS "Extracting libxml2 for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
+    )
 endif()
 
 
@@ -102,28 +100,26 @@ endif()
 # libarchive for Android
 ################################################################################
 
-if(BUILD_ANDROID)
-    set(LIBARCHIVE_VER "3.1.2")
+set(LIBARCHIVE_VER "3.1.2")
 
-    file(
-        DOWNLOAD
-        ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-        ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-        EXPECTED_MD5 d72d5a3e44fa50070acc1f9ced6a346f
-        SHOW_PROGRESS
+file(
+    DOWNLOAD
+    ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
+    EXPECTED_MD5 d72d5a3e44fa50070acc1f9ced6a346f
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
     )
 
-    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive)
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
-        )
-
-        message(STATUS "Extracting libarchive for Android ...")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
-        )
-    endif()
+    message(STATUS "Extracting libarchive for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
+    )
 endif()
 
 
