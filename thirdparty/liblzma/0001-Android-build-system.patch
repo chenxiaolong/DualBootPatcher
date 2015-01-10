@@ -1,12 +1,12 @@
-From 18a580242823b3d779edf3b54cc221a63739d606 Mon Sep 17 00:00:00 2001
+From 00a19c80414f5151b6ad7064922a78056bfbdcea Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Fri, 9 Jan 2015 22:06:55 -0500
 Subject: [PATCH] Android build system
 
 ---
- Android.mk | 121 ++++++++++++++++
- config.h   | 482 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 603 insertions(+)
+ Android.mk | 121 +++++++++++++++
+ config.h   | 486 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 607 insertions(+)
  create mode 100644 Android.mk
  create mode 100644 config.h
 
@@ -139,10 +139,10 @@ index 0000000..cf90d3e
 +include $(BUILD_STATIC_LIBRARY)
 diff --git a/config.h b/config.h
 new file mode 100644
-index 0000000..9353deb
+index 0000000..e4c260e
 --- /dev/null
 +++ b/config.h
-@@ -0,0 +1,482 @@
+@@ -0,0 +1,486 @@
 +/* config.h.  Generated from config.h.in by configure.  */
 +/* config.h.in.  Generated from configure.ac by autoheader.  */
 +
@@ -330,7 +330,11 @@ index 0000000..9353deb
 +#define HAVE_POSIX_FADVISE 1
 +
 +/* Define to 1 if you have the `pthread_condattr_setclock' function. */
++#if __ANDROID_API__ >= 21
 +#define HAVE_PTHREAD_CONDATTR_SETCLOCK 1
++#else
++/* #undef HAVE_PTHREAD_CONDATTR_SETCLOCK */
++#endif
 +
 +/* Have PTHREAD_PRIO_INHERIT. */
 +#define HAVE_PTHREAD_PRIO_INHERIT 1
