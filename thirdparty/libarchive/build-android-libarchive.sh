@@ -17,8 +17,18 @@
 
 set -e
 
+xz_ver='5.2.0'
+
 url='https://github.com/libarchive/libarchive.git'
 ver='3.1.2'
+
+if [ ! -f ../liblzma/liblzma-${xz_ver}_android.tar.bz2 ]; then
+    echo "Please run thirdparty/liblzma/build-android-liblzma.sh first"
+    exit 1
+fi
+
+mkdir -p liblzma/
+tar xvf ../liblzma/liblzma-${xz_ver}_android.tar.bz2 -C liblzma/
 
 mkdir -p libarchive/
 cd libarchive/
@@ -40,6 +50,8 @@ popd
 
 if [ ! -f android.toolchain.cmake ]; then
     wget 'https://github.com/taka-no-me/android-cmake/raw/master/android.toolchain.cmake'
+    # Hack to allow us to specify liblzma's path
+    sed -i '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}")/g' android.toolchain.cmake
 fi
 
 build() {
@@ -47,7 +59,16 @@ build() {
     local api="${2}"
     local toolchain="${3}"
 
+    mkdir -p "build_${abi}"
+    pushd "build_${abi}"
+
+    rm -rf liblzma
+    mkdir liblzma
+    ln -s "$(pwd)/../../liblzma/include" liblzma/include
+    ln -s "$(pwd)/../../liblzma/lib_${abi}" liblzma/lib
+
     cmake ../libarchive \
+        -DLIBLZMA_PREFIX_PATH="$(pwd)/liblzma" \
         -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake \
         -DANDROID_ABI="${abi}" \
         -DANDROID_NATIVE_API_LEVEL="${api}" \
@@ -55,48 +76,25 @@ build() {
         -DLIBRARY_OUTPUT_PATH_ROOT=.
 
     make -j4
+
+    popd
 }
 
-if [ ! -f build_armeabi-v7a/libs/armeabi-v7a/libarchive.a ]; then
-    mkdir -p build_armeabi-v7a
-    pushd build_armeabi-v7a
-    build armeabi-v7a android-17 arm-linux-androideabi-4.9
-    popd
-fi
-
-if [ ! -f build_arm64-v8a/libs/arm64-v8a/libarchive.a ]; then
-    mkdir -p build_arm64-v8a
-    pushd build_arm64-v8a
-    build arm64-v8a android-21 aarch64-linux-android-4.9
-    popd
-fi
-
-if [ ! -f build_x86/libs/x86/libarchive.a ]; then
-    mkdir -p build_x86
-    pushd build_x86
-    build x86 android-17 x86-4.9
-    popd
-fi
-
-if [ ! -f build_x86_64/libs/x86_64/libarchive.a ]; then
-    mkdir -p build_x86_64
-    pushd build_x86_64
-    build x86_64 android-21 x86_64-4.9
-    popd
-fi
+build armeabi-v7a android-21 arm-linux-androideabi-4.9
+build arm64-v8a android-21 aarch64-linux-android-4.9
+build x86 android-21 x86-4.9
+build x86_64 android-21 x86_64-4.9
 
 
 outdir="$(mktemp -d)"
 
 mkdir "${outdir}"/include/
-mkdir "${outdir}"/lib_{armeabi-v7a,arm64-v8a,x86,x86_64}/
 
 cp libarchive/libarchive/archive.h "${outdir}"/include/
 cp libarchive/libarchive/archive_entry.h "${outdir}"/include/
-cp --preserve=links build_armeabi-v7a/libs/armeabi-v7a/* "${outdir}"/lib_armeabi-v7a/
-cp --preserve=links build_arm64-v8a/libs/arm64-v8a/* "${outdir}"/lib_arm64-v8a/
-cp --preserve=links build_x86/libs/x86/* "${outdir}"/lib_x86/
-cp --preserve=links build_x86_64/libs/x86_64/* "${outdir}"/lib_x86_64/
+for abi in armeabi-v7a arm64-v8a x86 x86_64; do
+    cp -a build_${abi}/libs/${abi}/ "${outdir}"/lib_${abi}/
+done
 
 curdir="$(pwd)"
 pushd "${outdir}"
