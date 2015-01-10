@@ -104,7 +104,7 @@ file(
     DOWNLOAD
     ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-    EXPECTED_MD5 d72d5a3e44fa50070acc1f9ced6a346f
+    EXPECTED_MD5 bcb32910936b37e4d5802fbc9319be5e
     SHOW_PROGRESS
 )
 
