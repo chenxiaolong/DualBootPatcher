@@ -53,6 +53,17 @@ set(MBP_HEADERS
     patchererror.h
     patcherinterface.h
     patchinfo.h
+    cwrapper/cbootimage.h
+    cwrapper/ccommon.h
+    cwrapper/ccpiofile.h
+    cwrapper/cdevice.h
+    cwrapper/cfileinfo.h
+    cwrapper/cpatcherconfig.h
+    cwrapper/cpatchererror.h
+    cwrapper/cpatcherinterface.h
+    cwrapper/cpatchinfo.h
+    cwrapper/cstringmap.h
+    cwrapper/ctypes.h
 )
 
 set(MBP_NOINST_HEADERS
