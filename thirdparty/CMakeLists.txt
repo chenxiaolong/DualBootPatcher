@@ -44,28 +44,26 @@ install(
 # boost for Android
 ################################################################################
 
-if(BUILD_ANDROID)
-    set(BOOST_VER "1.57.0")
+set(BOOST_VER "1.57.0")
 
-    file(
-        DOWNLOAD
-        ${URL_BASE}/boost-${BOOST_VER}_android.tar.bz2
-        ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
-        EXPECTED_MD5 ab35effea3638135b618d0d8de298471
-        SHOW_PROGRESS
+file(
+    DOWNLOAD
+    ${URL_BASE}/boost-${BOOST_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
+    EXPECTED_MD5 ab35effea3638135b618d0d8de298471
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/boost)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/boost
     )
 
-    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/boost)
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/boost
-        )
-
-        message(STATUS "Extracting boost for Android ...")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/boost
-        )
-    endif()
+    message(STATUS "Extracting boost for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/boost
+    )
 endif()
 
 
