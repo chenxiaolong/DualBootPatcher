@@ -339,8 +339,10 @@ PatcherError FileUtils::laCountFiles(const std::string &path,
                                      std::vector<std::string> ignore)
 {
     archive *aInput = archive_read_new();
-    archive_read_support_filter_all(aInput);
-    archive_read_support_format_all(aInput);
+    archive_read_support_filter_none(aInput);
+    archive_read_support_format_zip(aInput);
+    //archive_read_support_filter_all(aInput);
+    //archive_read_support_format_all(aInput);
 
     int ret = archive_read_open_filename(aInput, path.c_str(), 10240);
     if (ret != ARCHIVE_OK) {
