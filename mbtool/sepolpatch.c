@@ -64,7 +64,7 @@ static int read_selinux_policy(const char *path, policydb_t *pdb)
         return -1;
     }
 
-    map = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+    map = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
         LOGE("Failed to mmap %s: %s", path, strerror(errno));
         close(fd);
