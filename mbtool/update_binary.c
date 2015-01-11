@@ -152,17 +152,11 @@ struct libmbp {
 
     CBootImage *     (*mbp_bootimage_create)             (void);
     void             (*mbp_bootimage_destroy)            (CBootImage *bootImage);
-    CPatcherError *  (*mbp_bootimage_error)              (const CBootImage *bootImage);
-    int              (*mbp_bootimage_load_data)          (CBootImage *bootImage,
-                                                          const void *data,
-                                                          size_t size);
     int              (*mbp_bootimage_load_file)          (CBootImage *bootImage,
                                                           const char *filename);
     void             (*mbp_bootimage_create_data)        (const CBootImage *bootImage,
                                                           void **data,
                                                           size_t *size);
-    int              (*mbp_bootimage_create_file)        (CBootImage *bootImage,
-                                                          const char *filename);
     size_t           (*mbp_bootimage_ramdisk_image)      (const CBootImage *bootImage,
                                                           void **data);
     void             (*mbp_bootimage_set_ramdisk_image)  (CBootImage *bootImage,
@@ -171,7 +165,6 @@ struct libmbp {
 
     CCpioFile *      (*mbp_cpiofile_create)              (void);
     void             (*mbp_cpiofile_destroy)             (CCpioFile *cpio);
-    CPatcherError *  (*mbp_cpiofile_error)               (const CCpioFile *cpio);
     int              (*mbp_cpiofile_load_data)           (CCpioFile *cpio,
                                                           const void *data,
                                                           size_t size);
@@ -179,26 +172,6 @@ struct libmbp {
                                                           int gzip,
                                                           void **data,
                                                           size_t *size);
-    int              (*mbp_cpiofile_exists)              (const CCpioFile *cpio,
-                                                          const char *filename);
-    int              (*mbp_cpiofile_remove)              (CCpioFile *cpio,
-                                                          const char *filename);
-    char **          (*mbp_cpiofile_filenames)           (const CCpioFile *cpio);
-    int              (*mbp_cpiofile_contents)            (const CCpioFile *cpio,
-                                                          const char *filename,
-                                                          void **data,
-                                                          size_t *size);
-    int              (*mbp_cpiofile_set_contents)        (CCpioFile *cpio,
-                                                          const char *filename,
-                                                          const void *data,
-                                                          size_t size);
-    int              (*mbp_cpiofile_add_symlink)         (CCpioFile *cpio,
-                                                          const char *source,
-                                                          const char *target);
-    int              (*mbp_cpiofile_add_file)            (CCpioFile *cpio,
-                                                          const char *path,
-                                                          const char *name,
-                                                          unsigned int perms);
     int              (*mbp_cpiofile_add_file_from_data)  (CCpioFile *cpio,
                                                           const void *data,
                                                           size_t size,
@@ -210,12 +183,8 @@ struct libmbp {
     char *           (*mbp_device_codename)              (const CDevice *device);
     char **          (*mbp_device_boot_block_devs)       (const CDevice *device);
 
-    void             (*mbp_error_destroy)                (CPatcherError *error);
-    char *           (*mbp_error_filename)               (const CPatcherError *error);
-
     CPatcherConfig * (*mbp_config_create)                (void);
     void             (*mbp_config_destroy)               (CPatcherConfig *pc);
-    CPatcherError *  (*mbp_config_error)                 (const CPatcherConfig *pc);
     char *           (*mbp_config_version)               (const CPatcherConfig *pc);
     CDevice **       (*mbp_config_devices)               (const CPatcherConfig *pc);
 
@@ -244,26 +213,15 @@ static int libmbp_init(struct libmbp *mbp, const char *path)
 
     DLSYM(mbp, mbp_bootimage_create);
     DLSYM(mbp, mbp_bootimage_destroy);
-    DLSYM(mbp, mbp_bootimage_error);
-    DLSYM(mbp, mbp_bootimage_load_data);
     DLSYM(mbp, mbp_bootimage_load_file);
     DLSYM(mbp, mbp_bootimage_create_data);
-    DLSYM(mbp, mbp_bootimage_create_file);
     DLSYM(mbp, mbp_bootimage_ramdisk_image);
     DLSYM(mbp, mbp_bootimage_set_ramdisk_image);
 
     DLSYM(mbp, mbp_cpiofile_create);
     DLSYM(mbp, mbp_cpiofile_destroy);
-    DLSYM(mbp, mbp_cpiofile_error);
     DLSYM(mbp, mbp_cpiofile_load_data);
     DLSYM(mbp, mbp_cpiofile_create_data);
-    DLSYM(mbp, mbp_cpiofile_exists);
-    DLSYM(mbp, mbp_cpiofile_remove);
-    DLSYM(mbp, mbp_cpiofile_filenames);
-    DLSYM(mbp, mbp_cpiofile_contents);
-    DLSYM(mbp, mbp_cpiofile_set_contents);
-    DLSYM(mbp, mbp_cpiofile_add_symlink);
-    DLSYM(mbp, mbp_cpiofile_add_file);
     DLSYM(mbp, mbp_cpiofile_add_file_from_data);
 
     DLSYM(mbp, mbp_device_create);
@@ -271,12 +229,8 @@ static int libmbp_init(struct libmbp *mbp, const char *path)
     DLSYM(mbp, mbp_device_codename);
     DLSYM(mbp, mbp_device_boot_block_devs);
 
-    DLSYM(mbp, mbp_error_destroy);
-    DLSYM(mbp, mbp_error_filename);
-
     DLSYM(mbp, mbp_config_create);
     DLSYM(mbp, mbp_config_destroy);
-    DLSYM(mbp, mbp_config_error);
     DLSYM(mbp, mbp_config_version);
     DLSYM(mbp, mbp_config_devices);
 
