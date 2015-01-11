@@ -81,7 +81,6 @@ struct package {
 
 struct rom {
     char *id;
-    char *kernel_id;
     char *name;
     char *description;
     int system_uses_image;

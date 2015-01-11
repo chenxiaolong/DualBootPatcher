@@ -95,7 +95,7 @@ static void rom_cleanup(struct rom *rom);
 #if ROMS_DEBUG >= 2
 static void rom_dump(struct rom *rom);
 #endif
-static int add_rom(struct roms *roms, char *id, char *kernel_id, char *name,
+static int add_rom(struct roms *roms, char *id, char *name,
                    char *description, int system_uses_image, char *system_path,
                    char *cache_path, char *data_path);
 
@@ -117,7 +117,6 @@ static void rom_cleanup(struct rom *rom)
 {
     // free(NULL) is valid
     free(rom->id);
-    free(rom->kernel_id);
     free(rom->name);
     free(rom->description);
     free(rom->system_path);
@@ -133,8 +132,6 @@ static void rom_dump(struct rom *rom)
     LOGD("ROM:");
     if (rom->id)
         LOGD("- ID:                        %s", rom->id);
-    if (rom->kernel_id)
-        LOGD("- Kernel ID:                 %s", rom->kernel_id);
     if (rom->name)
         LOGD("- Name:                      %s", rom->name);
     if (rom->description)
@@ -153,7 +150,7 @@ static void rom_dump(struct rom *rom)
 }
 #endif
 
-static int add_rom(struct roms *roms, char *id, char *kernel_id, char *name,
+static int add_rom(struct roms *roms, char *id, char *name,
                    char *description, int system_uses_image, char *system_path,
                    char *cache_path, char *data_path)
 {
@@ -168,8 +165,6 @@ static int add_rom(struct roms *roms, char *id, char *kernel_id, char *name,
 
     if (id)
         r->id = strdup(id);
-    if (kernel_id)
-        r->kernel_id = strdup(kernel_id);
     if (name)
         r->name = strdup(name);
     if (description)
@@ -195,7 +190,7 @@ static int add_rom(struct roms *roms, char *id, char *kernel_id, char *name,
 
 int mb_roms_get_builtin(struct roms *roms)
 {
-    add_rom(roms, "primary", "primary", NULL, NULL, 0, SYSTEM, CACHE, DATA);
+    add_rom(roms, "primary", NULL, NULL, 0, SYSTEM, CACHE, DATA);
 
     // /system/multiboot/dual/system.img
     // /cache/multiboot/dual/cache/
@@ -209,7 +204,7 @@ int mb_roms_get_builtin(struct roms *roms)
     // /data/multiboot/%s/cache/
     // /data/multiboot/%s/data/
 
-    add_rom(roms, "dual", "secondary", NULL, NULL, 1,
+    add_rom(roms, "dual", NULL, NULL, 1,
             SYSTEM SEP "multiboot" SEP "dual" SEP "system.img",
             CACHE SEP "multiboot" SEP "dual" SEP "cache",
             DATA SEP "multiboot" SEP "dual" SEP "data");
@@ -229,7 +224,7 @@ int mb_roms_get_builtin(struct roms *roms)
         snprintf(cache, 50, fmtCache, id);
         snprintf(data, 50, fmtData, id);
 
-        add_rom(roms, id, id, NULL, NULL, 1, system, cache, data);
+        add_rom(roms, id, NULL, NULL, 1, system, cache, data);
     }
 
     return 0;
