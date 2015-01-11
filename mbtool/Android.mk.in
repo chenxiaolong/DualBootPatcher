@@ -30,7 +30,6 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 
 mbtool_src_base := \
-	appsync.c \
 	common.c \
 	config.c \
 	mount_fstab.c \
