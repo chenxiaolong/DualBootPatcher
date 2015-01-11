@@ -480,11 +480,16 @@ static int setup_unzip(void)
         return -1;
     }
 
-    remove("/chroot/sbin/unzip");
+    remove(CHROOT "/sbin/unzip");
 
     if (mb_copy_file(TEMP_UNZIP, CHROOT "/sbin/unzip",
                      MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
         LOGE("Failed to copy %s to %s", TEMP_UNZIP, CHROOT "/sbin/unzip");
+        return -1;
+    }
+
+    if (chmod(CHROOT "/sbin/unzip", 0555) < 0) {
+        LOGE("Failed to chmod %s: %s", CHROOT "/sbin/unzip", strerror(errno));
         return -1;
     }
 
