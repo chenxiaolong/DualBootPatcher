@@ -35,6 +35,7 @@
 
 #include "main.h"
 #include "roms.h"
+#include "external/sha.h"
 #include "util/archive.h"
 #include "util/command.h"
 #include "util/copy.h"
@@ -441,9 +442,6 @@ error:
 
 static int destroy_chroot(void)
 {
-    // TODO: Copy /images/boot.img to /data/media/0/MultiKernels/
-    // chmod 775 the kernel
-
     umount(CHROOT "/dev/pts");
     umount(CHROOT "/dev");
     umount(CHROOT "/proc");
@@ -629,6 +627,52 @@ static int shrink_image(const char *path)
     }
 
     return 0;
+}
+
+static int sha1_hash(const char *path, unsigned char digest[SHA_DIGEST_SIZE])
+{
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        LOGE("%s: Failed to open: %s", path, strerror(errno));
+        return -1;
+    }
+
+    unsigned char buf[10240];
+    size_t n;
+
+    SHA_CTX ctx;
+    SHA_init(&ctx);
+
+    while ((n = fread(buf, 1, sizeof(buf), fp)) > 0) {
+        SHA_update(&ctx, buf, n);
+        if (n < sizeof(buf)) {
+            break;
+        }
+    }
+
+    if (ferror(fp)) {
+        LOGE("%s: Failed to read file", path);
+        fclose(fp);
+        return -1;
+    }
+
+    fclose(fp);
+
+    memcpy(digest, SHA_final(&ctx), SHA_DIGEST_SIZE);
+
+    return 0;
+}
+
+static void to_hex_string(unsigned char *data, size_t size, char *out)
+{
+    static const char digits[] = "0123456789abcdef";
+
+    for (unsigned int i = 0; i < size; ++i) {
+        out[2 * i] = digits[(data[i] >> 4) & 0xf];
+        out[2 * i + 1] = digits[data[i] & 0xf];
+    }
+
+    out[2 * size] = '\0';
 }
 
 // Returns -1 on error, 1 if path is AROMA installer, 0 otherwise
@@ -940,6 +984,18 @@ static int update_binary(void)
     ui_print("- /data: %s", rom->data_path);
 
 
+    // Calculate SHA1 hash of the boot partition
+    unsigned char hash[SHA_DIGEST_SIZE];
+    if (sha1_hash(boot_block_dev, hash) < 0) {
+        ui_print("Failed to compute sha1sum of boot partition");
+        goto error;
+    }
+
+    char digest[2 * SHA_DIGEST_SIZE + 1];
+    to_hex_string(hash, SHA_DIGEST_SIZE, digest);
+    LOGD("Boot partition SHA1sum: %s", digest);
+
+
     // Extract e2fsck and resize2fs
     if (setup_e2fsprogs() < 0) {
         ui_print("Failed to extract e2fsprogs");
@@ -1022,7 +1078,40 @@ static int update_binary(void)
     }
 
 
-    // TODO: Set kernel
+    // Calculate SHA1 hash of the boot partition after installation
+    unsigned char new_hash[SHA_DIGEST_SIZE];
+    if (sha1_hash(boot_block_dev, new_hash) < 0) {
+        ui_print("Failed to compute sha1sum of boot partition");
+        goto error;
+    }
+
+    char new_digest[2 * SHA_DIGEST_SIZE + 1];
+    to_hex_string(new_hash, SHA_DIGEST_SIZE, new_digest);
+    LOGD("Old boot partition SHA1sum: %s", digest);
+    LOGD("New boot partition SHA1sum: %s", new_digest);
+
+    // Set kernel if it was changed
+    if (memcmp(hash, new_hash, SHA_DIGEST_SIZE) != 0) {
+        ui_print("Setting kernel");
+
+        char path[100];
+        snprintf(path, sizeof(path), "/data/media/0/MultiBoot/%s", rom->id);
+        if (mb_mkdir_recursive(path, 0775) < 0) {
+            ui_print("Failed to create %s", path);
+            goto error;
+        }
+
+        strlcat(path, "/boot.img", sizeof(path));
+        if (mb_copy_file(boot_block_dev, path, 0) < 0) {
+            ui_print("Failed to copy boot image");
+            goto error;
+        }
+
+        if (chmod(path, 0775) < 0) {
+            // Non-fatal
+            LOGE("%s: Failed to chmod: %s", path, strerror(errno));
+        }
+    }
 
 success:
     ui_print("Destroying chroot environment");
