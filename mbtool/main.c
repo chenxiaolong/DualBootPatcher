@@ -24,7 +24,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "config.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
 #ifdef RECOVERY

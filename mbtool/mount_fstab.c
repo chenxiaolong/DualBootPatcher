@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "config.h"
+#include "roms.h"
 #include "sepolpatch.h"
 #include "util/directory.h"
 #include "util/file.h"
@@ -41,8 +41,6 @@
 static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
                                 char *mount_point);
-static struct partconfig * find_partconfig(void);
-
 
 static int create_dir_and_mount(struct fstab_rec *rec,
                                 struct fstab_rec *flags_from_rec,
@@ -90,17 +88,10 @@ static int create_dir_and_mount(struct fstab_rec *rec,
     return 0;
 }
 
-static struct partconfig * find_partconfig(void)
+static int starts_with(const char *string, const char *prefix)
 {
-    struct mainconfig *config = get_mainconfig();
-
-    for (int i = 0; i < config->partconfigs_len; ++i) {
-       if (strcmp(config->installed, config->partconfigs[i].id) == 0) {
-           return &config->partconfigs[i];
-       }
-    }
-
-    return NULL;
+    return strlen(prefix) > strlen(string) ? 0
+            : strncmp(string, prefix, strlen(prefix)) == 0;
 }
 
 int mount_fstab(const char *fstab_path)
@@ -127,6 +118,10 @@ int mount_fstab(const char *fstab_path)
     struct stat st;
     int share_app = 0;
     int share_app_asec = 0;
+
+    struct roms r;
+    mb_roms_init(&r);
+    mb_roms_get_builtin(&r);
 
     // basename() and dirname() modify the source string
     strlcpy(copy1, fstab_path, sizeof(copy1));
@@ -195,11 +190,20 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Mount raw partitions to /raw-*
-    struct partconfig *partconfig = find_partconfig();
-    if (!partconfig) {
-        LOGE("Could not determine partition configuration");
+    char *rom_id;
+    if (mb_file_first_line("/romid", &rom_id) < 0) {
+        LOGE("Failed to determine ROM ID");
         goto error;
     }
+
+    struct rom *rom = mb_find_rom_by_id(&r, rom_id);
+    if (!rom) {
+        LOGE("Unknown ROM ID: %s", rom_id);
+        free(rom_id);
+        goto error;
+    }
+
+    free(rom_id);
 
     // Because of how Android deals with partitions, if, say, the source path
     // for the /system bind mount resides on /cache, then the cache partition
@@ -208,13 +212,13 @@ int mount_fstab(const char *fstab_path)
     // since the current setup does not allow two bind mounted locations to
     // reside on the same partition.
 
-    if (strcmp(partconfig->target_system_partition, "/cache") == 0) {
+    if (starts_with(rom->system_path, "/cache")) {
         flags_system = rec_cache;
     } else {
         flags_system = rec_system;
     }
 
-    if (strcmp(partconfig->target_cache_partition, "/system") == 0) {
+    if (starts_with(rom->cache_path, "/system")) {
         flags_cache = rec_system;
     } else {
         flags_cache = rec_cache;
@@ -235,16 +239,38 @@ int mount_fstab(const char *fstab_path)
         goto error;
     }
 
-    // Bind mount directories to /system, /cache, and /data
-    if (mb_bind_mount(partconfig->target_system, 0771, "/system", 0771) < 0) {
+    // Make paths use /raw-...
+    if (!rom->system_path || !rom->system_path[0]
+            || !rom->cache_path || !rom->cache_path[0]
+            || !rom->data_path || !rom->data_path[0]) {
+        LOGE("Invalid or null paths");
         goto error;
     }
 
-    if (mb_bind_mount(partconfig->target_cache, 0771, "/cache", 0771) < 0) {
+    char target_system[100] = "/raw-";
+    char target_cache[100] = "/raw-";
+    char target_data[100] = "/raw-";
+    strlcat(target_system, rom->system_path + 1, sizeof(target_system));
+    strlcat(target_cache, rom->cache_path + 1, sizeof(target_cache));
+    strlcat(target_data, rom->data_path + 1, sizeof(target_data));
+
+    if (rom->system_uses_image) {
+        if (mount(target_system, "/system", "ext4", MS_NOSUID, "") < 0) {
+            LOGE("Failed to mount %s at %s: %s",
+                 target_system, "/system", strerror(errno));
+            goto error;
+        }
+    } else {
+        if (mb_bind_mount(target_system, 0771, "/system", 0771) < 0) {
+            goto error;
+        }
+    }
+
+    if (mb_bind_mount(target_cache, 0771, "/cache", 0771) < 0) {
         goto error;
     }
 
-    if (mb_bind_mount(partconfig->target_data, 0771, "/data", 0771) < 0) {
+    if (mb_bind_mount(target_data, 0771, "/data", 0771) < 0) {
         goto error;
     }
 
@@ -296,6 +322,8 @@ int mount_fstab(const char *fstab_path)
 
     mb_free_fstab(fstab);
 
+    mb_roms_cleanup(&r);
+
     mb_create_empty_file(path_completed);
 
     LOGI("Successfully mounted partitions");
@@ -306,6 +334,8 @@ error:
     if (fstab) {
         mb_free_fstab(fstab);
     }
+
+    mb_roms_cleanup(&r);
 
     mb_create_empty_file(path_failed);
 
@@ -355,12 +385,6 @@ int mount_fstab_main(int argc, char *argv[])
     // Use the kernel log since logcat hasn't run yet
     mb_klog_init();
     mb_log_use_kernel_output();
-
-    // Read configuration file
-    if (mainconfig_init() < 0) {
-        LOGE("Failed to load main configuration file");
-        return EXIT_FAILURE;
-    }
 
     // Patch SELinux policy
     if (patch_loaded_sepolicy() < 0) {

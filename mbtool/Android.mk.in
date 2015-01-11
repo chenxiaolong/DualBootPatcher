@@ -31,12 +31,12 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 mbtool_src_base := \
 	common.c \
-	config.c \
 	mount_fstab.c \
 	main.c \
 	roms.c \
 	sepolpatch.c \
 	external/mntent.c \
+	external/sha.c \
 	util/command.c \
 	util/copy.c \
 	util/delete.c \
