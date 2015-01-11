@@ -95,6 +95,13 @@ LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
 
 LOCAL_CFLAGS += -DRECOVERY
 
-LOCAL_LDLIBS := -lz
+# Use the recovery's loader
+LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker
+
+# Statically link libc
+TARGET_LDLIBS := -lgcc
+LOCAL_LDLIBS := -nodefaultlibs -Wl,-Bstatic -lc -Wl,-Bdynamic -ldl
+
+LOCAL_LDLIBS += -lz
 
 include $(BUILD_EXECUTABLE)
