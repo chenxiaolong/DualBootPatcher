@@ -671,9 +671,23 @@ bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
 
     // TODO Headers are being discarded
 
-    for (auto &file : files) {
+    for (auto const &file : files) {
         RETURN_IF_CANCELLED
-        auto ret = FileUtils::laAddFile(aOutput, file, temporaryDir + "/" + file);
+
+        PatcherError ret;
+
+        if (file == "META-INF/com/google/android/update-binary") {
+            ret = FileUtils::laAddFile(
+                    aOutput,
+                    "META-INF/com/google/android/update-binary.orig",
+                    temporaryDir + "/" + file);
+        } else {
+            ret = FileUtils::laAddFile(
+                    aOutput,
+                    file,
+                    temporaryDir + "/" + file);
+        }
+
         if (ret.errorCode() != MBP::ErrorCode::NoError) {
             error = ret;
             return false;
