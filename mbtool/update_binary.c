@@ -206,6 +206,7 @@ struct libmbp {
 
     CDevice *        (*mbp_device_create)                (void);
     void             (*mbp_device_destroy)               (CDevice *device);
+    char *           (*mbp_device_codename)              (const CDevice *device);
     char **          (*mbp_device_boot_block_devs)       (const CDevice *device);
 
     void             (*mbp_error_destroy)                (CPatcherError *error);
@@ -266,6 +267,7 @@ static int libmbp_init(struct libmbp *mbp, const char *path)
 
     DLSYM(mbp, mbp_device_create);
     DLSYM(mbp, mbp_device_destroy);
+    DLSYM(mbp, mbp_device_codename);
     DLSYM(mbp, mbp_device_boot_block_devs);
 
     DLSYM(mbp, mbp_error_destroy);
@@ -820,6 +822,9 @@ static int update_binary(void)
 
     CPatcherConfig * pc = NULL;
 
+    char *device = NULL;
+    char *boot_block_dev = NULL;
+
 
     ui_print("Creating chroot environment");
 
@@ -830,7 +835,7 @@ static int update_binary(void)
 
 
     // Verify device
-    char *device = get_target_device();
+    device = get_target_device();
     char prop1[MB_PROP_VALUE_MAX] = { 0 };
     char prop2[MB_PROP_VALUE_MAX] = { 0 };
     mb_get_property("ro.product.device", prop1, "");
@@ -847,11 +852,8 @@ static int update_binary(void)
 
     if (!strstr(prop1, device) && !strstr(prop2, device)) {
         ui_print("The patched zip is for '%s'. This device is '%s'.", device, prop1);
-        free(device);
         goto error;
     }
-
-    free(device);
 
 
     // dlopen libmbp-mini.so
@@ -877,6 +879,32 @@ static int update_binary(void)
         LOGD("libmbp-mini version: %s", version);
         mbp.mbp_free(version);
     }
+
+    // Due to optimizations in libc, strlen() may trigger valgrind errors like
+    //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
+    // It's an annoyance, but not a big deal
+    CDevice **device_list = mbp.mbp_config_devices(pc);
+    for (CDevice **iter = device_list; *iter; ++iter) {
+        // My C wrapper really needs some work...
+        char *codename = mbp.mbp_device_codename(*iter);
+        if (strcmp(codename, device) == 0) {
+            mbp.mbp_free(codename);
+
+            char **boot_devs = mbp.mbp_device_boot_block_devs(*iter);
+            boot_block_dev = strdup(*boot_devs);
+            mbp.mbp_free_array((void **) boot_devs);
+        } else {
+            mbp.mbp_free(codename);
+        }
+    }
+    mbp.mbp_free(device_list);
+
+    if (!boot_block_dev) {
+        ui_print("Could not determine the boot block device");
+        goto error;
+    }
+
+    LOGD("Boot block device: %s", boot_block_dev);
 
 
     // Choose install type
@@ -1006,6 +1034,9 @@ success:
     mbp.mbp_config_destroy(pc);
     libmbp_destroy(&mbp);
 
+    free(device);
+    free(boot_block_dev);
+
     if (destroy_chroot() < 0) {
         ui_print("Failed to destroy chroot environment. You should reboot into"
                  " recovery again to avoid flashing issues.");
@@ -1023,6 +1054,9 @@ error:
 
     mbp.mbp_config_destroy(pc);
     libmbp_destroy(&mbp);
+
+    free(device);
+    free(boot_block_dev);
 
     destroy_chroot();
 
