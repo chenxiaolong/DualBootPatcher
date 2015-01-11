@@ -965,9 +965,9 @@ static int update_binary(void)
 
 
     // Copy ourself for the real update-binary to use
-    mb_copy_file(mb_self_get_path(), CHROOT HELPER_TOOL,
+    mb_copy_file(mb_self_get_path(), CHROOT "/" HELPER_TOOL,
                  MB_COPY_ATTRIBUTES | MB_COPY_XATTRS);
-    chmod(CHROOT HELPER_TOOL, 0555);
+    chmod(CHROOT "/" HELPER_TOOL, 0555);
 
 
     // Run real update-binary
