@@ -154,8 +154,8 @@ struct libmbp {
     void             (*mbp_bootimage_destroy)            (CBootImage *bootImage);
     CPatcherError *  (*mbp_bootimage_error)              (const CBootImage *bootImage);
     int              (*mbp_bootimage_load_data)          (CBootImage *bootImage,
-                                                          const char *data,
-                                                          unsigned int size);
+                                                          const void *data,
+                                                          size_t size);
     int              (*mbp_bootimage_load_file)          (CBootImage *bootImage,
                                                           const char *filename);
     void             (*mbp_bootimage_create_data)        (const CBootImage *bootImage,
@@ -166,15 +166,15 @@ struct libmbp {
     size_t           (*mbp_bootimage_ramdisk_image)      (const CBootImage *bootImage,
                                                           void **data);
     void             (*mbp_bootimage_set_ramdisk_image)  (CBootImage *bootImage,
-                                                          const char *data,
+                                                          const void *data,
                                                           size_t size);
 
     CCpioFile *      (*mbp_cpiofile_create)              (void);
     void             (*mbp_cpiofile_destroy)             (CCpioFile *cpio);
     CPatcherError *  (*mbp_cpiofile_error)               (const CCpioFile *cpio);
     int              (*mbp_cpiofile_load_data)           (CCpioFile *cpio,
-                                                          const char *data,
-                                                          unsigned int size);
+                                                          const void *data,
+                                                          size_t size);
     int              (*mbp_cpiofile_create_data)         (CCpioFile *cpio,
                                                           int gzip,
                                                           void **data,
@@ -190,7 +190,7 @@ struct libmbp {
                                                           size_t *size);
     int              (*mbp_cpiofile_set_contents)        (CCpioFile *cpio,
                                                           const char *filename,
-                                                          char *data,
+                                                          const void *data,
                                                           size_t size);
     int              (*mbp_cpiofile_add_symlink)         (CCpioFile *cpio,
                                                           const char *source,
@@ -200,7 +200,7 @@ struct libmbp {
                                                           const char *name,
                                                           unsigned int perms);
     int              (*mbp_cpiofile_add_file_from_data)  (CCpioFile *cpio,
-                                                          char *data,
+                                                          const void *data,
                                                           size_t size,
                                                           const char *name,
                                                           unsigned int perms);
@@ -1092,7 +1092,61 @@ static int update_binary(void)
 
     // Set kernel if it was changed
     if (memcmp(hash, new_hash, SHA_DIGEST_SIZE) != 0) {
-        ui_print("Setting kernel");
+        ui_print("Boot partition was modified. Setting kernel");
+
+        // Add /installed with the ROM ID to the ramdisk
+
+        CBootImage *bi = mbp.mbp_bootimage_create();
+        if (mbp.mbp_bootimage_load_file(bi, boot_block_dev) < 0) {
+            ui_print("Failed to load boot partition image");
+            mbp.mbp_bootimage_destroy(bi);
+            goto error;
+        }
+
+        void *ramdisk_data;
+        size_t ramdisk_size;
+        ramdisk_size = mbp.mbp_bootimage_ramdisk_image(bi, &ramdisk_data);
+
+        CCpioFile *cpio = mbp.mbp_cpiofile_create();
+        if (mbp.mbp_cpiofile_load_data(cpio, ramdisk_data, ramdisk_size) < 0) {
+            ui_print("Failed to load ramdisk");
+            mbp.mbp_free(ramdisk_data);
+            mbp.mbp_cpiofile_destroy(cpio);
+            mbp.mbp_bootimage_destroy(bi);
+            goto error;
+        }
+
+        // cpiofile keeps a copy of what it needs
+        mbp.mbp_free(ramdisk_data);
+
+        if (mbp.mbp_cpiofile_add_file_from_data(
+                cpio, rom->id, strlen(rom->id), "installed", 0444) < 0) {
+            ui_print("Failed to add ROM ID to ramdisk");
+            mbp.mbp_cpiofile_destroy(cpio);
+            mbp.mbp_bootimage_destroy(bi);
+            goto error;
+        }
+
+        if (mbp.mbp_cpiofile_create_data(
+                cpio, 1, &ramdisk_data, &ramdisk_size) < 0) {
+            ui_print("Failed to create new ramdisk");
+            mbp.mbp_cpiofile_destroy(cpio);
+            mbp.mbp_bootimage_destroy(bi);
+            goto error;
+        }
+
+        mbp.mbp_cpiofile_destroy(cpio);
+
+        mbp.mbp_bootimage_set_ramdisk_image(bi, ramdisk_data, ramdisk_size);
+        mbp.mbp_free(ramdisk_data);
+
+        void *bootimg_data;
+        size_t bootimg_size;
+        mbp.mbp_bootimage_create_data(bi, &bootimg_data, &bootimg_size);
+
+        mbp.mbp_bootimage_destroy(bi);
+
+        // Backup kernel
 
         char path[100];
         snprintf(path, sizeof(path), "/data/media/0/MultiBoot/%s", rom->id);
@@ -1102,8 +1156,11 @@ static int update_binary(void)
         }
 
         strlcat(path, "/boot.img", sizeof(path));
-        if (mb_copy_file(boot_block_dev, path, 0) < 0) {
-            ui_print("Failed to copy boot image");
+
+        if (mb_file_write_data(path, bootimg_data, bootimg_size) < 0) {
+            LOGE("Failed to write %s: %s", path, strerror(errno));
+            ui_print("Failed to write %s", path);
+            mbp.mbp_free(bootimg_data);
             goto error;
         }
 
@@ -1111,6 +1168,15 @@ static int update_binary(void)
             // Non-fatal
             LOGE("%s: Failed to chmod: %s", path, strerror(errno));
         }
+
+        if (mb_file_write_data(boot_block_dev, bootimg_data, bootimg_size) < 0) {
+            LOGE("Failed to write %s: %s", boot_block_dev, strerror(errno));
+            ui_print("Failed to write %s", boot_block_dev);
+            mbp.mbp_free(bootimg_data);
+            goto error;
+        }
+
+        mbp.mbp_free(bootimg_data);
     }
 
 success:

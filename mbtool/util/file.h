@@ -19,5 +19,8 @@
 
 #pragma once
 
+#include <sys/types.h>
+
 int mb_create_empty_file(const char *path);
 int mb_file_first_line(const char *path, char **line_out);
+int mb_file_write_data(const char *path, const void *data, size_t size);

@@ -73,3 +73,42 @@ error:
     free(line);
     return -1;
 }
+
+int mb_file_write_data(const char *path, const void *data, size_t size)
+{
+    FILE *fp;
+    fp = fopen(path, "wb");
+    if (!fp) {
+        goto error;
+    }
+
+    int saved_errno;
+
+    ssize_t nwritten;
+
+    do {
+        if ((nwritten = fwrite(data, 1, size, fp)) < 0) {
+            goto error;
+        }
+
+        size -= nwritten;
+        data += nwritten;
+    } while (size > 0);
+
+    if (fclose(fp) < 0) {
+        fp = NULL;
+        goto error;
+    }
+
+    return 0;
+
+error:
+    saved_errno = errno;
+
+    if (fp) {
+        fclose(fp);
+    }
+
+    errno = saved_errno;
+    return -1;
+}
