@@ -143,6 +143,27 @@ def quicksort(l):
         return left + [pivot] + right
 
 
+# From http://code.activestate.com/recipes/577081-humanized-representation-of-a-number-of-bytes/
+def humanize_bytes(bytes, precision=1):
+    abbrevs = (
+        (1 << 80, 'YiB'),
+        (1 << 70, 'ZiB'),
+        (1 << 60, 'EiB'),
+        (1 << 50, 'PiB'),
+        (1 << 40, 'TiB'),
+        (1 << 30, 'GiB'),
+        (1 << 20, 'MiB'),
+        (1 << 10, 'KiB'),
+        (1,       'bytes')
+    )
+    if bytes == 1:
+        return '1 byte'
+    for factor, suffix in abbrevs:
+        if bytes >= factor:
+            break
+    return '%.*f %s' % (precision, bytes / factor, suffix)
+
+
 if len(sys.argv) != 2:
     print('Usage: %s [files directory]' % sys.argv[0])
     sys.exit(1)
@@ -246,6 +267,8 @@ for i in range(0, len(versions)):
             writer.push('a', attrs={'href': f})
             writer.write(f)
             writer.pop('a')
+            fullpath = os.path.join(filesdir, f)
+            writer.write(' (%s)' % humanize_bytes(os.path.getsize(fullpath)))
             writer.pop('li')
     writer.pop('ul')
 
