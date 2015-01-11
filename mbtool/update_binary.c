@@ -730,7 +730,9 @@ static int run_aroma_selection(void)
     const char *argv[] = {
         TEMP_UPDATER,
         interface,
-        output_fd_str,
+        // Force output to stderr
+        //output_fd_str,
+        "2",
         TEMP_AROMA,
         NULL
     };
