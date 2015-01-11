@@ -33,7 +33,7 @@ void mbp_bootimage_destroy(CBootImage *bootImage);
 CPatcherError * mbp_bootimage_error(const CBootImage *bootImage);
 
 int mbp_bootimage_load_data(CBootImage *bootImage,
-                            const char *data, unsigned int size);
+                            const void *data, size_t size);
 int mbp_bootimage_load_file(CBootImage *bootImage,
                             const char *filename);
 
@@ -88,22 +88,22 @@ void mbp_bootimage_set_addresses(CBootImage *bootImage,
 size_t mbp_bootimage_kernel_image(const CBootImage *bootImage,
                                   void **data);
 void mbp_bootimage_set_kernel_image(CBootImage *bootImage,
-                                    const char *data, size_t size);
+                                    const void *data, size_t size);
 
 size_t mbp_bootimage_ramdisk_image(const CBootImage *bootImage,
                                    void **data);
 void mbp_bootimage_set_ramdisk_image(CBootImage *bootImage,
-                                     const char *data, size_t size);
+                                     const void *data, size_t size);
 
 size_t mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
                                              void **data);
 void mbp_bootimage_set_second_bootloader_image(CBootImage *bootImage,
-                                               const char *data, size_t size);
+                                               const void *data, size_t size);
 
 size_t mbp_bootimage_device_tree_image(const CBootImage *bootImage,
                                        void **data);
 void mbp_bootimage_set_device_tree_image(CBootImage *bootImage,
-                                         const char *data, unsigned int size);
+                                         const void *data, size_t size);
 
 #ifdef __cplusplus
 }

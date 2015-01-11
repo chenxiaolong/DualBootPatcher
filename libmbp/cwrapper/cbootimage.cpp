@@ -103,7 +103,7 @@ CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
  * \sa BootImage::load(const std::vector<unsigned char> &)
  */
 int mbp_bootimage_load_data(CBootImage *bootImage,
-                            const char *data, unsigned int size)
+                            const void *data, size_t size)
 {
     CAST(bootImage);
     bool ret = bi->load(data_to_vector(data, size));
@@ -545,7 +545,7 @@ size_t mbp_bootimage_kernel_image(const CBootImage *bootImage, void **data)
  * \sa BootImage::setKernelImage()
  */
 void mbp_bootimage_set_kernel_image(CBootImage *bootImage,
-                                    const char *data, size_t size)
+                                    const void *data, size_t size)
 {
     CAST(bootImage);
     bi->setKernelImage(data_to_vector(data, size));
@@ -580,7 +580,7 @@ size_t mbp_bootimage_ramdisk_image(const CBootImage *bootImage, void **data)
  * \sa BootImage::setRamdiskImage()
  */
 void mbp_bootimage_set_ramdisk_image(CBootImage *bootImage,
-                                     const char *data, size_t size)
+                                     const void *data, size_t size)
 {
     CAST(bootImage);
     bi->setRamdiskImage(data_to_vector(data, size));
@@ -616,7 +616,7 @@ size_t mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
  * \sa BootImage::setSecondBootloaderImage()
  */
 void mbp_bootimage_set_second_bootloader_image(CBootImage *bootImage,
-                                               const char *data, size_t size)
+                                               const void *data, size_t size)
 {
     CAST(bootImage);
     bi->setSecondBootloaderImage(data_to_vector(data, size));
@@ -652,8 +652,7 @@ size_t mbp_bootimage_device_tree_image(const CBootImage *bootImage,
  * \sa BootImage::setDeviceTreeImage()
  */
 void mbp_bootimage_set_device_tree_image(CBootImage *bootImage,
-                                         const char *data,
-                                         unsigned int size)
+                                         const void *data, size_t size)
 {
     CAST(bootImage);
     bi->setDeviceTreeImage(data_to_vector(data, size));

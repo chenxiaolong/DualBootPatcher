@@ -103,7 +103,7 @@ CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
  * \sa CpioFile::load()
  */
 int mbp_cpiofile_load_data(CCpioFile *cpio,
-                           const char *data, unsigned int size)
+                           const void *data, size_t size)
 {
     CAST(cpio);
     bool ret = cf->load(data_to_vector(data, size));
@@ -231,7 +231,7 @@ int mbp_cpiofile_contents(const CCpioFile *cpio,
  */
 int mbp_cpiofile_set_contents(CCpioFile *cpio,
                               const char *filename,
-                              char *data, size_t size)
+                              const void *data, size_t size)
 {
     CAST(cpio);
     bool ret = cf->setContents(filename, data_to_vector(data, size));
@@ -295,7 +295,7 @@ int mbp_cpiofile_add_file(CCpioFile *cpio,
  * \sa CpioFile::addFile(std::vector<unsigned char>, const std::string &, unsigned int)
  */
 int mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
-                                    char *data, size_t size,
+                                    const void *data, size_t size,
                                     const char *name, unsigned int perms)
 {
     CAST(cpio);
