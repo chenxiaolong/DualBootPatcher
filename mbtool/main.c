@@ -27,8 +27,10 @@
 #include "config.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
+#ifdef RECOVERY
 #include "update_binary.h"
 #include "update_binary_tool.h"
+#endif
 
 #include "util/logging.h"
 
@@ -53,9 +55,11 @@ struct tool tools[] = {
     // Tools
     TOOL(mount_fstab),
     TOOL(sepolpatch),
+#ifdef RECOVERY
     { "updater", update_binary_main }, // TWRP
     { "update-binary", update_binary_main },
     { "update-binary-tool", update_binary_tool_main },
+#endif
     { NULL, NULL }
 };
 
