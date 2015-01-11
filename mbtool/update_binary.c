@@ -1015,6 +1015,11 @@ static int update_binary(void)
     chmod(CHROOT "/" HELPER_TOOL, 0555);
 
 
+    // Copy /default.prop
+    mb_copy_file("/default.prop", CHROOT "/default.prop",
+                 MB_COPY_ATTRIBUTES | MB_COPY_XATTRS);
+
+
     // Run real update-binary
     ui_print("Running real update-binary");
     ui_print("Here we go!");
