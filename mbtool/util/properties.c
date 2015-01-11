@@ -19,11 +19,35 @@
 
 #include "util/properties.h"
 
+#if __ANDROID_API__ >= 21
+#include <dlfcn.h>
+#endif
 #include <string.h>
+
+#include "util/logging.h"
 
 int mb_get_property(const char *name, char *value_out, char *default_value)
 {
+#if __ANDROID_API__ >= 21
+    // __system_property_get is hidden on Android 5.0 for arm64-v8a and x86_64
+    // I can't seem to find anything explaining the reason... oh well.
+
+    void *handle = dlopen("libc.so", RTLD_NOLOAD);
+    if (!handle) {
+        LOGE("Failed to dlopen() libc.so");
+        return 0;
+    }
+
+    int (*__system_property_get)(const char *, char *) =
+            dlsym(handle, "__system_property_get");
+#endif
+
     int len = __system_property_get(name, value_out);
+
+#if __ANDROID_API__ >= 21
+    dlclose(handle);
+#endif
+
     if (len == 0) {
         if (default_value) {
             return (int) strlcpy(value_out, default_value, MB_PROP_VALUE_MAX);
