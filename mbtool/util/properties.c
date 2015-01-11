@@ -28,9 +28,11 @@
 
 int mb_get_property(const char *name, char *value_out, char *default_value)
 {
-#if __ANDROID_API__ >= 21
+#if 0 && __ANDROID_API__ >= 21
     // __system_property_get is hidden on Android 5.0 for arm64-v8a and x86_64
     // I can't seem to find anything explaining the reason... oh well.
+
+    // NOTE: This is disabled for now since we always link libc statically
 
     void *handle = dlopen("libc.so", RTLD_NOLOAD);
     if (!handle) {
@@ -44,7 +46,7 @@ int mb_get_property(const char *name, char *value_out, char *default_value)
 
     int len = __system_property_get(name, value_out);
 
-#if __ANDROID_API__ >= 21
+#if 0 && __ANDROID_API__ >= 21
     dlclose(handle);
 #endif
 
