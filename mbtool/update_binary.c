@@ -1048,9 +1048,9 @@ static int update_binary(void)
 
 
     // Umount filesystems from inside the chroot
-    const char *umount_system[] = { HELPER_TOOL, "umount", "/system", NULL };
-    const char *umount_cache[] = { HELPER_TOOL, "umount", "/cache", NULL };
-    const char *umount_data[] = { HELPER_TOOL, "umount", "/data", NULL };
+    const char *umount_system[] = { HELPER_TOOL, "unmount", "/system", NULL };
+    const char *umount_cache[] = { HELPER_TOOL, "unmount", "/cache", NULL };
+    const char *umount_data[] = { HELPER_TOOL, "unmount", "/data", NULL };
     mb_run_command_chroot(CHROOT, (char **) umount_system);
     mb_run_command_chroot(CHROOT, (char **) umount_cache);
     mb_run_command_chroot(CHROOT, (char **) umount_data);
