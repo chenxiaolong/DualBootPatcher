@@ -47,6 +47,14 @@
 #include "util/properties.h"
 
 
+// Set to 1 to spawn a shell after installation
+// NOTE: This should ONLY be used through adb. For example:
+//
+//     $ adb push mbtool_recovery /tmp/updater
+//     $ adb shell /tmp/updater 3 1 /path/to/file_patched.zip
+#define DEBUG_SHELL 0
+
+
 const char *BUSYBOX_WRAPPER =
 "#!/sbin/busybox_orig sh"                                               "\n"
 ""                                                                      "\n"
@@ -1030,6 +1038,13 @@ static int update_binary(void)
     if ((ret = run_real_updater()) < 0) {
         ui_print("Failed to run real update-binary");
     }
+
+#if DEBUG_SHELL
+    {
+        const char *argv[] = { "/sbin/sh", "-i", NULL };
+        mb_run_command_chroot(CHROOT, (char **) argv);
+    }
+#endif
 
 
     // Umount filesystems from inside the chroot
