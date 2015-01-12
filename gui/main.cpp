@@ -52,8 +52,7 @@ int main(int argc, char *argv[])
 
     if (!pc.loadPatchInfos()) {
         QMessageBox::warning(nullptr, a.applicationName(),
-                             QObject::tr("Failed to load patchinfo files in: %1")
-                                    .arg(QString::fromStdString(pc.patchInfosDirectory())));
+                             QObject::tr("Failed to load patchinfo files"));
         return 1;
     }
 
