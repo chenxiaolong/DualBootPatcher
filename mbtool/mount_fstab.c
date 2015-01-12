@@ -20,6 +20,7 @@
 #include "mount_fstab.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <libgen.h>
 #include <stdio.h>
@@ -37,6 +38,9 @@
 #include "util/logging.h"
 #include "util/loopdev.h"
 #include "util/mount.h"
+
+
+#define FORCE_SELINUX_PERMISSIVE 0
 
 
 static int create_dir_and_mount(struct fstab_rec *rec,
@@ -483,6 +487,14 @@ int mount_fstab_main(int argc, char *argv[])
         LOGV("SELinux policy patching completed. Waiting 1 second for policy reload");
         sleep(1);
     }
+
+#if FORCE_SELINUX_PERMISSIVE
+    int fd = open("/sys/fs/selinux/enforce", O_RDWR);
+    if (fd > 0) {
+        write(fd, "0", 1);
+        close(fd);
+    }
+#endif
 
     return mount_fstab(argv[optind]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
