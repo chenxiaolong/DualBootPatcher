@@ -803,7 +803,9 @@ static int run_real_updater(void)
     };
 
     pid_t parent = getppid();
-    int aroma = is_aroma(CHROOT TEMP_UPDATER) >= 0;
+    int aroma = is_aroma(CHROOT TEMP_UPDATER) > 0;
+
+    LOGD("update-binary is AROMA: %d", aroma);
 
     if (aroma) {
         kill(parent, SIGSTOP);
