@@ -89,7 +89,7 @@ int mb_mkdir_parent(const char *path, mode_t perms)
 
     dir = dirname(dup);
 
-    if (mkdir(dir, perms) < 0 && errno != EEXIST) {
+    if (mb_mkdir_recursive(dir, perms) < 0 && errno != EEXIST) {
         goto error;
     }
 
