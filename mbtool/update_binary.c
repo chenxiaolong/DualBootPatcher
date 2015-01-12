@@ -599,6 +599,21 @@ static int shrink_image(const char *path)
         }
     }
 
+    // Enlarge by 10MB in case the user wants to modify /system/build.prop or
+    // something
+    struct stat sb;
+    if (stat(path, &sb) == 0) {
+        off_t size_mib = sb.st_size / 1024 / 1024 + 10;
+        size_t len = 3; // 'M', '\0', and first digit
+        for (int n = size_mib; n /= 10; ++len);
+        char *size_str = malloc(len);
+        snprintf(size_str, len, "%jdM", (intmax_t) size_mib);
+
+        // Ignore errors here
+        const char *argv[] = { TEMP_RESIZE2FS, path, size_str, NULL };
+        mb_run_command((char **) argv);
+    }
+
     return 0;
 }
 
