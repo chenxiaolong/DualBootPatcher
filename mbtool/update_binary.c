@@ -558,7 +558,9 @@ static int create_or_enlarge_image(const char *path)
 
     // Force an fsck to make resize2fs happy
     const char *e2fsck_argv[] = { TEMP_E2FSCK, "-f", "-y", path, NULL };
-    if (mb_run_command((char **) e2fsck_argv) != 0) {
+    int ret = mb_run_command((char **) e2fsck_argv);
+    // 0 = no errors; 1 = errors were corrected
+    if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
         LOGE("%s: Failed to run e2fsck", path);
         return -1;
     }
@@ -579,7 +581,9 @@ static int shrink_image(const char *path)
 {
     // Force an fsck to make resize2fs happy
     const char *e2fsck_argv[] = { TEMP_E2FSCK, "-f", "-y", path, NULL };
-    if (mb_run_command((char **) e2fsck_argv) != 0) {
+    int ret = mb_run_command((char **) e2fsck_argv);
+    // 0 = no errors; 1 = errors were corrected
+    if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
         LOGE("%s: Failed to run e2fsck", path);
         return -1;
     }
