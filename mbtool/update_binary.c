@@ -612,6 +612,8 @@ static int shrink_image(const char *path)
         // Ignore errors here
         const char *argv[] = { TEMP_RESIZE2FS, path, size_str, NULL };
         mb_run_command((char **) argv);
+
+        free(size_str);
     }
 
     return 0;
