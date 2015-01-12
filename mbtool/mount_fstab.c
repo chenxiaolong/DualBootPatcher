@@ -35,6 +35,7 @@
 #include "util/file.h"
 #include "util/fstab.h"
 #include "util/logging.h"
+#include "util/loopdev.h"
 #include "util/mount.h"
 
 
@@ -255,11 +256,27 @@ int mount_fstab(const char *fstab_path)
     strlcat(target_data, rom->data_path + 1, sizeof(target_data));
 
     if (rom->system_uses_image) {
-        if (mount(target_system, "/system", "ext4", MS_NOSUID, "") < 0) {
-            LOGE("Failed to mount %s at %s: %s",
-                 target_system, "/system", strerror(errno));
+        char *loopdev = NULL;
+
+        if (!(loopdev = mb_loopdev_find_unused())) {
+            LOGE("Failed to find unused loop device: %s", strerror(errno));
             goto error;
         }
+
+        if (mb_loopdev_setup_device(loopdev, target_system, 0, 0) < 0) {
+            LOGE("Failed to setup loop device %s: %s", loopdev, strerror(errno));
+            free(loopdev);
+            goto error;
+        }
+
+        if (mount(loopdev, "/system", "ext4", MS_NOSUID, "") < 0) {
+            LOGE("Failed to mount %s at %s: %s",
+                 target_system, "/system", strerror(errno));
+            free(loopdev);
+            goto error;
+        }
+
+        free(loopdev);
     } else {
         if (mb_bind_mount(target_system, 0771, "/system", 0771) < 0) {
             goto error;
