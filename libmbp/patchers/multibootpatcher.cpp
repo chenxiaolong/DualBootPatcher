@@ -266,10 +266,8 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         cpio.remove(mbtool);
     }
 
-    if (!cpio.addFile(pc->binariesDirectory() + "/"
-            + "android" + "/"
-            + info->device()->architecture() + "/"
-            + "mbtool", mbtool, 0750)) {
+    if (!cpio.addFile(pc->dataDirectory() + "/binaries/android/"
+            + info->device()->architecture() + "/mbtool", mbtool, 0750)) {
         error = cpio.error();
         return false;
     }
@@ -421,7 +419,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // Add mbtool_recovery
     result = FileUtils::laAddFile(
             aOutput, "META-INF/com/google/android/update-binary",
-            pc->binariesDirectory() + "/android/"
+            pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
@@ -436,7 +434,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // Add mbtool
     result = FileUtils::laAddFile(
             aOutput, "multiboot/mbtool",
-            pc->binariesDirectory() + "/android/"
+            pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
@@ -465,7 +463,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // Add e2fsck
     result = FileUtils::laAddFile(
             aOutput, "multiboot/e2fsck",
-            pc->binariesDirectory() + "/android/"
+            pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/e2fsck");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
@@ -480,7 +478,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // Add resize2fs
     result = FileUtils::laAddFile(
             aOutput, "multiboot/resize2fs",
-            pc->binariesDirectory() + "/android/"
+            pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/resize2fs");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
@@ -495,7 +493,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // Add unzip.tar.xz
     result = FileUtils::laAddFile(
             aOutput, "multiboot/unzip",
-            pc->binariesDirectory() + "/android/"
+            pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/unzip");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;

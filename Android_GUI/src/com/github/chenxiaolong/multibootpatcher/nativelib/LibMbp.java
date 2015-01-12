@@ -151,17 +151,9 @@ public class LibMbp {
         static native CPatcherConfig mbp_config_create();
         static native void mbp_config_destroy(CPatcherConfig pc);
         static native CPatcherError mbp_config_error(CPatcherConfig pc);
-        static native Pointer mbp_config_binaries_directory(CPatcherConfig pc);
         static native Pointer mbp_config_data_directory(CPatcherConfig pc);
-        static native Pointer mbp_config_patches_directory(CPatcherConfig pc);
-        static native Pointer mbp_config_patchinfos_directory(CPatcherConfig pc);
-        static native Pointer mbp_config_scripts_directory(CPatcherConfig pc);
         static native Pointer mbp_config_temp_directory(CPatcherConfig pc);
-        static native void mbp_config_set_binaries_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_data_directory(CPatcherConfig pc, String path);
-        static native void mbp_config_set_patches_directory(CPatcherConfig pc, String path);
-        static native void mbp_config_set_patchinfos_directory(CPatcherConfig pc, String path);
-        static native void mbp_config_set_scripts_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_temp_directory(CPatcherConfig pc, String path);
         static native Pointer mbp_config_version(CPatcherConfig pc);
         static native Pointer mbp_config_devices(CPatcherConfig pc);
@@ -1251,33 +1243,9 @@ public class LibMbp {
             return new PatcherError(error);
         }
 
-        public String getBinariesDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getBinariesDirectory");
-            Pointer p = CWrapper.mbp_config_binaries_directory(mCPatcherConfig);
-            return getStringAndFree(p);
-        }
-
         public String getDataDirectory() {
             log(mCPatcherConfig, PatcherConfig.class, "getDataDirectory");
             Pointer p = CWrapper.mbp_config_data_directory(mCPatcherConfig);
-            return getStringAndFree(p);
-        }
-
-        public String getPatchesDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getPatchesDirectory");
-            Pointer p = CWrapper.mbp_config_patches_directory(mCPatcherConfig);
-            return getStringAndFree(p);
-        }
-
-        public String getPatchInfosDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getPatchInfosDirectory");
-            Pointer p = CWrapper.mbp_config_patchinfos_directory(mCPatcherConfig);
-            return getStringAndFree(p);
-        }
-
-        public String getScriptsDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getScriptsDirectory");
-            Pointer p = CWrapper.mbp_config_scripts_directory(mCPatcherConfig);
             return getStringAndFree(p);
         }
 
@@ -1287,39 +1255,11 @@ public class LibMbp {
             return getStringAndFree(p);
         }
 
-        public void setBinariesDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setBinariesDirectory", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_config_set_binaries_directory(mCPatcherConfig, path);
-        }
-
         public void setDataDirectory(String path) {
             log(mCPatcherConfig, PatcherConfig.class, "setDataDirectory", path);
             ensureNotNull(path);
 
             CWrapper.mbp_config_set_data_directory(mCPatcherConfig, path);
-        }
-
-        public void setPatchesDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setPatchesDirectory", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_config_set_patches_directory(mCPatcherConfig, path);
-        }
-
-        public void setPatchInfosDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setPatchInfosDirectory", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_config_set_patchinfos_directory(mCPatcherConfig, path);
-        }
-
-        public void setScriptsDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setScriptsDirectory", path);
-            ensureNotNull(path);
-
-            CWrapper.mbp_config_set_scripts_directory(mCPatcherConfig, path);
         }
 
         public void setTempDirectory(String path) {

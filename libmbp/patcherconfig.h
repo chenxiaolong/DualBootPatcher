@@ -48,18 +48,10 @@ public:
 
     PatcherError error() const;
 
-    std::string binariesDirectory() const;
     std::string dataDirectory() const;
-    std::string patchesDirectory() const;
-    std::string patchInfosDirectory() const;
-    std::string scriptsDirectory() const;
     std::string tempDirectory() const;
 
-    void setBinariesDirectory(std::string path);
     void setDataDirectory(std::string path);
-    void setPatchesDirectory(std::string path);
-    void setPatchInfosDirectory(std::string path);
-    void setScriptsDirectory(std::string path);
     void setTempDirectory(std::string path);
 
     std::string version() const;

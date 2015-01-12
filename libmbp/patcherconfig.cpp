@@ -59,11 +59,7 @@ class PatcherConfig::Impl
 {
 public:
     // Directories
-    std::string binariesDir;
     std::string dataDir;
-    std::string patchesDir;
-    std::string patchInfosDir;
-    std::string scriptsDir;
     std::string tempDir;
 
     std::string version;
@@ -108,13 +104,6 @@ public:
 };
 /*! \endcond */
 
-
-static const std::string BinariesDirName = "binaries";
-static const std::string PatchesDirName = "patches";
-static const std::string PatchInfosDirName = "patchinfos";
-static const std::string ScriptsDirName = "scripts";
-
-// --------------------------------
 
 #ifndef LIBMBP_MINI
 const xmlChar *PatchInfoTagPatchinfo = (xmlChar *) "patchinfo";
@@ -199,22 +188,6 @@ PatcherError PatcherConfig::error() const
 }
 
 /*!
- * \brief Get binaries directory
- *
- * The detault binaries directory is `<datadir>/binaries/`
- *
- * \return Binaries directory
- */
-std::string PatcherConfig::binariesDirectory() const
-{
-    if (m_impl->binariesDir.empty()) {
-        return dataDirectory() + "/" + BinariesDirName;
-    } else {
-        return m_impl->binariesDir;
-    }
-}
-
-/*!
  * \brief Get top-level data directory
  *
  * \return Data directory
@@ -222,54 +195,6 @@ std::string PatcherConfig::binariesDirectory() const
 std::string PatcherConfig::dataDirectory() const
 {
     return m_impl->dataDir;
-}
-
-/*!
- * \brief Get patch files directory
- *
- * The detault binaries directory is `<datadir>/patches/`
- *
- * \return Patch files directory
- */
-std::string PatcherConfig::patchesDirectory() const
-{
-    if (m_impl->patchesDir.empty()) {
-        return dataDirectory() + "/" + PatchesDirName;
-    } else {
-        return m_impl->patchesDir;
-    }
-}
-
-/*!
- * \brief Get PatchInfo files directory
- *
- * The detault binaries directory is `<datadir>/patchinfos/`
- *
- * \return PatchInfo files directory
- */
-std::string PatcherConfig::patchInfosDirectory() const
-{
-    if (m_impl->patchInfosDir.empty()) {
-        return dataDirectory() + "/" + PatchInfosDirName;
-    } else {
-        return m_impl->patchInfosDir;
-    }
-}
-
-/*!
- * \brief Get shell scripts directory
- *
- * The detault binaries directory is `<datadir>/scripts/`
- *
- * \return Shell scripts directory
- */
-std::string PatcherConfig::scriptsDirectory() const
-{
-    if (m_impl->scriptsDir.empty()) {
-        return dataDirectory() + "/" + ScriptsDirName;
-    } else {
-        return m_impl->scriptsDir;
-    }
 }
 
 /*!
@@ -289,19 +214,6 @@ std::string PatcherConfig::tempDirectory() const
 }
 
 /*!
- * \brief Set binaries directory
- *
- * \note This should only be changed if the default data directory structure is
- *       desired.
- *
- * \param path Path to binaries directory
- */
-void PatcherConfig::setBinariesDirectory(std::string path)
-{
-    m_impl->binariesDir = std::move(path);
-}
-
-/*!
  * \brief Set top-level data directory
  *
  * \param path Path to data directory
@@ -309,45 +221,6 @@ void PatcherConfig::setBinariesDirectory(std::string path)
 void PatcherConfig::setDataDirectory(std::string path)
 {
     m_impl->dataDir = std::move(path);
-}
-
-/*!
- * \brief Set patch files directory
- *
- * \note This should only be changed if the default data directory structure is
- *       not desired.
- *
- * \param path Path to patch files directory
- */
-void PatcherConfig::setPatchesDirectory(std::string path)
-{
-    m_impl->patchesDir = std::move(path);
-}
-
-/*!
- * \brief Set PatchInfo files directory
- *
- * \note This should only be changed if the default data directory structure is
- *       not desired.
- *
- * \param path Path to PatchInfo files directory
- */
-void PatcherConfig::setPatchInfosDirectory(std::string path)
-{
-    m_impl->patchInfosDir = std::move(path);
-}
-
-/*!
- * \brief Set shell scripts directory
- *
- * \note This should only be changed if the default data directory structure is
- *       not desired.
- *
- * \param path Path to shell scripts directory
- */
-void PatcherConfig::setScriptsDirectory(std::string path)
-{
-    m_impl->scriptsDir = std::move(path);
 }
 
 /*!
@@ -806,7 +679,7 @@ static boost::filesystem::path makeRelative(boost::filesystem::path from,
 bool PatcherConfig::loadPatchInfos()
 {
     try {
-        const boost::filesystem::path dirPath(patchInfosDirectory());
+        const boost::filesystem::path dirPath(dataDirectory() + "/patchinfos");
 
         boost::filesystem::recursive_directory_iterator it(dirPath);
         boost::filesystem::recursive_directory_iterator end;

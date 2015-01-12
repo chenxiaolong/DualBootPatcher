@@ -75,7 +75,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
         return;
     }
 
-    m_impl->patchFile = pc->patchesDirectory() + "/" + args.at(ArgFile);
+    m_impl->patchFile = pc->dataDirectory() + "/patches/" + args.at(ArgFile);
 
     std::vector<unsigned char> contents;
     auto ret = FileUtils::readToMemory(m_impl->patchFile, &contents);
@@ -148,13 +148,13 @@ std::vector<std::string> PatchFilePatcher::existingFiles() const
 bool PatchFilePatcher::patchFiles(const std::string &directory)
 {
 #if defined(__ANDROID__)
-    std::string patch = m_impl->pc->binariesDirectory();
-    patch += "/android/";
+    std::string patch = m_impl->pc->dataDirectory();
+    patch += "/binaries/android/";
     patch += m_impl->info->device()->architecture();
     patch += "/patch";
 #elif defined(_WIN32)
-    std::string patch = m_impl->pc->binariesDirectory();
-    patch += "/windows/hctap.exe";
+    std::string patch = m_impl->pc->dataDirectory();
+    patch += "/binaries/windows/hctap.exe";
 #else
     std::string patch = "patch";
 #endif

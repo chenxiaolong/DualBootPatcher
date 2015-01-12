@@ -94,23 +94,6 @@ CPatcherError * mbp_config_error(const CPatcherConfig *pc)
 }
 
 /*!
- * \brief Get binaries directory
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return Binaries directory
- *
- * \sa PatcherConfig::binariesDirectory()
- */
-char * mbp_config_binaries_directory(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    return string_to_cstring(config->binariesDirectory());
-}
-
-/*!
  * \brief Get top-level data directory
  *
  * \note The returned string is dynamically allocated. It should be free()'d
@@ -125,57 +108,6 @@ char * mbp_config_data_directory(const CPatcherConfig *pc)
 {
     CCAST(pc);
     return string_to_cstring(config->dataDirectory());
-}
-
-/*!
- * \brief Get patch files directory
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return Patch files directory
- *
- * \sa PatcherConfig::patchesDirectory()
- */
-char * mbp_config_patches_directory(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    return string_to_cstring(config->patchesDirectory());
-}
-
-/*!
- * \brief Get PatchInfo files directory
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return PatchInfo files directory
- *
- * \sa PatcherConfig::patchInfosDirectory()
- */
-char * mbp_config_patchinfos_directory(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    return string_to_cstring(config->patchInfosDirectory());
-}
-
-/*!
- * \brief Get shell scripts directory
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return Shell scripts directory
- *
- * \sa PatcherConfig::scriptsDirectory()
- */
-char * mbp_config_scripts_directory(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    return string_to_cstring(config->scriptsDirectory());
 }
 
 /*!
@@ -196,20 +128,6 @@ char * mbp_config_temp_directory(const CPatcherConfig *pc)
 }
 
 /*!
- * \brief Set binaries directory
- *
- * \param pc CPatcherConfig object
- * \param path Path to binaries directory
- *
- * \sa PatcherConfig::setBinariesDirectory()
- */
-void mbp_config_set_binaries_directory(CPatcherConfig *pc, char *path)
-{
-    CAST(pc);
-    config->setBinariesDirectory(path);
-}
-
-/*!
  * \brief Set top-level data directory
  *
  * \param pc CPatcherConfig object
@@ -221,48 +139,6 @@ void mbp_config_set_data_directory(CPatcherConfig *pc, char *path)
 {
     CAST(pc);
     config->setDataDirectory(path);
-}
-
-/*!
- * \brief Set patch files directory
- *
- * \param pc CPatcherConfig object
- * \param path Path to patch files directory
- *
- * \sa PatcherConfig::setPatchesDirectory()
- */
-void mbp_config_set_patches_directory(CPatcherConfig *pc, char *path)
-{
-    CAST(pc);
-    config->setPatchesDirectory(path);
-}
-
-/*!
- * \brief Set PatchInfo files directory
- *
- * \param pc CPatcherConfig object
- * \param path Path to PatchInfo files directory
- *
- * \sa PatcherConfig::setPatchInfosDirectory()
- */
-void mbp_config_set_patchinfos_directory(CPatcherConfig *pc, char *path)
-{
-    CAST(pc);
-    config->setPatchInfosDirectory(path);
-}
-
-/*!
- * \brief Set shell scripts directory
- *
- * \param pc CPatcherConfig object
- * \param path Path to shell scripts directory
- *
- * \sa PatcherConfig::setScriptsDirectory()
- */
-void mbp_config_set_scripts_directory(CPatcherConfig *pc, char *path)
-{
-    CAST(pc);
-    config->setScriptsDirectory(path);
 }
 
 /*!
