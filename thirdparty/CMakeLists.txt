@@ -297,6 +297,7 @@ install(
     FILES_MATCHING
     PATTERN e2fsck
     PATTERN resize2fs
+    PATTERN tune2fs
 )
 
 

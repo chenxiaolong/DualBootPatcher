@@ -119,6 +119,9 @@ const char *BUSYBOX_WRAPPER =
 #define ZIP_RESIZE2FS   "multiboot/resize2fs"
 #define TEMP_RESIZE2FS  "/tmp/resize2fs"
 
+#define ZIP_TUNE2FS     "multiboot/tune2fs"
+#define TEMP_TUNE2FS    "/tmp/tune2fs"
+
 #define ZIP_UNZIP       "multiboot/unzip"
 #define TEMP_UNZIP      "/tmp/unzip"
 
@@ -457,6 +460,7 @@ static int setup_e2fsprogs(void)
     struct extract_info files[] = {
         { ZIP_E2FSCK, TEMP_E2FSCK },
         { ZIP_RESIZE2FS, TEMP_RESIZE2FS },
+        { ZIP_TUNE2FS, TEMP_TUNE2FS },
         { NULL, NULL }
     };
 
@@ -472,6 +476,11 @@ static int setup_e2fsprogs(void)
 
     if (chmod(TEMP_RESIZE2FS, 0555) < 0) {
         LOGE(TEMP_RESIZE2FS ": Failed to chmod: %s", strerror(errno));
+        return -1;
+    }
+
+    if (chmod(TEMP_TUNE2FS, 0555) < 0) {
+        LOGE(TEMP_TUNE2FS ": Failed to chmod: %s", strerror(errno));
         return -1;
     }
 
@@ -556,6 +565,15 @@ static int create_or_enlarge_image(const char *path)
         }
     }
 
+    // Unset uninit_bg to avoid this bug, which is not patched in some Android
+    // kernels (well, at least hammerhead's kernel)
+    // http://www.redhat.com/archives/dm-devel/2012-June/msg00029.html
+    const char *tune2fs_argv[] = { TEMP_TUNE2FS, "-O", "^uninit_bg", path, NULL };
+    if (mb_run_command((char **) tune2fs_argv) != 0) {
+        LOGE("%s: Failed to clear uninit_bg flag", path);
+        return -1;
+    }
+
     // Force an fsck to make resize2fs happy
     const char *e2fsck_argv[] = { TEMP_E2FSCK, "-f", "-y", path, NULL };
     int ret = mb_run_command((char **) e2fsck_argv);
@@ -573,6 +591,9 @@ static int create_or_enlarge_image(const char *path)
         LOGE("%s: Failed to run resize2fs", path);
         return -1;
     }
+
+    // Rerun e2fsck to ensure we don't get mounted read-only
+    mb_run_command((char **) e2fsck_argv);
 
     return 0;
 }
@@ -615,6 +636,9 @@ static int shrink_image(const char *path)
 
         free(size_str);
     }
+
+    // Rerun e2fsck to ensure we don't get mounted read-only
+    mb_run_command((char **) e2fsck_argv);
 
     return 0;
 }

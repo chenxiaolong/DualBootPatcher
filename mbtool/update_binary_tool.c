@@ -76,6 +76,8 @@ static int do_mount(const char *mountpoint)
         mb_file_write_data(STAMP_FILE, loopdev, strlen(loopdev));
 
         free(loopdev);
+
+        LOGD(TAG "Mounted %s at %s", loopdev, SYSTEM);
     } else {
         LOGV(TAG "Ignoring mount command for %s", mountpoint);
     }
