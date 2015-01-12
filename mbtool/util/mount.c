@@ -19,6 +19,8 @@
 
 #include "util/mount.h"
 
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -34,12 +36,13 @@ int mb_is_mounted(const char *mountpoint)
 {
     FILE *f;
     int ret = 0;
-    struct mntent *ent;
+    struct mntent ent;
+    char buf[1024];
 
     f = setmntent("/proc/mounts", "r");
     if (f != NULL) {
-        while ((ent = getmntent(f)) != NULL) {
-            if (strcmp(mountpoint, ent->mnt_dir) == 0) {
+        while (getmntent_r(f, &ent, buf, sizeof(buf))) {
+            if (strcmp(mountpoint, ent.mnt_dir) == 0) {
                 ret = 1;
                 break;
             }
@@ -54,21 +57,22 @@ int mb_unmount_all(const char *dir)
 {
     FILE *fp;
     int failed;
-    struct mntent *ent;
+    struct mntent ent;
+    char buf[1024];
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
 
         fp = setmntent("/proc/mounts", "r");
         if (fp) {
-            while ((ent = getmntent(fp)) != NULL) {
-                if (strlen(ent->mnt_dir) >= strlen(dir)
-                        && strncmp(ent->mnt_dir, dir, strlen(dir)) == 0) {
-                    //LOGD("Attempting to unmount %s", ent->mnt_dir);
+            while (getmntent_r(fp, &ent, buf, sizeof(buf))) {
+                if (strlen(ent.mnt_dir) >= strlen(dir)
+                        && strncmp(ent.mnt_dir, dir, strlen(dir)) == 0) {
+                    //LOGD("Attempting to unmount %s", ent.mnt_dir);
 
-                    if (umount(ent->mnt_dir) < 0) {
+                    if (umount(ent.mnt_dir) < 0) {
                         LOGE("Failed to unmount %s: %s",
-                             ent->mnt_dir, strerror(errno));
+                             ent.mnt_dir, strerror(errno));
                         ++failed;
                     }
                 }

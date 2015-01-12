@@ -30,6 +30,8 @@
 
 #include "util/file.h"
 #include "util/logging.h"
+#include "util/loopdev.h"
+#include "util/mount.h"
 
 
 #define ACTION_MOUNT "mount"
@@ -52,13 +54,28 @@ static int do_mount(const char *mountpoint)
             return 0;
         }
 
-        if (mount("/tmp/system.img", SYSTEM,
-                  "ext4", MS_NOSUID, "") < 0) {
-            LOGE(TAG "Failed to mount %s: %s", mountpoint, strerror(errno));
+        char *loopdev = NULL;
+
+        if (!(loopdev = mb_loopdev_find_unused())) {
+            LOGE("Failed to find unused loop device: %s", strerror(errno));
             return -1;
         }
 
-        mb_create_empty_file(STAMP_FILE);
+        if (mb_loopdev_setup_device(loopdev, "/tmp/system.img", 0, 0) < 0) {
+            LOGE("Failed to setup loop device %s: %s", loopdev, strerror(errno));
+            free(loopdev);
+            return -1;
+        }
+
+        if (mount(loopdev, SYSTEM, "ext4", MS_NOSUID, "") < 0) {
+            LOGE(TAG "Failed to mount %s: %s", loopdev, strerror(errno));
+            free(loopdev);
+            return -1;
+        }
+
+        mb_file_write_data(STAMP_FILE, loopdev, strlen(loopdev));
+
+        free(loopdev);
     } else {
         LOGV(TAG "Ignoring mount command for %s", mountpoint);
     }
@@ -69,10 +86,30 @@ static int do_mount(const char *mountpoint)
 static int do_unmount(const char *mountpoint)
 {
     if (strcmp(mountpoint, SYSTEM) == 0) {
-        if (umount(SYSTEM) < 0 && errno != EINVAL) {
-            LOGE(TAG "Failed to unmount %s: %s", mountpoint, strerror(errno));
+        if (access(STAMP_FILE, F_OK) != 0) {
+            LOGV(TAG "/system not mounted. Skipping");
+            return 0;
+        }
+
+        char *loopdev;
+        if (mb_file_first_line(STAMP_FILE, &loopdev) < 0) {
+            LOGE(TAG "Failed to get first line of " STAMP_FILE);
             return -1;
         }
+
+        if (umount(SYSTEM) < 0) {
+            LOGE(TAG "Failed to unmount %s: %s", SYSTEM, strerror(errno));
+            free(loopdev);
+            return -1;
+        }
+
+        if (mb_loopdev_remove_device(loopdev) < 0) {
+            LOGE(TAG "Failed to remove loop device %s: %s", loopdev, strerror(errno));
+            free(loopdev);
+            return -1;
+        }
+
+        free(loopdev);
 
         remove(STAMP_FILE);
     } else {

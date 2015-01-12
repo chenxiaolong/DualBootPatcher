@@ -44,6 +44,7 @@ mbtool_src_base := \
 	util/file.c \
 	util/fstab.c \
 	util/logging.c \
+	util/loopdev.c \
 	util/mount.c \
 	util/properties.c
 

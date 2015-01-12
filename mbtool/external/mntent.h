@@ -81,7 +81,7 @@ libc_hidden_proto(setmntent)
    check).  */
 extern struct mntent *getmntent (FILE *__stream) __THROW;
 
-#ifdef __USE_MISC
+//#ifdef __USE_MISC
 /* Reentrant version of the above function.  */
 extern struct mntent *getmntent_r (FILE *__restrict __stream,
 				   struct mntent *__restrict __result,
@@ -90,7 +90,7 @@ extern struct mntent *getmntent_r (FILE *__restrict __stream,
 #if 0
 libc_hidden_proto(getmntent_r)
 #endif
-#endif
+//#endif
 
 /* Write the mount table entry described by MNT to STREAM.
    Return zero on success, nonzero on failure.  */

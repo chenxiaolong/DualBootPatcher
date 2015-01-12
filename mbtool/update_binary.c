@@ -97,7 +97,7 @@ const char *BUSYBOX_WRAPPER =
 
 #define CHROOT          "/chroot"
 
-#define HELPER_TOOL     "update-binary-tool"
+#define HELPER_TOOL     "/update-binary-tool"
 
 #define ZIP_UPDATER     "META-INF/com/google/android/update-binary"
 #define TEMP_UPDATER    "/tmp/updater"
@@ -356,18 +356,20 @@ static int create_chroot(void)
 
     // Don't create unnecessary special files in /dev to avoid install scripts
     // from overwriting partitions
-    MKNOD_CHECKED(CHROOT "/dev/console", S_IFCHR | 0644, makedev(5, 1));
-    MKNOD_CHECKED(CHROOT "/dev/null",    S_IFCHR | 0644, makedev(1, 3));
-    MKNOD_CHECKED(CHROOT "/dev/ptmx",    S_IFCHR | 0644, makedev(5, 2));
-    MKNOD_CHECKED(CHROOT "/dev/random",  S_IFCHR | 0644, makedev(1, 8));
-    MKNOD_CHECKED(CHROOT "/dev/tty",     S_IFCHR | 0644, makedev(5, 0));
-    MKNOD_CHECKED(CHROOT "/dev/urandom", S_IFCHR | 0644, makedev(1, 9));
-    MKNOD_CHECKED(CHROOT "/dev/zero",    S_IFCHR | 0644, makedev(1, 5));
+    MKNOD_CHECKED(CHROOT "/dev/console",      S_IFCHR | 0644, makedev(5, 1));
+    MKNOD_CHECKED(CHROOT "/dev/null",         S_IFCHR | 0644, makedev(1, 3));
+    MKNOD_CHECKED(CHROOT "/dev/ptmx",         S_IFCHR | 0644, makedev(5, 2));
+    MKNOD_CHECKED(CHROOT "/dev/random",       S_IFCHR | 0644, makedev(1, 8));
+    MKNOD_CHECKED(CHROOT "/dev/tty",          S_IFCHR | 0644, makedev(5, 0));
+    MKNOD_CHECKED(CHROOT "/dev/urandom",      S_IFCHR | 0644, makedev(1, 9));
+    MKNOD_CHECKED(CHROOT "/dev/zero",         S_IFCHR | 0644, makedev(1, 5));
+    MKNOD_CHECKED(CHROOT "/dev/loop-control", S_IFCHR | 0644, makedev(10, 237));
 
     // Create a few loopback devices in case we need to use them
-    MKNOD_CHECKED(CHROOT "/dev/loop0",   S_IFBLK | 0644, makedev(7, 0));
-    MKNOD_CHECKED(CHROOT "/dev/loop1",   S_IFBLK | 0644, makedev(7, 1));
-    MKNOD_CHECKED(CHROOT "/dev/loop2",   S_IFBLK | 0644, makedev(7, 2));
+    MKDIR_CHECKED(CHROOT "/dev/block", 0755);
+    MKNOD_CHECKED(CHROOT "/dev/block/loop0",  S_IFBLK | 0644, makedev(7, 0));
+    MKNOD_CHECKED(CHROOT "/dev/block/loop1",  S_IFBLK | 0644, makedev(7, 1));
+    MKNOD_CHECKED(CHROOT "/dev/block/loop2",  S_IFBLK | 0644, makedev(7, 2));
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
 #if 1
@@ -396,6 +398,12 @@ error:
 
 static int destroy_chroot(void)
 {
+    umount(CHROOT "/system");
+    umount(CHROOT "/cache");
+    umount(CHROOT "/data");
+
+    umount(CHROOT TEMP_SYSTEM_IMG);
+
     umount(CHROOT "/dev/pts");
     umount(CHROOT "/dev");
     umount(CHROOT "/proc");
@@ -403,12 +411,6 @@ static int destroy_chroot(void)
     umount(CHROOT "/sys");
     umount(CHROOT "/tmp");
     umount(CHROOT "/sbin");
-
-    umount(CHROOT "/system");
-    umount(CHROOT "/cache");
-    umount(CHROOT "/data");
-
-    umount(CHROOT TEMP_SYSTEM_IMG);
 
     // Unmount everything previously mounted in /chroot
     if (mb_unmount_all(CHROOT) < 0) {
@@ -1010,9 +1012,9 @@ static int update_binary(void)
 
 
     // Copy ourself for the real update-binary to use
-    mb_copy_file(mb_self_get_path(), CHROOT "/" HELPER_TOOL,
+    mb_copy_file(mb_self_get_path(), CHROOT HELPER_TOOL,
                  MB_COPY_ATTRIBUTES | MB_COPY_XATTRS);
-    chmod(CHROOT "/" HELPER_TOOL, 0555);
+    chmod(CHROOT HELPER_TOOL, 0555);
 
 
     // Copy /default.prop
@@ -1028,6 +1030,15 @@ static int update_binary(void)
     if ((ret = run_real_updater()) < 0) {
         ui_print("Failed to run real update-binary");
     }
+
+
+    // Umount filesystems from inside the chroot
+    const char *umount_system[] = { HELPER_TOOL, "umount", "/system", NULL };
+    const char *umount_cache[] = { HELPER_TOOL, "umount", "/cache", NULL };
+    const char *umount_data[] = { HELPER_TOOL, "umount", "/data", NULL };
+    mb_run_command_chroot(CHROOT, (char **) umount_system);
+    mb_run_command_chroot(CHROOT, (char **) umount_cache);
+    mb_run_command_chroot(CHROOT, (char **) umount_data);
 
 
     // Shrink system image file
@@ -1148,8 +1159,6 @@ static int update_binary(void)
 success:
     ui_print("Destroying chroot environment");
 
-    umount(CHROOT TEMP_INST_ZIP);
-
     mb_roms_cleanup(&r);
 
     mbp.mbp_config_destroy(pc);
@@ -1168,8 +1177,6 @@ success:
 
 error:
     ui_print("Destroying chroot environment");
-
-    umount(CHROOT TEMP_INST_ZIP);
 
     mb_roms_cleanup(&r);
 
