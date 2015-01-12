@@ -95,6 +95,72 @@ static int starts_with(const char *string, const char *prefix)
             : strncmp(string, prefix, strlen(prefix)) == 0;
 }
 
+static char * file_getprop(const char *path, const char *key)
+{
+    FILE *fp = NULL;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    fp = fopen(path, "rb");
+    if (!fp) {
+        goto error;
+    }
+
+    while ((read = getline(&line, &len, fp)) >= 0) {
+        if (line[0] == '\0' || line[0] == '#') {
+            // Skip empty and comment lines
+            continue;
+        }
+
+        char *equals = strchr(line, '=');
+        if (!equals) {
+            // No equals in line
+            continue;
+        }
+
+        if ((size_t)(equals - line) != strlen(key)) {
+            // Key is not the same length
+            continue;
+        }
+
+        if (strncmp(line, key, strlen(key)) == 0) {
+            // Strip newline
+            if (line[read - 1] == '\n') {
+                line[read - 1] = '\0';
+                --read;
+            }
+
+            char *ret = strdup(equals + 1);
+            fclose(fp);
+            free(line);
+            return ret;
+        }
+    }
+
+error:
+    if (fp) {
+        fclose(fp);
+    }
+
+    free(line);
+    return NULL;
+}
+
+static unsigned long get_api_version(void)
+{
+    char *api_str = file_getprop("/system/build.prop",
+                                 "ro.build.version.sdk");
+    char *temp;
+    unsigned long api = strtoul(api_str, &temp, 0);
+    free(api_str);
+    if (*temp == '\0') {
+        return api;
+    } else {
+        return 0;
+    }
+}
+
 int mount_fstab(const char *fstab_path)
 {
     static const char *fmt_fstab_gen = "%s/.%s.gen";
@@ -301,7 +367,14 @@ int mount_fstab(const char *fstab_path)
     // we'll bypass this.
     FILE* lv = fopen("/data/.layout_version", "wb");
     if (lv) {
-        fwrite("2", 1, 1, lv);
+        const char *layout_version;
+        if (get_api_version() >= 21) {
+            layout_version = "3";
+        } else {
+            layout_version = "2";
+        }
+
+        fwrite(layout_version, 1, strlen(layout_version), lv);
         fclose(lv);
     } else {
         LOGE("Failed to open /data/.layout_version to disable migration");
