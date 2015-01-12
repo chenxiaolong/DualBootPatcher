@@ -22,6 +22,7 @@
 #define MB_COPY_ATTRIBUTES              0x1
 #define MB_COPY_XATTRS                  0x2
 #define MB_COPY_EXCLUDE_TOP_LEVEL       0x4
+#define MB_COPY_FOLLOW_SYMLINKS         0x8
 
 int mb_copy_file(const char *source, const char *target, int flags);
 int mb_copy_dir(const char *source, const char *target, int flags);

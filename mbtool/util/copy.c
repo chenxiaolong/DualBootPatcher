@@ -252,11 +252,80 @@ int mb_copy_file(const char *source, const char *target, int flags)
              target, strerror(errno));
         goto error;
     }
-    if (copy_data(source, target) < 0) {
-        LOGE("%s: Failed to copy data: %s",
-             target, strerror(errno));
+
+    struct stat sb;
+    if (((flags & MB_COPY_FOLLOW_SYMLINKS) ? stat : lstat)(source, &sb) < 0) {
+        LOGE("%s: Failed to stat: %s",
+             source, strerror(errno));
         goto error;
     }
+
+    switch (sb.st_mode & S_IFMT) {
+    case S_IFBLK:
+        if (mknod(target, S_IFBLK | S_IRWXU, sb.st_rdev) < 0) {
+            LOGW("%s: Failed to create block device: %s",
+                 target, strerror(errno));
+            goto error;
+        }
+        break;
+
+    case S_IFCHR:
+        if (mknod(target, S_IFCHR | S_IRWXU, sb.st_rdev) < 0) {
+            LOGW("%s: Failed to create character device: %s",
+                 target, strerror(errno));
+            goto error;
+        }
+        break;
+
+    case S_IFIFO:
+        if (mkfifo(target, S_IRWXU) < 0) {
+            LOGW("%s: Failed to create FIFO pipe: %s",
+                 target, strerror(errno));
+            goto error;
+        }
+        break;
+
+    case S_IFLNK:
+        if (!(flags & MB_COPY_FOLLOW_SYMLINKS)) {
+            char *symlink_path = NULL;
+            if (readlink2(source, &symlink_path) < 0) {
+                LOGW("%s: Failed to read symlink path: %s",
+                     source, strerror(errno));
+                goto error;
+            }
+
+            if (symlink(symlink_path, target) < 0) {
+                LOGW("%s: Failed to create symlink: %s",
+                     target, strerror(errno));
+                free(symlink_path);
+                goto error;
+            }
+            free(symlink_path);
+
+            break;
+        }
+
+        // Treat as file
+
+    case S_IFREG:
+        if (copy_data(source, target) < 0) {
+            LOGE("%s: Failed to copy data: %s",
+                 target, strerror(errno));
+            goto error;
+        }
+        break;
+
+    case S_IFSOCK:
+        LOGE("%s: Cannot copy socket", target);
+        errno = EINVAL;
+        goto error;
+
+    case S_IFDIR:
+        LOGE("%s: Cannot copy directory", target);
+        errno = EINVAL;
+        goto error;
+    }
+
     if ((flags && MB_COPY_ATTRIBUTES) && copy_stat(source, target) < 0) {
         LOGE("%s: Failed to copy attributes: %s",
              target, strerror(errno));
@@ -286,6 +355,14 @@ int mb_copy_dir(const char *source, const char *target, int flags)
     FTSENT *root = NULL;
     char *pathbuf = NULL;
     size_t pathsize = 0;
+
+    // This is almost *never* useful, so we won't allow it
+    if (flags & MB_COPY_FOLLOW_SYMLINKS) {
+        LOGE("MB_COPY_FOLLOW_SYMLINKS not allowed for recursive copies");
+        errno = EINVAL;
+        ret = -1;
+        goto finish;
+    }
 
     struct stat sb;
 
