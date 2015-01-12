@@ -335,7 +335,7 @@ int mount_fstab(const char *fstab_path)
             goto error;
         }
 
-        if (mount(loopdev, "/system", "ext4", MS_NOSUID, "") < 0) {
+        if (mount(loopdev, "/system", "ext4", 0, "") < 0) {
             LOGE("Failed to mount %s at %s: %s",
                  target_system, "/system", strerror(errno));
             free(loopdev);

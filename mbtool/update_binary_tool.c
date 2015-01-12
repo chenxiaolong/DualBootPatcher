@@ -67,7 +67,7 @@ static int do_mount(const char *mountpoint)
             return -1;
         }
 
-        if (mount(loopdev, SYSTEM, "ext4", MS_NOSUID, "") < 0) {
+        if (mount(loopdev, SYSTEM, "ext4", 0, "") < 0) {
             LOGE(TAG "Failed to mount %s: %s", loopdev, strerror(errno));
             free(loopdev);
             return -1;
