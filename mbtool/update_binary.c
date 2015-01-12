@@ -1132,7 +1132,7 @@ static int update_binary(void)
     if (memcmp(hash, new_hash, SHA_DIGEST_SIZE) != 0) {
         ui_print("Boot partition was modified. Setting kernel");
 
-        // Add /installed with the ROM ID to the ramdisk
+        // Add /romid with the ROM ID to the ramdisk
 
         CBootImage *bi = mbp.mbp_bootimage_create();
         if (mbp.mbp_bootimage_load_file(bi, boot_block_dev) < 0) {
@@ -1158,7 +1158,7 @@ static int update_binary(void)
         mbp.mbp_free(ramdisk_data);
 
         if (mbp.mbp_cpiofile_add_file_from_data(
-                cpio, rom->id, strlen(rom->id), "installed", 0444) < 0) {
+                cpio, rom->id, strlen(rom->id), "romid", 0444) < 0) {
             ui_print("Failed to add ROM ID to ramdisk");
             mbp.mbp_cpiofile_destroy(cpio);
             mbp.mbp_bootimage_destroy(bi);
