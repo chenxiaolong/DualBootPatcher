@@ -25,6 +25,10 @@
 #include <stdio.h>
 #endif
 
+#ifdef __ANDROID__
+#include <sys/stat.h>
+#endif
+
 #include <unordered_map>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -152,6 +156,8 @@ bool PatchFilePatcher::patchFiles(const std::string &directory)
     patch += "/binaries/android/";
     patch += m_impl->info->device()->architecture();
     patch += "/patch";
+
+    chmod(patch.c_str(), 0755);
 #elif defined(_WIN32)
     std::string patch = m_impl->pc->dataDirectory();
     patch += "/binaries/windows/hctap.exe";

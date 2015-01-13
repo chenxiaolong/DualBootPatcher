@@ -50,6 +50,8 @@ public class LibMiscStuff {
         long get_mnt_avail_size(String mountpoint);
 
         boolean is_same_file(String path1, String path2);
+
+        boolean extract_archive(String filename, String target);
     }
 
     public static CLibrary INSTANCE = (CLibrary) Native.loadLibrary("miscstuff", CLibrary.class);

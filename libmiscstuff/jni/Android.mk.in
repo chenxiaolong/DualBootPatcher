@@ -1,0 +1,29 @@
+LOCAL_PATH := $(call my-dir)
+THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
+LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
+LIBLZMA_DIR := $(THIRD_PARTY)/android/liblzma
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libarchive
+LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := liblzma
+LOCAL_SRC_FILES := $(LIBLZMA_DIR)/lib_$(TARGET_ARCH_ABI)/liblzma.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := libmiscstuff.c mntent.c
+LOCAL_MODULE := libmiscstuff
+
+LOCAL_STATIC_LIBRARIES := libarchive liblzma
+
+LOCAL_C_INCLUDES := \
+	$(LIBARCHIVE_DIR)/include \
+	$(LIBLZMA_DIR)/include
+
+LOCAL_LDLIBS := -llog -lz
+include $(BUILD_SHARED_LIBRARY)

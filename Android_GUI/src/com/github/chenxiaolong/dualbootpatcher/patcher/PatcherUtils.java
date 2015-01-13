@@ -33,19 +33,14 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher.Progres
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherConfig;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError.ErrorCode;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 public class PatcherUtils {
     public static final String TAG = PatcherUtils.class.getSimpleName();
-    private static final String FILENAME = "data-%s.zip";
+    private static final String FILENAME = "data-%s.tar.xz";
     private static final String DIRNAME = "data-%s";
 
     public static final String PARAM_PATCHER = "patcher";
@@ -276,87 +271,11 @@ public class PatcherUtils {
                 new RootFile(d.getAbsolutePath()).recursiveDelete();
             }
 
-            //extractZip(targetFile.getAbsolutePath(), targetDir.getAbsolutePath());
-            extractZip(targetFile.getAbsolutePath(), context.getFilesDir().getAbsolutePath());
+            LibMiscStuff.INSTANCE.extract_archive(targetFile.getAbsolutePath(),
+                    context.getFilesDir().getAbsolutePath());
 
             // Delete archive
             targetFile.delete();
         }
-    }
-
-    /* http://stackoverflow.com/questions/3382996/how-to-unzip-files-programmatically-in-android */
-    private static boolean extractZip(String zipPath, String outputDir) {
-        FileInputStream fis = null;
-        ZipInputStream zis = null;
-
-        try {
-            fis = new FileInputStream(zipPath);
-            zis = new ZipInputStream(new BufferedInputStream(fis));
-            ZipEntry ze;
-
-            byte[] buffer = new byte[1024];
-            int length;
-
-            while ((ze = zis.getNextEntry()) != null) {
-                File target = new File(outputDir + File.separator + ze.getName());
-
-                if (ze.isDirectory()) {
-                    target.mkdirs();
-                } else {
-                    File parent = target.getParentFile();
-                    if (parent != null) {
-                        parent.mkdirs();
-                    }
-
-                    FileOutputStream fos = null;
-                    try {
-                        fos = new FileOutputStream(target);
-
-                        while ((length = zis.read(buffer)) >= 0) {
-                            fos.write(buffer, 0, length);
-                        }
-
-                        fos.close();
-                        fos = null;
-                    } finally {
-                        if (fos != null) {
-                            try {
-                                fos.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-
-                zis.closeEntry();
-
-                if (target.getName().equals("patch")) {
-                    new RootFile(target, false).chmod(0700);
-                }
-            }
-
-            zis.close();
-
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (zis != null) {
-                try {
-                    zis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return false;
     }
 }

@@ -1,5 +1,11 @@
 include(ExternalProject)
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/Android.mk.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/Android.mk
+    @ONLY
+)
+
 ExternalProject_Add(
     libmiscstuff
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
