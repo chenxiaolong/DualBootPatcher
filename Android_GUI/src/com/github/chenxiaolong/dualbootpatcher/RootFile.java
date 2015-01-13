@@ -17,8 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.util.Log;
-
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
@@ -219,7 +217,7 @@ public class RootFile {
 
             String newline = System.getProperty("line.separator");
             String[] split = output.split(newline);
-            ArrayList<String> files = new ArrayList<String>();
+            ArrayList<String> files = new ArrayList<>();
 
             for (String s : split) {
                 if (!s.isEmpty()) {
@@ -404,74 +402,6 @@ public class RootFile {
             }
         } else if (mAttemptRoot) {
             CommandUtils.runRootCommand("echo '" + contents + "' > " + getAbsolutePath());
-        }
-    }
-
-    public boolean isTmpFsMounted() {
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader("/proc/mounts"));
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                String[] split = line.split(" ");
-                // See man:fstab(8)
-                String fsSpec = split[0];
-                String fsFile = split[1];
-                String fsVfsType = split[2];
-                String fsMntOps = split[3];
-                String fsFreq = split[4];
-                String fsPassNo = split[5];
-
-                // We can ignore escaped characters because the tmpfs paths used are alphanumeric
-                if (fsVfsType.equals("tmpfs") && fsFile.equals(mFile.getPath())) {
-                    return true;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public boolean mountTmpFs() {
-        if (!mAttemptRoot) {
-            return false;
-        }
-
-        if (isTmpFsMounted()) {
-            Log.w(TAG, "A tmpfs is already mounted. Skipping tmpfs mounting");
-            return true;
-        }
-
-        if (isDirectory()) {
-            recursiveDelete();
-        }
-
-        mkdirs();
-        return CommandUtils.runRootCommand("mount -t tmpfs tmpfs " + getAbsolutePath()) == 0;
-    }
-
-    public void unmountTmpFs() {
-        if (!mAttemptRoot) {
-            return;
-        }
-
-        if (!isTmpFsMounted()) {
-            return;
-        }
-
-        if (isDirectory()) {
-            CommandUtils.runRootCommand("umount " + getAbsolutePath());
         }
     }
 
