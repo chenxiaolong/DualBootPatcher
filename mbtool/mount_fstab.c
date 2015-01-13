@@ -38,6 +38,7 @@
 #include "util/logging.h"
 #include "util/loopdev.h"
 #include "util/mount.h"
+#include "util/properties.h"
 
 
 #define FORCE_SELINUX_PERMISSIVE 0
@@ -272,6 +273,11 @@ int mount_fstab(const char *fstab_path)
         LOGE("Unknown ROM ID: %s", rom_id);
         free(rom_id);
         goto error;
+    }
+
+    // Set property for the Android app to use
+    if (mb_set_property("ro.multiboot.romid", rom_id) < 0) {
+        LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom_id);
     }
 
     free(rom_id);
