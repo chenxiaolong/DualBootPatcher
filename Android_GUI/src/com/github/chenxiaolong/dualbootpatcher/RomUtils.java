@@ -18,45 +18,29 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.content.Context;
+import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.github.chenxiaolong.dualbootpatcher.settings.RomInfoConfigFile;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+// TODO: This should completely go away as soon as the mbtool daemon is ready. Too much
+//       duplicated code here
 
 public class RomUtils {
     private static final String TAG = RomUtils.class.getSimpleName();
 
     private static ArrayList<RomInformation> mRoms;
 
-    public static final String BUILD_PROP = "build.prop";
-
-    public static final String RAW_SYSTEM = "/raw-system";
-    public static final String RAW_CACHE = "/raw-cache";
-    public static final String RAW_DATA = "/raw-data";
-    public static final String SYSTEM = "/system";
-    public static final String CACHE = "/cache";
-    public static final String DATA = "/data";
-
     public static final String UNKNOWN_ID = "unknown";
     public static final String PRIMARY_ID = "primary";
     public static final String SECONDARY_ID = "dual";
     public static final String MULTI_ID_PREFIX = "multi-slot-";
-    public static final String PRIMARY_KERNEL_ID = PRIMARY_ID;
-    public static final String SECONDARY_KERNEL_ID = "secondary";
-    public static final String MULTI_KERNEL_ID_PREFIX = MULTI_ID_PREFIX;
-
-    private static final String KEY_MOD_VERSION = "ro.modversion";
-    private static final String KEY_SLIM_VERSION = "ro.slim.version";
-    private static final String KEY_CM_VERSION = "ro.cm.version";
-    private static final String KEY_OMNI_VERSION = "ro.omni.version";
-    private static final String KEY_DISPLAY_ID = "ro.build.display.id";
 
     public static class RomInformation implements Parcelable {
         // Mount points
@@ -64,9 +48,12 @@ public class RomUtils {
         public String cache;
         public String data;
 
+        public boolean usesSystemImage;
+
         // Identifiers
         public String id;
-        public String kernelId;
+
+        public String thumbnailPath;
 
         public RomInformation() {
         }
@@ -75,8 +62,9 @@ public class RomUtils {
             system = in.readString();
             cache = in.readString();
             data = in.readString();
+            usesSystemImage = in.readInt() != 0;
             id = in.readString();
-            kernelId = in.readString();
+            thumbnailPath = in.readString();
         }
 
         @Override
@@ -89,8 +77,9 @@ public class RomUtils {
             dest.writeString(system);
             dest.writeString(cache);
             dest.writeString(data);
+            dest.writeInt(usesSystemImage ? 1 : 0);
             dest.writeString(id);
-            dest.writeString(kernelId);
+            dest.writeString(thumbnailPath);
         }
 
         @SuppressWarnings("unused")
@@ -109,20 +98,23 @@ public class RomUtils {
     }
 
     private static boolean isBootedInPrimary() {
-        return !new RootFile(RAW_SYSTEM).isDirectory() || LibMiscStuff.INSTANCE.is_same_file(RAW_SYSTEM + File.separator + BUILD_PROP, SYSTEM + File.separator + BUILD_PROP);
+        return !new RootFile("/raw-system").isDirectory() || LibMiscStuff.INSTANCE
+                .is_same_file("/raw-system/build.prop", "/system/build.prop");
     }
 
-    public static RomInformation getCurrentRom() {
-        return getCurrentRomViaInode();
-    }
+    public static RomInformation getCurrentRom(Context context) {
+        String id = null;
+        try {
+            id = SystemPropertiesProxy.get(context, "ro.multiboot.romid");
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
 
-    private static RomInformation getCurrentRomViaInode() {
-        RomInformation[] roms = getRoms();
-
-        for (RomInformation rom : roms) {
-            if (LibMiscStuff.INSTANCE.is_same_file(rom.system + File.separator + BUILD_PROP,
-                    SYSTEM + File.separator + BUILD_PROP)) {
-                return rom;
+        if (id != null) {
+            for (RomInformation rom : getRoms()) {
+                if (rom.id.equals(id)) {
+                    return rom;
+                }
             }
         }
 
@@ -135,53 +127,54 @@ public class RomUtils {
 
             RomInformation info;
 
-            // Check if primary ROM exists
             if (isBootedInPrimary()) {
                 info = new RomInformation();
 
-                info.system = SYSTEM;
-                info.cache = CACHE;
-                info.data = DATA;
-
+                info.usesSystemImage = false;
+                info.system = "/system";
+                info.cache = "/cache";
+                info.data = "/data";
                 info.id = PRIMARY_ID;
-                info.kernelId = PRIMARY_KERNEL_ID;
+                info.thumbnailPath = Environment.getExternalStorageDirectory()
+                        + "/MultiBoot/" + PRIMARY_ID + "/thumbnail.webp";
 
                 mRoms.add(info);
-            } else if (new RootFile(RAW_SYSTEM + File.separator + BUILD_PROP).isFile()) {
+            } else if (new RootFile("/raw-system/build.prop").isFile()) {
                 info = new RomInformation();
 
-                info.system = RAW_SYSTEM;
-                info.cache = RAW_CACHE;
-                info.data = RAW_DATA;
-
+                info.usesSystemImage = false;
+                info.system = "/raw-system";
+                info.cache = "/raw-cache";
+                info.data = "/raw-data";
                 info.id = PRIMARY_ID;
-                info.kernelId = PRIMARY_KERNEL_ID;
+                info.thumbnailPath = Environment.getExternalStorageDirectory()
+                        + "/MultiBoot/" + PRIMARY_ID + "/thumbnail.webp";
 
                 mRoms.add(info);
             }
 
-            if (new RootFile(RAW_SYSTEM + File.separator + SECONDARY_ID + File
-                    .separator + BUILD_PROP).isFile()) {
+            if (new RootFile("/raw-system/multiboot/dual/system.img").isFile()) {
                 info = new RomInformation();
 
-                info.system = RAW_SYSTEM + File.separator + SECONDARY_ID;
-                info.cache = RAW_CACHE + File.separator + SECONDARY_ID;
-                info.data = RAW_DATA + File.separator + SECONDARY_ID;
-
+                info.usesSystemImage = true;
+                info.system = "/raw-system/multiboot/dual/system.img";
+                info.cache = "/raw-cache/multiboot/dual/cache";
+                info.data = "/raw-data/multiboot/dual/data";
                 info.id = SECONDARY_ID;
-                info.kernelId = SECONDARY_KERNEL_ID;
+                info.thumbnailPath = Environment.getExternalStorageDirectory()
+                        + "/MultiBoot/" + SECONDARY_ID + "/thumbnail.webp";
 
                 mRoms.add(info);
-            } else if (new RootFile(SYSTEM + File.separator + SECONDARY_ID + File
-                    .separator + BUILD_PROP).isFile()) {
+            } else if (new RootFile("/system/multiboot/dual/system.img").isFile()) {
                 info = new RomInformation();
 
-                info.system = SYSTEM + File.separator + SECONDARY_ID;
-                info.cache = CACHE + File.separator + SECONDARY_ID;
-                info.data = DATA + File.separator + SECONDARY_ID;
-
+                info.usesSystemImage = true;
+                info.system = "/system/multiboot/dual/system.img";
+                info.cache = "/cache/multiboot/dual/cache";
+                info.data = "/data/multiboot/dual/data";
                 info.id = SECONDARY_ID;
-                info.kernelId = SECONDARY_KERNEL_ID;
+                info.thumbnailPath = Environment.getExternalStorageDirectory()
+                        + "/MultiBoot/" + SECONDARY_ID + "/thumbnail.webp";
 
                 mRoms.add(info);
             }
@@ -189,33 +182,35 @@ public class RomUtils {
             int max = 10;
             for (int i = 0; i < max; i++) {
                 String id = MULTI_ID_PREFIX + i;
-                String rawSystemPath = RAW_CACHE + File.separator + id + SYSTEM;
-                String rawCachePath = RAW_SYSTEM + File.separator + id + CACHE;
-                String rawDataPath = RAW_DATA + File.separator + id;
-                String systemPath = CACHE + File.separator + id + SYSTEM;
-                String cachePath = SYSTEM + File.separator + id + CACHE;
-                String dataPath = DATA + File.separator + id;
+                String systemPathRaw = "/raw-cache/multiboot/" + id + "/system.img";
+                String cachePathRaw = "/raw-system/multiboot/" + id + "/cache";
+                String dataPathRaw = "/raw-data/multiboot/" + id + "/data";
+                String systemPath = "/cache/multiboot/" + id + "/system.img";
+                String cachePath = "/system/multiboot/" + id + "/cache";
+                String dataPath = "/data/multiboot/" + id + "/data";
 
-                if (new RootFile(rawSystemPath).isDirectory()) {
+                if (new RootFile(systemPathRaw).isFile()) {
                     info = new RomInformation();
 
-                    info.system = rawSystemPath;
-                    info.cache = rawCachePath;
-                    info.data = rawDataPath;
-
+                    info.usesSystemImage = true;
+                    info.system = systemPathRaw;
+                    info.cache = cachePathRaw;
+                    info.data = dataPathRaw;
                     info.id = id;
-                    info.kernelId = id;
+                    info.thumbnailPath = Environment.getExternalStorageDirectory()
+                            + "/MultiBoot/" + id + "/thumbnail.webp";
 
                     mRoms.add(info);
                 } else if (new RootFile(systemPath).isDirectory()) {
                     info = new RomInformation();
 
+                    info.usesSystemImage = true;
                     info.system = systemPath;
                     info.cache = cachePath;
                     info.data = dataPath;
-
                     info.id = id;
-                    info.kernelId = id;
+                    info.thumbnailPath = Environment.getExternalStorageDirectory()
+                            + "/MultiBoot/" + id + "/thumbnail.webp";
 
                     mRoms.add(info);
                 }
@@ -237,13 +232,13 @@ public class RomUtils {
     }
 
     public static String getDefaultName(Context context, RomInformation info) {
-        if (info.kernelId.equals(PRIMARY_KERNEL_ID)) {
+        if (info.id.equals(PRIMARY_ID)) {
             return context.getString(R.string.primary);
-        } else if (info.kernelId.equals(SECONDARY_KERNEL_ID)) {
+        } else if (info.id.equals(SECONDARY_ID)) {
             return context.getString(R.string.secondary);
-        } else if (info.kernelId.startsWith(MULTI_KERNEL_ID_PREFIX)) {
-            Pattern p = Pattern.compile("^" + MULTI_KERNEL_ID_PREFIX + "(.+)");
-            Matcher m = p.matcher(info.kernelId);
+        } else if (info.id.startsWith(MULTI_ID_PREFIX)) {
+            Pattern p = Pattern.compile("^" + MULTI_ID_PREFIX + "(.+)");
+            Matcher m = p.matcher(info.id);
             String num;
             if (m.find()) {
                 num = m.group(1);
@@ -280,62 +275,9 @@ public class RomUtils {
         }.start();
     }
 
-    private static Properties getBuildProp(RomInformation info) {
-        return MiscUtils.getProperties(info.system + File.separator + BUILD_PROP);
-    }
-
-    public static String getVersion(RomInformation info) {
-        Properties prop = getBuildProp(info);
-
-        if (prop == null) {
-            return null;
-        }
-
-        if (prop.containsKey(KEY_MOD_VERSION)) {
-            return prop.getProperty(KEY_MOD_VERSION);
-        } else if (prop.containsKey(KEY_SLIM_VERSION)) {
-            return prop.getProperty(KEY_SLIM_VERSION);
-        } else if (prop.containsKey(KEY_CM_VERSION)) {
-            return prop.getProperty(KEY_CM_VERSION);
-        } else if (prop.containsKey(KEY_OMNI_VERSION)) {
-            return prop.getProperty(KEY_OMNI_VERSION);
-        } else if (prop.containsKey(KEY_DISPLAY_ID)) {
-            return prop.getProperty(KEY_DISPLAY_ID);
-        } else {
-            return null;
-        }
-    }
-
     public static int getIconResource(RomInformation info) {
-        Properties prop = getBuildProp(info);
-
-        if (prop == null) {
-            return R.drawable.rom_android;
-        }
-
-        if (prop.containsKey(KEY_SLIM_VERSION)) {
-            return R.drawable.rom_slimroms;
-        } else if (prop.containsKey(KEY_CM_VERSION)) {
-            return R.drawable.rom_cyanogenmod;
-        } else if (prop.containsKey(KEY_OMNI_VERSION)) {
-            return R.drawable.rom_omnirom;
-        } else {
-            return R.drawable.rom_android;
-        }
-    }
-
-    public static File getThumbnailTempFile(Context context, RomInformation romInfo) {
-        return new File(context.getCacheDir() + File.separator
-                + "image." + romInfo.id + ".webp.tmp");
-    }
-
-    public static File getThumbnailFile(RomInformation romInfo) {
-        if (new File(RAW_DATA).isDirectory()) {
-            return new File(RAW_DATA + File.separator
-                    + "patcher.image." + romInfo.id + ".webp");
-        } else {
-            return new File(DATA + File.separator
-                    + "patcher.image." + romInfo.id + ".webp");
-        }
+        // Mounting the system images to read their build.prop files would be too slow, so for now,
+        // we just use a generic Android icon
+        return R.drawable.rom_android;
     }
 }

@@ -229,7 +229,6 @@ public class AppListLoaderFragment extends Fragment {
     public class RomInfoResult {
         RomInformation[] roms;
         String[] names;
-        String[] versions;
     }
 
     private class ObtainRomInfoTask extends AsyncTask<Void, Void, RomInfoResult> {
@@ -245,15 +244,12 @@ public class AppListLoaderFragment extends Fragment {
             result.roms = RomUtils.getRoms();
 
             ArrayList<String> names = new ArrayList<>();
-            ArrayList<String> versions = new ArrayList<>();
 
             for (RomInformation rom : result.roms) {
                 names.add(RomUtils.getName(mContext, rom));
-                versions.add(RomUtils.getVersion(rom));
             }
 
             result.names = names.toArray(new String[names.size()]);
-            result.versions = versions.toArray(new String[versions.size()]);
 
             return result;
         }

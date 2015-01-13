@@ -49,7 +49,7 @@ public class AppSharingService extends IntentService {
 
     private void onPackageRemoved(String pkg) {
         AppSharingConfigFile config = AppSharingConfigFile.getInstance();
-        RomInformation info = RomUtils.getCurrentRom();
+        RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
 
         if (info == null) {
             Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");
@@ -82,7 +82,7 @@ public class AppSharingService extends IntentService {
     }
 
     private void getSyncdaemonVersion() {
-        RomInformation curRom = RomUtils.getCurrentRom();
+        RomInformation curRom = RomUtils.getCurrentRom(this);
 
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_GOT_INFO);

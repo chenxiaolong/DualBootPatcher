@@ -32,14 +32,6 @@
         android:layout_height="wrap_content" />
 
     <TextView
-        android:id="@+id/switcher_subtitle"
-        style="@style/card_subtitle_dim"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="middle"
-        android:singleLine="true" />
-
-    <TextView
         android:id="@+id/switcher_message"
         style="@style/card_message_italicized"
         android:layout_width="match_parent"

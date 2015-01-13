@@ -25,7 +25,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.squareup.picasso.Picasso;
 
@@ -70,7 +69,7 @@ public class RomDialogCard extends Card {
         mName = name;
         mListener = listener;
 
-        mCacheFile = RomUtils.getThumbnailTempFile(getContext(), romInfo);
+        mCacheFile = new File(romInfo.thumbnailPath + ".tmp");
 
         PicassoCardThumbnail thumb = new PicassoCardThumbnail(getContext(), imageResId);
         thumb.setExternalUsage(true);

@@ -17,8 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import it.gmariotti.cardslib.library.internal.Card;
-import it.gmariotti.cardslib.library.internal.CardThumbnail;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
@@ -28,15 +26,16 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
 
+import it.gmariotti.cardslib.library.internal.Card;
+import it.gmariotti.cardslib.library.internal.CardThumbnail;
+
 public class RomCard extends Card {
     private TextView mTitle;
-    private TextView mSubtitle;
     private TextView mMessage;
     private ProgressBar mProgressBar;
 
@@ -44,7 +43,6 @@ public class RomCard extends Card {
 
     private final RomInformation mRomInfo;
     private String mName;
-    private final String mVersion;
     private final File mFile;
 
     private int mStringResId;
@@ -62,7 +60,7 @@ public class RomCard extends Card {
 
         @Override
         public void setupInnerViewElements(ViewGroup parent, View viewImage) {
-            if (mFile != null && mFile.exists() && mFile.canRead()) {
+            if (mFile.exists() && mFile.canRead()) {
                 // Don't cache the image since we may need to refresh it
                 Picasso.with(getContext()).load(mFile).resize(96, 96).skipMemoryCache()
                         .error(mImageResId).into((ImageView) viewImage);
@@ -73,14 +71,12 @@ public class RomCard extends Card {
         }
     }
 
-    public RomCard(Context context, RomInformation info, String name, String version,
-            int imageResId) {
+    public RomCard(Context context, RomInformation info, String name, int imageResId) {
         super(context, R.layout.cardcontent_switcher);
         mRomInfo = info;
         mName = name;
-        mVersion = version;
 
-        mFile = RomUtils.getThumbnailFile(mRomInfo);
+        mFile = new File(mRomInfo.thumbnailPath);
 
         PicassoCardThumbnail thumb = new PicassoCardThumbnail(getContext(), imageResId);
         thumb.setExternalUsage(true);
@@ -90,13 +86,11 @@ public class RomCard extends Card {
     @Override
     public void setupInnerViewElements(ViewGroup parent, View view) {
         mTitle = (TextView) parent.findViewById(R.id.switcher_title);
-        mSubtitle = (TextView) parent.findViewById(R.id.switcher_subtitle);
         mMessage = (TextView) parent.findViewById(R.id.switcher_message);
         mProgressBar = (ProgressBar) parent
                 .findViewById(R.id.switcher_progress);
 
         mTitle.setText(mName);
-        mSubtitle.setText(mVersion);
 
         enableViews();
         updateViews();
@@ -107,11 +101,9 @@ public class RomCard extends Card {
         if (mTitle != null) {
             if (mShowProgress) {
                 mTitle.setVisibility(View.GONE);
-                mSubtitle.setVisibility(View.GONE);
                 mProgressBar.setVisibility(View.VISIBLE);
             } else {
                 mTitle.setVisibility(View.VISIBLE);
-                mSubtitle.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.GONE);
             }
         }
@@ -130,7 +122,6 @@ public class RomCard extends Card {
 
     private void enableViews() {
         mTitle.setEnabled(mEnabled);
-        mSubtitle.setEnabled(mEnabled);
         setClickable(mEnabled);
         setLongClickable(mEnabled);
 
@@ -183,14 +174,14 @@ public class RomCard extends Card {
     }
 
     public void onSaveInstanceState(Bundle outState) {
-        String prefix = "romcard_" + mRomInfo.kernelId;
+        String prefix = "romcard_" + mRomInfo.id;
         outState.putBoolean(prefix + "_showprogress", mShowProgress);
         outState.putBoolean(prefix + "_showmessage", mShowMessage);
         outState.putInt(prefix + "_messageresid", mStringResId);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
-        String prefix = "romcard_" + mRomInfo.kernelId;
+        String prefix = "romcard_" + mRomInfo.id;
         mShowProgress = savedInstanceState.getBoolean(prefix + "_showprogress");
         mShowMessage = savedInstanceState.getBoolean(prefix + "_showmessage");
         mStringResId = savedInstanceState.getInt(prefix + "_messageresid");

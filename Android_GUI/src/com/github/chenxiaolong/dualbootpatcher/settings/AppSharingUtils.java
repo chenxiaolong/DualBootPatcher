@@ -23,8 +23,6 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -91,7 +89,8 @@ public class AppSharingUtils {
         return apksMap;
     }
 
-    public static void updateRamdisk(Context context) throws Exception {
+    public static void updateRamdisk(Context context) /* throws Exception */ {
+        /*
         RomInformation romInfo = RomUtils.getCurrentRom();
         if (romInfo == null) {
             throw new Exception("Failed to get current ROM");
@@ -148,6 +147,7 @@ public class AppSharingUtils {
         bootImageFile.chmod(0755);
 
         SwitcherUtils.writeKernel(romInfo.kernelId);
+        */
     }
 
 

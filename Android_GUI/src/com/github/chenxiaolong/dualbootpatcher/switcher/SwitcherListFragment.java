@@ -81,7 +81,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final String EXTRA_SHOWING_RENAME_DIALOG = "showingRenameDialog";
     private static final String EXTRA_ROMS = "roms";
     private static final String EXTRA_ROM_NAMES = "romNames";
-    private static final String EXTRA_ROM_VERSIONS = "romVersions";
     private static final String EXTRA_ROM_IMAGE_RES_IDS = "romImageResIds";
     private static final String EXTRA_ROM_DIALOG_NAME = "romDialogName";
 
@@ -116,7 +115,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private RomInformation[] mRoms;
     private String[] mRomNames;
-    private String[] mRomVersions;
     private int[] mRomImageResIds;
 
     private static SwitcherListFragment newInstance() {
@@ -164,7 +162,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             mRoms = (RomInformation[]) savedInstanceState.getParcelableArray(EXTRA_ROMS);
             mRomNames = savedInstanceState.getStringArray(EXTRA_ROM_NAMES);
-            mRomVersions = savedInstanceState.getStringArray(EXTRA_ROM_VERSIONS);
             mRomImageResIds = savedInstanceState.getIntArray(EXTRA_ROM_IMAGE_RES_IDS);
 
             String selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
@@ -310,7 +307,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         if (mRoms != null) {
             outState.putParcelableArray(EXTRA_ROMS, mRoms);
             outState.putStringArray(EXTRA_ROM_NAMES, mRomNames);
-            outState.putStringArray(EXTRA_ROM_VERSIONS, mRomVersions);
             outState.putIntArray(EXTRA_ROM_IMAGE_RES_IDS, mRomImageResIds);
         }
 
@@ -451,10 +447,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         return null;
     }
 
-    private RomCard findCardFromId(String kernelId) {
+    private RomCard findCardFromId(String id) {
         for (Card c : mCards) {
             RomCard card = (RomCard) c;
-            if (card.getRom().kernelId.equals(kernelId)) {
+            if (card.getRom().id.equals(id)) {
                 return card;
             }
         }
@@ -524,14 +520,13 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 }
             };
 
-            final File tempThumbnail = RomUtils.getThumbnailTempFile(
-                    getActivity(), mSelectedRom);
+            final File tempThumbnail = new File(mSelectedRom.thumbnailPath + ".tmp");
 
             // Save a temporary copy of the current image when the dialog first appears. All
             // changes are done on the temporary image and then copied back if the OK button is
             // pressed.
             try {
-                File curThumbnail = RomUtils.getThumbnailFile(mSelectedRom);
+                File curThumbnail = new File(mSelectedRom.thumbnailPath);
                 if (curThumbnail.isFile() && !tempThumbnail.exists() && !mRebootDialogShowing) {
                     org.apache.commons.io.FileUtils.copyFile(curThumbnail, tempThumbnail);
                 }
@@ -552,11 +547,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             builder.setPositiveButton(R.string.ok, new OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    RootFile thumbnail = new RootFile(
-                            RomUtils.getThumbnailFile(mSelectedRom).toString());
+                    RootFile thumbnail = new RootFile(mSelectedRom.thumbnailPath, false);
 
                     if (tempThumbnail.isFile()) {
-                        RootFile temp = new RootFile(tempThumbnail.toString());
+                        RootFile temp = new RootFile(tempThumbnail, false);
                         temp.moveTo(thumbnail);
                         thumbnail.chmod(0755);
                     } else {
@@ -645,9 +639,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         updateCardUI();
 
         if (mAction == ACTION_CHOOSE_ROM) {
-            mEventCollector.chooseRom(info.kernelId);
+            mEventCollector.chooseRom(info.id);
         } else if (mAction == ACTION_SET_KERNEL) {
-            mEventCollector.setKernel(info.kernelId);
+            mEventCollector.setKernel(info.id);
         }
     }
 
@@ -770,7 +764,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             // Write the image to a temporary file. If the user selects it,
             // the move it to the appropriate location.
-            File f = RomUtils.getThumbnailTempFile(mContext, mSelectedRom);
+            File f = new File(mSelectedRom.thumbnailPath);
 
             FileOutputStream out = null;
 
@@ -808,7 +802,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         public class RomInfoResult {
             RomInformation[] roms;
             String[] names;
-            String[] versions;
             int[] imageResIds;
         }
 
@@ -827,15 +820,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             result.roms = RomUtils.getRoms();
             result.names = new String[result.roms.length];
-            result.versions = new String[result.roms.length];
             result.imageResIds = new int[result.roms.length];
 
             for (int i = 0; i < result.roms.length; i++) {
                 result.names[i] = RomUtils.getName(mContext, result.roms[i]);
-                result.versions[i] = RomUtils.getVersion(result.roms[i]);
-                if (result.versions[i] == null) {
-                    result.versions[i] = mContext.getString(R.string.couldnt_determine_version);
-                }
                 result.imageResIds[i] = RomUtils.getIconResource(result.roms[i]);
             }
 
@@ -851,7 +839,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             if (result != null) {
                 mRoms = result.roms;
                 mRomNames = result.names;
-                mRomVersions = result.versions;
                 mRomImageResIds = result.imageResIds;
             }
 
@@ -860,8 +847,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             for (int i = 0; i < mRoms.length; i++) {
                 final RomInformation info = mRoms[i];
 
-                RomCard card = new RomCard(getActivity(), info,
-                        mRomNames[i], mRomVersions[i], mRomImageResIds[i]);
+                RomCard card = new RomCard(getActivity(), info, mRomNames[i], mRomImageResIds[i]);
 
                 if (mSavedInstanceState != null) {
                     card.onRestoreInstanceState(mSavedInstanceState);

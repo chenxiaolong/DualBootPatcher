@@ -17,11 +17,14 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.os.Build;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherConfig;
 
 import java.io.File;
 
@@ -31,56 +34,56 @@ public class SwitcherUtils {
     public static final String ABOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/aboot";
     // Can't use Environment.getExternalStorageDirectory() because the path is
     // different in the root environment
-    public static final String KERNEL_PATH_ROOT = "/media/0/MultiKernels";
+    public static final String KERNEL_PATH_ROOT = "/data/media/0/MultiBoot/%s/boot.img";
 
     public static int dd(String source, String dest) {
         return CommandUtils.runRootCommand("dd if=" + source + " of=" + dest);
     }
 
-    public static void writeKernel(String kernelId) throws Exception {
-        String[] paths = new String[] { RomUtils.RAW_DATA + KERNEL_PATH_ROOT,
-                RomUtils.DATA + KERNEL_PATH_ROOT,
-                "/raw-system/dual-kernels", "/system/dual-kernels" };
+    private static String getBootPartition() {
+        String bootBlockDev = null;
 
-        String kernel = null;
-        for (String path : paths) {
-            String temp = path + File.separator + kernelId + ".img";
-            if (!new RootFile(temp).isFile()) {
-                Log.e(TAG, temp + " not found");
-                continue;
+        PatcherConfig pc = new PatcherConfig();
+        for (Device d : pc.getDevices()) {
+            if (Build.DEVICE.contains(d.getCodename())) {
+                String[] bootBlockDevs = d.getBootBlockDevs();
+                if (bootBlockDevs.length > 0) {
+                    bootBlockDev = bootBlockDevs[0];
+                }
+                break;
             }
-            kernel = temp;
-            break;
+        }
+        pc.destroy();
+
+        return bootBlockDev;
+    }
+
+    public static void writeKernel(String id) throws Exception {
+        String kernel = String.format(KERNEL_PATH_ROOT, id);
+        if (!new RootFile(kernel).isFile()) {
+            Log.e(TAG, kernel + " not found");
+            throw new Exception("The kernel for " + id + " was not found");
         }
 
-        if (kernel == null) {
-            throw new Exception("The kernel for " + kernelId + " was not found");
-        }
-
-        int ret = dd(kernel, BOOT_PARTITION);
-        if (ret != 0) {
+        if (dd(kernel, getBootPartition()) != 0) {
             throw new Exception("Failed to write " + kernel + " with dd");
         }
     }
 
-    public static void backupKernel(String kernelId) throws Exception {
-        String kernelPath = RomUtils.RAW_DATA + KERNEL_PATH_ROOT;
-        if (!new RootFile(RomUtils.RAW_DATA).isDirectory()) {
-            kernelPath = RomUtils.DATA + KERNEL_PATH_ROOT;
+    public static void backupKernel(String id) throws Exception {
+        String kernel = String.format(KERNEL_PATH_ROOT, id);
+
+        new RootFile(new File(kernel).getParentFile()).mkdirs();
+
+        if (dd(getBootPartition(), kernel) != 0) {
+            throw new Exception("Failed to backup to " + kernel + " with dd");
         }
 
-        RootFile f = new RootFile(kernelPath);
-        f.mkdirs();
-
-        String targetKernel = kernelPath + File.separator + kernelId + ".img";
-
-        if (dd(BOOT_PARTITION, targetKernel) != 0) {
-            throw new Exception("Failed to backup to " + targetKernel + " with dd");
-        }
+        RootFile f = new RootFile(kernel);
 
         Log.v(TAG, "Fixing permissions");
-        f.recursiveChmod(0775);
-        f.recursiveChown("media_rw", "media_rw");
+        f.chmod(0775);
+        f.chown("media_rw", "media_rw");
     }
 
     public static void reboot() {

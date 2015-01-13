@@ -17,13 +17,10 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.File;
 
 public abstract class ConfigFile {
     private static final String CONF_VERSION = "jsonversion";
@@ -40,14 +37,7 @@ public abstract class ConfigFile {
     }
 
     protected String getConfigFile() {
-        // Avoid root for this (not using FileUtils.isExistsDirectory())
-        File d = new File(RomUtils.RAW_DATA);
-
-        if (d.exists() && d.isDirectory()) {
-            return RomUtils.RAW_DATA + File.separator + mConfigFilename;
-        } else {
-            return RomUtils.DATA + File.separator + mConfigFilename;
-        }
+        return mConfigFilename;
     }
 
     private synchronized void load() {
@@ -58,7 +48,7 @@ public abstract class ConfigFile {
 
             JSONObject root = null;
 
-            String contents = new RootFile(getConfigFile()).getContents();
+            String contents = new RootFile(getConfigFile(), false).getContents();
             if (contents != null) {
                 try {
                     root = new JSONObject(contents);
