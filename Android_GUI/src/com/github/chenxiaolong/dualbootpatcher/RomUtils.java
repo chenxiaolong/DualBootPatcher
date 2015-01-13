@@ -20,9 +20,9 @@ package com.github.chenxiaolong.dualbootpatcher;
 import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.settings.RomInfoConfigFile;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -108,20 +108,19 @@ public class RomUtils {
         };
     }
 
-    private static boolean isBootedInPrimary(Context context) {
-        return !new RootFile(RAW_SYSTEM).isDirectory() || FileUtils.isSameInode(context,
-                RAW_SYSTEM + File.separator + BUILD_PROP, SYSTEM + File.separator + BUILD_PROP);
+    private static boolean isBootedInPrimary() {
+        return !new RootFile(RAW_SYSTEM).isDirectory() || LibMiscStuff.INSTANCE.is_same_file(RAW_SYSTEM + File.separator + BUILD_PROP, SYSTEM + File.separator + BUILD_PROP);
     }
 
-    public static RomInformation getCurrentRom(Context context) {
-        return getCurrentRomViaInode(context);
+    public static RomInformation getCurrentRom() {
+        return getCurrentRomViaInode();
     }
 
-    private static RomInformation getCurrentRomViaInode(Context context) {
-        RomInformation[] roms = getRoms(context);
+    private static RomInformation getCurrentRomViaInode() {
+        RomInformation[] roms = getRoms();
 
         for (RomInformation rom : roms) {
-            if (FileUtils.isSameInode(context, rom.system + File.separator + BUILD_PROP,
+            if (LibMiscStuff.INSTANCE.is_same_file(rom.system + File.separator + BUILD_PROP,
                     SYSTEM + File.separator + BUILD_PROP)) {
                 return rom;
             }
@@ -130,14 +129,14 @@ public class RomUtils {
         return null;
     }
 
-    public static RomInformation[] getRoms(Context context) {
+    public static RomInformation[] getRoms() {
         if (mRoms == null) {
-            mRoms = new ArrayList<RomInformation>();
+            mRoms = new ArrayList<>();
 
             RomInformation info;
 
             // Check if primary ROM exists
-            if (isBootedInPrimary(context)) {
+            if (isBootedInPrimary()) {
                 info = new RomInformation();
 
                 info.system = SYSTEM;
@@ -226,8 +225,8 @@ public class RomUtils {
         return mRoms.toArray(new RomInformation[mRoms.size()]);
     }
 
-    public static RomInformation getRomFromId(Context context, String id) {
-        RomInformation[] roms = getRoms(context);
+    public static RomInformation getRomFromId(String id) {
+        RomInformation[] roms = getRoms();
         for (RomInformation rom : roms) {
             if (rom.id.equals(id)) {
                 return rom;

@@ -264,7 +264,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
                         new Thread() {
                             @Override
                             public void run() {
-                                SwitcherUtils.reboot(context);
+                                SwitcherUtils.reboot();
                             }
                         }.start();
                     }

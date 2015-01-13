@@ -64,14 +64,13 @@ public class AppSharingUtils {
         return new RootFile(SHARE_PAID_APPS_PATH).isFile();
     }
 
-    public static HashMap<RomInformation, ArrayList<String>> getAllApks(Context context) {
-        RomInformation[] roms = RomUtils.getRoms(context);
+    public static HashMap<RomInformation, ArrayList<String>> getAllApks() {
+        RomInformation[] roms = RomUtils.getRoms();
 
-        HashMap<RomInformation, ArrayList<String>> apksMap =
-                new HashMap<RomInformation, ArrayList<String>>();
+        HashMap<RomInformation, ArrayList<String>> apksMap = new HashMap<>();
 
         for (RomInformation rom : roms) {
-            ArrayList<String> apks = new ArrayList<String>();
+            ArrayList<String> apks = new ArrayList<>();
             String[] filenames = new RootFile(rom.data + File.separator + "app").list();
 
             if (filenames == null || filenames.length == 0) {
@@ -93,7 +92,7 @@ public class AppSharingUtils {
     }
 
     public static void updateRamdisk(Context context) throws Exception {
-        RomInformation romInfo = RomUtils.getCurrentRom(context);
+        RomInformation romInfo = RomUtils.getCurrentRom();
         if (romInfo == null) {
             throw new Exception("Failed to get current ROM");
         }

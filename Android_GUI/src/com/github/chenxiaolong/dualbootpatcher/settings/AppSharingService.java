@@ -21,12 +21,8 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
-import com.github.chenxiaolong.dualbootpatcher.MiscUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-
-import java.util.Properties;
 
 public class AppSharingService extends IntentService {
     private static final String TAG = AppSharingService.class.getSimpleName();
@@ -53,7 +49,7 @@ public class AppSharingService extends IntentService {
 
     private void onPackageRemoved(String pkg) {
         AppSharingConfigFile config = AppSharingConfigFile.getInstance();
-        RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
+        RomInformation info = RomUtils.getCurrentRom();
 
         if (info == null) {
             Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");
@@ -86,43 +82,12 @@ public class AppSharingService extends IntentService {
     }
 
     private void getSyncdaemonVersion() {
-        String version = null;
-
-        // If the daemon is not running, assume that it's not installed
-        int pid = CommandUtils.getPid(this, "syncdaemon");
-
-        if (pid > 0) {
-            Properties prop = MiscUtils.getProperties("/data/local/tmp/syncdaemon.pid");
-
-            if (prop.containsKey("version") && prop.containsKey("pid")) {
-                String propPid = prop.getProperty("pid");
-                String propVersion = prop.getProperty("version");
-
-                Log.d(TAG, "syncdaemon pid: " + propPid);
-                Log.d(TAG, "syncdaemon version: " + propVersion);
-
-                int pid2 = -1;
-
-                try {
-                    pid2 = Integer.parseInt(propPid);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-
-                // Only check the version in the properties file if it corresponds to the currently
-                // running syncdaemon
-                if (pid == pid2) {
-                    version = propVersion;
-                }
-            }
-        }
-
-        RomInformation curRom = RomUtils.getCurrentRom(this);
+        RomInformation curRom = RomUtils.getCurrentRom();
 
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_GOT_INFO);
         i.putExtra(RESULT_ROMINFO, curRom);
-        i.putExtra(RESULT_VERSION, version);
+        i.putExtra(RESULT_VERSION, (String) null);
         sendBroadcast(i);
     }
 

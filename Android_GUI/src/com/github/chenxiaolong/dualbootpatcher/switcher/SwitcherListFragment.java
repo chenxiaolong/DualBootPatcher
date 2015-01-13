@@ -169,7 +169,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             String selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
             if (selectedRomId != null) {
-                mSelectedRom = RomUtils.getRomFromId(getActivity(), selectedRomId);
+                mSelectedRom = RomUtils.getRomFromId(selectedRomId);
             }
 
             if (savedInstanceState.getBoolean(EXTRA_SHOWING_DIALOG)) {
@@ -350,7 +350,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     }
 
     private void initCardList() {
-        mCards = new ArrayList<Card>();
+        mCards = new ArrayList<>();
         mCardArrayAdapter = new CardArrayAdapter(getActivity(), mCards);
 
         mCardListView = (CardListView) getActivity().findViewById(mCardListResId);
@@ -825,7 +825,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             RomInfoResult result = new RomInfoResult();
 
-            result.roms = RomUtils.getRoms(mContext);
+            result.roms = RomUtils.getRoms();
             result.names = new String[result.roms.length];
             result.versions = new String[result.roms.length];
             result.imageResIds = new int[result.roms.length];

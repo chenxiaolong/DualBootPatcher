@@ -42,10 +42,6 @@ public final class CommandUtils {
 
     public static final String STREAM_STDOUT = "stdout";
     public static final String STREAM_STDERR = "stderr";
-    private static final String BUSYBOX_MOUNT = "/data/local/tmp/busybox";
-
-    // Don't unmount the tmpfs used for running busybox as root since it wastes a lot of time
-    private static final boolean NO_UNMOUNT_TMPFS = true;
 
     public static interface CommandListener {
         public void onNewOutputLine(String line, String stream);
@@ -357,57 +353,6 @@ public final class CommandUtils {
         }
     }
 
-    public static String getBusyboxCommandString(Context context, String applet, String... args) {
-        return StringUtils.join(getBusyboxCommand(context, applet, args), " ");
-    }
-
-    public static String[] getBusyboxCommand(Context context, String applet, String... args) {
-        FileUtils.deleteOldCachedAsset(context, "busybox-static");
-        String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
-        new RootFile(busybox, false).chmod(0755);
-
-        ArrayList<String> newArgs = new ArrayList<String>();
-        newArgs.add(busybox);
-        newArgs.add(applet);
-
-        Collections.addAll(newArgs, args);
-
-        return newArgs.toArray(new String[newArgs.size()]);
-    }
-
-    public static String mountBusyboxTmpfs(Context context) {
-        int uid = getUid(context);
-
-        RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
-        mountPoint.mountTmpFs();
-        mountPoint.chown(uid, uid);
-
-        final String busyboxBinary = BUSYBOX_MOUNT + File.separator + "busybox";
-
-        // If busybox does not exist, extract it
-        RootFile busyboxFile = new RootFile(busyboxBinary);
-        if (!busyboxFile.isFile()) {
-            // Delete old versions
-            FileUtils.deleteOldCachedAsset(context, "busybox-static");
-            String busybox = FileUtils.extractVersionedAssetToCache(context, "busybox-static");
-
-            CommandUtils.runRootCommand("cp " + busybox + " " + busyboxBinary);
-        }
-
-        new RootFile(busyboxBinary).chmod(0755);
-        CommandUtils.runRootCommand("chcon u:object_r:system_file:s0 " + busyboxBinary);
-
-        return busyboxBinary;
-    }
-
-    public static void unmountBusyboxTmpfs() {
-        if (!NO_UNMOUNT_TMPFS) {
-            RootFile mountPoint = new RootFile(BUSYBOX_MOUNT);
-            mountPoint.unmountTmpFs();
-            mountPoint.recursiveDelete();
-        }
-    }
-
     public static int getUid(Context context) {
         int uid = 0;
 
@@ -423,43 +368,6 @@ public final class CommandUtils {
         }
 
         return uid;
-    }
-
-    public static int getPid(Context context, String name) {
-        FirstLineListener listener = new FirstLineListener();
-
-        CommandParams params = new CommandParams();
-        params.listener = listener;
-        CommandRunner cmd;
-
-        params.command = getBusyboxCommand(context, "pidof", name);
-
-        cmd = new CommandRunner(params);
-        cmd.start();
-        waitForCommand(cmd);
-
-        if (cmd.getResult().exitCode == 0) {
-            try {
-                return Integer.parseInt(listener.getLine());
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return -1;
-    }
-
-    public static boolean killPid(int pid) {
-        CommandParams params = new CommandParams();
-        params.command = new String[] { "kill", Integer.toString(pid) };
-
-        CommandRunner cmd = new CommandRunner(params);
-        cmd.start();
-        waitForCommand(cmd);
-
-        CommandResult result = cmd.getResult();
-
-        return result.exitCode == 0 || runRootCommand("kill " + pid) == 0;
     }
 
     private static class FirstLineListener implements CommandListener {

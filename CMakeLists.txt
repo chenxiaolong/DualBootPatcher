@@ -34,7 +34,7 @@ add_subdirectory(data)
 add_subdirectory(mbtool)
 
 if(BUILD_ANDROID)
-    add_subdirectory(libmountpoint)
+    add_subdirectory(libmiscstuff)
     add_subdirectory(libloki)
     add_subdirectory(Android_GUI)
 else()

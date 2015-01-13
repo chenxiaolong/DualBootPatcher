@@ -419,7 +419,7 @@ public class MainActivity extends ActionBarActivity {
             break;
 
         case NAV_REBOOT:
-            SwitcherUtils.reboot(getApplicationContext());
+            SwitcherUtils.reboot();
             break;
 
         case NAV_ABOUT:

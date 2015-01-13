@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 ExternalProject_Add(
-    libmountpoint
+    libmiscstuff
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
     BUILD_COMMAND ${NDK_BUILD}
@@ -15,7 +15,7 @@ ExternalProject_Add(
 
 # Always rebuild since files may have changed
 ExternalProject_Add_Step(
-    libmountpoint
+    libmiscstuff
     forcerebuild
     DEPENDEES update
     DEPENDERS configure

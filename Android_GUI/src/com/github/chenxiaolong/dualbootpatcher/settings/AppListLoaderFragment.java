@@ -69,7 +69,7 @@ public class AppListLoaderFragment extends Fragment {
             mPackageManager = getActivity().getPackageManager();
             mResources = getResources();
 
-            mTask = new LoaderTask(getActivity().getApplicationContext());
+            mTask = new LoaderTask();
             mTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
 
@@ -115,24 +115,20 @@ public class AppListLoaderFragment extends Fragment {
         public String pkg;
         public String name;
         public Drawable icon;
-        public ArrayList<RomInformation> roms = new ArrayList<RomInformation>();
+        public ArrayList<RomInformation> roms = new ArrayList<>();
     }
 
     private class LoaderTask extends AsyncTask<Void, Void, Void> {
         private static final int MAX_THREADS = 4;
-        private Context mContext;
-        private ArrayList<AppInformation> mAppInfos = new ArrayList<AppInformation>();
-        private HashMap<String, AppInformation> mAppInfosMap =
-                new HashMap<String, AppInformation>();
+        private ArrayList<AppInformation> mAppInfos = new ArrayList<>();
+        private HashMap<String, AppInformation> mAppInfosMap = new HashMap<>();
 
-        public LoaderTask(Context context) {
-            mContext = context;
+        public LoaderTask() {
         }
 
         @Override
         protected Void doInBackground(Void... args) {
-            HashMap<RomInformation, ArrayList<String>> apksMap =
-                    AppSharingUtils.getAllApks(mContext);
+            HashMap<RomInformation, ArrayList<String>> apksMap = AppSharingUtils.getAllApks();
 
             if (apksMap == null) {
                 return null;
@@ -149,7 +145,7 @@ public class AppListLoaderFragment extends Fragment {
                     partitionSize = filenames.size() / MAX_THREADS + 1;
                 }
 
-                ArrayList<LoaderThread> threads = new ArrayList<LoaderThread>();
+                ArrayList<LoaderThread> threads = new ArrayList<>();
 
                 for (int i = 0; i < filenames.size(); i += partitionSize) {
                     LoaderThread thread = new LoaderThread(rom, filenames, i,
@@ -246,10 +242,10 @@ public class AppListLoaderFragment extends Fragment {
         @Override
         protected RomInfoResult doInBackground(Void... params) {
             final RomInfoResult result = new RomInfoResult();
-            result.roms = RomUtils.getRoms(mContext);
+            result.roms = RomUtils.getRoms();
 
-            ArrayList<String> names = new ArrayList<String>();
-            ArrayList<String> versions = new ArrayList<String>();
+            ArrayList<String> names = new ArrayList<>();
+            ArrayList<String> versions = new ArrayList<>();
 
             for (RomInformation rom : result.roms) {
                 names.add(RomUtils.getName(mContext, rom));

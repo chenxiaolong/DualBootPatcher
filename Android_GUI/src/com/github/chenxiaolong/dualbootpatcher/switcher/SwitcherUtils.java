@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -84,22 +83,16 @@ public class SwitcherUtils {
         f.recursiveChown("media_rw", "media_rw");
     }
 
-    public static void reboot(final Context context) {
+    public static void reboot() {
         new Thread() {
             @Override
             public void run() {
-                runReboot(context);
+                runReboot();
             }
         }.start();
     }
 
-    private static int runReboot(Context context) {
-        String busybox = CommandUtils.mountBusyboxTmpfs(context);
-
-        int ret = CommandUtils.runRootCommand(busybox + " reboot");
-
-        CommandUtils.unmountBusyboxTmpfs();
-
-        return ret;
+    private static int runReboot() {
+        return CommandUtils.runRootCommand("reboot");
     }
 }

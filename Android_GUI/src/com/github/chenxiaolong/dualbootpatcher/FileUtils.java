@@ -166,34 +166,4 @@ public class FileUtils {
             }
         }
     }
-
-    public static boolean isSameInode(Context context, String file1, String file2) {
-        if (!new RootFile(file1).isFile() || !new RootFile(file2).isFile()) {
-            return false;
-        }
-
-        String busybox = CommandUtils.mountBusyboxTmpfs(context);
-
-        String ls = busybox + " ls -id \"${1}\"";
-        String awk = busybox + " awk '{print $1}'";
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("get_inode() {");
-        sb.append("  ").append(ls).append(" | ").append(awk).append(";");
-        sb.append("};");
-        sb.append("same_inode() {");
-        sb.append("  if test $(get_inode \"${1}\") == $(get_inode \"${2}\"); then");
-        sb.append("    return 0;");
-        sb.append("  else");
-        sb.append("    return 1;");
-        sb.append("  fi;");
-        sb.append("};");
-        sb.append("same_inode ").append(file1).append(" ").append(file2);
-
-        boolean success = CommandUtils.runRootCommand(sb.toString()) == 0;
-
-        CommandUtils.unmountBusyboxTmpfs();
-
-        return success;
-    }
 }

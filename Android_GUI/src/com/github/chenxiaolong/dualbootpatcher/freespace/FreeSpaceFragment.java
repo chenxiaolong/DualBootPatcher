@@ -25,8 +25,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff.mntent;
 import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
 import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
+import com.sun.jna.Pointer;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -64,10 +67,12 @@ public class FreeSpaceFragment extends Fragment {
         // Choose random color to start from (and go down the list)
         int colorIndex = new Random().nextInt(COLORS.length);
 
-        String[] mountpoints = getMountPoints();
-        for (String mountpoint : mountpoints) {
-            String fstype = getMntType(mountpoint);
-            String fsname = getMntFsname(mountpoint);
+        Pointer stream = LibMiscStuff.INSTANCE.setmntent("/proc/mounts", "r");
+        mntent ent;
+        while ((ent = LibMiscStuff.INSTANCE.getmntent(stream)) != null) {
+            String fstype = ent.mnt_type;
+            String fsname = ent.mnt_fsname;
+            String mountpoint = ent.mnt_dir;
 
             // Ignore irrelevant filesystems
             if ("cgroup".equals(fstype)
@@ -92,8 +97,8 @@ public class FreeSpaceFragment extends Fragment {
                 continue;
             }
 
-            long total = getMntTotalSize(mountpoint);
-            long avail = getMntAvailSpace(mountpoint);
+            long total = LibMiscStuff.INSTANCE.get_mnt_total_size(mountpoint);
+            long avail = LibMiscStuff.INSTANCE.get_mnt_avail_size(mountpoint);
 
             int color = COLORS[colorIndex];
             FreeSpaceCard card = new FreeSpaceCard(getActivity(), mountpoint, total, avail, color);
@@ -101,6 +106,8 @@ public class FreeSpaceFragment extends Fragment {
 
             colorIndex = (colorIndex + 1) % COLORS.length;
         }
+
+        LibMiscStuff.INSTANCE.endmntent(stream);
 
         CardArrayAdapter cardArrayAdapter = new CardArrayAdapter(getActivity(), cards);
         if (mList != null) {
@@ -117,27 +124,4 @@ public class FreeSpaceFragment extends Fragment {
         mList = (CardListView) view.findViewById(R.id.mountpoints);
         return view;
     }
-
-    static {
-        System.loadLibrary("mountpoint-jni");
-    }
-
-    private static native String[] getMountPoints();
-
-    private static native String getMntFsname(String mountpoint);
-
-    private static native String getMntType(String mountpoint);
-
-    @SuppressWarnings("unused")
-    private static native String getMntOpts(String mountpoint);
-
-    @SuppressWarnings("unused")
-    private static native int getMntFreq(String mountpoint);
-
-    @SuppressWarnings("unused")
-    private static native int getMntPassno(String mountpoint);
-
-    private static native long getMntTotalSize(String mountpoint);
-
-    private static native long getMntAvailSpace(String mountpoint);
 }
