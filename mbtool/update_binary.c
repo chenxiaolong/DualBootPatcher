@@ -22,6 +22,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <fts.h>
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include <archive_entry.h>
 
 #include "main.h"
+#include "multiboot.h"
 #include "roms.h"
 #include "external/sha.h"
 #include "util/archive.h"
@@ -43,6 +45,7 @@
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/logging.h"
+#include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/properties.h"
 
@@ -873,8 +876,170 @@ static int run_real_updater(void)
     return 0;
 }
 
+static int copy_system(const char *source, const char *target)
+{
+    int ret = 0;
+    FTS *ftsp = NULL;
+    FTSENT *curr;
+
+    char *files[] = { (char *) source, NULL };
+
+    ftsp = fts_open(files, FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV, NULL);
+    if (!ftsp) {
+        LOGE("%s: fts_open failed: %s", source, strerror(errno));
+        ret = -1;
+        goto finish;
+    }
+
+    size_t pathsize;
+    char *pathbuf = NULL;
+
+    while ((curr = fts_read(ftsp))) {
+        switch (curr->fts_info) {
+        case FTS_NS:
+        case FTS_DNR:
+        case FTS_ERR:
+            LOGW("%s: fts_read error: %s",
+                 curr->fts_accpath, strerror(curr->fts_errno));
+            continue;
+
+        case FTS_DC:
+        case FTS_DOT:
+        case FTS_NSOK:
+            // Not reached
+            continue;
+        }
+
+        if (curr->fts_level != 1) {
+            continue;
+        }
+
+        if (strcmp(curr->fts_name, "multiboot") == 0) {
+            fts_set(ftsp, curr, FTS_SKIP);
+            continue;
+        }
+
+        pathsize = strlen(target) + 1 + strlen(curr->fts_name) + 1;
+
+        char *temp_pathbuf;
+        if ((temp_pathbuf = realloc(pathbuf, pathsize))) {
+            pathbuf = temp_pathbuf;
+        } else {
+            ret = -1;
+            errno = ENOMEM;
+            goto finish;
+        }
+        pathbuf[0] = '\0';
+
+        strlcat(pathbuf, target, pathsize);
+        strlcat(pathbuf, "/", pathsize);
+        strlcat(pathbuf, curr->fts_name, pathsize);
+
+        switch (curr->fts_info) {
+        case FTS_D:
+            // target is the correct parameter here (or pathbuf and
+            // MB_COPY_EXCLUDE_TOP_LEVEL flag)
+            if (mb_copy_dir(curr->fts_accpath, target,
+                            MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
+                LOGW("%s: Failed to copy directory: %s",
+                     curr->fts_path, strerror(errno));
+                ret = -1;
+            }
+            fts_set(ftsp, curr, FTS_SKIP);
+            continue;
+
+        case FTS_DP:
+            continue;
+
+        case FTS_F:
+        case FTS_SL:
+        case FTS_SLNONE:
+        case FTS_DEFAULT:
+            if (mb_copy_file(curr->fts_accpath, pathbuf,
+                             MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
+                LOGW("%s: Failed to copy file: %s",
+                     curr->fts_path, strerror(errno));
+                ret = -1;
+            }
+            continue;
+        }
+    }
+
+finish:
+    if (ftsp) {
+        fts_close(ftsp);
+    }
+
+    return ret;
+}
+
+static int system_image_copy(const char *source, const char *image, int reverse)
+{
+    struct stat sb;
+    char *loopdev = NULL;
+
+    if (stat("/tmp/.system.tmp", &sb) < 0
+            && mkdir("/tmp/.system.tmp", 0755) < 0) {
+        LOGE("Failed to create %s: %s", "/tmp/.system.tmp", strerror(errno));
+        goto error;
+    }
+
+    if (!(loopdev = mb_loopdev_find_unused())) {
+        LOGE("Failed to find unused loop device: %s", strerror(errno));
+        goto error;
+    }
+
+    if (mb_loopdev_setup_device(loopdev, image, 0, 0) < 0) {
+        LOGE("Failed to setup loop device %s: %s", loopdev, strerror(errno));
+        goto error;
+    }
+
+    if (mount(loopdev, "/tmp/.system.tmp", "ext4", 0, "") < 0) {
+        LOGE("Failed to mount %s: %s", loopdev, strerror(errno));
+        goto error;
+    }
+
+    if (reverse) {
+        if (copy_system("/tmp/.system.tmp", source) < 0) {
+            LOGE("Failed to copy system files from %s to %s",
+                 "/tmp/.system.tmp", source);
+            goto error;
+        }
+    } else {
+        if (copy_system(source, "/tmp/.system.tmp") < 0) {
+            LOGE("Failed to copy system files from %s to %s",
+                 source, "/tmp/.system.tmp");
+            goto error;
+        }
+    }
+
+    if (umount("/tmp/.system.tmp") < 0) {
+        LOGE("Failed to unmount %s: %s", "/tmp/.system.tmp", strerror(errno));
+        goto error;
+    }
+
+    if (mb_loopdev_remove_device(loopdev) < 0) {
+        LOGE("Failed to remove loop device %s: %s", loopdev, strerror(errno));
+        goto error;
+    }
+
+    free(loopdev);
+
+    return 0;
+
+error:
+    if (loopdev) {
+        umount("/tmp/.system.tmp");
+        mb_loopdev_remove_device(loopdev);
+        free(loopdev);
+    }
+    return -1;
+}
+
 static int update_binary(void)
 {
+    int ret = 0;
+
     struct roms r;
     mb_roms_init(&r);
     mb_roms_get_builtin(&r);
@@ -1077,8 +1242,26 @@ static int update_binary(void)
         MOUNT_CHECKED(rom->system_path, CHROOT TEMP_SYSTEM_IMG,
                       "", MS_BIND, "");
     } else {
-        ui_print("Installing ROMs to a directory is no longer supported");
-        goto error;
+        ui_print("Copying system to temporary image");
+
+        // Create temporary image in /data
+        if (create_or_enlarge_image("/data/.system.img.tmp") < 0) {
+            ui_print("Failed to create temporary image %s",
+                     "/data/.system.img.tmp");
+            goto error;
+        }
+
+        // Copy current /system files to the image
+        if (system_image_copy(rom->system_path, "/data/.system.img.tmp", 0) < 0) {
+            ui_print("Failed to copy %s to %s",
+                     rom->system_path, "/data/.system.img.tmp");
+            goto error;
+        }
+
+        // Install to the image
+        mb_create_empty_file(CHROOT TEMP_SYSTEM_IMG);
+        MOUNT_CHECKED("/data/.system.img.tmp", CHROOT TEMP_SYSTEM_IMG,
+                      "", MS_BIND, "");
     }
 
 
@@ -1106,8 +1289,8 @@ static int update_binary(void)
     ui_print("Running real update-binary");
     ui_print("Here we go!");
 
-    int ret;
-    if ((ret = run_real_updater()) < 0) {
+    int updater_ret;
+    if ((updater_ret = run_real_updater()) < 0) {
         ui_print("Failed to run real update-binary");
     }
 
@@ -1128,16 +1311,32 @@ static int update_binary(void)
     mb_run_command_chroot(CHROOT, (char **) umount_data);
 
 
-    // Shrink system image file
     if (rom->system_uses_image) {
+        // Shrink system image file
         umount(CHROOT "/system");
         if (shrink_image(rom->system_path) < 0) {
             ui_print("Failed to shrink system image");
             goto error;
         }
+    } else {
+        ui_print("Copying temporary image to system");
+
+        // Format system directory
+        if (mb_wipe_directory(rom->system_path, 1) < 0) {
+            ui_print("Failed to wipe %s", rom->system_path);
+            goto error;
+        }
+
+        // Copy image back to system directory
+        if (system_image_copy(rom->system_path, "/data/.system.img.tmp", 1) < 0) {
+            ui_print("Failed to copy %s to %s",
+                     "/data/.system.img.tmp", rom->system_path);
+            goto error;
+        }
     }
 
-    if (ret < 0) {
+
+    if (updater_ret < 0) {
         goto error;
     }
 
@@ -1243,8 +1442,10 @@ static int update_binary(void)
         mbp.mbp_free(bootimg_data);
     }
 
-success:
+finish:
     ui_print("Destroying chroot environment");
+
+    remove("/data/.system.img.tmp");
 
     mb_roms_cleanup(&r);
 
@@ -1260,24 +1461,16 @@ success:
         return -1;
     }
 
-    return 0;
+    return ret;
 
 error:
-    ui_print("Destroying chroot environment");
-
-    mb_roms_cleanup(&r);
-
-    mbp.mbp_config_destroy(pc);
-    libmbp_destroy(&mbp);
-
-    free(device);
-    free(boot_block_dev);
-
-    destroy_chroot();
-
     ui_print("Failed to flash zip file.");
+    ret = -1;
+    goto finish;
 
-    return -1;
+success:
+    ret = 0;
+    goto finish;
 }
 
 static void update_binary_usage(int error)

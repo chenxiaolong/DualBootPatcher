@@ -20,7 +20,6 @@
 #include "update_binary_tool.h"
 
 #include <errno.h>
-#include <fts.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +27,7 @@
 #include <sys/mount.h>
 #include <unistd.h>
 
+#include "multiboot.h"
 #include "util/file.h"
 #include "util/logging.h"
 #include "util/loopdev.h"
@@ -57,18 +57,19 @@ static int do_mount(const char *mountpoint)
         char *loopdev = NULL;
 
         if (!(loopdev = mb_loopdev_find_unused())) {
-            LOGE("Failed to find unused loop device: %s", strerror(errno));
+            LOGE(TAG "Failed to find unused loop device: %s", strerror(errno));
             return -1;
         }
 
         if (mb_loopdev_setup_device(loopdev, "/tmp/system.img", 0, 0) < 0) {
-            LOGE("Failed to setup loop device %s: %s", loopdev, strerror(errno));
+            LOGE(TAG "Failed to setup loop device %s: %s", loopdev, strerror(errno));
             free(loopdev);
             return -1;
         }
 
         if (mount(loopdev, SYSTEM, "ext4", 0, "") < 0) {
             LOGE(TAG "Failed to mount %s: %s", loopdev, strerror(errno));
+            mb_loopdev_remove_device(loopdev);
             free(loopdev);
             return -1;
         }
@@ -123,71 +124,20 @@ static int do_unmount(const char *mountpoint)
 
 static int do_format(const char *mountpoint)
 {
-    int isData = strcmp(mountpoint, DATA) == 0;
-    int ret = 0;
-    FTS *ftsp = NULL;
-    FTSENT *curr;
-
-    char *files[] = { (char *) mountpoint, NULL };
-
-    ftsp = fts_open(files, FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV, NULL);
-    if (!ftsp) {
-        LOGE("%s: fts_open failed: %s", mountpoint, strerror(errno));
-        ret = -1;
-        goto finish;
-    }
-
-    while ((curr = fts_read(ftsp))) {
-        switch (curr->fts_info) {
-        case FTS_NS:
-        case FTS_DNR:
-        case FTS_ERR:
-            LOGW("%s: fts_read error: %s",
-                 curr->fts_accpath, strerror(curr->fts_errno));
-            continue;
-
-        case FTS_DC:
-        case FTS_DOT:
-        case FTS_NSOK:
-            // Not reached
-            continue;
+    if (strcmp(mountpoint, SYSTEM) == 0
+            || strcmp(mountpoint, CACHE) == 0) {
+        if (mb_wipe_directory(mountpoint, 1) < 0) {
+            LOGE(TAG "Failed to wipe %s", mountpoint);
+            return -1;
         }
-
-        if (curr->fts_level == 1) {
-            // Skip {/system,/cache,/data}/multiboot and /data/media
-            if (strcmp(curr->fts_name, "multiboot") == 0
-                    || (isData && strcmp(curr->fts_name, "media") == 0)) {
-                fts_set(ftsp, curr, FTS_SKIP);
-                continue;
-            }
-        }
-
-        switch (curr->fts_info) {
-        case FTS_D:
-            // Do nothing. Need depth-first search, so directories are deleted
-            // in FTS_DP
-            continue;
-
-        case FTS_DP:
-        case FTS_F:
-        case FTS_SL:
-        case FTS_SLNONE:
-        case FTS_DEFAULT:
-            if (curr->fts_level >= 1 && remove(curr->fts_accpath) < 0) {
-                LOGW("%s: Failed to remove: %s",
-                     curr->fts_path, strerror(errno));
-                ret = -1;
-            }
-            continue;
+    } else if (strcmp(mountpoint, DATA) == 0) {
+        if (mb_wipe_directory(mountpoint, 0) < 0) {
+            LOGE(TAG "Failed to wipe %s", mountpoint);
+            return -1;
         }
     }
 
-finish:
-    if (ftsp) {
-        fts_close(ftsp);
-    }
-
-    return ret;
+    return 0;
 }
 
 static void update_binary_tool_usage(int error)
