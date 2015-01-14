@@ -1,6 +1,6 @@
 <patchinfo>
     <name>Paranoid Android Google Apps</name>
-    <regex>^pa_gapps-.*-[0-9\.]+-(BETA[0-9]+-)?[0-9]+-signed\.zip$</regex>
+    <regex>^pa_gapps-.*-[0-9\.]+-(BETA[0-9]+-)?[0-9]+[a-z]?-signed\.zip$</regex>
 
     <has-boot-image>false</has-boot-image>
 
