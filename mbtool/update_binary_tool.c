@@ -115,6 +115,8 @@ static int do_unmount(const char *mountpoint)
         free(loopdev);
 
         remove(STAMP_FILE);
+
+        LOGD(TAG "Unmounted %s", SYSTEM);
     } else {
         LOGV(TAG "Ignoring unmount command for %s", mountpoint);
     }

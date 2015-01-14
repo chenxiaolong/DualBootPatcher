@@ -58,49 +58,6 @@
 #define DEBUG_SHELL 0
 
 
-const char *BUSYBOX_WRAPPER =
-"#!/sbin/busybox_orig sh"                                               "\n"
-""                                                                      "\n"
-"do_mount() {"                                                          "\n"
-"    echo \"mount command disabled in chroot environment\" >&2"         "\n"
-"    exit 0"                                                            "\n"
-"}"                                                                     "\n"
-""                                                                      "\n"
-"do_umount() {"                                                         "\n"
-"    echo \"umount command disabled in chroot environment\" >&2"        "\n"
-"    exit 0"                                                            "\n"
-"}"                                                                     "\n"
-""                                                                      "\n"
-"do_unzip() {"                                                          "\n"
-"    /sbin/unzip \"${@}\""                                              "\n"
-"    exit \"${?}\""                                                     "\n"
-"}"                                                                     "\n"
-""                                                                      "\n"
-"argv0=\"${0##*/}\""                                                    "\n"
-"tool=\"\""                                                             "\n"
-""                                                                      "\n"
-"if [ \"x${argv0}\" = \"xbusybox\" ]; then"                             "\n"
-"    tool=\"${1}\""                                                     "\n"
-"    shift"                                                             "\n"
-"else"                                                                  "\n"
-"    tool=\"${argv0}\""                                                 "\n"
-"fi"                                                                    "\n"
-""                                                                      "\n"
-"case \"${tool}\" in"                                                   "\n"
-"    mount) do_mount ;;"                                                "\n"
-"    umount) do_umount ;;"                                              "\n"
-"    unzip) do_unzip \"${@}\" ;;"                                       "\n"
-"esac"                                                                  "\n"
-""                                                                      "\n"
-"if [ \"x${argv0}\" = \"xbusybox\" ]; then"                             "\n"
-"    /sbin/busybox_orig \"${@}\""                                       "\n"
-"else"                                                                  "\n"
-"    /sbin/busybox_orig \"${tool}\" \"${@}\""                           "\n"
-"fi"                                                                    "\n"
-"exit \"${?}\""                                                         "\n"
-;
-
-
 /* Lots of paths */
 
 // ZIP_*:  Paths in zip file
@@ -130,6 +87,8 @@ const char *BUSYBOX_WRAPPER =
 
 #define ZIP_AROMA       "multiboot/aromawrapper.zip"
 #define TEMP_AROMA      "/tmp/aromawrapper.zip"
+
+#define ZIP_BBWRAPPER   "multiboot/bb-wrapper.sh"
 
 #define ZIP_DEVICE      "multiboot/device"
 #define TEMP_DEVICE     "/tmp/device"
@@ -521,14 +480,21 @@ static int setup_unzip(void)
 static int setup_busybox_wrapper(void)
 {
     rename(CHROOT "/sbin/busybox", CHROOT "/sbin/busybox_orig");
-    FILE *fp = fopen(CHROOT "/sbin/busybox", "wb");
-    if (!fp) {
-        LOGE("Failed to open " CHROOT "/sbin/busybox: %s", strerror(errno));
+
+    struct extract_info files[] = {
+        { ZIP_BBWRAPPER, CHROOT "/sbin/busybox" },
+        { NULL, NULL }
+    };
+
+    if (mb_extract_files2(zip_file, files) < 0) {
+        LOGE("Failed to extract " ZIP_BBWRAPPER " from zip file");
         return -1;
     }
-    fwrite(BUSYBOX_WRAPPER, 1, strlen(BUSYBOX_WRAPPER), fp);
-    fclose(fp);
-    chmod(CHROOT "/sbin/busybox", 0555);
+
+    if (chmod(CHROOT "/sbin/busybox", 0555) < 0) {
+        LOGE("Failed to chmod %s: %s", CHROOT "/sbin/busybox", strerror(errno));
+        return -1;
+    }
 
     return 0;
 }

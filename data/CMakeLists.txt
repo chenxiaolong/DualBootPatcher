@@ -13,11 +13,11 @@ install(
 )
 
 # Scripts
-#install(
-#    DIRECTORY scripts/
-#    DESTINATION ${DATA_INSTALL_DIR}/scripts
-#    COMPONENT Libraries
-#)
+install(
+    DIRECTORY scripts/
+    DESTINATION ${DATA_INSTALL_DIR}/scripts
+    COMPONENT Libraries
+)
 
 # aroma wrapper (to rebuild, run create-aromawrapper.sh)
 set(URL_BASE "https://dl.dropboxusercontent.com/u/486665/MultiBootPatcher/prebuilts")

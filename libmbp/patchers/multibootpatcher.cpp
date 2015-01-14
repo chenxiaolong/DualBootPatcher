@@ -380,13 +380,14 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for mbtool_recovery (update-binary)
     // +1 for mbtool
     // +1 for aromawrapper.sh
+    // +1 for bb-wrapper.sh
     // +1 for e2fsck
     // +1 for resize2fs
     // +1 for tune2fs
     // +1 for unzip
     // +1 for device
     // +1 for libmbp-mini.so
-    MAX_PROGRESS_CB(count + 9);
+    MAX_PROGRESS_CB(count + 10);
     PROGRESS_CB(progress);
 
     if (!openInputArchive()) {
@@ -451,6 +452,20 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/aromawrapper.zip",
             pc->dataDirectory() + "/aromawrapper.zip");
+    if (result.errorCode() != MBP::ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    RETURN_IF_CANCELLED
+
+    PROGRESS_CB(++progress);
+    DETAILS_CB("multiboot/bb-wrapper.sh");
+
+    // Add bb-wrapper.sh
+    result = FileUtils::laAddFile(
+        aOutput, "multiboot/bb-wrapper.sh",
+        pc->dataDirectory() + "/scripts/bb-wrapper.sh");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
