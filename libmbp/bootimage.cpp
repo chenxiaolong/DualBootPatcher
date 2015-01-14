@@ -145,14 +145,14 @@ public:
     // Whether the ramdisk is LZ4 or gzip compressed
     int ramdiskCompression = GZIP;
 
+    bool isLoki;
+
     PatcherError error;
 
     bool loadAndroidHeader(const std::vector<unsigned char> &data,
-                           const int headerIndex,
-                           const bool isLoki);
+                           const int headerIndex);
     bool loadLokiHeader(const std::vector< unsigned char> &data,
-                        const int headerIndex,
-                        const bool isLoki);
+                        const int headerIndex);
     int lokiFindGzipOffset(const std::vector<unsigned char> &data,
                            const unsigned int startOffset) const;
     int lokiFindRamdiskSize(const std::vector<unsigned char> &data,
@@ -262,14 +262,14 @@ bool BootImage::load(const std::vector<unsigned char> &data)
     }
 
     // Find the Loki magic string
-    bool isLoki = std::memcmp(&data[0x400], LOKI_MAGIC, 4) == 0;
+    m_impl->isLoki = std::memcmp(&data[0x400], LOKI_MAGIC, 4) == 0;
 
     // Find the Android magic string
     bool isAndroid = false;
     int headerIndex = -1;
 
     int searchRange;
-    if (isLoki) {
+    if (m_impl->isLoki) {
         searchRange = 32;
     } else {
         searchRange = 512;
@@ -291,10 +291,10 @@ bool BootImage::load(const std::vector<unsigned char> &data)
 
     bool ret;
 
-    if (isLoki) {
-        ret = m_impl->loadLokiHeader(data, headerIndex, isLoki);
+    if (m_impl->isLoki) {
+        ret = m_impl->loadLokiHeader(data, headerIndex);
     } else {
-        ret = m_impl->loadAndroidHeader(data, headerIndex, isLoki);
+        ret = m_impl->loadAndroidHeader(data, headerIndex);
     }
 
     return ret;
@@ -327,8 +327,7 @@ bool BootImage::load(const std::string &filename)
 }
 
 bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
-                                        const int headerIndex,
-                                        const bool isLoki)
+                                        const int headerIndex)
 {
     // Make sure the file is large enough to contain the header
     if (data.size() < headerIndex + sizeof(BootImageHeader)) {
@@ -399,8 +398,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
 }
 
 bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
-                                     const int headerIndex,
-                                     const bool isLoki)
+                                     const int headerIndex)
 {
     // Make sure the file is large enough to contain the Loki header
     if (data.size() < 0x400 + sizeof(LokiHeader)) {
@@ -409,7 +407,7 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
         return false;
     }
 
-    if (!loadAndroidHeader(data, headerIndex, isLoki)) {
+    if (!loadAndroidHeader(data, headerIndex)) {
         // Error code already set
         return false;
     }
@@ -875,6 +873,11 @@ bool BootImage::extract(const std::string &directory, const std::string &prefix)
     }
 
     return true;
+}
+
+bool BootImage::isLoki() const
+{
+    return m_impl->isLoki;
 }
 
 int BootImage::Impl::skipPadding(const int &itemSize, const int &pageSize) const

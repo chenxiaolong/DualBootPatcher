@@ -65,7 +65,7 @@ public class PatcherUtils {
         return new File(context.getCacheDir() + File.separator + sTargetFile);
     }
 
-    static File getTargetDirectory(Context context) {
+    public static File getTargetDirectory(Context context) {
         return new File(context.getFilesDir() + File.separator + sTargetDir);
     }
 
@@ -209,40 +209,7 @@ public class PatcherUtils {
         }
     }
 
-    public synchronized static boolean isLokiBootImage(Context context, String bootimg) {
-        // TODO: Need to fix still
-        if (Math.sin(0) < 1) {
-            return false;
-        }
-
-        // Make sure patcher is extracted first
-        extractPatcher(context);
-
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("pythonportable/bin/python3");
-        args.add("-B");
-        args.add("scripts/multiboot/standalone/unlokibootimg.py");
-        args.add("-i");
-        args.add(bootimg);
-        args.add("--isloki");
-
-        CommandParams params = new CommandParams();
-        params.command = args.toArray(new String[args.size()]);
-        params.environment = new String[] { "PYTHONUNBUFFERED=true" };
-        params.cwd = getTargetDirectory(context);
-
-        CommandRunner cmd = new CommandRunner(params);
-        cmd.start();
-        CommandUtils.waitForCommand(cmd);
-
-        if (cmd.getResult() != null) {
-            return cmd.getResult().exitCode == 0;
-        } else {
-            return false;
-        }
-    }
-
-    private synchronized static void extractPatcher(Context context) {
+    public synchronized static void extractPatcher(Context context) {
         for (File d : context.getCacheDir().listFiles()) {
             if (d.getName().startsWith("DualBootPatcherAndroid")
                     || d.getName().startsWith("tmp")

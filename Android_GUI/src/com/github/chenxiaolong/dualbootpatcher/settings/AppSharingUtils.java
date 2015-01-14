@@ -18,11 +18,17 @@
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.content.Context;
+import android.os.Build;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CpioFile;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -89,65 +95,77 @@ public class AppSharingUtils {
         return apksMap;
     }
 
-    public static void updateRamdisk(Context context) /* throws Exception */ {
-        /*
-        RomInformation romInfo = RomUtils.getCurrentRom();
+    public static void updateRamdisk(Context context) throws Exception {
+        PatcherUtils.extractPatcher(context);
+
+        RomInformation romInfo = RomUtils.getCurrentRom(context);
         if (romInfo == null) {
-            throw new Exception("Failed to get current ROM");
+            throw new Exception("Could not determine current ROM");
         }
 
-        String kernelPath = RomUtils.RAW_DATA + SwitcherUtils.KERNEL_PATH_ROOT;
-        if (!new RootFile(RomUtils.RAW_DATA).isDirectory()) {
-            kernelPath = RomUtils.DATA + SwitcherUtils.KERNEL_PATH_ROOT;
-        }
-        new RootFile(kernelPath).chmod(0755);
-
-        // Copy the current kernel to a temporary directory
-        String bootImage = kernelPath + File.separator + romInfo.kernelId + ".img";
+        String bootImage = String.format(SwitcherUtils.KERNEL_PATH_ROOT, romInfo.id);
         RootFile bootImageFile = new RootFile(bootImage);
 
         if (!bootImageFile.isFile()) {
-            SwitcherUtils.backupKernel(romInfo.kernelId);
+            SwitcherUtils.backupKernel(romInfo.id);
         }
 
-        String tmpKernel = context.getCacheDir() + File.separator + "kernel.img";
+        String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
         RootFile tmpKernelFile = new RootFile(tmpKernel);
         bootImageFile.copyTo(tmpKernelFile);
-        tmpKernelFile.chmod(0666);
+        tmpKernelFile.chmod(0777);
 
-        boolean wasLokid = PatcherUtils.isLokiBootImage(context, tmpKernel);
-
-        // Update syncdaemon in the boot image
-        if (!PatcherUtils.updateSyncdaemon(context, tmpKernel)) {
-            throw new Exception("Failed to update syncdaemon");
+        BootImage bi = new BootImage();
+        if (!bi.load(tmpKernel)) {
+            PatcherError error = bi.getError();
+            throw new Exception("Error code: " + error.getErrorCode());
         }
 
-        String newKernel = context.getCacheDir() + File.separator + "kernel_syncdaemon.img";
-        RootFile newKernelFile = new RootFile(newKernel);
+        CpioFile cpio = new CpioFile();
+        if (!cpio.load(bi.getRamdiskImage())) {
+            PatcherError error = cpio.getError();
+            throw new Exception("Error code: " + error.getErrorCode());
+        }
 
-        if (wasLokid) {
+        if (cpio.isExists("mbtool")) {
+            cpio.remove("mbtool");
+        }
+
+        if (!cpio.addFile(PatcherUtils.getTargetDirectory(context)
+                + "/binaries/android/" + Build.CPU_ABI + "/mbtool", "mbtool", 0755)) {
+            PatcherError error = cpio.getError();
+            throw new Exception("Error code: " + error.getErrorCode());
+        }
+
+        bi.setRamdiskImage(cpio.createData(true));
+
+        if (!bi.createFile(tmpKernel)) {
+            PatcherError error = bi.getError();
+            throw new Exception("Error code: " + error.getErrorCode());
+        }
+
+        if (bi.isLoki()) {
             String aboot = context.getCacheDir() + File.separator + "aboot.img";
             SwitcherUtils.dd(SwitcherUtils.ABOOT_PARTITION, aboot);
             new RootFile(aboot).chmod(0666);
 
             String lokiKernel = context.getCacheDir() + File.separator + "kernel.lok";
 
-            if (lokiPatch("boot", aboot, newKernel, lokiKernel) != 0) {
+            if (lokiPatch("boot", aboot, tmpKernel, lokiKernel) != 0) {
                 throw new Exception("Failed to loki patch new boot image");
             }
 
-            newKernelFile.delete();
+            new File(lokiKernel).delete();
 
             org.apache.commons.io.FileUtils.moveFile(
-                    new File(lokiKernel), new File(newKernel));
+                    new File(lokiKernel), new File(tmpKernel));
         }
 
         // Copy to target
-        newKernelFile.copyTo(bootImageFile);
+        new RootFile(tmpKernel).copyTo(bootImageFile);
         bootImageFile.chmod(0755);
 
-        SwitcherUtils.writeKernel(romInfo.kernelId);
-        */
+        SwitcherUtils.writeKernel(romInfo.id);
     }
 
 
@@ -160,9 +178,12 @@ public class AppSharingUtils {
     private static native int lokiPatch(String partitionLabel, String abootImage,
                                         String inImage, String outImage);
 
+    @SuppressWarnings("unused")
     private static native int lokiFlash(String partitionLabel, String lokiImage);
 
+    @SuppressWarnings("unused")
     private static native int lokiFind(String abootImage);
 
+    @SuppressWarnings("unused")
     private static native int lokiUnlok(String inImage, String outImage);
 }

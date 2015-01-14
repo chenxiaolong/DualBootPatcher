@@ -44,6 +44,8 @@ int mbp_bootimage_create_file(CBootImage *bootImage,
 int mbp_bootimage_extract(CBootImage *bootImage,
                           const char *directory, const char *prefix);
 
+int mbp_bootimage_is_loki(CBootImage *bootImage);
+
 char * mbp_bootimage_boardname(const CBootImage *bootImage);
 void mbp_bootimage_set_boardname(CBootImage *bootImage,
                                  const char *name);

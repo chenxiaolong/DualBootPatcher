@@ -40,6 +40,8 @@ public:
     bool createFile(const std::string &path);
     bool extract(const std::string &directory, const std::string &prefix);
 
+    bool isLoki() const;
+
     std::string boardName() const;
     void setBoardName(const std::string &name);
     void resetBoardName();

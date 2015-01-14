@@ -184,6 +184,12 @@ int mbp_bootimage_extract(CBootImage *bootImage,
     return ret ? 0 : -1;
 }
 
+int mbp_bootimage_is_loki(CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return bi->isLoki() ? 0 : -1;
+}
+
 /*!
  * \brief Board name field in the boot image header
  *

@@ -64,6 +64,7 @@ public class LibMbp {
         static native void mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native int mbp_bootimage_create_file(CBootImage bi, String filename);
         static native int mbp_bootimage_extract(CBootImage bi, String directory, String prefix);
+        static native int mbp_bootimage_is_loki(CBootImage bi);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
         static native void mbp_bootimage_set_boardname(CBootImage bi, String name);
         static native void mbp_bootimage_reset_boardname(CBootImage bi);
@@ -466,6 +467,12 @@ public class LibMbp {
             ensureNotNull(prefix);
 
             return CWrapper.mbp_bootimage_extract(mCBootImage, directory, prefix) == 0;
+        }
+
+        public boolean isLoki() {
+            log(mCBootImage, BootImage.class, "isLoki");
+
+            return CWrapper.mbp_bootimage_is_loki(mCBootImage) == 0;
         }
 
         public String getBoardName() {
