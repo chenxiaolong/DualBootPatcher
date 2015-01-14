@@ -3,7 +3,4 @@
     <regex>Xposed-Disabler-Recovery.zip</regex>
 
     <has-boot-image>false</has-boot-image>
-    <autopatchers>
-        <autopatcher file="Other/xposed.dualboot.patch">PatchFile</autopatcher>
-    </autopatchers>
 </patchinfo>
