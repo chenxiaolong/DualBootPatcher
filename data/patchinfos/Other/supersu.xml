@@ -3,7 +3,5 @@
     <regex>^UPDATE-SuperSU-v[0-9A-Za-z\.]+\.zip$</regex>
 
     <has-boot-image>false</has-boot-image>
-    <autopatchers>
-        <autopatcher file="Other/supersu.dualboot.patch">PatchFile</autopatcher>
-    </autopatchers>
+    <!-- Doesn't need any patches! :) -->
 </patchinfo>
