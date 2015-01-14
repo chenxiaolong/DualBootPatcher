@@ -1,38 +1,6 @@
 --- a/META-INF/com/google/android/update-binary
 +++ b/META-INF/com/google/android/update-binary
-@@ -88,13 +88,13 @@
-         tar -cz -f "$log_folder/pa_gapps_debug_info.tar.gz" *;
-         cd /;
-     fi;
--    rm -rf /tmp;
-+    #rm -rf /tmp;
-     set_progress 1.0;
-     ui_print "- Unmounting /system, /data, /cache";
-     ui_print " ";
--    umount /system;
--    umount /data;
--    umount /cache;
-+    /update-binary-tool unmount /system
-+    /update-binary-tool unmount /data
-+    /update-binary-tool unmount /cache
-     exit $1;
- }
- 
-@@ -223,10 +223,9 @@
- ui_print "- Mounting /system, /data, /cache";
- ui_print " ";
- set_progress 0.01;
--busybox mount /system;
--busybox mount /data;
--busybox mount /cache;
--busybox mount -o rw,remount /system;
-+/update-binary-tool mount /system
-+/update-binary-tool mount /data
-+/update-binary-tool mount /cache
- # _____________________________________________________________________________________________________________________
- #                                                  Gather Device & GApps Package Information
- # Locate gapps-config (if used)
-@@ -663,7 +662,7 @@
+@@ -663,7 +663,7 @@
  eval "playgames_size=\$pg_${gms}_size"; # Determine size of PlayGames
  
  # Read and save system partition size details
