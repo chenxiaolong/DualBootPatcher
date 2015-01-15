@@ -1108,6 +1108,7 @@ static int update_binary(void)
     }
 
 
+    RECURSIVE_DELETE_CHECKED(MB_TEMP);
     MKDIR_CHECKED(MB_TEMP, 0755);
 
     if (extract_zip_files() < 0) {
