@@ -597,7 +597,7 @@ static int shrink_image(const char *path)
     // resize2fs will not go below the worst case scenario, so multiple resizes
     // are needed to achieve the "true" minimum
     const char *resize2fs_argv[] = { MB_TEMP "/resize2fs", "-M", path, NULL };
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 1 /* 5 */; ++i) {
         if (mb_run_command((char **) resize2fs_argv) != 0) {
             LOGE("%s: Failed to run resize2fs", path);
             return -1;
