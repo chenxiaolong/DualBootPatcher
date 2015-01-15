@@ -28,6 +28,7 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 #include "roms.h"
@@ -388,6 +389,13 @@ int mount_fstab(const char *fstab_path)
         fclose(lv);
     } else {
         LOGE("Failed to open /data/.layout_version to disable migration");
+    }
+
+    static const char *context = "u:object_r:install_data_file:s0";
+    if (lsetxattr("/data/.layout_version", "security.selinux",
+                  context, strlen(context) + 1, 0) < 0) {
+        LOGE("%s: Failed to set SELinux context: %s",
+             "/data/.layout_version", strerror(errno));
     }
 
     // Global app sharing
