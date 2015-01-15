@@ -326,12 +326,12 @@ int mb_copy_file(const char *source, const char *target, int flags)
         goto error;
     }
 
-    if ((flags && MB_COPY_ATTRIBUTES) && copy_stat(source, target) < 0) {
+    if ((flags & MB_COPY_ATTRIBUTES) && copy_stat(source, target) < 0) {
         LOGE("%s: Failed to copy attributes: %s",
              target, strerror(errno));
         goto error;
     }
-    if ((flags && MB_COPY_XATTRS) && copy_xattrs(source, target) < 0) {
+    if ((flags & MB_COPY_XATTRS) && copy_xattrs(source, target) < 0) {
         LOGE("%s: Failed to copy xattrs: %s",
              target, strerror(errno));
         goto error;
@@ -540,14 +540,14 @@ int mb_copy_dir(const char *source, const char *target, int flags)
                 ret = -1;
                 continue;
             }
-            if ((flags && MB_COPY_ATTRIBUTES)
+            if ((flags & MB_COPY_ATTRIBUTES)
                     && copy_stat(curr->fts_accpath, pathbuf) < 0) {
                 LOGW("%s: Failed to copy attributes: %s",
                      pathbuf, strerror(errno));
                 ret = -1;
                 continue;
             }
-            if ((flags && MB_COPY_XATTRS)
+            if ((flags & MB_COPY_XATTRS)
                     && copy_xattrs(curr->fts_accpath, pathbuf) < 0) {
                 LOGW("%s: Failed to copy xattrs: %s",
                      pathbuf, strerror(errno));
@@ -581,14 +581,14 @@ int mb_copy_dir(const char *source, const char *target, int flags)
                 continue;
             }
             free(symlink_path);
-            if ((flags && MB_COPY_ATTRIBUTES)
+            if ((flags & MB_COPY_ATTRIBUTES)
                     && copy_stat(curr->fts_accpath, pathbuf) < 0) {
                 LOGW("%s: Failed to copy attributes: %s",
                      pathbuf, strerror(errno));
                 ret = -1;
                 continue;
             }
-            if ((flags && MB_COPY_XATTRS)
+            if ((flags & MB_COPY_XATTRS)
                     && copy_xattrs(curr->fts_accpath, pathbuf) < 0) {
                 LOGW("%s: Failed to copy xattrs: %s",
                      pathbuf, strerror(errno));
@@ -638,7 +638,7 @@ int mb_copy_dir(const char *source, const char *target, int flags)
                 ret = -1;
                 continue;
             }
-            if ((flags && MB_COPY_XATTRS)
+            if ((flags & MB_COPY_XATTRS)
                     && copy_xattrs(curr->fts_accpath, pathbuf) < 0) {
                 LOGW("%s: Failed to copy xattrs: %s",
                      pathbuf, strerror(errno));
