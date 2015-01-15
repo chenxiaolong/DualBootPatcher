@@ -1496,8 +1496,10 @@ finish:
 
     mb_roms_cleanup(&r);
 
-    mbp.mbp_config_destroy(pc);
-    libmbp_destroy(&mbp);
+    if (mbp.handle) {
+        mbp.mbp_config_destroy(pc);
+        libmbp_destroy(&mbp);
+    }
 
     free(device);
     free(boot_block_dev);
