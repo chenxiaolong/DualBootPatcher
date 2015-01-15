@@ -32,6 +32,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 mbtool_src_base := \
 	common.c \
 	mount_fstab.c \
+	multiboot.c \
 	main.c \
 	roms.c \
 	sepolpatch.c \
