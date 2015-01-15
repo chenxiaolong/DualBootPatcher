@@ -415,11 +415,6 @@ int mount_fstab(const char *fstab_path)
         }
     }
 
-    // TODO: Hack to run additional script
-    if (stat("/init.additional.sh", &st) == 0) {
-        system("sh /init.additional.sh");
-    }
-
     mb_free_fstab(fstab);
 
     mb_roms_cleanup(&r);
