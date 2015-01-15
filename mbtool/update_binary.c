@@ -845,6 +845,13 @@ static int run_aroma_selection(void)
  */
 static int run_real_updater(void)
 {
+    if (mb_copy_file(MB_TEMP "/updater", CHROOT MB_TEMP "/updater",
+                     MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
+        LOGE("Failed to copy %s to %s: %s",
+             MB_TEMP "/updater", CHROOT MB_TEMP "/updater", strerror(errno));
+        return -1;
+    }
+
     if (chmod(CHROOT MB_TEMP "/updater", 0555) < 0) {
         LOGE("%s: Failed to chmod: %s",
              CHROOT MB_TEMP "/updater", strerror(errno));
