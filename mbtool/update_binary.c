@@ -60,41 +60,20 @@
 
 /* Lots of paths */
 
-// ZIP_*:  Paths in zip file
-// TEMP_*: Temporary paths (eg. for extracted files)
-
 #define CHROOT          "/chroot"
+#define MB_TEMP         "/multiboot"
 
 #define HELPER_TOOL     "/update-binary-tool"
 
 #define ZIP_UPDATER     "META-INF/com/google/android/update-binary"
-#define TEMP_UPDATER    "/tmp/updater"
-
-#define TEMP_INST_ZIP   "/tmp/install.zip"
-#define TEMP_SYSTEM_IMG "/tmp/system.img"
-
 #define ZIP_E2FSCK      "multiboot/e2fsck"
-#define TEMP_E2FSCK     "/tmp/e2fsck"
-
 #define ZIP_RESIZE2FS   "multiboot/resize2fs"
-#define TEMP_RESIZE2FS  "/tmp/resize2fs"
-
 #define ZIP_TUNE2FS     "multiboot/tune2fs"
-#define TEMP_TUNE2FS    "/tmp/tune2fs"
-
 #define ZIP_UNZIP       "multiboot/unzip"
-#define TEMP_UNZIP      "/tmp/unzip"
-
 #define ZIP_AROMA       "multiboot/aromawrapper.zip"
-#define TEMP_AROMA      "/tmp/aromawrapper.zip"
-
 #define ZIP_BBWRAPPER   "multiboot/bb-wrapper.sh"
-
 #define ZIP_DEVICE      "multiboot/device"
-#define TEMP_DEVICE     "/tmp/device"
-
 #define ZIP_MBP_MINI    "multiboot/libmbp-mini.so"
-#define TEMP_MBP_MINI   "/tmp/libmbp-mini.so"
 
 
 static const char *interface;
@@ -299,6 +278,7 @@ static int create_chroot(void)
 
     // Setup directories
     MKDIR_CHECKED(CHROOT, 0755);
+    MKDIR_CHECKED(CHROOT MB_TEMP, 0755);
     MKDIR_CHECKED(CHROOT "/dev", 0755);
     MKDIR_CHECKED(CHROOT "/etc", 0755);
     MKDIR_CHECKED(CHROOT "/proc", 0755);
@@ -375,7 +355,7 @@ static int destroy_chroot(void)
     umount(CHROOT "/cache");
     umount(CHROOT "/data");
 
-    umount(CHROOT TEMP_SYSTEM_IMG);
+    umount(CHROOT MB_TEMP "/system.img");
 
     umount(CHROOT "/dev/pts");
     umount(CHROOT "/dev");
@@ -396,98 +376,117 @@ static int destroy_chroot(void)
     return 0;
 }
 
-static char * get_target_device(void)
+/*!
+ * \brief Extract needed multiboot files from the patched zip file
+ *
+ * \return 0 on success, -1 on failure
+ */
+static int extract_zip_files(void)
 {
-    struct extract_info files[] = {
-        { ZIP_DEVICE, TEMP_DEVICE },
+    static const struct extract_info files[] = {
+        { ZIP_UPDATER ".orig",  MB_TEMP "/updater"          },
+        { ZIP_E2FSCK,           MB_TEMP "/e2fsck"           },
+        { ZIP_RESIZE2FS,        MB_TEMP "/resize2fs"        },
+        { ZIP_TUNE2FS,          MB_TEMP "/tune2fs"          },
+        { ZIP_UNZIP,            MB_TEMP "/unzip"            },
+        { ZIP_AROMA,            MB_TEMP "/aromawrapper.zip" },
+        { ZIP_BBWRAPPER,        MB_TEMP "/bb-wrapper.sh"    },
+        { ZIP_DEVICE,           MB_TEMP "/device"           },
+        { ZIP_MBP_MINI,         MB_TEMP "/libmbp-mini.so"   },
         { NULL, NULL }
     };
 
     if (mb_extract_files2(zip_file, files) < 0) {
-        LOGE("Failed to extract " ZIP_DEVICE " from zip file");
-        return NULL;
+        LOGE("Failed to extract all multiboot files");
+        return -1;
     }
 
+    return 0;
+}
+
+/*!
+ * \brief Get the target device of the patched zip file
+ *
+ * \return Dynamically allocated string containing the device codename or NULL
+ *         if the device could not be determined
+ */
+static char * get_target_device(void)
+{
     char *device = NULL;
-    if (mb_file_first_line(TEMP_DEVICE, &device) < 0) {
-        LOGE("Failed to read " TEMP_DEVICE);
+    if (mb_file_first_line(MB_TEMP "/device", &device) < 0) {
+        LOGE("Failed to read " MB_TEMP "/device");
         return NULL;
     }
 
     return device;
 }
 
+/*!
+ * \brief Make e2fsprogs files executable
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int setup_e2fsprogs(void)
 {
-    struct extract_info files[] = {
-        { ZIP_E2FSCK, TEMP_E2FSCK },
-        { ZIP_RESIZE2FS, TEMP_RESIZE2FS },
-        { ZIP_TUNE2FS, TEMP_TUNE2FS },
-        { NULL, NULL }
-    };
-
-    if (mb_extract_files2(zip_file, files) < 0) {
-        LOGE("Failed to extract e2fsprogs from zip file");
+    if (chmod(MB_TEMP "/e2fsck", 0555) < 0) {
+        LOGE("%s: Failed to chmod: %s", MB_TEMP "/e2fsck", strerror(errno));
         return -1;
     }
 
-    if (chmod(TEMP_E2FSCK, 0555) < 0) {
-        LOGE(TEMP_E2FSCK ": Failed to chmod: %s", strerror(errno));
+    if (chmod(MB_TEMP "/resize2fs", 0555) < 0) {
+        LOGE("%s: Failed to chmod: %s", MB_TEMP "/resize2fs", strerror(errno));
         return -1;
     }
 
-    if (chmod(TEMP_RESIZE2FS, 0555) < 0) {
-        LOGE(TEMP_RESIZE2FS ": Failed to chmod: %s", strerror(errno));
-        return -1;
-    }
-
-    if (chmod(TEMP_TUNE2FS, 0555) < 0) {
-        LOGE(TEMP_TUNE2FS ": Failed to chmod: %s", strerror(errno));
+    if (chmod(MB_TEMP "/tune2fs", 0555) < 0) {
+        LOGE("%s: Failed to chmod: %s", MB_TEMP "/tune2fs", strerror(errno));
         return -1;
     }
 
     return 0;
 }
 
+/*!
+ * \brief Replace /sbin/unzip in the chroot with one supporting zip flags 1 & 8
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int setup_unzip(void)
 {
-    struct extract_info files[] = {
-        { ZIP_UNZIP, TEMP_UNZIP },
-        { NULL, NULL }
-    };
-
-    if (mb_extract_files2(zip_file, files) < 0) {
-        LOGE("Failed to extract " ZIP_UNZIP " from zip file");
-        return -1;
-    }
-
     remove(CHROOT "/sbin/unzip");
 
-    if (mb_copy_file(TEMP_UNZIP, CHROOT "/sbin/unzip",
+    if (mb_copy_file(MB_TEMP "/unzip",
+                     CHROOT "/sbin/unzip",
                      MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
-        LOGE("Failed to copy %s to %s", TEMP_UNZIP, CHROOT "/sbin/unzip");
+        LOGE("Failed to copy %s to %s: %s",
+             MB_TEMP "/unzip", CHROOT "/sbin/unzip", strerror(errno));
         return -1;
     }
 
     if (chmod(CHROOT "/sbin/unzip", 0555) < 0) {
-        LOGE("Failed to chmod %s: %s", CHROOT "/sbin/unzip", strerror(errno));
+        LOGE("Failed to chmod %s: %s",
+             CHROOT "/sbin/unzip", strerror(errno));
         return -1;
     }
 
     return 0;
 }
 
+/*!
+ * \brief Replace busybox in the chroot with a wrapper that disables certain
+ *        functions
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int setup_busybox_wrapper(void)
 {
     rename(CHROOT "/sbin/busybox", CHROOT "/sbin/busybox_orig");
 
-    struct extract_info files[] = {
-        { ZIP_BBWRAPPER, CHROOT "/sbin/busybox" },
-        { NULL, NULL }
-    };
-
-    if (mb_extract_files2(zip_file, files) < 0) {
-        LOGE("Failed to extract " ZIP_BBWRAPPER " from zip file");
+    if (mb_copy_file(MB_TEMP "/bb-wrapper.sh",
+                     CHROOT "/sbin/busybox",
+                     MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
+        LOGE("Failed to copy %s to %s: %s",
+             MB_TEMP "/bb-wrapper.sh", CHROOT "/sbin/busybox", strerror(errno));
         return -1;
     }
 
@@ -499,14 +498,20 @@ static int setup_busybox_wrapper(void)
     return 0;
 }
 
+/*!
+ * \brief Create new ext4 image or expand existing image
+ *
+ * Create a 3GB image image (or extend an existing one) for installing a ROM.
+ * There isn't really a point to calculate an approximate size, since either
+ * way, if there isn't enough space, the ROM will fail to install anyway. After
+ * installation, the image will be shrunken to its minimum size.
+ *
+ * \param path Image file path
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int create_or_enlarge_image(const char *path)
 {
-    // Create a 3GB image image (or extend an existing one) for installing a
-    // ROM. There isn't really a point to calculate an approximate size, since
-    // either way, if there isn't enough space, the ROM will fail to install
-    // anyway. After installation, the image will be shrunken to its minimum
-    // size.
-
 #define IMAGE_SIZE "3G"
 
     if (mb_mkdir_parent(path, S_IRWXU) < 0) {
@@ -537,14 +542,16 @@ static int create_or_enlarge_image(const char *path)
     // Unset uninit_bg to avoid this bug, which is not patched in some Android
     // kernels (well, at least hammerhead's kernel)
     // http://www.redhat.com/archives/dm-devel/2012-June/msg00029.html
-    const char *tune2fs_argv[] = { TEMP_TUNE2FS, "-O", "^uninit_bg", path, NULL };
+    const char *tune2fs_argv[] =
+            { MB_TEMP "/tune2fs", "-O", "^uninit_bg", path, NULL };
     if (mb_run_command((char **) tune2fs_argv) != 0) {
         LOGE("%s: Failed to clear uninit_bg flag", path);
         return -1;
     }
 
     // Force an fsck to make resize2fs happy
-    const char *e2fsck_argv[] = { TEMP_E2FSCK, "-f", "-y", path, NULL };
+    const char *e2fsck_argv[] =
+            { MB_TEMP "/e2fsck", "-f", "-y", path, NULL };
     int ret = mb_run_command((char **) e2fsck_argv);
     // 0 = no errors; 1 = errors were corrected
     if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
@@ -555,7 +562,8 @@ static int create_or_enlarge_image(const char *path)
     LOGD("%s: Enlarging to %s", path, IMAGE_SIZE);
 
     // Enlarge existing image
-    const char *resize2fs_argv[] = { TEMP_RESIZE2FS, path, IMAGE_SIZE, NULL };
+    const char *resize2fs_argv[] =
+            { MB_TEMP "/resize2fs", path, IMAGE_SIZE, NULL };
     if (mb_run_command((char **) resize2fs_argv) != 0) {
         LOGE("%s: Failed to run resize2fs", path);
         return -1;
@@ -567,10 +575,17 @@ static int create_or_enlarge_image(const char *path)
     return 0;
 }
 
+/*!
+ * \brief Shrink an image to its minimum size + 10MiB
+ *
+ * \param path Image file path
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int shrink_image(const char *path)
 {
     // Force an fsck to make resize2fs happy
-    const char *e2fsck_argv[] = { TEMP_E2FSCK, "-f", "-y", path, NULL };
+    const char *e2fsck_argv[] = { MB_TEMP "/e2fsck", "-f", "-y", path, NULL };
     int ret = mb_run_command((char **) e2fsck_argv);
     // 0 = no errors; 1 = errors were corrected
     if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
@@ -581,7 +596,7 @@ static int shrink_image(const char *path)
     // Shrink image
     // resize2fs will not go below the worst case scenario, so multiple resizes
     // are needed to achieve the "true" minimum
-    const char *resize2fs_argv[] = { TEMP_RESIZE2FS, "-M", path, NULL };
+    const char *resize2fs_argv[] = { MB_TEMP "/resize2fs", "-M", path, NULL };
     for (int i = 0; i < 5; ++i) {
         if (mb_run_command((char **) resize2fs_argv) != 0) {
             LOGE("%s: Failed to run resize2fs", path);
@@ -600,7 +615,7 @@ static int shrink_image(const char *path)
         snprintf(size_str, len, "%jdM", (intmax_t) size_mib);
 
         // Ignore errors here
-        const char *argv[] = { TEMP_RESIZE2FS, path, size_str, NULL };
+        const char *argv[] = { MB_TEMP "/resize2fs", path, size_str, NULL };
         mb_run_command((char **) argv);
 
         free(size_str);
@@ -612,6 +627,15 @@ static int shrink_image(const char *path)
     return 0;
 }
 
+/*!
+ * \brief Compute SHA1 hash of a file
+ *
+ * \param path Path to file
+ * \param digest `unsigned char` array of size `SHA_DIGEST_SIZE` to store
+ *               computed hash value
+ *
+ * \return 0 on success, -1 on failure and errno set appropriately
+ */
 static int sha1_hash(const char *path, unsigned char digest[SHA_DIGEST_SIZE])
 {
     FILE *fp = fopen(path, "rb");
@@ -636,6 +660,7 @@ static int sha1_hash(const char *path, unsigned char digest[SHA_DIGEST_SIZE])
     if (ferror(fp)) {
         LOGE("%s: Failed to read file", path);
         fclose(fp);
+        errno = EIO;
         return -1;
     }
 
@@ -646,6 +671,17 @@ static int sha1_hash(const char *path, unsigned char digest[SHA_DIGEST_SIZE])
     return 0;
 }
 
+/*!
+ * \brief Convert binary data to its hex string representation
+ *
+ * The size of the output string should be at least `2 * size + 1` bytes.
+ * (Two characters in string for each byte in the binary data + one byte for
+ * the NULL terminator.)
+ *
+ * \param data Binary data
+ * \param size Size of binary data
+ * \param out Output string
+ */
 static void to_hex_string(unsigned char *data, size_t size, char *out)
 {
     static const char digits[] = "0123456789abcdef";
@@ -658,7 +694,12 @@ static void to_hex_string(unsigned char *data, size_t size, char *out)
     out[2 * size] = '\0';
 }
 
-// Returns -1 on error, 1 if path is AROMA installer, 0 otherwise
+/*!
+ * \brief Guess if an installer file in an AROMA installer
+ *
+ * \return 1 if file in an AROMA installer, 0 if the file is not, -1 on error
+ *         (and errno set appropriately)
+ */
 static int is_aroma(const char *path)
 {
     // Possible strings we can search for
@@ -729,43 +770,51 @@ error:
     return -1;
 }
 
+/*!
+ * \brief Run AROMA wrapper for ROM installation selection
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int run_aroma_selection(void)
 {
-    struct extract_info files[] = {
-        { ZIP_AROMA, CHROOT TEMP_AROMA },
-        { NULL, NULL }
-    };
-
-    if (mb_extract_files2(zip_file, files) < 0) {
-        LOGE("Failed to extract " ZIP_AROMA);
-        return -1;
-    }
-
     struct extract_info aroma_files[] = {
-        { ZIP_UPDATER, CHROOT TEMP_UPDATER },
+        { ZIP_UPDATER, CHROOT MB_TEMP "/updater" },
         { NULL, NULL }
     };
 
-    if (mb_extract_files2(CHROOT TEMP_AROMA, aroma_files) < 0) {
-        LOGE("Failed to extract " ZIP_UPDATER);
+    if (mb_extract_files2(MB_TEMP "/aromawrapper.zip", aroma_files) < 0) {
+        LOGE("Failed to extract %s", ZIP_UPDATER);
         return -1;
     }
 
-    if (chmod(CHROOT TEMP_UPDATER, 0555) < 0) {
-        LOGE("Failed to chmod " CHROOT TEMP_UPDATER);
+    if (chmod(CHROOT MB_TEMP "/updater", 0555) < 0) {
+        LOGE("%s: Failed to chmod: %s",
+             CHROOT MB_TEMP "/updater", strerror(errno));
+        return -1;
+    }
+
+    if (mb_copy_file(MB_TEMP "/aromawrapper.zip",
+                     CHROOT MB_TEMP "/aromawrapper.zip",
+                     MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
+        LOGE("Failed to copy %s to %s: %s",
+             MB_TEMP "/aromawrapper.zip", CHROOT MB_TEMP "/aromawrapper.zip",
+             strerror(errno));
         return -1;
     }
 
     const char *argv[] = {
-        TEMP_UPDATER,
+        MB_TEMP "/updater",
         interface,
         // Force output to stderr
         //output_fd_str,
         "2",
-        TEMP_AROMA,
+        MB_TEMP "/aromawrapper.zip",
         NULL
     };
 
+    // Stop parent process (/sbin/recovery), so AROMA doesn't fight over the
+    // framebuffer. AROMA normally already does this, but when we wrap it, it
+    // just stops the wraapper.
     pid_t parent = getppid();
 
     kill(parent, SIGSTOP);
@@ -775,9 +824,11 @@ static int run_aroma_selection(void)
         kill(parent, SIGCONT);
 
         if (ret < 0) {
-            LOGE("Failed to execute " TEMP_UPDATER ": %s", strerror(errno));
+            LOGE("Failed to execute %s: %s",
+                 MB_TEMP "/updater", strerror(errno));
         } else {
-            LOGE(TEMP_UPDATER " return non-zero exit status");
+            LOGE("%s returned non-zero exit status",
+                 MB_TEMP "/updater");
         }
         return -1;
     }
@@ -787,33 +838,29 @@ static int run_aroma_selection(void)
     return 0;
 }
 
+/*!
+ * \brief Run real update-binary in the chroot
+ *
+ * \return 0 on success, -1 on failure
+ */
 static int run_real_updater(void)
 {
-    struct extract_info files[] = {
-        { ZIP_UPDATER ".orig", CHROOT TEMP_UPDATER },
-        { NULL, NULL }
-    };
-
-    if (mb_extract_files2(zip_file, files) < 0) {
-        LOGE("Failed to extract original update-binary file");
-        return -1;
-    }
-
-    if (chmod(CHROOT TEMP_UPDATER, 0555) < 0) {
-        LOGE("Failed to chmod " CHROOT TEMP_UPDATER);
+    if (chmod(CHROOT MB_TEMP "/updater", 0555) < 0) {
+        LOGE("%s: Failed to chmod: %s",
+             CHROOT MB_TEMP "/updater", strerror(errno));
         return -1;
     }
 
     const char *argv[] = {
-        TEMP_UPDATER,
+        MB_TEMP "/updater",
         interface,
         output_fd_str,
-        TEMP_INST_ZIP,
+        MB_TEMP "/install.zip",
         NULL
     };
 
     pid_t parent = getppid();
-    int aroma = is_aroma(CHROOT TEMP_UPDATER) > 0;
+    int aroma = is_aroma(CHROOT MB_TEMP "/updater") > 0;
 
     LOGD("update-binary is AROMA: %d", aroma);
 
@@ -828,9 +875,11 @@ static int run_real_updater(void)
         }
 
         if (ret < 0) {
-            LOGE("Failed to execute " TEMP_UPDATER ": %s", strerror(errno));
+            LOGE("Failed to execute %s: %s",
+                 MB_TEMP "/updater", strerror(errno));
         } else {
-            LOGE(TEMP_UPDATER " return non-zero exit status");
+            LOGE("%s returned non-zero exit status",
+                 MB_TEMP "/updater");
         }
         return -1;
     }
@@ -842,6 +891,14 @@ static int run_real_updater(void)
     return 0;
 }
 
+/*!
+ * \brief Copy /system directory excluding multiboot files
+ *
+ * \param source Source directory
+ * \param target Target directory
+ *
+ * \return 0 on success, -1 on error
+ */
 static int copy_system(const char *source, const char *target)
 {
     int ret = 0;
@@ -939,14 +996,25 @@ finish:
     return ret;
 }
 
+/*!
+ * \brief Copy a /system directory to an image file
+ *
+ * \param source Source directory
+ * \param image Target image file
+ * \param reverse If non-zero, then the image file is the source and the
+ *                directory is the target
+ *
+ * \return 0 on success, -1 on error
+ */
 static int system_image_copy(const char *source, const char *image, int reverse)
 {
     struct stat sb;
     char *loopdev = NULL;
 
-    if (stat("/tmp/.system.tmp", &sb) < 0
-            && mkdir("/tmp/.system.tmp", 0755) < 0) {
-        LOGE("Failed to create %s: %s", "/tmp/.system.tmp", strerror(errno));
+    if (stat(MB_TEMP "/.system.tmp", &sb) < 0
+            && mkdir(MB_TEMP "/.system.tmp", 0755) < 0) {
+        LOGE("Failed to create %s: %s",
+             MB_TEMP "/.system.tmp", strerror(errno));
         goto error;
     }
 
@@ -960,27 +1028,28 @@ static int system_image_copy(const char *source, const char *image, int reverse)
         goto error;
     }
 
-    if (mount(loopdev, "/tmp/.system.tmp", "ext4", 0, "") < 0) {
+    if (mount(loopdev, MB_TEMP "/.system.tmp", "ext4", 0, "") < 0) {
         LOGE("Failed to mount %s: %s", loopdev, strerror(errno));
         goto error;
     }
 
     if (reverse) {
-        if (copy_system("/tmp/.system.tmp", source) < 0) {
+        if (copy_system(MB_TEMP "/.system.tmp", source) < 0) {
             LOGE("Failed to copy system files from %s to %s",
-                 "/tmp/.system.tmp", source);
+                 MB_TEMP "/.system.tmp", source);
             goto error;
         }
     } else {
-        if (copy_system(source, "/tmp/.system.tmp") < 0) {
+        if (copy_system(source, MB_TEMP "/.system.tmp") < 0) {
             LOGE("Failed to copy system files from %s to %s",
-                 source, "/tmp/.system.tmp");
+                 source, MB_TEMP "/.system.tmp");
             goto error;
         }
     }
 
-    if (umount("/tmp/.system.tmp") < 0) {
-        LOGE("Failed to unmount %s: %s", "/tmp/.system.tmp", strerror(errno));
+    if (umount(MB_TEMP "/.system.tmp") < 0) {
+        LOGE("Failed to unmount %s: %s",
+             MB_TEMP "/.system.tmp", strerror(errno));
         goto error;
     }
 
@@ -995,13 +1064,18 @@ static int system_image_copy(const char *source, const char *image, int reverse)
 
 error:
     if (loopdev) {
-        umount("/tmp/.system.tmp");
+        umount(MB_TEMP "/.system.tmp");
         mb_loopdev_remove_device(loopdev);
         free(loopdev);
     }
     return -1;
 }
 
+/*!
+ * \brief Main wrapper function
+ *
+ * \return 0 on success, -1 on error
+ */
 static int update_binary(void)
 {
     int ret = 0;
@@ -1027,6 +1101,14 @@ static int update_binary(void)
     }
 
 
+    MKDIR_CHECKED(MB_TEMP, 0755);
+
+    if (extract_zip_files() < 0) {
+        ui_print("Failed to extract multiboot files from zip");
+        goto error;
+    }
+
+
     // Verify device
     device = get_target_device();
     char prop1[MB_PROP_VALUE_MAX] = { 0 };
@@ -1044,24 +1126,14 @@ static int update_binary(void)
     LOGD("Target device = %s", device);
 
     if (!strstr(prop1, device) && !strstr(prop2, device)) {
-        ui_print("The patched zip is for '%s'. This device is '%s'.", device, prop1);
+        ui_print("Patched zip is for '%s', but device is '%s'", device, prop1);
         goto error;
     }
 
 
     // dlopen libmbp-mini.so
-    struct extract_info files[] = {
-        { ZIP_MBP_MINI, TEMP_MBP_MINI },
-        { NULL, NULL }
-    };
-
-    if (mb_extract_files2(zip_file, files) < 0) {
-        ui_print("Failed to extract libmbp-mini from zip file");
-        goto error;
-    }
-
-    if (libmbp_init(&mbp, TEMP_MBP_MINI) < 0) {
-        ui_print("Failed to load " TEMP_MBP_MINI);
+    if (libmbp_init(&mbp, MB_TEMP "/libmbp-mini.so") < 0) {
+        ui_print("Failed to load " MB_TEMP "/libmbp-mini.so");
         goto error;
     }
 
@@ -1132,7 +1204,7 @@ static int update_binary(void)
     }
 
     char *install_type;
-    if (mb_file_first_line(CHROOT "/tmp/installtype", &install_type) < 0) {
+    if (mb_file_first_line(CHROOT MB_TEMP "/installtype", &install_type) < 0) {
         ui_print("Failed to determine install type");
         goto error;
     }
@@ -1204,8 +1276,8 @@ static int update_binary(void)
         }
 
         // The installer will handle the mounting and unmounting
-        mb_create_empty_file(CHROOT TEMP_SYSTEM_IMG);
-        MOUNT_CHECKED(rom->system_path, CHROOT TEMP_SYSTEM_IMG,
+        mb_create_empty_file(CHROOT MB_TEMP "/system.img");
+        MOUNT_CHECKED(rom->system_path, CHROOT MB_TEMP "/system.img",
                       "", MS_BIND, "");
     } else {
         ui_print("Copying system to temporary image");
@@ -1225,15 +1297,15 @@ static int update_binary(void)
         }
 
         // Install to the image
-        mb_create_empty_file(CHROOT TEMP_SYSTEM_IMG);
-        MOUNT_CHECKED("/data/.system.img.tmp", CHROOT TEMP_SYSTEM_IMG,
+        mb_create_empty_file(CHROOT MB_TEMP "/system.img");
+        MOUNT_CHECKED("/data/.system.img.tmp", CHROOT MB_TEMP "/system.img",
                       "", MS_BIND, "");
     }
 
 
     // Bind-mount zip file
-    mb_create_empty_file(CHROOT TEMP_INST_ZIP);
-    MOUNT_CHECKED(zip_file, CHROOT TEMP_INST_ZIP, "", MS_BIND, "");
+    mb_create_empty_file(CHROOT MB_TEMP "/install.zip");
+    MOUNT_CHECKED(zip_file, CHROOT MB_TEMP "/install.zip", "", MS_BIND, "");
 
 
     // Wrap busybox to disable some applets
@@ -1294,7 +1366,8 @@ static int update_binary(void)
         }
 
         // Copy image back to system directory
-        if (system_image_copy(rom->system_path, "/data/.system.img.tmp", 1) < 0) {
+        if (system_image_copy(rom->system_path,
+                              "/data/.system.img.tmp", 1) < 0) {
             ui_print("Failed to copy %s to %s",
                      "/data/.system.img.tmp", rom->system_path);
             goto error;

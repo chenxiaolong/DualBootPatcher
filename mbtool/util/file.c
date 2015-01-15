@@ -26,6 +26,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+/*!
+ * \brief Create empty file with 0666 permissions
+ *
+ * \note Returns 0 if file already exists
+ *
+ * \param path File to create
+ * \return 0 on success, -1 on failure with errno set appropriately
+ */
 int mb_create_empty_file(const char *path)
 {
     int fd;
@@ -39,6 +47,19 @@ int mb_create_empty_file(const char *path)
     return 0;
 }
 
+/*!
+ * \brief Get first line from file
+ *
+ * \param path File to read
+ * \param line_out Pointer to char * which will contain the first line
+ *
+ * \note line_out will point to a dynamically allocated buffer that should be
+ *       free()'d when it is no longer needed
+ *
+ * \note line_out is not modified if this function fails
+ *
+ * \return 0 on success, -1 on failure and errno set appropriately
+ */
 int mb_file_first_line(const char *path, char **line_out)
 {
     FILE *fp = NULL;
@@ -74,6 +95,15 @@ error:
     return -1;
 }
 
+/*!
+ * \brief Write data to a file
+ *
+ * \param path File to write
+ * \param data Pointer to data to write
+ * \param size Size of \a data
+ *
+ * \return 0 on success, -1 on failure and errno set appropriately
+ */
 int mb_file_write_data(const char *path, const void *data, size_t size)
 {
     FILE *fp;

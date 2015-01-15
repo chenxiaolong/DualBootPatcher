@@ -272,13 +272,13 @@ error:
     return -1;
 }
 
-int mb_extract_files2(const char *filename, struct extract_info *files)
+int mb_extract_files2(const char *filename, const struct extract_info *files)
 {
     struct archive *in = NULL;
     struct archive *out = NULL;
     struct archive_entry *entry;
     int ret;
-    struct extract_info *files_ptr;
+    const struct extract_info *files_ptr;
     int expected_count = 0;
     int count = 0;
 

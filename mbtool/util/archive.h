@@ -27,4 +27,4 @@ struct extract_info {
 int mb_extract_archive(const char *filename, const char *target);
 int mb_extract_files(const char *filename, const char *target,
                      const char **files);
-int mb_extract_files2(const char *filename, struct extract_info *files);
+int mb_extract_files2(const char *filename, const struct extract_info *files);

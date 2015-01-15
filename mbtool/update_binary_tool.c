@@ -61,7 +61,7 @@ static int do_mount(const char *mountpoint)
             return -1;
         }
 
-        if (mb_loopdev_setup_device(loopdev, "/tmp/system.img", 0, 0) < 0) {
+        if (mb_loopdev_setup_device(loopdev, "/multiboot/system.img", 0, 0) < 0) {
             LOGE(TAG "Failed to setup loop device %s: %s", loopdev, strerror(errno));
             free(loopdev);
             return -1;
