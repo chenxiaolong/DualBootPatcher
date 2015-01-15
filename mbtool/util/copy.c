@@ -186,17 +186,17 @@ static int copy_stat(const char *source, const char *target)
         return -1;
     }
 
+    if (lchown(target, sb.st_uid, sb.st_gid) < 0) {
+        LOGE("%s: Failed to chown: %s", target, strerror(errno));
+        return -1;
+    }
+
     if (!S_ISLNK(sb.st_mode)) {
         if (chmod(target, sb.st_mode & (S_ISUID | S_ISGID | S_ISVTX
                                       | S_IRWXU | S_IRWXG | S_IRWXO)) < 0) {
             LOGE("%s: Failed to chmod: %s", target, strerror(errno));
             return -1;
         }
-    }
-
-    if (lchown(target, sb.st_uid, sb.st_gid) < 0) {
-        LOGE("%s: Failed to chown: %s", target, strerror(errno));
-        return -1;
     }
 
     return 0;
