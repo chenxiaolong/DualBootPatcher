@@ -187,8 +187,8 @@ static int copy_stat(const char *source, const char *target)
     }
 
     if (!S_ISLNK(sb.st_mode)) {
-        // Not preserving 4th octal digit bits (S_ISUID | S_ISGID | S_IXVTX)
-        if (chmod(target, sb.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) < 0) {
+        if (chmod(target, sb.st_mode & (S_ISUID | S_ISGID | S_ISVTX
+                                      | S_IRWXU | S_IRWXG | S_IRWXO)) < 0) {
             LOGE("%s: Failed to chmod: %s", target, strerror(errno));
             return -1;
         }
