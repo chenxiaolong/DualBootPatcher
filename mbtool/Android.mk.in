@@ -29,6 +29,8 @@ LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
+git_version := $(shell git describe --dirty --always --tags)
+
 mbtool_src_base := \
 	common.c \
 	mount_fstab.c \
@@ -70,6 +72,10 @@ LOCAL_C_INCLUDES := \
 TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
 
 LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
+
+LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
+LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
+
 LOCAL_LDFLAGS := -static
 
 include $(BUILD_EXECUTABLE)
@@ -96,6 +102,9 @@ TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
 LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
 
 LOCAL_CFLAGS += -DRECOVERY
+
+LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
+LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
 # Use the recovery's loader
 LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker

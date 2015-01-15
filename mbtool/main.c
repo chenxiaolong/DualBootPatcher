@@ -68,6 +68,8 @@ static void mbtool_usage(int error)
     FILE *stream = error ? stderr : stdout;
 
     fprintf(stream,
+            "Version: " MBP_VERSION "\n"
+            "Git version: " GIT_VERSION "\n\n"
             "Usage: mbtool [tool] [tool arguments ...]\n\n"
             "This is a multicall binary. The individual tools can be invoked\n"
             "by passing the tool name as the first argument to mbtool or by\n"
