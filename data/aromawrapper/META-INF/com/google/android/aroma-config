@@ -38,26 +38,26 @@ menubox(
 );
 
 if prop("installtype.prop","selected") == "1" then
-    write("/tmp/installtype", "primary");
+    write("/multiboot/installtype", "primary");
 endif;
 
 if prop("installtype.prop","selected") == "2" then
-    write("/tmp/installtype", "dual");
+    write("/multiboot/installtype", "dual");
 endif;
 
 if prop("installtype.prop","selected") == "3" then
-    write("/tmp/installtype", "multi-slot-1");
+    write("/multiboot/installtype", "multi-slot-1");
 endif;
 
 if prop("installtype.prop","selected") == "4" then
-    write("/tmp/installtype", "multi-slot-2");
+    write("/multiboot/installtype", "multi-slot-2");
 endif;
 
 if prop("installtype.prop","selected") == "5" then
-    write("/tmp/installtype", "multi-slot-3");
+    write("/multiboot/installtype", "multi-slot-3");
 endif;
 
 if prop("installtype.prop","selected") == "6" then
-    write("/tmp/installtype", "cancelled");
+    write("/multiboot/installtype", "cancelled");
     exit("");
 endif;
