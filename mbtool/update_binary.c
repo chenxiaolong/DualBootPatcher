@@ -57,6 +57,10 @@
 //     $ adb shell /tmp/updater 3 1 /path/to/file_patched.zip
 #define DEBUG_SHELL 0
 
+// Use an update-binary file not from the zip file
+#define DEBUG_USE_ALTERNATE_UPDATER 0
+#define DEBUG_ALTERNATE_UPDATER_PATH "/tmp/updater.orig"
+
 
 /* Lots of paths */
 
@@ -845,10 +849,16 @@ static int run_aroma_selection(void)
  */
 static int run_real_updater(void)
 {
-    if (mb_copy_file(MB_TEMP "/updater", CHROOT MB_TEMP "/updater",
+#if DEBUG_USE_ALTERNATE_UPDATER
+#define UPDATER DEBUG_ALTERNATE_UPDATER_PATH
+#else
+#define UPDATER MB_TEMP "/updater"
+#endif
+
+    if (mb_copy_file(UPDATER, CHROOT MB_TEMP "/updater",
                      MB_COPY_ATTRIBUTES | MB_COPY_XATTRS) < 0) {
         LOGE("Failed to copy %s to %s: %s",
-             MB_TEMP "/updater", CHROOT MB_TEMP "/updater", strerror(errno));
+             UPDATER, CHROOT MB_TEMP "/updater", strerror(errno));
         return -1;
     }
 
