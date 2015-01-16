@@ -50,9 +50,4 @@ case "${tool}" in
     unzip) do_unzip "${@}" ;;
 esac
 
-if [ "x${argv0}" = "xbusybox" ]; then
-    /sbin/busybox_orig "${tool}" "${@}"
-else
-    /sbin/busybox_orig "${@}"
-fi
-exit "${?}"
+exec /sbin/busybox_orig "${tool}" "${@}"
