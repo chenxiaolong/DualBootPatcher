@@ -567,7 +567,7 @@ static int create_or_enlarge_image(const char *path)
 
     // Enlarge existing image
     const char *resize2fs_argv[] =
-            { MB_TEMP "/resize2fs", path, IMAGE_SIZE, NULL };
+            { MB_TEMP "/resize2fs", "-f", "-p", path, IMAGE_SIZE, NULL };
     if (mb_run_command((char **) resize2fs_argv) != 0) {
         LOGE("%s: Failed to run resize2fs", path);
         return -1;
@@ -600,7 +600,8 @@ static int shrink_image(const char *path)
     // Shrink image
     // resize2fs will not go below the worst case scenario, so multiple resizes
     // are needed to achieve the "true" minimum
-    const char *resize2fs_argv[] = { MB_TEMP "/resize2fs", "-M", path, NULL };
+    const char *resize2fs_argv[] =
+            { MB_TEMP "/resize2fs", "-f", "-p", "-M", path, NULL };
     for (int i = 0; i < 1 /* 5 */; ++i) {
         if (mb_run_command((char **) resize2fs_argv) != 0) {
             LOGE("%s: Failed to run resize2fs", path);
@@ -619,7 +620,8 @@ static int shrink_image(const char *path)
         snprintf(size_str, len, "%jdM", (intmax_t) size_mib);
 
         // Ignore errors here
-        const char *argv[] = { MB_TEMP "/resize2fs", path, size_str, NULL };
+        const char *argv[] =
+                { MB_TEMP "/resize2fs", "-f", "-p", path, size_str, NULL };
         mb_run_command((char **) argv);
 
         free(size_str);
