@@ -51,8 +51,8 @@ case "${tool}" in
 esac
 
 if [ "x${argv0}" = "xbusybox" ]; then
-    /sbin/busybox_orig "${@}"
-else
     /sbin/busybox_orig "${tool}" "${@}"
+else
+    /sbin/busybox_orig "${@}"
 fi
 exit "${?}"
