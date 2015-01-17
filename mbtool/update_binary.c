@@ -1147,6 +1147,11 @@ static int update_binary(void)
     to_hex_string(hash, SHA_DIGEST_SIZE, digest);
     LOGD("Boot partition SHA1sum: %s", digest);
 
+    // Save a copy of the boot image that we'll restore if the installation fails
+    if (mb_copy_file(boot_block_dev, MB_TEMP "/boot.orig", 0) < 0) {
+        ui_print("Failed to backup boot partition");
+        goto error;
+    }
 
 
     // Extract busybox's unzip tool with support for zip file data descriptors
@@ -1384,6 +1389,10 @@ finish:
     ui_print("Destroying chroot environment");
 
     remove("/data/.system.img.tmp");
+
+    if (mb_copy_file(MB_TEMP "/boot.orig", boot_block_dev, 0) < 0) {
+        LOGE("Failed to restore boot partition");
+    }
 
     mb_roms_cleanup(&r);
 
