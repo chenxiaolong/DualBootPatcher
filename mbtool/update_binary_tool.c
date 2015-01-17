@@ -49,6 +49,12 @@
 static int do_mount(const char *mountpoint)
 {
     if (strcmp(mountpoint, SYSTEM) == 0) {
+        if (access("/multiboot/system.img", F_OK) < 0) {
+            // Assume we don't need the image if the wrapper didn't create it
+            LOGV(TAG "Ignoring mount command for %s", mountpoint);
+            return 0;
+        }
+
         if (access(STAMP_FILE, F_OK) == 0) {
             LOGV(TAG "/system already mounted. Skipping");
             return 0;
@@ -89,6 +95,12 @@ static int do_mount(const char *mountpoint)
 static int do_unmount(const char *mountpoint)
 {
     if (strcmp(mountpoint, SYSTEM) == 0) {
+        if (access("/multiboot/system.img", F_OK) < 0) {
+            // Assume we don't need the image if the wrapper didn't create it
+            LOGV(TAG "Ignoring unmount command for %s", mountpoint);
+            return 0;
+        }
+
         if (access(STAMP_FILE, F_OK) != 0) {
             LOGV(TAG "/system not mounted. Skipping");
             return 0;

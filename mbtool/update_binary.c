@@ -44,7 +44,6 @@
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/directory.h"
-#include "util/ext4.h"
 #include "util/file.h"
 #include "util/logging.h"
 #include "util/loopdev.h"
@@ -73,9 +72,6 @@
 #define HELPER_TOOL     "/update-binary-tool"
 
 #define ZIP_UPDATER     "META-INF/com/google/android/update-binary"
-#define ZIP_E2FSCK      "multiboot/e2fsck"
-#define ZIP_RESIZE2FS   "multiboot/resize2fs"
-#define ZIP_TUNE2FS     "multiboot/tune2fs"
 #define ZIP_UNZIP       "multiboot/unzip"
 #define ZIP_AROMA       "multiboot/aromawrapper.zip"
 #define ZIP_BBWRAPPER   "multiboot/bb-wrapper.sh"
@@ -392,9 +388,6 @@ static int extract_zip_files(void)
 {
     static const struct extract_info files[] = {
         { ZIP_UPDATER ".orig",  MB_TEMP "/updater"          },
-        { ZIP_E2FSCK,           MB_TEMP "/e2fsck"           },
-        { ZIP_RESIZE2FS,        MB_TEMP "/resize2fs"        },
-        { ZIP_TUNE2FS,          MB_TEMP "/tune2fs"          },
         { ZIP_UNZIP,            MB_TEMP "/unzip"            },
         { ZIP_AROMA,            MB_TEMP "/aromawrapper.zip" },
         { ZIP_BBWRAPPER,        MB_TEMP "/bb-wrapper.sh"    },
@@ -426,31 +419,6 @@ static char * get_target_device(void)
     }
 
     return device;
-}
-
-/*!
- * \brief Make e2fsprogs files executable
- *
- * \return 0 on success, -1 on failure
- */
-static int setup_e2fsprogs(void)
-{
-    if (chmod(MB_TEMP "/e2fsck", 0555) < 0) {
-        LOGE("%s: Failed to chmod: %s", MB_TEMP "/e2fsck", strerror(errno));
-        return -1;
-    }
-
-    if (chmod(MB_TEMP "/resize2fs", 0555) < 0) {
-        LOGE("%s: Failed to chmod: %s", MB_TEMP "/resize2fs", strerror(errno));
-        return -1;
-    }
-
-    if (chmod(MB_TEMP "/tune2fs", 0555) < 0) {
-        LOGE("%s: Failed to chmod: %s", MB_TEMP "/tune2fs", strerror(errno));
-        return -1;
-    }
-
-    return 0;
 }
 
 /*!
@@ -506,248 +474,42 @@ static int setup_busybox_wrapper(void)
 }
 
 /*!
- * \brief Get minimum size of ext4 image as reported by resize2fs
- *
- * \return Minimum size if greater than 0, 0 on failure
- */
-uint64_t ext4_get_minimum_size(const char *path)
-{
-    int fds[2];
-    if (pipe(fds) < 0) {
-        LOGE("Failed to create pipes: %s", strerror(errno));
-        return 0;
-    }
-
-    pid_t pid;
-
-    switch (pid = fork()) {
-    case -1:
-        close(fds[0]);
-        close(fds[1]);
-        return 0;
-
-    case 0:
-        close(fds[0]);
-        dup2(fds[1], STDOUT_FILENO);
-        dup2(fds[1], STDERR_FILENO);
-        close(fds[1]);
-        execlp(MB_TEMP "/resize2fs", MB_TEMP "/resize2fs", "-P", path, NULL);
-        exit(127);
-    }
-
-    FILE *fp = fdopen(fds[0], "rb");
-    close(fds[1]);
-
-    static const char *magic = "Estimated minimum size of the filesystem: ";
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    uint64_t block_count = (uint64_t) -1;
-
-    while ((read = getline(&line, &len, fp)) >= 0) {
-        if (strstr(line, magic)) {
-            char *pos = line + strlen(magic);
-            char *temp;
-            uint64_t num = strtoull(pos, &temp, 0);
-            if (*temp == '\0' || *temp == '\n') {
-                block_count = num;
-                break;
-            }
-        }
-    }
-
-    free(line);
-
-    fclose(fp);
-    int status;
-    do {
-        pid = waitpid(pid, &status, 0);
-    } while (pid == -1 && errno == EINTR);
-
-    if (block_count == (uint64_t) -1) {
-        LOGE("%s: Failed to determine minimum block count", path);
-        return 0;
-    }
-
-    return block_count;
-}
-
-/*!
- * \brief Create new ext4 image or expand existing image
- *
- * Create a 3GB image image (or extend an existing one) for installing a ROM.
- * There isn't really a point to calculate an approximate size, since either
- * way, if there isn't enough space, the ROM will fail to install anyway. After
- * installation, the image will be shrunken to its minimum size.
+ * \brief Create 3G temporary ext4 image
  *
  * \param path Image file path
  *
  * \return 0 on success, -1 on failure
  */
-static int create_or_enlarge_image(const char *path)
+static int create_temporary_image(const char *path)
 {
-    char *size_str = NULL;
+#define IMAGE_SIZE "3G"
 
     if (mb_mkdir_parent(path, S_IRWXU) < 0) {
         LOGE("%s: Failed to create parent directory: %s",
              path, strerror(errno));
-        goto error;
-    }
-
-    uint64_t avail_space;
-
-    if (mb_starts_with(path, "/system")) {
-        avail_space = mb_mount_get_avail_size("/system");
-    } else if (mb_starts_with(path, "/cache")) {
-        avail_space = mb_mount_get_avail_size("/cache");
-    } else if (mb_starts_with(path, "/data")) {
-        avail_space = mb_mount_get_avail_size("/data");
-    } else {
-        LOGE("%s: Does not reside on /system, /cache, or /data", path);
-        goto error;
+        return -1;
     }
 
     struct stat sb;
     if (stat(path, &sb) < 0) {
         if (errno != ENOENT) {
             LOGE("%s: Failed to stat: %s", path, strerror(errno));
-            goto error;
+            return -1;
         } else {
-            LOGD("%s: Creating new %s ext4 image", path, size_str);
-
-            // New size will be the empty space on the partition
-            size_str = mb_uint64_to_string(avail_space / 1024 / 1024, NULL, "M");
+            LOGD("%s: Creating new %s ext4 image", path, IMAGE_SIZE);
 
             // Create new image
-            const char *argv[] =
-                    { "make_ext4fs", "-l", size_str, path, NULL };
+            const char *argv[] = { "make_ext4fs", "-l", IMAGE_SIZE, path, NULL };
             if (mb_run_command((char **) argv) != 0) {
                 LOGE("%s: Failed to create image", path);
-                goto error;
+                return -1;
             }
-            goto success;
+            return 0;
         }
     }
 
-    // Unset uninit_bg to avoid this bug, which is not patched in some Android
-    // kernels (well, at least hammerhead's kernel)
-    // http://www.redhat.com/archives/dm-devel/2012-June/msg00029.html
-    const char *tune2fs_argv[] =
-            { MB_TEMP "/tune2fs", "-O", "^uninit_bg", path, NULL };
-    if (mb_run_command((char **) tune2fs_argv) != 0) {
-        LOGE("%s: Failed to clear uninit_bg flag", path);
-        goto error;
-    }
-
-    // Force an fsck to make resize2fs happy
-    const char *e2fsck_argv[] =
-            { MB_TEMP "/e2fsck", "-f", "-y", path, NULL };
-    int ret = mb_run_command((char **) e2fsck_argv);
-    // 0 = no errors; 1 = errors were corrected
-    if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
-        LOGE("%s: Failed to run e2fsck", path);
-        goto error;
-    }
-
-    // New size is the size of the image + the free space on the partition
-    size_str = mb_uint64_to_string(
-            (avail_space + sb.st_size) / 1024 / 1024, NULL, "M");
-
-    LOGD("%s: Enlarging to %s", path, size_str);
-
-    // Enlarge existing image
-    const char *resize2fs_argv[] =
-            { MB_TEMP "/resize2fs", "-f", "-p", path, size_str, NULL };
-    if (mb_run_command((char **) resize2fs_argv) != 0) {
-        LOGE("%s: Failed to run resize2fs", path);
-        goto error;
-    }
-
-    // Rerun e2fsck to ensure we don't get mounted read-only
-    mb_run_command((char **) e2fsck_argv);
-
-success:
-    free(size_str);
-    return 0;
-
-error:
-    free(size_str);
+    LOGE("%s: File already exists", path);
     return -1;
-}
-
-/*!
- * \brief Shrink an image to its minimum size + 10MiB
- *
- * \param path Image file path
- *
- * \return 0 on success, -1 on failure
- */
-static int shrink_image(const char *path)
-{
-    // The ext4 superblock may have a larger size than our file, so we have to
-    // increase the size of the image file (with holes, of course) before
-    // calling e2fsck
-    struct ext4_info info;
-    if (mb_ext4_get_info(path, &info) < 0) {
-        LOGE("%s: Failed to read ext4 superblock", path);
-        return -1;
-    }
-
-    LOGD("ext4 block count: %" PRIu32, info.block_count);
-    LOGD("ext4 block size: %" PRIu32, info.block_size);
-
-    LOGD("Truncating image at %" PRIu64 " bytes",
-         (uint64_t) info.block_count * info.block_size);
-
-    int fd = open(path, O_WRONLY);
-    if (fd < 0) {
-        LOGE("%s: Failed to open: %s", path, strerror(errno));
-        return -1;
-    }
-    if (ftruncate(fd, info.block_count * info.block_size) < 0) {
-        LOGE("%s: Failed to truncate: %s", path, strerror(errno));
-        close(fd);
-        return -1;
-    }
-    close(fd);
-
-    // Force an fsck to make resize2fs happy
-    const char *e2fsck_argv[] = { MB_TEMP "/e2fsck", "-f", "-y", path, NULL };
-    int ret = mb_run_command((char **) e2fsck_argv);
-    // 0 = no errors; 1 = errors were corrected
-    if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
-        LOGE("%s: Failed to run e2fsck", path);
-        return -1;
-    }
-
-    // Shrink image
-
-    uint64_t minimum = ext4_get_minimum_size(path);
-    if (!minimum) {
-        LOGE("%s: Failed to determine minimum size", path);
-        return -1;
-    }
-    minimum *= info.block_size;
-
-    off_t size_mib = minimum /1024 / 1024 + 10;
-    size_t len = 3; // 'M', '\0', and first digit
-    for (int n = size_mib; n /= 10; ++len);
-    char *size_str = malloc(len);
-    snprintf(size_str, len, "%jdM", (intmax_t) size_mib);
-
-    const char *argv[] =
-            { MB_TEMP "/resize2fs", "-f", "-p", path, size_str, NULL };
-    if (mb_run_command((char **) argv) != 0) {
-        LOGE("%s: Failed to resize to %s", path, size_str);
-        return -1;
-    }
-
-    // Rerun e2fsck to ensure we don't get mounted read-only
-    mb_run_command((char **) e2fsck_argv);
-
-    LOGD("%s: Shrunken to %s", path, size_str);
-
-    return 0;
 }
 
 /*!
@@ -1147,6 +909,13 @@ static int system_image_copy(const char *source, const char *image, int reverse)
     struct stat sb;
     char *loopdev = NULL;
 
+    if (stat(source, &sb) < 0
+            && mb_mkdir_recursive(source, 0755) < 0) {
+        LOGE("Failed to create %s: %s",
+             source, strerror(errno));
+        goto error;
+    }
+
     if (stat(MB_TEMP "/.system.tmp", &sb) < 0
             && mkdir(MB_TEMP "/.system.tmp", 0755) < 0) {
         LOGE("Failed to create %s: %s",
@@ -1379,12 +1148,6 @@ static int update_binary(void)
     LOGD("Boot partition SHA1sum: %s", digest);
 
 
-    // Extract e2fsck and resize2fs
-    if (setup_e2fsprogs() < 0) {
-        ui_print("Failed to extract e2fsprogs");
-        goto error;
-    }
-
 
     // Extract busybox's unzip tool with support for zip file data descriptors
     if (setup_unzip() < 0) {
@@ -1406,21 +1169,27 @@ static int update_binary(void)
         goto error;
     }
 
-    if (rom->system_uses_image) {
-        if (create_or_enlarge_image(rom->system_path) < 0) {
-            ui_print("Failed to create or enlarge image %s", rom->system_path);
+    // Create a temporary image if the zip file has a system.transfer.list file
+    struct exists_info info[] = {
+        { "system.transfer.list", 0 },
+        { NULL, 0}
+    };
+    if (mb_archive_exists(zip_file, info) < 0) {
+        ui_print("Failed to read zip file");
+        goto error;
+    }
+
+    if (!info[0].exists) {
+        if (mb_bind_mount(rom->system_path, 0771, CHROOT "/system", 0771) < 0) {
+            ui_print("Failed to bind mount %s to %s",
+                     rom->system_path, CHROOT "/system");
             goto error;
         }
-
-        // The installer will handle the mounting and unmounting
-        mb_create_empty_file(CHROOT MB_TEMP "/system.img");
-        MOUNT_CHECKED(rom->system_path, CHROOT MB_TEMP "/system.img",
-                      "", MS_BIND, "");
     } else {
         ui_print("Copying system to temporary image");
 
         // Create temporary image in /data
-        if (create_or_enlarge_image("/data/.system.img.tmp") < 0) {
+        if (create_temporary_image("/data/.system.img.tmp") < 0) {
             ui_print("Failed to create temporary image %s",
                      "/data/.system.img.tmp");
             goto error;
@@ -1486,14 +1255,7 @@ static int update_binary(void)
     mb_run_command_chroot(CHROOT, (char **) umount_data);
 
 
-    if (rom->system_uses_image) {
-        // Shrink system image file
-        umount(CHROOT "/system");
-        if (shrink_image(rom->system_path) < 0) {
-            ui_print("Failed to shrink system image");
-            goto error;
-        }
-    } else {
+    if (info[0].exists) {
         ui_print("Copying temporary image to system");
 
         // Format system directory
@@ -1703,7 +1465,7 @@ int update_binary_main(int argc, char *argv[])
     output_fd_str = argv[2];
     zip_file = argv[3];
 
-    // A bad time messes up the ext4 utilities
+    // 0 epoch time tends to screw things up...
     struct timeval tv;
     gettimeofday(&tv, NULL);
 

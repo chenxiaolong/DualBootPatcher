@@ -24,7 +24,13 @@ struct extract_info {
     const char *to;
 };
 
+struct exists_info {
+    const char *path;
+    int exists;
+};
+
 int mb_extract_archive(const char *filename, const char *target);
 int mb_extract_files(const char *filename, const char *target,
                      const char **files);
 int mb_extract_files2(const char *filename, const struct extract_info *files);
+int mb_archive_exists(const char *filename, struct exists_info *files);

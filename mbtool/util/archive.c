@@ -336,3 +336,46 @@ error:
 
     return -1;
 }
+
+int mb_archive_exists(const char *filename, struct exists_info *files)
+{
+    struct archive *in = NULL;
+    struct archive_entry *entry;
+    int ret;
+    struct exists_info *files_ptr;
+
+    if (!files) {
+        goto error;
+    }
+
+    for (files_ptr = files; files_ptr->path; ++files_ptr) {
+        files_ptr->exists = 0;
+    }
+
+    if (setup_input(&in, filename) < 0) {
+        goto error;
+    }
+
+    while ((ret = archive_read_next_header(in, &entry)) == ARCHIVE_OK) {
+        for (files_ptr = files; files_ptr->path; ++files_ptr) {
+            if (strcmp(archive_entry_pathname(entry), files_ptr->path) == 0) {
+                files_ptr->exists = 1;
+            }
+        }
+    }
+
+    if (ret != ARCHIVE_EOF) {
+        LOGE("Archive extraction ended without reaching EOF: %s",
+             archive_error_string(in));
+        goto error;
+    }
+
+    archive_read_free(in);
+
+    return 0;
+
+error:
+    archive_read_free(in);
+
+    return -1;
+}

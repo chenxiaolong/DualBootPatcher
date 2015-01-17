@@ -381,13 +381,10 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for mbtool
     // +1 for aromawrapper.sh
     // +1 for bb-wrapper.sh
-    // +1 for e2fsck
-    // +1 for resize2fs
-    // +1 for tune2fs
     // +1 for unzip
     // +1 for device
     // +1 for libmbp-mini.so
-    MAX_PROGRESS_CB(count + 10);
+    MAX_PROGRESS_CB(count + 7);
     PROGRESS_CB(progress);
 
     if (!openInputArchive()) {
@@ -466,51 +463,6 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
         aOutput, "multiboot/bb-wrapper.sh",
         pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    RETURN_IF_CANCELLED
-
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/e2fsck");
-
-    // Add e2fsck
-    result = FileUtils::laAddFile(
-            aOutput, "multiboot/e2fsck",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/e2fsck");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    RETURN_IF_CANCELLED
-
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/resize2fs");
-
-    // Add resize2fs
-    result = FileUtils::laAddFile(
-            aOutput, "multiboot/resize2fs",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/resize2fs");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    RETURN_IF_CANCELLED
-
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/tune2fs");
-
-    // Add tune2fs
-    result = FileUtils::laAddFile(
-            aOutput, "multiboot/tune2fs",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/tune2fs");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;

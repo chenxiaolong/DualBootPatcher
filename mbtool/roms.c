@@ -96,8 +96,8 @@ static void rom_cleanup(struct rom *rom);
 static void rom_dump(struct rom *rom);
 #endif
 static int add_rom(struct roms *roms, char *id, char *name,
-                   char *description, int system_uses_image, char *system_path,
-                   char *cache_path, char *data_path);
+                   char *description, char *system_path, char *cache_path,
+                   char *data_path);
 
 static void package_init(struct package *pkg);
 static void package_cleanup(struct package *pkg);
@@ -136,13 +136,8 @@ static void rom_dump(struct rom *rom)
         LOGD("- Name:                      %s", rom->name);
     if (rom->description)
         LOGD("- Description:               %s", rom->description);
-    if (rom->system_image_path) {
-        if (rom->system_uses_image) {
-            LOGD("- /system image path:        %s", rom->system_path);
-        } else {
-            LOGD("- /system bind mount source: %s", rom->system_path);
-        }
-    }
+    if (rom->system_path)
+        LOGD("- /system bind mount source: %s", rom->system_path);
     if (rom->cache_path)
         LOGD("- /cache bind mount source:  %s", rom->cache_path);
     if (rom->data_path)
@@ -151,8 +146,8 @@ static void rom_dump(struct rom *rom)
 #endif
 
 static int add_rom(struct roms *roms, char *id, char *name,
-                   char *description, int system_uses_image, char *system_path,
-                   char *cache_path, char *data_path)
+                   char *description, char *system_path, char *cache_path,
+                   char *data_path)
 {
     if (roms->len == 0) {
         roms->list = malloc(1 * sizeof(struct rom));
@@ -169,8 +164,6 @@ static int add_rom(struct roms *roms, char *id, char *name,
         r->name = strdup(name);
     if (description)
         r->description = strdup(description);
-
-    r->system_uses_image = system_uses_image;
 
     if (system_path)
         r->system_path = strdup(system_path);
@@ -190,22 +183,22 @@ static int add_rom(struct roms *roms, char *id, char *name,
 
 int mb_roms_get_builtin(struct roms *roms)
 {
-    add_rom(roms, "primary", NULL, NULL, 0, SYSTEM, CACHE, DATA);
+    add_rom(roms, "primary", NULL, NULL, SYSTEM, CACHE, DATA);
 
-    // /system/multiboot/dual/system.img
+    // /system/multiboot/dual/system/
     // /cache/multiboot/dual/cache/
     // /data/multiboot/dual/data/
 
-    // /cache/multiboot/%s/system.img
+    // /cache/multiboot/%s/system/
     // /system/multiboot/%s/cache/
     // /data/multiboot/%s/data/
 
-    // /data/multiboot/%s/system.img
+    // /data/multiboot/%s/system/
     // /data/multiboot/%s/cache/
     // /data/multiboot/%s/data/
 
-    add_rom(roms, "dual", NULL, NULL, 1,
-            SYSTEM SEP "multiboot" SEP "dual" SEP "system.img",
+    add_rom(roms, "dual", NULL, NULL,
+            SYSTEM SEP "multiboot" SEP "dual" SEP "system",
             CACHE SEP "multiboot" SEP "dual" SEP "cache",
             DATA SEP "multiboot" SEP "dual" SEP "data");
 
@@ -215,7 +208,7 @@ int mb_roms_get_builtin(struct roms *roms)
     char cache[50] = { 0 };
     char data[50] = { 0 };
     for (int i = 0; i < 3; ++i) {
-        const char *fmtSystem = CACHE SEP "multiboot" SEP "%s" SEP "system.img";
+        const char *fmtSystem = CACHE SEP "multiboot" SEP "%s" SEP "system";
         const char *fmtCache = SYSTEM SEP "multiboot" SEP "%s" SEP "cache";
         const char *fmtData = DATA SEP "multiboot" SEP "%s" SEP "data";
 
@@ -224,7 +217,7 @@ int mb_roms_get_builtin(struct roms *roms)
         snprintf(cache, 50, fmtCache, id);
         snprintf(data, 50, fmtData, id);
 
-        add_rom(roms, id, NULL, NULL, 1, system, cache, data);
+        add_rom(roms, id, NULL, NULL, system, cache, data);
     }
 
     return 0;

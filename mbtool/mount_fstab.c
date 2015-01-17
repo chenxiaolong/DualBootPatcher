@@ -332,32 +332,8 @@ int mount_fstab(const char *fstab_path)
     strlcat(target_cache, rom->cache_path + 1, sizeof(target_cache));
     strlcat(target_data, rom->data_path + 1, sizeof(target_data));
 
-    if (rom->system_uses_image) {
-        char *loopdev = NULL;
-
-        if (!(loopdev = mb_loopdev_find_unused())) {
-            LOGE("Failed to find unused loop device: %s", strerror(errno));
-            goto error;
-        }
-
-        if (mb_loopdev_setup_device(loopdev, target_system, 0, 0) < 0) {
-            LOGE("Failed to setup loop device %s: %s", loopdev, strerror(errno));
-            free(loopdev);
-            goto error;
-        }
-
-        if (mount(loopdev, "/system", "ext4", 0, "") < 0) {
-            LOGE("Failed to mount %s at %s: %s",
-                 target_system, "/system", strerror(errno));
-            free(loopdev);
-            goto error;
-        }
-
-        free(loopdev);
-    } else {
-        if (mb_bind_mount(target_system, 0771, "/system", 0771) < 0) {
-            goto error;
-        }
+    if (mb_bind_mount(target_system, 0771, "/system", 0771) < 0) {
+        goto error;
     }
 
     if (mb_bind_mount(target_cache, 0771, "/cache", 0771) < 0) {

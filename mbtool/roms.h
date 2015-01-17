@@ -83,7 +83,6 @@ struct rom {
     char *id;
     char *name;
     char *description;
-    int system_uses_image;
     char *system_path;
     char *cache_path;
     char *data_path;

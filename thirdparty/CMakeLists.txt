@@ -290,15 +290,11 @@ if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs)
     )
 endif()
 
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs/
-    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
-    COMPONENT Libraries
-    FILES_MATCHING
-    PATTERN e2fsck
-    PATTERN resize2fs
-    PATTERN tune2fs
-)
+#install(
+#    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs/
+#    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+#    COMPONENT Libraries
+#)
 
 
 ################################################################################
