@@ -19,5 +19,8 @@
 
 #pragma once
 
+#include <inttypes.h>
+
 int mb_starts_with(const char *string, const char *prefix);
 int mb_ends_with(const char *string, const char *suffix);
+char * mb_uint64_to_string(uint64_t number, const char *prefix, const char *suffix);

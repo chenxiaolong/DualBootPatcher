@@ -19,6 +19,8 @@
 
 #include "util/string.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int mb_starts_with(const char *string, const char *prefix)
@@ -47,4 +49,24 @@ int mb_ends_with(const char *string, const char *suffix)
     }
 
     return strcmp(string + string_len - suffix_len, suffix) == 0;
+}
+
+char * mb_uint64_to_string(uint64_t number, const char *prefix, const char *suffix) {
+    size_t len = 2; // '\0', and first digit
+
+    if (prefix) {
+        len += strlen(prefix);
+    }
+    if (suffix) {
+        len += strlen(suffix);
+    }
+
+    for (uint64_t n = number; n /= 10; ++len);
+
+    char *str = malloc(len);
+    if (str) {
+        snprintf(str, len, "%s%" PRIu64 "%s",
+                 prefix ? prefix : "", number, suffix ? suffix : "");
+    }
+    return str;
 }
