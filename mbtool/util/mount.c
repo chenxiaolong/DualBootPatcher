@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 #include <unistd.h>
 
 #include "external/mntent.h"
@@ -126,4 +127,26 @@ int mb_bind_mount(const char *source, mode_t source_perms,
     }
 
     return 0;
+}
+
+int64_t mb_mount_get_total_size(const char *mountpoint)
+{
+    struct statfs sfs;
+
+    if (statfs(mountpoint, &sfs) < 0) {
+        return 0;
+    }
+
+    return sfs.f_bsize * sfs.f_blocks;
+}
+
+int64_t mb_mount_get_avail_size(const char *mountpoint)
+{
+    struct statfs sfs;
+
+    if (statfs(mountpoint, &sfs) < 0) {
+        return 0;
+    }
+
+    return sfs.f_bsize * sfs.f_bavail;
 }

@@ -25,3 +25,5 @@ int mb_is_mounted(const char *mountpoint);
 int mb_unmount_all(const char *dir);
 int mb_bind_mount(const char *source, mode_t source_perms,
                   const char *target, mode_t target_perms);
+int64_t mb_mount_get_total_size(const char *mountpoint);
+int64_t mb_mount_get_avail_size(const char *mountpoint);
