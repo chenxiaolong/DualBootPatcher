@@ -44,11 +44,13 @@
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/directory.h"
+#include "util/ext4.h"
 #include "util/file.h"
 #include "util/logging.h"
 #include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/properties.h"
+#include "util/string.h"
 
 
 // Set to 1 to spawn a shell after installation
@@ -504,6 +506,73 @@ static int setup_busybox_wrapper(void)
 }
 
 /*!
+ * \brief Get minimum size of ext4 image as reported by resize2fs
+ *
+ * \return Minimum size if greater than 0, 0 on failure
+ */
+uint64_t ext4_get_minimum_size(const char *path)
+{
+    int fds[2];
+    if (pipe(fds) < 0) {
+        LOGE("Failed to create pipes: %s", strerror(errno));
+        return 0;
+    }
+
+    pid_t pid;
+
+    switch (pid = fork()) {
+    case -1:
+        close(fds[0]);
+        close(fds[1]);
+        return 0;
+
+    case 0:
+        close(fds[0]);
+        dup2(fds[1], STDOUT_FILENO);
+        dup2(fds[1], STDERR_FILENO);
+        close(fds[1]);
+        execlp(MB_TEMP "/resize2fs", MB_TEMP "/resize2fs", "-P", path, NULL);
+        exit(127);
+    }
+
+    FILE *fp = fdopen(fds[0], "rb");
+    close(fds[1]);
+
+    static const char *magic = "Estimated minimum size of the filesystem: ";
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    uint64_t block_count = (uint64_t) -1;
+
+    while ((read = getline(&line, &len, fp)) >= 0) {
+        if (strstr(line, magic)) {
+            char *pos = line + strlen(magic);
+            char *temp;
+            uint64_t num = strtoull(pos, &temp, 0);
+            if (*temp == '\0' || *temp == '\n') {
+                block_count = num;
+                break;
+            }
+        }
+    }
+
+    free(line);
+
+    fclose(fp);
+    int status;
+    do {
+        pid = waitpid(pid, &status, 0);
+    } while (pid == -1 && errno == EINTR);
+
+    if (block_count == (uint64_t) -1) {
+        LOGE("%s: Failed to determine minimum block count", path);
+        return 0;
+    }
+
+    return block_count;
+}
+
+/*!
  * \brief Create new ext4 image or expand existing image
  *
  * Create a 3GB image image (or extend an existing one) for installing a ROM.
@@ -517,30 +586,46 @@ static int setup_busybox_wrapper(void)
  */
 static int create_or_enlarge_image(const char *path)
 {
-#define IMAGE_SIZE "3G"
+    char *size_str = NULL;
 
     if (mb_mkdir_parent(path, S_IRWXU) < 0) {
         LOGE("%s: Failed to create parent directory: %s",
              path, strerror(errno));
-        return -1;
+        goto error;
+    }
+
+    uint64_t avail_space;
+
+    if (mb_starts_with(path, "/system")) {
+        avail_space = mb_mount_get_avail_size("/system");
+    } else if (mb_starts_with(path, "/cache")) {
+        avail_space = mb_mount_get_avail_size("/cache");
+    } else if (mb_starts_with(path, "/data")) {
+        avail_space = mb_mount_get_avail_size("/data");
+    } else {
+        LOGE("%s: Does not reside on /system, /cache, or /data", path);
+        goto error;
     }
 
     struct stat sb;
     if (stat(path, &sb) < 0) {
         if (errno != ENOENT) {
             LOGE("%s: Failed to stat: %s", path, strerror(errno));
-            return -1;
+            goto error;
         } else {
-            LOGD("%s: Creating new %s ext4 image", path, IMAGE_SIZE);
+            LOGD("%s: Creating new %s ext4 image", path, size_str);
+
+            // New size will be the empty space on the partition
+            size_str = mb_uint64_to_string(avail_space / 1024 / 1024, NULL, "M");
 
             // Create new image
             const char *argv[] =
-                    { "make_ext4fs", "-l", IMAGE_SIZE, path, NULL };
+                    { "make_ext4fs", "-l", size_str, path, NULL };
             if (mb_run_command((char **) argv) != 0) {
                 LOGE("%s: Failed to create image", path);
-                return -1;
+                goto error;
             }
-            return 0;
+            goto success;
         }
     }
 
@@ -551,7 +636,7 @@ static int create_or_enlarge_image(const char *path)
             { MB_TEMP "/tune2fs", "-O", "^uninit_bg", path, NULL };
     if (mb_run_command((char **) tune2fs_argv) != 0) {
         LOGE("%s: Failed to clear uninit_bg flag", path);
-        return -1;
+        goto error;
     }
 
     // Force an fsck to make resize2fs happy
@@ -561,23 +646,33 @@ static int create_or_enlarge_image(const char *path)
     // 0 = no errors; 1 = errors were corrected
     if (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1) {
         LOGE("%s: Failed to run e2fsck", path);
-        return -1;
+        goto error;
     }
 
-    LOGD("%s: Enlarging to %s", path, IMAGE_SIZE);
+    // New size is the size of the image + the free space on the partition
+    size_str = mb_uint64_to_string(
+            (avail_space + sb.st_size) / 1024 / 1024, NULL, "M");
+
+    LOGD("%s: Enlarging to %s", path, size_str);
 
     // Enlarge existing image
     const char *resize2fs_argv[] =
-            { MB_TEMP "/resize2fs", "-f", "-p", path, IMAGE_SIZE, NULL };
+            { MB_TEMP "/resize2fs", "-f", "-p", path, size_str, NULL };
     if (mb_run_command((char **) resize2fs_argv) != 0) {
         LOGE("%s: Failed to run resize2fs", path);
-        return -1;
+        goto error;
     }
 
     // Rerun e2fsck to ensure we don't get mounted read-only
     mb_run_command((char **) e2fsck_argv);
 
+success:
+    free(size_str);
     return 0;
+
+error:
+    free(size_str);
+    return -1;
 }
 
 /*!
@@ -589,6 +684,33 @@ static int create_or_enlarge_image(const char *path)
  */
 static int shrink_image(const char *path)
 {
+    // The ext4 superblock may have a larger size than our file, so we have to
+    // increase the size of the image file (with holes, of course) before
+    // calling e2fsck
+    struct ext4_info info;
+    if (mb_ext4_get_info(path, &info) < 0) {
+        LOGE("%s: Failed to read ext4 superblock", path);
+        return -1;
+    }
+
+    LOGD("ext4 block count: %" PRIu32, info.block_count);
+    LOGD("ext4 block size: %" PRIu32, info.block_size);
+
+    LOGD("Truncating image at %" PRIu64 " bytes",
+         (uint64_t) info.block_count * info.block_size);
+
+    int fd = open(path, O_WRONLY);
+    if (fd < 0) {
+        LOGE("%s: Failed to open: %s", path, strerror(errno));
+        return -1;
+    }
+    if (ftruncate(fd, info.block_count * info.block_size) < 0) {
+        LOGE("%s: Failed to truncate: %s", path, strerror(errno));
+        close(fd);
+        return -1;
+    }
+    close(fd);
+
     // Force an fsck to make resize2fs happy
     const char *e2fsck_argv[] = { MB_TEMP "/e2fsck", "-f", "-y", path, NULL };
     int ret = mb_run_command((char **) e2fsck_argv);
@@ -599,37 +721,31 @@ static int shrink_image(const char *path)
     }
 
     // Shrink image
-    // resize2fs will not go below the worst case scenario, so multiple resizes
-    // are needed to achieve the "true" minimum
-    const char *resize2fs_argv[] =
-            { MB_TEMP "/resize2fs", "-f", "-p", "-M", path, NULL };
-    for (int i = 0; i < 1 /* 5 */; ++i) {
-        if (mb_run_command((char **) resize2fs_argv) != 0) {
-            LOGE("%s: Failed to run resize2fs", path);
-            return -1;
-        }
+
+    uint64_t minimum = ext4_get_minimum_size(path);
+    if (!minimum) {
+        LOGE("%s: Failed to determine minimum size", path);
+        return -1;
     }
+    minimum *= info.block_size;
 
-    // Enlarge by 10MB in case the user wants to modify /system/build.prop or
-    // something
-    struct stat sb;
-    if (stat(path, &sb) == 0) {
-        off_t size_mib = sb.st_size / 1024 / 1024 + 10;
-        size_t len = 3; // 'M', '\0', and first digit
-        for (int n = size_mib; n /= 10; ++len);
-        char *size_str = malloc(len);
-        snprintf(size_str, len, "%jdM", (intmax_t) size_mib);
+    off_t size_mib = minimum /1024 / 1024 + 10;
+    size_t len = 3; // 'M', '\0', and first digit
+    for (int n = size_mib; n /= 10; ++len);
+    char *size_str = malloc(len);
+    snprintf(size_str, len, "%jdM", (intmax_t) size_mib);
 
-        // Ignore errors here
-        const char *argv[] =
-                { MB_TEMP "/resize2fs", "-f", "-p", path, size_str, NULL };
-        mb_run_command((char **) argv);
-
-        free(size_str);
+    const char *argv[] =
+            { MB_TEMP "/resize2fs", "-f", "-p", path, size_str, NULL };
+    if (mb_run_command((char **) argv) != 0) {
+        LOGE("%s: Failed to resize to %s", path, size_str);
+        return -1;
     }
 
     // Rerun e2fsck to ensure we don't get mounted read-only
     mb_run_command((char **) e2fsck_argv);
+
+    LOGD("%s: Shrunken to %s", path, size_str);
 
     return 0;
 }
