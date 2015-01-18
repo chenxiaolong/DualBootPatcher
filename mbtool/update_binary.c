@@ -1184,7 +1184,7 @@ static int update_binary(void)
         goto error;
     }
 
-    if (!info[0].exists) {
+    if (!info[0].exists && strcmp(rom->id, "primary") != 0) {
         if (mb_bind_mount(rom->system_path, 0771, CHROOT "/system", 0771) < 0) {
             ui_print("Failed to bind mount %s to %s",
                      rom->system_path, CHROOT "/system");
@@ -1260,7 +1260,7 @@ static int update_binary(void)
     mb_run_command_chroot(CHROOT, (char **) umount_data);
 
 
-    if (info[0].exists) {
+    if (info[0].exists || strcmp(rom->id, "primary") == 0) {
         ui_print("Copying temporary image to system");
 
         // Format system directory
