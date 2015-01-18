@@ -48,8 +48,6 @@ public class RomUtils {
         public String cache;
         public String data;
 
-        public boolean usesSystemImage;
-
         // Identifiers
         public String id;
 
@@ -62,7 +60,6 @@ public class RomUtils {
             system = in.readString();
             cache = in.readString();
             data = in.readString();
-            usesSystemImage = in.readInt() != 0;
             id = in.readString();
             thumbnailPath = in.readString();
         }
@@ -77,7 +74,6 @@ public class RomUtils {
             dest.writeString(system);
             dest.writeString(cache);
             dest.writeString(data);
-            dest.writeInt(usesSystemImage ? 1 : 0);
             dest.writeString(id);
             dest.writeString(thumbnailPath);
         }
@@ -130,7 +126,6 @@ public class RomUtils {
             if (isBootedInPrimary()) {
                 info = new RomInformation();
 
-                info.usesSystemImage = false;
                 info.system = "/system";
                 info.cache = "/cache";
                 info.data = "/data";
@@ -142,7 +137,6 @@ public class RomUtils {
             } else if (new RootFile("/raw-system/build.prop").isFile()) {
                 info = new RomInformation();
 
-                info.usesSystemImage = false;
                 info.system = "/raw-system";
                 info.cache = "/raw-cache";
                 info.data = "/raw-data";
@@ -153,11 +147,10 @@ public class RomUtils {
                 mRoms.add(info);
             }
 
-            if (new RootFile("/raw-system/multiboot/dual/system.img").isFile()) {
+            if (new RootFile("/raw-system/multiboot/dual/system").isDirectory()) {
                 info = new RomInformation();
 
-                info.usesSystemImage = true;
-                info.system = "/raw-system/multiboot/dual/system.img";
+                info.system = "/raw-system/multiboot/dual/system";
                 info.cache = "/raw-cache/multiboot/dual/cache";
                 info.data = "/raw-data/multiboot/dual/data";
                 info.id = SECONDARY_ID;
@@ -165,11 +158,10 @@ public class RomUtils {
                         + "/MultiBoot/" + SECONDARY_ID + "/thumbnail.webp";
 
                 mRoms.add(info);
-            } else if (new RootFile("/system/multiboot/dual/system.img").isFile()) {
+            } else if (new RootFile("/system/multiboot/dual/system").isDirectory()) {
                 info = new RomInformation();
 
-                info.usesSystemImage = true;
-                info.system = "/system/multiboot/dual/system.img";
+                info.system = "/system/multiboot/dual/system";
                 info.cache = "/cache/multiboot/dual/cache";
                 info.data = "/data/multiboot/dual/data";
                 info.id = SECONDARY_ID;
@@ -182,17 +174,16 @@ public class RomUtils {
             int max = 10;
             for (int i = 0; i < max; i++) {
                 String id = MULTI_ID_PREFIX + i;
-                String systemPathRaw = "/raw-cache/multiboot/" + id + "/system.img";
+                String systemPathRaw = "/raw-cache/multiboot/" + id + "/system";
                 String cachePathRaw = "/raw-system/multiboot/" + id + "/cache";
                 String dataPathRaw = "/raw-data/multiboot/" + id + "/data";
-                String systemPath = "/cache/multiboot/" + id + "/system.img";
+                String systemPath = "/cache/multiboot/" + id + "/system";
                 String cachePath = "/system/multiboot/" + id + "/cache";
                 String dataPath = "/data/multiboot/" + id + "/data";
 
-                if (new RootFile(systemPathRaw).isFile()) {
+                if (new RootFile(systemPathRaw).isDirectory()) {
                     info = new RomInformation();
 
-                    info.usesSystemImage = true;
                     info.system = systemPathRaw;
                     info.cache = cachePathRaw;
                     info.data = dataPathRaw;
@@ -204,7 +195,6 @@ public class RomUtils {
                 } else if (new RootFile(systemPath).isDirectory()) {
                     info = new RomInformation();
 
-                    info.usesSystemImage = true;
                     info.system = systemPath;
                     info.cache = cachePath;
                     info.data = dataPath;
@@ -276,8 +266,6 @@ public class RomUtils {
     }
 
     public static int getIconResource(RomInformation info) {
-        // Mounting the system images to read their build.prop files would be too slow, so for now,
-        // we just use a generic Android icon
         return R.drawable.rom_android;
     }
 }
