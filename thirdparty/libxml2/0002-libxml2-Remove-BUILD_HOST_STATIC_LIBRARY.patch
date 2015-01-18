@@ -1,5 +1,5 @@
 From 730c474a165784faaa47d453fc389219eb3f3e4d Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Sat, 15 Nov 2014 16:16:18 -0500
 Subject: [PATCH 2/2] libxml2: Remove BUILD_HOST_STATIC_LIBRARY
 

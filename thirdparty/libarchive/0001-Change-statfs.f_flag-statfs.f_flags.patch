@@ -1,5 +1,5 @@
 From 00760cd7db62abc2335fe1c074300f4bb4a82e35 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Sat, 15 Nov 2014 14:39:40 -0500
 Subject: [PATCH] Change statfs.f_flag -> statfs.f_flags
 

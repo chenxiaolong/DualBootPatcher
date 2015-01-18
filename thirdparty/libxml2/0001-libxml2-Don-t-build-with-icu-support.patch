@@ -1,5 +1,5 @@
 From b0f32cbd79fe2de63750d37b8c55089d801ecf43 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Sat, 15 Nov 2014 15:33:52 -0500
 Subject: [PATCH 1/2] libxml2: Don't build with icu support
 

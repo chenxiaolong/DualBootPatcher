@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+ * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

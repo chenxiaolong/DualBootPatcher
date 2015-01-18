@@ -1,5 +1,5 @@
 From 391a82e13b5400cade99ebd22294b0c2d6ca75ed Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Mon, 22 Dec 2014 02:43:11 -0500
 Subject: [PATCH] Build only the unzip applet
 

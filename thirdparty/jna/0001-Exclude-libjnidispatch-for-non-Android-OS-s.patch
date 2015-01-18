@@ -1,5 +1,5 @@
 From fbb1af610b60a06bede927add11fe16de2e9c5d7 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Fri, 12 Dec 2014 20:36:27 -0500
 Subject: [PATCH] Exclude libjnidispatch for non-Android OS's
 

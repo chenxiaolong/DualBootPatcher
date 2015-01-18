@@ -1,5 +1,5 @@
 From 0e5bcfe8c46306f31e27bfea81d5fb8ed3841025 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Sat, 10 Jan 2015 01:38:07 -0500
 Subject: [PATCH] Build static bsdtar and bsdcpio executables
 

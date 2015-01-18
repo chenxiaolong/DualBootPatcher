@@ -1,5 +1,5 @@
 From 3080f6c454e6d3d1c8e9ad63f03736c74717c1ba Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Thu, 4 Dec 2014 02:31:44 -0500
 Subject: [PATCH] jansson: Build static library on Android
 

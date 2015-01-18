@@ -1,5 +1,5 @@
 From b011bdb743a4749a8542cb046a4f92a6ba55bc22 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Fri, 12 Dec 2014 16:52:22 -0500
 Subject: [PATCH] Fix Android build
 

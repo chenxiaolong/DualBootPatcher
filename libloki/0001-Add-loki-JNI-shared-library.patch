@@ -1,5 +1,5 @@
 From 12f330b8556e45d5454227be6e1168e16e9fa7ce Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Fri, 1 Aug 2014 16:33:40 -0400
 Subject: [PATCH] Add loki JNI shared library
 
@@ -245,7 +245,7 @@ index 0000000..b886645
 +++ b/loki_jni.c
 @@ -0,0 +1,74 @@
 +/*
-+ * Copyright (C) 2014  Xiao-Long Chen <chenxiaolong@cxl.epac.to>
++ * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
 + *
 + * This program is free software: you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
