@@ -140,8 +140,24 @@ static int do_format(const char *mountpoint)
 {
     if (strcmp(mountpoint, SYSTEM) == 0
             || strcmp(mountpoint, CACHE) == 0) {
+        // Need to mount the partition if we're using an image file and it
+        // hasn't been mounted
+        int needs_mount = (strcmp(mountpoint, SYSTEM) == 0)
+                && (access("/multiboot/system.img", F_OK) == 0)
+                && (access(STAMP_FILE, F_OK) != 0);
+
+        if (needs_mount && do_mount(mountpoint) < 0) {
+            LOGE(TAG "Failed to mount %s", mountpoint);
+            return -1;
+        }
+
         if (mb_wipe_directory(mountpoint, 1) < 0) {
             LOGE(TAG "Failed to wipe %s", mountpoint);
+            return -1;
+        }
+
+        if (needs_mount && do_unmount(mountpoint) < 0) {
+            LOGE(TAG "Failed to unmount %s", mountpoint);
             return -1;
         }
     } else if (strcmp(mountpoint, DATA) == 0) {
@@ -150,6 +166,8 @@ static int do_format(const char *mountpoint)
             return -1;
         }
     }
+
+    LOGD(TAG "Formatted %s", mountpoint);
 
     return 0;
 }
