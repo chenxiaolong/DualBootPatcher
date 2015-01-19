@@ -214,14 +214,14 @@ public class PatcherUtils {
             if (d.getName().startsWith("DualBootPatcherAndroid")
                     || d.getName().startsWith("tmp")
                     || d.getName().startsWith("data-")) {
-                new RootFile(d.getAbsolutePath()).recursiveDelete();
+                new RootFile(d.getAbsolutePath(), false).recursiveDelete();
             }
         }
         for (File d : context.getFilesDir().listFiles()) {
             if (d.isDirectory()) {
                 for (File t : d.listFiles()) {
                     if (t.getName().contains("tmp")) {
-                        new RootFile(t.getAbsolutePath()).recursiveDelete();
+                        new RootFile(t.getAbsolutePath(), false).recursiveDelete();
                     }
                 }
             }
@@ -235,7 +235,7 @@ public class PatcherUtils {
 
             // Remove all previous files
             for (File d : context.getFilesDir().listFiles()) {
-                new RootFile(d.getAbsolutePath()).recursiveDelete();
+                new RootFile(d.getAbsolutePath(), false).recursiveDelete();
             }
 
             LibMiscStuff.INSTANCE.extract_archive(targetFile.getAbsolutePath(),
