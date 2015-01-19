@@ -56,7 +56,7 @@ struct tool tools[] = {
     TOOL(sepolpatch),
 #ifdef RECOVERY
     { "updater", update_binary_main }, // TWRP
-    { "update-binary", update_binary_main },
+    { "update_binary", update_binary_main }, // CWM, Philz
     { "update-binary-tool", update_binary_tool_main },
 #endif
     { NULL, NULL }
