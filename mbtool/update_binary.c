@@ -1234,6 +1234,11 @@ static int update_binary(void)
                  MB_COPY_ATTRIBUTES | MB_COPY_XATTRS);
 
 
+    // Copy file_contexts
+    mb_copy_file("/file_contexts", CHROOT "/file_contexts",
+                 MB_COPY_ATTRIBUTES | MB_COPY_XATTRS);
+
+
     // Run real update-binary
     ui_print("Running real update-binary");
     ui_print("Here we go!");
