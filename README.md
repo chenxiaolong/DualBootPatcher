@@ -70,7 +70,7 @@ Compiling from Source
         mkdir build && cd build
         cmake .. -DBUILD_ANDROID=ON
         make
-        rm -rf assets && cpack -G ZIP
+        rm -rf assets && cpack -G TXZ
         cd ../Android_GUI
         ./gradlew assembleRelease
 
@@ -79,7 +79,7 @@ Compiling from Source
         mkdir build && cd build
         cmake .. -DBUILD_ANDROID=ON -DANDROID_DEBUG=ON
         make
-        rm -rf assets && cpack -G ZIP
+        rm -rf assets && cpack -G TXZ
         cd ../Android_GUI
         ./gradlew assembleDebug
         
