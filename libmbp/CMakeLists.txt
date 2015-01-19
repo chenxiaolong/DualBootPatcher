@@ -114,7 +114,7 @@ if(BUILD_ANDROID)
                       -j${PROCESSOR_COUNT}
                       NDK_PROJECT_PATH=.
                       NDK_APPLICATION_MK=Application.mk
-                      NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmbp/out
+                      NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
                       NDK_OUT=<TMP_DIR>
                       APP_BUILD_SCRIPT=Android.mk
                       ${NDK_ARGS}
@@ -212,7 +212,7 @@ ExternalProject_Add(
                   -j${PROCESSOR_COUNT}
                   NDK_PROJECT_PATH=.
                   NDK_APPLICATION_MK=Application.mk
-                  NDK_APP_LIBS_OUT=${CMAKE_BINARY_DIR}/libmbp/out-mini
+                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out-mini
                   NDK_OUT=<TMP_DIR>
                   APP_BUILD_SCRIPT=Android-mini.mk
                   ${NDK_ARGS}

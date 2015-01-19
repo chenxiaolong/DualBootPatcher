@@ -383,8 +383,7 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for bb-wrapper.sh
     // +1 for unzip
     // +1 for device
-    // +1 for libmbp-mini.so
-    MAX_PROGRESS_CB(count + 7);
+    MAX_PROGRESS_CB(count + 6);
     PROGRESS_CB(progress);
 
     if (!openInputArchive()) {
@@ -495,20 +494,6 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/device",
             std::vector<unsigned char>(codename.begin(), codename.end()));
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    RETURN_IF_CANCELLED
-
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/libmbp-mini.so");
-
-    result = FileUtils::laAddFile(
-            aOutput, "multiboot/libmbp-mini.so",
-            pc->dataDirectory() + "/libraries/"
-                    + info->device()->architecture() + "/libmbp-mini.so");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;

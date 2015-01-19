@@ -31,6 +31,11 @@ ExternalProject_Add_Step(
     COMMAND ""
 )
 
+add_dependencies(
+    mbtool
+    mbp-mini
+)
+
 install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out/
     DESTINATION ${DATA_INSTALL_DIR}/binaries/android

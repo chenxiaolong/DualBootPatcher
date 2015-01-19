@@ -19,7 +19,6 @@
 
 #include "update_binary.h"
 
-#include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
@@ -34,6 +33,12 @@
 
 #include <archive.h>
 #include <archive_entry.h>
+
+#include <libmbp/cwrapper/cbootimage.h>
+#include <libmbp/cwrapper/ccommon.h>
+#include <libmbp/cwrapper/ccpiofile.h>
+#include <libmbp/cwrapper/cdevice.h>
+#include <libmbp/cwrapper/cpatcherconfig.h>
 
 #include "main.h"
 #include "multiboot.h"
@@ -76,7 +81,6 @@
 #define ZIP_AROMA       "multiboot/aromawrapper.zip"
 #define ZIP_BBWRAPPER   "multiboot/bb-wrapper.sh"
 #define ZIP_DEVICE      "multiboot/device"
-#define ZIP_MBP_MINI    "multiboot/libmbp-mini.so"
 
 
 static const char *interface;
@@ -84,128 +88,6 @@ static const char *output_fd_str;
 static const char *zip_file;
 
 static int output_fd;
-
-
-struct CBootImage;
-typedef struct CBootImage CBootImage;
-
-struct CCpioFile;
-typedef struct CCpioFile CCpioFile;
-
-struct CDevice;
-typedef struct CDevice CDevice;
-
-struct CPatcherError;
-typedef struct CPatcherError CPatcherError;
-
-struct CPatcherConfig;
-typedef struct CPatcherConfig CPatcherConfig;
-
-// dlopen()'ed from libmbp-mini.so
-struct libmbp {
-    void *handle;
-
-    CBootImage *     (*mbp_bootimage_create)             (void);
-    void             (*mbp_bootimage_destroy)            (CBootImage *bootImage);
-    int              (*mbp_bootimage_load_file)          (CBootImage *bootImage,
-                                                          const char *filename);
-    void             (*mbp_bootimage_create_data)        (const CBootImage *bootImage,
-                                                          void **data,
-                                                          size_t *size);
-    size_t           (*mbp_bootimage_ramdisk_image)      (const CBootImage *bootImage,
-                                                          void **data);
-    void             (*mbp_bootimage_set_ramdisk_image)  (CBootImage *bootImage,
-                                                          const void *data,
-                                                          size_t size);
-
-    CCpioFile *      (*mbp_cpiofile_create)              (void);
-    void             (*mbp_cpiofile_destroy)             (CCpioFile *cpio);
-    int              (*mbp_cpiofile_load_data)           (CCpioFile *cpio,
-                                                          const void *data,
-                                                          size_t size);
-    int              (*mbp_cpiofile_create_data)         (CCpioFile *cpio,
-                                                          int gzip,
-                                                          void **data,
-                                                          size_t *size);
-    int              (*mbp_cpiofile_add_file_from_data)  (CCpioFile *cpio,
-                                                          const void *data,
-                                                          size_t size,
-                                                          const char *name,
-                                                          unsigned int perms);
-
-    CDevice *        (*mbp_device_create)                (void);
-    void             (*mbp_device_destroy)               (CDevice *device);
-    char *           (*mbp_device_codename)              (const CDevice *device);
-    char **          (*mbp_device_boot_block_devs)       (const CDevice *device);
-
-    CPatcherConfig * (*mbp_config_create)                (void);
-    void             (*mbp_config_destroy)               (CPatcherConfig *pc);
-    char *           (*mbp_config_version)               (const CPatcherConfig *pc);
-    CDevice **       (*mbp_config_devices)               (const CPatcherConfig *pc);
-
-    void             (*mbp_free)                         (void *data);
-    void             (*mbp_free_array)                   (void **array);
-};
-
-#define DLSYM(mbp, func) \
-    dlerror(); \
-    mbp->func = dlsym(mbp->handle, #func); \
-    if ((error = dlerror())) { \
-        LOGE("dlsym() failed for '%s': %s", #func, error); \
-        return -1; \
-    }
-
-static int libmbp_init(struct libmbp *mbp, const char *path)
-{
-    mbp->handle = dlopen(path, RTLD_LAZY);
-    if (!mbp->handle) {
-        LOGE("%s: Failed to dlopen: %s", path, dlerror());
-        return -1;
-    }
-
-    // Android's dlerror() returns const char *
-    const char *error;
-
-    DLSYM(mbp, mbp_bootimage_create);
-    DLSYM(mbp, mbp_bootimage_destroy);
-    DLSYM(mbp, mbp_bootimage_load_file);
-    DLSYM(mbp, mbp_bootimage_create_data);
-    DLSYM(mbp, mbp_bootimage_ramdisk_image);
-    DLSYM(mbp, mbp_bootimage_set_ramdisk_image);
-
-    DLSYM(mbp, mbp_cpiofile_create);
-    DLSYM(mbp, mbp_cpiofile_destroy);
-    DLSYM(mbp, mbp_cpiofile_load_data);
-    DLSYM(mbp, mbp_cpiofile_create_data);
-    DLSYM(mbp, mbp_cpiofile_add_file_from_data);
-
-    DLSYM(mbp, mbp_device_create);
-    DLSYM(mbp, mbp_device_destroy);
-    DLSYM(mbp, mbp_device_codename);
-    DLSYM(mbp, mbp_device_boot_block_devs);
-
-    DLSYM(mbp, mbp_config_create);
-    DLSYM(mbp, mbp_config_destroy);
-    DLSYM(mbp, mbp_config_version);
-    DLSYM(mbp, mbp_config_devices);
-
-    DLSYM(mbp, mbp_free);
-    DLSYM(mbp, mbp_free_array);
-
-    return 0;
-}
-
-static int libmbp_destroy(struct libmbp *mbp)
-{
-    if (mbp->handle) {
-        if (dlclose(mbp->handle) < 0) {
-            LOGE("Failed to dlclose(): %s", dlerror());
-            return -1;
-        }
-    }
-
-    return 0;
-}
 
 
 static void ui_print(const char *fmt, ...)
@@ -392,7 +274,6 @@ static int extract_zip_files(void)
         { ZIP_AROMA,            MB_TEMP "/aromawrapper.zip" },
         { ZIP_BBWRAPPER,        MB_TEMP "/bb-wrapper.sh"    },
         { ZIP_DEVICE,           MB_TEMP "/device"           },
-        { ZIP_MBP_MINI,         MB_TEMP "/libmbp-mini.so"   },
         { NULL, NULL }
     };
 
@@ -989,9 +870,6 @@ static int update_binary(void)
     mb_roms_init(&r);
     mb_roms_get_builtin(&r);
 
-    struct libmbp mbp;
-    memset(&mbp, 0, sizeof(mbp));
-
     CPatcherConfig * pc = NULL;
 
     char *device = NULL;
@@ -1037,31 +915,25 @@ static int update_binary(void)
     }
 
 
-    // dlopen libmbp-mini.so
-    if (libmbp_init(&mbp, MB_TEMP "/libmbp-mini.so") < 0) {
-        ui_print("Failed to load " MB_TEMP "/libmbp-mini.so");
-        goto error;
-    }
+    pc = mbp_config_create();
 
-    pc = mbp.mbp_config_create();
-
-    char *version = mbp.mbp_config_version(pc);
+    char *version = mbp_config_version(pc);
     if (version) {
         LOGD("libmbp-mini version: %s", version);
-        mbp.mbp_free(version);
+        mbp_free(version);
     }
 
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
-    CDevice **device_list = mbp.mbp_config_devices(pc);
+    CDevice **device_list = mbp_config_devices(pc);
     for (CDevice **iter = device_list; *iter; ++iter) {
         // My C wrapper really needs some work...
-        char *codename = mbp.mbp_device_codename(*iter);
+        char *codename = mbp_device_codename(*iter);
         if (strcmp(codename, device) == 0) {
-            mbp.mbp_free(codename);
+            mbp_free(codename);
 
-            char **boot_devs = mbp.mbp_device_boot_block_devs(*iter);
+            char **boot_devs = mbp_device_boot_block_devs(*iter);
             boot_block_dev = strdup(*boot_devs);
 
             // Ensure these are available in the chroot
@@ -1088,12 +960,12 @@ static int update_binary(void)
                 free(dev_path);
             }
 
-            mbp.mbp_free_array((void **) boot_devs);
+            mbp_free_array((void **) boot_devs);
         } else {
-            mbp.mbp_free(codename);
+            mbp_free(codename);
         }
     }
-    mbp.mbp_free(device_list);
+    mbp_free(device_list);
 
     if (!boot_block_dev) {
         ui_print("Could not determine the boot block device");
@@ -1307,55 +1179,55 @@ static int update_binary(void)
 
         // Add /romid with the ROM ID to the ramdisk
 
-        CBootImage *bi = mbp.mbp_bootimage_create();
-        if (mbp.mbp_bootimage_load_file(bi, boot_block_dev) < 0) {
+        CBootImage *bi = mbp_bootimage_create();
+        if (mbp_bootimage_load_file(bi, boot_block_dev) < 0) {
             ui_print("Failed to load boot partition image");
-            mbp.mbp_bootimage_destroy(bi);
+            mbp_bootimage_destroy(bi);
             goto error;
         }
 
         void *ramdisk_data;
         size_t ramdisk_size;
-        ramdisk_size = mbp.mbp_bootimage_ramdisk_image(bi, &ramdisk_data);
+        ramdisk_size = mbp_bootimage_ramdisk_image(bi, &ramdisk_data);
 
-        CCpioFile *cpio = mbp.mbp_cpiofile_create();
-        if (mbp.mbp_cpiofile_load_data(cpio, ramdisk_data, ramdisk_size) < 0) {
+        CCpioFile *cpio = mbp_cpiofile_create();
+        if (mbp_cpiofile_load_data(cpio, ramdisk_data, ramdisk_size) < 0) {
             ui_print("Failed to load ramdisk");
-            mbp.mbp_free(ramdisk_data);
-            mbp.mbp_cpiofile_destroy(cpio);
-            mbp.mbp_bootimage_destroy(bi);
+            mbp_free(ramdisk_data);
+            mbp_cpiofile_destroy(cpio);
+            mbp_bootimage_destroy(bi);
             goto error;
         }
 
         // cpiofile keeps a copy of what it needs
-        mbp.mbp_free(ramdisk_data);
+        mbp_free(ramdisk_data);
 
-        if (mbp.mbp_cpiofile_add_file_from_data(
+        if (mbp_cpiofile_add_file_from_data(
                 cpio, rom->id, strlen(rom->id), "romid", 0444) < 0) {
             ui_print("Failed to add ROM ID to ramdisk");
-            mbp.mbp_cpiofile_destroy(cpio);
-            mbp.mbp_bootimage_destroy(bi);
+            mbp_cpiofile_destroy(cpio);
+            mbp_bootimage_destroy(bi);
             goto error;
         }
 
-        if (mbp.mbp_cpiofile_create_data(
+        if (mbp_cpiofile_create_data(
                 cpio, 1, &ramdisk_data, &ramdisk_size) < 0) {
             ui_print("Failed to create new ramdisk");
-            mbp.mbp_cpiofile_destroy(cpio);
-            mbp.mbp_bootimage_destroy(bi);
+            mbp_cpiofile_destroy(cpio);
+            mbp_bootimage_destroy(bi);
             goto error;
         }
 
-        mbp.mbp_cpiofile_destroy(cpio);
+        mbp_cpiofile_destroy(cpio);
 
-        mbp.mbp_bootimage_set_ramdisk_image(bi, ramdisk_data, ramdisk_size);
-        mbp.mbp_free(ramdisk_data);
+        mbp_bootimage_set_ramdisk_image(bi, ramdisk_data, ramdisk_size);
+        mbp_free(ramdisk_data);
 
         void *bootimg_data;
         size_t bootimg_size;
-        mbp.mbp_bootimage_create_data(bi, &bootimg_data, &bootimg_size);
+        mbp_bootimage_create_data(bi, &bootimg_data, &bootimg_size);
 
-        mbp.mbp_bootimage_destroy(bi);
+        mbp_bootimage_destroy(bi);
 
         // Backup kernel
 
@@ -1371,7 +1243,7 @@ static int update_binary(void)
         if (mb_file_write_data(path, bootimg_data, bootimg_size) < 0) {
             LOGE("Failed to write %s: %s", path, strerror(errno));
             ui_print("Failed to write %s", path);
-            mbp.mbp_free(bootimg_data);
+            mbp_free(bootimg_data);
             goto error;
         }
 
@@ -1383,11 +1255,11 @@ static int update_binary(void)
         if (mb_file_write_data(boot_block_dev, bootimg_data, bootimg_size) < 0) {
             LOGE("Failed to write %s: %s", boot_block_dev, strerror(errno));
             ui_print("Failed to write %s", boot_block_dev);
-            mbp.mbp_free(bootimg_data);
+            mbp_free(bootimg_data);
             goto error;
         }
 
-        mbp.mbp_free(bootimg_data);
+        mbp_free(bootimg_data);
     }
 
 finish:
@@ -1401,9 +1273,8 @@ finish:
 
     mb_roms_cleanup(&r);
 
-    if (mbp.handle) {
-        mbp.mbp_config_destroy(pc);
-        libmbp_destroy(&mbp);
+    if (pc) {
+        mbp_config_destroy(pc);
     }
 
     free(device);

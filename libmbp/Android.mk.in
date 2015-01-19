@@ -64,10 +64,11 @@ LOCAL_CFLAGS += -DLIBMBP_MINI
 endif
 
 LOCAL_CFLAGS += -ffunction-sections -fdata-sections -Os
+
+ifneq ($(MBP_MINI),true)
 LOCAL_LDFLAGS := -Wl,--gc-sections -Os
 
 LOCAL_LDLIBS := -lz
-ifneq ($(MBP_MINI),true)
 LOCAL_LDLIBS += -llog
 endif
 
@@ -77,4 +78,8 @@ LOCAL_STATIC_LIBRARIES := \
 	libxml2 \
 	libarchive
 
+ifeq ($(MBP_MINI),true)
+include $(BUILD_STATIC_LIBRARY)
+else
 include $(BUILD_SHARED_LIBRARY)
+endif
