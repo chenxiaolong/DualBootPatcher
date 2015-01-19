@@ -330,7 +330,9 @@ public final class CommandUtils {
             cmd.join();
             CommandResult result = cmd.getResult();
 
-            return result.exitCode;
+            if (result != null) {
+                return result.exitCode;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
