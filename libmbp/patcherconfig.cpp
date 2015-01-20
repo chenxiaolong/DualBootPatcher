@@ -44,13 +44,13 @@
 #include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
 #include "ramdiskpatchers/baconramdiskpatcher.h"
-#include "ramdiskpatchers/d800ramdiskpatcher.h"
 #include "ramdiskpatchers/falconramdiskpatcher.h"
 #include "ramdiskpatchers/floramdiskpatcher.h"
 #include "ramdiskpatchers/hammerheadramdiskpatcher.h"
 #include "ramdiskpatchers/hlteramdiskpatcher.h"
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
 #include "ramdiskpatchers/klteramdiskpatcher.h"
+#include "ramdiskpatchers/lgg2ramdiskpatcher.h"
 #endif
 
 
@@ -422,8 +422,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // LG G2
     device = new Device();
-    device->setId("d800");
-    device->setCodenames({ "d800" });
+    device->setId("lgg2");
+    device->setCodenames({ "d800", "ls980" });
     device->setName("LG G2");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
@@ -480,13 +480,13 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 {
     std::vector<std::string> list;
     list.push_back(BaconRamdiskPatcher::Id);
-    list.push_back(D800RamdiskPatcher::Id);
     list.push_back(FalconRamdiskPatcher::Id);
     list.push_back(FloAOSPRamdiskPatcher::Id);
     list.push_back(HammerheadDefaultRamdiskPatcher::Id);
     list.push_back(HlteDefaultRamdiskPatcher::Id);
     list.push_back(JflteDefaultRamdiskPatcher::Id);
     list.push_back(KlteDefaultRamdiskPatcher::Id);
+    list.push_back(LGG2RamdiskPatcher::Id);
     return list;
 }
 
@@ -575,8 +575,6 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
 
     if (id == BaconRamdiskPatcher::Id) {
         rp = new BaconRamdiskPatcher(this, info, cpio);
-    } else if (id == D800RamdiskPatcher::Id) {
-        rp = new D800RamdiskPatcher(this, info, cpio);
     } else if (id == FalconRamdiskPatcher::Id) {
         rp = new FalconRamdiskPatcher(this, info, cpio);
     } else if (id == FloAOSPRamdiskPatcher::Id) {
@@ -589,6 +587,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new JflteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == KlteDefaultRamdiskPatcher::Id) {
         rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
+    } else if (id == LGG2RamdiskPatcher::Id) {
+        rp = new LGG2RamdiskPatcher(this, info, cpio);
     }
 
     if (rp != nullptr) {

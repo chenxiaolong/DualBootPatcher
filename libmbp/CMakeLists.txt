@@ -34,7 +34,6 @@ set(MBP_SOURCES
     # Ramdisk patchers
     ramdiskpatchers/baconramdiskpatcher.cpp
     ramdiskpatchers/coreramdiskpatcher.cpp
-    ramdiskpatchers/d800ramdiskpatcher.cpp
     ramdiskpatchers/falconramdiskpatcher.cpp
     ramdiskpatchers/floramdiskpatcher.cpp
     ramdiskpatchers/galaxyramdiskpatcher.cpp
@@ -42,6 +41,7 @@ set(MBP_SOURCES
     ramdiskpatchers/hlteramdiskpatcher.cpp
     ramdiskpatchers/jflteramdiskpatcher.cpp
     ramdiskpatchers/klteramdiskpatcher.cpp
+    ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
 )
 
@@ -78,7 +78,6 @@ set(MBP_NOINST_HEADERS
     # Ramdisk patchers
     ramdiskpatchers/baconramdiskpatcher.h
     ramdiskpatchers/coreramdiskpatcher.h
-    ramdiskpatchers/d800ramdiskpatcher.h
     ramdiskpatchers/falconramdiskpatcher.h
     ramdiskpatchers/floramdiskpatcher.h
     ramdiskpatchers/galaxyramdiskpatcher.h
@@ -86,6 +85,7 @@ set(MBP_NOINST_HEADERS
     ramdiskpatchers/hlteramdiskpatcher.h
     ramdiskpatchers/jflteramdiskpatcher.h
     ramdiskpatchers/klteramdiskpatcher.h
+    ramdiskpatchers/lgg2ramdiskpatcher.h
     ramdiskpatchers/qcomramdiskpatcher.h
 )
 

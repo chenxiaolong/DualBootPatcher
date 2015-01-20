@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/d800ramdiskpatcher.h"
+#include "ramdiskpatchers/lgg2ramdiskpatcher.h"
 
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 /*! \cond INTERNAL */
-class D800RamdiskPatcher::Impl
+class LGG2RamdiskPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -36,9 +36,9 @@ public:
 /*! \endcond */
 
 
-const std::string D800RamdiskPatcher::Id = "d800/default";
+const std::string LGG2RamdiskPatcher::Id = "lgg2/default";
 
-D800RamdiskPatcher::D800RamdiskPatcher(const PatcherConfig * const pc,
+LGG2RamdiskPatcher::LGG2RamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,
                                        CpioFile * const cpio) :
     m_impl(new Impl())
@@ -48,21 +48,21 @@ D800RamdiskPatcher::D800RamdiskPatcher(const PatcherConfig * const pc,
     m_impl->cpio = cpio;
 }
 
-D800RamdiskPatcher::~D800RamdiskPatcher()
+LGG2RamdiskPatcher::~LGG2RamdiskPatcher()
 {
 }
 
-PatcherError D800RamdiskPatcher::error() const
+PatcherError LGG2RamdiskPatcher::error() const
 {
     return m_impl->error;
 }
 
-std::string D800RamdiskPatcher::id() const
+std::string LGG2RamdiskPatcher::id() const
 {
     return Id;
 }
 
-bool D800RamdiskPatcher::patchRamdisk()
+bool LGG2RamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);

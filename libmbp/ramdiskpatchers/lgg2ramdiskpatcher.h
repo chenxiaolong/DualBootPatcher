@@ -26,13 +26,13 @@
 #include "patcherinterface.h"
 
 
-class D800RamdiskPatcher : public RamdiskPatcher
+class LGG2RamdiskPatcher : public RamdiskPatcher
 {
 public:
-    explicit D800RamdiskPatcher(const PatcherConfig * const pc,
+    explicit LGG2RamdiskPatcher(const PatcherConfig * const pc,
                                 const FileInfo * const info,
                                 CpioFile * const cpio);
-    ~D800RamdiskPatcher();
+    ~LGG2RamdiskPatcher();
 
     static const std::string Id;
 
