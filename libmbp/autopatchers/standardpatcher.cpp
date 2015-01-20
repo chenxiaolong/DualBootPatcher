@@ -223,6 +223,13 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
                     RE_ARG("umount")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
+        // Quick hack for CM12
+        if (it->find("ifelse(is_mounted(\"/system\"), unmount(\"/system\"));")
+                != std::string::npos) {
+            it = lines->erase(it);
+            continue;
+        }
+
         bool isUnmountLine = MBP_regex_search(*it, re1)
                 || MBP_regex_search(*it, re2);
 
