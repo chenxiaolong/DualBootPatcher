@@ -35,6 +35,7 @@ public:
     std::vector<std::string> cacheDevs;
     std::vector<std::string> dataDevs;
     std::vector<std::string> bootDevs;
+    std::vector<std::string> extraDevs;
 };
 /*! \endcond */
 
@@ -166,4 +167,14 @@ std::vector<std::string> Device::bootBlockDevs() const
 void Device::setBootBlockDevs(std::vector<std::string> blockDevs)
 {
     m_impl->bootDevs = std::move(blockDevs);
+}
+
+std::vector<std::string> Device::extraBlockDevs() const
+{
+    return m_impl->extraDevs;
+}
+
+void Device::setExtraBlockDevs(std::vector<std::string> blockDevs)
+{
+    m_impl->extraDevs = std::move(blockDevs);
 }

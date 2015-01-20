@@ -1099,6 +1099,34 @@ static int update_binary(void)
 
         mbp_free_array((void **) boot_devs);
 
+        // Copy any other required block devices to the chroot
+        char **extra_devs = mbp_device_boot_block_devs(*cdev_iter);
+
+        for (char **extra_iter = extra_devs; *extra_iter; ++extra_iter) {
+            size_t dev_path_size = strlen(*extra_iter) + strlen(CHROOT) + 2;
+            char *dev_path = malloc(dev_path_size);
+            dev_path[0] = '\0';
+            strlcat(dev_path, CHROOT, dev_path_size);
+            strlcat(dev_path, "/", dev_path_size);
+            strlcat(dev_path, *extra_iter, dev_path_size);
+
+            if (mb_mkdir_parent(dev_path, 0755) < 0) {
+                LOGE("Failed to create parent directory of %s", dev_path);
+            }
+
+            // Follow symlinks just in case the symlink source isn't in the list
+            if (mb_copy_file(*extra_iter, dev_path, MB_COPY_ATTRIBUTES
+                                                  | MB_COPY_XATTRS
+                                                  | MB_COPY_FOLLOW_SYMLINKS) < 0) {
+                LOGE("Failed to copy %s. Continuing anyway", *extra_iter);
+            }
+
+            free(dev_path);
+        }
+
+        mbp_free_array((void **) extra_devs);
+
+
         break;
     }
 

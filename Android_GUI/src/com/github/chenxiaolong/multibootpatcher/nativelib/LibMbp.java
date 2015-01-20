@@ -137,6 +137,8 @@ public class LibMbp {
         static native void mbp_device_set_data_block_devs(CDevice device, StringArray block_devs);
         static native Pointer mbp_device_boot_block_devs(CDevice device);
         static native void mbp_device_set_boot_block_devs(CDevice device, StringArray block_devs);
+        static native Pointer mbp_device_extra_block_devs(CDevice device);
+        static native void mbp_device_set_extra_block_devs(CDevice device, StringArray block_devs);
         // END: cdevice.h
 
         // BEGIN: cfileinfo.h
@@ -1054,6 +1056,19 @@ public class LibMbp {
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_boot_block_devs(mCDevice, new StringArray(blockDevs));
+        }
+
+        public String[] getExtraBlockDevs() {
+            log(mCDevice, Device.class, "getExtraBlockDevs");
+            Pointer p = CWrapper.mbp_device_extra_block_devs(mCDevice);
+            return getStringArrayAndFree(p);
+        }
+
+        public void setExtraBlockDevs(String[] blockDevs) {
+            log(mCDevice, Device.class, "setExtraBlockDevs", (Object) blockDevs);
+            ensureNotNull(blockDevs);
+
+            CWrapper.mbp_device_set_extra_block_devs(mCDevice, new StringArray(blockDevs));
         }
     }
 

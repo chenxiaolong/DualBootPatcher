@@ -225,4 +225,16 @@ void mbp_device_set_boot_block_devs(CDevice *device, const char **block_devs)
     d->setBootBlockDevs(cstring_array_to_vector(block_devs));
 }
 
+char ** mbp_device_extra_block_devs(const CDevice *device)
+{
+    CCAST(device);
+    return vector_to_cstring_array(d->extraBlockDevs());
+}
+
+void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs)
+{
+    CAST(device);
+    d->setExtraBlockDevs(cstring_array_to_vector(block_devs));
+}
+
 }
