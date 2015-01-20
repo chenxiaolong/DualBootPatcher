@@ -29,11 +29,7 @@
 #include <sepol/sepol.h>
 
 #include "util/logging.h"
-
-
-#define SELINUX_ENFORCE_FILE "/sys/fs/selinux/enforce"
-#define SELINUX_POLICY_FILE "/sys/fs/selinux/policy"
-#define SELINUX_LOAD_FILE "/sys/fs/selinux/load"
+#include "util/selinux.h"
 
 
 // Types to make permissive
@@ -44,118 +40,6 @@ static char *permissive_types[] = {
     NULL
 };
 
-static int read_selinux_policy(const char *path, policydb_t *pdb)
-{
-    struct policy_file pf;
-    struct stat sb;
-    void *map;
-    int fd;
-    int ret;
-
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        LOGE("Failed to open %s: %s", path, strerror(errno));
-        return -1;
-    }
-
-    if (fstat(fd, &sb) < 0) {
-        LOGE("Failed to stat %s: %s", path, strerror(errno));
-        close(fd);
-        return -1;
-    }
-
-    map = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (map == MAP_FAILED) {
-        LOGE("Failed to mmap %s: %s", path, strerror(errno));
-        close(fd);
-        return -1;
-    }
-
-    policy_file_init(&pf);
-    pf.type = PF_USE_MEMORY;
-    pf.data = map;
-    pf.len = sb.st_size;
-
-    ret = policydb_read(pdb, &pf, 0);
-
-    sepol_handle_destroy(pf.handle);
-    munmap(map, sb.st_size);
-    close(fd);
-
-    return ret;
-}
-
-// /sys/fs/selinux/load requires the entire policy to be written in a single
-// write(2) call.
-// See: http://marc.info/?l=selinux&m=141882521027239&w=2
-static int write_selinux_policy(const char *path, policydb_t *pdb)
-{
-    void *data;
-    size_t len;
-    sepol_handle_t *handle;
-    int fd;
-
-    // Don't print warnings to stderr
-    handle = sepol_handle_create();
-    sepol_msg_set_callback(handle, NULL, NULL);
-
-    if (policydb_to_image(handle, pdb, &data, &len) < 0) {
-        LOGE("Failed to write policydb to memory");
-        sepol_handle_destroy(handle);
-        return -1;
-    }
-
-    fd = open(path, O_CREAT | O_TRUNC | O_RDWR, 0644);
-    if (fd < 0) {
-        LOGE("Failed to open %s: %s", path, strerror(errno));
-        sepol_handle_destroy(handle);
-        free(data);
-        return -1;
-    }
-
-    if (write(fd, data, len) < 0) {
-        LOGE("Failed to write to %s: %s", path, strerror(errno));
-        sepol_handle_destroy(handle);
-        close(fd);
-        free(data);
-        return -1;
-    }
-
-    sepol_handle_destroy(handle);
-    close(fd);
-    free(data);
-
-    return 0;
-}
-
-static void make_permissive(policydb_t *pdb, char **types)
-{
-    type_datum_t *type;
-    char **iter;
-
-    for (iter = types; *iter; iter++) {
-        type = hashtab_search(pdb->p_types.table, *iter);
-        if (!type) {
-            LOGV("Type %s not found in policy", *iter);
-            continue;
-        }
-
-        if (ebitmap_get_bit(&pdb->permissive_map, type->s.value)) {
-            LOGV("Type %s is already permissive", *iter);
-            continue;
-        }
-
-        if (ebitmap_set_bit(&pdb->permissive_map, type->s.value, 1) < 0) {
-            LOGE("Failed to set bit for type %s in the permissive map", *iter);
-            continue;
-        }
-
-        LOGD("Type %s is now permissive", *iter);
-    }
-
-    return;
-}
-
 static int patch_sepolicy_internal(const char *source, const char *target)
 {
     policydb_t pdb;
@@ -165,7 +49,7 @@ static int patch_sepolicy_internal(const char *source, const char *target)
         return -1;
     }
 
-    if (read_selinux_policy(source, &pdb) < 0) {
+    if (mb_selinux_read_policy(source, &pdb) < 0) {
         LOGE("Failed to read SELinux policy file: %s", source);
         policydb_destroy(&pdb);
         return -1;
@@ -173,9 +57,11 @@ static int patch_sepolicy_internal(const char *source, const char *target)
 
     LOGD("Policy version: %u", pdb.policyvers);
 
-    make_permissive(&pdb, permissive_types);
+    for (char **iter = permissive_types; *iter; ++iter) {
+        mb_selinux_make_permissive(&pdb, *iter);
+    }
 
-    if (write_selinux_policy(target, &pdb) < 0) {
+    if (mb_selinux_write_policy(target, &pdb) < 0) {
         LOGE("Failed to write SELinux policy file: %s", target);
         policydb_destroy(&pdb);
         return -1;
@@ -196,7 +82,7 @@ int patch_loaded_sepolicy()
     FILE *fp;
     int is_enforcing = 0;
 
-    fp = fopen(SELINUX_ENFORCE_FILE, "rb");
+    fp = fopen(MB_SELINUX_ENFORCE_FILE, "rb");
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't
@@ -204,13 +90,13 @@ int patch_loaded_sepolicy()
             LOGV("Kernel does not support SELinux. Policy won't be patched");
             return 0;
         } else {
-            LOGE("Failed to open %s: %s", SELINUX_ENFORCE_FILE, strerror(errno));
+            LOGE("Failed to open %s: %s", MB_SELINUX_ENFORCE_FILE, strerror(errno));
             return -1;
         }
     }
 
     if (fscanf(fp, "%u", &is_enforcing) != 1) {
-        LOGE("Failed to parse %s: %s", SELINUX_ENFORCE_FILE, strerror(errno));
+        LOGE("Failed to parse %s: %s", MB_SELINUX_ENFORCE_FILE, strerror(errno));
         fclose(fp);
         return -1;
     }
@@ -222,7 +108,7 @@ int patch_loaded_sepolicy()
         return 0;
     }
 
-    return patch_sepolicy_internal(SELINUX_POLICY_FILE, SELINUX_LOAD_FILE);
+    return patch_sepolicy_internal(MB_SELINUX_POLICY_FILE, MB_SELINUX_LOAD_FILE);
 }
 
 static void sepolpatch_usage(int error)
@@ -314,10 +200,10 @@ int sepolpatch_main(int argc, char *argv[])
     }
 
     if (!source_file) {
-        source_file = SELINUX_POLICY_FILE;
+        source_file = MB_SELINUX_POLICY_FILE;
     }
     if (!target_file) {
-        target_file = SELINUX_LOAD_FILE;
+        target_file = MB_SELINUX_LOAD_FILE;
     }
 
     return patch_sepolicy(source_file, target_file) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;

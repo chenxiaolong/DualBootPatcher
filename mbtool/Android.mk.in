@@ -72,7 +72,8 @@ mbtool_src_base := \
 	util/logging.c \
 	util/loopdev.c \
 	util/mount.c \
-	util/properties.c
+	util/properties.c \
+	util/selinux.c
 
 mbtool_src_recovery := \
 	update_binary.c \
