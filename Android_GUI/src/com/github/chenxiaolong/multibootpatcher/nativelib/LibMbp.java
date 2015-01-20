@@ -959,10 +959,10 @@ public class LibMbp {
         }
 
         public void setId(String id) {
-            log(mCDevice, Device.class, "setId", name);
-            ensureNotNull(name);
+            log(mCDevice, Device.class, "setId", id);
+            ensureNotNull(id);
 
-            CWrapper.mbp_device_set_id(mCDevice, name);
+            CWrapper.mbp_device_set_id(mCDevice, id);
         }
 
         public String[] getCodenames() {
