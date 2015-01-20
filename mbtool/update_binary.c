@@ -268,7 +268,15 @@ static int create_chroot(void)
     MOUNT_CHECKED("none", CHROOT "/dev/pts",        "devpts",    0, "");
     MOUNT_CHECKED("none", CHROOT "/proc",           "proc",      0, "");
     MOUNT_CHECKED("none", CHROOT "/sys",            "sysfs",     0, "");
-    MOUNT_CHECKED("none", CHROOT "/sys/fs/selinux", "selinuxfs", 0, "");
+
+    // Some recoveries don't have SELinux enabled
+    if (mount(    "none", CHROOT "/sys/fs/selinux", "selinuxfs", 0, "") < 0
+            && errno != ENOENT) {
+        LOGE("Failed to mount %s (%s) at %s: %s",
+             "none", "selinuxfs", CHROOT "/sys/fs/selinux", strerror(errno));
+        goto error;
+    }
+
     MOUNT_CHECKED("none", CHROOT "/tmp",            "tmpfs",     0, "");
     // Copy the contents of sbin since we need to mess with some of the binaries
     // there. Also, for whatever reason, bind mounting /sbin results in EINVAL
@@ -963,15 +971,18 @@ static int update_binary(void)
     char *boot_block_dev = NULL;
 
 
-    if (patch_sepolicy() < 0) {
-        LOGE("Failed to patch sepolicy");
-        int fd = open(MB_SELINUX_ENFORCE_FILE, O_WRONLY);
-        if (fd >= 0) {
-            write(fd, "0", 1);
-            close(fd);
-        } else {
-            LOGE("Failed to set SELinux to permissive mode");
-            ui_print("Could not patch or disable SELinux");
+    struct stat sb;
+    if (stat("/sys/fs/selinux", &sb) == 0) {
+        if (patch_sepolicy() < 0) {
+            LOGE("Failed to patch sepolicy");
+            int fd = open(MB_SELINUX_ENFORCE_FILE, O_WRONLY);
+            if (fd >= 0) {
+                write(fd, "0", 1);
+                close(fd);
+            } else {
+                LOGE("Failed to set SELinux to permissive mode");
+                ui_print("Could not patch or disable SELinux");
+            }
         }
     }
 
