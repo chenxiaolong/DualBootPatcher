@@ -152,7 +152,7 @@ PatchInfo::~PatchInfo()
  * \brief PatchInfo identifier
  *
  * This is usually similar to eg.
- * `[Device codename]/(ROMs|Kernels)/[ROM/Kernel Type]/[ROM/Kernel Name]`
+ * `[Device ID]/(ROMs|Kernels)/[ROM/Kernel Type]/[ROM/Kernel Name]`
  *
  * \return PatchInfo ID
  */

@@ -1008,11 +1008,6 @@ static int update_binary(void)
     LOGD("ro.build.product = %s", prop2);
     LOGD("Target device = %s", device);
 
-    if (!strstr(prop1, device) && !strstr(prop2, device)) {
-        ui_print("Patched zip is for '%s', but device is '%s'", device, prop1);
-        goto error;
-    }
-
 
     pc = mbp_config_create();
 
@@ -1025,46 +1020,82 @@ static int update_binary(void)
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
+    int device_error = 0;
+
     CDevice **device_list = mbp_config_devices(pc);
-    for (CDevice **iter = device_list; *iter; ++iter) {
+    for (CDevice **cdev_iter = device_list; *cdev_iter; ++cdev_iter) {
         // My C wrapper really needs some work...
-        char *codename = mbp_device_codename(*iter);
-        if (strcmp(codename, device) == 0) {
-            mbp_free(codename);
 
-            char **boot_devs = mbp_device_boot_block_devs(*iter);
+        if (strcmp(device, mbp_device_id(*cdev_iter)) != 0) {
+            // Haven't found device
+            continue;
+        }
+
+        int matches = 0;
+
+        // Verify codename
+        char **codenames = mbp_device_codenames(*cdev_iter);
+        for (char **name_iter = codenames; *name_iter; ++name_iter) {
+            if (strstr(prop1, *name_iter) || strstr(prop2, *name_iter)) {
+                matches = 1;
+                break;
+            }
+        }
+
+        if (!matches) {
+            ui_print("Patched zip is for:");
+            for (char **name_iter = codenames; *name_iter; ++name_iter) {
+                ui_print("- %s", *name_iter);
+            }
+            ui_print("This device is '%s'", prop1);
+
+            device_error = 1;
+        }
+
+        mbp_free_array((void **) codenames);
+
+        if (device_error) {
+            break;
+        }
+
+        // Copy boot partition block devices to the chroot
+        char **boot_devs = mbp_device_boot_block_devs(*cdev_iter);
+        if (*boot_devs) {
             boot_block_dev = strdup(*boot_devs);
+        }
 
-            // Ensure these are available in the chroot
-            for (char **iter2 = boot_devs; *iter2; ++iter2) {
-                size_t dev_path_size = strlen(*iter2) + strlen(CHROOT) + 2;
-                char *dev_path = malloc(dev_path_size);
-                dev_path[0] = '\0';
-                strlcat(dev_path, CHROOT, dev_path_size);
-                strlcat(dev_path, "/", dev_path_size);
-                strlcat(dev_path, *iter2, dev_path_size);
+        for (char **boot_iter = boot_devs; *boot_iter; ++boot_iter) {
+            size_t dev_path_size = strlen(*boot_iter) + strlen(CHROOT) + 2;
+            char *dev_path = malloc(dev_path_size);
+            dev_path[0] = '\0';
+            strlcat(dev_path, CHROOT, dev_path_size);
+            strlcat(dev_path, "/", dev_path_size);
+            strlcat(dev_path, *boot_iter, dev_path_size);
 
-                if (mb_mkdir_parent(dev_path, 0755) < 0) {
-                    LOGE("Failed to create parent directory of %s", dev_path);
-                }
-
-                // Follow symlinks just in case the symlink source isn't in the
-                // list
-                if (mb_copy_file(*iter2, dev_path, MB_COPY_ATTRIBUTES
-                                                 | MB_COPY_XATTRS
-                                                 | MB_COPY_FOLLOW_SYMLINKS) < 0) {
-                    LOGE("Failed to copy %s. Continuing anyway", *iter2);
-                }
-
-                free(dev_path);
+            if (mb_mkdir_parent(dev_path, 0755) < 0) {
+                LOGE("Failed to create parent directory of %s", dev_path);
             }
 
-            mbp_free_array((void **) boot_devs);
-        } else {
-            mbp_free(codename);
+            // Follow symlinks just in case the symlink source isn't in the list
+            if (mb_copy_file(*boot_iter, dev_path, MB_COPY_ATTRIBUTES
+                                                 | MB_COPY_XATTRS
+                                                 | MB_COPY_FOLLOW_SYMLINKS) < 0) {
+                LOGE("Failed to copy %s. Continuing anyway", *boot_iter);
+            }
+
+            free(dev_path);
         }
+
+        mbp_free_array((void **) boot_devs);
+
+        break;
     }
+
     mbp_free(device_list);
+
+    if (device_error) {
+        goto error;
+    }
 
     if (!boot_block_dev) {
         ui_print("Could not determine the boot block device");

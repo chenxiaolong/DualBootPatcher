@@ -69,36 +69,48 @@ void mbp_device_destroy(CDevice *device)
     delete d;
 }
 
+char * mbp_device_id(const CDevice *device)
+{
+    CCAST(device);
+    return string_to_cstring(d->id());
+}
+
+void mbp_device_set_id(CDevice *device, const char *id)
+{
+    CAST(device);
+    d->setId(id);
+}
+
 /*!
- * \brief Device's codename
+ * \brief Device's codenames
  *
  * \note The output data is dynamically allocated. It should be `free()`'d
  *       when it is no longer needed.
  *
  * \param device CDevice object
  *
- * \return Device codename
+ * \return Device codenames
  *
- * \sa Device::codename()
+ * \sa Device::codenames()
  */
-char * mbp_device_codename(const CDevice *device)
+char ** mbp_device_codenames(const CDevice *device)
 {
     CCAST(device);
-    return string_to_cstring(d->codename());
+    return vector_to_cstring_array(d->codenames());
 }
 
 /*!
- * \brief Set the device's codename
+ * \brief Set the device's codenames
  *
  * \param device CDevice object
- * \param name Codename
+ * \param names Codenames
  *
- * \sa Device::setCodename()
+ * \sa Device::setCodenames()
  */
-void mbp_device_set_codename(CDevice *device, const char *name)
+void mbp_device_set_codenames(CDevice *device, const char **names)
 {
     CAST(device);
-    d->setCodename(name);
+    d->setCodenames(cstring_array_to_vector(names));
 }
 
 /*!

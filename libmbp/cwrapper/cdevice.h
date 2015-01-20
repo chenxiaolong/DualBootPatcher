@@ -28,8 +28,11 @@ extern "C" {
 CDevice * mbp_device_create(void);
 void mbp_device_destroy(CDevice *device);
 
-char * mbp_device_codename(const CDevice *device);
-void mbp_device_set_codename(CDevice *device, const char *name);
+char * mbp_device_id(const CDevice *device);
+void mbp_device_set_id(CDevice *device, const char *id);
+
+char ** mbp_device_codenames(const CDevice *device);
+void mbp_device_set_codenames(CDevice *device, const char **names);
 
 char * mbp_device_name(const CDevice *device);
 void mbp_device_set_name(CDevice *device, const char *name);

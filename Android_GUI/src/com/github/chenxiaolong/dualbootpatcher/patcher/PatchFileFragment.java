@@ -331,7 +331,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
                 if (mPCS.mPatchInfo.hasBootImage(PatchInfo.Default())) {
                     mPCS.mPatchInfo.setRamdisk(PatchInfo.Default(),
-                            mPCS.mDevice.getCodename() + "/default");
+                            mPCS.mDevice.getId() + "/default");
 
                     String bootImagesText = mCustomOptsCard.getBootImage();
                     if (bootImagesText != null) {

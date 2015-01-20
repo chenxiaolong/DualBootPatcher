@@ -126,7 +126,7 @@ public class MainOptsCard extends Card {
 
     public void refreshDevices() {
         for (Device device : PatcherUtils.sPC.getDevices()) {
-            String text = String.format("%s (%s)", device.getCodename(), device.getName());
+            String text = String.format("%s (%s)", device.getId(), device.getName());
             mDeviceAdapter.add(text);
         }
         mDeviceAdapter.notifyDataSetChanged();

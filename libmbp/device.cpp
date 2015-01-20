@@ -26,7 +26,8 @@
 class Device::Impl
 {
 public:
-    std::string codename;
+    std::string id;
+    std::vector<std::string> codenames;
     std::string name;
     std::string architecture;
 
@@ -53,24 +54,34 @@ Device::~Device()
 {
 }
 
-/*!
- * \brief Device's codename
- *
- * \return Device codename
- */
-std::string Device::codename() const
+std::string Device::id() const
 {
-    return m_impl->codename;
+    return m_impl->id;
+}
+
+void Device::setId(std::string id)
+{
+    m_impl->id = std::move(id);
 }
 
 /*!
- * \brief Set the device's codename
+ * \brief Device's codenames
  *
- * \param name Codename
+ * \return Device codenames
  */
-void Device::setCodename(std::string name)
+std::vector<std::string> Device::codenames() const
 {
-    m_impl->codename = std::move(name);
+    return m_impl->codenames;
+}
+
+/*!
+ * \brief Set the device's codenames
+ *
+ * \param names Codenames
+ */
+void Device::setCodenames(std::vector<std::string> names)
+{
+    m_impl->codenames = std::move(names);
 }
 
 /*!

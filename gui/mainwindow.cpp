@@ -397,7 +397,7 @@ void MainWindow::populateWidgets()
     // Populate devices
     for (Device *device : d->pc->devices()) {
         d->deviceSel->addItem(QStringLiteral("%1 (%2)")
-                .arg(QString::fromStdString(device->codename()))
+                .arg(QString::fromStdString(device->id()))
                 .arg(QString::fromStdString(device->name())));
     }
 
@@ -571,7 +571,7 @@ void MainWindow::startPatching()
                                           d->hasBootImageCb->isChecked());
             if (d->patchInfo->hasBootImage(PatchInfo::Default)) {
                 d->patchInfo->setRamdisk(PatchInfo::Default,
-                                         d->device->codename() + "/default");
+                                         d->device->id() + "/default");
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
                     const std::string textStdString = text.toStdString();

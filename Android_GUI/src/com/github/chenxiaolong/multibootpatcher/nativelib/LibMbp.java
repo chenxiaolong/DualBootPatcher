@@ -121,8 +121,10 @@ public class LibMbp {
         // BEGIN: cdevice.h
         static native CDevice mbp_device_create();
         static native void mbp_device_destroy(CDevice device);
-        static native Pointer mbp_device_codename(CDevice device);
-        static native void mbp_device_set_codename(CDevice device, String name);
+        static native Pointer mbp_device_id(CDevice device);
+        static native void mbp_device_set_id(CDevice device, String id);
+        static native Pointer mbp_device_codenames(CDevice device);
+        static native void mbp_device_set_codenames(CDevice device, StringArray names);
         static native Pointer mbp_device_name(CDevice device);
         static native void mbp_device_set_name(CDevice device, String name);
         static native Pointer mbp_device_architecture(CDevice device);
@@ -950,17 +952,30 @@ public class LibMbp {
             }
         };
 
-        public String getCodename() {
-            log(mCDevice, Device.class, "getCodename");
-            Pointer p = CWrapper.mbp_device_codename(mCDevice);
+        public String getId() {
+            log(mCDevice, Device.class, "getId");
+            Pointer p = CWrapper.mbp_device_id(mCDevice);
             return getStringAndFree(p);
         }
 
-        public void setCodename(String name) {
-            log(mCDevice, Device.class, "setCodename", name);
+        public void setId(String id) {
+            log(mCDevice, Device.class, "setId", name);
             ensureNotNull(name);
 
-            CWrapper.mbp_device_set_codename(mCDevice, name);
+            CWrapper.mbp_device_set_id(mCDevice, name);
+        }
+
+        public String[] getCodenames() {
+            log(mCDevice, Device.class, "getCodenames");
+            Pointer p = CWrapper.mbp_device_codenames(mCDevice);
+            return getStringArrayAndFree(p);
+        }
+
+        public void setCodenames(String[] names) {
+            log(mCDevice, Device.class, "setCodenames", (Object) names);
+            ensureNotNull(names);
+
+            CWrapper.mbp_device_set_codenames(mCDevice, new StringArray(names));
         }
 
         public String getName() {

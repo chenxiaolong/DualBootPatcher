@@ -31,8 +31,10 @@ public:
     Device();
     ~Device();
 
-    std::string codename() const;
-    void setCodename(std::string name);
+    std::string id() const;
+    void setId(std::string id);
+    std::vector<std::string> codenames() const;
+    void setCodenames(std::vector<std::string> names);
     std::string name() const;
     void setName(std::string name);
     std::string architecture() const;

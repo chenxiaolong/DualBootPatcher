@@ -488,12 +488,11 @@ bool MultiBootPatcher::Impl::patchZip()
     DETAILS_CB("multiboot/device");
 
     // In the future, we may add more to the device file, but for now, we write
-    // the codename and mbtool will dlopen() libmbp to retrieve additional
-    // information
-    const std::string codename = info->device()->codename();
+    // the id and mbtool will use libmbp to retrieve additional information
+    const std::string id = info->device()->id();
     result = FileUtils::laAddFile(
             aOutput, "multiboot/device",
-            std::vector<unsigned char>(codename.begin(), codename.end()));
+            std::vector<unsigned char>(id.begin(), id.end()));
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;

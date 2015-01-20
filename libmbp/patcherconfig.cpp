@@ -280,7 +280,7 @@ std::vector<PatchInfo *> PatcherConfig::patchInfos(const Device * const device) 
     std::vector<PatchInfo *> l;
 
     for (PatchInfo *info : m_impl->patchInfos) {
-        if (boost::starts_with(info->id(), device->codename())) {
+        if (boost::starts_with(info->id(), device->id())) {
             l.push_back(info);
             continue;
         }
@@ -356,7 +356,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // Samsung Galaxy S 4
     device = new Device();
-    device->setCodename("jflte");
+    device->setId("jflte");
+    device->setCodenames({ "jflte" });
     device->setName("Samsung Galaxy S 4");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p16" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
@@ -366,7 +367,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // Samsung Galaxy S 5
     device = new Device();
-    device->setCodename("klte");
+    device->setId("klte");
+    device->setCodenames({ "klte" });
     device->setName("Samsung Galaxy S 5");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
@@ -376,7 +378,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // Samsung Galaxy Note 3
     device = new Device();
-    device->setCodename("hlte");
+    device->setId("hlte");
+    device->setCodenames({ "hlte" });
     device->setName("Samsung Galaxy Note 3");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
@@ -386,7 +389,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // Google/LG Nexus 5
     device = new Device();
-    device->setCodename("hammerhead");
+    device->setId("hammerhead");
+    device->setCodenames({ "hammerhead" });
     device->setName("Google/LG Nexus 5");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p25" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p27" });
@@ -396,7 +400,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // Google/ASUS Nexus 7 (2013)
     device = new Device();
-    device->setCodename("flo");
+    device->setId("flo");
+    device->setCodenames({ "flo" });
     device->setName("Google/ASUS Nexus 7 (2013)");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p22" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p23" });
@@ -406,7 +411,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // OnePlus One
     device = new Device();
-    device->setCodename("bacon");
+    device->setId("bacon");
+    device->setCodenames({ "bacon" });
     device->setName("OnePlus One");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p14" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p16" });
@@ -416,7 +422,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // LG G2
     device = new Device();
-    device->setCodename("d800");
+    device->setId("d800");
+    device->setCodenames({ "d800" });
     device->setName("LG G2");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
@@ -426,7 +433,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
 
     // Falcon
     device = new Device();
-    device->setCodename("falcon");
+    device->setId("falcon");
+    device->setCodenames({ "falcon" });
     device->setName("Motorola Moto G");
     device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
     device->setCacheBlockDevs({ qcomCache /*, TODO */ });

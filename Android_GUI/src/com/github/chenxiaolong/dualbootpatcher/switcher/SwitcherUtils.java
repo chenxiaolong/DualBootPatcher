@@ -45,7 +45,16 @@ public class SwitcherUtils {
 
         PatcherConfig pc = new PatcherConfig();
         for (Device d : pc.getDevices()) {
-            if (Build.DEVICE.contains(d.getCodename())) {
+            boolean matches = false;
+
+            for (String codename : d.getCodenames()) {
+                if (Build.DEVICE.contains(codename)) {
+                    matches = true;
+                    break;
+                }
+            }
+
+            if (matches) {
                 String[] bootBlockDevs = d.getBootBlockDevs();
                 if (bootBlockDevs.length > 0) {
                     bootBlockDev = bootBlockDevs[0];
