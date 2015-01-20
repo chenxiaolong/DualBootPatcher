@@ -79,6 +79,7 @@ mbtool_src_recovery := \
 	update_binary.c \
 	update_binary_tool.c \
 	util/archive.c \
+	util/chown.c \
 	util/string.c
 
 

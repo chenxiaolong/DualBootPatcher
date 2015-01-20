@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 #include <sepol/sepol.h>
@@ -214,4 +215,14 @@ int mb_selinux_add_rule(policydb_t *pdb,
          source_str, target_str, class_str, perm_str);
 
     return 0;
+}
+
+int mb_selinux_set_context(const char *path, const char *context)
+{
+    return setxattr(path, "security.selinux", context, strlen(context) + 1, 0);
+}
+
+int mb_selinux_lset_context(const char *path, const char *context)
+{
+    return lsetxattr(path, "security.selinux", context, strlen(context) + 1, 0);
 }

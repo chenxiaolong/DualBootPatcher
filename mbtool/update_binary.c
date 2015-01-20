@@ -45,6 +45,7 @@
 #include "roms.h"
 #include "external/sha.h"
 #include "util/archive.h"
+#include "util/chown.h"
 #include "util/command.h"
 #include "util/copy.h"
 #include "util/delete.h"
@@ -76,6 +77,8 @@
 #define MB_TEMP         "/multiboot"
 
 #define HELPER_TOOL     "/update-binary-tool"
+
+#define LOG_FILE        "/data/media/0/MultiBoot.log"
 
 #define ZIP_UPDATER     "META-INF/com/google/android/update-binary"
 #define ZIP_UNZIP       "multiboot/unzip"
@@ -1381,6 +1384,31 @@ finish:
         ui_print("Failed to destroy chroot environment. You should reboot into"
                  " recovery again to avoid flashing issues.");
         return -1;
+    }
+
+    if (ret < 0) {
+        if (mb_copy_file("/tmp/recovery.log", LOG_FILE, 0) < 0) {
+            LOGE("Failed to copy log file: %s", strerror(errno));
+        }
+
+        if (chmod(LOG_FILE, 0664) < 0) {
+            LOGE("%s: Failed to chmod: %s", LOG_FILE, strerror(errno));
+        }
+
+        if (mb_chown_name(LOG_FILE, "media_rw", "media_rw") < 0) {
+            LOGE("%s: Failed to chown: %s", LOG_FILE, strerror(errno));
+            if (chown(LOG_FILE, 1023, 1023) < 0) {
+                LOGE("%s: Failed to chown: %s", LOG_FILE, strerror(errno));
+            }
+        }
+
+        if (mb_selinux_set_context(
+                LOG_FILE, "u:object_r:media_rw_data_file:s0") < 0) {
+            LOGE("%s: Failed to set context: %s", LOG_FILE, strerror(errno));
+        }
+
+        ui_print("The log file was saved as MultiBoot.log on the internal "
+                 "storage.");
     }
 
     return ret;
