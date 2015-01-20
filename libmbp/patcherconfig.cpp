@@ -418,10 +418,10 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device = new Device();
     device->setCodename("d800");
     device->setName("LG G2");
-    device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
-    device->setCacheBlockDevs({ qcomCache /*, TODO */ });
-    device->setDataBlockDevs({ qcomData /*, TODO */ });
-    device->setBootBlockDevs({ qcomBoot /*, TODO */ });
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p34" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p38" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
     devices.push_back(device);
 
     // Falcon
