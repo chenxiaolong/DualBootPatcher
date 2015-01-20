@@ -389,6 +389,17 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
 
+    // Samsung Galaxy Note 4
+    device = new Device();
+    device->setId("trlte");
+    device->setCodenames({ "trltetmo" });
+    device->setName("Samsung Galaxy Note 4 (T-Mobile ONLY)");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p25" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
+    devices.push_back(device);
+
     // Google/LG Nexus 5
     device = new Device();
     device->setId("hammerhead");
