@@ -139,3 +139,79 @@ int mb_selinux_make_permissive(policydb_t *pdb, char *type_str)
 
     return 0;
 }
+
+// Based on public domain code from sepolicy-inject:
+// https://bitbucket.org/joshua_brindle/sepolicy-inject/
+// See the following commit about the hashtab_key_t casts:
+// https://github.com/TresysTechnology/setools/commit/2994d1ca1da9e6f25f082c0dd1a49b5f958bd2ca
+int mb_selinux_add_rule(policydb_t *pdb,
+                        const char *source_str,
+                        const char *target_str,
+                        const char *class_str,
+                        const char *perm_str) {
+    type_datum_t *source, *target;
+    class_datum_t *clazz;
+    perm_datum_t *perm;
+    avtab_datum_t *av;
+    avtab_key_t key;
+
+    source = hashtab_search(pdb->p_types.table, (hashtab_key_t) source_str);
+    if (!source) {
+        LOGE("Source type %s does not exist", source_str);
+        return -1;
+    }
+    target = hashtab_search(pdb->p_types.table, (hashtab_key_t) target_str);
+    if (!target) {
+        LOGE("Target type %s does not exist", target_str);
+        return -1;
+    }
+    clazz = hashtab_search(pdb->p_classes.table, (hashtab_key_t) class_str);
+    if (!clazz) {
+        LOGE("Class %s does not exist", class_str);
+        return -1;
+    }
+    perm = hashtab_search(clazz->permissions.table, (hashtab_key_t) perm_str);
+    if (!perm) {
+        if (clazz->comdatum == NULL) {
+            LOGE("Perm %s does not exist in class %s", perm_str, class_str);
+            return -1;
+        }
+        perm = hashtab_search(clazz->comdatum->permissions.table,
+                              (hashtab_key_t) perm_str);
+        if (!perm) {
+            LOGE("Perm %s does not exist in class %s", perm_str, class_str);
+            return -1;
+        }
+    }
+
+    // See if there is already a rule
+    key.source_type = source->s.value;
+    key.target_type = target->s.value;
+    key.target_class = clazz->s.value;
+    key.specified = AVTAB_ALLOWED;
+    av = avtab_search(&pdb->te_avtab, &key);
+
+    if (!av) {
+        av = malloc(sizeof(av));
+        if (!av) {
+            LOGE("Out of memory");
+            return -1;
+        }
+
+        av->data |= 1U << (perm->s.value - 1);
+        if (avtab_insert(&pdb->te_avtab, &key, av) != 0) {
+            free(av);
+            LOGE("Failed to add rule to avtab");
+            return -1;
+        }
+
+        free(av);
+    }
+
+    av->data |= 1U << (perm->s.value - 1);
+
+    LOGD("Added rule: \"allow %s %s:%s %s;\"",
+         source_str, target_str, class_str, perm_str);
+
+    return 0;
+}

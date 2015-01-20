@@ -54,6 +54,7 @@
 #include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/properties.h"
+#include "util/selinux.h"
 #include "util/string.h"
 
 
@@ -101,6 +102,89 @@ static void ui_print(const char *fmt, ...)
     dprintf(output_fd, "ui_print\n");
 
     va_end(ap);
+}
+
+/*
+ * To work around denials (on Samsung devices):
+ * 1. Mount the system and data partitions
+ *
+ *      $ mount /system
+ *      $ mount /data
+ *
+ * 2. Start the audit daemon
+ *
+ *      $ /system/bin/auditd
+ *
+ * 3. From another window, run mbtool's update-binary wrapper
+ *
+ *      $ /tmp/mbtool_recovery updater 3 1 /path/to/file_patched.zip
+ *
+ * 4. Pull /data/misc/audit/audit.log and run it through audit2allow
+ *
+ *      $ adb pull /data/misc/audit/audit.log
+ *      $ grep denied audit.log | audit2allow
+ *
+ * 5. Allow the rule using mb_selinux_add_rule()
+ *
+ *    Rules of the form:
+ *      allow source target:class perm;
+ *    Are allowed by calling:
+ *      mb_selinux_add_rule(&pdb, source, target, class, perm);
+ *
+ * --
+ *
+ * To view the allow rules for the currently loaded policy:
+ *
+ * 1. Pull the current policy file
+ *
+ *      $ adb pull /sys/fs/selinux/policy
+ *
+ * 2. View the rules (the -s, -t, -c, and -p parameters can be used to filter
+ *    the rules by source, target, class, and permission, respectively)
+ *
+ *      $ sesearch -A policy
+ */
+static int patch_sepolicy()
+{
+    policydb_t pdb;
+
+    if (policydb_init(&pdb) < 0) {
+        LOGE("Failed to initialize policydb");
+        return -1;
+    }
+
+    if (mb_selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb) < 0) {
+        LOGE("Failed to read SELinux policy file: %s", MB_SELINUX_POLICY_FILE);
+        policydb_destroy(&pdb);
+        return -1;
+    }
+
+    LOGD("Policy version: %u", pdb.policyvers);
+
+    // Debugging rules (for CWM and Philz)
+    mb_selinux_add_rule(&pdb, "adbd",  "block_device",    "blk_file",   "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "graphics_device", "chr_file",   "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "graphics_device", "dir",        "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "input_device",    "chr_file",   "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "input_device",    "dir",        "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "rootfs",          "dir",        "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "rootfs",          "file",       "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "rootfs",          "lnk_file",   "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "system_file",     "file",       "relabelto");
+    mb_selinux_add_rule(&pdb, "adbd",  "tmpfs",           "file",       "relabelto");
+
+    mb_selinux_add_rule(&pdb, "rootfs", "tmpfs",          "filesystem", "associate");
+    mb_selinux_add_rule(&pdb, "tmpfs",  "rootfs",         "filesystem", "associate");
+
+    if (mb_selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb) < 0) {
+        LOGE("Failed to write SELinux policy file: %s", MB_SELINUX_LOAD_FILE);
+        policydb_destroy(&pdb);
+        return -1;
+    }
+
+    policydb_destroy(&pdb);
+
+    return 0;
 }
 
 #define MKDIR_CHECKED(a, b) \
@@ -875,6 +959,18 @@ static int update_binary(void)
     char *device = NULL;
     char *boot_block_dev = NULL;
 
+
+    if (patch_sepolicy() < 0) {
+        LOGE("Failed to patch sepolicy");
+        int fd = open(MB_SELINUX_ENFORCE_FILE, O_WRONLY);
+        if (fd >= 0) {
+            write(fd, "0", 1);
+            close(fd);
+        } else {
+            LOGE("Failed to set SELinux to permissive mode");
+            ui_print("Could not patch or disable SELinux");
+        }
+    }
 
     ui_print("Creating chroot environment");
 

@@ -101,14 +101,13 @@ static int copy_xattrs(const char *source, const char *target)
     char *value = NULL;
 
     // xattr names are in a NULL-separated list
-
     size = llistxattr(source, NULL, 0);
     if (size < 0) {
         if (errno == ENOTSUP) {
             LOGV("%s: xattrs not supported on filesystem", source);
             goto success;
         } else {
-            LOGE("%s: %s", source, strerror(errno));
+            LOGE("%s: Failed to list xattrs: %s", source, strerror(errno));
             goto error;
         }
     }
@@ -160,7 +159,7 @@ static int copy_xattrs(const char *source, const char *target)
                 LOGV("%s: xattrs not supported on filesystem", target);
                 break;
             } else {
-                LOGE("%s: %s", target, strerror(errno));
+                LOGE("%s: Failed to set xattrs: %s", target, strerror(errno));
                 goto error;
             }
         }

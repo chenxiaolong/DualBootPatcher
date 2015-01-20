@@ -28,3 +28,8 @@
 int mb_selinux_read_policy(const char *path, policydb_t *pdb);
 int mb_selinux_write_policy(const char *path, policydb_t *pdb);
 int mb_selinux_make_permissive(policydb_t *pdb, char *type_str);
+int mb_selinux_add_rule(policydb_t *pdb,
+                        const char *source_str,
+                        const char *target_str,
+                        const char *class_str,
+                        const char *perm_str);
