@@ -353,6 +353,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     const std::string qcomCache("/dev/block/platform/msm_sdcc.1/by-name/cache");
     const std::string qcomData("/dev/block/platform/msm_sdcc.1/by-name/userdata");
     const std::string qcomBoot("/dev/block/platform/msm_sdcc.1/by-name/boot");
+    const std::string qcomAboot("/dev/block/platform/msm_sdcc.1/by-name/aboot");
 
     // Samsung Galaxy S 4
     device = new Device();
@@ -363,6 +364,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p29" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p20" });
+    device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
     // Samsung Galaxy S 5
@@ -429,6 +431,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p38" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
+    device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
     // Falcon
