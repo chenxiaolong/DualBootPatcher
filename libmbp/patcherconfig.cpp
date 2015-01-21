@@ -436,7 +436,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // LG G2
     device = new Device();
     device->setId("lgg2");
-    device->setCodenames({ "d800", "ls980" });
+    device->setCodenames({ "d800", "d802", "ls980" });
     device->setName("LG G2");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
