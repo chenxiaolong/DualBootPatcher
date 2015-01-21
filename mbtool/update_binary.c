@@ -40,6 +40,8 @@
 #include <libmbp/cwrapper/cdevice.h>
 #include <libmbp/cwrapper/cpatcherconfig.h>
 
+#include <loki.h>
+
 #include "main.h"
 #include "multiboot.h"
 #include "roms.h"
@@ -1412,9 +1414,34 @@ static int update_binary(void)
         size_t bootimg_size;
         mbp_bootimage_create_data(bi, &bootimg_data, &bootimg_size);
 
+        int was_loki = mbp_bootimage_is_loki(bi) == 0;
+
         mbp_bootimage_destroy(bi);
 
         // Backup kernel
+
+        if (mb_file_write_data(MB_TEMP "/boot.img", bootimg_data, bootimg_size) < 0) {
+            LOGE("Failed to write %s: %s", MB_TEMP "/boot.img", strerror(errno));
+            ui_print("Failed to write %s", MB_TEMP "/boot.img");
+            mbp_free(bootimg_data);
+            goto error;
+        }
+
+        mbp_free(bootimg_data);
+
+        // Reloki if needed
+        if (was_loki) {
+            if (loki_patch("boot", "/dev/block/platform/msm_sdcc.1/by-name/aboot",
+                           MB_TEMP "/boot.img", MB_TEMP "/boot.lok") < 0) {
+                ui_print("Failed to run loki");
+                goto error;
+            }
+
+            unlink(MB_TEMP "/boot.img");
+            rename(MB_TEMP "/boot.lok", MB_TEMP "/boot.img");
+        }
+
+        // Write to multiboot directory and boot partition
 
         char path[100];
         snprintf(path, sizeof(path), "/data/media/0/MultiBoot/%s", rom->id);
@@ -1422,29 +1449,60 @@ static int update_binary(void)
             ui_print("Failed to create %s", path);
             goto error;
         }
-
         strlcat(path, "/boot.img", sizeof(path));
 
-        if (mb_file_write_data(path, bootimg_data, bootimg_size) < 0) {
-            LOGE("Failed to write %s: %s", path, strerror(errno));
-            ui_print("Failed to write %s", path);
-            mbp_free(bootimg_data);
+        int fd_source = open(MB_TEMP "/boot.img", O_RDONLY);
+        if (fd_source < 0) {
+            LOGE("Failed to open %s: %s", MB_TEMP "/boot.img", strerror(errno));
             goto error;
         }
 
-        if (chmod(path, 0775) < 0) {
+        int fd_boot = open(boot_block_dev, O_WRONLY);
+        if (fd_boot < 0) {
+            LOGE("Failed to open %s: %s", boot_block_dev, strerror(errno));
+            close(fd_source);
+            goto error;
+        }
+
+        int fd_backup = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0775);
+        if (fd_backup < 0) {
+            LOGE("Failed to open %s: %s", path, strerror(errno));
+            close(fd_source);
+            close(fd_boot);
+            goto error;
+        }
+
+        if (mb_copy_data_fd(fd_source, fd_boot) < 0) {
+            LOGE("Failed to write %s: %s", boot_block_dev, strerror(errno));
+            close(fd_source);
+            close(fd_boot);
+            close(fd_backup);
+            goto error;
+        }
+
+        lseek(fd_source, 0, SEEK_SET);
+
+        if (mb_copy_data_fd(fd_source, fd_backup) < 0) {
+            LOGE("Failed to write %s: %s", path, strerror(errno));
+            close(fd_source);
+            close(fd_boot);
+            close(fd_backup);
+            goto error;
+        }
+
+        if (fchmod(fd_backup, 0775) < 0) {
             // Non-fatal
             LOGE("%s: Failed to chmod: %s", path, strerror(errno));
         }
 
-        if (mb_file_write_data(boot_block_dev, bootimg_data, bootimg_size) < 0) {
-            LOGE("Failed to write %s: %s", boot_block_dev, strerror(errno));
-            ui_print("Failed to write %s", boot_block_dev);
-            mbp_free(bootimg_data);
-            goto error;
-        }
+        close(fd_source);
+        close(fd_boot);
+        close(fd_backup);
 
-        mbp_free(bootimg_data);
+        if (mb_chown_name(path, "media_rw", "media_rw") < 0) {
+            // Non-fatal
+            LOGE("%s: Failed to chown: %s", path, strerror(errno));
+        }
     }
 
 finish:
