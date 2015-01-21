@@ -145,20 +145,21 @@ public class AppSharingUtils {
         }
 
         if (bi.isLoki()) {
-            String aboot = context.getCacheDir() + File.separator + "aboot.img";
-            SwitcherUtils.dd(SwitcherUtils.ABOOT_PARTITION, aboot);
-            new RootFile(aboot).chmod(0666);
+            throw new Exception("loki support currently disabled");
+            //String aboot = context.getCacheDir() + File.separator + "aboot.img";
+            //SwitcherUtils.dd(SwitcherUtils.ABOOT_PARTITION, aboot);
+            //new RootFile(aboot).chmod(0666);
 
-            String lokiKernel = context.getCacheDir() + File.separator + "kernel.lok";
+            //String lokiKernel = context.getCacheDir() + File.separator + "kernel.lok";
 
-            if (lokiPatch("boot", aboot, tmpKernel, lokiKernel) != 0) {
-                throw new Exception("Failed to loki patch new boot image");
-            }
+            //if (lokiPatch("boot", aboot, tmpKernel, lokiKernel) != 0) {
+            //    throw new Exception("Failed to loki patch new boot image");
+            //}
 
-            new File(lokiKernel).delete();
+            //new File(lokiKernel).delete();
 
-            org.apache.commons.io.FileUtils.moveFile(
-                    new File(lokiKernel), new File(tmpKernel));
+            //org.apache.commons.io.FileUtils.moveFile(
+            //        new File(lokiKernel), new File(tmpKernel));
         }
 
         // Copy to target
@@ -167,23 +168,4 @@ public class AppSharingUtils {
 
         SwitcherUtils.writeKernel(romInfo.id);
     }
-
-
-    // libloki-jni native library
-
-    static {
-        System.loadLibrary("loki-jni");
-    }
-
-    private static native int lokiPatch(String partitionLabel, String abootImage,
-                                        String inImage, String outImage);
-
-    @SuppressWarnings("unused")
-    private static native int lokiFlash(String partitionLabel, String lokiImage);
-
-    @SuppressWarnings("unused")
-    private static native int lokiFind(String abootImage);
-
-    @SuppressWarnings("unused")
-    private static native int lokiUnlok(String inImage, String outImage);
 }
