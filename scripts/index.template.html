@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Dual Boot Patcher snapshots</title>
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+
+        <style>
+        body {
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        .navbar {
+            margin-bottom: 20px;
+        }
+        </style>
+    </head>
+
+    <body role="document">
+
+        <div class="container" role="main">
+
+            <nav class="navbar navbar-default">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="#">Dual Boot Patcher</a>
+                    </div>
+                    <div id="navbar" class="collapse navbar-collapse">
+                        <ul class="nav navbar-nav">
+                            <li class="active"><a href="#">Snapshots</a></li>
+                            <li><a href="http://forum.xda-developers.com/showthread.php?t=2447534">XDA</a></li>
+                            <li><a href="https://jenkins.cxl.epac.to/job/DualBoot_Patcher/">Build Server</a></li>
+                            <li><a href="https://github.com/chenxiaolong/DualBootPatcher">Source Code</a></li>
+                        </ul>
+                    </div> <!--/.nav-collapse -->
+                </div>
+            </nav>
+
+            <div class="jumbotron">
+                <h1>Snapshot builds</h1>
+                <p>Below are unstable releases that are automatically build by the continuous integration server. They contain all the latest and greatest features, but have the potential of eating your hamster, cat, or dog (and of course your phone). Make sure to backup before installing and using these builds. Enjoy!
+            </div>
+
+            <div class="alert alert-warning" role="alert">
+                <strong>Note!</strong> These snapshots now fully support Lollipop (including 'system.new.img' block image installers), but these builds are <b>NOT</b> compatible with ROMs patched with <b>8.0.0.r436.g41f104b</b> or earlier. ROMs patched with older versions will not show up new versions of the app and vice versa.
+            </div>
+
+            <div class="well">
+                <p>Most people should start off fresh, but if you want to keep the currently multibooted ROMs, follow the steps below.</p>
+                <ol>
+                    <li>Move The following directories while booted into recovery or the primary ROM:</li>
+                    <pre>
+Secondary:
+----------
+/data/dual            -> /data/multiboot/dual
+/cache/dual           -> /cache/multiboot/dual
+/system/dual          -> /system/multiboot/dual
+/data/media/0/MultiKernels/secondary.img
+                      -> /data/media/0/MultiBoot/dual/boot.img
+
+Multi-Slot-X (replacing X with actual number)
+------------
+/data/multi-slot-X    -> /data/multiboot/multi-slot-X
+/system/multi-slot-X  ->  /system/multiboot/multi-slot-X
+/cache/multi-slot-X   ->  /cache/multiboot/multi-slot-X
+/data/media/0/MultiKernels/multi-slot-X
+                      ->  /data/media/0/MultiBoot/multi-slot-X/boot.img
+                    </pre>
+                    <li>Repatch ROM or kernel (don't need both) and reboot</li>
+                    <li>Avoid using older versions of the patcher</li>
+                </ol>
+            </div>
+
+INSERT GENERATED STUFF HERE
+
+        </div> <!-- /container -->
+
+        <!-- Bootstrap core JavaScript
+        ================================================== -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    </body>
+</html>

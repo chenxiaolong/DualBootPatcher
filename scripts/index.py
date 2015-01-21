@@ -19,6 +19,7 @@
 
 # Generate changelogs and create HTML output
 
+import html
 import os
 import re
 import shutil
@@ -92,6 +93,9 @@ class Version():
             and self.p3 == other.p3 \
             and self.p4 == other.p4
 
+    def __str__(self):
+        return self.ver
+
     def __hash__(self):
         return hash(self.ver)
 
@@ -111,7 +115,10 @@ class HTMLWriter():
             raise Exception('Tag stack not empty when closing HTML file: %s'
                             % self._stack)
 
-    def push(self, tag, attrs=None):
+    def push(self, tag, attrs=None, newline=False, indent=False):
+        if indent:
+            self._file.write('    ' * (len(self._stack) + 1))
+
         self._stack.append(tag)
         if attrs:
             attrs_str = ' '.join('%s="%s"' % (i, attrs[i]) for i in attrs)
@@ -119,18 +126,33 @@ class HTMLWriter():
         else:
             self._file.write('<%s>' % tag)
 
-    def pop(self, tag):
+        if newline:
+            self._file.write('\n')
+
+    def pop(self, tag, newline=False, indent=False):
+        if indent:
+            self._file.write('    ' * (len(self._stack)))
+
         top_tag = self._stack.pop()
         if top_tag != tag:
             raise ValueError('Tag <%s> does not match tag at top of'
                              'stack: <%s>' % (tag, top_tag))
         self._file.write('</%s>' % tag)
 
+        if newline:
+            self._file.write('\n')
+
     def write_tag(self, tag):
         self._file.write('<%s />' % tag)
 
-    def write(self, string):
-        self._file.write(string)
+    def write(self, string, escape=True):
+        if escape:
+            self._file.write(html.escape(string))
+        else:
+            self._file.write(string)
+
+    def newline(self):
+        self._file.write('\n')
 
 
 def quicksort(l):
@@ -177,7 +199,7 @@ if not os.path.exists(filesdir):
 
 # HTML output
 writer = HTMLWriter()
-writer.open(os.path.join(filesdir, 'index.html'))
+writer.open(os.path.join(filesdir, '.index.gen.html'))
 
 
 # List of patcher files and versions
@@ -195,56 +217,6 @@ for f in os.listdir(filesdir):
 versions = quicksort(list(set(versions)))
 
 
-# HTML header boilerplate
-writer.push('html')
-writer.push('head')
-writer.push('title')
-writer.write('%s snapshots' % name)
-writer.pop('title')
-writer.pop('head')
-writer.push('body')
-writer.push('h1')
-writer.write('%s Snapshots (Unstable Builds)' % name)
-writer.pop('h1')
-
-# TODO: Remove when complete
-writer.push('style')
-writer.write('.warning { color: red; font-size: 30px; font-weight: bold; }')
-writer.write('.code { font-family: monospace; white-space: pre; }')
-writer.pop('style')
-writer.write('''
-<a class="warning">NOTE:</a>These snapshots now fully support Lollipop (including 'system.new.img' block image installers), but these builds are <b>NOT</b> compatible with ROMs patched with <b>8.0.0.r436.g41f104b</b> or earlier. ROMs patched with older versions will not show up new versions of the app and vice versa.
-<br />
-<br />
-Most people should start off fresh, but if you want to keep the currently multibooted ROMs, follow the steps below.
-<br />
-<ol>
-<li>Move The following directories while booted into recovery or the primary ROM:</li>
-<a class="code">
-Secondary:
-----------
-/data/dual            -> /data/multiboot/dual
-/cache/dual           -> /cache/multiboot/dual
-/system/dual          -> /system/multiboot/dual
-/data/media/0/MultiKernels/secondary.img
-                      -> /data/media/0/MultiBoot/dual/boot.img
-
-Multi-Slot-X (replacing X with actual number)
-------------
-/data/multi-slot-X    -> /data/multiboot/multi-slot-X
-/system/multi-slot-X  ->  /system/multiboot/multi-slot-X
-/cache/multi-slot-X   ->  /cache/multiboot/multi-slot-X
-/data/media/0/MultiKernels/multi-slot-X
-                      ->  /data/media/0/MultiBoot/multi-slot-X/boot.img
-</a>
-<br />
-<li>Repatch ROM or kernel (don't need both) and reboot</li>
-<li>Avoid using older versions of the patcher</li>
-</ol>
-''')
-# TODO: Remove when complete
-
-
 # Remove old builds
 if len(versions) >= maxbuilds:
     for i in range(maxbuilds, len(versions)):
@@ -258,9 +230,6 @@ if len(versions) >= maxbuilds:
 # Write file list and changelog
 for i in range(0, len(versions)):
     version = versions[i]
-
-    # Separator
-    writer.write_tag('hr')
 
     # Get commit log
     process = subprocess.Popen(
@@ -276,32 +245,37 @@ for i in range(0, len(versions)):
                      % version.commit)
 
     # Write timestamp
-    writer.push('b')
+    writer.push('div', attrs={'class': 'page-header'}, newline=True, indent=True)
+    writer.push('h3', indent=True)
+    writer.write(str(version))
+    writer.write(' ')
+    writer.push('small')
     writer.write(timestamp)
-    writer.pop('b')
+    writer.pop('small')
+    writer.pop('h3', newline=True)
+    writer.pop('div', indent=True, newline=True)
 
-    writer.write_tag('br')
-    writer.write_tag('br')
-    writer.push('b')
+    writer.push('h4', indent=True)
     writer.write('Files:')
-    writer.pop('b')
-    writer.write_tag('br')
+    writer.pop('h4', newline=True)
 
     # Write files list
-    writer.push('ul')
+    writer.push('ul', indent=True, newline=True)
     for f in files:
         if version.ver in f:
-            writer.push('li')
+            writer.push('li', indent=True)
             writer.push('a', attrs={'href': f})
             writer.write(f)
             writer.pop('a')
             fullpath = os.path.join(filesdir, f)
             writer.write(' (%s)' % humanize_bytes(os.path.getsize(fullpath)))
-            writer.pop('li')
-    writer.pop('ul')
+            writer.pop('li', newline=True)
+    writer.pop('ul', indent=True, newline=True)
 
     if i == len(versions) - 1:
+        writer.push('p', indent=True)
         writer.write('An earlier build is needed to generate a changelog')
+        writer.pop('p', newline=True)
         continue
 
     new_commit = version.commit
@@ -317,29 +291,64 @@ for i in range(0, len(versions)):
     log = process.communicate()[0].split('\n')
 
     if len(log) <= 1:
+        writer.push('p', indent=True)
         writer.write('WTF?? Failed to generate changelog')
+        writer.pop('p', newline=True)
         continue
 
-    writer.push('b')
+    writer.push('h4', indent=True)
     writer.write('Changelog:')
-    writer.pop('b')
-    writer.write_tag('br')
+    writer.pop('h4', newline=True)
+    writer.push('table', attrs={'class': 'table'}, indent=True, newline=True)
+    writer.push('thead', indent=True, newline=True)
+    writer.push('tr', indent=True, newline=True)
+    writer.push('th', indent=True)
+    writer.write('Commit')
+    writer.pop('th', newline=True)
+    writer.push('th', indent=True)
+    writer.write('Description')
+    writer.pop('th', newline=True)
+    writer.pop('tr', indent=True, newline=True)
+    writer.pop('thead', indent=True, newline=True)
+    writer.push('tbody', indent=True, newline=True)
 
     # Write commit list
-    writer.push('ul')
     for j in range(0, len(log) - 1, 2):
         commit = log[j]
         subject = log[j + 1]
-        writer.push('li')
+        writer.push('tr', indent=True, newline=True)
+        writer.push('td', indent=True)
         writer.push('a', attrs={'href': '%s/commit/%s' % (github, commit)})
         writer.write(commit[0:7])
         writer.pop('a')
-        writer.write(': %s' % subject)
-        writer.pop('li')
-    writer.pop('ul')
+        writer.pop('td', newline=True)
+        writer.push('td', indent=True)
+        writer.write(subject)
+        writer.pop('td', newline=True)
+        writer.pop('tr', indent=True, newline=True)
+
+    writer.pop('tbody', indent=True, newline=True)
+    writer.pop('table', indent=True, newline=True)
 
 
-# HTML footer boilerplate
-writer.pop('body')
-writer.pop('html')
 writer.close()
+
+
+sourcedir = os.path.dirname(os.path.realpath(__file__))
+templatefile = os.path.join(sourcedir, 'index.template.html')
+outfile = os.path.join(filesdir, 'index.html')
+genfile = os.path.join(filesdir, '.index.gen.html')
+MAGIC = b'INSERT GENERATED STUFF HERE\n'
+
+f_out = open(outfile, 'wb')
+
+with open(templatefile, 'rb') as f_in:
+    for line in f_in:
+        if line == MAGIC:
+            with open(genfile, 'rb') as f_gen:
+                for gen_line in f_gen:
+                    f_out.write(gen_line)
+        else:
+            f_out.write(line)
+
+os.remove(genfile)
