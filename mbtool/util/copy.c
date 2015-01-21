@@ -33,23 +33,10 @@
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries
 
-static int copy_data(const char *source, const char *target)
+int mb_copy_data_fd(int fd_source, int fd_target)
 {
-    int fd_source = -1;
-    int fd_target = -1;
     char buf[10240];
     ssize_t nread;
-    int saved_errno;
-
-    fd_source = open(source, O_RDONLY);
-    if (fd_source < 0) {
-        goto error;
-    }
-
-    fd_target = open(target, O_WRONLY | O_CREAT | O_EXCL, 0666);
-    if (fd_target < 0) {
-        goto error;
-    }
 
     while ((nread = read(fd_source, buf, sizeof buf)) > 0) {
         char *out_ptr = buf;
@@ -66,17 +53,43 @@ static int copy_data(const char *source, const char *target)
     }
 
     if (nread == 0) {
-        if (close(fd_source) < 0) {
-            fd_source = -1;
-            goto error;
-        }
-        if (close(fd_target) < 0) {
-            fd_target = -1;
-            goto error;
-        }
-
         return 0;
     }
+
+error:
+    return -1;
+}
+
+static int copy_data(const char *source, const char *target)
+{
+    int fd_source = -1;
+    int fd_target = -1;
+    int saved_errno;
+
+    fd_source = open(source, O_RDONLY);
+    if (fd_source < 0) {
+        goto error;
+    }
+
+    fd_target = open(target, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd_target < 0) {
+        goto error;
+    }
+
+    if (mb_copy_data_fd(fd_source, fd_target) < 0) {
+        goto error;
+    }
+
+    if (close(fd_source) < 0) {
+        fd_source = -1;
+        goto error;
+    }
+    if (close(fd_target) < 0) {
+        fd_target = -1;
+        goto error;
+    }
+
+    return 0;
 
 error:
     saved_errno = errno;

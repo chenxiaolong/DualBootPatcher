@@ -952,6 +952,35 @@ error:
     return -1;
 }
 
+static int copy_blockdev(const char *source, const char *target)
+{
+    int fd_source = -1;
+    int fd_target = -1;
+
+    if ((fd_source = open(source, O_RDONLY)) < 0) {
+        goto error;
+    }
+
+    if ((fd_target = open(target, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
+        goto error;
+    }
+
+    if (mb_copy_data_fd(fd_source, fd_target) < 0) {
+        goto error;
+    }
+
+    close(fd_source);
+    close(fd_target);
+
+    return 0;
+
+error:
+    close(fd_source);
+    close(fd_target);
+
+    return 0;
+}
+
 /*!
  * \brief Main wrapper function
  *
@@ -1176,7 +1205,7 @@ static int update_binary(void)
     LOGD("Boot partition SHA1sum: %s", digest);
 
     // Save a copy of the boot image that we'll restore if the installation fails
-    if (mb_copy_file(boot_block_dev, MB_TEMP "/boot.orig", 0) < 0) {
+    if (copy_blockdev(boot_block_dev, MB_TEMP "/boot.orig") < 0) {
         ui_print("Failed to backup boot partition");
         goto error;
     }
@@ -1424,8 +1453,8 @@ finish:
     remove("/data/.system.img.tmp");
 
     if (ret < 0 && boot_block_dev
-            && mb_copy_file(MB_TEMP "/boot.orig", boot_block_dev, 0) < 0) {
-        LOGE("Failed to restore boot partition");
+            && copy_blockdev(boot_block_dev, MB_TEMP "/boot.orig") < 0) {
+        LOGE("Failed to restore boot partition: %s", strerror(errno));
     }
 
     mb_roms_cleanup(&r);
