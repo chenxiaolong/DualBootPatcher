@@ -1619,19 +1619,6 @@ int update_binary_main(int argc, char *argv[])
     output_fd_str = argv[2];
     zip_file = argv[3];
 
-    // 0 epoch time tends to screw things up...
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-
-    struct tm tm;
-    gmtime_r(&tv.tv_sec, &tm);
-
-    if (tm.tm_year < 2015) {
-        tv.tv_sec = 1420070400; // 2015-01-01 00:00:00 +0000 (UTC)
-        tv.tv_usec = 0;
-        settimeofday(&tv, NULL);
-    }
-
     // stdout is messed up when it's appended to /tmp/recovery.log
     mb_log_set_standard_stream_all(stderr);
 
