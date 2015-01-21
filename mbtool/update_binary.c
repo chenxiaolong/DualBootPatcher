@@ -1360,6 +1360,7 @@ static int update_binary(void)
     LOGD("Old boot partition SHA1sum: %s", digest);
     LOGD("New boot partition SHA1sum: %s", new_digest);
 
+
     // Set kernel if it was changed
     if (memcmp(hash, new_hash, SHA_DIGEST_SIZE) != 0) {
         ui_print("Boot partition was modified. Setting kernel");
@@ -1431,11 +1432,19 @@ static int update_binary(void)
 
         // Reloki if needed
         if (was_loki) {
-            if (loki_patch("boot", "/dev/block/platform/msm_sdcc.1/by-name/aboot",
-                           MB_TEMP "/boot.img", MB_TEMP "/boot.lok") < 0) {
+            if (copy_blockdev("/dev/block/platform/msm_sdcc.1/by-name/aboot",
+                              MB_TEMP "/aboot.img") < 0) {
+                ui_print("Failed to copy aboot partition");
+                goto error;
+            }
+
+            if (loki_patch("boot", MB_TEMP "/aboot.img",
+                           MB_TEMP "/boot.img", MB_TEMP "/boot.lok") != 0) {
                 ui_print("Failed to run loki");
                 goto error;
             }
+
+            ui_print("Successfully loki'd boot image");
 
             unlink(MB_TEMP "/boot.img");
             rename(MB_TEMP "/boot.lok", MB_TEMP "/boot.img");
