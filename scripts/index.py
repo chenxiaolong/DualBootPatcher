@@ -210,9 +210,37 @@ writer.pop('h1')
 # TODO: Remove when complete
 writer.push('style')
 writer.write('.warning { color: red; font-size: 30px; font-weight: bold; }')
+writer.write('.code { font-family: monospace; white-space: pre; }')
 writer.pop('style')
 writer.write('''
-<a class="warning">WARNING:</a> Any builds newer than <b>8.0.0.r436.g41f104b</b> will (most likely) <i>NOT WORK</i>. The patcher is going through a series of changes needed to better support bash script installers (such as PA Gapps) and Android 5.0 ROMs that use the system.new.dat block image installers. <b>You have been warned!</b>
+<a class="warning">NOTE:</a>These snapshots now fully support Lollipop (including 'system.new.img' block image installers), but these builds are <b>NOT</b> compatible with ROMs patched with <b>8.0.0.r436.g41f104b</b> or earlier. ROMs patched with older versions will not show up new versions of the app and vice versa.
+<br />
+<br />
+Most people should start off fresh, but if you want to keep the currently multibooted ROMs, follow the steps below.
+<br />
+<ol>
+<li>Move The following directories while booted into recovery or the primary ROM:</li>
+<a class="code">
+Secondary:
+----------
+/data/dual            -> /data/multiboot/dual
+/cache/dual           -> /cache/multiboot/dual
+/system/dual          -> /system/multiboot/dual
+/data/media/0/MultiKernels/secondary.img
+                      -> /data/media/0/MultiBoot/dual/boot.img
+
+Multi-Slot-X (replacing X with actual number)
+------------
+/data/multi-slot-X    -> /data/multiboot/multi-slot-X
+/system/multi-slot-X  ->  /system/multiboot/multi-slot-X
+/cache/multi-slot-X   ->  /cache/multiboot/multi-slot-X
+/data/media/0/MultiKernels/multi-slot-X
+                      ->  /data/media/0/MultiBoot/multi-slot-X/boot.img
+</a>
+<br />
+<li>Repatch ROM or kernel (don't need both) and reboot</li>
+<li>Avoid using older versions of the patcher</li>
+</ol>
 ''')
 # TODO: Remove when complete
 
