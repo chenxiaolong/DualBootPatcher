@@ -142,6 +142,9 @@ LOCAL_CFLAGS += -DRECOVERY
 LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
 LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
+#LOCAL_CFLAGS += -DMB_LIBC_DEBUG
+# Use the recovery's loader
+#LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker
 LOCAL_LDFLAGS := -static
 LOCAL_LDFLAGS += -lz
 

@@ -28,15 +28,15 @@
 
 int mb_get_property(const char *name, char *value_out, char *default_value)
 {
-#if 0 && __ANDROID_API__ >= 21
+#ifdef MB_LIBC_DEBUG
     // __system_property_get is hidden on Android 5.0 for arm64-v8a and x86_64
     // I can't seem to find anything explaining the reason... oh well.
 
     // NOTE: This is disabled for now since we always link libc statically
 
-    void *handle = dlopen("libc.so", RTLD_NOLOAD);
+    void *handle = dlopen("/tmp/libc.so", RTLD_LOCAL);
     if (!handle) {
-        LOGE("Failed to dlopen() libc.so");
+        LOGE("Failed to dlopen() libc.so: %s", dlerror());
         return 0;
     }
 
@@ -46,7 +46,7 @@ int mb_get_property(const char *name, char *value_out, char *default_value)
 
     int len = __system_property_get(name, value_out);
 
-#if 0 && __ANDROID_API__ >= 21
+#ifdef MB_LIBC_DEBUG
     dlclose(handle);
 #endif
 
@@ -63,5 +63,22 @@ int mb_get_property(const char *name, char *value_out, char *default_value)
 
 int mb_set_property(const char *name, const char *value)
 {
-    return __system_property_set(name, value);
+#ifdef MB_LIBC_DEBUG
+    void *handle = dlopen("/tmp/libc.so", RTLD_LOCAL);
+    if (!handle) {
+        LOGE("Failed to dlopen() libc.so: %s", dlerror());
+        return 0;
+    }
+
+    int (*__system_property_set)(const char *, const char *) =
+            dlsym(handle, "__system_property_set");
+#endif
+
+    int ret = __system_property_set(name, value);
+
+#ifdef MB_LIBC_DEBUG
+    dlclose(handle);
+#endif
+
+    return ret;
 }
