@@ -6,3 +6,6 @@
 	path = external/xz
 	url = https://github.com/chenxiaolong/xz.git
 	branch = mbp
+[submodule "external/zlib"]
+	path = external/zlib
+	url = https://github.com/madler/zlib.git
