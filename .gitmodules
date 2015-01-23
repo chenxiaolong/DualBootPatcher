@@ -2,3 +2,7 @@
 	path = external/libarchive
 	url = https://github.com/chenxiaolong/libarchive.git
 	branch = install
+[submodule "external/xz"]
+	path = external/xz
+	url = https://github.com/chenxiaolong/xz.git
+	branch = mbp
