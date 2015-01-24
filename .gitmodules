@@ -9,3 +9,6 @@
 [submodule "external/zlib"]
 	path = external/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "external/lz4"]
+	path = external/lz4
+	url = https://github.com/Cyan4973/lz4.git
