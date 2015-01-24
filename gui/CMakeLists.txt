@@ -58,6 +58,12 @@ target_link_libraries(gui
     mbp
 )
 
+set_target_properties(gui
+    PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED 1
+)
+
 # Set rpath for portable build
 if (${PORTABLE})
     set_target_properties(gui

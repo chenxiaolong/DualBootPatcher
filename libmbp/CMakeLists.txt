@@ -143,6 +143,8 @@ else()
     set_target_properties(mbp PROPERTIES
         VERSION 1.0.0
         SOVERSION 1
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED 1
     )
 
     target_link_libraries(mbp
