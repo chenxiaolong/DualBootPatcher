@@ -61,7 +61,7 @@ Compiling from Source
     Linux (portable):
 
         mkdir build && cd build
-        cmake ..  -DPORTABLE=ON
+        cmake ..  -DMBP_PORTABLE=ON
         make
         cpack -G ZIP # Or TBZ2, TGZ, TZ, etc.
 

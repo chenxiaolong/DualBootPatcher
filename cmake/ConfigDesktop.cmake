@@ -3,10 +3,10 @@ include(GNUInstallDirs)
 
 # Portable application
 
-option(PORTABLE "Build as portable application" OFF)
+option(MBP_PORTABLE "Build as portable application" OFF)
 
 if(WIN32)
-    set(PORTABLE ON CACHE BOOL "Build as portable application" FORCE)
+    set(MBP_PORTABLE ON CACHE BOOL "Build as portable application" FORCE)
 endif()
 
 # Compiler flags
@@ -243,7 +243,7 @@ endif()
 
 # Install paths
 
-if(${PORTABLE})
+if(${MBP_PORTABLE})
     set(BIN_INSTALL_DIR bin)
     set(DATA_INSTALL_DIR data)
     set(HEADERS_INSTALL_DIR include)

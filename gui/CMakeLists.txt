@@ -4,7 +4,7 @@ set(CMAKE_AUTOMOC ON)
 # Needs QtWidgets
 find_package(Qt5Widgets 5.3 REQUIRED)
 
-if(${PORTABLE})
+if(${MBP_PORTABLE})
     add_definitions(
         -DPORTABLE
         -DLOCAL_DATA_DIR="../data"
@@ -65,7 +65,7 @@ set_target_properties(gui
 )
 
 # Set rpath for portable build
-if (${PORTABLE})
+if (${MBP_PORTABLE})
     set_target_properties(gui
         PROPERTIES
         BUILD_WITH_INSTALL_RPATH OFF
