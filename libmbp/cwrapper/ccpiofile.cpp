@@ -117,7 +117,6 @@ int mbp_cpiofile_load_data(CCpioFile *cpio,
  *       when it is no longer needed.
  *
  * \param cpio CCpioFile object
- * \param gzip Whether archive should be gzip-compressed
  * \param data Output data
  * \param size Size of output data
  *
@@ -126,11 +125,11 @@ int mbp_cpiofile_load_data(CCpioFile *cpio,
  * \sa CpioFile::createData()
  */
 int mbp_cpiofile_create_data(CCpioFile *cpio,
-                             int gzip, void **data, size_t *size)
+                             void **data, size_t *size)
 {
     CAST(cpio);
     std::vector<unsigned char> vData;
-    if (!cf->createData(&vData, gzip)) {
+    if (!cf->createData(&vData)) {
         return -1;
     }
 

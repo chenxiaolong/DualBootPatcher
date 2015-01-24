@@ -275,7 +275,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
     RETURN_IF_CANCELLED
 
     std::vector<unsigned char> newRamdisk;
-    if (!cpio.createData(&newRamdisk, true)) {
+    if (!cpio.createData(&newRamdisk)) {
         error = cpio.error();
         return false;
     }

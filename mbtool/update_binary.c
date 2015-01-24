@@ -1399,7 +1399,7 @@ static int update_binary(void)
         }
 
         if (mbp_cpiofile_create_data(
-                cpio, 1, &ramdisk_data, &ramdisk_size) < 0) {
+                cpio, &ramdisk_data, &ramdisk_size) < 0) {
             ui_print("Failed to create new ramdisk");
             mbp_cpiofile_destroy(cpio);
             mbp_bootimage_destroy(bi);

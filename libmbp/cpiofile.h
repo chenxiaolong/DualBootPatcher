@@ -35,7 +35,7 @@ public:
     PatcherError error() const;
 
     bool load(const std::vector<unsigned char> &data);
-    bool createData(std::vector<unsigned char> *dataOut, bool gzip);
+    bool createData(std::vector<unsigned char> *dataOut);
 
     bool exists(const std::string &name) const;
     bool remove(const std::string &name);

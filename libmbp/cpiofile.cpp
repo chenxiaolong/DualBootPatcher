@@ -34,6 +34,12 @@
 
 typedef std::pair<archive_entry *, std::vector<unsigned char>> FilePair;
 
+enum Compression {
+    NONE,
+    GZIP,
+    LZ4
+};
+
 /*! \cond INTERNAL */
 class CpioFile::Impl
 {
@@ -41,6 +47,8 @@ public:
     ~Impl();
 
     std::vector<FilePair> files;
+
+    Compression compression;
 
     PatcherError error;
 };
@@ -105,6 +113,16 @@ PatcherError CpioFile::error() const
  */
 bool CpioFile::load(const std::vector<unsigned char> &data)
 {
+    if (data.size() >= 2 && std::memcmp(data.data(), "\x1f\x8b", 2) == 0) {
+        m_impl->compression = GZIP;
+    } else if (data.size() >= 4
+            && std::memcmp(data.data(), "\x02\x21\x4c\x18", 4) == 0) {
+        // Magic number is 0x184C2102 (little endian)
+        m_impl->compression = LZ4;
+    } else {
+        m_impl->compression = NONE;
+    }
+
     archive *a;
     archive_entry *entry;
 
@@ -215,21 +233,24 @@ static bool sortByName(const FilePair &p1, const FilePair &p2)
 /*!
  * \brief Constructs the cpio archive
  *
- * This function builds the `.cpio` file, optionally compressing it with gzip.
+ * This function builds the `.cpio` file, compressing it in either gzip or LZ4.
  * The archive uses the `newc` format and files are written in lexographical
  * order.
  *
  * \return Cpio archive binary data
  */
-bool CpioFile::createData(std::vector<unsigned char> *dataOut, bool gzip)
+bool CpioFile::createData(std::vector<unsigned char> *dataOut)
 {
     std::vector<unsigned char> data;
     archive *a = archive_write_new();
 
     archive_write_set_format_cpio_newc(a);
 
-    if (gzip) {
+    // Use same compression as before
+    if (m_impl->compression == GZIP) {
         archive_write_add_filter_gzip(a);
+    } else if (m_impl->compression == LZ4) {
+        archive_write_add_filter_lz4(a);
     } else {
         archive_write_add_filter_none(a);
     }

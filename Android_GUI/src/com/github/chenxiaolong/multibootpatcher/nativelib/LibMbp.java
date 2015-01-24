@@ -107,7 +107,7 @@ public class LibMbp {
         static native void mbp_cpiofile_destroy(CCpioFile cpio);
         static native CPatcherError mbp_cpiofile_error(CCpioFile cpio);
         static native int mbp_cpiofile_load_data(CCpioFile cpio, Pointer data, int size);
-        static native int mbp_cpiofile_create_data(CCpioFile cpio, boolean gzip, PointerByReference dataReturn, /* size_t */ IntByReference size);
+        static native int mbp_cpiofile_create_data(CCpioFile cpio, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native int mbp_cpiofile_exists(CCpioFile cpio, String filename);
         static native int mbp_cpiofile_remove(CCpioFile cpio, String filename);
         static native Pointer mbp_cpiofile_filenames(CCpioFile cpio);
@@ -771,12 +771,12 @@ public class LibMbp {
             return ret == 0;
         }
 
-        public byte[] createData(boolean gzip) {
-            log(mCCpioFile, CpioFile.class, "createData", gzip);
+        public byte[] createData() {
+            log(mCCpioFile, CpioFile.class, "createData");
             PointerByReference pData = new PointerByReference();
             IntByReference pSize = new IntByReference();
 
-            int ret = CWrapper.mbp_cpiofile_create_data(mCCpioFile, gzip, pData, pSize);
+            int ret = CWrapper.mbp_cpiofile_create_data(mCCpioFile, pData, pSize);
 
             if (ret != 0) {
                 return null;
