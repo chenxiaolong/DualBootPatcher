@@ -152,27 +152,27 @@ endif()
 # liblz4 for Android
 ################################################################################
 
-#set(LIBLZ4_VER "r127")
-#
-#file(
-#    DOWNLOAD
-#    ${URL_BASE}/liblz4-${LIBLZ4_VER}_android.tar.bz2
-#    ${CMAKE_CURRENT_SOURCE_DIR}/liblz4-${LIBLZ4_VER}_android.tar.bz2
-#    EXPECTED_MD5 eab12196d906ee4ecfa447ea435b4fe7
-#    SHOW_PROGRESS
-#)
-#
-#if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/liblz4)
-#    execute_process(
-#        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/liblz4
-#    )
-#
-#    message(STATUS "Extracting liblz4 for Android ...")
-#    execute_process(
-#        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/liblz4-${LIBLZ4_VER}_android.tar.bz2
-#        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/liblz4
-#    )
-#endif()
+set(LIBLZ4_VER "r127")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/liblz4-${LIBLZ4_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/liblz4-${LIBLZ4_VER}_android.tar.bz2
+    EXPECTED_MD5 7120178f62782fb0908c609e1a2a667b
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/liblz4)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/liblz4
+    )
+
+    message(STATUS "Extracting liblz4 for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/liblz4-${LIBLZ4_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/liblz4
+    )
+endif()
 
 
 ################################################################################
