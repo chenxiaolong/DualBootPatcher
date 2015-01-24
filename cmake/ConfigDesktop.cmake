@@ -188,6 +188,12 @@ else()
     add_subdirectory(external/lz4/cmake_unofficial)
     set(MBP_LZ4_INCLUDES "${CMAKE_SOURCE_DIR}/external/lz4/lib")
     set(MBP_LZ4_LIBRARIES liblz4)
+    # Linking shared library to libarchive's static library, need -fPIC
+    set_target_properties(
+        liblz4
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+    )
 endif()
 
 
