@@ -7,9 +7,9 @@ set(MBP_VERSION_PATCH 0Alpha6)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
 # Allow version to be overridden in Jenkins
-set(CI_VERSION "" CACHE STRING "Override version (continuous integration)")
-if(CI_VERSION)
-    set(MBP_VERSION ${CI_VERSION})
+set(MBP_CI_VERSION "" CACHE STRING "Override version (continuous integration)")
+if(MBP_CI_VERSION)
+    set(MBP_VERSION ${MBP_CI_VERSION})
 endif()
 
 set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
