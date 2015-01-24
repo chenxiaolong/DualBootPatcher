@@ -90,7 +90,7 @@ struct LokiHeader {
 
 // From loki.h in the original source code:
 // https://raw.githubusercontent.com/djrbliss/loki/master/loki.h
-const char *SHELL_CODE =
+static const unsigned char SHELL_CODE[] =
         "\xfe\xb5"
         "\x0d\x4d"
         "\xd5\xf8"
@@ -624,8 +624,8 @@ unsigned int BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned 
         auto size = data.size();
 
         for (unsigned int i = 0; i < size - (sizeof(SHELL_CODE) - 9); ++i) {
-            if (std::memcmp(&data[i], SHELL_CODE, sizeof(SHELL_CODE) - 9)) {
-                ramdiskAddr = *(reinterpret_cast<const unsigned char *>(
+            if (std::memcmp(&data[i], SHELL_CODE, sizeof(SHELL_CODE) - 9) == 0) {
+                ramdiskAddr = *(reinterpret_cast<const unsigned int *>(
                         &data[i] + sizeof(SHELL_CODE) - 5));
                 break;
             }
