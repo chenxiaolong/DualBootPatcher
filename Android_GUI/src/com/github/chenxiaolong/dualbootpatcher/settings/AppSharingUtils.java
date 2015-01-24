@@ -137,7 +137,7 @@ public class AppSharingUtils {
             throw new Exception("Error code: " + error.getErrorCode());
         }
 
-        bi.setRamdiskImage(cpio.createData(true));
+        bi.setRamdiskImage(cpio.createData());
 
         if (!bi.createFile(tmpKernel)) {
             PatcherError error = bi.getError();
