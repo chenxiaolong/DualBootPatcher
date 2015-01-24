@@ -1,4 +1,27 @@
 LOCAL_PATH := $(call my-dir)
+
+# To debug using valgrind, set DEBUGGING to true and push
+# <build dir>/mbtool/mbtool-prefix/tmp/local/armeabi-v7a/mbtool_recovery
+# to /tmp/updater. If the recovery used is TWRP, click the console window
+# button so tapping the screen won't perform unwanted operations (debugging
+# through ADB does not send SIGSTOP to the recovery process).
+#
+# Then, unpack valgrind (presumably to /data) and run:
+#   /data/local/Inst/bin/valgrind \
+#       -v --track-origins=yes --leak-check=full \
+#       /tmp/updater 3 1 /tmp/test_patched.zip
+#
+# Note that when DEBUGGING is set to true, the binary is not statically
+# linked, so the API 21 libc.so, libdl.so, and libcutils.so are needed.
+# If the ROM installed on the device is a Lollipop ROM, just run the
+# following before running valgrind:
+#   cp /system/lib/libc.so /tmp/
+#   cp /system/lib/libdl.so /tmp/
+#   cp /system/lib/libcutils.so /tmp/
+#   cd /tmp/
+DEBUGGING := false
+
+
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
 LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
@@ -150,10 +173,14 @@ LOCAL_CFLAGS += -DRECOVERY
 LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
 LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
-#LOCAL_CFLAGS += -DMB_LIBC_DEBUG
+ifeq ($(DEBUGGING),true)
+LOCAL_CFLAGS += -DMB_LIBC_DEBUG
 # Use the recovery's loader
-#LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker
+LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker
+else
 LOCAL_LDFLAGS := -static
+endif
+
 LOCAL_LDFLAGS += -lz
 
 include $(BUILD_EXECUTABLE)
