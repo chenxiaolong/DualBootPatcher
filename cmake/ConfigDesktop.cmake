@@ -222,7 +222,7 @@ else()
     set(LZMA_LIBRARY ${MBP_LIBLZMA_LIBRARIES})
     set(LZ4_INCLUDE_DIR ${MBP_LZ4_INCLUDES})
     set(LZ4_LIBRARY ${MBP_LZ4_LIBRARIES})
-    set(MBP_LIBARCHIVE_INCLUDES ${CMAKE_SOURCE_DIR}/external/libarchive)
+    set(MBP_LIBARCHIVE_INCLUDES ${CMAKE_SOURCE_DIR}/external/libarchive/libarchive)
     set(MBP_LIBARCHIVE_LIBRARIES archive_static)
     add_subdirectory(external/libarchive)
     # Linking shared library to libarchive's static library, need -fPIC
