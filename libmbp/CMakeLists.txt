@@ -5,6 +5,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Allow libmbp headers to be found
 include_directories(${CMAKE_SOURCE_DIR})
 
+include_directories(${MBP_ZLIB_INCLUDES})
+include_directories(${MBP_LIBLZMA_INCLUDES})
+include_directories(${MBP_LIBARCHIVE_INCLUDES})
+
 set(MBP_SOURCES
     bootimage.cpp
     cpiofile.cpp
@@ -149,8 +153,10 @@ else()
 
     target_link_libraries(mbp
         ${Boost_LIBRARIES}
-        ${LibArchive_LIBRARIES}
         ${LIBXML2_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
+        ${MBP_LIBLZMA_LIBRARIES}
+        ${MBP_LIBARCHIVE_LIBRARIES}
     )
 
     # Install library
