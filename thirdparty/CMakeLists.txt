@@ -233,7 +233,7 @@ endif()
 # jna for Android
 ################################################################################
 
-if(BUILD_ANDROID)
+if(MBP_BUILD_ANDROID)
     set(JNA_VER "4.1.0")
 
     file(

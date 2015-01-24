@@ -96,7 +96,7 @@ set(MBP_NOINST_HEADERS
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
 
-if(BUILD_ANDROID)
+if(MBP_BUILD_ANDROID)
     # Wordaround semicolon separated list issue
     set(MBP_SOURCES_STR "")
     foreach(_source ${MBP_SOURCES})

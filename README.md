@@ -68,7 +68,7 @@ Compiling from Source
     Android (release):
 
         mkdir build && cd build
-        cmake .. -DBUILD_ANDROID=ON
+        cmake .. -DMBP_BUILD_ANDROID=ON
         make
         rm -rf assets && cpack -G TXZ
         cd ../Android_GUI
@@ -77,13 +77,13 @@ Compiling from Source
     Android (debug):
 
         mkdir build && cd build
-        cmake .. -DBUILD_ANDROID=ON -DANDROID_DEBUG=ON
+        cmake .. -DMBP_BUILD_ANDROID=ON -DANDROID_DEBUG=ON
         make
         rm -rf assets && cpack -G TXZ
         cd ../Android_GUI
         ./gradlew assembleDebug
         
-    Note that by passing `-DBUILD_ANDROID=ON` to CMake, it will build only the Android version of the patcher. If you want to build both the PC and Android versions of the patcher, create one build directory for each.
+    Note that by passing `-DMBP_BUILD_ANDROID=ON` to CMake, it will build only the Android version of the patcher. If you want to build both the PC and Android versions of the patcher, create one build directory for each.
 
 License
 -------

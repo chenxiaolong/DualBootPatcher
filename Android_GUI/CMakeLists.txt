@@ -1,4 +1,4 @@
-if(BUILD_ANDROID)
+if(MBP_BUILD_ANDROID)
     include(ExternalProject)
 
     configure_file(
