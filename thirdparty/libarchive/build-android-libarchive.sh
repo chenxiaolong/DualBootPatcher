@@ -18,17 +18,26 @@
 set -e
 
 xz_ver='5.2.0'
+lz4_ver='r127'
 
 url='https://github.com/libarchive/libarchive.git'
-ver='3.1.2'
+commit='cf053b6b1825eb77f6271a7724e492cec01785b9'
 
 if [ ! -f ../liblzma/liblzma-${xz_ver}_android.tar.bz2 ]; then
     echo "Please run thirdparty/liblzma/build-android-liblzma.sh first"
     exit 1
 fi
 
+if [ ! -f ../lz4/liblz4-${lz4_ver}_android.tar.bz2 ]; then
+    echo "Please run thirdparty/lz4/build-android-lz4.sh first"
+    exit 1
+fi
+
 mkdir -p liblzma/
 tar xvf ../liblzma/liblzma-${xz_ver}_android.tar.bz2 -C liblzma/
+
+mkdir -p liblz4/
+tar xvf ../lz4/liblz4-${lz4_ver}_android.tar.bz2 -C liblz4/
 
 mkdir -p libarchive/
 cd libarchive/
@@ -43,15 +52,19 @@ else
 fi
 
 pushd libarchive
-git checkout v${ver}
+git checkout ${commit}
 git am ../../0001-Android-build-fix.patch
 git am ../../0001-Change-statfs.f_flag-statfs.f_flags.patch
+ver=$(git describe --long | sed -E "s/^v//g;s/([^-]*-g)/r\1/;s/-/./g")
 popd
 
-if [ ! -f android.toolchain.cmake ]; then
-    wget 'https://github.com/taka-no-me/android-cmake/raw/master/android.toolchain.cmake'
-    # Hack to allow us to specify liblzma's path
-    sed -i '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}")/g' android.toolchain.cmake
+if [ ! -f android.toolchain.cmake.orig ]; then
+    wget 'https://github.com/taka-no-me/android-cmake/raw/master/android.toolchain.cmake' \
+        -O android.toolchain.cmake.orig
+    # Hack to allow us to specify liblzma and lz4's path
+    sed '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}" "${LIBLZ4_PREFIX_PATH}")/g' \
+        < android.toolchain.cmake.orig \
+        > android.toolchain.cmake
 fi
 
 build() {
@@ -67,8 +80,18 @@ build() {
     ln -s "$(pwd)/../../liblzma/include" liblzma/include
     ln -s "$(pwd)/../../liblzma/lib_${abi}" liblzma/lib
 
+    rm -rf liblz4
+    mkdir liblz4
+    ln -s "$(pwd)/../../liblz4/include" liblz4/include
+    ln -s "$(pwd)/../../liblz4/lib_${abi}" liblz4/lib
+
     cmake ../libarchive \
+        -DENABLE_TAR=OFF \
+        -DENABLE_CPIO=OFF \
+        -DENABLE_CAT=OFF \
+        -DENABLE_TEST=OFF \
         -DLIBLZMA_PREFIX_PATH="$(pwd)/liblzma" \
+        -DLIBLZ4_PREFIX_PATH="$(pwd)/liblz4" \
         -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake \
         -DANDROID_ABI="${abi}" \
         -DANDROID_NATIVE_API_LEVEL="${api}" \
