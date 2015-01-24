@@ -1591,6 +1591,9 @@ static void update_binary_usage(int error)
 
 int update_binary_main(int argc, char *argv[])
 {
+    // Make stdout unbuffered
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     int opt;
 
     static struct option long_options[] = {
