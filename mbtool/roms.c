@@ -207,7 +207,7 @@ int mb_roms_get_builtin(struct roms *roms)
     char system[50] = { 0 };
     char cache[50] = { 0 };
     char data[50] = { 0 };
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 1; i <= 3; ++i) {
         const char *fmtSystem = CACHE SEP "multiboot" SEP "%s" SEP "system";
         const char *fmtCache = SYSTEM SEP "multiboot" SEP "%s" SEP "cache";
         const char *fmtData = DATA SEP "multiboot" SEP "%s" SEP "data";
