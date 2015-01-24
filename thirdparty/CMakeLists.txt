@@ -98,13 +98,13 @@ endif()
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.1.2")
+set(LIBARCHIVE_VER "3.1.2.r443.g687ac8d")
 
 file(
     DOWNLOAD
     ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-    EXPECTED_MD5 bcb32910936b37e4d5802fbc9319be5e
+    EXPECTED_MD5 507f280567b2bded29039123861784e1
     SHOW_PROGRESS
 )
 
