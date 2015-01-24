@@ -1520,8 +1520,9 @@ finish:
     remove("/data/.system.img.tmp");
 
     if (ret < 0 && boot_block_dev
-            && copy_blockdev(boot_block_dev, MB_TEMP "/boot.orig") < 0) {
+            && copy_blockdev(MB_TEMP "/boot.orig", boot_block_dev) < 0) {
         LOGE("Failed to restore boot partition: %s", strerror(errno));
+        ui_print("Failed to restore boot partition");
     }
 
     mb_roms_cleanup(&r);
