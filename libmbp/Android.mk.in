@@ -3,6 +3,7 @@ THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 BOOST_DIR := $(THIRD_PARTY)/android/boost
 LIBXML2_DIR := $(THIRD_PARTY)/android/libxml2
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
+LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 
 
 include $(CLEAR_VARS)
@@ -26,6 +27,12 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libarchive
 LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := liblz4
+LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -76,7 +83,8 @@ LOCAL_STATIC_LIBRARIES := \
 	boost_filesystem \
 	boost_system \
 	libxml2 \
-	libarchive
+	libarchive \
+	liblz4
 
 ifeq ($(MBP_MINI),true)
 include $(BUILD_STATIC_LIBRARY)

@@ -113,6 +113,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
     // Allow gzip-compressed cpio files to work as well
     // (libarchive is awesome)
     archive_read_support_filter_gzip(a);
+    archive_read_support_filter_lz4(a);
     archive_read_support_format_cpio(a);
 
     int ret = archive_read_open_memory(a,
