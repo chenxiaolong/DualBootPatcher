@@ -164,11 +164,12 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
 
         if (r < ARCHIVE_WARN) {
             Log::log(Log::Warning, "libarchive: %s", archive_error_string(a));
-            archive_read_free(a);
 
             m_impl->error = PatcherError::createArchiveError(
                     MBP::ErrorCode::ArchiveReadDataError,
                     archive_entry_pathname(entry));
+
+            archive_read_free(a);
             return false;
         }
 
