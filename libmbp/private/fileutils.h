@@ -45,7 +45,7 @@ public:
 
     static bool laExtractFile(archive *aInput,
                               archive_entry *entry,
-                              const std::string directory);
+                              const std::string &directory);
 
     static PatcherError laAddFile(archive * const aOutput,
                                   const std::string &name,

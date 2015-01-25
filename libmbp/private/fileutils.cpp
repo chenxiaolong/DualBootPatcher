@@ -140,7 +140,7 @@ bool FileUtils::laCopyData(archive *aInput, archive *aOutput)
 
 bool FileUtils::laExtractFile(archive *aInput,
                               archive_entry *entry,
-                              const std::string directory)
+                              const std::string &directory)
 {
     int r;
     __LA_INT64_T offset;
