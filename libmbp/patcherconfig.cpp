@@ -353,7 +353,15 @@ void PatcherConfig::Impl::loadDefaultDevices()
     const std::string qcomCache("/dev/block/platform/msm_sdcc.1/by-name/cache");
     const std::string qcomData("/dev/block/platform/msm_sdcc.1/by-name/userdata");
     const std::string qcomBoot("/dev/block/platform/msm_sdcc.1/by-name/boot");
+
     const std::string qcomAboot("/dev/block/platform/msm_sdcc.1/by-name/aboot");
+    const std::string qcomImgdata("/dev/block/platform/msm_sdcc.1/by-name/imgdata");
+    const std::string qcomMisc("/dev/block/platform/msm_sdcc.1/by-name/misc");
+    const std::string qcomModem("/dev/block/platform/msm_sdcc.1/by-name/modem");
+    const std::string qcomRpm("/dev/block/platform/msm_sdcc.1/by-name/rpm");
+    const std::string qcomSbl1("/dev/block/platform/msm_sdcc.1/by-name/sbl1");
+    const std::string qcomSdi("/dev/block/platform/msm_sdcc.1/by-name/sdi");
+    const std::string qcomTz("/dev/block/platform/msm_sdcc.1/by-name/tz");
 
     // Samsung Galaxy S 4
     device = new Device();
@@ -409,6 +417,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p27" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p19" });
+    device->setExtraBlockDevs({ qcomAboot, qcomImgdata, qcomMisc, qcomModem,
+                                qcomRpm, qcomSbl1, qcomSdi, qcomTz });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2013)
