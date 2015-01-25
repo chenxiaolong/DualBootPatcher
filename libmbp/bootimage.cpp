@@ -967,7 +967,7 @@ void BootImage::Impl::dumpHeader() const
     //         header.id[3], header.id[4], header.id[5],
     //         header.id[6], header.id[7]);
     Log::log(Log::Debug, "- id:           %s",
-             toHex(reinterpret_cast<const unsigned char *>(header.id), 40));
+             toHex(reinterpret_cast<const unsigned char *>(header.id), 32));
 }
 
 /*!
