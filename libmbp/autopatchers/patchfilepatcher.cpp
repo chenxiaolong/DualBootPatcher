@@ -75,7 +75,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
     // The arguments should have the patch to the file
     if (args.find(ArgFile) == args.end()) {
-        Log::log(Log::Warning, "Arguments does not contain the path to a patch file");
+        LOGW("Arguments does not contain the path to a patch file");
         return;
     }
 
@@ -84,7 +84,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
     std::vector<unsigned char> contents;
     auto ret = FileUtils::readToMemory(m_impl->patchFile, &contents);
     if (ret.errorCode() != MBP::ErrorCode::NoError) {
-        Log::log(Log::Warning, "Failed to read patch file");
+        LOGW("Failed to read patch file");
         return;
     }
 
@@ -106,9 +106,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
             // Skip files containing escaped characters
             if (file.find("\\") != std::string::npos) {
-                Log::log(Log::Warning,
-                         "Skipping file with escaped characters in filename: %s",
-                         file);
+                LOGW("Skipping file with escaped characters in filename: %s", file);
                 continue;
             }
 
@@ -118,7 +116,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
                 file.erase(file.begin(), file.begin() + it + 1);
             }
 
-            Log::log(Log::Debug, "Found file in patch: %s", file);
+            LOGD("Found file in patch: %s", file);
 
             m_impl->files.push_back(file);
         }
@@ -183,7 +181,7 @@ bool PatchFilePatcher::patchFiles(const std::string &directory)
 
     boost::split(lines, output, boost::is_any_of("\n"));
     for (auto &line : lines) {
-        Log::log(Log::Error, "patch output: %s", line);
+        LOGE("patch output: %s", line);
     }
 
     if (error) {

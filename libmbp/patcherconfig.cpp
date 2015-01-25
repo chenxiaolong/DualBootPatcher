@@ -724,7 +724,7 @@ bool PatcherConfig::loadPatchInfos()
 
         return true;
     } catch (std::exception &e) {
-        Log::log(Log::Warning, e.what());
+        LOGW(e.what());
     }
 
     return false;
@@ -757,7 +757,7 @@ bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
             info->setId(pathId);
             patchInfos.push_back(info);
         } else {
-            Log::log(Log::Warning, "Unknown tag: %s", (char *) curNode->name);
+            LOGW("Unknown tag: %s", (char *) curNode->name);
         }
     }
 
@@ -786,7 +786,7 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
         }
 
         if (xmlStrcmp(curNode->name, PatchInfoTagPatchinfo) == 0) {
-            Log::log(Log::Warning, "Nested <patchinfo> is not allowed");
+            LOGW("Nested <patchinfo> is not allowed");
         } else if (xmlStrcmp(curNode->name, PatchInfoTagMatches) == 0) {
             parsePatchInfoTagMatches(curNode, info);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagNotMatched) == 0) {
@@ -806,8 +806,8 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::Default);
         } else {
-            Log::log(Log::Warning, "Unrecognized tag within <patchinfo>: %s",
-                     (char *) curNode->name);
+            LOGW("Unrecognized tag within <patchinfo>: %s",
+                 (char *) curNode->name);
         }
     }
 }
@@ -819,7 +819,7 @@ void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
 
     xmlChar *value = xmlGetProp(node, PatchInfoAttrRegex);
     if (value == nullptr) {
-        Log::log(Log::Warning, "<matches> element has no 'regex' attribute");
+        LOGW("<matches> element has no 'regex' attribute");
         return;
     }
 
@@ -836,7 +836,7 @@ void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
         }
 
         if (xmlStrcmp(curNode->name, PatchInfoTagMatches) == 0) {
-            Log::log(Log::Warning, "Nested <matches> is not allowed");
+            LOGW("Nested <matches> is not allowed");
         } else if (xmlStrcmp(curNode->name, PatchInfoTagHasBootImage) == 0) {
             parsePatchInfoTagHasBootImage(curNode, info, regex);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
@@ -846,8 +846,8 @@ void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, regex);
         } else {
-            Log::log(Log::Warning, "Unrecognized tag within <matches>: %s",
-                     (char *) curNode->name);
+            LOGW("Unrecognized tag within <matches>: %s",
+                 (char *) curNode->name);
         }
     }
 }
@@ -865,7 +865,7 @@ void PatcherConfig::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
         }
 
         if (xmlStrcmp(curNode->name, PatchInfoTagNotMatched) == 0) {
-            Log::log(Log::Warning, "Nested <not-matched> is not allowed");
+            LOGW("Nested <not-matched> is not allowed");
         } else if (xmlStrcmp(curNode->name, PatchInfoTagHasBootImage) == 0) {
             parsePatchInfoTagHasBootImage(curNode, info, PatchInfo::NotMatched);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagRamdisk) == 0) {
@@ -875,8 +875,8 @@ void PatcherConfig::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::NotMatched);
         } else {
-            Log::log(Log::Warning, "Unrecognized tag within <not-matched>: %s",
-                     (char *) curNode->name);
+            LOGW("Unrecognized tag within <not-matched>: %s",
+                 (char *) curNode->name);
         }
     }
 }
@@ -896,12 +896,12 @@ void PatcherConfig::Impl::parsePatchInfoTagName(xmlNode *node,
         if (info->name().empty()) {
             info->setName(xmlStringToStdString(curNode->content));
         } else {
-            Log::log(Log::Warning, "Ignoring additional <name> elements");
+            LOGW("Ignoring additional <name> elements");
         }
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<name> tag has no text");
+        LOGW("<name> tag has no text");
     }
 }
 
@@ -923,7 +923,7 @@ void PatcherConfig::Impl::parsePatchInfoTagRegex(xmlNode *node,
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<regex> tag has no text");
+        LOGW("<regex> tag has no text");
     }
 }
 
@@ -945,7 +945,7 @@ void PatcherConfig::Impl::parsePatchInfoTagExcludeRegex(xmlNode *node,
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<exclude-regex> tag has no text");
+        LOGW("<exclude-regex> tag has no text");
     }
 }
 
@@ -960,14 +960,14 @@ void PatcherConfig::Impl::parsePatchInfoTagRegexes(xmlNode *node,
         }
 
         if (xmlStrcmp(curNode->name, PatchInfoTagRegexes) == 0) {
-            Log::log(Log::Warning, "Nested <regexes> is not allowed");
+            LOGW("Nested <regexes> is not allowed");
         } else if (xmlStrcmp(curNode->name, PatchInfoTagRegex) == 0) {
             parsePatchInfoTagRegex(curNode, info);
         } else if (xmlStrcmp(curNode->name, PatchInfoTagExcludeRegex) == 0) {
             parsePatchInfoTagExcludeRegex(curNode, info);
         } else {
-            Log::log(Log::Warning, "Unrecognized tag within <regexes>: %s",
-                     (char *) curNode->name);
+            LOGW("Unrecognized tag within <regexes>: %s",
+                 (char *) curNode->name);
         }
     }
 }
@@ -990,13 +990,13 @@ void PatcherConfig::Impl::parsePatchInfoTagHasBootImage(xmlNode *node,
         } else if (xmlStrcmp(curNode->content, XmlTextFalse) == 0) {
             info->setHasBootImage(type, false);
         } else {
-            Log::log(Log::Warning, "Unknown value for <has-boot-image>: %s",
-                     (char *) curNode->content);
+            LOGW("Unknown value for <has-boot-image>: %s",
+                 (char *) curNode->content);
         }
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<has-boot-image> tag has no text");
+        LOGW("<has-boot-image> tag has no text");
     }
 }
 
@@ -1016,12 +1016,12 @@ void PatcherConfig::Impl::parsePatchInfoTagRamdisk(xmlNode *node,
         if (info->ramdisk(type).empty()) {
             info->setRamdisk(type, xmlStringToStdString(curNode->content));
         } else {
-            Log::log(Log::Warning, "Ignoring additional <ramdisk> elements");
+            LOGW("Ignoring additional <ramdisk> elements");
         }
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<ramdisk> tag has no text");
+        LOGW("<ramdisk> tag has no text");
     }
 }
 
@@ -1037,12 +1037,12 @@ void PatcherConfig::Impl::parsePatchInfoTagAutopatchers(xmlNode *node,
         }
 
         if (xmlStrcmp(curNode->name, PatchInfoTagAutopatchers) == 0) {
-            Log::log(Log::Warning, "Nested <autopatchers> is not allowed");
+            LOGW("Nested <autopatchers> is not allowed");
         } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatcher) == 0) {
             parsePatchInfoTagAutopatcher(curNode, info, type);
         } else {
-            Log::log(Log::Warning, "Unrecognized tag within <autopatchers>: %s",
-                     (char *) curNode->name);
+            LOGW("Unrecognized tag within <autopatchers>: %s",
+                 (char *) curNode->name);
         }
     }
 }
@@ -1076,7 +1076,7 @@ void PatcherConfig::Impl::parsePatchInfoTagAutopatcher(xmlNode *node,
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<autopatcher> tag has no text");
+        LOGW("<autopatcher> tag has no text");
     }
 }
 
@@ -1098,13 +1098,13 @@ void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
         } else if (xmlStrcmp(curNode->content, XmlTextFalse) == 0) {
             info->setDeviceCheck(type, false);
         } else {
-            Log::log(Log::Warning, "Unknown value for <device-check>: %s",
-                     (char *) curNode->content);
+            LOGW("Unknown value for <device-check>: %s",
+                 (char *) curNode->content);
         }
     }
 
     if (!hasText) {
-        Log::log(Log::Warning, "<device-check> tag has no text");
+        LOGW("<device-check> tag has no text");
     }
 }
 

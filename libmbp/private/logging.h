@@ -34,11 +34,11 @@
 #  include <cstdio>
 #endif
 
-#define LOGD(...) Log::log(Debug, __VA_ARGS__)
-#define LOGV(...) Log::log(Verbose, __VA_ARGS__)
-#define LOGI(...) Log::log(Info, __VA_ARGS__)
-#define LOGW(...) Log::log(Warning, __VA_ARGS__)
-#define LOGE(...) Log::log(Error, __VA_ARGS__)
+#define LOGD(...) Log::log(Log::Debug, __VA_ARGS__)
+#define LOGV(...) Log::log(Log::Verbose, __VA_ARGS__)
+#define LOGI(...) Log::log(Log::Info, __VA_ARGS__)
+#define LOGW(...) Log::log(Log::Warning, __VA_ARGS__)
+#define LOGE(...) Log::log(Log::Error, __VA_ARGS__)
 
 
 /*!
