@@ -39,5 +39,9 @@ if(NOT DEFINED PROCESSOR_COUNT)
         set(PROCESSOR_COUNT "$ENV{NUMBER_OF_PROCESSORS}")
     endif()
 
+    if("${PROCESSOR_COUNT}" STREQUAL "")
+        set(PROCESSOR_COUNT 4)
+    endif()
+
     message(STATUS "Processor count: ${PROCESSOR_COUNT}")
 endif()
