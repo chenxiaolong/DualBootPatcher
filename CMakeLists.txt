@@ -37,7 +37,6 @@ if(MBP_BUILD_ANDROID)
     add_subdirectory(libmiscstuff)
     add_subdirectory(Android_GUI)
 else()
-    add_subdirectory(shortcuts)
     add_subdirectory(gui)
 endif()
 
