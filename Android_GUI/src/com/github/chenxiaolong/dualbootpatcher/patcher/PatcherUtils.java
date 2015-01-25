@@ -127,10 +127,6 @@ public class PatcherUtils {
             return context.getString(R.string.boot_image_no_android_header_error);
         case ErrorCode.BOOT_IMAGE_NO_RAMDISK_GZIP_HEADER_ERROR:
             return context.getString(R.string.boot_image_no_ramdisk_gzip_header_error);
-        case ErrorCode.BOOT_IMAGE_NO_RAMDISK_SIZE_ERROR:
-            return context.getString(R.string.boot_image_no_ramdisk_size_error);
-        case ErrorCode.BOOT_IMAGE_NO_KERNEL_SIZE_ERROR:
-            return context.getString(R.string.boot_image_no_kernel_size_error);
         case ErrorCode.BOOT_IMAGE_NO_RAMDISK_ADDRESS_ERROR:
             return context.getString(R.string.boot_image_no_ramdisk_address_error);
         case ErrorCode.CPIO_FILE_ALREADY_EXIST_ERROR:

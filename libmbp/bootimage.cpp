@@ -151,15 +151,16 @@ public:
 
     bool loadAndroidHeader(const std::vector<unsigned char> &data,
                            const int headerIndex);
-    bool loadLokiHeader(const std::vector< unsigned char> &data,
+    bool loadLokiHeader(const std::vector<unsigned char> &data,
                         const int headerIndex);
-    int lokiFindGzipOffset(const std::vector<unsigned char> &data,
-                           const unsigned int startOffset) const;
-    int lokiFindRamdiskSize(const std::vector<unsigned char> &data,
-                            const LokiHeader *loki,
-                            const int &ramdiskOffset) const;
-    int lokiFindKernelSize(const std::vector<unsigned char> &data,
-                           const LokiHeader *loki) const;
+    bool loadLokiNewImage(const std::vector<unsigned char> &data,
+                          const LokiHeader *loki);
+    bool loadLokiOldImage(const std::vector<unsigned char> &data,
+                          const LokiHeader *loki);
+    unsigned int lokiOldFindGzipOffset(const std::vector<unsigned char> &data,
+                                       const unsigned int startOffset) const;
+    unsigned int lokiOldFindRamdiskSize(const std::vector<unsigned char> &data,
+                                        const int &ramdiskOffset) const;
     unsigned int lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
                                         const LokiHeader *loki) const;
     int skipPadding(const int &itemSize,
@@ -412,11 +413,6 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
         return false;
     }
 
-    // The kernel tags address is invalid in the loki images
-    Log::log(Log::Debug, "Setting kernel tags address to default: 0x%08x",
-             header.tags_addr);
-    m_parent->resetKernelTagsAddress();
-
     const LokiHeader *loki = reinterpret_cast<const LokiHeader *>(&data[0x400]);
 
     Log::log(Log::Debug, "Found Loki boot image header at 0x%x", 0x400);
@@ -429,30 +425,108 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     Log::log(Log::Debug, "- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
     Log::log(Log::Debug, "- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
 
-    int kernelSize = lokiFindKernelSize(data, loki);
-    if (kernelSize < 0) {
+    if (loki->orig_kernel_size != 0
+            && loki->orig_ramdisk_size != 0
+            && loki->ramdisk_addr != 0) {
+        return loadLokiNewImage(data, loki);
+    } else {
+        return loadLokiOldImage(data, loki);
+    }
+}
+
+bool BootImage::Impl::loadLokiNewImage(const std::vector<unsigned char> &data,
+                                       const LokiHeader *loki)
+{
+    Log::log(Log::Debug, "This is a new loki image");
+
+    unsigned int pageMask = header.page_size - 1;
+    unsigned int fakeSize;
+
+    // From loki_unlok.c
+    if (header.ramdisk_addr > 0x88f00000 || header.ramdisk_addr < 0xfa00000) {
+        fakeSize = header.page_size;
+    } else {
+        fakeSize = 0x200;
+    }
+
+    // Find original ramdisk address
+    unsigned int ramdiskAddr = lokiFindRamdiskAddress(data, loki);
+    if (ramdiskAddr == 0) {
         error = PatcherError::createBootImageError(
-            MBP::ErrorCode::BootImageNoKernelSizeError);
+                MBP::ErrorCode::BootImageNoRamdiskAddressError);
         return false;
     }
 
+    // Restore original values in boot image header
+    header.ramdisk_size = loki->orig_ramdisk_size;
+    header.kernel_size = loki->orig_kernel_size;
+    header.ramdisk_addr = ramdiskAddr;
+
+    unsigned int pageKernelSize =
+            (loki->orig_kernel_size + pageMask) & ~pageMask;
+    unsigned int pageRamdiskSize =
+            (loki->orig_ramdisk_size + pageMask) & ~pageMask;
+
+    // Kernel image
+    kernelImage.assign(
+            data.begin() + header.page_size,
+            data.begin() + header.page_size + loki->orig_kernel_size);
+
+    // Ramdisk image
+    ramdiskImage.assign(
+            data.begin() + header.page_size + pageKernelSize,
+            data.begin() + header.page_size + pageKernelSize + loki->orig_ramdisk_size);
+
+    // No second bootloader image
+    secondBootloaderImage.clear();
+
+    // Possible device tree image
+    if (header.dt_size != 0) {
+        auto startPtr = data.begin() + header.page_size
+                + pageKernelSize + pageRamdiskSize + fakeSize;
+        deviceTreeImage.assign(startPtr, startPtr + header.dt_size);
+    } else {
+        deviceTreeImage.clear();
+    }
+
+    return true;
+}
+
+bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
+                                       const LokiHeader *loki)
+{
+    Log::log(Log::Debug, "This is an old loki image");
+
+    // The kernel tags address is invalid in the old loki images
+    Log::log(Log::Debug, "Setting kernel tags address to default: 0x%08x",
+             header.tags_addr);
+    m_parent->resetKernelTagsAddress();
+
+    unsigned int kernelSize;
+    unsigned int ramdiskSize;
+    unsigned int ramdiskAddr;
+
+    // If the boot image was patched with an early version of loki, the original
+    // kernel size is not stored in the loki header properly (or in the shellcode).
+    // The size is stored in the kernel image's header though, so we'll use that.
+    // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
+    kernelSize = *(reinterpret_cast<const int *>(&data[header.page_size + 0x2c]));
+    Log::log(Log::Debug, "Kernel size: %d", kernelSize);
+
+
     // The ramdisk always comes after the kernel in boot images, so start the
     // search there
-    int gzipOffset = lokiFindGzipOffset(data, header.page_size + kernelSize);
-    if (gzipOffset < 0) {
+    unsigned int gzipOffset = lokiOldFindGzipOffset(
+            data, header.page_size + kernelSize);
+    if (gzipOffset == 0) {
         error = PatcherError::createBootImageError(
                 MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError);
         return false;
     }
 
-    int ramdiskSize = lokiFindRamdiskSize(data, loki, gzipOffset);
-    if (ramdiskSize < 0) {
-        error = PatcherError::createBootImageError(
-                MBP::ErrorCode::BootImageNoRamdiskSizeError);
-        return false;
-    }
+    ramdiskSize = lokiOldFindRamdiskSize(data, gzipOffset);
 
-    unsigned int ramdiskAddr = lokiFindRamdiskAddress(data, loki);
+    ramdiskAddr = lokiFindRamdiskAddress(data, loki);
     if (ramdiskAddr == 0) {
         error = PatcherError::createBootImageError(
                 MBP::ErrorCode::BootImageNoRamdiskAddressError);
@@ -463,20 +537,27 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
     header.kernel_size = kernelSize;
     header.ramdisk_addr = ramdiskAddr;
 
+    // Kernel image
     kernelImage.assign(
             data.begin() + header.page_size,
             data.begin() + header.page_size + kernelSize);
+
+    // Ramdisk image
     ramdiskImage.assign(
             data.begin() + gzipOffset,
             data.begin() + gzipOffset + ramdiskSize);
+
+    // No second bootloader image
     secondBootloaderImage.clear();
+
+    // No device tree image
     deviceTreeImage.clear();
 
     return true;
 }
 
-int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data,
-                                        const unsigned int startOffset) const
+unsigned int BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned char> &data,
+                                                    const unsigned int startOffset) const
 {
     // gzip header:
     // byte 0-1 : magic bytes 0x1f, 0x8b
@@ -494,7 +575,7 @@ int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data,
     unsigned int curOffset = startOffset - 1;
 
     while (true) {
-        // Try to find first gzip header
+        // Try to find gzip header
         auto it = std::search(data.begin() + curOffset + 1, data.end(),
                               gzipDeflate, gzipDeflate + 3);
 
@@ -536,7 +617,7 @@ int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data,
     if (gzipOffset == 0) {
         if (offsetsFlag0.empty()) {
             Log::log(Log::Warning, "Could not find the ramdisk's gzip header");
-            return -1;
+            return 0;
         } else {
             gzipOffset = offsetsFlag0[0];
         }
@@ -547,70 +628,44 @@ int BootImage::Impl::lokiFindGzipOffset(const std::vector<unsigned char> &data,
     return gzipOffset;
 }
 
-int BootImage::Impl::lokiFindRamdiskSize(const std::vector<unsigned char> &data,
-                                         const LokiHeader *loki,
-                                         const int &ramdiskOffset) const
+unsigned int BootImage::Impl::lokiOldFindRamdiskSize(const std::vector<unsigned char> &data,
+                                                     const int &ramdiskOffset) const
 {
-    int ramdiskSize = -1;
+    unsigned int ramdiskSize;
 
     // If the boot image was patched with an old version of loki, the ramdisk
     // size is not stored properly. We'll need to guess the size of the archive.
-    if (loki->orig_ramdisk_size == 0) {
-        // The ramdisk is supposed to be from the gzip header to EOF, but loki needs
-        // to store a copy of aboot, so it is put in the last 0x200 bytes of the file.
-        ramdiskSize = data.size() - ramdiskOffset - 0x200;
-        // For LG kernels:
-        // ramdiskSize = data.size() - ramdiskOffset - d->header->page_size;
 
-        // The gzip file is zero padded, so we'll search backwards until we find a
-        // non-zero byte
-        unsigned int begin = data.size() - 0x200;
-        int found = -1;
+    // The ramdisk is supposed to be from the gzip header to EOF, but loki needs
+    // to store a copy of aboot, so it is put in the last 0x200 bytes of the file.
+    ramdiskSize = data.size() - ramdiskOffset - 0x200;
+    // For LG kernels:
+    // ramdiskSize = data.size() - ramdiskOffset - d->header->page_size;
 
-        if (begin < header.page_size) {
-            return -1;
+    // The gzip file is zero padded, so we'll search backwards until we find a
+    // non-zero byte
+    std::size_t begin = data.size() - 0x200;
+    int found = -1;
+
+    if (begin < header.page_size) {
+        return -1;
+    }
+
+    for (std::size_t i = begin; i > begin - header.page_size; --i) {
+        if (data[i] != 0) {
+            found = i;
+            break;
         }
+    }
 
-        for (unsigned int i = begin; i > begin - header.page_size; i--) {
-            if (data[i] != 0) {
-                found = i;
-                break;
-            }
-        }
-
-        if (found == -1) {
-            Log::log(Log::Debug, "Ramdisk size: %d (may include some padding)", ramdiskSize);
-        } else {
-            ramdiskSize = found - ramdiskOffset;
-            Log::log(Log::Debug, "Ramdisk size: %d (with padding removed)", ramdiskSize);
-        }
+    if (found == -1) {
+        Log::log(Log::Debug, "Ramdisk size: %d (may include some padding)", ramdiskSize);
     } else {
-        ramdiskSize = loki->orig_ramdisk_size;
-        Log::log(Log::Debug, "Ramdisk size: %d", ramdiskSize);
+        ramdiskSize = found - ramdiskOffset;
+        Log::log(Log::Debug, "Ramdisk size: %d (with padding removed)", ramdiskSize);
     }
 
     return ramdiskSize;
-}
-
-int BootImage::Impl::lokiFindKernelSize(const std::vector<unsigned char> &data,
-                                        const LokiHeader *loki) const
-{
-    int kernelSize = -1;
-
-    // If the boot image was patched with an early version of loki, the original
-    // kernel size is not stored in the loki header properly (or in the shellcode).
-    // The size is stored in the kernel image's header though, so we'll use that.
-    // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
-    if (loki->orig_kernel_size == 0) {
-        kernelSize = *(reinterpret_cast<const int *>(
-                &data[header.page_size + 0x2c]));
-    } else {
-        kernelSize = loki->orig_kernel_size;
-    }
-
-    Log::log(Log::Debug, "Kernel size: %d", kernelSize);
-
-    return kernelSize;
 }
 
 unsigned int BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
@@ -633,7 +688,7 @@ unsigned int BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned 
 
         if (ramdiskAddr == 0) {
             Log::log(Log::Warning, "Couldn't determine ramdisk offset");
-            return -1;
+            return 0;
         }
 
         Log::log(Log::Debug, "Original ramdisk address: 0x%08x", ramdiskAddr);

@@ -65,8 +65,6 @@ enum ErrorCode {
     BootImageSmallerThanHeaderError,
     BootImageNoAndroidHeaderError,
     BootImageNoRamdiskGzipHeaderError,
-    BootImageNoRamdiskSizeError,
-    BootImageNoKernelSizeError,
     BootImageNoRamdiskAddressError,
 
     // cpio

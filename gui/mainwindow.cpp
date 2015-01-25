@@ -642,10 +642,6 @@ static QString errorToString(PatcherError error) {
         return QObject::tr("Could not find the Android header in the boot image");
     case MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError:
         return QObject::tr("Could not find the ramdisk's gzip header");
-    case MBP::ErrorCode::BootImageNoRamdiskSizeError:
-        return QObject::tr("Could not determine the ramdisk's size");
-    case MBP::ErrorCode::BootImageNoKernelSizeError:
-        return QObject::tr("Could not determine the kernel's size");
     case MBP::ErrorCode::BootImageNoRamdiskAddressError:
         return QObject::tr("Could not determine the ramdisk's memory address");
     case MBP::ErrorCode::CpioFileAlreadyExistsError:

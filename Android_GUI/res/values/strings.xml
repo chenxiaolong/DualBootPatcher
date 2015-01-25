@@ -308,8 +308,6 @@
         boot image</string>
     <string name="boot_image_no_ramdisk_gzip_header_error">Could not find the ramdisk\'s gzip
         header</string>
-    <string name="boot_image_no_ramdisk_size_error">Could not determine the ramdisk\'s size</string>
-    <string name="boot_image_no_kernel_size_error">Could not determine the kernel\'s size</string>
     <string name="boot_image_no_ramdisk_address_error">Could not determine the ramdisk\'s memory
         address</string>
     <string name="cpio_file_already_exists_error">File already exists in cpio archive: %s</string>

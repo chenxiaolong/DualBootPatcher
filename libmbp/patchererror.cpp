@@ -145,8 +145,6 @@ PatcherError PatcherError::createBootImageError(MBP::ErrorCode error)
     case MBP::ErrorCode::BootImageSmallerThanHeaderError:
     case MBP::ErrorCode::BootImageNoAndroidHeaderError:
     case MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError:
-    case MBP::ErrorCode::BootImageNoRamdiskSizeError:
-    case MBP::ErrorCode::BootImageNoKernelSizeError:
     case MBP::ErrorCode::BootImageNoRamdiskAddressError:
         break;
     default:
