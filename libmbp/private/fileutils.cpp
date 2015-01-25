@@ -216,6 +216,8 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
     if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
         Log::log(Log::Warning, "libarchive: %s", archive_error_string(aOutput));
 
+        archive_entry_free(entry);
+
         return PatcherError::createArchiveError(
                 MBP::ErrorCode::ArchiveWriteHeaderError, name);
     }
@@ -223,6 +225,8 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
     // Write contents
     unsigned int size = archive_write_data(aOutput, contents.data(), contents.size());
     if (size != contents.size()) {
+        archive_entry_free(entry);
+
         return PatcherError::createArchiveError(
                 MBP::ErrorCode::ArchiveWriteDataError, name);
     }
