@@ -95,16 +95,16 @@ cmake_dependent_option(
     ON
 )
 cmake_dependent_option(
-    MBP_USE_SYSTEM_BZIP2
-    "Use system-installed bzip2"
-    "${MBP_USE_SYSTEM_LIBRARY_BZIP2}"
+    MBP_USE_SYSTEM_LIBLZMA
+    "Use system-installed liblzma"
+    "${MBP_USE_SYSTEM_LIBRARY_LIBLZMA}"
     "NOT MBP_USE_SYSTEM_LIBARCHIVE"
     ON
 )
 cmake_dependent_option(
-    MBP_USE_SYSTEM_LIBLZMA
-    "Use system-installed liblzma"
-    "${MBP_USE_SYSTEM_LIBRARY_LIBLZMA}"
+    MBP_USE_SYSTEM_LZ4
+    "Use system-installed lz4"
+    "${MBP_USE_SYSTEM_LIBRARY_LZ4}"
     "NOT MBP_USE_SYSTEM_LIBARCHIVE"
     ON
 )
@@ -180,7 +180,7 @@ if(MBP_USE_SYSTEM_LZ4)
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(LZ4 DEFAULT_MSG MBP_LZ4_LIBRARIES MBP_LZ4_INCLUDES)
     if(NOT LZ4_FOUND)
-        message(FATAL_ERROR "CMAKE_USE_SYSTEM_LIBLZ4 is ON but LZ4 is not found!")
+        message(FATAL_ERROR "CMAKE_USE_SYSTEM_LZ4 is ON but LZ4 is not found!")
     endif()
 else()
     set(BUILD_TOOLS OFF CACHE INTERNAL "Build the command line tools")
