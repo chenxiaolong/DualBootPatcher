@@ -32,8 +32,8 @@ menubox(
     "<~config_primary.name>",    "<~config_primary.desc>",    "@default",
     "<~config_dual.name>",       "<~config_dual.desc>",       "@default",
     "<~config_multislot1.name>", "<~config_multislot1.desc>", "@default",
-    "<~config_multislot2.name>", "<~config_multislot1.desc>", "@default",
-    "<~config_multislot3.name>", "<~config_multislot1.desc>", "@default",
+    "<~config_multislot2.name>", "<~config_multislot2.desc>", "@default",
+    "<~config_multislot3.name>", "<~config_multislot3.desc>", "@default",
     "<~cancel.name>",            "<~cancel.desc>",            "@alert"
 );
 

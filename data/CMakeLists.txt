@@ -26,7 +26,7 @@ file(
     DOWNLOAD
     ${URL_BASE}/aromawrapper.zip
     ${CMAKE_CURRENT_SOURCE_DIR}/aromawrapper.zip
-    EXPECTED_MD5 ecf14c3b8051da9928df91e05852b024
+    EXPECTED_MD5 a4d749ab840ddf2ad69477feb5ecbf0a
     SHOW_PROGRESS
 )
 
