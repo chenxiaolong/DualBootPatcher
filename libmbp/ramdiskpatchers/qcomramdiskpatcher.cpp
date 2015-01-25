@@ -104,8 +104,6 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
         std::vector<std::string> lines;
         boost::split(lines, strContents, boost::is_any_of("\n"));
 
-        static const std::string mountLine = "%1%%2% %3% %4% %5% %6%";
-
         // Some Android 4.2 ROMs mount the cache partition in the init
         // scripts, so the fstab has no cache line
         bool hasCacheLine = false;
