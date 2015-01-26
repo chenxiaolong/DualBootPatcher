@@ -66,6 +66,11 @@ if(NOT MSVC)
     )
 endif()
 
+set_target_properties(gui
+    PROPERTIES
+    OUTPUT_NAME DualBootPatcher
+)
+
 # Set rpath for portable build
 if (${MBP_PORTABLE})
     set_target_properties(gui
