@@ -1,0 +1,124 @@
+Building for Windows with mingw-w64
+===================================
+
+DualBootPatcher can be natively compiled on Windows or cross-compiled from Linux using mingw-w64.
+
+
+### MinGW (Natively compiled w/msys2)
+
+TODO: Still to be written
+
+
+### MinGW (Cross compiled from Linux)
+
+To cross-compile DualBootPatcher, the following packages are needed:
+
+- cmake
+- git
+- android-ndk
+- mingw-w64 toolchain
+
+Additionally, the following mingw-compiled packages are needed:
+
+- boost
+- libxml2
+- qt5
+- xz
+
+On Arch Linux, the following command will install some of the needed packages:
+
+    pacman -S cmake git mingw-w64
+
+The remaining packages will have to be installed from the AUR. I'd highly recommend against using AUR helpers for this, since they build in `/tmp/`. Some of these packages need more than 6GB of disk space to build!
+
+- android-ndk
+- mingw-w64-boost
+- mingw-w64-libxml2
+- mingw-w64-qt5-base
+- mingw-w64-xz
+
+
+Once all the dependencies are installed, follow the steps below to build DualBootPatcher.
+
+1. Clone the git repository
+
+    ```sh
+    git clone https://github.com/chenxiaolong/DualBootPatcher.git
+    ```
+
+2. Set up the environment and CMake toolchain file
+
+    ```sh
+    # Set these appropriately for your distro
+    export MINGW_TRIPLET=i686-w64-mingw32
+    export MINGW_ROOT_PATH=/usr/${MINGW_TRIPLET}
+
+    export ANDROID_NDK_HOME=/opt/android-ndk
+
+    sed \
+        -e "s,@MINGW_TRIPLET@,${MINGW_TRIPLET},g" \
+        -e "s,@MINGW_ROOT_PATH@,${MINGW_ROOT_PATH},g" \
+        < mingw/toolchain-mingw.cmake.in \
+        > mingw/toolchain-mingw.cmake
+    ```
+
+3. Start the build!
+
+    ```sh
+    mkdir build && cd build
+    cmake .. \
+        -DMBP_PORTABLE=ON \
+        -DCMAKE_TOOLCHAIN_FILE=../mingw/toolchain-mingw.cmake \
+        -DMBP_USE_SYSTEM_LIBRARY_ZLIB=ON \
+        -DMBP_USE_SYSTEM_LIBRARY_LIBLZMA=ON \
+        -DMBP_MINGW_USE_STATIC_LIBS=ON
+    ```
+
+    `MBP_PORTABLE` creates a portable build that can be run on any Windows system.
+    `MBP_USE_SYSTEM_LIBRARY_*` avoids using the bundled libraries, which are statically compiled.
+    `MBP_MINGW_USE_STATIC_LIBS` tells CMake to prefer static libraries over DLLs.
+
+5. Create the distributable zip package.
+
+    ```sh
+    cpack -G ZIP
+    ```
+
+   The resulting file will be something like `DualBootPatcher-[version]-win32.zip`
+
+6. Add needed DLLs to the zip.
+
+    ```sh
+    unzip DualBootPatcher-<version>-win32.zip
+    rm DualBootPatcher-<version>-win32.zip
+    pushd DualBootPatcher-<version>-win32
+
+    dlls=(
+        libboost_filesystem-mt.dll
+        libboost_system-mt.dll
+        libgcc_s_sjlj-1.dll
+        libGLESv2.dll
+        libiconv-2.dll
+        libpcre16-0.dll
+        libpng16-16.dll
+        libstdc++-6.dll
+        libwinpthread-1.dll
+        libxml2-2.dll
+        Qt5Core.dll
+        Qt5Gui.dll
+        Qt5Widgets.dll
+        zlib1.dll
+    )
+    for dll in "${dlls[@]}"; do
+      cp "${mingw_root_path}/bin/${dll}" bin/
+    done
+
+    # Qt Windows plugin
+    mkdir bin/platforms/
+    cp "${mingw_root_path}"/lib/qt/plugins/platforms/qwindows.dll bin/platforms/
+
+    # Optionally, compress dlls
+    upx --lzma bin/*.dll
+    popd
+    zip -r DualBootPatcher-<version>-win32.zip DualBootPatcher-<version>-win32
+    ```
