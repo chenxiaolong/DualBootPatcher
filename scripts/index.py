@@ -28,7 +28,7 @@ import sys
 
 name = 'Dual Boot Patcher'
 github = 'https://github.com/chenxiaolong/DualBootPatcher'
-maxbuilds = 100
+maxbuilds = 999999
 
 
 class Version():
