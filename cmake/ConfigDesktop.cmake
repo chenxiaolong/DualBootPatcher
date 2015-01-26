@@ -282,13 +282,14 @@ endif()
 # Install paths
 
 if(${MBP_PORTABLE})
-    set(BIN_INSTALL_DIR bin)
     set(DATA_INSTALL_DIR data)
     set(HEADERS_INSTALL_DIR include)
 
     if(WIN32)
-        set(LIB_INSTALL_DIR bin)
+        set(BIN_INSTALL_DIR .)
+        set(LIB_INSTALL_DIR .)
     else()
+        set(BIN_INSTALL_DIR bin)
         set(LIB_INSTALL_DIR lib)
     endif()
 else()
