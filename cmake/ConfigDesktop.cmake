@@ -2,21 +2,31 @@ include(CMakeDependentOption)
 include(GNUInstallDirs)
 
 # Portable application
-
 option(MBP_PORTABLE "Build as portable application" OFF)
-
 if(WIN32)
     set(MBP_PORTABLE ON CACHE BOOL "Build as portable application" FORCE)
 endif()
 
-# Compiler flags
 
+# Prefer static libraries when compiling with mingw
+option(
+    MBP_MINGW_USE_STATIC_LIBS
+    "Prefer static libraries when compiling with mingw"
+    OFF
+)
+if(WIN32 AND MINGW AND MBP_MINGW_USE_STATIC_LIBS)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES_OLD ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+endif()
+
+
+# Compiler flags
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
     # Enable warnings
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     # Except for "/*" within comment errors (present in doxygen blocks)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=comment")
     # Visibility
@@ -25,6 +35,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
 endif()
+
 
 # Use boost::regex instead on versions of gcc that don't have std::regex
 # implemented
@@ -47,14 +58,18 @@ if(USE_BOOST_REGEX)
     list(APPEND BOOST_COMPONENTS regex)
 endif()
 
+
 # Dependencies
 
+# Boost
 find_package(Boost REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+# Qt5
 find_package(Qt5Core 5.3 REQUIRED)
 
+# libxml2
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 
@@ -245,6 +260,12 @@ else()
         EXCLUDE_FROM_ALL 1
         EXCLUDE_FROM_DEFAULT_BUILD 1
     )
+endif()
+
+
+# Restore CMAKE_FIND_LIBRARY_SUFFIXES
+if(WIN32 AND MINGW AND MBP_MINGW_USE_STATIC_LIBS)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OLD})
 endif()
 
 
