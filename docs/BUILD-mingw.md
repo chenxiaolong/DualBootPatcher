@@ -61,8 +61,8 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     sed \
         -e "s,@MINGW_TRIPLET@,${MINGW_TRIPLET},g" \
         -e "s,@MINGW_ROOT_PATH@,${MINGW_ROOT_PATH},g" \
-        < mingw/toolchain-mingw.cmake.in \
-        > mingw/toolchain-mingw.cmake
+        < cmake/toolchain-mingw.cmake.in \
+        > cmake/toolchain-mingw.cmake
     ```
 
 3. Start the build!
@@ -71,10 +71,11 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     mkdir build && cd build
     cmake .. \
         -DMBP_PORTABLE=ON \
-        -DCMAKE_TOOLCHAIN_FILE=../mingw/toolchain-mingw.cmake \
+        -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-mingw.cmake \
         -DMBP_USE_SYSTEM_LIBRARY_ZLIB=ON \
         -DMBP_USE_SYSTEM_LIBRARY_LIBLZMA=ON \
         -DMBP_MINGW_USE_STATIC_LIBS=ON
+    make
     ```
 
     `MBP_PORTABLE` creates a portable build that can be run on any Windows system.
@@ -113,12 +114,12 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
         zlib1.dll
     )
     for dll in "${dlls[@]}"; do
-      cp "${mingw_root_path}/bin/${dll}" bin/
+        cp "${MINGW_ROOT_PATH}/bin/${dll}" bin/
     done
 
     # Qt Windows plugin
     mkdir bin/platforms/
-    cp "${mingw_root_path}"/lib/qt/plugins/platforms/qwindows.dll bin/platforms/
+    cp "${MINGW_ROOT_PATH}"/lib/qt/plugins/platforms/qwindows.dll bin/platforms/
 
     # Optionally, compress dlls
     upx --lzma bin/*.dll
