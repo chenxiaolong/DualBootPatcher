@@ -40,10 +40,13 @@ The remaining packages will have to be installed from the AUR. I'd highly recomm
 
 Once all the dependencies are installed, follow the steps below to build DualBootPatcher.
 
-1. Clone the git repository
+1. Clone the git repository and setup the submodules
 
     ```sh
     git clone https://github.com/chenxiaolong/DualBootPatcher.git
+    cd DualBootPatcher
+    git submodule --init
+    git submodule update
     ```
 
 2. Set up the environment and CMake toolchain file
