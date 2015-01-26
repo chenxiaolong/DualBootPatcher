@@ -114,15 +114,15 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
         zlib1.dll
     )
     for dll in "${dlls[@]}"; do
-        cp "${MINGW_ROOT_PATH}/bin/${dll}" bin/
+        cp "${MINGW_ROOT_PATH}/bin/${dll}" .
     done
 
     # Qt Windows plugin
-    mkdir bin/platforms/
-    cp "${MINGW_ROOT_PATH}"/lib/qt/plugins/platforms/qwindows.dll bin/platforms/
+    mkdir platforms/
+    cp "${MINGW_ROOT_PATH}"/lib/qt/plugins/platforms/qwindows.dll platforms/
 
     # Optionally, compress dlls
-    upx --lzma bin/*.dll
+    upx --lzma *.dll
     popd
     zip -r DualBootPatcher-<version>-win32.zip DualBootPatcher-<version>-win32
     ```

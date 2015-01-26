@@ -101,7 +101,7 @@ The following packages need to be downloaded and installed:
 
    The resulting file will be something like `DualBootPatcher-[version]-win32.zip`
 
-3. Extract `DualBootPatcher-[version]-win32.zip` and copy the following files to the `bin/` directory
+3. Extract `DualBootPatcher-[version]-win32.zip` and copy the following files to the `DualBootPatcher-[version]-win32` directory
 
     - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_filesystem-vc120-mt-1_57.dll
     - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_regex-vc120-mt-1_57.dll
