@@ -151,12 +151,21 @@ else()
         POSITION_INDEPENDENT_CODE 1
     )
     # Don't build the shared library or other binaries
-    set_target_properties(
-        zlib example example64 minigzip minigzip64
-        PROPERTIES
-        EXCLUDE_FROM_ALL 1
-        EXCLUDE_FROM_DEFAULT_BUILD 1
-    )
+    set(ZLIB_DISABLE zlib example minigzip)
+    if(TARGET example64)
+        list(APPEND ZLIB_DISABLE example64)
+    endif()
+    if (TARGET minigzip64)
+        list(APPEND ZLIB_DISABLE minigzip64)
+    endif()
+    foreach(ZLIB_TARGET ${ZLIB_DISABLE})
+        set_target_properties(
+            ${ZLIB_TARGET}
+            PROPERTIES
+            EXCLUDE_FROM_ALL 1
+            EXCLUDE_FROM_DEFAULT_BUILD 1
+        )
+    endforeach()
 endif()
 
 
