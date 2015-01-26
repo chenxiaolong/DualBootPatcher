@@ -141,7 +141,7 @@ if(MBP_USE_SYSTEM_ZLIB)
     set(MBP_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
 else()
     set(SKIP_INSTALL_ALL ON CACHE INTERNAL "Disable zlib install")
-    set(MBP_ZLIB_INCLUDES ${CMAKE_SOURCE_DIR}/external/zlib)
+    set(MBP_ZLIB_INCLUDES ${CMAKE_SOURCE_DIR}/external/zlib ${CMAKE_BINARY_DIR}/external/zlib)
     set(MBP_ZLIB_LIBRARIES zlibstatic)
     add_subdirectory(external/zlib)
     # Linking shared library to zlib's static library, need -fPIC
