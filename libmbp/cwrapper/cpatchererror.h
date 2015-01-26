@@ -20,18 +20,18 @@
 #pragma once
 
 #include "cwrapper/ctypes.h"
-#include "errors.h"
+//#include "errors.h"
 
 #ifdef __cplusplus
-using namespace MBP;
+//using namespace MBP;
 
 extern "C" {
 #endif
 
 void mbp_error_destroy(CPatcherError *error);
 
-enum ErrorType mbp_error_error_type(const CPatcherError *error);
-enum ErrorCode mbp_error_error_code(const CPatcherError *error);
+/* enum ErrorType */ int mbp_error_error_type(const CPatcherError *error);
+/* enum ErrorCode */ int mbp_error_error_code(const CPatcherError *error);
 
 char * mbp_error_patcher_name(const CPatcherError *error);
 char * mbp_error_filename(const CPatcherError *error);

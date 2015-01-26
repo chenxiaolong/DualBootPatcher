@@ -65,10 +65,10 @@ void mbp_error_destroy(CPatcherError *error)
  *
  * \sa PatcherError::errorType()
  */
-ErrorType mbp_error_error_type(const CPatcherError *error)
+/* ErrorType */ int mbp_error_error_type(const CPatcherError *error)
 {
     CCAST(error);
-    return pe->errorType();
+    return static_cast<int>(pe->errorType());
 }
 
 /*!
@@ -78,10 +78,10 @@ ErrorType mbp_error_error_type(const CPatcherError *error)
  *
  * \sa PatcherError::errorCode()
  */
-ErrorCode mbp_error_error_code(const CPatcherError *error)
+/* ErrorCode */ int mbp_error_error_code(const CPatcherError *error)
 {
     CCAST(error);
-    return pe->errorCode();
+    return static_cast<int>(pe->errorCode());
 }
 
 /*!
