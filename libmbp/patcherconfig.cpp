@@ -51,6 +51,7 @@
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
 #include "ramdiskpatchers/klteramdiskpatcher.h"
 #include "ramdiskpatchers/lgg2ramdiskpatcher.h"
+#include "ramdiskpatchers/trlteramdiskpatcher.h"
 #endif
 
 
@@ -511,6 +512,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
     list.push_back(JflteDefaultRamdiskPatcher::Id);
     list.push_back(KlteDefaultRamdiskPatcher::Id);
     list.push_back(LGG2RamdiskPatcher::Id);
+    list.push_back(TrlteDefaultRamdiskPatcher::Id);
     return list;
 }
 
@@ -613,6 +615,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == LGG2RamdiskPatcher::Id) {
         rp = new LGG2RamdiskPatcher(this, info, cpio);
+    } else if (id == TrlteDefaultRamdiskPatcher::Id) {
+        rp = new TrlteDefaultRamdiskPatcher(this, info, cpio);
     }
 
     if (rp != nullptr) {

@@ -47,6 +47,7 @@ set(MBP_SOURCES
     ramdiskpatchers/klteramdiskpatcher.cpp
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
+    ramdiskpatchers/trlteramdiskpatcher.cpp
 )
 
 set(MBP_HEADERS
@@ -91,6 +92,7 @@ set(MBP_NOINST_HEADERS
     ramdiskpatchers/klteramdiskpatcher.h
     ramdiskpatchers/lgg2ramdiskpatcher.h
     ramdiskpatchers/qcomramdiskpatcher.h
+    ramdiskpatchers/trlteramdiskpatcher.h
 )
 
 # If we're building for Android, then compile with ndk-build since it can easily
