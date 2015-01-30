@@ -43,8 +43,6 @@ public:
 
 const std::string CoreRamdiskPatcher::FstabRegex
         = "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
-const std::string CoreRamdiskPatcher::PropVersion
-        = "ro.patcher.version=%1%\n";
 #if 0
 const std::string CoreRamdiskPatcher::SyncdaemonService
         = "\nservice syncdaemon /sbin/syncdaemon\n"
@@ -95,9 +93,6 @@ std::string CoreRamdiskPatcher::id() const
 
 bool CoreRamdiskPatcher::patchRamdisk()
 {
-    if (!modifyDefaultProp()) {
-        return false;
-    }
 #if 0
     if (!addSyncdaemon()) {
         return false;
@@ -106,26 +101,6 @@ bool CoreRamdiskPatcher::patchRamdisk()
     if (!fixDataMediaContext()) {
         return false;
     }
-    return true;
-}
-
-bool CoreRamdiskPatcher::modifyDefaultProp()
-{
-    std::vector<unsigned char> defaultProp;
-    if (!m_impl->cpio->contents(DefaultProp, &defaultProp)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    defaultProp.insert(defaultProp.end(), '\n');
-
-    std::string propVersion = (boost::format(PropVersion)
-            % m_impl->pc->version()).str();
-    defaultProp.insert(defaultProp.end(),
-                       propVersion.begin(), propVersion.end());
-
-    m_impl->cpio->setContents(DefaultProp, std::move(defaultProp));
-
     return true;
 }
 

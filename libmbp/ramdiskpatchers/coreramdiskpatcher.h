@@ -35,7 +35,6 @@ public:
     ~CoreRamdiskPatcher();
 
     static const std::string FstabRegex;
-    static const std::string PropVersion;
 #if 0
     static const std::string SyncdaemonService;
 #endif
@@ -46,7 +45,6 @@ public:
 
     virtual bool patchRamdisk() override;
 
-    bool modifyDefaultProp();
 #if 0
     bool addSyncdaemon();
 #endif
