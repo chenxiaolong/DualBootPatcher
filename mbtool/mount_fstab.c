@@ -374,6 +374,13 @@ int mount_fstab(const char *fstab_path)
              "/data/.layout_version", strerror(errno));
     }
 
+
+    // Set version property
+    if (mb_set_property("ro.multiboot.version", MBP_VERSION) < 0) {
+        LOGE("Failed to set 'ro.multiboot.version' to '%s'", MBP_VERSION);
+    }
+
+
     // Global app sharing
     share_app = stat("/data/patcher.share-app", &st) == 0;
     share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
