@@ -24,11 +24,12 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "mount_fstab.h"
-#include "sepolpatch.h"
 #ifdef RECOVERY
 #include "update_binary.h"
 #include "update_binary_tool.h"
+#else
+#include "mount_fstab.h"
+#include "sepolpatch.h"
 #endif
 
 #include "util/logging.h"
@@ -52,12 +53,13 @@ struct tool {
 struct tool tools[] = {
     TOOL(mbtool),
     // Tools
-    TOOL(mount_fstab),
-    TOOL(sepolpatch),
 #ifdef RECOVERY
     { "updater", update_binary_main }, // TWRP
     { "update_binary", update_binary_main }, // CWM, Philz
     { "update-binary-tool", update_binary_tool_main },
+#else
+    TOOL(mount_fstab),
+    TOOL(sepolpatch),
 #endif
     { NULL, NULL }
 };
