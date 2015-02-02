@@ -5,9 +5,15 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets 5.3 REQUIRED)
 
 if(${MBP_PORTABLE})
+    if(WIN32)
+        set(LOCAL_DATA_DIR "data")
+    else()
+        set(LOCAL_DATA_DIR "../data")
+    endif()
+
     add_definitions(
         -DPORTABLE
-        -DLOCAL_DATA_DIR="../data"
+        -DLOCAL_DATA_DIR="${LOCAL_DATA_DIR}"
     )
 else()
     add_definitions(
