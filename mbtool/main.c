@@ -28,6 +28,7 @@
 #include "update_binary.h"
 #include "update_binary_tool.h"
 #else
+#include "daemon.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
 #endif
@@ -58,6 +59,7 @@ struct tool tools[] = {
     { "update_binary", update_binary_main }, // CWM, Philz
     { "update-binary-tool", update_binary_tool_main },
 #else
+    TOOL(daemon),
     TOOL(mount_fstab),
     TOOL(sepolpatch),
 #endif

@@ -94,6 +94,7 @@ git_version := $(shell git describe --dirty --always --tags)
 
 mbtool_src_base := \
 	common.c \
+	daemon.c \
 	mount_fstab.c \
 	multiboot.c \
 	main.c \
@@ -111,7 +112,8 @@ mbtool_src_base := \
 	util/loopdev.c \
 	util/mount.c \
 	util/properties.c \
-	util/selinux.c
+	util/selinux.c \
+	util/socket.c
 
 mbtool_src_recovery := \
 	update_binary.c \
