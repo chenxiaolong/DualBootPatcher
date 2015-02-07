@@ -71,7 +71,6 @@ private:
     void setWidgetDefaults();
 
     void refreshPresets();
-    void updateBootImageTextBox();
 
     void chooseFile();
     void checkSupported();

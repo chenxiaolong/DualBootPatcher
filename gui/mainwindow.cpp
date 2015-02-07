@@ -175,8 +175,6 @@ void MainWindow::onHasBootImageToggled()
             widget->setEnabled(false);
         }
     }
-
-    updateBootImageTextBox();
 }
 
 void MainWindow::onMaxProgressUpdated(int max)
@@ -439,26 +437,12 @@ void MainWindow::refreshPresets()
     }
 }
 
-void MainWindow::updateBootImageTextBox()
-{
-    Q_D(MainWindow);
-
-    // Disable the boot image textbox if the selected file is a boot image
-    if (d->state == MainWindowPrivate::ChoseFile) {
-        bool isImg = d->fileName.endsWith(
-            QStringLiteral(".img"), Qt::CaseInsensitive);
-        bool isLok = d->fileName.endsWith(
-            QStringLiteral(".lok"), Qt::CaseInsensitive);
-        d->bootImageLe->setEnabled(!isImg && !isLok);
-    }
-}
-
 void MainWindow::chooseFile()
 {
     Q_D(MainWindow);
 
     QString fileName = QFileDialog::getOpenFileName(
-            this, QString(), QString(), tr("(*.zip *.img *.lok)"));
+            this, QString(), QString(), tr("(*.zip)"));
     if (fileName.isNull()) {
         return;
     }
@@ -505,8 +489,6 @@ void MainWindow::updateWidgetsVisibility()
         widget->setVisible(d->state == MainWindowPrivate::ChoseFile
                 && d->supported == MainWindowPrivate::NotSupported);
     }
-
-    updateBootImageTextBox();
 
     d->chooseFileBtn->setVisible(
             d->state == MainWindowPrivate::FirstRun);
