@@ -102,6 +102,7 @@ mbtool_src_base := \
 	sepolpatch.c \
 	external/mntent.c \
 	external/sha.c \
+	util/cmdline.c \
 	util/command.c \
 	util/copy.c \
 	util/delete.c \
