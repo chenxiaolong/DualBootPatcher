@@ -112,6 +112,7 @@ mbtool_src_base := \
 	util/logging.c \
 	util/loopdev.c \
 	util/mount.c \
+	util/path.c \
 	util/properties.c \
 	util/selinux.c \
 	util/socket.c \
