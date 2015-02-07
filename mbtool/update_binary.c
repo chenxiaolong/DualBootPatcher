@@ -1365,8 +1365,6 @@ static int update_binary(void)
     if (memcmp(hash, new_hash, SHA_DIGEST_SIZE) != 0) {
         ui_print("Boot partition was modified. Setting kernel");
 
-        // Add /romid with the ROM ID to the ramdisk
-
         CBootImage *bi = mbp_bootimage_create();
         if (mbp_bootimage_load_file(bi, boot_block_dev) < 0) {
             ui_print("Failed to load boot partition image");
@@ -1374,42 +1372,17 @@ static int update_binary(void)
             goto error;
         }
 
-        void *ramdisk_data;
-        size_t ramdisk_size;
-        ramdisk_size = mbp_bootimage_ramdisk_image(bi, &ramdisk_data);
-
-        CCpioFile *cpio = mbp_cpiofile_create();
-        if (mbp_cpiofile_load_data(cpio, ramdisk_data, ramdisk_size) < 0) {
-            ui_print("Failed to load ramdisk");
-            mbp_free(ramdisk_data);
-            mbp_cpiofile_destroy(cpio);
-            mbp_bootimage_destroy(bi);
-            goto error;
-        }
-
-        // cpiofile keeps a copy of what it needs
-        mbp_free(ramdisk_data);
-
-        if (mbp_cpiofile_add_file_from_data(
-                cpio, rom->id, strlen(rom->id), "romid", 0444) < 0) {
-            ui_print("Failed to add ROM ID to ramdisk");
-            mbp_cpiofile_destroy(cpio);
-            mbp_bootimage_destroy(bi);
-            goto error;
-        }
-
-        if (mbp_cpiofile_create_data(
-                cpio, &ramdisk_data, &ramdisk_size) < 0) {
-            ui_print("Failed to create new ramdisk");
-            mbp_cpiofile_destroy(cpio);
-            mbp_bootimage_destroy(bi);
-            goto error;
-        }
-
-        mbp_cpiofile_destroy(cpio);
-
-        mbp_bootimage_set_ramdisk_image(bi, ramdisk_data, ramdisk_size);
-        mbp_free(ramdisk_data);
+        char *cmdline = mbp_bootimage_kernel_cmdline(bi);
+        size_t newcmd_size =
+                strlen(cmdline) + strlen(" romid=") + strlen(rom->id) + 1;
+        char *newcmd = malloc(newcmd_size);
+        newcmd[0] = '\0';
+        strlcat(newcmd, cmdline, newcmd_size);
+        strlcat(newcmd, " romid=", newcmd_size);
+        strlcat(newcmd, rom->id, newcmd_size);
+        mbp_free(cmdline);
+        mbp_bootimage_set_kernel_cmdline(bi, newcmd);
+        free(newcmd);
 
         void *bootimg_data;
         size_t bootimg_size;

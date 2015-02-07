@@ -33,6 +33,7 @@
 
 #include "roms.h"
 #include "sepolpatch.h"
+#include "util/cmdline.h"
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/fstab.h"
@@ -264,7 +265,7 @@ int mount_fstab(const char *fstab_path)
 
     // Mount raw partitions to /raw-*
     char *rom_id;
-    if (mb_file_first_line("/romid", &rom_id) < 0) {
+    if (mb_kernel_cmdline_get_option("romid", &rom_id) < 0) {
         LOGE("Failed to determine ROM ID");
         goto error;
     }

@@ -114,14 +114,14 @@ mbtool_src_base := \
 	util/mount.c \
 	util/properties.c \
 	util/selinux.c \
-	util/socket.c
+	util/socket.c \
+	util/string.c
 
 mbtool_src_recovery := \
 	update_binary.c \
 	update_binary_tool.c \
 	util/archive.c \
-	util/chown.c \
-	util/string.c
+	util/chown.c
 
 
 include $(CLEAR_VARS)
