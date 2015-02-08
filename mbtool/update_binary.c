@@ -954,35 +954,6 @@ error:
     return -1;
 }
 
-static int copy_blockdev(const char *source, const char *target)
-{
-    int fd_source = -1;
-    int fd_target = -1;
-
-    if ((fd_source = open(source, O_RDONLY)) < 0) {
-        goto error;
-    }
-
-    if ((fd_target = open(target, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
-        goto error;
-    }
-
-    if (mb_copy_data_fd(fd_source, fd_target) < 0) {
-        goto error;
-    }
-
-    close(fd_source);
-    close(fd_target);
-
-    return 0;
-
-error:
-    close(fd_source);
-    close(fd_target);
-
-    return 0;
-}
-
 /*!
  * \brief Main wrapper function
  *
@@ -1207,7 +1178,7 @@ static int update_binary(void)
     LOGD("Boot partition SHA1sum: %s", digest);
 
     // Save a copy of the boot image that we'll restore if the installation fails
-    if (copy_blockdev(boot_block_dev, MB_TEMP "/boot.orig") < 0) {
+    if (mb_copy_contents(boot_block_dev, MB_TEMP "/boot.orig") < 0) {
         ui_print("Failed to backup boot partition");
         goto error;
     }
@@ -1405,8 +1376,8 @@ static int update_binary(void)
 
         // Reloki if needed
         if (was_loki) {
-            if (copy_blockdev("/dev/block/platform/msm_sdcc.1/by-name/aboot",
-                              MB_TEMP "/aboot.img") < 0) {
+            if (mb_copy_contents("/dev/block/platform/msm_sdcc.1/by-name/aboot",
+                                 MB_TEMP "/aboot.img") < 0) {
                 ui_print("Failed to copy aboot partition");
                 goto error;
             }
@@ -1493,7 +1464,7 @@ finish:
     remove("/data/.system.img.tmp");
 
     if (ret < 0 && boot_block_dev
-            && copy_blockdev(MB_TEMP "/boot.orig", boot_block_dev) < 0) {
+            && mb_copy_contents(MB_TEMP "/boot.orig", boot_block_dev) < 0) {
         LOGE("Failed to restore boot partition: %s", strerror(errno));
         ui_print("Failed to restore boot partition");
     }

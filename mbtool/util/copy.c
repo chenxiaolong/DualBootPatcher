@@ -255,6 +255,35 @@ static int readlink2(const char *path, char **out_ptr)
     return 0;
 }
 
+int mb_copy_contents(const char *source, const char *target)
+{
+    int fd_source = -1;
+    int fd_target = -1;
+
+    if ((fd_source = open(source, O_RDONLY)) < 0) {
+        goto error;
+    }
+
+    if ((fd_target = open(target, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
+        goto error;
+    }
+
+    if (mb_copy_data_fd(fd_source, fd_target) < 0) {
+        goto error;
+    }
+
+    close(fd_source);
+    close(fd_target);
+
+    return 0;
+
+error:
+    close(fd_source);
+    close(fd_target);
+
+    return -1;
+}
+
 int mb_copy_file(const char *source, const char *target, int flags)
 {
     mode_t old_umask = umask(0);
