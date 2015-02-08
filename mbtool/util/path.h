@@ -19,4 +19,5 @@
 
 #pragma once
 
+__attribute__ ((sentinel))
 char * mb_path_build(char *path1, ...);
