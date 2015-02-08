@@ -305,16 +305,21 @@ int mount_fstab(const char *fstab_path)
 
     flags_data = rec_data;
 
-    if (create_dir_and_mount(rec_system, flags_system, "/raw-system") < 0) {
-        LOGE("Failed to mount /raw-system");
+    if (mkdir("/raw", 0755) < 0) {
+        LOGE("Failed to create /raw");
         goto error;
     }
-    if (create_dir_and_mount(rec_cache, flags_cache, "/raw-cache") < 0) {
-        LOGE("Failed to mount /raw-cache");
+
+    if (create_dir_and_mount(rec_system, flags_system, "/raw/system") < 0) {
+        LOGE("Failed to mount /raw/system");
         goto error;
     }
-    if (create_dir_and_mount(rec_data, flags_data, "/raw-data") < 0) {
-        LOGE("Failed to mount /raw-data");
+    if (create_dir_and_mount(rec_cache, flags_cache, "/raw/cache") < 0) {
+        LOGE("Failed to mount /raw/cache");
+        goto error;
+    }
+    if (create_dir_and_mount(rec_data, flags_data, "/raw/data") < 0) {
+        LOGE("Failed to mount /raw/data");
         goto error;
     }
 
@@ -346,7 +351,7 @@ int mount_fstab(const char *fstab_path)
     }
 
     // Bind mount internal SD directory
-    if (mb_bind_mount("/raw-data/media", 0771, "/data/media", 0771)) {
+    if (mb_bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
         goto error;
     }
 
@@ -387,21 +392,21 @@ int mount_fstab(const char *fstab_path)
     share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
 
     if (share_app || share_app_asec) {
-        if (mb_bind_mount("/raw-data/app-lib", 0771,
+        if (mb_bind_mount("/raw/data/app-lib", 0771,
                           "/data/app-lib", 0771) < 0) {
             goto error;
         }
     }
 
     if (share_app) {
-        if (mb_bind_mount("/raw-data/app", 0771,
+        if (mb_bind_mount("/raw/data/app", 0771,
                           "/data/app", 0771) < 0) {
             goto error;
         }
     }
 
     if (share_app_asec) {
-        if (mb_bind_mount("/raw-data/app-asec", 0771,
+        if (mb_bind_mount("/raw/data/app-asec", 0771,
                           "/data/app-asec", 0771) < 0) {
             goto error;
         }
