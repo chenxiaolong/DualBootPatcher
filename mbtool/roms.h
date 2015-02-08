@@ -81,23 +81,24 @@ struct package {
 
 struct rom {
     char *id;
-    char *name;
-    char *description;
     char *system_path;
     char *cache_path;
     char *data_path;
+    int use_raw_paths;
     struct package *pkgs;
     size_t pkgs_len;
 };
 
 struct roms {
-    struct rom *list;
+    struct rom **list;
     size_t len;
+    size_t capacity;
 };
 
 int mb_roms_init(struct roms *roms);
 int mb_roms_cleanup(struct roms *roms);
 int mb_roms_get_builtin(struct roms *roms);
+int mb_roms_get_installed(struct roms *roms);
 struct rom * mb_find_rom_by_id(struct roms *roms, const char *id);
 int mb_rom_load_packages(struct rom *rom);
 int mb_rom_cleanup_packages(struct rom *rom);

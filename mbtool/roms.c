@@ -30,6 +30,7 @@
 #include <libxml/tree.h>
 
 #include "util/logging.h"
+#include "util/path.h"
 
 
 // 0: No extra debugging output
@@ -38,9 +39,6 @@
 #define ROMS_DEBUG 1
 
 
-#define RAW_SYSTEM "/raw-system"
-#define RAW_CACHE "/raw-cache"
-#define RAW_DATA "/raw-data"
 #define SYSTEM "/system"
 #define CACHE "/cache"
 #define DATA "/data"
@@ -90,14 +88,7 @@ static const xmlChar *ATTR_UT                   = TO_XMLCHAR "ut";
 static const xmlChar *ATTR_VERSION              = TO_XMLCHAR "version";
 
 
-static void rom_init(struct rom *rom);
-static void rom_cleanup(struct rom *rom);
-#if ROMS_DEBUG >= 2
-static void rom_dump(struct rom *rom);
-#endif
-static int add_rom(struct roms *roms, char *id, char *name,
-                   char *description, char *system_path, char *cache_path,
-                   char *data_path);
+static void free_rom(struct rom *rom);
 
 static void package_init(struct package *pkg);
 static void package_cleanup(struct package *pkg);
@@ -108,125 +99,180 @@ static int parse_tag_package(xmlNode *node, struct rom *rom);
 static int parse_tag_packages(xmlNode *node, struct rom *rom);
 
 
-static void rom_init(struct rom *rom)
+static int roms_add_rom(struct roms *roms, struct rom *rom)
 {
-    memset(rom, 0, sizeof(struct rom));
+    if (roms->len == 0) {
+        roms->capacity = 1;
+        roms->list = malloc(1 * sizeof(struct rom *));
+        if (!roms->list) {
+            return -1;
+        }
+    } else if (roms->len == roms->capacity) {
+        roms->capacity <<= 1;
+        void *temp = realloc(roms->list, roms->capacity * sizeof(struct rom *));
+        if (temp) {
+            roms->list = temp;
+        } else {
+            return -1;
+        }
+    }
+
+    roms->list[roms->len] = rom;
+    ++roms->len;
+
+    return 0;
 }
 
-static void rom_cleanup(struct rom *rom)
+static int roms_remove_rom(struct roms *roms, struct rom *rom)
 {
+    int index = -1;
+
+    for (unsigned int i = 0; i < roms->len; ++i) {
+        if (roms->list[i] == rom) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index < 0) {
+        return -1;
+    }
+
+    memmove(roms->list + index, roms->list + index + 1,
+            (roms->len - index - 1) * sizeof(struct rom *));
+    --roms->len;
+
+    if (roms->len == 0) {
+        roms->capacity = 0;
+        free(roms->list);
+        roms->list = NULL;
+    } else if (roms->len <= roms->capacity / 2) {
+        roms->capacity >>= 1;
+        void *temp = realloc(roms->list, roms->capacity * sizeof(struct rom *));
+        if (temp) {
+            roms->list = temp;
+        } else {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static void free_rom(struct rom *rom)
+{
+    if (!rom) {
+        return;
+    }
+
     // free(NULL) is valid
     free(rom->id);
-    free(rom->name);
-    free(rom->description);
     free(rom->system_path);
     free(rom->cache_path);
     free(rom->data_path);
 
     mb_rom_cleanup_packages(rom);
-}
 
-#if ROMS_DEBUG >= 2
-static void rom_dump(struct rom *rom)
-{
-    LOGD("ROM:");
-    if (rom->id)
-        LOGD("- ID:                        %s", rom->id);
-    if (rom->name)
-        LOGD("- Name:                      %s", rom->name);
-    if (rom->description)
-        LOGD("- Description:               %s", rom->description);
-    if (rom->system_path)
-        LOGD("- /system bind mount source: %s", rom->system_path);
-    if (rom->cache_path)
-        LOGD("- /cache bind mount source:  %s", rom->cache_path);
-    if (rom->data_path)
-        LOGD("- /data bind mount source:   %s", rom->data_path);
-}
-#endif
-
-static int add_rom(struct roms *roms, char *id, char *name,
-                   char *description, char *system_path, char *cache_path,
-                   char *data_path)
-{
-    if (roms->len == 0) {
-        roms->list = malloc(1 * sizeof(struct rom));
-    } else {
-        roms->list = realloc(roms->list, (roms->len + 1) * sizeof(struct rom));
-    }
-
-    struct rom *r = &roms->list[roms->len];
-    rom_init(r);
-
-    if (id)
-        r->id = strdup(id);
-    if (name)
-        r->name = strdup(name);
-    if (description)
-        r->description = strdup(description);
-
-    if (system_path)
-        r->system_path = strdup(system_path);
-    if (cache_path)
-        r->cache_path = strdup(cache_path);
-    if (data_path)
-        r->data_path = strdup(data_path);
-
-    ++roms->len;
-
-#if ROMS_DEBUG >= 2
-    rom_dump(r);
-#endif
-
-    return 0;
+    free(rom);
 }
 
 int mb_roms_get_builtin(struct roms *roms)
 {
-    add_rom(roms, "primary", NULL, NULL, SYSTEM, CACHE, DATA);
+    // Primary
+    struct rom *r = calloc(sizeof(struct rom), 1);
+    if (!r) {
+        return -1;
+    }
 
-    // /system/multiboot/dual/system/
-    // /cache/multiboot/dual/cache/
-    // /data/multiboot/dual/data/
+    r->id = strdup("primary");
+    r->system_path = strdup(SYSTEM);
+    r->cache_path = strdup(CACHE);
+    r->data_path = strdup(DATA);
 
-    // /cache/multiboot/%s/system/
-    // /system/multiboot/%s/cache/
-    // /data/multiboot/%s/data/
+    roms_add_rom(roms, r);
 
-    // /data/multiboot/%s/system/
-    // /data/multiboot/%s/cache/
-    // /data/multiboot/%s/data/
+    // Secondary
+    r = calloc(sizeof(struct rom), 1);
+    if (!r) {
+        return -1;
+    }
 
-    add_rom(roms, "dual", NULL, NULL,
-            SYSTEM SEP "multiboot" SEP "dual" SEP "system",
-            CACHE SEP "multiboot" SEP "dual" SEP "cache",
-            DATA SEP "multiboot" SEP "dual" SEP "data");
+    r->id = strdup("dual");
+    r->system_path = mb_path_build(SYSTEM, "multiboot", "dual", "system", NULL);
+    r->cache_path = mb_path_build(CACHE, "multiboot", "dual", "cache", NULL);
+    r->data_path = mb_path_build(DATA, "multiboot", "dual", "data", NULL);
+
+    roms_add_rom(roms, r);
 
     // Multislots
-    char id[50] = { 0 };
-    char system[50] = { 0 };
-    char cache[50] = { 0 };
-    char data[50] = { 0 };
+    char id[20] = { 0 };
     for (int i = 1; i <= 3; ++i) {
-        const char *fmtSystem = CACHE SEP "multiboot" SEP "%s" SEP "system";
-        const char *fmtCache = SYSTEM SEP "multiboot" SEP "%s" SEP "cache";
-        const char *fmtData = DATA SEP "multiboot" SEP "%s" SEP "data";
+        snprintf(id, 20, "multi-slot-%d", i);
 
-        snprintf(id, 50, "multi-slot-%d", i);
-        snprintf(system, 50, fmtSystem, id);
-        snprintf(cache, 50, fmtCache, id);
-        snprintf(data, 50, fmtData, id);
+        r = calloc(sizeof(struct rom), 1);
+        if (!r) {
+            return -1;
+        }
 
-        add_rom(roms, id, NULL, NULL, system, cache, data);
+        r->id = strdup(id);
+        r->system_path = mb_path_build(CACHE, "multiboot", id, "system", NULL);
+        r->cache_path = mb_path_build(SYSTEM, "multiboot", id, "cache", NULL);
+        r->data_path = mb_path_build(DATA, "multiboot", id, "data", NULL);
+
+        roms_add_rom(roms, r);
     }
 
     return 0;
+}
+
+int mb_roms_get_installed(struct roms *roms)
+{
+    struct roms all_roms;
+    mb_roms_init(&all_roms);
+    mb_roms_get_builtin(&all_roms);
+
+    struct stat sb;
+
+    while (all_roms.len > 0) {
+        struct rom *r = all_roms.list[0];
+
+        char *raw_bp_path = mb_path_build("/raw", r->system_path, "build.prop", NULL);
+        if (!raw_bp_path) {
+            goto error;
+        }
+
+        char *bp_path = mb_path_build(r->system_path, "build.prop", NULL);
+        if (!bp_path) {
+            free(raw_bp_path);
+            goto error;
+        }
+
+        if (stat(raw_bp_path, &sb) == 0 && S_ISREG(sb.st_mode)) {
+            r->use_raw_paths = 1;
+            roms_add_rom(roms, r);
+        } else if (stat(bp_path, &sb) == 0 && S_ISREG(sb.st_mode)) {
+            r->use_raw_paths = 0;
+            roms_add_rom(roms, r);
+        }
+
+        free(raw_bp_path);
+        free(bp_path);
+
+        roms_remove_rom(&all_roms, r);
+    }
+
+    mb_roms_cleanup(&all_roms);
+    return 0;
+
+error:
+    mb_roms_cleanup(&all_roms);
+    return -1;
 }
 
 struct rom * mb_find_rom_by_id(struct roms *roms, const char *id)
 {
     for (unsigned int i = 0; i < roms->len; ++i) {
-        struct rom *r = &roms->list[i];
+        struct rom *r = roms->list[i];
         if (strcmp(r->id, id) == 0) {
             return r;
         }
@@ -239,6 +285,7 @@ int mb_roms_init(struct roms *roms)
 {
     roms->list = NULL;
     roms->len = 0;
+    roms->capacity = 0;
 
     return 0;
 }
@@ -246,14 +293,14 @@ int mb_roms_init(struct roms *roms)
 int mb_roms_cleanup(struct roms *roms)
 {
     for (unsigned int i = 0; i < roms->len; ++i) {
-        struct rom *r = &roms->list[i];
-
-        rom_cleanup(r);
+        struct rom *r = roms->list[i];
+        free_rom(r);
     }
 
     free(roms->list);
     roms->list = NULL;
     roms->len = 0;
+    roms->capacity = 0;
 
     return 0;
 }
@@ -308,6 +355,7 @@ static void package_cleanup(struct package *pkg)
 }
 
 #if ROMS_DEBUG >= 2
+
 static char * time_to_string(unsigned long long time)
 {
     static char buf[50];
@@ -428,6 +476,7 @@ static void package_dump(struct package *pkg)
     if (pkg->installer)
         LOGD("- Installer:           %s", pkg->installer);
 }
+
 #endif
 
 static int parse_tag_package(xmlNode *node, struct rom *rom)
