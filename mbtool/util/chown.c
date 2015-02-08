@@ -20,10 +20,13 @@
 #include "util/chown.h"
 
 #include <errno.h>
+#include <fts.h>
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "util/logging.h"
 
 // WARNING: Not thread safe! Android doesn't have getpwnam_r() or getgrnam_r()
 static int mb_chown_internal(const char *path, const char *user,
@@ -57,12 +60,71 @@ static int mb_chown_internal(const char *path, const char *user,
     return (follow_symlinks ? chown : lchown)(path, uid, gid);
 }
 
-int mb_chown_name(const char *path, const char *user, const char *group)
+static int mb_chown_internal_recursive(const char *path, const char *user,
+                                       const char *group, int follow_symlinks)
 {
-    return mb_chown_internal(path, user, group, 1);
+    int ret = 0;
+    FTS *ftsp = NULL;
+    FTSENT *curr;
+
+    char *files[] = { (char *) path, NULL };
+
+    ftsp = fts_open(files, FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV, NULL);
+    if (!ftsp) {
+        LOGE("%s: fts_open failed: %s", path, strerror(errno));
+        ret = -1;
+        goto finish;
+    }
+
+    while ((curr = fts_read(ftsp))) {
+        switch (curr->fts_info) {
+        case FTS_NS:
+        case FTS_DNR:
+        case FTS_ERR:
+            LOGW("%s: fts_read error: %s",
+                 curr->fts_accpath, strerror(curr->fts_errno));
+            break;
+
+        case FTS_DC:
+        case FTS_DOT:
+        case FTS_NSOK:
+            // Not reached
+            break;
+
+        case FTS_D:
+            // Do nothing. Need depth-first search, so directories are deleted
+            // in FTS_DP
+            break;
+
+        case FTS_DP:
+        case FTS_F:
+        case FTS_SL:
+        case FTS_SLNONE:
+        case FTS_DEFAULT:
+            if (mb_chown_internal(curr->fts_accpath, user, group, follow_symlinks) < 0) {
+                LOGW("%s: Failed to chown: %s",
+                     curr->fts_path, strerror(errno));
+                ret = -1;
+            }
+            break;
+        }
+    }
+
+finish:
+    if (ftsp) {
+        fts_close(ftsp);
+    }
+
+    return ret;
 }
 
-int mb_lchown_name(const char *path, const char *user, const char *group)
+int mb_chown(const char *path, const char *user, const char *group, int flags)
 {
-    return mb_chown_internal(path, user, group, 0);
+    if (flags & MB_CHOWN_RECURSIVE) {
+        return mb_chown_internal_recursive(path, user, group,
+                                           flags & MB_CHOWN_FOLLOW_SYMLINKS);
+    } else {
+        return mb_chown_internal(path, user, group,
+                                 flags & MB_CHOWN_FOLLOW_SYMLINKS);
+    }
 }

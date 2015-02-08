@@ -19,5 +19,7 @@
 
 #pragma once
 
-int mb_chown_name(const char *path, const char *user, const char *group);
-int mb_lchown_name(const char *path, const char *user, const char *group);
+#define MB_CHOWN_FOLLOW_SYMLINKS        0x1
+#define MB_CHOWN_RECURSIVE              0x2
+
+int mb_chown(const char *path, const char *user, const char *group, int flags);

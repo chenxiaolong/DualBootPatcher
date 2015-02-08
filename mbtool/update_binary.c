@@ -1452,7 +1452,7 @@ static int update_binary(void)
         close(fd_boot);
         close(fd_backup);
 
-        if (mb_chown_name(path, "media_rw", "media_rw") < 0) {
+        if (mb_chown(path, "media_rw", "media_rw", 0) < 0) {
             // Non-fatal
             LOGE("%s: Failed to chown: %s", path, strerror(errno));
         }
@@ -1493,7 +1493,7 @@ finish:
             LOGE("%s: Failed to chmod: %s", LOG_FILE, strerror(errno));
         }
 
-        if (mb_chown_name(LOG_FILE, "media_rw", "media_rw") < 0) {
+        if (mb_chown(LOG_FILE, "media_rw", "media_rw", 0) < 0) {
             LOGE("%s: Failed to chown: %s", LOG_FILE, strerror(errno));
             if (chown(LOG_FILE, 1023, 1023) < 0) {
                 LOGE("%s: Failed to chown: %s", LOG_FILE, strerror(errno));
