@@ -73,6 +73,10 @@ static int v1_list_roms(int fd)
                     && mb_socket_write_string(fd, r->data_path) == 0;
         }
         if (success) {
+            success = mb_socket_write_string(fd, "USE_RAW_PATHS") == 0
+                    && mb_socket_write_int32(fd, r->use_raw_paths) == 0;
+        }
+        if (success) {
             success = mb_socket_write_string(fd, "ROM_END") == 0;
         }
 
