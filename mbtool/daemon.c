@@ -29,17 +29,21 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "actions.h"
 #include "roms.h"
 #include "util/logging.h"
 #include "util/socket.h"
 
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied
-#define RESPONSE_OK "OK"                        // Generic success response
+#define RESPONSE_OK "OK"                        // Generic accepted response
+#define RESPONSE_SUCCESS "SUCCESS"              // Generic success response
 #define RESPONSE_FAIL "FAIL"                    // Generic failure response
 #define RESPONSE_UNSUPPORTED "UNSUPPORTED"      // Generic unsupported response
 
 #define V1_COMMAND_LIST_ROMS "LIST_ROMS"        // [Version 1] List installed ROMs
+#define V1_COMMAND_CHOOSE_ROM "CHOOSE_ROM"      // [Version 1] Switch ROM
+#define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
 
 
 static int v1_list_roms(int fd)
@@ -97,6 +101,76 @@ error:
     return -1;
 }
 
+static int v1_choose_rom(int fd)
+{
+    char *id = NULL;
+    char *boot_blockdev = NULL;
+
+    if (mb_socket_read_string(fd, &id) < 0) {
+        goto error;
+    }
+
+    if (mb_socket_read_string(fd, &boot_blockdev) < 0) {
+        goto error;
+    }
+
+    int ret;
+
+    if (mb_action_choose_rom(id, boot_blockdev) < 0) {
+        ret = mb_socket_write_string(fd, RESPONSE_FAIL);
+    } else {
+        ret = mb_socket_write_string(fd, RESPONSE_SUCCESS);
+    }
+
+    if (ret < 0) {
+        goto error;
+    }
+
+    free(id);
+    free(boot_blockdev);
+    return 0;
+
+error:
+    free(id);
+    free(boot_blockdev);
+    return -1;
+}
+
+static int v1_set_kernel(int fd)
+{
+    char *id = NULL;
+    char *boot_blockdev = NULL;
+
+    if (mb_socket_read_string(fd, &id) < 0) {
+        goto error;
+    }
+
+    if (mb_socket_read_string(fd, &boot_blockdev) < 0) {
+        goto error;
+    }
+
+    int ret;
+
+    if (mb_action_set_kernel(id, boot_blockdev) < 0) {
+        ret = mb_socket_write_string(fd, RESPONSE_FAIL);
+    } else {
+        ret = mb_socket_write_string(fd, RESPONSE_SUCCESS);
+    }
+
+    if (ret < 0) {
+        goto error;
+    }
+
+    free(id);
+    free(boot_blockdev);
+    return 0;
+
+error:
+    free(id);
+    free(boot_blockdev);
+    return -1;
+}
+
 static int connection_version_1(int fd)
 {
     if (mb_socket_write_string(fd, RESPONSE_OK) < 0) {
@@ -110,18 +184,34 @@ static int connection_version_1(int fd)
             goto error;
         }
 
-        if (strcmp(command, V1_COMMAND_LIST_ROMS) == 0) {
+        if (strcmp(command, V1_COMMAND_LIST_ROMS) == 0
+                || strcmp(command, V1_COMMAND_CHOOSE_ROM) == 0
+                || strcmp(command, V1_COMMAND_SET_KERNEL) == 0) {
+            // Acknowledge command
             if (mb_socket_write_string(fd, RESPONSE_OK) < 0) {
                 goto error;
             }
-            if (v1_list_roms(fd) < 0) {
-                goto error;
-            }
         } else {
-            // Allow further commands
+            // Invalid command; allow further commands
             if (mb_socket_write_string(fd, RESPONSE_UNSUPPORTED) < 0) {
                 goto error;
             }
+        }
+
+        // NOTE: A negative return value indicates a connection error, not a
+        //       command failure!
+        int ret = 0;
+
+        if (strcmp(command, V1_COMMAND_LIST_ROMS) == 0) {
+            ret = v1_list_roms(fd);
+        } else if (strcmp(command, V1_COMMAND_CHOOSE_ROM) == 0) {
+            ret = v1_choose_rom(fd);
+        } else if (strcmp(command, V1_COMMAND_SET_KERNEL) == 0) {
+            ret = v1_set_kernel(fd);
+        }
+
+        if (ret < 0) {
+            goto error;
         }
     }
 

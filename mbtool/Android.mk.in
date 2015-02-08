@@ -93,6 +93,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 git_version := $(shell git describe --dirty --always --tags)
 
 mbtool_src_base := \
+	actions.c \
 	common.c \
 	daemon.c \
 	mount_fstab.c \
@@ -103,6 +104,7 @@ mbtool_src_base := \
 	external/mntent.c \
 	external/sha.c \
 	util/chmod.c \
+	util/chown.c \
 	util/cmdline.c \
 	util/command.c \
 	util/copy.c \
@@ -122,8 +124,7 @@ mbtool_src_base := \
 mbtool_src_recovery := \
 	update_binary.c \
 	update_binary_tool.c \
-	util/archive.c \
-	util/chown.c
+	util/archive.c
 
 
 include $(CLEAR_VARS)
