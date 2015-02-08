@@ -46,27 +46,19 @@ static int v1_list_roms(int fd)
 {
     struct roms roms;
     mb_roms_init(&roms);
-    mb_roms_get_builtin(&roms);
+    mb_roms_get_installed(&roms);
 
     if (mb_socket_write_int32(fd, roms.len) < 0) {
         goto error;
     }
 
     for (unsigned int i = 0; i < roms.len; ++i) {
-        struct rom *r = &roms.list[i];
+        struct rom *r = roms.list[i];
 
         int success = mb_socket_write_string(fd, "ROM_BEGIN") == 0;
         if (success && r->id) {
             success = mb_socket_write_string(fd, "ID") == 0
                     && mb_socket_write_string(fd, r->id) == 0;
-        }
-        if (success && r->name) {
-            success = mb_socket_write_string(fd, "NAME") == 0
-                    && mb_socket_write_string(fd, r->name) == 0;
-        }
-        if (success && r->description) {
-            success = mb_socket_write_string(fd, "DESCRIPTION") == 0
-                    && mb_socket_write_string(fd, r->description) == 0;
         }
         if (success && r->system_path) {
             success = mb_socket_write_string(fd, "SYSTEM_PATH") == 0
@@ -87,6 +79,10 @@ static int v1_list_roms(int fd)
         if (!success) {
             goto error;
         }
+    }
+
+    if (mb_socket_write_string(fd, RESPONSE_OK) < 0) {
+        goto error;
     }
 
     mb_roms_cleanup(&roms);
