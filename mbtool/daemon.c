@@ -44,6 +44,7 @@
 #define V1_COMMAND_LIST_ROMS "LIST_ROMS"        // [Version 1] List installed ROMs
 #define V1_COMMAND_CHOOSE_ROM "CHOOSE_ROM"      // [Version 1] Switch ROM
 #define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
+#define V1_COMMAND_REBOOT "REBOOT"              // [Version 1] Reboot
 
 
 static int v1_list_roms(int fd)
@@ -171,6 +172,30 @@ error:
     return -1;
 }
 
+static int v1_reboot(int fd)
+{
+    char *reboot_arg = NULL;
+
+    if (mb_socket_read_string(fd, &reboot_arg) < 0) {
+        goto error;
+    }
+
+    if (mb_action_reboot(reboot_arg) < 0) {
+        if (mb_socket_write_string(fd, RESPONSE_FAIL) < 0) {
+            goto error;
+        }
+    }
+
+    // Not reached
+
+    free(reboot_arg);
+    return 0;
+
+error:
+    free(reboot_arg);
+    return -1;
+}
+
 static int connection_version_1(int fd)
 {
     if (mb_socket_write_string(fd, RESPONSE_OK) < 0) {
@@ -186,7 +211,8 @@ static int connection_version_1(int fd)
 
         if (strcmp(command, V1_COMMAND_LIST_ROMS) == 0
                 || strcmp(command, V1_COMMAND_CHOOSE_ROM) == 0
-                || strcmp(command, V1_COMMAND_SET_KERNEL) == 0) {
+                || strcmp(command, V1_COMMAND_SET_KERNEL) == 0
+                || strcmp(command, V1_COMMAND_REBOOT) == 0) {
             // Acknowledge command
             if (mb_socket_write_string(fd, RESPONSE_OK) < 0) {
                 goto error;
@@ -208,6 +234,8 @@ static int connection_version_1(int fd)
             ret = v1_choose_rom(fd);
         } else if (strcmp(command, V1_COMMAND_SET_KERNEL) == 0) {
             ret = v1_set_kernel(fd);
+        } else if (strcmp(command, V1_COMMAND_REBOOT) == 0) {
+            ret = v1_reboot(fd);
         }
 
         if (ret < 0) {

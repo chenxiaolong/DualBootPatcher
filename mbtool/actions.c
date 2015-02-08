@@ -19,7 +19,9 @@
 
 #include "actions.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "roms.h"
 #include "util/chmod.h"
@@ -28,6 +30,7 @@
 #include "util/directory.h"
 #include "util/logging.h"
 #include "util/path.h"
+#include "util/properties.h"
 
 #define MULTIBOOT_DIR "/data/media/0/MultiBoot"
 
@@ -89,4 +92,32 @@ int mb_action_choose_rom(const char *id, const char *boot_blockdev)
 int mb_action_set_kernel(const char *id, const char *boot_blockdev)
 {
     return choose_or_set_rom(id, boot_blockdev, 0);
+}
+
+int mb_action_reboot(const char *reboot_arg)
+{
+    char value[MB_PROP_VALUE_MAX];
+
+    if (!reboot_arg) {
+        LOGE("NULL reboot argument!");
+        return -1;
+    }
+
+    size_t len = snprintf(value, sizeof(value), "reboot,%s", reboot_arg);
+    if (len >= sizeof(value)) {
+        LOGE("Reboot argument %zu bytes too long", len - sizeof(value) + 1);
+        return -1;
+    }
+
+    if (mb_set_property("sys.powerctl", value) < 0) {
+        LOGE("Failed to set property");
+        return -1;
+    }
+
+    // Obviously shouldn't return
+    while (1) {
+        pause();
+    }
+
+    return 0;
 }

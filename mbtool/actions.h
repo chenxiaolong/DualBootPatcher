@@ -21,3 +21,4 @@
 
 int mb_action_choose_rom(const char *id, const char *boot_blockdev);
 int mb_action_set_kernel(const char *id, const char *boot_blockdev);
+int mb_action_reboot(const char *reboot_arg);
