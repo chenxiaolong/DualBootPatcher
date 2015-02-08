@@ -66,12 +66,8 @@ public class SwitcherUtils {
         new Thread() {
             @Override
             public void run() {
-                runReboot();
+                MbtoolSocket.getInstance().restart("");
             }
         }.start();
-    }
-
-    private static int runReboot() {
-        return CommandUtils.runRootCommand("reboot");
     }
 }
