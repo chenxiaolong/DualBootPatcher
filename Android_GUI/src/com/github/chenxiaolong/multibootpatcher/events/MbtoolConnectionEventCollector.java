@@ -22,9 +22,6 @@ import android.os.AsyncTask;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SocketCommunicationException;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket
-        .SocketCredentialsDeniedException;
 
 public class MbtoolConnectionEventCollector extends EventCollector {
     public static final String TAG = MbtoolConnectionEventCollector.class.getSimpleName();
@@ -78,16 +75,7 @@ public class MbtoolConnectionEventCollector extends EventCollector {
     private class MbtoolConnectionTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... args) {
-            try {
-                MbtoolSocket.getInstance().connect();
-                return true;
-            } catch (SocketCommunicationException e) {
-                e.printStackTrace();
-            } catch (SocketCredentialsDeniedException e) {
-                e.printStackTrace();
-            }
-
-            return false;
+            return MbtoolSocket.getInstance().connect();
         }
 
         @Override

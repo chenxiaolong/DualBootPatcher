@@ -25,15 +25,12 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
-import com.stericson.RootTools.execution.Command;
 
-import java.io.EOFException;
+import org.apache.commons.io.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 public class MbtoolSocket {
     private static final String TAG = MbtoolSocket.class.getSimpleName();
@@ -52,6 +49,8 @@ public class MbtoolSocket {
     private static MbtoolSocket sInstance;
 
     private LocalSocket mSocket;
+    private InputStream mSocketIS;
+    private OutputStream mSocketOS;
     private int mInterfaceVersion;
 
     // Keep this as a singleton class for now
@@ -67,47 +66,69 @@ public class MbtoolSocket {
         return sInstance;
     }
 
-    public void connect() throws SocketCommunicationException, SocketCredentialsDeniedException {
-        mSocket = new LocalSocket();
+    public boolean connect() {
+        // Already connected
+        if (mSocket != null) {
+            return true;
+        }
+
+        Log.i(TAG, "Connecting to mbtool");
         try {
+            mSocket = new LocalSocket();
             mSocket.connect(new LocalSocketAddress("mbtool.daemon", Namespace.ABSTRACT));
 
-            OutputStream os = mSocket.getOutputStream();
-            InputStream is = mSocket.getInputStream();
+            mSocketIS = mSocket.getInputStream();
+            mSocketOS = mSocket.getOutputStream();
 
             // Verify credentials
-            String response = readString(is);
+            String response = SocketUtils.readString(mSocketIS);
             if (RESPONSE_DENY.equals(response)) {
-                throw new SocketCredentialsDeniedException("mbtool explicitly denied access to " +
-                        "the daemon. WARNING: This app is probably not officially signed!");
+                throw new SocketProtocolException("mbtool explicitly denied access to the " +
+                        "daemon. WARNING: This app is probably not officially signed!");
             } else if (!RESPONSE_ALLOW.equals(response)) {
-                throw new SocketCommunicationException("Unexpected reply: " + response);
+                throw new SocketProtocolException("Unexpected reply: " + response);
             }
 
             // Request an interface version
-            writeInt32(os, mInterfaceVersion);
-            response = readString(is);
+            SocketUtils.writeInt32(mSocketOS, mInterfaceVersion);
+            response = SocketUtils.readString(mSocketIS);
             if (RESPONSE_UNSUPPORTED.equals(response)) {
-                throw new SocketCommunicationException(
-                        "Daemon does not support interface " + mInterfaceVersion);
+                throw new SocketProtocolException("Daemon does not support interface " +
+                        mInterfaceVersion);
             } else if (!RESPONSE_OK.equals(response)) {
-                throw new SocketCommunicationException("Unexpected reply: " + response);
+                throw new SocketProtocolException("Unexpected reply: " + response);
             }
+
+            return true;
         } catch (IOException e) {
-            throw new SocketCommunicationException(e);
+            e.printStackTrace();
+            disconnect();
+        } catch (SocketProtocolException e) {
+            e.printStackTrace();
         }
+
+        return false;
+    }
+
+    public void disconnect() {
+        Log.i(TAG, "Disconnecting from mbtool");
+        IOUtils.closeQuietly(mSocket);
+        IOUtils.closeQuietly(mSocketIS);
+        IOUtils.closeQuietly(mSocketOS);
+        mSocket = null;
+        mSocketIS = null;
+        mSocketOS = null;
     }
 
     public RomInformation[] getInstalledRoms() {
-        ensureConnected();
+        if (!connect()) {
+            return null;
+        }
 
         try {
-            OutputStream os = mSocket.getOutputStream();
-            InputStream is = mSocket.getInputStream();
+            sendCommand(V1_COMMAND_LIST_ROMS);
 
-            sendCommand(is, os, V1_COMMAND_LIST_ROMS);
-
-            int length = readInt32(is);
+            int length = SocketUtils.readInt32(mSocketIS);
             RomInformation[] roms = new RomInformation[length];
             String response;
 
@@ -116,20 +137,20 @@ public class MbtoolSocket {
                 boolean ready = false;
 
                 while (true) {
-                    response = readString(is);
+                    response = SocketUtils.readString(mSocketIS);
 
                     if ("ROM_BEGIN".equals(response)) {
                         ready = true;
                     } else if (ready && "ID".equals(response)) {
-                        rom.id = readString(is);
+                        rom.id = SocketUtils.readString(mSocketIS);
                     } else if (ready && "SYSTEM_PATH".equals(response)) {
-                        rom.system = readString(is);
+                        rom.system = SocketUtils.readString(mSocketIS);
                     } else if (ready && "CACHE_PATH".equals(response)) {
-                        rom.cache = readString(is);
+                        rom.cache = SocketUtils.readString(mSocketIS);
                     } else if (ready && "DATA_PATH".equals(response)) {
-                        rom.data = readString(is);
+                        rom.data = SocketUtils.readString(mSocketIS);
                     } else if (ready && "USE_RAW_PATHS".equals(response)) {
-                        rom.useRawPaths = readInt32(is) != 0;
+                        rom.useRawPaths = SocketUtils.readInt32(mSocketIS) != 0;
                     } else if (ready && "ROM_END".equals(response)) {
                         ready = false;
                         break;
@@ -138,17 +159,18 @@ public class MbtoolSocket {
                     }
                 }
 
-                rom.thumbnailPath = Environment.getExternalStorageDirectory()
-                        + "/MultiBoot/" + rom.id + "/thumbnail.webp";
+                rom.thumbnailPath = Environment.getExternalStorageDirectory() + "/MultiBoot/" +
+                        rom.id + "/thumbnail.webp";
             }
 
             // Command always returns OK at the end
-            readString(is);
+            SocketUtils.readString(mSocketIS);
 
             return roms;
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (SocketCommunicationException e) {
+            disconnect();
+        } catch (SocketProtocolException e) {
             e.printStackTrace();
         }
 
@@ -156,13 +178,12 @@ public class MbtoolSocket {
     }
 
     public boolean chooseRom(String id) {
-        ensureConnected();
+        if (!connect()) {
+            return false;
+        }
 
         try {
-            OutputStream os = mSocket.getOutputStream();
-            InputStream is = mSocket.getInputStream();
-
-            sendCommand(is, os, V1_COMMAND_CHOOSE_ROM);
+            sendCommand(V1_COMMAND_CHOOSE_ROM);
 
             String bootBlockDev = SwitcherUtils.getBootPartition();
             if (bootBlockDev == null) {
@@ -170,20 +191,22 @@ public class MbtoolSocket {
                 return false;
             }
 
-            writeString(os, id);
-            writeString(os, bootBlockDev);
+            SocketUtils.writeString(mSocketOS, id);
+            SocketUtils.writeString(mSocketOS, bootBlockDev);
 
-            String response = readString(is);
-            if (response.equals(RESPONSE_SUCCESS)) {
+            String response = SocketUtils.readString(mSocketIS);
+            switch (response) {
+            case RESPONSE_SUCCESS:
                 return true;
-            } else if (response.equals(RESPONSE_FAIL)) {
+            case RESPONSE_FAIL:
                 return false;
-            } else {
-                throw new SocketCommunicationException("Invalid response: " + response);
+            default:
+                throw new SocketProtocolException("Invalid response: " + response);
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (SocketCommunicationException e) {
+            disconnect();
+        } catch (SocketProtocolException e) {
             e.printStackTrace();
         }
 
@@ -191,13 +214,12 @@ public class MbtoolSocket {
     }
 
     public boolean setKernel(String id) {
-        ensureConnected();
+        if (!connect()) {
+            return false;
+        }
 
         try {
-            OutputStream os = mSocket.getOutputStream();
-            InputStream is = mSocket.getInputStream();
-
-            sendCommand(is, os, V1_COMMAND_SET_KERNEL);
+            sendCommand(V1_COMMAND_SET_KERNEL);
 
             String bootBlockDev = SwitcherUtils.getBootPartition();
             if (bootBlockDev == null) {
@@ -205,20 +227,22 @@ public class MbtoolSocket {
                 return false;
             }
 
-            writeString(os, id);
-            writeString(os, bootBlockDev);
+            SocketUtils.writeString(mSocketOS, id);
+            SocketUtils.writeString(mSocketOS, bootBlockDev);
 
-            String response = readString(is);
-            if (response.equals(RESPONSE_SUCCESS)) {
+            String response = SocketUtils.readString(mSocketIS);
+            switch (response) {
+            case RESPONSE_SUCCESS:
                 return true;
-            } else if (response.equals(RESPONSE_FAIL)) {
+            case RESPONSE_FAIL:
                 return false;
-            } else {
-                throw new SocketCommunicationException("Invalid response: " + response);
+            default:
+                throw new SocketProtocolException("Invalid response: " + response);
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (SocketCommunicationException e) {
+            disconnect();
+        } catch (SocketProtocolException e) {
             e.printStackTrace();
         }
 
@@ -227,109 +251,30 @@ public class MbtoolSocket {
 
     // Exceptions
 
-    public static class SocketCredentialsDeniedException extends Exception {
-        public SocketCredentialsDeniedException(String message) {
+    public static class SocketProtocolException extends Exception {
+        public SocketProtocolException(String message) {
             super(message);
         }
 
-        public SocketCredentialsDeniedException(Throwable throwable) {
+        public SocketProtocolException(Throwable throwable) {
             super(throwable);
         }
 
-        public SocketCredentialsDeniedException(String message, Throwable throwable) {
+        public SocketProtocolException(String message, Throwable throwable) {
             super(message, throwable);
-        }
-    }
-
-    public static class SocketCommunicationException extends Exception {
-        public SocketCommunicationException(String message) {
-            super(message);
-        }
-
-        public SocketCommunicationException(Throwable throwable) {
-            super(throwable);
-        }
-
-        public SocketCommunicationException(String message, Throwable throwable) {
-            super(message, throwable);
-        }
-    }
-
-    private void ensureConnected() {
-        if (mSocket == null || !mSocket.isConnected()) {
-            throw new IllegalStateException("Not connected to mbtool daemon");
         }
     }
 
     // Private helper functions
 
-    private static void sendCommand(InputStream is, OutputStream os, String command) throws
-            IOException, SocketCommunicationException {
-        writeString(os, command);
+    private void sendCommand(String command) throws IOException, SocketProtocolException {
+        SocketUtils.writeString(mSocketOS, command);
 
-        String response = readString(is);
+        String response = SocketUtils.readString(mSocketIS);
         if (RESPONSE_UNSUPPORTED.equals(response)) {
-            throw new SocketCommunicationException("Unsupported command: " + command);
+            throw new SocketProtocolException("Unsupported command: " + command);
         } else if (!RESPONSE_OK.equals(response)) {
-            throw new SocketCommunicationException("Unknown response: " + response);
+            throw new SocketProtocolException("Unknown response: " + response);
         }
-    }
-
-    private static void readFully(InputStream is, byte[] buf, int offset, int length) throws
-            IOException {
-        while (length > 0) {
-            int n = is.read(buf, offset, length);
-            if (n < 0) {
-                throw new EOFException();
-            }
-            offset += n;
-            length -= n;
-        }
-    }
-
-    private static short readInt16(InputStream is) throws IOException {
-        byte[] buf = new byte[2];
-        readFully(is, buf, 0, 2);
-        return ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN).getShort();
-    }
-
-    private static void writeInt16(OutputStream os, short num) throws IOException {
-        os.write(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(num).array());
-    }
-
-    private static int readInt32(InputStream is) throws IOException {
-        byte[] buf = new byte[4];
-        readFully(is, buf, 0, 4);
-        return ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN).getInt();
-    }
-
-    private static void writeInt32(OutputStream os, int num) throws IOException {
-        os.write(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(num).array());
-    }
-
-    private static long readInt64(InputStream is) throws IOException {
-        byte[] buf = new byte[8];
-        readFully(is, buf, 0, 8);
-        return ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN).getLong();
-    }
-
-    private static void writeInt64(OutputStream os, long num) throws IOException {
-        os.write(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(num).array());
-    }
-
-    private static String readString(InputStream is) throws IOException {
-        int length = readInt32(is);
-        if (length < 0) {
-            throw new IOException("Invalid string length");
-        }
-
-        byte[] str = new byte[length];
-        readFully(is, str, 0, length);
-        return new String(str);
-    }
-
-    private static void writeString(OutputStream os, String str) throws IOException {
-        writeInt32(os, str.length());
-        os.write(str.getBytes());
     }
 }
