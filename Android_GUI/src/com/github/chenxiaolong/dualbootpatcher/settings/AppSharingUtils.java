@@ -103,11 +103,11 @@ public class AppSharingUtils {
             throw new Exception("Could not determine current ROM");
         }
 
-        String bootImage = String.format(SwitcherUtils.KERNEL_PATH_ROOT, romInfo.id);
+        String bootImage = String.format("/data/media/0/MultiBoot/%s/boot.img", romInfo.id);
         RootFile bootImageFile = new RootFile(bootImage);
 
         if (!bootImageFile.isFile()) {
-            SwitcherUtils.backupKernel(romInfo.id);
+            SwitcherUtils.setKernel(romInfo.id);
         }
 
         String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
@@ -166,6 +166,6 @@ public class AppSharingUtils {
         new RootFile(tmpKernel).copyTo(bootImageFile);
         bootImageFile.chmod(0755);
 
-        SwitcherUtils.writeKernel(romInfo.id);
+        SwitcherUtils.chooseRom(romInfo.id);
     }
 }

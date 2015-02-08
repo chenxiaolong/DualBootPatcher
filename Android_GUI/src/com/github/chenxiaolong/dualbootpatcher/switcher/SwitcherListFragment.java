@@ -45,11 +45,12 @@ import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.RootCheckerEventCollector;
-import com.github.chenxiaolong.dualbootpatcher.RootCheckerEventCollector.RootAcknowledgedEvent;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.ChoseRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
+import com.github.chenxiaolong.multibootpatcher.events.MbtoolConnectionEventCollector;
+import com.github.chenxiaolong.multibootpatcher.events.MbtoolConnectionEventCollector
+        .MbtoolConnectionEvent;
 import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
 import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
 
@@ -89,7 +90,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private boolean mPerformingAction;
 
     private SwitcherEventCollector mEventCollector;
-    private RootCheckerEventCollector mRootChecker;
+    private MbtoolConnectionEventCollector mMbtoolEventCollector;
 
     private Bundle mSavedInstanceState;
 
@@ -104,7 +105,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private int mAction;
     private boolean mCardsLoaded;
 
-    private ArrayList<BaseEvent> mEvents = new ArrayList<BaseEvent>();
+    private ArrayList<BaseEvent> mEvents = new ArrayList<>();
 
     private AlertDialog mDialog;
     private AlertDialog mRenameDialog;
@@ -153,7 +154,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mRootChecker = RootCheckerEventCollector.getInstance(getFragmentManager());
+        mMbtoolEventCollector = MbtoolConnectionEventCollector.getInstance(getFragmentManager());
 
         mSavedInstanceState = savedInstanceState;
 
@@ -199,12 +200,12 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
 
         if (mAction == ACTION_CHOOSE_ROM) {
-            mRootChecker.createListener(TAG_CHOOSE_ROM);
+            mMbtoolEventCollector.createListener(TAG_CHOOSE_ROM);
         } else if (mAction == ACTION_SET_KERNEL) {
-            mRootChecker.createListener(TAG_SET_KERNEL);
+            mMbtoolEventCollector.createListener(TAG_SET_KERNEL);
         }
 
-        mRootChecker.requestRoot();
+        mMbtoolEventCollector.connect();
     }
 
     private void reloadFragment() {
@@ -239,10 +240,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         if (mAction == ACTION_CHOOSE_ROM) {
             mEventCollector.attachListener(TAG_CHOOSE_ROM, this);
-            mRootChecker.attachListener(TAG_CHOOSE_ROM, this);
+            mMbtoolEventCollector.attachListener(TAG_CHOOSE_ROM, this);
         } else if (mAction == ACTION_SET_KERNEL) {
             mEventCollector.attachListener(TAG_SET_KERNEL, this);
-            mRootChecker.attachListener(TAG_SET_KERNEL, this);
+            mMbtoolEventCollector.attachListener(TAG_SET_KERNEL, this);
         }
     }
 
@@ -252,10 +253,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         if (mAction == ACTION_CHOOSE_ROM) {
             mEventCollector.detachListener(TAG_CHOOSE_ROM);
-            mRootChecker.detachListener(TAG_CHOOSE_ROM);
+            mMbtoolEventCollector.detachListener(TAG_CHOOSE_ROM);
         } else if (mAction == ACTION_SET_KERNEL) {
             mEventCollector.detachListener(TAG_SET_KERNEL);
-            mRootChecker.detachListener(TAG_SET_KERNEL);
+            mMbtoolEventCollector.detachListener(TAG_SET_KERNEL);
         }
     }
 
@@ -328,7 +329,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mNoRootCard.setOnClickListener(new OnCardClickListener() {
             @Override
             public void onClick(Card card, View view) {
-                mRootChecker.resetAttempt();
+                mMbtoolEventCollector.resetAttempt();
                 reloadFragment();
             }
         });
@@ -716,10 +717,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             } else {
                 mEvents.add(event);
             }
-        } else if (event instanceof RootAcknowledgedEvent) {
-            RootAcknowledgedEvent e = (RootAcknowledgedEvent) event;
+        } else if (event instanceof MbtoolConnectionEvent) {
+            MbtoolConnectionEvent e = (MbtoolConnectionEvent) event;
 
-            if (!e.allowed) {
+            if (!e.connected) {
                 mNoRootCardView.setVisibility(View.VISIBLE);
                 refreshProgressVisibility(false);
             } else {

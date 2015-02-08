@@ -42,27 +42,24 @@ public class SwitcherService extends IntentService {
     public static final String STATE_SET_KERNEL = "set_kernel";
 
     public static final String RESULT_FAILED = "failed";
-    public static final String RESULT_MESSAGE = "message";
     public static final String RESULT_KERNEL_ID = "kernel_id";
 
     public SwitcherService() {
         super(TAG);
     }
 
-    private void onChoseRom(boolean failed, String message, String kernelId) {
+    private void onChoseRom(boolean failed, String kernelId) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_CHOSE_ROM);
         i.putExtra(RESULT_FAILED, failed);
-        i.putExtra(RESULT_MESSAGE, message);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
         sendBroadcast(i);
     }
 
-    private void onSetKernel(boolean failed, String message, String kernelId) {
+    private void onSetKernel(boolean failed, String kernelId) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_SET_KERNEL);
         i.putExtra(RESULT_FAILED, failed);
-        i.putExtra(RESULT_MESSAGE, message);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
         sendBroadcast(i);
     }
@@ -100,18 +97,9 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_CHOOSE_ROM);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean failed = true;
-        String message = "";
+        boolean failed = !SwitcherUtils.chooseRom(kernelId);
 
-        try {
-            SwitcherUtils.writeKernel(kernelId);
-            failed = false;
-        } catch (Exception e) {
-            message = e.getMessage();
-            e.printStackTrace();
-        }
-
-        onChoseRom(failed, message, kernelId);
+        onChoseRom(failed, kernelId);
 
         removeNotification();
     }
@@ -120,18 +108,9 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_SET_KERNEL);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean failed = true;
-        String message = "";
+        boolean failed = !SwitcherUtils.setKernel(kernelId);
 
-        try {
-            SwitcherUtils.backupKernel(kernelId);
-            failed = false;
-        } catch (Exception e) {
-            message = e.getMessage();
-            e.printStackTrace();
-        }
-
-        onSetKernel(failed, message, kernelId);
+        onSetKernel(failed, kernelId);
 
         removeNotification();
     }
