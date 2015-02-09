@@ -164,7 +164,7 @@ error:
 
 struct rom * mb_find_rom_by_id(struct roms *roms, const char *id)
 {
-    for (unsigned int i = 0; i < roms->len; ++i) {
+    for (size_t i = 0; i < roms->len; ++i) {
         struct rom *r = roms->list[i];
         if (strcmp(r->id, id) == 0) {
             return r;
@@ -189,7 +189,7 @@ int mb_roms_cleanup(struct roms *roms)
         return 0;
     }
 
-    for (unsigned int i = 0; i < roms->len; ++i) {
+    for (size_t i = 0; i < roms->len; ++i) {
         struct rom *r = roms->list[i];
         free_rom(r);
     }
