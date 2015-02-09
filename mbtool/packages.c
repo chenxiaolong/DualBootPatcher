@@ -107,7 +107,7 @@ static void package_cleanup(struct package *pkg)
     }
 
     free(pkg->name);
-    free(pkg->name);
+    free(pkg->real_name);
     free(pkg->code_path);
     free(pkg->resource_path);
     free(pkg->native_library_path);
