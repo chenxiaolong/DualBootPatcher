@@ -16,7 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 url="https://github.com/SELinuxProject/selinux.git"
-ver="2.3"
+commit="98d497389bb1994d3b738ca5bf0dfeb6c685dd46"
+ver="2.3-${commit:0:7}"
 
 set -e
 
@@ -30,9 +31,12 @@ else
 fi
 
 pushd selinux/libsepol
-git checkout "libsepol-${ver}"
+if [[ ! -z "${commit}" ]]; then
+    git checkout "${commit}"
+else
+    git checkout "libsepol-${ver}"
+fi
 git am ../../0001-Build-for-Android-targets.patch
-git am ../../0001-Build-static-library.patch
 
 arches=(armeabi-v7a arm64-v8a x86 x86_64)
 ndk-build \
