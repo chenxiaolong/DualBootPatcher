@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <time.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -28,10 +29,7 @@
 #include "util/logging.h"
 
 
-// 0: No extra debugging output
-// 1: Normal debugging output
-// 2: A crap ton of debugging output
-#define PACKAGES_DEBUG 1
+#define PACKAGES_DEBUG 0
 
 
 #define TO_CHAR (char *)
@@ -411,7 +409,7 @@ static int parse_tag_package(xmlNode *node, struct packages *pkgs)
         }
     }
 
-#if ROMS_DEBUG >= 2
+#if PACKAGES_DEBUG >= 2
     package_dump(pkg);
 #endif
 
