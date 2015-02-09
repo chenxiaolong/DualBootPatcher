@@ -147,7 +147,11 @@ LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
 LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
 LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
+ifeq ($(DEBUGGING),true)
+LOCAL_CFLAGS += -DMB_LIBC_DEBUG -DMB_LIBC_PATH=\"/system/lib/libc.so\"
+else
 LOCAL_LDFLAGS := -static
+endif
 
 include $(BUILD_EXECUTABLE)
 
@@ -181,7 +185,7 @@ LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
 LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
 ifeq ($(DEBUGGING),true)
-LOCAL_CFLAGS += -DMB_LIBC_DEBUG
+LOCAL_CFLAGS += -DMB_LIBC_DEBUG -DMB_LIBC_PATH=\"/tmp/libc.so\"
 # Use the recovery's loader
 LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker
 else

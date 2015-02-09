@@ -34,9 +34,9 @@ int mb_get_property(const char *name, char *value_out, char *default_value)
 
     // NOTE: This is disabled for now since we always link libc statically
 
-    void *handle = dlopen("/tmp/libc.so", RTLD_LOCAL);
+    void *handle = dlopen(MB_LIBC_PATH, RTLD_LOCAL);
     if (!handle) {
-        LOGE("Failed to dlopen() libc.so: %s", dlerror());
+        LOGE("Failed to dlopen() %s: %s", MB_LIBC_PATH, dlerror());
         return 0;
     }
 
@@ -64,9 +64,9 @@ int mb_get_property(const char *name, char *value_out, char *default_value)
 int mb_set_property(const char *name, const char *value)
 {
 #ifdef MB_LIBC_DEBUG
-    void *handle = dlopen("/tmp/libc.so", RTLD_LOCAL);
+    void *handle = dlopen(MB_LIBC_PATH, RTLD_LOCAL);
     if (!handle) {
-        LOGE("Failed to dlopen() libc.so: %s", dlerror());
+        LOGE("Failed to dlopen() %s: %s", MB_LIBC_PATH, dlerror());
         return 0;
     }
 
