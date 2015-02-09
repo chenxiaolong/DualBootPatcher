@@ -99,6 +99,7 @@ mbtool_src_base := \
 	mount_fstab.c \
 	multiboot.c \
 	main.c \
+	packages.c \
 	roms.c \
 	sepolpatch.c \
 	external/mntent.c \
