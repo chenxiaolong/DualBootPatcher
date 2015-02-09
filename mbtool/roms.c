@@ -148,6 +148,7 @@ int mb_roms_get_installed(struct roms *roms)
             roms_add(roms, r);
         } else {
             free_rom(r);
+            free(r);
         }
 
         free(raw_bp_path);
