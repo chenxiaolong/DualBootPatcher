@@ -206,13 +206,13 @@ endif()
 # libsepol for Android
 ################################################################################
 
-set(LIBSEPOL_VER "2.3")
+set(LIBSEPOL_VER "2.3-98d4973")
 
 file(
     DOWNLOAD
     ${URL_BASE}/libsepol-${LIBSEPOL_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libsepol-${LIBSEPOL_VER}_android.tar.bz2
-    EXPECTED_MD5 73e618c7c075936e67544c332edb7055
+    EXPECTED_MD5 9c39f359cfba0b32caca521da2bcdfbc
     SHOW_PROGRESS
 )
 
