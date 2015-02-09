@@ -241,9 +241,10 @@ static int connection_version_1(int fd)
         if (ret < 0) {
             goto error;
         }
+
+        free(command);
     }
 
-    free(command);
     return 0;
 
 error:
