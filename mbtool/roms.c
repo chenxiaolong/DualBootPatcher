@@ -65,8 +65,6 @@ static void free_rom(struct rom *rom)
     free(rom->data_path);
 
     mb_packages_cleanup(rom->pkgs);
-
-    free(rom);
 }
 
 int mb_roms_get_builtin(struct roms *roms)
@@ -140,18 +138,20 @@ int mb_roms_get_installed(struct roms *roms)
             goto error;
         }
 
+        roms_remove(&all_roms, r);
+
         if (stat(raw_bp_path, &sb) == 0 && S_ISREG(sb.st_mode)) {
             r->use_raw_paths = 1;
             roms_add(roms, r);
         } else if (stat(bp_path, &sb) == 0 && S_ISREG(sb.st_mode)) {
             r->use_raw_paths = 0;
             roms_add(roms, r);
+        } else {
+            free_rom(r);
         }
 
         free(raw_bp_path);
         free(bp_path);
-
-        roms_remove(&all_roms, r);
     }
 
     mb_roms_cleanup(&all_roms);
@@ -192,6 +192,7 @@ int mb_roms_cleanup(struct roms *roms)
     for (size_t i = 0; i < roms->len; ++i) {
         struct rom *r = roms->list[i];
         free_rom(r);
+        free(r);
     }
 
     free(roms->list);
