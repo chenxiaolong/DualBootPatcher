@@ -196,6 +196,7 @@ int mb_packages_cleanup(struct packages *pkgs)
     for (size_t i = 0; i < pkgs->len; ++i) {
         struct package *pkg = pkgs->list[i];
         package_cleanup(pkg);
+        free(pkg);
     }
 
     free(pkgs->list);
