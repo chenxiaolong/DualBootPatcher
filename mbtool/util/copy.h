@@ -19,12 +19,18 @@
 
 #pragma once
 
+#include <string>
+
 #define MB_COPY_ATTRIBUTES              0x1
 #define MB_COPY_XATTRS                  0x2
 #define MB_COPY_EXCLUDE_TOP_LEVEL       0x4
 #define MB_COPY_FOLLOW_SYMLINKS         0x8
 
-int mb_copy_data_fd(int fd_source, int fd_target);
-int mb_copy_contents(const char *source, const char *target);
-int mb_copy_file(const char *source, const char *target, int flags);
-int mb_copy_dir(const char *source, const char *target, int flags);
+namespace MB {
+
+bool copy_data_fd(int fd_source, int fd_target);
+bool copy_contents(const std::string &source, const std::string &target);
+bool copy_file(const std::string &source, const std::string &target, int flags);
+bool copy_dir(const std::string &source, const std::string &target, int flags);
+
+}

@@ -19,18 +19,27 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
+namespace MB {
+
 struct extract_info {
-    const char *from;
-    const char *to;
+    std::string from;
+    std::string to;
 };
 
 struct exists_info {
-    const char *path;
-    int exists;
+    std::string path;
+    bool exists;
 };
 
-int mb_extract_archive(const char *filename, const char *target);
-int mb_extract_files(const char *filename, const char *target,
-                     const char **files);
-int mb_extract_files2(const char *filename, const struct extract_info *files);
-int mb_archive_exists(const char *filename, struct exists_info *files);
+bool extract_archive(const std::string &filename, const std::string &target);
+bool extract_files(const std::string &filename, const std::string &target,
+                   const std::vector<std::string> &files);
+bool extract_files2(const std::string &filename,
+                    const std::vector<extract_info> &files);
+bool archive_exists(const std::string &filename,
+                    std::vector<exists_info> &files);
+
+}

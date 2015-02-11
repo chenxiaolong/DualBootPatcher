@@ -21,30 +21,27 @@
 
 #include <stdio.h>
 
-#define LOGE(...) mb_logmsg(MB_LOG_ERROR,   __VA_ARGS__)
-#define LOGW(...) mb_logmsg(MB_LOG_WARNING, __VA_ARGS__)
-#define LOGI(...) mb_logmsg(MB_LOG_INFO,    __VA_ARGS__)
-#define LOGD(...) mb_logmsg(MB_LOG_DEBUG,   __VA_ARGS__)
-#define LOGV(...) mb_logmsg(MB_LOG_VERBOSE, __VA_ARGS__)
+#include <spdlog/spdlog.h>
 
-enum loglevels {
-    MB_LOG_ERROR,
-    MB_LOG_WARNING,
-    MB_LOG_INFO,
-    MB_LOG_DEBUG,
-    MB_LOG_VERBOSE
+#define LOGE(...) MB::logger()->error(__VA_ARGS__)
+#define LOGW(...) MB::logger()->warn(__VA_ARGS__)
+#define LOGI(...) MB::logger()->info(__VA_ARGS__)
+#define LOGD(...) MB::logger()->debug(__VA_ARGS__)
+#define LOGV(...) MB::logger()->info(__VA_ARGS__)
+
+namespace MB {
+
+enum class LogTarget {
+    DEFAULT,
+    KLOG,
+#ifdef USE_ANDROID_LOG
+    LOGCAT,
+#endif
+    STDOUT,
+    STDERR
 };
 
-void mb_klog_init(void);
+void log_set_target(LogTarget target);
+std::shared_ptr<spdlog::logger> logger();
 
-__attribute__((format(printf, 2, 3)))
-void mb_logmsg(int prio, const char *fmt, ...);
-
-void mb_log_use_default_output(void);
-void mb_log_use_standard_output(void);
-void mb_log_use_logcat_output(void);
-void mb_log_use_kernel_output(void);
-void mb_log_set_standard_stream(int prio, FILE *stream);
-void mb_log_set_default_standard_stream(int prio);
-void mb_log_set_standard_stream_all(FILE *stream);
-void mb_log_set_default_standard_stream_all(void);
+}

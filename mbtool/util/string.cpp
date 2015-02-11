@@ -17,13 +17,22 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <string>
+#include "util/string.h"
 
 namespace MB {
 
-bool kernel_cmdline_get_option(const std::string &option,
-                               std::string *out);
+bool starts_with(const std::string &string, const std::string &prefix)
+{
+    return string.compare(0, prefix.length(), prefix) == 0;
+}
+
+bool ends_with(const std::string &string, const std::string &suffix)
+{
+    if (string.size() < suffix.size()) {
+        return false;
+    }
+
+    return string.compare(string.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
 
 }

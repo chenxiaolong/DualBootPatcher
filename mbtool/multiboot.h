@@ -19,4 +19,6 @@
 
 #pragma once
 
-int mb_wipe_directory(const char *mountpoint, int wipeMedia);
+#include <string>
+
+bool wipe_directory(const std::string &mountpoint, bool wipe_media);

@@ -19,7 +19,11 @@
 
 #pragma once
 
-#include <sys/types.h>
+#include <string>
 
-int mb_mkdir_recursive(const char *dir, mode_t mode);
-int mb_mkdir_parent(const char *path, mode_t perms);
+namespace MB {
+
+bool mkdir_recursive(const std::string &dir, mode_t mode);
+bool mkdir_parent(const std::string &path, mode_t perms);
+
+}

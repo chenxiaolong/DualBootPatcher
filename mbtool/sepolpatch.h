@@ -19,6 +19,9 @@
 
 #pragma once
 
-int patch_sepolicy(const char *source, const char *target);
-int patch_loaded_sepolicy();
+#include <string>
+
+bool patch_sepolicy(const std::string &source,
+                    const std::string &target);
+bool patch_loaded_sepolicy();
 int sepolpatch_main(int argc, char *argv[]);

@@ -19,26 +19,27 @@
 
 #pragma once
 
-#include <stddef.h>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "packages.h"
-#include "util/vector.h"
 
-struct rom {
-    char *id;
-    char *system_path;
-    char *cache_path;
-    char *data_path;
-    int use_raw_paths;
-    struct packages *pkgs;
+class Rom {
+public:
+    std::string id;
+    std::string system_path;
+    std::string cache_path;
+    std::string data_path;
+    bool use_raw_paths;
+    std::vector<Package *> pkgs;
+
+    // Functions
+    Rom();
+    ~Rom();
 };
 
-VECTOR(struct rom *, roms);
-
-int mb_roms_init(struct roms *roms);
-int mb_roms_cleanup(struct roms *roms);
-int mb_roms_get_builtin(struct roms *roms);
-int mb_roms_get_installed(struct roms *roms);
-struct rom * mb_find_rom_by_id(struct roms *roms, const char *id);
-int mb_rom_load_packages(struct rom *rom);
-int mb_rom_cleanup_packages(struct rom *rom);
+bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms);
+bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms);
+std::shared_ptr<Rom> mb_find_rom_by_id(std::vector<std::shared_ptr<Rom>> *roms,
+                                       const std::string &id);

@@ -19,7 +19,16 @@
 
 #pragma once
 
+#include <string>
+
 #define MB_CHOWN_FOLLOW_SYMLINKS        0x1
 #define MB_CHOWN_RECURSIVE              0x2
 
-int mb_chown(const char *path, const char *user, const char *group, int flags);
+namespace MB {
+
+bool chown(const std::string &path,
+           const std::string &user,
+           const std::string &group,
+           int flags);
+
+}

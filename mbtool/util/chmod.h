@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include <string>
 #include <sys/types.h>
 
-int mb_chmod_recursive(const char *path, mode_t perms);
+namespace MB {
+
+bool chmod_recursive(const std::string &path, mode_t perms);
+
+}

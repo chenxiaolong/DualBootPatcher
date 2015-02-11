@@ -19,11 +19,5 @@
 
 #pragma once
 
-#include <string>
-
-namespace MB {
-
-bool kernel_cmdline_get_option(const std::string &option,
-                               std::string *out);
-
-}
+int appsync();
+int appsync_main(int argc, char *argv[]);

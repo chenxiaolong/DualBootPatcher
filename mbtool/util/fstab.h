@@ -19,23 +19,22 @@
 
 #pragma once
 
-struct fstab
-{
-    int num_entries;
-    struct fstab_rec *recs;
-    char *fstab_filename;
-};
+#include <string>
+#include <vector>
+
+namespace MB {
 
 struct fstab_rec
 {
-    char *blk_device;
-    char *mount_point;
-    char *fs_type;
+    std::string blk_device;
+    std::string mount_point;
+    std::string fs_type;
     unsigned long flags;
-    char *fs_options;
-    char *vold_args;
-    char *orig_line;
+    std::string fs_options;
+    std::string vold_args;
+    std::string orig_line;
 };
 
-struct fstab * mb_read_fstab(const char *path);
-void mb_free_fstab(struct fstab *fstab);
+std::vector<fstab_rec> read_fstab(const std::string &path);
+
+}

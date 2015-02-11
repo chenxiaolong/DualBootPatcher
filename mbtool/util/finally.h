@@ -19,11 +19,30 @@
 
 #pragma once
 
-#include <string>
-
 namespace MB {
 
-bool kernel_cmdline_get_option(const std::string &option,
-                               std::string *out);
+// Perform action once this goes out of scope, essentially acting as the
+// "finally" part of a try-finally block (in eg. Java)
+template <typename F>
+class Finally {
+public:
+    Finally(F f) : _f(f)
+    {
+    }
+
+    ~Finally()
+    {
+        _f();
+    }
+
+private:
+    F _f;
+};
+
+template <typename F>
+Finally<F> finally(F f)
+{
+    return Finally<F>(f);
+}
 
 }

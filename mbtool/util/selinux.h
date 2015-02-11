@@ -19,19 +19,25 @@
 
 #pragma once
 
+#include <string>
+
 #include <sepol/policydb/policydb.h>
 
 #define MB_SELINUX_ENFORCE_FILE "/sys/fs/selinux/enforce"
 #define MB_SELINUX_POLICY_FILE "/sys/fs/selinux/policy"
 #define MB_SELINUX_LOAD_FILE "/sys/fs/selinux/load"
 
-int mb_selinux_read_policy(const char *path, policydb_t *pdb);
-int mb_selinux_write_policy(const char *path, policydb_t *pdb);
-int mb_selinux_make_permissive(policydb_t *pdb, char *type_str);
-int mb_selinux_add_rule(policydb_t *pdb,
-                        const char *source_str,
-                        const char *target_str,
-                        const char *class_str,
-                        const char *perm_str);
-int mb_selinux_set_context(const char *path, const char *context);
-int mb_selinux_lset_context(const char *path, const char *context);
+namespace MB {
+
+bool selinux_read_policy(const std::string &path, policydb_t *pdb);
+bool selinux_write_policy(const std::string &path, policydb_t *pdb);
+bool selinux_make_permissive(policydb_t *pdb, const std::string &type_str);
+bool selinux_add_rule(policydb_t *pdb,
+                      const std::string &source_str,
+                      const std::string &target_str,
+                      const std::string &class_str,
+                      const std::string &perm_str);
+bool selinux_set_context(const std::string &path, const std::string &context);
+bool selinux_lset_context(const std::string &path, const std::string &context);
+
+}

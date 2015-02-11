@@ -19,4 +19,10 @@
 
 #pragma once
 
-int mb_delete_recursive(const char *path);
+#include <string>
+
+namespace MB {
+
+bool delete_recursive(const std::string &path);
+
+}

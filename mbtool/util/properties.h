@@ -19,10 +19,19 @@
 
 #pragma once
 
+#include <string>
+
 #include <sys/system_properties.h>
 
 #define MB_PROP_NAME_MAX  PROP_NAME_MAX
 #define MB_PROP_VALUE_MAX PROP_VALUE_MAX
 
-int mb_get_property(const char *name, char *value_out, char *default_value);
-int mb_set_property(const char *name, const char *value);
+namespace MB {
+
+void get_property(const std::string &name,
+                  std::string *value_out,
+                  const std::string &default_value);
+bool set_property(const std::string &name,
+                  const std::string &value);
+
+}

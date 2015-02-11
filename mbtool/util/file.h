@@ -19,8 +19,14 @@
 
 #pragma once
 
-#include <sys/types.h>
+#include <string>
 
-int mb_create_empty_file(const char *path);
-int mb_file_first_line(const char *path, char **line_out);
-int mb_file_write_data(const char *path, const void *data, size_t size);
+namespace MB {
+
+bool create_empty_file(const std::string &path);
+bool file_first_line(const std::string &path,
+                     std::string *line_out);
+bool file_write_data(const std::string &path,
+                     const char *data, size_t size);
+
+}

@@ -19,47 +19,48 @@
 
 #pragma once
 
-#include <stddef.h>
-
-#include "util/vector.h"
+#include <vector>
 
 
-// From frameworks/base/core/java/android/content/pm/ApplicationInfo.java
-// See https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/content/pm/ApplicationInfo.java
-#define FLAG_SYSTEM                     1 << 0
-#define FLAG_DEBUGGABLE                 1 << 1
-#define FLAG_HAS_CODE                   1 << 2
-#define FLAG_PERSISTENT                 1 << 3
-#define FLAG_FACTORY_TEST               1 << 4
-#define FLAG_ALLOW_TASK_REPARENTING     1 << 5
-#define FLAG_ALLOW_CLEAR_USER_DATA      1 << 6
-#define FLAG_UPDATED_SYSTEM_APP         1 << 7
-#define FLAG_TEST_ONLY                  1 << 8
-#define FLAG_SUPPORTS_SMALL_SCREENS     1 << 9
-#define FLAG_SUPPORTS_NORMAL_SCREENS    1 << 10
-#define FLAG_SUPPORTS_LARGE_SCREENS     1 << 11
-#define FLAG_RESIZEABLE_FOR_SCREENS     1 << 12
-#define FLAG_SUPPORTS_SCREEN_DENSITIES  1 << 13
-#define FLAG_VM_SAFE_MODE               1 << 14
-#define FLAG_ALLOW_BACKUP               1 << 15
-#define FLAG_KILL_AFTER_RESTORE         1 << 16
-#define FLAG_RESTORE_ANY_VERSION        1 << 17
-#define FLAG_EXTERNAL_STORAGE           1 << 18
-#define FLAG_SUPPORTS_XLARGE_SCREENS    1 << 19
-#define FLAG_LARGE_HEAP                 1 << 20
-#define FLAG_STOPPED                    1 << 21
-#define FLAG_SUPPORTS_RTL               1 << 22
-#define FLAG_INSTALLED                  1 << 23
-#define FLAG_IS_DATA_ONLY               1 << 24
-#define FLAG_IS_GAME                    1 << 25
-#define FLAG_FULL_BACKUP_ONLY           1 << 26
-#define FLAG_HIDDEN                     1 << 27
-#define FLAG_CANT_SAVE_STATE            1 << 28
-#define FLAG_FORWARD_LOCK               1 << 29
-#define FLAG_PRIVILEGED                 1 << 30
-#define FLAG_MULTIARCH                  1 << 31
+class Package {
+public:
+    // From frameworks/base/core/java/android/content/pm/ApplicationInfo.java
+    // See https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/content/pm/ApplicationInfo.java
+    enum class Flags : int {
+        FLAG_SYSTEM                    = 1 << 0,
+        FLAG_DEBUGGABLE                = 1 << 1,
+        FLAG_HAS_CODE                  = 1 << 2,
+        FLAG_PERSISTENT                = 1 << 3,
+        FLAG_FACTORY_TEST              = 1 << 4,
+        FLAG_ALLOW_TASK_REPARENTING    = 1 << 5,
+        FLAG_ALLOW_CLEAR_USER_DATA     = 1 << 6,
+        FLAG_UPDATED_SYSTEM_APP        = 1 << 7,
+        FLAG_TEST_ONLY                 = 1 << 8,
+        FLAG_SUPPORTS_SMALL_SCREENS    = 1 << 9,
+        FLAG_SUPPORTS_NORMAL_SCREENS   = 1 << 10,
+        FLAG_SUPPORTS_LARGE_SCREENS    = 1 << 11,
+        FLAG_RESIZEABLE_FOR_SCREENS    = 1 << 12,
+        FLAG_SUPPORTS_SCREEN_DENSITIES = 1 << 13,
+        FLAG_VM_SAFE_MODE              = 1 << 14,
+        FLAG_ALLOW_BACKUP              = 1 << 15,
+        FLAG_KILL_AFTER_RESTORE        = 1 << 16,
+        FLAG_RESTORE_ANY_VERSION       = 1 << 17,
+        FLAG_EXTERNAL_STORAGE          = 1 << 18,
+        FLAG_SUPPORTS_XLARGE_SCREENS   = 1 << 19,
+        FLAG_LARGE_HEAP                = 1 << 20,
+        FLAG_STOPPED                   = 1 << 21,
+        FLAG_SUPPORTS_RTL              = 1 << 22,
+        FLAG_INSTALLED                 = 1 << 23,
+        FLAG_IS_DATA_ONLY              = 1 << 24,
+        FLAG_IS_GAME                   = 1 << 25,
+        FLAG_FULL_BACKUP_ONLY          = 1 << 26,
+        FLAG_HIDDEN                    = 1 << 27,
+        FLAG_CANT_SAVE_STATE           = 1 << 28,
+        FLAG_FORWARD_LOCK              = 1 << 29,
+        FLAG_PRIVILEGED                = 1 << 30,
+        FLAG_MULTIARCH                 = 1 << 31
+    };
 
-struct package {
     char *name;                                 // PackageSetting.name
     char *real_name;                            // PackageSetting.realName
     char *code_path;                            // PackageSetting.codePathString
@@ -80,10 +81,12 @@ struct package {
     char *uid_error;                            // (not in PackageSetting)
     char *install_status;                       // (not in PackageSetting)
     char *installer;                            // PackageSetting.installerPackageName
+
+    // Functions
+    Package();
+    ~Package();
+    bool load_xml(const char *path);
 };
 
-VECTOR(struct package *, packages);
-
-int mb_packages_init(struct packages *pkgs);
-int mb_packages_load_xml(struct packages *pkgs, const char *path);
-int mb_packages_cleanup(struct packages *pkgs);
+int mb_packages_load_xml(std::vector<Package *> *pkgs, const char *path);
+void mb_packages_free(std::vector<Package *> *pkgs);

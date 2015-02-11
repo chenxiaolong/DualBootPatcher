@@ -19,9 +19,13 @@
 
 #pragma once
 
-#include <inttypes.h>
+#include <string>
 
-char * mb_loopdev_find_unused(void);
-int mb_loopdev_setup_device(const char *loopdev, const char *file,
-                            uint64_t offset, int ro);
-int mb_loopdev_remove_device(const char *loopdev);
+namespace MB {
+
+std::string loopdev_find_unused(void);
+bool loopdev_setup_device(const std::string &loopdev, const std::string &file,
+                          uint64_t offset, bool ro);
+bool loopdev_remove_device(const std::string &loopdev);
+
+}

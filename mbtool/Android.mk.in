@@ -21,6 +21,9 @@ LOCAL_PATH := $(call my-dir)
 #   cd /tmp/
 DEBUGGING := false
 
+# Whether ccache should be used (highly recommended!)
+USE_CCACHE := true
+
 
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
@@ -32,6 +35,7 @@ LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 BOOST_DIR := $(THIRD_PARTY)/android/boost
 MBP_MINI_DIR := @CMAKE_BINARY_DIR@/libmbp/mbp-mini-prefix/tmp/local
 TOP_DIR := @CMAKE_SOURCE_DIR@
+EXTERNAL_DIR := $(TOP_DIR)/external
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libjansson
@@ -92,65 +96,101 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 git_version := $(shell git describe --dirty --always --tags)
 
+mbutil_src := \
+	util/archive.cpp \
+	util/chmod.cpp \
+	util/chown.cpp \
+	util/cmdline.cpp \
+	util/command.cpp \
+	util/copy.cpp \
+	util/delete.cpp \
+	util/directory.cpp \
+	util/file.cpp \
+	util/fstab.cpp \
+	util/fts.cpp \
+	util/logging.cpp \
+	util/loopdev.cpp \
+	util/mount.cpp \
+	util/properties.cpp \
+	util/selinux.cpp \
+	util/socket.cpp \
+	util/string.cpp
+
 mbtool_src_base := \
-	actions.c \
-	common.c \
-	daemon.c \
-	mount_fstab.c \
-	multiboot.c \
-	main.c \
-	packages.c \
-	roms.c \
-	sepolpatch.c \
+	actions.cpp \
+	appsync.cpp \
+	common.cpp \
+	daemon.cpp \
+	main.cpp \
+	mount_fstab.cpp \
+	packages.cpp \
+	roms.cpp \
+	sepolpatch.cpp \
 	external/mntent.c \
 	external/sha.c \
-	util/chmod.c \
-	util/chown.c \
-	util/cmdline.c \
-	util/command.c \
-	util/copy.c \
-	util/delete.c \
-	util/directory.c \
-	util/file.c \
-	util/fstab.c \
-	util/logging.c \
-	util/loopdev.c \
-	util/mount.c \
-	util/path.c \
-	util/properties.c \
-	util/selinux.c \
-	util/socket.c \
-	util/string.c
+	$(EXTERNAL_DIR)/cppformat/format.cc
 
 mbtool_src_recovery := \
-	update_binary.c \
-	update_binary_tool.c \
-	util/archive.c
+	multiboot.cpp \
+	update_binary.cpp \
+	update_binary_tool.cpp
+
+mb_common_cflags := \
+	-Wall -Wextra -Werror \
+	-fno-exceptions -fno-rtti \
+	-ffunction-sections -fdata-sections \
+	-Os
+
+mb_common_ldflags := \
+	-Wl,--gc-sections
+
+mb_common_cflags += -DFMT_EXCEPTIONS=0 -DSPD_EXCEPTIONS=0
+
+ifeq ($(DEBUGGING),true)
+mb_common_cflags += -DMB_LIBC_DEBUG
+endif
+
+
+ifeq ($(USE_CCACHE),true)
+TARGET_CC := ccache $(TARGET_CC)
+TARGET_CXX := ccache $(TARGET_CXX)
+endif
+
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(mbutil_src)
+LOCAL_MODULE := libmbutil
+LOCAL_CFLAGS := $(mb_common_cflags)
+LOCAL_C_INCLUDES := \
+	$(JANSSON_DIR)/include \
+	$(LIBARCHIVE_DIR)/include \
+	$(LIBSEPOL_DIR)/include \
+	$(LIBXML2_DIR)/include/libxml2 \
+	$(EXTERNAL_DIR) \
+	$(EXTERNAL_DIR)/spdlog/include
+include $(BUILD_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libjansson libsepol libxml2
+LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol libxml2
 
 LOCAL_C_INCLUDES := \
 	$(JANSSON_DIR)/include \
+	$(LIBARCHIVE_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
-	$(LIBXML2_DIR)/include/libxml2
+	$(LIBXML2_DIR)/include/libxml2 \
+	$(EXTERNAL_DIR)/spdlog/include
 
-# Not sure why it tries to compile the binary with g++
-TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
-
-LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
-
+LOCAL_CFLAGS := $(mb_common_cflags)
 LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
 LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
-ifeq ($(DEBUGGING),true)
-LOCAL_CFLAGS += -DMB_LIBC_DEBUG -DMB_LIBC_PATH=\"/system/lib/libc.so\"
-else
-LOCAL_LDFLAGS := -static
+LOCAL_LDFLAGS := $(mb_common_ldflags)
+ifneq ($(DEBUGGING),true)
+LOCAL_LDFLAGS += -static
 endif
 
 include $(BUILD_EXECUTABLE)
@@ -163,33 +203,29 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base) $(mbtool_src_recovery)
 
 LOCAL_MODULE := mbtool_recovery
-LOCAL_STATIC_LIBRARIES := libmbp-mini libjansson libsepol libxml2 libarchive libloki liblz4 boost_filesystem boost_system gnustl_static
+LOCAL_STATIC_LIBRARIES := libmbutil libmbp-mini libjansson libsepol libxml2 libarchive libloki liblz4 boost_filesystem boost_system gnustl_static
 
 LOCAL_C_INCLUDES := \
 	$(JANSSON_DIR)/include \
+	$(LIBARCHIVE_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
-	$(LIBARCHIVE_DIR)/include \
 	$(LIBLOKI_DIR)/include \
 	$(TOP_DIR)/libmbp \
-	$(TOP_DIR)
+	$(TOP_DIR) \
+	$(EXTERNAL_DIR)/spdlog/include
 
-# Not sure why it tries to compile the binary with g++
-TARGET_CXX := $(TOOLCHAIN_PREFIX)gcc
-
-LOCAL_CFLAGS := -std=c11 -Wall -Wextra -Werror
-
+LOCAL_CFLAGS := $(mb_common_cflags)
 LOCAL_CFLAGS += -DRECOVERY
-
 LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
 LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
+LOCAL_LDFLAGS := $(mb_common_ldflags)
 ifeq ($(DEBUGGING),true)
-LOCAL_CFLAGS += -DMB_LIBC_DEBUG -DMB_LIBC_PATH=\"/tmp/libc.so\"
 # Use the recovery's loader
-LOCAL_LDFLAGS := -Wl,--dynamic-linker=/sbin/linker
+LOCAL_LDFLAGS += -Wl,--dynamic-linker=/sbin/linker
 else
-LOCAL_LDFLAGS := -static
+LOCAL_LDFLAGS += -static
 endif
 
 LOCAL_LDFLAGS += -lz

@@ -13,3 +13,9 @@
 	path = external/lz4
 	url = https://github.com/chenxiaolong/lz4.git
 	branch = mbp
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/chenxiaolong/spdlog.git
+[submodule "external/cppformat"]
+	path = external/cppformat
+	url = https://github.com/cppformat/cppformat.git

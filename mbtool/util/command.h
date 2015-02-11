@@ -19,6 +19,14 @@
 
 #pragma once
 
-int mb_run_shell_command(const char *command);
-int mb_run_command(char * const argv[]);
-int mb_run_command_chroot(const char *dir, char * const argv[]);
+#include <string>
+#include <vector>
+
+namespace MB {
+
+int run_shell_command(const std::string &command);
+int run_command(const std::vector<std::string> &argv);
+int run_command_chroot(const std::string &dir,
+                       const std::vector<std::string> &argv);
+
+}

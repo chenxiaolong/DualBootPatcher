@@ -19,21 +19,27 @@
 
 #pragma once
 
+#include <string>
+
 #include <inttypes.h>
 
-int64_t mb_socket_read(int fd, void *buf, int64_t size);
-int64_t mb_socket_write(int fd, void *buf, int64_t size);
-int mb_socket_read_uint16(int fd, uint16_t *result);
-int mb_socket_write_uint16(int fd, uint16_t n);
-int mb_socket_read_uint32(int fd, uint32_t *result);
-int mb_socket_write_uint32(int fd, uint32_t n);
-int mb_socket_read_uint64(int fd, uint64_t *result);
-int mb_socket_write_uint64(int fd, uint64_t n);
-int mb_socket_read_int16(int fd, int16_t *result);
-int mb_socket_write_int16(int fd, int16_t n);
-int mb_socket_read_int32(int fd, int32_t *result);
-int mb_socket_write_int32(int fd, int32_t n);
-int mb_socket_read_int64(int fd, int64_t *result);
-int mb_socket_write_int64(int fd, int64_t n);
-int mb_socket_read_string(int fd, char **result);
-int mb_socket_write_string(int fd, char *str);
+namespace MB {
+
+int64_t socket_read(int fd, void *buf, int64_t size);
+int64_t socket_write(int fd, const void *buf, int64_t size);
+bool socket_read_uint16(int fd, uint16_t *result);
+bool socket_write_uint16(int fd, uint16_t n);
+bool socket_read_uint32(int fd, uint32_t *result);
+bool socket_write_uint32(int fd, uint32_t n);
+bool socket_read_uint64(int fd, uint64_t *result);
+bool socket_write_uint64(int fd, uint64_t n);
+bool socket_read_int16(int fd, int16_t *result);
+bool socket_write_int16(int fd, int16_t n);
+bool socket_read_int32(int fd, int32_t *result);
+bool socket_write_int32(int fd, int32_t n);
+bool socket_read_int64(int fd, int64_t *result);
+bool socket_write_int64(int fd, int64_t n);
+bool socket_read_string(int fd, std::string *result);
+bool socket_write_string(int fd, const std::string &str);
+
+}

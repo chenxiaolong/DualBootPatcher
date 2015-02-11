@@ -19,8 +19,20 @@
 
 #pragma once
 
-#include <inttypes.h>
+#include <sstream>
+#include <string>
 
-int mb_starts_with(const char *string, const char *prefix);
-int mb_ends_with(const char *string, const char *suffix);
-char * mb_uint64_to_string(uint64_t number, const char *prefix, const char *suffix);
+namespace MB {
+
+bool starts_with(const std::string &string, const std::string &prefix);
+bool ends_with(const std::string &string, const std::string &suffix);
+
+template <typename T>
+std::string to_string(const T& t)
+{
+    std::ostringstream ss;
+    ss << t;
+    return ss.str();
+}
+
+}
