@@ -20,6 +20,7 @@
 #include "util/path.h"
 
 #include <cerrno>
+#include <libgen.h>
 
 #include "util/logging.h"
 
@@ -40,6 +41,15 @@ std::string get_cwd()
     std::string ret(cwd);
     free(cwd);
     return ret;
+}
+
+std::string dir_name(const std::string &path)
+{
+    std::vector<char> buf(path.begin(), path.end());
+    buf.push_back('\0');
+
+    char *ptr = dirname(buf.data());
+    return std::string(ptr);
 }
 
 }

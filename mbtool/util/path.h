@@ -27,6 +27,7 @@ namespace util
 {
 
 std::string get_cwd();
+std::string dir_name(const std::string &path);
 
 }
 }

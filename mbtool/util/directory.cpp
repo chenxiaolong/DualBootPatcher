@@ -19,11 +19,13 @@
 
 #include "util/directory.h"
 
+#include <vector>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include <libgen.h>
 #include <sys/stat.h>
+
+#include "util/path.h"
 
 namespace mb
 {
@@ -35,84 +37,62 @@ bool mkdir_recursive(const std::string &dir, mode_t mode)
     struct stat st;
     char *p;
     char *save_ptr;
-    char *temp = NULL;
-    char *copy = NULL;
-    int len;
+    std::vector<char> temp;
+    std::vector<char> copy;
 
     if (dir.empty()) {
         errno = EINVAL;
-        goto error;
+        return false;
     }
 
-    copy = strdup(dir.c_str());
-    len = strlen(dir.c_str());
-    temp = (char *) malloc(len + 2);
+    copy.assign(dir.begin(), dir.end());
+    copy.push_back('\0');
+    temp.resize(dir.size() + 2);
     temp[0] = '\0';
 
     if (dir[0] == '/') {
-        strcat(temp, "/");
+        strcat(temp.data(), "/");
     }
 
-    p = strtok_r(copy, "/", &save_ptr);
+    p = strtok_r(copy.data(), "/", &save_ptr);
     while (p != NULL) {
-        strcat(temp, p);
-        strcat(temp, "/");
+        strcat(temp.data(), p);
+        strcat(temp.data(), "/");
 
-        if (stat(temp, &st) < 0 && mkdir(temp, mode) < 0) {
-            goto error;
+        if (stat(temp.data(), &st) < 0 && mkdir(temp.data(), mode) < 0) {
+            return false;
         }
 
         p = strtok_r(NULL, "/", &save_ptr);
     }
 
-    free(copy);
-    free(temp);
     return true;
-
-error:
-    free(copy);
-    free(temp);
-    return false;
 }
 
 bool mkdir_parent(const std::string &path, mode_t perms)
 {
-    struct stat sb;
-    char *dup = NULL;
-    char *dir;
-
     if (path.empty()) {
         errno = EINVAL;
-        goto error;
+        return false;
     }
 
-    dup = strdup(path.c_str());
-    if (!dup) {
-        errno = ENOMEM;
-        goto error;
-    }
-
-    dir = dirname(dup);
+    struct stat sb;
+    std::string dir = dir_name(path);
 
     if (!mkdir_recursive(dir, perms) && errno != EEXIST) {
-        goto error;
+        return false;
     }
 
-    if (stat(dir, &sb) < 0) {
-        goto error;
+    if (stat(dir.c_str(), &sb) < 0) {
+        return false;
     }
 
     if (!S_ISDIR(sb.st_mode)) {
         errno = ENOTDIR;
-        goto error;
+        return false;
     }
 
-    free(dup);
     return true;
-
-error:
-    free(dup);
-    return false;
 }
 
 }
