@@ -31,6 +31,7 @@
 
 #include "actions.h"
 #include "roms.h"
+#include "util/finally.h"
 #include "util/logging.h"
 #include "util/socket.h"
 
@@ -226,6 +227,13 @@ static int verify_credentials(uid_t uid)
 
 static bool client_connection(int fd)
 {
+    bool ret = true;
+    auto fail = util::finally([&] {
+        if (!ret) {
+            LOGE("Killing connection");
+        }
+    });
+
     LOGD("Accepted connection from %d", fd);
 
     struct ucred cred;
@@ -233,7 +241,7 @@ static bool client_connection(int fd)
 
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
         LOGE("Failed to get socket credentials: %s", strerror(errno));
-        goto error;
+        return ret = false;
     }
 
     LOGD("Client PID: %d", cred.pid);
@@ -243,13 +251,13 @@ static bool client_connection(int fd)
     // TODO: Verify credentials
     if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
         LOGE("Failed to send credentials allowed message");
-        goto error;
+        return ret = false;
     }
 
     int32_t version;
     if (!util::socket_read_int32(fd, &version)) {
         LOGE("Failed to get interface version");
-        goto error;
+        return ret = false;
     }
 
     if (version == 1) {
@@ -260,14 +268,10 @@ static bool client_connection(int fd)
     } else {
         LOGE("Unsupported interface version: %d", version);
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
-        goto error;
+        return ret = false;
     }
 
     return true;
-
-error:
-    LOGE("Killing connection");
-    return false;
 }
 
 static bool run_daemon(void)
@@ -280,6 +284,10 @@ static bool run_daemon(void)
         LOGE("Failed to create socket: %s", strerror(errno));
         return false;
     }
+
+    auto close_fd = util::finally([&] {
+        close(fd);
+    });
 
     char abs_name[] = "\0mbtool.daemon";
     size_t abs_name_len = sizeof(abs_name) - 1;
@@ -295,12 +303,12 @@ static bool run_daemon(void)
     if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         LOGE("Is another instance running?");
-        goto error;
+        return false;
     }
 
     if (listen(fd, 3) < 0) {
         LOGE("Failed to listen on socket: %s", strerror(errno));
-        goto error;
+        return false;
     }
 
     LOGD("Socket ready, waiting for connections");
@@ -320,16 +328,10 @@ static bool run_daemon(void)
 
     if (client_fd < 0) {
         LOGE("Failed to accept connection on socket: %s", strerror(errno));
-        goto error;
+        return false;
     }
 
     return true;
-
-error:
-    if (fd > 0) {
-        close(fd);
-    }
-    return false;
 }
 
 static void daemon_usage(int error)
