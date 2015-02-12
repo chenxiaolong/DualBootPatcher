@@ -25,13 +25,16 @@
 #include <ctype.h>
 #include <sys/mount.h>
 
-#include "logging.h"
+#include "util/finally.h"
+#include "util/logging.h"
 
 
 namespace mb
 {
 namespace util
 {
+
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 struct mount_flag
 {
@@ -77,7 +80,12 @@ static int options_to_flags(char *args, char *new_args, int size);
 // Much simplified version of fs_mgr's fstab parsing code
 std::vector<fstab_rec> read_fstab(const std::string &path)
 {
-    std::FILE *fp;
+    file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
+    if (!fp) {
+        LOGE("Failed to open file %s: %s", path, strerror(errno));
+        return std::vector<fstab_rec>();
+    }
+
     int count, entries;
     char *line = NULL;
     size_t len = 0; // allocated memory size
@@ -88,14 +96,12 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
     std::vector<fstab_rec> fstab;
     char temp_mount_args[1024];
 
-    fp = std::fopen(path.c_str(), "rb");
-    if (!fp) {
-        LOGE("Failed to open file %s", path.c_str());
-        return std::vector<fstab_rec>();
-    }
+    auto free_line = finally([&] {
+        free(line);
+    });
 
     entries = 0;
-    while ((bytes_read = getline(&line, &len, fp)) != -1) {
+    while ((bytes_read = getline(&line, &len, fp.get())) != -1) {
         // Strip newlines
         if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
             line[bytes_read - 1] = '\0';
@@ -117,13 +123,13 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
     if (entries == 0) {
         LOGE("fstab contains no entries");
-        goto error;
+        return std::vector<fstab_rec>();
     }
 
-    std::fseek(fp, 0, SEEK_SET);
+    std::fseek(fp.get(), 0, SEEK_SET);
 
     count = 0;
-    while ((bytes_read = getline(&line, &len, fp)) != -1) {
+    while ((bytes_read = getline(&line, &len, fp.get())) != -1) {
         // Strip newlines
         if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
             line[bytes_read - 1] = '\0';
@@ -152,25 +158,25 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
         if ((temp = strtok_r(line, delim, &save_ptr)) == NULL) {
             LOGE("No source path/device found in entry: %s", line);
-            goto error;
+            return std::vector<fstab_rec>();
         }
         rec.blk_device = temp;
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
             LOGE("No mount point found in entry: %s", line);
-            goto error;
+            return std::vector<fstab_rec>();
         }
         rec.mount_point = temp;
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
             LOGE("No filesystem type found in entry: %s", line);
-            goto error;
+            return std::vector<fstab_rec>();
         }
         rec.fs_type = temp;
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
             LOGE("No mount options found in entry: %s", line);
-            goto error;
+            return std::vector<fstab_rec>();
         }
         rec.flags = options_to_flags(temp, temp_mount_args, 1024);
 
@@ -180,7 +186,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
         if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
             LOGE("No fs_mgr/vold options found in entry: %s", line);
-            goto error;
+            return std::vector<fstab_rec>();
         }
         rec.vold_args = temp;
 
@@ -189,14 +195,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
         ++count;
     }
 
-    std::fclose(fp);
-    free(line);
     return fstab;
-
-error:
-    std::fclose(fp);
-    free(line);
-    return std::vector<fstab_rec>();
 }
 
 static int options_to_flags(char *args, char *new_args, int size)
