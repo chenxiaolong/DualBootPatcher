@@ -19,6 +19,7 @@
 
 #include "util/file.h"
 
+#include <memory>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -27,10 +28,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "util/finally.h"
+
 namespace mb
 {
 namespace util
 {
+
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 /*!
  * \brief Create empty file with 0666 permissions
@@ -38,7 +43,7 @@ namespace util
  * \note Returns 0 if file already exists
  *
  * \param path File to create
- * \return 0 on success, -1 on failure with errno set appropriately
+ * \return true on success, false on failure with errno set appropriately
  */
 bool create_empty_file(const std::string &path)
 {
@@ -46,11 +51,11 @@ bool create_empty_file(const std::string &path)
     if ((fd = open(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR |
                                                    S_IRGRP | S_IWGRP |
                                                    S_IROTH | S_IWOTH)) < 0) {
-        return -1;
+        return false;
     }
 
     close(fd);
-    return 0;
+    return true;
 }
 
 /*!
@@ -64,23 +69,26 @@ bool create_empty_file(const std::string &path)
  *
  * \note line_out is not modified if this function fails
  *
- * \return 0 on success, -1 on failure and errno set appropriately
+ * \return true on success, false on failure and errno set appropriately
  */
 bool file_first_line(const std::string &path,
                      std::string *line_out)
 {
-    std::FILE *fp = NULL;
+    file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
+    if (!fp) {
+        return false;
+    }
+
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
 
-    fp = std::fopen(path.c_str(), "rb");
-    if (!fp) {
-        goto error;
-    }
+    auto free_line = finally([&] {
+        free(line);
+    });
 
-    if ((read = getline(&line, &len, fp)) < 0) {
-        goto error;
+    if ((read = getline(&line, &len, fp.get())) < 0) {
+        return false;
     }
 
     if (line[read - 1] == '\n') {
@@ -88,20 +96,9 @@ bool file_first_line(const std::string &path,
         --read;
     }
 
-    std::fclose(fp);
-
     *line_out = line;
 
-    free(line);
-    return 0;
-
-error:
-    if (fp) {
-        std::fclose(fp);
-    }
-
-    free(line);
-    return -1;
+    return true;
 }
 
 /*!
@@ -111,46 +108,28 @@ error:
  * \param data Pointer to data to write
  * \param size Size of \a data
  *
- * \return 0 on success, -1 on failure and errno set appropriately
+ * \return true on success, false on failure and errno set appropriately
  */
 bool file_write_data(const std::string &path,
                      const char *data, size_t size)
 {
-    std::FILE *fp;
-    fp = std::fopen(path.c_str(), "wb");
+    file_ptr fp(std::fopen(path.c_str(), "wb"), std::fclose);
     if (!fp) {
-        goto error;
+        return false;
     }
-
-    int saved_errno;
 
     ssize_t nwritten;
 
     do {
-        if ((nwritten = std::fwrite(data, 1, size, fp)) < 0) {
-            goto error;
+        if ((nwritten = std::fwrite(data, 1, size, fp.get())) < 0) {
+            return false;
         }
 
         size -= nwritten;
         data += nwritten;
     } while (size > 0);
 
-    if (std::fclose(fp) < 0) {
-        fp = NULL;
-        goto error;
-    }
-
-    return 0;
-
-error:
-    saved_errno = errno;
-
-    if (fp) {
-        std::fclose(fp);
-    }
-
-    errno = saved_errno;
-    return -1;
+    return true;
 }
 
 }
