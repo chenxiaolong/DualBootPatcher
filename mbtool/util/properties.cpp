@@ -72,7 +72,7 @@ void get_property(const std::string &name,
     void *handle = dlopen(LIBC, RTLD_LOCAL);
     if (!handle) {
         LOGE("Failed to dlopen() %s: %s", LIBC, dlerror());
-        return 0;
+        return;
     }
 
     int (*__system_property_get)(const char *, char *) =
@@ -102,7 +102,7 @@ bool set_property(const std::string &name,
     void *handle = dlopen(LIBC, RTLD_LOCAL);
     if (!handle) {
         LOGE("Failed to dlopen() %s: %s", LIBC, dlerror());
-        return 0;
+        return false;
     }
 
     int (*__system_property_set)(const char *, const char *) =
