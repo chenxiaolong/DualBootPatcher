@@ -21,16 +21,23 @@
 
 #include <string>
 
-#define MB_COPY_ATTRIBUTES              0x1
-#define MB_COPY_XATTRS                  0x2
-#define MB_COPY_EXCLUDE_TOP_LEVEL       0x4
-#define MB_COPY_FOLLOW_SYMLINKS         0x8
+namespace mb
+{
+namespace util
+{
 
-namespace MB {
+enum CopyFlags : int
+{
+    MB_COPY_ATTRIBUTES          = 0x1,
+    MB_COPY_XATTRS              = 0x2,
+    MB_COPY_EXCLUDE_TOP_LEVEL   = 0x3,
+    MB_COPY_FOLLOW_SYMLINKS     = 0x4
+};
 
 bool copy_data_fd(int fd_source, int fd_target);
 bool copy_contents(const std::string &source, const std::string &target);
 bool copy_file(const std::string &source, const std::string &target, int flags);
 bool copy_dir(const std::string &source, const std::string &target, int flags);
 
+}
 }

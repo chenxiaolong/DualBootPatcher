@@ -19,4 +19,9 @@
 
 #pragma once
 
+namespace mb
+{
+
 int daemon_main(int argc, char *argv[]);
+
+}

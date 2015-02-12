@@ -25,7 +25,10 @@
 #include <cppformat/format.h>
 
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 FTSWrapper::FTSWrapper(std::string path, int flags)
 {
@@ -229,4 +232,5 @@ int FTSWrapper::on_reached_socket()
     return Action::FTS_OK;
 }
 
+}
 }

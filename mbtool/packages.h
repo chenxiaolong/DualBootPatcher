@@ -24,7 +24,11 @@
 #include <vector>
 
 
-class Package {
+namespace mb
+{
+
+class Package
+{
 public:
     // From frameworks/base/core/java/android/content/pm/ApplicationInfo.java
     // See https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/content/pm/ApplicationInfo.java
@@ -90,3 +94,5 @@ public:
 
 bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
                           const std::string &path);
+
+}

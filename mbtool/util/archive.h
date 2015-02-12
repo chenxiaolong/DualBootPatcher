@@ -22,7 +22,10 @@
 #include <string>
 #include <vector>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 struct extract_info {
     std::string from;
@@ -42,4 +45,5 @@ bool extract_files2(const std::string &filename,
 bool archive_exists(const std::string &filename,
                     std::vector<exists_info> &files);
 
+}
 }

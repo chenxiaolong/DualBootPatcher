@@ -45,7 +45,7 @@ int main(int argc, char *argv[]);
 static int mbtool_main(int argc, char *argv[]);
 
 
-#define TOOL(name) { #name, name##_main }
+#define TOOL(name) { #name, mb::name##_main }
 
 struct tool {
     const char *name;
@@ -53,17 +53,17 @@ struct tool {
 };
 
 struct tool tools[] = {
-    TOOL(mbtool),
+    { "mbtool", mbtool_main },
     // Tools
 #ifdef RECOVERY
-    { "updater", update_binary_main }, // TWRP
-    { "update_binary", update_binary_main }, // CWM, Philz
-    { "update-binary-tool", update_binary_tool_main },
+    { "updater", mb::update_binary_main }, // TWRP
+    { "update_binary", mb::update_binary_main }, // CWM, Philz
+    { "update-binary-tool", mb::update_binary_tool_main },
 #else
-    TOOL(appsync),
-    TOOL(daemon),
-    TOOL(mount_fstab),
-    TOOL(sepolpatch),
+    { "appsync", mb::appsync_main },
+    { "daemon", mb::daemon_main },
+    { "mount_fstab", mb::mount_fstab_main },
+    { "sepolpatch", mb::sepolpatch_main },
 #endif
     { NULL, NULL }
 };

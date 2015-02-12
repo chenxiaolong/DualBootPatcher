@@ -21,8 +21,12 @@
 
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 std::string get_cwd();
 
+}
 }

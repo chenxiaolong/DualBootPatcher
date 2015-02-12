@@ -21,4 +21,9 @@
 
 #include <string>
 
+namespace mb
+{
+
 bool wipe_directory(const std::string &mountpoint, bool wipe_media);
+
+}

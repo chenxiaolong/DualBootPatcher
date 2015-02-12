@@ -28,7 +28,10 @@
 #include "util/fts.h"
 #include "util/logging.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 class RecursiveDeleter : public FTSWrapper {
 public:
@@ -83,4 +86,5 @@ bool delete_recursive(const std::string &path)
     return deleter.run();
 }
 
+}
 }

@@ -25,7 +25,10 @@
 #include <libgen.h>
 #include <sys/stat.h>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool mkdir_recursive(const std::string &dir, mode_t mode)
 {
@@ -112,4 +115,5 @@ error:
     return false;
 }
 
+}
 }

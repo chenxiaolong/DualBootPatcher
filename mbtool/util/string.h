@@ -22,7 +22,10 @@
 #include <sstream>
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool starts_with(const std::string &string, const std::string &prefix);
 bool ends_with(const std::string &string, const std::string &suffix);
@@ -35,4 +38,5 @@ std::string to_string(const T& t)
     return ss.str();
 }
 
+}
 }

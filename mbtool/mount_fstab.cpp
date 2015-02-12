@@ -47,8 +47,11 @@
 #define FORCE_SELINUX_PERMISSIVE 0
 
 
-static bool create_dir_and_mount(struct MB::fstab_rec *rec,
-                                 struct MB::fstab_rec *flags_from_rec,
+namespace mb
+{
+
+static bool create_dir_and_mount(struct util::fstab_rec *rec,
+                                 struct util::fstab_rec *flags_from_rec,
                                  const std::string &mount_point)
 {
     struct stat st;
@@ -122,7 +125,7 @@ static std::string file_getprop(const std::string &path, const std::string &key)
             continue;
         }
 
-        if (MB::starts_with(line, key)) {
+        if (util::starts_with(line, key)) {
             // Strip newline
             if (line[read - 1] == '\n') {
                 line[read - 1] = '\0';
@@ -160,14 +163,14 @@ static unsigned long get_api_version(void)
 
 int mount_fstab(const std::string &fstab_path)
 {
-    std::vector<MB::fstab_rec> fstab;
+    std::vector<util::fstab_rec> fstab;
     std::FILE *out = NULL;
-    struct MB::fstab_rec *rec_system = NULL;
-    struct MB::fstab_rec *rec_cache = NULL;
-    struct MB::fstab_rec *rec_data = NULL;
-    struct MB::fstab_rec *flags_system = NULL;
-    struct MB::fstab_rec *flags_cache = NULL;
-    struct MB::fstab_rec *flags_data = NULL;
+    struct util::fstab_rec *rec_system = NULL;
+    struct util::fstab_rec *rec_cache = NULL;
+    struct util::fstab_rec *rec_data = NULL;
+    struct util::fstab_rec *flags_system = NULL;
+    struct util::fstab_rec *flags_cache = NULL;
+    struct util::fstab_rec *flags_data = NULL;
     std::string target_system;
     std::string target_cache;
     std::string target_data;
@@ -224,7 +227,7 @@ int mount_fstab(const std::string &fstab_path)
     }
 
     // Read original fstab
-    fstab = MB::read_fstab(fstab_path);
+    fstab = util::read_fstab(fstab_path);
     if (fstab.empty()) {
         LOGE("Failed to read %s", fstab_path);
         goto error;
@@ -238,7 +241,7 @@ int mount_fstab(const std::string &fstab_path)
         goto error;
     }
 
-    for (MB::fstab_rec &rec : fstab) {
+    for (util::fstab_rec &rec : fstab) {
         if (rec.mount_point == "/system") {
             rec_system = &rec;
         } else if (rec.mount_point == "/cache") {
@@ -261,7 +264,7 @@ int mount_fstab(const std::string &fstab_path)
     }
 
     // Mount raw partitions to /raw-*
-    if (!MB::kernel_cmdline_get_option("romid", &rom_id)) {
+    if (!util::kernel_cmdline_get_option("romid", &rom_id)) {
         LOGE("Failed to determine ROM ID");
         goto error;
     }
@@ -273,7 +276,7 @@ int mount_fstab(const std::string &fstab_path)
     }
 
     // Set property for the Android app to use
-    if (!MB::set_property("ro.multiboot.romid", rom_id)) {
+    if (!util::set_property("ro.multiboot.romid", rom_id)) {
         LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom_id);
     }
 
@@ -284,13 +287,13 @@ int mount_fstab(const std::string &fstab_path)
     // since the current setup does not allow two bind mounted locations to
     // reside on the same partition.
 
-    if (MB::starts_with(rom->system_path, "/cache")) {
+    if (util::starts_with(rom->system_path, "/cache")) {
         flags_system = rec_cache;
     } else {
         flags_system = rec_system;
     }
 
-    if (MB::starts_with(rom->cache_path, "/system")) {
+    if (util::starts_with(rom->cache_path, "/system")) {
         flags_cache = rec_system;
     } else {
         flags_cache = rec_cache;
@@ -331,20 +334,20 @@ int mount_fstab(const std::string &fstab_path)
     target_data += "/raw";
     target_data += rom->data_path;
 
-    if (!MB::bind_mount(target_system, 0771, "/system", 0771)) {
+    if (!util::bind_mount(target_system, 0771, "/system", 0771)) {
         goto error;
     }
 
-    if (!MB::bind_mount(target_cache, 0771, "/cache", 0771)) {
+    if (!util::bind_mount(target_cache, 0771, "/cache", 0771)) {
         goto error;
     }
 
-    if (!MB::bind_mount(target_data, 0771, "/data", 0771)) {
+    if (!util::bind_mount(target_data, 0771, "/data", 0771)) {
         goto error;
     }
 
     // Bind mount internal SD directory
-    if (!MB::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
+    if (!util::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
         goto error;
     }
 
@@ -375,7 +378,7 @@ int mount_fstab(const std::string &fstab_path)
 
 
     // Set version property
-    if (!MB::set_property("ro.multiboot.version", MBP_VERSION)) {
+    if (!util::set_property("ro.multiboot.version", MBP_VERSION)) {
         LOGE("Failed to set 'ro.multiboot.version' to '%s'", MBP_VERSION);
     }
 
@@ -385,34 +388,34 @@ int mount_fstab(const std::string &fstab_path)
     share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
 
     if (share_app || share_app_asec) {
-        if (!MB::bind_mount("/raw/data/app-lib", 0771,
-                            "/data/app-lib", 0771)) {
+        if (!util::bind_mount("/raw/data/app-lib", 0771,
+                              "/data/app-lib", 0771)) {
             goto error;
         }
     }
 
     if (share_app) {
-        if (!MB::bind_mount("/raw/data/app", 0771,
-                            "/data/app", 0771)) {
+        if (!util::bind_mount("/raw/data/app", 0771,
+                              "/data/app", 0771)) {
             goto error;
         }
     }
 
     if (share_app_asec) {
-        if (!MB::bind_mount("/raw/data/app-asec", 0771,
-                            "/data/app-asec", 0771)) {
+        if (!util::bind_mount("/raw/data/app-asec", 0771,
+                              "/data/app-asec", 0771)) {
             goto error;
         }
     }
 
-    MB::create_empty_file(path_completed);
+    util::create_empty_file(path_completed);
 
     LOGI("Successfully mounted partitions");
 
     return 0;
 
 error:
-    MB::create_empty_file(path_failed);
+    util::create_empty_file(path_failed);
 
     return -1;
 }
@@ -458,7 +461,7 @@ int mount_fstab_main(int argc, char *argv[])
     }
 
     // Use the kernel log since logcat hasn't run yet
-    MB::log_set_target(MB::LogTarget::KLOG);
+    util::log_set_target(util::LogTarget::KLOG);
 
     // Patch SELinux policy
     if (!patch_loaded_sepolicy()) {
@@ -477,4 +480,6 @@ int mount_fstab_main(int argc, char *argv[])
 #endif
 
     return mount_fstab(argv[optind]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
 }

@@ -21,8 +21,12 @@
 
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool delete_recursive(const std::string &path);
 
+}
 }

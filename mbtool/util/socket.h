@@ -23,7 +23,10 @@
 
 #include <inttypes.h>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 int64_t socket_read(int fd, void *buf, int64_t size);
 int64_t socket_write(int fd, const void *buf, int64_t size);
@@ -42,4 +45,5 @@ bool socket_write_int64(int fd, int64_t n);
 bool socket_read_string(int fd, std::string *result);
 bool socket_write_string(int fd, const std::string &str);
 
+}
 }

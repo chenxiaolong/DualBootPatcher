@@ -19,4 +19,9 @@
 
 #pragma once
 
+namespace mb
+{
+
 int mount_fstab_main(int argc, char *argv[]);
+
+}

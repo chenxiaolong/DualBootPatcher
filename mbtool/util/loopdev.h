@@ -21,11 +21,15 @@
 
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 std::string loopdev_find_unused(void);
 bool loopdev_setup_device(const std::string &loopdev, const std::string &file,
                           uint64_t offset, bool ro);
 bool loopdev_remove_device(const std::string &loopdev);
 
+}
 }

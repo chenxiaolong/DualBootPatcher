@@ -23,7 +23,10 @@
 
 #define LOG_TAG "mbtool"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 static LogTarget log_target;
 static std::unordered_map<int, std::string> names;
@@ -85,4 +88,5 @@ std::shared_ptr<spdlog::logger> logger()
     return logptr;
 }
 
+}
 }

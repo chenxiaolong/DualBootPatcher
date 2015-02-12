@@ -32,6 +32,9 @@
 #define BUILD_PROP "build.prop"
 
 
+namespace mb
+{
+
 Rom::Rom() : use_raw_paths(false)
 {
 }
@@ -135,4 +138,6 @@ std::shared_ptr<Rom> mb_find_rom_by_id(std::vector<std::shared_ptr<Rom>> *roms,
     }
 
     return std::shared_ptr<Rom>();
+}
+
 }

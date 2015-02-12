@@ -19,7 +19,10 @@
 
 #include "util/string.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool starts_with(const std::string &string, const std::string &prefix)
 {
@@ -35,4 +38,5 @@ bool ends_with(const std::string &string, const std::string &suffix)
     return string.compare(string.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+}
 }

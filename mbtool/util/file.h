@@ -21,7 +21,10 @@
 
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool create_empty_file(const std::string &path);
 bool file_first_line(const std::string &path,
@@ -29,4 +32,5 @@ bool file_first_line(const std::string &path,
 bool file_write_data(const std::string &path,
                      const char *data, size_t size);
 
+}
 }

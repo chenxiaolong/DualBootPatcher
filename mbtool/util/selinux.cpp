@@ -32,7 +32,10 @@
 #include "util/logging.h"
 
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 {
@@ -238,4 +241,5 @@ bool selinux_lset_context(const std::string &path, const std::string &context)
                      context.c_str(), context.size() + 1, 0);
 }
 
+}
 }

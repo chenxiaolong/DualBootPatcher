@@ -21,6 +21,11 @@
 
 #include <string>
 
+namespace mb
+{
+
 bool action_choose_rom(const std::string &id, const std::string &boot_blockdev);
 bool action_set_kernel(const std::string &id, const std::string &boot_blockdev);
 bool action_reboot(const std::string &reboot_arg);
+
+}

@@ -26,6 +26,9 @@
 #include "util/logging.h"
 
 
+namespace mb
+{
+
 int appsync()
 {
     return 0;
@@ -72,4 +75,6 @@ int appsync_main(int argc, char *argv[])
     }
 
     return appsync() == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
 }

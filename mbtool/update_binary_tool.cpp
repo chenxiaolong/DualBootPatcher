@@ -44,6 +44,9 @@
 #define STAMP_FILE "/.system-mounted"
 
 
+namespace mb
+{
+
 static bool do_mount(const std::string &mountpoint)
 {
     if (mountpoint == SYSTEM) {
@@ -58,14 +61,14 @@ static bool do_mount(const std::string &mountpoint)
             return true;
         }
 
-        std::string loopdev = MB::loopdev_find_unused();
+        std::string loopdev = util::loopdev_find_unused();
 
         if (loopdev.empty()) {
             LOGE(TAG "Failed to find unused loop device: %s", strerror(errno));
             return false;
         }
 
-        if (!MB::loopdev_setup_device(loopdev, "/multiboot/system.img", 0, 0)) {
+        if (!util::loopdev_setup_device(loopdev, "/multiboot/system.img", 0, 0)) {
             LOGE(TAG "Failed to setup loop device %s: %s",
                  loopdev, strerror(errno));
             return false;
@@ -74,11 +77,11 @@ static bool do_mount(const std::string &mountpoint)
         if (mount(loopdev.c_str(), SYSTEM, "ext4", 0, "") < 0) {
             LOGE(TAG "Failed to mount %s: %s",
                  loopdev, strerror(errno));
-            MB::loopdev_remove_device(loopdev);
+            util::loopdev_remove_device(loopdev);
             return false;
         }
 
-        MB::file_write_data(STAMP_FILE, loopdev.data(), loopdev.size());
+        util::file_write_data(STAMP_FILE, loopdev.data(), loopdev.size());
 
         LOGD(TAG "Mounted %s at %s", loopdev, SYSTEM);
     } else {
@@ -103,7 +106,7 @@ static bool do_unmount(const std::string &mountpoint)
         }
 
         std::string loopdev;
-        if (!MB::file_first_line(STAMP_FILE, &loopdev)) {
+        if (!util::file_first_line(STAMP_FILE, &loopdev)) {
             LOGE(TAG "Failed to get first line of " STAMP_FILE);
             return false;
         }
@@ -113,7 +116,7 @@ static bool do_unmount(const std::string &mountpoint)
             return false;
         }
 
-        if (!MB::loopdev_remove_device(loopdev)) {
+        if (!util::loopdev_remove_device(loopdev)) {
             LOGE(TAG "Failed to remove loop device %s: %s",
                  loopdev, strerror(errno));
             return false;
@@ -215,7 +218,7 @@ int update_binary_tool_main(int argc, char *argv[])
     }
 
     // Log to stderr, so the output is ordered correctly in /tmp/recovery.log
-    MB::log_set_target(MB::LogTarget::STDERR);
+    util::log_set_target(util::LogTarget::STDERR);
 
     std::string action = argv[optind];
     std::string mountpoint = argv[optind + 1];
@@ -250,4 +253,6 @@ int update_binary_tool_main(int argc, char *argv[])
     }
 
     return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
 }

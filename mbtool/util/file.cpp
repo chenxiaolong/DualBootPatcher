@@ -27,7 +27,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 /*!
  * \brief Create empty file with 0666 permissions
@@ -150,4 +153,5 @@ error:
     return -1;
 }
 
+}
 }

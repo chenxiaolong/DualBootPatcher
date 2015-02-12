@@ -36,6 +36,9 @@
 #define TO_CHAR (char *)
 #define TO_XMLCHAR (xmlChar *)
 
+namespace mb
+{
+
 static const xmlChar *TAG_DATABASE_VERSION      = TO_XMLCHAR "database-version";
 static const xmlChar *TAG_DEFINED_KEYSET        = TO_XMLCHAR "defined-keyset";
 static const xmlChar *TAG_KEYSET_SETTINGS       = TO_XMLCHAR "keyset-settings";
@@ -371,4 +374,6 @@ static bool parse_tag_packages(xmlNode *node,
     }
 
     return true;
+}
+
 }

@@ -23,7 +23,10 @@
 
 #include "util/logging.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 std::string get_cwd()
 {
@@ -39,4 +42,5 @@ std::string get_cwd()
     return ret;
 }
 
+}
 }

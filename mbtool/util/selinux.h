@@ -27,7 +27,10 @@
 #define MB_SELINUX_POLICY_FILE "/sys/fs/selinux/policy"
 #define MB_SELINUX_LOAD_FILE "/sys/fs/selinux/load"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
 bool selinux_write_policy(const std::string &path, policydb_t *pdb);
@@ -40,4 +43,5 @@ bool selinux_add_rule(policydb_t *pdb,
 bool selinux_set_context(const std::string &path, const std::string &context);
 bool selinux_lset_context(const std::string &path, const std::string &context);
 
+}
 }

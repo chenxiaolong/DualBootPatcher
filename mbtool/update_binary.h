@@ -19,4 +19,9 @@
 
 #pragma once
 
+namespace mb
+{
+
 int update_binary_main(int argc, char *argv[]);
+
+}

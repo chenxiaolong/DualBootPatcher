@@ -33,6 +33,9 @@
 
 #define MULTIBOOT_DIR "/data/media/0/MultiBoot"
 
+namespace mb
+{
+
 static bool choose_or_set_rom(const std::string &id,
                               const std::string &boot_blockdev, bool choose)
 {
@@ -51,23 +54,24 @@ static bool choose_or_set_rom(const std::string &id,
                 .append(id).append("/")
                 .append("boot.img");
 
-    if (!MB::mkdir_parent(bootimg_path, 0775)) {
+    if (!util::mkdir_parent(bootimg_path, 0775)) {
         LOGE("Failed to create parent directory of %s", bootimg_path);
         return false;
     }
 
-    if (!MB::copy_contents(choose ? bootimg_path : boot_blockdev,
-                           choose ? boot_blockdev : bootimg_path)) {
+    if (!util::copy_contents(choose ? bootimg_path : boot_blockdev,
+                             choose ? boot_blockdev : bootimg_path)) {
         LOGE("Failed to write %s", choose ? boot_blockdev : bootimg_path);
         return false;
     }
 
-    if (!MB::chown(MULTIBOOT_DIR, "media_rw", "media_rw", MB_CHOWN_RECURSIVE)) {
+    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
+                     util::MB_CHOWN_RECURSIVE)) {
         LOGE("Failed to chown %s", MULTIBOOT_DIR);
         return false;
     }
 
-    if (!MB::chmod_recursive(MULTIBOOT_DIR, 0775)) {
+    if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
         LOGE("Failed to chmod %s", MULTIBOOT_DIR);
         return false;
     }
@@ -96,7 +100,7 @@ bool action_reboot(const std::string &reboot_arg)
         return false;
     }
 
-    if (!MB::set_property("sys.powerctl", value)) {
+    if (!util::set_property("sys.powerctl", value)) {
         LOGE("Failed to set property");
         return false;
     }
@@ -107,4 +111,6 @@ bool action_reboot(const std::string &reboot_arg)
     }
 
     return true;
+}
+
 }

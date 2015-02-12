@@ -39,7 +39,10 @@
 #define LOOP_PREFIX  "/dev/block/loop"
 
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 std::string loopdev_find_unused(void)
 {
@@ -58,7 +61,7 @@ std::string loopdev_find_unused(void)
     close(fd);
     fd = -1;
 
-    return std::string(LOOP_PREFIX) + MB::to_string(n);
+    return std::string(LOOP_PREFIX) + to_string(n);
 
 error:
     saved_errno = errno;
@@ -135,4 +138,5 @@ bool loopdev_remove_device(const std::string &loopdev)
     return ret == 0;
 }
 
+}
 }

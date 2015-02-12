@@ -22,8 +22,12 @@
 #include <string>
 #include <sys/types.h>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool chmod_recursive(const std::string &path, mode_t perms);
 
+}
 }

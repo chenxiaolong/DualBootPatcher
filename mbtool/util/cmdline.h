@@ -21,9 +21,13 @@
 
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool kernel_cmdline_get_option(const std::string &option,
                                std::string *out);
 
+}
 }

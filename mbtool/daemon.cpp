@@ -47,35 +47,38 @@
 #define V1_COMMAND_REBOOT "REBOOT"              // [Version 1] Reboot
 
 
+namespace mb
+{
+
 static bool v1_list_roms(int fd)
 {
     std::vector<std::shared_ptr<Rom>> roms;
     mb_roms_add_installed(&roms);
 
-    if (!MB::socket_write_int32(fd, roms.size())) {
+    if (!util::socket_write_int32(fd, roms.size())) {
         return false;
     }
 
     for (auto r : roms) {
-        bool success = MB::socket_write_string(fd, "ROM_BEGIN")
-                && MB::socket_write_string(fd, "ID")
-                && MB::socket_write_string(fd, r->id)
-                && MB::socket_write_string(fd, "SYSTEM_PATH")
-                && MB::socket_write_string(fd, r->system_path)
-                && MB::socket_write_string(fd, "CACHE_PATH")
-                && MB::socket_write_string(fd, r->cache_path)
-                && MB::socket_write_string(fd, "DATA_PATH")
-                && MB::socket_write_string(fd, r->data_path)
-                && MB::socket_write_string(fd, "USE_RAW_PATHS")
-                && MB::socket_write_int32(fd, r->use_raw_paths)
-                && MB::socket_write_string(fd, "ROM_END");
+        bool success = util::socket_write_string(fd, "ROM_BEGIN")
+                && util::socket_write_string(fd, "ID")
+                && util::socket_write_string(fd, r->id)
+                && util::socket_write_string(fd, "SYSTEM_PATH")
+                && util::socket_write_string(fd, r->system_path)
+                && util::socket_write_string(fd, "CACHE_PATH")
+                && util::socket_write_string(fd, r->cache_path)
+                && util::socket_write_string(fd, "DATA_PATH")
+                && util::socket_write_string(fd, r->data_path)
+                && util::socket_write_string(fd, "USE_RAW_PATHS")
+                && util::socket_write_int32(fd, r->use_raw_paths)
+                && util::socket_write_string(fd, "ROM_END");
 
         if (!success) {
             return false;
         }
     }
 
-    if (!MB::socket_write_string(fd, RESPONSE_OK)) {
+    if (!util::socket_write_string(fd, RESPONSE_OK)) {
         return false;
     }
 
@@ -87,20 +90,20 @@ static bool v1_choose_rom(int fd)
     std::string id;
     std::string boot_blockdev;
 
-    if (!MB::socket_read_string(fd, &id)) {
+    if (!util::socket_read_string(fd, &id)) {
         return false;
     }
 
-    if (!MB::socket_read_string(fd, &boot_blockdev)) {
+    if (!util::socket_read_string(fd, &boot_blockdev)) {
         return false;
     }
 
     bool ret;
 
     if (!action_choose_rom(id, boot_blockdev)) {
-        ret = MB::socket_write_string(fd, RESPONSE_FAIL);
+        ret = util::socket_write_string(fd, RESPONSE_FAIL);
     } else {
-        ret = MB::socket_write_string(fd, RESPONSE_SUCCESS);
+        ret = util::socket_write_string(fd, RESPONSE_SUCCESS);
     }
 
     if (!ret) {
@@ -115,20 +118,20 @@ static bool v1_set_kernel(int fd)
     std::string id;
     std::string boot_blockdev;
 
-    if (!MB::socket_read_string(fd, &id)) {
+    if (!util::socket_read_string(fd, &id)) {
         return false;
     }
 
-    if (MB::socket_read_string(fd, &boot_blockdev)) {
+    if (util::socket_read_string(fd, &boot_blockdev)) {
         return false;
     }
 
     bool ret;
 
     if (!action_set_kernel(id, boot_blockdev)) {
-        ret = MB::socket_write_string(fd, RESPONSE_FAIL);
+        ret = util::socket_write_string(fd, RESPONSE_FAIL);
     } else {
-        ret = MB::socket_write_string(fd, RESPONSE_SUCCESS);
+        ret = util::socket_write_string(fd, RESPONSE_SUCCESS);
     }
 
     if (!ret) {
@@ -142,12 +145,12 @@ static bool v1_reboot(int fd)
 {
     std::string reboot_arg;
 
-    if (!MB::socket_read_string(fd, &reboot_arg)) {
+    if (!util::socket_read_string(fd, &reboot_arg)) {
         return false;
     }
 
     if (!action_reboot(reboot_arg)) {
-        if (!MB::socket_write_string(fd, RESPONSE_FAIL)) {
+        if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
             return false;
         }
     }
@@ -160,12 +163,12 @@ static bool connection_version_1(int fd)
 {
     std::string command;
 
-    if (!MB::socket_write_string(fd, RESPONSE_OK)) {
+    if (!util::socket_write_string(fd, RESPONSE_OK)) {
         return false;
     }
 
     while (1) {
-        if (!MB::socket_read_string(fd, &command)) {
+        if (!util::socket_read_string(fd, &command)) {
             return false;
         }
 
@@ -174,12 +177,12 @@ static bool connection_version_1(int fd)
                 || command == V1_COMMAND_SET_KERNEL
                 || command == V1_COMMAND_REBOOT) {
             // Acknowledge command
-            if (!MB::socket_write_string(fd, RESPONSE_OK)) {
+            if (!util::socket_write_string(fd, RESPONSE_OK)) {
                 return false;
             }
         } else {
             // Invalid command; allow further commands
-            if (MB::socket_write_string(fd, RESPONSE_UNSUPPORTED)) {
+            if (util::socket_write_string(fd, RESPONSE_UNSUPPORTED)) {
                 return false;
             }
         }
@@ -238,13 +241,13 @@ static bool client_connection(int fd)
     LOGD("Client GID: %d", cred.gid);
 
     // TODO: Verify credentials
-    if (!MB::socket_write_string(fd, RESPONSE_ALLOW)) {
+    if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
         LOGE("Failed to send credentials allowed message");
         goto error;
     }
 
     int32_t version;
-    if (!MB::socket_read_int32(fd, &version)) {
+    if (!util::socket_read_int32(fd, &version)) {
         LOGE("Failed to get interface version");
         goto error;
     }
@@ -256,7 +259,7 @@ static bool client_connection(int fd)
         return true;
     } else {
         LOGE("Unsupported interface version: %d", version);
-        MB::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         goto error;
     }
 
@@ -369,4 +372,6 @@ int daemon_main(int argc, char *argv[])
     }
 
     return run_daemon() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
 }

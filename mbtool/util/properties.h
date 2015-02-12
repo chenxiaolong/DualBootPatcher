@@ -26,7 +26,10 @@
 #define MB_PROP_NAME_MAX  PROP_NAME_MAX
 #define MB_PROP_VALUE_MAX PROP_VALUE_MAX
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 void get_property(const std::string &name,
                   std::string *value_out,
@@ -34,4 +37,5 @@ void get_property(const std::string &name,
 bool set_property(const std::string &name,
                   const std::string &value);
 
+}
 }

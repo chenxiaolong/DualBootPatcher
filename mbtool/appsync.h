@@ -19,5 +19,10 @@
 
 #pragma once
 
+namespace mb
+{
+
 int appsync();
 int appsync_main(int argc, char *argv[]);
+
+}

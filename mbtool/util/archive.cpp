@@ -31,7 +31,9 @@
 #include "util/finally.h"
 #include "util/path.h"
 
-namespace MB
+namespace mb
+{
+namespace util
 {
 
 typedef std::unique_ptr<archive, int (*)(archive *)> archive_ptr;
@@ -132,7 +134,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
 
     setup_output(out.get());
 
-    if (!MB::mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
         LOGE("%s: Failed to create directory: %s",
              target, strerror(errno));
         return false;
@@ -193,7 +195,7 @@ bool extract_files(const std::string &filename, const std::string &target,
 
     setup_output(out.get());
 
-    if (!MB::mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
+    if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
         LOGE("%s: Failed to create directory: %s",
              target, strerror(errno));
         return false;
@@ -331,4 +333,5 @@ bool archive_exists(const std::string &filename,
     return true;
 }
 
+}
 }

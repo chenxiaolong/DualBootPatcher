@@ -28,7 +28,10 @@
 
 #include "util/logging.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 #ifdef MB_LIBC_DEBUG
 static const char *LIBC = nullptr;
@@ -122,4 +125,5 @@ bool set_property(const std::string &name,
     return ret == 0;
 }
 
+}
 }

@@ -27,7 +27,10 @@
 
 #include "util/logging.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 int run_shell_command(const std::string &command)
 {
@@ -119,4 +122,5 @@ int run_command_chroot(const std::string &dir,
     return pid == -1 ? -1 : status;
 }
 
+}
 }

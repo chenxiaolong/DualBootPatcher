@@ -120,7 +120,6 @@ mbutil_src := \
 mbtool_src_base := \
 	actions.cpp \
 	appsync.cpp \
-	common.cpp \
 	daemon.cpp \
 	main.cpp \
 	mount_fstab.cpp \

@@ -33,6 +33,9 @@
 #include "util/selinux.h"
 
 
+namespace mb
+{
+
 // Types to make permissive
 static const char *permissive_types[] = {
     "init",
@@ -51,7 +54,7 @@ static bool patch_sepolicy_internal(const std::string &source,
         return false;
     }
 
-    if (!MB::selinux_read_policy(source, &pdb)) {
+    if (!util::selinux_read_policy(source, &pdb)) {
         LOGE("Failed to read SELinux policy file: %s", source);
         policydb_destroy(&pdb);
         return false;
@@ -60,10 +63,10 @@ static bool patch_sepolicy_internal(const std::string &source,
     LOGD("Policy version: %u", pdb.policyvers);
 
     for (const char **iter = permissive_types; *iter; ++iter) {
-        MB::selinux_make_permissive(&pdb, *iter);
+        util::selinux_make_permissive(&pdb, *iter);
     }
 
-    if (!MB::selinux_write_policy(target, &pdb)) {
+    if (!util::selinux_write_policy(target, &pdb)) {
         LOGE("Failed to write SELinux policy file: %s", target);
         policydb_destroy(&pdb);
         return false;
@@ -210,4 +213,6 @@ int sepolpatch_main(int argc, char *argv[])
     }
 
     return patch_sepolicy(source_file, target_file) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
 }

@@ -23,13 +23,16 @@
 
 #include <spdlog/spdlog.h>
 
-#define LOGE(...) MB::logger()->error(__VA_ARGS__)
-#define LOGW(...) MB::logger()->warn(__VA_ARGS__)
-#define LOGI(...) MB::logger()->info(__VA_ARGS__)
-#define LOGD(...) MB::logger()->debug(__VA_ARGS__)
-#define LOGV(...) MB::logger()->info(__VA_ARGS__)
+#define LOGE(...) util::logger()->error(__VA_ARGS__)
+#define LOGW(...) util::logger()->warn(__VA_ARGS__)
+#define LOGI(...) util::logger()->info(__VA_ARGS__)
+#define LOGD(...) util::logger()->debug(__VA_ARGS__)
+#define LOGV(...) util::logger()->info(__VA_ARGS__)
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 enum class LogTarget {
     DEFAULT,
@@ -44,4 +47,5 @@ enum class LogTarget {
 void log_set_target(LogTarget target);
 std::shared_ptr<spdlog::logger> logger();
 
+}
 }

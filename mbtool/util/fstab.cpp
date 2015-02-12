@@ -28,7 +28,10 @@
 #include "logging.h"
 
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 struct mount_flag
 {
@@ -235,4 +238,5 @@ static int options_to_flags(char *args, char *new_args, int size)
     return flags;
 }
 
+}
 }

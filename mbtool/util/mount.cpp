@@ -35,7 +35,10 @@
 
 #define MAX_UNMOUNT_TRIES 5
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool is_mounted(const std::string &mountpoint)
 {
@@ -71,7 +74,7 @@ bool unmount_all(const std::string &dir)
         fp = setmntent("/proc/mounts", "r");
         if (fp) {
             while (getmntent_r(fp, &ent, buf, sizeof(buf))) {
-                if (MB::starts_with(ent.mnt_dir, dir)) {
+                if (starts_with(ent.mnt_dir, dir)) {
                     //LOGD("Attempting to unmount %s", ent.mnt_dir);
 
                     if (umount(ent.mnt_dir) < 0) {
@@ -104,13 +107,13 @@ bool bind_mount(const std::string &source, mode_t source_perms,
     struct stat sb;
 
     if (stat(source.c_str(), &sb) < 0
-            && !MB::mkdir_recursive(source, source_perms)) {
+            && !mkdir_recursive(source, source_perms)) {
         LOGE("Failed to create %s", source);
         return false;
     }
 
     if (stat(target.c_str(), &sb) < 0
-            && !MB::mkdir_recursive(target, target_perms)) {
+            && !mkdir_recursive(target, target_perms)) {
         LOGE("Failed to create %s", target);
         return false;
     }
@@ -156,4 +159,5 @@ int64_t mount_get_avail_size(const std::string &mountpoint)
     return sfs.f_bsize * sfs.f_bavail;
 }
 
+}
 }

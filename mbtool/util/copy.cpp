@@ -36,7 +36,10 @@
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool copy_data_fd(int fd_source, int fd_target)
 {
@@ -688,4 +691,5 @@ bool copy_dir(const std::string &source, const std::string &target, int flags)
     return ret;
 }
 
+}
 }

@@ -24,11 +24,14 @@
 
 #include <fts.h>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 class FTSWrapper {
 public:
-    enum Flags {
+    enum Flags : int {
         // Follow symlinks while traversing (WARNING: dangerous!)
         FTS_FollowSymlinks              = 0x1,
         // If tree contains a mountpoint, traverse its contents
@@ -37,7 +40,7 @@ public:
         FTS_GroupSpecialFiles           = 0x4
     };
 
-    enum Action {
+    enum Action : int {
         // Hook succeeded
         FTS_OK                          = 0x0,
         // Hook failed (run() will return false)
@@ -90,4 +93,5 @@ private:
     bool _ran = false;
 };
 
+}
 }

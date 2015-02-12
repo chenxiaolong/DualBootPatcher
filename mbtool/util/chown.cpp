@@ -30,7 +30,10 @@
 #include "util/fts.h"
 #include "util/logging.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 // WARNING: Not thread safe! Android doesn't have getpwnam_r() or getgrnam_r()
 static bool chown_internal(const std::string &path,
@@ -139,4 +142,5 @@ bool chown(const std::string &path,
     }
 }
 
+}
 }

@@ -22,7 +22,10 @@
 #include <string>
 #include <vector>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 struct fstab_rec
 {
@@ -37,4 +40,5 @@ struct fstab_rec
 
 std::vector<fstab_rec> read_fstab(const std::string &path);
 
+}
 }

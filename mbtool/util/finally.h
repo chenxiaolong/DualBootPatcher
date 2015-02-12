@@ -19,7 +19,10 @@
 
 #pragma once
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 // Perform action once this goes out of scope, essentially acting as the
 // "finally" part of a try-finally block (in eg. Java)
@@ -45,4 +48,5 @@ Finally<F> finally(F f)
     return Finally<F>(f);
 }
 
+}
 }

@@ -27,7 +27,10 @@
 #include "util/logging.h"
 
 
-class WipeDirectory : public MB::FTSWrapper {
+namespace mb
+{
+
+class WipeDirectory : public util::FTSWrapper {
 public:
     WipeDirectory(std::string path, bool wipe_media)
         : FTSWrapper(path, FTS_GroupSpecialFiles),
@@ -94,4 +97,6 @@ bool wipe_directory(const std::string &mountpoint, bool wipe_media)
 {
     WipeDirectory wd(mountpoint, wipe_media);
     return wd.run();
+}
+
 }

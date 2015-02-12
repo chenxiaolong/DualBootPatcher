@@ -28,7 +28,10 @@
 #include "util/fts.h"
 #include "util/logging.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 class RecursiveChmod : public FTSWrapper {
 public:
@@ -90,4 +93,5 @@ bool chmod_recursive(const std::string &path, mode_t perms)
     return fts.run();
 }
 
+}
 }

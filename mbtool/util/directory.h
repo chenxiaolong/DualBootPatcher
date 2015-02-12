@@ -21,9 +21,13 @@
 
 #include <string>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool mkdir_recursive(const std::string &dir, mode_t mode);
 bool mkdir_parent(const std::string &path, mode_t perms);
 
+}
 }

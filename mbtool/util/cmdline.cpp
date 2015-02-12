@@ -25,13 +25,16 @@
 #include "util/file.h"
 #include "util/string.h"
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 bool kernel_cmdline_get_option(const std::string &option,
                                std::string *out)
 {
     std::string line;
-    if (!MB::file_first_line("/proc/cmdline", &line)) {
+    if (!file_first_line("/proc/cmdline", &line)) {
         return false;
     }
     std::vector<char> linebuf(line.begin(), line.end());
@@ -42,7 +45,7 @@ bool kernel_cmdline_get_option(const std::string &option,
 
     token = strtok_r(linebuf.data(), " ", &temp);
     while (token != NULL) {
-        if (MB::starts_with(token, option)) {
+        if (starts_with(token, option)) {
             char *p = token + option.size();
             if (*p == '\0' || *p == ' ') {
                 // No value
@@ -74,4 +77,5 @@ bool kernel_cmdline_get_option(const std::string &option,
     return false;
 }
 
+}
 }

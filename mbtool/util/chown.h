@@ -21,14 +21,21 @@
 
 #include <string>
 
-#define MB_CHOWN_FOLLOW_SYMLINKS        0x1
-#define MB_CHOWN_RECURSIVE              0x2
+namespace mb
+{
+namespace util
+{
 
-namespace MB {
+enum ChownFlags : int
+{
+    MB_CHOWN_FOLLOW_SYMLINKS = 0x1,
+    MB_CHOWN_RECURSIVE       = 0x2
+};
 
 bool chown(const std::string &path,
            const std::string &user,
            const std::string &group,
            int flags);
 
+}
 }

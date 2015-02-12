@@ -24,7 +24,10 @@
 #include <cstring>
 #include <unistd.h>
 
-namespace MB {
+namespace mb
+{
+namespace util
+{
 
 int64_t socket_read(int fd, void *buf, int64_t size)
 {
@@ -167,4 +170,5 @@ bool socket_write_string(int fd, const std::string &str)
     return false;
 }
 
+}
 }
