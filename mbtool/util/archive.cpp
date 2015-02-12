@@ -28,8 +28,13 @@
 
 #include "logging.h"
 #include "util/directory.h"
+#include "util/finally.h"
+#include "util/path.h"
 
-namespace MB {
+namespace MB
+{
+
+typedef std::unique_ptr<archive, int (*)(archive *)> archive_ptr;
 
 static int copy_data(struct archive *in, struct archive *out)
 {
@@ -72,48 +77,27 @@ static int copy_header_and_data(struct archive *in, struct archive *out,
     return ret;
 }
 
-static bool setup_input(struct archive **in, const std::string &filename)
+static bool setup_input(archive *in, const std::string &filename)
 {
-    struct archive *a = NULL;
-    a = archive_read_new();
-    if (!a) {
-        LOGE("Out of memory");
+    // Add more as needed
+    //archive_read_support_format_all(in);
+    //archive_read_support_filter_all(in);
+    archive_read_support_format_tar(in);
+    archive_read_support_format_zip(in);
+    //archive_read_support_filter_xz(in);
+
+    if (archive_read_open_filename(in, filename.c_str(), 10240) != ARCHIVE_OK) {
+        LOGE("%s: Failed to open archive: %s",
+             filename, archive_error_string(in));
         return false;
     }
 
-    // Add more as needed
-    //archive_read_support_format_all(a);
-    //archive_read_support_filter_all(a);
-    archive_read_support_format_tar(a);
-    archive_read_support_format_zip(a);
-    //archive_read_support_filter_xz(a);
-
-    if (archive_read_open_filename(a, filename.c_str(), 10240) != ARCHIVE_OK) {
-        LOGE("%s: Failed to open archive: %s",
-             filename, archive_error_string(a));
-        goto error;
-    }
-
-    *in = a;
     return true;
-
-error:
-    if (a) {
-        archive_read_free(a);
-    }
-    return false;
 }
 
-static bool setup_output(struct archive **out)
+static void setup_output(archive *out)
 {
-    struct archive *a = NULL;
-    a = archive_write_disk_new();
-    if (!a) {
-        LOGE("Out of memory");
-        return false;
-    }
-
-    archive_write_disk_set_options(a,
+    archive_write_disk_set_options(out,
                                    ARCHIVE_EXTRACT_ACL |
                                    ARCHIVE_EXTRACT_FFLAGS |
                                    ARCHIVE_EXTRACT_PERM |
@@ -122,185 +106,168 @@ static bool setup_output(struct archive **out)
                                    ARCHIVE_EXTRACT_TIME |
                                    ARCHIVE_EXTRACT_UNLINK |
                                    ARCHIVE_EXTRACT_XATTR);
-
-    *out = a;
-    return true;
 }
 
 bool extract_archive(const std::string &filename, const std::string &target)
 {
-    struct archive *in = NULL;
-    struct archive *out = NULL;
+    archive_ptr in(archive_read_new(), archive_read_free);
+    archive_ptr out(archive_write_disk_new(), archive_write_free);
+
+    if (!in || !out) {
+        LOGE("Out of memory");
+        return false;
+    }
+
     struct archive_entry *entry;
     int ret;
-    char *cwd = NULL;
+    std::string cwd = get_cwd();
 
-    if (!setup_input(&in, filename)) {
-        goto error;
+    if (cwd.empty()) {
+        return false;
     }
 
-    if (!setup_output(&out)) {
-        goto error;
+    if (!setup_input(in.get(), filename)) {
+        return false;
     }
 
-    if (!(cwd = getcwd(NULL, 0))) {
-        LOGE("Failed to get cwd: %s", strerror(errno));
-        goto error;
-    }
+    setup_output(out.get());
 
     if (!MB::mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
         LOGE("%s: Failed to create directory: %s",
              target, strerror(errno));
-        goto error;
+        return false;
     }
 
     if (chdir(target.c_str()) < 0) {
         LOGE("%s: Failed to change to target directory: %s",
              target, strerror(errno));
-        goto error;
+        return false;
     }
 
-    while ((ret = archive_read_next_header(in, &entry)) == ARCHIVE_OK) {
-        if (copy_header_and_data(in, out, entry) != ARCHIVE_OK) {
-            goto error;
+    auto chdir_back = finally([&] {
+        chdir(cwd.c_str());
+    });
+
+    while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
+        if (copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+            return false;
         }
     }
 
     if (ret != ARCHIVE_EOF) {
         LOGE("Archive extraction ended without reaching EOF: %s",
-             archive_error_string(in));
-        goto error;
+             archive_error_string(in.get()));
+        return false;
     }
-
-    chdir(cwd);
-
-    archive_read_free(in);
-    archive_write_free(out);
 
     return true;
-
-error:
-    if (cwd) {
-        chdir(cwd);
-    }
-
-    archive_read_free(in);
-    archive_write_free(out);
-
-    return false;
 }
 
 bool extract_files(const std::string &filename, const std::string &target,
                    const std::vector<std::string> &files)
 {
-    struct archive *in = NULL;
-    struct archive *out = NULL;
+    if (files.empty()) {
+        return false;
+    }
+
+    archive_ptr in(archive_read_new(), archive_read_free);
+    archive_ptr out(archive_write_disk_new(), archive_write_free);
+
+    if (!in || !out) {
+        LOGE("Out of memory");
+        return false;
+    }
+
     struct archive_entry *entry;
     int ret;
-    char *cwd = NULL;
-    int expected_count = files.size();
-    int count = 0;
+    std::string cwd = get_cwd();
+    unsigned int count = 0;
 
-    if (files.empty()) {
-        goto error;
+    if (cwd.empty()) {
+        return false;
     }
 
-    if (!setup_input(&in, filename)) {
-        goto error;
+    if (!setup_input(in.get(), filename)) {
+        return false;
     }
 
-    if (!setup_output(&out)) {
-        goto error;
-    }
-
-    if (!(cwd = getcwd(NULL, 0))) {
-        LOGE("Failed to get cwd: %s", strerror(errno));
-        goto error;
-    }
+    setup_output(out.get());
 
     if (!MB::mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
         LOGE("%s: Failed to create directory: %s",
              target, strerror(errno));
-        goto error;
+        return false;
     }
 
     if (chdir(target.c_str()) < 0) {
         LOGE("%s: Failed to change to target directory: %s",
              target, strerror(errno));
-        goto error;
+        return false;
     }
 
-    while ((ret = archive_read_next_header(in, &entry)) == ARCHIVE_OK) {
+    auto chdir_back = finally([&] {
+        chdir(cwd.c_str());
+    });
+
+    while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
         if (std::find(files.begin(), files.end(),
                 archive_entry_pathname(entry)) != files.end()) {
             ++count;
 
-            if (copy_header_and_data(in, out, entry) != ARCHIVE_OK) {
-                goto error;
+            if (copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+                return false;
             }
         }
     }
 
     if (ret != ARCHIVE_EOF) {
         LOGE("Archive extraction ended without reaching EOF: %s",
-             archive_error_string(in));
-        goto error;
+             archive_error_string(in.get()));
+        return false;
     }
 
-    if (count != expected_count) {
+    if (count != files.size()) {
         LOGE("Not all specified files were extracted");
-        goto error;
+        return false;
     }
-
-    chdir(cwd);
-
-    archive_read_free(in);
-    archive_write_free(out);
 
     return true;
-
-error:
-    if (cwd) {
-        chdir(cwd);
-    }
-
-    archive_read_free(in);
-    archive_write_free(out);
-
-    return false;
 }
 
 bool extract_files2(const std::string &filename,
                     const std::vector<extract_info> &files)
 {
-    struct archive *in = NULL;
-    struct archive *out = NULL;
+    if (files.empty()) {
+        return false;
+    }
+
+    archive_ptr in(archive_read_new(), archive_read_free);
+    archive_ptr out(archive_write_disk_new(), archive_write_free);
+
+    if (!in || !out) {
+        LOGE("Out of memory");
+        return false;
+    }
+
     struct archive_entry *entry;
     int ret;
-    int expected_count = files.size();
-    int count = 0;
+    unsigned int count = 0;
 
-    if (files.empty()) {
-        goto error;
+    if (!setup_input(in.get(), filename)) {
+        return false;
     }
 
-    if (!setup_input(&in, filename)) {
-        goto error;
-    }
+    setup_output(out.get());
 
-    if (!setup_output(&out)) {
-        goto error;
-    }
-
-    while ((ret = archive_read_next_header(in, &entry)) == ARCHIVE_OK) {
+    while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
         for (const extract_info &info : files) {
             if (info.from == archive_entry_pathname(entry)) {
                 ++count;
 
                 archive_entry_set_pathname(entry, info.to.c_str());
 
-                if (copy_header_and_data(in, out, entry) != ARCHIVE_OK) {
-                    goto error;
+                if (copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+                    return false;
                 }
 
                 archive_entry_set_pathname(entry, info.from.c_str());
@@ -310,47 +277,44 @@ bool extract_files2(const std::string &filename,
 
     if (ret != ARCHIVE_EOF) {
         LOGE("Archive extraction ended without reaching EOF: %s",
-             archive_error_string(in));
-        goto error;
+             archive_error_string(in.get()));
+        return false;
     }
 
-    if (count != expected_count) {
+    if (count != files.size()) {
         LOGE("Not all specified files were extracted");
-        goto error;
+        return false;
     }
-
-    archive_read_free(in);
-    archive_write_free(out);
 
     return true;
-
-error:
-    archive_read_free(in);
-    archive_write_free(out);
-
-    return false;
 }
 
 bool archive_exists(const std::string &filename,
                     std::vector<exists_info> &files)
 {
-    struct archive *in = NULL;
+    if (files.empty()) {
+        return false;
+    }
+
+    archive_ptr in(archive_read_new(), archive_read_free);
+
+    if (!in) {
+        LOGE("Out of memory");
+        return false;
+    }
+
     struct archive_entry *entry;
     int ret;
-
-    if (files.empty()) {
-        goto error;
-    }
 
     for (exists_info &info : files) {
         info.exists = false;
     }
 
-    if (!setup_input(&in, filename)) {
-        goto error;
+    if (!setup_input(in.get(), filename)) {
+        return false;
     }
 
-    while ((ret = archive_read_next_header(in, &entry)) == ARCHIVE_OK) {
+    while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
         for (exists_info &info : files) {
             if (info.path == archive_entry_pathname(entry)) {
                 info.exists = true;
@@ -360,18 +324,11 @@ bool archive_exists(const std::string &filename,
 
     if (ret != ARCHIVE_EOF) {
         LOGE("Archive extraction ended without reaching EOF: %s",
-             archive_error_string(in));
-        goto error;
+             archive_error_string(in.get()));
+        return false;
     }
 
-    archive_read_free(in);
-
     return true;
-
-error:
-    archive_read_free(in);
-
-    return false;
 }
 
 }
