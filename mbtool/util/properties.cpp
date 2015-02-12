@@ -20,18 +20,23 @@
 #include "util/properties.h"
 
 #include <vector>
+#include <cstdio>
 #include <cstring>
 
 #if __ANDROID_API__ >= 21
 #include <dlfcn.h>
 #endif
 
+#include "util/finally.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 namespace mb
 {
 namespace util
 {
+
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE*)> file_ptr;
 
 #ifdef MB_LIBC_DEBUG
 static const char *LIBC = nullptr;
@@ -123,6 +128,57 @@ bool set_property(const std::string &name,
 #endif
 
     return ret == 0;
+}
+
+bool file_get_property(const std::string &path,
+                       const std::string &key,
+                       std::string *out,
+                       const std::string &default_value)
+{
+    file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+    if (!fp) {
+        return false;
+    }
+
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    auto free_line = finally([&] {
+        free(line);
+    });
+
+    while ((read = getline(&line, &len, fp.get())) >= 0) {
+        if (line[0] == '\0' || line[0] == '#') {
+            // Skip empty and comment lines
+            continue;
+        }
+
+        char *equals = strchr(line, '=');
+        if (!equals) {
+            // No equals in line
+            continue;
+        }
+
+        if ((size_t)(equals - line) != key.size()) {
+            // Key is not the same length
+            continue;
+        }
+
+        if (starts_with(line, key)) {
+            // Strip newline
+            if (line[read - 1] == '\n') {
+                line[read - 1] = '\0';
+                --read;
+            }
+
+            out->assign(equals + 1);
+            return true;
+        }
+    }
+
+    *out = default_value;
+    return true;
 }
 
 }

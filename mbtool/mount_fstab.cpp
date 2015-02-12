@@ -36,6 +36,7 @@
 #include "util/cmdline.h"
 #include "util/directory.h"
 #include "util/file.h"
+#include "util/finally.h"
 #include "util/fstab.h"
 #include "util/logging.h"
 #include "util/loopdev.h"
@@ -50,6 +51,8 @@
 
 namespace mb
 {
+
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 static bool create_dir_and_mount(struct util::fstab_rec *rec,
                                  struct util::fstab_rec *flags_from_rec,
@@ -97,62 +100,13 @@ static bool create_dir_and_mount(struct util::fstab_rec *rec,
     return true;
 }
 
-static std::string file_getprop(const std::string &path, const std::string &key)
-{
-    std::FILE *fp = NULL;
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t read;
-
-    fp = std::fopen(path.c_str(), "rb");
-    if (!fp) {
-        goto error;
-    }
-
-    while ((read = getline(&line, &len, fp)) >= 0) {
-        if (line[0] == '\0' || line[0] == '#') {
-            // Skip empty and comment lines
-            continue;
-        }
-
-        char *equals = strchr(line, '=');
-        if (!equals) {
-            // No equals in line
-            continue;
-        }
-
-        if ((size_t)(equals - line) != key.size()) {
-            // Key is not the same length
-            continue;
-        }
-
-        if (util::starts_with(line, key)) {
-            // Strip newline
-            if (line[read - 1] == '\n') {
-                line[read - 1] = '\0';
-                --read;
-            }
-
-            std::string ret = equals + 1;
-            std::fclose(fp);
-            free(line);
-            return ret;
-        }
-    }
-
-error:
-    if (fp) {
-        std::fclose(fp);
-    }
-
-    free(line);
-    return std::string();
-}
-
 static unsigned long get_api_version(void)
 {
-    std::string api_str = file_getprop("/system/build.prop",
-                                       "ro.build.version.sdk");
+    std::string api_str;
+    util::file_get_property("/system/build.prop",
+                            "ro.build.version.sdk",
+                            &api_str, "");
+
     char *temp;
     unsigned long api = strtoul(api_str.c_str(), &temp, 0);
     if (*temp == '\0') {
@@ -162,10 +116,11 @@ static unsigned long get_api_version(void)
     }
 }
 
-int mount_fstab(const std::string &fstab_path)
+bool mount_fstab(const std::string &fstab_path)
 {
+    bool ret = true;
+
     std::vector<util::fstab_rec> fstab;
-    std::FILE *out = NULL;
     struct util::fstab_rec *rec_system = NULL;
     struct util::fstab_rec *rec_cache = NULL;
     struct util::fstab_rec *rec_data = NULL;
@@ -184,7 +139,6 @@ int mount_fstab(const std::string &fstab_path)
     bool share_app = false;
     bool share_app_asec = false;
     std::shared_ptr<Rom> rom;
-    std::FILE *fp;
     std::string rom_id;
 
     std::vector<std::shared_ptr<Rom>> roms;
@@ -206,15 +160,24 @@ int mount_fstab(const std::string &fstab_path)
     path_failed += base_name;
     path_failed += ".failed";
 
+    auto on_finish = util::finally([&] {
+        if (ret) {
+            util::create_empty_file(path_completed);
+            LOGI("Successfully mounted partitions");
+        } else {
+            util::create_empty_file(path_failed);
+        }
+    });
+
     // This is a oneshot operation
     if (stat(path_completed.c_str(), &st) == 0) {
         LOGV("Filesystems already successfully mounted");
-        return 0;
+        return true;
     }
 
     if (stat(path_failed.c_str(), &st) == 0) {
         LOGE("Failed to mount partitions ealier. No further attempts will be made");
-        return -1;
+        return false;
     }
 
     // Remount rootfs as read-write so a new fstab file can be written
@@ -226,15 +189,15 @@ int mount_fstab(const std::string &fstab_path)
     fstab = util::read_fstab(fstab_path);
     if (fstab.empty()) {
         LOGE("Failed to read %s", fstab_path);
-        goto error;
+        return false;
     }
 
     // Generate new fstab without /system, /cache, or /data entries
-    out = std::fopen(path_fstab_gen.c_str(), "wb");
+    file_ptr out(std::fopen(path_fstab_gen.c_str(), "wb"), std::fclose);
     if (!out) {
         LOGE("Failed to open %s for writing: %s",
              path_fstab_gen, strerror(errno));
-        goto error;
+        return false;
     }
 
     for (util::fstab_rec &rec : fstab) {
@@ -245,30 +208,30 @@ int mount_fstab(const std::string &fstab_path)
         } else if (rec.mount_point == "/data") {
             rec_data = &rec;
         } else {
-            std::fprintf(out, "%s\n", rec.orig_line.c_str());
+            std::fprintf(out.get(), "%s\n", rec.orig_line.c_str());
         }
     }
 
-    std::fclose(out);
+    out.reset();
 
     // /system and /data are always in the fstab. The patcher should create
     // an entry for /cache for the ROMs that mount it manually in one of the
     // init scripts
     if (!rec_system || !rec_cache || !rec_data) {
         LOGE("fstab does not contain all of /system, /cache, and /data!");
-        goto error;
+        return false;
     }
 
     // Mount raw partitions to /raw-*
     if (!util::kernel_cmdline_get_option("romid", &rom_id)) {
         LOGE("Failed to determine ROM ID");
-        goto error;
+        return false;
     }
 
     rom = mb_find_rom_by_id(&roms, rom_id);
     if (!rom) {
         LOGE("Unknown ROM ID: %s", rom_id);
-        goto error;
+        return false;
     }
 
     // Set property for the Android app to use
@@ -299,20 +262,20 @@ int mount_fstab(const std::string &fstab_path)
 
     if (mkdir("/raw", 0755) < 0) {
         LOGE("Failed to create /raw");
-        goto error;
+        return false;
     }
 
     if (!create_dir_and_mount(rec_system, flags_system, "/raw/system")) {
         LOGE("Failed to mount /raw/system");
-        goto error;
+        return false;
     }
     if (!create_dir_and_mount(rec_cache, flags_cache, "/raw/cache")) {
         LOGE("Failed to mount /raw/cache");
-        goto error;
+        return false;
     }
     if (!create_dir_and_mount(rec_data, flags_data, "/raw/data")) {
         LOGE("Failed to mount /raw/data");
-        goto error;
+        return false;
     }
 
     // Make paths use /raw-...
@@ -320,7 +283,7 @@ int mount_fstab(const std::string &fstab_path)
             || rom->cache_path.empty()
             || rom->data_path.empty()) {
         LOGE("Invalid or empty paths");
-        goto error;
+        return false;
     }
 
     target_system += "/raw";
@@ -331,26 +294,26 @@ int mount_fstab(const std::string &fstab_path)
     target_data += rom->data_path;
 
     if (!util::bind_mount(target_system, 0771, "/system", 0771)) {
-        goto error;
+        return false;
     }
 
     if (!util::bind_mount(target_cache, 0771, "/cache", 0771)) {
-        goto error;
+        return false;
     }
 
     if (!util::bind_mount(target_data, 0771, "/data", 0771)) {
-        goto error;
+        return false;
     }
 
     // Bind mount internal SD directory
     if (!util::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
-        goto error;
+        return false;
     }
 
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    fp = fopen("/data/.layout_version", "wb");
+    file_ptr fp(std::fopen("/data/.layout_version", "wb"), std::fclose);
     if (fp) {
         const char *layout_version;
         if (get_api_version() >= 21) {
@@ -359,15 +322,15 @@ int mount_fstab(const std::string &fstab_path)
             layout_version = "2";
         }
 
-        fwrite(layout_version, 1, strlen(layout_version), fp);
-        fclose(fp);
+        fwrite(layout_version, 1, strlen(layout_version), fp.get());
+        fp.reset();
     } else {
         LOGE("Failed to open /data/.layout_version to disable migration");
     }
 
-    static const char *context = "u:object_r:install_data_file:s0";
+    static std::string context("u:object_r:install_data_file:s0");
     if (lsetxattr("/data/.layout_version", "security.selinux",
-                  context, strlen(context) + 1, 0) < 0) {
+                  context.c_str(), context.size() + 1, 0) < 0) {
         LOGE("%s: Failed to set SELinux context: %s",
              "/data/.layout_version", strerror(errno));
     }
@@ -386,34 +349,25 @@ int mount_fstab(const std::string &fstab_path)
     if (share_app || share_app_asec) {
         if (!util::bind_mount("/raw/data/app-lib", 0771,
                               "/data/app-lib", 0771)) {
-            goto error;
+            return false;
         }
     }
 
     if (share_app) {
         if (!util::bind_mount("/raw/data/app", 0771,
                               "/data/app", 0771)) {
-            goto error;
+            return false;
         }
     }
 
     if (share_app_asec) {
         if (!util::bind_mount("/raw/data/app-asec", 0771,
                               "/data/app-asec", 0771)) {
-            goto error;
+            return false;
         }
     }
 
-    util::create_empty_file(path_completed);
-
-    LOGI("Successfully mounted partitions");
-
-    return 0;
-
-error:
-    util::create_empty_file(path_failed);
-
-    return -1;
+    return true;
 }
 
 static void mount_fstab_usage(int error)
@@ -475,7 +429,7 @@ int mount_fstab_main(int argc, char *argv[])
     }
 #endif
 
-    return mount_fstab(argv[optind]) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return mount_fstab(argv[optind]) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 }

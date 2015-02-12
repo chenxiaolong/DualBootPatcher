@@ -36,6 +36,10 @@ void get_property(const std::string &name,
                   const std::string &default_value);
 bool set_property(const std::string &name,
                   const std::string &value);
+bool file_get_property(const std::string &path,
+                       const std::string &key,
+                       std::string *out,
+                       const std::string &default_value);
 
 }
 }
