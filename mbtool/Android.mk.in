@@ -111,6 +111,7 @@ mbutil_src := \
 	util/logging.cpp \
 	util/loopdev.cpp \
 	util/mount.cpp \
+	util/path.cpp \
 	util/properties.cpp \
 	util/selinux.cpp \
 	util/socket.cpp \
@@ -118,7 +119,6 @@ mbutil_src := \
 
 mbtool_src_base := \
 	actions.cpp \
-	appsync.cpp \
 	common.cpp \
 	daemon.cpp \
 	main.cpp \
