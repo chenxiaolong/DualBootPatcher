@@ -1,4 +1,8 @@
 LOCAL_PATH := $(call my-dir)
+
+# Whether ccache should be used (highly recommended!)
+USE_CCACHE := true
+
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 BOOST_DIR := $(THIRD_PARTY)/android/boost
 LIBXML2_DIR := $(THIRD_PARTY)/android/libxml2
@@ -34,6 +38,12 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := liblz4
 LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
 include $(PREBUILT_STATIC_LIBRARY)
+
+
+ifeq ($(USE_CCACHE),true)
+TARGET_CC := ccache $(TARGET_CC)
+TARGET_CXX := ccache $(TARGET_CXX)
+endif
 
 
 include $(CLEAR_VARS)
