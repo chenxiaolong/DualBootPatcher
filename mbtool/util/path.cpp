@@ -61,5 +61,28 @@ std::string base_name(const std::string &path)
     return std::string(ptr);
 }
 
+bool read_link(const std::string &path, std::string *out)
+{
+    std::vector<char> buf;
+    ssize_t len;
+
+    buf.resize(64);
+
+    for (;;) {
+        len = readlink(path.c_str(), buf.data(), buf.size() - 1);
+        if (len < 0) {
+            return false;
+        } else if ((size_t) len == buf.size() - 1) {
+            buf.resize(buf.size() << 1);
+        } else {
+            break;
+        }
+    }
+
+    buf[len] = '\0';
+    out->assign(buf.data());
+    return true;
+}
+
 }
 }

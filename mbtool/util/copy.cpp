@@ -30,8 +30,10 @@
 
 #include <cppformat/format.h>
 
+#include "util/finally.h"
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/path.h"
 
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries
@@ -52,7 +54,7 @@ bool copy_data_fd(int fd_source, int fd_target)
 
         do {
             if ((nwritten = write(fd_target, out_ptr, nread)) < 0) {
-                goto error;
+                return false;
             }
 
             nread -= nwritten;
@@ -60,57 +62,37 @@ bool copy_data_fd(int fd_source, int fd_target)
         } while (nread > 0);
     }
 
-    if (nread == 0) {
-        return true;
-    }
-
-error:
-    return false;
+    return nread == 0;
 }
 
 static bool copy_data(const std::string &source, const std::string &target)
 {
     int fd_source = -1;
     int fd_target = -1;
-    int saved_errno;
 
     fd_source = open(source.c_str(), O_RDONLY);
     if (fd_source < 0) {
-        goto error;
+        return false;
     }
+
+    auto close_source_fd = finally([&] {
+        close(fd_source);
+    });
 
     fd_target = open(target.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0666);
     if (fd_target < 0) {
-        goto error;
+        return false;
     }
+
+    auto close_target_fd = finally([&] {
+        close(fd_target);
+    });
 
     if (!copy_data_fd(fd_source, fd_target)) {
-        goto error;
-    }
-
-    if (close(fd_source) < 0) {
-        fd_source = -1;
-        goto error;
-    }
-    if (close(fd_target) < 0) {
-        fd_target = -1;
-        goto error;
+        return false;
     }
 
     return true;
-
-error:
-    saved_errno = errno;
-
-    if (fd_source >= 0) {
-        close(fd_source);
-    }
-    if (fd_target >= 0) {
-        close(fd_target);
-    }
-
-    errno = saved_errno;
-    return false;
 }
 
 static bool copy_xattrs(const std::string &source, const std::string &target)
@@ -207,67 +189,46 @@ static bool copy_stat(const std::string &source, const std::string &target)
     return true;
 }
 
-// Dynamically memory allocation version of readlink()
-static bool readlink2(const std::string &path, std::string *out_ptr)
-{
-    std::vector<char> buf;
-    ssize_t len;
-
-    buf.resize(64);
-
-    for (;;) {
-        len = readlink(path.c_str(), buf.data(), buf.size() - 1);
-        if (len < 0) {
-            return false;
-        } else if ((size_t) len == buf.size() - 1) {
-            buf.resize(buf.size() << 1);
-        } else {
-            break;
-        }
-    }
-
-    buf[len] = '\0';
-    *out_ptr = buf.data();
-    return true;
-}
-
 bool copy_contents(const std::string &source, const std::string &target)
 {
     int fd_source = -1;
     int fd_target = -1;
 
     if ((fd_source = open(source.c_str(), O_RDONLY)) < 0) {
-        goto error;
+        return false;
     }
+
+    auto close_source_fd = finally([&] {
+        close(fd_source);
+    });
 
     if ((fd_target = open(target.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
-        goto error;
+        return false;
     }
+
+    auto close_target_fd = finally([&] {
+        close(fd_target);
+    });
 
     if (!copy_data_fd(fd_source, fd_target)) {
-        goto error;
+        return false;
     }
 
-    close(fd_source);
-    close(fd_target);
-
     return true;
-
-error:
-    close(fd_source);
-    close(fd_target);
-
-    return false;
 }
 
 bool copy_file(const std::string &source, const std::string &target, int flags)
 {
     mode_t old_umask = umask(0);
 
+    auto restore_umask = finally([&] {
+        umask(old_umask);
+    });
+
     if (unlink(target.c_str()) < 0 && errno != ENOENT) {
         LOGE("%s: Failed to remove old file: %s",
              target, strerror(errno));
-        goto error;
+        return false;
     }
 
     struct stat sb;
@@ -275,7 +236,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
             ? stat : lstat)(source.c_str(), &sb) < 0) {
         LOGE("%s: Failed to stat: %s",
              source, strerror(errno));
-        goto error;
+        return false;
     }
 
     switch (sb.st_mode & S_IFMT) {
@@ -283,7 +244,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         if (mknod(target.c_str(), S_IFBLK | S_IRWXU, sb.st_rdev) < 0) {
             LOGW("%s: Failed to create block device: %s",
                  target, strerror(errno));
-            goto error;
+            return false;
         }
         break;
 
@@ -291,7 +252,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         if (mknod(target.c_str(), S_IFCHR | S_IRWXU, sb.st_rdev) < 0) {
             LOGW("%s: Failed to create character device: %s",
                  target, strerror(errno));
-            goto error;
+            return false;
         }
         break;
 
@@ -299,23 +260,23 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         if (mkfifo(target.c_str(), S_IRWXU) < 0) {
             LOGW("%s: Failed to create FIFO pipe: %s",
                  target, strerror(errno));
-            goto error;
+            return false;
         }
         break;
 
     case S_IFLNK:
         if (!(flags & MB_COPY_FOLLOW_SYMLINKS)) {
             std::string symlink_path;
-            if (!readlink2(source.c_str(), &symlink_path)) {
+            if (!read_link(source, &symlink_path)) {
                 LOGW("%s: Failed to read symlink path: %s",
                      source, strerror(errno));
-                goto error;
+                return false;
             }
 
             if (symlink(symlink_path.c_str(), target.c_str()) < 0) {
                 LOGW("%s: Failed to create symlink: %s",
                      target, strerror(errno));
-                goto error;
+                return false;
             }
 
             break;
@@ -326,38 +287,33 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
     case S_IFREG:
         if (!copy_data(source, target)) {
             LOGE("%s: Failed to copy data: %s", target, strerror(errno));
-            goto error;
+            return false;
         }
         break;
 
     case S_IFSOCK:
         LOGE("%s: Cannot copy socket", target);
         errno = EINVAL;
-        goto error;
+        return false;
 
     case S_IFDIR:
         LOGE("%s: Cannot copy directory", target);
         errno = EINVAL;
-        goto error;
+        return false;
     }
 
     if ((flags & MB_COPY_ATTRIBUTES)
             && !copy_stat(source, target)) {
         LOGE("%s: Failed to copy attributes: %s", target, strerror(errno));
-        goto error;
+        return false;
     }
     if ((flags & MB_COPY_XATTRS)
             && !copy_xattrs(source, target)) {
         LOGE("%s: Failed to copy xattrs: %s", target, strerror(errno));
-        goto error;
+        return false;
     }
 
-    umask(old_umask);
     return true;
-
-error:
-    umask(old_umask);
-    return false;
 }
 
 
@@ -528,7 +484,7 @@ public:
 
         // Find current symlink target
         std::string symlink_path;
-        if (!readlink2(_curr->fts_accpath, &symlink_path)) {
+        if (!read_link(_curr->fts_accpath, &symlink_path)) {
             _error_msg = fmt::format("%s: Failed to read symlink path: %s",
                                      _curr->fts_accpath, strerror(errno));
             LOGW("%s", _error_msg);

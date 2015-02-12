@@ -29,6 +29,7 @@ namespace util
 std::string get_cwd();
 std::string dir_name(const std::string &path);
 std::string base_name(const std::string &path);
+bool read_link(const std::string &path, std::string *out);
 
 }
 }
