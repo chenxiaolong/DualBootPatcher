@@ -29,6 +29,7 @@
 
 #include <linux/loop.h>
 
+#include "util/finally.h"
 #include "util/string.h"
 
 
@@ -46,85 +47,61 @@ namespace util
 
 std::string loopdev_find_unused(void)
 {
-    int saved_errno;
     int fd = -1;
     int n;
 
     if ((fd = open(LOOP_CONTROL, O_RDWR)) < 0) {
-        goto error;
+        return std::string();
     }
+
+    auto close_fd = finally([&] {
+        close(fd);
+    });
 
     if ((n = ioctl(fd, LOOP_CTL_GET_FREE)) < 0) {
-        goto error;
+        return std::string();
     }
-
-    close(fd);
-    fd = -1;
 
     return std::string(LOOP_PREFIX) + to_string(n);
-
-error:
-    saved_errno = errno;
-
-    if (fd > 0) {
-        close(fd);
-    }
-
-    errno = saved_errno;
-
-    return std::string();
 }
 
 bool loopdev_setup_device(const std::string &loopdev, const std::string &file,
                           uint64_t offset, bool ro)
 {
-    int saved_errno;
     int ffd = -1;
     int lfd = -1;
 
     struct loop_info64 loopinfo;
 
     if ((ffd = open(file.c_str(), ro ? O_RDONLY : O_RDWR)) < 0) {
-        goto error;
+        return false;
     }
 
+    auto close_ffd = finally([&] {
+        close(ffd);
+    });
+
     if ((lfd = open(loopdev.c_str(), ro ? O_RDONLY : O_RDWR)) < 0) {
-        goto error;
+        return false;
     }
+
+    auto close_lfd = finally([&] {
+        close(lfd);
+    });
 
     memset(&loopinfo, 0, sizeof(struct loop_info64));
     loopinfo.lo_offset = offset;
 
     if (ioctl(lfd, LOOP_SET_FD, ffd) < 0) {
-        goto error;
+        return false;
     }
 
     if (ioctl(lfd, LOOP_SET_STATUS64, &loopinfo) < 0) {
         ioctl(lfd, LOOP_CLR_FD, 0);
-        goto error;
+        return false;
     }
-
-    close(ffd);
-    ffd = -1;
-
-    close(lfd);
-    lfd = -1;
 
     return true;
-
-error:
-    saved_errno = errno;
-
-    if (ffd > 0) {
-        close(ffd);
-    }
-    if (lfd > 0) {
-        close(lfd);
-    }
-
-    errno = saved_errno;
-
-    return false;
 }
 
 bool loopdev_remove_device(const std::string &loopdev)
