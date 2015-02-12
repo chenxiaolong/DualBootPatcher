@@ -50,7 +50,7 @@ static bool chown_internal(const std::string &path,
         if (!errno) {
             errno = EINVAL; // User does not exist
         }
-        return -1;
+        return false;
     } else {
         uid = pw->pw_uid;
     }
@@ -61,7 +61,7 @@ static bool chown_internal(const std::string &path,
         if (!errno) {
             errno = EINVAL; // Group does not exist
         }
-        return -1;
+        return false;
     } else {
         gid = gr->gr_gid;
     }
