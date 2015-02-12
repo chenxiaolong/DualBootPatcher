@@ -52,5 +52,14 @@ std::string dir_name(const std::string &path)
     return std::string(ptr);
 }
 
+std::string base_name(const std::string &path)
+{
+    std::vector<char> buf(path.begin(), path.end());
+    buf.push_back('\0');
+
+    char *ptr = basename(buf.data());
+    return std::string(ptr);
+}
+
 }
 }

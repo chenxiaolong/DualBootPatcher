@@ -40,6 +40,7 @@
 #include "util/logging.h"
 #include "util/loopdev.h"
 #include "util/mount.h"
+#include "util/path.h"
 #include "util/properties.h"
 #include "util/string.h"
 
@@ -174,13 +175,11 @@ int mount_fstab(const std::string &fstab_path)
     std::string target_system;
     std::string target_cache;
     std::string target_data;
-    std::vector<char> copy1(fstab_path.begin(), fstab_path.end());
-    std::vector<char> copy2(fstab_path.begin(), fstab_path.end());
     std::string path_fstab_gen;
     std::string path_completed;
     std::string path_failed;
-    char *base_name;
-    char *dir_name;
+    std::string base_name;
+    std::string dir_name;
     struct stat st;
     bool share_app = false;
     bool share_app_asec = false;
@@ -191,11 +190,8 @@ int mount_fstab(const std::string &fstab_path)
     std::vector<std::shared_ptr<Rom>> roms;
     mb_roms_add_builtin(&roms);
 
-    // basename() and dirname() modify the source string
-    copy1.push_back(0);
-    copy2.push_back(0);
-    base_name = basename(copy1.data());
-    dir_name = dirname(copy2.data());
+    base_name = util::base_name(fstab_path);
+    dir_name = util::dir_name(fstab_path);
 
     path_fstab_gen += dir_name;
     path_fstab_gen += "/.";
