@@ -34,14 +34,6 @@
 
 Rom::Rom() : use_raw_paths(false)
 {
-
-}
-
-Rom::~Rom()
-{
-    for (Package *pkg : pkgs) {
-        delete pkg;
-    }
 }
 
 bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms)

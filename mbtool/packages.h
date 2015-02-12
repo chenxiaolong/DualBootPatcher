@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
 #include <vector>
 
 
@@ -26,50 +28,50 @@ class Package {
 public:
     // From frameworks/base/core/java/android/content/pm/ApplicationInfo.java
     // See https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/content/pm/ApplicationInfo.java
-    enum class Flags : int {
-        FLAG_SYSTEM                    = 1 << 0,
-        FLAG_DEBUGGABLE                = 1 << 1,
-        FLAG_HAS_CODE                  = 1 << 2,
-        FLAG_PERSISTENT                = 1 << 3,
-        FLAG_FACTORY_TEST              = 1 << 4,
-        FLAG_ALLOW_TASK_REPARENTING    = 1 << 5,
-        FLAG_ALLOW_CLEAR_USER_DATA     = 1 << 6,
-        FLAG_UPDATED_SYSTEM_APP        = 1 << 7,
-        FLAG_TEST_ONLY                 = 1 << 8,
-        FLAG_SUPPORTS_SMALL_SCREENS    = 1 << 9,
-        FLAG_SUPPORTS_NORMAL_SCREENS   = 1 << 10,
-        FLAG_SUPPORTS_LARGE_SCREENS    = 1 << 11,
-        FLAG_RESIZEABLE_FOR_SCREENS    = 1 << 12,
-        FLAG_SUPPORTS_SCREEN_DENSITIES = 1 << 13,
-        FLAG_VM_SAFE_MODE              = 1 << 14,
-        FLAG_ALLOW_BACKUP              = 1 << 15,
-        FLAG_KILL_AFTER_RESTORE        = 1 << 16,
-        FLAG_RESTORE_ANY_VERSION       = 1 << 17,
-        FLAG_EXTERNAL_STORAGE          = 1 << 18,
-        FLAG_SUPPORTS_XLARGE_SCREENS   = 1 << 19,
-        FLAG_LARGE_HEAP                = 1 << 20,
-        FLAG_STOPPED                   = 1 << 21,
-        FLAG_SUPPORTS_RTL              = 1 << 22,
-        FLAG_INSTALLED                 = 1 << 23,
-        FLAG_IS_DATA_ONLY              = 1 << 24,
-        FLAG_IS_GAME                   = 1 << 25,
-        FLAG_FULL_BACKUP_ONLY          = 1 << 26,
-        FLAG_HIDDEN                    = 1 << 27,
-        FLAG_CANT_SAVE_STATE           = 1 << 28,
-        FLAG_FORWARD_LOCK              = 1 << 29,
-        FLAG_PRIVILEGED                = 1 << 30,
-        FLAG_MULTIARCH                 = 1 << 31
+    enum Flags : uint64_t {
+        FLAG_SYSTEM                    = 1ULL << 0,
+        FLAG_DEBUGGABLE                = 1ULL << 1,
+        FLAG_HAS_CODE                  = 1ULL << 2,
+        FLAG_PERSISTENT                = 1ULL << 3,
+        FLAG_FACTORY_TEST              = 1ULL << 4,
+        FLAG_ALLOW_TASK_REPARENTING    = 1ULL << 5,
+        FLAG_ALLOW_CLEAR_USER_DATA     = 1ULL << 6,
+        FLAG_UPDATED_SYSTEM_APP        = 1ULL << 7,
+        FLAG_TEST_ONLY                 = 1ULL << 8,
+        FLAG_SUPPORTS_SMALL_SCREENS    = 1ULL << 9,
+        FLAG_SUPPORTS_NORMAL_SCREENS   = 1ULL << 10,
+        FLAG_SUPPORTS_LARGE_SCREENS    = 1ULL << 11,
+        FLAG_RESIZEABLE_FOR_SCREENS    = 1ULL << 12,
+        FLAG_SUPPORTS_SCREEN_DENSITIES = 1ULL << 13,
+        FLAG_VM_SAFE_MODE              = 1ULL << 14,
+        FLAG_ALLOW_BACKUP              = 1ULL << 15,
+        FLAG_KILL_AFTER_RESTORE        = 1ULL << 16,
+        FLAG_RESTORE_ANY_VERSION       = 1ULL << 17,
+        FLAG_EXTERNAL_STORAGE          = 1ULL << 18,
+        FLAG_SUPPORTS_XLARGE_SCREENS   = 1ULL << 19,
+        FLAG_LARGE_HEAP                = 1ULL << 20,
+        FLAG_STOPPED                   = 1ULL << 21,
+        FLAG_SUPPORTS_RTL              = 1ULL << 22,
+        FLAG_INSTALLED                 = 1ULL << 23,
+        FLAG_IS_DATA_ONLY              = 1ULL << 24,
+        FLAG_IS_GAME                   = 1ULL << 25,
+        FLAG_FULL_BACKUP_ONLY          = 1ULL << 26,
+        FLAG_HIDDEN                    = 1ULL << 27,
+        FLAG_CANT_SAVE_STATE           = 1ULL << 28,
+        FLAG_FORWARD_LOCK              = 1ULL << 29,
+        FLAG_PRIVILEGED                = 1ULL << 30,
+        FLAG_MULTIARCH                 = 1ULL << 31
     };
 
-    char *name;                                 // PackageSetting.name
-    char *real_name;                            // PackageSetting.realName
-    char *code_path;                            // PackageSetting.codePathString
-    char *resource_path;                        // PackageSetting.resourcePathString
-    char *native_library_path;                  // PackageSetting.legacyNativeLibraryPathString
-    char *primary_cpu_abi;                      // PackageSetting.primaryCpuAbiString
-    char *secondary_cpu_abi;                    // PackageSetting.secondaryCpuAbiString
-    char *cpu_abi_override;                     // PackageSetting.cpuAbiOverride
-    int pkg_flags;                              // PackageSetting.pkgFlags
+    std::string name;                           // PackageSetting.name
+    std::string real_name;                      // PackageSetting.realName
+    std::string code_path;                      // PackageSetting.codePathString
+    std::string resource_path;                  // PackageSetting.resourcePathString
+    std::string native_library_path;            // PackageSetting.legacyNativeLibraryPathString
+    std::string primary_cpu_abi;                // PackageSetting.primaryCpuAbiString
+    std::string secondary_cpu_abi;              // PackageSetting.secondaryCpuAbiString
+    std::string cpu_abi_override;               // PackageSetting.cpuAbiOverride
+    Flags pkg_flags;                            // PackageSetting.pkgFlags
     // Timestamps are in milliseconds epoch/unix time
     unsigned long long timestamp;               // PackageSetting.timeStamp
     unsigned long long first_install_time;      // PackageSetting.firstInstallTime
@@ -78,15 +80,13 @@ public:
     int is_shared_user;                         // PackageSetting.sharedUser != null
     int user_id;                                // PackageSetting.appId
     int shared_user_id;                         // PackageSetting.appId
-    char *uid_error;                            // (not in PackageSetting)
-    char *install_status;                       // (not in PackageSetting)
-    char *installer;                            // PackageSetting.installerPackageName
+    std::string uid_error;                      // (not in PackageSetting)
+    std::string install_status;                 // (not in PackageSetting)
+    std::string installer;                      // PackageSetting.installerPackageName
 
     // Functions
     Package();
-    ~Package();
-    bool load_xml(const char *path);
 };
 
-int mb_packages_load_xml(std::vector<Package *> *pkgs, const char *path);
-void mb_packages_free(std::vector<Package *> *pkgs);
+bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
+                          const std::string &path);

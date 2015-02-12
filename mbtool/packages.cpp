@@ -72,21 +72,22 @@ static const xmlChar *ATTR_USER_ID              = TO_XMLCHAR "userId";
 static const xmlChar *ATTR_UT                   = TO_XMLCHAR "ut";
 static const xmlChar *ATTR_VERSION              = TO_XMLCHAR "version";
 
-
-static int parse_tag_package(xmlNode *node, std::vector<Package *> *pkgs);
-static int parse_tag_packages(xmlNode *node, std::vector<Package *> *pkgs);
+static bool parse_tag_package(xmlNode *node,
+                              std::vector<std::shared_ptr<Package>> *pkgs);
+static bool parse_tag_packages(xmlNode *node,
+                               std::vector<std::shared_ptr<Package>> *pkgs);
 
 
 Package::Package() :
-        name(nullptr),
-        real_name(nullptr),
-        code_path(nullptr),
-        resource_path(nullptr),
-        native_library_path(nullptr),
-        primary_cpu_abi(nullptr),
-        secondary_cpu_abi(nullptr),
-        cpu_abi_override(nullptr),
-        pkg_flags(0),
+        name(),
+        real_name(),
+        code_path(),
+        resource_path(),
+        native_library_path(),
+        primary_cpu_abi(),
+        secondary_cpu_abi(),
+        cpu_abi_override(),
+        pkg_flags(static_cast<Flags>(0)),
         timestamp(0),
         first_install_time(0),
         last_update_time(0),
@@ -94,45 +95,21 @@ Package::Package() :
         is_shared_user(0),
         user_id(0),
         shared_user_id(0),
-        uid_error(nullptr),
-        install_status(nullptr),
-        installer(nullptr)
+        uid_error(),
+        install_status(),
+        installer()
 {
 }
 
-Package::~Package()
-{
-    std::free(name);
-    std::free(real_name);
-    std::free(code_path);
-    std::free(resource_path);
-    std::free(native_library_path);
-    std::free(primary_cpu_abi);
-    std::free(secondary_cpu_abi);
-    std::free(cpu_abi_override);
-
-    pkg_flags = 0;
-    timestamp = 0;
-    first_install_time = 0;
-    last_update_time = 0;
-    version = 0;
-    is_shared_user = 0;
-    user_id = 0;
-    shared_user_id = 0;
-
-    std::free(uid_error);
-    std::free(install_status);
-    std::free(installer);
-}
-
-int mb_packages_load_xml(std::vector<Package *> *pkgs, const char *path)
+bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
+                          const std::string &path)
 {
     LIBXML_TEST_VERSION
 
-    xmlDoc *doc = xmlReadFile(path, NULL, 0);
+    xmlDoc *doc = xmlReadFile(path.c_str(), NULL, 0);
     if (!doc) {
         LOGE("Failed to parse XML file: %s", path);
-        return -1;
+        return false;
     }
 
     xmlNode *root = xmlDocGetRootElement(doc);
@@ -152,16 +129,7 @@ int mb_packages_load_xml(std::vector<Package *> *pkgs, const char *path)
     xmlFreeDoc(doc);
     xmlCleanupParser();
 
-    return 0;
-}
-
-void mb_packages_free(std::vector<Package *> *pkgs)
-{
-    for (Package *pkg : *pkgs) {
-        delete pkg;
-    }
-
-    pkgs->clear();
+    return true;
 }
 
 #if PACKAGES_DEBUG >= 2
@@ -178,91 +146,91 @@ static char * time_to_string(unsigned long long time)
 
 #define DUMP_FLAG(f) LOGD("-                      %s (0x%d)", #f, f);
 
-static void package_dump(Package *pkg)
+static void package_dump(const std::shared_ptr<Package> &pkg)
 {
     LOGD("Package:");
-    if (pkg->name)
+    if (!pkg->name.empty())
         LOGD("- Name:                %s", pkg->name);
-    if (pkg->real_name)
+    if (!pkg->real_name.empty())
         LOGD("- Real name:           %s", pkg->real_name);
-    if (pkg->code_path)
+    if (!pkg->code_path.empty())
         LOGD("- Code path:           %s", pkg->code_path);
-    if (pkg->resource_path)
+    if (!pkg->resource_path.empty())
         LOGD("- Resource path:       %s", pkg->resource_path);
-    if (pkg->native_library_path)
+    if (!pkg->native_library_path.empty())
         LOGD("- Native library path: %s", pkg->native_library_path);
-    if (pkg->primary_cpu_abi)
+    if (!pkg->primary_cpu_abi.empty())
         LOGD("- Primary CPU ABI:     %s", pkg->primary_cpu_abi);
-    if (pkg->secondary_cpu_abi)
+    if (!pkg->secondary_cpu_abi.empty())
         LOGD("- Secondary CPU ABI:   %s", pkg->secondary_cpu_abi);
-    if (pkg->cpu_abi_override)
+    if (!pkg->cpu_abi_override.empty())
         LOGD("- CPU ABI override:    %s", pkg->cpu_abi_override);
 
     LOGD("- Flags:               0x%x", pkg->pkg_flags);
-    if (pkg->pkg_flags & FLAG_SYSTEM)
-        DUMP_FLAG(FLAG_SYSTEM);
-    if (pkg->pkg_flags & FLAG_DEBUGGABLE)
-        DUMP_FLAG(FLAG_DEBUGGABLE);
-    if (pkg->pkg_flags & FLAG_HAS_CODE)
-        DUMP_FLAG(FLAG_HAS_CODE);
-    if (pkg->pkg_flags & FLAG_PERSISTENT)
-        DUMP_FLAG(FLAG_PERSISTENT);
-    if (pkg->pkg_flags & FLAG_FACTORY_TEST)
-        DUMP_FLAG(FLAG_FACTORY_TEST);
-    if (pkg->pkg_flags & FLAG_ALLOW_TASK_REPARENTING)
-        DUMP_FLAG(FLAG_ALLOW_TASK_REPARENTING);
-    if (pkg->pkg_flags & FLAG_ALLOW_CLEAR_USER_DATA)
-        DUMP_FLAG(FLAG_ALLOW_CLEAR_USER_DATA);
-    if (pkg->pkg_flags & FLAG_UPDATED_SYSTEM_APP)
-        DUMP_FLAG(FLAG_UPDATED_SYSTEM_APP);
-    if (pkg->pkg_flags & FLAG_TEST_ONLY)
-        DUMP_FLAG(FLAG_TEST_ONLY);
-    if (pkg->pkg_flags & FLAG_SUPPORTS_SMALL_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_SMALL_SCREENS);
-    if (pkg->pkg_flags & FLAG_SUPPORTS_NORMAL_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_NORMAL_SCREENS);
-    if (pkg->pkg_flags & FLAG_SUPPORTS_LARGE_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_LARGE_SCREENS);
-    if (pkg->pkg_flags & FLAG_RESIZEABLE_FOR_SCREENS)
-        DUMP_FLAG(FLAG_RESIZEABLE_FOR_SCREENS);
-    if (pkg->pkg_flags & FLAG_SUPPORTS_SCREEN_DENSITIES)
-        DUMP_FLAG(FLAG_SUPPORTS_SCREEN_DENSITIES);
-    if (pkg->pkg_flags & FLAG_VM_SAFE_MODE)
-        DUMP_FLAG(FLAG_VM_SAFE_MODE);
-    if (pkg->pkg_flags & FLAG_ALLOW_BACKUP)
-        DUMP_FLAG(FLAG_ALLOW_BACKUP);
-    if (pkg->pkg_flags & FLAG_KILL_AFTER_RESTORE)
-        DUMP_FLAG(FLAG_KILL_AFTER_RESTORE);
-    if (pkg->pkg_flags & FLAG_RESTORE_ANY_VERSION)
-        DUMP_FLAG(FLAG_RESTORE_ANY_VERSION);
-    if (pkg->pkg_flags & FLAG_EXTERNAL_STORAGE)
-        DUMP_FLAG(FLAG_EXTERNAL_STORAGE);
-    if (pkg->pkg_flags & FLAG_SUPPORTS_XLARGE_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_XLARGE_SCREENS);
-    if (pkg->pkg_flags & FLAG_LARGE_HEAP)
-        DUMP_FLAG(FLAG_LARGE_HEAP);
-    if (pkg->pkg_flags & FLAG_STOPPED)
-        DUMP_FLAG(FLAG_STOPPED);
-    if (pkg->pkg_flags & FLAG_SUPPORTS_RTL)
-        DUMP_FLAG(FLAG_SUPPORTS_RTL);
-    if (pkg->pkg_flags & FLAG_INSTALLED)
-        DUMP_FLAG(FLAG_INSTALLED);
-    if (pkg->pkg_flags & FLAG_IS_DATA_ONLY)
-        DUMP_FLAG(FLAG_IS_DATA_ONLY);
-    if (pkg->pkg_flags & FLAG_IS_GAME)
-        DUMP_FLAG(FLAG_IS_GAME);
-    if (pkg->pkg_flags & FLAG_FULL_BACKUP_ONLY)
-        DUMP_FLAG(FLAG_FULL_BACKUP_ONLY);
-    if (pkg->pkg_flags & FLAG_HIDDEN)
-        DUMP_FLAG(FLAG_HIDDEN);
-    if (pkg->pkg_flags & FLAG_CANT_SAVE_STATE)
-        DUMP_FLAG(FLAG_CANT_SAVE_STATE);
-    if (pkg->pkg_flags & FLAG_FORWARD_LOCK)
-        DUMP_FLAG(FLAG_FORWARD_LOCK);
-    if (pkg->pkg_flags & FLAG_PRIVILEGED)
-        DUMP_FLAG(FLAG_PRIVILEGED);
-    if (pkg->pkg_flags & FLAG_MULTIARCH)
-        DUMP_FLAG(FLAG_MULTIARCH);
+    if (pkg->pkg_flags & Package::FLAG_SYSTEM)
+        DUMP_FLAG(Package::FLAG_SYSTEM);
+    if (pkg->pkg_flags & Package::FLAG_DEBUGGABLE)
+        DUMP_FLAG(Package::FLAG_DEBUGGABLE);
+    if (pkg->pkg_flags & Package::FLAG_HAS_CODE)
+        DUMP_FLAG(Package::FLAG_HAS_CODE);
+    if (pkg->pkg_flags & Package::FLAG_PERSISTENT)
+        DUMP_FLAG(Package::FLAG_PERSISTENT);
+    if (pkg->pkg_flags & Package::FLAG_FACTORY_TEST)
+        DUMP_FLAG(Package::FLAG_FACTORY_TEST);
+    if (pkg->pkg_flags & Package::FLAG_ALLOW_TASK_REPARENTING)
+        DUMP_FLAG(Package::FLAG_ALLOW_TASK_REPARENTING);
+    if (pkg->pkg_flags & Package::FLAG_ALLOW_CLEAR_USER_DATA)
+        DUMP_FLAG(Package::FLAG_ALLOW_CLEAR_USER_DATA);
+    if (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
+        DUMP_FLAG(Package::FLAG_UPDATED_SYSTEM_APP);
+    if (pkg->pkg_flags & Package::FLAG_TEST_ONLY)
+        DUMP_FLAG(Package::FLAG_TEST_ONLY);
+    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_SMALL_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_SMALL_SCREENS);
+    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_NORMAL_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_NORMAL_SCREENS);
+    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_LARGE_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_LARGE_SCREENS);
+    if (pkg->pkg_flags & Package::FLAG_RESIZEABLE_FOR_SCREENS)
+        DUMP_FLAG(Package::FLAG_RESIZEABLE_FOR_SCREENS);
+    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_SCREEN_DENSITIES)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_SCREEN_DENSITIES);
+    if (pkg->pkg_flags & Package::FLAG_VM_SAFE_MODE)
+        DUMP_FLAG(Package::FLAG_VM_SAFE_MODE);
+    if (pkg->pkg_flags & Package::FLAG_ALLOW_BACKUP)
+        DUMP_FLAG(Package::FLAG_ALLOW_BACKUP);
+    if (pkg->pkg_flags & Package::FLAG_KILL_AFTER_RESTORE)
+        DUMP_FLAG(Package::FLAG_KILL_AFTER_RESTORE);
+    if (pkg->pkg_flags & Package::FLAG_RESTORE_ANY_VERSION)
+        DUMP_FLAG(Package::FLAG_RESTORE_ANY_VERSION);
+    if (pkg->pkg_flags & Package::FLAG_EXTERNAL_STORAGE)
+        DUMP_FLAG(Package::FLAG_EXTERNAL_STORAGE);
+    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_XLARGE_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_XLARGE_SCREENS);
+    if (pkg->pkg_flags & Package::FLAG_LARGE_HEAP)
+        DUMP_FLAG(Package::FLAG_LARGE_HEAP);
+    if (pkg->pkg_flags & Package::FLAG_STOPPED)
+        DUMP_FLAG(Package::FLAG_STOPPED);
+    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_RTL)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_RTL);
+    if (pkg->pkg_flags & Package::FLAG_INSTALLED)
+        DUMP_FLAG(Package::FLAG_INSTALLED);
+    if (pkg->pkg_flags & Package::FLAG_IS_DATA_ONLY)
+        DUMP_FLAG(Package::FLAG_IS_DATA_ONLY);
+    if (pkg->pkg_flags & Package::FLAG_IS_GAME)
+        DUMP_FLAG(Package::FLAG_IS_GAME);
+    if (pkg->pkg_flags & Package::FLAG_FULL_BACKUP_ONLY)
+        DUMP_FLAG(Package::FLAG_FULL_BACKUP_ONLY);
+    if (pkg->pkg_flags & Package::FLAG_HIDDEN)
+        DUMP_FLAG(Package::FLAG_HIDDEN);
+    if (pkg->pkg_flags & Package::FLAG_CANT_SAVE_STATE)
+        DUMP_FLAG(Package::FLAG_CANT_SAVE_STATE);
+    if (pkg->pkg_flags & Package::FLAG_FORWARD_LOCK)
+        DUMP_FLAG(Package::FLAG_FORWARD_LOCK);
+    if (pkg->pkg_flags & Package::FLAG_PRIVILEGED)
+        DUMP_FLAG(Package::FLAG_PRIVILEGED);
+    if (pkg->pkg_flags & Package::FLAG_MULTIARCH)
+        DUMP_FLAG(Package::FLAG_MULTIARCH);
 
     if (pkg->timestamp > 0)
         LOGD("- Timestamp:           %s", time_to_string(pkg->timestamp));
@@ -279,57 +247,59 @@ static void package_dump(Package *pkg)
         LOGD("- User ID:             %d", pkg->user_id);
     }
 
-    if (pkg->uid_error)
+    if (!pkg->uid_error.empty())
         LOGD("- UID error:           %s", pkg->uid_error);
-    if (pkg->install_status)
+    if (!pkg->install_status.empty())
         LOGD("- Install status:      %s", pkg->install_status);
-    if (pkg->installer)
+    if (!pkg->installer.empty())
         LOGD("- Installer:           %s", pkg->installer);
 }
 
 #endif
 
-static int parse_tag_package(xmlNode *node, std::vector<Package *> *pkgs)
+static bool parse_tag_package(xmlNode *node,
+                              std::vector<std::shared_ptr<Package>> *pkgs)
 {
     assert(xmlStrcmp(node->name, TAG_PACKAGE) == 0);
 
-    Package *pkg = new Package();
+    std::shared_ptr<Package> pkg(new Package());
 
     for (xmlAttr *attr = node->properties; attr; attr = attr->next) {
         const xmlChar *name = attr->name;
         xmlChar *value = xmlGetProp(node, attr->name);
 
         if (xmlStrcmp(name, ATTR_CODE_PATH) == 0) {
-            pkg->code_path = strdup(TO_CHAR value);
+            pkg->code_path = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_CPU_ABI_OVERRIDE) == 0) {
-            pkg->cpu_abi_override = strdup(TO_CHAR value);
+            pkg->cpu_abi_override = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_FLAGS) == 0) {
-            pkg->pkg_flags = strtol(TO_CHAR value, NULL, 10);
+            pkg->pkg_flags = static_cast<Package::Flags>(
+                    strtoll(TO_CHAR value, NULL, 10));
         } else if (xmlStrcmp(name, ATTR_FT) == 0) {
             pkg->timestamp = strtoull(TO_CHAR value, NULL, 16);
         } else if (xmlStrcmp(name, ATTR_INSTALL_STATUS) == 0) {
-            pkg->install_status = strdup(TO_CHAR value);
+            pkg->install_status = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_INSTALLER) == 0) {
-            pkg->installer = strdup(TO_CHAR value);
+            pkg->installer = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_IT) == 0) {
             pkg->first_install_time = strtoull(TO_CHAR value, NULL, 16);
         } else if (xmlStrcmp(name, ATTR_NAME) == 0) {
-            pkg->name = strdup(TO_CHAR value);
+            pkg->name = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_NATIVE_LIBRARY_PATH) == 0) {
-            pkg->native_library_path = strdup(TO_CHAR value);
+            pkg->native_library_path = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_PRIMARY_CPU_ABI) == 0) {
-            pkg->primary_cpu_abi = strdup(TO_CHAR value);
+            pkg->primary_cpu_abi = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_REAL_NAME) == 0) {
-            pkg->real_name = strdup(TO_CHAR value);
+            pkg->real_name = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_RESOURCE_PATH) == 0) {
-            pkg->resource_path = strdup(TO_CHAR value);
+            pkg->resource_path = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_SECONDARY_CPU_ABI) == 0) {
-            pkg->secondary_cpu_abi = strdup(TO_CHAR value);
+            pkg->secondary_cpu_abi = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_SHARED_USER_ID) == 0) {
             pkg->shared_user_id = strtol(TO_CHAR value, NULL, 10);
             pkg->is_shared_user = 1;
         } else if (xmlStrcmp(name, ATTR_UID_ERROR) == 0) {
-            pkg->uid_error = strdup(TO_CHAR value);
+            pkg->uid_error = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_USER_ID) == 0) {
             pkg->user_id = strtol(TO_CHAR value, NULL, 10);
             pkg->is_shared_user = 0;
@@ -367,12 +337,13 @@ static int parse_tag_package(xmlNode *node, std::vector<Package *> *pkgs)
     package_dump(pkg);
 #endif
 
-    pkgs->push_back(pkg);
+    pkgs->push_back(std::move(pkg));
 
-    return 0;
+    return true;
 }
 
-static int parse_tag_packages(xmlNode *node, std::vector<Package *> *pkgs)
+static bool parse_tag_packages(xmlNode *node,
+                               std::vector<std::shared_ptr<Package>> *pkgs)
 {
     assert(xmlStrcmp(node->name, TAG_PACKAGES) == 0);
 
@@ -399,5 +370,5 @@ static int parse_tag_packages(xmlNode *node, std::vector<Package *> *pkgs)
         }
     }
 
-    return 0;
+    return true;
 }

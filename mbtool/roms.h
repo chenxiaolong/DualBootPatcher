@@ -32,11 +32,9 @@ public:
     std::string cache_path;
     std::string data_path;
     bool use_raw_paths;
-    std::vector<Package *> pkgs;
+    std::vector<std::shared_ptr<Package>> pkgs;
 
-    // Functions
     Rom();
-    ~Rom();
 };
 
 bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms);
