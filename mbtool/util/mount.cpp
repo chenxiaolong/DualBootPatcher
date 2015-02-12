@@ -40,30 +40,31 @@ namespace mb
 namespace util
 {
 
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
+
 bool is_mounted(const std::string &mountpoint)
 {
-    std::FILE *f;
-    bool ret = false;
+    file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
+    if (!fp) {
+        return false;
+    }
+
+    bool found = false;
     struct mntent ent;
     char buf[1024];
 
-    f = setmntent("/proc/mounts", "r");
-    if (f != NULL) {
-        while (getmntent_r(f, &ent, buf, sizeof(buf))) {
-            if (mountpoint == ent.mnt_dir) {
-                ret = true;
-                break;
-            }
+    while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+        if (mountpoint == ent.mnt_dir) {
+            found = true;
+            break;
         }
-        endmntent(f);
     }
 
-    return ret;
+    return found;
 }
 
 bool unmount_all(const std::string &dir)
 {
-    std::FILE *fp;
     int failed;
     struct mntent ent;
     char buf[1024];
@@ -71,23 +72,22 @@ bool unmount_all(const std::string &dir)
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
 
-        fp = setmntent("/proc/mounts", "r");
-        if (fp) {
-            while (getmntent_r(fp, &ent, buf, sizeof(buf))) {
-                if (starts_with(ent.mnt_dir, dir)) {
-                    //LOGD("Attempting to unmount %s", ent.mnt_dir);
-
-                    if (umount(ent.mnt_dir) < 0) {
-                        LOGE("Failed to unmount %s: %s",
-                             ent.mnt_dir, strerror(errno));
-                        ++failed;
-                    }
-                }
-            }
-            endmntent(fp);
-        } else {
+        file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
+        if (!fp) {
             LOGE("Failed to read /proc/mounts: %s", strerror(errno));
             return false;
+        }
+
+        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+            if (starts_with(ent.mnt_dir, dir)) {
+                //LOGD("Attempting to unmount %s", ent.mnt_dir);
+
+                if (umount(ent.mnt_dir) < 0) {
+                    LOGE("Failed to unmount %s: %s",
+                          ent.mnt_dir, strerror(errno));
+                    ++failed;
+                }
+            }
         }
 
         if (failed == 0) {
