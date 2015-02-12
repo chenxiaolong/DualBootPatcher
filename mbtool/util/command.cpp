@@ -19,8 +19,8 @@
 
 #include "util/command.h"
 
-#include <errno.h>
-#include <stdlib.h>
+#include <cerrno>
+#include <cstdlib>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>

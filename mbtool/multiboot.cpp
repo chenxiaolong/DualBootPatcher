@@ -19,8 +19,8 @@
 
 #include "multiboot.h"
 
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 
 #include "external/cppformat/format.h"
 #include "util/fts.h"

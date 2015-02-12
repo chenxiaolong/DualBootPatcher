@@ -19,16 +19,16 @@
 
 #include "update_binary.h"
 
-#include <errno.h>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <fcntl.h>
 #include <getopt.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <time.h>
 
 #include <archive.h>
 #include <archive_entry.h>

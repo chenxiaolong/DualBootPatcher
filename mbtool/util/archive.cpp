@@ -26,9 +26,9 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include "logging.h"
 #include "util/directory.h"
 #include "util/finally.h"
+#include "util/logging.h"
 #include "util/path.h"
 
 namespace mb

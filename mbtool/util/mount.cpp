@@ -29,8 +29,8 @@
 #include <unistd.h>
 
 #include "external/mntent.h"
-#include "logging.h"
 #include "util/directory.h"
+#include "util/logging.h"
 #include "util/string.h"
 
 #define MAX_UNMOUNT_TRIES 5

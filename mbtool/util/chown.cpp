@@ -19,7 +19,7 @@
 
 #include "util/chown.h"
 
-#include <errno.h>
+#include <cerrno>
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>

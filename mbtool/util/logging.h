@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <stdio.h>
-
 #include <spdlog/spdlog.h>
 
 #define LOGE(...) util::logger()->error(__VA_ARGS__)

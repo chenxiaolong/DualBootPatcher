@@ -19,8 +19,8 @@
 
 #include "actions.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 
 #include "roms.h"
