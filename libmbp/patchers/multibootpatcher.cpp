@@ -377,12 +377,11 @@ bool MultiBootPatcher::Impl::patchZip()
     RETURN_IF_CANCELLED
 
     // +1 for mbtool_recovery (update-binary)
-    // +1 for mbtool
-    // +1 for aromawrapper.sh
+    // +1 for aromawrapper.zip
     // +1 for bb-wrapper.sh
     // +1 for unzip
     // +1 for device
-    MAX_PROGRESS_CB(count + 6);
+    MAX_PROGRESS_CB(count + 5);
     PROGRESS_CB(progress);
 
     if (!openInputArchive()) {
@@ -418,21 +417,6 @@ bool MultiBootPatcher::Impl::patchZip()
             aOutput, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    RETURN_IF_CANCELLED
-
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/mbtool");
-
-    // Add mbtool
-    result = FileUtils::laAddFile(
-            aOutput, "multiboot/mbtool",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool");
     if (result.errorCode() != MBP::ErrorCode::NoError) {
         error = result;
         return false;
