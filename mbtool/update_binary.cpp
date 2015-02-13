@@ -94,6 +94,8 @@ extern "C" {
 namespace mb
 {
 
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
+
 static const char *interface;
 static const char *output_fd_str;
 static const char *zip_file;
@@ -496,7 +498,7 @@ static bool create_temporary_image(const std::string &path)
 static bool sha1_hash(const std::string &path,
                       unsigned char digest[SHA_DIGEST_SIZE])
 {
-    FILE *fp = fopen(path.c_str(), "rb");
+    file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
     if (!fp) {
         LOGE("%s: Failed to open: %s", path, strerror(errno));
         return false;
@@ -508,21 +510,18 @@ static bool sha1_hash(const std::string &path,
     SHA_CTX ctx;
     SHA_init(&ctx);
 
-    while ((n = fread(buf, 1, sizeof(buf), fp)) > 0) {
+    while ((n = fread(buf, 1, sizeof(buf), fp.get())) > 0) {
         SHA_update(&ctx, buf, n);
         if (n < sizeof(buf)) {
             break;
         }
     }
 
-    if (ferror(fp)) {
+    if (ferror(fp.get())) {
         LOGE("%s: Failed to read file", path);
-        fclose(fp);
         errno = EIO;
         return false;
     }
-
-    fclose(fp);
 
     memcpy(digest, SHA_final(&ctx), SHA_DIGEST_SIZE);
 
@@ -1352,26 +1351,26 @@ static bool update_binary(void)
             return ret = false;
         }
 
+        auto close_fd_source = util::finally([&] { close(fd_source); });
+
         int fd_boot = open(boot_block_dev.c_str(), O_WRONLY);
         if (fd_boot < 0) {
             LOGE("Failed to open %s: %s", boot_block_dev, strerror(errno));
-            close(fd_source);
             return ret = false;
         }
+
+        auto close_fd_boot = util::finally([&] { close(fd_boot); });
 
         int fd_backup = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0775);
         if (fd_backup < 0) {
             LOGE("Failed to open %s: %s", path, strerror(errno));
-            close(fd_source);
-            close(fd_boot);
             return ret = false;
         }
 
+        auto close_fd_backup = util::finally([&] { close(fd_backup); });
+
         if (!util::copy_data_fd(fd_source, fd_boot)) {
             LOGE("Failed to write %s: %s", boot_block_dev, strerror(errno));
-            close(fd_source);
-            close(fd_boot);
-            close(fd_backup);
             return ret = false;
         }
 
@@ -1379,9 +1378,6 @@ static bool update_binary(void)
 
         if (!util::copy_data_fd(fd_source, fd_backup)) {
             LOGE("Failed to write %s: %s", path, strerror(errno));
-            close(fd_source);
-            close(fd_boot);
-            close(fd_backup);
             return ret = false;
         }
 
@@ -1389,10 +1385,6 @@ static bool update_binary(void)
             // Non-fatal
             LOGE("%s: Failed to chmod: %s", path, strerror(errno));
         }
-
-        close(fd_source);
-        close(fd_boot);
-        close(fd_backup);
 
         if (!util::chown(path, "media_rw", "media_rw", 0)) {
             // Non-fatal

@@ -36,6 +36,8 @@
 namespace mb
 {
 
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
+
 // Types to make permissive
 static const char *permissive_types[] = {
     "init",
@@ -85,10 +87,9 @@ bool patch_sepolicy(const std::string &source,
 
 bool patch_loaded_sepolicy()
 {
-    std::FILE *fp;
     int is_enforcing = 0;
 
-    fp = std::fopen(MB_SELINUX_ENFORCE_FILE, "rb");
+    file_ptr fp(std::fopen(MB_SELINUX_ENFORCE_FILE, "rb"), std::fclose);
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't
@@ -101,13 +102,10 @@ bool patch_loaded_sepolicy()
         }
     }
 
-    if (std::fscanf(fp, "%u", &is_enforcing) != 1) {
+    if (std::fscanf(fp.get(), "%u", &is_enforcing) != 1) {
         LOGE("Failed to parse %s: %s", MB_SELINUX_ENFORCE_FILE, strerror(errno));
-        std::fclose(fp);
         return false;
     }
-
-    std::fclose(fp);
 
     if (!is_enforcing) {
         LOGV("SELinux is globally set to permissive. Policy won't be patched");
