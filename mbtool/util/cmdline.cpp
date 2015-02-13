@@ -44,7 +44,7 @@ bool kernel_cmdline_get_option(const std::string &option,
     char *token;
 
     token = strtok_r(linebuf.data(), " ", &temp);
-    while (token != NULL) {
+    while (token != nullptr) {
         if (starts_with(token, option)) {
             char *p = token + option.size();
             if (*p == '\0' || *p == ' ') {
@@ -71,7 +71,7 @@ bool kernel_cmdline_get_option(const std::string &option,
             }
         }
 
-        token = strtok_r(NULL, " ", &temp);
+        token = strtok_r(nullptr, " ", &temp);
     }
 
     return false;

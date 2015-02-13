@@ -55,7 +55,7 @@ bool mkdir_recursive(const std::string &dir, mode_t mode)
     }
 
     p = strtok_r(copy.data(), "/", &save_ptr);
-    while (p != NULL) {
+    while (p != nullptr) {
         strcat(temp.data(), p);
         strcat(temp.data(), "/");
 
@@ -63,7 +63,7 @@ bool mkdir_recursive(const std::string &dir, mode_t mode)
             return false;
         }
 
-        p = strtok_r(NULL, "/", &save_ptr);
+        p = strtok_r(nullptr, "/", &save_ptr);
     }
 
     return true;

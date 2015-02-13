@@ -37,7 +37,7 @@
 #include "util/logging.h"
 
 
-const char *main_argv0 = NULL;
+const char *main_argv0 = nullptr;
 static int first_run = 1;
 
 
@@ -65,7 +65,7 @@ struct tool tools[] = {
     { "mount_fstab", mb::mount_fstab_main },
     { "sepolpatch", mb::sepolpatch_main },
 #endif
-    { NULL, NULL }
+    { nullptr, nullptr }
 };
 
 
@@ -108,7 +108,7 @@ struct tool * find_tool(const char *name)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 int main(int argc, char *argv[])

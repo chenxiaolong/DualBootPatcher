@@ -121,12 +121,12 @@ bool mount_fstab(const std::string &fstab_path)
     bool ret = true;
 
     std::vector<util::fstab_rec> fstab;
-    struct util::fstab_rec *rec_system = NULL;
-    struct util::fstab_rec *rec_cache = NULL;
-    struct util::fstab_rec *rec_data = NULL;
-    struct util::fstab_rec *flags_system = NULL;
-    struct util::fstab_rec *flags_cache = NULL;
-    struct util::fstab_rec *flags_data = NULL;
+    struct util::fstab_rec *rec_system = nullptr;
+    struct util::fstab_rec *rec_cache = nullptr;
+    struct util::fstab_rec *rec_data = nullptr;
+    struct util::fstab_rec *flags_system = nullptr;
+    struct util::fstab_rec *flags_cache = nullptr;
+    struct util::fstab_rec *flags_data = nullptr;
     std::string target_system;
     std::string target_cache;
     std::string target_data;

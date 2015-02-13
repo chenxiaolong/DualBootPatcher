@@ -79,7 +79,7 @@ bool file_first_line(const std::string &path,
         return false;
     }
 
-    char *line = NULL;
+    char *line = nullptr;
     size_t len = 0;
     ssize_t read;
 

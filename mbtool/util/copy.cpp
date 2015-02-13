@@ -104,7 +104,7 @@ static bool copy_xattrs(const std::string &source, const std::string &target)
     std::vector<char> value;
 
     // xattr names are in a NULL-separated list
-    size = llistxattr(source.c_str(), NULL, 0);
+    size = llistxattr(source.c_str(), nullptr, 0);
     if (size < 0) {
         if (errno == ENOTSUP) {
             LOGV("{}: xattrs not supported on filesystem", source);
@@ -133,7 +133,7 @@ static bool copy_xattrs(const std::string &source, const std::string &target)
             continue;
         }
 
-        size = lgetxattr(source.c_str(), name, NULL, 0);
+        size = lgetxattr(source.c_str(), name, nullptr, 0);
         if (size < 0) {
             LOGW("{}: Failed to get attribute '{}': {}",
                  source, name, strerror(errno));

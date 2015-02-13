@@ -43,7 +43,7 @@ int run_shell_command(const std::string &command)
         pid_t pid;
         if ((pid = fork()) >= 0) {
             if (pid == 0) {
-                execlp("/sbin/sh", "sh", "-c", command.c_str(), NULL);
+                execlp("/sbin/sh", "sh", "-c", command.c_str(), nullptr);
                 exit(127);
             } else {
                 pid = waitpid(pid, &status, 0);

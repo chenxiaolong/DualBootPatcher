@@ -396,7 +396,7 @@ static std::string get_target_device(void)
     std::string device;
     if (!util::file_first_line(MB_TEMP "/device", &device)) {
         LOGE("Failed to read " MB_TEMP "/device");
-        return NULL;
+        return std::string();
     }
 
     return device;
@@ -569,7 +569,7 @@ static bool is_aroma(const char *path)
         "AROMA_NAME",
         "AROMA_BUILD",
         "AROMA_VERSION",
-        NULL
+        nullptr
     };
 
     struct stat sb;
@@ -644,8 +644,7 @@ static bool run_aroma_selection(void)
         // Force output to stderr
         //output_fd_str,
         "2",
-        MB_TEMP "/aromawrapper.zip",
-        NULL
+        MB_TEMP "/aromawrapper.zip"
     };
 
     // Stop parent process (/sbin/recovery), so AROMA doesn't fight over the
@@ -702,8 +701,7 @@ static bool run_real_updater(void)
         MB_TEMP "/updater",
         interface,
         output_fd_str,
-        MB_TEMP "/install.zip",
-        NULL
+        MB_TEMP "/install.zip"
     };
 
     pid_t parent = getppid();
@@ -1411,7 +1409,7 @@ static void update_binary_usage(int error)
 int update_binary_main(int argc, char *argv[])
 {
     // Make stdout unbuffered
-    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stdout, nullptr, _IONBF, 0);
 
     int opt;
 

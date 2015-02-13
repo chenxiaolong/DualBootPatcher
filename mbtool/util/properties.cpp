@@ -142,7 +142,7 @@ bool file_get_property(const std::string &path,
         return false;
     }
 
-    char *line = NULL;
+    char *line = nullptr;
     size_t len = 0;
     ssize_t read;
 

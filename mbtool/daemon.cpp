@@ -314,7 +314,7 @@ static bool run_daemon(void)
     LOGD("Socket ready, waiting for connections");
 
     int client_fd;
-    while ((client_fd = accept(fd, NULL, NULL)) >= 0) {
+    while ((client_fd = accept(fd, nullptr, nullptr)) >= 0) {
         pid_t child_pid = fork();
         if (child_pid < 0) {
             LOGE("Failed to fork: {}", strerror(errno));

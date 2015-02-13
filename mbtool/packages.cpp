@@ -109,7 +109,7 @@ bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
 {
     LIBXML_TEST_VERSION
 
-    xmlDoc *doc = xmlReadFile(path.c_str(), NULL, 0);
+    xmlDoc *doc = xmlReadFile(path.c_str(), nullptr, 0);
     if (!doc) {
         LOGE("Failed to parse XML file: {}", path);
         return false;
@@ -277,15 +277,15 @@ static bool parse_tag_package(xmlNode *node,
             pkg->cpu_abi_override = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_FLAGS) == 0) {
             pkg->pkg_flags = static_cast<Package::Flags>(
-                    strtoll(TO_CHAR value, NULL, 10));
+                    strtoll(TO_CHAR value, nullptr, 10));
         } else if (xmlStrcmp(name, ATTR_FT) == 0) {
-            pkg->timestamp = strtoull(TO_CHAR value, NULL, 16);
+            pkg->timestamp = strtoull(TO_CHAR value, nullptr, 16);
         } else if (xmlStrcmp(name, ATTR_INSTALL_STATUS) == 0) {
             pkg->install_status = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_INSTALLER) == 0) {
             pkg->installer = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_IT) == 0) {
-            pkg->first_install_time = strtoull(TO_CHAR value, NULL, 16);
+            pkg->first_install_time = strtoull(TO_CHAR value, nullptr, 16);
         } else if (xmlStrcmp(name, ATTR_NAME) == 0) {
             pkg->name = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_NATIVE_LIBRARY_PATH) == 0) {
@@ -299,17 +299,17 @@ static bool parse_tag_package(xmlNode *node,
         } else if (xmlStrcmp(name, ATTR_SECONDARY_CPU_ABI) == 0) {
             pkg->secondary_cpu_abi = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_SHARED_USER_ID) == 0) {
-            pkg->shared_user_id = strtol(TO_CHAR value, NULL, 10);
+            pkg->shared_user_id = strtol(TO_CHAR value, nullptr, 10);
             pkg->is_shared_user = 1;
         } else if (xmlStrcmp(name, ATTR_UID_ERROR) == 0) {
             pkg->uid_error = TO_CHAR value;
         } else if (xmlStrcmp(name, ATTR_USER_ID) == 0) {
-            pkg->user_id = strtol(TO_CHAR value, NULL, 10);
+            pkg->user_id = strtol(TO_CHAR value, nullptr, 10);
             pkg->is_shared_user = 0;
         } else if (xmlStrcmp(name, ATTR_UT) == 0) {
-            pkg->last_update_time = strtoull(TO_CHAR value, NULL, 16);
+            pkg->last_update_time = strtoull(TO_CHAR value, nullptr, 16);
         } else if (xmlStrcmp(name, ATTR_VERSION) == 0) {
-            pkg->version = strtol(TO_CHAR value, NULL, 10);
+            pkg->version = strtol(TO_CHAR value, nullptr, 10);
         } else {
             LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_PACKAGE);
         }

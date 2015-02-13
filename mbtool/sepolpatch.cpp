@@ -43,7 +43,7 @@ static const char *permissive_types[] = {
     "init",
     "init_shell",
     "recovery",
-    NULL
+    nullptr
 };
 
 static bool patch_sepolicy_internal(const std::string &source,
@@ -146,8 +146,8 @@ int sepolpatch_main(int argc, char *argv[])
 {
     int opt;
     int loaded_flag = 0;
-    const char *source_file = NULL;
-    const char *target_file = NULL;
+    const char *source_file = nullptr;
+    const char *target_file = nullptr;
 
     static struct option long_options[] = {
         {"loaded", no_argument,       0, 'l'},

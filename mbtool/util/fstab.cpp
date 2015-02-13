@@ -70,7 +70,7 @@ static struct mount_flag mount_flags[] =
     // Flags that should be ignored
     { "ro",             0 },
     { "defaults",       0 },
-    { NULL,             0 }
+    { nullptr,          0 }
 };
 
 
@@ -87,7 +87,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
     }
 
     int count, entries;
-    char *line = NULL;
+    char *line = nullptr;
     size_t len = 0; // allocated memory size
     ssize_t bytes_read; // number of bytes read
     char *temp;
@@ -156,25 +156,25 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
         rec.orig_line = line;
 
-        if ((temp = strtok_r(line, delim, &save_ptr)) == NULL) {
+        if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
             LOGE("No source path/device found in entry: {}", line);
             return std::vector<fstab_rec>();
         }
         rec.blk_device = temp;
 
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No mount point found in entry: {}", line);
             return std::vector<fstab_rec>();
         }
         rec.mount_point = temp;
 
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No filesystem type found in entry: {}", line);
             return std::vector<fstab_rec>();
         }
         rec.fs_type = temp;
 
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No mount options found in entry: {}", line);
             return std::vector<fstab_rec>();
         }
@@ -184,7 +184,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
             rec.fs_options = temp_mount_args;
         }
 
-        if ((temp = strtok_r(NULL, delim, &save_ptr)) == NULL) {
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No fs_mgr/vold options found in entry: {}", line);
             return std::vector<fstab_rec>();
         }
@@ -227,7 +227,7 @@ static int options_to_flags(char *args, char *new_args, int size)
             }
         }
 
-        temp = strtok_r(NULL, ",", &save_ptr);
+        temp = strtok_r(nullptr, ",", &save_ptr);
     }
 
     if (new_args && new_args[0]) {

@@ -78,9 +78,9 @@ bool FTSWrapper::run()
     }
 
     // We only support traversal of one tree
-    char *files[] = { (char *) _path.c_str(), NULL };
+    char *files[] = { (char *) _path.c_str(), nullptr };
 
-    _ftsp = fts_open(files, fts_flags, NULL);
+    _ftsp = fts_open(files, fts_flags, nullptr);
     if (!_ftsp) {
         _error_msg = fmt::format("fts_open failed: {}", strerror(errno));
         ret = false;

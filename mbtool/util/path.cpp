@@ -31,9 +31,9 @@ namespace util
 
 std::string get_cwd()
 {
-    char *cwd = NULL;
+    char *cwd = nullptr;
 
-    if (!(cwd = getcwd(NULL, 0))) {
+    if (!(cwd = getcwd(nullptr, 0))) {
         LOGE("Failed to get cwd: {}", strerror(errno));
         return std::string();
     }

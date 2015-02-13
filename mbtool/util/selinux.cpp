@@ -60,7 +60,7 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
         return false;
     }
 
-    map = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
         LOGE("Failed to mmap {}: {}", path, strerror(errno));
         return false;
@@ -94,7 +94,7 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
 
     // Don't print warnings to stderr
     handle = sepol_handle_create();
-    sepol_msg_set_callback(handle, NULL, NULL);
+    sepol_msg_set_callback(handle, nullptr, nullptr);
 
     auto destroy_handle = finally([&] {
         sepol_handle_destroy(handle);
@@ -190,7 +190,7 @@ bool selinux_add_rule(policydb_t *pdb,
     perm = (perm_datum_t *) hashtab_search(
             clazz->permissions.table, (hashtab_key_t) perm_str.c_str());
     if (!perm) {
-        if (clazz->comdatum == NULL) {
+        if (clazz->comdatum == nullptr) {
             LOGE("Perm {} does not exist in class {}", perm_str, class_str);
             return false;
         }
