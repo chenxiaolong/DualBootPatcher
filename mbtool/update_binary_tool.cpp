@@ -52,7 +52,7 @@ static bool do_mount(const std::string &mountpoint)
     if (mountpoint == SYSTEM) {
         if (access("/multiboot/system.img", F_OK) < 0) {
             // Assume we don't need the image if the wrapper didn't create it
-            LOGV(TAG "Ignoring mount command for %s", mountpoint);
+            LOGV(TAG "Ignoring mount command for {}", mountpoint);
             return true;
         }
 
@@ -64,18 +64,18 @@ static bool do_mount(const std::string &mountpoint)
         std::string loopdev = util::loopdev_find_unused();
 
         if (loopdev.empty()) {
-            LOGE(TAG "Failed to find unused loop device: %s", strerror(errno));
+            LOGE(TAG "Failed to find unused loop device: {}", strerror(errno));
             return false;
         }
 
         if (!util::loopdev_setup_device(loopdev, "/multiboot/system.img", 0, 0)) {
-            LOGE(TAG "Failed to setup loop device %s: %s",
+            LOGE(TAG "Failed to setup loop device {}: {}",
                  loopdev, strerror(errno));
             return false;
         }
 
         if (mount(loopdev.c_str(), SYSTEM, "ext4", 0, "") < 0) {
-            LOGE(TAG "Failed to mount %s: %s",
+            LOGE(TAG "Failed to mount {}: {}",
                  loopdev, strerror(errno));
             util::loopdev_remove_device(loopdev);
             return false;
@@ -83,9 +83,9 @@ static bool do_mount(const std::string &mountpoint)
 
         util::file_write_data(STAMP_FILE, loopdev.data(), loopdev.size());
 
-        LOGD(TAG "Mounted %s at %s", loopdev, SYSTEM);
+        LOGD(TAG "Mounted {} at {}", loopdev, SYSTEM);
     } else {
-        LOGV(TAG "Ignoring mount command for %s", mountpoint);
+        LOGV(TAG "Ignoring mount command for {}", mountpoint);
     }
 
     return true;
@@ -96,7 +96,7 @@ static bool do_unmount(const std::string &mountpoint)
     if (mountpoint == SYSTEM) {
         if (access("/multiboot/system.img", F_OK) < 0) {
             // Assume we don't need the image if the wrapper didn't create it
-            LOGV(TAG "Ignoring unmount command for %s", mountpoint);
+            LOGV(TAG "Ignoring unmount command for {}", mountpoint);
             return true;
         }
 
@@ -112,21 +112,21 @@ static bool do_unmount(const std::string &mountpoint)
         }
 
         if (umount(SYSTEM) < 0) {
-            LOGE(TAG "Failed to unmount %s: %s", SYSTEM, strerror(errno));
+            LOGE(TAG "Failed to unmount {}: {}", SYSTEM, strerror(errno));
             return false;
         }
 
         if (!util::loopdev_remove_device(loopdev)) {
-            LOGE(TAG "Failed to remove loop device %s: %s",
+            LOGE(TAG "Failed to remove loop device {}: {}",
                  loopdev, strerror(errno));
             return false;
         }
 
         remove(STAMP_FILE);
 
-        LOGD(TAG "Unmounted %s", SYSTEM);
+        LOGD(TAG "Unmounted {}", SYSTEM);
     } else {
-        LOGV(TAG "Ignoring unmount command for %s", mountpoint);
+        LOGV(TAG "Ignoring unmount command for {}", mountpoint);
     }
 
     return true;
@@ -142,27 +142,27 @@ static bool do_format(const std::string &mountpoint)
                 && (access(STAMP_FILE, F_OK) != 0);
 
         if (needs_mount && !do_mount(mountpoint)) {
-            LOGE(TAG "Failed to mount %s", mountpoint);
+            LOGE(TAG "Failed to mount {}", mountpoint);
             return false;
         }
 
         if (!wipe_directory(mountpoint, true)) {
-            LOGE(TAG "Failed to wipe %s", mountpoint);
+            LOGE(TAG "Failed to wipe {}", mountpoint);
             return false;
         }
 
         if (needs_mount && !do_unmount(mountpoint)) {
-            LOGE(TAG "Failed to unmount %s", mountpoint);
+            LOGE(TAG "Failed to unmount {}", mountpoint);
             return false;
         }
     } else if (mountpoint == DATA) {
         if (!wipe_directory(mountpoint, false)) {
-            LOGE(TAG "Failed to wipe %s", mountpoint);
+            LOGE(TAG "Failed to wipe {}", mountpoint);
             return false;
         }
     }
 
-    LOGD(TAG "Formatted %s", mountpoint);
+    LOGD(TAG "Formatted {}", mountpoint);
 
     return true;
 }

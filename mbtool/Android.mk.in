@@ -182,6 +182,7 @@ LOCAL_C_INCLUDES := \
 	$(LIBARCHIVE_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
+	$(EXTERNAL_DIR) \
 	$(EXTERNAL_DIR)/spdlog/include
 
 LOCAL_CFLAGS := $(mb_common_cflags)
@@ -213,6 +214,7 @@ LOCAL_C_INCLUDES := \
 	$(LIBLOKI_DIR)/include \
 	$(TOP_DIR)/libmbp \
 	$(TOP_DIR) \
+	$(EXTERNAL_DIR) \
 	$(EXTERNAL_DIR)/spdlog/include
 
 LOCAL_CFLAGS := $(mb_common_cflags)

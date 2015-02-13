@@ -84,9 +84,9 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            _error_msg = fmt::format("%s: Failed to remove: %s",
+            _error_msg = fmt::format("{}: Failed to remove: {}",
                                      _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg);
+            LOGW("{}", _error_msg);
             return false;
         }
         return true;

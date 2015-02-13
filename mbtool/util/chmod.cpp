@@ -61,7 +61,7 @@ public:
     virtual int on_reached_symlink() override
     {
         // Avoid security issue
-        LOGW("%s: Not setting permissions on symlink",
+        LOGW("{}: Not setting permissions on symlink",
              _curr->fts_path);
         return Action::FTS_Skip;
     }
@@ -77,9 +77,9 @@ private:
     bool chmod_path()
     {
         if (chmod(_curr->fts_accpath, _perms) < 0) {
-            _error_msg = fmt::format("%s: Failed to chmod: %s",
+            _error_msg = fmt::format("{}: Failed to chmod: {}",
                                      _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg);
+            LOGW("{}", _error_msg);
             return false;
         }
         return true;

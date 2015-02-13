@@ -234,19 +234,19 @@ static bool client_connection(int fd)
         }
     });
 
-    LOGD("Accepted connection from %d", fd);
+    LOGD("Accepted connection from {:d}", fd);
 
     struct ucred cred;
     socklen_t cred_len = sizeof(struct ucred);
 
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
-        LOGE("Failed to get socket credentials: %s", strerror(errno));
+        LOGE("Failed to get socket credentials: {}", strerror(errno));
         return ret = false;
     }
 
-    LOGD("Client PID: %d", cred.pid);
-    LOGD("Client UID: %d", cred.uid);
-    LOGD("Client GID: %d", cred.gid);
+    LOGD("Client PID: {:d}", cred.pid);
+    LOGD("Client UID: {:d}", cred.uid);
+    LOGD("Client GID: {:d}", cred.gid);
 
     // TODO: Verify credentials
     if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
@@ -266,7 +266,7 @@ static bool client_connection(int fd)
         }
         return true;
     } else {
-        LOGE("Unsupported interface version: %d", version);
+        LOGE("Unsupported interface version: {:d}", version);
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return ret = false;
     }
@@ -281,7 +281,7 @@ static bool run_daemon(void)
 
     fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
-        LOGE("Failed to create socket: %s", strerror(errno));
+        LOGE("Failed to create socket: {}", strerror(errno));
         return false;
     }
 
@@ -301,13 +301,13 @@ static bool run_daemon(void)
     socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
 
     if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
-        LOGE("Failed to bind socket: %s", strerror(errno));
+        LOGE("Failed to bind socket: {}", strerror(errno));
         LOGE("Is another instance running?");
         return false;
     }
 
     if (listen(fd, 3) < 0) {
-        LOGE("Failed to listen on socket: %s", strerror(errno));
+        LOGE("Failed to listen on socket: {}", strerror(errno));
         return false;
     }
 
@@ -317,7 +317,7 @@ static bool run_daemon(void)
     while ((client_fd = accept(fd, NULL, NULL)) >= 0) {
         pid_t child_pid = fork();
         if (child_pid < 0) {
-            LOGE("Failed to fork: %s", strerror(errno));
+            LOGE("Failed to fork: {}", strerror(errno));
         } else if (child_pid == 0) {
             bool ret = client_connection(client_fd);
             close(client_fd);
@@ -327,7 +327,7 @@ static bool run_daemon(void)
     }
 
     if (client_fd < 0) {
-        LOGE("Failed to accept connection on socket: %s", strerror(errno));
+        LOGE("Failed to accept connection on socket: {}", strerror(errno));
         return false;
     }
 

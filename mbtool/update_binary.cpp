@@ -159,12 +159,12 @@ static bool patch_sepolicy()
     }
 
     if (!util::selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: %s", MB_SELINUX_POLICY_FILE);
+        LOGE("Failed to read SELinux policy file: {}", MB_SELINUX_POLICY_FILE);
         policydb_destroy(&pdb);
         return false;
     }
 
-    LOGD("Policy version: %u", pdb.policyvers);
+    LOGD("Policy version: {}", pdb.policyvers);
 
     // Debugging rules (for CWM and Philz)
     util::selinux_add_rule(&pdb, "adbd",  "block_device",    "blk_file",   "relabelto");
@@ -182,7 +182,7 @@ static bool patch_sepolicy()
     util::selinux_add_rule(&pdb, "tmpfs",  "rootfs",         "filesystem", "associate");
 
     if (!util::selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: %s", MB_SELINUX_LOAD_FILE);
+        LOGE("Failed to write SELinux policy file: {}", MB_SELINUX_LOAD_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -194,37 +194,37 @@ static bool patch_sepolicy()
 
 #define MKDIR_CHECKED(a, b) \
     if (mkdir(a, b) < 0) { \
-        LOGE("Failed to create %s: %s", a, strerror(errno)); \
+        LOGE("Failed to create {}: {}", a, strerror(errno)); \
         return ret = false; \
     }
 #define MOUNT_CHECKED(a, b, c, d, e) \
     if (mount(a, b, c, d, e) < 0) { \
-        LOGE("Failed to mount %s (%s) at %s: %s", a, c, b, strerror(errno)); \
+        LOGE("Failed to mount {} ({}) at {}: {}", a, c, b, strerror(errno)); \
         return ret = false; \
     }
 #define MKNOD_CHECKED(a, b, c) \
     if (mknod(a, b, c) < 0) { \
-        LOGE("Failed to create special file %s: %s", a, strerror(errno)); \
+        LOGE("Failed to create special file {}: {}", a, strerror(errno)); \
         return ret = false; \
     }
 #define IS_MOUNTED_CHECKED(a) \
     if (!util::is_mounted(a)) { \
-        LOGE("%s is not mounted", a); \
+        LOGE("{} is not mounted", a); \
         return ret = false; \
     }
 #define UNMOUNT_ALL_CHECKED(a) \
     if (!util::unmount_all(a)) { \
-        LOGE("Failed to unmount all mountpoints within %s", a); \
+        LOGE("Failed to unmount all mountpoints within {}", a); \
         return ret = false; \
     }
 #define RECURSIVE_DELETE_CHECKED(a) \
     if (!util::delete_recursive(a)) { \
-        LOGE("Failed to recursively remove %s", a); \
+        LOGE("Failed to recursively remove {}", a); \
         return ret = false; \
     }
 #define COPY_DIR_CONTENTS_CHECKED(a, b, c) \
     if (!util::copy_dir(a, b, c)) { \
-        LOGE("Failed to copy contents of %s/ to %s/", a, b); \
+        LOGE("Failed to copy contents of {}/ to {}/", a, b); \
         return ret = false; \
     }
 
@@ -273,7 +273,7 @@ static bool create_chroot(void)
     // Some recoveries don't have SELinux enabled
     if (mount(    "none", CHROOT "/sys/fs/selinux", "selinuxfs", 0, "") < 0
             && errno != ENOENT) {
-        LOGE("Failed to mount %s (%s) at %s: %s",
+        LOGE("Failed to mount {} ({}) at {}: {}",
              "none", "selinuxfs", CHROOT "/sys/fs/selinux", strerror(errno));
         return ret = false;
     }
@@ -412,13 +412,13 @@ static bool setup_unzip(void)
     if (!util::copy_file(MB_TEMP "/unzip",
                          CHROOT "/sbin/unzip",
                          util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-        LOGE("Failed to copy %s to %s: %s",
+        LOGE("Failed to copy {} to {}: {}",
              MB_TEMP "/unzip", CHROOT "/sbin/unzip", strerror(errno));
         return false;
     }
 
     if (chmod(CHROOT "/sbin/unzip", 0555) < 0) {
-        LOGE("Failed to chmod %s: %s",
+        LOGE("Failed to chmod {}: {}",
              CHROOT "/sbin/unzip", strerror(errno));
         return false;
     }
@@ -437,13 +437,13 @@ static bool setup_busybox_wrapper(void)
     if (!util::copy_file(MB_TEMP "/bb-wrapper.sh",
                          CHROOT "/sbin/busybox",
                          util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-        LOGE("Failed to copy %s to %s: %s",
+        LOGE("Failed to copy {} to {}: {}",
              MB_TEMP "/bb-wrapper.sh", CHROOT "/sbin/busybox", strerror(errno));
         return false;
     }
 
     if (chmod(CHROOT "/sbin/busybox", 0555) < 0) {
-        LOGE("Failed to chmod %s: %s", CHROOT "/sbin/busybox", strerror(errno));
+        LOGE("Failed to chmod {}: {}", CHROOT "/sbin/busybox", strerror(errno));
         return false;
     }
 
@@ -460,7 +460,7 @@ static bool create_temporary_image(const std::string &path)
 #define IMAGE_SIZE "3G"
 
     if (!util::mkdir_parent(path, S_IRWXU)) {
-        LOGE("%s: Failed to create parent directory: %s",
+        LOGE("{}: Failed to create parent directory: {}",
              path, strerror(errno));
         return false;
     }
@@ -468,21 +468,21 @@ static bool create_temporary_image(const std::string &path)
     struct stat sb;
     if (stat(path.c_str(), &sb) < 0) {
         if (errno != ENOENT) {
-            LOGE("%s: Failed to stat: %s", path, strerror(errno));
+            LOGE("{}: Failed to stat: {}", path, strerror(errno));
             return false;
         } else {
-            LOGD("%s: Creating new %s ext4 image", path, IMAGE_SIZE);
+            LOGD("{}: Creating new {} ext4 image", path, IMAGE_SIZE);
 
             // Create new image
             if (util::run_command({ "make_ext4fs", "-l", IMAGE_SIZE, path }) != 0) {
-                LOGE("%s: Failed to create image", path);
+                LOGE("{}: Failed to create image", path);
                 return false;
             }
             return true;
         }
     }
 
-    LOGE("%s: File already exists", path);
+    LOGE("{}: File already exists", path);
     return false;
 }
 
@@ -500,7 +500,7 @@ static bool sha1_hash(const std::string &path,
 {
     file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
     if (!fp) {
-        LOGE("%s: Failed to open: %s", path, strerror(errno));
+        LOGE("{}: Failed to open: {}", path, strerror(errno));
         return false;
     }
 
@@ -518,7 +518,7 @@ static bool sha1_hash(const std::string &path,
     }
 
     if (ferror(fp.get())) {
-        LOGE("%s: Failed to read file", path);
+        LOGE("{}: Failed to read file", path);
         errno = EIO;
         return false;
     }
@@ -590,7 +590,7 @@ static bool is_aroma(const char *path)
         return false;
     }
 
-    map = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
         return false;
     }
@@ -619,12 +619,12 @@ static bool run_aroma_selection(void)
     };
 
     if (!util::extract_files2(MB_TEMP "/aromawrapper.zip", aroma_files)) {
-        LOGE("Failed to extract %s", ZIP_UPDATER);
+        LOGE("Failed to extract {}", ZIP_UPDATER);
         return false;
     }
 
     if (chmod(CHROOT MB_TEMP "/updater", 0555) < 0) {
-        LOGE("%s: Failed to chmod: %s",
+        LOGE("{}: Failed to chmod: {}",
              CHROOT MB_TEMP "/updater", strerror(errno));
         return false;
     }
@@ -632,7 +632,7 @@ static bool run_aroma_selection(void)
     if (!util::copy_file(MB_TEMP "/aromawrapper.zip",
                          CHROOT MB_TEMP "/aromawrapper.zip",
                          util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-        LOGE("Failed to copy %s to %s: %s",
+        LOGE("Failed to copy {} to {}: {}",
              MB_TEMP "/aromawrapper.zip", CHROOT MB_TEMP "/aromawrapper.zip",
              strerror(errno));
         return false;
@@ -660,10 +660,10 @@ static bool run_aroma_selection(void)
         kill(parent, SIGCONT);
 
         if (ret < 0) {
-            LOGE("Failed to execute %s: %s",
+            LOGE("Failed to execute {}: {}",
                  MB_TEMP "/updater", strerror(errno));
         } else {
-            LOGE("%s returned non-zero exit status",
+            LOGE("{} returned non-zero exit status",
                  MB_TEMP "/updater");
         }
         return false;
@@ -687,13 +687,13 @@ static bool run_real_updater(void)
 
     if (!util::copy_file(UPDATER, CHROOT MB_TEMP "/updater",
                          util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-        LOGE("Failed to copy %s to %s: %s",
+        LOGE("Failed to copy {} to {}: {}",
              UPDATER, CHROOT MB_TEMP "/updater", strerror(errno));
         return false;
     }
 
     if (chmod(CHROOT MB_TEMP "/updater", 0555) < 0) {
-        LOGE("%s: Failed to chmod: %s",
+        LOGE("{}: Failed to chmod: {}",
              CHROOT MB_TEMP "/updater", strerror(errno));
         return false;
     }
@@ -709,7 +709,7 @@ static bool run_real_updater(void)
     pid_t parent = getppid();
     bool aroma = is_aroma(CHROOT MB_TEMP "/updater");
 
-    LOGD("update-binary is AROMA: %d", aroma);
+    LOGD("update-binary is AROMA: {}", aroma);
 
     if (aroma) {
         kill(parent, SIGSTOP);
@@ -722,10 +722,10 @@ static bool run_real_updater(void)
         }
 
         if (ret < 0) {
-            LOGE("Failed to execute %s: %s",
+            LOGE("Failed to execute {}: {}",
                  MB_TEMP "/updater", strerror(errno));
         } else {
-            LOGE("%s returned non-zero exit status",
+            LOGE("{} returned non-zero exit status",
                  MB_TEMP "/updater");
         }
         return false;
@@ -772,9 +772,9 @@ public:
         // MB_COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
                             util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-            _error_msg = fmt::format("%s: Failed to copy directory: %s",
+            _error_msg = fmt::format("{}: Failed to copy directory: {}",
                                      _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg);
+            LOGW("{}", _error_msg);
             return Action::FTS_Skip | Action::FTS_Fail;
         }
         return Action::FTS_Skip;
@@ -803,9 +803,9 @@ private:
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
                              util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-            _error_msg = fmt::format("%s: Failed to copy file: %s",
+            _error_msg = fmt::format("{}: Failed to copy file: {}",
                                      _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg);
+            LOGW("{}", _error_msg);
             return false;
         }
         return true;
@@ -847,56 +847,56 @@ static bool system_image_copy(const std::string &source,
 
     if (stat(source.c_str(), &sb) < 0
             && !util::mkdir_recursive(source, 0755)) {
-        LOGE("Failed to create %s: %s",
+        LOGE("Failed to create {}: {}",
              source, strerror(errno));
         return false;
     }
 
     if (stat(MB_TEMP "/.system.tmp", &sb) < 0
             && mkdir(MB_TEMP "/.system.tmp", 0755) < 0) {
-        LOGE("Failed to create %s: %s",
+        LOGE("Failed to create {}: {}",
              MB_TEMP "/.system.tmp", strerror(errno));
         return false;
     }
 
     loopdev = util::loopdev_find_unused();
     if (loopdev.empty()) {
-        LOGE("Failed to find unused loop device: %s", strerror(errno));
+        LOGE("Failed to find unused loop device: {}", strerror(errno));
         return false;
     }
 
     if (!util::loopdev_setup_device(loopdev, image, 0, 0)) {
-        LOGE("Failed to setup loop device %s: %s", loopdev, strerror(errno));
+        LOGE("Failed to setup loop device {}: {}", loopdev, strerror(errno));
         return false;
     }
 
     if (mount(loopdev.c_str(), MB_TEMP "/.system.tmp", "ext4", 0, "") < 0) {
-        LOGE("Failed to mount %s: %s", loopdev, strerror(errno));
+        LOGE("Failed to mount {}: {}", loopdev, strerror(errno));
         return false;
     }
 
     if (reverse) {
         if (!copy_system(MB_TEMP "/.system.tmp", source)) {
-            LOGE("Failed to copy system files from %s to %s",
+            LOGE("Failed to copy system files from {} to {}",
                  MB_TEMP "/.system.tmp", source);
             return false;
         }
     } else {
         if (!copy_system(source, MB_TEMP "/.system.tmp")) {
-            LOGE("Failed to copy system files from %s to %s",
+            LOGE("Failed to copy system files from {} to {}",
                  source, MB_TEMP "/.system.tmp");
             return false;
         }
     }
 
     if (umount(MB_TEMP "/.system.tmp") < 0) {
-        LOGE("Failed to unmount %s: %s",
+        LOGE("Failed to unmount {}: {}",
              MB_TEMP "/.system.tmp", strerror(errno));
         return false;
     }
 
     if (!util::loopdev_remove_device(loopdev)) {
-        LOGE("Failed to remove loop device %s: %s", loopdev, strerror(errno));
+        LOGE("Failed to remove loop device {}: {}", loopdev, strerror(errno));
         return false;
     }
 
@@ -911,7 +911,7 @@ static bool update_binary(void)
     bool ret = true;
 
     PatcherConfig pc;
-    LOGD("libmbp-mini version: %s", pc.version());
+    LOGD("libmbp-mini version: {}", pc.version());
 
     std::shared_ptr<Rom> rom;
     std::vector<std::shared_ptr<Rom>> r;
@@ -938,7 +938,7 @@ static bool update_binary(void)
 
         if (!ret && !boot_block_dev.empty()
                 && !util::copy_contents(MB_TEMP "/boot.orig", boot_block_dev)) {
-            LOGE("Failed to restore boot partition: %s", strerror(errno));
+            LOGE("Failed to restore boot partition: {}", strerror(errno));
             ui_print("Failed to restore boot partition");
         }
 
@@ -949,23 +949,23 @@ static bool update_binary(void)
 
         if (!ret) {
             if (!util::copy_file("/tmp/recovery.log", LOG_FILE, 0)) {
-                LOGE("Failed to copy log file: %s", strerror(errno));
+                LOGE("Failed to copy log file: {}", strerror(errno));
             }
 
             if (chmod(LOG_FILE, 0664) < 0) {
-                LOGE("%s: Failed to chmod: %s", LOG_FILE, strerror(errno));
+                LOGE("{}: Failed to chmod: {}", LOG_FILE, strerror(errno));
             }
 
             if (util::chown(LOG_FILE, "media_rw", "media_rw", 0)) {
-                LOGE("%s: Failed to chown: %s", LOG_FILE, strerror(errno));
+                LOGE("{}: Failed to chown: {}", LOG_FILE, strerror(errno));
                 if (chown(LOG_FILE, 1023, 1023) < 0) {
-                    LOGE("%s: Failed to chown: %s", LOG_FILE, strerror(errno));
+                    LOGE("{}: Failed to chown: {}", LOG_FILE, strerror(errno));
                 }
             }
 
             if (!util::selinux_set_context(
                     LOG_FILE, "u:object_r:media_rw_data_file:s0")) {
-                LOGE("%s: Failed to set context: %s", LOG_FILE, strerror(errno));
+                LOGE("{}: Failed to set context: {}", LOG_FILE, strerror(errno));
             }
 
             ui_print("The log file was saved as MultiBoot.log on the internal "
@@ -1017,9 +1017,9 @@ static bool update_binary(void)
         return ret = false;
     }
 
-    LOGD("ro.product.device = %s", prop_product_device);
-    LOGD("ro.build.product = %s", prop_build_product);
-    LOGD("Target device = %s", device);
+    LOGD("ro.product.device = {}", prop_product_device);
+    LOGD("ro.build.product = {}", prop_build_product);
+    LOGD("Target device = {}", device);
 
 
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
@@ -1047,9 +1047,9 @@ static bool update_binary(void)
         if (!matches) {
             ui_print("Patched zip is for:");
             for (const std::string &codename : d->codenames()) {
-                ui_print(fmt::format("- %s", codename));
+                ui_print(fmt::format("- {}", codename));
             }
-            ui_print(fmt::format("This device is '%s'", prop_product_device));
+            ui_print(fmt::format("This device is '{}'", prop_product_device));
 
             device_error = true;
         }
@@ -1076,17 +1076,17 @@ static bool update_binary(void)
             dev_path += dev;
 
             if (!util::mkdir_parent(dev_path, 0755)) {
-                LOGE("Failed to create parent directory of %s", dev_path);
+                LOGE("Failed to create parent directory of {}", dev_path);
             }
 
             // Follow symlinks just in case the symlink source isn't in the list
             if (!util::copy_file(dev, dev_path, util::MB_COPY_ATTRIBUTES
                                               | util::MB_COPY_XATTRS
                                               | util::MB_COPY_FOLLOW_SYMLINKS)) {
-                LOGE("Failed to copy %s. Continuing anyway", dev);
+                LOGE("Failed to copy {}. Continuing anyway", dev);
             }
 
-            LOGD("Copied %s to the chroot", dev_path);
+            LOGD("Copied {} to the chroot", dev_path);
         }
 
         break;
@@ -1101,7 +1101,7 @@ static bool update_binary(void)
         return ret = false;
     }
 
-    LOGD("Boot block device: %s", boot_block_dev);
+    LOGD("Boot block device: {}", boot_block_dev);
 
 
     // Choose install type
@@ -1122,7 +1122,7 @@ static bool update_binary(void)
 
     rom = mb_find_rom_by_id(&r, install_type);
     if (!rom) {
-        ui_print(fmt::format("Unknown ROM ID: %s", install_type));
+        ui_print(fmt::format("Unknown ROM ID: {}", install_type));
         return ret = false;
     }
 
@@ -1141,7 +1141,7 @@ static bool update_binary(void)
 
     char digest[2 * SHA_DIGEST_SIZE + 1];
     to_hex_string(hash, SHA_DIGEST_SIZE, digest);
-    LOGD("Boot partition SHA1sum: %s", digest);
+    LOGD("Boot partition SHA1sum: {}", digest);
 
     // Save a copy of the boot image that we'll restore if the installation fails
     if (!util::copy_contents(boot_block_dev, MB_TEMP "/boot.orig")) {
@@ -1159,13 +1159,13 @@ static bool update_binary(void)
 
     // Mount target filesystems
     if (!util::bind_mount(rom->cache_path, 0771, CHROOT "/cache", 0771)) {
-        ui_print(fmt::format("Failed to bind mount %s to %s",
+        ui_print(fmt::format("Failed to bind mount {} to {}",
                              rom->cache_path, CHROOT "/cache"));
         return ret = false;
     }
 
     if (!util::bind_mount(rom->data_path, 0771, CHROOT "/data", 0771)) {
-        ui_print(fmt::format("Failed to bind mount %s to %s",
+        ui_print(fmt::format("Failed to bind mount {} to {}",
                              rom->data_path, CHROOT "/data"));
         return ret = false;
     }
@@ -1174,7 +1174,7 @@ static bool update_binary(void)
 
     if (!has_block_image && rom->id != "primary") {
         if (!util::bind_mount(rom->system_path, 0771, CHROOT "/system", 0771)) {
-            ui_print(fmt::format("Failed to bind mount %s to %s",
+            ui_print(fmt::format("Failed to bind mount {} to {}",
                                  rom->system_path, CHROOT "/system"));
             return ret = false;
         }
@@ -1183,14 +1183,14 @@ static bool update_binary(void)
 
         // Create temporary image in /data
         if (!create_temporary_image("/data/.system.img.tmp")) {
-            ui_print(fmt::format("Failed to create temporary image %s",
+            ui_print(fmt::format("Failed to create temporary image {}",
                                  "/data/.system.img.tmp"));
             return ret = false;
         }
 
         // Copy current /system files to the image
         if (!system_image_copy(rom->system_path, "/data/.system.img.tmp", false)) {
-            ui_print(fmt::format("Failed to copy %s to %s",
+            ui_print(fmt::format("Failed to copy {} to {}",
                                  rom->system_path, "/data/.system.img.tmp"));
             return ret = false;
         }
@@ -1254,14 +1254,14 @@ static bool update_binary(void)
 
         // Format system directory
         if (!wipe_directory(rom->system_path, true)) {
-            ui_print(fmt::format("Failed to wipe %s", rom->system_path));
+            ui_print(fmt::format("Failed to wipe {}", rom->system_path));
             return ret = false;
         }
 
         // Copy image back to system directory
         if (!system_image_copy(rom->system_path,
                                "/data/.system.img.tmp", true)) {
-            ui_print(fmt::format("Failed to copy %s to %s",
+            ui_print(fmt::format("Failed to copy {} to {}",
                                  "/data/.system.img.tmp", rom->system_path));
             return ret = false;
         }
@@ -1282,8 +1282,8 @@ static bool update_binary(void)
 
     char new_digest[2 * SHA_DIGEST_SIZE + 1];
     to_hex_string(new_hash, SHA_DIGEST_SIZE, new_digest);
-    LOGD("Old boot partition SHA1sum: %s", digest);
-    LOGD("New boot partition SHA1sum: %s", new_digest);
+    LOGD("Old boot partition SHA1sum: {}", digest);
+    LOGD("New boot partition SHA1sum: {}", new_digest);
 
 
     // Set kernel if it was changed
@@ -1310,8 +1310,8 @@ static bool update_binary(void)
         if (!util::file_write_data(MB_TEMP "/boot.img",
                                    reinterpret_cast<char *>(bootimg.data()),
                                    bootimg.size())) {
-            LOGE("Failed to write %s: %s", MB_TEMP "/boot.img", strerror(errno));
-            ui_print(fmt::format("Failed to write %s", MB_TEMP "/boot.img"));
+            LOGE("Failed to write {}: {}", MB_TEMP "/boot.img", strerror(errno));
+            ui_print(fmt::format("Failed to write {}", MB_TEMP "/boot.img"));
             return ret = false;
         }
 
@@ -1341,13 +1341,13 @@ static bool update_binary(void)
         path += rom->id;
         path += "/boot.img";
         if (!util::mkdir_parent(path, 0775)) {
-            ui_print(fmt::format("Failed to create %s", path));
+            ui_print(fmt::format("Failed to create {}", path));
             return ret = false;
         }
 
         int fd_source = open(MB_TEMP "/boot.img", O_RDONLY);
         if (fd_source < 0) {
-            LOGE("Failed to open %s: %s", MB_TEMP "/boot.img", strerror(errno));
+            LOGE("Failed to open {}: {}", MB_TEMP "/boot.img", strerror(errno));
             return ret = false;
         }
 
@@ -1355,7 +1355,7 @@ static bool update_binary(void)
 
         int fd_boot = open(boot_block_dev.c_str(), O_WRONLY);
         if (fd_boot < 0) {
-            LOGE("Failed to open %s: %s", boot_block_dev, strerror(errno));
+            LOGE("Failed to open {}: {}", boot_block_dev, strerror(errno));
             return ret = false;
         }
 
@@ -1363,32 +1363,32 @@ static bool update_binary(void)
 
         int fd_backup = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0775);
         if (fd_backup < 0) {
-            LOGE("Failed to open %s: %s", path, strerror(errno));
+            LOGE("Failed to open {}: {}", path, strerror(errno));
             return ret = false;
         }
 
         auto close_fd_backup = util::finally([&] { close(fd_backup); });
 
         if (!util::copy_data_fd(fd_source, fd_boot)) {
-            LOGE("Failed to write %s: %s", boot_block_dev, strerror(errno));
+            LOGE("Failed to write {}: {}", boot_block_dev, strerror(errno));
             return ret = false;
         }
 
         lseek(fd_source, 0, SEEK_SET);
 
         if (!util::copy_data_fd(fd_source, fd_backup)) {
-            LOGE("Failed to write %s: %s", path, strerror(errno));
+            LOGE("Failed to write {}: {}", path, strerror(errno));
             return ret = false;
         }
 
         if (fchmod(fd_backup, 0775) < 0) {
             // Non-fatal
-            LOGE("%s: Failed to chmod: %s", path, strerror(errno));
+            LOGE("{}: Failed to chmod: {}", path, strerror(errno));
         }
 
         if (!util::chown(path, "media_rw", "media_rw", 0)) {
             // Non-fatal
-            LOGE("%s: Failed to chown: %s", path, strerror(errno));
+            LOGE("{}: Failed to chown: {}", path, strerror(errno));
         }
     }
 

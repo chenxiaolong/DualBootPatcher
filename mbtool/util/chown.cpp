@@ -119,9 +119,9 @@ private:
     bool chown_path()
     {
         if (!chown_internal(_curr->fts_accpath, _user, _group, _follow_symlinks)) {
-            _error_msg = fmt::format("%s: Failed to chown: %s",
+            _error_msg = fmt::format("{}: Failed to chown: {}",
                                      _curr->fts_path, strerror(errno));
-            LOGW("%s", _error_msg);
+            LOGW("{}", _error_msg);
             return false;
         }
         return true;

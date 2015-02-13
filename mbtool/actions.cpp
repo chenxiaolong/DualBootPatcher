@@ -46,7 +46,7 @@ static bool choose_or_set_rom(const std::string &id,
 
     auto r = mb_find_rom_by_id(&roms, id);
     if (!r) {
-        LOGE("Invalid ROM ID: %s", id);
+        LOGE("Invalid ROM ID: {}", id);
         return false;
     }
 
@@ -55,24 +55,24 @@ static bool choose_or_set_rom(const std::string &id,
                 .append("boot.img");
 
     if (!util::mkdir_parent(bootimg_path, 0775)) {
-        LOGE("Failed to create parent directory of %s", bootimg_path);
+        LOGE("Failed to create parent directory of {}", bootimg_path);
         return false;
     }
 
     if (!util::copy_contents(choose ? bootimg_path : boot_blockdev,
                              choose ? boot_blockdev : bootimg_path)) {
-        LOGE("Failed to write %s", choose ? boot_blockdev : bootimg_path);
+        LOGE("Failed to write {}", choose ? boot_blockdev : bootimg_path);
         return false;
     }
 
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
                      util::MB_CHOWN_RECURSIVE)) {
-        LOGE("Failed to chown %s", MULTIBOOT_DIR);
+        LOGE("Failed to chown {}", MULTIBOOT_DIR);
         return false;
     }
 
     if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
-        LOGE("Failed to chmod %s", MULTIBOOT_DIR);
+        LOGE("Failed to chmod {}", MULTIBOOT_DIR);
         return false;
     }
 
@@ -95,7 +95,7 @@ bool action_reboot(const std::string &reboot_arg)
     value.append(reboot_arg);
 
     if (value.size() >= MB_PROP_VALUE_MAX - 1) {
-        LOGE("Reboot argument %zu bytes too long",
+        LOGE("Reboot argument {:d} bytes too long",
              value.size() + 1 - MB_PROP_VALUE_MAX);
         return false;
     }

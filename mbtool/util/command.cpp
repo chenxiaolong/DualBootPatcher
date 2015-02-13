@@ -104,11 +104,11 @@ int run_command_chroot(const std::string &dir,
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             if (chdir(dir.c_str()) < 0) {
-                LOGE("%s: Failed to chdir: %s", dir, strerror(errno));
+                LOGE("{}; Failed to chdir: {}", dir, strerror(errno));
                 exit(EXIT_FAILURE);
             }
             if (chroot(dir.c_str()) < 0) {
-                LOGE("%s: Failed to chroot: %s", dir, strerror(errno));
+                LOGE("{}: Failed to chroot: {}", dir, strerror(errno));
                 exit(EXIT_FAILURE);
             }
 

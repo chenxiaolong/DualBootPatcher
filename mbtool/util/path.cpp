@@ -34,7 +34,7 @@ std::string get_cwd()
     char *cwd = NULL;
 
     if (!(cwd = getcwd(NULL, 0))) {
-        LOGE("Failed to get cwd: %s", strerror(errno));
+        LOGE("Failed to get cwd: {}", strerror(errno));
         return std::string();
     }
 

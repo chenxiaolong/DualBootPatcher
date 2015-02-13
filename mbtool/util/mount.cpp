@@ -74,17 +74,17 @@ bool unmount_all(const std::string &dir)
 
         file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
         if (!fp) {
-            LOGE("Failed to read /proc/mounts: %s", strerror(errno));
+            LOGE("Failed to read /proc/mounts: {}", strerror(errno));
             return false;
         }
 
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
             if (starts_with(ent.mnt_dir, dir)) {
-                //LOGD("Attempting to unmount %s", ent.mnt_dir);
+                //LOGD("Attempting to unmount {}", ent.mnt_dir);
 
                 if (umount(ent.mnt_dir) < 0) {
-                    LOGE("Failed to unmount %s: %s",
-                          ent.mnt_dir, strerror(errno));
+                    LOGE("Failed to unmount {}: {}",
+                         ent.mnt_dir, strerror(errno));
                     ++failed;
                 }
             }
@@ -97,7 +97,7 @@ bool unmount_all(const std::string &dir)
         // Retry
     }
 
-    LOGE("Failed to unmount %d partitions", failed);
+    LOGE("Failed to unmount {} partitions", failed);
     return false;
 }
 
@@ -108,28 +108,28 @@ bool bind_mount(const std::string &source, mode_t source_perms,
 
     if (stat(source.c_str(), &sb) < 0
             && !mkdir_recursive(source, source_perms)) {
-        LOGE("Failed to create %s", source);
+        LOGE("Failed to create {}", source);
         return false;
     }
 
     if (stat(target.c_str(), &sb) < 0
             && !mkdir_recursive(target, target_perms)) {
-        LOGE("Failed to create %s", target);
+        LOGE("Failed to create {}", target);
         return false;
     }
 
     if (chmod(source.c_str(), source_perms) < 0) {
-        LOGE("Failed to chmod %s", source);
+        LOGE("Failed to chmod {}", source);
         return false;
     }
 
     if (chmod(target.c_str(), target_perms) < 0) {
-        LOGE("Failed to chmod %s", target);
+        LOGE("Failed to chmod {}", target);
         return false;
     }
 
     if (mount(source.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
-        LOGE("Failed to bind mount %s to %s: %s",
+        LOGE("Failed to bind mount {} to {}: {}",
              source, target, strerror(errno));
         return false;
     }

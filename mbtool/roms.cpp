@@ -23,6 +23,8 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#include <cppformat/format.h>
+
 #include "util/logging.h"
 
 #define SYSTEM "/system"
@@ -67,23 +69,20 @@ bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms)
     roms->push_back(std::move(dual));
 
     // Multislots
-    char id[20] = { 0 };
     for (int i = 1; i <= 3; ++i) {
-        snprintf(id, 20, "multi-slot-%d", i);
-
         std::shared_ptr<Rom> multislot(new Rom());
-        multislot->id = id;
+        multislot->id = fmt::format("multi-slot-{:d}", i);
         multislot->system_path.append(CACHE).append("/")
                               .append("multiboot").append("/")
-                              .append(id).append("/")
+                              .append(multislot->id).append("/")
                               .append("system");
         multislot->cache_path.append(SYSTEM).append("/")
                              .append("multiboot").append("/")
-                             .append(id).append("/")
+                             .append(multislot->id).append("/")
                              .append("cache");
         multislot->data_path.append(DATA).append("/")
                             .append("multiboot").append("/")
-                            .append(id).append("/")
+                            .append(multislot->id).append("/")
                             .append("data");
         roms->push_back(multislot);
     }

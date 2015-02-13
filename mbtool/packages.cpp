@@ -111,7 +111,7 @@ bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
 
     xmlDoc *doc = xmlReadFile(path.c_str(), NULL, 0);
     if (!doc) {
-        LOGE("Failed to parse XML file: %s", path);
+        LOGE("Failed to parse XML file: {}", path);
         return false;
     }
 
@@ -125,7 +125,7 @@ bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
         if (xmlStrcmp(cur_node->name, TAG_PACKAGES) == 0) {
             parse_tag_packages(cur_node, pkgs);
         } else {
-            LOGW("Unrecognized root tag: %s", cur_node->name);
+            LOGW("Unrecognized root tag: {}", cur_node->name);
         }
     }
 
@@ -147,29 +147,29 @@ static char * time_to_string(unsigned long long time)
     return buf;
 }
 
-#define DUMP_FLAG(f) LOGD("-                      %s (0x%d)", #f, f);
+#define DUMP_FLAG(f) LOGD("-                      {} ({:#x})", #f, f);
 
 static void package_dump(const std::shared_ptr<Package> &pkg)
 {
     LOGD("Package:");
     if (!pkg->name.empty())
-        LOGD("- Name:                %s", pkg->name);
+        LOGD("- Name:                {}", pkg->name);
     if (!pkg->real_name.empty())
-        LOGD("- Real name:           %s", pkg->real_name);
+        LOGD("- Real name:           {}", pkg->real_name);
     if (!pkg->code_path.empty())
-        LOGD("- Code path:           %s", pkg->code_path);
+        LOGD("- Code path:           {}", pkg->code_path);
     if (!pkg->resource_path.empty())
-        LOGD("- Resource path:       %s", pkg->resource_path);
+        LOGD("- Resource path:       {}", pkg->resource_path);
     if (!pkg->native_library_path.empty())
-        LOGD("- Native library path: %s", pkg->native_library_path);
+        LOGD("- Native library path: {}", pkg->native_library_path);
     if (!pkg->primary_cpu_abi.empty())
-        LOGD("- Primary CPU ABI:     %s", pkg->primary_cpu_abi);
+        LOGD("- Primary CPU ABI:     {}", pkg->primary_cpu_abi);
     if (!pkg->secondary_cpu_abi.empty())
-        LOGD("- Secondary CPU ABI:   %s", pkg->secondary_cpu_abi);
+        LOGD("- Secondary CPU ABI:   {}", pkg->secondary_cpu_abi);
     if (!pkg->cpu_abi_override.empty())
-        LOGD("- CPU ABI override:    %s", pkg->cpu_abi_override);
+        LOGD("- CPU ABI override:    {}", pkg->cpu_abi_override);
 
-    LOGD("- Flags:               0x%x", pkg->pkg_flags);
+    LOGD("- Flags:               {:#x}", pkg->pkg_flags);
     if (pkg->pkg_flags & Package::FLAG_SYSTEM)
         DUMP_FLAG(Package::FLAG_SYSTEM);
     if (pkg->pkg_flags & Package::FLAG_DEBUGGABLE)
@@ -236,26 +236,26 @@ static void package_dump(const std::shared_ptr<Package> &pkg)
         DUMP_FLAG(Package::FLAG_MULTIARCH);
 
     if (pkg->timestamp > 0)
-        LOGD("- Timestamp:           %s", time_to_string(pkg->timestamp));
+        LOGD("- Timestamp:           {}", time_to_string(pkg->timestamp));
     if (pkg->first_install_time > 0)
-        LOGD("- First install time:  %s", time_to_string(pkg->first_install_time));
+        LOGD("- First install time:  {}", time_to_string(pkg->first_install_time));
     if (pkg->last_update_time > 0)
-        LOGD("- Last update time:    %s", time_to_string(pkg->last_update_time));
+        LOGD("- Last update time:    {}", time_to_string(pkg->last_update_time));
 
-    LOGD("- Version:             %d", pkg->version);
+    LOGD("- Version:             {}", pkg->version);
 
     if (pkg->is_shared_user) {
-        LOGD("- Shared user ID:      %d", pkg->shared_user_id);
+        LOGD("- Shared user ID:      {}", pkg->shared_user_id);
     } else {
-        LOGD("- User ID:             %d", pkg->user_id);
+        LOGD("- User ID:             {}", pkg->user_id);
     }
 
     if (!pkg->uid_error.empty())
-        LOGD("- UID error:           %s", pkg->uid_error);
+        LOGD("- UID error:           {}", pkg->uid_error);
     if (!pkg->install_status.empty())
-        LOGD("- Install status:      %s", pkg->install_status);
+        LOGD("- Install status:      {}", pkg->install_status);
     if (!pkg->installer.empty())
-        LOGD("- Installer:           %s", pkg->installer);
+        LOGD("- Installer:           {}", pkg->installer);
 }
 
 #endif
@@ -311,7 +311,7 @@ static bool parse_tag_package(xmlNode *node,
         } else if (xmlStrcmp(name, ATTR_VERSION) == 0) {
             pkg->version = strtol(TO_CHAR value, NULL, 10);
         } else {
-            LOGW("Unrecognized attribute '%s' in <%s>", name, TAG_PACKAGE);
+            LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_PACKAGE);
         }
 
         xmlFree(value);
@@ -323,7 +323,7 @@ static bool parse_tag_package(xmlNode *node,
         }
 
         if (xmlStrcmp(cur_node->name, TAG_PACKAGE) == 0) {
-            LOGW("Nested <%s> is not allowed", TAG_PACKAGE);
+            LOGW("Nested <{}> is not allowed", TAG_PACKAGE);
         } else if (xmlStrcmp(cur_node->name, TAG_DEFINED_KEYSET) == 0
                 || xmlStrcmp(cur_node->name, TAG_PERMS) == 0
                 || xmlStrcmp(cur_node->name, TAG_PROPER_SIGNING_KEYSET) == 0
@@ -332,7 +332,7 @@ static bool parse_tag_package(xmlNode *node,
                 || xmlStrcmp(cur_node->name, TAG_UPGRADE_KEYSET) == 0) {
             // Ignore
         } else {
-            LOGW("Unrecognized <%s> within <%s>", cur_node->name, TAG_PACKAGE);
+            LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_PACKAGE);
         }
     }
 
@@ -356,7 +356,7 @@ static bool parse_tag_packages(xmlNode *node,
         }
 
         if (xmlStrcmp(cur_node->name, TAG_PACKAGES) == 0) {
-            LOGW("Nested <%s> is not allowed", TAG_PACKAGES);
+            LOGW("Nested <{}> is not allowed", TAG_PACKAGES);
         } else if (xmlStrcmp(cur_node->name, TAG_PACKAGE) == 0) {
             parse_tag_package(cur_node, pkgs);
         } else if (xmlStrcmp(cur_node->name, TAG_DATABASE_VERSION) == 0
@@ -369,7 +369,7 @@ static bool parse_tag_packages(xmlNode *node,
                 || xmlStrcmp(cur_node->name, TAG_UPDATED_PACKAGE) == 0) {
             // Ignore
         } else {
-            LOGW("Unrecognized <%s> within <%s>", cur_node->name, TAG_PACKAGES);
+            LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_PACKAGES);
         }
     }
 
