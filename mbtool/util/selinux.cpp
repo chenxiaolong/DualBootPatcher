@@ -212,7 +212,7 @@ bool selinux_add_rule(policydb_t *pdb,
 
     if (!av) {
         avtab_datum_t av_new;
-        av_new.data |= 1U << (perm->s.value - 1);
+        av_new.data = 1U << (perm->s.value - 1);
         if (avtab_insert(&pdb->te_avtab, &key, &av_new) != 0) {
             LOGE("Failed to add rule to avtab");
             return false;
