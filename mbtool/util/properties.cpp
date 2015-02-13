@@ -80,8 +80,9 @@ void get_property(const std::string &name,
         return;
     }
 
-    int (*__system_property_get)(const char *, char *) =
-            dlsym(handle, "__system_property_get");
+    auto __system_property_get =
+            reinterpret_cast<int (*)(const char *, char *)>(
+                    dlsym(handle, "__system_property_get"));
 #endif
 
     std::vector<char> value(MB_PROP_VALUE_MAX);
@@ -110,8 +111,9 @@ bool set_property(const std::string &name,
         return false;
     }
 
-    int (*__system_property_set)(const char *, const char *) =
-            dlsym(handle, "__system_property_set");
+    auto __system_property_set =
+            reinterpret_cast<int (*)(const char *, const char *)>(
+                    dlsym(handle, "__system_property_set"));
 #endif
 
     if (name.size() >= MB_PROP_NAME_MAX - 1) {
