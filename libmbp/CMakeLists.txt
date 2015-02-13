@@ -9,6 +9,9 @@ include_directories(${MBP_ZLIB_INCLUDES})
 include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
+include_directories(${CMAKE_SOURCE_DIR}/external)
+include_directories(${CMAKE_SOURCE_DIR}/external/spdlog/include)
+
 set(MBP_SOURCES
     bootimage.cpp
     cpiofile.cpp
@@ -18,6 +21,7 @@ set(MBP_SOURCES
     patchererror.cpp
     patchinfo.cpp
     private/fileutils.cpp
+    private/logging.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
@@ -48,6 +52,7 @@ set(MBP_SOURCES
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
+    ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
 )
 
 set(MBP_HEADERS
@@ -195,6 +200,7 @@ set(MBP_MINI_SOURCES
     patchererror.cpp
     #patchinfo.cpp
     private/fileutils.cpp
+    private/logging.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
@@ -204,6 +210,7 @@ set(MBP_MINI_SOURCES
     #cwrapper/cpatchinfo.cpp
     cwrapper/cstringmap.cpp
     cwrapper/private/util.cpp
+    ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
 )
 
 # Wordaround semicolon separated list issue

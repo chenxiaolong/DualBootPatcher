@@ -24,7 +24,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/format.hpp>
+
+#include <cppformat/format.h>
 
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 #include "private/logging.h"
@@ -121,12 +122,12 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
         }
 
         if (!hasCacheLine) {
-            std::string cacheLine = "%1% /cache ext4 %2% %3%";
+            std::string cacheLine = "{1} /cache ext4 {2} {3}";
             std::string mountArgs = "nosuid,nodev,barrier=1";
             std::string voldArgs = "wait,check";
 
-            lines.push_back((boost::format(cacheLine) % CachePartition
-                             % mountArgs % voldArgs).str());
+            lines.push_back(fmt::format(
+                    cacheLine, CachePartition, mountArgs, voldArgs));
         }
 
         strContents = boost::join(lines, "\n");
@@ -219,8 +220,7 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
                 index = it2 - fstabs.begin();
             }
 
-            std::string serviceName =
-                    (boost::format("mbtool-mount-%03d") % index).str();
+            std::string serviceName = fmt::format("mbtool-mount-{:03d}", index);
 
             // Start mounting service
             it = lines.insert(it, spaces + "start " + serviceName);
@@ -234,11 +234,10 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
     }
 
     for (unsigned int i = 0; i < fstabs.size(); ++i) {
-        std::string serviceName =
-                (boost::format("mbtool-mount-%03d") % i).str();
+        std::string serviceName = fmt::format("mbtool-mount-{:03d}", i);
 
-        lines.push_back((boost::format("service %s /mbtool mount_fstab %s")
-                % serviceName % fstabs[i]).str());
+        lines.push_back(fmt::format(
+                "service {} /mbtool mount_fstab {}", serviceName, fstabs[i]));
         lines.push_back("    class core");
         lines.push_back("    critical");
         lines.push_back("    oneshot");

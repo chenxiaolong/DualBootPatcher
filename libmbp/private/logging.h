@@ -19,115 +19,26 @@
 
 #pragma once
 
-#include <cassert>
-
-#include <string>
-#include <vector>
-
-#include <boost/format.hpp>
-
-
 #if defined(ANDROID) && !defined(LIBMBP_MINI)
-#  include <android/log.h>
-#  define LOG_TAG "libmbp"
-#else
-#  include <cstdio>
+#define USE_ANDROID_LOG
 #endif
 
-#define LOGD(...) Log::log(Log::Debug, __VA_ARGS__)
-#define LOGV(...) Log::log(Log::Verbose, __VA_ARGS__)
-#define LOGI(...) Log::log(Log::Info, __VA_ARGS__)
-#define LOGW(...) Log::log(Log::Warning, __VA_ARGS__)
-#define LOGE(...) Log::log(Log::Error, __VA_ARGS__)
+#include <spdlog/spdlog.h>
 
+#define LOGE(...) logger()->error(__VA_ARGS__)
+#define LOGW(...) logger()->warn(__VA_ARGS__)
+#define LOGI(...) logger()->info(__VA_ARGS__)
+#define LOGD(...) logger()->debug(__VA_ARGS__)
+#define LOGV(...) logger()->info(__VA_ARGS__)
 
-/*!
-    \class Log
-    \brief A very basic logger
- */
-class Log
-{
-public:
-    enum LogLevel {
-        Debug,
-        Verbose,
-        Info,
-        Warning,
-        Error
-    };
-
-    static void log(LogLevel level, const boost::format &fmt)
-    {
-#if defined(ANDROID) && !defined(LIBMBP_MINI)
-        android_LogPriority priority = ANDROID_LOG_DEBUG;
-
-        switch (level) {
-        case Debug:
-            priority = ANDROID_LOG_DEBUG;
-            break;
-        case Verbose:
-            priority = ANDROID_LOG_VERBOSE;
-            break;
-        case Info:
-            priority = ANDROID_LOG_INFO;
-            break;
-        case Warning:
-            priority = ANDROID_LOG_WARN;
-            break;
-        case Error:
-            priority = ANDROID_LOG_ERROR;
-            break;
-        default:
-            assert(false);
-        }
-
-        __android_log_print(priority, LOG_TAG, "%s", fmt.str().c_str());
-#else
-        switch (level) {
-        case Debug:
-            std::fprintf(stderr, "[Debug]: %s\n", fmt.str().c_str());
-            break;
-        case Verbose:
-            std::fprintf(stderr, "[Verbose]: %s\n", fmt.str().c_str());
-            break;
-        case Info:
-            std::fprintf(stderr, "[Info]: %s\n", fmt.str().c_str());
-            break;
-        case Warning:
-            std::fprintf(stderr, "[Warning]: %s\n", fmt.str().c_str());
-            break;
-        case Error:
-            std::fprintf(stderr, "[Error]: %s\n", fmt.str().c_str());
-            break;
-        default:
-            assert(false);
-        }
+enum class LogTarget {
+    DEFAULT,
+#ifdef USE_ANDROID_LOG
+    LOGCAT,
 #endif
-    }
-
-    static void log(LogLevel level, const std::string &str)
-    {
-        log(level, boost::format(str));
-    }
-
-    // Thanks to jxh at http://stackoverflow.com/questions/18347957/a-convenient-logging-statement-for-c-using-boostformat
-    // for the variadic template boost::format wrappers!
-
-    template <typename T, typename... Params>
-    static void log(LogLevel level, boost::format &fmt, T arg, Params... params)
-    {
-        log(level, fmt % arg, params...);
-    }
-
-    template <typename... Params>
-    static void log(LogLevel level, const std::string &fmt, Params... params)
-    {
-        boost::format boostFmt(fmt);
-        log(level, boostFmt, params...);
-    }
-
-private:
-    Log() = delete;
-    Log(const Log &) = delete;
-    Log(Log &&) = delete;
+    STDOUT,
+    STDERR
 };
+
+void log_set_target(LogTarget target);
+std::shared_ptr<spdlog::logger> logger();

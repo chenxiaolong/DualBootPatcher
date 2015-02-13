@@ -137,7 +137,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
     int ret = archive_read_open_memory(a,
             const_cast<unsigned char *>(data.data()), data.size());
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: %s", archive_error_string(a));
+        LOGW("libarchive: {}", archive_error_string(a));
         archive_read_free(a);
 
         m_impl->error = PatcherError::createArchiveError(
@@ -163,7 +163,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
         }
 
         if (r < ARCHIVE_WARN) {
-            LOGW("libarchive: %s", archive_error_string(a));
+            LOGW("libarchive: {}", archive_error_string(a));
 
             m_impl->error = PatcherError::createArchiveError(
                     MBP::ErrorCode::ArchiveReadDataError,
@@ -179,7 +179,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
     }
 
     if (ret < ARCHIVE_WARN) {
-        LOGW("libarchive: %s", archive_error_string(a));
+        LOGW("libarchive: {}", archive_error_string(a));
         archive_read_free(a);
 
         m_impl->error = PatcherError::createArchiveError(
@@ -189,7 +189,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
 
     ret = archive_read_free(a);
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: %s", archive_error_string(a));
+        LOGW("libarchive: {}", archive_error_string(a));
 
         m_impl->error = PatcherError::createArchiveError(
                 MBP::ErrorCode::ArchiveFreeError, std::string());
@@ -263,7 +263,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
                                  &archiveWriteCallback,
                                  &archiveCloseCallback);
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: %s", archive_error_string(a));
+        LOGW("libarchive: {}", archive_error_string(a));
         archive_write_fail(a);
         archive_write_free(a);
 
@@ -274,7 +274,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
 
     for (auto const &p : m_impl->files) {
         if (archive_write_header(a, p.first) != ARCHIVE_OK) {
-            LOGW("libarchive: %s : %s",
+            LOGW("libarchive: {} : {}",
                  archive_error_string(a),
                  archive_entry_pathname(p.first));
 
@@ -302,7 +302,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
     ret = archive_write_close(a);
 
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: %s", archive_error_string(a));
+        LOGW("libarchive: {}", archive_error_string(a));
         archive_write_fail(a);
         archive_write_free(a);
 

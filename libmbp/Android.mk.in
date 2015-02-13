@@ -8,6 +8,8 @@ BOOST_DIR := $(THIRD_PARTY)/android/boost
 LIBXML2_DIR := $(THIRD_PARTY)/android/libxml2
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
+TOP_DIR := @CMAKE_SOURCE_DIR@
+EXTERNAL_DIR := $(TOP_DIR)/external
 
 
 include $(CLEAR_VARS)
@@ -59,7 +61,9 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_C_INCLUDES := \
 	$(BOOST_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
-	$(LIBARCHIVE_DIR)/include
+	$(LIBARCHIVE_DIR)/include \
+	$(EXTERNAL_DIR) \
+	$(EXTERNAL_DIR)/spdlog/include
 
 #LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
 LOCAL_CFLAGS := -Wall -Wextra -pedantic

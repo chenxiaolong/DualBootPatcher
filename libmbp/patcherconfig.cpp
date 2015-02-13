@@ -771,7 +771,7 @@ bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
             info->setId(pathId);
             patchInfos.push_back(info);
         } else {
-            LOGW("Unknown tag: %s", (char *) curNode->name);
+            LOGW("Unknown tag: {}", (char *) curNode->name);
         }
     }
 
@@ -820,7 +820,7 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::Default);
         } else {
-            LOGW("Unrecognized tag within <patchinfo>: %s",
+            LOGW("Unrecognized tag within <patchinfo>: {}",
                  (char *) curNode->name);
         }
     }
@@ -860,7 +860,7 @@ void PatcherConfig::Impl::parsePatchInfoTagMatches(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, regex);
         } else {
-            LOGW("Unrecognized tag within <matches>: %s",
+            LOGW("Unrecognized tag within <matches>: {}",
                  (char *) curNode->name);
         }
     }
@@ -889,7 +889,7 @@ void PatcherConfig::Impl::parsePatchInfoTagNotMatched(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info, PatchInfo::NotMatched);
         } else {
-            LOGW("Unrecognized tag within <not-matched>: %s",
+            LOGW("Unrecognized tag within <not-matched>: {}",
                  (char *) curNode->name);
         }
     }
@@ -980,7 +980,7 @@ void PatcherConfig::Impl::parsePatchInfoTagRegexes(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagExcludeRegex) == 0) {
             parsePatchInfoTagExcludeRegex(curNode, info);
         } else {
-            LOGW("Unrecognized tag within <regexes>: %s",
+            LOGW("Unrecognized tag within <regexes>: {}",
                  (char *) curNode->name);
         }
     }
@@ -1004,7 +1004,7 @@ void PatcherConfig::Impl::parsePatchInfoTagHasBootImage(xmlNode *node,
         } else if (xmlStrcmp(curNode->content, XmlTextFalse) == 0) {
             info->setHasBootImage(type, false);
         } else {
-            LOGW("Unknown value for <has-boot-image>: %s",
+            LOGW("Unknown value for <has-boot-image>: {}",
                  (char *) curNode->content);
         }
     }
@@ -1055,7 +1055,7 @@ void PatcherConfig::Impl::parsePatchInfoTagAutopatchers(xmlNode *node,
         } else if (xmlStrcmp(curNode->name, PatchInfoTagAutopatcher) == 0) {
             parsePatchInfoTagAutopatcher(curNode, info, type);
         } else {
-            LOGW("Unrecognized tag within <autopatchers>: %s",
+            LOGW("Unrecognized tag within <autopatchers>: {}",
                  (char *) curNode->name);
         }
     }
@@ -1112,7 +1112,7 @@ void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(xmlNode *node,
         } else if (xmlStrcmp(curNode->content, XmlTextFalse) == 0) {
             info->setDeviceCheck(type, false);
         } else {
-            LOGW("Unknown value for <device-check>: %s",
+            LOGW("Unknown value for <device-check>: {}",
                  (char *) curNode->content);
         }
     }
