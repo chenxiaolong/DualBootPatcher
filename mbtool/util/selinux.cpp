@@ -29,6 +29,7 @@
 
 #include <sepol/sepol.h>
 
+#include "util/finally.h"
 #include "util/logging.h"
 
 
@@ -43,7 +44,6 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
     struct stat sb;
     void *map;
     int fd;
-    int ret;
 
     fd = open(path.c_str(), O_RDONLY);
     if (fd < 0) {
@@ -51,31 +51,35 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
         return false;
     }
 
+    auto close_fd = finally([&] {
+        close(fd);
+    });
+
     if (fstat(fd, &sb) < 0) {
         LOGE("Failed to stat %s: %s", path, strerror(errno));
-        close(fd);
         return false;
     }
 
     map = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
         LOGE("Failed to mmap %s: %s", path, strerror(errno));
-        close(fd);
         return false;
     }
+
+    auto unmap_map = finally([&] {
+        munmap(map, sb.st_size);
+    });
 
     policy_file_init(&pf);
     pf.type = PF_USE_MEMORY;
     pf.data = (char *) map;
     pf.len = sb.st_size;
 
-    ret = policydb_read(pdb, &pf, 0);
+    auto destroy_pf = finally([&] {
+        sepol_handle_destroy(pf.handle);
+    });
 
-    sepol_handle_destroy(pf.handle);
-    munmap(map, sb.st_size);
-    close(fd);
-
-    return ret == 0 ? true : false;
+    return policydb_read(pdb, &pf, 0) == 0;
 }
 
 // /sys/fs/selinux/load requires the entire policy to be written in a single
@@ -92,31 +96,33 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
     handle = sepol_handle_create();
     sepol_msg_set_callback(handle, NULL, NULL);
 
+    auto destroy_handle = finally([&] {
+        sepol_handle_destroy(handle);
+    });
+
     if (policydb_to_image(handle, pdb, &data, &len) < 0) {
         LOGE("Failed to write policydb to memory");
-        sepol_handle_destroy(handle);
         return false;
     }
+
+    auto free_data = finally([&] {
+        free(data);
+    });
 
     fd = open(path.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
     if (fd < 0) {
         LOGE("Failed to open %s: %s", path, strerror(errno));
-        sepol_handle_destroy(handle);
-        free(data);
         return false;
     }
+
+    auto close_fd = finally([&] {
+        close(fd);
+    });
 
     if (write(fd, data, len) < 0) {
         LOGE("Failed to write to %s: %s", path, strerror(errno));
-        sepol_handle_destroy(handle);
-        close(fd);
-        free(data);
         return false;
     }
-
-    sepol_handle_destroy(handle);
-    close(fd);
-    free(data);
 
     return true;
 }
@@ -205,23 +211,15 @@ bool selinux_add_rule(policydb_t *pdb,
     av = avtab_search(&pdb->te_avtab, &key);
 
     if (!av) {
-        av = (avtab_datum_t *) malloc(sizeof(av));
-        if (!av) {
-            LOGE("Out of memory");
-            return false;
-        }
-
-        av->data |= 1U << (perm->s.value - 1);
-        if (avtab_insert(&pdb->te_avtab, &key, av) != 0) {
-            free(av);
+        avtab_datum_t av_new;
+        av_new.data |= 1U << (perm->s.value - 1);
+        if (avtab_insert(&pdb->te_avtab, &key, &av_new) != 0) {
             LOGE("Failed to add rule to avtab");
             return false;
         }
-
-        free(av);
+    } else {
+        av->data |= 1U << (perm->s.value - 1);
     }
-
-    av->data |= 1U << (perm->s.value - 1);
 
     LOGD("Added rule: \"allow %s %s:%s %s;\"",
          source_str, target_str, class_str, perm_str);
