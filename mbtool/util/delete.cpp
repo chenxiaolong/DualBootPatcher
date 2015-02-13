@@ -82,6 +82,12 @@ private:
 
 bool delete_recursive(const std::string &path)
 {
+    struct stat sb;
+    if (stat(path.c_str(), &sb) < 0 && errno == ENOENT) {
+        // Don't fail if directory does not exist
+        return true;
+    }
+
     RecursiveDeleter deleter(path);
     return deleter.run();
 }
