@@ -35,6 +35,7 @@
 
 #include <libmbp/bootimage.h>
 #include <libmbp/device.h>
+#include <libmbp/logging.h>
 #include <libmbp/patcherconfig.h>
 
 extern "C" {
@@ -1393,6 +1394,27 @@ static bool update_binary(void)
     return true;
 }
 
+static void mbp_log_cb(MBP::LogLevel prio, const std::string &msg)
+{
+    switch (prio) {
+    case MBP::LogLevel::Debug:
+        LOGD("{}", msg);
+        break;
+    case MBP::LogLevel::Error:
+        LOGE("{}", msg);
+        break;
+    case MBP::LogLevel::Info:
+        LOGI("{}", msg);
+        break;
+    case MBP::LogLevel::Verbose:
+        LOGV("{}", msg);
+        break;
+    case MBP::LogLevel::Warning:
+        LOGW("{}", msg);
+        break;
+    }
+}
+
 static void update_binary_usage(int error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -1450,6 +1472,8 @@ int update_binary_main(int argc, char *argv[])
 
     // stdout is messed up when it's appended to /tmp/recovery.log
     util::log_set_target(util::LogTarget::STDERR);
+
+    MBP::setLogCallback(mbp_log_cb);
 
     return update_binary() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
