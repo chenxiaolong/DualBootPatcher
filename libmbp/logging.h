@@ -17,26 +17,23 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "private/logging.h"
+#pragma once
 
-#include <unordered_map>
+#include <string>
 
-#define LOG_TAG "libmbp"
-
-static MBP::LogFunction logger = nullptr;
-
-namespace MBP {
-
-void setLogCallback(LogFunction cb)
+namespace MBP
 {
-    logger = cb;
-}
 
-}
+enum class LogLevel : int {
+    Debug,
+    Verbose,
+    Info,
+    Warning,
+    Error
+};
 
-void log(MBP::LogLevel level, const std::string &str)
-{
-    if (logger) {
-        logger(level, str);
-    }
+typedef void (*LogFunction)(LogLevel, const std::string &);
+
+void setLogCallback(LogFunction cb);
+
 }

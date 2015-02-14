@@ -106,7 +106,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
             // Skip files containing escaped characters
             if (file.find("\\") != std::string::npos) {
-                LOGW("Skipping file with escaped characters in filename: {}", file);
+                FLOGW("Skipping file with escaped characters in filename: {}", file);
                 continue;
             }
 
@@ -116,7 +116,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
                 file.erase(file.begin(), file.begin() + it + 1);
             }
 
-            LOGD("Found file in patch: {}", file);
+            FLOGD("Found file in patch: {}", file);
 
             m_impl->files.push_back(file);
         }
@@ -181,7 +181,7 @@ bool PatchFilePatcher::patchFiles(const std::string &directory)
 
     boost::split(lines, output, boost::is_any_of("\n"));
     for (auto &line : lines) {
-        LOGE("patch output: {}", line);
+        FLOGE("patch output: {}", line);
     }
 
     if (error) {

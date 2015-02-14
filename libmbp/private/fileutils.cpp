@@ -214,7 +214,7 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
 
     // Write header to new file
     if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-        LOGW("libarchive: {}", archive_error_string(aOutput));
+        FLOGW("libarchive: {}", archive_error_string(aOutput));
 
         archive_entry_free(entry);
 
@@ -294,7 +294,7 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
 
     // Write header to new file
     if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-        LOGW("libarchive: {}", archive_error_string(aOutput));
+        FLOGW("libarchive: {}", archive_error_string(aOutput));
         archive_entry_free(entry);
 
         return PatcherError::createArchiveError(
@@ -350,7 +350,7 @@ PatcherError FileUtils::laCountFiles(const std::string &path,
 
     int ret = archive_read_open_filename(aInput, path.c_str(), 10240);
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: {}", archive_error_string(aInput));
+        FLOGW("libarchive: {}", archive_error_string(aInput));
         archive_read_free(aInput);
 
         return PatcherError::createArchiveError(

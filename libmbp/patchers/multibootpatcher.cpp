@@ -539,7 +539,7 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             std::vector<unsigned char> data;
 
             if (!FileUtils::laReadToByteArray(aInput, entry, &data)) {
-                LOGW("libarchive: {}", archive_error_string(aInput));
+                FLOGW("libarchive: {}", archive_error_string(aInput));
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveReadDataError, curFile);
                 return false;
@@ -559,7 +559,7 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
 
             // Write header to new file
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                LOGW("libarchive: {}", archive_error_string(aOutput));
+                FLOGW("libarchive: {}", archive_error_string(aOutput));
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
                 return false;
@@ -577,14 +577,14 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             }
 
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
-                LOGW("libarchive: {}", archive_error_string(aOutput));
+                FLOGW("libarchive: {}", archive_error_string(aOutput));
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
             if (!FileUtils::laCopyData(aInput, aOutput)) {
-                LOGW("libarchive: {}", archive_error_string(aInput));
+                FLOGW("libarchive: {}", archive_error_string(aInput));
                 error = PatcherError::createArchiveError(
                         MBP::ErrorCode::ArchiveWriteDataError, curFile);
                 return false;
@@ -659,7 +659,7 @@ bool MultiBootPatcher::Impl::openInputArchive()
     int ret = archive_read_open_filename(
             aInput, info->filename().c_str(), 10240);
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: {}", archive_error_string(aInput));
+        FLOGW("libarchive: {}", archive_error_string(aInput));
         archive_read_free(aInput);
         aInput = nullptr;
 
@@ -691,7 +691,7 @@ bool MultiBootPatcher::Impl::openOutputArchive()
     const std::string newPath = m_parent->newFilePath();
     int ret = archive_write_open_filename(aOutput, newPath.c_str());
     if (ret != ARCHIVE_OK) {
-        LOGW("libarchive: {}", archive_error_string(aOutput));
+        FLOGW("libarchive: {}", archive_error_string(aOutput));
         archive_write_free(aOutput);
         aOutput = nullptr;
 

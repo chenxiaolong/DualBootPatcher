@@ -10,7 +10,6 @@ include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
-include_directories(${CMAKE_SOURCE_DIR}/external/spdlog/include)
 
 set(MBP_SOURCES
     bootimage.cpp
@@ -61,6 +60,7 @@ set(MBP_HEADERS
     device.h
     fileinfo.h
     libmbp_global.h
+    logging.h
     patcherconfig.h
     patchererror.h
     patcherinterface.h

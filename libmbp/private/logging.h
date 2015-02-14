@@ -19,26 +19,22 @@
 
 #pragma once
 
-#if defined(ANDROID) && !defined(LIBMBP_MINI)
-#define USE_ANDROID_LOG
-#endif
+#include <memory>
 
-#include <spdlog/spdlog.h>
+#include <cppformat/format.h>
 
-#define LOGE(...) logger()->error(__VA_ARGS__)
-#define LOGW(...) logger()->warn(__VA_ARGS__)
-#define LOGI(...) logger()->info(__VA_ARGS__)
-#define LOGD(...) logger()->debug(__VA_ARGS__)
-#define LOGV(...) logger()->info(__VA_ARGS__)
+#include "../logging.h"
 
-enum class LogTarget {
-    DEFAULT,
-#ifdef USE_ANDROID_LOG
-    LOGCAT,
-#endif
-    STDOUT,
-    STDERR
-};
 
-void log_set_target(LogTarget target);
-std::shared_ptr<spdlog::logger> logger();
+#define LOGE(str) log(MBP::LogLevel::Error, str)
+#define LOGW(str) log(MBP::LogLevel::Warning, str)
+#define LOGI(str) log(MBP::LogLevel::Info, str)
+#define LOGD(str) log(MBP::LogLevel::Debug, str)
+#define LOGV(str) log(MBP::LogLevel::Verbose, str)
+#define FLOGE(...) log(MBP::LogLevel::Error, fmt::format(__VA_ARGS__))
+#define FLOGW(...) log(MBP::LogLevel::Warning, fmt::format(__VA_ARGS__))
+#define FLOGI(...) log(MBP::LogLevel::Info, fmt::format(__VA_ARGS__))
+#define FLOGD(...) log(MBP::LogLevel::Debug, fmt::format(__VA_ARGS__))
+#define FLOGV(...) log(MBP::LogLevel::Verbose, fmt::format(__VA_ARGS__))
+
+void log(MBP::LogLevel level, const std::string &str);

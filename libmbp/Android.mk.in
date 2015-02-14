@@ -62,8 +62,7 @@ LOCAL_C_INCLUDES := \
 	$(BOOST_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
 	$(LIBARCHIVE_DIR)/include \
-	$(EXTERNAL_DIR) \
-	$(EXTERNAL_DIR)/spdlog/include
+	$(EXTERNAL_DIR)
 
 #LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
 LOCAL_CFLAGS := -Wall -Wextra -pedantic
@@ -90,7 +89,6 @@ ifneq ($(MBP_MINI),true)
 LOCAL_LDFLAGS := -Wl,--gc-sections -Os
 
 LOCAL_LDLIBS := -lz
-LOCAL_LDLIBS += -llog
 endif
 
 LOCAL_STATIC_LIBRARIES := \
