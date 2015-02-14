@@ -194,6 +194,8 @@ ifneq ($(DEBUGGING),true)
 LOCAL_LDFLAGS += -static
 endif
 
+#LOCAL_LDFLAGS += -Wl,-Map,mbtool.map
+
 include $(BUILD_EXECUTABLE)
 
 
@@ -231,5 +233,7 @@ LOCAL_LDFLAGS += -static
 endif
 
 LOCAL_LDFLAGS += -lz
+
+#LOCAL_LDFLAGS += -Wl,-Map,mbtoolrecovery.map
 
 include $(BUILD_EXECUTABLE)
