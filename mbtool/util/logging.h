@@ -19,13 +19,28 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
+#include <string>
 
-#define LOGE(...) util::logger()->error(__VA_ARGS__)
-#define LOGW(...) util::logger()->warn(__VA_ARGS__)
-#define LOGI(...) util::logger()->info(__VA_ARGS__)
-#define LOGD(...) util::logger()->debug(__VA_ARGS__)
-#define LOGV(...) util::logger()->info(__VA_ARGS__)
+#include <cppformat/format.h>
+
+#if 0
+#define LOGE(msg) mb::util::log(mb::util::LogLevel::ERROR, msg)
+#define LOGW(msg) mb::util::log(mb::util::LogLevel::WARNING, msg)
+#define LOGI(msg) mb::util::log(mb::util::LogLevel::INFO, msg)
+#define LOGD(msg) mb::util::log(mb::util::LogLevel::DEBUG, msg)
+#define LOGV(msg) mb::util::log(mb::util::LogLevel::VERBOSE, msg)
+#define FLOGE(...) mb::util::log(mb::util::LogLevel::ERROR, fmt::format(__VA_ARGS__))
+#define FLOGW(...) mb::util::log(mb::util::LogLevel::WARNING, fmt::format(__VA_ARGS__))
+#define FLOGI(...) mb::util::log(mb::util::LogLevel::INFO, fmt::format(__VA_ARGS__))
+#define FLOGD(...) mb::util::log(mb::util::LogLevel::DEBUG, fmt::format(__VA_ARGS__))
+#define FLOGV(...) mb::util::log(mb::util::LogLevel::VERBOSE, fmt::format(__VA_ARGS__))
+#else
+#define LOGE(...) mb::util::log(mb::util::LogLevel::ERROR, fmt::format(__VA_ARGS__))
+#define LOGW(...) mb::util::log(mb::util::LogLevel::WARNING, fmt::format(__VA_ARGS__))
+#define LOGI(...) mb::util::log(mb::util::LogLevel::INFO, fmt::format(__VA_ARGS__))
+#define LOGD(...) mb::util::log(mb::util::LogLevel::DEBUG, fmt::format(__VA_ARGS__))
+#define LOGV(...) mb::util::log(mb::util::LogLevel::VERBOSE, fmt::format(__VA_ARGS__))
+#endif
 
 namespace mb
 {
@@ -42,8 +57,16 @@ enum class LogTarget {
     STDERR
 };
 
+enum class LogLevel {
+    ERROR,
+    WARNING,
+    INFO,
+    DEBUG,
+    VERBOSE
+};
+
 void log_set_target(LogTarget target);
-std::shared_ptr<spdlog::logger> logger();
+void log(LogLevel prio, const std::string &msg);
 
 }
 }

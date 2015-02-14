@@ -144,7 +144,7 @@ mb_common_cflags := \
 mb_common_ldflags := \
 	-Wl,--gc-sections
 
-mb_common_cflags += -DFMT_EXCEPTIONS=0 -DSPD_EXCEPTIONS=0
+mb_common_cflags += -DFMT_EXCEPTIONS=0
 
 ifeq ($(DEBUGGING),true)
 mb_common_cflags += -DMB_LIBC_DEBUG
@@ -166,8 +166,7 @@ LOCAL_C_INCLUDES := \
 	$(LIBARCHIVE_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
-	$(EXTERNAL_DIR) \
-	$(EXTERNAL_DIR)/spdlog/include
+	$(EXTERNAL_DIR)
 include $(BUILD_STATIC_LIBRARY)
 
 
@@ -182,8 +181,7 @@ LOCAL_C_INCLUDES := \
 	$(LIBARCHIVE_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
 	$(LIBXML2_DIR)/include/libxml2 \
-	$(EXTERNAL_DIR) \
-	$(EXTERNAL_DIR)/spdlog/include
+	$(EXTERNAL_DIR)
 
 LOCAL_CFLAGS := $(mb_common_cflags)
 LOCAL_CFLAGS += -DMBP_VERSION=\"@MBP_VERSION@\"
@@ -216,8 +214,7 @@ LOCAL_C_INCLUDES := \
 	$(LIBLOKI_DIR)/include \
 	$(TOP_DIR)/libmbp \
 	$(TOP_DIR) \
-	$(EXTERNAL_DIR) \
-	$(EXTERNAL_DIR)/spdlog/include
+	$(EXTERNAL_DIR)
 
 LOCAL_CFLAGS := $(mb_common_cflags)
 LOCAL_CFLAGS += -DRECOVERY
