@@ -19,6 +19,7 @@
 
 #include "util/properties.h"
 
+#include <memory>
 #include <vector>
 #include <cstdio>
 #include <cstring>

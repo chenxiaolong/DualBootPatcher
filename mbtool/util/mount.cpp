@@ -19,6 +19,8 @@
 
 #include "util/mount.h"
 
+#include <memory>
+#include <vector>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>

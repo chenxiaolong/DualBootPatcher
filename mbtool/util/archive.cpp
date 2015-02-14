@@ -20,6 +20,7 @@
 #include "util/archive.h"
 
 #include <algorithm>
+#include <memory>
 #include <cerrno>
 #include <cstring>
 

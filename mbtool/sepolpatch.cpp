@@ -19,6 +19,7 @@
 
 #include "sepolpatch.h"
 
+#include <memory>
 #include <cstdio>
 #include <fcntl.h>
 #include <getopt.h>

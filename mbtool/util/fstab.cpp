@@ -19,6 +19,7 @@
 
 #include "util/fstab.h"
 
+#include <memory>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

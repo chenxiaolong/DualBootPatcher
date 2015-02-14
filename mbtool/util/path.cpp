@@ -19,8 +19,10 @@
 
 #include "util/path.h"
 
+#include <vector>
 #include <cerrno>
 #include <libgen.h>
+#include <unistd.h>
 
 #include "util/logging.h"
 
