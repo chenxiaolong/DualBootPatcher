@@ -23,6 +23,10 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 
+#include <iostream>
+
+#include <libmbp/logging.h>
+
 #ifdef PORTABLE
 #  if defined(DATA_DIR)
 #    error DATA_DIR should not be defined for portable builds
@@ -36,11 +40,36 @@
 static const QChar Sep = QLatin1Char('/');
 
 
+static void log_cb(MBP::LogLevel prio, const std::string &msg)
+{
+    switch (prio) {
+    case MBP::LogLevel::Debug:
+        std::cout << "[Debug] ";
+        break;
+    case MBP::LogLevel::Error:
+        std::cout << "[Error] ";
+        break;
+    case MBP::LogLevel::Info:
+        std::cout << "[Info] ";
+        break;
+    case MBP::LogLevel::Verbose:
+        std::cout << "[Verbose] ";
+        break;
+    case MBP::LogLevel::Warning:
+        std::cout << "[Warning] ";
+        break;
+    }
+
+    std::cout << msg << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
+
+    MBP::setLogCallback(log_cb);
 
     PatcherConfig pc;
 
