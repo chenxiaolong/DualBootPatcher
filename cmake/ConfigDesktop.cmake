@@ -69,10 +69,6 @@ link_directories(${Boost_LIBRARY_DIRS})
 # Qt5
 find_package(Qt5Core 5.3 REQUIRED)
 
-# libxml2
-find_package(LibXml2 REQUIRED)
-include_directories(${LIBXML2_INCLUDE_DIR})
-
 
 # Same logic as CMakeLists.txt from the CMake source
 set(EXTERNAL_LIBRARIES LIBARCHIVE LIBLZMA LZ4 ZLIB)
@@ -236,6 +232,7 @@ else()
     set(ENABLE_LZMA ON CACHE INTERNAL "Enable the use of the system found LZMA library if found")
     set(ENABLE_ZLIB ON CACHE INTERNAL "Enable the use of the system found ZLIB library if found")
     set(ENABLE_BZip2 OFF CACHE INTERNAL "Enable the use of the system found BZip2 library if found")
+    set(ENABLE_LIBXML2 OFF CACHE INTERNAL "Enable the use of the system found libxml2 library if found")
     set(ENABLE_EXPAT OFF CACHE INTERNAL "Enable the use of the system found EXPAT library if found")
     set(ENABLE_PCREPOSIX OFF CACHE INTERNAL "Enable the use of the system found PCREPOSIX library if found")
     set(ENABLE_LibGCC OFF CACHE INTERNAL "Enable the use of the system found LibGCC library if found")
