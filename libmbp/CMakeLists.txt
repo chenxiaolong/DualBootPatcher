@@ -52,6 +52,7 @@ set(MBP_SOURCES
     ramdiskpatchers/qcomramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
     ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
+    ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
 set(MBP_HEADERS
@@ -165,7 +166,6 @@ else()
 
     target_link_libraries(mbp
         ${Boost_LIBRARIES}
-        ${LIBXML2_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}

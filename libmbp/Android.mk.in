@@ -5,7 +5,6 @@ USE_CCACHE := true
 
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 BOOST_DIR := $(THIRD_PARTY)/android/boost
-LIBXML2_DIR := $(THIRD_PARTY)/android/libxml2
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 TOP_DIR := @CMAKE_SOURCE_DIR@
@@ -21,12 +20,6 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := boost_system
 LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_system-mt.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libxml2
-LOCAL_SRC_FILES := $(LIBXML2_DIR)/lib_$(TARGET_ARCH_ABI)/libxml2.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -60,9 +53,9 @@ LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
 	$(BOOST_DIR)/include \
-	$(LIBXML2_DIR)/include/libxml2 \
 	$(LIBARCHIVE_DIR)/include \
-	$(EXTERNAL_DIR)
+	$(EXTERNAL_DIR) \
+	$(EXTERNAL_DIR)/pugixml/src
 
 #LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
 LOCAL_CFLAGS := -Wall -Wextra -pedantic
@@ -94,7 +87,6 @@ endif
 LOCAL_STATIC_LIBRARIES := \
 	boost_filesystem \
 	boost_system \
-	libxml2 \
 	libarchive \
 	liblz4
 
