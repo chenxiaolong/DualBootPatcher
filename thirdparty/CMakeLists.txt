@@ -68,33 +68,6 @@ endif()
 
 
 ################################################################################
-# libxml2 for Android
-################################################################################
-
-set(LIBXML2_VER "android-5.0.0_r6")
-
-file(
-    DOWNLOAD
-    ${URL_BASE}/libxml2_${LIBXML2_VER}.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
-    EXPECTED_MD5 83181acfdac6089b1d44d77b242cb4b5
-    SHOW_PROGRESS
-)
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
-    )
-
-    message(STATUS "Extracting libxml2 for Android ...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libxml2_${LIBXML2_VER}.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libxml2
-    )
-endif()
-
-
-################################################################################
 # libarchive for Android
 ################################################################################
 
