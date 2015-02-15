@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 
@@ -90,9 +91,17 @@ public:
 
     // Functions
     Package();
+
+    void dump();
 };
 
-bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
-                          const std::string &path);
+class Packages
+{
+public:
+    std::vector<std::shared_ptr<Package>> pkgs;
+    std::unordered_map<std::string, std::string> sigs;
+};
+
+bool mb_packages_load_xml(Packages *pkgs, const std::string &path);
 
 }

@@ -30,15 +30,13 @@
 #include "util/logging.h"
 
 
-#define PACKAGES_DEBUG 0
-
-
 #define TO_CHAR (char *)
 #define TO_XMLCHAR (xmlChar *)
 
 namespace mb
 {
 
+static const xmlChar *TAG_CERT                  = TO_XMLCHAR "cert";
 static const xmlChar *TAG_DATABASE_VERSION      = TO_XMLCHAR "database-version";
 static const xmlChar *TAG_DEFINED_KEYSET        = TO_XMLCHAR "defined-keyset";
 static const xmlChar *TAG_KEYSET_SETTINGS       = TO_XMLCHAR "keyset-settings";
@@ -60,9 +58,11 @@ static const xmlChar *ATTR_CODE_PATH            = TO_XMLCHAR "codePath";
 static const xmlChar *ATTR_CPU_ABI_OVERRIDE     = TO_XMLCHAR "cpuAbiOverride";
 static const xmlChar *ATTR_FLAGS                = TO_XMLCHAR "flags";
 static const xmlChar *ATTR_FT                   = TO_XMLCHAR "ft";
+static const xmlChar *ATTR_INDEX                = TO_XMLCHAR "index";
 static const xmlChar *ATTR_INSTALL_STATUS       = TO_XMLCHAR "installStatus";
 static const xmlChar *ATTR_INSTALLER            = TO_XMLCHAR "installer";
 static const xmlChar *ATTR_IT                   = TO_XMLCHAR "it";
+static const xmlChar *ATTR_KEY                  = TO_XMLCHAR "key";
 static const xmlChar *ATTR_NAME                 = TO_XMLCHAR "name";
 static const xmlChar *ATTR_NATIVE_LIBRARY_PATH  = TO_XMLCHAR "nativeLibraryPath";
 static const xmlChar *ATTR_PRIMARY_CPU_ABI      = TO_XMLCHAR "primaryCpuAbi";
@@ -75,10 +75,10 @@ static const xmlChar *ATTR_USER_ID              = TO_XMLCHAR "userId";
 static const xmlChar *ATTR_UT                   = TO_XMLCHAR "ut";
 static const xmlChar *ATTR_VERSION              = TO_XMLCHAR "version";
 
-static bool parse_tag_package(xmlNode *node,
-                              std::vector<std::shared_ptr<Package>> *pkgs);
-static bool parse_tag_packages(xmlNode *node,
-                               std::vector<std::shared_ptr<Package>> *pkgs);
+static bool parse_tag_cert(xmlNode *node, Packages *pkgs);
+static bool parse_tag_sigs(xmlNode *node, Packages *pkgs);
+static bool parse_tag_package(xmlNode *node, Packages *pkgs);
+static bool parse_tag_packages(xmlNode *node, Packages *pkgs);
 
 
 Package::Package() :
@@ -104,8 +104,128 @@ Package::Package() :
 {
 }
 
-bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
-                          const std::string &path)
+static char * time_to_string(unsigned long long time)
+{
+    static char buf[50];
+
+    const time_t t = time / 1000;
+    strftime(buf, 50, "%a %b %d %H:%M:%S %Y", localtime(&t));
+
+    return buf;
+}
+
+#define DUMP_FLAG(f) LOGD("-                      {} ({:#x})", #f, f);
+
+void Package::dump()
+{
+    LOGD("Package:");
+    if (!name.empty())
+        LOGD("- Name:                {}", name);
+    if (!real_name.empty())
+        LOGD("- Real name:           {}", real_name);
+    if (!code_path.empty())
+        LOGD("- Code path:           {}", code_path);
+    if (!resource_path.empty())
+        LOGD("- Resource path:       {}", resource_path);
+    if (!native_library_path.empty())
+        LOGD("- Native library path: {}", native_library_path);
+    if (!primary_cpu_abi.empty())
+        LOGD("- Primary CPU ABI:     {}", primary_cpu_abi);
+    if (!secondary_cpu_abi.empty())
+        LOGD("- Secondary CPU ABI:   {}", secondary_cpu_abi);
+    if (!cpu_abi_override.empty())
+        LOGD("- CPU ABI override:    {}", cpu_abi_override);
+
+    LOGD("- Flags:               {:#x}", pkg_flags);
+    if (pkg_flags & Package::FLAG_SYSTEM)
+        DUMP_FLAG(Package::FLAG_SYSTEM);
+    if (pkg_flags & Package::FLAG_DEBUGGABLE)
+        DUMP_FLAG(Package::FLAG_DEBUGGABLE);
+    if (pkg_flags & Package::FLAG_HAS_CODE)
+        DUMP_FLAG(Package::FLAG_HAS_CODE);
+    if (pkg_flags & Package::FLAG_PERSISTENT)
+        DUMP_FLAG(Package::FLAG_PERSISTENT);
+    if (pkg_flags & Package::FLAG_FACTORY_TEST)
+        DUMP_FLAG(Package::FLAG_FACTORY_TEST);
+    if (pkg_flags & Package::FLAG_ALLOW_TASK_REPARENTING)
+        DUMP_FLAG(Package::FLAG_ALLOW_TASK_REPARENTING);
+    if (pkg_flags & Package::FLAG_ALLOW_CLEAR_USER_DATA)
+        DUMP_FLAG(Package::FLAG_ALLOW_CLEAR_USER_DATA);
+    if (pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
+        DUMP_FLAG(Package::FLAG_UPDATED_SYSTEM_APP);
+    if (pkg_flags & Package::FLAG_TEST_ONLY)
+        DUMP_FLAG(Package::FLAG_TEST_ONLY);
+    if (pkg_flags & Package::FLAG_SUPPORTS_SMALL_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_SMALL_SCREENS);
+    if (pkg_flags & Package::FLAG_SUPPORTS_NORMAL_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_NORMAL_SCREENS);
+    if (pkg_flags & Package::FLAG_SUPPORTS_LARGE_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_LARGE_SCREENS);
+    if (pkg_flags & Package::FLAG_RESIZEABLE_FOR_SCREENS)
+        DUMP_FLAG(Package::FLAG_RESIZEABLE_FOR_SCREENS);
+    if (pkg_flags & Package::FLAG_SUPPORTS_SCREEN_DENSITIES)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_SCREEN_DENSITIES);
+    if (pkg_flags & Package::FLAG_VM_SAFE_MODE)
+        DUMP_FLAG(Package::FLAG_VM_SAFE_MODE);
+    if (pkg_flags & Package::FLAG_ALLOW_BACKUP)
+        DUMP_FLAG(Package::FLAG_ALLOW_BACKUP);
+    if (pkg_flags & Package::FLAG_KILL_AFTER_RESTORE)
+        DUMP_FLAG(Package::FLAG_KILL_AFTER_RESTORE);
+    if (pkg_flags & Package::FLAG_RESTORE_ANY_VERSION)
+        DUMP_FLAG(Package::FLAG_RESTORE_ANY_VERSION);
+    if (pkg_flags & Package::FLAG_EXTERNAL_STORAGE)
+        DUMP_FLAG(Package::FLAG_EXTERNAL_STORAGE);
+    if (pkg_flags & Package::FLAG_SUPPORTS_XLARGE_SCREENS)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_XLARGE_SCREENS);
+    if (pkg_flags & Package::FLAG_LARGE_HEAP)
+        DUMP_FLAG(Package::FLAG_LARGE_HEAP);
+    if (pkg_flags & Package::FLAG_STOPPED)
+        DUMP_FLAG(Package::FLAG_STOPPED);
+    if (pkg_flags & Package::FLAG_SUPPORTS_RTL)
+        DUMP_FLAG(Package::FLAG_SUPPORTS_RTL);
+    if (pkg_flags & Package::FLAG_INSTALLED)
+        DUMP_FLAG(Package::FLAG_INSTALLED);
+    if (pkg_flags & Package::FLAG_IS_DATA_ONLY)
+        DUMP_FLAG(Package::FLAG_IS_DATA_ONLY);
+    if (pkg_flags & Package::FLAG_IS_GAME)
+        DUMP_FLAG(Package::FLAG_IS_GAME);
+    if (pkg_flags & Package::FLAG_FULL_BACKUP_ONLY)
+        DUMP_FLAG(Package::FLAG_FULL_BACKUP_ONLY);
+    if (pkg_flags & Package::FLAG_HIDDEN)
+        DUMP_FLAG(Package::FLAG_HIDDEN);
+    if (pkg_flags & Package::FLAG_CANT_SAVE_STATE)
+        DUMP_FLAG(Package::FLAG_CANT_SAVE_STATE);
+    if (pkg_flags & Package::FLAG_FORWARD_LOCK)
+        DUMP_FLAG(Package::FLAG_FORWARD_LOCK);
+    if (pkg_flags & Package::FLAG_PRIVILEGED)
+        DUMP_FLAG(Package::FLAG_PRIVILEGED);
+    if (pkg_flags & Package::FLAG_MULTIARCH)
+        DUMP_FLAG(Package::FLAG_MULTIARCH);
+
+    if (timestamp > 0)
+        LOGD("- Timestamp:           {}", time_to_string(timestamp));
+    if (first_install_time > 0)
+        LOGD("- First install time:  {}", time_to_string(first_install_time));
+    if (last_update_time > 0)
+        LOGD("- Last update time:    {}", time_to_string(last_update_time));
+
+    LOGD("- Version:             {}", version);
+
+    if (is_shared_user) {
+        LOGD("- Shared user ID:      {}", shared_user_id);
+    } else {
+        LOGD("- User ID:             {}", user_id);
+    }
+
+    if (!uid_error.empty())
+        LOGD("- UID error:           {}", uid_error);
+    if (!install_status.empty())
+        LOGD("- Install status:      {}", install_status);
+    if (!installer.empty())
+        LOGD("- Installer:           {}", installer);
+}
+
+bool mb_packages_load_xml(Packages *pkgs, const std::string &path)
 {
     LIBXML_TEST_VERSION
 
@@ -135,133 +255,71 @@ bool mb_packages_load_xml(std::vector<std::shared_ptr<Package>> *pkgs,
     return true;
 }
 
-#if PACKAGES_DEBUG >= 2
-
-static char * time_to_string(unsigned long long time)
+static bool parse_tag_cert(xmlNode *node, Packages *pkgs)
 {
-    static char buf[50];
+    assert(xmlStrcmp(node->name, TAG_CERT) == 0);
 
-    const time_t t = time / 1000;
-    strftime(buf, 50, "%a %b %d %H:%M:%S %Y", localtime(&t));
+    std::string index;
+    std::string key;
 
-    return buf;
-}
+    for (xmlAttr *attr = node->properties; attr; attr = attr->next) {
+        const xmlChar *name = attr->name;
+        xmlChar *value = xmlGetProp(node, attr->name);
 
-#define DUMP_FLAG(f) LOGD("-                      {} ({:#x})", #f, f);
+        if (xmlStrcmp(name, ATTR_INDEX) == 0) {
+            index = TO_CHAR value;
+        } else if (xmlStrcmp(name, ATTR_KEY) == 0) {
+            key = TO_CHAR value;
+        } else {
+            LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_CERT);
+        }
 
-static void package_dump(const std::shared_ptr<Package> &pkg)
-{
-    LOGD("Package:");
-    if (!pkg->name.empty())
-        LOGD("- Name:                {}", pkg->name);
-    if (!pkg->real_name.empty())
-        LOGD("- Real name:           {}", pkg->real_name);
-    if (!pkg->code_path.empty())
-        LOGD("- Code path:           {}", pkg->code_path);
-    if (!pkg->resource_path.empty())
-        LOGD("- Resource path:       {}", pkg->resource_path);
-    if (!pkg->native_library_path.empty())
-        LOGD("- Native library path: {}", pkg->native_library_path);
-    if (!pkg->primary_cpu_abi.empty())
-        LOGD("- Primary CPU ABI:     {}", pkg->primary_cpu_abi);
-    if (!pkg->secondary_cpu_abi.empty())
-        LOGD("- Secondary CPU ABI:   {}", pkg->secondary_cpu_abi);
-    if (!pkg->cpu_abi_override.empty())
-        LOGD("- CPU ABI override:    {}", pkg->cpu_abi_override);
-
-    LOGD("- Flags:               {:#x}", pkg->pkg_flags);
-    if (pkg->pkg_flags & Package::FLAG_SYSTEM)
-        DUMP_FLAG(Package::FLAG_SYSTEM);
-    if (pkg->pkg_flags & Package::FLAG_DEBUGGABLE)
-        DUMP_FLAG(Package::FLAG_DEBUGGABLE);
-    if (pkg->pkg_flags & Package::FLAG_HAS_CODE)
-        DUMP_FLAG(Package::FLAG_HAS_CODE);
-    if (pkg->pkg_flags & Package::FLAG_PERSISTENT)
-        DUMP_FLAG(Package::FLAG_PERSISTENT);
-    if (pkg->pkg_flags & Package::FLAG_FACTORY_TEST)
-        DUMP_FLAG(Package::FLAG_FACTORY_TEST);
-    if (pkg->pkg_flags & Package::FLAG_ALLOW_TASK_REPARENTING)
-        DUMP_FLAG(Package::FLAG_ALLOW_TASK_REPARENTING);
-    if (pkg->pkg_flags & Package::FLAG_ALLOW_CLEAR_USER_DATA)
-        DUMP_FLAG(Package::FLAG_ALLOW_CLEAR_USER_DATA);
-    if (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
-        DUMP_FLAG(Package::FLAG_UPDATED_SYSTEM_APP);
-    if (pkg->pkg_flags & Package::FLAG_TEST_ONLY)
-        DUMP_FLAG(Package::FLAG_TEST_ONLY);
-    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_SMALL_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_SMALL_SCREENS);
-    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_NORMAL_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_NORMAL_SCREENS);
-    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_LARGE_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_LARGE_SCREENS);
-    if (pkg->pkg_flags & Package::FLAG_RESIZEABLE_FOR_SCREENS)
-        DUMP_FLAG(Package::FLAG_RESIZEABLE_FOR_SCREENS);
-    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_SCREEN_DENSITIES)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_SCREEN_DENSITIES);
-    if (pkg->pkg_flags & Package::FLAG_VM_SAFE_MODE)
-        DUMP_FLAG(Package::FLAG_VM_SAFE_MODE);
-    if (pkg->pkg_flags & Package::FLAG_ALLOW_BACKUP)
-        DUMP_FLAG(Package::FLAG_ALLOW_BACKUP);
-    if (pkg->pkg_flags & Package::FLAG_KILL_AFTER_RESTORE)
-        DUMP_FLAG(Package::FLAG_KILL_AFTER_RESTORE);
-    if (pkg->pkg_flags & Package::FLAG_RESTORE_ANY_VERSION)
-        DUMP_FLAG(Package::FLAG_RESTORE_ANY_VERSION);
-    if (pkg->pkg_flags & Package::FLAG_EXTERNAL_STORAGE)
-        DUMP_FLAG(Package::FLAG_EXTERNAL_STORAGE);
-    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_XLARGE_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_XLARGE_SCREENS);
-    if (pkg->pkg_flags & Package::FLAG_LARGE_HEAP)
-        DUMP_FLAG(Package::FLAG_LARGE_HEAP);
-    if (pkg->pkg_flags & Package::FLAG_STOPPED)
-        DUMP_FLAG(Package::FLAG_STOPPED);
-    if (pkg->pkg_flags & Package::FLAG_SUPPORTS_RTL)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_RTL);
-    if (pkg->pkg_flags & Package::FLAG_INSTALLED)
-        DUMP_FLAG(Package::FLAG_INSTALLED);
-    if (pkg->pkg_flags & Package::FLAG_IS_DATA_ONLY)
-        DUMP_FLAG(Package::FLAG_IS_DATA_ONLY);
-    if (pkg->pkg_flags & Package::FLAG_IS_GAME)
-        DUMP_FLAG(Package::FLAG_IS_GAME);
-    if (pkg->pkg_flags & Package::FLAG_FULL_BACKUP_ONLY)
-        DUMP_FLAG(Package::FLAG_FULL_BACKUP_ONLY);
-    if (pkg->pkg_flags & Package::FLAG_HIDDEN)
-        DUMP_FLAG(Package::FLAG_HIDDEN);
-    if (pkg->pkg_flags & Package::FLAG_CANT_SAVE_STATE)
-        DUMP_FLAG(Package::FLAG_CANT_SAVE_STATE);
-    if (pkg->pkg_flags & Package::FLAG_FORWARD_LOCK)
-        DUMP_FLAG(Package::FLAG_FORWARD_LOCK);
-    if (pkg->pkg_flags & Package::FLAG_PRIVILEGED)
-        DUMP_FLAG(Package::FLAG_PRIVILEGED);
-    if (pkg->pkg_flags & Package::FLAG_MULTIARCH)
-        DUMP_FLAG(Package::FLAG_MULTIARCH);
-
-    if (pkg->timestamp > 0)
-        LOGD("- Timestamp:           {}", time_to_string(pkg->timestamp));
-    if (pkg->first_install_time > 0)
-        LOGD("- First install time:  {}", time_to_string(pkg->first_install_time));
-    if (pkg->last_update_time > 0)
-        LOGD("- Last update time:    {}", time_to_string(pkg->last_update_time));
-
-    LOGD("- Version:             {}", pkg->version);
-
-    if (pkg->is_shared_user) {
-        LOGD("- Shared user ID:      {}", pkg->shared_user_id);
-    } else {
-        LOGD("- User ID:             {}", pkg->user_id);
+        xmlFree(value);
     }
 
-    if (!pkg->uid_error.empty())
-        LOGD("- UID error:           {}", pkg->uid_error);
-    if (!pkg->install_status.empty())
-        LOGD("- Install status:      {}", pkg->install_status);
-    if (!pkg->installer.empty())
-        LOGD("- Installer:           {}", pkg->installer);
+    if (index.empty()) {
+        LOGW("Missing or empty index in <{}>", TAG_CERT);
+    } else if (!key.empty()) {
+        auto it = pkgs->sigs.find(index);
+        if (it != pkgs->sigs.end()) {
+            // Make sure key matches if it's already in the map
+            if (it->second != key) {
+                LOGE("Error: Index \"{}\" assigned to multiple keys", index);
+                return false;
+            }
+        } else {
+            // Otherwise, add it to the map
+            pkgs->sigs.insert(std::make_pair(std::move(index), std::move(key)));
+        }
+    }
+
+    return true;
 }
 
-#endif
+static bool parse_tag_sigs(xmlNode *node, Packages *pkgs)
+{
+    assert(xmlStrcmp(node->name, TAG_SIGS) == 0);
 
-static bool parse_tag_package(xmlNode *node,
-                              std::vector<std::shared_ptr<Package>> *pkgs)
+    for (xmlNode *cur_node = node->children; cur_node; cur_node = cur_node->next) {
+        if (cur_node->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+
+        if (xmlStrcmp(cur_node->name, TAG_SIGS) == 0) {
+            LOGW("Nested <{}> is not allowed", TAG_SIGS);
+        } else if (xmlStrcmp(cur_node->name, TAG_CERT) == 0) {
+            if (!parse_tag_cert(cur_node, pkgs)) {
+                return false;
+            }
+        } else {
+            LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_SIGS);
+        }
+    }
+
+    return true;
+}
+
+static bool parse_tag_package(xmlNode *node, Packages *pkgs)
 {
     assert(xmlStrcmp(node->name, TAG_PACKAGE) == 0);
 
@@ -328,25 +386,23 @@ static bool parse_tag_package(xmlNode *node,
                 || xmlStrcmp(cur_node->name, TAG_PERMS) == 0
                 || xmlStrcmp(cur_node->name, TAG_PROPER_SIGNING_KEYSET) == 0
                 || xmlStrcmp(cur_node->name, TAG_SIGNING_KEYSET) == 0
-                || xmlStrcmp(cur_node->name, TAG_SIGS) == 0
                 || xmlStrcmp(cur_node->name, TAG_UPGRADE_KEYSET) == 0) {
             // Ignore
+        } else if (xmlStrcmp(cur_node->name, TAG_SIGS) == 0) {
+            if (!parse_tag_sigs(cur_node, pkgs)) {
+                return false;
+            }
         } else {
             LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_PACKAGE);
         }
     }
 
-#if PACKAGES_DEBUG >= 2
-    package_dump(pkg);
-#endif
-
-    pkgs->push_back(std::move(pkg));
+    pkgs->pkgs.push_back(std::move(pkg));
 
     return true;
 }
 
-static bool parse_tag_packages(xmlNode *node,
-                               std::vector<std::shared_ptr<Package>> *pkgs)
+static bool parse_tag_packages(xmlNode *node, Packages *pkgs)
 {
     assert(xmlStrcmp(node->name, TAG_PACKAGES) == 0);
 
@@ -358,7 +414,9 @@ static bool parse_tag_packages(xmlNode *node,
         if (xmlStrcmp(cur_node->name, TAG_PACKAGES) == 0) {
             LOGW("Nested <{}> is not allowed", TAG_PACKAGES);
         } else if (xmlStrcmp(cur_node->name, TAG_PACKAGE) == 0) {
-            parse_tag_package(cur_node, pkgs);
+            if (!parse_tag_package(cur_node, pkgs)) {
+                return false;
+            }
         } else if (xmlStrcmp(cur_node->name, TAG_DATABASE_VERSION) == 0
                 || xmlStrcmp(cur_node->name, TAG_KEYSET_SETTINGS) == 0
                 || xmlStrcmp(cur_node->name, TAG_LAST_PLATFORM_VERSION) == 0
