@@ -10,6 +10,7 @@ include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
+include_directories(${CMAKE_SOURCE_DIR}/external/pugixml/src)
 
 set(MBP_SOURCES
     bootimage.cpp
