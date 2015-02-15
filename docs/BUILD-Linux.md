@@ -7,7 +7,6 @@ The following packages are needed for compiling:
 - gcc-multilib
 - boost
 - libarchive
-- libxml2
 - lz4
 - xz
 - zip

@@ -21,7 +21,6 @@ To cross-compile DualBootPatcher, the following packages are needed:
 Additionally, the following mingw-compiled packages are needed:
 
 - boost
-- libxml2
 - qt5
 - xz
 
@@ -33,7 +32,6 @@ The remaining packages will have to be installed from the AUR. I'd highly recomm
 
 - android-ndk
 - mingw-w64-boost
-- mingw-w64-libxml2
 - mingw-w64-qt5-base
 - mingw-w64-xz
 
@@ -107,7 +105,6 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
         libpng16-16.dll
         libstdc++-6.dll
         libwinpthread-1.dll
-        libxml2-2.dll
         Qt5Core.dll
         Qt5Gui.dll
         Qt5Widgets.dll

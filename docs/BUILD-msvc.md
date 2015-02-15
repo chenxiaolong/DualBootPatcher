@@ -27,21 +27,6 @@ The following packages need to be downloaded and installed:
 4. Check "Init submodules", "Show Whole Project", "Select all", and click OK
 
 
-### Build libxml2 2.9.2
-
-1. Download and extract [libxml2 2.9.2](ftp://xmlsoft.org/libxml2/libxml2-2.9.2.tar.gz)
-
-2. Rename `configure.ac` to `configure.in`
-
-3. Compile and install to `C:\libxml2`
-
-    ```dos
-    cd path\to\libxml2-2.9.2\win32
-    cscript configure.js compiler=msvc prefix=c:\libxml2 include=c:\libxml2\include lib=c:\libxml2\lib iconv=no
-    nmake /f Makefile.msvc
-    nmake /f Makefile.msvc install
-    ```
-
 ### Build minimal version of Qt 5.4.0
 
 1. Download and extract `qtbase` and `qtwinextras`
@@ -79,7 +64,6 @@ The following packages need to be downloaded and installed:
    set PATH="%PATH%;C:\QtMinimal\5.4.0"
    set BOOST_ROOT="C:\local\boost_1_57_0"
    set BOOST_LIBRARYDIR="C:\local\boost_1_57_0\lib32-msvc-12.0"
-   set LIBXML2_ROOT="C:\libxml2"
    set QTDIR="c:\QtMinimal\5.4.0"
    set PATH="%PATH%;C:\Program Files (x86)\CMake\bin"
    ```
@@ -93,8 +77,7 @@ The following packages need to be downloaded and installed:
        -DMBP_PORTABLE=ON ^
        -DBOOST_ROOT="%BOOST_ROOT%" ^
        -DBOOST_LIBRARYDIR="%BOOST_LIBRARYDIR%" ^
-       -DLIBXML2_ROOT="%LIBXML2_ROOT%" ^
-       -DCMAKE_PREFIX_PATH="%QTDIR%\lib\cmake;%LIBXML2_ROOT%"
+       -DCMAKE_PREFIX_PATH="%QTDIR%\lib\cmake"
    cmake --build . --config Release
    cpack -G ZIP -D CPACK_BUILD_CONFIG=Release
    ```
@@ -106,7 +89,6 @@ The following packages need to be downloaded and installed:
     - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_filesystem-vc120-mt-1_57.dll
     - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_regex-vc120-mt-1_57.dll
     - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_system-vc120-mt-1_57.dll
-    - C:\libxml2\bin\libxml2.dll
     - C:\QtMinimal\5.4.0\bin\Qt5Core.dll
     - C:\QtMinimal\5.4.0\bin\Qt5Gui.dll
     - C:\QtMinimal\5.4.0\bin\Qt5Widgets.dll
