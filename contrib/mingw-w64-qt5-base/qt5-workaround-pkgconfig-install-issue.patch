@@ -1,0 +1,46 @@
+--- qmake/generators/makefile.cpp.pkgconfig	2013-01-29 20:03:12.000000000 +0100
++++ qmake/generators/makefile.cpp	2013-03-26 19:18:07.480722316 +0100
+@@ -3102,7 +3102,7 @@
+ }
+ 
+ QString
+-MakefileGenerator::pkgConfigFileName(bool fixify)
++MakefileGenerator::pkgConfigFileName(bool fixify, bool onlyPrependDestdir)
+ {
+     QString ret = project->first("QMAKE_PKGCONFIG_FILE").toQString();
+     if (ret.isEmpty()) {
+@@ -3130,7 +3130,11 @@
+     if(fixify) {
+         if(QDir::isRelativePath(ret) && !project->isEmpty("DESTDIR"))
+             ret.prepend(project->first("DESTDIR").toQString());
+-        ret = Option::fixPathToLocalOS(fileFixify(ret, qmake_getpwd(), Option::output_dir));
++        if (onlyPrependDestdir) {
++            ret = Option::fixPathToLocalOS(ret);
++        } else {
++            ret = Option::fixPathToLocalOS(fileFixify(ret, qmake_getpwd(), Option::output_dir));
++        }
+     }
+     return ret;
+ }
+--- qmake/generators/makefile.h.orig	2013-03-26 19:17:37.624199870 +0100
++++ qmake/generators/makefile.h	2013-03-26 19:17:56.327527157 +0100
+@@ -102,7 +102,7 @@
+     virtual void writeDefaultVariables(QTextStream &t);
+ 
+     QString pkgConfigPrefix() const;
+-    QString pkgConfigFileName(bool fixify=true);
++    QString pkgConfigFileName(bool fixify=true, bool onlyPrependDestdir = false);
+     QString pkgConfigFixPath(QString) const;
+     void writePkgConfigFile();   // for pkg-config
+ 
+--- qmake/generators/win32/winmakefile.cpp.orig	2013-03-26 19:05:13.398183953 +0100
++++ qmake/generators/win32/winmakefile.cpp	2013-03-26 19:15:02.800490466 +0100
+@@ -851,7 +851,7 @@
+                 }
+                 if(!ret.isEmpty())
+                     ret += "\n\t";
+-                ret += installMetaFile(ProKey("QMAKE_PKGCONFIG_INSTALL_REPLACE"), pkgConfigFileName(true), dst_pc);
++                ret += installMetaFile(ProKey("QMAKE_PKGCONFIG_INSTALL_REPLACE"), pkgConfigFileName(true, true), dst_pc);
+                 if(!uninst.isEmpty())
+                     uninst.append("\n\t");
+                 uninst.append("-$(DEL_FILE) \"" + dst_pc + "\"");

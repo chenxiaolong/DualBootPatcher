@@ -1,0 +1,10 @@
+--- qtbase-opensource-src-5.1.0/mkspecs/features/qt_app.prf.orig	2013-08-01 01:21:52.461910182 +0200
++++ qtbase-opensource-src-5.1.0/mkspecs/features/qt_app.prf	2013-08-01 01:22:46.777801052 +0200
+@@ -20,6 +20,7 @@
+ QMAKE_LFLAGS += $$QMAKE_LFLAGS_GCSECTIONS
+ 
+ host_build: QT -= gui   # no host tool will ever use gui
++host_build: QT_CONFIG += rpath
+ host_build:force_bootstrap {
+     !build_pass: CONFIG += release
+     contains(QT, core(-private)?|xml) {

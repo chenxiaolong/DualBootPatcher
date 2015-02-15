@@ -1,0 +1,22 @@
+--- qt-stable/qtbase/src/angle/src/compiler/translator_common.pro.orig	2013-06-18 08:49:51.975288500 +0000
++++ qt-stable/qtbase/src/angle/src/compiler/translator_common.pro	2013-06-18 08:50:06.047321000 +0000
+@@ -92,7 +92,7 @@
+     $$ANGLE_DIR/src/third_party/compiler/ArrayBoundsClamper.cpp
+ 
+ # NOTE: 'win_flex' and 'bison' can be found in qt5/gnuwin32/bin
+-flex.commands = $$addGnuPath(win_flex) --noline --nounistd --outfile=${QMAKE_FILE_BASE}_lex.cpp ${QMAKE_FILE_NAME}
++flex.commands = $$addGnuPath(flex) --noline --nounistd --outfile=${QMAKE_FILE_BASE}_lex.cpp ${QMAKE_FILE_NAME}
+ flex.output = ${QMAKE_FILE_BASE}_lex.cpp
+ flex.input = FLEX_SOURCES
+ flex.dependency_type = TYPE_C
+--- qt-stable/qtbase/src/angle/src/compiler/preprocessor/preprocessor.pro.orig	2013-06-18 08:50:54.314442500 +0000
++++ qt-stable/qtbase/src/angle/src/compiler/preprocessor/preprocessor.pro	2013-06-18 08:51:52.606574000 +0000
+@@ -43,7 +43,7 @@
+     $$ANGLE_DIR/src/compiler/preprocessor/Token.cpp
+ 
+ # NOTE: 'win_flex' and 'bison' can be found in qt5/gnuwin32/bin
+-flex.commands = $$addGnuPath(win_flex) --noline --nounistd --outfile=${QMAKE_FILE_BASE}.cpp ${QMAKE_FILE_NAME}
++flex.commands = $$addGnuPath(flex) --noline --nounistd --outfile=${QMAKE_FILE_BASE}.cpp ${QMAKE_FILE_NAME}
+ flex.output = ${QMAKE_FILE_BASE}.cpp
+ flex.input = FLEX_SOURCES
+ flex.dependency_type = TYPE_C

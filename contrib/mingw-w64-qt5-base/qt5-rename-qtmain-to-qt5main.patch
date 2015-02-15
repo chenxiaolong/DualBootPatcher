@@ -1,0 +1,35 @@
+--- qtbase-opensource-src-5.2.1/src/winmain/winmain.pro.orig	2014-04-29 18:51:05.206296152 +0200
++++ qtbase-opensource-src-5.2.1/src/winmain/winmain.pro	2014-04-29 18:51:18.737512221 +0200
+@@ -2,7 +2,7 @@
+ !win32:error("$$_FILE_ is intended only for Windows!")
+ 
+ TEMPLATE = lib
+-TARGET = qtmain
++TARGET = qt5main
+ DESTDIR = $$QT.core.libs
+ 
+ CONFIG += static
+--- qtbase-opensource-src-5.2.1/mkspecs/features/create_cmake.prf.orig	2014-04-29 18:53:49.511932034 +0200
++++ qtbase-opensource-src-5.2.1/mkspecs/features/create_cmake.prf	2014-04-29 18:54:44.515819011 +0200
+@@ -203,8 +203,8 @@
+     CMAKE_LIB_FILE_LOCATION_RELEASE = $${CMAKE_QT_STEM}.dll
+ 
+     mingw {
+-        CMAKE_WINMAIN_FILE_LOCATION_DEBUG = libqtmain$${QT_LIBINFIX}d.a
+-        CMAKE_WINMAIN_FILE_LOCATION_RELEASE = libqtmain$${QT_LIBINFIX}.a
++        CMAKE_WINMAIN_FILE_LOCATION_DEBUG = libqt5main$${QT_LIBINFIX}.a
++        CMAKE_WINMAIN_FILE_LOCATION_RELEASE = libqt5main$${QT_LIBINFIX}.a
+ 
+         !isEmpty(CMAKE_STATIC_TYPE) {
+             CMAKE_STATIC_WINDOWS_BUILD = "true"
+--- qtbase-opensource-src-5.3.1/mkspecs/features/win32/windows.prf.qtmain	2014-07-05 14:18:23.211155781 +0200
++++ qtbase-opensource-src-5.3.1/mkspecs/features/win32/windows.prf	2014-07-05 14:18:46.045390147 +0200
+@@ -6,7 +6,7 @@
+     mingw:DEFINES += QT_NEEDS_QMAIN
+ 
+     qt:for(entryLib, $$list($$unique(QMAKE_LIBS_QT_ENTRY))) {
+-        isEqual(entryLib, -lqtmain): {
++        isEqual(entryLib, -lqt5main): {
+             !contains(QMAKE_DEFAULT_LIBDIRS, $$QT.core.libs): \
+                 QMAKE_LIBS += -L$$QT.core.libs
+             CONFIG(debug, debug|release): QMAKE_LIBS += $${entryLib}$${QT_LIBINFIX}d

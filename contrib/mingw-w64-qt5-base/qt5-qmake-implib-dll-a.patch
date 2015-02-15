@@ -1,0 +1,33 @@
+--- a/qmake/generators/win32/mingw_make.cpp	2013-08-25 13:04:06.000000000 -0500
++++ b/qmake/generators/win32/mingw_make.cpp	2014-01-02 01:24:31.640046700 -0600
+@@ -71,7 +71,7 @@ QString MingwMakefileGenerator::escapeDe
+ 
+ QString MingwMakefileGenerator::getLibTarget()
+ {
+-    return QString("lib" + project->first("TARGET") + project->first("TARGET_VERSION_EXT") + ".a");
++    return QString("lib" + project->first("TARGET") + project->first("TARGET_VERSION_EXT") + ".dll.a");
+ }
+ 
+ bool MingwMakefileGenerator::findLibraries()
+@@ -268,7 +268,7 @@
+         if(!project->first("DESTDIR").isEmpty())
+             destDir = Option::fixPathToTargetOS(project->first("DESTDIR") + Option::dir_sep, false, false);
+         project->values("MINGW_IMPORT_LIB").prepend(destDir + "lib" + project->first("TARGET")
+-                                                         + project->first("TARGET_VERSION_EXT") + ".a");
++                                                         + project->first("TARGET_VERSION_EXT") + ".dll.a");
+         project->values("QMAKE_LFLAGS").append(QString("-Wl,--out-implib,") + project->first("MINGW_IMPORT_LIB"));
+     }
+ 
+--- a/mkspecs/features/create_cmake.prf.cmake     2013-10-22 10:49:28.000000000 +0200
++++ b/mkspecs/features/create_cmake.prf   2013-10-23 21:38:02.959762089 +0200
+@@ -207,8 +207,8 @@
+             CMAKE_PRL_FILE_LOCATION_DEBUG = lib$${CMAKE_QT_STEM}d.prl
+             CMAKE_PRL_FILE_LOCATION_RELEASE = lib$${CMAKE_QT_STEM}.prl
+         } else {
+-            CMAKE_IMPLIB_FILE_LOCATION_DEBUG = lib$${CMAKE_QT_STEM}d.a
+-            CMAKE_IMPLIB_FILE_LOCATION_RELEASE = lib$${CMAKE_QT_STEM}.a
++            CMAKE_IMPLIB_FILE_LOCATION_DEBUG = lib$${CMAKE_QT_STEM}d.dll.a
++            CMAKE_IMPLIB_FILE_LOCATION_RELEASE = lib$${CMAKE_QT_STEM}.dll.a
+         }
+     } else {
+         CMAKE_WINMAIN_FILE_LOCATION_DEBUG = qtmain$${QT_LIBINFIX}d.lib

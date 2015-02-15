@@ -1,0 +1,19 @@
+--- src.orig/3rdparty/angle/src/compiler/glslang.y	2014-01-02 11:53:56.393615041 +0100
++++ src/3rdparty/angle/src/compiler/glslang.y	2014-01-02 12:06:10.904972303 +0100
+@@ -47,6 +47,7 @@ WHICH GENERATES THE GLSL ES PARSER (glsl
+ %pure-parser
+ %parse-param {TParseContext* context}
+ %locations
++%lex-param {YYLEX_PARAM}
+ 
+ %code requires {
+ #define YYLTYPE TSourceLoc
+@@ -90,7 +91,7 @@ extern void yyerror(YYLTYPE* yylloc, TPa
+ 
+ #define YYLLOC_DEFAULT(Current, Rhs, N)                      \
+   do {                                                       \
+-      if (YYID(N)) {                                         \
++      if (N) {                                               \
+         (Current).first_file = YYRHSLOC(Rhs, 1).first_file;  \
+         (Current).first_line = YYRHSLOC(Rhs, 1).first_line;  \
+         (Current).last_file = YYRHSLOC(Rhs, N).last_file;    \

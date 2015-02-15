@@ -1,0 +1,48 @@
+--- mkspecs/features/qt_functions.prf.orig      2012-09-05 23:30:01.612735271 +0200
++++ mkspecs/features/qt_functions.prf   2012-09-05 23:32:40.030869399 +0200
+@@ -134,6 +134,19 @@
+         }
+ 
+         $$2 += $$LINKAGE
++
++        win32:CONFIG(static) {
++            isEqual(MODULE_NAME, Qt5Core) {
++                $$2 += $$QMAKE_LIBS_CORE
++            } else:isEqual(MODULE_NAME, Qt5Gui) {
++                $$2 += $$QMAKE_LIBS_GUI
++            } else:isEqual(MODULE_NAME, Qt5Network) {
++                $$2 += $$QMAKE_LIBS_NETWORK
++            } else:isEqual(MODULE_NAME, Qt5OpenGL) {
++                $$2 += $$QMAKE_LIBS_OPENGL
++            }
++        }
++
+         export($$2)
+ 
+         !isEmpty(QMAKE_LSB) {
+--- mkspecs/features/default_post.prf.orig      2012-09-05 23:28:56.827501401 +0200
++++ mkspecs/features/default_post.prf   2012-09-05 23:29:31.617923080 +0200
+@@ -47,3 +50,8 @@
+ 
+ QMAKE_INCDIR += $$QMAKE_INCDIR_POST
+ QMAKE_LIBDIR += $$QMAKE_LIBDIR_POST
++
++win32:contains(CONFIG, static) {
++    DEFINES += QT_STATIC
++    QMAKE_LFLAGS += -static
++}
+--- configure.orig	2012-12-10 23:51:02.920255366 +0100
++++ configure	2012-12-10 23:55:58.101753703 +0100
+@@ -6193,6 +6193,12 @@
+ }
+ QT_CONFIG += $QT_CONFIG
+ 
++contains(CONFIG, static) {
++    CONFIG -= shared
++    QT_CONFIG += static jpeg gif
++    QT_CONFIG -= shared
++}
++
+ #versioning
+ QT_VERSION = $QT_VERSION
+ QT_MAJOR_VERSION = $QT_MAJOR_VERSION

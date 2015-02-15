@@ -1,0 +1,13 @@
+--- qtbase-opensource-src-5.1.0/src/corelib/tools/qregularexpression.cpp.orig	2013-07-11 08:23:02.687691337 +0200
++++ qtbase-opensource-src-5.1.0/src/corelib/tools/qregularexpression.cpp	2013-07-11 08:23:27.231900674 +0200
+@@ -47,6 +47,10 @@
+ #include <QtCore/qatomic.h>
+ #include <QtCore/qdatastream.h>
+ 
++#ifdef QT_STATIC
++#define PCRE_STATIC
++#endif
++
+ #include <pcre.h>
+ 
+ QT_BEGIN_NAMESPACE

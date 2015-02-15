@@ -1,0 +1,10 @@
+--- src/gui/opengl/opengl.pri.orig	2014-12-05 09:24:35.000000000 -0700
++++ src/gui/opengl/opengl.pri	2015-02-09 10:48:48.484071754 -0700
+@@ -4,6 +4,7 @@
+ contains(QT_CONFIG, opengles2):CONFIG += opengles2
+ 
+ contains(QT_CONFIG, opengl)|contains(QT_CONFIG, opengles2) {
++    QMAKE_CXXFLAGS+="-Wa,-mbig-obj"
+ 
+     HEADERS += opengl/qopengl.h \
+                opengl/qopengl_p.h \

@@ -1,0 +1,12 @@
+--- qtbase-opensource-src-5.2.0/qmake/generators/makefile.cpp.orig	2014-01-03 01:30:23.631353708 +0100
++++ qtbase-opensource-src-5.2.0/qmake/generators/makefile.cpp	2014-01-03 01:32:37.888625966 +0100
+@@ -3168,6 +3168,9 @@
+         if (dot != -1)
+             ret = ret.left(dot);
+     }
++    if (project->isActiveConfig("debug")) {
++        ret += "d";
++    }
+     ret += Option::pkgcfg_ext;
+     QString subdir = project->first("QMAKE_PKGCONFIG_DESTDIR").toQString();
+     if(!subdir.isEmpty()) {
