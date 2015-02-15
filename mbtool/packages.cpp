@@ -24,61 +24,57 @@
 #include <cstring>
 #include <ctime>
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
+#include <pugixml.hpp>
 
 #include "util/logging.h"
 
 
-#define TO_CHAR (char *)
-#define TO_XMLCHAR (xmlChar *)
-
 namespace mb
 {
 
-static const xmlChar *TAG_CERT                  = TO_XMLCHAR "cert";
-static const xmlChar *TAG_DATABASE_VERSION      = TO_XMLCHAR "database-version";
-static const xmlChar *TAG_DEFINED_KEYSET        = TO_XMLCHAR "defined-keyset";
-static const xmlChar *TAG_KEYSET_SETTINGS       = TO_XMLCHAR "keyset-settings";
-static const xmlChar *TAG_LAST_PLATFORM_VERSION = TO_XMLCHAR "last-platform-version";
-static const xmlChar *TAG_PACKAGE               = TO_XMLCHAR "package";
-static const xmlChar *TAG_PACKAGES              = TO_XMLCHAR "packages";
-static const xmlChar *TAG_PERMISSION_TREES      = TO_XMLCHAR "permission-trees";
-static const xmlChar *TAG_PERMISSIONS           = TO_XMLCHAR "permissions";
-static const xmlChar *TAG_PERMS                 = TO_XMLCHAR "perms";
-static const xmlChar *TAG_PROPER_SIGNING_KEYSET = TO_XMLCHAR "proper-signing-keyset";
-static const xmlChar *TAG_RENAMED_PACKAGE       = TO_XMLCHAR "renamed-package";
-static const xmlChar *TAG_SHARED_USER           = TO_XMLCHAR "shared-user";
-static const xmlChar *TAG_SIGNING_KEYSET        = TO_XMLCHAR "signing-keyset";
-static const xmlChar *TAG_SIGS                  = TO_XMLCHAR "sigs";
-static const xmlChar *TAG_UPDATED_PACKAGE       = TO_XMLCHAR "updated-package";
-static const xmlChar *TAG_UPGRADE_KEYSET        = TO_XMLCHAR "upgrade-keyset";
+static const char *TAG_CERT                  = "cert";
+static const char *TAG_DATABASE_VERSION      = "database-version";
+static const char *TAG_DEFINED_KEYSET        = "defined-keyset";
+static const char *TAG_KEYSET_SETTINGS       = "keyset-settings";
+static const char *TAG_LAST_PLATFORM_VERSION = "last-platform-version";
+static const char *TAG_PACKAGE               = "package";
+static const char *TAG_PACKAGES              = "packages";
+static const char *TAG_PERMISSION_TREES      = "permission-trees";
+static const char *TAG_PERMISSIONS           = "permissions";
+static const char *TAG_PERMS                 = "perms";
+static const char *TAG_PROPER_SIGNING_KEYSET = "proper-signing-keyset";
+static const char *TAG_RENAMED_PACKAGE       = "renamed-package";
+static const char *TAG_SHARED_USER           = "shared-user";
+static const char *TAG_SIGNING_KEYSET        = "signing-keyset";
+static const char *TAG_SIGS                  = "sigs";
+static const char *TAG_UPDATED_PACKAGE       = "updated-package";
+static const char *TAG_UPGRADE_KEYSET        = "upgrade-keyset";
 
-static const xmlChar *ATTR_CODE_PATH            = TO_XMLCHAR "codePath";
-static const xmlChar *ATTR_CPU_ABI_OVERRIDE     = TO_XMLCHAR "cpuAbiOverride";
-static const xmlChar *ATTR_FLAGS                = TO_XMLCHAR "flags";
-static const xmlChar *ATTR_FT                   = TO_XMLCHAR "ft";
-static const xmlChar *ATTR_INDEX                = TO_XMLCHAR "index";
-static const xmlChar *ATTR_INSTALL_STATUS       = TO_XMLCHAR "installStatus";
-static const xmlChar *ATTR_INSTALLER            = TO_XMLCHAR "installer";
-static const xmlChar *ATTR_IT                   = TO_XMLCHAR "it";
-static const xmlChar *ATTR_KEY                  = TO_XMLCHAR "key";
-static const xmlChar *ATTR_NAME                 = TO_XMLCHAR "name";
-static const xmlChar *ATTR_NATIVE_LIBRARY_PATH  = TO_XMLCHAR "nativeLibraryPath";
-static const xmlChar *ATTR_PRIMARY_CPU_ABI      = TO_XMLCHAR "primaryCpuAbi";
-static const xmlChar *ATTR_REAL_NAME            = TO_XMLCHAR "realName";
-static const xmlChar *ATTR_RESOURCE_PATH        = TO_XMLCHAR "resourcePath";
-static const xmlChar *ATTR_SECONDARY_CPU_ABI    = TO_XMLCHAR "secondaryCpuAbi";
-static const xmlChar *ATTR_SHARED_USER_ID       = TO_XMLCHAR "sharedUserId";
-static const xmlChar *ATTR_UID_ERROR            = TO_XMLCHAR "uidError";
-static const xmlChar *ATTR_USER_ID              = TO_XMLCHAR "userId";
-static const xmlChar *ATTR_UT                   = TO_XMLCHAR "ut";
-static const xmlChar *ATTR_VERSION              = TO_XMLCHAR "version";
+static const char *ATTR_CODE_PATH            = "codePath";
+static const char *ATTR_CPU_ABI_OVERRIDE     = "cpuAbiOverride";
+static const char *ATTR_FLAGS                = "flags";
+static const char *ATTR_FT                   = "ft";
+static const char *ATTR_INDEX                = "index";
+static const char *ATTR_INSTALL_STATUS       = "installStatus";
+static const char *ATTR_INSTALLER            = "installer";
+static const char *ATTR_IT                   = "it";
+static const char *ATTR_KEY                  = "key";
+static const char *ATTR_NAME                 = "name";
+static const char *ATTR_NATIVE_LIBRARY_PATH  = "nativeLibraryPath";
+static const char *ATTR_PRIMARY_CPU_ABI      = "primaryCpuAbi";
+static const char *ATTR_REAL_NAME            = "realName";
+static const char *ATTR_RESOURCE_PATH        = "resourcePath";
+static const char *ATTR_SECONDARY_CPU_ABI    = "secondaryCpuAbi";
+static const char *ATTR_SHARED_USER_ID       = "sharedUserId";
+static const char *ATTR_UID_ERROR            = "uidError";
+static const char *ATTR_USER_ID              = "userId";
+static const char *ATTR_UT                   = "ut";
+static const char *ATTR_VERSION              = "version";
 
-static bool parse_tag_cert(xmlNode *node, Packages *pkgs);
-static bool parse_tag_sigs(xmlNode *node, Packages *pkgs);
-static bool parse_tag_package(xmlNode *node, Packages *pkgs);
-static bool parse_tag_packages(xmlNode *node, Packages *pkgs);
+static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs);
+static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs);
+static bool parse_tag_package(pugi::xml_node node, Packages *pkgs);
+static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs);
 
 
 Package::Package() :
@@ -227,54 +223,50 @@ void Package::dump()
 
 bool mb_packages_load_xml(Packages *pkgs, const std::string &path)
 {
-    LIBXML_TEST_VERSION
-
-    xmlDoc *doc = xmlReadFile(path.c_str(), nullptr, 0);
-    if (!doc) {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file(path.c_str());
+    if (!result) {
         LOGE("Failed to parse XML file: {}", path);
         return false;
     }
 
-    xmlNode *root = xmlDocGetRootElement(doc);
+    pugi::xml_node root = doc.root();
 
-    for (xmlNode *cur_node = root; cur_node; cur_node = cur_node->next) {
-        if (cur_node->type != XML_ELEMENT_NODE) {
+    for (pugi::xml_node cur_node : root.children()) {
+        if (cur_node.type() != pugi::xml_node_type::node_element) {
             continue;
         }
 
-        if (xmlStrcmp(cur_node->name, TAG_PACKAGES) == 0) {
-            parse_tag_packages(cur_node, pkgs);
+        if (strcmp(cur_node.name(), TAG_PACKAGES) == 0) {
+            if (!parse_tag_packages(cur_node, pkgs)) {
+                return false;
+            }
         } else {
-            LOGW("Unrecognized root tag: {}", cur_node->name);
+            LOGW("Unrecognized root tag: {}", cur_node.name());
         }
     }
-
-    xmlFreeDoc(doc);
-    xmlCleanupParser();
 
     return true;
 }
 
-static bool parse_tag_cert(xmlNode *node, Packages *pkgs)
+static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs)
 {
-    assert(xmlStrcmp(node->name, TAG_CERT) == 0);
+    assert(strcmp(node->name, TAG_CERT) == 0);
 
     std::string index;
     std::string key;
 
-    for (xmlAttr *attr = node->properties; attr; attr = attr->next) {
-        const xmlChar *name = attr->name;
-        xmlChar *value = xmlGetProp(node, attr->name);
+    for (pugi::xml_attribute attr : node.attributes()) {
+        const pugi::char_t *name = attr.name();
+        const pugi::char_t *value = attr.value();
 
-        if (xmlStrcmp(name, ATTR_INDEX) == 0) {
-            index = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_KEY) == 0) {
-            key = TO_CHAR value;
+        if (strcmp(name, ATTR_INDEX) == 0) {
+            index = value;
+        } else if (strcmp(name, ATTR_KEY) == 0) {
+            key = value;
         } else {
             LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_CERT);
         }
-
-        xmlFree(value);
     }
 
     if (index.empty()) {
@@ -296,104 +288,102 @@ static bool parse_tag_cert(xmlNode *node, Packages *pkgs)
     return true;
 }
 
-static bool parse_tag_sigs(xmlNode *node, Packages *pkgs)
+static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs)
 {
-    assert(xmlStrcmp(node->name, TAG_SIGS) == 0);
+    assert(strcmp(node.name(), TAG_SIGS) == 0);
 
-    for (xmlNode *cur_node = node->children; cur_node; cur_node = cur_node->next) {
-        if (cur_node->type != XML_ELEMENT_NODE) {
+    for (pugi::xml_node cur_node : node.children()) {
+        if (cur_node.type() != pugi::xml_node_type::node_element) {
             continue;
         }
 
-        if (xmlStrcmp(cur_node->name, TAG_SIGS) == 0) {
+        if (strcmp(cur_node.name(), TAG_SIGS) == 0) {
             LOGW("Nested <{}> is not allowed", TAG_SIGS);
-        } else if (xmlStrcmp(cur_node->name, TAG_CERT) == 0) {
+        } else if (strcmp(cur_node.name(), TAG_CERT) == 0) {
             if (!parse_tag_cert(cur_node, pkgs)) {
                 return false;
             }
         } else {
-            LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_SIGS);
+            LOGW("Unrecognized <{}> within <{}>", cur_node.name(), TAG_SIGS);
         }
     }
 
     return true;
 }
 
-static bool parse_tag_package(xmlNode *node, Packages *pkgs)
+static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
 {
-    assert(xmlStrcmp(node->name, TAG_PACKAGE) == 0);
+    assert(strcmp(node.name(), TAG_PACKAGE) == 0);
 
     std::shared_ptr<Package> pkg(new Package());
 
-    for (xmlAttr *attr = node->properties; attr; attr = attr->next) {
-        const xmlChar *name = attr->name;
-        xmlChar *value = xmlGetProp(node, attr->name);
+    for (pugi::xml_attribute attr : node.attributes()) {
+        const pugi::char_t *name = attr.name();
+        const pugi::char_t *value = attr.value();
 
-        if (xmlStrcmp(name, ATTR_CODE_PATH) == 0) {
-            pkg->code_path = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_CPU_ABI_OVERRIDE) == 0) {
-            pkg->cpu_abi_override = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_FLAGS) == 0) {
+        if (strcmp(name, ATTR_CODE_PATH) == 0) {
+            pkg->code_path = value;
+        } else if (strcmp(name, ATTR_CPU_ABI_OVERRIDE) == 0) {
+            pkg->cpu_abi_override = value;
+        } else if (strcmp(name, ATTR_FLAGS) == 0) {
             pkg->pkg_flags = static_cast<Package::Flags>(
-                    strtoll(TO_CHAR value, nullptr, 10));
-        } else if (xmlStrcmp(name, ATTR_FT) == 0) {
-            pkg->timestamp = strtoull(TO_CHAR value, nullptr, 16);
-        } else if (xmlStrcmp(name, ATTR_INSTALL_STATUS) == 0) {
-            pkg->install_status = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_INSTALLER) == 0) {
-            pkg->installer = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_IT) == 0) {
-            pkg->first_install_time = strtoull(TO_CHAR value, nullptr, 16);
-        } else if (xmlStrcmp(name, ATTR_NAME) == 0) {
-            pkg->name = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_NATIVE_LIBRARY_PATH) == 0) {
-            pkg->native_library_path = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_PRIMARY_CPU_ABI) == 0) {
-            pkg->primary_cpu_abi = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_REAL_NAME) == 0) {
-            pkg->real_name = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_RESOURCE_PATH) == 0) {
-            pkg->resource_path = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_SECONDARY_CPU_ABI) == 0) {
-            pkg->secondary_cpu_abi = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_SHARED_USER_ID) == 0) {
-            pkg->shared_user_id = strtol(TO_CHAR value, nullptr, 10);
+                    strtoll(value, nullptr, 10));
+        } else if (strcmp(name, ATTR_FT) == 0) {
+            pkg->timestamp = strtoull(value, nullptr, 16);
+        } else if (strcmp(name, ATTR_INSTALL_STATUS) == 0) {
+            pkg->install_status = value;
+        } else if (strcmp(name, ATTR_INSTALLER) == 0) {
+            pkg->installer = value;
+        } else if (strcmp(name, ATTR_IT) == 0) {
+            pkg->first_install_time = strtoull(value, nullptr, 16);
+        } else if (strcmp(name, ATTR_NAME) == 0) {
+            pkg->name = value;
+        } else if (strcmp(name, ATTR_NATIVE_LIBRARY_PATH) == 0) {
+            pkg->native_library_path = value;
+        } else if (strcmp(name, ATTR_PRIMARY_CPU_ABI) == 0) {
+            pkg->primary_cpu_abi = value;
+        } else if (strcmp(name, ATTR_REAL_NAME) == 0) {
+            pkg->real_name = value;
+        } else if (strcmp(name, ATTR_RESOURCE_PATH) == 0) {
+            pkg->resource_path = value;
+        } else if (strcmp(name, ATTR_SECONDARY_CPU_ABI) == 0) {
+            pkg->secondary_cpu_abi = value;
+        } else if (strcmp(name, ATTR_SHARED_USER_ID) == 0) {
+            pkg->shared_user_id = strtol(value, nullptr, 10);
             pkg->is_shared_user = 1;
-        } else if (xmlStrcmp(name, ATTR_UID_ERROR) == 0) {
-            pkg->uid_error = TO_CHAR value;
-        } else if (xmlStrcmp(name, ATTR_USER_ID) == 0) {
-            pkg->user_id = strtol(TO_CHAR value, nullptr, 10);
+        } else if (strcmp(name, ATTR_UID_ERROR) == 0) {
+            pkg->uid_error = value;
+        } else if (strcmp(name, ATTR_USER_ID) == 0) {
+            pkg->user_id = strtol(value, nullptr, 10);
             pkg->is_shared_user = 0;
-        } else if (xmlStrcmp(name, ATTR_UT) == 0) {
-            pkg->last_update_time = strtoull(TO_CHAR value, nullptr, 16);
-        } else if (xmlStrcmp(name, ATTR_VERSION) == 0) {
-            pkg->version = strtol(TO_CHAR value, nullptr, 10);
+        } else if (strcmp(name, ATTR_UT) == 0) {
+            pkg->last_update_time = strtoull(value, nullptr, 16);
+        } else if (strcmp(name, ATTR_VERSION) == 0) {
+            pkg->version = strtol(value, nullptr, 10);
         } else {
             LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_PACKAGE);
         }
-
-        xmlFree(value);
     }
 
-    for (xmlNode *cur_node = node->children; cur_node; cur_node = cur_node->next) {
-        if (cur_node->type != XML_ELEMENT_NODE) {
+    for (pugi::xml_node cur_node : node.children()) {
+        if (cur_node.type() != pugi::xml_node_type::node_element) {
             continue;
         }
 
-        if (xmlStrcmp(cur_node->name, TAG_PACKAGE) == 0) {
+        if (strcmp(cur_node.name(), TAG_PACKAGE) == 0) {
             LOGW("Nested <{}> is not allowed", TAG_PACKAGE);
-        } else if (xmlStrcmp(cur_node->name, TAG_DEFINED_KEYSET) == 0
-                || xmlStrcmp(cur_node->name, TAG_PERMS) == 0
-                || xmlStrcmp(cur_node->name, TAG_PROPER_SIGNING_KEYSET) == 0
-                || xmlStrcmp(cur_node->name, TAG_SIGNING_KEYSET) == 0
-                || xmlStrcmp(cur_node->name, TAG_UPGRADE_KEYSET) == 0) {
+        } else if (strcmp(cur_node.name(), TAG_DEFINED_KEYSET) == 0
+                || strcmp(cur_node.name(), TAG_PERMS) == 0
+                || strcmp(cur_node.name(), TAG_PROPER_SIGNING_KEYSET) == 0
+                || strcmp(cur_node.name(), TAG_SIGNING_KEYSET) == 0
+                || strcmp(cur_node.name(), TAG_UPGRADE_KEYSET) == 0) {
             // Ignore
-        } else if (xmlStrcmp(cur_node->name, TAG_SIGS) == 0) {
+        } else if (strcmp(cur_node.name(), TAG_SIGS) == 0) {
             if (!parse_tag_sigs(cur_node, pkgs)) {
                 return false;
             }
         } else {
-            LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_PACKAGE);
+            LOGW("Unrecognized <{}> within <{}>", cur_node.name(), TAG_PACKAGE);
         }
     }
 
@@ -402,32 +392,32 @@ static bool parse_tag_package(xmlNode *node, Packages *pkgs)
     return true;
 }
 
-static bool parse_tag_packages(xmlNode *node, Packages *pkgs)
+static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs)
 {
-    assert(xmlStrcmp(node->name, TAG_PACKAGES) == 0);
+    assert(strcmp(node.name(), TAG_PACKAGES) == 0);
 
-    for (xmlNode *cur_node = node->children; cur_node; cur_node = cur_node->next) {
-        if (cur_node->type != XML_ELEMENT_NODE) {
+    for (pugi::xml_node cur_node : node.children()) {
+        if (cur_node.type() != pugi::xml_node_type::node_element) {
             continue;
         }
 
-        if (xmlStrcmp(cur_node->name, TAG_PACKAGES) == 0) {
+        if (strcmp(cur_node.name(), TAG_PACKAGES) == 0) {
             LOGW("Nested <{}> is not allowed", TAG_PACKAGES);
-        } else if (xmlStrcmp(cur_node->name, TAG_PACKAGE) == 0) {
+        } else if (strcmp(cur_node.name(), TAG_PACKAGE) == 0) {
             if (!parse_tag_package(cur_node, pkgs)) {
                 return false;
             }
-        } else if (xmlStrcmp(cur_node->name, TAG_DATABASE_VERSION) == 0
-                || xmlStrcmp(cur_node->name, TAG_KEYSET_SETTINGS) == 0
-                || xmlStrcmp(cur_node->name, TAG_LAST_PLATFORM_VERSION) == 0
-                || xmlStrcmp(cur_node->name, TAG_PERMISSION_TREES) == 0
-                || xmlStrcmp(cur_node->name, TAG_PERMISSIONS) == 0
-                || xmlStrcmp(cur_node->name, TAG_RENAMED_PACKAGE) == 0
-                || xmlStrcmp(cur_node->name, TAG_SHARED_USER) == 0
-                || xmlStrcmp(cur_node->name, TAG_UPDATED_PACKAGE) == 0) {
+        } else if (strcmp(cur_node.name(), TAG_DATABASE_VERSION) == 0
+                || strcmp(cur_node.name(), TAG_KEYSET_SETTINGS) == 0
+                || strcmp(cur_node.name(), TAG_LAST_PLATFORM_VERSION) == 0
+                || strcmp(cur_node.name(), TAG_PERMISSION_TREES) == 0
+                || strcmp(cur_node.name(), TAG_PERMISSIONS) == 0
+                || strcmp(cur_node.name(), TAG_RENAMED_PACKAGE) == 0
+                || strcmp(cur_node.name(), TAG_SHARED_USER) == 0
+                || strcmp(cur_node.name(), TAG_UPDATED_PACKAGE) == 0) {
             // Ignore
         } else {
-            LOGW("Unrecognized <{}> within <{}>", cur_node->name, TAG_PACKAGES);
+            LOGW("Unrecognized <{}> within <{}>", cur_node.name(), TAG_PACKAGES);
         }
     }
 
