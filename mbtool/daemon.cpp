@@ -124,7 +124,7 @@ static bool v1_set_kernel(int fd)
         return false;
     }
 
-    if (util::socket_read_string(fd, &boot_blockdev)) {
+    if (!util::socket_read_string(fd, &boot_blockdev)) {
         return false;
     }
 
@@ -184,7 +184,7 @@ static bool connection_version_1(int fd)
             }
         } else {
             // Invalid command; allow further commands
-            if (util::socket_write_string(fd, RESPONSE_UNSUPPORTED)) {
+            if (!util::socket_write_string(fd, RESPONSE_UNSUPPORTED)) {
                 return false;
             }
         }
