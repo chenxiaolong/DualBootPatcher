@@ -24,6 +24,10 @@ DEBUGGING := false
 # Whether ccache should be used (highly recommended!)
 USE_CCACHE := true
 
+# Allow debug certificate?
+# WARNING: Dangerous!
+ALLOW_DEBUG_CERT := false
+
 
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
@@ -119,6 +123,7 @@ mbtool_src_base := \
 	packages.cpp \
 	roms.cpp \
 	sepolpatch.cpp \
+	validcerts.cpp \
 	external/mntent.c \
 	external/sha.c \
 	$(EXTERNAL_DIR)/cppformat/format.cc \
@@ -142,6 +147,10 @@ mb_common_cflags += -DFMT_EXCEPTIONS=0 -DPUGIXML_NO_EXCEPTIONS
 
 ifeq ($(DEBUGGING),true)
 mb_common_cflags += -DMB_LIBC_DEBUG
+endif
+
+ifeq ($(ALLOW_DEBUG_CERT),true)
+mb_common_cflags += -DALLOW_DEBUG_CERT -Wno-error=cpp
 endif
 
 

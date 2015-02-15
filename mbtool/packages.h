@@ -89,6 +89,8 @@ public:
     std::string install_status;                 // (not in PackageSetting)
     std::string installer;                      // PackageSetting.installerPackageName
 
+    std::vector<std::string> sig_indexes;
+
     // Functions
     Package();
 
@@ -100,8 +102,10 @@ class Packages
 public:
     std::vector<std::shared_ptr<Package>> pkgs;
     std::unordered_map<std::string, std::string> sigs;
-};
 
-bool mb_packages_load_xml(Packages *pkgs, const std::string &path);
+    bool load_xml(const std::string &path);
+
+    std::shared_ptr<Package> find_by_uid(uid_t uid);
+};
 
 }

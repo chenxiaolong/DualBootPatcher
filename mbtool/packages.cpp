@@ -71,8 +71,10 @@ static const char *ATTR_USER_ID              = "userId";
 static const char *ATTR_UT                   = "ut";
 static const char *ATTR_VERSION              = "version";
 
-static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs);
-static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs);
+static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
+                           std::shared_ptr<Package> pkg);
+static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs,
+                           std::shared_ptr<Package> pkg);
 static bool parse_tag_package(pugi::xml_node node, Packages *pkgs);
 static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs);
 
@@ -221,12 +223,15 @@ void Package::dump()
         LOGD("- Installer:           {}", installer);
 }
 
-bool mb_packages_load_xml(Packages *pkgs, const std::string &path)
+bool Packages::load_xml(const std::string &path)
 {
+    pkgs.clear();
+    sigs.clear();
+
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(path.c_str());
     if (!result) {
-        LOGE("Failed to parse XML file: {}", path);
+        LOGE("Failed to parse XML file: {}: {}", path, result.description());
         return false;
     }
 
@@ -238,7 +243,7 @@ bool mb_packages_load_xml(Packages *pkgs, const std::string &path)
         }
 
         if (strcmp(cur_node.name(), TAG_PACKAGES) == 0) {
-            if (!parse_tag_packages(cur_node, pkgs)) {
+            if (!parse_tag_packages(cur_node, this)) {
                 return false;
             }
         } else {
@@ -249,7 +254,8 @@ bool mb_packages_load_xml(Packages *pkgs, const std::string &path)
     return true;
 }
 
-static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs)
+static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
+                           std::shared_ptr<Package> pkg)
 {
     assert(strcmp(node->name, TAG_CERT) == 0);
 
@@ -271,7 +277,10 @@ static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs)
 
     if (index.empty()) {
         LOGW("Missing or empty index in <{}>", TAG_CERT);
-    } else if (!key.empty()) {
+    } else {
+        pkg->sig_indexes.push_back(index);
+    }
+    if (!index.empty() && !key.empty()) {
         auto it = pkgs->sigs.find(index);
         if (it != pkgs->sigs.end()) {
             // Make sure key matches if it's already in the map
@@ -288,7 +297,8 @@ static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs)
     return true;
 }
 
-static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs)
+static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs,
+                           std::shared_ptr<Package> pkg)
 {
     assert(strcmp(node.name(), TAG_SIGS) == 0);
 
@@ -300,7 +310,7 @@ static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs)
         if (strcmp(cur_node.name(), TAG_SIGS) == 0) {
             LOGW("Nested <{}> is not allowed", TAG_SIGS);
         } else if (strcmp(cur_node.name(), TAG_CERT) == 0) {
-            if (!parse_tag_cert(cur_node, pkgs)) {
+            if (!parse_tag_cert(cur_node, pkgs, pkg)) {
                 return false;
             }
         } else {
@@ -379,7 +389,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
                 || strcmp(cur_node.name(), TAG_UPGRADE_KEYSET) == 0) {
             // Ignore
         } else if (strcmp(cur_node.name(), TAG_SIGS) == 0) {
-            if (!parse_tag_sigs(cur_node, pkgs)) {
+            if (!parse_tag_sigs(cur_node, pkgs, pkg)) {
                 return false;
             }
         } else {
@@ -422,6 +432,15 @@ static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs)
     }
 
     return true;
+}
+
+std::shared_ptr<Package> Packages::find_by_uid(uid_t uid)
+{
+    auto it = std::find_if(pkgs.begin(), pkgs.end(),
+                           [&](const std::shared_ptr<Package> &pkg) {
+        return !pkg->is_shared_user && pkg->user_id == static_cast<int>(uid);
+    });
+    return it == pkgs.end() ? std::shared_ptr<Package>() : *it;
 }
 
 }

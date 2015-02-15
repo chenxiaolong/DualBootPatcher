@@ -31,6 +31,7 @@
 
 #include "actions.h"
 #include "roms.h"
+#include "validcerts.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/socket.h"
@@ -210,20 +211,46 @@ static bool connection_version_1(int fd)
     return true;
 }
 
-#if 0
-static int verify_credentials(uid_t uid)
+static bool verify_credentials(uid_t uid)
 {
-    struct packages pkgs;
-    mb_packages_init(&pkgs);
-    mb_packages_load_xml(&pkgs, "/data/local/tmp/packages.xml");
+    // Rely on the OS for signature checking and simply compare strings in
+    // packages.xml. The only way that file changes is if the package is
+    // removed and reinstalled, in which case, Android will kill the client and
+    // the connection will terminate. Or, the client already has root access, in
+    // which case, there's not much we can do to prevent damage.
 
+    Packages pkgs;
+    if (!pkgs.load_xml("/data/system/packages.xml")) {
+        LOGE("Failed to load /data/system/packages.xml");
+        return false;
+    }
 
+    std::shared_ptr<Package> pkg = pkgs.find_by_uid(uid);
+    if (!pkg) {
+        LOGE("Failed to find package for UID {:d}", uid);
+        return false;
+    }
 
-    mb_packages_cleanup(&pkgs);
+    pkg->dump();
+    LOGD("{} has {:d} signatures", pkg->name, pkg->sig_indexes.size());
 
-    return 0;
+    for (const std::string &index : pkg->sig_indexes) {
+        if (pkgs.sigs.find(index) == pkgs.sigs.end()) {
+            LOGW("Signature index {} has no key", index);
+            continue;
+        }
+
+        const std::string &key = pkgs.sigs[index];
+        if (std::find(valid_certs.begin(), valid_certs.end(), key)
+                != valid_certs.end()) {
+            LOGV("{} matches whitelisted signatures", pkg->name);
+            return true;
+        }
+    }
+
+    LOGE("{} does not match whitelisted signatures", pkg->name);
+    return false;
 }
-#endif
 
 static bool client_connection(int fd)
 {
@@ -248,9 +275,15 @@ static bool client_connection(int fd)
     LOGD("Client UID: {:d}", cred.uid);
     LOGD("Client GID: {:d}", cred.gid);
 
-    // TODO: Verify credentials
-    if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
-        LOGE("Failed to send credentials allowed message");
+    if (verify_credentials(cred.uid)) {
+        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
+            LOGE("Failed to send credentials allowed message");
+            return ret = false;
+        }
+    } else {
+        if (!util::socket_write_string(fd, RESPONSE_DENY)) {
+            LOGE("Failed to send credentials denied message");
+        }
         return ret = false;
     }
 
