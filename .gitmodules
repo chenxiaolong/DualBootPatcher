@@ -16,3 +16,6 @@
 [submodule "external/cppformat"]
 	path = external/cppformat
 	url = https://github.com/chenxiaolong/cppformat.git
+[submodule "external/pugixml"]
+	path = external/pugixml
+	url = https://github.com/zeux/pugixml.git
