@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "libmbp_global.h"
+
 #include <string>
 
 namespace MBP
@@ -34,6 +36,6 @@ enum class LogLevel : int {
 
 typedef void (*LogFunction)(LogLevel, const std::string &);
 
-void setLogCallback(LogFunction cb);
+MBP_EXPORT void setLogCallback(LogFunction cb);
 
 }
