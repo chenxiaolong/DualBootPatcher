@@ -102,125 +102,131 @@ Package::Package() :
 {
 }
 
-static char * time_to_string(unsigned long long time)
+static char * time_to_string(uint64_t time)
 {
     static char buf[50];
 
     const time_t t = time / 1000;
-    strftime(buf, 50, "%a %b %d %H:%M:%S %Y", localtime(&t));
+    strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Y", localtime(&t));
 
     return buf;
 }
 
-#define DUMP_FLAG(f) LOGD("-                      {} ({:#x})", #f, f);
+#define DUMP_FLAG(flag) LOGD(fmt_flag, "", #flag, \
+                             static_cast<uint64_t>(Package::flag))
 
 void Package::dump()
 {
+    static const char *fmt_string = "- {:<22} {}";
+    static const char *fmt_int    = "- {:<22} {:d}";
+    static const char *fmt_hex    = "- {:<22} {:#x}";
+    static const char *fmt_flag   = "- {:<22} {} ({:#x})";
+
     LOGD("Package:");
     if (!name.empty())
-        LOGD("- Name:                {}", name);
+        LOGD(fmt_string, "Name:", name);
     if (!real_name.empty())
-        LOGD("- Real name:           {}", real_name);
+        LOGD(fmt_string, "Real name:", real_name);
     if (!code_path.empty())
-        LOGD("- Code path:           {}", code_path);
+        LOGD(fmt_string, "Code path:", code_path);
     if (!resource_path.empty())
-        LOGD("- Resource path:       {}", resource_path);
+        LOGD(fmt_string, "Resource path:", resource_path);
     if (!native_library_path.empty())
-        LOGD("- Native library path: {}", native_library_path);
+        LOGD(fmt_string, "Native library path:", native_library_path);
     if (!primary_cpu_abi.empty())
-        LOGD("- Primary CPU ABI:     {}", primary_cpu_abi);
+        LOGD(fmt_string, "Primary CPU ABI:", primary_cpu_abi);
     if (!secondary_cpu_abi.empty())
-        LOGD("- Secondary CPU ABI:   {}", secondary_cpu_abi);
+        LOGD(fmt_string, "Secondary CPU ABI:", secondary_cpu_abi);
     if (!cpu_abi_override.empty())
-        LOGD("- CPU ABI override:    {}", cpu_abi_override);
+        LOGD(fmt_string, "CPU ABI override:", cpu_abi_override);
 
-    LOGD("- Flags:               {:#x}", pkg_flags);
+    LOGD(fmt_hex, "Flags:", static_cast<uint64_t>(pkg_flags));
     if (pkg_flags & Package::FLAG_SYSTEM)
-        DUMP_FLAG(Package::FLAG_SYSTEM);
+        DUMP_FLAG(FLAG_SYSTEM);
     if (pkg_flags & Package::FLAG_DEBUGGABLE)
-        DUMP_FLAG(Package::FLAG_DEBUGGABLE);
+        DUMP_FLAG(FLAG_DEBUGGABLE);
     if (pkg_flags & Package::FLAG_HAS_CODE)
-        DUMP_FLAG(Package::FLAG_HAS_CODE);
+        DUMP_FLAG(FLAG_HAS_CODE);
     if (pkg_flags & Package::FLAG_PERSISTENT)
-        DUMP_FLAG(Package::FLAG_PERSISTENT);
+        DUMP_FLAG(FLAG_PERSISTENT);
     if (pkg_flags & Package::FLAG_FACTORY_TEST)
-        DUMP_FLAG(Package::FLAG_FACTORY_TEST);
+        DUMP_FLAG(FLAG_FACTORY_TEST);
     if (pkg_flags & Package::FLAG_ALLOW_TASK_REPARENTING)
-        DUMP_FLAG(Package::FLAG_ALLOW_TASK_REPARENTING);
+        DUMP_FLAG(FLAG_ALLOW_TASK_REPARENTING);
     if (pkg_flags & Package::FLAG_ALLOW_CLEAR_USER_DATA)
-        DUMP_FLAG(Package::FLAG_ALLOW_CLEAR_USER_DATA);
+        DUMP_FLAG(FLAG_ALLOW_CLEAR_USER_DATA);
     if (pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
-        DUMP_FLAG(Package::FLAG_UPDATED_SYSTEM_APP);
+        DUMP_FLAG(FLAG_UPDATED_SYSTEM_APP);
     if (pkg_flags & Package::FLAG_TEST_ONLY)
-        DUMP_FLAG(Package::FLAG_TEST_ONLY);
+        DUMP_FLAG(FLAG_TEST_ONLY);
     if (pkg_flags & Package::FLAG_SUPPORTS_SMALL_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_SMALL_SCREENS);
+        DUMP_FLAG(FLAG_SUPPORTS_SMALL_SCREENS);
     if (pkg_flags & Package::FLAG_SUPPORTS_NORMAL_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_NORMAL_SCREENS);
+        DUMP_FLAG(FLAG_SUPPORTS_NORMAL_SCREENS);
     if (pkg_flags & Package::FLAG_SUPPORTS_LARGE_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_LARGE_SCREENS);
+        DUMP_FLAG(FLAG_SUPPORTS_LARGE_SCREENS);
     if (pkg_flags & Package::FLAG_RESIZEABLE_FOR_SCREENS)
-        DUMP_FLAG(Package::FLAG_RESIZEABLE_FOR_SCREENS);
+        DUMP_FLAG(FLAG_RESIZEABLE_FOR_SCREENS);
     if (pkg_flags & Package::FLAG_SUPPORTS_SCREEN_DENSITIES)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_SCREEN_DENSITIES);
+        DUMP_FLAG(FLAG_SUPPORTS_SCREEN_DENSITIES);
     if (pkg_flags & Package::FLAG_VM_SAFE_MODE)
-        DUMP_FLAG(Package::FLAG_VM_SAFE_MODE);
+        DUMP_FLAG(FLAG_VM_SAFE_MODE);
     if (pkg_flags & Package::FLAG_ALLOW_BACKUP)
-        DUMP_FLAG(Package::FLAG_ALLOW_BACKUP);
+        DUMP_FLAG(FLAG_ALLOW_BACKUP);
     if (pkg_flags & Package::FLAG_KILL_AFTER_RESTORE)
-        DUMP_FLAG(Package::FLAG_KILL_AFTER_RESTORE);
+        DUMP_FLAG(FLAG_KILL_AFTER_RESTORE);
     if (pkg_flags & Package::FLAG_RESTORE_ANY_VERSION)
-        DUMP_FLAG(Package::FLAG_RESTORE_ANY_VERSION);
+        DUMP_FLAG(FLAG_RESTORE_ANY_VERSION);
     if (pkg_flags & Package::FLAG_EXTERNAL_STORAGE)
-        DUMP_FLAG(Package::FLAG_EXTERNAL_STORAGE);
+        DUMP_FLAG(FLAG_EXTERNAL_STORAGE);
     if (pkg_flags & Package::FLAG_SUPPORTS_XLARGE_SCREENS)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_XLARGE_SCREENS);
+        DUMP_FLAG(FLAG_SUPPORTS_XLARGE_SCREENS);
     if (pkg_flags & Package::FLAG_LARGE_HEAP)
-        DUMP_FLAG(Package::FLAG_LARGE_HEAP);
+        DUMP_FLAG(FLAG_LARGE_HEAP);
     if (pkg_flags & Package::FLAG_STOPPED)
-        DUMP_FLAG(Package::FLAG_STOPPED);
+        DUMP_FLAG(FLAG_STOPPED);
     if (pkg_flags & Package::FLAG_SUPPORTS_RTL)
-        DUMP_FLAG(Package::FLAG_SUPPORTS_RTL);
+        DUMP_FLAG(FLAG_SUPPORTS_RTL);
     if (pkg_flags & Package::FLAG_INSTALLED)
-        DUMP_FLAG(Package::FLAG_INSTALLED);
+        DUMP_FLAG(FLAG_INSTALLED);
     if (pkg_flags & Package::FLAG_IS_DATA_ONLY)
-        DUMP_FLAG(Package::FLAG_IS_DATA_ONLY);
+        DUMP_FLAG(FLAG_IS_DATA_ONLY);
     if (pkg_flags & Package::FLAG_IS_GAME)
-        DUMP_FLAG(Package::FLAG_IS_GAME);
+        DUMP_FLAG(FLAG_IS_GAME);
     if (pkg_flags & Package::FLAG_FULL_BACKUP_ONLY)
-        DUMP_FLAG(Package::FLAG_FULL_BACKUP_ONLY);
+        DUMP_FLAG(FLAG_FULL_BACKUP_ONLY);
     if (pkg_flags & Package::FLAG_HIDDEN)
-        DUMP_FLAG(Package::FLAG_HIDDEN);
+        DUMP_FLAG(FLAG_HIDDEN);
     if (pkg_flags & Package::FLAG_CANT_SAVE_STATE)
-        DUMP_FLAG(Package::FLAG_CANT_SAVE_STATE);
+        DUMP_FLAG(FLAG_CANT_SAVE_STATE);
     if (pkg_flags & Package::FLAG_FORWARD_LOCK)
-        DUMP_FLAG(Package::FLAG_FORWARD_LOCK);
+        DUMP_FLAG(FLAG_FORWARD_LOCK);
     if (pkg_flags & Package::FLAG_PRIVILEGED)
-        DUMP_FLAG(Package::FLAG_PRIVILEGED);
+        DUMP_FLAG(FLAG_PRIVILEGED);
     if (pkg_flags & Package::FLAG_MULTIARCH)
-        DUMP_FLAG(Package::FLAG_MULTIARCH);
+        DUMP_FLAG(FLAG_MULTIARCH);
 
     if (timestamp > 0)
-        LOGD("- Timestamp:           {}", time_to_string(timestamp));
+        LOGD(fmt_string, "Timestamp:", time_to_string(timestamp));
     if (first_install_time > 0)
-        LOGD("- First install time:  {}", time_to_string(first_install_time));
+        LOGD(fmt_string, "First install time:", time_to_string(first_install_time));
     if (last_update_time > 0)
-        LOGD("- Last update time:    {}", time_to_string(last_update_time));
+        LOGD(fmt_string, "Last update time:", time_to_string(last_update_time));
 
-    LOGD("- Version:             {}", version);
+    LOGD(fmt_int, "Version:", version);
 
     if (is_shared_user) {
-        LOGD("- Shared user ID:      {}", shared_user_id);
+        LOGD(fmt_int, "Shared user ID:", shared_user_id);
     } else {
-        LOGD("- User ID:             {}", user_id);
+        LOGD(fmt_int, "User ID:", user_id);
     }
 
     if (!uid_error.empty())
-        LOGD("- UID error:           {}", uid_error);
+        LOGD(fmt_string, "UID error:", uid_error);
     if (!install_status.empty())
-        LOGD("- Install status:      {}", install_status);
+        LOGD(fmt_string, "Install status:", install_status);
     if (!installer.empty())
-        LOGD("- Installer:           {}", installer);
+        LOGD(fmt_string, "Installer:", installer);
 }
 
 bool Packages::load_xml(const std::string &path)

@@ -68,26 +68,26 @@ public:
         FLAG_MULTIARCH                 = 1ULL << 31
     };
 
-    std::string name;                           // PackageSetting.name
-    std::string real_name;                      // PackageSetting.realName
-    std::string code_path;                      // PackageSetting.codePathString
-    std::string resource_path;                  // PackageSetting.resourcePathString
-    std::string native_library_path;            // PackageSetting.legacyNativeLibraryPathString
-    std::string primary_cpu_abi;                // PackageSetting.primaryCpuAbiString
-    std::string secondary_cpu_abi;              // PackageSetting.secondaryCpuAbiString
-    std::string cpu_abi_override;               // PackageSetting.cpuAbiOverride
-    Flags pkg_flags;                            // PackageSetting.pkgFlags
+    std::string name;                   // PackageSetting.name
+    std::string real_name;              // PackageSetting.realName
+    std::string code_path;              // PackageSetting.codePathString
+    std::string resource_path;          // PackageSetting.resourcePathString
+    std::string native_library_path;    // PackageSetting.legacyNativeLibraryPathString
+    std::string primary_cpu_abi;        // PackageSetting.primaryCpuAbiString
+    std::string secondary_cpu_abi;      // PackageSetting.secondaryCpuAbiString
+    std::string cpu_abi_override;       // PackageSetting.cpuAbiOverride
+    Flags pkg_flags;                    // PackageSetting.pkgFlags
     // Timestamps are in milliseconds epoch/unix time
-    unsigned long long timestamp;               // PackageSetting.timeStamp
-    unsigned long long first_install_time;      // PackageSetting.firstInstallTime
-    unsigned long long last_update_time;        // PackageSetting.lastUpdateTime
-    int version;                                // PackageSetting.versionCode
-    int is_shared_user;                         // PackageSetting.sharedUser != null
-    int user_id;                                // PackageSetting.appId
-    int shared_user_id;                         // PackageSetting.appId
-    std::string uid_error;                      // (not in PackageSetting)
-    std::string install_status;                 // (not in PackageSetting)
-    std::string installer;                      // PackageSetting.installerPackageName
+    uint64_t timestamp;                 // PackageSetting.timeStamp
+    uint64_t first_install_time;        // PackageSetting.firstInstallTime
+    uint64_t last_update_time;          // PackageSetting.lastUpdateTime
+    int version;                        // PackageSetting.versionCode
+    int is_shared_user;                 // PackageSetting.sharedUser != null
+    int user_id;                        // PackageSetting.appId
+    int shared_user_id;                 // PackageSetting.appId
+    std::string uid_error;              // (not in PackageSetting)
+    std::string install_status;         // (not in PackageSetting)
+    std::string installer;              // PackageSetting.installerPackageName
 
     std::vector<std::string> sig_indexes;
 
