@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <sys/un.h>
 #include <unistd.h>
 
@@ -393,6 +394,31 @@ static bool run_daemon(void)
     return true;
 }
 
+static bool run_daemon_fork(void)
+{
+    pid_t first, second;
+    int status;
+    if ((first = fork()) >= 0) {
+        if (first == 0) {
+            if ((second = fork()) >= 0) {
+                if (second == 0) {
+                    run_daemon();
+                }
+                exit(EXIT_SUCCESS);
+            } else {
+                LOGE("Failed to fork");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            first = waitpid(first, &status, 0);
+        }
+    } else {
+        LOGE("Failed to fork");
+    }
+
+    return first == -1 ? false : true;
+}
+
 static void daemon_usage(int error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -400,22 +426,29 @@ static void daemon_usage(int error)
     fprintf(stream,
             "Usage: daemon [OPTION]...\n\n"
             "Options:\n"
-            "  -h, --help    Display this help message\n");
+            "  -d, --daemonize  Fork to background\n"
+            "  -h, --help       Display this help message\n");
 }
 
 int daemon_main(int argc, char *argv[])
 {
     int opt;
+    bool fork_flag = false;
 
     static struct option long_options[] = {
-        {"help",   no_argument,       0, 'h'},
+        {"daemonize", no_argument, 0, 'd'},
+        {"help",      no_argument, 0, 'h'},
         {0, 0, 0, 0}
     };
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "ls:t:h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "dh", long_options, &long_index)) != -1) {
         switch (opt) {
+        case 'd':
+            fork_flag = true;
+            break;
+
         case 'h':
             daemon_usage(0);
             return EXIT_SUCCESS;
@@ -432,7 +465,11 @@ int daemon_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    return run_daemon() ? EXIT_SUCCESS : EXIT_FAILURE;
+    if (fork_flag) {
+        return run_daemon_fork() ? EXIT_SUCCESS : EXIT_FAILURE;
+    } else {
+        return run_daemon() ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
 }
 
 }
