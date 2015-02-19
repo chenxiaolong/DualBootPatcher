@@ -59,9 +59,7 @@
         access again.</string>
 
     <!-- Navigation drawer item for selecting the ROM -->
-    <string name="title_choose_rom">Choose ROM</string>
-    <!-- Navigation drawer item for setting the kernel -->
-    <string name="title_set_kernel">Set Kernel</string>
+    <string name="title_roms">ROMs</string>
     <!-- Navigation drawer item for patching a zip file -->
     <string name="title_patch_zip">Patch Zip File</string>
     <!-- Navigation drawer item for checking free space -->
@@ -89,14 +87,32 @@
     <!-- Text shown when a ROM's version could not be detected -->
     <string name="couldnt_determine_version">Couldn\'t determine ROM version</string>
 
+    <!-- Title of progress dialog shown when switching ROMs -->
+    <string name="switching_rom">Switching ROM</string>
+    <!-- Title of progress dialog shown when setting kernel -->
+    <string name="setting_kernel">Setting kernel</string>
     <!-- Message shown when switching ROMs succeeds -->
-    <string name="choose_rom_success">Successfully switched</string>
+    <string name="choose_rom_success">Successfully switched ROM</string>
     <!-- Message shown when switching ROMs failed -->
     <string name="choose_rom_failure">Failed to switch ROM</string>
     <!-- Message shown when setting the kernel succeeds -->
     <string name="set_kernel_success">Successfully set the kernel</string>
     <!-- Message shown when setting the kernel fails -->
     <string name="set_kernel_failure">Failed to set kernel</string>
+
+    <!-- Version text shown on ROM card if the version could not be detected -->
+    <string name="rom_card_unknown_version">Unknown version</string>
+    <!-- Build text shown on ROM card if the build could not be detected -->
+    <string name="rom_card_unknown_build">Unknown build</string>
+
+    <!-- ROM menu item for setting kernel -->
+    <string name="rom_menu_set_kernel">Set kernel</string>
+    <!-- ROM menu item for changing the name -->
+    <string name="rom_menu_edit_name">Edit name</string>
+    <!-- ROM menu item for changing the image -->
+    <string name="rom_menu_change_image">Change image</string>
+    <!-- ROM menu item for resetting back to the default image -->
+    <string name="rom_menu_reset_image">Reset image</string>
 
     <!-- Accessibility text for the ROM logo images -->
     <string name="switcher_rom_image">ROM logo</string>
@@ -111,9 +127,7 @@
     <string name="rename_rom_title">Rename %s</string>
     <!-- Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM -->
     <string name="rename_rom_desc">Enter a new name for %s. Leave blank to use the
-        default name. Tap the icon to change the ROM\'s icon.</string>
-    <!-- Dialog button text for resetting the ROM icon -->
-    <string name="reset_icon">Reset icon</string>
+        default name.</string>
 
     <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>

@@ -35,7 +35,7 @@ public class DetailsCard extends Card {
     private String mText;
 
     public DetailsCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.cardcontent_details);
+        this(context, R.layout.card_inner_layout_details);
         mPCS = pcs;
     }
 

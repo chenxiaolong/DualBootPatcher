@@ -54,23 +54,22 @@ import java.util.ArrayList;
 
 public class MainActivity extends ActionBarActivity {
     private static final int[] RES_NAV_TITLES = new int[] {
-            R.string.title_choose_rom, R.string.title_set_kernel,
+            R.string.title_roms,
             R.string.title_patch_zip, R.string.title_free_space, R.string.title_rom_settings,
             R.string.title_reboot, R.string.title_about, R.string.title_exit };
 
     private static final int[] RES_NAV_ICONS = new int[] { R.drawable.check,
-            R.drawable.pin, R.drawable.split, R.drawable.storage, R.drawable.settings,
+            R.drawable.split, R.drawable.storage, R.drawable.settings,
             R.drawable.refresh, R.drawable.about, R.drawable.exit };
 
     private static final int NAV_SEPARATOR = -1;
-    private static final int NAV_CHOOSE_ROM = 0;
-    private static final int NAV_SET_KERNEL = 1;
-    private static final int NAV_PATCH_FILE = 2;
-    private static final int NAV_FREE_SPACE = 3;
-    private static final int NAV_SETTINGS = 4;
-    private static final int NAV_REBOOT = 5;
-    private static final int NAV_ABOUT = 6;
-    private static final int NAV_EXIT = 7;
+    private static final int NAV_ROMS = 0;
+    private static final int NAV_PATCH_FILE = 1;
+    private static final int NAV_FREE_SPACE = 2;
+    private static final int NAV_SETTINGS = 3;
+    private static final int NAV_REBOOT = 4;
+    private static final int NAV_ABOUT = 5;
+    private static final int NAV_EXIT = 6;
 
     private SharedPreferences mPrefs;
 
@@ -78,7 +77,7 @@ public class MainActivity extends ActionBarActivity {
     private ScrollView mDrawerView;
     private ActionBarDrawerToggle mDrawerToggle;
 
-    private final ArrayList<Integer> mDrawerItems = new ArrayList<Integer>();
+    private final ArrayList<Integer> mDrawerItems = new ArrayList<>();
     private View[] mDrawerItemViews;
     private boolean[] mDrawerItemsProgress;
     private int mDrawerItemSelected;
@@ -87,11 +86,10 @@ public class MainActivity extends ActionBarActivity {
     private Handler mHandler;
     private Runnable mPending;
 
-    public static final int FRAGMENT_CHOOSE_ROM = 1;
-    public static final int FRAGMENT_SET_KERNEL = 2;
-    public static final int FRAGMENT_PATCH_FILE = 3;
-    public static final int FRAGMENT_FREE_SPACE = 4;
-    public static final int FRAGMENT_ABOUT = 5;
+    public static final int FRAGMENT_ROMS = 1;
+    public static final int FRAGMENT_PATCH_FILE = 2;
+    public static final int FRAGMENT_FREE_SPACE = 3;
+    public static final int FRAGMENT_ABOUT = 4;
 
     private int mFragment;
 
@@ -153,8 +151,7 @@ public class MainActivity extends ActionBarActivity {
         mDrawerView.setLayoutParams(params);
 
         mDrawerItems.clear();
-        mDrawerItems.add(NAV_CHOOSE_ROM);
-        mDrawerItems.add(NAV_SET_KERNEL);
+        mDrawerItems.add(NAV_ROMS);
         mDrawerItems.add(NAV_PATCH_FILE);
         mDrawerItems.add(NAV_FREE_SPACE);
         mDrawerItems.add(NAV_SETTINGS);
@@ -290,8 +287,7 @@ public class MainActivity extends ActionBarActivity {
         int type = mDrawerItems.get(item);
 
         switch (type) {
-        case NAV_CHOOSE_ROM:
-        case NAV_SET_KERNEL:
+        case NAV_ROMS:
         case NAV_PATCH_FILE:
         case NAV_FREE_SPACE:
         case NAV_ABOUT:
@@ -377,8 +373,7 @@ public class MainActivity extends ActionBarActivity {
         int type = mDrawerItems.get(item);
 
         switch (type) {
-        case NAV_CHOOSE_ROM:
-        case NAV_SET_KERNEL:
+        case NAV_ROMS:
         case NAV_PATCH_FILE:
         case NAV_FREE_SPACE:
         case NAV_ABOUT:
@@ -393,13 +388,8 @@ public class MainActivity extends ActionBarActivity {
         int type = mDrawerItems.get(item);
 
         switch (type) {
-        case NAV_CHOOSE_ROM:
-            mFragment = FRAGMENT_CHOOSE_ROM;
-            showFragment();
-            break;
-
-        case NAV_SET_KERNEL:
-            mFragment = FRAGMENT_SET_KERNEL;
+        case NAV_ROMS:
+            mFragment = FRAGMENT_ROMS;
             showFragment();
             break;
 
@@ -449,10 +439,7 @@ public class MainActivity extends ActionBarActivity {
     private void hideFragments(boolean animate) {
         FragmentManager fm = getFragmentManager();
 
-        Fragment prevChooseRom = fm
-                .findFragmentByTag(SwitcherListFragment.TAG_CHOOSE_ROM);
-        Fragment prevSetKernel = fm
-                .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
+        Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.TAG);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
         Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
@@ -463,11 +450,8 @@ public class MainActivity extends ActionBarActivity {
             ft.setCustomAnimations(0, R.animator.fragment_out);
         }
 
-        if (prevChooseRom != null) {
-            ft.hide(prevChooseRom);
-        }
-        if (prevSetKernel != null) {
-            ft.hide(prevSetKernel);
+        if (prevRoms != null) {
+            ft.hide(prevRoms);
         }
         if (prevPatchFile != null) {
             ft.hide(prevPatchFile);
@@ -486,10 +470,7 @@ public class MainActivity extends ActionBarActivity {
     private void showFragment() {
         FragmentManager fm = getFragmentManager();
 
-        Fragment prevChooseRom = fm
-                .findFragmentByTag(SwitcherListFragment.TAG_CHOOSE_ROM);
-        Fragment prevSetKernel = fm
-                .findFragmentByTag(SwitcherListFragment.TAG_SET_KERNEL);
+        Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.TAG);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
         Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.TAG);
         Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
@@ -498,32 +479,16 @@ public class MainActivity extends ActionBarActivity {
         ft.setCustomAnimations(R.animator.fragment_in, 0);
 
         switch (mFragment) {
-        case FRAGMENT_CHOOSE_ROM:
-            mTitle = R.string.title_choose_rom;
+        case FRAGMENT_ROMS:
+            mTitle = R.string.title_roms;
             updateTitle();
 
-            if (prevChooseRom == null) {
-                Fragment f = SwitcherListFragment
-                        .newInstance(SwitcherListFragment.ACTION_CHOOSE_ROM);
+            if (prevRoms == null) {
+                Fragment f = SwitcherListFragment.newInstance();
                 ft.add(R.id.content_frame, f,
-                        SwitcherListFragment.TAG_CHOOSE_ROM);
+                        SwitcherListFragment.TAG);
             } else {
-                ft.show(prevChooseRom);
-            }
-
-            break;
-
-        case FRAGMENT_SET_KERNEL:
-            mTitle = R.string.title_set_kernel;
-            updateTitle();
-
-            if (prevSetKernel == null) {
-                Fragment f = SwitcherListFragment
-                        .newInstance(SwitcherListFragment.ACTION_SET_KERNEL);
-                ft.add(R.id.content_frame, f,
-                        SwitcherListFragment.TAG_SET_KERNEL);
-            } else {
-                ft.show(prevSetKernel);
+                ft.show(prevRoms);
             }
 
             break;
@@ -588,12 +553,8 @@ public class MainActivity extends ActionBarActivity {
         int type;
 
         switch (fragment) {
-        case FRAGMENT_CHOOSE_ROM:
-            type = NAV_CHOOSE_ROM;
-            break;
-
-        case FRAGMENT_SET_KERNEL:
-            type = NAV_SET_KERNEL;
+        case FRAGMENT_ROMS:
+            type = NAV_ROMS;
             break;
 
         case FRAGMENT_PATCH_FILE:

@@ -19,7 +19,6 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.os.Build;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherConfig;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;

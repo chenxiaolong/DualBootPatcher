@@ -32,7 +32,7 @@ Appuyez pour tenter d\'obtenir un accès root à nouveau.</string>
   <string name="noroot_settings_desc">L\'application n\'a pas pu obtenir d\'accès root. Le Root est nécessaire pour changer les paramètres de partage d\'application.
 Appuyez pour tenter d\'obtenir un accès root à nouveau.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_choose_rom">Choisir une ROM</string>
+  <string name="title_roms">Choisir une ROM</string>
   <!--Navigation drawer item for setting the kernel-->
   <string name="title_set_kernel">Régler le kernel</string>
   <!--Navigation drawer item for patching a zip file-->
@@ -97,7 +97,7 @@ Appuyez et maintenez pour choisir un fichier different.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Appuyer pour commencer le patchage</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s 
+  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s
 Le fichier que vous avez sélectionné n\'est pas supporté. Vous pouvez essayer de patcher le fichier de toute façon en utilisant les options ci-dessous.
 Tapez et maintenez pour choisir un fichier différent.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
@@ -108,7 +108,7 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Impossible de patcher le fichier</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_failure_desc">%s 
+  <string name="filechooser_failure_desc">%s
 Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Title for the preset card-->
   <string name="preset_title">Préréglage</string>
@@ -200,7 +200,7 @@ Le partage ne fonctionnera probablement pas correctement.</string>
   <string name="indiv_app_sharing_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_dialog_desc">Le partage d\'application individuelle permet à l\'appareil de conserver une copie d\'une application pour chaque ROM sélectionnée pour économiser de l\'espace. Il assure également que l\'application est mise à jour dans chaque ROM.
-Quand une application est installée, mise à niveau, ou retiré, le patcher demandera parfois un accès root pour démarrer le service «syncdaemon \'. 
+Quand une application est installée, mise à niveau, ou retiré, le patcher demandera parfois un accès root pour démarrer le service «syncdaemon \'.
 S\'il vous plaît autoriser la demande de synchronisation pour réussir.</string>
   <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
   <string name="indiv_app_sharing_incompat_global">Ne peut être utilisé en application globale

@@ -20,30 +20,21 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginLeft="3dp"
-    android:layout_marginRight="3dp"
-    android:gravity="center_vertical"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
     <TextView
-        android:id="@+id/switcher_title"
-        style="@style/card_title"
+        android:id="@+id/message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <TextView
-        android:id="@+id/switcher_message"
-        style="@style/card_message_italicized"
+    <View
+        style="@style/separator"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/edittext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-
-    <ProgressBar
-        android:id="@+id/switcher_progress"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:indeterminate="true"
-        android:visibility="gone" />
 
 </LinearLayout>

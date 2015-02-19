@@ -18,21 +18,27 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.content.Context;
+import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.github.chenxiaolong.dualbootpatcher.settings.RomInfoConfigFile;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// TODO: This should completely go away as soon as the mbtool daemon is ready. Too much
-//       duplicated code here
-
 public class RomUtils {
-    private static final String TAG = RomUtils.class.getSimpleName();
-
     private static RomInformation[] mRoms;
 
     public static final String UNKNOWN_ID = "unknown";
@@ -42,27 +48,41 @@ public class RomUtils {
 
     public static class RomInformation implements Parcelable {
         // Mount points
-        public String system;
-        public String cache;
-        public String data;
+        private String mSystem;
+        private String mCache;
+        private String mData;
 
-        public boolean useRawPaths;
+        private boolean mUseRawPaths;
 
         // Identifiers
-        public String id;
+        private String mId;
 
-        public String thumbnailPath;
+        private String mVersion;
+        private String mBuild;
+
+        private String mThumbnailPath;
+        private String mConfigPath;
+
+        private String mDefaultName;
+        private String mName;
+        private int mImageResId;
 
         public RomInformation() {
         }
 
         protected RomInformation(Parcel in) {
-            system = in.readString();
-            cache = in.readString();
-            data = in.readString();
-            useRawPaths = in.readInt() != 0;
-            id = in.readString();
-            thumbnailPath = in.readString();
+            mSystem = in.readString();
+            mCache = in.readString();
+            mData = in.readString();
+            mUseRawPaths = in.readInt() != 0;
+            mId = in.readString();
+            mVersion = in.readString();
+            mBuild = in.readString();
+            mThumbnailPath = in.readString();
+            mConfigPath = in.readString();
+            mDefaultName = in.readString();
+            mName = in.readString();
+            mImageResId = in.readInt();
         }
 
         @Override
@@ -72,12 +92,18 @@ public class RomUtils {
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
-            dest.writeString(system);
-            dest.writeString(cache);
-            dest.writeString(data);
-            dest.writeInt(useRawPaths ? 1 : 0);
-            dest.writeString(id);
-            dest.writeString(thumbnailPath);
+            dest.writeString(mSystem);
+            dest.writeString(mCache);
+            dest.writeString(mData);
+            dest.writeInt(mUseRawPaths ? 1 : 0);
+            dest.writeString(mId);
+            dest.writeString(mVersion);
+            dest.writeString(mBuild);
+            dest.writeString(mThumbnailPath);
+            dest.writeString(mConfigPath);
+            dest.writeString(mDefaultName);
+            dest.writeString(mName);
+            dest.writeInt(mImageResId);
         }
 
         @SuppressWarnings("unused")
@@ -96,13 +122,120 @@ public class RomUtils {
 
         @Override
         public String toString() {
-            return "id=" + id
-                    + ", system=" + system
-                    + ", cache=" + cache
-                    + ", data=" + data
-                    + ", useRawPaths=" + useRawPaths
-                    + ", thumbnailPath=" + thumbnailPath;
+            return "id=" + mId
+                    + ", system=" + mSystem
+                    + ", cache=" + mCache
+                    + ", data=" + mData
+                    + ", useRawPaths=" + mUseRawPaths
+                    + ", version=" + mVersion
+                    + ", build=" + mBuild
+                    + ", thumbnailPath=" + mThumbnailPath
+                    + ", configPath=" + mConfigPath
+                    + ", defaultName=" + mDefaultName
+                    + ", name=" + mName
+                    + ", imageResId=" + mImageResId;
         }
+
+        public String getSystemPath() {
+            return mSystem;
+        }
+
+        public void setSystemPath(String system) {
+            mSystem = system;
+        }
+
+        public String getCachePath() {
+            return mCache;
+        }
+
+        public void setCachePath(String cache) {
+            mCache = cache;
+        }
+
+        public String getDataPath() {
+            return mData;
+        }
+
+        public void setDataPath(String data) {
+            mData = data;
+        }
+
+        public boolean isUsesRawPaths() {
+            return mUseRawPaths;
+        }
+
+        public void setUsesRawPaths(boolean usesRawPaths) {
+            mUseRawPaths = usesRawPaths;
+        }
+
+        public String getId() {
+            return mId;
+        }
+
+        public void setId(String id) {
+            mId = id;
+        }
+
+        public String getVersion() {
+            return mVersion;
+        }
+
+        public void setVersion(String version) {
+            mVersion = version;
+        }
+
+        public String getBuild() {
+            return mBuild;
+        }
+
+        public void setBuild(String build) {
+            mBuild = build;
+        }
+
+        public String getThumbnailPath() {
+            return mThumbnailPath;
+        }
+
+        public void setThumbnailPath(String thumbnailPath) {
+            mThumbnailPath = thumbnailPath;
+        }
+
+        public String getConfigPath() {
+            return mConfigPath;
+        }
+
+        public void setConfigPath(String configPath) {
+            mConfigPath = configPath;
+        }
+
+        public String getDefaultName() {
+            return mDefaultName;
+        }
+
+        public void setDefaultName(String defaultName) {
+            mDefaultName = defaultName;
+        }
+
+        public String getName() {
+            return mName != null ? mName : mDefaultName;
+        }
+
+        public void setName(String name) {
+            mName = name;
+        }
+
+        public int getImageResId() {
+            return mImageResId;
+        }
+
+        private void setImageResId(int imageResId) {
+            mImageResId = imageResId;
+        }
+    }
+
+    private static class RomConfig {
+        public String id;
+        public String name;
     }
 
     public static RomInformation getCurrentRom(Context context) {
@@ -114,8 +247,8 @@ public class RomUtils {
         }
 
         if (id != null) {
-            for (RomInformation rom : getRoms()) {
-                if (rom.id.equals(id)) {
+            for (RomInformation rom : getRoms(context)) {
+                if (rom.getId().equals(id)) {
                     return rom;
                 }
             }
@@ -124,33 +257,75 @@ public class RomUtils {
         return null;
     }
 
-    public static RomInformation[] getRoms() {
+    public static RomInformation[] getRoms(Context context) {
         if (mRoms == null) {
             mRoms = MbtoolSocket.getInstance().getInstalledRoms();
+
+            if (mRoms != null) {
+                for (RomInformation rom : mRoms) {
+                    rom.setThumbnailPath(Environment.getExternalStorageDirectory()
+                            + "/MultiBoot/" + rom.getId() + "/thumbnail.webp");
+                    rom.setConfigPath(Environment.getExternalStorageDirectory()
+                            + "/MultiBoot/" + rom.getId() + "/config.json");
+                    rom.setImageResId(R.drawable.rom_android);
+                    rom.setDefaultName(getDefaultName(context, rom));
+
+                    loadConfig(rom);
+                }
+            }
         }
 
         return mRoms;
     }
 
-    public static RomInformation getRomFromId(String id) {
-        RomInformation[] roms = getRoms();
-        for (RomInformation rom : roms) {
-            if (rom.id.equals(id)) {
-                return rom;
-            }
+    public static void loadConfig(RomInformation info) {
+        RomConfig config = null;
+        Gson gson = new Gson();
+        try {
+            config = gson.fromJson(new JsonReader(new FileReader(info.getConfigPath())),
+                    RomConfig.class);
+        } catch (FileNotFoundException e) {
+            // Ignore
         }
 
-        return null;
+        // Pretty minimal config file right now
+        if (config != null) {
+            info.setName(config.name);
+        }
     }
 
-    public static String getDefaultName(Context context, RomInformation info) {
-        if (info.id.equals(PRIMARY_ID)) {
+    public static void saveConfig(RomInformation info) {
+        File configFile = new File(info.getConfigPath());
+        configFile.getParentFile().mkdirs();
+
+        RomConfig config = new RomConfig();
+        config.id = info.getId();
+        config.name = info.getName();
+
+        Gson gson = new Gson();
+
+        JsonWriter writer = null;
+        try {
+            writer = new JsonWriter(new OutputStreamWriter(
+                    new FileOutputStream(configFile), "UTF-8"));
+            gson.toJson(config, RomConfig.class, writer);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(writer);
+        }
+    }
+
+    private static String getDefaultName(Context context, RomInformation info) {
+        if (info.getId().equals(PRIMARY_ID)) {
             return context.getString(R.string.primary);
-        } else if (info.id.equals(SECONDARY_ID)) {
+        } else if (info.getId().equals(SECONDARY_ID)) {
             return context.getString(R.string.secondary);
-        } else if (info.id.startsWith(MULTI_ID_PREFIX)) {
+        } else if (info.getId().startsWith(MULTI_ID_PREFIX)) {
             Pattern p = Pattern.compile("^" + MULTI_ID_PREFIX + "(.+)");
-            Matcher m = p.matcher(info.id);
+            Matcher m = p.matcher(info.getId());
             String num;
             if (m.find()) {
                 num = m.group(1);
@@ -159,35 +334,5 @@ public class RomUtils {
         }
 
         return UNKNOWN_ID;
-    }
-
-    public static String getName(Context context, RomInformation info) {
-        String customName = RomInfoConfigFile.getInstance().getRomName(info);
-        if (customName == null || customName.trim().isEmpty()) {
-            return getDefaultName(context, info);
-        } else {
-            return customName;
-        }
-    }
-
-    public static void setName(RomInformation info, String name) {
-        final RomInfoConfigFile config = RomInfoConfigFile.getInstance();
-
-        if (name != null && !name.trim().isEmpty()) {
-            config.setRomName(info, name.trim());
-        } else {
-            config.setRomName(info, null);
-        }
-
-        new Thread() {
-            @Override
-            public void run() {
-                config.save();
-            }
-        }.start();
-    }
-
-    public static int getIconResource(RomInformation info) {
-        return R.drawable.rom_android;
     }
 }

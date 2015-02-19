@@ -38,7 +38,7 @@ pentru a modifica setările de partajare a aplicației. \ N \ nTap pentru a înc
 
 din nou.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_choose_rom">Alege ROM-ul</string>
+  <string name="title_roms">Alege ROM-ul</string>
   <!--Navigation drawer item for setting the kernel-->
   <string name="title_set_kernel">Setati Kernelul.</string>
   <!--Navigation drawer item for patching a zip file-->

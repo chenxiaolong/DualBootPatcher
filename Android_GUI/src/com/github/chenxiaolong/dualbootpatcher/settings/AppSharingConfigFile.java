@@ -88,7 +88,7 @@ public class AppSharingConfigFile extends ConfigFile {
         for (SharedPackage pkginfo : mPackages) {
             if (pkginfo.name.equals(pkg)) {
                 for (int j = 0; j < pkginfo.romIds.size(); j++) {
-                    if (pkginfo.romIds.get(j).equals(info.id)) {
+                    if (pkginfo.romIds.get(j).equals(info.getId())) {
                         return true;
                     }
                 }
@@ -114,21 +114,21 @@ public class AppSharingConfigFile extends ConfigFile {
             pkginfo = new SharedPackage();
             pkginfo.name = pkg;
             if (sync) {
-                pkginfo.romIds.add(info.id);
+                pkginfo.romIds.add(info.getId());
             }
             mPackages.add(pkginfo);
         } else {
             int found = -1;
 
             for (int i = 0; i < pkginfo.romIds.size(); i++) {
-                if (pkginfo.romIds.get(i).equals(info.id)) {
+                if (pkginfo.romIds.get(i).equals(info.getId())) {
                     found = i;
                     break;
                 }
             }
 
             if (sync && found == -1) {
-                pkginfo.romIds.add(info.id);
+                pkginfo.romIds.add(info.getId());
             } else if (!sync && found != -1) {
                 pkginfo.romIds.remove(found);
             }

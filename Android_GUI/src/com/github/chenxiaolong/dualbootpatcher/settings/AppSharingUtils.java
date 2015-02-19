@@ -68,14 +68,14 @@ public class AppSharingUtils {
         return new RootFile(SHARE_PAID_APPS_PATH).isFile();
     }
 
-    public static HashMap<RomInformation, ArrayList<String>> getAllApks() {
-        RomInformation[] roms = RomUtils.getRoms();
+    public static HashMap<RomInformation, ArrayList<String>> getAllApks(Context context) {
+        RomInformation[] roms = RomUtils.getRoms(context);
 
         HashMap<RomInformation, ArrayList<String>> apksMap = new HashMap<>();
 
         for (RomInformation rom : roms) {
             ArrayList<String> apks = new ArrayList<>();
-            String[] filenames = new RootFile(rom.data + File.separator + "app").list();
+            String[] filenames = new RootFile(rom.getDataPath() + File.separator + "app").list();
 
             if (filenames == null || filenames.length == 0) {
                 continue;
@@ -83,7 +83,7 @@ public class AppSharingUtils {
 
             for (String filename : filenames) {
                 if (filename.endsWith(".apk")) {
-                    apks.add(rom.data + File.separator + "app" + File.separator + filename);
+                    apks.add(rom.getDataPath() + File.separator + "app" + File.separator + filename);
                 }
             }
 
@@ -103,11 +103,11 @@ public class AppSharingUtils {
             throw new Exception("Could not determine current ROM");
         }
 
-        String bootImage = String.format("/data/media/0/MultiBoot/%s/boot.img", romInfo.id);
+        String bootImage = String.format("/data/media/0/MultiBoot/%s/boot.img", romInfo.getId());
         RootFile bootImageFile = new RootFile(bootImage);
 
         if (!bootImageFile.isFile()) {
-            SwitcherUtils.setKernel(romInfo.id);
+            SwitcherUtils.setKernel(romInfo.getId());
         }
 
         String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
@@ -166,6 +166,6 @@ public class AppSharingUtils {
         new RootFile(tmpKernel).copyTo(bootImageFile);
         bootImageFile.chmod(0755);
 
-        SwitcherUtils.chooseRom(romInfo.id);
+        SwitcherUtils.chooseRom(romInfo.getId());
     }
 }

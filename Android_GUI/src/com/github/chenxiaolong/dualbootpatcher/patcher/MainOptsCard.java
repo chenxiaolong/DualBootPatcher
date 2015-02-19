@@ -18,7 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -52,7 +51,7 @@ public class MainOptsCard extends Card {
 
     public MainOptsCard(Context context, PatcherConfigState pcs,
                         MainOptsSelectedListener listener) {
-        this(context, R.layout.cardcontent_mainopts);
+        this(context, R.layout.card_inner_layout_mainopts);
         mPCS = pcs;
         mListener = listener;
     }

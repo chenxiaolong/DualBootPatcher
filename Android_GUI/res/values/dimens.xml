@@ -46,8 +46,20 @@
     <dimen name="all_caps_button_text_size">12sp</dimen>
 
     <!-- Cards -->
+    <dimen name="card_v7_thumbnail_width">80dp</dimen>
+    <dimen name="card_v7_thumbnail_height">80dp</dimen>
+    <dimen name="card_v7_thumbnail_margin">6dp</dimen>
+    <dimen name="card_v7_main_content_padding">10dp</dimen>
+    <dimen name="card_v7_primary_text_size">20sp</dimen>
+    <dimen name="card_v7_secondary_text_size">12sp</dimen>
+    <dimen name="card_v7_overflow_button_margins">4dp</dimen>
+
+
+
+
+
     <dimen name="card_outside_side_padding">8dp</dimen>
-    <dimen name="card_thumbnail_padding">8dp</dimen>
+    <dimen name="card_thumbnail_padding">5dp</dimen>
     <dimen name="card_separator_padding">16dp</dimen>
     <dimen name="card_internal_separator_padding">8dp</dimen>
     <dimen name="card_content_minimal_padding">4dp</dimen>

@@ -43,7 +43,7 @@ public class SwitcherEventCollector extends EventCollector {
                     boolean failed = bundle.getBoolean(SwitcherService.RESULT_FAILED);
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
 
-                    sendEvent(new ChoseRomEvent(failed, kernelId));
+                    sendEvent(new SwitchedRomEvent(failed, kernelId));
                 } else if (SwitcherService.STATE_SET_KERNEL.equals(state)) {
                     boolean failed = bundle.getBoolean(SwitcherService.RESULT_FAILED);
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
@@ -90,11 +90,11 @@ public class SwitcherEventCollector extends EventCollector {
 
     // Events
 
-    public class ChoseRomEvent extends BaseEvent {
+    public class SwitchedRomEvent extends BaseEvent {
         boolean failed;
         String kernelId;
 
-        public ChoseRomEvent(boolean failed, String kernelId) {
+        public SwitchedRomEvent(boolean failed, String kernelId) {
             this.failed = failed;
             this.kernelId = kernelId;
         }

@@ -22,26 +22,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <it.gmariotti.cardslib.library.view.CardViewNative
-        android:id="@+id/card_noroot_choose_rom"
+    <include
+        android:id="@+id/card_noroot"
+        layout="@layout/card_v7_mbtool_connect_fail"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="12dp"
-        android:layout_marginRight="12dp"
-        android:layout_marginTop="12dp"
-        card:card_layout_resourceID="@layout/card_layout" />
+        android:layout_height="wrap_content" />
 
-    <it.gmariotti.cardslib.library.view.CardListView
-        android:id="@+id/card_list_choose_rom"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/card_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/card_noroot_choose_rom"
         android:paddingLeft="@dimen/card_outside_side_padding"
-        android:paddingRight="@dimen/card_outside_side_padding"
-        card:list_card_layout_resourceID="@layout/card_list_layout_padded_thumbnail" />
+        android:paddingRight="@dimen/card_outside_side_padding" />
 
     <ProgressBar
-        android:id="@+id/card_list_loading_choose_rom"
+        android:id="@+id/card_list_loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"

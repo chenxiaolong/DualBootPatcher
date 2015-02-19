@@ -20,7 +20,6 @@ package com.github.chenxiaolong.multibootpatcher.socket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.net.LocalSocketAddress.Namespace;
-import android.os.Environment;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -143,25 +142,25 @@ public class MbtoolSocket {
                     if ("ROM_BEGIN".equals(response)) {
                         ready = true;
                     } else if (ready && "ID".equals(response)) {
-                        rom.id = SocketUtils.readString(mSocketIS);
+                        rom.setId(SocketUtils.readString(mSocketIS));
                     } else if (ready && "SYSTEM_PATH".equals(response)) {
-                        rom.system = SocketUtils.readString(mSocketIS);
+                        rom.setSystemPath(SocketUtils.readString(mSocketIS));
                     } else if (ready && "CACHE_PATH".equals(response)) {
-                        rom.cache = SocketUtils.readString(mSocketIS);
+                        rom.setCachePath(SocketUtils.readString(mSocketIS));
                     } else if (ready && "DATA_PATH".equals(response)) {
-                        rom.data = SocketUtils.readString(mSocketIS);
+                        rom.setDataPath(SocketUtils.readString(mSocketIS));
                     } else if (ready && "USE_RAW_PATHS".equals(response)) {
-                        rom.useRawPaths = SocketUtils.readInt32(mSocketIS) != 0;
+                        rom.setUsesRawPaths(SocketUtils.readInt32(mSocketIS) != 0);
+                    } else if (ready && "VERSION".equals(response)) {
+                        rom.setVersion(SocketUtils.readString(mSocketIS));
+                    } else if (ready && "BUILD".equals(response)) {
+                        rom.setBuild(SocketUtils.readString(mSocketIS));
                     } else if (ready && "ROM_END".equals(response)) {
-                        ready = false;
                         break;
                     } else {
                         Log.e(TAG, "getInstalledRoms(): Unknown response: " + response);
                     }
                 }
-
-                rom.thumbnailPath = Environment.getExternalStorageDirectory() + "/MultiBoot/" +
-                        rom.id + "/thumbnail.webp";
             }
 
             // Command always returns OK at the end

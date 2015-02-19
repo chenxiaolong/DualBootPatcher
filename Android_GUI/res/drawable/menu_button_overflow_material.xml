@@ -17,18 +17,11 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_marginLeft="3dp"
-    android:layout_marginRight="3dp"
-    android:gravity="center_vertical"
-    android:orientation="vertical" >
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <EditText
-        android:id="@+id/romdialog_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textAutoCorrect" />
+    <item android:drawable="@drawable/ic_more_vert_black_24dp" android:state_pressed="true" />
+    <item android:drawable="@drawable/ic_more_vert_black_24dp" android:state_focused="true" />
+    <item android:drawable="@drawable/ic_more_vert_black_24dp" android:state_selected="true" />
+    <item android:drawable="@drawable/ic_more_vert_grey600_24dp" />
 
-</LinearLayout>
+</selector>

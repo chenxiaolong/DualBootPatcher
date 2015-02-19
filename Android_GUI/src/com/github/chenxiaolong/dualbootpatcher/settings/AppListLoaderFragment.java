@@ -128,7 +128,7 @@ public class AppListLoaderFragment extends Fragment {
 
         @Override
         protected Void doInBackground(Void... args) {
-            HashMap<RomInformation, ArrayList<String>> apksMap = AppSharingUtils.getAllApks();
+            HashMap<RomInformation, ArrayList<String>> apksMap = AppSharingUtils.getAllApks(getActivity());
 
             if (apksMap == null) {
                 return null;
@@ -241,12 +241,12 @@ public class AppListLoaderFragment extends Fragment {
         @Override
         protected RomInfoResult doInBackground(Void... params) {
             final RomInfoResult result = new RomInfoResult();
-            result.roms = RomUtils.getRoms();
+            result.roms = RomUtils.getRoms(mContext);
 
             ArrayList<String> names = new ArrayList<>();
 
             for (RomInformation rom : result.roms) {
-                names.add(RomUtils.getName(mContext, rom));
+                names.add(rom.getName());
             }
 
             result.names = names.toArray(new String[names.size()]);

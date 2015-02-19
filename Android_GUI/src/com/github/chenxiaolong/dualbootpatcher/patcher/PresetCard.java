@@ -46,7 +46,7 @@ public class PresetCard extends Card {
     private TextView mPresetName;
 
     public PresetCard(Context context, PatcherConfigState pcs, PresetSelectedListener listener) {
-        this(context, R.layout.cardcontent_preset);
+        this(context, R.layout.card_inner_layout_preset);
         mPCS = pcs;
         mListener = listener;
     }

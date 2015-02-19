@@ -28,7 +28,7 @@
   <!--Message for the card shown in the switcher when root access could not be obtained-->
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_choose_rom">Выберите ROM</string>
+  <string name="title_roms">Выберите ROM</string>
   <!--Navigation drawer item for setting the kernel-->
   <string name="title_set_kernel">Установить Ядро</string>
   <!--Navigation drawer item for patching a zip file-->
@@ -88,7 +88,7 @@
   <string name="filechooser_initial_title">Нажмите для выбора файла</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
   <string name="filechooser_initial_desc">Zip файлы и образы загрузочного диска (boot.img, boot.lok)
-поддерживаются этой программой. При выборе неподдерживаемого файла, появятся 
+поддерживаются этой программой. При выборе неподдерживаемого файла, появятся
 опции позволяющие нестандартныe настройки.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Нажмите чтобы начать прошивку</string>

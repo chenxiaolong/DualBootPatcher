@@ -47,7 +47,7 @@ public class FileChooserCard extends Card {
     private ProgressBar mProgressBar;
 
     public FileChooserCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.cardcontent_file_chooser);
+        this(context, R.layout.card_inner_layout_file_chooser);
         mPCS = pcs;
     }
 

@@ -36,7 +36,7 @@ public class FreeSpaceCard extends Card {
 
     public FreeSpaceCard(Context context, String mountpoint,
              long totalSize, long availSpace, int color) {
-        super(context, R.layout.cardcontent_free_space);
+        super(context, R.layout.card_inner_layout_free_space);
         mMountPoint = mountpoint;
         mTotalSize = totalSize;
         mAvailSpace = availSpace;

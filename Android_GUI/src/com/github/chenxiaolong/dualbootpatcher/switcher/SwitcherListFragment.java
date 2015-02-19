@@ -21,38 +21,46 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.app.FragmentTransaction;
+import android.app.LoaderManager;
+import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
+import android.content.Loader;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.RootFile;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.ChoseRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
-import com.github.chenxiaolong.multibootpatcher.events.MbtoolConnectionEventCollector;
-import com.github.chenxiaolong.multibootpatcher.events.MbtoolConnectionEventCollector
-        .MbtoolConnectionEvent;
-import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
-import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
+import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter;
+import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter.RomCardActionListener;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -60,86 +68,51 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-
-import it.gmariotti.cardslib.library.internal.Card;
-import it.gmariotti.cardslib.library.internal.Card.OnCardClickListener;
-import it.gmariotti.cardslib.library.internal.Card.OnLongCardClickListener;
-import it.gmariotti.cardslib.library.internal.CardArrayAdapter;
-import it.gmariotti.cardslib.library.view.CardListView;
-import it.gmariotti.cardslib.library.view.CardViewNative;
 
 public class SwitcherListFragment extends Fragment implements OnDismissListener,
-        EventCollectorListener {
-    public static final String TAG_CHOOSE_ROM = SwitcherListFragment.class.getSimpleName() + "1";
-    public static final String TAG_SET_KERNEL = SwitcherListFragment.class.getSimpleName() + "2";
-    public static final int ACTION_CHOOSE_ROM = 1;
-    public static final int ACTION_SET_KERNEL = 2;
+        EventCollectorListener, RomCardActionListener,
+        LoaderManager.LoaderCallbacks<RomInformation[]> {
+    public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
     private static final String EXTRA_PERFORMING_ACTION = "performingAction";
-    private static final String EXTRA_SELECTED_ROM_ID = "selectedRomId";
-    private static final String EXTRA_SHOWING_DIALOG = "showingDialog";
-    private static final String EXTRA_SHOWING_RENAME_DIALOG = "showingRenameDialog";
-    private static final String EXTRA_ROMS = "roms";
-    private static final String EXTRA_ROM_NAMES = "romNames";
-    private static final String EXTRA_ROM_IMAGE_RES_IDS = "romImageResIds";
-    private static final String EXTRA_ROM_DIALOG_NAME = "romDialogName";
+    private static final String EXTRA_SELECTED_ROM = "selectedRom";
+    private static final String EXTRA_PROGRESS_DIALOG = "progressDialog";
+    private static final String EXTRA_CONFIRM_DIALOG = "confirmDialog";
+    private static final String EXTRA_INPUT_DIALOG = "inputDialog";
+
+    private static final int PROGRESS_DIALOG_SWITCH_ROM = 1;
+    private static final int PROGRESS_DIALOG_SET_KERNEL = 2;
+    private static final int CONFIRM_DIALOG_SET_KERNEL = 1;
+    private static final int INPUT_DIALOG_EDIT_NAME = 1;
 
     private static final int REQUEST_IMAGE = 1234;
 
     private boolean mPerformingAction;
 
     private SwitcherEventCollector mEventCollector;
-    private MbtoolConnectionEventCollector mMbtoolEventCollector;
 
-    private Bundle mSavedInstanceState;
-
-    private int mCardListResId;
-
-    private NoRootCard mNoRootCard;
-    private CardViewNative mNoRootCardView;
-    private ArrayList<Card> mCards;
-    private CardArrayAdapter mCardArrayAdapter;
-    private CardListView mCardListView;
+    private CardView mNoRootCardView;
+    private RomCardAdapter mRomCardAdapter;
+    private RecyclerView mCardListView;
     private ProgressBar mProgressBar;
-    private int mAction;
-    private boolean mCardsLoaded;
 
-    private ArrayList<BaseEvent> mEvents = new ArrayList<>();
+    private int mProgressDialogType;
+    private AlertDialog mProgressDialog;
+    private int mConfirmDialogType;
+    private AlertDialog mConfirmDialog;
+    private int mInputDialogType;
+    private AlertDialog mInputDialog;
 
-    private AlertDialog mDialog;
-    private AlertDialog mRenameDialog;
+    private ArrayList<RomInformation> mRoms;
     private RomInformation mSelectedRom;
-    private RomDialogCard mRomDialogCard;
-    private boolean mRebootDialogShowing;
-    private String mRomDialogName;
 
-    private RomInformation[] mRoms;
-    private String[] mRomNames;
-    private int[] mRomImageResIds;
-
-    private static SwitcherListFragment newInstance() {
+    public static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
-    }
-
-    public static SwitcherListFragment newInstance(int action) {
-        SwitcherListFragment f = newInstance();
-
-        Bundle args = new Bundle();
-        args.putInt("action", action);
-
-        f.setArguments(args);
-
-        return f;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            mAction = getArguments().getInt("action");
-        }
 
         FragmentManager fm = getFragmentManager();
         mEventCollector = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
@@ -154,136 +127,82 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mMbtoolEventCollector = MbtoolConnectionEventCollector.getInstance(getFragmentManager());
-
-        mSavedInstanceState = savedInstanceState;
-
         if (savedInstanceState != null) {
             mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
 
-            mRoms = (RomInformation[]) savedInstanceState.getParcelableArray(EXTRA_ROMS);
-            mRomNames = savedInstanceState.getStringArray(EXTRA_ROM_NAMES);
-            mRomImageResIds = savedInstanceState.getIntArray(EXTRA_ROM_IMAGE_RES_IDS);
+            mSelectedRom = savedInstanceState.getParcelable(EXTRA_SELECTED_ROM);
 
-            String selectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
-            if (selectedRomId != null) {
-                mSelectedRom = RomUtils.getRomFromId(selectedRomId);
+            int progressDialogType = savedInstanceState.getInt(EXTRA_PROGRESS_DIALOG);
+            if (progressDialogType > 0) {
+                buildProgressDialog(progressDialogType);
             }
 
-            if (savedInstanceState.getBoolean(EXTRA_SHOWING_DIALOG)) {
-                buildDialog();
+            int confirmDialogType = savedInstanceState.getInt(EXTRA_CONFIRM_DIALOG);
+            if (confirmDialogType > 0) {
+                buildConfirmDialog(confirmDialogType);
             }
 
-            if (savedInstanceState.getBoolean(EXTRA_SHOWING_RENAME_DIALOG)) {
-                mRebootDialogShowing = true;
+            int inputDialogType = savedInstanceState.getInt(EXTRA_INPUT_DIALOG);
+            if (inputDialogType > 0) {
+                buildInputDialog(inputDialogType);
             }
-
-            mRomDialogName = savedInstanceState.getString(EXTRA_ROM_DIALOG_NAME);
         }
 
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mProgressBar = (ProgressBar) getActivity().findViewById(
-                    R.id.card_list_loading_choose_rom);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mProgressBar = (ProgressBar) getActivity().findViewById(
-                    R.id.card_list_loading_set_kernel);
-        }
+        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
 
         initNoRootCard();
-        mNoRootCardView.setVisibility(View.GONE);
-
         initCardList();
+        refreshNoRootVisibility(false);
 
         // Show progress bar on initial load, not on rotation
         if (savedInstanceState != null) {
             refreshProgressVisibility(false);
         }
 
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mMbtoolEventCollector.createListener(TAG_CHOOSE_ROM);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mMbtoolEventCollector.createListener(TAG_SET_KERNEL);
-        }
-
-        mMbtoolEventCollector.connect();
+        getActivity().getLoaderManager().initLoader(0, null, this);
     }
 
     private void reloadFragment() {
-        FragmentManager fm = getFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-        ft.detach(this);
-        ft.attach(this);
-        ft.commit();
+        getActivity().getLoaderManager().restartLoader(0, null, this);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mCardListResId = R.id.card_list_choose_rom;
-
-            return inflater.inflate(R.layout.fragment_switcher_choose_rom,
-                    container, false);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mCardListResId = R.id.card_list_set_kernel;
-
-            return inflater.inflate(R.layout.fragment_switcher_set_kernel,
-                    container, false);
-        }
-
-        return null;
+        return inflater.inflate(R.layout.fragment_switcher, container, false);
     }
 
     @Override
     public void onResume() {
         super.onResume();
 
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mEventCollector.attachListener(TAG_CHOOSE_ROM, this);
-            mMbtoolEventCollector.attachListener(TAG_CHOOSE_ROM, this);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mEventCollector.attachListener(TAG_SET_KERNEL, this);
-            mMbtoolEventCollector.attachListener(TAG_SET_KERNEL, this);
-        }
+        mEventCollector.attachListener(TAG, this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mEventCollector.detachListener(TAG_CHOOSE_ROM);
-            mMbtoolEventCollector.detachListener(TAG_CHOOSE_ROM);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mEventCollector.detachListener(TAG_SET_KERNEL);
-            mMbtoolEventCollector.detachListener(TAG_SET_KERNEL);
-        }
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        if (mRebootDialogShowing) {
-            buildRenameDialog();
-            if (mRomDialogName != null) {
-                mRomDialogCard.setName(mRomDialogName);
-            }
-        }
+        mEventCollector.detachListener(TAG);
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
-        if (mDialog != null) {
-            mDialog.dismiss();
-            mDialog = null;
+        if (mProgressDialog != null) {
+            mProgressDialog.dismiss();
+            mProgressDialog = null;
         }
 
-        if (mRenameDialog != null) {
-            mRenameDialog.dismiss();
-            mRenameDialog = null;
+        if (mConfirmDialog != null) {
+            mConfirmDialog.dismiss();
+            mConfirmDialog = null;
+        }
+
+        if (mInputDialog != null) {
+            mInputDialog.dismiss();
+            mInputDialog = null;
         }
     }
 
@@ -293,85 +212,61 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         outState.putBoolean(EXTRA_PERFORMING_ACTION, mPerformingAction);
         if (mSelectedRom != null) {
-            outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRom.id);
+            outState.putParcelable(EXTRA_SELECTED_ROM, mSelectedRom);
         }
-        if (mDialog != null) {
-            outState.putBoolean(EXTRA_SHOWING_DIALOG, true);
+        if (mProgressDialog != null) {
+            outState.putInt(EXTRA_PROGRESS_DIALOG, mProgressDialogType);
         }
-        if (mRenameDialog != null) {
-            outState.putBoolean(EXTRA_SHOWING_RENAME_DIALOG, mRebootDialogShowing);
+        if (mConfirmDialog != null) {
+            outState.putInt(EXTRA_CONFIRM_DIALOG, mConfirmDialogType);
         }
-        if (mRomDialogCard != null) {
-            outState.putString(EXTRA_ROM_DIALOG_NAME, mRomDialogCard.getName());
-        }
-
-        if (mRoms != null) {
-            outState.putParcelableArray(EXTRA_ROMS, mRoms);
-            outState.putStringArray(EXTRA_ROM_NAMES, mRomNames);
-            outState.putIntArray(EXTRA_ROM_IMAGE_RES_IDS, mRomImageResIds);
-        }
-
-        // mCards will be null when switching to the SuperUser/SuperSU activity
-        // for approving root access
-        if (mCards != null) {
-            processQueuedEvents();
-
-            for (Card c : mCards) {
-                RomCard card = (RomCard) c;
-                card.onSaveInstanceState(outState);
-            }
+        if (mInputDialog != null) {
+            outState.putInt(EXTRA_INPUT_DIALOG, mInputDialogType);
         }
     }
 
+    /**
+     * Create error card on fragment startup
+     */
     private void initNoRootCard() {
-        mNoRootCard = new NoRootCard(getActivity());
-        mNoRootCard.setClickable(true);
-        mNoRootCard.setOnClickListener(new OnCardClickListener() {
+        mNoRootCardView = (CardView) getActivity().findViewById(R.id.card_noroot);
+        mNoRootCardView.setClickable(true);
+        mNoRootCardView.setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(Card card, View view) {
-                mMbtoolEventCollector.resetAttempt();
+            public void onClick(View view) {
                 reloadFragment();
             }
         });
-
-        int id = 0;
-
-        if (mAction == ACTION_CHOOSE_ROM) {
-            id = R.id.card_noroot_choose_rom;
-        } else if (mAction == ACTION_SET_KERNEL) {
-            id = R.id.card_noroot_set_kernel;
-        }
-
-        mNoRootCardView = (CardViewNative) getActivity().findViewById(id);
-        mNoRootCardView.setCard(mNoRootCard);
     }
 
+    /**
+     * Create CardListView on fragment startup
+     */
     private void initCardList() {
-        mCards = new ArrayList<>();
-        mCardArrayAdapter = new CardArrayAdapter(getActivity(), mCards);
+        mRoms = new ArrayList<>();
+        mRomCardAdapter = new RomCardAdapter(getActivity(), mRoms, this);
 
-        mCardListView = (CardListView) getActivity().findViewById(mCardListResId);
-        if (mCardListView != null) {
-            AnimationAdapter animArrayAdapter = new AlphaInAnimationAdapter(mCardArrayAdapter);
-            animArrayAdapter.setAbsListView(mCardListView);
-            mCardListView.setExternalAdapter(animArrayAdapter, mCardArrayAdapter);
-            refreshRomListVisibility(false);
-        }
-    }
+        mCardListView = (RecyclerView) getActivity().findViewById(R.id.card_list);
+        mCardListView.setHasFixedSize(true);
+        mCardListView.setAdapter(mRomCardAdapter);
 
-    private void initCards() {
-        Context context = getActivity().getApplicationContext();
-        new ObtainRomsTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        mCardListView.setLayoutManager(llm);
+
+        refreshRomListVisibility(false);
     }
 
     @Override
     public void onDismiss(DialogInterface dialog) {
-        if (mDialog == dialog) {
-            mDialog = null;
+        if (mProgressDialog == dialog) {
+            mProgressDialog = null;
         }
-        if (mRenameDialog == dialog) {
-            mRenameDialog = null;
-            mRomDialogCard = null;
+        if (mConfirmDialog == dialog) {
+            mConfirmDialog = null;
+        }
+        if (mInputDialog == dialog) {
+            mInputDialog = null;
         }
     }
 
@@ -383,6 +278,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mCardListView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
+    private void refreshNoRootVisibility(boolean visible) {
+        mNoRootCardView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
     private void updateCardUI() {
         if (mPerformingAction) {
             // Keep screen on
@@ -390,299 +289,139 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
             // Show progress spinner in navigation bar
-            switch (mAction) {
-            case ACTION_CHOOSE_ROM:
-                ((MainActivity) getActivity()).showProgress(
-                        MainActivity.FRAGMENT_CHOOSE_ROM, true);
-                break;
-            case ACTION_SET_KERNEL:
-                ((MainActivity) getActivity()).showProgress(
-                        MainActivity.FRAGMENT_SET_KERNEL, true);
-                break;
-            }
-
-            // Disable all cards
-            for (int i = 0; mCards != null && i < mCards.size(); i++) {
-                RomCard card = (RomCard) mCards.get(i);
-                card.setEnabled(false);
-            }
-            mCardArrayAdapter.notifyDataSetChanged();
+            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_ROMS, true);
         } else {
             // Don't keep screen on
             getActivity().getWindow().clearFlags(
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
             // Hide progress spinner in navigation bar
-            switch (mAction) {
-            case ACTION_CHOOSE_ROM:
-                ((MainActivity) getActivity()).showProgress(
-                        MainActivity.FRAGMENT_CHOOSE_ROM, false);
-                break;
-            case ACTION_SET_KERNEL:
-                ((MainActivity) getActivity()).showProgress(
-                        MainActivity.FRAGMENT_SET_KERNEL, false);
-                break;
-            }
-
-            // Re-enable all cards
-            for (int i = 0; mCards != null && i < mCards.size(); i++) {
-                RomCard card = (RomCard) mCards.get(i);
-                card.setEnabled(true);
-            }
-            mCardArrayAdapter.notifyDataSetChanged();
+            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_ROMS, false);
         }
     }
 
-    private void showProgress(RomCard card, boolean show) {
-        card.hideMessage();
-        card.setProgressShowing(show);
+    private void buildProgressDialog(int type) {
+        if (mProgressDialog != null) {
+            throw new IllegalStateException("Tried to create progress dialog twice!");
+        }
+
+        int titleResId;
+        int messageResId;
+
+        switch (type) {
+        case PROGRESS_DIALOG_SWITCH_ROM:
+            titleResId = R.string.switching_rom;
+            messageResId = R.string.please_wait;
+            break;
+        case PROGRESS_DIALOG_SET_KERNEL:
+            titleResId = R.string.setting_kernel;
+            messageResId = R.string.please_wait;
+            break;
+        default:
+            throw new IllegalStateException("Invalid progress dialog type");
+        }
+
+        mProgressDialogType = type;
+
+        mProgressDialog = new MaterialDialog.Builder(getActivity())
+                .title(titleResId)
+                .content(messageResId)
+                .progress(true, 0)
+                .build();
+
+        mProgressDialog.setOnDismissListener(this);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.show();
     }
 
-    private RomCard findCard(RomInformation info) {
-        for (Card c : mCards) {
-            RomCard card = (RomCard) c;
-            if (info.equals(card.getRom())) {
-                return card;
-            }
+    private void buildConfirmDialog(int type) {
+        if (mConfirmDialog != null) {
+            throw new IllegalStateException("Tried to create confirm dialog twice!");
         }
-        return null;
+
+        switch (type) {
+        case CONFIRM_DIALOG_SET_KERNEL:
+            String message = String.format(getString(R.string.switcher_ask_set_kernel_desc),
+                    mSelectedRom.getName());
+
+            mConfirmDialog = new MaterialDialog.Builder(getActivity())
+                    .title(R.string.switcher_ask_set_kernel_title)
+                    .content(message)
+                    .positiveText(R.string.proceed)
+                    .negativeText(R.string.cancel)
+                    .callback(new ButtonCallback() {
+                        @Override
+                        public void onPositive(MaterialDialog dialog) {
+                            setKernel(mSelectedRom);
+                        }
+                    })
+                    .build();
+            break;
+        default:
+            throw new IllegalStateException("Invalid confirm dialog type");
+        }
+
+        mConfirmDialogType = type;
+
+        mConfirmDialog.setOnDismissListener(this);
+        mConfirmDialog.setCanceledOnTouchOutside(false);
+        mConfirmDialog.setCancelable(false);
+        mConfirmDialog.show();
     }
 
-    private RomCard findCardFromId(String id) {
-        for (Card c : mCards) {
-            RomCard card = (RomCard) c;
-            if (card.getRom().id.equals(id)) {
-                return card;
-            }
-        }
-        return null;
-    }
-
-    private void showCompletionMessage(RomCard card, boolean failed) {
-        for (Card c : mCards) {
-            RomCard curCard = (RomCard) c;
-            if (curCard == card) {
-                curCard.showCompletionMessage(mAction, failed);
-            } else {
-                curCard.hideMessage();
-            }
-        }
-        mCardArrayAdapter.notifyDataSetChanged();
-    }
-
-    private void buildDialog() {
-        if (mDialog == null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setTitle(R.string.switcher_ask_set_kernel_title);
-
-            String message = String.format(
-                    getActivity().getString(R.string.switcher_ask_set_kernel_desc),
-                    RomUtils.getName(getActivity(), mSelectedRom));
-
-            builder.setMessage(message);
-
-            DialogInterface.OnClickListener listener = new OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    startAction(mSelectedRom);
-                }
-            };
-
-            builder.setPositiveButton(R.string.proceed, listener);
-            builder.setNegativeButton(R.string.cancel, null);
-            mDialog = builder.show();
-            mDialog.setOnDismissListener(this);
-        }
-    }
-
-    private void buildRenameDialog() {
-        if (mRenameDialog == null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-            String defaultName = RomUtils.getDefaultName(getActivity(), mSelectedRom);
-            String name = RomUtils.getName(getActivity(), mSelectedRom);
-            builder.setTitle(String.format(getActivity().getString(
-                    R.string.rename_rom_title), defaultName));
-            builder.setMessage(String.format(getActivity().getString(
-                    R.string.rename_rom_desc), defaultName));
-
-            LayoutInflater inflater = getActivity().getLayoutInflater();
-
-            View v = inflater.inflate(R.layout.dialog_rename_rom, null);
-
-            View.OnClickListener listener = new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent();
-                    intent.setType("image/*");
-                    intent.setAction(Intent.ACTION_GET_CONTENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    startActivityForResult(intent, REQUEST_IMAGE);
-                }
-            };
-
-            final File tempThumbnail = new File(mSelectedRom.thumbnailPath + ".tmp");
-
-            // Save a temporary copy of the current image when the dialog first appears. All
-            // changes are done on the temporary image and then copied back if the OK button is
-            // pressed.
-            try {
-                File curThumbnail = new File(mSelectedRom.thumbnailPath);
-                if (curThumbnail.isFile() && !tempThumbnail.exists() && !mRebootDialogShowing) {
-                    org.apache.commons.io.FileUtils.copyFile(curThumbnail, tempThumbnail);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            int imageResId = RomUtils.getIconResource(mSelectedRom);
-
-            mRomDialogCard = new RomDialogCard(getActivity(), mSelectedRom,
-                    name, imageResId, listener);
-
-            CardViewNative cardView = (CardViewNative) v.findViewById(R.id.rom_card);
-            cardView.setCard(mRomDialogCard);
-
-            builder.setView(v);
-
-            builder.setPositiveButton(R.string.ok, new OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    RootFile thumbnail = new RootFile(mSelectedRom.thumbnailPath, false);
-
-                    if (tempThumbnail.isFile()) {
-                        RootFile temp = new RootFile(tempThumbnail, false);
-                        temp.moveTo(thumbnail);
-                        thumbnail.chmod(0755);
-                    } else {
-                        thumbnail.delete();
-                    }
-
-                    RomUtils.setName(mSelectedRom, mRomDialogCard.getName());
-                    refreshNames();
-
-                    mRebootDialogShowing = false;
-                }
-            });
-
-            builder.setNegativeButton(R.string.cancel, new OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    if (tempThumbnail.isFile()) {
-                        tempThumbnail.delete();
-                    }
-
-                    mRebootDialogShowing = false;
-                }
-            });
-
-            builder.setNeutralButton(R.string.reset_icon, new OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    // Dummy
-                }
-            });
-
-            mRenameDialog = builder.show();
-            mRenameDialog.setOnDismissListener(this);
-            mRenameDialog.setCanceledOnTouchOutside(false);
-
-            // Set listener on the button after the dialog is created so the dialog isn't dismissed
-            ((AlertDialog) mRenameDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
-                    .setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    tempThumbnail.delete();
-
-                    refreshRenameDialog();
-                }
-            });
-
-            mRebootDialogShowing = true;
-        }
-    }
-
-    private void refreshRenameDialog() {
-        if (mRenameDialog != null) {
-            CardViewNative cardView = (CardViewNative) mRenameDialog.findViewById(R.id.rom_card);
-            cardView.refreshCard(mRomDialogCard);
-        }
-    }
-
-    private void refreshNames() {
-        for (int i = 0; i < mRoms.length; i++) {
-            final RomInformation info = mRoms[i];
-            final RomCard card = (RomCard) mCards.get(i);
-
-            String name = RomUtils.getName(getActivity(), info);
-            mRomNames[i] = name;
-            card.setName(name);
+    private void buildInputDialog(int type) {
+        if (mInputDialog != null) {
+            throw new IllegalStateException("Tried to create input dialog twice!");
         }
 
-        mCardArrayAdapter.notifyDataSetChanged();
-    }
+        switch (type) {
+        case INPUT_DIALOG_EDIT_NAME:
+            String title = String.format(getString(R.string.rename_rom_title),
+                    mSelectedRom.getDefaultName());
+            String message = String.format(getString(R.string.rename_rom_desc),
+                    mSelectedRom.getDefaultName());
 
-    private void startActionAskingIfNeeded(final RomInformation info) {
-        if (mAction == ACTION_CHOOSE_ROM) {
-            startAction(info);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            buildDialog();
-        }
-    }
+            mInputDialog = new MaterialDialog.Builder(getActivity())
+                    .title(title)
+                    .customView(R.layout.dialog_textbox, true)
+                    .positiveText(R.string.ok)
+                    .negativeText(R.string.cancel)
+                    .callback(new ButtonCallback() {
+                        @Override
+                        public void onPositive(MaterialDialog dialog) {
+                            EditText et = (EditText) dialog.findViewById(R.id.edittext);
+                            String newName = et.getText().toString().trim();
+                            if (newName.isEmpty()) {
+                                return;
+                            }
 
-    private void startAction(RomInformation info) {
-        RomCard card = findCard(info);
-        if (card != null) {
-            showProgress(card, true);
-        }
+                            mSelectedRom.setName(newName);
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    RomUtils.saveConfig(mSelectedRom);
+                                }
+                            }.start();
+                            mRomCardAdapter.notifyDataSetChanged();
+                        }
+                    })
+                    .build();
 
-        mPerformingAction = true;
-        updateCardUI();
-
-        if (mAction == ACTION_CHOOSE_ROM) {
-            mEventCollector.chooseRom(info.id);
-        } else if (mAction == ACTION_SET_KERNEL) {
-            mEventCollector.setKernel(info.id);
-        }
-    }
-
-    private void processChoseRomEvent(ChoseRomEvent event) {
-        RomCard card = findCardFromId(event.kernelId);
-        if (card != null) {
-            showProgress(card, false);
-        }
-
-        mPerformingAction = false;
-        updateCardUI();
-
-        showCompletionMessage(card, event.failed);
-    }
-
-    private void processSetKernelEvent(SetKernelEvent event) {
-        RomCard card = findCardFromId(event.kernelId);
-        if (card != null) {
-            showProgress(card, false);
+            TextView tv = (TextView)
+                    ((MaterialDialog) mInputDialog).getCustomView().findViewById(R.id.message);
+            tv.setText(message);
+            break;
+        default:
+            throw new IllegalStateException("Invalid input dialog type");
         }
 
-        mPerformingAction = false;
-        updateCardUI();
+        mInputDialogType = type;
 
-        showCompletionMessage(card, event.failed);
-    }
-
-    private void processQueuedEvents() {
-        Iterator<BaseEvent> iter = mEvents.iterator();
-        while (iter.hasNext()) {
-            BaseEvent event = iter.next();
-
-            if (event instanceof ChoseRomEvent) {
-                processChoseRomEvent((ChoseRomEvent) event);
-            } else if (event instanceof SetKernelEvent) {
-                processSetKernelEvent((SetKernelEvent) event);
-            }
-
-            iter.remove();
-        }
+        mInputDialog.setOnDismissListener(this);
+        mInputDialog.setCanceledOnTouchOutside(false);
+        mInputDialog.setCancelable(false);
+        mInputDialog.show();
     }
 
     @Override
@@ -700,34 +439,110 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     }
 
     @Override
-    public void onEventReceived(BaseEvent event) {
-        if (event instanceof ChoseRomEvent) {
-            ChoseRomEvent e = (ChoseRomEvent) event;
-
-            if (mCardsLoaded) {
-                processChoseRomEvent(e);
-            } else {
-                mEvents.add(event);
-            }
-        } else if (event instanceof SetKernelEvent) {
-            SetKernelEvent e = (SetKernelEvent) event;
-
-            if (mCardsLoaded) {
-                processSetKernelEvent(e);
-            } else {
-                mEvents.add(event);
-            }
-        } else if (event instanceof MbtoolConnectionEvent) {
-            MbtoolConnectionEvent e = (MbtoolConnectionEvent) event;
-
-            if (!e.connected) {
-                mNoRootCardView.setVisibility(View.VISIBLE);
-                refreshProgressVisibility(false);
-            } else {
-                mNoRootCardView.setVisibility(View.GONE);
-                initCards();
-            }
+    public void onEventReceived(BaseEvent bEvent) {
+        if (bEvent instanceof SwitchedRomEvent) {
+            SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
+            mPerformingAction = false;
+            updateCardUI();
+            mProgressDialog.dismiss();
+            mProgressDialog = null;
+            Toast.makeText(getActivity(),
+                    event.failed ? R.string.choose_rom_failure : R.string.choose_rom_success,
+                    Toast.LENGTH_SHORT).show();
+        } else if (bEvent instanceof SetKernelEvent) {
+            SetKernelEvent event = (SetKernelEvent) bEvent;
+            mPerformingAction = false;
+            updateCardUI();
+            mProgressDialog.dismiss();
+            mProgressDialog = null;
+            Toast.makeText(getActivity(),
+                    event.failed ? R.string.set_kernel_failure : R.string.set_kernel_success,
+                    Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onSelectedRom(RomInformation info) {
+        mSelectedRom = info;
+        mPerformingAction = true;
+        updateCardUI();
+
+        buildProgressDialog(PROGRESS_DIALOG_SWITCH_ROM);
+        mEventCollector.chooseRom(info.getId());
+    }
+
+    @Override
+    public void onSelectedSetKernel(RomInformation info) {
+        mSelectedRom = info;
+
+        // Ask for confirmation
+        buildConfirmDialog(CONFIRM_DIALOG_SET_KERNEL);
+    }
+
+    private void setKernel(RomInformation info) {
+        mPerformingAction = true;
+        updateCardUI();
+
+        buildProgressDialog(PROGRESS_DIALOG_SET_KERNEL);
+        mEventCollector.setKernel(info.getId());
+    }
+
+    @Override
+    public void onSelectedEditName(RomInformation info) {
+        mSelectedRom = info;
+
+        buildInputDialog(INPUT_DIALOG_EDIT_NAME);
+    }
+
+    @Override
+    public void onSelectedChangeImage(RomInformation info) {
+        mSelectedRom = info;
+
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(intent, REQUEST_IMAGE);
+    }
+
+    @Override
+    public void onSelectedResetImage(RomInformation info) {
+        mSelectedRom = info;
+
+        File f = new File(info.getThumbnailPath());
+        if (f.isFile()) {
+            f.delete();
+        }
+
+        mRomCardAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public Loader<RomInformation[]> onCreateLoader(int id, Bundle args) {
+        return new RomsLoader(getActivity());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<RomInformation[]> loader, RomInformation[] result) {
+        mRoms.clear();
+
+        if (result != null) {
+            for (RomInformation info : result) {
+                mRoms.add(info);
+            }
+        } else {
+            refreshNoRootVisibility(true);
+        }
+
+        mRomCardAdapter.notifyDataSetChanged();
+        updateCardUI();
+
+        refreshProgressVisibility(false);
+        refreshRomListVisibility(true);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<RomInformation[]> loader) {
     }
 
     protected class ResizeAndCacheImageTask extends AsyncTask<Void, Void, Void> {
@@ -765,7 +580,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
             // Write the image to a temporary file. If the user selects it,
             // the move it to the appropriate location.
-            File f = new File(mSelectedRom.thumbnailPath);
+            File f = new File(mSelectedRom.getThumbnailPath());
+            f.getParentFile().mkdirs();
 
             FileOutputStream out = null;
 
@@ -775,13 +591,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } finally {
-                if (out != null) {
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                IOUtils.closeQuietly(out);
             }
 
             return null;
@@ -793,96 +603,30 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 return;
             }
 
-            refreshRenameDialog();
+            mRomCardAdapter.notifyDataSetChanged();
         }
     }
 
-    protected class ObtainRomsTask extends AsyncTask<Void, Void, ObtainRomsTask.RomInfoResult> {
-        private final Context mContext;
+    private static class RomsLoader extends AsyncTaskLoader<RomInformation[]> {
+        private RomInformation[] mResult;
 
-        public class RomInfoResult {
-            RomInformation[] roms;
-            String[] names;
-            int[] imageResIds;
+        public RomsLoader(Context context) {
+            super(context);
+            onContentChanged();
         }
 
-        public ObtainRomsTask(Context context) {
-            mContext = context;
-        }
-
-        @Override
-        protected RomInfoResult doInBackground(Void... params) {
-            // If roms were already loaded, don't load them again
-            if (mRoms != null) {
-                return null;
+        @Override protected void onStartLoading() {
+            if (mResult != null) {
+                deliverResult(mResult);
+            } else if (takeContentChanged()) {
+                forceLoad();
             }
-
-            RomInfoResult result = new RomInfoResult();
-
-            result.roms = RomUtils.getRoms();
-            result.names = new String[result.roms.length];
-            result.imageResIds = new int[result.roms.length];
-
-            for (int i = 0; i < result.roms.length; i++) {
-                result.names[i] = RomUtils.getName(mContext, result.roms[i]);
-                result.imageResIds[i] = RomUtils.getIconResource(result.roms[i]);
-            }
-
-            return result;
         }
 
         @Override
-        protected void onPostExecute(RomInfoResult result) {
-            if (getActivity() == null) {
-                return;
-            }
-
-            if (result != null) {
-                mRoms = result.roms;
-                mRomNames = result.names;
-                mRomImageResIds = result.imageResIds;
-            }
-
-            mCards.clear();
-
-            for (int i = 0; i < mRoms.length; i++) {
-                final RomInformation info = mRoms[i];
-
-                RomCard card = new RomCard(getActivity(), info, mRomNames[i], mRomImageResIds[i]);
-
-                if (mSavedInstanceState != null) {
-                    card.onRestoreInstanceState(mSavedInstanceState);
-                }
-
-                card.setOnClickListener(new OnCardClickListener() {
-                    @Override
-                    public void onClick(Card card, View view) {
-                        mSelectedRom = info;
-                        startActionAskingIfNeeded(info);
-                    }
-                });
-
-                card.setOnLongClickListener(new OnLongCardClickListener() {
-                    @Override
-                    public boolean onLongClick(Card card, View view) {
-                        mSelectedRom = info;
-                        buildRenameDialog();
-                        return true;
-                    }
-                });
-
-                mCards.add(card);
-            }
-
-            mCardArrayAdapter.notifyDataSetChanged();
-            updateCardUI();
-
-            refreshProgressVisibility(false);
-            refreshRomListVisibility(true);
-
-            processQueuedEvents();
-
-            mCardsLoaded = true;
+        public RomInformation[] loadInBackground() {
+            mResult = RomUtils.getRoms(getContext());
+            return mResult;
         }
     }
 }

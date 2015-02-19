@@ -30,7 +30,7 @@
   <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
   <string name="noroot_settings_desc">Программа не смогла заполучить режим доступа \"root\".\nДоступ с административными правами нужен для изменения настроек ресурсов.\n\nНажмите для повторного\nзапроса режима root.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_choose_rom">Выберите ROM</string>
+  <string name="title_roms">Выберите ROM</string>
   <!--Navigation drawer item for setting the kernel-->
   <string name="title_set_kernel">Установить Ядро</string>
   <!--Navigation drawer item for patching a zip file-->

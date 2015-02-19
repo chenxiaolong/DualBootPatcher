@@ -33,7 +33,7 @@ possa essere effettuato lo switch tra i firmware.\n\nFai un tap per riprovare ad
   <string name="noroot_settings_desc">L\'applicazione non è stata in grado di ottenere i permessi di root.
 I permessi di root sono richiesti per configurare la condivisione delle app.\n\nFai un tap per riprovare ad ottenere i permessi di root.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_choose_rom">Scegli la ROM</string>
+  <string name="title_roms">Scegli la ROM</string>
   <!--Navigation drawer item for setting the kernel-->
   <string name="title_set_kernel">Imposta il Kernel</string>
   <!--Navigation drawer item for patching a zip file-->
@@ -251,7 +251,7 @@ nel kernel</string>
   <string name="only_zip_supported">Solo i file ZIP sono supportati da %s</string>
   <string name="only_boot_image_supported">Solo i kernel sono supportati da %s</string>
   <string name="patching_cancelled">Il processo di patching è stato annullato</string>
-  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system 
+  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system
 o /cache nell\'updater-script.\n\nSe il file è una ROM, allora qualcosa è andato storto.
 Se il file non è una ROM (es. kernel o mod), non ha bisogno di essere patchato.</string>
   <string name="apply_patch_file_error">Impossibile applicare il file patch</string>

@@ -76,9 +76,9 @@ public class SwitcherService extends IntentService {
         builder.setOngoing(true);
 
         if (ACTION_CHOOSE_ROM.equals(action)) {
-            builder.setContentTitle(getString(R.string.title_choose_rom));
+            builder.setContentTitle(getString(R.string.switching_rom));
         } else if (ACTION_SET_KERNEL.equals(action)) {
-            builder.setContentTitle(getString(R.string.title_set_kernel));
+            builder.setContentTitle(getString(R.string.setting_kernel));
         }
 
         builder.setContentIntent(pendingIntent);

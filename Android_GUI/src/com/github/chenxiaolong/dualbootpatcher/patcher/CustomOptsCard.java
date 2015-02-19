@@ -46,7 +46,7 @@ public class CustomOptsCard extends Card {
     private boolean mDisable;
 
     public CustomOptsCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.cardcontent_customopts);
+        this(context, R.layout.card_inner_layout_customopts);
         mPCS = pcs;
     }
 

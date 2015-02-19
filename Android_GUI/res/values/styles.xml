@@ -55,6 +55,35 @@
     </style>
 
     <!-- Card styles -->
+    <style name="card_v7_overflow_button">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/menu_button_overflow_material</item>
+    </style>
+
+    <style name="card_v7_thumbnail">
+        <item name="android:layout_width">@dimen/card_v7_thumbnail_width</item>
+        <item name="android:layout_height">@dimen/card_v7_thumbnail_height</item>
+        <item name="android:layout_margin">@dimen/card_v7_thumbnail_margin</item>
+    </style>
+
+    <style name="card_v7_primary_text">
+        <item name="android:textSize">@dimen/card_v7_primary_text_size</item>
+    </style>
+
+    <style name="card_v7_secondary_text">
+        <item name="android:textColor">@android:color/secondary_text_light</item>
+        <item name="android:textSize">@dimen/card_v7_secondary_text_size</item>
+    </style>
+
+
+
+
+
+
+
+
+
     <style name="card_content_minimal_padding" parent="@style/card.native.content_outer_layout">
         <item name="android:paddingLeft">@dimen/card_content_minimal_padding</item>
         <item name="android:paddingRight">@dimen/card_content_minimal_padding</item>
@@ -72,6 +101,15 @@
         <item name="android:layout_marginLeft">10dp</item>
         <item name="android:layout_marginRight">10dp</item>
         <item name="android:layout_marginTop">10dp</item>
+    </style>
+
+    <style name="card_content_frame_layout" >
+        <item name="android:layout_width">match_parent</item>
+        <!-- <item name="android:minHeight">@dimen/card_base_empty_height</item> -->
+        <item name="android:paddingLeft">@dimen/card_main_content_native_default_paddingLeft</item>
+        <item name="android:paddingRight">@dimen/card_main_content_native_default_paddingRight</item>
+        <item name="android:paddingTop">@dimen/card_main_content_native_default_paddingTop</item>
+        <item name="android:paddingBottom">@dimen/card_main_content_native_default_paddingBottom</item>
     </style>
 
     <style name="card_title">

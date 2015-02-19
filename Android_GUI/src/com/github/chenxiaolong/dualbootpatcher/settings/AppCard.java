@@ -52,7 +52,7 @@ public class AppCard extends Card {
 
     public AppCard(Context context, AppSharingConfigFile config, AppInformation appInfo,
                    RomInfoResult romInfos) {
-        super(context, R.layout.cardcontent_app);
+        super(context, R.layout.card_inner_layout_app);
         mConfig = config;
         mAppInfo = appInfo;
         mRomInfos = romInfos;

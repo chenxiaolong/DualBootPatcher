@@ -40,7 +40,7 @@ public class ProgressCard extends Card {
     private int mMaxProgress = 0;
 
     public ProgressCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.cardcontent_progress);
+        this(context, R.layout.card_inner_layout_progress);
         mPCS = pcs;
     }
 

@@ -30,25 +30,31 @@
         style="@style/card.native.main_layout_foreground"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="horizontal">
+
+        <it.gmariotti.cardslib.library.view.component.CardThumbnailView
+            android:id="@+id/card_thumbnail_layout"
+            style="@style/card.native.card_thumbnail_outer_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            card:card_thumbnail_layout_resourceID="@layout/card_thumbnail_layout_padded" />
 
         <LinearLayout
             android:id="@+id/card_thumb_and_content_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <it.gmariotti.cardslib.library.view.component.CardThumbnailView
-                android:id="@+id/card_thumbnail_layout"
-                style="@style/card.native.card_thumbnail_outer_layout"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_margin="@dimen/card_thumbnail_padding"
-                card:card_thumbnail_layout_resourceID="@layout/native_base_thumbnail_layout" />
+            <it.gmariotti.cardslib.library.view.component.CardHeaderView
+                android:id="@+id/card_header_layout"
+                style="@style/card.native.header_outer_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                card:card_header_layout_resourceID="@layout/native_base_header_layout" />
 
             <FrameLayout
                 android:id="@+id/card_main_content_layout"
-                style="@style/card.native.content_outer_layout"
+                style="@style/card_content_frame_layout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 

@@ -343,7 +343,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     private void setupGlobalAppSharePrefs() {
-        boolean isPrimary = mCurrentRom != null && mCurrentRom.id.equals(RomUtils.PRIMARY_ID);
+        boolean isPrimary = mCurrentRom != null && mCurrentRom.getId().equals(RomUtils.PRIMARY_ID);
 
         if (isPrimary) {
             mAppSharingCategory.removePreference(mShareApps);
