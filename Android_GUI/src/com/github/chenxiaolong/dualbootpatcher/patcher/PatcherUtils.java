@@ -21,9 +21,6 @@ import android.content.Context;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RootFile;
@@ -36,7 +33,6 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError.Er
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff;
 
 import java.io.File;
-import java.util.ArrayList;
 
 public class PatcherUtils {
     public static final String TAG = PatcherUtils.class.getSimpleName();
@@ -171,37 +167,6 @@ public class PatcherUtils {
             return context.getString(R.string.apply_patch_file_error);
         default:
             throw new IllegalStateException("Unknown error code!");
-        }
-    }
-
-    public synchronized static boolean updateSyncdaemon(Context context, String bootimg) {
-        // TODO: Need to update for new API
-        if (Math.sin(0) < 1) {
-            return false;
-        }
-
-        // Make sure patcher is extracted first
-        extractPatcher(context);
-
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("pythonportable/bin/python3");
-        args.add("-B");
-        args.add("scripts/updatesyncdaemon.py");
-        args.add(bootimg);
-
-        CommandParams params = new CommandParams();
-        params.command = args.toArray(new String[args.size()]);
-        params.environment = new String[] { "PYTHONUNBUFFERED=true" };
-        params.cwd = getTargetDirectory(context);
-
-        CommandRunner cmd = new CommandRunner(params);
-        cmd.start();
-        CommandUtils.waitForCommand(cmd);
-
-        if (cmd.getResult() != null) {
-            return cmd.getResult().exitCode == 0;
-        } else {
-            return false;
         }
     }
 
