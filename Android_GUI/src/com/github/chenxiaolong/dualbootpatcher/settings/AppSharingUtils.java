@@ -18,54 +18,62 @@
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.content.Context;
-import android.os.Build;
+import android.os.Environment;
 
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.RootFile;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.BootImage;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CpioFile;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class AppSharingUtils {
     public static final String TAG = AppSharingUtils.class.getSimpleName();
 
-    private static final String SHARE_APPS_PATH = "/data/patcher.share-app";
-    private static final String SHARE_PAID_APPS_PATH = "/data/patcher.share-app-asec";
+    private static final String SHARE_APPS_PATH =
+            Environment.getExternalStorageDirectory() + "/MultiBoot/%s/share-app";
+    private static final String SHARE_PAID_APPS_PATH =
+            Environment.getExternalStorageDirectory() + "/MultiBoot/%s/share-app-asec";
 
     public static boolean setShareAppsEnabled(boolean enable) {
+        String path = String.format(SHARE_APPS_PATH, "ID");
+        File f = new File(path);
         if (enable) {
-            CommandUtils.runRootCommand("touch " + SHARE_APPS_PATH);
+            try {
+                f.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return isShareAppsEnabled();
         } else {
-            CommandUtils.runRootCommand("rm -f " + SHARE_APPS_PATH);
+            f.delete();
             return !isShareAppsEnabled();
         }
     }
 
     public static boolean setSharePaidAppsEnabled(boolean enable) {
+        String path = String.format(SHARE_PAID_APPS_PATH);
+        File f = new File(path);
         if (enable) {
-            CommandUtils.runRootCommand("touch " + SHARE_PAID_APPS_PATH);
+            try {
+                f.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return isSharePaidAppsEnabled();
         } else {
-            CommandUtils.runRootCommand("rm -f " + SHARE_PAID_APPS_PATH);
+            f.delete();
             return !isSharePaidAppsEnabled();
         }
     }
 
     public static boolean isShareAppsEnabled() {
-        return new RootFile(SHARE_APPS_PATH).isFile();
+        return new File(SHARE_APPS_PATH).isFile();
     }
 
     public static boolean isSharePaidAppsEnabled() {
-        return new RootFile(SHARE_PAID_APPS_PATH).isFile();
+        return new File(SHARE_PAID_APPS_PATH).isFile();
     }
 
     public static HashMap<RomInformation, ArrayList<String>> getAllApks(Context context) {
@@ -75,7 +83,7 @@ public class AppSharingUtils {
 
         for (RomInformation rom : roms) {
             ArrayList<String> apks = new ArrayList<>();
-            String[] filenames = new RootFile(rom.getDataPath() + File.separator + "app").list();
+            String[] filenames = new File(rom.getDataPath() + File.separator + "app").list();
 
             if (filenames == null || filenames.length == 0) {
                 continue;
@@ -96,6 +104,7 @@ public class AppSharingUtils {
     }
 
     public static void updateRamdisk(Context context) throws Exception {
+        /*
         PatcherUtils.extractPatcher(context);
 
         RomInformation romInfo = RomUtils.getCurrentRom(context);
@@ -113,7 +122,7 @@ public class AppSharingUtils {
         String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
         RootFile tmpKernelFile = new RootFile(tmpKernel);
         bootImageFile.copyTo(tmpKernelFile);
-        tmpKernelFile.chmod(0777);
+        //tmpKernelFile.chmod(0777);
 
         BootImage bi = new BootImage();
         if (!bi.load(tmpKernel)) {
@@ -164,8 +173,9 @@ public class AppSharingUtils {
 
         // Copy to target
         new RootFile(tmpKernel).copyTo(bootImageFile);
-        bootImageFile.chmod(0755);
+        //bootImageFile.chmod(0755);
 
         SwitcherUtils.chooseRom(context, romInfo.getId());
+        */
     }
 }

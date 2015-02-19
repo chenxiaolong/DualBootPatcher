@@ -23,7 +23,6 @@ import android.os.Bundle;
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RootFile;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
@@ -175,14 +174,14 @@ public class PatcherUtils {
             if (d.getName().startsWith("DualBootPatcherAndroid")
                     || d.getName().startsWith("tmp")
                     || d.getName().startsWith("data-")) {
-                new RootFile(d.getAbsolutePath(), false).recursiveDelete();
+                org.apache.commons.io.FileUtils.deleteQuietly(d);
             }
         }
         for (File d : context.getFilesDir().listFiles()) {
             if (d.isDirectory()) {
                 for (File t : d.listFiles()) {
                     if (t.getName().contains("tmp")) {
-                        new RootFile(t.getAbsolutePath(), false).recursiveDelete();
+                        org.apache.commons.io.FileUtils.deleteQuietly(t);
                     }
                 }
             }
@@ -196,7 +195,7 @@ public class PatcherUtils {
 
             // Remove all previous files
             for (File d : context.getFilesDir().listFiles()) {
-                new RootFile(d.getAbsolutePath(), false).recursiveDelete();
+                org.apache.commons.io.FileUtils.deleteQuietly(d);
             }
 
             LibMiscStuff.INSTANCE.extract_archive(targetFile.getAbsolutePath(),
