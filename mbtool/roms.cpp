@@ -100,7 +100,7 @@ bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms)
     while (!all_roms.empty()) {
         auto r = std::move(all_roms[0]);
 
-        std::string raw_bp_path("/raw-");
+        std::string raw_bp_path("/raw");
         raw_bp_path += r->system_path;
         raw_bp_path += "/";
         raw_bp_path += "build.prop";

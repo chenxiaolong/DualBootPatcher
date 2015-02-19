@@ -34,6 +34,7 @@
 #include "validcerts.h"
 #include "util/finally.h"
 #include "util/logging.h"
+#include "util/properties.h"
 #include "util/socket.h"
 
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
@@ -62,6 +63,16 @@ static bool v1_list_roms(int fd)
     }
 
     for (auto r : roms) {
+        std::string build_prop;
+        if (r->use_raw_paths) {
+            build_prop += "/raw";
+        }
+        build_prop += r->system_path;
+        build_prop += "/build.prop";
+
+        std::unordered_map<std::string, std::string> properties;
+        util::file_get_all_properties(build_prop, &properties);
+
         bool success = util::socket_write_string(fd, "ROM_BEGIN")
                 && util::socket_write_string(fd, "ID")
                 && util::socket_write_string(fd, r->id)
@@ -72,8 +83,23 @@ static bool v1_list_roms(int fd)
                 && util::socket_write_string(fd, "DATA_PATH")
                 && util::socket_write_string(fd, r->data_path)
                 && util::socket_write_string(fd, "USE_RAW_PATHS")
-                && util::socket_write_int32(fd, r->use_raw_paths)
-                && util::socket_write_string(fd, "ROM_END");
+                && util::socket_write_int32(fd, r->use_raw_paths);
+
+        if (success && properties.find("ro.build.version.release")
+                != properties.end()) {
+            const std::string &version = properties["ro.build.version.release"];
+            success = util::socket_write_string(fd, "VERSION")
+                    && util::socket_write_string(fd, version);
+        }
+        if (success && properties.find("ro.build.display.id")
+                != properties.end()) {
+            const std::string &build = properties["ro.build.display.id"];
+            success = util::socket_write_string(fd, "BUILD")
+                    && util::socket_write_string(fd, build);
+        }
+        if (success) {
+            success = util::socket_write_string(fd, "ROM_END");
+        }
 
         if (!success) {
             return false;

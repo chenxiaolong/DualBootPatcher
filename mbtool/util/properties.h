@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include <sys/system_properties.h>
 
@@ -40,6 +41,8 @@ bool file_get_property(const std::string &path,
                        const std::string &key,
                        std::string *out,
                        const std::string &default_value);
+bool file_get_all_properties(const std::string &path,
+                             std::unordered_map<std::string, std::string> *map);
 
 }
 }

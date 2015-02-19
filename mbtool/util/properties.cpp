@@ -184,5 +184,49 @@ bool file_get_property(const std::string &path,
     return true;
 }
 
+bool file_get_all_properties(const std::string &path,
+                             std::unordered_map<std::string, std::string> *map)
+{
+    file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+    if (!fp) {
+        return false;
+    }
+
+    char *line = nullptr;
+    size_t len = 0;
+    ssize_t read;
+
+    auto free_line = finally([&] {
+        free(line);
+    });
+
+    std::unordered_map<std::string, std::string> tempMap;
+
+    while ((read = getline(&line, &len, fp.get())) >= 0) {
+        if (line[0] == '\0' || line[0] == '#') {
+            // Skip empty and comment lines
+            continue;
+        }
+
+        char *equals = strchr(line, '=');
+        if (!equals) {
+            // No equals in line
+            continue;
+        }
+
+        // Strip newline
+        if (line[read - 1] == '\n') {
+            line[read - 1] = '\0';
+            --read;
+        }
+
+        *equals = '\0';
+        tempMap[line] = equals + 1;
+    }
+
+    map->swap(tempMap);
+    return true;
+}
+
 }
 }
