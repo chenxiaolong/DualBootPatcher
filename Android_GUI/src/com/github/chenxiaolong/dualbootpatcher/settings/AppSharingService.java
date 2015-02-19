@@ -48,7 +48,6 @@ public class AppSharingService extends IntentService {
     }
 
     private void onPackageRemoved(String pkg) {
-        AppSharingConfigFile config = AppSharingConfigFile.getInstance();
         RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
 
         if (info == null) {
@@ -57,11 +56,11 @@ public class AppSharingService extends IntentService {
         }
 
         // Unsync package if explicitly removed
-        if (config.isRomSynced(pkg, info)) {
-            config.setRomSynced(pkg, info, false);
-        }
+        //if (config.isRomSynced(pkg, info)) {
+            //config.setRomSynced(pkg, info, false);
+        //}
 
-        config.save();
+        //config.save();
     }
 
     private void updateRamdisk() {

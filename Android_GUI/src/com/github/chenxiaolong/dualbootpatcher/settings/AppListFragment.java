@@ -56,7 +56,6 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     private ProgressBar mProgressBar;
     private CardListView mAppsList;
     private ArrayList<AppInformation> mAppInfos;
-    private AppSharingConfigFile mConfig;
     private RomInfoResult mRomInfos;
 
     private boolean mLoadedApps;
@@ -71,7 +70,6 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mSavedInstanceState = savedInstanceState;
-        mConfig = AppSharingConfigFile.getInstance();
 
         FragmentManager fm = getFragmentManager();
         mLoaderFragment = (AppListLoaderFragment) fm
@@ -86,7 +84,7 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mConfig.save();
+        //mConfig.save();
     }
 
     @Override
@@ -117,9 +115,9 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
 
         showAppList(false);
 
-        mAppInfos = new ArrayList<AppInformation>();
+        mAppInfos = new ArrayList<>();
 
-        mCards = new ArrayList<Card>();
+        mCards = new ArrayList<>();
         mCardArrayAdapter = new CardArrayAdapter(getActivity(), mCards);
         mAppsList = (CardListView) getActivity().findViewById(R.id.apps);
         if (mAppsList != null) {
@@ -223,7 +221,7 @@ public class AppListFragment extends Fragment implements LoaderListener, OnDismi
     private void ready() {
         if (mLoadedApps && mLoadedRoms) {
             for (AppInformation appInfo : mAppInfos) {
-                AppCard card = new AppCard(getActivity(), mConfig, appInfo, mRomInfos);
+                AppCard card = new AppCard(getActivity(), appInfo, mRomInfos);
                 mCards.add(card);
             }
 

@@ -47,13 +47,10 @@ import it.gmariotti.cardslib.library.internal.ViewToClickToExpand.CardElementUI;
 
 public class AppCard extends Card {
     private final AppInformation mAppInfo;
-    private final AppSharingConfigFile mConfig;
     private final RomInfoResult mRomInfos;
 
-    public AppCard(Context context, AppSharingConfigFile config, AppInformation appInfo,
-                   RomInfoResult romInfos) {
+    public AppCard(Context context, AppInformation appInfo, RomInfoResult romInfos) {
         super(context, R.layout.card_inner_layout_app);
-        mConfig = config;
         mAppInfo = appInfo;
         mRomInfos = romInfos;
 
@@ -145,11 +142,11 @@ public class AppCard extends Card {
             ArrayList<CheckBox> checkboxes;
 
             if (view.getTag() == null) {
-                checkboxes = new ArrayList<CheckBox>();
+                checkboxes = new ArrayList<>();
 
                 LinearLayout ll = (LinearLayout) view.findViewById(R.id.expanded_layout);
 
-                for (int i = 0; i < mRomInfos.roms.length; i++) {
+                for (RomInformation rom : mRomInfos.roms) {
                     CheckBox checkbox = (CheckBox) mInflater.inflate(
                             R.layout.app_rom_checkbox, ll, false);
 
@@ -171,12 +168,12 @@ public class AppCard extends Card {
                 // Clear listener before setting checked status since the view is recycled
                 checkbox.setOnCheckedChangeListener(null);
 
-                checkbox.setChecked(mConfig.isRomSynced(mAppInfo.pkg, rom));
+                //checkbox.setChecked(mConfig.isRomSynced(mAppInfo.pkg, rom));
 
                 checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                        mConfig.setRomSynced(mAppInfo.pkg, rom, isChecked);
+                        //mConfig.setRomSynced(mAppInfo.pkg, rom, isChecked);
                     }
                 });
             }
