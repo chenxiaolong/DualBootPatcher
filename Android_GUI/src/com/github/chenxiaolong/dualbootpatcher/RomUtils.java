@@ -259,7 +259,7 @@ public class RomUtils {
 
     public static RomInformation[] getRoms(Context context) {
         if (mRoms == null) {
-            mRoms = MbtoolSocket.getInstance().getInstalledRoms();
+            mRoms = MbtoolSocket.getInstance().getInstalledRoms(context);
 
             if (mRoms != null) {
                 for (RomInformation rom : mRoms) {

@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.content.Context;
 import android.os.Build;
 
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
@@ -53,19 +54,19 @@ public class SwitcherUtils {
         return bootBlockDev;
     }
 
-    public static boolean chooseRom(String id) {
-        return MbtoolSocket.getInstance().chooseRom(id);
+    public static boolean chooseRom(Context context, String id) {
+        return MbtoolSocket.getInstance().chooseRom(context, id);
     }
 
-    public static boolean setKernel(String id) {
-        return MbtoolSocket.getInstance().setKernel(id);
+    public static boolean setKernel(Context context, String id) {
+        return MbtoolSocket.getInstance().setKernel(context, id);
     }
 
-    public static void reboot() {
+    public static void reboot(final Context context) {
         new Thread() {
             @Override
             public void run() {
-                MbtoolSocket.getInstance().restart("");
+                MbtoolSocket.getInstance().restart(context, "");
             }
         }.start();
     }

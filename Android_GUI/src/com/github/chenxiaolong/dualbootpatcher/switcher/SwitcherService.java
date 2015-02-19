@@ -97,7 +97,7 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_CHOOSE_ROM);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean failed = !SwitcherUtils.chooseRom(kernelId);
+        boolean failed = !SwitcherUtils.chooseRom(this, kernelId);
 
         onChoseRom(failed, kernelId);
 
@@ -108,7 +108,7 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_SET_KERNEL);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean failed = !SwitcherUtils.setKernel(kernelId);
+        boolean failed = !SwitcherUtils.setKernel(this, kernelId);
 
         onSetKernel(failed, kernelId);
 

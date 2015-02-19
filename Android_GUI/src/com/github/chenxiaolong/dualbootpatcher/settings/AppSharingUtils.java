@@ -107,7 +107,7 @@ public class AppSharingUtils {
         RootFile bootImageFile = new RootFile(bootImage);
 
         if (!bootImageFile.isFile()) {
-            SwitcherUtils.setKernel(romInfo.getId());
+            SwitcherUtils.setKernel(context, romInfo.getId());
         }
 
         String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
@@ -166,6 +166,6 @@ public class AppSharingUtils {
         new RootFile(tmpKernel).copyTo(bootImageFile);
         bootImageFile.chmod(0755);
 
-        SwitcherUtils.chooseRom(romInfo.getId());
+        SwitcherUtils.chooseRom(context, romInfo.getId());
     }
 }

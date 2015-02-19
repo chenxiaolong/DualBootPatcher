@@ -17,12 +17,16 @@
 
 package com.github.chenxiaolong.multibootpatcher.socket;
 
+import android.content.Context;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.net.LocalSocketAddress.Namespace;
+import android.os.Build;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 import org.apache.commons.io.IOUtils;
@@ -66,17 +70,40 @@ public class MbtoolSocket {
         return sInstance;
     }
 
-    public boolean connect() {
+    public boolean connect(Context context) {
         // Already connected
         if (mSocket != null) {
             return true;
         }
 
-        Log.i(TAG, "Connecting to mbtool");
-        try {
-            mSocket = new LocalSocket();
-            mSocket.connect(new LocalSocketAddress("mbtool.daemon", Namespace.ABSTRACT));
+        mSocket = new LocalSocket();
 
+        for (int i = 0; i < 5; i++) {
+            Log.i(TAG, "Connecting to mbtool (attempt #" + i + ")");
+
+            try {
+                mSocket.connect(new LocalSocketAddress("mbtool.daemon", Namespace.ABSTRACT));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            Log.e(TAG, "Failed to connect to mbtool. Launching it and trying again");
+            if (!executeMbtool(context)) {
+                Log.e(TAG, "Failed to execute mbtool");
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (!mSocket.isConnected()) {
+            disconnect();
+            return false;
+        }
+
+        try {
             mSocketIS = mSocket.getInputStream();
             mSocketOS = mSocket.getOutputStream();
 
@@ -110,6 +137,26 @@ public class MbtoolSocket {
         return false;
     }
 
+    private boolean executeMbtool(Context context) {
+        PatcherUtils.extractPatcher(context);
+        String abi;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            abi = Build.SUPPORTED_ABIS[0];
+        } else {
+            abi = Build.CPU_ABI;
+        }
+
+        String mbtool = PatcherUtils.getTargetDirectory(context)
+                + "/binaries/android/" + abi + "/mbtool";
+
+        CommandUtils.runRootCommand("mount -o remount,rw /");
+        boolean ret = CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
+                && CommandUtils.runRootCommand("/mbtool daemon --daemonize") == 0;
+        CommandUtils.runRootCommand("mount -o remount,ro /");
+
+        return ret;
+    }
+
     public void disconnect() {
         Log.i(TAG, "Disconnecting from mbtool");
         IOUtils.closeQuietly(mSocket);
@@ -120,8 +167,8 @@ public class MbtoolSocket {
         mSocketOS = null;
     }
 
-    public RomInformation[] getInstalledRoms() {
-        if (!connect()) {
+    public RomInformation[] getInstalledRoms(Context context) {
+        if (!connect(context)) {
             return null;
         }
 
@@ -177,8 +224,8 @@ public class MbtoolSocket {
         return null;
     }
 
-    public boolean chooseRom(String id) {
-        if (!connect()) {
+    public boolean chooseRom(Context context, String id) {
+        if (!connect(context)) {
             return false;
         }
 
@@ -213,8 +260,8 @@ public class MbtoolSocket {
         return false;
     }
 
-    public boolean setKernel(String id) {
-        if (!connect()) {
+    public boolean setKernel(Context context, String id) {
+        if (!connect(context)) {
             return false;
         }
 
@@ -249,8 +296,8 @@ public class MbtoolSocket {
         return false;
     }
 
-    public boolean restart(String arg) {
-        if (!connect()) {
+    public boolean restart(Context context, String arg) {
+        if (!connect(context)) {
             return false;
         }
 
