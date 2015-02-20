@@ -34,9 +34,6 @@ public:
                                 CpioFile * const cpio);
     ~CoreRamdiskPatcher();
 
-    static const std::string FstabRegex;
-    static const std::string MbtoolDaemonService;
-
     virtual PatcherError error() const override;
 
     virtual std::string id() const override;

@@ -40,9 +40,7 @@ public:
 /*! \endcond */
 
 
-const std::string CoreRamdiskPatcher::FstabRegex
-        = "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
-const std::string CoreRamdiskPatcher::MbtoolDaemonService
+static const std::string MbtoolDaemonService
         = "\nservice mbtooldaemon /mbtool daemon\n"
         "    class main\n"
         "    user root\n";

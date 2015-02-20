@@ -45,6 +45,9 @@ public:
 /*! \endcond */
 
 
+static const std::string FstabRegex =
+        "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
+
 static const std::string CachePartition =
         "/dev/block/platform/msm_sdcc.1/by-name/cache";
 
@@ -113,8 +116,7 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
             auto &line = *it;
 
             MBP_smatch what;
-            bool hasMatch = MBP_regex_search(
-                    line, what, MBP_regex(CoreRamdiskPatcher::FstabRegex));
+            bool hasMatch = MBP_regex_search(line, what, MBP_regex(FstabRegex));
 
             if (hasMatch && what[3] == Cache) {
                 hasCacheLine = true;
