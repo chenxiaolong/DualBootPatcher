@@ -35,9 +35,7 @@ public:
     ~CoreRamdiskPatcher();
 
     static const std::string FstabRegex;
-#if 0
-    static const std::string SyncdaemonService;
-#endif
+    static const std::string MbtoolDaemonService;
 
     virtual PatcherError error() const override;
 
@@ -45,9 +43,7 @@ public:
 
     virtual bool patchRamdisk() override;
 
-#if 0
-    bool addSyncdaemon();
-#endif
+    bool addDaemonService();
     bool fixDataMediaContext();
 
 private:

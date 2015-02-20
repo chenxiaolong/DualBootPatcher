@@ -42,12 +42,10 @@ public:
 
 const std::string CoreRamdiskPatcher::FstabRegex
         = "^(#.+)?(/dev/\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)";
-#if 0
-const std::string CoreRamdiskPatcher::SyncdaemonService
-        = "\nservice syncdaemon /sbin/syncdaemon\n"
+const std::string CoreRamdiskPatcher::MbtoolDaemonService
+        = "\nservice mbtooldaemon /mbtool daemon\n"
         "    class main\n"
         "    user root\n";
-#endif
 
 static const std::string DataMediaContext =
         "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
@@ -92,19 +90,16 @@ std::string CoreRamdiskPatcher::id() const
 
 bool CoreRamdiskPatcher::patchRamdisk()
 {
-#if 0
-    if (!addSyncdaemon()) {
+    if (!addDaemonService()) {
         return false;
     }
-#endif
     if (!fixDataMediaContext()) {
         return false;
     }
     return true;
 }
 
-#if 0
-bool CoreRamdiskPatcher::addSyncdaemon()
+bool CoreRamdiskPatcher::addDaemonService()
 {
     std::vector<unsigned char> initRc;
     if (!m_impl->cpio->contents(InitRc, &initRc)) {
@@ -113,13 +108,12 @@ bool CoreRamdiskPatcher::addSyncdaemon()
     }
 
     initRc.insert(initRc.end(),
-                  SyncdaemonService.begin(), SyncdaemonService.end());
+                  MbtoolDaemonService.begin(), MbtoolDaemonService.end());
 
     m_impl->cpio->setContents(InitRc, std::move(initRc));
 
     return true;
 }
-#endif
 
 /*!
  * Some ROMs omit the line in /file_contexts that sets the context of
