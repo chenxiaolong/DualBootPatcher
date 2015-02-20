@@ -19,9 +19,9 @@
 
 #include "util/socket.h"
 
-#include <vector>
 #include <cstdlib>
 #include <cstring>
+#include <sys/socket.h>
 #include <unistd.h>
 
 namespace mb
@@ -167,6 +167,125 @@ bool socket_write_string(int fd, const std::string &str)
     if (socket_write(fd, str.data(), str.size()) == (int64_t) str.size()) {
         return true;
     }
+    return false;
+}
+
+bool socket_read_string_array(int fd, std::vector<std::string> *result)
+{
+    int32_t len;
+    if (!socket_read_int32(fd, &len)) {
+        return false;
+    }
+
+    if (len < 0) {
+        return false;
+    }
+
+    std::vector<std::string> buf(len);
+    for (int32_t i = 0; i < len; ++i) {
+        std::string temp;
+        if (!socket_read_string(fd, &temp)) {
+            return false;
+        }
+        buf[i] = std::move(temp);
+    }
+
+    result->swap(buf);
+    return true;
+}
+
+bool socket_write_string_array(int fd, const std::vector<std::string> &list)
+{
+    if (!socket_write_int32(fd, list.size())) {
+        return false;
+    }
+
+    for (const std::string &str : list) {
+        if (!socket_write_string(fd, str)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool socket_receive_fds(int fd, std::vector<int> *fds)
+{
+    char dummy;
+
+    struct iovec iov;
+    iov.iov_base = &dummy;
+    iov.iov_len = 1;
+
+    std::size_t n_fds = fds->size();
+    std::vector<char> control(sizeof(struct cmsghdr) + sizeof(int) * n_fds);
+
+    struct msghdr msg;
+    msg.msg_name = nullptr;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_flags = 0;
+    msg.msg_control = control.data();
+    msg.msg_controllen = control.size();
+
+    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+    cmsg->cmsg_len = msg.msg_controllen;
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+
+    if (recvmsg(fd, &msg, 0) < 0) {
+        return false;
+    }
+
+    int *data = reinterpret_cast<int *>(CMSG_DATA(cmsg));
+    n_fds = (cmsg->cmsg_len - sizeof(struct cmsghdr)) / sizeof(int);
+    if (n_fds != fds->size()) {
+        // Did not receive correct amount of file descriptors
+        return false;
+    }
+
+    for (std::size_t i = 0; i < n_fds; ++i) {
+        (*fds)[i] = data[i];
+    }
+
+    return true;
+}
+
+bool socket_send_fds(int fd, const std::vector<int> &fds)
+{
+    std::size_t n_fds = fds.size();
+    if (n_fds > 0) {
+        char dummy = '!';
+
+        struct iovec iov;
+        iov.iov_base = &dummy;
+        iov.iov_len = 1;
+
+        std::vector<char> control(sizeof(struct cmsghdr) + sizeof(int) * n_fds);
+
+        struct msghdr msg;
+        msg.msg_name = nullptr;
+        msg.msg_namelen = 0;
+        msg.msg_iov = &iov;
+        msg.msg_iovlen = 1;
+        msg.msg_flags = 0;
+        msg.msg_control = control.data();
+        msg.msg_controllen = control.size();
+
+        struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+        cmsg->cmsg_len = msg.msg_controllen;
+        cmsg->cmsg_level = SOL_SOCKET;
+        cmsg->cmsg_type = SCM_RIGHTS;
+
+        int *data = reinterpret_cast<int *>(CMSG_DATA(cmsg));
+        for (std::size_t i = 0; i < n_fds; ++i) {
+            data[i] = fds[i];
+        }
+
+        return sendmsg(fd, &msg, 0) >= 0 ? true : false;
+    }
+
     return false;
 }
 

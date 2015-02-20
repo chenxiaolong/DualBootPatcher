@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include <inttypes.h>
 
@@ -44,6 +45,10 @@ bool socket_read_int64(int fd, int64_t *result);
 bool socket_write_int64(int fd, int64_t n);
 bool socket_read_string(int fd, std::string *result);
 bool socket_write_string(int fd, const std::string &str);
+bool socket_read_string_array(int fd, std::vector<std::string> *result);
+bool socket_write_string_array(int fd, const std::vector<std::string> &list);
+bool socket_receive_fds(int fd, std::vector<int> *fds);
+bool socket_send_fds(int fd, const std::vector<int> &fds);
 
 }
 }
