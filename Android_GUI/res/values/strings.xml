@@ -45,6 +45,13 @@
     <!-- Thank you message for contributors and links to relavent URLs -->
     <string name="credits">Special thanks to everyone who helped make this patcher possible!</string>
 
+    <!-- Title for card shown in the switcher when the connection to mbtool failed -->
+    <string name="mbtool_connect_fail_title">Could not connect to mbtool</string>
+    <!-- Message for the card shown in the switcher when the connection to mbtool failed -->
+    <string name="mbtool_connect_fail_message">The application was unable to connect to
+        mbtool. This could happen if root access was denied or if the ramdisk is not up to
+        date.\n\nTap to try again.</string>
+
     <!-- Message in ROM Settings screen indicating that it's waiting for root access -->
     <string name="waiting_for_root">Waiting for root access</string>
     <!-- Title for the card shown in the switcher when root access could not be obtained -->

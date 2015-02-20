@@ -23,7 +23,7 @@
     android:layout_height="match_parent">
 
     <include
-        android:id="@+id/card_noroot"
+        android:id="@+id/card_error"
         layout="@layout/card_v7_mbtool_connect_fail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />

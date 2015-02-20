@@ -91,7 +91,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private SwitcherEventCollector mEventCollector;
 
-    private CardView mNoRootCardView;
+    private CardView mErrorCardView;
     private RomCardAdapter mRomCardAdapter;
     private RecyclerView mCardListView;
     private ProgressBar mProgressBar;
@@ -150,9 +150,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
 
-        initNoRootCard();
+        initErrorCard();
         initCardList();
-        refreshNoRootVisibility(false);
+        refreshErrorVisibility(false);
 
         // Show progress bar on initial load, not on rotation
         if (savedInstanceState != null) {
@@ -163,6 +163,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     }
 
     private void reloadFragment() {
+        refreshErrorVisibility(false);
+        refreshProgressVisibility(true);
         getActivity().getLoaderManager().restartLoader(0, null, this);
     }
 
@@ -228,10 +230,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     /**
      * Create error card on fragment startup
      */
-    private void initNoRootCard() {
-        mNoRootCardView = (CardView) getActivity().findViewById(R.id.card_noroot);
-        mNoRootCardView.setClickable(true);
-        mNoRootCardView.setOnClickListener(new OnClickListener() {
+    private void initErrorCard() {
+        mErrorCardView = (CardView) getActivity().findViewById(R.id.card_error);
+        mErrorCardView.setClickable(true);
+        mErrorCardView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 reloadFragment();
@@ -278,8 +280,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mCardListView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
-    private void refreshNoRootVisibility(boolean visible) {
-        mNoRootCardView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    private void refreshErrorVisibility(boolean visible) {
+        mErrorCardView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     private void updateCardUI() {
@@ -531,7 +533,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 mRoms.add(info);
             }
         } else {
-            refreshNoRootVisibility(true);
+            refreshErrorVisibility(true);
         }
 
         mRomCardAdapter.notifyDataSetChanged();

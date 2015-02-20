@@ -37,13 +37,13 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:singleLine="true"
-            android:text="@string/noroot_title" />
+            android:text="@string/mbtool_connect_fail_title" />
 
         <TextView
             android:id="@+id/rom_version"
             style="@style/card_v7_secondary_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/noroot_switcher_desc" />
+            android:text="@string/mbtool_connect_fail_message" />
     </LinearLayout>
 </android.support.v7.widget.CardView>
