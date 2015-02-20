@@ -49,6 +49,7 @@
 #define V1_COMMAND_CHOOSE_ROM "CHOOSE_ROM"      // [Version 1] Switch ROM
 #define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
 #define V1_COMMAND_REBOOT "REBOOT"              // [Version 1] Reboot
+#define V1_COMMAND_OPEN "OPEN"                  // [Version 1] Open file
 
 
 namespace mb
@@ -188,6 +189,59 @@ static bool v1_reboot(int fd)
     return true;
 }
 
+static bool v1_open(int fd)
+{
+    std::string path;
+    std::vector<std::string> modes;
+
+    if (!util::socket_read_string(fd, &path)) {
+        return false;
+    }
+
+    if (!util::socket_read_string_array(fd, &modes)) {
+        return false;
+    }
+
+    int flags = 0;
+
+    for (const std::string &m : modes) {
+        if (m == "APPEND") {
+            flags |= O_APPEND;
+        } else if (m == "CREAT") {
+            flags |= O_CREAT;
+        } else if (m == "EXCL") {
+            flags |= O_EXCL;
+        } else if (m == "RDWR") {
+            flags |= O_RDWR;
+        } else if (m == "TRUNC") {
+            flags |= O_TRUNC;
+        } else if (m == "WRONLY") {
+            flags |= O_WRONLY;
+        }
+    }
+
+    int ffd = open(path.c_str(), flags, 0666);
+    if (ffd < 0) {
+        if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
+            return false;
+        }
+    }
+
+    auto close_ffd = util::finally([&]{
+        close(ffd);
+    });
+
+    if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+        return false;
+    }
+
+    if (!util::socket_send_fds(fd, { ffd })) {
+        return false;
+    }
+
+    return true;
+}
+
 static bool connection_version_1(int fd)
 {
     std::string command;
@@ -204,7 +258,8 @@ static bool connection_version_1(int fd)
         if (command == V1_COMMAND_LIST_ROMS
                 || command == V1_COMMAND_CHOOSE_ROM
                 || command == V1_COMMAND_SET_KERNEL
-                || command == V1_COMMAND_REBOOT) {
+                || command == V1_COMMAND_REBOOT
+                || command == V1_COMMAND_OPEN) {
             // Acknowledge command
             if (!util::socket_write_string(fd, RESPONSE_OK)) {
                 return false;
@@ -228,6 +283,8 @@ static bool connection_version_1(int fd)
             ret = v1_set_kernel(fd);
         } else if (command == V1_COMMAND_REBOOT) {
             ret = v1_reboot(fd);
+        } else if (command == V1_COMMAND_OPEN) {
+            ret = v1_open(fd);
         }
 
         if (!ret) {
