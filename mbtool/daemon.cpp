@@ -45,6 +45,7 @@
 #define RESPONSE_FAIL "FAIL"                    // Generic failure response
 #define RESPONSE_UNSUPPORTED "UNSUPPORTED"      // Generic unsupported response
 
+#define V1_COMMAND_VERSION "VERSION"            // [Version 1] Version number
 #define V1_COMMAND_LIST_ROMS "LIST_ROMS"        // [Version 1] List installed ROMs
 #define V1_COMMAND_CHOOSE_ROM "CHOOSE_ROM"      // [Version 1] Switch ROM
 #define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
@@ -54,6 +55,15 @@
 
 namespace mb
 {
+
+static bool v1_version(int fd)
+{
+    if (!util::socket_write_string(fd, MBP_VERSION)) {
+        return false;
+    }
+
+    return true;
+}
 
 static bool v1_list_roms(int fd)
 {
@@ -255,7 +265,8 @@ static bool connection_version_1(int fd)
             return false;
         }
 
-        if (command == V1_COMMAND_LIST_ROMS
+        if (command == V1_COMMAND_VERSION
+                || command == V1_COMMAND_LIST_ROMS
                 || command == V1_COMMAND_CHOOSE_ROM
                 || command == V1_COMMAND_SET_KERNEL
                 || command == V1_COMMAND_REBOOT
@@ -275,7 +286,9 @@ static bool connection_version_1(int fd)
         //       command failure!
         bool ret = true;
 
-        if (command == V1_COMMAND_LIST_ROMS) {
+        if (command == V1_COMMAND_VERSION) {
+            ret = v1_version(fd);
+        } else if (command == V1_COMMAND_LIST_ROMS) {
             ret = v1_list_roms(fd);
         } else if (command == V1_COMMAND_CHOOSE_ROM) {
             ret = v1_choose_rom(fd);
