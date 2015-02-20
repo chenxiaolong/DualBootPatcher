@@ -18,7 +18,6 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -32,51 +31,57 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <it.gmariotti.cardslib.library.view.CardViewNative
+            <include
                 android:id="@+id/card_mainopts"
-                style="@style/card_external_minimal_margins"
+                layout="@layout/card_v7_patcher_mainopts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                card:card_layout_resourceID="@layout/card_layout_patcher" />
+                android:layout_marginLeft="@dimen/card_outside_side_padding"
+                android:layout_marginRight="@dimen/card_outside_side_padding" />
 
-            <it.gmariotti.cardslib.library.view.CardViewNative
+            <include
                 android:id="@+id/card_file_chooser"
-                style="@style/card_external_minimal_margins"
+                layout="@layout/card_v7_patcher_file_chooser"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                card:card_layout_resourceID="@layout/card_layout_patcher" />
+                android:layout_marginLeft="@dimen/card_outside_side_padding"
+                android:layout_marginRight="@dimen/card_outside_side_padding" />
 
             <!-- Cards to configure patcher for unsupported file -->
 
-            <it.gmariotti.cardslib.library.view.CardViewNative
+            <include
                 android:id="@+id/card_preset"
-                style="@style/card_external_minimal_margins"
+                layout="@layout/card_v7_patcher_preset"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                card:card_layout_resourceID="@layout/card_layout_patcher" />
+                android:layout_marginLeft="@dimen/card_outside_side_padding"
+                android:layout_marginRight="@dimen/card_outside_side_padding" />
 
-            <it.gmariotti.cardslib.library.view.CardViewNative
+            <include
                 android:id="@+id/card_customopts"
-                style="@style/card_external_minimal_margins"
+                layout="@layout/card_v7_patcher_customopts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                card:card_layout_resourceID="@layout/card_layout_patcher" />
+                android:layout_marginLeft="@dimen/card_outside_side_padding"
+                android:layout_marginRight="@dimen/card_outside_side_padding" />
 
             <!-- Cards to show patching progress -->
 
-            <it.gmariotti.cardslib.library.view.CardViewNative
+            <include
                 android:id="@+id/card_details"
-                style="@style/card_external_minimal_margins"
+                layout="@layout/card_v7_patcher_details"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                card:card_layout_resourceID="@layout/card_layout_patcher" />
+                android:layout_marginLeft="@dimen/card_outside_side_padding"
+                android:layout_marginRight="@dimen/card_outside_side_padding" />
 
-            <it.gmariotti.cardslib.library.view.CardViewNative
+            <include
                 android:id="@+id/card_progress"
-                style="@style/card_external_minimal_margins"
+                layout="@layout/card_v7_patcher_progress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                card:card_layout_resourceID="@layout/card_layout_patcher" />
+                android:layout_marginLeft="@dimen/card_outside_side_padding"
+                android:layout_marginRight="@dimen/card_outside_side_padding" />
         </LinearLayout>
     </ScrollView>
 

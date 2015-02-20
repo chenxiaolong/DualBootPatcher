@@ -19,64 +19,58 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.view.CardViewNative;
 
-public class ProgressCard extends Card {
-    private PatcherConfigState mPCS;
+public class ProgressCW {
+    private static final String EXTRA_PROGRESS_MAX = "progress_max";
+    private static final String EXTRA_PROGRESS_CURRENT = "progress_current";
 
-    private TextView mPercentage;
-    private TextView mFiles;
-    private ProgressBar mProgress;
+    private CardView vCard;
+    private TextView vPercentage;
+    private TextView vFiles;
+    private ProgressBar vProgress;
+
+    private Context mContext;
+    private PatcherConfigState mPCS;
 
     private int mCurProgress = 0;
     private int mMaxProgress = 0;
 
-    public ProgressCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.card_inner_layout_progress);
+    public ProgressCW(Context context, PatcherConfigState pcs, CardView card) {
+        mContext = context;
         mPCS = pcs;
-    }
 
-    public ProgressCard(Context context, int innerLayout) {
-        super(context, innerLayout);
-    }
+        vCard = card;
+        vPercentage = (TextView) card.findViewById(R.id.progress_percentage);
+        vFiles = (TextView) card.findViewById(R.id.progress_files);
+        vProgress = (ProgressBar) card.findViewById(R.id.progress_bar);
 
-    @Override
-    public void setupInnerViewElements(ViewGroup parent, View view) {
-        if (view != null) {
-            mPercentage = (TextView) view.findViewById(R.id.progress_percentage);
-            mFiles = (TextView) view.findViewById(R.id.progress_files);
-            mProgress = (ProgressBar) view.findViewById(R.id.progress_bar);
-
-            updateProgress();
-        }
+        updateProgress();
     }
 
     private void updateProgress() {
-        if (mProgress != null) {
-            mProgress.setMax(mMaxProgress);
-            mProgress.setProgress(mCurProgress);
+        if (vProgress != null) {
+            vProgress.setMax(mMaxProgress);
+            vProgress.setProgress(mCurProgress);
         }
-        if (mPercentage != null) {
+        if (vPercentage != null) {
             if (mMaxProgress == 0) {
-                mPercentage.setText("0%");
+                vPercentage.setText("0%");
             } else {
-                mPercentage.setText(String.format("%.1f%%",
+                vPercentage.setText(String.format("%.1f%%",
                         (double) mCurProgress / mMaxProgress * 100));
             }
         }
-        if (mFiles != null) {
-            mFiles.setText(String.format(
-                    getContext().getString(R.string.overall_progress_files),
-                    Integer.toString(mCurProgress),
-                    Integer.toString(mMaxProgress)));
+        if (vFiles != null) {
+            vFiles.setText(String.format(mContext.getString(R.string.overall_progress_files),
+                    Integer.toString(mCurProgress), Integer.toString(mMaxProgress)));
         }
     }
 
@@ -97,30 +91,26 @@ public class ProgressCard extends Card {
     }
 
     public void onSaveInstanceState(Bundle outState) {
-        outState.putInt("progress_max", mMaxProgress);
-        outState.putInt("progress_current", mCurProgress);
+        outState.putInt(EXTRA_PROGRESS_MAX, mMaxProgress);
+        outState.putInt(EXTRA_PROGRESS_CURRENT, mCurProgress);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mMaxProgress = savedInstanceState.getInt("progress_max");
-        mCurProgress = savedInstanceState.getInt("progress_current");
+        mMaxProgress = savedInstanceState.getInt(EXTRA_PROGRESS_MAX);
+        mCurProgress = savedInstanceState.getInt(EXTRA_PROGRESS_CURRENT);
         updateProgress();
     }
 
     public void refreshState() {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
-            if (getCardView() != null) {
-                ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
-            }
+            vCard.setVisibility(View.VISIBLE);
             break;
 
         case PatcherConfigState.STATE_CHOSE_FILE:
         case PatcherConfigState.STATE_INITIAL:
         case PatcherConfigState.STATE_FINISHED:
-            if (getCardView() != null) {
-                ((CardViewNative) getCardView()).setVisibility(View.GONE);
-            }
+            vCard.setVisibility(View.GONE);
             break;
         }
     }

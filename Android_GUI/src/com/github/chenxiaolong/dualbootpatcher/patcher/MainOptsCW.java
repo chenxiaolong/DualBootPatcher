@@ -18,8 +18,8 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
+import android.support.v7.widget.CardView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
@@ -31,59 +31,50 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 
 import java.util.ArrayList;
 
-import it.gmariotti.cardslib.library.internal.Card;
-
-public class MainOptsCard extends Card {
-    public static interface MainOptsSelectedListener {
+public class MainOptsCW {
+    protected static interface MainOptsListener {
         public void onPatcherSelected(String patcherName);
 
         public void onDeviceSelected(Device device);
     }
 
+    private TextView vTitle;
+    private Spinner vPatcherSpinner;
+    private Spinner vDeviceSpinner;
+
+    private Context mContext;
     private PatcherConfigState mPCS;
-    private MainOptsSelectedListener mListener;
+    private MainOptsListener mListener;
 
-    private TextView mTitle;
     private ArrayAdapter<String> mPatcherAdapter;
-    private Spinner mPatcherSpinner;
     private ArrayAdapter<String> mDeviceAdapter;
-    private Spinner mDeviceSpinner;
+    private ArrayList<String> mPatchers = new ArrayList<>();
+    private ArrayList<String> mDevices = new ArrayList<>();
 
-    public MainOptsCard(Context context, PatcherConfigState pcs,
-                        MainOptsSelectedListener listener) {
-        this(context, R.layout.card_inner_layout_mainopts);
+    public MainOptsCW(Context context, PatcherConfigState pcs, CardView card,
+                      MainOptsListener listener) {
+        mContext = context;
         mPCS = pcs;
         mListener = listener;
+        vTitle = (TextView) card.findViewById(R.id.card_title);
+        vPatcherSpinner = (Spinner) card.findViewById(R.id.spinner_patcher);
+        vDeviceSpinner = (Spinner) card.findViewById(R.id.spinner_device);
+
+        initPatchers();
+        initDevices();
     }
 
-    public MainOptsCard(Context context, int innerLayout) {
-        super(context, innerLayout);
-    }
-
-    @Override
-    public void setupInnerViewElements(ViewGroup parent, View view) {
-        if (view != null) {
-            mTitle = (TextView) view.findViewById(R.id.card_title);
-            mPatcherSpinner = (Spinner) view.findViewById(R.id.spinner_patcher);
-            mDeviceSpinner = (Spinner) view.findViewById(R.id.spinner_device);
-        }
-
-        initControls();
-    }
-
-    private void initControls() {
-        // Patchers
-
-        mPatcherAdapter = new ArrayAdapter<String>(getContext(),
-                android.R.layout.simple_spinner_item, android.R.id.text1);
+    private void initPatchers() {
+        mPatcherAdapter = new ArrayAdapter<>(mContext,
+                android.R.layout.simple_spinner_item, android.R.id.text1, mPatchers);
         mPatcherAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mPatcherSpinner.setAdapter(mPatcherAdapter);
+        vPatcherSpinner.setAdapter(mPatcherAdapter);
 
-        mPatcherSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+        vPatcherSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (mListener != null) {
-                    mListener.onPatcherSelected(mPatcherSpinner.getSelectedItem().toString());
+                    mListener.onPatcherSelected(vPatcherSpinner.getSelectedItem().toString());
                 }
             }
 
@@ -91,15 +82,15 @@ public class MainOptsCard extends Card {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+    }
 
-        // Devices
-
-        mDeviceAdapter = new ArrayAdapter<String>(getContext(),
-                android.R.layout.simple_spinner_item, android.R.id.text1);
+    private void initDevices() {
+        mDeviceAdapter = new ArrayAdapter<>(mContext,
+                android.R.layout.simple_spinner_item, android.R.id.text1, mDevices);
         mDeviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mDeviceSpinner.setAdapter(mDeviceAdapter);
+        vDeviceSpinner.setAdapter(mDeviceAdapter);
 
-        mDeviceSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+        vDeviceSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (mListener != null) {
@@ -114,25 +105,23 @@ public class MainOptsCard extends Card {
     }
 
     public void refreshPatchers() {
-        ArrayList<String> patchers = new ArrayList<String>();
+        mPatchers.clear();
         for (String patcherId : PatcherUtils.sPC.getPatchers()) {
-            patchers.add(PatcherUtils.sPC.getPatcherName(patcherId));
+            mPatchers.add(PatcherUtils.sPC.getPatcherName(patcherId));
         }
-
-        mPatcherAdapter.addAll(patchers.toArray(new String[0]));
         mPatcherAdapter.notifyDataSetChanged();
     }
 
     public void refreshDevices() {
+        mDevices.clear();
         for (Device device : PatcherUtils.sPC.getDevices()) {
-            String text = String.format("%s (%s)", device.getId(), device.getName());
-            mDeviceAdapter.add(text);
+            mDevices.add(String.format("%s (%s)", device.getId(), device.getName()));
         }
         mDeviceAdapter.notifyDataSetChanged();
     }
 
     public Device getDevice() {
-        int position = mDeviceSpinner.getSelectedItemPosition();
+        int position = vDeviceSpinner.getSelectedItemPosition();
         if (position < 0) {
             position = 0;
         }
@@ -140,9 +129,9 @@ public class MainOptsCard extends Card {
     }
 
     public void setEnabled(boolean enabled) {
-        mTitle.setEnabled(enabled);
-        mPatcherSpinner.setEnabled(enabled);
-        mDeviceSpinner.setEnabled(enabled);
+        vTitle.setEnabled(enabled);
+        vPatcherSpinner.setEnabled(enabled);
+        vDeviceSpinner.setEnabled(enabled);
     }
 
     public void refreshState() {

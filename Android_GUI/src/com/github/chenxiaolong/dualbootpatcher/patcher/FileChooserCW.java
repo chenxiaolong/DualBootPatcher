@@ -19,72 +19,62 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-import it.gmariotti.cardslib.library.internal.Card;
-
-public class FileChooserCard extends Card {
+public class FileChooserCW {
     private static final String EXTRA_PROGRESS = "filechooser_progress";
     private static final String EXTRA_FAILED = "filechooser_failed";
     private static final String EXTRA_MESSAGE = "filechooser_message";
     private static final String EXTRA_NEWFILE = "filechooser_newfile";
 
+    private CardView vCard;
+    private TextView vTitle;
+    private TextView vMessage;
+    private ProgressBar vProgressBar;
+
+    private Context mContext;
     private PatcherConfigState mPCS;
 
     private boolean mShowProgress;
-
     private boolean mFailed;
     private String mMessage;
     private String mNewFile;
 
-    private TextView mTitleView;
-    private TextView mDescView;
-    private ProgressBar mProgressBar;
-
-    public FileChooserCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.card_inner_layout_file_chooser);
+    public FileChooserCW(Context context, PatcherConfigState pcs, CardView card) {
+        mContext = context;
         mPCS = pcs;
-    }
 
-    public FileChooserCard(Context context, int innerLayout) {
-        super(context, innerLayout);
-    }
+        vCard = card;
+        vTitle = (TextView) card.findViewById(R.id.file_chooser_title);
+        vMessage = (TextView) card.findViewById(R.id.file_chooser_message);
+        vProgressBar = (ProgressBar) card.findViewById(R.id.file_chooser_progress);
 
-    @Override
-    public void setupInnerViewElements(ViewGroup parent, View view) {
-        if (view != null) {
-            mTitleView = (TextView) view.findViewById(R.id.file_chooser_title);
-            mDescView = (TextView) view.findViewById(R.id.file_chooser_message);
-            mProgressBar = (ProgressBar) view
-                    .findViewById(R.id.file_chooser_progress);
-
-            displayProgress();
-            displayMessage();
-        }
+        displayProgress();
+        displayMessage();
     }
 
     private void displayProgress() {
         if (mShowProgress) {
-            mTitleView.setVisibility(View.GONE);
-            mDescView.setVisibility(View.GONE);
-            mProgressBar.setVisibility(View.VISIBLE);
+            vTitle.setVisibility(View.GONE);
+            vMessage.setVisibility(View.GONE);
+            vProgressBar.setVisibility(View.VISIBLE);
         } else {
-            mTitleView.setVisibility(View.VISIBLE);
-            mDescView.setVisibility(View.VISIBLE);
-            mProgressBar.setVisibility(View.GONE);
+            vTitle.setVisibility(View.VISIBLE);
+            vMessage.setVisibility(View.VISIBLE);
+            vProgressBar.setVisibility(View.GONE);
         }
     }
 
     private void displayMessage() {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_INITIAL:
-            mTitleView.setText(R.string.filechooser_initial_title);
-            mDescView.setText(R.string.filechooser_initial_desc);
+            vTitle.setText(R.string.filechooser_initial_title);
+            vMessage.setText(R.string.filechooser_initial_desc);
             break;
 
         case PatcherConfigState.STATE_PATCHING:
@@ -100,21 +90,19 @@ public class FileChooserCard extends Card {
                 descId = R.string.filechooser_unsupported_desc;
             }
 
-            mTitleView.setText(titleId);
-            mDescView.setText(String.format(getContext().getString(descId), mPCS.mFilename));
+            vTitle.setText(titleId);
+            vMessage.setText(String.format(mContext.getString(descId), mPCS.mFilename));
             break;
 
         case PatcherConfigState.STATE_FINISHED:
             if (mFailed) {
-                mTitleView.setText(R.string.filechooser_failure_title);
-                mDescView.setText(String.format(
-                        getContext().getString(
-                                R.string.filechooser_failure_desc), mMessage));
+                vTitle.setText(R.string.filechooser_failure_title);
+                vMessage.setText(String.format(mContext.getString(R.string
+                        .filechooser_failure_desc), mMessage));
             } else {
-                mTitleView.setText(R.string.filechooser_success_title);
-                mDescView.setText(String.format(
-                        getContext().getString(
-                                R.string.filechooser_success_desc), mNewFile));
+                vTitle.setText(R.string.filechooser_success_title);
+                vMessage.setText(String.format(mContext.getString(R.string
+                        .filechooser_success_desc), mNewFile));
             }
             break;
         }
@@ -122,14 +110,9 @@ public class FileChooserCard extends Card {
 
     public void onFileChosen() {
         displayMessage();
-
-        if (getCardView() != null) {
-            getCardView().refreshCard(this);
-        }
     }
 
-    public void onFinishedPatching(boolean failed, String message,
-            String newFile) {
+    public void onFinishedPatching(boolean failed, String message, String newFile) {
         mFailed = failed;
         mMessage = message;
         mNewFile = newFile;
@@ -137,14 +120,10 @@ public class FileChooserCard extends Card {
     }
 
     public void setEnabled(boolean enabled) {
-        mTitleView.setEnabled(enabled);
-        mDescView.setEnabled(enabled);
-        setClickable(enabled);
-        setLongClickable(enabled);
-
-        if (getCardView() != null) {
-            getCardView().refreshCard(this);
-        }
+        vTitle.setEnabled(enabled);
+        vMessage.setEnabled(enabled);
+        vCard.setClickable(enabled);
+        vCard.setLongClickable(enabled);
     }
 
     public void setProgressShowing(boolean show) {

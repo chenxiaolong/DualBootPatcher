@@ -17,75 +17,65 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.content.Context;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-import it.gmariotti.cardslib.library.internal.Card;
 import it.gmariotti.cardslib.library.view.CardViewNative;
 
-public class DetailsCard extends Card {
+public class DetailsCW {
+    private static final String EXTRA_DETAILS_TEXT = "details_text";
+
+    private CardView vCard;
+    private TextView vDetails;
+
     private PatcherConfigState mPCS;
 
-    private TextView mDetails;
     private String mText;
 
-    public DetailsCard(Context context, PatcherConfigState pcs) {
-        this(context, R.layout.card_inner_layout_details);
+    public DetailsCW(PatcherConfigState pcs, CardView card) {
         mPCS = pcs;
-    }
 
-    public DetailsCard(Context context, int innerLayout) {
-        super(context, innerLayout);
-    }
+        vCard = card;
+        vDetails = (TextView) card.findViewById(R.id.details_text);
 
-    @Override
-    public void setupInnerViewElements(ViewGroup parent, View view) {
-        if (view != null) {
-            mDetails = (TextView) view.findViewById(R.id.details_text);
-            if (mText != null) {
-                mDetails.setText(mText);
-            }
+        if (mText != null) {
+            vDetails.setText(mText);
         }
     }
 
     public void setDetails(String text) {
         mText = text;
-        mDetails.setText(text);
+        vDetails.setText(text);
     }
 
     public void reset() {
         mText = "";
-        mDetails.setText("");
+        vDetails.setText("");
     }
 
     public void onSaveInstanceState(Bundle outState) {
-        outState.putString("details_text", mText);
+        outState.putString(EXTRA_DETAILS_TEXT, mText);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mText = savedInstanceState.getString("details_text");
-        mDetails.setText(mText);
+        mText = savedInstanceState.getString(EXTRA_DETAILS_TEXT);
+        vDetails.setText(mText);
     }
 
     public void refreshState() {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
-            if (getCardView() != null) {
-                ((CardViewNative) getCardView()).setVisibility(View.VISIBLE);
-            }
+            vCard.setVisibility(View.VISIBLE);
             break;
 
         case PatcherConfigState.STATE_CHOSE_FILE:
         case PatcherConfigState.STATE_INITIAL:
         case PatcherConfigState.STATE_FINISHED:
-            if (getCardView() != null) {
-                ((CardViewNative) getCardView()).setVisibility(View.GONE);
-            }
+            vCard.setVisibility(View.GONE);
             break;
         }
     }
