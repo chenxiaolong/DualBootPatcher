@@ -18,16 +18,14 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <it.gmariotti.cardslib.library.view.CardListView
+    <android.support.v7.widget.RecyclerView
         android:id="@+id/mountpoints"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="@dimen/card_outside_side_padding"
-        android:paddingRight="@dimen/card_outside_side_padding"
-        card:list_card_layout_resourceID="@layout/native_list_card_layout" />
+        android:paddingRight="@dimen/card_outside_side_padding" />
 
 </RelativeLayout>

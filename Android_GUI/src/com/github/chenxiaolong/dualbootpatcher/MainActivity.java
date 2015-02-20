@@ -44,7 +44,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.chenxiaolong.dualbootpatcher.freespace.FreeSpaceFragment;
+import com.github.chenxiaolong.multibootpatcher.fragments.FreeSpaceFragment;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
 import com.github.chenxiaolong.dualbootpatcher.settings.SettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;

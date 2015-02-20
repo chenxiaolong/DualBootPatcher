@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.freespace;
+package com.github.chenxiaolong.multibootpatcher.views;
 
 import android.content.Context;
 import android.content.res.TypedArray;
