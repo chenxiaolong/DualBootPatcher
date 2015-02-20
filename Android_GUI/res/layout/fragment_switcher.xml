@@ -26,7 +26,9 @@
         android:id="@+id/card_error"
         layout="@layout/card_v7_mbtool_connect_fail"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/card_outside_side_padding"
+        android:layout_marginRight="@dimen/card_outside_side_padding" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/card_list"
