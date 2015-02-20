@@ -148,9 +148,8 @@
     <!-- Title for the file chooser card telling the user to tap to choose a file -->
     <string name="filechooser_initial_title">Tap to choose a file to patch</string>
     <!-- Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown -->
-    <string name="filechooser_initial_desc">Zip files and boot images (boot.img, boot.lok) are
-        supported by the patcher. If an unsupported file is chosen, additional options will appear
-        that allow the patching process to be customized.</string>
+    <string name="filechooser_initial_desc">If an unsupported file is chosen, additional options
+        will appear that allow the patching process to be customized.</string>
 
     <!-- Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching -->
     <string name="filechooser_ready_title">Tap to begin patching</string>
