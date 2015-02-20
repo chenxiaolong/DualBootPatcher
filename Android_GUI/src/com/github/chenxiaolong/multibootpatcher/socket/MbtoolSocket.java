@@ -31,6 +31,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 
 import org.apache.commons.io.IOUtils;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,6 +50,7 @@ public class MbtoolSocket {
     private static final String V1_COMMAND_CHOOSE_ROM = "CHOOSE_ROM";
     private static final String V1_COMMAND_SET_KERNEL = "SET_KERNEL";
     private static final String V1_COMMAND_REBOOT = "REBOOT";
+    private static final String V1_COMMAND_OPEN = "OPEN";
 
     private static MbtoolSocket sInstance;
 
@@ -323,6 +325,45 @@ public class MbtoolSocket {
         return false;
     }
 
+    public FileDescriptor open(Context context, String filename, String[] flags) {
+        if (!connect(context)) {
+            return null;
+        }
+
+        try {
+            sendCommand(V1_COMMAND_OPEN);
+
+            SocketUtils.writeString(mSocketOS, filename);
+            SocketUtils.writeStringArray(mSocketOS, flags);
+
+            String response = SocketUtils.readString(mSocketIS);
+            if (response.equals(RESPONSE_FAIL)) {
+                return null;
+            } else if (!response.equals(RESPONSE_SUCCESS)) {
+                throw new SocketProtocolException("Invalid response: " + response);
+            }
+
+            // Read file descriptors
+            //int dummy = mSocketIS.read();
+            byte[] buf = new byte[1];
+            SocketUtils.readFully(mSocketIS, buf, 0, 1);
+            FileDescriptor[] fds = mSocket.getAncillaryFileDescriptors();
+
+            if (fds == null || fds.length == 0) {
+                throw new SocketProtocolException("mbtool sent no file descriptor");
+            }
+
+            return fds[0];
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        } catch (SocketProtocolException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     // Exceptions
 
     public static class SocketProtocolException extends Exception {
@@ -350,5 +391,14 @@ public class MbtoolSocket {
         } else if (!RESPONSE_OK.equals(response)) {
             throw new SocketProtocolException("Unknown response: " + response);
         }
+    }
+
+    public static class OpenFlags {
+        public static final String APPEND = "APPEND";
+        public static final String CREAT = "CREAT";
+        public static final String EXCL = "EXCL";
+        public static final String RDWR = "RDWR";
+        public static final String TRUNC = "TRUNC";
+        public static final String WRONLY = "WRONLY";
     }
 }

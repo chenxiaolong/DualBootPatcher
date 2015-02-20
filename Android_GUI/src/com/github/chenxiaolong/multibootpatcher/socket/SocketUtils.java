@@ -82,4 +82,26 @@ public class SocketUtils {
         writeInt32(os, str.length());
         os.write(str.getBytes());
     }
+
+    public static String[] readStringArray(InputStream is) throws IOException {
+        int length = readInt32(is);
+        if (length < 0) {
+            throw new IOException("Invalid array length");
+        }
+
+        String[] result = new String[length];
+        for (int i = 0; i < length; i++) {
+            result[i] = readString(is);
+        }
+
+        return result;
+    }
+
+    public static void writeStringArray(OutputStream os, String[] array) throws IOException {
+        writeInt32(os, array.length);
+
+        for (String str : array) {
+            writeString(os, str);
+        }
+    }
 }
