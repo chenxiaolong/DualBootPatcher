@@ -83,6 +83,7 @@ public class MbtoolSocket {
 
             try {
                 mSocket.connect(new LocalSocketAddress("mbtool.daemon", Namespace.ABSTRACT));
+                break;
             } catch (IOException e) {
                 e.printStackTrace();
             }
