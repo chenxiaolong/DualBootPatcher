@@ -39,7 +39,6 @@ import android.view.animation.AlphaAnimation;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
-import com.github.chenxiaolong.dualbootpatcher.MiscUtils.Version;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -49,6 +48,7 @@ import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingEventCollector
 import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingEventCollector
         .UpdatedRamdiskEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+import com.github.chenxiaolong.multibootpatcher.Version;
 
 public class RomSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener, OnDismissListener,

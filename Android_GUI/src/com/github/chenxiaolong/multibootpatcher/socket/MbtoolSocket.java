@@ -28,6 +28,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+import com.github.chenxiaolong.multibootpatcher.Version;
 
 import org.apache.commons.io.IOUtils;
 
@@ -39,6 +40,8 @@ import java.io.OutputStream;
 public class MbtoolSocket {
     private static final String TAG = MbtoolSocket.class.getSimpleName();
 
+    private static final String SOCKET_ADDRESS = "mbtool.daemon";
+
     private static final String RESPONSE_ALLOW = "ALLOW";
     private static final String RESPONSE_DENY = "DENY";
     private static final String RESPONSE_OK = "OK";
@@ -46,11 +49,14 @@ public class MbtoolSocket {
     private static final String RESPONSE_FAIL = "FAIL";
     private static final String RESPONSE_UNSUPPORTED = "UNSUPPORTED";
 
+    private static final String V1_COMMAND_VERSION = "VERSION";
     private static final String V1_COMMAND_LIST_ROMS = "LIST_ROMS";
     private static final String V1_COMMAND_CHOOSE_ROM = "CHOOSE_ROM";
     private static final String V1_COMMAND_SET_KERNEL = "SET_KERNEL";
     private static final String V1_COMMAND_REBOOT = "REBOOT";
     private static final String V1_COMMAND_OPEN = "OPEN";
+
+    private static final String MINIMUM_VERSION = "8.99.6";
 
     private static MbtoolSocket sInstance;
 
@@ -58,6 +64,7 @@ public class MbtoolSocket {
     private InputStream mSocketIS;
     private OutputStream mSocketOS;
     private int mInterfaceVersion;
+    private String mMbtoolVersion;
 
     // Keep this as a singleton class for now
     private MbtoolSocket() {
@@ -72,69 +79,103 @@ public class MbtoolSocket {
         return sInstance;
     }
 
+    /**
+     * Initializes the mbtool connection.
+     *
+     * 1. Setup input and output streams
+     * 2. Check to make sure mbtool authorized our connection
+     * 3. Request interface version and check if the daemon supports it
+     * 4. Get mbtool version from daemon
+     *
+     * @throws IOException
+     */
+    private void initializeConnection() throws IOException {
+        mSocketIS = mSocket.getInputStream();
+        mSocketOS = mSocket.getOutputStream();
+
+        // Verify credentials
+        String response = SocketUtils.readString(mSocketIS);
+        if (RESPONSE_DENY.equals(response)) {
+            throw new IOException("mbtool explicitly denied access to the daemon. " +
+                    "WARNING: This app is probably not officially signed!");
+        } else if (!RESPONSE_ALLOW.equals(response)) {
+            throw new IOException("Unexpected reply: " + response);
+        }
+
+        // Request an interface version
+        SocketUtils.writeInt32(mSocketOS, mInterfaceVersion);
+        response = SocketUtils.readString(mSocketIS);
+        if (RESPONSE_UNSUPPORTED.equals(response)) {
+            throw new IOException("Daemon does not support interface " + mInterfaceVersion);
+        } else if (!RESPONSE_OK.equals(response)) {
+            throw new IOException("Unexpected reply: " + response);
+        }
+
+        // Get mbtool version
+        sendCommand(V1_COMMAND_VERSION);
+        mMbtoolVersion = SocketUtils.readString(mSocketIS);
+        if (mMbtoolVersion == null) {
+            throw new IOException("Could not determine mbtool version");
+        }
+
+        Log.v(TAG, "mbtool version: " + mMbtoolVersion);
+        Log.v(TAG, "minimum version: " + MINIMUM_VERSION);
+
+        Version v1 = new Version(mMbtoolVersion);
+        Version v2 = new Version(MINIMUM_VERSION);
+
+        // Ensure that the version is newer than the minimum required version
+        if (v1.compareTo(v2) < 0) {
+            throw new IOException("mbtool version is: " + mMbtoolVersion + ", " +
+                    "minimum needed is: " + MINIMUM_VERSION);
+        }
+    }
+
+    /**
+     * Connects to the mbtool socket
+     *
+     * 1. Try connecting to the socket
+     * 2. If that fails or if the version is too old, launch bundled mbtool and connect again
+     * 3. If that fails, then return false
+     *
+     * @param context Application context
+     * @return True if successfully connected or if already connected. False, otherwise
+     */
     public boolean connect(Context context) {
-        // Already connected
+        // If we're already connected, then we're good
         if (mSocket != null) {
             return true;
         }
 
-        mSocket = new LocalSocket();
-
-        for (int i = 0; i < 5; i++) {
-            Log.i(TAG, "Connecting to mbtool (attempt #" + i + ")");
-
-            try {
-                mSocket.connect(new LocalSocketAddress("mbtool.daemon", Namespace.ABSTRACT));
-                break;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            Log.e(TAG, "Failed to connect to mbtool. Launching it and trying again");
-            if (!executeMbtool(context)) {
-                Log.e(TAG, "Failed to execute mbtool");
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        // Try connecting to the socket
+        try {
+            mSocket = new LocalSocket();
+            mSocket.connect(new LocalSocketAddress(SOCKET_ADDRESS, Namespace.ABSTRACT));
+            initializeConnection();
+            return true;
+        } catch (IOException e) {
+            Log.e(TAG, "Could not connect to mbtool socket", e);
+            disconnect();
         }
 
-        if (!mSocket.isConnected()) {
-            disconnect();
+        Log.v(TAG, "Launching bundled mbtool");
+
+        if (!executeMbtool(context)) {
+            Log.e(TAG, "Failed to execute mbtool");
             return false;
         }
 
         try {
-            mSocketIS = mSocket.getInputStream();
-            mSocketOS = mSocket.getOutputStream();
-
-            // Verify credentials
-            String response = SocketUtils.readString(mSocketIS);
-            if (RESPONSE_DENY.equals(response)) {
-                throw new SocketProtocolException("mbtool explicitly denied access to the " +
-                        "daemon. WARNING: This app is probably not officially signed!");
-            } else if (!RESPONSE_ALLOW.equals(response)) {
-                throw new SocketProtocolException("Unexpected reply: " + response);
-            }
-
-            // Request an interface version
-            SocketUtils.writeInt32(mSocketOS, mInterfaceVersion);
-            response = SocketUtils.readString(mSocketIS);
-            if (RESPONSE_UNSUPPORTED.equals(response)) {
-                throw new SocketProtocolException("Daemon does not support interface " +
-                        mInterfaceVersion);
-            } else if (!RESPONSE_OK.equals(response)) {
-                throw new SocketProtocolException("Unexpected reply: " + response);
-            }
-
+            Thread.sleep(1000);
+            mSocket = new LocalSocket();
+            mSocket.connect(new LocalSocketAddress(SOCKET_ADDRESS, Namespace.ABSTRACT));
+            initializeConnection();
             return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Could not connect to mbtool socket", e);
             disconnect();
-        } catch (SocketProtocolException e) {
-            e.printStackTrace();
         }
 
         return false;
@@ -153,8 +194,9 @@ public class MbtoolSocket {
                 + "/binaries/android/" + abi + "/mbtool";
 
         CommandUtils.runRootCommand("mount -o remount,rw /");
-        boolean ret = CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
-                && CommandUtils.runRootCommand("/mbtool daemon --daemonize") == 0;
+        CommandUtils.runRootCommand("stop mbtooldaemon");
+        boolean ret = CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0;
+        CommandUtils.runRootCommand("start mbtooldaemon");
         CommandUtils.runRootCommand("mount -o remount,ro /");
 
         return ret;
@@ -168,6 +210,14 @@ public class MbtoolSocket {
         mSocket = null;
         mSocketIS = null;
         mSocketOS = null;
+    }
+
+    public String version(Context context) {
+        if (!connect(context)) {
+            return null;
+        }
+
+        return mMbtoolVersion;
     }
 
     public RomInformation[] getInstalledRoms(Context context) {
@@ -220,8 +270,6 @@ public class MbtoolSocket {
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
-        } catch (SocketProtocolException e) {
-            e.printStackTrace();
         }
 
         return null;
@@ -251,13 +299,11 @@ public class MbtoolSocket {
             case RESPONSE_FAIL:
                 return false;
             default:
-                throw new SocketProtocolException("Invalid response: " + response);
+                throw new IOException("Invalid response: " + response);
             }
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
-        } catch (SocketProtocolException e) {
-            e.printStackTrace();
         }
 
         return false;
@@ -287,13 +333,11 @@ public class MbtoolSocket {
             case RESPONSE_FAIL:
                 return false;
             default:
-                throw new SocketProtocolException("Invalid response: " + response);
+                throw new IOException("Invalid response: " + response);
             }
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
-        } catch (SocketProtocolException e) {
-            e.printStackTrace();
         }
 
         return false;
@@ -313,13 +357,11 @@ public class MbtoolSocket {
             if (response.equals(RESPONSE_FAIL)) {
                 return false;
             } else {
-                throw new SocketProtocolException("Invalid response: " + response);
+                throw new IOException("Invalid response: " + response);
             }
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
-        } catch (SocketProtocolException e) {
-            e.printStackTrace();
         }
 
         return false;
@@ -340,7 +382,7 @@ public class MbtoolSocket {
             if (response.equals(RESPONSE_FAIL)) {
                 return null;
             } else if (!response.equals(RESPONSE_SUCCESS)) {
-                throw new SocketProtocolException("Invalid response: " + response);
+                throw new IOException("Invalid response: " + response);
             }
 
             // Read file descriptors
@@ -350,46 +392,28 @@ public class MbtoolSocket {
             FileDescriptor[] fds = mSocket.getAncillaryFileDescriptors();
 
             if (fds == null || fds.length == 0) {
-                throw new SocketProtocolException("mbtool sent no file descriptor");
+                throw new IOException("mbtool sent no file descriptor");
             }
 
             return fds[0];
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
-        } catch (SocketProtocolException e) {
-            e.printStackTrace();
         }
 
         return null;
     }
 
-    // Exceptions
-
-    public static class SocketProtocolException extends Exception {
-        public SocketProtocolException(String message) {
-            super(message);
-        }
-
-        public SocketProtocolException(Throwable throwable) {
-            super(throwable);
-        }
-
-        public SocketProtocolException(String message, Throwable throwable) {
-            super(message, throwable);
-        }
-    }
-
     // Private helper functions
 
-    private void sendCommand(String command) throws IOException, SocketProtocolException {
+    private void sendCommand(String command) throws IOException {
         SocketUtils.writeString(mSocketOS, command);
 
         String response = SocketUtils.readString(mSocketIS);
         if (RESPONSE_UNSUPPORTED.equals(response)) {
-            throw new SocketProtocolException("Unsupported command: " + command);
+            throw new IOException("Unsupported command: " + command);
         } else if (!RESPONSE_OK.equals(response)) {
-            throw new SocketProtocolException("Unknown response: " + response);
+            throw new IOException("Unknown response: " + response);
         }
     }
 
