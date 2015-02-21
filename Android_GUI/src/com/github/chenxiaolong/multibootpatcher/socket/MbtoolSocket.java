@@ -440,7 +440,7 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_COPY);
+            sendCommand(V1_COMMAND_CHMOD);
 
             SocketUtils.writeString(mSocketOS, filename);
             SocketUtils.writeInt32(mSocketOS, mode);
