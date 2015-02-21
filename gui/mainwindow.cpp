@@ -442,7 +442,7 @@ void MainWindow::chooseFile()
     Q_D(MainWindow);
 
     QString fileName = QFileDialog::getOpenFileName(
-            this, QString(), QString(), tr("(*.zip)"));
+            this, QString(), QString(), tr("Zip files (*.zip)"));
     if (fileName.isNull()) {
         return;
     }
