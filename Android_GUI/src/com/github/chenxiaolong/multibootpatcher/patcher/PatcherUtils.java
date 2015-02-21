@@ -100,13 +100,13 @@ public class PatcherUtils {
             return context.getString(R.string.unknown_error);
         case ErrorCode.PATCHER_CREATE_ERROR:
             return String.format(context.getString(R.string.patcher_create_error),
-                    error.getPatcherName());
+                    error.getPatcherId());
         case ErrorCode.AUTOPATCHER_CREATE_ERROR:
             return String.format(context.getString(R.string.autopatcher_create_error),
-                    error.getPatcherName());
+                    error.getPatcherId());
         case ErrorCode.RAMDISK_PATCHER_CREATE_ERROR:
             return String.format(context.getString(R.string.ramdisk_patcher_create_error),
-                    error.getPatcherName());
+                    error.getPatcherId());
         case ErrorCode.FILE_OPEN_ERROR:
             return String.format(context.getString(R.string.file_open_error), error.getFilename());
         case ErrorCode.FILE_READ_ERROR:
@@ -154,10 +154,10 @@ public class PatcherUtils {
                     error.getFilename());
         case ErrorCode.ONLY_ZIP_SUPPORTED:
             return String.format(context.getString(R.string.only_zip_supported),
-                    error.getPatcherName());
+                    error.getPatcherId());
         case ErrorCode.ONLY_BOOT_IMAGE_SUPPORTED:
             return String.format(context.getString(R.string.only_boot_image_supported),
-                    error.getPatcherName());
+                    error.getPatcherId());
         case ErrorCode.PATCHING_CANCELLED:
             return context.getString(R.string.patching_cancelled);
         case ErrorCode.SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND:

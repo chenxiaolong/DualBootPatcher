@@ -85,19 +85,19 @@ void mbp_error_destroy(CPatcherError *error)
 }
 
 /*!
- * \brief Name of patcher that caused the error
+ * \brief Id of patcher that caused the error
  *
  * \note The returned string is dynamically allocated. It should be free()'d
  *       when it is no longer needed.
  *
  * \return Patcher name
  *
- * \sa PatcherError::patcherName()
+ * \sa PatcherError::patcherId()
  */
-char * mbp_error_patcher_name(const CPatcherError *error)
+char * mbp_error_patcher_id(const CPatcherError *error)
 {
     CCAST(error);
-    return string_to_cstring(pe->patcherName());
+    return string_to_cstring(pe->patcherId());
 }
 
 /*!

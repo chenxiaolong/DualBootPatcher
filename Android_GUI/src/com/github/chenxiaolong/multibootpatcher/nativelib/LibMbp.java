@@ -168,7 +168,6 @@ public class LibMbp {
         static native Pointer mbp_config_patchers(CPatcherConfig pc);
         static native Pointer mbp_config_autopatchers(CPatcherConfig pc);
         static native Pointer mbp_config_ramdiskpatchers(CPatcherConfig pc);
-        static native Pointer mbp_config_patcher_name(CPatcherConfig pc, String id);
         static native CPatcher mbp_config_create_patcher(CPatcherConfig pc, String id);
         static native CAutoPatcher mbp_config_create_autopatcher(CPatcherConfig pc, String id, CFileInfo info, CStringMap args);
         static native CRamdiskPatcher mbp_config_create_ramdisk_patcher(CPatcherConfig pc, String id, CFileInfo info, CCpioFile cpio);
@@ -182,7 +181,7 @@ public class LibMbp {
         static native void mbp_error_destroy(CPatcherError error);
         static native /* ErrorType */ int mbp_error_error_type(CPatcherError error);
         static native /* ErrorCode */ int mbp_error_error_code(CPatcherError error);
-        static native Pointer mbp_error_patcher_name(CPatcherError error);
+        static native Pointer mbp_error_patcher_id(CPatcherError error);
         static native Pointer mbp_error_filename(CPatcherError error);
         // END: cpatchererror.h
 
@@ -245,7 +244,6 @@ public class LibMbp {
 
         static native CPatcherError mbp_patcher_error(CPatcher patcher);
         static native Pointer mbp_patcher_id(CPatcher patcher);
-        static native Pointer mbp_patcher_name(CPatcher patcher);
         static native boolean mbp_patcher_uses_patchinfo(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
         static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
@@ -1391,14 +1389,6 @@ public class LibMbp {
             return getStringArrayAndFree(p);
         }
 
-        public String getPatcherName(String id) {
-            log(mCPatcherConfig, PatcherConfig.class, "getPatcherName", id);
-            ensureNotNull(id);
-
-            Pointer p = CWrapper.mbp_config_patcher_name(mCPatcherConfig, id);
-            return getStringAndFree(p);
-        }
-
         public Patcher createPatcher(String id) {
             log(mCPatcherConfig, PatcherConfig.class, "createPatcher", id);
             ensureNotNull(id);
@@ -1585,9 +1575,9 @@ public class LibMbp {
             return CWrapper.mbp_error_error_code(mCPatcherError);
         }
 
-        public String getPatcherName() {
-            log(mCPatcherError, PatcherError.class, "getPatcherName");
-            Pointer p = CWrapper.mbp_error_patcher_name(mCPatcherError);
+        public String getPatcherId() {
+            log(mCPatcherError, PatcherError.class, "getPatcherId");
+            Pointer p = CWrapper.mbp_error_patcher_id(mCPatcherError);
             return getStringAndFree(p);
         }
 
@@ -2048,12 +2038,6 @@ public class LibMbp {
         public String getId() {
             log(mCPatcher, Patcher.class, "getId");
             Pointer p = CWrapper.mbp_patcher_id(mCPatcher);
-            return getStringAndFree(p);
-        }
-
-        public String getName() {
-            log(mCPatcher, Patcher.class, "getName");
-            Pointer p = CWrapper.mbp_patcher_name(mCPatcher);
             return getStringAndFree(p);
         }
 

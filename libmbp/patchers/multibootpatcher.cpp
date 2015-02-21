@@ -65,10 +65,6 @@
         detailsCb(x, userData); \
     }
 
-// TODO TODO TODO
-#define tr(x) (x)
-// TODO TODO TODO
-
 
 /*! \cond INTERNAL */
 class MultiBootPatcher::Impl
@@ -116,7 +112,6 @@ private:
 
 
 const std::string MultiBootPatcher::Id("MultiBootPatcher");
-const std::string MultiBootPatcher::Name = tr("Multi Boot Patcher");
 
 
 MultiBootPatcher::MultiBootPatcher(PatcherConfig * const pc)
@@ -137,11 +132,6 @@ PatcherError MultiBootPatcher::error() const
 std::string MultiBootPatcher::id() const
 {
     return Id;
-}
-
-std::string MultiBootPatcher::name() const
-{
-    return Name;
 }
 
 bool MultiBootPatcher::usesPatchInfo() const
@@ -364,8 +354,6 @@ bool MultiBootPatcher::Impl::patchZip()
     }
 
     RETURN_IF_CANCELLED
-
-    DETAILS_CB(tr("Counting number of files in zip file ..."));
 
     unsigned int count;
     auto result = FileUtils::laCountFiles(info->filename(), &count);

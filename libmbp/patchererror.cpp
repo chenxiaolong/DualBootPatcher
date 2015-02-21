@@ -29,7 +29,7 @@ public:
     MBP::ErrorCode errorCode;
 
     // Patcher creation error
-    std::string patcherName;
+    std::string patcherId;
 
     // IO error, cpio error
     std::string filename;
@@ -113,7 +113,7 @@ PatcherError PatcherError::createPatcherCreationError(MBP::ErrorCode error,
     }
 
     PatcherError pe(MBP::ErrorType::PatcherCreationError, error);
-    pe.m_impl->patcherName = std::move(name);
+    pe.m_impl->patcherId = std::move(name);
     return pe;
 }
 /*! \endcond */
@@ -228,7 +228,7 @@ PatcherError PatcherError::createSupportedFileError(MBP::ErrorCode error,
     }
 
     PatcherError pe(MBP::ErrorType::SupportedFileError, error);
-    pe.m_impl->patcherName = std::move(name);
+    pe.m_impl->patcherId = std::move(name);
     return pe;
 }
 /*! \endcond */
@@ -289,16 +289,16 @@ MBP::ErrorCode PatcherError::errorCode() const
 }
 
 /*!
- * \brief Name of patcher that caused the error
+ * \brief Id of patcher that caused the error
  *
  * \Note This is valid only if the error type is PatcherCreationError or
  *       SupportedFileError.
  *
- * \return Patcher name
+ * \return Patcher id
  */
-std::string PatcherError::patcherName() const
+std::string PatcherError::patcherId() const
 {
-    return m_impl->patcherName;
+    return m_impl->patcherId;
 }
 
 /*!

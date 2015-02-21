@@ -43,7 +43,7 @@ public:
     MBP::ErrorType errorType() const;
     MBP::ErrorCode errorCode() const;
 
-    std::string patcherName() const;
+    std::string patcherId() const;
     std::string filename() const;
 
     PatcherError();

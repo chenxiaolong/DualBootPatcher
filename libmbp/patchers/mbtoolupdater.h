@@ -32,13 +32,11 @@ public:
     ~MbtoolUpdater();
 
     static const std::string Id;
-    static const std::string Name;
 
     virtual PatcherError error() const override;
 
     // Patcher info
     virtual std::string id() const override;
-    virtual std::string name() const override;
     virtual bool usesPatchInfo() const override;
 
     // Patching

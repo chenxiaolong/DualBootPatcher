@@ -33,7 +33,7 @@ void mbp_error_destroy(CPatcherError *error);
 /* enum ErrorType */ int mbp_error_error_type(const CPatcherError *error);
 /* enum ErrorCode */ int mbp_error_error_code(const CPatcherError *error);
 
-char * mbp_error_patcher_name(const CPatcherError *error);
+char * mbp_error_patcher_id(const CPatcherError *error);
 char * mbp_error_filename(const CPatcherError *error);
 
 #ifdef __cplusplus

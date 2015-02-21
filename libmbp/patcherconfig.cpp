@@ -518,24 +518,6 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 }
 
 /*!
- * \brief Get Patcher's friendly name
- *
- * \param id Patcher ID
- *
- * \return Patcher's name
- */
-std::string PatcherConfig::patcherName(const std::string &id) const
-{
-    if (id == MbtoolUpdater::Id) {
-        return MbtoolUpdater::Name;
-    } else if (id == MultiBootPatcher::Id) {
-        return MultiBootPatcher::Name;
-    }
-
-    return std::string();
-}
-
-/*!
  * \brief Create new Patcher
  *
  * \param id Patcher ID

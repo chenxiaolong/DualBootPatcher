@@ -58,11 +58,6 @@ public:
     virtual std::string id() const = 0;
 
     /*!
-        \brief The patcher's friendly name
-     */
-    virtual std::string name() const = 0;
-
-    /*!
         \brief Whether or not the patcher uses patchinfo files
      */
     virtual bool usesPatchInfo() const = 0;

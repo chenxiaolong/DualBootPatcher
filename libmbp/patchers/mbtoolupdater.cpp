@@ -34,11 +34,6 @@
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
-// TODO TODO TODO
-#define tr(x) (x)
-// TODO TODO TODO
-
-
 /*! \cond INTERNAL */
 class MbtoolUpdater::Impl
 {
@@ -60,7 +55,6 @@ private:
 
 
 const std::string MbtoolUpdater::Id("MbtoolUpdater");
-const std::string MbtoolUpdater::Name = tr("mbtool updater");
 
 
 MbtoolUpdater::MbtoolUpdater(PatcherConfig * const pc)
@@ -81,11 +75,6 @@ PatcherError MbtoolUpdater::error() const
 std::string MbtoolUpdater::id() const
 {
     return Id;
-}
-
-std::string MbtoolUpdater::name() const
-{
-    return Name;
 }
 
 bool MbtoolUpdater::usesPatchInfo() const

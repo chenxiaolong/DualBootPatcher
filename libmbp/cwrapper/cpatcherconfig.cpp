@@ -327,24 +327,6 @@ char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc)
 }
 
 /*!
- * \brief Get Patcher's friendly name
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \param id Patcher ID
- * \return Patcher's name
- *
- * \sa PatcherConfig::patcherName()
- */
-char * mbp_config_patcher_name(const CPatcherConfig *pc, const char *id)
-{
-    CCAST(pc);
-    return string_to_cstring(config->patcherName(id));
-}
-
-/*!
  * \brief Create new Patcher
  *
  * \param pc CPatcherConfig object

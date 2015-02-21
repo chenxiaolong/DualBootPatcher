@@ -564,13 +564,13 @@ static QString errorToString(PatcherError error) {
         return QObject::tr("An unknown error has occurred");
     case MBP::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher: %1")
-                .arg(QString::fromStdString(error.patcherName()));
+                .arg(QString::fromStdString(error.patcherId()));
     case MBP::ErrorCode::AutoPatcherCreateError:
         return QObject::tr("Failed to create autopatcher: %1")
-                .arg(QString::fromStdString(error.patcherName()));
+                .arg(QString::fromStdString(error.patcherId()));
     case MBP::ErrorCode::RamdiskPatcherCreateError:
         return QObject::tr("Failed to create ramdisk patcher: %1")
-                .arg(QString::fromStdString(error.patcherName()));
+                .arg(QString::fromStdString(error.patcherId()));
     case MBP::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file: %1")
                 .arg(QString::fromStdString(error.filename()));
@@ -621,10 +621,10 @@ static QString errorToString(PatcherError error) {
                 .arg(QString::fromStdString(error.filename()));
     case MBP::ErrorCode::OnlyZipSupported:
         return QObject::tr("Only ZIP files are supported by %1")
-                .arg(QString::fromStdString(error.patcherName()));
+                .arg(QString::fromStdString(error.patcherId()));
     case MBP::ErrorCode::OnlyBootImageSupported:
         return QObject::tr("Only boot images are supported by %1")
-                .arg(QString::fromStdString(error.patcherName()));
+                .arg(QString::fromStdString(error.patcherId()));
     case MBP::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
     case MBP::ErrorCode::SystemCacheFormatLinesNotFound:

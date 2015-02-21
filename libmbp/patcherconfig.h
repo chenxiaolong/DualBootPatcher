@@ -67,8 +67,6 @@ public:
     std::vector<std::string> autoPatchers() const;
     std::vector<std::string> ramdiskPatchers() const;
 
-    std::string patcherName(const std::string &id) const;
-
     Patcher * createPatcher(const std::string &id);
     AutoPatcher * createAutoPatcher(const std::string &id,
                                     const FileInfo * const info,

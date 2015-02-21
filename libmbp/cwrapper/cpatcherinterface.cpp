@@ -128,23 +128,6 @@ char * mbp_patcher_id(const CPatcher *patcher)
 }
 
 /*!
- * \brief The patcher's friendly name
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param patcher CPatcher object
- * \return Patcher name
- *
- * \sa Patcher::name()
- */
-char * mbp_patcher_name(const CPatcher *patcher)
-{
-    CCASTP(patcher);
-    return string_to_cstring(p->name());
-}
-
-/*!
  * \brief Whether or not the patcher uses patchinfo files
  *
  * \param patcher CPatcher object

@@ -53,8 +53,6 @@ char ** mbp_config_patchers(const CPatcherConfig *pc);
 char ** mbp_config_autopatchers(const CPatcherConfig *pc);
 char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc);
 
-char * mbp_config_patcher_name(const CPatcherConfig *pc, const char *id);
-
 CPatcher * mbp_config_create_patcher(CPatcherConfig *pc, const char *id);
 CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
                                              const char *id,
