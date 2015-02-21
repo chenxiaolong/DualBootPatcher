@@ -48,19 +48,8 @@ static const std::string MbtoolDaemonService
 static const std::string DataMediaContext =
         "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
 
-static const std::string DefaultProp = "default.prop";
 static const std::string InitRc = "init.rc";
 static const std::string FileContexts = "file_contexts";
-
-static const std::string TagVersion = "version";
-static const std::string TagInstalled = "installed";
-static const std::string TagPcId = "id";
-static const std::string TagPcKernelId = "kernel-id";
-static const std::string TagPcName = "name";
-static const std::string TagPcDescription = "description";
-static const std::string TagPcTargetSystem = "target-system";
-static const std::string TagPcTargetCache = "target-cache";
-static const std::string TagPcTargetData = "target-data";
 
 CoreRamdiskPatcher::CoreRamdiskPatcher(const PatcherConfig * const pc,
                                        const FileInfo * const info,

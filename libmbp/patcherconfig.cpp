@@ -38,6 +38,7 @@
 
 // Patchers
 #ifndef LIBMBP_MINI
+#include "patchers/mbtoolupdater.h"
 #include "patchers/multibootpatcher.h"
 #include "autopatchers/jfltepatcher.h"
 #include "autopatchers/patchfilepatcher.h"
@@ -478,6 +479,7 @@ std::vector<std::string> PatcherConfig::patchers() const
 {
     std::vector<std::string> list;
     list.push_back(MultiBootPatcher::Id);
+    list.push_back(MbtoolUpdater::Id);
     return list;
 }
 
@@ -524,7 +526,9 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
  */
 std::string PatcherConfig::patcherName(const std::string &id) const
 {
-    if (id == MultiBootPatcher::Id) {
+    if (id == MbtoolUpdater::Id) {
+        return MbtoolUpdater::Name;
+    } else if (id == MultiBootPatcher::Id) {
         return MultiBootPatcher::Name;
     }
 
@@ -542,7 +546,9 @@ Patcher * PatcherConfig::createPatcher(const std::string &id)
 {
     Patcher *p = nullptr;
 
-    if (id == MultiBootPatcher::Id) {
+    if (id == MbtoolUpdater::Id) {
+        p = new MbtoolUpdater(this);
+    } else if (id == MultiBootPatcher::Id) {
         p = new MultiBootPatcher(this);
     }
 
