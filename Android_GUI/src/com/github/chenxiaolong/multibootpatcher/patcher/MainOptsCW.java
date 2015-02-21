@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.patcher;
+package com.github.chenxiaolong.multibootpatcher.patcher;
 
 import android.content.Context;
 import android.support.v7.widget.CardView;

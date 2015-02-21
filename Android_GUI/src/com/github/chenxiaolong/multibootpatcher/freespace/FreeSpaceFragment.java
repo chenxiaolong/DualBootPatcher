@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.multibootpatcher.fragments;
+package com.github.chenxiaolong.multibootpatcher.freespace;
 
 import android.app.Fragment;
 import android.content.Context;

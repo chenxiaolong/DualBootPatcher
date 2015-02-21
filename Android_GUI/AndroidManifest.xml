@@ -59,7 +59,7 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".patcher.PatcherService" />
+        <service android:name="com.github.chenxiaolong.multibootpatcher.patcher.PatcherService" />
         <service android:name=".switcher.SwitcherService" />
         <service android:name=".settings.AppSharingService" />
     </application>

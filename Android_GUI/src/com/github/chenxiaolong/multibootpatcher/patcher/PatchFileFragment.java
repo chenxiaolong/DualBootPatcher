@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.patcher;
+package com.github.chenxiaolong.multibootpatcher.patcher;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -38,13 +38,13 @@ import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.patcher.MainOptsCW.MainOptsListener;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PresetCW.PresetListener;
+import com.github.chenxiaolong.multibootpatcher.patcher.MainOptsCW.MainOptsListener;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PresetCW.PresetListener;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
