@@ -55,7 +55,9 @@ public class MbtoolSocket {
     private static final String V1_COMMAND_SET_KERNEL = "SET_KERNEL";
     private static final String V1_COMMAND_REBOOT = "REBOOT";
     private static final String V1_COMMAND_OPEN = "OPEN";
+    private static final String V1_COMMAND_COPY = "COPY";
 
+    // TODO: Handle numbering for snapshots
     private static final String MINIMUM_VERSION = "8.99.6";
 
     private static MbtoolSocket sInstance;
@@ -402,6 +404,33 @@ public class MbtoolSocket {
         }
 
         return null;
+    }
+
+    public boolean copy(Context context, String source, String target) {
+        if (!connect(context)) {
+            return false;
+        }
+
+        try {
+            sendCommand(V1_COMMAND_COPY);
+
+            SocketUtils.writeString(mSocketOS, source);
+            SocketUtils.writeString(mSocketOS, target);
+
+            String response = SocketUtils.readString(mSocketIS);
+            if (response.equals(RESPONSE_FAIL)) {
+                return false;
+            } else if (!response.equals(RESPONSE_SUCCESS)) {
+                throw new IOException("Invalid response: " + response);
+            }
+
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        }
+
+        return false;
     }
 
     // Private helper functions
