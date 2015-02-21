@@ -26,12 +26,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class EventCollector extends Fragment {
-    private HashMap<String, ListenerAndQueue> mEventQueues =
-            new HashMap<String, ListenerAndQueue>();
+    private HashMap<String, ListenerAndQueue> mEventQueues = new HashMap<>();
 
     private class ListenerAndQueue {
         EventCollectorListener listener;
-        ArrayList<BaseEvent> queue = new ArrayList<BaseEvent>();
+        ArrayList<BaseEvent> queue = new ArrayList<>();
     }
 
     public interface EventCollectorListener {

@@ -68,6 +68,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class SwitcherListFragment extends Fragment implements OnDismissListener,
         EventCollectorListener, RomCardActionListener,
@@ -529,9 +530,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mRoms.clear();
 
         if (result != null) {
-            for (RomInformation info : result) {
-                mRoms.add(info);
-            }
+            Collections.addAll(mRoms, result);
         } else {
             refreshErrorVisibility(true);
         }

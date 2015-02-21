@@ -92,7 +92,7 @@ public class PatcherUtils {
         return bundle;
     }
 
-    private static String getErrorMessage(Context context, PatcherError error) {
+    public static String getErrorMessage(Context context, PatcherError error) {
         switch (error.getErrorCode()) {
         case ErrorCode.NO_ERROR:
             return context.getString(R.string.no_error);

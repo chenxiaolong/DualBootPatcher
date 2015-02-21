@@ -139,31 +139,4 @@ public class FileUtils {
             e.printStackTrace();
         }
     }
-
-    public static String extractVersionedAssetToCache(Context context, String asset) {
-        String prefix = asset + "::";
-        String target = prefix + BuildConfig.VERSION_NAME;
-
-        File cachedFile = new File(context.getCacheDir() + File.separator + target);
-        if (!cachedFile.exists()) {
-            FileUtils.extractAsset(context, asset, cachedFile);
-        }
-
-        return cachedFile.getAbsolutePath();
-    }
-
-    public static void deleteOldCachedAsset(Context context, String asset) {
-        String prefix = asset + "::";
-        String current = prefix + BuildConfig.VERSION_NAME;
-
-        for (File f : context.getCacheDir().listFiles()) {
-            if (f.isFile()) {
-                String name = f.getName();
-
-                if (name.startsWith(prefix) && !name.equals(current)) {
-                    f.delete();
-                }
-            }
-        }
-    }
 }

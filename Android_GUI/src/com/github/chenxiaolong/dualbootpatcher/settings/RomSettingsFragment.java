@@ -33,6 +33,7 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
+import android.support.annotation.NonNull;
 import android.text.Html;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
@@ -166,7 +167,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
         outState.putBoolean(EXTRA_UPDATE_FAILED, mUpdateFailed);
@@ -264,7 +265,7 @@ public class RomSettingsFragment extends PreferenceFragment implements
                         new Thread() {
                             @Override
                             public void run() {
-                                SwitcherUtils.reboot(getActivity());
+                                SwitcherUtils.reboot(context);
                             }
                         }.start();
                     }
