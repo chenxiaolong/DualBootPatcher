@@ -56,6 +56,7 @@ public class MbtoolSocket {
     private static final String V1_COMMAND_REBOOT = "REBOOT";
     private static final String V1_COMMAND_OPEN = "OPEN";
     private static final String V1_COMMAND_COPY = "COPY";
+    private static final String V1_COMMAND_CHMOD = "CHMOD";
 
     // TODO: Handle numbering for snapshots
     private static final String MINIMUM_VERSION = "8.99.6";
@@ -416,6 +417,33 @@ public class MbtoolSocket {
 
             SocketUtils.writeString(mSocketOS, source);
             SocketUtils.writeString(mSocketOS, target);
+
+            String response = SocketUtils.readString(mSocketIS);
+            if (response.equals(RESPONSE_FAIL)) {
+                return false;
+            } else if (!response.equals(RESPONSE_SUCCESS)) {
+                throw new IOException("Invalid response: " + response);
+            }
+
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        }
+
+        return false;
+    }
+
+    public boolean chmod(Context context, String filename, int mode) {
+        if (!connect(context)) {
+            return false;
+        }
+
+        try {
+            sendCommand(V1_COMMAND_COPY);
+
+            SocketUtils.writeString(mSocketOS, filename);
+            SocketUtils.writeInt32(mSocketOS, mode);
 
             String response = SocketUtils.readString(mSocketIS);
             if (response.equals(RESPONSE_FAIL)) {
