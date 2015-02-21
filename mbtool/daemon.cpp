@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -53,6 +54,7 @@
 #define V1_COMMAND_REBOOT "REBOOT"              // [Version 1] Reboot
 #define V1_COMMAND_OPEN "OPEN"                  // [Version 1] Open file
 #define V1_COMMAND_COPY "COPY"                  // [Version 1] Copy file
+#define V1_COMMAND_CHMOD "CHMOD"                // [Version 1] chmod file
 
 
 namespace mb
@@ -280,6 +282,41 @@ static bool v1_copy(int fd)
     return true;
 }
 
+static bool v1_chmod(int fd)
+{
+    std::string filename;
+    uint32_t mode;
+
+    if (!util::socket_read_string(fd, &filename)) {
+        return false;
+    }
+
+    if (!util::socket_read_uint32(fd, &mode)) {
+        return false;
+    }
+
+    // Don't allow setting setuid or setgid permissions
+    uint32_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    if (masked != mode) {
+        if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
+            return false;
+        }
+        return true;
+    }
+
+    if (chmod(filename.c_str(), mode) < 0) {
+        if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
+            return false;
+        }
+    } else {
+        if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool connection_version_1(int fd)
 {
     std::string command;
@@ -299,7 +336,8 @@ static bool connection_version_1(int fd)
                 || command == V1_COMMAND_SET_KERNEL
                 || command == V1_COMMAND_REBOOT
                 || command == V1_COMMAND_OPEN
-                || command == V1_COMMAND_COPY) {
+                || command == V1_COMMAND_COPY
+                || command == V1_COMMAND_CHMOD) {
             // Acknowledge command
             if (!util::socket_write_string(fd, RESPONSE_OK)) {
                 return false;
@@ -329,6 +367,8 @@ static bool connection_version_1(int fd)
             ret = v1_open(fd);
         } else if (command == V1_COMMAND_COPY) {
             ret = v1_copy(fd);
+        } else if (command == V1_COMMAND_CHMOD) {
+            ret = v1_chmod(fd);
         }
 
         if (!ret) {
