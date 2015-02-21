@@ -44,32 +44,34 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.chenxiaolong.dualbootpatcher.settings.SettingsActivity;
+import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.multibootpatcher.freespace.FreeSpaceFragment;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatchFileFragment;
+import com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity;
 
 import java.util.ArrayList;
 
 public class MainActivity extends ActionBarActivity {
     private static final int[] RES_NAV_TITLES = new int[] {
-            R.string.title_roms,
-            R.string.title_patch_zip, R.string.title_free_space, R.string.title_rom_settings,
-            R.string.title_reboot, R.string.title_about, R.string.title_exit };
+            R.string.title_roms, R.string.title_patch_zip, R.string.title_free_space,
+            R.string.title_rom_settings, R.string.title_app_sharing, R.string.title_reboot,
+            R.string.title_about, R.string.title_exit };
 
     private static final int[] RES_NAV_ICONS = new int[] { R.drawable.check,
-            R.drawable.split, R.drawable.storage, R.drawable.settings,
+            R.drawable.split, R.drawable.storage, R.drawable.settings, R.drawable.dashboard,
             R.drawable.refresh, R.drawable.about, R.drawable.exit };
 
     private static final int NAV_SEPARATOR = -1;
     private static final int NAV_ROMS = 0;
     private static final int NAV_PATCH_FILE = 1;
     private static final int NAV_FREE_SPACE = 2;
-    private static final int NAV_SETTINGS = 3;
-    private static final int NAV_REBOOT = 4;
-    private static final int NAV_ABOUT = 5;
-    private static final int NAV_EXIT = 6;
+    private static final int NAV_ROM_SETTINGS = 3;
+    private static final int NAV_APP_SHARING = 4;
+    private static final int NAV_REBOOT = 5;
+    private static final int NAV_ABOUT = 6;
+    private static final int NAV_EXIT = 7;
 
     private SharedPreferences mPrefs;
 
@@ -154,7 +156,8 @@ public class MainActivity extends ActionBarActivity {
         mDrawerItems.add(NAV_ROMS);
         mDrawerItems.add(NAV_PATCH_FILE);
         mDrawerItems.add(NAV_FREE_SPACE);
-        mDrawerItems.add(NAV_SETTINGS);
+        mDrawerItems.add(NAV_ROM_SETTINGS);
+        mDrawerItems.add(NAV_APP_SHARING);
         mDrawerItems.add(NAV_SEPARATOR);
         mDrawerItems.add(NAV_REBOOT);
         mDrawerItems.add(NAV_ABOUT);
@@ -403,10 +406,17 @@ public class MainActivity extends ActionBarActivity {
             showFragment();
             break;
 
-        case NAV_SETTINGS:
-            Intent intent = new Intent(this, SettingsActivity.class);
+        case NAV_ROM_SETTINGS: {
+            Intent intent = new Intent(this, RomSettingsActivity.class);
             startActivity(intent);
             break;
+        }
+
+        case NAV_APP_SHARING: {
+            Intent intent = new Intent(this, AppSharingSettingsActivity.class);
+            startActivity(intent);
+            break;
+        }
 
         case NAV_REBOOT:
             SwitcherUtils.reboot(this);

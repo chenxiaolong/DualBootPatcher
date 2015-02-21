@@ -15,22 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.settings;
+package com.github.chenxiaolong.multibootpatcher.settings;
 
 import android.app.Activity;
+import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.multibootpatcher.EventCollector;
 
-public class AppSharingEventCollector extends EventCollector {
-    public static final String TAG = AppSharingEventCollector.class.getSimpleName();
+public class RomSettingsEventCollector extends EventCollector {
+    public static final String TAG = RomSettingsEventCollector.class.getSimpleName();
 
     private Context mContext;
+
+    public static RomSettingsEventCollector getInstance(FragmentManager fm) {
+        RomSettingsEventCollector rsec = (RomSettingsEventCollector) fm.findFragmentByTag(TAG);
+        if (rsec == null) {
+            rsec = new RomSettingsEventCollector();
+            fm.beginTransaction().add(rsec, RomSettingsEventCollector.TAG).commit();
+        }
+        return rsec;
+    }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -38,17 +47,11 @@ public class AppSharingEventCollector extends EventCollector {
             Bundle bundle = intent.getExtras();
 
             if (bundle != null) {
-                String state = bundle.getString(AppSharingService.STATE);
+                String state = bundle.getString(RomSettingsService.STATE);
 
-                if (AppSharingService.STATE_UPDATED_RAMDISK.equals(state)) {
-                    boolean failed = bundle.getBoolean(AppSharingService.RESULT_FAILED);
-
-                    sendEvent(new UpdatedRamdiskEvent(failed));
-                } else if (AppSharingService.STATE_GOT_INFO.equals(state)) {
-                    RomInformation curRom = bundle.getParcelable(AppSharingService.RESULT_ROMINFO);
-                    String version = bundle.getString(AppSharingService.RESULT_VERSION);
-
-                    sendEvent(new SettingsInfoEvent(curRom, version));
+                if (RomSettingsService.STATE_UPDATED_RAMDISK.equals(state)) {
+                    boolean success = bundle.getBoolean(RomSettingsService.RESULT_SUCCESS);
+                    sendEvent(new UpdatedRamdiskEvent(success));
                 }
             }
         }
@@ -60,7 +63,7 @@ public class AppSharingEventCollector extends EventCollector {
         if (mContext == null) {
             mContext = getActivity().getApplicationContext();
             mContext.registerReceiver(mReceiver, new IntentFilter(
-                    AppSharingService.BROADCAST_INTENT));
+                    RomSettingsService.BROADCAST_INTENT));
         }
     }
 
@@ -75,34 +78,18 @@ public class AppSharingEventCollector extends EventCollector {
     // Start tasks
 
     public void updateRamdisk() {
-        Intent intent = new Intent(mContext, AppSharingService.class);
-        intent.putExtra(AppSharingService.ACTION, AppSharingService.ACTION_UPDATE_RAMDISK);
-        mContext.startService(intent);
-    }
-
-    public void getInfo() {
-        Intent intent = new Intent(mContext, AppSharingService.class);
-        intent.putExtra(AppSharingService.ACTION, AppSharingService.ACTION_GET_INFO);
+        Intent intent = new Intent(mContext, RomSettingsService.class);
+        intent.putExtra(RomSettingsService.ACTION, RomSettingsService.ACTION_UPDATE_RAMDISK);
         mContext.startService(intent);
     }
 
     // Events
 
-    public class SettingsInfoEvent extends BaseEvent {
-        RomInformation currentRom;
-        String syncDaemonVersion;
-
-        public SettingsInfoEvent(RomInformation currentRom, String syncDaemonVersion) {
-            this.currentRom = currentRom;
-            this.syncDaemonVersion = syncDaemonVersion;
-        }
-    }
-
     public class UpdatedRamdiskEvent extends BaseEvent {
-        boolean failed;
+        boolean success;
 
-        public UpdatedRamdiskEvent(boolean failed) {
-            this.failed = failed;
+        public UpdatedRamdiskEvent(boolean success) {
+            this.success = success;
         }
     }
 }

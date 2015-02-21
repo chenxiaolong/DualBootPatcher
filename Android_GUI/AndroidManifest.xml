@@ -43,13 +43,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".settings.SettingsActivity"
+            android:name="com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity"
             android:label="@string/title_rom_settings"
             android:parentActivityName=".MainActivity" />
         <activity
+            android:name=".settings.AppSharingSettingsActivity"
+            android:label="@string/title_app_sharing"
+            android:parentActivityName=".MainActivity" />
+        <activity
             android:name=".settings.AppListActivity"
-            android:label="@string/rom_settings_indiv_app_sharing_title"
-            android:parentActivityName=".settings.SettingsActivity" />
+            android:label="@string/a_s_settings_indiv_app_sharing_title"
+            android:parentActivityName=".settings.AppSharingSettingsActivity" />
 
         <receiver android:name=".settings.AppSharingEventReceiver">
             <intent-filter>
@@ -60,6 +64,7 @@
         </receiver>
 
         <service android:name="com.github.chenxiaolong.multibootpatcher.patcher.PatcherService" />
+        <service android:name="com.github.chenxiaolong.multibootpatcher.settings.RomSettingsService" />
         <service android:name=".switcher.SwitcherService" />
         <service android:name=".settings.AppSharingService" />
     </application>

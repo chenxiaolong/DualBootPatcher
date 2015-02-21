@@ -30,7 +30,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.AlertDialogFragment;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector;
+import com.github.chenxiaolong.multibootpatcher.EventCollector;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 

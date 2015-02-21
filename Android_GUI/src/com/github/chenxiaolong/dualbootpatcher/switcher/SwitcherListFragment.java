@@ -49,8 +49,8 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -616,7 +616,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             onContentChanged();
         }
 
-        @Override protected void onStartLoading() {
+        @Override
+        protected void onStartLoading() {
             if (mResult != null) {
                 deliverResult(mResult);
             } else if (takeContentChanged()) {

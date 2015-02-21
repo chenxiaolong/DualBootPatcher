@@ -150,22 +150,22 @@
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="rom_settings_app_sharing_title">Совместное владение приложений (ЭКСПЕРИМЕНТАЛЬНО)</string>
+  <string name="a_s_settings_app_sharing_title">Совместное владение приложений (ЭКСПЕРИМЕНТАЛЬНО)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_title">Совместно владеть приложениями</string>
+  <string name="a_s_settings_share_apps_title">Совместно владеть приложениями</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Владеть приложениями совместно из главного ROMа\nс текущим (перезагрузка обязательна).</string>
+  <string name="a_s_settings_share_apps_desc">Владеть приложениями совместно из главного ROMа\nс текущим (перезагрузка обязательна).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Совместно владеть платными приложениями</string>
+  <string name="a_s_settings_share_paid_apps_title">Совместно владеть платными приложениями</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_desc">\n<![CDATA[
+  <string name="a_s_settings_share_paid_apps_desc">\n<![CDATA[
 Совместно владеть приложениями из главного ROM-а с текущим (перезагрузка обязательна).
 <strong>Успех не гарантирован из-за DRM.</strong>
 ]]>\n</string>
   <!--Title for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_title">Совместно владеть приложениями</string>
+  <string name="a_s_settings_indiv_app_sharing_title">Совместно владеть приложениями</string>
   <!--Description for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_desc">Совместно владеть приложениями со всеми ROM-ами\n(перезагрузка обязательна).</string>
+  <string name="a_s_settings_indiv_app_sharing_desc">Совместно владеть приложениями со всеми ROM-ами\n(перезагрузка обязательна).</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Обновить виртуальный диск</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->

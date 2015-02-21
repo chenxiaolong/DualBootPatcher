@@ -143,23 +143,23 @@ arquivos a serem adaptados.</string>
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="rom_settings_app_sharing_title">Compartilhamento de aplicativos (EXPERIMENTAL)</string>
+  <string name="a_s_settings_app_sharing_title">Compartilhamento de aplicativos (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_title">Compartilhar aplicativos</string>
+  <string name="a_s_settings_share_apps_title">Compartilhar aplicativos</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Compartilhar aplicativos da ROM primária com a ROM atual (requer reinicialização)</string>
+  <string name="a_s_settings_share_apps_desc">Compartilhar aplicativos da ROM primária com a ROM atual (requer reinicialização)</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Compartilhar aplicativos pagos</string>
+  <string name="a_s_settings_share_paid_apps_title">Compartilhar aplicativos pagos</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_desc">
+  <string name="a_s_settings_share_paid_apps_desc">
 <![CDATA[
 Compartilhar aplicativos pagos da ROM primária com a ROM atual (requer reinício).
 <strong>Pode não funcionar devido à DRM.</strong>
 ]]></string>
   <!--Title for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_title">Compartilhar aplicativos individuais</string>
+  <string name="a_s_settings_indiv_app_sharing_title">Compartilhar aplicativos individuais</string>
   <!--Description for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_desc">Compartilhar aplicativos individuais entre as ROMs (requer reinicialização)</string>
+  <string name="a_s_settings_indiv_app_sharing_desc">Compartilhar aplicativos individuais entre as ROMs (requer reinicialização)</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Atualizar o Ramdisk</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->

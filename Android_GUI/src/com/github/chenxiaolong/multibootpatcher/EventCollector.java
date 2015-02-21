@@ -15,22 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher;
+package com.github.chenxiaolong.multibootpatcher;
 
 import android.app.Fragment;
 import android.os.Bundle;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Universal class to collect events
+ *
+ * This class collects, caches, and dispatches events to make event handling easy during
+ * orientation changes or other situations where the client might not be able to receive events.
+ */
 public class EventCollector extends Fragment {
     private HashMap<String, ListenerAndQueue> mEventQueues = new HashMap<>();
 
     private class ListenerAndQueue {
         EventCollectorListener listener;
-        ArrayList<BaseEvent> queue = new ArrayList<>();
+        ArrayDeque<BaseEvent> queue = new ArrayDeque<>();
     }
 
     public interface EventCollectorListener {
@@ -38,17 +45,6 @@ public class EventCollector extends Fragment {
     }
 
     public static class BaseEvent {
-        // If true, the event will always remain in the queue and will be resent whenever the
-        // listener is attached.
-        private boolean mKeepInQueue;
-
-        public boolean getKeepInQueue() {
-            return mKeepInQueue;
-        }
-
-        public void setKeepInQueue(boolean keepInQueue) {
-            mKeepInQueue = keepInQueue;
-        }
     }
 
     @Override
@@ -79,10 +75,7 @@ public class EventCollector extends Fragment {
             while (iter.hasNext()) {
                 BaseEvent event = iter.next();
                 lq.listener.onEventReceived(event);
-
-                if (!event.getKeepInQueue()) {
-                    iter.remove();
-                }
+                iter.remove();
             }
         }
 
@@ -102,57 +95,8 @@ public class EventCollector extends Fragment {
 
             if (lq.listener != null) {
                 lq.listener.onEventReceived(event);
-
-                if (event.getKeepInQueue()) {
-                    lq.queue.add(event);
-                }
             } else {
                 lq.queue.add(event);
-            }
-        }
-    }
-
-    protected synchronized void sendEventIfNotQueued(BaseEvent event) {
-        for (Map.Entry<String, ListenerAndQueue> entry : mEventQueues.entrySet()) {
-            ListenerAndQueue lq = entry.getValue();
-
-            boolean skip = false;
-
-            for (BaseEvent e : lq.queue) {
-                if (e == event) {
-                    skip = true;
-                    break;
-                }
-            }
-
-            if (skip) {
-                continue;
-            }
-
-            if (lq.listener != null) {
-                lq.listener.onEventReceived(event);
-
-                if (event.getKeepInQueue()) {
-                    lq.queue.add(event);
-                }
-            } else {
-                lq.queue.add(event);
-            }
-        }
-    }
-
-    // Remove all events of a certain type
-    protected synchronized void removeAllEvents(Class type) {
-        for (Map.Entry<String, ListenerAndQueue> entry : mEventQueues.entrySet()) {
-            ListenerAndQueue lq = entry.getValue();
-
-            Iterator<BaseEvent> iter = lq.queue.iterator();
-            while (iter.hasNext()) {
-                BaseEvent e = iter.next();
-
-                if (type.isInstance(e)) {
-                    iter.remove();
-                }
             }
         }
     }

@@ -172,24 +172,24 @@ de patch-uit.</string>
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="rom_settings_app_sharing_title">Partajare aplicatii (EXPERIMENTAL)</string>
+  <string name="a_s_settings_app_sharing_title">Partajare aplicatii (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_title">Partajare aplicatii</string>
+  <string name="a_s_settings_share_apps_title">Partajare aplicatii</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Partajarea aplicatiilor din ROM-ul principal cu
+  <string name="a_s_settings_share_apps_desc">Partajarea aplicatiilor din ROM-ul principal cu
 ROM-ul curent (necesita repornire)</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Partajare aplicatii platite</string>
+  <string name="a_s_settings_share_paid_apps_title">Partajare aplicatii platite</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_desc">
+  <string name="a_s_settings_share_paid_apps_desc">
 <![CDATA[
 Partajarea aplicatiilor platite din primul ROM cu ROM-ul curent (necesita restart)
 <strong>POSIBIL SA NU FUNCTIONEZE CU DRM</strong>
 ]]></string>
   <!--Title for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_title">Partajati aplicatiile individuale</string>
+  <string name="a_s_settings_indiv_app_sharing_title">Partajati aplicatiile individuale</string>
   <!--Description for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_desc">Partajare aplicatii individuale intre ROM-uri
+  <string name="a_s_settings_indiv_app_sharing_desc">Partajare aplicatii individuale intre ROM-uri
 (necesita repornire)</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Actualizati ramdisk</string>

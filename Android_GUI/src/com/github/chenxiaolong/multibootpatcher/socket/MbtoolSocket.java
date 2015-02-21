@@ -26,9 +26,9 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.multibootpatcher.Version;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
 
 import org.apache.commons.io.IOUtils;
 
@@ -58,9 +58,6 @@ public class MbtoolSocket {
     private static final String V1_COMMAND_COPY = "COPY";
     private static final String V1_COMMAND_CHMOD = "CHMOD";
     private static final String V1_COMMAND_LOKI_PATCH = "LOKI_PATCH";
-
-    // TODO: Handle numbering for snapshots
-    private static final String MINIMUM_VERSION = "8.99.6";
 
     private static MbtoolSocket sInstance;
 
@@ -122,16 +119,16 @@ public class MbtoolSocket {
             throw new IOException("Could not determine mbtool version");
         }
 
-        Log.v(TAG, "mbtool version: " + mMbtoolVersion);
-        Log.v(TAG, "minimum version: " + MINIMUM_VERSION);
-
         Version v1 = new Version(mMbtoolVersion);
-        Version v2 = new Version(MINIMUM_VERSION);
+        Version v2 = MbtoolUtils.getMinimumRequiredVersion();
+
+        Log.v(TAG, "mbtool version: " + v1);
+        Log.v(TAG, "minimum version: " + v2);
 
         // Ensure that the version is newer than the minimum required version
         if (v1.compareTo(v2) < 0) {
-            throw new IOException("mbtool version is: " + mMbtoolVersion + ", " +
-                    "minimum needed is: " + MINIMUM_VERSION);
+            throw new IOException("mbtool version is: " + v1 + ", " +
+                    "minimum needed is: " + v2);
         }
     }
 
@@ -214,6 +211,8 @@ public class MbtoolSocket {
         mSocket = null;
         mSocketIS = null;
         mSocketOS = null;
+
+        mMbtoolVersion = null;
     }
 
     public String version(Context context) {

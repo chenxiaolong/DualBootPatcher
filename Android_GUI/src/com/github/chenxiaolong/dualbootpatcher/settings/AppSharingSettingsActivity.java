@@ -24,14 +24,14 @@ import android.view.MenuItem;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class SettingsActivity extends ActionBarActivity {
+public class AppSharingSettingsActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.rom_settings);
 
         getFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, new RomSettingsFragment()).commit();
+                .replace(R.id.content_frame, new AppSharingSettingsFragment()).commit();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

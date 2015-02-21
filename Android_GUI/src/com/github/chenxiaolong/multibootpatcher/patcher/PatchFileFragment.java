@@ -34,8 +34,8 @@ import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.multibootpatcher.patcher.MainOptsCW.MainOptsListener;

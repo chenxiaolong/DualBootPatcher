@@ -24,7 +24,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector;
+import com.github.chenxiaolong.multibootpatcher.EventCollector;
 
 public class SwitcherEventCollector extends EventCollector {
     public static final String TAG = SwitcherEventCollector.class.getSimpleName();

@@ -52,19 +52,6 @@
         mbtool. This could happen if root access was denied or if the ramdisk is not up to
         date.\n\nTap to try again.</string>
 
-    <!-- Message in ROM Settings screen indicating that it's waiting for root access -->
-    <string name="waiting_for_root">Waiting for root access</string>
-    <!-- Title for the card shown in the switcher when root access could not be obtained -->
-    <string name="noroot_title">No root access</string>
-    <!-- Message for the card shown in the switcher when root access could not be obtained -->
-    <string name="noroot_switcher_desc">The application was unable to obtain root access. Root
-        access is needed for writing to the kernel/boot image partition to switch between
-        firmware.\n\nTap to try to obtain root access again.</string>
-    <!-- Message for the card shown in the ROM Settings screen when root access could not be obtained -->
-    <string name="noroot_settings_desc">The application was unable to obtain root access. Root
-        access is needed to change application sharing settings.\n\nTap to try to obtain root
-        access again.</string>
-
     <!-- Navigation drawer item for selecting the ROM -->
     <string name="title_roms">ROMs</string>
     <!-- Navigation drawer item for patching a zip file -->
@@ -73,6 +60,8 @@
     <string name="title_free_space">Free Space</string>
     <!-- Navigation drawer item for changing the ROM settings -->
     <string name="title_rom_settings">ROM Settings</string>
+    <!-- Navigation drawer item for changing the app sharing settings -->
+    <string name="title_app_sharing">App Sharing</string>
     <!-- Nagivation drawer item for rebooting the device -->
     <string name="title_reboot">Reboot</string>
     <!-- Navigation drawer item for showing the about screen -->
@@ -226,16 +215,16 @@
     <string name="format_bytes" translatable="false">%s B</string>
 
     <!-- Title for the application sharing section of the ROM Settings -->
-    <string name="rom_settings_app_sharing_title">Application sharing (EXPERIMENTAL)</string>
+    <string name="a_s_settings_app_sharing_title">Application sharing (EXPERIMENTAL)</string>
     <!-- Name of the preference for globally sharing free applications from the primary ROM -->
-    <string name="rom_settings_share_apps_title">Share applications</string>
+    <string name="a_s_settings_share_apps_title">Share applications</string>
     <!-- Description of the preference for globally shareing free applications from the primary ROM -->
-    <string name="rom_settings_share_apps_desc">Share applications from the primary ROM with the
+    <string name="a_s_settings_share_apps_desc">Share applications from the primary ROM with the
         current ROM (requires reboot).</string>
     <!-- Name of the preference for globally sharing paid applications from the primary ROM -->
-    <string name="rom_settings_share_paid_apps_title">Share paid applications</string>
+    <string name="a_s_settings_share_paid_apps_title">Share paid applications</string>
     <!-- Description of the preference for globally shareing paid applications from the primary ROM -->
-    <string name="rom_settings_share_paid_apps_desc">
+    <string name="a_s_settings_share_paid_apps_desc">
         <![CDATA[
             Share paid applications from the primary ROM with the current ROM (requires reboot).
             <strong>May not work due to DRM.</strong>
@@ -243,10 +232,14 @@
     </string>
 
     <!-- Title for the preference to share individual applications -->
-    <string name="rom_settings_indiv_app_sharing_title">Share individual applications</string>
+    <string name="a_s_settings_indiv_app_sharing_title">Share individual applications</string>
     <!-- Description for the preference to share individual applications -->
-    <string name="rom_settings_indiv_app_sharing_desc">Share individual applications across ROMs
+    <string name="a_s_settings_indiv_app_sharing_desc">Share individual applications across ROMs
         (requires reboot).</string>
+
+    <!-- Title for preference category for boot options -->
+    <string name="rom_settings_booting_title">Booting options</string>
+
     <!-- Preference for updating the ramdisk -->
     <string name="update_ramdisk_title">Update ramdisk</string>
     <!-- Description for updating the ramdisk. Avoids having to repatch the ROM -->

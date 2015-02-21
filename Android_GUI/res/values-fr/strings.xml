@@ -159,23 +159,23 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="rom_settings_app_sharing_title">Partage d\'application (EXPERIMENTAL)</string>
+  <string name="a_s_settings_app_sharing_title">Partage d\'application (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_title">Partager les applications</string>
+  <string name="a_s_settings_share_apps_title">Partager les applications</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="rom_settings_share_apps_desc">Partager des applications de la ROM primaire avec la ROM actuelle (requiert un redémarrage).</string>
+  <string name="a_s_settings_share_apps_desc">Partager des applications de la ROM primaire avec la ROM actuelle (requiert un redémarrage).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_title">Partager les applications payantes</string>
+  <string name="a_s_settings_share_paid_apps_title">Partager les applications payantes</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="rom_settings_share_paid_apps_desc">
+  <string name="a_s_settings_share_paid_apps_desc">
 <![CDATA[
 Partager les applications de la ROM primaire avec la ROM actuelle (requiert un redémarrage).
 <strong>Peut ne pas travailler du au DRM.</strong>
 ]]></string>
   <!--Title for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_title">Partager des applications individuelles</string>
+  <string name="a_s_settings_indiv_app_sharing_title">Partager des applications individuelles</string>
   <!--Description for the preference to share individual applications-->
-  <string name="rom_settings_indiv_app_sharing_desc">Partager les applications individuelles à travers les ROMs
+  <string name="a_s_settings_indiv_app_sharing_desc">Partager les applications individuelles à travers les ROMs
 (requiert un redémarrage).</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Mettre à jour le disque virtuel</string>
