@@ -26,8 +26,6 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-import it.gmariotti.cardslib.library.view.CardViewNative;
-
 public class ProgressCW {
     private static final String EXTRA_PROGRESS_MAX = "progress_max";
     private static final String EXTRA_PROGRESS_CURRENT = "progress_current";

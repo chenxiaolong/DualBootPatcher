@@ -31,8 +31,6 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 
 import java.util.ArrayList;
 
-import it.gmariotti.cardslib.library.view.CardViewNative;
-
 public class PresetCW {
     protected static interface PresetListener {
         public void onPresetSelected(PatchInfo info);
@@ -65,7 +63,7 @@ public class PresetCW {
     }
 
     private void initPresets() {
-        mPresetAdapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item,
+        mPresetAdapter = new ArrayAdapter<>(mContext, android.R.layout.simple_spinner_item,
                 android.R.id.text1, mPresets);
         mPresetAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         vPresetSpinner.setAdapter(mPresetAdapter);
