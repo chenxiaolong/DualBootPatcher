@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "actions.h"
+#include "lokipatch.h"
 #include "roms.h"
 #include "validcerts.h"
 #include "util/copy.h"
@@ -55,6 +56,7 @@
 #define V1_COMMAND_OPEN "OPEN"                  // [Version 1] Open file
 #define V1_COMMAND_COPY "COPY"                  // [Version 1] Copy file
 #define V1_COMMAND_CHMOD "CHMOD"                // [Version 1] chmod file
+#define V1_COMMAND_LOKI_PATCH "LOKI_PATCH"      // [Version 1] Patch file with loki
 
 
 namespace mb
@@ -317,6 +319,32 @@ static bool v1_chmod(int fd)
     return true;
 }
 
+static bool v1_loki_patch(int fd)
+{
+    std::string source;
+    std::string target;
+
+    if (!util::socket_read_string(fd, &source)) {
+        return false;
+    }
+
+    if (!util::socket_read_string(fd, &target)) {
+        return false;
+    }
+
+    if (!loki_patch_file(source, target)) {
+        if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
+            return false;
+        }
+    } else {
+        if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool connection_version_1(int fd)
 {
     std::string command;
@@ -337,7 +365,8 @@ static bool connection_version_1(int fd)
                 || command == V1_COMMAND_REBOOT
                 || command == V1_COMMAND_OPEN
                 || command == V1_COMMAND_COPY
-                || command == V1_COMMAND_CHMOD) {
+                || command == V1_COMMAND_CHMOD
+                || command == V1_COMMAND_LOKI_PATCH) {
             // Acknowledge command
             if (!util::socket_write_string(fd, RESPONSE_OK)) {
                 return false;
@@ -369,6 +398,8 @@ static bool connection_version_1(int fd)
             ret = v1_copy(fd);
         } else if (command == V1_COMMAND_CHMOD) {
             ret = v1_chmod(fd);
+        } else if (command == V1_COMMAND_LOKI_PATCH) {
+            ret = v1_loki_patch(fd);
         }
 
         if (!ret) {

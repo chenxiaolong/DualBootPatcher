@@ -118,6 +118,7 @@ mbtool_src_base := \
 	actions.cpp \
 	appsync.cpp \
 	daemon.cpp \
+	lokipatch.cpp \
 	main.cpp \
 	mount_fstab.cpp \
 	packages.cpp \
@@ -176,11 +177,12 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol
+LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol libloki
 
 LOCAL_C_INCLUDES := \
 	$(JANSSON_DIR)/include \
 	$(LIBARCHIVE_DIR)/include \
+	$(LIBLOKI_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
 	$(EXTERNAL_DIR) \
 	$(EXTERNAL_DIR)/pugixml/src
