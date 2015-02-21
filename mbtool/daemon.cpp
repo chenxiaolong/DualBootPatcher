@@ -33,6 +33,7 @@
 #include "actions.h"
 #include "roms.h"
 #include "validcerts.h"
+#include "util/copy.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
@@ -51,6 +52,7 @@
 #define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
 #define V1_COMMAND_REBOOT "REBOOT"              // [Version 1] Reboot
 #define V1_COMMAND_OPEN "OPEN"                  // [Version 1] Open file
+#define V1_COMMAND_COPY "COPY"                  // [Version 1] Copy file
 
 
 namespace mb
@@ -252,6 +254,32 @@ static bool v1_open(int fd)
     return true;
 }
 
+static bool v1_copy(int fd)
+{
+    std::string source;
+    std::string target;
+
+    if (!util::socket_read_string(fd, &source)) {
+        return false;
+    }
+
+    if (!util::socket_read_string(fd, &target)) {
+        return false;
+    }
+
+    if (!util::copy_contents(source, target)) {
+        if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
+            return false;
+        }
+    } else {
+        if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool connection_version_1(int fd)
 {
     std::string command;
@@ -270,7 +298,8 @@ static bool connection_version_1(int fd)
                 || command == V1_COMMAND_CHOOSE_ROM
                 || command == V1_COMMAND_SET_KERNEL
                 || command == V1_COMMAND_REBOOT
-                || command == V1_COMMAND_OPEN) {
+                || command == V1_COMMAND_OPEN
+                || command == V1_COMMAND_COPY) {
             // Acknowledge command
             if (!util::socket_write_string(fd, RESPONSE_OK)) {
                 return false;
@@ -298,6 +327,8 @@ static bool connection_version_1(int fd)
             ret = v1_reboot(fd);
         } else if (command == V1_COMMAND_OPEN) {
             ret = v1_open(fd);
+        } else if (command == V1_COMMAND_COPY) {
+            ret = v1_copy(fd);
         }
 
         if (!ret) {
