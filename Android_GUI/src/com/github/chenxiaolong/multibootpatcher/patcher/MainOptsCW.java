@@ -33,22 +33,17 @@ import java.util.ArrayList;
 
 public class MainOptsCW {
     protected static interface MainOptsListener {
-        public void onPatcherSelected(String patcherName);
-
         public void onDeviceSelected(Device device);
     }
 
     private TextView vTitle;
-    private Spinner vPatcherSpinner;
     private Spinner vDeviceSpinner;
 
     private Context mContext;
     private PatcherConfigState mPCS;
     private MainOptsListener mListener;
 
-    private ArrayAdapter<String> mPatcherAdapter;
     private ArrayAdapter<String> mDeviceAdapter;
-    private ArrayList<String> mPatchers = new ArrayList<>();
     private ArrayList<String> mDevices = new ArrayList<>();
 
     public MainOptsCW(Context context, PatcherConfigState pcs, CardView card,
@@ -57,31 +52,9 @@ public class MainOptsCW {
         mPCS = pcs;
         mListener = listener;
         vTitle = (TextView) card.findViewById(R.id.card_title);
-        vPatcherSpinner = (Spinner) card.findViewById(R.id.spinner_patcher);
         vDeviceSpinner = (Spinner) card.findViewById(R.id.spinner_device);
 
-        initPatchers();
         initDevices();
-    }
-
-    private void initPatchers() {
-        mPatcherAdapter = new ArrayAdapter<>(mContext,
-                android.R.layout.simple_spinner_item, android.R.id.text1, mPatchers);
-        mPatcherAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        vPatcherSpinner.setAdapter(mPatcherAdapter);
-
-        vPatcherSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (mListener != null) {
-                    mListener.onPatcherSelected(vPatcherSpinner.getSelectedItem().toString());
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
     }
 
     private void initDevices() {
@@ -104,14 +77,6 @@ public class MainOptsCW {
         });
     }
 
-    public void refreshPatchers() {
-        mPatchers.clear();
-        for (String patcherId : PatcherUtils.sPC.getPatchers()) {
-            mPatchers.add(PatcherUtils.sPC.getPatcherName(patcherId));
-        }
-        mPatcherAdapter.notifyDataSetChanged();
-    }
-
     public void refreshDevices() {
         mDevices.clear();
         for (Device device : PatcherUtils.sPC.getDevices()) {
@@ -130,7 +95,6 @@ public class MainOptsCW {
 
     public void setEnabled(boolean enabled) {
         vTitle.setEnabled(enabled);
-        vPatcherSpinner.setEnabled(enabled);
         vDeviceSpinner.setEnabled(enabled);
     }
 

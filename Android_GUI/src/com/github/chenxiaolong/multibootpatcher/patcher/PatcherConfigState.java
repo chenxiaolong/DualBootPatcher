@@ -40,7 +40,6 @@ public class PatcherConfigState implements Parcelable {
         out.writeInt(mState);
         out.writeString(mFilename);
         out.writeInt(mSupported);
-        writeStringHashMap(out, mReversePatcherMap);
         out.writeParcelable(mPatcher, 0);
         out.writeParcelable(mDevice, 0);
         out.writeParcelableArray(mPatchInfos, 0);
@@ -55,7 +54,6 @@ public class PatcherConfigState implements Parcelable {
         mState = in.readInt();
         mFilename = in.readString();
         mSupported = in.readInt();
-        mReversePatcherMap = readStringHashMap(in);
         mPatcher = in.readParcelable(Patcher.class.getClassLoader());
         mDevice = in.readParcelable(Device.class.getClassLoader());
         mPatchInfos = (PatchInfo[]) in.readParcelableArray(PatchInfo.class.getClassLoader());
@@ -117,12 +115,7 @@ public class PatcherConfigState implements Parcelable {
 
     public void setupInitial() {
         if (!mInitialized) {
-            //mPatcher = PatcherUtils.sPC.createPatcher(DEFAULT_PATCHER);
-
-            for (String patcherId : PatcherUtils.sPC.getPatchers()) {
-                String patcherName = PatcherUtils.sPC.getPatcherName(patcherId);
-                mReversePatcherMap.put(patcherName, patcherId);
-            }
+            mPatcher = PatcherUtils.sPC.createPatcher(DEFAULT_PATCHER);
 
             mDevice = PatcherUtils.sPC.getDevices()[0];
 
@@ -153,8 +146,6 @@ public class PatcherConfigState implements Parcelable {
     // Level of support for the selected file
     public int mSupported;
 
-    // Maps patcher name to patcher ID
-    public HashMap<String, String> mReversePatcherMap = new HashMap<>();
     // Selected patcher
     public Patcher mPatcher;
 

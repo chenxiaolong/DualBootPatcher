@@ -38,12 +38,6 @@
             android:text="@string/devpartconfig_title" />
 
         <Spinner
-            android:id="@+id/spinner_patcher"
-            style="@style/patcher_card_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <Spinner
             android:id="@+id/spinner_device"
             style="@style/patcher_card_spinner"
             android:layout_width="match_parent"

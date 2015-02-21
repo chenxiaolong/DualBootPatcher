@@ -289,7 +289,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private void patcherInitialized() {
         mPCS.setupInitial();
 
-        mMainOptsCW.refreshPatchers();
         mMainOptsCW.refreshDevices();
 
         mPresetCW.refreshPresets();
@@ -407,24 +406,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                 return true;
             }
         });
-    }
-
-    @Override
-    public void onPatcherSelected(String patcherName) {
-        String patcherId = mPCS.mReversePatcherMap.get(patcherName);
-
-        // Destroy the native C object when the patcher is switched
-        if (mPCS.mPatcher != null && !mPCS.mPatcher.getId().equals(patcherId)) {
-            PatcherUtils.sPC.destroyPatcher(mPCS.mPatcher);
-            mPCS.mPatcher = null;
-        }
-
-        if (mPCS.mPatcher == null) {
-            mPCS.mPatcher = PatcherUtils.sPC.createPatcher(patcherId);
-        }
-
-        // Recheck to see if the selected file is supported
-        checkSupported();
     }
 
     @Override
