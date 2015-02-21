@@ -42,6 +42,7 @@ extern "C" {
 #include <loki.h>
 }
 
+#include "lokipatch.h"
 #include "main.h"
 #include "multiboot.h"
 #include "roms.h"
@@ -1316,14 +1317,7 @@ static bool update_binary(void)
 
         // Reloki if needed
         if (was_loki) {
-            if (!util::copy_contents("/dev/block/platform/msm_sdcc.1/by-name/aboot",
-                                     MB_TEMP "/aboot.img")) {
-                ui_print("Failed to copy aboot partition");
-                return ret = false;
-            }
-
-            if (loki_patch("boot", MB_TEMP "/aboot.img",
-                           MB_TEMP "/boot.img", MB_TEMP "/boot.lok") != 0) {
+            if (!loki_patch_file(MB_TEMP "/boot.img", MB_TEMP "/boot.lok")) {
                 ui_print("Failed to run loki");
                 return ret = false;
             }
