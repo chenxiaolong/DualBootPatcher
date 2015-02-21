@@ -57,6 +57,7 @@ public class MbtoolSocket {
     private static final String V1_COMMAND_OPEN = "OPEN";
     private static final String V1_COMMAND_COPY = "COPY";
     private static final String V1_COMMAND_CHMOD = "CHMOD";
+    private static final String V1_COMMAND_LOKI_PATCH = "LOKI_PATCH";
 
     // TODO: Handle numbering for snapshots
     private static final String MINIMUM_VERSION = "8.99.6";
@@ -444,6 +445,33 @@ public class MbtoolSocket {
 
             SocketUtils.writeString(mSocketOS, filename);
             SocketUtils.writeInt32(mSocketOS, mode);
+
+            String response = SocketUtils.readString(mSocketIS);
+            if (response.equals(RESPONSE_FAIL)) {
+                return false;
+            } else if (!response.equals(RESPONSE_SUCCESS)) {
+                throw new IOException("Invalid response: " + response);
+            }
+
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        }
+
+        return false;
+    }
+
+    public boolean lokiPatch(Context context, String source, String target) {
+        if (!connect(context)) {
+            return false;
+        }
+
+        try {
+            sendCommand(V1_COMMAND_LOKI_PATCH);
+
+            SocketUtils.writeString(mSocketOS, source);
+            SocketUtils.writeString(mSocketOS, target);
 
             String response = SocketUtils.readString(mSocketIS);
             if (response.equals(RESPONSE_FAIL)) {
