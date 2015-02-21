@@ -343,8 +343,14 @@ bool mount_fstab(const std::string &fstab_path)
 
 
     // Global app sharing
-    share_app = stat("/data/patcher.share-app", &st) == 0;
-    share_app_asec = stat("/data/patcher.share-app-asec", &st) == 0;
+    std::string share_app_path("/data/media/0/MultiBoot/");
+    std::string share_app_asec_path("/data/media/0/MultiBoot/");
+    share_app_path += rom->id;
+    share_app_asec_path += rom->id;
+    share_app_path += "/share-app";
+    share_app_asec_path += "/share-app-asec";
+    share_app = stat(share_app_path.c_str(), &st) == 0;
+    share_app_asec = stat(share_app_asec_path.c_str(), &st) == 0;
 
     if (share_app || share_app_asec) {
         if (!util::bind_mount("/raw/data/app-lib", 0771,
