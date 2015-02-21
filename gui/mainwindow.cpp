@@ -55,6 +55,8 @@ MainWindow::MainWindow(PatcherConfig *pc, QWidget *parent)
 
     d->pc = pc;
 
+    d->patcher = pc->createPatcher("MultiBootPatcher");
+
     addWidgets();
     setWidgetActions();
     populateWidgets();
@@ -104,25 +106,6 @@ void MainWindow::onDeviceSelected(int index)
     d->device = d->pc->devices()[index];
 
     refreshPresets();
-
-    if (d->state == MainWindowPrivate::FinishedPatching) {
-        d->state = MainWindowPrivate::ChoseFile;
-    }
-
-    checkSupported();
-    updateWidgetsVisibility();
-}
-
-void MainWindow::onPatcherSelected(const QString &patcher)
-{
-    Q_D(MainWindow);
-
-    QString patcherId = d->reversePatcherMap[patcher];
-    if (d->patcher != nullptr) {
-        d->pc->destroyPatcher(d->patcher);
-        d->patcher = nullptr;
-    }
-    d->patcher = d->pc->createPatcher(patcherId.toStdString());
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
         d->state = MainWindowPrivate::ChoseFile;
@@ -220,19 +203,15 @@ void MainWindow::addWidgets()
     d->mainContainer = new QWidget(this);
 
     // Selectors and file chooser
-    d->patcherSel = new QComboBox(d->mainContainer);
     d->deviceSel = new QComboBox(d->mainContainer);
 
     // Labels
     d->deviceLbl = new QLabel(tr("Device:"), d->mainContainer);
-    d->patcherLbl = new QLabel(tr("Patcher:"), d->mainContainer);
 
     QGridLayout *layout = new QGridLayout(d->mainContainer);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(d->deviceLbl, i, 0);
     layout->addWidget(d->deviceSel, i, 1, 1, -1);
-    layout->addWidget(d->patcherLbl, ++i, 0);
-    layout->addWidget(d->patcherSel, i, 1, 1, -1);
 
     // Add items for unsupported files
     d->messageLbl = new QLabel(d->mainContainer);
@@ -366,10 +345,6 @@ void MainWindow::setWidgetActions()
     connect(d->deviceSel, indexChangedInt,
             this, &MainWindow::onDeviceSelected);
 
-    // Patcher
-    connect(d->patcherSel, indexChangedQString,
-            this, &MainWindow::onPatcherSelected);
-
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
             this, &MainWindow::onButtonClicked);
@@ -398,16 +373,6 @@ void MainWindow::populateWidgets()
                 .arg(QString::fromStdString(device->id()))
                 .arg(QString::fromStdString(device->name())));
     }
-
-    // Populate patchers
-    QStringList patcherNames;
-    for (auto const &id : d->pc->patchers()) {
-        QString name = QString::fromStdString(d->pc->patcherName(id));
-        patcherNames << name;
-        d->reversePatcherMap[name] = QString::fromStdString(id);
-    }
-    patcherNames.sort();
-    d->patcherSel->addItems(patcherNames);
 }
 
 void MainWindow::setWidgetDefaults()

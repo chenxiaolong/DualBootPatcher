@@ -63,7 +63,6 @@ public:
     PatcherConfig *pc = nullptr;
 
     // Selected patcher
-    QHash<QString, QString> reversePatcherMap;
     Patcher *patcher = nullptr;
     PatchInfo *patchInfo = nullptr;
 
@@ -95,9 +94,7 @@ public:
 
     // Main widgets
     QLabel *deviceLbl;
-    QLabel *patcherLbl;
     QComboBox *deviceSel;
-    QComboBox *patcherSel;
 
     QLabel *messageLbl;
 

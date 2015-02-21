@@ -49,7 +49,6 @@ signals:
 
 private slots:
     void onDeviceSelected(int index);
-    void onPatcherSelected(const QString &patcher);
     void onButtonClicked(QAbstractButton *button);
 
     // Unsupported files
