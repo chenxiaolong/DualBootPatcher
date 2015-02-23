@@ -30,16 +30,16 @@
         android:padding="@dimen/card_v7_main_content_padding">
 
         <TextView
+            style="@style/card_v7_section_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/devpartconfig_title"
-            android:textColor="#80000000" />
+            android:text="@string/devpartconfig_title" />
 
         <Spinner
             android:id="@+id/spinner_device"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
 
         <LinearLayout
             android:id="@+id/unsupported_container"
@@ -50,24 +50,24 @@
             <!-- Preset -->
 
             <TextView
+                style="@style/card_v7_section_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="@string/preset_title"
-                android:textColor="#80000000" />
+                android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
+                android:text="@string/preset_title" />
 
             <Spinner
                 android:id="@+id/spinner_preset"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
 
             <TextView
                 android:id="@+id/preset_name"
                 style="@style/card_message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
 
             <!-- Custom options -->
 
@@ -78,17 +78,17 @@
                 android:orientation="vertical">
 
                 <TextView
+                    style="@style/card_v7_section_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/customopts_title"
-                    android:textColor="#80000000" />
+                    android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
+                    android:text="@string/customopts_title" />
 
                 <CheckBox
                     android:id="@+id/customopts_devicecheck"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="@dimen/card_v7_normal_view_margin_top"
                     android:text="@string/customopts_devicecheck" />
 
                 <CheckBox
@@ -112,12 +112,12 @@
                     -->
 
                     <TextView
+                        style="@style/card_v7_section_title"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
                         android:labelFor="@+id/customopts_bootimage"
-                        android:text="@string/customopts_bootimage"
-                        android:textColor="#80000000" />
+                        android:text="@string/customopts_bootimage" />
 
                     <!-- Prevent EditText from getting focus -->
 

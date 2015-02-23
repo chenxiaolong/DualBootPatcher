@@ -53,6 +53,8 @@
     <dimen name="card_v7_primary_text_size">20sp</dimen>
     <dimen name="card_v7_secondary_text_size">12sp</dimen>
     <dimen name="card_v7_overflow_button_margins">4dp</dimen>
+    <dimen name="card_v7_normal_view_margin_top">4dp</dimen>
+    <dimen name="card_v7_title_view_margin_top">18dp</dimen>
 
 
 

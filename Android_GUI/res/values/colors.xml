@@ -30,6 +30,8 @@
     <color name="navigation_background">#ffffffff</color>
     <color name="nav_item_text_color">#de000000</color>
 
+    <color name="card_v7_text_color_dim">#80000000</color>
+
     <!-- All caps button -->
     <!-- <color name="all_caps_button_text_color">#ffffffff</color> -->
     <color name="all_caps_button_text_color">#ff000000</color>
