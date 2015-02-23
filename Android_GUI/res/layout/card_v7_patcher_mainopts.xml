@@ -25,22 +25,118 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="@dimen/card_v7_main_content_padding">
 
         <TextView
-            android:id="@+id/card_title"
-            style="@style/card_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="10dp"
-            android:text="@string/devpartconfig_title" />
+            android:text="@string/devpartconfig_title"
+            android:textColor="#80000000" />
 
         <Spinner
             android:id="@+id/spinner_device"
-            style="@style/patcher_card_spinner"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:id="@+id/unsupported_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Preset -->
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="@string/preset_title"
+                android:textColor="#80000000" />
+
+            <Spinner
+                android:id="@+id/spinner_preset"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/preset_name"
+                style="@style/card_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" />
+
+            <!-- Custom options -->
+
+            <LinearLayout
+                android:id="@+id/customopts_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="@string/customopts_title"
+                    android:textColor="#80000000" />
+
+                <CheckBox
+                    android:id="@+id/customopts_devicecheck"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/customopts_devicecheck" />
+
+                <CheckBox
+                    android:id="@+id/customopts_hasbootimage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/customopts_hasbootimage" />
+
+                <LinearLayout
+                    android:id="@+id/customopts_bootimage_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!--
+                    <View
+                        style="@style/separator"
+                        android:layout_marginBottom="@dimen/card_internal_separator_padding"
+                        android:layout_marginTop="@dimen/card_internal_separator_padding" />
+                    -->
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:labelFor="@+id/customopts_bootimage"
+                        android:text="@string/customopts_bootimage"
+                        android:textColor="#80000000" />
+
+                    <!-- Prevent EditText from getting focus -->
+
+                    <LinearLayout
+                        android:id="@+id/customopts_dummylayout"
+                        android:layout_width="0px"
+                        android:layout_height="0px"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:orientation="horizontal" />
+
+                    <EditText
+                        android:id="@+id/customopts_bootimage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/customopts_bootimage_hint"
+                        android:inputType="textNoSuggestions" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </android.support.v7.widget.CardView>

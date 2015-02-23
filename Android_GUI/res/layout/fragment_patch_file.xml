@@ -47,24 +47,6 @@
                 android:layout_marginLeft="@dimen/card_outside_side_padding"
                 android:layout_marginRight="@dimen/card_outside_side_padding" />
 
-            <!-- Cards to configure patcher for unsupported file -->
-
-            <include
-                android:id="@+id/card_preset"
-                layout="@layout/card_v7_patcher_preset"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_outside_side_padding"
-                android:layout_marginRight="@dimen/card_outside_side_padding" />
-
-            <include
-                android:id="@+id/card_customopts"
-                layout="@layout/card_v7_patcher_customopts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_outside_side_padding"
-                android:layout_marginRight="@dimen/card_outside_side_padding" />
-
             <!-- Cards to show patching progress -->
 
             <include

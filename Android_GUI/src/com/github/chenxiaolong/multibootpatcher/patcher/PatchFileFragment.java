@@ -34,23 +34,24 @@ import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 
-import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.multibootpatcher.patcher.MainOptsCW.MainOptsListener;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
-import com.github.chenxiaolong.multibootpatcher.patcher.PresetCW.PresetListener;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
+
+import java.util.ArrayList;
 
 public class PatchFileFragment extends Fragment implements EventCollectorListener,
-        MainOptsListener, PresetListener {
+        MainOptsListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final String EXTRA_CONFIG_STATE = "config_state";
@@ -67,19 +68,17 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     // CardView wrappers
     private MainOptsCW mMainOptsCW;
     private FileChooserCW mFileChooserCW;
-    private PresetCW mPresetCW;
-    private CustomOptsCW mCustomOptsCW;
     private DetailsCW mDetailsCW;
     private ProgressCW mProgressCW;
 
     private CardView mMainOptsCardView;
     private CardView mFileChooserCardView;
-    private CardView mPresetCardView;
-    private CardView mCustomOptsCardView;
     private CardView mDetailsCardView;
     private CardView mProgressCardView;
 
     private PatcherConfigState mPCS;
+
+    private ArrayList<PatcherUIListener> mUIListeners = new ArrayList<>();
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
@@ -113,6 +112,10 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_loading_patch_file);
 
         initCards();
+
+        for (PatcherUIListener listener : mUIListeners) {
+            listener.onCardCreate(savedInstanceState == null);
+        }
     }
 
     @Override
@@ -125,6 +128,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         // Card for selecting the device and partition configuration
         mMainOptsCardView = (CardView) getActivity().findViewById(R.id.card_mainopts);
         mMainOptsCW = new MainOptsCW(getActivity(), mPCS, mMainOptsCardView, this);
+        mUIListeners.add(mMainOptsCW);
     }
 
     private void initFileChooserCard() {
@@ -139,19 +143,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         } else {
             setTapActionChooseFile();
         }
-    }
-
-    private void initPresetCard() {
-        // Card that allows the user to select a preset patchinfo to patch an unsupported file
-        mPresetCardView = (CardView) getActivity().findViewById(R.id.card_preset);
-        mPresetCW = new PresetCW(getActivity(), mPCS, mPresetCardView, this);
-    }
-
-    private void initCustomOptsCard() {
-        // Card that allows the user to manually change the patcher options when patching an
-        // unsupported file
-        mCustomOptsCardView = (CardView) getActivity().findViewById(R.id.card_customopts);
-        mCustomOptsCW = new CustomOptsCW(getActivity(), mPCS, mCustomOptsCardView);
     }
 
     private void initDetailsCard() {
@@ -173,8 +164,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         initMainOptsCard();
         initFileChooserCard();
-        initPresetCard();
-        initCustomOptsCard();
         initDetailsCard();
         initProgressCard();
 
@@ -257,10 +246,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     }
 
     private void updateCardUI() {
-        mMainOptsCW.refreshState();
         mFileChooserCW.refreshState();
-        mPresetCW.refreshState();
-        mCustomOptsCW.refreshState();
         mDetailsCW.refreshState();
         mProgressCW.refreshState();
 
@@ -290,8 +276,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mPCS.setupInitial();
 
         mMainOptsCW.refreshDevices();
-
-        mPresetCW.refreshPresets();
+        mMainOptsCW.refreshPresets();
 
         restoreCardStates();
 
@@ -301,6 +286,11 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
     private void startPatching() {
         mPCS.mState = PatcherConfigState.STATE_PATCHING;
+
+        for (PatcherUIListener listener : mUIListeners) {
+            listener.onStartedPatching();
+        }
+
         updateCardUI();
 
         // Scroll to the bottom
@@ -311,20 +301,20 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             }
         });
 
-        if (mPCS.mSupported == PatcherConfigState.NOT_SUPPORTED) {
+        if (!mPCS.mSupported) {
             if (mPCS.mPatchInfo == null) {
                 mPCS.mPatchInfo = new PatchInfo();
 
                 mPCS.mPatchInfo.addAutoPatcher(PatchInfo.Default(), "StandardPatcher", null);
 
                 mPCS.mPatchInfo.setHasBootImage(PatchInfo.Default(),
-                        mCustomOptsCW.isHasBootImageEnabled());
+                        mMainOptsCW.isHasBootImageEnabled());
 
                 if (mPCS.mPatchInfo.hasBootImage(PatchInfo.Default())) {
                     mPCS.mPatchInfo.setRamdisk(PatchInfo.Default(),
                             mPCS.mDevice.getId() + "/default");
 
-                    String bootImagesText = mCustomOptsCW.getBootImage();
+                    String bootImagesText = mMainOptsCW.getBootImage();
                     if (bootImagesText != null) {
                         String[] bootImages = bootImagesText.split(",");
                         mPCS.mPatchInfo.setBootImages(PatchInfo.Default(), bootImages);
@@ -332,13 +322,13 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                 }
 
                 mPCS.mPatchInfo.setDeviceCheck(PatchInfo.Default(),
-                        mCustomOptsCW.isDeviceCheckEnabled());
+                        mMainOptsCW.isDeviceCheckEnabled());
             }
         }
 
         FileInfo fileInfo = new FileInfo();
         fileInfo.setFilename(mPCS.mFilename);
-        fileInfo.setDevice(mMainOptsCW.getDevice());
+        fileInfo.setDevice(mPCS.mDevice);
         fileInfo.setPatchInfo(mPCS.mPatchInfo);
 
         Context context = getActivity().getApplicationContext();
@@ -358,24 +348,28 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         // Show progress on file chooser card
         mFileChooserCW.setProgressShowing(true);
 
-        mPCS.mSupported = PatcherConfigState.NOT_SUPPORTED;
+        mPCS.mSupported = false;
 
         // If the patcher doesn't use the patchinfo files, then just assume everything is supported.
 
         if (!mPCS.mPatcher.usesPatchInfo()) {
-            mPCS.mSupported |= PatcherConfigState.SUPPORTED_FILE;
+            mPCS.mSupported = true;
         }
 
         // Otherwise, check if it really is supported
         else if ((mPCS.mPatchInfo = PatcherUtils.sPC.findMatchingPatchInfo(
-                mMainOptsCW.getDevice(), mPCS.mFilename)) != null) {
-            mPCS.mSupported |= PatcherConfigState.SUPPORTED_FILE;
+                mPCS.mDevice, mPCS.mFilename)) != null) {
+            mPCS.mSupported = true;
         }
 
         setTapActionPatchFile();
 
         mFileChooserCW.onFileChosen();
         mFileChooserCW.setProgressShowing(false);
+
+        for (PatcherUIListener listener : mUIListeners) {
+            listener.onChoseFile();
+        }
 
         updateCardUI();
     }
@@ -416,14 +410,11 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         checkSupported();
 
         // Reload presets specific to the device
-        mPresetCW.refreshPresets();
+        mMainOptsCW.refreshPresets();
     }
 
     @Override
     public void onPresetSelected(PatchInfo info) {
-        // Disable custom options if a preset is selected
-        mCustomOptsCW.setUsingPreset(info != null);
-
         mPCS.mPatchInfo = info;
     }
 
@@ -445,6 +436,11 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             FinishedPatchingEvent e = (FinishedPatchingEvent) event;
 
             mPCS.mState = PatcherConfigState.STATE_FINISHED;
+
+            for (PatcherUIListener listener : mUIListeners) {
+                listener.onFinishedPatching();
+            }
+
             updateCardUI();
 
             // Update MTP cache
@@ -465,8 +461,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             mFileChooserCW.onFinishedPatching(e.failed, e.message, e.newFile);
 
             // Reset for next round of patching
-            mPresetCW.reset();
-            mCustomOptsCW.reset();
             mDetailsCW.reset();
             mProgressCW.reset();
 

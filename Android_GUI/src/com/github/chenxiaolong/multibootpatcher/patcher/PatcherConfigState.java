@@ -39,7 +39,7 @@ public class PatcherConfigState implements Parcelable {
         out.writeInt(mInitialized ? 1 : 0);
         out.writeInt(mState);
         out.writeString(mFilename);
-        out.writeInt(mSupported);
+        out.writeInt(mSupported ? 1 : 0);
         out.writeParcelable(mPatcher, 0);
         out.writeParcelable(mDevice, 0);
         out.writeParcelableArray(mPatchInfos, 0);
@@ -53,7 +53,7 @@ public class PatcherConfigState implements Parcelable {
         mInitialized = in.readInt() != 0;
         mState = in.readInt();
         mFilename = in.readString();
-        mSupported = in.readInt();
+        mSupported = in.readInt() != 0;
         mPatcher = in.readParcelable(Patcher.class.getClassLoader());
         mDevice = in.readParcelable(Device.class.getClassLoader());
         mPatchInfos = (PatchInfo[]) in.readParcelableArray(PatchInfo.class.getClassLoader());
@@ -127,9 +127,6 @@ public class PatcherConfigState implements Parcelable {
 
     private static final String DEFAULT_PATCHER = "MultiBootPatcher";
 
-    public static final int NOT_SUPPORTED = 0x0;
-    public static final int SUPPORTED_FILE = 0x1;
-
     public static final int STATE_INITIAL = 0;
     public static final int STATE_CHOSE_FILE = 1;
     public static final int STATE_PATCHING = 2;
@@ -144,7 +141,7 @@ public class PatcherConfigState implements Parcelable {
     public String mFilename;
 
     // Level of support for the selected file
-    public int mSupported;
+    public boolean mSupported;
 
     // Selected patcher
     public Patcher mPatcher;

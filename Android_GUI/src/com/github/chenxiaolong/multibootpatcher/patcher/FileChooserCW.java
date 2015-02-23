@@ -82,7 +82,7 @@ public class FileChooserCW {
             int titleId;
             int descId;
 
-            if (mPCS.mSupported != PatcherConfigState.NOT_SUPPORTED) {
+            if (mPCS.mSupported) {
                 titleId = R.string.filechooser_ready_title;
                 descId = R.string.filechooser_ready_desc;
             } else {
