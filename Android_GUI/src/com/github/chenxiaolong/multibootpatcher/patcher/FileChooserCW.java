@@ -26,11 +26,8 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class FileChooserCW {
+public class FileChooserCW implements PatcherUIListener {
     private static final String EXTRA_PROGRESS = "filechooser_progress";
-    private static final String EXTRA_FAILED = "filechooser_failed";
-    private static final String EXTRA_MESSAGE = "filechooser_message";
-    private static final String EXTRA_NEWFILE = "filechooser_newfile";
 
     private CardView vCard;
     private TextView vTitle;
@@ -41,9 +38,6 @@ public class FileChooserCW {
     private PatcherConfigState mPCS;
 
     private boolean mShowProgress;
-    private boolean mFailed;
-    private String mMessage;
-    private String mNewFile;
 
     public FileChooserCW(Context context, PatcherConfigState pcs, CardView card) {
         mContext = context;
@@ -95,28 +89,17 @@ public class FileChooserCW {
             break;
 
         case PatcherConfigState.STATE_FINISHED:
-            if (mFailed) {
+            if (mPCS.mPatcherFailed) {
                 vTitle.setText(R.string.filechooser_failure_title);
                 vMessage.setText(String.format(mContext.getString(R.string
-                        .filechooser_failure_desc), mMessage));
+                        .filechooser_failure_desc), mPCS.mPatcherError));
             } else {
                 vTitle.setText(R.string.filechooser_success_title);
                 vMessage.setText(String.format(mContext.getString(R.string
-                        .filechooser_success_desc), mNewFile));
+                        .filechooser_success_desc), mPCS.mPatcherNewFile));
             }
             break;
         }
-    }
-
-    public void onFileChosen() {
-        displayMessage();
-    }
-
-    public void onFinishedPatching(boolean failed, String message, String newFile) {
-        mFailed = failed;
-        mMessage = message;
-        mNewFile = newFile;
-        displayMessage();
     }
 
     public void setEnabled(boolean enabled) {
@@ -133,21 +116,14 @@ public class FileChooserCW {
 
     public void onSaveInstanceState(Bundle outState) {
         outState.putBoolean(EXTRA_PROGRESS, mShowProgress);
-        outState.putBoolean(EXTRA_FAILED, mFailed);
-        outState.putString(EXTRA_MESSAGE, mMessage);
-        outState.putString(EXTRA_NEWFILE, mNewFile);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         mShowProgress = savedInstanceState.getBoolean(EXTRA_PROGRESS);
-        mFailed = savedInstanceState.getBoolean(EXTRA_FAILED);
-        mMessage = savedInstanceState.getString(EXTRA_MESSAGE);
-        mNewFile = savedInstanceState.getString(EXTRA_NEWFILE);
-
-        displayMessage();
     }
 
-    public void refreshState() {
+    @Override
+    public void onCardCreate(boolean initial) {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
             setEnabled(false);
@@ -159,5 +135,23 @@ public class FileChooserCW {
             setEnabled(true);
             break;
         }
+
+        displayMessage();
+    }
+
+    @Override
+    public void onChoseFile() {
+        displayMessage();
+    }
+
+    @Override
+    public void onStartedPatching() {
+        setEnabled(false);
+    }
+
+    @Override
+    public void onFinishedPatching() {
+        setEnabled(true);
+        displayMessage();
     }
 }

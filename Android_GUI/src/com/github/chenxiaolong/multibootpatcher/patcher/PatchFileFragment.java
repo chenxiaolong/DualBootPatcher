@@ -143,6 +143,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         } else {
             setTapActionChooseFile();
         }
+
+        mUIListeners.add(mFileChooserCW);
     }
 
     private void initDetailsCard() {
@@ -246,7 +248,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     }
 
     private void updateCardUI() {
-        mFileChooserCW.refreshState();
         mDetailsCW.refreshState();
         mProgressCW.refreshState();
 
@@ -364,7 +365,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         setTapActionPatchFile();
 
-        mFileChooserCW.onFileChosen();
         mFileChooserCW.setProgressShowing(false);
 
         for (PatcherUIListener listener : mUIListeners) {
@@ -435,6 +435,10 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         } else if (event instanceof FinishedPatchingEvent) {
             FinishedPatchingEvent e = (FinishedPatchingEvent) event;
 
+            mPCS.mPatcherFailed = e.failed;
+            mPCS.mPatcherError = e.message;
+            mPCS.mPatcherNewFile = e.newFile;
+
             mPCS.mState = PatcherConfigState.STATE_FINISHED;
 
             for (PatcherUIListener listener : mUIListeners) {
@@ -456,9 +460,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                     mScrollView.fullScroll(View.FOCUS_UP);
                 }
             });
-
-            // Display message
-            mFileChooserCW.onFinishedPatching(e.failed, e.message, e.newFile);
 
             // Reset for next round of patching
             mDetailsCW.reset();
