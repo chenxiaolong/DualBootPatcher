@@ -159,6 +159,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         // the compression part though, since that takes the longest)
         mProgressCardView = (CardView) getActivity().findViewById(R.id.card_progress);
         mProgressCW = new ProgressCW(getActivity(), mPCS, mProgressCardView);
+        mUIListeners.add(mProgressCW);
     }
 
     private void initCards() {
@@ -186,10 +187,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private void restoreCardStates() {
         for (PatcherUIListener listener : mUIListeners) {
             listener.onRestoreCardState(mSavedInstanceState);
-        }
-
-        if (mSavedInstanceState != null) {
-            mProgressCW.onRestoreInstanceState(mSavedInstanceState);
         }
     }
 
@@ -238,8 +235,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         for (PatcherUIListener listener : mUIListeners) {
             listener.onSaveCardState(outState);
         }
-
-        mProgressCW.onSaveInstanceState(outState);
     }
 
     private void updateMainUI() {
@@ -253,8 +248,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     }
 
     private void updateCardUI() {
-        mProgressCW.refreshState();
-
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
             // Keep screen on
@@ -464,9 +457,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                     mScrollView.fullScroll(View.FOCUS_UP);
                 }
             });
-
-            // Reset for next round of patching
-            mProgressCW.reset();
 
             // Tap to choose the next file
             setTapActionChooseFile();

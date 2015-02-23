@@ -26,7 +26,7 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class ProgressCW {
+public class ProgressCW implements PatcherUIListener {
     private static final String EXTRA_PROGRESS_MAX = "progress_max";
     private static final String EXTRA_PROGRESS_CURRENT = "progress_current";
 
@@ -49,8 +49,6 @@ public class ProgressCW {
         vPercentage = (TextView) card.findViewById(R.id.progress_percentage);
         vFiles = (TextView) card.findViewById(R.id.progress_files);
         vProgress = (ProgressBar) card.findViewById(R.id.progress_bar);
-
-        updateProgress();
     }
 
     private void updateProgress() {
@@ -82,24 +80,8 @@ public class ProgressCW {
         updateProgress();
     }
 
-    public void reset() {
-        mCurProgress = 0;
-        mMaxProgress = 0;
-        updateProgress();
-    }
-
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putInt(EXTRA_PROGRESS_MAX, mMaxProgress);
-        outState.putInt(EXTRA_PROGRESS_CURRENT, mCurProgress);
-    }
-
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mMaxProgress = savedInstanceState.getInt(EXTRA_PROGRESS_MAX);
-        mCurProgress = savedInstanceState.getInt(EXTRA_PROGRESS_CURRENT);
-        updateProgress();
-    }
-
-    public void refreshState() {
+    @Override
+    public void onCardCreate() {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
             vCard.setVisibility(View.VISIBLE);
@@ -111,5 +93,40 @@ public class ProgressCW {
             vCard.setVisibility(View.GONE);
             break;
         }
+
+        updateProgress();
+    }
+
+    @Override
+    public void onRestoreCardState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            mMaxProgress = savedInstanceState.getInt(EXTRA_PROGRESS_MAX);
+            mCurProgress = savedInstanceState.getInt(EXTRA_PROGRESS_CURRENT);
+            updateProgress();
+        }
+    }
+
+    @Override
+    public void onSaveCardState(Bundle outState) {
+        outState.putInt(EXTRA_PROGRESS_MAX, mMaxProgress);
+        outState.putInt(EXTRA_PROGRESS_CURRENT, mCurProgress);
+    }
+
+    @Override
+    public void onChoseFile() {
+    }
+
+    @Override
+    public void onStartedPatching() {
+        vCard.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onFinishedPatching() {
+        vCard.setVisibility(View.GONE);
+
+        mCurProgress = 0;
+        mMaxProgress = 0;
+        updateProgress();
     }
 }
