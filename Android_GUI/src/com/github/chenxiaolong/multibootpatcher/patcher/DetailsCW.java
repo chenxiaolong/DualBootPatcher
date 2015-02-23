@@ -24,7 +24,7 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class DetailsCW {
+public class DetailsCW implements PatcherUIListener {
     private static final String EXTRA_DETAILS_TEXT = "details_text";
 
     private CardView vCard;
@@ -39,10 +39,6 @@ public class DetailsCW {
 
         vCard = card;
         vDetails = (TextView) card.findViewById(R.id.details_text);
-
-        if (mText != null) {
-            vDetails.setText(mText);
-        }
     }
 
     public void setDetails(String text) {
@@ -50,21 +46,8 @@ public class DetailsCW {
         vDetails.setText(text);
     }
 
-    public void reset() {
-        mText = "";
-        vDetails.setText("");
-    }
-
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putString(EXTRA_DETAILS_TEXT, mText);
-    }
-
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mText = savedInstanceState.getString(EXTRA_DETAILS_TEXT);
-        vDetails.setText(mText);
-    }
-
-    public void refreshState() {
+    @Override
+    public void onCardCreate() {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
             vCard.setVisibility(View.VISIBLE);
@@ -76,5 +59,36 @@ public class DetailsCW {
             vCard.setVisibility(View.GONE);
             break;
         }
+    }
+
+    @Override
+    public void onRestoreCardState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            mText = savedInstanceState.getString(EXTRA_DETAILS_TEXT);
+            vDetails.setText(mText);
+        }
+    }
+
+    @Override
+    public void onSaveCardState(Bundle outState) {
+        outState.putString(EXTRA_DETAILS_TEXT, mText);
+    }
+
+    @Override
+    public void onChoseFile() {
+    }
+
+    @Override
+    public void onStartedPatching() {
+        vCard.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onFinishedPatching() {
+        vCard.setVisibility(View.GONE);
+
+        // Reset views
+        mText = "";
+        vDetails.setText("");
     }
 }

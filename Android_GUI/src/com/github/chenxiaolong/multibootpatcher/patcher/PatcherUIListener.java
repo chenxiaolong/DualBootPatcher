@@ -17,8 +17,14 @@
 
 package com.github.chenxiaolong.multibootpatcher.patcher;
 
+import android.os.Bundle;
+
 public interface PatcherUIListener {
-    public void onCardCreate(boolean initial);
+    public void onCardCreate();
+
+    public void onRestoreCardState(Bundle savedInstanceState);
+
+    public void onSaveCardState(Bundle outState);
 
     public void onChoseFile();
 

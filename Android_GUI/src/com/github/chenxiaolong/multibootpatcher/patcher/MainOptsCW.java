@@ -22,6 +22,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.view.KeyEvent;
 import android.view.View;
@@ -163,7 +164,7 @@ public class MainOptsCW implements PatcherUIListener {
     }
 
     @Override
-    public void onCardCreate(boolean initial) {
+    public void onCardCreate() {
         // Must rebuild from the saved state
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_INITIAL:
@@ -201,6 +202,14 @@ public class MainOptsCW implements PatcherUIListener {
 
             break;
         }
+    }
+
+    @Override
+    public void onRestoreCardState(Bundle savedInstanceState) {
+    }
+
+    @Override
+    public void onSaveCardState(Bundle outState) {
     }
 
     @Override

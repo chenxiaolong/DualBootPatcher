@@ -114,16 +114,8 @@ public class FileChooserCW implements PatcherUIListener {
         displayProgress();
     }
 
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putBoolean(EXTRA_PROGRESS, mShowProgress);
-    }
-
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        mShowProgress = savedInstanceState.getBoolean(EXTRA_PROGRESS);
-    }
-
     @Override
-    public void onCardCreate(boolean initial) {
+    public void onCardCreate() {
         switch (mPCS.mState) {
         case PatcherConfigState.STATE_PATCHING:
             setEnabled(false);
@@ -137,6 +129,18 @@ public class FileChooserCW implements PatcherUIListener {
         }
 
         displayMessage();
+    }
+
+    @Override
+    public void onRestoreCardState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            mShowProgress = savedInstanceState.getBoolean(EXTRA_PROGRESS);
+        }
+    }
+
+    @Override
+    public void onSaveCardState(Bundle outState) {
+        outState.putBoolean(EXTRA_PROGRESS, mShowProgress);
     }
 
     @Override

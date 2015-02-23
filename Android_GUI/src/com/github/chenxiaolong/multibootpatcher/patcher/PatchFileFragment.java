@@ -114,7 +114,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         initCards();
 
         for (PatcherUIListener listener : mUIListeners) {
-            listener.onCardCreate(savedInstanceState == null);
+            listener.onCardCreate();
         }
     }
 
@@ -151,6 +151,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         // Card to show patching details
         mDetailsCardView = (CardView) getActivity().findViewById(R.id.card_details);
         mDetailsCW = new DetailsCW(mPCS, mDetailsCardView);
+        mUIListeners.add(mDetailsCW);
     }
 
     private void initProgressCard() {
@@ -183,9 +184,11 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     }
 
     private void restoreCardStates() {
+        for (PatcherUIListener listener : mUIListeners) {
+            listener.onRestoreCardState(mSavedInstanceState);
+        }
+
         if (mSavedInstanceState != null) {
-            mFileChooserCW.onRestoreInstanceState(mSavedInstanceState);
-            mDetailsCW.onRestoreInstanceState(mSavedInstanceState);
             mProgressCW.onRestoreInstanceState(mSavedInstanceState);
         }
     }
@@ -232,8 +235,10 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         outState.putParcelable(EXTRA_CONFIG_STATE, mPCS);
 
-        mFileChooserCW.onSaveInstanceState(outState);
-        mDetailsCW.onSaveInstanceState(outState);
+        for (PatcherUIListener listener : mUIListeners) {
+            listener.onSaveCardState(outState);
+        }
+
         mProgressCW.onSaveInstanceState(outState);
     }
 
@@ -248,7 +253,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     }
 
     private void updateCardUI() {
-        mDetailsCW.refreshState();
         mProgressCW.refreshState();
 
         switch (mPCS.mState) {
@@ -462,7 +466,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             });
 
             // Reset for next round of patching
-            mDetailsCW.reset();
             mProgressCW.reset();
 
             // Tap to choose the next file
