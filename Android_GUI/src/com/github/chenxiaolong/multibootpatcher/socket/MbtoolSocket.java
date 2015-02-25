@@ -194,13 +194,12 @@ public class MbtoolSocket {
         String mbtool = PatcherUtils.getTargetDirectory(context)
                 + "/binaries/android/" + abi + "/mbtool";
 
-        CommandUtils.runRootCommand("mount -o remount,rw /");
-        CommandUtils.runRootCommand("stop mbtooldaemon");
-        boolean ret = CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0;
-        CommandUtils.runRootCommand("start mbtooldaemon");
-        CommandUtils.runRootCommand("mount -o remount,ro /");
-
-        return ret;
+        return CommandUtils.runRootCommand("mount -o remount,rw /") == 0
+                && CommandUtils.runRootCommand("stop mbtooldaemon") == 0
+                && CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
+                && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
+                && CommandUtils.runRootCommand("start mbtooldaemon") == 0
+                && CommandUtils.runRootCommand("mount -o remount,ro /") == 0;
     }
 
     public void disconnect() {
