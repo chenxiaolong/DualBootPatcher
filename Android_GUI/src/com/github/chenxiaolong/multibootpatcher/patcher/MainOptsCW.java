@@ -19,6 +19,7 @@ package com.github.chenxiaolong.multibootpatcher.patcher;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
@@ -172,6 +173,9 @@ public class MainOptsCW implements PatcherUIListener {
             // Don't show unsupported file options initially or when patching is finished
             collapseUnsupportedOpts();
 
+            // Don't show preset name by default
+            vPresetName.setVisibility(View.GONE);
+
             // But when we're finished, make sure views are re-enabled
             if (mPCS.mState == PatcherConfigState.STATE_FINISHED) {
                 setEnabled(true);
@@ -270,7 +274,7 @@ public class MainOptsCW implements PatcherUIListener {
      */
     private void onPresetSelected(int position) {
         if (position == 0) {
-            vPresetName.setText(mContext.getString(R.string.preset_custom_desc));
+            //vPresetName.setText(mContext.getString(R.string.preset_custom_desc));
             animateExpandCustomOpts();
         } else {
             vPresetName.setText(mPCS.mPatchInfos[position - 1].getName());
@@ -317,21 +321,25 @@ public class MainOptsCW implements PatcherUIListener {
     /**
      * Create an Animator that expands a ViewGroup. When the Animator starts, the visibility of the
      * ViewGroup will be set to View.VISIBLE and the layout height will grow from 0px to the
-     * measured height, as determined by measureView() and vg.getMeasuredHeight(). When the Animator
-     * completes, the layout height mode will be set to wrap_content.
+     * measured height, as determined by measureView() and view.getMeasuredHeight(). When the
+     * Animator completes, the layout height mode will be set to wrap_content.
      *
-     * @param vg ViewGroup to expand
+     * @param view View to expand
      * @return Animator object
      */
-    private static Animator createExpandLayoutAnimator(final ViewGroup vg) {
-        measureView(vg);
+    private static Animator createExpandLayoutAnimator(final View view) {
+        measureView(view);
 
-        vg.setVisibility(View.VISIBLE);
-        Animator animator = createHeightAnimator(vg, 0, vg.getMeasuredHeight());
+        Animator animator = createHeightAnimator(view, 0, view.getMeasuredHeight());
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
+            public void onAnimationStart(Animator animation) {
+                view.setVisibility(View.VISIBLE);
+            }
+
+            @Override
             public void onAnimationEnd(Animator animation) {
-                setHeightWrapContent(vg);
+                setHeightWrapContent(view);
             }
         });
 
@@ -343,17 +351,17 @@ public class MainOptsCW implements PatcherUIListener {
      * of the ViewGroup will be set to View.GONE and the layout height mode will be set to
      * wrap_content.
      *
-     * @param vg ViewGroup to collapse
+     * @param view View to collapse
      * @return Animator object
      */
-    private static Animator createCollapseLayoutAnimator(final ViewGroup vg) {
-        ValueAnimator animator = createHeightAnimator(vg, vg.getHeight(), 0);
+    private static Animator createCollapseLayoutAnimator(final View view) {
+        ValueAnimator animator = createHeightAnimator(view, view.getHeight(), 0);
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                vg.setVisibility(View.GONE);
+                view.setVisibility(View.GONE);
 
-                setHeightWrapContent(vg);
+                setHeightWrapContent(view);
             }
         });
         return animator;
@@ -411,6 +419,7 @@ public class MainOptsCW implements PatcherUIListener {
      */
     private void expandCustomOpts() {
         vCustomOptsContainer.setVisibility(View.VISIBLE);
+        vPresetName.setVisibility(View.GONE);
     }
 
     /**
@@ -419,6 +428,7 @@ public class MainOptsCW implements PatcherUIListener {
      */
     private void collapseCustomOpts() {
         vCustomOptsContainer.setVisibility(View.GONE);
+        vPresetName.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -432,8 +442,11 @@ public class MainOptsCW implements PatcherUIListener {
             return;
         }
 
-        Animator animator = createExpandLayoutAnimator(vCustomOptsContainer);
-        animator.start();
+        Animator animator = createCollapseLayoutAnimator(vPresetName);
+        Animator animator2 = createExpandLayoutAnimator(vCustomOptsContainer);
+        AnimatorSet set = new AnimatorSet();
+        set.play(animator2).after(animator);
+        set.start();
     }
 
     /**
@@ -448,7 +461,10 @@ public class MainOptsCW implements PatcherUIListener {
         }
 
         Animator animator = createCollapseLayoutAnimator(vCustomOptsContainer);
-        animator.start();
+        Animator animator2 = createExpandLayoutAnimator(vPresetName);
+        AnimatorSet set = new AnimatorSet();
+        set.play(animator2).after(animator);
+        set.start();
     }
 
     /**
@@ -511,12 +527,12 @@ public class MainOptsCW implements PatcherUIListener {
     /**
      * Set a layout's height param to wrap_content.
      *
-     * @param vg ViewGroup/layout
+     * @param view ViewGroup/layout
      */
-    private static void setHeightWrapContent(ViewGroup vg) {
-        LayoutParams params = vg.getLayoutParams();
+    private static void setHeightWrapContent(View view) {
+        LayoutParams params = view.getLayoutParams();
         params.height = LayoutParams.WRAP_CONTENT;
-        vg.setLayoutParams(params);
+        view.setLayoutParams(params);
     }
 
     /**
