@@ -555,7 +555,7 @@ static bool run_daemon(void)
         } else if (child_pid == 0) {
             bool ret = client_connection(client_fd);
             close(client_fd);
-            exit(ret ? 0 : 1);
+            _exit(ret ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         close(client_fd);
     }
@@ -568,29 +568,59 @@ static bool run_daemon(void)
     return true;
 }
 
-static bool run_daemon_fork(void)
+__attribute__((noreturn))
+static void run_daemon_fork(void)
 {
-    pid_t first, second;
-    int status;
-    if ((first = fork()) >= 0) {
-        if (first == 0) {
-            if ((second = fork()) >= 0) {
-                if (second == 0) {
-                    run_daemon();
-                }
-                exit(EXIT_SUCCESS);
-            } else {
-                LOGE("Failed to fork");
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            first = waitpid(first, &status, 0);
-        }
-    } else {
-        LOGE("Failed to fork");
+    pid_t pid = fork();
+    if (pid < 0) {
+        LOGE("Failed to fork: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        _exit(EXIT_SUCCESS);
     }
 
-    return first == -1 ? false : true;
+    if (setsid() < 0) {
+        LOGE("Failed to become session leader: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+
+    signal(SIGHUP, SIG_IGN);
+
+    pid = fork();
+    if (pid < 0) {
+        LOGE("Failed to fork: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        _exit(EXIT_SUCCESS);
+    }
+
+    if (chdir("/") < 0) {
+        LOGE("Failed to change cwd to /: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+
+    umask(0);
+
+    LOGD("Started daemon in background");
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+    if (open("/dev/null", O_RDONLY) < 0) {
+        LOGE("Failed to reopen stdin: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+    if (open("/dev/null",O_WRONLY) == -1) {
+        LOGE("Failed to reopen stdout: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+    if (open("/dev/null",O_RDWR) == -1) {
+        LOGE("Failed to reopen stderr: {}", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+
+    run_daemon();
+    exit(EXIT_SUCCESS);
 }
 
 static void daemon_usage(int error)
@@ -670,7 +700,7 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (fork_flag) {
-        return run_daemon_fork() ? EXIT_SUCCESS : EXIT_FAILURE;
+        run_daemon_fork();
     } else {
         return run_daemon() ? EXIT_SUCCESS : EXIT_FAILURE;
     }
