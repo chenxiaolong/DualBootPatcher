@@ -31,6 +31,7 @@ import java.util.Map;
 // NOTE: Almost no checking of parameters is performed on both the Java and C side of this native
 //       wrapper. As a rule of thumb, don't pass null to any function.
 
+@SuppressWarnings("unused")
 public class LibMbp {
     /** Log (almost) all native method calls and their parameters */
     private static final boolean DEBUG = false;
@@ -340,7 +341,7 @@ public class LibMbp {
     }
 
     public static class BootImage implements Parcelable {
-        private static HashMap<CBootImage, Integer> sInstances = new HashMap<CBootImage, Integer>();
+        private static final HashMap<CBootImage, Integer> sInstances = new HashMap<>();
         private CBootImage mCBootImage;
 
         public BootImage() {
@@ -378,8 +379,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CBootImage getPointer() {
@@ -674,7 +676,7 @@ public class LibMbp {
     }
 
     public static class CpioFile implements Parcelable {
-        private static HashMap<CCpioFile, Integer> sInstances = new HashMap<CCpioFile, Integer>();
+        private static final HashMap<CCpioFile, Integer> sInstances = new HashMap<>();
         private CCpioFile mCCpioFile;
 
         public CpioFile() {
@@ -712,8 +714,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CCpioFile getPointer() {
@@ -868,7 +871,7 @@ public class LibMbp {
     }
 
     public static class Device implements Parcelable {
-        private static HashMap<CDevice, Integer> sInstances = new HashMap<CDevice, Integer>();
+        private static final HashMap<CDevice, Integer> sInstances = new HashMap<>();
         private CDevice mCDevice;
         private boolean mDestroyable;
 
@@ -909,8 +912,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CDevice getPointer() {
@@ -1071,7 +1075,7 @@ public class LibMbp {
     }
 
     public static class FileInfo implements Parcelable {
-        private static HashMap<CFileInfo, Integer> sInstances = new HashMap<CFileInfo, Integer>();
+        private static final HashMap<CFileInfo, Integer> sInstances = new HashMap<>();
         private CFileInfo mCFileInfo;
 
         public FileInfo() {
@@ -1109,8 +1113,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CFileInfo getPointer() {
@@ -1191,8 +1196,7 @@ public class LibMbp {
     }
 
     public static class PatcherConfig implements Parcelable {
-        private static HashMap<CPatcherConfig, Integer> sInstances =
-                new HashMap<CPatcherConfig, Integer>();
+        private static final HashMap<CPatcherConfig, Integer> sInstances = new HashMap<>();
         private CPatcherConfig mCPatcherConfig;
 
         public PatcherConfig() {
@@ -1231,8 +1235,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CPatcherConfig getPointer() {
@@ -1492,8 +1497,7 @@ public class LibMbp {
             public static int APPLY_PATCH_FILE_ERROR = 28;
         }
 
-        private static HashMap<CPatcherError, Integer> sInstances =
-                new HashMap<CPatcherError, Integer>();
+        private static final HashMap<CPatcherError, Integer> sInstances = new HashMap<>();
         private CPatcherError mCPatcherError;
 
         PatcherError(CPatcherError cPatcherError) {
@@ -1524,8 +1528,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CPatcherError getPointer() {
@@ -1589,7 +1594,7 @@ public class LibMbp {
     }
 
     public static class PatchInfo implements Parcelable {
-        private static HashMap<CPatchInfo, Integer> sInstances = new HashMap<CPatchInfo, Integer>();
+        private static final HashMap<CPatchInfo, Integer> sInstances = new HashMap<>();
         private CPatchInfo mCPatchInfo;
         private boolean mDestroyable;
 
@@ -1631,8 +1636,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CPatchInfo getPointer() {
@@ -1879,7 +1885,7 @@ public class LibMbp {
     }
 
     public static class StringMap implements Parcelable {
-        private static HashMap<CStringMap, Integer> sInstances = new HashMap<CStringMap, Integer>();
+        private static final HashMap<CStringMap, Integer> sInstances = new HashMap<>();
         private CStringMap mCStringMap;
 
         public StringMap() {
@@ -1916,8 +1922,9 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() {
+        public void finalize() throws Throwable {
             destroy();
+            super.finalize();
         }
 
         CStringMap getPointer() {
@@ -1959,7 +1966,7 @@ public class LibMbp {
 
         public HashMap<String, String> getHashMap() {
             log(mCStringMap, StringMap.class, "getHashMap");
-            HashMap<String, String> map = new HashMap<String, String>();
+            HashMap<String, String> map = new HashMap<>();
             Pointer pKeys = CWrapper.mbp_stringmap_keys(mCStringMap);
             String[] keys = getStringArrayAndFree(pKeys);
             for (String key : keys) {
