@@ -38,6 +38,12 @@ if [ ! -d "${name}" ]; then
     tar xvf "${tar}"
 fi
 
+pushd "${name}"
+sed -i '/AC_FUNC_MALLOC/d' configure.ac
+sed -i '/AC_FUNC_REALLOC/d' configure.ac
+autoreconf -vfi
+popd
+
 build_procps() {
     local arch="${1}"
     local toolchain="${2}"
