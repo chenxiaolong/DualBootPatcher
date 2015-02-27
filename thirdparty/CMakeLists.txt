@@ -239,7 +239,7 @@ file(
     DOWNLOAD
     ${URL_BASE}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-    EXPECTED_MD5 dae3e5d74327c7d87726197ce0c58b5e
+    EXPECTED_MD5 38489848300b3ac68297142ae943cfb5
     SHOW_PROGRESS
 )
 
