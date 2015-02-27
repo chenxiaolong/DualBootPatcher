@@ -43,7 +43,8 @@ public:
 static const std::string MbtoolDaemonService
         = "\nservice mbtooldaemon /mbtool daemon\n"
         "    class main\n"
-        "    user root\n";
+        "    user root\n"
+        "    oneshot\n";
 
 static const std::string DataMediaContext =
         "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
