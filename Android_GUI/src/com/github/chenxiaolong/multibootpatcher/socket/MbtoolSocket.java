@@ -195,11 +195,10 @@ public class MbtoolSocket {
                 + "/binaries/android/" + abi + "/mbtool";
 
         return CommandUtils.runRootCommand("mount -o remount,rw /") == 0
-                && CommandUtils.runRootCommand("stop mbtooldaemon") == 0
                 && CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
                 && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
-                && CommandUtils.runRootCommand("start mbtooldaemon") == 0
-                && CommandUtils.runRootCommand("mount -o remount,ro /") == 0;
+                && CommandUtils.runRootCommand("mount -o remount,ro /") == 0
+                && CommandUtils.runRootCommand("/mbtool daemon --replace --daemonize") == 0;
     }
 
     public void disconnect() {
