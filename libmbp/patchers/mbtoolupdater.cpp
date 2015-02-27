@@ -31,6 +31,7 @@
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
+#include "private/regex.h"
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
@@ -185,18 +186,28 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     std::vector<std::string> lines;
     boost::split(lines, strContents, boost::is_any_of("\n"));
 
-    bool hasMbtoolDaemon = false;
+    MBP_regex whitespace("^\\s$");
+    bool insideService = false;
 
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::starts_with(*it, "service")
-                && it->find("mbtooldaemon") != std::string::npos) {
-            hasMbtoolDaemon = true;
-            break;
+    // Remove old mbtooldaemon service definition
+    for (auto it = lines.begin(); it != lines.end();) {
+        if (boost::starts_with(*it, "service")) {
+            insideService = it->find("mbtooldaemon") != std::string::npos;
+        } else if (insideService && MBP_regex_search(*it, whitespace)) {
+            insideService = false;
+        }
+
+        if (insideService) {
+            it = lines.erase(it);
+        } else {
+            ++it;
         }
     }
 
-    if (!hasMbtoolDaemon) {
-        CoreRamdiskPatcher crp(pc, info, cpio);
-        crp.addDaemonService();
-    }
+    strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    cpio->setContents("init.rc", std::move(contents));
+
+    CoreRamdiskPatcher crp(pc, info, cpio);
+    crp.addDaemonService();
 }
