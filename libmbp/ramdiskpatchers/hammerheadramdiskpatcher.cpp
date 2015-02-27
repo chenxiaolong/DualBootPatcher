@@ -23,6 +23,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class HammerheadBaseRamdiskPatcher::Impl
 {
@@ -92,4 +95,6 @@ bool HammerheadDefaultRamdiskPatcher::patchRamdisk()
     }
 
     return true;
+}
+
 }

@@ -22,11 +22,14 @@
 #include <cassert>
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class PatcherError::Impl {
 public:
-    MBP::ErrorType errorType;
-    MBP::ErrorCode errorCode;
+    ErrorType errorType;
+    ErrorCode errorCode;
 
     // Patcher creation error
     std::string patcherId;
@@ -47,8 +50,8 @@ public:
 
 PatcherError::PatcherError() : m_impl(new Impl())
 {
-    m_impl->errorType = MBP::ErrorType::GenericError;
-    m_impl->errorCode = MBP::ErrorCode::NoError;
+    m_impl->errorType = ErrorType::GenericError;
+    m_impl->errorCode = ErrorCode::NoError;
 }
 
 PatcherError::PatcherError(const PatcherError &error) : m_impl(error.m_impl)
@@ -59,7 +62,7 @@ PatcherError::PatcherError(PatcherError &&error) : m_impl(std::move(error.m_impl
 {
 }
 
-PatcherError::PatcherError(MBP::ErrorType errorType, MBP::ErrorCode errorCode)
+PatcherError::PatcherError(ErrorType errorType, ErrorCode errorCode)
     : m_impl(new Impl())
 {
     m_impl->errorType = errorType;
@@ -83,183 +86,183 @@ PatcherError & PatcherError::operator=(PatcherError &&other)
 }
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createGenericError(MBP::ErrorCode error)
+PatcherError PatcherError::createGenericError(ErrorCode error)
 {
     switch (error) {
-    case MBP::ErrorCode::NoError:
-    //case MBP::ErrorCode::CustomError:
-    case MBP::ErrorCode::UnknownError:
+    case ErrorCode::NoError:
+    //case ErrorCode::CustomError:
+    case ErrorCode::UnknownError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::GenericError, error);
+    PatcherError pe(ErrorType::GenericError, error);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createPatcherCreationError(MBP::ErrorCode error,
+PatcherError PatcherError::createPatcherCreationError(ErrorCode error,
                                                       std::string name)
 {
     switch (error) {
-    case MBP::ErrorCode::PatcherCreateError:
-    case MBP::ErrorCode::AutoPatcherCreateError:
-    case MBP::ErrorCode::RamdiskPatcherCreateError:
+    case ErrorCode::PatcherCreateError:
+    case ErrorCode::AutoPatcherCreateError:
+    case ErrorCode::RamdiskPatcherCreateError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::PatcherCreationError, error);
+    PatcherError pe(ErrorType::PatcherCreationError, error);
     pe.m_impl->patcherId = std::move(name);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createIOError(MBP::ErrorCode error,
+PatcherError PatcherError::createIOError(ErrorCode error,
                                          std::string filename)
 {
     switch (error) {
-    case MBP::ErrorCode::FileOpenError:
-    case MBP::ErrorCode::FileReadError:
-    case MBP::ErrorCode::FileWriteError:
-    case MBP::ErrorCode::DirectoryNotExistError:
+    case ErrorCode::FileOpenError:
+    case ErrorCode::FileReadError:
+    case ErrorCode::FileWriteError:
+    case ErrorCode::DirectoryNotExistError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::IOError, error);
+    PatcherError pe(ErrorType::IOError, error);
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createBootImageError(MBP::ErrorCode error)
+PatcherError PatcherError::createBootImageError(ErrorCode error)
 {
     switch (error) {
-    case MBP::ErrorCode::BootImageSmallerThanHeaderError:
-    case MBP::ErrorCode::BootImageNoAndroidHeaderError:
-    case MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError:
-    case MBP::ErrorCode::BootImageNoRamdiskAddressError:
+    case ErrorCode::BootImageSmallerThanHeaderError:
+    case ErrorCode::BootImageNoAndroidHeaderError:
+    case ErrorCode::BootImageNoRamdiskGzipHeaderError:
+    case ErrorCode::BootImageNoRamdiskAddressError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::BootImageError, error);
+    PatcherError pe(ErrorType::BootImageError, error);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createCpioError(MBP::ErrorCode error,
+PatcherError PatcherError::createCpioError(ErrorCode error,
                                            std::string filename)
 {
     switch (error) {
-    case MBP::ErrorCode::CpioFileAlreadyExistsError:
-    case MBP::ErrorCode::CpioFileNotExistError:
+    case ErrorCode::CpioFileAlreadyExistsError:
+    case ErrorCode::CpioFileNotExistError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::CpioError, error);
+    PatcherError pe(ErrorType::CpioError, error);
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createArchiveError(MBP::ErrorCode error,
+PatcherError PatcherError::createArchiveError(ErrorCode error,
                                               std::string filename)
 {
     switch (error) {
-    case MBP::ErrorCode::ArchiveReadOpenError:
-    case MBP::ErrorCode::ArchiveReadDataError:
-    case MBP::ErrorCode::ArchiveReadHeaderError:
-    case MBP::ErrorCode::ArchiveWriteOpenError:
-    case MBP::ErrorCode::ArchiveWriteDataError:
-    case MBP::ErrorCode::ArchiveWriteHeaderError:
-    case MBP::ErrorCode::ArchiveCloseError:
-    case MBP::ErrorCode::ArchiveFreeError:
+    case ErrorCode::ArchiveReadOpenError:
+    case ErrorCode::ArchiveReadDataError:
+    case ErrorCode::ArchiveReadHeaderError:
+    case ErrorCode::ArchiveWriteOpenError:
+    case ErrorCode::ArchiveWriteDataError:
+    case ErrorCode::ArchiveWriteHeaderError:
+    case ErrorCode::ArchiveCloseError:
+    case ErrorCode::ArchiveFreeError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::ArchiveError, error);
+    PatcherError pe(ErrorType::ArchiveError, error);
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createXmlError(MBP::ErrorCode error,
+PatcherError PatcherError::createXmlError(ErrorCode error,
                                           std::string filename)
 {
     switch (error) {
-    case MBP::ErrorCode::XmlParseFileError:
+    case ErrorCode::XmlParseFileError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::XmlError, error);
+    PatcherError pe(ErrorType::XmlError, error);
     pe.m_impl->filename = std::move(filename);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createSupportedFileError(MBP::ErrorCode error,
+PatcherError PatcherError::createSupportedFileError(ErrorCode error,
                                                     std::string name)
 {
     switch (error) {
-    case MBP::ErrorCode::OnlyZipSupported:
-    case MBP::ErrorCode::OnlyBootImageSupported:
+    case ErrorCode::OnlyZipSupported:
+    case ErrorCode::OnlyBootImageSupported:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::SupportedFileError, error);
+    PatcherError pe(ErrorType::SupportedFileError, error);
     pe.m_impl->patcherId = std::move(name);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createCancelledError(MBP::ErrorCode error)
+PatcherError PatcherError::createCancelledError(ErrorCode error)
 {
     switch (error) {
-    case MBP::ErrorCode::PatchingCancelled:
+    case ErrorCode::PatchingCancelled:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::CancelledError, error);
+    PatcherError pe(ErrorType::CancelledError, error);
     return pe;
 }
 /*! \endcond */
 
 /*! \cond INTERNAL */
-PatcherError PatcherError::createPatchingError(MBP::ErrorCode error)
+PatcherError PatcherError::createPatchingError(ErrorCode error)
 {
     switch (error) {
-    case MBP::ErrorCode::SystemCacheFormatLinesNotFound:
-    case MBP::ErrorCode::ApplyPatchFileError:
+    case ErrorCode::SystemCacheFormatLinesNotFound:
+    case ErrorCode::ApplyPatchFileError:
         break;
     default:
         assert(false);
     }
 
-    PatcherError pe(MBP::ErrorType::PatchingError, error);
+    PatcherError pe(ErrorType::PatchingError, error);
     return pe;
 }
 /*! \endcond */
@@ -271,7 +274,7 @@ PatcherError PatcherError::createPatchingError(MBP::ErrorCode error)
  *
  * \sa errors.h
  */
-MBP::ErrorType PatcherError::errorType() const
+ErrorType PatcherError::errorType() const
 {
     return m_impl->errorType;
 }
@@ -283,7 +286,7 @@ MBP::ErrorType PatcherError::errorType() const
  *
  * \sa errors.h
  */
-MBP::ErrorCode PatcherError::errorCode() const
+ErrorCode PatcherError::errorCode() const
 {
     return m_impl->errorCode;
 }
@@ -312,4 +315,6 @@ std::string PatcherError::patcherId() const
 std::string PatcherError::filename() const
 {
     return m_impl->filename;
+}
+
 }

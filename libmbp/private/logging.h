@@ -26,15 +26,15 @@
 #include "../logging.h"
 
 
-#define LOGE(str) log(MBP::LogLevel::Error, str)
-#define LOGW(str) log(MBP::LogLevel::Warning, str)
-#define LOGI(str) log(MBP::LogLevel::Info, str)
-#define LOGD(str) log(MBP::LogLevel::Debug, str)
-#define LOGV(str) log(MBP::LogLevel::Verbose, str)
-#define FLOGE(...) log(MBP::LogLevel::Error, fmt::format(__VA_ARGS__))
-#define FLOGW(...) log(MBP::LogLevel::Warning, fmt::format(__VA_ARGS__))
-#define FLOGI(...) log(MBP::LogLevel::Info, fmt::format(__VA_ARGS__))
-#define FLOGD(...) log(MBP::LogLevel::Debug, fmt::format(__VA_ARGS__))
-#define FLOGV(...) log(MBP::LogLevel::Verbose, fmt::format(__VA_ARGS__))
+#define LOGE(str) log(mbp::LogLevel::Error, str)
+#define LOGW(str) log(mbp::LogLevel::Warning, str)
+#define LOGI(str) log(mbp::LogLevel::Info, str)
+#define LOGD(str) log(mbp::LogLevel::Debug, str)
+#define LOGV(str) log(mbp::LogLevel::Verbose, str)
+#define FLOGE(...) log(mbp::LogLevel::Error, fmt::format(__VA_ARGS__))
+#define FLOGW(...) log(mbp::LogLevel::Warning, fmt::format(__VA_ARGS__))
+#define FLOGI(...) log(mbp::LogLevel::Info, fmt::format(__VA_ARGS__))
+#define FLOGD(...) log(mbp::LogLevel::Debug, fmt::format(__VA_ARGS__))
+#define FLOGV(...) log(mbp::LogLevel::Verbose, fmt::format(__VA_ARGS__))
 
-void log(MBP::LogLevel level, const std::string &str);
+void log(mbp::LogLevel level, const std::string &str);

@@ -26,6 +26,9 @@
 #include "patchinfo.h"
 
 
+namespace mbp
+{
+
 /*!
     \class Patcher
     \brief Handles the patching of zip files and boot images
@@ -183,3 +186,5 @@ public:
      */
     virtual bool patchRamdisk() = 0;
 };
+
+}

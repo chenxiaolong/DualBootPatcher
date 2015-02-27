@@ -27,6 +27,10 @@
 
 #include "patchererror.h"
 
+
+namespace mbp
+{
+
 class FileUtils
 {
 public:
@@ -59,3 +63,5 @@ public:
                                      unsigned int *count,
                                      std::vector<std::string> ignore = std::vector<std::string>());
 };
+
+}

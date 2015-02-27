@@ -40,22 +40,22 @@
 static const QChar Sep = QLatin1Char('/');
 
 
-static void log_cb(MBP::LogLevel prio, const std::string &msg)
+static void log_cb(mbp::LogLevel prio, const std::string &msg)
 {
     switch (prio) {
-    case MBP::LogLevel::Debug:
+    case mbp::LogLevel::Debug:
         std::cout << "[Debug] ";
         break;
-    case MBP::LogLevel::Error:
+    case mbp::LogLevel::Error:
         std::cout << "[Error] ";
         break;
-    case MBP::LogLevel::Info:
+    case mbp::LogLevel::Info:
         std::cout << "[Info] ";
         break;
-    case MBP::LogLevel::Verbose:
+    case mbp::LogLevel::Verbose:
         std::cout << "[Verbose] ";
         break;
-    case MBP::LogLevel::Warning:
+    case mbp::LogLevel::Warning:
         std::cout << "[Warning] ";
         break;
     }
@@ -69,9 +69,9 @@ int main(int argc, char *argv[])
 
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
 
-    MBP::setLogCallback(log_cb);
+    mbp::setLogCallback(log_cb);
 
-    PatcherConfig pc;
+    mbp::PatcherConfig pc;
 
 #ifdef PORTABLE
     pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + LOCAL_DATA_DIR);

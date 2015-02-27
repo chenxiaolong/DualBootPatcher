@@ -29,6 +29,9 @@
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class GalaxyRamdiskPatcher::Impl
 {
@@ -127,4 +130,6 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     m_impl->cpio->setContents(Msm8960LpmRc, std::move(contents));
 
     return true;
+}
+
 }

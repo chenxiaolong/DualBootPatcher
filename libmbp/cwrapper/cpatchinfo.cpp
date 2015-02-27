@@ -28,10 +28,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    PatchInfo *pi = reinterpret_cast<PatchInfo *>(x);
+    mbp::PatchInfo *pi = reinterpret_cast<mbp::PatchInfo *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const PatchInfo *pi = reinterpret_cast<const PatchInfo *>(x);
+    const mbp::PatchInfo *pi = reinterpret_cast<const mbp::PatchInfo *>(x);
 
 
 /*!
@@ -51,13 +51,13 @@ extern "C" {
 /*! \brief Key for getting the default values */
 const char * mbp_patchinfo_default(void)
 {
-    return PatchInfo::Default.c_str();
+    return mbp::PatchInfo::Default.c_str();
 }
 
 /*! \brief Key for getting the `<not-matched>` values */
 const char *mbp_patchinfo_notmatched(void)
 {
-    return PatchInfo::NotMatched.c_str();
+    return mbp::PatchInfo::NotMatched.c_str();
 }
 
 
@@ -70,7 +70,7 @@ const char *mbp_patchinfo_notmatched(void)
  */
 CPatchInfo * mbp_patchinfo_create(void)
 {
-    return reinterpret_cast<CPatchInfo *>(new PatchInfo());
+    return reinterpret_cast<CPatchInfo *>(new mbp::PatchInfo());
 }
 
 /*!
@@ -309,8 +309,8 @@ void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
                                    const char *apName, CStringMap *args)
 {
     CAST(info);
-    PatchInfo::AutoPatcherArgs *apArgs =
-            reinterpret_cast<PatchInfo::AutoPatcherArgs *>(args);
+    mbp::PatchInfo::AutoPatcherArgs *apArgs =
+            reinterpret_cast<mbp::PatchInfo::AutoPatcherArgs *>(args);
 
     pi->addAutoPatcher(key, apName, *apArgs);
 }
@@ -366,8 +366,8 @@ CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
                                             const char *apName)
 {
     CCAST(info);
-    PatchInfo::AutoPatcherArgs *args =
-            new PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
+    mbp::PatchInfo::AutoPatcherArgs *args =
+            new mbp::PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
     return reinterpret_cast<CStringMap *>(args);
 }
 

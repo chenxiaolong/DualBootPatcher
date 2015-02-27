@@ -26,6 +26,9 @@
 #include "patchererror.h"
 
 
+namespace mbp
+{
+
 class MBP_EXPORT BootImage
 {
 public:
@@ -95,3 +98,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

@@ -55,6 +55,9 @@
 #endif
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class PatcherConfig::Impl
 {
@@ -716,7 +719,7 @@ bool PatcherConfig::loadPatchInfos()
 
                 if (!m_impl->loadPatchInfoXml(it->path().string(), id)) {
                     m_impl->error = PatcherError::createXmlError(
-                            MBP::ErrorCode::XmlParseFileError,
+                            ErrorCode::XmlParseFileError,
                             it->path().string());
                     return false;
                 }
@@ -739,7 +742,7 @@ bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
     auto result = doc.load_file(path.c_str());
     if (!result) {
         error = PatcherError::createXmlError(
-                MBP::ErrorCode::XmlParseFileError, path);
+                ErrorCode::XmlParseFileError, path);
         return false;
     }
 
@@ -1086,3 +1089,5 @@ void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(pugi::xml_node node,
 }
 
 #endif
+
+}

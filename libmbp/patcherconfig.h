@@ -34,6 +34,9 @@
 #endif
 
 
+namespace mbp
+{
+
 #ifndef LIBMBP_MINI
 class Patcher;
 class AutoPatcher;
@@ -86,3 +89,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

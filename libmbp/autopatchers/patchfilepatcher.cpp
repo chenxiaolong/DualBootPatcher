@@ -40,6 +40,9 @@
 #include "private/regex.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class PatchFilePatcher::Impl
 {
@@ -83,7 +86,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
     std::vector<unsigned char> contents;
     auto ret = FileUtils::readToMemory(m_impl->patchFile, &contents);
-    if (ret.errorCode() != MBP::ErrorCode::NoError) {
+    if (ret.errorCode() != ErrorCode::NoError) {
         LOGW("Failed to read patch file");
         return;
     }
@@ -186,7 +189,7 @@ bool PatchFilePatcher::patchFiles(const std::string &directory)
 
     if (error) {
         m_impl->error = PatcherError::createPatchingError(
-                MBP::ErrorCode::ApplyPatchFileError);
+                ErrorCode::ApplyPatchFileError);
         return false;
     } else {
         return true;
@@ -340,3 +343,5 @@ bool PatchFilePatcher::Impl::runProcess(std::string program,
 }
 
 #endif
+
+}

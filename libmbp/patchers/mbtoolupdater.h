@@ -25,6 +25,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class MbtoolUpdater : public Patcher
 {
 public:
@@ -55,3 +58,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

@@ -36,7 +36,7 @@
 const int patcherPtrTypeId = qRegisterMetaType<PatcherPtr>("PatcherPtr");
 const int fileInfoPtrTypeId = qRegisterMetaType<FileInfoPtr>("FileInfoPtr");
 
-MainWindow::MainWindow(PatcherConfig *pc, QWidget *parent)
+MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
     Q_D(MainWindow);
@@ -358,7 +358,7 @@ void MainWindow::setWidgetActions()
             this, &MainWindow::onHasBootImageToggled);
 }
 
-bool sortByPatchInfoId(PatchInfo *pi1, PatchInfo *pi2)
+bool sortByPatchInfoId(mbp::PatchInfo *pi1, mbp::PatchInfo *pi2)
 {
     return boost::ilexicographical_compare(pi1->id(), pi2->id());
 }
@@ -368,7 +368,7 @@ void MainWindow::populateWidgets()
     Q_D(MainWindow);
 
     // Populate devices
-    for (Device *device : d->pc->devices()) {
+    for (mbp::Device *device : d->pc->devices()) {
         d->deviceSel->addItem(QStringLiteral("%1 (%2)")
                 .arg(QString::fromStdString(device->id()))
                 .arg(QString::fromStdString(device->name())));
@@ -397,7 +397,7 @@ void MainWindow::refreshPresets()
     d->presetSel->addItem(tr("Custom"));
     d->patchInfos = d->pc->patchInfos(d->device);
     std::sort(d->patchInfos.begin(), d->patchInfos.end(), sortByPatchInfoId);
-    for (PatchInfo *info : d->patchInfos) {
+    for (mbp::PatchInfo *info : d->patchInfos) {
         d->presetSel->addItem(QString::fromStdString(info->id()));
     }
 }
@@ -509,26 +509,26 @@ void MainWindow::startPatching()
 
     if (!d->supported) {
         if (d->presetSel->currentIndex() == 0) {
-            d->patchInfo = new PatchInfo();
+            d->patchInfo = new mbp::PatchInfo(); // TODO: Memory leak here!
 
-            d->patchInfo->addAutoPatcher(PatchInfo::Default,
+            d->patchInfo->addAutoPatcher(mbp::PatchInfo::Default,
                                          "StandardPatcher",
-                                         PatchInfo::AutoPatcherArgs());
-            d->patchInfo->setHasBootImage(PatchInfo::Default,
+                                         mbp::PatchInfo::AutoPatcherArgs());
+            d->patchInfo->setHasBootImage(mbp::PatchInfo::Default,
                                           d->hasBootImageCb->isChecked());
-            if (d->patchInfo->hasBootImage(PatchInfo::Default)) {
-                d->patchInfo->setRamdisk(PatchInfo::Default,
+            if (d->patchInfo->hasBootImage(mbp::PatchInfo::Default)) {
+                d->patchInfo->setRamdisk(mbp::PatchInfo::Default,
                                          d->device->id() + "/default");
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
                     const std::string textStdString = text.toStdString();
                     std::vector<std::string> bootImages;
                     boost::split(bootImages, textStdString, boost::is_any_of(","));
-                    d->patchInfo->setBootImages(PatchInfo::Default, bootImages);
+                    d->patchInfo->setBootImages(mbp::PatchInfo::Default, bootImages);
                 }
             }
 
-            d->patchInfo->setDeviceCheck(PatchInfo::Default,
+            d->patchInfo->setDeviceCheck(mbp::PatchInfo::Default,
                                          !d->deviceCheckCb->isChecked());
         } else {
             d->patchInfo = d->patchInfos[d->presetSel->currentIndex() - 1];
@@ -538,7 +538,7 @@ void MainWindow::startPatching()
     d->state = MainWindowPrivate::Patching;
     updateWidgetsVisibility();
 
-    FileInfoPtr fileInfo = new FileInfo();
+    FileInfoPtr fileInfo = new mbp::FileInfo();
     fileInfo->setFilename(d->fileName.toStdString());
     fileInfo->setDevice(d->device);
     fileInfo->setPatchInfo(d->patchInfo);
@@ -556,78 +556,78 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
 }
 
 
-static QString errorToString(PatcherError error) {
+static QString errorToString(const mbp::PatcherError &error) {
     switch (error.errorCode()) {
-    case MBP::ErrorCode::NoError:
+    case mbp::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
-    case MBP::ErrorCode::UnknownError:
+    case mbp::ErrorCode::UnknownError:
         return QObject::tr("An unknown error has occurred");
-    case MBP::ErrorCode::PatcherCreateError:
+    case mbp::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher: %1")
                 .arg(QString::fromStdString(error.patcherId()));
-    case MBP::ErrorCode::AutoPatcherCreateError:
+    case mbp::ErrorCode::AutoPatcherCreateError:
         return QObject::tr("Failed to create autopatcher: %1")
                 .arg(QString::fromStdString(error.patcherId()));
-    case MBP::ErrorCode::RamdiskPatcherCreateError:
+    case mbp::ErrorCode::RamdiskPatcherCreateError:
         return QObject::tr("Failed to create ramdisk patcher: %1")
                 .arg(QString::fromStdString(error.patcherId()));
-    case MBP::ErrorCode::FileOpenError:
+    case mbp::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::FileReadError:
+    case mbp::ErrorCode::FileReadError:
         return QObject::tr("Failed to read from file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::FileWriteError:
+    case mbp::ErrorCode::FileWriteError:
         return QObject::tr("Failed to write to file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::DirectoryNotExistError:
+    case mbp::ErrorCode::DirectoryNotExistError:
         return QObject::tr("Directory does not exist: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::BootImageSmallerThanHeaderError:
+    case mbp::ErrorCode::BootImageSmallerThanHeaderError:
         return QObject::tr("The boot image file is smaller than the boot image header size");
-    case MBP::ErrorCode::BootImageNoAndroidHeaderError:
+    case mbp::ErrorCode::BootImageNoAndroidHeaderError:
         return QObject::tr("Could not find the Android header in the boot image");
-    case MBP::ErrorCode::BootImageNoRamdiskGzipHeaderError:
+    case mbp::ErrorCode::BootImageNoRamdiskGzipHeaderError:
         return QObject::tr("Could not find the ramdisk's gzip header");
-    case MBP::ErrorCode::BootImageNoRamdiskAddressError:
+    case mbp::ErrorCode::BootImageNoRamdiskAddressError:
         return QObject::tr("Could not determine the ramdisk's memory address");
-    case MBP::ErrorCode::CpioFileAlreadyExistsError:
+    case mbp::ErrorCode::CpioFileAlreadyExistsError:
         return QObject::tr("File already exists in cpio archive: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::CpioFileNotExistError:
+    case mbp::ErrorCode::CpioFileNotExistError:
         return QObject::tr("File does not exist in cpio archive: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::ArchiveReadOpenError:
+    case mbp::ErrorCode::ArchiveReadOpenError:
         return QObject::tr("Failed to open archive for reading");
-    case MBP::ErrorCode::ArchiveReadDataError:
+    case mbp::ErrorCode::ArchiveReadDataError:
         return QObject::tr("Failed to read archive data for file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::ArchiveReadHeaderError:
+    case mbp::ErrorCode::ArchiveReadHeaderError:
         return QObject::tr("Failed to read archive entry header");
-    case MBP::ErrorCode::ArchiveWriteOpenError:
+    case mbp::ErrorCode::ArchiveWriteOpenError:
         return QObject::tr("Failed to open archive for writing");
-    case MBP::ErrorCode::ArchiveWriteDataError:
+    case mbp::ErrorCode::ArchiveWriteDataError:
         return QObject::tr("Failed to write archive data for file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::ArchiveWriteHeaderError:
+    case mbp::ErrorCode::ArchiveWriteHeaderError:
         return QObject::tr("Failed to write archive header for file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::ArchiveCloseError:
+    case mbp::ErrorCode::ArchiveCloseError:
         return QObject::tr("Failed to close archive");
-    case MBP::ErrorCode::ArchiveFreeError:
+    case mbp::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case MBP::ErrorCode::XmlParseFileError:
+    case mbp::ErrorCode::XmlParseFileError:
         return QObject::tr("Failed to parse XML file: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case MBP::ErrorCode::OnlyZipSupported:
+    case mbp::ErrorCode::OnlyZipSupported:
         return QObject::tr("Only ZIP files are supported by %1")
                 .arg(QString::fromStdString(error.patcherId()));
-    case MBP::ErrorCode::OnlyBootImageSupported:
+    case mbp::ErrorCode::OnlyBootImageSupported:
         return QObject::tr("Only boot images are supported by %1")
                 .arg(QString::fromStdString(error.patcherId()));
-    case MBP::ErrorCode::PatchingCancelled:
+    case mbp::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
-    case MBP::ErrorCode::SystemCacheFormatLinesNotFound:
+    case mbp::ErrorCode::SystemCacheFormatLinesNotFound:
         return QObject::tr("The patcher could not find any /system or /cache"
                            "formatting lines in the updater-script file.\n\n"
                            "If the file is a ROM, then something failed. If the"

@@ -20,13 +20,16 @@
 #pragma once
 
 #ifdef __cplusplus
-namespace MBP {
+namespace mbp
+{
 #endif
 
 #ifdef __cplusplus
-enum class ErrorType : int {
+enum class ErrorType : int
+{
 #else
-enum ErrorType {
+enum ErrorType
+{
 #endif
     GenericError = 0,
     PatcherCreationError,
@@ -41,9 +44,11 @@ enum ErrorType {
 };
 
 #ifdef __cplusplus
-enum class ErrorCode : int {
+enum class ErrorCode : int
+{
 #else
-enum ErrorCode {
+enum ErrorCode
+{
 #endif
     // Generic
     NoError = 0,

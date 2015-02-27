@@ -26,6 +26,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class JflteBaseRamdiskPatcher : public RamdiskPatcher
 {
 public:
@@ -62,3 +65,5 @@ public:
 private:
     bool geChargerModeMount();
 };
+
+}

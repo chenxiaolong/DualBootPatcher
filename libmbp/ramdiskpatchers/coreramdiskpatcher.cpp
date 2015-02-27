@@ -27,6 +27,9 @@
 #include "patcherconfig.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class CoreRamdiskPatcher::Impl
 {
@@ -140,4 +143,6 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
     m_impl->cpio->setContents(FileContexts, std::move(contents));
 
     return true;
+}
+
 }

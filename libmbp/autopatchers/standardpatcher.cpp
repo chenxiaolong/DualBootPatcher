@@ -31,6 +31,9 @@
 #include "private/regex.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class StandardPatcher::Impl
 {
@@ -311,4 +314,6 @@ void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
             }
         }
     }
+}
+
 }

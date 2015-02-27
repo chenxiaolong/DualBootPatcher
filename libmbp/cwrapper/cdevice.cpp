@@ -28,10 +28,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    Device *d = reinterpret_cast<Device *>(x);
+    mbp::Device *d = reinterpret_cast<mbp::Device *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const Device *d = reinterpret_cast<const Device *>(x);
+    const mbp::Device *d = reinterpret_cast<const mbp::Device *>(x);
 
 
 /*!
@@ -55,7 +55,7 @@ extern "C" {
  */
 CDevice * mbp_device_create(void)
 {
-    return reinterpret_cast<CDevice *>(new Device());
+    return reinterpret_cast<CDevice *>(new mbp::Device());
 }
 
 /*!

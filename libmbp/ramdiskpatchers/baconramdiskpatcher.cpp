@@ -23,6 +23,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class BaconRamdiskPatcher::Impl
 {
@@ -78,4 +81,6 @@ bool BaconRamdiskPatcher::patchRamdisk()
     }
 
     return true;
+}
+
 }

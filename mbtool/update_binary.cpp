@@ -910,7 +910,7 @@ static bool update_binary(void)
 {
     bool ret = true;
 
-    PatcherConfig pc;
+    mbp::PatcherConfig pc;
     LOGD("libmbp-mini version: {}", pc.version());
 
     std::shared_ptr<Rom> rom;
@@ -1027,7 +1027,7 @@ static bool update_binary(void)
     // It's an annoyance, but not a big deal
     device_error = false;
 
-    for (Device *d : pc.devices()) {
+    for (mbp::Device *d : pc.devices()) {
         if (d->id() != device) {
             // Haven't found device
             continue;
@@ -1290,7 +1290,7 @@ static bool update_binary(void)
     if (memcmp(hash, new_hash, SHA_DIGEST_SIZE) != 0) {
         ui_print("Boot partition was modified. Setting kernel");
 
-        BootImage bi;
+        mbp::BootImage bi;
         if (!bi.load(boot_block_dev)) {
             ui_print("Failed to load boot partition image");
             return ret = false;
@@ -1388,22 +1388,22 @@ static bool update_binary(void)
     return true;
 }
 
-static void mbp_log_cb(MBP::LogLevel prio, const std::string &msg)
+static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
 {
     switch (prio) {
-    case MBP::LogLevel::Debug:
+    case mbp::LogLevel::Debug:
         LOGD("{}", msg);
         break;
-    case MBP::LogLevel::Error:
+    case mbp::LogLevel::Error:
         LOGE("{}", msg);
         break;
-    case MBP::LogLevel::Info:
+    case mbp::LogLevel::Info:
         LOGI("{}", msg);
         break;
-    case MBP::LogLevel::Verbose:
+    case mbp::LogLevel::Verbose:
         LOGV("{}", msg);
         break;
-    case MBP::LogLevel::Warning:
+    case mbp::LogLevel::Warning:
         LOGW("{}", msg);
         break;
     }
@@ -1467,7 +1467,7 @@ int update_binary_main(int argc, char *argv[])
     // stdout is messed up when it's appended to /tmp/recovery.log
     util::log_set_target(util::LogTarget::STDERR);
 
-    MBP::setLogCallback(mbp_log_cb);
+    mbp::setLogCallback(mbp_log_cb);
 
     return update_binary() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

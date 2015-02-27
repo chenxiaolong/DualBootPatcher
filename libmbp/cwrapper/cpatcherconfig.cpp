@@ -29,10 +29,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    PatcherConfig *config = reinterpret_cast<PatcherConfig *>(x);
+    mbp::PatcherConfig *config = reinterpret_cast<mbp::PatcherConfig *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const PatcherConfig *config = reinterpret_cast<const PatcherConfig *>(x);
+    const mbp::PatcherConfig *config = reinterpret_cast<const mbp::PatcherConfig *>(x);
 
 
 /*!
@@ -57,7 +57,7 @@ extern "C" {
  */
 CPatcherConfig * mbp_config_create(void)
 {
-    return reinterpret_cast<CPatcherConfig *>(new PatcherConfig());
+    return reinterpret_cast<CPatcherConfig *>(new mbp::PatcherConfig());
 }
 
 /*!
@@ -89,7 +89,7 @@ void mbp_config_destroy(CPatcherConfig *pc)
 CPatcherError * mbp_config_error(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    PatcherError *pe = new PatcherError(config->error());
+    mbp::PatcherError *pe = new mbp::PatcherError(config->error());
     return reinterpret_cast<CPatcherError *>(pe);
 }
 
@@ -242,7 +242,7 @@ CPatchInfo ** mbp_config_patchinfos_for_device(const CPatcherConfig *pc,
                                                const CDevice *device)
 {
     CCAST(pc);
-    const Device *d = reinterpret_cast<const Device *>(device);
+    const mbp::Device *d = reinterpret_cast<const mbp::Device *>(device);
     auto const infos = config->patchInfos(d);
 
     CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
@@ -270,8 +270,8 @@ CPatchInfo * mbp_config_find_matching_patchinfo(const CPatcherConfig *pc,
                                                 const char *filename)
 {
     CCAST(pc);
-    Device *d = reinterpret_cast<Device *>(device);
-    PatchInfo *pi = config->findMatchingPatchInfo(d, filename);
+    mbp::Device *d = reinterpret_cast<mbp::Device *>(device);
+    mbp::PatchInfo *pi = config->findMatchingPatchInfo(d, filename);
     return reinterpret_cast<CPatchInfo *>(pi);
 }
 
@@ -339,7 +339,7 @@ CPatcher * mbp_config_create_patcher(CPatcherConfig *pc,
                                      const char *id)
 {
     CAST(pc);
-    Patcher *p = config->createPatcher(id);
+    mbp::Patcher *p = config->createPatcher(id);
     return reinterpret_cast<CPatcher *>(p);
 }
 
@@ -360,10 +360,10 @@ CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
                                              const CStringMap *args)
 {
     CAST(pc);
-    const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
-    const PatchInfo::AutoPatcherArgs *apArgs =
-            reinterpret_cast<const PatchInfo::AutoPatcherArgs *>(args);
-    AutoPatcher *ap = config->createAutoPatcher(id, fi, *apArgs);
+    const mbp::FileInfo *fi = reinterpret_cast<const mbp::FileInfo *>(info);
+    const mbp::PatchInfo::AutoPatcherArgs *apArgs =
+            reinterpret_cast<const mbp::PatchInfo::AutoPatcherArgs *>(args);
+    mbp::AutoPatcher *ap = config->createAutoPatcher(id, fi, *apArgs);
     return reinterpret_cast<CAutoPatcher *>(ap);
 }
 
@@ -384,9 +384,9 @@ CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
                                                     CCpioFile *cpio)
 {
     CAST(pc);
-    const FileInfo *fi = reinterpret_cast<const FileInfo *>(info);
-    CpioFile *cf = reinterpret_cast<CpioFile *>(cpio);
-    RamdiskPatcher *rp = config->createRamdiskPatcher(id, fi, cf);
+    const mbp::FileInfo *fi = reinterpret_cast<const mbp::FileInfo *>(info);
+    mbp::CpioFile *cf = reinterpret_cast<mbp::CpioFile *>(cpio);
+    mbp::RamdiskPatcher *rp = config->createRamdiskPatcher(id, fi, cf);
     return reinterpret_cast<CRamdiskPatcher *>(rp);
 }
 
@@ -401,7 +401,7 @@ CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
 void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher)
 {
     CAST(pc);
-    Patcher *p = reinterpret_cast<Patcher *>(patcher);
+    mbp::Patcher *p = reinterpret_cast<mbp::Patcher *>(patcher);
     config->destroyPatcher(p);
 }
 
@@ -417,7 +417,7 @@ void mbp_config_destroy_autopatcher(CPatcherConfig *pc,
                                     CAutoPatcher *patcher)
 {
     CAST(pc);
-    AutoPatcher *ap = reinterpret_cast<AutoPatcher *>(patcher);
+    mbp::AutoPatcher *ap = reinterpret_cast<mbp::AutoPatcher *>(patcher);
     config->destroyAutoPatcher(ap);
 }
 
@@ -433,7 +433,7 @@ void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
                                         CRamdiskPatcher *patcher)
 {
     CAST(pc);
-    RamdiskPatcher *rp = reinterpret_cast<RamdiskPatcher *>(patcher);
+    mbp::RamdiskPatcher *rp = reinterpret_cast<mbp::RamdiskPatcher *>(patcher);
     config->destroyRamdiskPatcher(rp);
 }
 

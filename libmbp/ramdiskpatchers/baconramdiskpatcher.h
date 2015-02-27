@@ -26,6 +26,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class BaconRamdiskPatcher : public RamdiskPatcher
 {
 public:
@@ -46,3 +49,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

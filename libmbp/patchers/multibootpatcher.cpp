@@ -48,7 +48,7 @@
 #define RETURN_ERROR_IF_CANCELLED \
     if (m_impl->cancelled) { \
         m_impl->error = PatcherError::createCancelledError( \
-                MBP::ErrorCode::PatchingCancelled); \
+                ErrorCode::PatchingCancelled); \
         return false; \
     }
 
@@ -65,6 +65,9 @@
         detailsCb(x, userData); \
     }
 
+
+namespace mbp
+{
 
 /*! \cond INTERNAL */
 class MultiBootPatcher::Impl
@@ -176,7 +179,7 @@ bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
 
     if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
         m_impl->error = PatcherError::createSupportedFileError(
-                MBP::ErrorCode::OnlyZipSupported, Id);
+                ErrorCode::OnlyZipSupported, Id);
         return false;
     }
 
@@ -233,7 +236,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
             info->patchInfo()->ramdisk(key), info, &cpio);
     if (!rp) {
         error = PatcherError::createPatcherCreationError(
-                MBP::ErrorCode::RamdiskPatcherCreateError,
+                ErrorCode::RamdiskPatcherCreateError,
                 info->patchInfo()->ramdisk(key));
         return false;
     }
@@ -328,7 +331,7 @@ bool MultiBootPatcher::Impl::patchZip()
         auto *ap = pc->createAutoPatcher(item, info, args);
         if (!ap) {
             error = PatcherError::createPatcherCreationError(
-                    MBP::ErrorCode::AutoPatcherCreateError, item);
+                    ErrorCode::AutoPatcherCreateError, item);
             return false;
         }
 
@@ -357,7 +360,7 @@ bool MultiBootPatcher::Impl::patchZip()
 
     unsigned int count;
     auto result = FileUtils::laCountFiles(info->filename(), &count);
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -405,7 +408,7 @@ bool MultiBootPatcher::Impl::patchZip()
             aOutput, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -419,7 +422,7 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/aromawrapper.zip",
             pc->dataDirectory() + "/aromawrapper.zip");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -433,7 +436,7 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
         aOutput, "multiboot/bb-wrapper.sh",
         pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -448,7 +451,7 @@ bool MultiBootPatcher::Impl::patchZip()
             aOutput, "multiboot/unzip",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/unzip");
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -464,7 +467,7 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/device",
             std::vector<unsigned char>(id.begin(), id.end()));
-    if (result.errorCode() != MBP::ErrorCode::NoError) {
+    if (result.errorCode() != ErrorCode::NoError) {
         error = result;
         return false;
     }
@@ -508,7 +511,7 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
         if (exclude.find(curFile) != exclude.end()) {
             if (!FileUtils::laExtractFile(aInput, entry, temporaryDir)) {
                 error = PatcherError::createArchiveError(
-                        MBP::ErrorCode::ArchiveReadDataError, curFile);
+                        ErrorCode::ArchiveReadDataError, curFile);
                 return false;
             }
             continue;
@@ -529,7 +532,7 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             if (!FileUtils::laReadToByteArray(aInput, entry, &data)) {
                 FLOGW("libarchive: {}", archive_error_string(aInput));
                 error = PatcherError::createArchiveError(
-                        MBP::ErrorCode::ArchiveReadDataError, curFile);
+                        ErrorCode::ArchiveReadDataError, curFile);
                 return false;
             }
 
@@ -549,7 +552,7 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
                 FLOGW("libarchive: {}", archive_error_string(aOutput));
                 error = PatcherError::createArchiveError(
-                        MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
+                        ErrorCode::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
@@ -567,14 +570,14 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             if (archive_write_header(aOutput, entry) != ARCHIVE_OK) {
                 FLOGW("libarchive: {}", archive_error_string(aOutput));
                 error = PatcherError::createArchiveError(
-                        MBP::ErrorCode::ArchiveWriteHeaderError, curFile);
+                        ErrorCode::ArchiveWriteHeaderError, curFile);
                 return false;
             }
 
             if (!FileUtils::laCopyData(aInput, aOutput)) {
                 FLOGW("libarchive: {}", archive_error_string(aInput));
                 error = PatcherError::createArchiveError(
-                        MBP::ErrorCode::ArchiveWriteDataError, curFile);
+                        ErrorCode::ArchiveWriteDataError, curFile);
                 return false;
             }
         }
@@ -624,7 +627,7 @@ bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
                     temporaryDir + "/" + file);
         }
 
-        if (ret.errorCode() != MBP::ErrorCode::NoError) {
+        if (ret.errorCode() != ErrorCode::NoError) {
             error = ret;
             return false;
         }
@@ -652,7 +655,7 @@ bool MultiBootPatcher::Impl::openInputArchive()
         aInput = nullptr;
 
         error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveReadOpenError, info->filename());
+                ErrorCode::ArchiveReadOpenError, info->filename());
         return false;
     }
 
@@ -684,7 +687,7 @@ bool MultiBootPatcher::Impl::openOutputArchive()
         aOutput = nullptr;
 
         error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveWriteOpenError, newPath);
+                ErrorCode::ArchiveWriteOpenError, newPath);
         return false;
     }
 
@@ -697,4 +700,6 @@ void MultiBootPatcher::Impl::closeOutputArchive()
 
     archive_write_free(aOutput);
     aOutput = nullptr;
+}
+
 }

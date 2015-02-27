@@ -22,6 +22,9 @@
 #include <unordered_map>
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class Device::Impl
 {
@@ -177,4 +180,6 @@ std::vector<std::string> Device::extraBlockDevs() const
 void Device::setExtraBlockDevs(std::vector<std::string> blockDevs)
 {
     m_impl->extraDevs = std::move(blockDevs);
+}
+
 }

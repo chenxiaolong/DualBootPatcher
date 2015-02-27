@@ -29,6 +29,9 @@
 #include "private/regex.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class JflteBasePatcher::Impl
 {
@@ -110,4 +113,6 @@ bool JflteDalvikCachePatcher::patchFiles(const std::string &directory)
     // BuildProp end
 
     return true;
+}
+
 }

@@ -23,6 +23,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class FloBaseRamdiskPatcher::Impl
 {
@@ -87,4 +90,6 @@ bool FloAOSPRamdiskPatcher::patchRamdisk()
     }
 
     return true;
+}
+
 }

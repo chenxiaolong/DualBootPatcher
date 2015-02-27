@@ -28,10 +28,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    PatcherError *pe = reinterpret_cast<PatcherError *>(x);
+    mbp::PatcherError *pe = reinterpret_cast<mbp::PatcherError *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const PatcherError *pe = reinterpret_cast<const PatcherError *>(x);
+    const mbp::PatcherError *pe = reinterpret_cast<const mbp::PatcherError *>(x);
 
 
 /*!

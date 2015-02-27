@@ -31,6 +31,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class JflteBaseRamdiskPatcher::Impl
 {
@@ -164,4 +167,6 @@ bool JflteDefaultRamdiskPatcher::geChargerModeMount()
     m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
+}
+
 }

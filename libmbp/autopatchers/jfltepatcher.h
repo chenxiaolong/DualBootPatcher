@@ -25,6 +25,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class JflteBasePatcher : public AutoPatcher
 {
 public:
@@ -62,3 +65,5 @@ public:
 
     virtual bool patchFiles(const std::string &directory) override;
 };
+
+}

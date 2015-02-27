@@ -32,6 +32,9 @@
 #include "private/logging.h"
 
 
+namespace mbp
+{
+
 typedef std::pair<archive_entry *, std::vector<unsigned char>> FilePair;
 
 enum Compression {
@@ -141,7 +144,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
         archive_read_free(a);
 
         m_impl->error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveReadOpenError, "<memory>");
+                ErrorCode::ArchiveReadOpenError, "<memory>");
         return false;
     }
 
@@ -166,7 +169,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
             FLOGW("libarchive: {}", archive_error_string(a));
 
             m_impl->error = PatcherError::createArchiveError(
-                    MBP::ErrorCode::ArchiveReadDataError,
+                    ErrorCode::ArchiveReadDataError,
                     archive_entry_pathname(entry));
 
             archive_read_free(a);
@@ -183,7 +186,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
         archive_read_free(a);
 
         m_impl->error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveReadHeaderError, std::string());
+                ErrorCode::ArchiveReadHeaderError, std::string());
         return false;
     }
 
@@ -192,7 +195,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
         FLOGW("libarchive: {}", archive_error_string(a));
 
         m_impl->error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveFreeError, std::string());
+                ErrorCode::ArchiveFreeError, std::string());
         return false;
     }
 
@@ -268,7 +271,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
         archive_write_free(a);
 
         m_impl->error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveWriteOpenError, "<memory>");
+                ErrorCode::ArchiveWriteOpenError, "<memory>");
         return false;
     }
 
@@ -282,7 +285,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
             archive_write_free(a);
 
             m_impl->error = PatcherError::createArchiveError(
-                    MBP::ErrorCode::ArchiveWriteHeaderError,
+                    ErrorCode::ArchiveWriteHeaderError,
                     archive_entry_pathname(p.first));
             return false;
         }
@@ -293,7 +296,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
             archive_write_free(a);
 
             m_impl->error = PatcherError::createArchiveError(
-                    MBP::ErrorCode::ArchiveWriteDataError,
+                    ErrorCode::ArchiveWriteDataError,
                     archive_entry_pathname(p.first));
             return false;
         }
@@ -307,7 +310,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
         archive_write_free(a);
 
         m_impl->error = PatcherError::createArchiveError(
-                MBP::ErrorCode::ArchiveCloseError, std::string());
+                ErrorCode::ArchiveCloseError, std::string());
         return false;
     }
 
@@ -395,7 +398,7 @@ bool CpioFile::contents(const std::string &name,
     }
 
     m_impl->error = PatcherError::createCpioError(
-            MBP::ErrorCode::CpioFileNotExistError, name);
+            ErrorCode::CpioFileNotExistError, name);
     return false;
 }
 
@@ -419,7 +422,7 @@ bool CpioFile::setContents(const std::string &name,
     }
 
     m_impl->error = PatcherError::createCpioError(
-            MBP::ErrorCode::CpioFileNotExistError, name);
+            ErrorCode::CpioFileNotExistError, name);
     return false;
 }
 
@@ -437,7 +440,7 @@ bool CpioFile::addSymlink(const std::string &source, const std::string &target)
 {
     if (exists(target)) {
         m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileAlreadyExistsError, target);
+                ErrorCode::CpioFileAlreadyExistsError, target);
         return false;
     }
 
@@ -482,13 +485,13 @@ bool CpioFile::addFile(const std::string &path, const std::string &name,
 {
     if (exists(name)) {
         m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileAlreadyExistsError, name);
+                ErrorCode::CpioFileAlreadyExistsError, name);
         return false;
     }
 
     std::vector<unsigned char> contents;
     auto ret = FileUtils::readToMemory(path, &contents);
-    if (ret.errorCode() != MBP::ErrorCode::NoError) {
+    if (ret.errorCode() != ErrorCode::NoError) {
         m_impl->error = ret;
         return false;
     }
@@ -512,7 +515,7 @@ bool CpioFile::addFile(std::vector<unsigned char> contents,
 {
     if (exists(name)) {
         m_impl->error = PatcherError::createCpioError(
-                MBP::ErrorCode::CpioFileAlreadyExistsError, name);
+                ErrorCode::CpioFileAlreadyExistsError, name);
         return false;
     }
 
@@ -538,4 +541,6 @@ bool CpioFile::addFile(std::vector<unsigned char> contents,
     std::sort(m_impl->files.begin(), m_impl->files.end(), sortByName);
 
     return true;
+}
+
 }

@@ -32,6 +32,9 @@
 #include "private/regex.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class QcomRamdiskPatcher::Impl
 {
@@ -250,4 +253,6 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
     m_impl->cpio->setContents(filename, std::move(contents));
 
     return true;
+}
+
 }

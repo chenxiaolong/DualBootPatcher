@@ -20,6 +20,9 @@
 #include "fileinfo.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class FileInfo::Impl
 {
@@ -110,4 +113,6 @@ Device * FileInfo::device() const
 void FileInfo::setDevice(Device * const device)
 {
     m_impl->device = device;
+}
+
 }

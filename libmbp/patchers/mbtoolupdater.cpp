@@ -35,6 +35,9 @@
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class MbtoolUpdater::Impl
 {
@@ -126,7 +129,7 @@ bool MbtoolUpdater::patchFile(MaxProgressUpdatedCallback maxProgressCb,
 
     if (!isImg && !isLok) {
         m_impl->error = PatcherError::createSupportedFileError(
-                MBP::ErrorCode::OnlyBootImageSupported, Id);
+                ErrorCode::OnlyBootImageSupported, Id);
         return false;
     }
 
@@ -210,4 +213,6 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
 
     CoreRamdiskPatcher crp(pc, info, cpio);
     crp.addDaemonService();
+}
+
 }

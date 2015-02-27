@@ -23,7 +23,7 @@
 
 #include <string>
 
-namespace MBP
+namespace mbp
 {
 
 enum class LogLevel : int {

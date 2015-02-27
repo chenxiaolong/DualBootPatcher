@@ -27,6 +27,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class MultiBootPatcher : public Patcher
 {
 public:
@@ -57,3 +60,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

@@ -23,6 +23,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class FalconRamdiskPatcher::Impl
 {
@@ -85,4 +88,6 @@ bool FalconRamdiskPatcher::patchRamdisk()
     }
 
     return true;
+}
+
 }

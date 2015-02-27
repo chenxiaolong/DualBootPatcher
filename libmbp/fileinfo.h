@@ -27,6 +27,9 @@
 #include "patchinfo.h"
 
 
+namespace mbp
+{
+
 class MBP_EXPORT FileInfo
 {
 public:
@@ -46,3 +49,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

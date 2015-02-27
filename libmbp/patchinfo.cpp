@@ -26,6 +26,9 @@
 #include "private/regex.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class SubPatchInfo {
 public:
@@ -557,4 +560,6 @@ bool PatchInfo::deviceCheck(const std::string &key) const
 void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
 {
     m_impl->subPatchInfos[key].deviceCheck = deviceCheck;
+}
+
 }

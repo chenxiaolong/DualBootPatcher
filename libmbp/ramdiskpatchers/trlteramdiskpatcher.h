@@ -26,6 +26,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class TrlteBaseRamdiskPatcher : public RamdiskPatcher
 {
 public:
@@ -59,3 +62,5 @@ public:
 
     virtual bool patchRamdisk() override;
 };
+
+}

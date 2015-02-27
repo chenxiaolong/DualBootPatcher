@@ -25,6 +25,9 @@
 #include "libmbp_global.h"
 
 
+namespace mbp
+{
+
 class MBP_EXPORT Device
 {
 public:
@@ -54,3 +57,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

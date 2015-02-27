@@ -23,9 +23,10 @@
 
 #define LOG_TAG "libmbp"
 
-static MBP::LogFunction logger = nullptr;
 
-namespace MBP {
+static mbp::LogFunction logger = nullptr;
+
+namespace mbp {
 
 void setLogCallback(LogFunction cb)
 {
@@ -34,7 +35,7 @@ void setLogCallback(LogFunction cb)
 
 }
 
-void log(MBP::LogLevel level, const std::string &str)
+void log(mbp::LogLevel level, const std::string &str)
 {
     if (logger) {
         logger(level, str);

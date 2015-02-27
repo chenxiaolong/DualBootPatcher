@@ -26,22 +26,25 @@
 #include "errors.h"
 
 
+namespace mbp
+{
+
 class MBP_EXPORT PatcherError
 {
 public:
-    static PatcherError createGenericError(MBP::ErrorCode error);
-    static PatcherError createPatcherCreationError(MBP::ErrorCode error, std::string name);
-    static PatcherError createIOError(MBP::ErrorCode error, std::string filename);
-    static PatcherError createBootImageError(MBP::ErrorCode error);
-    static PatcherError createCpioError(MBP::ErrorCode error, std::string filename);
-    static PatcherError createArchiveError(MBP::ErrorCode error, std::string filename);
-    static PatcherError createXmlError(MBP::ErrorCode error, std::string filename);
-    static PatcherError createSupportedFileError(MBP::ErrorCode error, std::string name);
-    static PatcherError createCancelledError(MBP::ErrorCode error);
-    static PatcherError createPatchingError(MBP::ErrorCode error);
+    static PatcherError createGenericError(ErrorCode error);
+    static PatcherError createPatcherCreationError(ErrorCode error, std::string name);
+    static PatcherError createIOError(ErrorCode error, std::string filename);
+    static PatcherError createBootImageError(ErrorCode error);
+    static PatcherError createCpioError(ErrorCode error, std::string filename);
+    static PatcherError createArchiveError(ErrorCode error, std::string filename);
+    static PatcherError createXmlError(ErrorCode error, std::string filename);
+    static PatcherError createSupportedFileError(ErrorCode error, std::string name);
+    static PatcherError createCancelledError(ErrorCode error);
+    static PatcherError createPatchingError(ErrorCode error);
 
-    MBP::ErrorType errorType() const;
-    MBP::ErrorCode errorCode() const;
+    ErrorType errorType() const;
+    ErrorCode errorCode() const;
 
     std::string patcherId() const;
     std::string filename() const;
@@ -55,8 +58,10 @@ public:
 
 
 private:
-    PatcherError(MBP::ErrorType errorType, MBP::ErrorCode errorCode);
+    PatcherError(ErrorType errorType, ErrorCode errorCode);
 
     class Impl;
     std::shared_ptr<Impl> m_impl;
 };
+
+}

@@ -24,6 +24,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class KlteBaseRamdiskPatcher::Impl
 {
@@ -119,4 +122,6 @@ bool KlteDefaultRamdiskPatcher::patchRamdisk()
     }
 
     return true;
+}
+
 }

@@ -28,22 +28,22 @@
 
 #define CASTP(x) \
     assert(x != nullptr); \
-    Patcher *p = reinterpret_cast<Patcher *>(x);
+    mbp::Patcher *p = reinterpret_cast<mbp::Patcher *>(x);
 #define CCASTP(x) \
     assert(x != nullptr); \
-    const Patcher *p = reinterpret_cast<const Patcher *>(x);
+    const mbp::Patcher *p = reinterpret_cast<const mbp::Patcher *>(x);
 #define CASTAP(x) \
     assert(x != nullptr); \
-    AutoPatcher *ap = reinterpret_cast<AutoPatcher *>(x);
+    mbp::AutoPatcher *ap = reinterpret_cast<mbp::AutoPatcher *>(x);
 #define CCASTAP(x) \
     assert(x != nullptr); \
-    const AutoPatcher *ap = reinterpret_cast<const AutoPatcher *>(x);
+    const mbp::AutoPatcher *ap = reinterpret_cast<const mbp::AutoPatcher *>(x);
 #define CASTRP(x) \
     assert(x != nullptr); \
-    RamdiskPatcher *rp = reinterpret_cast<RamdiskPatcher *>(x);
+    mbp::RamdiskPatcher *rp = reinterpret_cast<mbp::RamdiskPatcher *>(x);
 #define CCASTRP(x) \
     assert(x != nullptr); \
-    const RamdiskPatcher *rp = reinterpret_cast<const RamdiskPatcher *>(x);
+    const mbp::RamdiskPatcher *rp = reinterpret_cast<const mbp::RamdiskPatcher *>(x);
 
 
 /*!
@@ -106,7 +106,7 @@ void detailsCbWrapper(const std::string &text, void *userData) {
 CPatcherError * mbp_patcher_error(const CPatcher *patcher)
 {
     CCASTP(patcher);
-    PatcherError *pe = new PatcherError(p->error());
+    mbp::PatcherError *pe = new mbp::PatcherError(p->error());
     return reinterpret_cast<CPatcherError *>(pe);
 }
 
@@ -152,7 +152,7 @@ bool mbp_patcher_uses_patchinfo(const CPatcher *patcher)
 void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info)
 {
     CASTP(patcher);
-    p->setFileInfo(reinterpret_cast<const FileInfo *>(info));
+    p->setFileInfo(reinterpret_cast<const mbp::FileInfo *>(info));
 }
 
 /*!
@@ -231,7 +231,7 @@ void mbp_patcher_cancel_patching(CPatcher *patcher)
 CPatcherError * mbp_autopatcher_error(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    PatcherError *pe = new PatcherError(ap->error());
+    mbp::PatcherError *pe = new mbp::PatcherError(ap->error());
     return reinterpret_cast<CPatcherError *>(pe);
 }
 
@@ -319,7 +319,7 @@ bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory)
 CPatcherError * mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher)
 {
     CCASTRP(patcher);
-    PatcherError *pe = new PatcherError(rp->error());
+    mbp::PatcherError *pe = new mbp::PatcherError(rp->error());
     return reinterpret_cast<CPatcherError *>(pe);
 }
 

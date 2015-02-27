@@ -60,11 +60,11 @@ public:
     QString fileName;
     bool autoMode;
 
-    PatcherConfig *pc = nullptr;
+    mbp::PatcherConfig *pc = nullptr;
 
     // Selected patcher
-    Patcher *patcher = nullptr;
-    PatchInfo *patchInfo = nullptr;
+    mbp::Patcher *patcher = nullptr;
+    mbp::PatchInfo *patchInfo = nullptr;
 
     // Level of support of the file
     SupportedFlags supported;
@@ -79,10 +79,10 @@ public:
     PatcherTask *task;
 
     // Selected device
-    Device *device = nullptr;
+    mbp::Device *device = nullptr;
 
     // List of available patchinfos
-    std::vector<PatchInfo *> patchInfos;
+    std::vector<mbp::PatchInfo *> patchInfos;
 
     QWidget *mainContainer;
     QWidget *progressContainer;

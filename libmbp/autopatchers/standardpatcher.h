@@ -26,6 +26,9 @@
 #include "patcherinterface.h"
 
 
+namespace mbp
+{
+
 class StandardPatcher : public AutoPatcher
 {
 public:
@@ -59,3 +62,5 @@ private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 };
+
+}

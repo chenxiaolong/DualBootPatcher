@@ -28,10 +28,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    CpioFile *cf = reinterpret_cast<CpioFile *>(x);
+    mbp::CpioFile *cf = reinterpret_cast<mbp::CpioFile *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const CpioFile *cf = reinterpret_cast<const CpioFile *>(x);
+    const mbp::CpioFile *cf = reinterpret_cast<const mbp::CpioFile *>(x);
 
 
 /*!
@@ -55,7 +55,7 @@ extern "C" {
  */
 CCpioFile * mbp_cpiofile_create(void)
 {
-    return reinterpret_cast<CCpioFile *>(new CpioFile());
+    return reinterpret_cast<CCpioFile *>(new mbp::CpioFile());
 }
 
 /*!
@@ -87,7 +87,7 @@ void mbp_cpiofile_destroy(CCpioFile *cpio)
 CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
 {
     CCAST(cpio);
-    PatcherError *pe = new PatcherError(cf->error());
+    mbp::PatcherError *pe = new mbp::PatcherError(cf->error());
     return reinterpret_cast<CPatcherError *>(pe);
 }
 

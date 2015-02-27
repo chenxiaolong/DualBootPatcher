@@ -29,9 +29,9 @@
 #include <QtWidgets/QWidget>
 
 
-typedef Patcher * PatcherPtr;
+typedef mbp::Patcher * PatcherPtr;
 Q_DECLARE_METATYPE(PatcherPtr)
-typedef FileInfo * FileInfoPtr;
+typedef mbp::FileInfo * FileInfoPtr;
 Q_DECLARE_METATYPE(FileInfoPtr)
 
 class MainWindowPrivate;
@@ -41,7 +41,7 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    MainWindow(PatcherConfig *pc, QWidget* parent = 0);
+    MainWindow(mbp::PatcherConfig *pc, QWidget* parent = 0);
     ~MainWindow();
 
 signals:

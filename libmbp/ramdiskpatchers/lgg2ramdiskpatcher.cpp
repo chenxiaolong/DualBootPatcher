@@ -23,6 +23,9 @@
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
+namespace mbp
+{
+
 /*! \cond INTERNAL */
 class LGG2RamdiskPatcher::Impl
 {
@@ -78,4 +81,6 @@ bool LGG2RamdiskPatcher::patchRamdisk()
     }
 
     return true;
+}
+
 }

@@ -28,10 +28,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    BootImage *bi = reinterpret_cast<BootImage *>(x);
+    mbp::BootImage *bi = reinterpret_cast<mbp::BootImage *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const BootImage *bi = reinterpret_cast<const BootImage *>(x);
+    const mbp::BootImage *bi = reinterpret_cast<const mbp::BootImage *>(x);
 
 
 /*!
@@ -55,7 +55,7 @@ extern "C" {
  */
 CBootImage * mbp_bootimage_create(void)
 {
-    return reinterpret_cast<CBootImage *>(new BootImage());
+    return reinterpret_cast<CBootImage *>(new mbp::BootImage());
 }
 
 /*!
@@ -87,7 +87,7 @@ void mbp_bootimage_destroy(CBootImage *bootImage)
 CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
 {
     CCAST(bootImage);
-    PatcherError *pe = new PatcherError(bi->error());
+    mbp::PatcherError *pe = new mbp::PatcherError(bi->error());
     return reinterpret_cast<CPatcherError *>(pe);
 }
 

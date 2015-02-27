@@ -28,10 +28,10 @@
 
 #define CAST(x) \
     assert(x != nullptr); \
-    FileInfo *fi = reinterpret_cast<FileInfo *>(x);
+    mbp::FileInfo *fi = reinterpret_cast<mbp::FileInfo *>(x);
 #define CCAST(x) \
     assert(x != nullptr); \
-    const FileInfo *fi = reinterpret_cast<const FileInfo *>(x);
+    const mbp::FileInfo *fi = reinterpret_cast<const mbp::FileInfo *>(x);
 
 
 /*!
@@ -55,7 +55,7 @@ extern "C" {
  */
 CFileInfo * mbp_fileinfo_create(void)
 {
-    return reinterpret_cast<CFileInfo *>(new FileInfo());
+    return reinterpret_cast<CFileInfo *>(new mbp::FileInfo());
 }
 
 /*!
@@ -127,7 +127,7 @@ CPatchInfo * mbp_fileinfo_patchinfo(const CFileInfo *info)
 void mbp_fileinfo_set_patchinfo(CFileInfo *info, CPatchInfo *pInfo)
 {
     CAST(info);
-    fi->setPatchInfo(reinterpret_cast<PatchInfo *>(pInfo));
+    fi->setPatchInfo(reinterpret_cast<mbp::PatchInfo *>(pInfo));
 }
 
 /*!
@@ -156,7 +156,7 @@ CDevice * mbp_fileinfo_device(const CFileInfo *info)
 void mbp_fileinfo_set_device(CFileInfo *info, CDevice *device)
 {
     CAST(info);
-    fi->setDevice(reinterpret_cast<Device *>(device));
+    fi->setDevice(reinterpret_cast<mbp::Device *>(device));
 }
 
 }
