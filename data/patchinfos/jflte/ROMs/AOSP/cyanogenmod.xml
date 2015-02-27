@@ -5,6 +5,5 @@
     <ramdisk>jflte/default</ramdisk>
     <autopatchers>
         <autopatcher>StandardPatcher</autopatcher>
-        <autopatcher>DalvikCachePatcher</autopatcher>
     </autopatchers>
 </patchinfo>
