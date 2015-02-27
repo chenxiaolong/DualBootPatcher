@@ -34,7 +34,6 @@ set(MBP_SOURCES
     cwrapper/cstringmap.cpp
     cwrapper/private/util.cpp
     # Autopatchers
-    autopatchers/jfltepatcher.cpp
     autopatchers/patchfilepatcher.cpp
     autopatchers/standardpatcher.cpp
     # Patchers
@@ -83,7 +82,6 @@ set(MBP_HEADERS
 
 set(MBP_NOINST_HEADERS
     # Autopatchers
-    autopatchers/jfltepatcher.h
     autopatchers/patchfilepatcher.h
     autopatchers/standardpatcher.h
     # Patchers

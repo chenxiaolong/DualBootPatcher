@@ -40,7 +40,6 @@
 #ifndef LIBMBP_MINI
 #include "patchers/mbtoolupdater.h"
 #include "patchers/multibootpatcher.h"
-#include "autopatchers/jfltepatcher.h"
 #include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
 #include "ramdiskpatchers/baconramdiskpatcher.h"
@@ -494,7 +493,6 @@ std::vector<std::string> PatcherConfig::patchers() const
 std::vector<std::string> PatcherConfig::autoPatchers() const
 {
     std::vector<std::string> list;
-    list.push_back(JflteDalvikCachePatcher::Id);
     list.push_back(PatchFilePatcher::Id);
     list.push_back(StandardPatcher::Id);
     return list;
@@ -559,9 +557,7 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
 {
     AutoPatcher *ap = nullptr;
 
-    if (id == JflteDalvikCachePatcher::Id) {
-        ap = new JflteDalvikCachePatcher(this, info);
-    } else if (id == PatchFilePatcher::Id) {
+    if (id == PatchFilePatcher::Id) {
         ap = new PatchFilePatcher(this, info, args);
     } else if (id == StandardPatcher::Id) {
         ap = new StandardPatcher(this, info, args);
