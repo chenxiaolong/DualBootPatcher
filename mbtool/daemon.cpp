@@ -545,6 +545,17 @@ static bool run_daemon(void)
         return false;
     }
 
+    // Eat zombies!
+    // SIG_IGN reaps zombie processes (it's not just a dummy function)
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGCHLD, &sa, 0) < 0) {
+        LOGE("Failed to set SIGCHLD handler: {}", strerror(errno));
+        return false;
+    }
+
     LOGD("Socket ready, waiting for connections");
 
     int client_fd;
