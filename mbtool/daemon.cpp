@@ -31,6 +31,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <proc/readproc.h>
+
 #include "actions.h"
 #include "lokipatch.h"
 #include "roms.h"
@@ -599,6 +601,7 @@ static void daemon_usage(int error)
             "Usage: daemon [OPTION]...\n\n"
             "Options:\n"
             "  -d, --daemonize  Fork to background\n"
+            "  -r, --replace    Kill existing daemon (if any) before starting\n"
             "  -h, --help       Display this help message\n");
 }
 
@@ -606,19 +609,25 @@ int daemon_main(int argc, char *argv[])
 {
     int opt;
     bool fork_flag = false;
+    bool replace_flag = false;
 
     static struct option long_options[] = {
         {"daemonize", no_argument, 0, 'd'},
+        {"replace",   no_argument, 0, 'r'},
         {"help",      no_argument, 0, 'h'},
         {0, 0, 0, 0}
     };
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "dh", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "drh", long_options, &long_index)) != -1) {
         switch (opt) {
         case 'd':
             fork_flag = true;
+            break;
+
+        case 'r':
+            replace_flag = true;
             break;
 
         case 'h':
@@ -635,6 +644,29 @@ int daemon_main(int argc, char *argv[])
     if (argc - optind != 0) {
         daemon_usage(1);
         return EXIT_FAILURE;
+    }
+
+    if (replace_flag) {
+        PROCTAB *proc = openproc(PROC_FILLCOM | PROC_FILLSTAT);
+        if (proc) {
+            pid_t curpid = getpid();
+
+            while (proc_t *info = readproc(proc, nullptr)) {
+                if (strcmp(info->cmd, "mbtool") == 0          // This is mbtool
+                        && info->cmdline                      // And we can see the command line
+                        && info->cmdline[1]                   // And argc > 1
+                        && strstr(info->cmdline[1], "daemon") // And it's a daemon process
+                        && info->tid != curpid) {             // And we're not killing ourself
+                    // Kill the daemon process
+                    std::printf("Killing PID %d\n", info->tid);
+                    kill(info->tid, SIGTERM);
+                }
+
+                freeproc(info);
+            }
+
+            closeproc(proc);
+        }
     }
 
     if (fork_flag) {
