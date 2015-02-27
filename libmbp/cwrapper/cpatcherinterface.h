@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "cwrapper/ctypes.h"
 
 #ifdef __cplusplus
@@ -35,11 +37,11 @@ char * mbp_patcher_id(const CPatcher *patcher);
 bool mbp_patcher_uses_patchinfo(const CPatcher *patcher);
 void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
 char * mbp_patcher_new_file_path(CPatcher *patcher);
-int mbp_patcher_patch_file(CPatcher *patcher,
-                           MaxProgressUpdatedCallback maxProgressCb,
-                           ProgressUpdatedCallback progressCb,
-                           DetailsUpdatedCallback detailsCb,
-                           void *userData);
+bool mbp_patcher_patch_file(CPatcher *patcher,
+                            MaxProgressUpdatedCallback maxProgressCb,
+                            ProgressUpdatedCallback progressCb,
+                            DetailsUpdatedCallback detailsCb,
+                            void *userData);
 void mbp_patcher_cancel_patching(CPatcher *patcher);
 
 
@@ -47,12 +49,12 @@ CPatcherError * mbp_autopatcher_error(const CAutoPatcher *patcher);
 char * mbp_autopatcher_id(const CAutoPatcher *patcher);
 char ** mbp_autopatcher_new_files(const CAutoPatcher *patcher);
 char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher);
-int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
+bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
 
 CPatcherError * mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);
 char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher);
-int mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
+bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
 
 
 #ifdef __cplusplus

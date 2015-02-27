@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "cwrapper/ctypes.h"
@@ -32,19 +33,19 @@ void mbp_bootimage_destroy(CBootImage *bootImage);
 
 CPatcherError * mbp_bootimage_error(const CBootImage *bootImage);
 
-int mbp_bootimage_load_data(CBootImage *bootImage,
-                            const void *data, size_t size);
-int mbp_bootimage_load_file(CBootImage *bootImage,
-                            const char *filename);
+bool mbp_bootimage_load_data(CBootImage *bootImage,
+                             const void *data, size_t size);
+bool mbp_bootimage_load_file(CBootImage *bootImage,
+                             const char *filename);
 
 void mbp_bootimage_create_data(const CBootImage *bootImage,
                                void **data, size_t *size);
-int mbp_bootimage_create_file(CBootImage *bootImage,
-                              const char *filename);
-int mbp_bootimage_extract(CBootImage *bootImage,
-                          const char *directory, const char *prefix);
+bool mbp_bootimage_create_file(CBootImage *bootImage,
+                               const char *filename);
+bool mbp_bootimage_extract(CBootImage *bootImage,
+                           const char *directory, const char *prefix);
 
-int mbp_bootimage_is_loki(CBootImage *bootImage);
+bool mbp_bootimage_is_loki(CBootImage *bootImage);
 
 char * mbp_bootimage_boardname(const CBootImage *bootImage);
 void mbp_bootimage_set_boardname(CBootImage *bootImage,

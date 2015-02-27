@@ -98,16 +98,15 @@ CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
  * \param data Byte array containing binary data
  * \param size Size of byte array
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa BootImage::load(const std::vector<unsigned char> &)
  */
-int mbp_bootimage_load_data(CBootImage *bootImage,
-                            const void *data, size_t size)
+bool mbp_bootimage_load_data(CBootImage *bootImage,
+                             const void *data, size_t size)
 {
     CAST(bootImage);
-    bool ret = bi->load(data_to_vector(data, size));
-    return ret ? 0 : -1;
+    return bi->load(data_to_vector(data, size));
 }
 
 /*!
@@ -116,16 +115,15 @@ int mbp_bootimage_load_data(CBootImage *bootImage,
  * \param bootImage CBootImage object
  * \param filename Path to boot image file
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa BootImage::load(const std::string &)
  */
-int mbp_bootimage_load_file(CBootImage *bootImage,
-                            const char *filename)
+bool mbp_bootimage_load_file(CBootImage *bootImage,
+                             const char *filename)
 {
     CAST(bootImage);
-    bool ret = bi->load(filename);
-    return ret ? 0 : -1;
+    return bi->load(filename);
 }
 
 /*!
@@ -153,16 +151,15 @@ void mbp_bootimage_create_data(const CBootImage *bootImage, void **data, size_t 
  * \param bootImage CBootImage object
  * \param filename Path to output file
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa BootImage::createFile()
  */
-int mbp_bootimage_create_file(CBootImage *bootImage,
-                              const char *filename)
+bool mbp_bootimage_create_file(CBootImage *bootImage,
+                               const char *filename)
 {
     CAST(bootImage);
-    bool ret = bi->createFile(filename);
-    return ret ? 0 : -1;
+    return bi->createFile(filename);
 }
 
 /*!
@@ -172,22 +169,21 @@ int mbp_bootimage_create_file(CBootImage *bootImage,
  * \param directory Output directory
  * \param prefix Filename prefix
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa BootImage::extract()
  */
-int mbp_bootimage_extract(CBootImage *bootImage,
-                          const char *directory, const char *prefix)
+bool mbp_bootimage_extract(CBootImage *bootImage,
+                           const char *directory, const char *prefix)
 {
     CAST(bootImage);
-    bool ret = bi->extract(directory, prefix);
-    return ret ? 0 : -1;
+    return bi->extract(directory, prefix);
 }
 
-int mbp_bootimage_is_loki(CBootImage *bootImage)
+bool mbp_bootimage_is_loki(CBootImage *bootImage)
 {
     CCAST(bootImage);
-    return bi->isLoki() ? 0 : -1;
+    return bi->isLoki();
 }
 
 /*!

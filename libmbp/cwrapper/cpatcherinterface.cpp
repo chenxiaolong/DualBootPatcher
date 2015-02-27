@@ -177,15 +177,15 @@ char * mbp_patcher_new_file_path(CPatcher *patcher)
  * \param progressCb Callback for receiving current progress value
  * \param detailsCb Callback for receiving detailed progress text
  * \param userData Pointer to pass to callback functions
- * \return 0 on success, otherwise -1 (and error set appropriately)
+ * \return true on success, otherwise false (and error set appropriately)
  *
  * \sa Patcher::patchFile()
  */
-int mbp_patcher_patch_file(CPatcher *patcher,
-                           MaxProgressUpdatedCallback maxProgressCb,
-                           ProgressUpdatedCallback progressCb,
-                           DetailsUpdatedCallback detailsCb,
-                           void *userData)
+bool mbp_patcher_patch_file(CPatcher *patcher,
+                            MaxProgressUpdatedCallback maxProgressCb,
+                            ProgressUpdatedCallback progressCb,
+                            DetailsUpdatedCallback detailsCb,
+                            void *userData)
 {
     CASTP(patcher);
 
@@ -195,10 +195,9 @@ int mbp_patcher_patch_file(CPatcher *patcher,
     wrapper.detailsCb = detailsCb;
     wrapper.userData = userData;
 
-    bool ret = p->patchFile(&maxProgressCbWrapper, &progressCbWrapper,
-                            &detailsCbWrapper,
-                            reinterpret_cast<void *>(&wrapper));
-    return ret ? 0 : -1;
+    return p->patchFile(&maxProgressCbWrapper, &progressCbWrapper,
+                        &detailsCbWrapper,
+                        reinterpret_cast<void *>(&wrapper));
 }
 
 /*!
@@ -292,15 +291,14 @@ char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher)
  *
  * \param patcher CAutoPatcher object
  * \param directory Directory containing the files to be patched
- * \return 0 on success, otherwise -1 (and error set appropriately)
+ * \return true on success, otherwise false (and error set appropriately)
  *
  * \sa AutoPatcher::patchFiles()
  */
-int mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory)
+bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory)
 {
     CASTAP(patcher);
-    bool ret = ap->patchFiles(directory);
-    return ret ? 0 : -1;
+    return ap->patchFiles(directory);
 }
 
 /*!
@@ -346,15 +344,14 @@ char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher)
  * \brief Start patching the ramdisk
  *
  * \param patcher CRamdiskPatcher object
- * \return 0 on success, otherwise -1 (and error set appropriately)
+ * \return true on success, otherwise false (and error set appropriately)
  *
  * \sa RamdiskPatcher::patchRamdisk()
  */
-int mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher)
+bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher)
 {
     CASTRP(patcher);
-    bool ret = rp->patchRamdisk();
-    return ret ? 0 : -1;
+    return rp->patchRamdisk();
 }
 
 }

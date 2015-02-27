@@ -98,16 +98,15 @@ CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
  * \param data Byte array containing binary data
  * \param size Size of byte array
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa CpioFile::load()
  */
-int mbp_cpiofile_load_data(CCpioFile *cpio,
-                           const void *data, size_t size)
+bool mbp_cpiofile_load_data(CCpioFile *cpio,
+                            const void *data, size_t size)
 {
     CAST(cpio);
-    bool ret = cf->load(data_to_vector(data, size));
-    return ret ? 0 : -1;
+    return cf->load(data_to_vector(data, size));
 }
 
 /*!
@@ -120,21 +119,21 @@ int mbp_cpiofile_load_data(CCpioFile *cpio,
  * \param data Output data
  * \param size Size of output data
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa CpioFile::createData()
  */
-int mbp_cpiofile_create_data(CCpioFile *cpio,
-                             void **data, size_t *size)
+bool mbp_cpiofile_create_data(CCpioFile *cpio,
+                              void **data, size_t *size)
 {
     CAST(cpio);
     std::vector<unsigned char> vData;
     if (!cf->createData(&vData)) {
-        return -1;
+        return false;
     }
 
     vector_to_data(vData, data, size);
-    return 0;
+    return true;
 }
 
 /*!
@@ -143,15 +142,14 @@ int mbp_cpiofile_create_data(CCpioFile *cpio,
  * \param cpio CCpioFile object
  * \param filename Filename
  *
- * \return 0 if file exists, otherwise -1
+ * \return true if file exists, otherwise false
  *
  * \sa CpioFile::exists()
  */
-int mbp_cpiofile_exists(const CCpioFile *cpio, const char *filename)
+bool mbp_cpiofile_exists(const CCpioFile *cpio, const char *filename)
 {
     CCAST(cpio);
-    bool ret = cf->exists(filename);
-    return ret ? 0 : -1;
+    return cf->exists(filename);
 }
 
 /*!
@@ -160,15 +158,14 @@ int mbp_cpiofile_exists(const CCpioFile *cpio, const char *filename)
  * \param cpio CCpioFile object
  * \param filename File to remove
  *
- * \return 0 if file was removed, otherwise -1
+ * \return true if file was removed, otherwise false
  *
  * \sa CpioFile::remove()
  */
-int mbp_cpiofile_remove(CCpioFile *cpio, const char *filename)
+bool mbp_cpiofile_remove(CCpioFile *cpio, const char *filename)
 {
     CAST(cpio);
-    bool ret = cf->remove(filename);
-    return ret ? 0 : -1;
+    return cf->remove(filename);
 }
 
 /*!
@@ -198,22 +195,22 @@ char ** mbp_cpiofile_filenames(const CCpioFile *cpio)
  * \param data Output data
  * \param size Size of output data
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa CpioFile::contents()
  */
-int mbp_cpiofile_contents(const CCpioFile *cpio,
-                          const char *filename,
-                          void **data, size_t *size)
+bool mbp_cpiofile_contents(const CCpioFile *cpio,
+                           const char *filename,
+                           void **data, size_t *size)
 {
     CCAST(cpio);
     std::vector<unsigned char> vData;
     if (!cf->contents(filename, &vData)) {
-        return -1;
+        return false;
     }
 
     vector_to_data(vData, data, size);
-    return 0;
+    return true;
 }
 
 /*!
@@ -224,17 +221,16 @@ int mbp_cpiofile_contents(const CCpioFile *cpio,
  * \param data Byte array containing binary data
  * \param size Size of byte array
  *
- * \return 0 on success or -1 on failure and error set appropriately
+ * \return true on success or false on failure and error set appropriately
  *
  * \sa CpioFile::setContents()
  */
-int mbp_cpiofile_set_contents(CCpioFile *cpio,
-                              const char *filename,
-                              const void *data, size_t size)
+bool mbp_cpiofile_set_contents(CCpioFile *cpio,
+                               const char *filename,
+                               const void *data, size_t size)
 {
     CAST(cpio);
-    bool ret = cf->setContents(filename, data_to_vector(data, size));
-    return ret ? 0 : -1;
+    return cf->setContents(filename, data_to_vector(data, size));
 }
 
 /*!
@@ -244,17 +240,16 @@ int mbp_cpiofile_set_contents(CCpioFile *cpio,
  * \param source Source path
  * \param target Target path
  *
- * \return 0 if the symlink was added, otherwise -1 and the error set
+ * \return true if the symlink was added, otherwise false and the error set
  *         appropriately
  *
  * \sa CpioFile::addSymlink()
  */
-int mbp_cpiofile_add_symlink(CCpioFile *cpio,
-                             const char *source, const char *target)
+bool mbp_cpiofile_add_symlink(CCpioFile *cpio,
+                              const char *source, const char *target)
 {
     CAST(cpio);
-    bool ret = cf->addSymlink(source, target);
-    return ret ? 0 : -1;
+    return cf->addSymlink(source, target);
 }
 
 /*!
@@ -265,18 +260,17 @@ int mbp_cpiofile_add_symlink(CCpioFile *cpio,
  * \param name Target path in archive
  * \param perms Octal unix permissions
  *
- * \return 0 if the file was added, otherwise -1 and the error set
+ * \return true if the file was added, otherwise false and the error set
  *         appropriately
  *
  * \sa CpioFile::addFile(const std::string &, const std::string &, unsigned int)
  */
-int mbp_cpiofile_add_file(CCpioFile *cpio,
-                          const char *path, const char *name,
-                          unsigned int perms)
+bool mbp_cpiofile_add_file(CCpioFile *cpio,
+                           const char *path, const char *name,
+                           unsigned int perms)
 {
     CAST(cpio);
-    bool ret = cf->addFile(path, name, perms);
-    return ret ? 0 : -1;
+    return cf->addFile(path, name, perms);
 }
 
 /*!
@@ -288,18 +282,17 @@ int mbp_cpiofile_add_file(CCpioFile *cpio,
  * \param name Target path in archive
  * \param perms Octal unix permissions
  *
- * \return 0 if the file was added, otherwise -1 and the error set
+ * \return true if the file was added, otherwise false and the error set
  *         appropriately
  *
  * \sa CpioFile::addFile(std::vector<unsigned char>, const std::string &, unsigned int)
  */
-int mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
-                                    const void *data, size_t size,
-                                    const char *name, unsigned int perms)
+bool mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
+                                     const void *data, size_t size,
+                                     const char *name, unsigned int perms)
 {
     CAST(cpio);
-    bool ret = cf->addFile(data_to_vector(data, size), name, perms);
-    return ret ? 0 : -1;
+    return cf->addFile(data_to_vector(data, size), name, perms);
 }
 
 }

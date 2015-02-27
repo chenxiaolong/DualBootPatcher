@@ -60,12 +60,12 @@ public class LibMbp {
         static native CBootImage mbp_bootimage_create();
         static native void mbp_bootimage_destroy(CBootImage bi);
         static native CPatcherError mbp_bootimage_error(CBootImage bi);
-        static native int mbp_bootimage_load_data(CBootImage bi, Pointer data, int size);
-        static native int mbp_bootimage_load_file(CBootImage bi, String filename);
+        static native boolean mbp_bootimage_load_data(CBootImage bi, Pointer data, int size);
+        static native boolean mbp_bootimage_load_file(CBootImage bi, String filename);
         static native void mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
-        static native int mbp_bootimage_create_file(CBootImage bi, String filename);
-        static native int mbp_bootimage_extract(CBootImage bi, String directory, String prefix);
-        static native int mbp_bootimage_is_loki(CBootImage bi);
+        static native boolean mbp_bootimage_create_file(CBootImage bi, String filename);
+        static native boolean mbp_bootimage_extract(CBootImage bi, String directory, String prefix);
+        static native boolean mbp_bootimage_is_loki(CBootImage bi);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
         static native void mbp_bootimage_set_boardname(CBootImage bi, String name);
         static native void mbp_bootimage_reset_boardname(CBootImage bi);
@@ -107,16 +107,16 @@ public class LibMbp {
         static native CCpioFile mbp_cpiofile_create();
         static native void mbp_cpiofile_destroy(CCpioFile cpio);
         static native CPatcherError mbp_cpiofile_error(CCpioFile cpio);
-        static native int mbp_cpiofile_load_data(CCpioFile cpio, Pointer data, int size);
-        static native int mbp_cpiofile_create_data(CCpioFile cpio, PointerByReference dataReturn, /* size_t */ IntByReference size);
-        static native int mbp_cpiofile_exists(CCpioFile cpio, String filename);
-        static native int mbp_cpiofile_remove(CCpioFile cpio, String filename);
+        static native boolean mbp_cpiofile_load_data(CCpioFile cpio, Pointer data, int size);
+        static native boolean mbp_cpiofile_create_data(CCpioFile cpio, PointerByReference dataReturn, /* size_t */ IntByReference size);
+        static native boolean mbp_cpiofile_exists(CCpioFile cpio, String filename);
+        static native boolean mbp_cpiofile_remove(CCpioFile cpio, String filename);
         static native Pointer mbp_cpiofile_filenames(CCpioFile cpio);
-        static native int mbp_cpiofile_contents(CCpioFile cpio, String filename, PointerByReference dataReturn, /* size_t */ IntByReference size);
-        static native int mbp_cpiofile_set_contents(CCpioFile cpio, String filename, Pointer data, /* size_t */ int size);
-        static native int mbp_cpiofile_add_symlink(CCpioFile cpio, String source, String target);
-        static native int mbp_cpiofile_add_file(CCpioFile cpio, String path, String name, int perms);
-        static native int mbp_cpiofile_add_file_from_data(CCpioFile cpio, Pointer data, /* size_t */ int size, String name, int perms);
+        static native boolean mbp_cpiofile_contents(CCpioFile cpio, String filename, PointerByReference dataReturn, /* size_t */ IntByReference size);
+        static native boolean mbp_cpiofile_set_contents(CCpioFile cpio, String filename, Pointer data, /* size_t */ int size);
+        static native boolean mbp_cpiofile_add_symlink(CCpioFile cpio, String source, String target);
+        static native boolean mbp_cpiofile_add_file(CCpioFile cpio, String path, String name, int perms);
+        static native boolean mbp_cpiofile_add_file_from_data(CCpioFile cpio, Pointer data, /* size_t */ int size, String name, int perms);
         // END: ccpiofile.h
 
         // BEGIN: cdevice.h
@@ -248,18 +248,18 @@ public class LibMbp {
         static native boolean mbp_patcher_uses_patchinfo(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
         static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
-        static native int mbp_patcher_patch_file(CPatcher patcher, MaxProgressUpdatedCallback maxProgressCb, ProgressUpdatedCallback progressCb, DetailsUpdatedCallback detailsCb, Pointer userData);
+        static native boolean mbp_patcher_patch_file(CPatcher patcher, MaxProgressUpdatedCallback maxProgressCb, ProgressUpdatedCallback progressCb, DetailsUpdatedCallback detailsCb, Pointer userData);
         static native void mbp_patcher_cancel_patching(CPatcher patcher);
 
         static native CPatcherError mbp_autopatcher_error(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_id(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_new_files(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_existing_files(CAutoPatcher patcher);
-        static native int mbp_autopatcher_patch_files(CAutoPatcher patcher, String directory);
+        static native boolean mbp_autopatcher_patch_files(CAutoPatcher patcher, String directory);
 
         static native CPatcherError mbp_ramdiskpatcher_error(CRamdiskPatcher patcher);
         static native Pointer mbp_ramdiskpatcher_id(CRamdiskPatcher patcher);
-        static native int mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher patcher);
+        static native boolean mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher patcher);
         // END: cpatcherinterface.h
     }
 
@@ -433,15 +433,14 @@ public class LibMbp {
 
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
-            int ret = CWrapper.mbp_bootimage_load_data(mCBootImage, mem, data.length);
-            return ret == 0;
+            return CWrapper.mbp_bootimage_load_data(mCBootImage, mem, data.length);
         }
 
         public boolean load(String filename) {
             log(mCBootImage, BootImage.class, "load", filename);
             ensureNotNull(filename);
 
-            return CWrapper.mbp_bootimage_load_file(mCBootImage, filename) == 0;
+            return CWrapper.mbp_bootimage_load_file(mCBootImage, filename);
         }
 
         public byte[] create() {
@@ -462,7 +461,7 @@ public class LibMbp {
             log(mCBootImage, BootImage.class, "createFile", path);
             ensureNotNull(path);
 
-            return CWrapper.mbp_bootimage_create_file(mCBootImage, path) == 0;
+            return CWrapper.mbp_bootimage_create_file(mCBootImage, path);
         }
 
         public boolean extract(String directory, String prefix) {
@@ -470,13 +469,13 @@ public class LibMbp {
             ensureNotNull(directory);
             ensureNotNull(prefix);
 
-            return CWrapper.mbp_bootimage_extract(mCBootImage, directory, prefix) == 0;
+            return CWrapper.mbp_bootimage_extract(mCBootImage, directory, prefix);
         }
 
         public boolean isLoki() {
             log(mCBootImage, BootImage.class, "isLoki");
 
-            return CWrapper.mbp_bootimage_is_loki(mCBootImage) == 0;
+            return CWrapper.mbp_bootimage_is_loki(mCBootImage);
         }
 
         public String getBoardName() {
@@ -768,8 +767,7 @@ public class LibMbp {
 
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
-            int ret = CWrapper.mbp_cpiofile_load_data(mCCpioFile, mem, data.length);
-            return ret == 0;
+            return CWrapper.mbp_cpiofile_load_data(mCCpioFile, mem, data.length);
         }
 
         public byte[] createData() {
@@ -777,9 +775,9 @@ public class LibMbp {
             PointerByReference pData = new PointerByReference();
             IntByReference pSize = new IntByReference();
 
-            int ret = CWrapper.mbp_cpiofile_create_data(mCCpioFile, pData, pSize);
+            boolean ret = CWrapper.mbp_cpiofile_create_data(mCCpioFile, pData, pSize);
 
-            if (ret != 0) {
+            if (!ret) {
                 return null;
             }
 
@@ -794,14 +792,14 @@ public class LibMbp {
             log(mCCpioFile, CpioFile.class, "isExists", name);
             ensureNotNull(name);
 
-            return CWrapper.mbp_cpiofile_exists(mCCpioFile, name) == 0;
+            return CWrapper.mbp_cpiofile_exists(mCCpioFile, name);
         }
 
         public boolean remove(String name) {
             log(mCCpioFile, CpioFile.class, "remove", name);
             ensureNotNull(name);
 
-            return CWrapper.mbp_cpiofile_remove(mCCpioFile, name) == 0;
+            return CWrapper.mbp_cpiofile_remove(mCCpioFile, name);
         }
 
         public String[] getFilenames() {
@@ -817,9 +815,9 @@ public class LibMbp {
             PointerByReference pData = new PointerByReference();
             IntByReference pSize = new IntByReference();
 
-            int ret = CWrapper.mbp_cpiofile_contents(mCCpioFile, name, pData, pSize);
+            boolean ret = CWrapper.mbp_cpiofile_contents(mCCpioFile, name, pData, pSize);
 
-            if (ret != 0) {
+            if (!ret) {
                 return null;
             }
 
@@ -837,8 +835,7 @@ public class LibMbp {
 
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
-            int ret = CWrapper.mbp_cpiofile_set_contents(mCCpioFile, name, mem, data.length);
-            return ret == 0;
+            return CWrapper.mbp_cpiofile_set_contents(mCCpioFile, name, mem, data.length);
         }
 
         public boolean addSymlink(String source, String target) {
@@ -846,7 +843,7 @@ public class LibMbp {
             ensureNotNull(source);
             ensureNotNull(target);
 
-            return CWrapper.mbp_cpiofile_add_symlink(mCCpioFile, source, target) == 0;
+            return CWrapper.mbp_cpiofile_add_symlink(mCCpioFile, source, target);
         }
 
         public boolean addFile(String path, String name, int perms) {
@@ -854,7 +851,7 @@ public class LibMbp {
             ensureNotNull(path);
             ensureNotNull(name);
 
-            return CWrapper.mbp_cpiofile_add_file(mCCpioFile, path, name, perms) == 0;
+            return CWrapper.mbp_cpiofile_add_file(mCCpioFile, path, name, perms);
         }
 
         public boolean addFile(byte[] contents, String name, int perms) {
@@ -864,9 +861,8 @@ public class LibMbp {
 
             Memory mem = new Memory(contents.length);
             mem.write(0, contents, 0, contents.length);
-            int ret = CWrapper.mbp_cpiofile_add_file_from_data(
+            return CWrapper.mbp_cpiofile_add_file_from_data(
                     mCCpioFile, mem, contents.length, name, perms);
-            return ret == 0;
         }
     }
 
@@ -2093,9 +2089,8 @@ public class LibMbp {
                 };
             }
 
-            int ret = CWrapper.mbp_patcher_patch_file(mCPatcher,
+            return CWrapper.mbp_patcher_patch_file(mCPatcher,
                     maxProgressCb, progressCb, detailsCb, null);
-            return ret == 0;
         }
 
         public void cancelPatching() {
@@ -2189,9 +2184,7 @@ public class LibMbp {
             log(mCAutoPatcher, AutoPatcher.class, "patchFiles", directory);
             ensureNotNull(directory);
 
-            int ret = CWrapper.mbp_autopatcher_patch_files(
-                    mCAutoPatcher, directory);
-            return ret == 0;
+            return CWrapper.mbp_autopatcher_patch_files(mCAutoPatcher, directory);
         }
     }
 
@@ -2258,8 +2251,7 @@ public class LibMbp {
 
         public boolean patchRamdisk() {
             log(mCRamdiskPatcher, RamdiskPatcher.class, "patchRamdisk");
-            int ret = CWrapper.mbp_ramdiskpatcher_patch_ramdisk(mCRamdiskPatcher);
-            return ret == 0;
+            return CWrapper.mbp_ramdiskpatcher_patch_ramdisk(mCRamdiskPatcher);
         }
     }
 }
