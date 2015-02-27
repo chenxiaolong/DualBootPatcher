@@ -92,13 +92,12 @@ std::vector<std::string> JflteDalvikCachePatcher::existingFiles() const
 
 bool JflteDalvikCachePatcher::patchFiles(const std::string &directory)
 {
-    std::vector<unsigned char> contents;
+    std::string contents;
 
     // BuildProp begin
-    FileUtils::readToMemory(directory + "/" + BuildProp, &contents);
-    std::string strContents(contents.begin(), contents.end());
+    FileUtils::readToString(directory + "/" + BuildProp, &contents);
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (it->find("dalvik.vm.dexopt-data-only") != std::string::npos) {
@@ -107,9 +106,8 @@ bool JflteDalvikCachePatcher::patchFiles(const std::string &directory)
         }
     }
 
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    FileUtils::writeFromMemory(directory + "/" + BuildProp, contents);
+    contents = boost::join(lines, "\n");
+    FileUtils::writeFromString(directory + "/" + BuildProp, contents);
     // BuildProp end
 
     return true;

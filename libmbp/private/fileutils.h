@@ -36,9 +36,13 @@ class FileUtils
 public:
     static PatcherError readToMemory(const std::string &path,
                                      std::vector<unsigned char> *contents);
+    static PatcherError readToString(const std::string &path,
+                                     std::string *contents);
 
     static PatcherError writeFromMemory(const std::string &path,
                                         const std::vector<unsigned char> &contents);
+    static PatcherError writeFromString(const std::string &path,
+                                        const std::string &contents);
 
     // libarchive
     static bool laReadToByteArray(archive *aInput,

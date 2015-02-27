@@ -55,12 +55,41 @@ PatcherError FileUtils::readToMemory(const std::string &path,
     std::vector<unsigned char> data(size);
 
     if (!file.read(reinterpret_cast<char *>(data.data()), size)) {
-        file.close();
-
         return PatcherError::createIOError(ErrorCode::FileReadError, path);
     }
 
-    file.close();
+    data.swap(*contents);
+
+    return PatcherError();
+}
+
+/*!
+    \brief Read contents of a file into a string
+
+    \param path Path to file
+    \param contents Output string (not modified unless reading succeeds)
+
+    \return Success or not
+ */
+PatcherError FileUtils::readToString(const std::string &path,
+                                     std::string *contents)
+{
+    std::ifstream file(path, std::ios::binary);
+
+    if (file.fail()) {
+        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+    }
+
+    file.seekg(0, std::ios::end);
+    auto size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::string data;
+    data.resize(size);
+
+    if (!file.read(&data[0], size)) {
+        return PatcherError::createIOError(ErrorCode::FileReadError, path);
+    }
 
     data.swap(*contents);
 
@@ -77,7 +106,20 @@ PatcherError FileUtils::writeFromMemory(const std::string &path,
     }
 
     file.write(reinterpret_cast<const char *>(contents.data()), contents.size());
-    file.close();
+
+    return PatcherError();
+}
+
+PatcherError FileUtils::writeFromString(const std::string &path,
+                                        const std::string &contents)
+{
+    std::ofstream file(path, std::ios::binary);
+
+    if (file.fail()) {
+        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+    }
+
+    file.write(contents.data(), contents.size());
 
     return PatcherError();
 }
