@@ -697,6 +697,9 @@ int daemon_main(int argc, char *argv[])
 
             closeproc(proc);
         }
+
+        // Give processes a chance to exit
+        usleep(500000);
     }
 
     if (fork_flag) {
