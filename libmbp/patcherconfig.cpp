@@ -626,6 +626,7 @@ void PatcherConfig::destroyPatcher(Patcher *patcher)
     assert(it != m_impl->allocPatchers.end());
 
     m_impl->allocPatchers.erase(it);
+    delete patcher;
 }
 
 /*!
@@ -642,6 +643,7 @@ void PatcherConfig::destroyAutoPatcher(AutoPatcher *patcher)
     assert(it != m_impl->allocAutoPatchers.end());
 
     m_impl->allocAutoPatchers.erase(it);
+    delete patcher;
 }
 
 /*!
@@ -658,6 +660,7 @@ void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
     assert(it != m_impl->allocRamdiskPatchers.end());
 
     m_impl->allocRamdiskPatchers.erase(it);
+    delete patcher;
 }
 
 // Based on the code from:
