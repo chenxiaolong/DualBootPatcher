@@ -85,6 +85,12 @@ PatcherError & PatcherError::operator=(PatcherError &&other)
     return *this;
 }
 
+PatcherError::operator bool() const
+{
+    return m_impl->errorType == ErrorType::GenericError
+            && m_impl->errorCode == ErrorCode::NoError;
+}
+
 /*! \cond INTERNAL */
 PatcherError PatcherError::createGenericError(ErrorCode error)
 {

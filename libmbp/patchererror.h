@@ -56,6 +56,8 @@ public:
     PatcherError & operator=(const PatcherError &other);
     PatcherError & operator=(PatcherError &&other);
 
+    explicit operator bool() const;
+
 
 private:
     PatcherError(ErrorType errorType, ErrorCode errorCode);
