@@ -84,16 +84,15 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
     m_impl->patchFile = pc->dataDirectory() + "/patches/" + args.at(ArgFile);
 
-    std::vector<unsigned char> contents;
-    auto ret = FileUtils::readToMemory(m_impl->patchFile, &contents);
+    std::string contents;
+    auto ret = FileUtils::readToString(m_impl->patchFile, &contents);
     if (ret.errorCode() != ErrorCode::NoError) {
         LOGW("Failed to read patch file");
         return;
     }
 
-    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     const MBP_regex reOrigFile("---\\s+(.+?)(?:$|\t)");
 
