@@ -491,7 +491,7 @@ bool CpioFile::addFile(const std::string &path, const std::string &name,
 
     std::vector<unsigned char> contents;
     auto ret = FileUtils::readToMemory(path, &contents);
-    if (ret.errorCode() != ErrorCode::NoError) {
+    if (!ret) {
         m_impl->error = ret;
         return false;
     }

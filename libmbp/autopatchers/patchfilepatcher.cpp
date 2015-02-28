@@ -86,7 +86,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
     std::string contents;
     auto ret = FileUtils::readToString(m_impl->patchFile, &contents);
-    if (ret.errorCode() != ErrorCode::NoError) {
+    if (!ret) {
         LOGW("Failed to read patch file");
         return;
     }

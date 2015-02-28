@@ -115,9 +115,8 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     std::vector<unsigned char> contents;
     m_impl->cpio->contents(Msm8960LpmRc, &contents);
 
-    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (MBP_regex_search(*it, MBP_regex("^\\s+mount.*/cache.*$"))) {
@@ -125,7 +124,7 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
         }
     }
 
-    strContents = boost::join(lines, "\n");
+    std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     m_impl->cpio->setContents(Msm8960LpmRc, std::move(contents));
 

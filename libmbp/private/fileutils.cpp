@@ -404,7 +404,7 @@ PatcherError FileUtils::laCountFiles(const std::string &path,
 
     archive_entry *entry;
 
-    int i = 0;
+    unsigned int i = 0;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
         const std::string name = archive_entry_pathname(entry);

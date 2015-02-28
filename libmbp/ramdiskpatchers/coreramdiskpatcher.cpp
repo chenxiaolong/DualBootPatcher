@@ -124,9 +124,8 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
     std::vector<unsigned char> contents;
     m_impl->cpio->contents(FileContexts, &contents);
 
-    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (boost::starts_with(*it, "/data/media")) {
@@ -138,7 +137,7 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
         lines.push_back(DataMediaContext);
     }
 
-    strContents = boost::join(lines, "\n");
+    std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     m_impl->cpio->setContents(FileContexts, std::move(contents));
 

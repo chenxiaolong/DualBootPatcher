@@ -479,10 +479,10 @@ void PatcherConfig::Impl::loadDefaultDevices()
  */
 std::vector<std::string> PatcherConfig::patchers() const
 {
-    std::vector<std::string> list;
-    list.push_back(MultiBootPatcher::Id);
-    list.push_back(MbtoolUpdater::Id);
-    return list;
+    return {
+        MultiBootPatcher::Id,
+        MbtoolUpdater::Id
+    };
 }
 
 /*!
@@ -492,10 +492,10 @@ std::vector<std::string> PatcherConfig::patchers() const
  */
 std::vector<std::string> PatcherConfig::autoPatchers() const
 {
-    std::vector<std::string> list;
-    list.push_back(PatchFilePatcher::Id);
-    list.push_back(StandardPatcher::Id);
-    return list;
+    return {
+        PatchFilePatcher::Id,
+        StandardPatcher::Id
+    };
 }
 
 /*!
@@ -505,17 +505,17 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
  */
 std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 {
-    std::vector<std::string> list;
-    list.push_back(BaconRamdiskPatcher::Id);
-    list.push_back(FalconRamdiskPatcher::Id);
-    list.push_back(FloAOSPRamdiskPatcher::Id);
-    list.push_back(HammerheadDefaultRamdiskPatcher::Id);
-    list.push_back(HlteDefaultRamdiskPatcher::Id);
-    list.push_back(JflteDefaultRamdiskPatcher::Id);
-    list.push_back(KlteDefaultRamdiskPatcher::Id);
-    list.push_back(LGG2RamdiskPatcher::Id);
-    list.push_back(TrlteDefaultRamdiskPatcher::Id);
-    return list;
+    return {
+        BaconRamdiskPatcher::Id,
+        FalconRamdiskPatcher::Id,
+        FloAOSPRamdiskPatcher::Id,
+        HammerheadDefaultRamdiskPatcher::Id,
+        HlteDefaultRamdiskPatcher::Id,
+        JflteDefaultRamdiskPatcher::Id,
+        KlteDefaultRamdiskPatcher::Id,
+        LGG2RamdiskPatcher::Id,
+        TrlteDefaultRamdiskPatcher::Id
+    };
 }
 
 /*!

@@ -96,12 +96,11 @@ std::vector<std::string> StandardPatcher::existingFiles() const
 
 bool StandardPatcher::patchFiles(const std::string &directory)
 {
-    std::vector<unsigned char> contents;
+    std::string contents;
 
-    FileUtils::readToMemory(directory + "/" + UpdaterScript, &contents);
-    std::string strContents(contents.begin(), contents.end());
+    FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     replaceMountLines(&lines, m_impl->info->device());
     replaceUnmountLines(&lines, m_impl->info->device());
@@ -115,9 +114,8 @@ bool StandardPatcher::patchFiles(const std::string &directory)
         removeDeviceChecks(&lines);
     }
 
-    strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    FileUtils::writeFromMemory(directory + "/" + UpdaterScript, contents);
+    contents = boost::join(lines, "\n");
+    FileUtils::writeFromString(directory + "/" + UpdaterScript, contents);
 
     return true;
 }

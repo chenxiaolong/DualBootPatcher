@@ -185,9 +185,8 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     std::vector<unsigned char> contents;
     cpio->contents("init.rc", &contents);
 
-    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     MBP_regex whitespace("^\\s$");
     bool insideService = false;
@@ -207,7 +206,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
         }
     }
 
-    strContents = boost::join(lines, "\n");
+    std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     cpio->setContents("init.rc", std::move(contents));
 

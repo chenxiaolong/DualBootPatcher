@@ -107,9 +107,8 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
             return false;
         }
 
-        std::string strContents(contents.begin(), contents.end());
         std::vector<std::string> lines;
-        boost::split(lines, strContents, boost::is_any_of("\n"));
+        boost::split(lines, contents, boost::is_any_of("\n"));
 
         // Some Android 4.2 ROMs mount the cache partition in the init
         // scripts, so the fstab has no cache line
@@ -135,7 +134,7 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
                     cacheLine, CachePartition, mountArgs, voldArgs));
         }
 
-        strContents = boost::join(lines, "\n");
+        std::string strContents = boost::join(lines, "\n");
         contents.assign(strContents.begin(), strContents.end());
         m_impl->cpio->setContents(fstab, std::move(contents));
     }
@@ -159,9 +158,8 @@ bool QcomRamdiskPatcher::stripManualCacheMounts(const std::string &filename)
         return false;
     }
 
-    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (MBP_regex_search(*it,
@@ -175,7 +173,7 @@ bool QcomRamdiskPatcher::stripManualCacheMounts(const std::string &filename)
         }
     }
 
-    strContents = boost::join(lines, "\n");
+    std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     m_impl->cpio->setContents(filename, std::move(contents));
 
@@ -190,9 +188,8 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         return false;
     }
 
-    std::string strContents(contents.begin(), contents.end());
     std::vector<std::string> lines;
-    boost::split(lines, strContents, boost::is_any_of("\n"));
+    boost::split(lines, contents, boost::is_any_of("\n"));
 
     std::vector<std::string> fstabs;
 
@@ -248,7 +245,7 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         lines.push_back("    oneshot");
     }
 
-    strContents = boost::join(lines, "\n");
+    std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     m_impl->cpio->setContents(filename, std::move(contents));
 
