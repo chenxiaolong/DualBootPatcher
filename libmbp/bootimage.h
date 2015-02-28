@@ -53,31 +53,31 @@ public:
     void setKernelCmdline(const std::string &cmdline);
     void resetKernelCmdline();
 
-    unsigned int pageSize() const;
-    void setPageSize(unsigned int size);
+    uint32_t pageSize() const;
+    void setPageSize(uint32_t size);
     void resetPageSize();
 
-    unsigned int kernelAddress() const;
-    void setKernelAddress(unsigned int address);
+    uint32_t kernelAddress() const;
+    void setKernelAddress(uint32_t address);
     void resetKernelAddress();
 
-    unsigned int ramdiskAddress() const;
-    void setRamdiskAddress(unsigned int address);
+    uint32_t ramdiskAddress() const;
+    void setRamdiskAddress(uint32_t address);
     void resetRamdiskAddress();
 
-    unsigned int secondBootloaderAddress() const;
-    void setSecondBootloaderAddress(unsigned int address);
+    uint32_t secondBootloaderAddress() const;
+    void setSecondBootloaderAddress(uint32_t address);
     void resetSecondBootloaderAddress();
 
-    unsigned int kernelTagsAddress() const;
-    void setKernelTagsAddress(unsigned int address);
+    uint32_t kernelTagsAddress() const;
+    void setKernelTagsAddress(uint32_t address);
     void resetKernelTagsAddress();
 
     // Set addresses using a base and offsets
-    void setAddresses(unsigned int base, unsigned int kernelOffset,
-                      unsigned int ramdiskOffset,
-                      unsigned int secondBootloaderOffset,
-                      unsigned int kernelTagsOffset);
+    void setAddresses(uint32_t base, uint32_t kernelOffset,
+                      uint32_t ramdiskOffset,
+                      uint32_t secondBootloaderOffset,
+                      uint32_t kernelTagsOffset);
 
     // For setting the various images
 

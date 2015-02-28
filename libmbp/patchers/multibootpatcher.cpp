@@ -360,7 +360,7 @@ bool MultiBootPatcher::Impl::patchZip()
 
     unsigned int count;
     auto result = FileUtils::laCountFiles(info->filename(), &count);
-    if (result.errorCode() != ErrorCode::NoError) {
+    if (!result) {
         error = result;
         return false;
     }
@@ -408,7 +408,7 @@ bool MultiBootPatcher::Impl::patchZip()
             aOutput, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
-    if (result.errorCode() != ErrorCode::NoError) {
+    if (!result) {
         error = result;
         return false;
     }
@@ -422,7 +422,7 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/aromawrapper.zip",
             pc->dataDirectory() + "/aromawrapper.zip");
-    if (result.errorCode() != ErrorCode::NoError) {
+    if (!result) {
         error = result;
         return false;
     }
@@ -436,7 +436,7 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
         aOutput, "multiboot/bb-wrapper.sh",
         pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (result.errorCode() != ErrorCode::NoError) {
+    if (!result) {
         error = result;
         return false;
     }
@@ -451,7 +451,7 @@ bool MultiBootPatcher::Impl::patchZip()
             aOutput, "multiboot/unzip",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/unzip");
-    if (result.errorCode() != ErrorCode::NoError) {
+    if (!result) {
         error = result;
         return false;
     }
@@ -467,7 +467,7 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
             aOutput, "multiboot/device",
             std::vector<unsigned char>(id.begin(), id.end()));
-    if (result.errorCode() != ErrorCode::NoError) {
+    if (!result) {
         error = result;
         return false;
     }
@@ -491,7 +491,7 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
                                    const std::string &temporaryDir,
                                    const std::unordered_set<std::string> &exclude)
 {
-    const std::string key = info->patchInfo()->keyFromFilename(info->filename());
+    auto const key = info->patchInfo()->keyFromFilename(info->filename());
 
     // Boot image params
     bool hasBootImage = info->patchInfo()->hasBootImage(key);
@@ -627,7 +627,7 @@ bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
                     temporaryDir + "/" + file);
         }
 
-        if (ret.errorCode() != ErrorCode::NoError) {
+        if (!ret) {
             error = ret;
             return false;
         }

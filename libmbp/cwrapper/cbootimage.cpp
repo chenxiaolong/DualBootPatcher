@@ -287,7 +287,7 @@ void mbp_bootimage_reset_kernel_cmdline(CBootImage *bootImage)
  *
  * \sa BootImage::pageSize()
  */
-unsigned int mbp_bootimage_page_size(const CBootImage *bootImage)
+uint32_t mbp_bootimage_page_size(const CBootImage *bootImage)
 {
     CCAST(bootImage);
     return bi->pageSize();
@@ -302,7 +302,7 @@ unsigned int mbp_bootimage_page_size(const CBootImage *bootImage)
  * \sa BootImage::setPageSize()
  */
 void mbp_bootimage_set_page_size(CBootImage *bootImage,
-                                 unsigned int pageSize)
+                                 uint32_t pageSize)
 {
     CAST(bootImage);
     bi->setPageSize(pageSize);
@@ -330,7 +330,7 @@ void mbp_bootimage_reset_page_size(CBootImage *bootImage)
  *
  * \sa BootImage::kernelAddress()
  */
-unsigned int mbp_bootimage_kernel_address(const CBootImage *bootImage)
+uint32_t mbp_bootimage_kernel_address(const CBootImage *bootImage)
 {
     CCAST(bootImage);
     return bi->kernelAddress();
@@ -345,7 +345,7 @@ unsigned int mbp_bootimage_kernel_address(const CBootImage *bootImage)
  * \sa BootImage::setKernelAddress()
  */
 void mbp_bootimage_set_kernel_address(CBootImage *bootImage,
-                                      unsigned int address)
+                                      uint32_t address)
 {
     CAST(bootImage);
     bi->setKernelAddress(address);
@@ -373,7 +373,7 @@ void mbp_bootimage_reset_kernel_address(CBootImage *bootImage)
  *
  * \sa BootImage::ramdiskAddress()
  */
-unsigned int mbp_bootimage_ramdisk_address(const CBootImage *bootImage)
+uint32_t mbp_bootimage_ramdisk_address(const CBootImage *bootImage)
 {
     CCAST(bootImage);
     return bi->ramdiskAddress();
@@ -388,7 +388,7 @@ unsigned int mbp_bootimage_ramdisk_address(const CBootImage *bootImage)
  * \sa BootImage::setRamdiskAddress()
  */
 void mbp_bootimage_set_ramdisk_address(CBootImage *bootImage,
-                                       unsigned int address)
+                                       uint32_t address)
 {
     CAST(bootImage);
     bi->setRamdiskAddress(address);
@@ -416,7 +416,7 @@ void mbp_bootimage_reset_ramdisk_address(CBootImage *bootImage)
  *
  * \sa BootImage::secondBootloaderAddress()
  */
-unsigned int mbp_bootimage_second_bootloader_address(const CBootImage *bootImage)
+uint32_t mbp_bootimage_second_bootloader_address(const CBootImage *bootImage)
 {
     CCAST(bootImage);
     return bi->secondBootloaderAddress();
@@ -431,7 +431,7 @@ unsigned int mbp_bootimage_second_bootloader_address(const CBootImage *bootImage
  * \sa BootImage::setSecondBootloaderAddress()
  */
 void mbp_bootimage_set_second_bootloader_address(CBootImage *bootImage,
-                                                 unsigned int address)
+                                                 uint32_t address)
 {
     CAST(bootImage);
     bi->setSecondBootloaderAddress(address);
@@ -460,7 +460,7 @@ void mbp_bootimage_reset_second_bootloader_address(CBootImage *bootImage)
  *
  * \sa BootImage::kernelTagsAddress()
  */
-unsigned int mbp_bootimage_kernel_tags_address(const CBootImage *bootImage)
+uint32_t mbp_bootimage_kernel_tags_address(const CBootImage *bootImage)
 {
     CCAST(bootImage);
     return bi->kernelTagsAddress();
@@ -475,7 +475,7 @@ unsigned int mbp_bootimage_kernel_tags_address(const CBootImage *bootImage)
  * \sa BootImage::setKernelTagsAddress()
  */
 void mbp_bootimage_set_kernel_tags_address(CBootImage *bootImage,
-                                           unsigned int address)
+                                           uint32_t address)
 {
     CAST(bootImage);
     bi->setKernelTagsAddress(address);
@@ -507,11 +507,11 @@ void mbp_bootimage_reset_kernel_tags_address(CBootImage *bootImage)
  * \sa BootImage::setAddresses()
  */
 void mbp_bootimage_set_addresses(CBootImage *bootImage,
-                                 unsigned int base,
-                                 unsigned int kernelOffset,
-                                 unsigned int ramdiskOffset,
-                                 unsigned int secondBootloaderOffset,
-                                 unsigned int kernelTagsOffset)
+                                 uint32_t base,
+                                 uint32_t kernelOffset,
+                                 uint32_t ramdiskOffset,
+                                 uint32_t secondBootloaderOffset,
+                                 uint32_t kernelTagsOffset)
 {
     CAST(bootImage);
     bi->setAddresses(base, kernelOffset, ramdiskOffset,

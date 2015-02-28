@@ -36,18 +36,18 @@ namespace mbp
 {
 
 static const char *BOOT_MAGIC = "ANDROID!";
-static const int BOOT_MAGIC_SIZE = 8;
-static const int BOOT_NAME_SIZE = 16;
-static const int BOOT_ARGS_SIZE = 512;
+static const uint32_t BOOT_MAGIC_SIZE = 8;
+static const uint32_t BOOT_NAME_SIZE = 16;
+static const uint32_t BOOT_ARGS_SIZE = 512;
 
 static const char *DEFAULT_BOARD = "";
 static const char *DEFAULT_CMDLINE = "";
-static const unsigned int DEFAULT_PAGE_SIZE = 2048u;
-static const unsigned int DEFAULT_BASE = 0x10000000u;
-static const unsigned int DEFAULT_KERNEL_OFFSET = 0x00008000u;
-static const unsigned int DEFAULT_RAMDISK_OFFSET = 0x01000000u;
-static const unsigned int DEFAULT_SECOND_OFFSET = 0x00f00000u;
-static const unsigned int DEFAULT_TAGS_OFFSET = 0x00000100u;
+static const uint32_t DEFAULT_PAGE_SIZE = 2048u;
+static const uint32_t DEFAULT_BASE = 0x10000000u;
+static const uint32_t DEFAULT_KERNEL_OFFSET = 0x00008000u;
+static const uint32_t DEFAULT_RAMDISK_OFFSET = 0x01000000u;
+static const uint32_t DEFAULT_SECOND_OFFSET = 0x00f00000u;
+static const uint32_t DEFAULT_TAGS_OFFSET = 0x00000100u;
 
 
 /*! \cond INTERNAL */
@@ -55,24 +55,24 @@ struct BootImageHeader
 {
     unsigned char magic[BOOT_MAGIC_SIZE];
 
-    unsigned kernel_size;   /* size in bytes */
-    unsigned kernel_addr;   /* physical load addr */
+    uint32_t kernel_size;   /* size in bytes */
+    uint32_t kernel_addr;   /* physical load addr */
 
-    unsigned ramdisk_size;  /* size in bytes */
-    unsigned ramdisk_addr;  /* physical load addr */
+    uint32_t ramdisk_size;  /* size in bytes */
+    uint32_t ramdisk_addr;  /* physical load addr */
 
-    unsigned second_size;   /* size in bytes */
-    unsigned second_addr;   /* physical load addr */
+    uint32_t second_size;   /* size in bytes */
+    uint32_t second_addr;   /* physical load addr */
 
-    unsigned tags_addr;     /* physical addr for kernel tags */
-    unsigned page_size;     /* flash page size we assume */
-    unsigned dt_size;       /* device tree in bytes */
-    unsigned unused;        /* future expansion: should be 0 */
+    uint32_t tags_addr;     /* physical addr for kernel tags */
+    uint32_t page_size;     /* flash page size we assume */
+    uint32_t dt_size;       /* device tree in bytes */
+    uint32_t unused;        /* future expansion: should be 0 */
     unsigned char name[BOOT_NAME_SIZE]; /* asciiz product name */
 
     unsigned char cmdline[BOOT_ARGS_SIZE];
 
-    unsigned id[8]; /* timestamp / checksum / sha1 / etc */
+    uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
 };
 /*! \endcond */
 
@@ -82,12 +82,12 @@ static const char *LOKI_MAGIC = "LOKI";
 /*! \cond INTERNAL */
 struct LokiHeader {
     unsigned char magic[4]; /* 0x494b4f4c */
-    unsigned int recovery;  /* 0 = boot.img, 1 = recovery.img */
+    uint32_t recovery;      /* 0 = boot.img, 1 = recovery.img */
     char build[128];        /* Build number */
 
-    unsigned int orig_kernel_size;
-    unsigned int orig_ramdisk_size;
-    unsigned int ramdisk_addr;
+    uint32_t orig_kernel_size;
+    uint32_t orig_ramdisk_size;
+    uint32_t ramdisk_addr;
 };
 /*! \endcond */
 
@@ -130,7 +130,7 @@ static const unsigned char SHELL_CODE[] =
 class BootImage::Impl
 {
 public:
-    enum COMPRESSION_TYPES {
+    enum class CompressionType {
         GZIP,
         LZ4
     };
@@ -147,28 +147,28 @@ public:
     std::vector<unsigned char> deviceTreeImage;
 
     // Whether the ramdisk is LZ4 or gzip compressed
-    int ramdiskCompression = GZIP;
+    CompressionType ramdiskCompression = CompressionType::GZIP;
 
     bool isLoki;
 
     PatcherError error;
 
     bool loadAndroidHeader(const std::vector<unsigned char> &data,
-                           const int headerIndex);
+                           const uint32_t headerIndex);
     bool loadLokiHeader(const std::vector<unsigned char> &data,
-                        const int headerIndex);
+                        const uint32_t headerIndex);
     bool loadLokiNewImage(const std::vector<unsigned char> &data,
                           const LokiHeader *loki);
     bool loadLokiOldImage(const std::vector<unsigned char> &data,
                           const LokiHeader *loki);
-    unsigned int lokiOldFindGzipOffset(const std::vector<unsigned char> &data,
-                                       const unsigned int startOffset) const;
-    unsigned int lokiOldFindRamdiskSize(const std::vector<unsigned char> &data,
-                                        const int &ramdiskOffset) const;
-    unsigned int lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
-                                        const LokiHeader *loki) const;
-    int skipPadding(const int &itemSize,
-                    const int &pageSize) const;
+    uint32_t lokiOldFindGzipOffset(const std::vector<unsigned char> &data,
+                                   const uint32_t startOffset) const;
+    uint32_t lokiOldFindRamdiskSize(const std::vector<unsigned char> &data,
+                                    const uint32_t ramdiskOffset) const;
+    uint32_t lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
+                                    const LokiHeader *loki) const;
+    uint32_t skipPadding(const uint32_t itemSize,
+                         const uint32_t pageSize) const;
     void updateSHA1Hash();
 
     void dumpHeader() const;
@@ -271,16 +271,16 @@ bool BootImage::load(const std::vector<unsigned char> &data)
 
     // Find the Android magic string
     bool isAndroid = false;
-    int headerIndex = -1;
+    uint32_t headerIndex;
 
-    int searchRange;
+    uint32_t searchRange;
     if (m_impl->isLoki) {
         searchRange = 32;
     } else {
         searchRange = 512;
     }
 
-    for (int i = 0; i <= searchRange; ++i) {
+    for (uint32_t i = 0; i <= searchRange; ++i) {
         if (std::memcmp(&data[i], BOOT_MAGIC, BOOT_MAGIC_SIZE) == 0) {
             isAndroid = true;
             headerIndex = i;
@@ -323,7 +323,7 @@ bool BootImage::load(const std::string &filename)
 {
     std::vector<unsigned char> data;
     auto ret = FileUtils::readToMemory(filename, &data);
-    if (ret.errorCode() != ErrorCode::NoError) {
+    if (!ret) {
         m_impl->error = ret;
         return false;
     }
@@ -332,7 +332,7 @@ bool BootImage::load(const std::string &filename)
 }
 
 bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
-                                        const int headerIndex)
+                                        const uint32_t headerIndex)
 {
     // Make sure the file is large enough to contain the header
     if (data.size() < headerIndex + sizeof(BootImageHeader)) {
@@ -354,7 +354,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
     // Don't try to read the various images inside the boot image if it's
     // Loki'd since some offsets and sizes need to be calculated
     if (!isLoki) {
-        unsigned int pos = sizeof(BootImageHeader);
+        uint32_t pos = sizeof(BootImageHeader);
         pos += skipPadding(sizeof(BootImageHeader), android->page_size);
 
         kernelImage.assign(
@@ -369,9 +369,9 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
                 data.begin() + pos + android->ramdisk_size);
 
         if (data[pos] == 0x02 && data[pos + 1] == 0x21) {
-            ramdiskCompression = Impl::LZ4;
+            ramdiskCompression = Impl::CompressionType::LZ4;
         } else {
-            ramdiskCompression = Impl::GZIP;
+            ramdiskCompression = Impl::CompressionType::GZIP;
         }
 
         pos += android->ramdisk_size;
@@ -403,7 +403,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
 }
 
 bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
-                                     const int headerIndex)
+                                     const uint32_t headerIndex)
 {
     // Make sure the file is large enough to contain the Loki header
     if (data.size() < 0x400 + sizeof(LokiHeader)) {
@@ -441,8 +441,8 @@ bool BootImage::Impl::loadLokiNewImage(const std::vector<unsigned char> &data,
 {
     LOGD("This is a new loki image");
 
-    unsigned int pageMask = header.page_size - 1;
-    unsigned int fakeSize;
+    uint32_t pageMask = header.page_size - 1;
+    uint32_t fakeSize;
 
     // From loki_unlok.c
     if (header.ramdisk_addr > 0x88f00000 || header.ramdisk_addr < 0xfa00000) {
@@ -452,7 +452,7 @@ bool BootImage::Impl::loadLokiNewImage(const std::vector<unsigned char> &data,
     }
 
     // Find original ramdisk address
-    unsigned int ramdiskAddr = lokiFindRamdiskAddress(data, loki);
+    uint32_t ramdiskAddr = lokiFindRamdiskAddress(data, loki);
     if (ramdiskAddr == 0) {
         error = PatcherError::createBootImageError(
                 ErrorCode::BootImageNoRamdiskAddressError);
@@ -464,10 +464,8 @@ bool BootImage::Impl::loadLokiNewImage(const std::vector<unsigned char> &data,
     header.kernel_size = loki->orig_kernel_size;
     header.ramdisk_addr = ramdiskAddr;
 
-    unsigned int pageKernelSize =
-            (loki->orig_kernel_size + pageMask) & ~pageMask;
-    unsigned int pageRamdiskSize =
-            (loki->orig_ramdisk_size + pageMask) & ~pageMask;
+    uint32_t pageKernelSize = (loki->orig_kernel_size + pageMask) & ~pageMask;
+    uint32_t pageRamdiskSize = (loki->orig_ramdisk_size + pageMask) & ~pageMask;
 
     // Kernel image
     kernelImage.assign(
@@ -503,21 +501,22 @@ bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
     m_parent->resetKernelTagsAddress();
     FLOGD("Setting kernel tags address to default: {:#08x}", header.tags_addr);
 
-    unsigned int kernelSize;
-    unsigned int ramdiskSize;
-    unsigned int ramdiskAddr;
+    uint32_t kernelSize;
+    uint32_t ramdiskSize;
+    uint32_t ramdiskAddr;
 
     // If the boot image was patched with an early version of loki, the original
     // kernel size is not stored in the loki header properly (or in the shellcode).
     // The size is stored in the kernel image's header though, so we'll use that.
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
-    kernelSize = *(reinterpret_cast<const int *>(&data[header.page_size + 0x2c]));
+    kernelSize = *(reinterpret_cast<const int32_t *>(
+            &data[header.page_size + 0x2c]));
     FLOGD("Kernel size: {:d}", kernelSize);
 
 
     // The ramdisk always comes after the kernel in boot images, so start the
     // search there
-    unsigned int gzipOffset = lokiOldFindGzipOffset(
+    uint32_t gzipOffset = lokiOldFindGzipOffset(
             data, header.page_size + kernelSize);
     if (gzipOffset == 0) {
         error = PatcherError::createBootImageError(
@@ -557,8 +556,8 @@ bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
     return true;
 }
 
-unsigned int BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned char> &data,
-                                                    const unsigned int startOffset) const
+uint32_t BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned char> &data,
+                                                const uint32_t startOffset) const
 {
     // gzip header:
     // byte 0-1 : magic bytes 0x1f, 0x8b
@@ -570,10 +569,10 @@ unsigned int BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned c
 
     static const unsigned char gzipDeflate[] = { 0x1f, 0x8b, 0x08 };
 
-    std::vector<unsigned int> offsetsFlag8; // Has original file name
-    std::vector<unsigned int> offsetsFlag0; // No flags
+    std::vector<uint32_t> offsetsFlag8; // Has original file name
+    std::vector<uint32_t> offsetsFlag0; // No flags
 
-    unsigned int curOffset = startOffset - 1;
+    uint32_t curOffset = startOffset - 1;
 
     while (true) {
         // Try to find gzip header
@@ -599,7 +598,7 @@ unsigned int BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned c
             offsetsFlag0.push_back(curOffset);
         } else {
             FLOGW("Unexpected flag {:#02x} found in gzip header at {:#x}",
-                  static_cast<int>(data[curOffset + 3]), curOffset);
+                  static_cast<int32_t>(data[curOffset + 3]), curOffset);
             continue;
         }
     }
@@ -607,7 +606,7 @@ unsigned int BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned c
     FLOGD("Found {:d} total gzip headers",
           offsetsFlag8.size() + offsetsFlag0.size());
 
-    unsigned int gzipOffset = 0;
+    uint32_t gzipOffset = 0;
 
     // Prefer gzip headers with original filename flag since most loki'd boot
     // images will have probably been compressed manually using the gzip tool
@@ -629,10 +628,10 @@ unsigned int BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned c
     return gzipOffset;
 }
 
-unsigned int BootImage::Impl::lokiOldFindRamdiskSize(const std::vector<unsigned char> &data,
-                                                     const int &ramdiskOffset) const
+uint32_t BootImage::Impl::lokiOldFindRamdiskSize(const std::vector<unsigned char> &data,
+                                                 const uint32_t ramdiskOffset) const
 {
-    unsigned int ramdiskSize;
+    uint32_t ramdiskSize;
 
     // If the boot image was patched with an old version of loki, the ramdisk
     // size is not stored properly. We'll need to guess the size of the archive.
@@ -646,7 +645,8 @@ unsigned int BootImage::Impl::lokiOldFindRamdiskSize(const std::vector<unsigned 
     // The gzip file is zero padded, so we'll search backwards until we find a
     // non-zero byte
     std::size_t begin = data.size() - 0x200;
-    int found = -1;
+    std::size_t location;
+    bool found = false;
 
     if (begin < header.page_size) {
         return -1;
@@ -654,34 +654,35 @@ unsigned int BootImage::Impl::lokiOldFindRamdiskSize(const std::vector<unsigned 
 
     for (std::size_t i = begin; i > begin - header.page_size; --i) {
         if (data[i] != 0) {
-            found = i;
+            location = i;
+            found = true;
             break;
         }
     }
 
-    if (found == -1) {
+    if (!found) {
         FLOGD("Ramdisk size: {:d} (may include some padding)", ramdiskSize);
     } else {
-        ramdiskSize = found - ramdiskOffset;
+        ramdiskSize = location - ramdiskOffset;
         FLOGD("Ramdisk size: {:d} (with padding removed)", ramdiskSize);
     }
 
     return ramdiskSize;
 }
 
-unsigned int BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
-                                                     const LokiHeader *loki) const
+uint32_t BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned char> &data,
+                                                 const LokiHeader *loki) const
 {
     // If the boot image was patched with a newer version of loki, find the ramdisk
     // offset in the shell code
-    unsigned int ramdiskAddr = 0;
+    uint32_t ramdiskAddr = 0;
 
     if (loki->ramdisk_addr != 0) {
         auto size = data.size();
 
-        for (unsigned int i = 0; i < size - (sizeof(SHELL_CODE) - 9); ++i) {
+        for (uint32_t i = 0; i < size - (sizeof(SHELL_CODE) - 9); ++i) {
             if (std::memcmp(&data[i], SHELL_CODE, sizeof(SHELL_CODE) - 9) == 0) {
-                ramdiskAddr = *(reinterpret_cast<const unsigned int *>(
+                ramdiskAddr = *(reinterpret_cast<const uint32_t *>(
                         &data[i] + sizeof(SHELL_CODE) - 5));
                 break;
             }
@@ -720,7 +721,7 @@ std::vector<unsigned char> BootImage::create() const
     data.insert(data.end(), headerBegin, headerBegin + sizeof(BootImageHeader));
 
     // Padding
-    unsigned int paddingSize = m_impl->skipPadding(
+    uint32_t paddingSize = m_impl->skipPadding(
             sizeof(BootImageHeader), m_impl->header.page_size);
     data.insert(data.end(), paddingSize, 0);
 
@@ -901,7 +902,7 @@ bool BootImage::extract(const std::string &directory, const std::string &prefix)
 
     // Write ramdisk image
     auto ramdiskFilename = pathPrefix;
-    if (m_impl->ramdiskCompression == Impl::LZ4) {
+    if (m_impl->ramdiskCompression == Impl::CompressionType::LZ4) {
         ramdiskFilename += "-ramdisk.lz4";
     } else {
         ramdiskFilename += "-ramdisk.gz";
@@ -936,9 +937,10 @@ bool BootImage::isLoki() const
     return m_impl->isLoki;
 }
 
-int BootImage::Impl::skipPadding(const int &itemSize, const int &pageSize) const
+uint32_t BootImage::Impl::skipPadding(const uint32_t itemSize,
+                                      const uint32_t pageSize) const
 {
-    unsigned int pageMask = pageSize - 1;
+    uint32_t pageMask = pageSize - 1;
 
     if ((itemSize & pageMask) == 0) {
         return 0;
@@ -947,12 +949,12 @@ int BootImage::Impl::skipPadding(const int &itemSize, const int &pageSize) const
     return pageSize - (itemSize & pageMask);
 }
 
-static std::string toHex(const unsigned char *data, unsigned int size) {
+static std::string toHex(const unsigned char *data, uint32_t size) {
     static const char digits[] = "0123456789abcdef";
 
     std::string hex;
     hex.reserve(2 * sizeof(size));
-    for (unsigned int i = 0; i < size; ++i) {
+    for (uint32_t i = 0; i < size; ++i) {
         hex += digits[(data[i] >> 4) & 0xf];
         hex += digits[data[i] & 0xF];
     }
@@ -985,7 +987,7 @@ void BootImage::Impl::updateSHA1Hash()
                            sizeof(header.dt_size));
     }
 
-    unsigned int digest[5];
+    uint32_t digest[5];
     hash.get_digest(digest);
 
     std::memset(header.id, 0, sizeof(header.id));
@@ -1108,7 +1110,7 @@ void BootImage::resetKernelCmdline()
  *
  * \return Page size
  */
-unsigned int BootImage::pageSize() const
+uint32_t BootImage::pageSize() const
 {
     return m_impl->header.page_size;
 }
@@ -1121,7 +1123,7 @@ unsigned int BootImage::pageSize() const
  *
  * \param size Page size
  */
-void BootImage::setPageSize(unsigned int size)
+void BootImage::setPageSize(uint32_t size)
 {
     // Size should be one of if 2048, 4096, 8192, 16384, 32768, 65536, or 131072
     m_impl->header.page_size = size;
@@ -1142,7 +1144,7 @@ void BootImage::resetPageSize()
  *
  * \return Kernel address
  */
-unsigned int BootImage::kernelAddress() const
+uint32_t BootImage::kernelAddress() const
 {
     return m_impl->header.kernel_addr;
 }
@@ -1152,7 +1154,7 @@ unsigned int BootImage::kernelAddress() const
  *
  * \param address Kernel address
  */
-void BootImage::setKernelAddress(unsigned int address)
+void BootImage::setKernelAddress(uint32_t address)
 {
     m_impl->header.kernel_addr = address;
 }
@@ -1172,7 +1174,7 @@ void BootImage::resetKernelAddress()
  *
  * \return Ramdisk address
  */
-unsigned int BootImage::ramdiskAddress() const
+uint32_t BootImage::ramdiskAddress() const
 {
     return m_impl->header.ramdisk_addr;
 }
@@ -1182,7 +1184,7 @@ unsigned int BootImage::ramdiskAddress() const
  *
  * \param address Ramdisk address
  */
-void BootImage::setRamdiskAddress(unsigned int address)
+void BootImage::setRamdiskAddress(uint32_t address)
 {
     m_impl->header.ramdisk_addr = address;
 }
@@ -1202,7 +1204,7 @@ void BootImage::resetRamdiskAddress()
  *
  * \return Second bootloader address
  */
-unsigned int BootImage::secondBootloaderAddress() const
+uint32_t BootImage::secondBootloaderAddress() const
 {
     return m_impl->header.second_addr;
 }
@@ -1212,7 +1214,7 @@ unsigned int BootImage::secondBootloaderAddress() const
  *
  * \param address Second bootloader address
  */
-void BootImage::setSecondBootloaderAddress(unsigned int address)
+void BootImage::setSecondBootloaderAddress(uint32_t address)
 {
     m_impl->header.second_addr = address;
 }
@@ -1232,7 +1234,7 @@ void BootImage::resetSecondBootloaderAddress()
  *
  * \return Kernel tags address
  */
-unsigned int BootImage::kernelTagsAddress() const
+uint32_t BootImage::kernelTagsAddress() const
 {
     return m_impl->header.tags_addr;
 }
@@ -1242,7 +1244,7 @@ unsigned int BootImage::kernelTagsAddress() const
  *
  * \param address Kernel tags address
  */
-void BootImage::setKernelTagsAddress(unsigned int address)
+void BootImage::setKernelTagsAddress(uint32_t address)
 {
     m_impl->header.tags_addr = address;
 }
@@ -1271,10 +1273,10 @@ void BootImage::resetKernelTagsAddress()
  * \param secondBootloaderOffset Second bootloader offset
  * \param kernelTagsOffset Kernel tags offset
  */
-void BootImage::setAddresses(unsigned int base, unsigned int kernelOffset,
-                             unsigned int ramdiskOffset,
-                             unsigned int secondBootloaderOffset,
-                             unsigned int kernelTagsOffset)
+void BootImage::setAddresses(uint32_t base, uint32_t kernelOffset,
+                             uint32_t ramdiskOffset,
+                             uint32_t secondBootloaderOffset,
+                             uint32_t kernelTagsOffset)
 {
     m_impl->header.kernel_addr = base + kernelOffset;
     m_impl->header.ramdisk_addr = base + ramdiskOffset;
