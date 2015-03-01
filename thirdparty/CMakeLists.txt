@@ -98,13 +98,13 @@ endif()
 # liblzma for Android
 ################################################################################
 
-set(LIBLZMA_VER "5.2.0")
+set(LIBLZMA_VER "5.2.1")
 
 file(
     DOWNLOAD
     ${URL_BASE}/liblzma-${LIBLZMA_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/liblzma-${LIBLZMA_VER}_android.tar.bz2
-    EXPECTED_MD5 eab12196d906ee4ecfa447ea435b4fe7
+    EXPECTED_MD5 43e6c040f4e1684e06537dc8864681af
     SHOW_PROGRESS
 )
 
