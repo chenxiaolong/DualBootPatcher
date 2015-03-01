@@ -64,6 +64,7 @@ static const char UnpackUsage[] =
     "all of the information necessary to recreate an identical boot image.\n"
     "\n"
     "  cmdline         Kernel command line\n"
+    "  board           Board name field in the header\n"
     "  base            Base address for offsets\n"
     "  kernel_offset   Address offset of the kernel image\n"
     "  ramdisk_offset  Address offset of the ramdisk image\n"
@@ -119,6 +120,7 @@ static const char PackUsage[] =
     "The following items are loaded to create a new boot image.\n"
     "\n"
     "  cmdline *        Kernel command line\n"
+    "  board *          Board name field in the header\n"
     "  base *           Base address for offsets\n"
     "  kernel_offset *  Address offset of the kernel image\n"
     "  ramdisk_offset * Address offset of the ramdisk image\n"
@@ -312,6 +314,7 @@ bool unpack_main(int argc, char *argv[])
     std::string output_dir;
     std::string prefix;
     std::string path_cmdline;
+    std::string path_board;
     std::string path_base;
     std::string path_kernel_offset;
     std::string path_ramdisk_offset;
@@ -327,16 +330,17 @@ bool unpack_main(int argc, char *argv[])
     enum unpack_options : int
     {
         OPT_OUTPUT_CMDLINE        = 10000 + 1,
-        OPT_OUTPUT_BASE           = 10000 + 2,
-        OPT_OUTPUT_KERNEL_OFFSET  = 10000 + 3,
-        OPT_OUTPUT_RAMDISK_OFFSET = 10000 + 4,
-        OPT_OUTPUT_SECOND_OFFSET  = 10000 + 5,
-        OPT_OUTPUT_TAGS_OFFSET    = 10000 + 6,
-        OPT_OUTPUT_PAGE_SIZE      = 10000 + 7,
-        OPT_OUTPUT_KERNEL         = 10000 + 8,
-        OPT_OUTPUT_RAMDISK        = 10000 + 9,
-        OPT_OUTPUT_SECOND         = 10000 + 10,
-        OPT_OUTPUT_DT             = 10000 + 11
+        OPT_OUTPUT_BOARD          = 10000 + 2,
+        OPT_OUTPUT_BASE           = 10000 + 3,
+        OPT_OUTPUT_KERNEL_OFFSET  = 10000 + 4,
+        OPT_OUTPUT_RAMDISK_OFFSET = 10000 + 5,
+        OPT_OUTPUT_SECOND_OFFSET  = 10000 + 6,
+        OPT_OUTPUT_TAGS_OFFSET    = 10000 + 7,
+        OPT_OUTPUT_PAGE_SIZE      = 10000 + 8,
+        OPT_OUTPUT_KERNEL         = 10000 + 9,
+        OPT_OUTPUT_RAMDISK        = 10000 + 10,
+        OPT_OUTPUT_SECOND         = 10000 + 11,
+        OPT_OUTPUT_DT             = 10000 + 12
     };
 
     static struct option long_options[] = {
@@ -346,6 +350,7 @@ bool unpack_main(int argc, char *argv[])
         {"noprefix",              required_argument, 0, 'n'},
         // Arguments without short versions
         {"output-cmdline",        required_argument, 0, OPT_OUTPUT_CMDLINE},
+        {"output-board",          required_argument, 0, OPT_OUTPUT_BOARD},
         {"output-base",           required_argument, 0, OPT_OUTPUT_BASE},
         {"output-kernel_offset",  required_argument, 0, OPT_OUTPUT_KERNEL_OFFSET},
         {"output-ramdisk_offset", required_argument, 0, OPT_OUTPUT_RAMDISK_OFFSET},
@@ -367,6 +372,7 @@ bool unpack_main(int argc, char *argv[])
         case 'p':                       prefix = optarg;              break;
         case 'n':                       no_prefix = optarg;           break;
         case OPT_OUTPUT_CMDLINE:        path_cmdline = optarg;        break;
+        case OPT_OUTPUT_BOARD:          path_board = optarg;          break;
         case OPT_OUTPUT_BASE:           path_base = optarg;           break;
         case OPT_OUTPUT_KERNEL_OFFSET:  path_kernel_offset = optarg;  break;
         case OPT_OUTPUT_RAMDISK_OFFSET: path_ramdisk_offset = optarg; break;
@@ -409,6 +415,8 @@ bool unpack_main(int argc, char *argv[])
 
     if (path_cmdline.empty())
         path_cmdline = (bf_output_dir / (prefix + "cmdline")).string();
+    if (path_board.empty())
+        path_board = (bf_output_dir / (prefix + "board")).string();
     if (path_base.empty())
         path_base = (bf_output_dir / (prefix + "base")).string();
     if (path_kernel_offset.empty())
@@ -432,6 +440,7 @@ bool unpack_main(int argc, char *argv[])
 
     printf("Output files:\n");
     printf("- cmdline:        %s\n", path_cmdline.c_str());
+    printf("- board:          %s\n", path_board.c_str());
     printf("- base:           %s\n", path_base.c_str());
     printf("- kernel_offset:  %s\n", path_kernel_offset.c_str());
     printf("- ramdisk_offset: %s\n", path_ramdisk_offset.c_str());
@@ -470,6 +479,12 @@ bool unpack_main(int argc, char *argv[])
     // Write kernel command line
     if (!write_file_fmt(path_cmdline, "%s\n", bi.kernelCmdline().c_str())) {
         fprintf(stderr, "%s: %s\n", path_cmdline.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write board name field
+    if (!write_file_fmt(path_board, "%s\n", bi.boardName().c_str())) {
+        fprintf(stderr, "%s: %s\n", path_board.c_str(), strerror(errno));
         return false;
     }
 
@@ -551,6 +566,7 @@ bool pack_main(int argc, char *argv[])
     std::string input_dir;
     std::string prefix;
     std::string path_cmdline;
+    std::string path_board;
     std::string path_base;
     std::string path_kernel_offset;
     std::string path_ramdisk_offset;
@@ -564,6 +580,7 @@ bool pack_main(int argc, char *argv[])
     // Values
     std::unordered_map<int, bool> values;
     std::string cmdline;
+    std::string board;
     uint32_t base;
     uint32_t kernel_offset;
     uint32_t ramdisk_offset;
@@ -580,24 +597,26 @@ bool pack_main(int argc, char *argv[])
     {
         // Paths
         OPT_INPUT_CMDLINE        = 10000 + 1,
-        OPT_INPUT_BASE           = 10000 + 2,
-        OPT_INPUT_KERNEL_OFFSET  = 10000 + 3,
-        OPT_INPUT_RAMDISK_OFFSET = 10000 + 4,
-        OPT_INPUT_SECOND_OFFSET  = 10000 + 5,
-        OPT_INPUT_TAGS_OFFSET    = 10000 + 6,
-        OPT_INPUT_PAGE_SIZE      = 10000 + 7,
-        OPT_INPUT_KERNEL         = 10000 + 8,
-        OPT_INPUT_RAMDISK        = 10000 + 9,
-        OPT_INPUT_SECOND         = 10000 + 10,
-        OPT_INPUT_DT             = 10000 + 11,
+        OPT_INPUT_BOARD          = 10000 + 2,
+        OPT_INPUT_BASE           = 10000 + 3,
+        OPT_INPUT_KERNEL_OFFSET  = 10000 + 4,
+        OPT_INPUT_RAMDISK_OFFSET = 10000 + 5,
+        OPT_INPUT_SECOND_OFFSET  = 10000 + 6,
+        OPT_INPUT_TAGS_OFFSET    = 10000 + 7,
+        OPT_INPUT_PAGE_SIZE      = 10000 + 8,
+        OPT_INPUT_KERNEL         = 10000 + 9,
+        OPT_INPUT_RAMDISK        = 10000 + 10,
+        OPT_INPUT_SECOND         = 10000 + 11,
+        OPT_INPUT_DT             = 10000 + 12,
         // Values
         OPT_VALUE_CMDLINE        = 20000 + 1,
-        OPT_VALUE_BASE           = 20000 + 2,
-        OPT_VALUE_KERNEL_OFFSET  = 20000 + 3,
-        OPT_VALUE_RAMDISK_OFFSET = 20000 + 4,
-        OPT_VALUE_SECOND_OFFSET  = 20000 + 5,
-        OPT_VALUE_TAGS_OFFSET    = 20000 + 6,
-        OPT_VALUE_PAGE_SIZE      = 20000 + 7
+        OPT_VALUE_BOARD          = 20000 + 2,
+        OPT_VALUE_BASE           = 20000 + 3,
+        OPT_VALUE_KERNEL_OFFSET  = 20000 + 4,
+        OPT_VALUE_RAMDISK_OFFSET = 20000 + 5,
+        OPT_VALUE_SECOND_OFFSET  = 20000 + 6,
+        OPT_VALUE_TAGS_OFFSET    = 20000 + 7,
+        OPT_VALUE_PAGE_SIZE      = 20000 + 8
     };
 
     static struct option long_options[] = {
@@ -607,6 +626,7 @@ bool pack_main(int argc, char *argv[])
         {"noprefix",             required_argument, 0, 'n'},
         // Arguments without short versions
         {"input-cmdline",        required_argument, 0, OPT_INPUT_CMDLINE},
+        {"input-board",          required_argument, 0, OPT_INPUT_BOARD},
         {"input-base",           required_argument, 0, OPT_INPUT_BASE},
         {"input-kernel_offset",  required_argument, 0, OPT_INPUT_KERNEL_OFFSET},
         {"input-ramdisk_offset", required_argument, 0, OPT_INPUT_RAMDISK_OFFSET},
@@ -619,6 +639,7 @@ bool pack_main(int argc, char *argv[])
         {"input-dt",             required_argument, 0, OPT_INPUT_DT},
         // Value arguments
         {"value-cmdline",        required_argument, 0, OPT_VALUE_CMDLINE},
+        {"value-board",          required_argument, 0, OPT_VALUE_BOARD},
         {"value-base",           required_argument, 0, OPT_VALUE_BASE},
         {"value-kernel_offset",  required_argument, 0, OPT_VALUE_KERNEL_OFFSET},
         {"value-ramdisk_offset", required_argument, 0, OPT_VALUE_RAMDISK_OFFSET},
@@ -636,6 +657,7 @@ bool pack_main(int argc, char *argv[])
         case 'p':                      prefix = optarg;              break;
         case 'n':                      no_prefix = true;             break;
         case OPT_INPUT_CMDLINE:        path_cmdline = optarg;        break;
+        case OPT_INPUT_BOARD:          path_board = optarg;          break;
         case OPT_INPUT_BASE:           path_base = optarg;           break;
         case OPT_INPUT_KERNEL_OFFSET:  path_kernel_offset = optarg;  break;
         case OPT_INPUT_RAMDISK_OFFSET: path_ramdisk_offset = optarg; break;
@@ -651,6 +673,12 @@ bool pack_main(int argc, char *argv[])
             path_cmdline.clear();
             values[opt] = true;
             cmdline = optarg;
+            break;
+
+        case OPT_VALUE_BOARD:
+            path_board.clear();
+            values[opt] = true;
+            board = optarg;
             break;
 
         case OPT_VALUE_BASE:
@@ -738,6 +766,8 @@ bool pack_main(int argc, char *argv[])
 
     if (path_cmdline.empty() && !values[OPT_VALUE_CMDLINE])
         path_cmdline = (bf_input_dir / (prefix + "cmdline")).string();
+    if (path_board.empty() && !values[OPT_VALUE_BOARD])
+        path_board = (bf_input_dir / (prefix + "board")).string();
     if (path_base.empty() && !values[OPT_VALUE_BASE])
         path_base = (bf_input_dir / (prefix + "base")).string();
     if (path_kernel_offset.empty() && !values[OPT_VALUE_KERNEL_OFFSET])
@@ -764,6 +794,10 @@ bool pack_main(int argc, char *argv[])
         printf("- cmdline:        (path)  %s\n", path_cmdline.c_str());
     else
         printf("- cmdline:        (value) %s\n", cmdline.c_str());
+    if (!path_board.empty())
+        printf("- board:          (path)  %s\n", path_board.c_str());
+    else
+        printf("- board:          (value) %s\n", board.c_str());
     if (!path_base.empty())
         printf("- base:           (path)  %s\n", path_base.c_str());
     else
@@ -808,20 +842,43 @@ bool pack_main(int argc, char *argv[])
     if (!values[OPT_VALUE_CMDLINE]) {
         file_ptr fp(fopen(path_cmdline.c_str(), "rb"), fclose);
         if (fp) {
-            char buf[mbp::BootImage::BootArgsSize];
-            if (!fgets(buf, mbp::BootImage::BootArgsSize, fp.get())) {
+            std::vector<char> buf(mbp::BootImage::BootArgsSize);
+            if (!fgets(buf.data(), mbp::BootImage::BootArgsSize, fp.get())) {
                 if (ferror(fp.get())) {
                     fprintf(stderr, "%s: %s\n",
                             path_cmdline.c_str(), strerror(errno));
+                    return false;
                 }
             }
-            cmdline = buf;
+            cmdline = buf.data();
             auto pos = cmdline.find('\n');
             if (pos != std::string::npos) {
                 cmdline.erase(pos);
             }
         } else {
             cmdline = mbp::BootImage::DefaultCmdline;
+        }
+    }
+
+    // Read board name
+    if (!values[OPT_VALUE_BOARD]) {
+        file_ptr fp(fopen(path_board.c_str(), "rb"), fclose);
+        if (fp) {
+            std::vector<char> buf(mbp::BootImage::BootNameSize);
+            if (!fgets(buf.data(), mbp::BootImage::BootNameSize, fp.get())) {
+                if (ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_board.c_str(), strerror(errno));
+                    return false;
+                }
+            }
+            board = buf.data();
+            auto pos = board.find('\n');
+            if (pos != std::string::npos) {
+                board.erase(pos);
+            }
+        } else {
+            board = mbp::BootImage::DefaultBoard;
         }
     }
 
@@ -964,6 +1021,7 @@ bool pack_main(int argc, char *argv[])
     }
 
     bi.setKernelCmdline(std::move(cmdline));
+    bi.setBoardName(std::move(board));
     bi.setAddresses(base, kernel_offset, ramdisk_offset, second_offset, tags_offset);
     bi.setPageSize(page_size);
     bi.setKernelImage(std::move(kernel_image));
