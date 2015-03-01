@@ -902,8 +902,8 @@ void BootImage::Impl::updateSHA1Hash()
     }
 
     // Debug...
-    std::string hexDigest = toHex(
-            reinterpret_cast<const unsigned char *>(header.id), sizeof(digest));
+    //std::string hexDigest = toHex(
+    //        reinterpret_cast<const unsigned char *>(header.id), sizeof(digest));
 
     //FLOGD("Computed new ID hash: {:s}", hexDigest);
 }
