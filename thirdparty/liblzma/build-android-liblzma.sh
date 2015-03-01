@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ver="5.2.0"
+ver="5.2.1"
 name="xz-${ver}"
 tar="${name}.tar.xz"
 url="http://tukaani.org/xz/${tar}"
