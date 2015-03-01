@@ -344,6 +344,22 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
     // Save the header struct
     header = *android;
 
+    switch (android->page_size) {
+    case 2048:
+    case 4096:
+    case 8192:
+    case 16384:
+    case 32768:
+    case 65536:
+    case 131072:
+        break;
+    default:
+        FLOGE("Invalid page size: {:d}", android->page_size);
+        error = PatcherError::createBootImageError(
+                ErrorCode::BootImageParseError);
+        return false;
+    }
+
     dumpHeader();
 
     // Don't try to read the various images inside the boot image if it's
@@ -708,6 +724,22 @@ std::vector<unsigned char> BootImage::create() const
 {
     std::vector<unsigned char> data;
 
+    switch (m_impl->header.page_size) {
+    case 2048:
+    case 4096:
+    case 8192:
+    case 16384:
+    case 32768:
+    case 65536:
+    case 131072:
+        break;
+    default:
+        FLOGE("Invalid page size: {:d}", m_impl->header.page_size);
+        m_impl->error = PatcherError::createBootImageError(
+                ErrorCode::BootImageParseError);
+        return std::vector<unsigned char>();
+    }
+
     // Header
     unsigned char *headerBegin =
             reinterpret_cast<unsigned char *>(&m_impl->header);
@@ -781,16 +813,17 @@ bool BootImage::createFile(const std::string &path)
     }
 
     std::vector<unsigned char> data = create();
+    if (data.empty()) {
+        return false;
+    }
+
     file.write(reinterpret_cast<const char *>(data.data()), data.size());
     if (file.bad()) {
-        file.close();
-
         m_impl->error = PatcherError::createIOError(
                 ErrorCode::FileWriteError, path);
         return false;
     }
 
-    file.close();
     return true;
 }
 
