@@ -32,6 +32,20 @@ namespace mbp
 class MBP_EXPORT BootImage
 {
 public:
+    static const char *BootMagic;
+    static const uint32_t BootMagicSize;
+    static const uint32_t BootNameSize;
+    static const uint32_t BootArgsSize;
+
+    static const char *DefaultBoard;
+    static const char *DefaultCmdline;
+    static const uint32_t DefaultPageSize;
+    static const uint32_t DefaultBase;
+    static const uint32_t DefaultKernelOffset;
+    static const uint32_t DefaultRamdiskOffset;
+    static const uint32_t DefaultSecondOffset;
+    static const uint32_t DefaultTagsOffset;
+
     BootImage();
     ~BootImage();
 

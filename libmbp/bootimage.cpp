@@ -35,25 +35,25 @@
 namespace mbp
 {
 
-static const char *BOOT_MAGIC = "ANDROID!";
-static const uint32_t BOOT_MAGIC_SIZE = 8;
-static const uint32_t BOOT_NAME_SIZE = 16;
-static const uint32_t BOOT_ARGS_SIZE = 512;
+const char *BootImage::BootMagic = "ANDROID!";
+const uint32_t BootImage::BootMagicSize = 8;
+const uint32_t BootImage::BootNameSize = 16;
+const uint32_t BootImage::BootArgsSize = 512;
 
-static const char *DEFAULT_BOARD = "";
-static const char *DEFAULT_CMDLINE = "";
-static const uint32_t DEFAULT_PAGE_SIZE = 2048u;
-static const uint32_t DEFAULT_BASE = 0x10000000u;
-static const uint32_t DEFAULT_KERNEL_OFFSET = 0x00008000u;
-static const uint32_t DEFAULT_RAMDISK_OFFSET = 0x01000000u;
-static const uint32_t DEFAULT_SECOND_OFFSET = 0x00f00000u;
-static const uint32_t DEFAULT_TAGS_OFFSET = 0x00000100u;
+const char *BootImage::DefaultBoard = "";
+const char *BootImage::DefaultCmdline = "";
+const uint32_t BootImage::DefaultPageSize = 2048u;
+const uint32_t BootImage::DefaultBase = 0x10000000u;
+const uint32_t BootImage::DefaultKernelOffset = 0x00008000u;
+const uint32_t BootImage::DefaultRamdiskOffset = 0x01000000u;
+const uint32_t BootImage::DefaultSecondOffset = 0x00f00000u;
+const uint32_t BootImage::DefaultTagsOffset = 0x00000100u;
 
 
 /*! \cond INTERNAL */
 struct BootImageHeader
 {
-    unsigned char magic[BOOT_MAGIC_SIZE];
+    unsigned char magic[BootImage::BootMagicSize];
 
     uint32_t kernel_size;   /* size in bytes */
     uint32_t kernel_addr;   /* physical load addr */
@@ -68,9 +68,9 @@ struct BootImageHeader
     uint32_t page_size;     /* flash page size we assume */
     uint32_t dt_size;       /* device tree in bytes */
     uint32_t unused;        /* future expansion: should be 0 */
-    unsigned char name[BOOT_NAME_SIZE]; /* asciiz product name */
+    unsigned char name[BootImage::BootNameSize]; /* asciiz product name */
 
-    unsigned char cmdline[BOOT_ARGS_SIZE];
+    unsigned char cmdline[BootImage::BootArgsSize];
 
     uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
 };
@@ -274,7 +274,7 @@ bool BootImage::load(const std::vector<unsigned char> &data)
     }
 
     for (uint32_t i = 0; i <= searchRange; ++i) {
-        if (std::memcmp(&data[i], BOOT_MAGIC, BOOT_MAGIC_SIZE) == 0) {
+        if (std::memcmp(&data[i], BootMagic, BootMagicSize) == 0) {
             isAndroid = true;
             headerIndex = i;
             break;
@@ -900,7 +900,7 @@ void BootImage::Impl::updateSHA1Hash()
 void BootImage::Impl::dumpHeader() const
 {
     FLOGD("- magic:        {:s}",
-          std::string(header.magic, header.magic + BOOT_MAGIC_SIZE));
+          std::string(header.magic, header.magic + BootMagicSize));
     FLOGD("- kernel_size:  {:d}",    header.kernel_size);
     FLOGD("- kernel_addr:  {:#08x}", header.kernel_addr);
     FLOGD("- ramdisk_size: {:d}",    header.ramdisk_size);
@@ -912,9 +912,9 @@ void BootImage::Impl::dumpHeader() const
     FLOGD("- dt_size:      {:d}",    header.dt_size);
     FLOGD("- unused:       {:#08x}", header.unused);
     FLOGD("- name:         {:s}",
-          std::string(header.name, header.name + BOOT_NAME_SIZE));
+          std::string(header.name, header.name + BootNameSize));
     FLOGD("- cmdline:      {:s}",
-          std::string(header.cmdline, header.cmdline + BOOT_ARGS_SIZE));
+          std::string(header.cmdline, header.cmdline + BootArgsSize));
     FLOGD("- id:           {:s}",
           toHex(reinterpret_cast<const unsigned char *>(header.id), 32));
 }
@@ -928,12 +928,12 @@ std::string BootImage::boardName() const
 {
     // The string may not be null terminated
     void *location;
-    if ((location = std::memchr(m_impl->header.name, 0, BOOT_NAME_SIZE)) != nullptr) {
+    if ((location = std::memchr(m_impl->header.name, 0, BootNameSize)) != nullptr) {
         return std::string(reinterpret_cast<char *>(m_impl->header.name),
                            reinterpret_cast<char *>(location));
     } else {
         return std::string(reinterpret_cast<char *>(m_impl->header.name),
-                           BOOT_NAME_SIZE);
+                           BootNameSize);
     }
 }
 
@@ -946,7 +946,7 @@ void BootImage::setBoardName(const std::string &name)
 {
     // -1 for null byte
     std::strcpy(reinterpret_cast<char *>(m_impl->header.name),
-                name.substr(0, BOOT_NAME_SIZE - 1).c_str());
+                name.substr(0, BootNameSize - 1).c_str());
 }
 
 /*!
@@ -956,7 +956,7 @@ void BootImage::setBoardName(const std::string &name)
  */
 void BootImage::resetBoardName()
 {
-    std::strcpy(reinterpret_cast<char *>(m_impl->header.name), DEFAULT_BOARD);
+    std::strcpy(reinterpret_cast<char *>(m_impl->header.name), DefaultBoard);
 }
 
 /*!
@@ -968,12 +968,12 @@ std::string BootImage::kernelCmdline() const
 {
     // The string may not be null terminated
     void *location;
-    if ((location = std::memchr(m_impl->header.cmdline, 0, BOOT_ARGS_SIZE)) != nullptr) {
+    if ((location = std::memchr(m_impl->header.cmdline, 0, BootArgsSize)) != nullptr) {
         return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
                            reinterpret_cast<char *>(location));
     } else {
         return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
-                           BOOT_ARGS_SIZE);
+                           BootArgsSize);
     }
 }
 
@@ -986,7 +986,7 @@ void BootImage::setKernelCmdline(const std::string &cmdline)
 {
     // -1 for null byte
     std::strcpy(reinterpret_cast<char *>(m_impl->header.cmdline),
-                cmdline.substr(0, BOOT_ARGS_SIZE - 1).c_str());
+                cmdline.substr(0, BootArgsSize - 1).c_str());
 }
 
 /*!
@@ -997,7 +997,7 @@ void BootImage::setKernelCmdline(const std::string &cmdline)
 void BootImage::resetKernelCmdline()
 {
     std::strcpy(reinterpret_cast<char *>(m_impl->header.cmdline),
-                DEFAULT_CMDLINE);
+                DefaultCmdline);
 }
 
 /*!
@@ -1031,7 +1031,7 @@ void BootImage::setPageSize(uint32_t size)
  */
 void BootImage::resetPageSize()
 {
-    m_impl->header.page_size = DEFAULT_PAGE_SIZE;
+    m_impl->header.page_size = DefaultPageSize;
 }
 
 /*!
@@ -1061,7 +1061,7 @@ void BootImage::setKernelAddress(uint32_t address)
  */
 void BootImage::resetKernelAddress()
 {
-    m_impl->header.kernel_addr = DEFAULT_BASE + DEFAULT_KERNEL_OFFSET;
+    m_impl->header.kernel_addr = DefaultBase + DefaultKernelOffset;
 }
 
 /*!
@@ -1091,7 +1091,7 @@ void BootImage::setRamdiskAddress(uint32_t address)
  */
 void BootImage::resetRamdiskAddress()
 {
-    m_impl->header.ramdisk_addr = DEFAULT_BASE + DEFAULT_RAMDISK_OFFSET;
+    m_impl->header.ramdisk_addr = DefaultBase + DefaultRamdiskOffset;
 }
 
 /*!
@@ -1121,7 +1121,7 @@ void BootImage::setSecondBootloaderAddress(uint32_t address)
  */
 void BootImage::resetSecondBootloaderAddress()
 {
-    m_impl->header.second_addr = DEFAULT_BASE + DEFAULT_SECOND_OFFSET;
+    m_impl->header.second_addr = DefaultBase + DefaultSecondOffset;
 }
 
 /*!
@@ -1151,7 +1151,7 @@ void BootImage::setKernelTagsAddress(uint32_t address)
  */
 void BootImage::resetKernelTagsAddress()
 {
-    m_impl->header.tags_addr = DEFAULT_BASE + DEFAULT_TAGS_OFFSET;
+    m_impl->header.tags_addr = DefaultBase + DefaultTagsOffset;
 }
 
 /*!
