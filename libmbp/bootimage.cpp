@@ -30,6 +30,7 @@
 
 #include "private/fileutils.h"
 #include "private/logging.h"
+#include "private/portable_endian.h"
 
 
 namespace mbp
@@ -896,13 +897,13 @@ void BootImage::Impl::updateSHA1Hash()
     hash.get_digest(digest);
 
     std::memset(header.id, 0, sizeof(header.id));
-    std::memcpy(header.id, reinterpret_cast<char *>(&digest),
-                sizeof(digest) > sizeof(header.id)
-                ? sizeof(header.id) : sizeof(digest));
+    for (int i = 0; i < 5; ++i) {
+        header.id[i] = htobe32(digest[i]);
+    }
 
     // Debug...
     std::string hexDigest = toHex(
-            reinterpret_cast<const unsigned char *>(digest), sizeof(digest));
+            reinterpret_cast<const unsigned char *>(header.id), sizeof(digest));
 
     FLOGD("Computed new ID hash: {:s}", hexDigest);
 }
