@@ -130,11 +130,6 @@ static const unsigned char SHELL_CODE[] =
 class BootImage::Impl
 {
 public:
-    enum class CompressionType {
-        GZIP,
-        LZ4
-    };
-
     Impl(BootImage *parent) : m_parent(parent) {}
 
     // Android boot image header
@@ -145,9 +140,6 @@ public:
     std::vector<unsigned char> ramdiskImage;
     std::vector<unsigned char> secondBootloaderImage;
     std::vector<unsigned char> deviceTreeImage;
-
-    // Whether the ramdisk is LZ4 or gzip compressed
-    CompressionType ramdiskCompression = CompressionType::GZIP;
 
     bool isLoki;
 
@@ -367,12 +359,6 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         ramdiskImage.assign(
                 data.begin() + pos,
                 data.begin() + pos + android->ramdisk_size);
-
-        if (data[pos] == 0x02 && data[pos + 1] == 0x21) {
-            ramdiskCompression = Impl::CompressionType::LZ4;
-        } else {
-            ramdiskCompression = Impl::CompressionType::GZIP;
-        }
 
         pos += android->ramdisk_size;
         pos += skipPadding(android->ramdisk_size, android->page_size);
@@ -798,137 +784,6 @@ bool BootImage::createFile(const std::string &path)
     }
 
     file.close();
-    return true;
-}
-
-/*!
- * \brief Extracts boot image header and data to a directory
- *
- * This function extracts and various pieces of header information and the
- * images to a directory. The extracted data is complete and can be used to
- * recreate the boot image.
- *
- * The files are extracted to `[directory]/[prefix]-[file]`, where \a directory
- * and \a prefix are passed as parameters. ("boot.img" is the common prefix.)
- *
- * The following files will be written by this function:
- *
- * - `[prefix]-cmdline` : Kernel command line
- * - `[prefix]-base` : Base address for offsets
- * - `[prefix]-ramdisk_offset` : Address offset of the ramdisk image
- * - `[prefix]-second_offset` : Address offset of the second bootloader image
- *                             (if it exists)
- * - `[prefix]-tags_offset` : Address offset of the kernel tags image
- *                           (if it exists)
- * - `[prefix]-pagesize` : Page size
- * - `[prefix]-zImage` : Kernel image
- * - `[prefix]-ramdisk.gz` : Ramdisk image (if compressed with gzip)
- * - `[prefix]-ramdisk.lz4` : Ramdisk image (if compressed with LZ4)
- * - `[prefix]-second` : Second bootloader image (if it exists)
- * - `[prefix]-dt` : Device tree image (if it exists)
- *
- * \param directory Output directory
- * \param prefix Filename prefix
- *
- * \return Whether extraction was successful
- */
-bool BootImage::extract(const std::string &directory, const std::string &prefix)
-{
-    if (!boost::filesystem::exists(directory)) {
-        m_impl->error = PatcherError::createIOError(
-                ErrorCode::DirectoryNotExistError, directory);
-        return false;
-    }
-
-    std::string pathPrefix(directory);
-    pathPrefix += "/";
-    pathPrefix += prefix;
-
-    // Write kernel command line
-    std::ofstream fileCmdline(pathPrefix + "-cmdline", std::ios::binary);
-    fileCmdline << std::string(reinterpret_cast<char *>(
-            m_impl->header.cmdline), BOOT_ARGS_SIZE);
-    fileCmdline << '\n';
-    fileCmdline.close();
-
-    // Write base address on which the offsets are applied
-    std::ofstream fileBase(pathPrefix + "-base", std::ios::binary);
-    fileBase << fmt::format("{:08x}", m_impl->header.kernel_addr - 0x00008000);
-    fileBase << '\n';
-    fileBase.close();
-
-    // Write ramdisk offset
-    std::ofstream fileRamdiskOffset(pathPrefix + "-ramdisk_offset",
-                                    std::ios::binary);
-    fileRamdiskOffset << fmt::format("{:08x}",
-            m_impl->header.ramdisk_addr - m_impl->header.kernel_addr
-                    + 0x00008000);
-    fileRamdiskOffset << '\n';
-    fileRamdiskOffset.close();
-
-    // Write second bootloader offset
-    if (m_impl->header.second_size > 0) {
-        std::ofstream fileSecondOffset(pathPrefix + "-second_offset",
-                                       std::ios::binary);
-        fileSecondOffset << fmt::format("{:08x}",
-                m_impl->header.second_addr - m_impl->header.kernel_addr
-                        + 0x00008000);
-        fileSecondOffset << '\n';
-        fileSecondOffset.close();
-    }
-
-    // Write kernel tags offset
-    if (m_impl->header.tags_addr != 0) {
-        std::ofstream fileTagsOffset(pathPrefix + "-tags_offset",
-                                     std::ios::binary);
-        fileTagsOffset << fmt::format("{:08x}",
-                m_impl->header.tags_addr - m_impl->header.kernel_addr
-                        + 0x00008000);
-        fileTagsOffset << '\n';
-        fileTagsOffset.close();
-    }
-
-    // Write page size
-    std::ofstream filePageSize(pathPrefix + "-pagesize", std::ios::binary);
-    filePageSize << m_impl->header.page_size;
-    filePageSize << '\n';
-    filePageSize.close();
-
-    // Write kernel image
-    std::ofstream fileKernel(pathPrefix + "-zImage", std::ios::binary);
-    fileKernel.write(reinterpret_cast<char *>(m_impl->kernelImage.data()),
-                     m_impl->kernelImage.size());
-    fileKernel.close();
-
-    // Write ramdisk image
-    auto ramdiskFilename = pathPrefix;
-    if (m_impl->ramdiskCompression == Impl::CompressionType::LZ4) {
-        ramdiskFilename += "-ramdisk.lz4";
-    } else {
-        ramdiskFilename += "-ramdisk.gz";
-    }
-
-    std::ofstream fileRamdisk(ramdiskFilename, std::ios::binary);
-    fileRamdisk.write(reinterpret_cast<char *>(m_impl->ramdiskImage.data()),
-                      m_impl->ramdiskImage.size());
-    fileRamdisk.close();
-
-    // Write second bootloader image
-    if (!m_impl->secondBootloaderImage.empty()) {
-        std::ofstream fileSecond(pathPrefix + "-second", std::ios::binary);
-        fileSecond.write(reinterpret_cast<char *>(m_impl->secondBootloaderImage.data()),
-                         m_impl->secondBootloaderImage.size());
-        fileSecond.close();
-    }
-
-    // Write device tree image
-    if (!m_impl->deviceTreeImage.empty()) {
-        std::ofstream fileDt(pathPrefix + "-dt", std::ios::binary);
-        fileDt.write(reinterpret_cast<char *>(m_impl->deviceTreeImage.data()),
-                     m_impl->deviceTreeImage.size());
-        fileDt.close();
-    }
-
     return true;
 }
 

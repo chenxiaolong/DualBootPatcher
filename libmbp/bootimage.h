@@ -41,7 +41,6 @@ public:
     bool load(const std::string &filename);
     std::vector<unsigned char> create() const;
     bool createFile(const std::string &path);
-    bool extract(const std::string &directory, const std::string &prefix);
 
     bool isLoki() const;
 

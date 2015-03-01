@@ -162,24 +162,6 @@ bool mbp_bootimage_create_file(CBootImage *bootImage,
     return bi->createFile(filename);
 }
 
-/*!
- * \brief Extracts boot image header and data to a directory
- *
- * \param bootImage CBootImage object
- * \param directory Output directory
- * \param prefix Filename prefix
- *
- * \return true on success or false on failure and error set appropriately
- *
- * \sa BootImage::extract()
- */
-bool mbp_bootimage_extract(CBootImage *bootImage,
-                           const char *directory, const char *prefix)
-{
-    CAST(bootImage);
-    return bi->extract(directory, prefix);
-}
-
 bool mbp_bootimage_is_loki(CBootImage *bootImage)
 {
     CCAST(bootImage);

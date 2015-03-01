@@ -43,8 +43,6 @@ void mbp_bootimage_create_data(const CBootImage *bootImage,
                                void **data, size_t *size);
 bool mbp_bootimage_create_file(CBootImage *bootImage,
                                const char *filename);
-bool mbp_bootimage_extract(CBootImage *bootImage,
-                           const char *directory, const char *prefix);
 
 bool mbp_bootimage_is_loki(CBootImage *bootImage);
 
