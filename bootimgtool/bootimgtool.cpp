@@ -266,33 +266,6 @@ static bool write_file_data(const std::string &path,
     return write_file_data(path, data.data(), data.size());
 }
 
-static bool read_file_first_line(const std::string &path, std::string *line_out)
-{
-    file_ptr fp(fopen(path.c_str(), "rb"), fclose);
-    if (!fp) {
-        return false;
-    }
-
-    char *line = nullptr;
-    size_t len = 0;
-    ssize_t read;
-
-    if ((read = getline(&line, &len, fp.get())) < 0) {
-        free(line);
-        return false;
-    }
-
-    if (line[read - 1] == '\n') {
-        line[read - 1] = '\0';
-        --read;
-    }
-
-    *line_out = line;
-
-    free(line);
-    return true;
-}
-
 static bool read_file_data(const std::string &path,
                            std::vector<unsigned char> *out)
 {
@@ -833,9 +806,22 @@ bool pack_main(int argc, char *argv[])
 
     // Read kernel command line
     if (!values[OPT_VALUE_CMDLINE]) {
-        if (!read_file_first_line(path_cmdline, &cmdline)) {
-            fprintf(stderr, "%s: %s\n", path_cmdline.c_str(), strerror(errno));
-            return false;
+        file_ptr fp(fopen(path_cmdline.c_str(), "rb"), fclose);
+        if (fp) {
+            char buf[mbp::BootImage::BootArgsSize];
+            if (!fgets(buf, mbp::BootImage::BootArgsSize, fp.get())) {
+                if (ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_cmdline.c_str(), strerror(errno));
+                }
+            }
+            cmdline = buf;
+            auto pos = cmdline.find('\n');
+            if (pos != std::string::npos) {
+                cmdline.erase(pos);
+            }
+        } else {
+            cmdline = mbp::BootImage::DefaultCmdline;
         }
     }
 
