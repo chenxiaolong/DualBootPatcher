@@ -323,36 +323,46 @@ public class LibMbp {
         }
     }
 
-    private static void log(PointerType ptr, Class clazz, String method, Object... params) {
-        if (DEBUG) {
-            StringBuilder sb = new StringBuilder();
-            sb.append('(');
-            sb.append(ptr.getPointer().getNativeLong(0));
-            sb.append(") ");
-            sb.append(clazz.getSimpleName());
-            sb.append('.');
-            sb.append(method);
-            sb.append('(');
+    private static String getSig(PointerType ptr, Class clazz, String method, Object... params) {
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        sb.append(ptr.getPointer().getNativeLong(0));
+        sb.append(") ");
+        sb.append(clazz.getSimpleName());
+        sb.append('.');
+        sb.append(method);
+        sb.append('(');
 
-            for (int i = 0; i < params.length; i++) {
-                Object param = params[i];
+        for (int i = 0; i < params.length; i++) {
+            Object param = params[i];
 
-                if (param instanceof String[]) {
-                    sb.append(Arrays.toString((String[]) param));
-                } else if (param instanceof PointerType) {
-                    sb.append(((PointerType) param).getPointer().getNativeLong(0));
-                } else {
-                    sb.append(param);
-                }
-
-                if (i != params.length - 1) {
-                    sb.append(", ");
-                }
+            if (param instanceof String[]) {
+                sb.append(Arrays.toString((String[]) param));
+            } else if (param instanceof PointerType) {
+                sb.append(((PointerType) param).getPointer().getNativeLong(0));
+            } else {
+                sb.append(param);
             }
 
-            sb.append(')');
+            if (i != params.length - 1) {
+                sb.append(", ");
+            }
+        }
 
-            Log.d("libmbp", sb.toString());
+        sb.append(')');
+
+        return sb.toString();
+    }
+
+    private static void validate(PointerType ptr, Class clazz, String method, Object... params) {
+        String signature = getSig(ptr, clazz, method, params);
+
+        if (DEBUG) {
+            Log.d("libmbp", signature);
+        }
+
+        if (ptr == null) {
+            throw new IllegalStateException("Called on a destroyed object! " + signature);
         }
     }
 
@@ -365,7 +375,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCBootImage);
             }
-            log(mCBootImage, BootImage.class, "(Constructor)");
+            validate(mCBootImage, BootImage.class, "(Constructor)");
         }
 
         BootImage(CBootImage cBootImage) {
@@ -375,14 +385,14 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCBootImage);
             }
-            log(mCBootImage, BootImage.class, "(Constructor)");
+            validate(mCBootImage, BootImage.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCBootImage, BootImage.class, "destroy");
+            validate(mCBootImage, BootImage.class, "destroy");
             synchronized (sInstances) {
                 if (mCBootImage != null && decrementRefCount(sInstances, mCBootImage)) {
-                    log(mCBootImage, BootImage.class, "(Destroyed)");
+                    validate(mCBootImage, BootImage.class, "(Destroyed)");
                     CWrapper.mbp_bootimage_destroy(mCBootImage);
                 }
                 mCBootImage = null;
@@ -401,7 +411,7 @@ public class LibMbp {
         }
 
         CBootImage getPointer() {
-            log(mCBootImage, BootImage.class, "getPointer");
+            validate(mCBootImage, BootImage.class, "getPointer");
             return mCBootImage;
         }
 
@@ -423,7 +433,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCBootImage);
             }
-            log(mCBootImage, BootImage.class, "(Constructor)");
+            validate(mCBootImage, BootImage.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<BootImage> CREATOR
@@ -438,13 +448,13 @@ public class LibMbp {
         };
 
         public PatcherError getError() {
-            log(mCBootImage, BootImage.class, "getError");
+            validate(mCBootImage, BootImage.class, "getError");
             CPatcherError error = CWrapper.mbp_bootimage_error(mCBootImage);
             return new PatcherError(error);
         }
 
         public boolean load(byte[] data) {
-            log(mCBootImage, BootImage.class, "load", data.length);
+            validate(mCBootImage, BootImage.class, "load", data.length);
             ensureNotNull(data);
 
             Memory mem = new Memory(data.length);
@@ -453,14 +463,14 @@ public class LibMbp {
         }
 
         public boolean load(String filename) {
-            log(mCBootImage, BootImage.class, "load", filename);
+            validate(mCBootImage, BootImage.class, "load", filename);
             ensureNotNull(filename);
 
             return CWrapper.mbp_bootimage_load_file(mCBootImage, filename);
         }
 
         public byte[] create() {
-            log(mCBootImage, BootImage.class, "create");
+            validate(mCBootImage, BootImage.class, "create");
             PointerByReference pData = new PointerByReference();
             IntByReference pSize = new IntByReference();
 
@@ -474,139 +484,139 @@ public class LibMbp {
         }
 
         public boolean createFile(String path) {
-            log(mCBootImage, BootImage.class, "createFile", path);
+            validate(mCBootImage, BootImage.class, "createFile", path);
             ensureNotNull(path);
 
             return CWrapper.mbp_bootimage_create_file(mCBootImage, path);
         }
 
         public boolean isLoki() {
-            log(mCBootImage, BootImage.class, "isLoki");
+            validate(mCBootImage, BootImage.class, "isLoki");
 
             return CWrapper.mbp_bootimage_is_loki(mCBootImage);
         }
 
         public String getBoardName() {
-            log(mCBootImage, BootImage.class, "getBoardName");
+            validate(mCBootImage, BootImage.class, "getBoardName");
             Pointer p = CWrapper.mbp_bootimage_boardname(mCBootImage);
             return getStringAndFree(p);
         }
 
         public void setBoardName(String name) {
-            log(mCBootImage, BootImage.class, "setBoardName", name);
+            validate(mCBootImage, BootImage.class, "setBoardName", name);
             ensureNotNull(name);
 
             CWrapper.mbp_bootimage_set_boardname(mCBootImage, name);
         }
 
         public void resetBoardName() {
-            log(mCBootImage, BootImage.class, "resetBoardName");
+            validate(mCBootImage, BootImage.class, "resetBoardName");
             CWrapper.mbp_bootimage_reset_boardname(mCBootImage);
         }
 
         public String getKernelCmdline() {
-            log(mCBootImage, BootImage.class, "getKernelCmdline");
+            validate(mCBootImage, BootImage.class, "getKernelCmdline");
             Pointer p = CWrapper.mbp_bootimage_kernel_cmdline(mCBootImage);
             return getStringAndFree(p);
         }
 
         public void setKernelCmdline(String cmdline) {
-            log(mCBootImage, BootImage.class, "setKernelCmdline", cmdline);
+            validate(mCBootImage, BootImage.class, "setKernelCmdline", cmdline);
             ensureNotNull(cmdline);
 
             CWrapper.mbp_bootimage_set_kernel_cmdline(mCBootImage, cmdline);
         }
 
         public void resetKernelCmdline() {
-            log(mCBootImage, BootImage.class, "resetKernelCmdline");
+            validate(mCBootImage, BootImage.class, "resetKernelCmdline");
             CWrapper.mbp_bootimage_reset_kernel_cmdline(mCBootImage);
         }
 
         public int getPageSize() {
-            log(mCBootImage, BootImage.class, "getPageSize");
+            validate(mCBootImage, BootImage.class, "getPageSize");
             return CWrapper.mbp_bootimage_page_size(mCBootImage);
         }
 
         public void setPageSize(int size) {
-            log(mCBootImage, BootImage.class, "setPageSize", size);
+            validate(mCBootImage, BootImage.class, "setPageSize", size);
             CWrapper.mbp_bootimage_set_page_size(mCBootImage, size);
         }
 
         public void resetPageSize() {
-            log(mCBootImage, BootImage.class, "resetPageSize");
+            validate(mCBootImage, BootImage.class, "resetPageSize");
             CWrapper.mbp_bootimage_reset_page_size(mCBootImage);
         }
 
         public int getKernelAddress() {
-            log(mCBootImage, BootImage.class, "getKernelAddress");
+            validate(mCBootImage, BootImage.class, "getKernelAddress");
             return CWrapper.mbp_bootimage_kernel_address(mCBootImage);
         }
 
         public void setKernelAddress(int address) {
-            log(mCBootImage, BootImage.class, "setKernelAddress", address);
+            validate(mCBootImage, BootImage.class, "setKernelAddress", address);
             CWrapper.mbp_bootimage_set_kernel_address(mCBootImage, address);
         }
 
         public void resetKernelAddress() {
-            log(mCBootImage, BootImage.class, "resetKernelAddress");
+            validate(mCBootImage, BootImage.class, "resetKernelAddress");
             CWrapper.mbp_bootimage_reset_kernel_address(mCBootImage);
         }
 
         public int getRamdiskAddress() {
-            log(mCBootImage, BootImage.class, "getRamdiskAddress");
+            validate(mCBootImage, BootImage.class, "getRamdiskAddress");
             return CWrapper.mbp_bootimage_ramdisk_address(mCBootImage);
         }
 
         public void setRamdiskAddress(int address) {
-            log(mCBootImage, BootImage.class, "setRamdiskAddress", address);
+            validate(mCBootImage, BootImage.class, "setRamdiskAddress", address);
             CWrapper.mbp_bootimage_set_ramdisk_address(mCBootImage, address);
         }
 
         public void resetRamdiskAddress() {
-            log(mCBootImage, BootImage.class, "resetRamdiskAddress");
+            validate(mCBootImage, BootImage.class, "resetRamdiskAddress");
             CWrapper.mbp_bootimage_reset_ramdisk_address(mCBootImage);
         }
 
         public int getSecondBootloaderAddress() {
-            log(mCBootImage, BootImage.class, "getSecondBootloaderAddress");
+            validate(mCBootImage, BootImage.class, "getSecondBootloaderAddress");
             return CWrapper.mbp_bootimage_second_bootloader_address(mCBootImage);
         }
 
         public void setSecondBootloaderAddress(int address) {
-            log(mCBootImage, BootImage.class, "setSecondBootloaderAddress", address);
+            validate(mCBootImage, BootImage.class, "setSecondBootloaderAddress", address);
             CWrapper.mbp_bootimage_set_second_bootloader_address(mCBootImage, address);
         }
 
         public void resetSecondBootloaderAddress() {
-            log(mCBootImage, BootImage.class, "resetSecondBootloaderAddress");
+            validate(mCBootImage, BootImage.class, "resetSecondBootloaderAddress");
             CWrapper.mbp_bootimage_reset_second_bootloader_address(mCBootImage);
         }
 
         public int getKernelTagsAddress() {
-            log(mCBootImage, BootImage.class, "getKernelTagsAddress");
+            validate(mCBootImage, BootImage.class, "getKernelTagsAddress");
             return CWrapper.mbp_bootimage_kernel_tags_address(mCBootImage);
         }
 
         public void setKernelTagsAddress(int address) {
-            log(mCBootImage, BootImage.class, "setKernelTagsAddress", address);
+            validate(mCBootImage, BootImage.class, "setKernelTagsAddress", address);
             CWrapper.mbp_bootimage_set_kernel_tags_address(mCBootImage, address);
         }
 
         public void resetKernelTagsAddress() {
-            log(mCBootImage, BootImage.class, "resetKernelTagsAddress");
+            validate(mCBootImage, BootImage.class, "resetKernelTagsAddress");
             CWrapper.mbp_bootimage_reset_kernel_tags_address(mCBootImage);
         }
 
         public void setAddresses(int base, int kernelOffset, int ramdiskOffset,
                                  int secondBootloaderOffset, int kernelTagsOffset) {
-            log(mCBootImage, BootImage.class, "setAddresses", base, kernelOffset, ramdiskOffset,
-                    secondBootloaderOffset, kernelTagsOffset);
+            validate(mCBootImage, BootImage.class, "setAddresses", base, kernelOffset,
+                    ramdiskOffset, secondBootloaderOffset, kernelTagsOffset);
             CWrapper.mbp_bootimage_set_addresses(mCBootImage, base, kernelOffset,
                     ramdiskOffset, secondBootloaderOffset, kernelTagsOffset);
         }
 
         public byte[] getKernelImage() {
-            log(mCBootImage, BootImage.class, "getKernelImage");
+            validate(mCBootImage, BootImage.class, "getKernelImage");
             PointerByReference pData = new PointerByReference();
             int size = CWrapper.mbp_bootimage_kernel_image(mCBootImage, pData);
             Pointer data = pData.getValue();
@@ -616,7 +626,7 @@ public class LibMbp {
         }
 
         public void setKernelImage(byte[] data) {
-            log(mCBootImage, BootImage.class, "setKernelImage", data.length);
+            validate(mCBootImage, BootImage.class, "setKernelImage", data.length);
             ensureNotNull(data);
 
             Memory mem = new Memory(data.length);
@@ -625,7 +635,7 @@ public class LibMbp {
         }
 
         public byte[] getRamdiskImage() {
-            log(mCBootImage, BootImage.class, "getRamdiskImage");
+            validate(mCBootImage, BootImage.class, "getRamdiskImage");
             PointerByReference pData = new PointerByReference();
             int size = CWrapper.mbp_bootimage_ramdisk_image(mCBootImage, pData);
             Pointer data = pData.getValue();
@@ -635,7 +645,7 @@ public class LibMbp {
         }
 
         public void setRamdiskImage(byte[] data) {
-            log(mCBootImage, BootImage.class, "setRamdiskImage", data.length);
+            validate(mCBootImage, BootImage.class, "setRamdiskImage", data.length);
             ensureNotNull(data);
 
             Memory mem = new Memory(data.length);
@@ -644,7 +654,7 @@ public class LibMbp {
         }
 
         public byte[] getSecondBootloaderImage() {
-            log(mCBootImage, BootImage.class, "getSecondBootloaderImage");
+            validate(mCBootImage, BootImage.class, "getSecondBootloaderImage");
             PointerByReference pData = new PointerByReference();
             int size = CWrapper.mbp_bootimage_second_bootloader_image(mCBootImage, pData);
             Pointer data = pData.getValue();
@@ -654,7 +664,7 @@ public class LibMbp {
         }
 
         public void setSecondBootloaderImage(byte[] data) {
-            log(mCBootImage, BootImage.class, "setSecondBootloaderImage", data.length);
+            validate(mCBootImage, BootImage.class, "setSecondBootloaderImage", data.length);
             ensureNotNull(data);
 
             Memory mem = new Memory(data.length);
@@ -663,7 +673,7 @@ public class LibMbp {
         }
 
         public byte[] getDeviceTreeImage() {
-            log(mCBootImage, BootImage.class, "getDeviceTreeImages");
+            validate(mCBootImage, BootImage.class, "getDeviceTreeImages");
             PointerByReference pData = new PointerByReference();
             int size = CWrapper.mbp_bootimage_device_tree_image(mCBootImage, pData);
             Pointer data = pData.getValue();
@@ -673,7 +683,7 @@ public class LibMbp {
         }
 
         public void setDeviceTreeImage(byte[] data) {
-            log(mCBootImage, BootImage.class, "setDeviceTreeImage", data.length);
+            validate(mCBootImage, BootImage.class, "setDeviceTreeImage", data.length);
             ensureNotNull(data);
 
             Memory mem = new Memory(data.length);
@@ -691,7 +701,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCCpioFile);
             }
-            log(mCCpioFile, CpioFile.class, "(Constructor)");
+            validate(mCCpioFile, CpioFile.class, "(Constructor)");
         }
 
         CpioFile(CCpioFile cCpioFile) {
@@ -701,14 +711,14 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCCpioFile);
             }
-            log(mCCpioFile, CpioFile.class, "(Constructor)");
+            validate(mCCpioFile, CpioFile.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCCpioFile, CpioFile.class, "destroy");
+            validate(mCCpioFile, CpioFile.class, "destroy");
             synchronized (sInstances) {
                 if (mCCpioFile != null && decrementRefCount(sInstances, mCCpioFile)) {
-                    log(mCCpioFile, CpioFile.class, "(Destroyed)");
+                    validate(mCCpioFile, CpioFile.class, "(Destroyed)");
                     CWrapper.mbp_cpiofile_destroy(mCCpioFile);
                 }
             }
@@ -727,7 +737,7 @@ public class LibMbp {
         }
 
         CCpioFile getPointer() {
-            log(mCCpioFile, CpioFile.class, "getPointer");
+            validate(mCCpioFile, CpioFile.class, "getPointer");
             return mCCpioFile;
         }
 
@@ -749,7 +759,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCCpioFile);
             }
-            log(mCCpioFile, CpioFile.class, "(Constructor)");
+            validate(mCCpioFile, CpioFile.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<CpioFile> CREATOR
@@ -764,13 +774,13 @@ public class LibMbp {
         };
 
         public PatcherError getError() {
-            log(mCCpioFile, CpioFile.class, "getError");
+            validate(mCCpioFile, CpioFile.class, "getError");
             CPatcherError error = CWrapper.mbp_cpiofile_error(mCCpioFile);
             return new PatcherError(error);
         }
 
         public boolean load(byte[] data) {
-            log(mCCpioFile, CpioFile.class, "load", data.length);
+            validate(mCCpioFile, CpioFile.class, "load", data.length);
             ensureNotNull(data);
 
             Memory mem = new Memory(data.length);
@@ -779,7 +789,7 @@ public class LibMbp {
         }
 
         public byte[] createData() {
-            log(mCCpioFile, CpioFile.class, "createData");
+            validate(mCCpioFile, CpioFile.class, "createData");
             PointerByReference pData = new PointerByReference();
             IntByReference pSize = new IntByReference();
 
@@ -797,27 +807,27 @@ public class LibMbp {
         }
 
         public boolean isExists(String name) {
-            log(mCCpioFile, CpioFile.class, "isExists", name);
+            validate(mCCpioFile, CpioFile.class, "isExists", name);
             ensureNotNull(name);
 
             return CWrapper.mbp_cpiofile_exists(mCCpioFile, name);
         }
 
         public boolean remove(String name) {
-            log(mCCpioFile, CpioFile.class, "remove", name);
+            validate(mCCpioFile, CpioFile.class, "remove", name);
             ensureNotNull(name);
 
             return CWrapper.mbp_cpiofile_remove(mCCpioFile, name);
         }
 
         public String[] getFilenames() {
-            log(mCCpioFile, CpioFile.class, "getFilenames");
+            validate(mCCpioFile, CpioFile.class, "getFilenames");
             Pointer p = CWrapper.mbp_cpiofile_filenames(mCCpioFile);
             return getStringArrayAndFree(p);
         }
 
         public byte[] getContents(String name) {
-            log(mCCpioFile, CpioFile.class, "getContents", name);
+            validate(mCCpioFile, CpioFile.class, "getContents", name);
             ensureNotNull(name);
 
             PointerByReference pData = new PointerByReference();
@@ -837,7 +847,7 @@ public class LibMbp {
         }
 
         public boolean setContents(String name, byte[] data) {
-            log(mCCpioFile, CpioFile.class, "setContents", name, data.length);
+            validate(mCCpioFile, CpioFile.class, "setContents", name, data.length);
             ensureNotNull(name);
             ensureNotNull(data);
 
@@ -847,7 +857,7 @@ public class LibMbp {
         }
 
         public boolean addSymlink(String source, String target) {
-            log(mCCpioFile, CpioFile.class, "addSymlink", source, target);
+            validate(mCCpioFile, CpioFile.class, "addSymlink", source, target);
             ensureNotNull(source);
             ensureNotNull(target);
 
@@ -855,7 +865,7 @@ public class LibMbp {
         }
 
         public boolean addFile(String path, String name, int perms) {
-            log(mCCpioFile, CpioFile.class, "addFile", path, name, perms);
+            validate(mCCpioFile, CpioFile.class, "addFile", path, name, perms);
             ensureNotNull(path);
             ensureNotNull(name);
 
@@ -863,7 +873,7 @@ public class LibMbp {
         }
 
         public boolean addFile(byte[] contents, String name, int perms) {
-            log(mCCpioFile, CpioFile.class, "addFile", contents.length, name, perms);
+            validate(mCCpioFile, CpioFile.class, "addFile", contents.length, name, perms);
             ensureNotNull(contents);
             ensureNotNull(name);
 
@@ -885,7 +895,7 @@ public class LibMbp {
                 incrementRefCount(sInstances, mCDevice);
             }
             mDestroyable = true;
-            log(mCDevice, Device.class, "(Constructor)");
+            validate(mCDevice, Device.class, "(Constructor)");
         }
 
         Device(CDevice cDevice, boolean destroyable) {
@@ -896,14 +906,14 @@ public class LibMbp {
                 incrementRefCount(sInstances, mCDevice);
             }
             mDestroyable = destroyable;
-            log(mCDevice, Device.class, "(Constructor)");
+            validate(mCDevice, Device.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCDevice, Device.class, "destroy");
+            validate(mCDevice, Device.class, "destroy");
             synchronized (sInstances) {
                 if (mCDevice != null && decrementRefCount(sInstances, mCDevice) && mDestroyable) {
-                    log(mCDevice, Device.class, "(Destroyed)");
+                    validate(mCDevice, Device.class, "(Destroyed)");
                     CWrapper.mbp_device_destroy(mCDevice);
                 }
             }
@@ -922,7 +932,7 @@ public class LibMbp {
         }
 
         CDevice getPointer() {
-            log(mCDevice, Device.class, "getPointer");
+            validate(mCDevice, Device.class, "getPointer");
             return mCDevice;
         }
 
@@ -946,7 +956,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCDevice);
             }
-            log(mCDevice, Device.class, "(Constructor)");
+            validate(mCDevice, Device.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<Device> CREATOR
@@ -961,117 +971,117 @@ public class LibMbp {
         };
 
         public String getId() {
-            log(mCDevice, Device.class, "getId");
+            validate(mCDevice, Device.class, "getId");
             Pointer p = CWrapper.mbp_device_id(mCDevice);
             return getStringAndFree(p);
         }
 
         public void setId(String id) {
-            log(mCDevice, Device.class, "setId", id);
+            validate(mCDevice, Device.class, "setId", id);
             ensureNotNull(id);
 
             CWrapper.mbp_device_set_id(mCDevice, id);
         }
 
         public String[] getCodenames() {
-            log(mCDevice, Device.class, "getCodenames");
+            validate(mCDevice, Device.class, "getCodenames");
             Pointer p = CWrapper.mbp_device_codenames(mCDevice);
             return getStringArrayAndFree(p);
         }
 
         public void setCodenames(String[] names) {
-            log(mCDevice, Device.class, "setCodenames", (Object) names);
+            validate(mCDevice, Device.class, "setCodenames", (Object) names);
             ensureNotNull(names);
 
             CWrapper.mbp_device_set_codenames(mCDevice, new StringArray(names));
         }
 
         public String getName() {
-            log(mCDevice, Device.class, "getName");
+            validate(mCDevice, Device.class, "getName");
             Pointer p = CWrapper.mbp_device_name(mCDevice);
             return getStringAndFree(p);
         }
 
         public void setName(String name) {
-            log(mCDevice, Device.class, "setName", name);
+            validate(mCDevice, Device.class, "setName", name);
             ensureNotNull(name);
 
             CWrapper.mbp_device_set_name(mCDevice, name);
         }
 
         public String getArchitecture() {
-            log(mCDevice, Device.class, "getArchitecture");
+            validate(mCDevice, Device.class, "getArchitecture");
             Pointer p = CWrapper.mbp_device_architecture(mCDevice);
             return getStringAndFree(p);
         }
 
         public void setArchitecture(String arch) {
-            log(mCDevice, Device.class, "setArchitecture", arch);
+            validate(mCDevice, Device.class, "setArchitecture", arch);
             ensureNotNull(arch);
 
             CWrapper.mbp_device_set_architecture(mCDevice, arch);
         }
 
         public String[] getSystemBlockDevs() {
-            log(mCDevice, Device.class, "getSystemBlockDevs");
+            validate(mCDevice, Device.class, "getSystemBlockDevs");
             Pointer p = CWrapper.mbp_device_system_block_devs(mCDevice);
             return getStringArrayAndFree(p);
         }
 
         public void setSystemBlockDevs(String[] blockDevs) {
-            log(mCDevice, Device.class, "setSystemBlockDevs", (Object) blockDevs);
+            validate(mCDevice, Device.class, "setSystemBlockDevs", (Object) blockDevs);
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_system_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getCacheBlockDevs() {
-            log(mCDevice, Device.class, "getCacheBlockDevs");
+            validate(mCDevice, Device.class, "getCacheBlockDevs");
             Pointer p = CWrapper.mbp_device_cache_block_devs(mCDevice);
             return getStringArrayAndFree(p);
         }
 
         public void setCacheBlockDevs(String[] blockDevs) {
-            log(mCDevice, Device.class, "setCacheBlockDevs", (Object) blockDevs);
+            validate(mCDevice, Device.class, "setCacheBlockDevs", (Object) blockDevs);
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_cache_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getDataBlockDevs() {
-            log(mCDevice, Device.class, "getDataBlockDevs");
+            validate(mCDevice, Device.class, "getDataBlockDevs");
             Pointer p = CWrapper.mbp_device_data_block_devs(mCDevice);
             return getStringArrayAndFree(p);
         }
 
         public void setDataBlockDevs(String[] blockDevs) {
-            log(mCDevice, Device.class, "setDataBlockDevs", (Object) blockDevs);
+            validate(mCDevice, Device.class, "setDataBlockDevs", (Object) blockDevs);
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_data_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getBootBlockDevs() {
-            log(mCDevice, Device.class, "getBootBlockDevs");
+            validate(mCDevice, Device.class, "getBootBlockDevs");
             Pointer p = CWrapper.mbp_device_boot_block_devs(mCDevice);
             return getStringArrayAndFree(p);
         }
 
         public void setBootBlockDevs(String[] blockDevs) {
-            log(mCDevice, Device.class, "setBootBlockDevs", (Object) blockDevs);
+            validate(mCDevice, Device.class, "setBootBlockDevs", (Object) blockDevs);
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_boot_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getExtraBlockDevs() {
-            log(mCDevice, Device.class, "getExtraBlockDevs");
+            validate(mCDevice, Device.class, "getExtraBlockDevs");
             Pointer p = CWrapper.mbp_device_extra_block_devs(mCDevice);
             return getStringArrayAndFree(p);
         }
 
         public void setExtraBlockDevs(String[] blockDevs) {
-            log(mCDevice, Device.class, "setExtraBlockDevs", (Object) blockDevs);
+            validate(mCDevice, Device.class, "setExtraBlockDevs", (Object) blockDevs);
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_extra_block_devs(mCDevice, new StringArray(blockDevs));
@@ -1087,7 +1097,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCFileInfo);
             }
-            log(mCFileInfo, FileInfo.class, "(Constructor)");
+            validate(mCFileInfo, FileInfo.class, "(Constructor)");
         }
 
         FileInfo(CFileInfo cFileInfo) {
@@ -1097,14 +1107,14 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCFileInfo);
             }
-            log(mCFileInfo, FileInfo.class, "(Constructor)");
+            validate(mCFileInfo, FileInfo.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCFileInfo, FileInfo.class, "destroy");
+            validate(mCFileInfo, FileInfo.class, "destroy");
             synchronized (sInstances) {
                 if (mCFileInfo != null && decrementRefCount(sInstances, mCFileInfo)) {
-                    log(mCFileInfo, FileInfo.class, "(Destroyed)");
+                    validate(mCFileInfo, FileInfo.class, "(Destroyed)");
                     CWrapper.mbp_fileinfo_destroy(mCFileInfo);
                 }
             }
@@ -1123,7 +1133,7 @@ public class LibMbp {
         }
 
         CFileInfo getPointer() {
-            log(mCFileInfo, FileInfo.class, "getPointer");
+            validate(mCFileInfo, FileInfo.class, "getPointer");
             return mCFileInfo;
         }
 
@@ -1145,7 +1155,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCFileInfo);
             }
-            log(mCFileInfo, FileInfo.class, "(Constructor)");
+            validate(mCFileInfo, FileInfo.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<FileInfo> CREATOR
@@ -1160,39 +1170,39 @@ public class LibMbp {
         };
 
         public String getFilename() {
-            log(mCFileInfo, FileInfo.class, "getFilename");
+            validate(mCFileInfo, FileInfo.class, "getFilename");
             Pointer p = CWrapper.mbp_fileinfo_filename(mCFileInfo);
             return getStringAndFree(p);
         }
 
         public void setFilename(String path) {
-            log(mCFileInfo, FileInfo.class, "setFilename", path);
+            validate(mCFileInfo, FileInfo.class, "setFilename", path);
             ensureNotNull(path);
 
             CWrapper.mbp_fileinfo_set_filename(mCFileInfo, path);
         }
 
         public PatchInfo getPatchInfo() {
-            log(mCFileInfo, FileInfo.class, "getPatchInfo");
+            validate(mCFileInfo, FileInfo.class, "getPatchInfo");
             CPatchInfo cPi = CWrapper.mbp_fileinfo_patchinfo(mCFileInfo);
             return cPi == null ? null : new PatchInfo(cPi, false);
         }
 
         public void setPatchInfo(PatchInfo info) {
-            log(mCFileInfo, FileInfo.class, "setPatchInfo", info);
+            validate(mCFileInfo, FileInfo.class, "setPatchInfo", info);
             ensureNotNull(info);
 
             CWrapper.mbp_fileinfo_set_patchinfo(mCFileInfo, info.getPointer());
         }
 
         public Device getDevice() {
-            log(mCFileInfo, FileInfo.class, "getDevice");
+            validate(mCFileInfo, FileInfo.class, "getDevice");
             CDevice cDevice = CWrapper.mbp_fileinfo_device(mCFileInfo);
             return cDevice == null ? null : new Device(cDevice, false);
         }
 
         public void setDevice(Device device) {
-            log(mCFileInfo, FileInfo.class, "setDevice", device);
+            validate(mCFileInfo, FileInfo.class, "setDevice", device);
             ensureNotNull(device);
 
             CWrapper.mbp_fileinfo_set_device(mCFileInfo, device.getPointer());
@@ -1208,7 +1218,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCPatcherConfig);
             }
-            log(mCPatcherConfig, PatcherConfig.class, "(Constructor)");
+            validate(mCPatcherConfig, PatcherConfig.class, "(Constructor)");
         }
 
         PatcherConfig(CPatcherConfig cPatcherConfig) {
@@ -1218,14 +1228,14 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCPatcherConfig);
             }
-            log(mCPatcherConfig, PatcherConfig.class, "(Constructor)");
+            validate(mCPatcherConfig, PatcherConfig.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCPatcherConfig, PatcherConfig.class, "destroy");
+            validate(mCPatcherConfig, PatcherConfig.class, "destroy");
             synchronized (sInstances) {
                 if (mCPatcherConfig != null && decrementRefCount(sInstances, mCPatcherConfig)) {
-                    log(mCPatcherConfig, PatcherConfig.class, "(Destroyed)");
+                    validate(mCPatcherConfig, PatcherConfig.class, "(Destroyed)");
                     CWrapper.mbp_config_destroy(mCPatcherConfig);
                 }
                 mCPatcherConfig = null;
@@ -1245,7 +1255,7 @@ public class LibMbp {
         }
 
         CPatcherConfig getPointer() {
-            log(mCPatcherConfig, PatcherConfig.class, "getPointer");
+            validate(mCPatcherConfig, PatcherConfig.class, "getPointer");
             return mCPatcherConfig;
         }
 
@@ -1267,7 +1277,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCPatcherConfig);
             }
-            log(mCPatcherConfig, PatcherConfig.class, "(Constructor)");
+            validate(mCPatcherConfig, PatcherConfig.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<PatcherConfig> CREATOR
@@ -1282,45 +1292,45 @@ public class LibMbp {
         };
 
         public PatcherError getError() {
-            log(mCPatcherConfig, PatcherConfig.class, "getError");
+            validate(mCPatcherConfig, PatcherConfig.class, "getError");
             CPatcherError error = CWrapper.mbp_config_error(mCPatcherConfig);
             return new PatcherError(error);
         }
 
         public String getDataDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getDataDirectory");
+            validate(mCPatcherConfig, PatcherConfig.class, "getDataDirectory");
             Pointer p = CWrapper.mbp_config_data_directory(mCPatcherConfig);
             return getStringAndFree(p);
         }
 
         public String getTempDirectory() {
-            log(mCPatcherConfig, PatcherConfig.class, "getTempDirectory");
+            validate(mCPatcherConfig, PatcherConfig.class, "getTempDirectory");
             Pointer p = CWrapper.mbp_config_temp_directory(mCPatcherConfig);
             return getStringAndFree(p);
         }
 
         public void setDataDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setDataDirectory", path);
+            validate(mCPatcherConfig, PatcherConfig.class, "setDataDirectory", path);
             ensureNotNull(path);
 
             CWrapper.mbp_config_set_data_directory(mCPatcherConfig, path);
         }
 
         public void setTempDirectory(String path) {
-            log(mCPatcherConfig, PatcherConfig.class, "setTempDirectory", path);
+            validate(mCPatcherConfig, PatcherConfig.class, "setTempDirectory", path);
             ensureNotNull(path);
 
             CWrapper.mbp_config_set_temp_directory(mCPatcherConfig, path);
         }
 
         public String getVersion() {
-            log(mCPatcherConfig, PatcherConfig.class, "getVersion");
+            validate(mCPatcherConfig, PatcherConfig.class, "getVersion");
             Pointer p = CWrapper.mbp_config_version(mCPatcherConfig);
             return getStringAndFree(p);
         }
 
         public Device[] getDevices() {
-            log(mCPatcherConfig, PatcherConfig.class, "getDevices");
+            validate(mCPatcherConfig, PatcherConfig.class, "getDevices");
             Pointer p = CWrapper.mbp_config_devices(mCPatcherConfig);
             Pointer[] ps = p.getPointerArray(0);
 
@@ -1336,7 +1346,7 @@ public class LibMbp {
         }
 
         public PatchInfo[] getPatchInfos() {
-            log(mCPatcherConfig, PatcherConfig.class, "getPatchInfos");
+            validate(mCPatcherConfig, PatcherConfig.class, "getPatchInfos");
             Pointer p = CWrapper.mbp_config_patchinfos(mCPatcherConfig);
             Pointer[] ps = p.getPointerArray(0);
 
@@ -1352,7 +1362,7 @@ public class LibMbp {
         }
 
         public PatchInfo[] getPatchInfos(Device device) {
-            log(mCPatcherConfig, PatcherConfig.class, "getPatchInfos", device);
+            validate(mCPatcherConfig, PatcherConfig.class, "getPatchInfos", device);
             ensureNotNull(device);
 
             Pointer p = CWrapper.mbp_config_patchinfos_for_device(
@@ -1371,7 +1381,8 @@ public class LibMbp {
         }
 
         public PatchInfo findMatchingPatchInfo(Device device, String filename) {
-            log(mCPatcherConfig, PatcherConfig.class, "findMatchingPatchInfo", device, filename);
+            validate(mCPatcherConfig, PatcherConfig.class, "findMatchingPatchInfo", device,
+                    filename);
             ensureNotNull(device);
             ensureNotNull(filename);
 
@@ -1381,25 +1392,25 @@ public class LibMbp {
         }
 
         public String[] getPatchers() {
-            log(mCPatcherConfig, PatcherConfig.class, "getPatchers");
+            validate(mCPatcherConfig, PatcherConfig.class, "getPatchers");
             Pointer p = CWrapper.mbp_config_patchers(mCPatcherConfig);
             return getStringArrayAndFree(p);
         }
 
         public String[] getAutoPatchers() {
-            log(mCPatcherConfig, PatcherConfig.class, "getAutoPatchers");
+            validate(mCPatcherConfig, PatcherConfig.class, "getAutoPatchers");
             Pointer p = CWrapper.mbp_config_autopatchers(mCPatcherConfig);
             return getStringArrayAndFree(p);
         }
 
         public String[] getRamdiskPatchers() {
-            log(mCPatcherConfig, PatcherConfig.class, "getRamdiskPatchers");
+            validate(mCPatcherConfig, PatcherConfig.class, "getRamdiskPatchers");
             Pointer p = CWrapper.mbp_config_ramdiskpatchers(mCPatcherConfig);
             return getStringArrayAndFree(p);
         }
 
         public Patcher createPatcher(String id) {
-            log(mCPatcherConfig, PatcherConfig.class, "createPatcher", id);
+            validate(mCPatcherConfig, PatcherConfig.class, "createPatcher", id);
             ensureNotNull(id);
 
             CPatcher patcher = CWrapper.mbp_config_create_patcher(mCPatcherConfig, id);
@@ -1407,7 +1418,7 @@ public class LibMbp {
         }
 
         public AutoPatcher createAutoPatcher(String id, FileInfo info, StringMap args) {
-            log(mCPatcherConfig, PatcherConfig.class, "createAutoPatcher", id, info, args);
+            validate(mCPatcherConfig, PatcherConfig.class, "createAutoPatcher", id, info, args);
             ensureNotNull(id);
             ensureNotNull(info);
             ensureNotNull(args);
@@ -1418,7 +1429,7 @@ public class LibMbp {
         }
 
         public RamdiskPatcher createRamdiskPatcher(String id, FileInfo info, CpioFile cpio) {
-            log(mCPatcherConfig, PatcherConfig.class, "createRamdiskPatcher", id, info, cpio);
+            validate(mCPatcherConfig, PatcherConfig.class, "createRamdiskPatcher", id, info, cpio);
             ensureNotNull(id);
             ensureNotNull(info);
             ensureNotNull(cpio);
@@ -1429,28 +1440,28 @@ public class LibMbp {
         }
 
         public void destroyPatcher(Patcher patcher) {
-            log(mCPatcherConfig, PatcherConfig.class, "destroyPatcher", patcher);
+            validate(mCPatcherConfig, PatcherConfig.class, "destroyPatcher", patcher);
             ensureNotNull(patcher);
 
             CWrapper.mbp_config_destroy_patcher(mCPatcherConfig, patcher.getPointer());
         }
 
         public void destroyAutoPatcher(AutoPatcher patcher) {
-            log(mCPatcherConfig, PatcherConfig.class, "destroyAutoPatcher", patcher);
+            validate(mCPatcherConfig, PatcherConfig.class, "destroyAutoPatcher", patcher);
             ensureNotNull(patcher);
 
             CWrapper.mbp_config_destroy_autopatcher(mCPatcherConfig, patcher.getPointer());
         }
 
         public void destroyRamdiskPatcher(RamdiskPatcher patcher) {
-            log(mCPatcherConfig, PatcherConfig.class, "destroyRamdiskPatcher", patcher);
+            validate(mCPatcherConfig, PatcherConfig.class, "destroyRamdiskPatcher", patcher);
             ensureNotNull(patcher);
 
             CWrapper.mbp_config_destroy_ramdisk_patcher(mCPatcherConfig, patcher.getPointer());
         }
 
         public boolean loadPatchInfos() {
-            log(mCPatcherConfig, PatcherConfig.class, "loadPatchInfos");
+            validate(mCPatcherConfig, PatcherConfig.class, "loadPatchInfos");
             return CWrapper.mbp_config_load_patchinfos(mCPatcherConfig);
         }
     }
@@ -1508,14 +1519,14 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCPatcherError);
             }
-            log(mCPatcherError, PatcherError.class, "(Constructor)");
+            validate(mCPatcherError, PatcherError.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCPatcherError, PatcherError.class, "destroy");
+            validate(mCPatcherError, PatcherError.class, "destroy");
             synchronized (sInstances) {
                 if (mCPatcherError != null && decrementRefCount(sInstances, mCPatcherError)) {
-                    log(mCPatcherError, PatcherError.class, "(Destroyed)");
+                    validate(mCPatcherError, PatcherError.class, "(Destroyed)");
                     CWrapper.mbp_error_destroy(mCPatcherError);
                 }
                 mCPatcherError = null;
@@ -1535,7 +1546,7 @@ public class LibMbp {
         }
 
         CPatcherError getPointer() {
-            log(mCPatcherError, PatcherError.class, "getPointer");
+            validate(mCPatcherError, PatcherError.class, "getPointer");
             return mCPatcherError;
         }
 
@@ -1557,7 +1568,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCPatcherError);
             }
-            log(mCPatcherError, PatcherError.class, "(Constructor)");
+            validate(mCPatcherError, PatcherError.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<PatcherError> CREATOR
@@ -1572,23 +1583,23 @@ public class LibMbp {
         };
 
         public /* ErrorType */ int getErrorType() {
-            log(mCPatcherError, PatcherError.class, "getErrorType");
+            validate(mCPatcherError, PatcherError.class, "getErrorType");
             return CWrapper.mbp_error_error_type(mCPatcherError);
         }
 
         public /* ErrorCode */ int getErrorCode() {
-            log(mCPatcherError, PatcherError.class, "getErrorCode");
+            validate(mCPatcherError, PatcherError.class, "getErrorCode");
             return CWrapper.mbp_error_error_code(mCPatcherError);
         }
 
         public String getPatcherId() {
-            log(mCPatcherError, PatcherError.class, "getPatcherId");
+            validate(mCPatcherError, PatcherError.class, "getPatcherId");
             Pointer p = CWrapper.mbp_error_patcher_id(mCPatcherError);
             return getStringAndFree(p);
         }
 
         public String getFilename() {
-            log(mCPatcherError, PatcherError.class, "getFilename");
+            validate(mCPatcherError, PatcherError.class, "getFilename");
             Pointer p = CWrapper.mbp_error_filename(mCPatcherError);
             return getStringAndFree(p);
         }
@@ -1605,7 +1616,7 @@ public class LibMbp {
                 incrementRefCount(sInstances, mCPatchInfo);
             }
             mDestroyable = true;
-            log(mCPatchInfo, PatchInfo.class, "(Constructor)");
+            validate(mCPatchInfo, PatchInfo.class, "(Constructor)");
         }
 
         PatchInfo(CPatchInfo cPatchInfo, boolean destroyable) {
@@ -1616,15 +1627,15 @@ public class LibMbp {
                 incrementRefCount(sInstances, mCPatchInfo);
             }
             mDestroyable = destroyable;
-            log(mCPatchInfo, PatchInfo.class, "(Constructor)");
+            validate(mCPatchInfo, PatchInfo.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCPatchInfo, PatchInfo.class, "destroy");
+            validate(mCPatchInfo, PatchInfo.class, "destroy");
             synchronized (sInstances) {
                 if (mCPatchInfo != null && decrementRefCount(sInstances, mCPatchInfo)
                         && mDestroyable) {
-                    log(mCPatchInfo, PatchInfo.class, "(Destroyed)");
+                    validate(mCPatchInfo, PatchInfo.class, "(Destroyed)");
                     CWrapper.mbp_patchinfo_destroy(mCPatchInfo);
                 }
                 mCPatchInfo = null;
@@ -1643,7 +1654,7 @@ public class LibMbp {
         }
 
         CPatchInfo getPointer() {
-            log(mCPatchInfo, PatchInfo.class, "getPointer");
+            validate(mCPatchInfo, PatchInfo.class, "getPointer");
             return mCPatchInfo;
         }
 
@@ -1667,7 +1678,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCPatchInfo);
             }
-            log(mCPatchInfo, PatchInfo.class, "(Constructor)");
+            validate(mCPatchInfo, PatchInfo.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<PatchInfo> CREATOR
@@ -1690,33 +1701,33 @@ public class LibMbp {
         }
 
         public String getId() {
-            log(mCPatchInfo, PatchInfo.class, "getId");
+            validate(mCPatchInfo, PatchInfo.class, "getId");
             Pointer p = CWrapper.mbp_patchinfo_id(mCPatchInfo);
             return getStringAndFree(p);
         }
 
         public void setId(String id) {
-            log(mCPatchInfo, PatchInfo.class, "setId", id);
+            validate(mCPatchInfo, PatchInfo.class, "setId", id);
             ensureNotNull(id);
 
             CWrapper.mbp_patchinfo_set_id(mCPatchInfo, id);
         }
 
         public String getName() {
-            log(mCPatchInfo, PatchInfo.class, "getName");
+            validate(mCPatchInfo, PatchInfo.class, "getName");
             Pointer p = CWrapper.mbp_patchinfo_name(mCPatchInfo);
             return getStringAndFree(p);
         }
 
         public void setName(String name) {
-            log(mCPatchInfo, PatchInfo.class, "setName", name);
+            validate(mCPatchInfo, PatchInfo.class, "setName", name);
             ensureNotNull(name);
 
             CWrapper.mbp_patchinfo_set_name(mCPatchInfo, name);
         }
 
         public String keyFromFilename(String fileName) {
-            log(mCPatchInfo, PatchInfo.class, "keyFromFilename", fileName);
+            validate(mCPatchInfo, PatchInfo.class, "keyFromFilename", fileName);
             ensureNotNull(fileName);
 
             Pointer p = CWrapper.mbp_patchinfo_key_from_filename(mCPatchInfo, fileName);
@@ -1724,56 +1735,56 @@ public class LibMbp {
         }
 
         public String[] getRegexes() {
-            log(mCPatchInfo, PatchInfo.class, "getRegexes");
+            validate(mCPatchInfo, PatchInfo.class, "getRegexes");
             Pointer p = CWrapper.mbp_patchinfo_regexes(mCPatchInfo);
             return getStringArrayAndFree(p);
         }
 
         public void setRegexes(String[] regexes) {
-            log(mCPatchInfo, PatchInfo.class, "setRegexes", (Object) regexes);
+            validate(mCPatchInfo, PatchInfo.class, "setRegexes", (Object) regexes);
             ensureNotNull(regexes);
 
             CWrapper.mbp_patchinfo_set_regexes(mCPatchInfo, new StringArray(regexes));
         }
 
         public String[] getExcludeRegexes() {
-            log(mCPatchInfo, PatchInfo.class, "getExcludeRegexes");
+            validate(mCPatchInfo, PatchInfo.class, "getExcludeRegexes");
             Pointer p = CWrapper.mbp_patchinfo_exclude_regexes(mCPatchInfo);
             return getStringArrayAndFree(p);
         }
 
         public void setExcludeRegexes(String[] regexes) {
-            log(mCPatchInfo, PatchInfo.class, "setExcludeRegexes", (Object) regexes);
+            validate(mCPatchInfo, PatchInfo.class, "setExcludeRegexes", (Object) regexes);
             ensureNotNull(regexes);
 
             CWrapper.mbp_patchinfo_set_exclude_regexes(mCPatchInfo, new StringArray(regexes));
         }
 
         public String[] getCondRegexes() {
-            log(mCPatchInfo, PatchInfo.class, "getCondRegexes");
+            validate(mCPatchInfo, PatchInfo.class, "getCondRegexes");
             Pointer p = CWrapper.mbp_patchinfo_cond_regexes(mCPatchInfo);
             return getStringArrayAndFree(p);
         }
 
         public void setCondRegexes(String[] regexes) {
-            log(mCPatchInfo, PatchInfo.class, "setCondRegexes", (Object) regexes);
+            validate(mCPatchInfo, PatchInfo.class, "setCondRegexes", (Object) regexes);
             ensureNotNull(regexes);
 
             CWrapper.mbp_patchinfo_set_cond_regexes(mCPatchInfo, new StringArray(regexes));
         }
 
         public boolean hasNotMatched() {
-            log(mCPatchInfo, PatchInfo.class, "hasNotMatched");
+            validate(mCPatchInfo, PatchInfo.class, "hasNotMatched");
             return CWrapper.mbp_patchinfo_has_not_matched(mCPatchInfo);
         }
 
         public void setHasNotMatched(boolean hasElem) {
-            log(mCPatchInfo, PatchInfo.class, "setHasNotMatched", hasElem);
+            validate(mCPatchInfo, PatchInfo.class, "setHasNotMatched", hasElem);
             CWrapper.mbp_patchinfo_set_has_not_matched(mCPatchInfo, hasElem);
         }
 
         public void addAutoPatcher(String key, String apName, StringMap args) {
-            log(mCPatchInfo, PatchInfo.class, "addAutoPatcher", key, apName, args);
+            validate(mCPatchInfo, PatchInfo.class, "addAutoPatcher", key, apName, args);
             ensureNotNull(key);
             ensureNotNull(apName);
 
@@ -1786,7 +1797,7 @@ public class LibMbp {
         }
 
         public void removeAutoPatcher(String key, String apName) {
-            log(mCPatchInfo, PatchInfo.class, "removeAutoPatcher", key, apName);
+            validate(mCPatchInfo, PatchInfo.class, "removeAutoPatcher", key, apName);
             ensureNotNull(key);
             ensureNotNull(apName);
 
@@ -1794,7 +1805,7 @@ public class LibMbp {
         }
 
         public String[] getAutoPatchers(String key) {
-            log(mCPatchInfo, PatchInfo.class, "getAutoPatchers", key);
+            validate(mCPatchInfo, PatchInfo.class, "getAutoPatchers", key);
             ensureNotNull(key);
 
             Pointer p = CWrapper.mbp_patchinfo_autopatchers(mCPatchInfo, key);
@@ -1802,7 +1813,7 @@ public class LibMbp {
         }
 
         public StringMap getAutoPatcherArgs(String key, String apName) {
-            log(mCPatchInfo, PatchInfo.class, "getAutoPatcherArgs", key, apName);
+            validate(mCPatchInfo, PatchInfo.class, "getAutoPatcherArgs", key, apName);
             ensureNotNull(key);
             ensureNotNull(apName);
 
@@ -1811,35 +1822,35 @@ public class LibMbp {
         }
 
         public boolean hasBootImage(String key) {
-            log(mCPatchInfo, PatchInfo.class, "hasBootImage", key);
+            validate(mCPatchInfo, PatchInfo.class, "hasBootImage", key);
             ensureNotNull(key);
 
             return CWrapper.mbp_patchinfo_has_boot_image(mCPatchInfo, key);
         }
 
         public void setHasBootImage(String key, boolean hasBootImage) {
-            log(mCPatchInfo, PatchInfo.class, "setHasBootImage", key, hasBootImage);
+            validate(mCPatchInfo, PatchInfo.class, "setHasBootImage", key, hasBootImage);
             ensureNotNull(key);
 
             CWrapper.mbp_patchinfo_set_has_boot_image(mCPatchInfo, key, hasBootImage);
         }
 
         public boolean autoDetectBootImages(String key) {
-            log(mCPatchInfo, PatchInfo.class, "autodetectBootImages", key);
+            validate(mCPatchInfo, PatchInfo.class, "autodetectBootImages", key);
             ensureNotNull(key);
 
             return CWrapper.mbp_patchinfo_autodetect_boot_images(mCPatchInfo, key);
         }
 
         public void setAutoDetectBootImages(String key, boolean autoDetect) {
-            log(mCPatchInfo, PatchInfo.class, "setAutoDetectBootImages", key, autoDetect);
+            validate(mCPatchInfo, PatchInfo.class, "setAutoDetectBootImages", key, autoDetect);
             ensureNotNull(key);
 
             CWrapper.mbp_patchinfo_set_autodetect_boot_images(mCPatchInfo, key, autoDetect);
         }
 
         public String[] getBootImages(String key) {
-            log(mCPatchInfo, PatchInfo.class, "getBootImages", key);
+            validate(mCPatchInfo, PatchInfo.class, "getBootImages", key);
             ensureNotNull(key);
 
             Pointer p = CWrapper.mbp_patchinfo_boot_images(mCPatchInfo, key);
@@ -1847,7 +1858,7 @@ public class LibMbp {
         }
 
         public void setBootImages(String key, String[] bootImages) {
-            log(mCPatchInfo, PatchInfo.class, "setBootImages", key, bootImages);
+            validate(mCPatchInfo, PatchInfo.class, "setBootImages", key, bootImages);
             ensureNotNull(key);
             ensureNotNull(bootImages);
 
@@ -1855,7 +1866,7 @@ public class LibMbp {
         }
 
         public String getRamdisk(String key) {
-            log(mCPatchInfo, PatchInfo.class, "getRamdisk", key);
+            validate(mCPatchInfo, PatchInfo.class, "getRamdisk", key);
             ensureNotNull(key);
 
             Pointer p = CWrapper.mbp_patchinfo_ramdisk(mCPatchInfo, key);
@@ -1863,7 +1874,7 @@ public class LibMbp {
         }
 
         public void setRamdisk(String key, String ramdisk) {
-            log(mCPatchInfo, PatchInfo.class, "setRamdisk", key, ramdisk);
+            validate(mCPatchInfo, PatchInfo.class, "setRamdisk", key, ramdisk);
             ensureNotNull(key);
             ensureNotNull(ramdisk);
 
@@ -1871,14 +1882,14 @@ public class LibMbp {
         }
 
         public boolean deviceCheck(String key) {
-            log(mCPatchInfo, PatchInfo.class, "deviceCheck", key);
+            validate(mCPatchInfo, PatchInfo.class, "deviceCheck", key);
             ensureNotNull(key);
 
             return CWrapper.mbp_patchinfo_device_check(mCPatchInfo, key);
         }
 
         public void setDeviceCheck(String key, boolean deviceCheck) {
-            log(mCPatchInfo, PatchInfo.class, "setDeviceCheck", key, deviceCheck);
+            validate(mCPatchInfo, PatchInfo.class, "setDeviceCheck", key, deviceCheck);
             ensureNotNull(key);
 
             CWrapper.mbp_patchinfo_set_device_check(mCPatchInfo, key, deviceCheck);
@@ -1894,7 +1905,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCStringMap);
             }
-            log(mCStringMap, StringMap.class, "(Constructor)");
+            validate(mCStringMap, StringMap.class, "(Constructor)");
         }
 
         StringMap(CStringMap cStringMap) {
@@ -1903,14 +1914,14 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCStringMap);
             }
-            log(mCStringMap, StringMap.class, "(Constructor)");
+            validate(mCStringMap, StringMap.class, "(Constructor)");
         }
 
         public void destroy() {
-            log(mCStringMap, StringMap.class, "destroy");
+            validate(mCStringMap, StringMap.class, "destroy");
             synchronized (sInstances) {
                 if (mCStringMap != null && decrementRefCount(sInstances, mCStringMap)) {
-                    log(mCStringMap, StringMap.class, "(Destroyed)");
+                    validate(mCStringMap, StringMap.class, "(Destroyed)");
                     CWrapper.mbp_stringmap_destroy(mCStringMap);
                 }
                 mCStringMap = null;
@@ -1929,7 +1940,7 @@ public class LibMbp {
         }
 
         CStringMap getPointer() {
-            log(mCStringMap, StringMap.class, "getPointer");
+            validate(mCStringMap, StringMap.class, "getPointer");
             return mCStringMap;
         }
 
@@ -1951,7 +1962,7 @@ public class LibMbp {
             synchronized (sInstances) {
                 incrementRefCount(sInstances, mCStringMap);
             }
-            log(mCStringMap, StringMap.class, "(Constructor)");
+            validate(mCStringMap, StringMap.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<StringMap> CREATOR
@@ -1966,7 +1977,7 @@ public class LibMbp {
         };
 
         public HashMap<String, String> getHashMap() {
-            log(mCStringMap, StringMap.class, "getHashMap");
+            validate(mCStringMap, StringMap.class, "getHashMap");
             HashMap<String, String> map = new HashMap<>();
             Pointer pKeys = CWrapper.mbp_stringmap_keys(mCStringMap);
             String[] keys = getStringArrayAndFree(pKeys);
@@ -1979,7 +1990,7 @@ public class LibMbp {
         }
 
         public void setHashMap(HashMap<String, String> map) {
-            log(mCStringMap, StringMap.class, "setHashMap", map);
+            validate(mCStringMap, StringMap.class, "setHashMap", map);
             ensureNotNull(map);
 
             CWrapper.mbp_stringmap_clear(mCStringMap);
@@ -1995,11 +2006,11 @@ public class LibMbp {
         Patcher(CPatcher cPatcher) {
             ensureNotNull(cPatcher);
             mCPatcher = cPatcher;
-            log(mCPatcher, Patcher.class, "(Constructor)");
+            validate(mCPatcher, Patcher.class, "(Constructor)");
         }
 
         CPatcher getPointer() {
-            log(mCPatcher, Patcher.class, "getPointer");
+            validate(mCPatcher, Patcher.class, "getPointer");
             return mCPatcher;
         }
 
@@ -2023,7 +2034,7 @@ public class LibMbp {
             long peer = in.readLong();
             mCPatcher = new CPatcher();
             mCPatcher.setPointer(new Pointer(peer));
-            log(mCPatcher, Patcher.class, "(Constructor)");
+            validate(mCPatcher, Patcher.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<Patcher> CREATOR
@@ -2038,35 +2049,35 @@ public class LibMbp {
         };
 
         public PatcherError getError() {
-            log(mCPatcher, Patcher.class, "getError");
+            validate(mCPatcher, Patcher.class, "getError");
             CPatcherError error = CWrapper.mbp_patcher_error(mCPatcher);
             return new PatcherError(error);
         }
 
         public String getId() {
-            log(mCPatcher, Patcher.class, "getId");
+            validate(mCPatcher, Patcher.class, "getId");
             Pointer p = CWrapper.mbp_patcher_id(mCPatcher);
             return getStringAndFree(p);
         }
 
         public boolean usesPatchInfo() {
-            log(mCPatcher, Patcher.class, "usesPatchInfo");
+            validate(mCPatcher, Patcher.class, "usesPatchInfo");
             return CWrapper.mbp_patcher_uses_patchinfo(mCPatcher);
         }
 
         public void setFileInfo(FileInfo info) {
-            log(mCPatcher, Patcher.class, "setFileInfo", info);
+            validate(mCPatcher, Patcher.class, "setFileInfo", info);
             CWrapper.mbp_patcher_set_fileinfo(mCPatcher, info.getPointer());
         }
 
         public String newFilePath() {
-            log(mCPatcher, Patcher.class, "newFilePath");
+            validate(mCPatcher, Patcher.class, "newFilePath");
             Pointer p = CWrapper.mbp_patcher_new_file_path(mCPatcher);
             return getStringAndFree(p);
         }
 
         public boolean patchFile(final ProgressListener listener) {
-            log(mCPatcher, Patcher.class, "patchFile", listener);
+            validate(mCPatcher, Patcher.class, "patchFile", listener);
             CWrapper.MaxProgressUpdatedCallback maxProgressCb = null;
             CWrapper.ProgressUpdatedCallback progressCb = null;
             CWrapper.DetailsUpdatedCallback detailsCb = null;
@@ -2099,7 +2110,7 @@ public class LibMbp {
         }
 
         public void cancelPatching() {
-            log(mCPatcher, Patcher.class, "cancelPatching");
+            validate(mCPatcher, Patcher.class, "cancelPatching");
             CWrapper.mbp_patcher_cancel_patching(mCPatcher);
         }
 
@@ -2118,11 +2129,11 @@ public class LibMbp {
         AutoPatcher(CAutoPatcher cAutoPatcher) {
             ensureNotNull(cAutoPatcher);
             mCAutoPatcher = cAutoPatcher;
-            log(mCAutoPatcher, AutoPatcher.class, "(Constructor)");
+            validate(mCAutoPatcher, AutoPatcher.class, "(Constructor)");
         }
 
         CAutoPatcher getPointer() {
-            log(mCAutoPatcher, AutoPatcher.class, "getPointer");
+            validate(mCAutoPatcher, AutoPatcher.class, "getPointer");
             return mCAutoPatcher;
         }
 
@@ -2147,7 +2158,7 @@ public class LibMbp {
             long peer = in.readLong();
             mCAutoPatcher = new CAutoPatcher();
             mCAutoPatcher.setPointer(new Pointer(peer));
-            log(mCAutoPatcher, AutoPatcher.class, "(Constructor)");
+            validate(mCAutoPatcher, AutoPatcher.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<AutoPatcher> CREATOR
@@ -2162,31 +2173,31 @@ public class LibMbp {
         };
 
         public PatcherError getError() {
-            log(mCAutoPatcher, AutoPatcher.class, "getError");
+            validate(mCAutoPatcher, AutoPatcher.class, "getError");
             CPatcherError error = CWrapper.mbp_autopatcher_error(mCAutoPatcher);
             return new PatcherError(error);
         }
 
         public String getId() {
-            log(mCAutoPatcher, AutoPatcher.class, "getId");
+            validate(mCAutoPatcher, AutoPatcher.class, "getId");
             Pointer p = CWrapper.mbp_autopatcher_id(mCAutoPatcher);
             return getStringAndFree(p);
         }
 
         public String[] newFiles() {
-            log(mCAutoPatcher, AutoPatcher.class, "newFiles");
+            validate(mCAutoPatcher, AutoPatcher.class, "newFiles");
             Pointer p = CWrapper.mbp_autopatcher_new_files(mCAutoPatcher);
             return getStringArrayAndFree(p);
         }
 
         public String[] existingFiles() {
-            log(mCAutoPatcher, AutoPatcher.class, "existingFiles");
+            validate(mCAutoPatcher, AutoPatcher.class, "existingFiles");
             Pointer p = CWrapper.mbp_autopatcher_existing_files(mCAutoPatcher);
             return getStringArrayAndFree(p);
         }
 
         public boolean patchFiles(String directory) {
-            log(mCAutoPatcher, AutoPatcher.class, "patchFiles", directory);
+            validate(mCAutoPatcher, AutoPatcher.class, "patchFiles", directory);
             ensureNotNull(directory);
 
             return CWrapper.mbp_autopatcher_patch_files(mCAutoPatcher, directory);
@@ -2199,11 +2210,11 @@ public class LibMbp {
         RamdiskPatcher(CRamdiskPatcher cRamdiskPatcher) {
             ensureNotNull(cRamdiskPatcher);
             mCRamdiskPatcher = cRamdiskPatcher;
-            log(mCRamdiskPatcher, RamdiskPatcher.class, "(Constructor)");
+            validate(mCRamdiskPatcher, RamdiskPatcher.class, "(Constructor)");
         }
 
         CRamdiskPatcher getPointer() {
-            log(mCRamdiskPatcher, RamdiskPatcher.class, "getPointer");
+            validate(mCRamdiskPatcher, RamdiskPatcher.class, "getPointer");
             return mCRamdiskPatcher;
         }
 
@@ -2228,7 +2239,7 @@ public class LibMbp {
             long peer = in.readLong();
             mCRamdiskPatcher = new CRamdiskPatcher();
             mCRamdiskPatcher.setPointer(new Pointer(peer));
-            log(mCRamdiskPatcher, RamdiskPatcher.class, "(Constructor)");
+            validate(mCRamdiskPatcher, RamdiskPatcher.class, "(Constructor)");
         }
 
         public static final Parcelable.Creator<RamdiskPatcher> CREATOR
@@ -2243,19 +2254,19 @@ public class LibMbp {
         };
 
         public PatcherError getError() {
-            log(mCRamdiskPatcher, RamdiskPatcher.class, "getError");
+            validate(mCRamdiskPatcher, RamdiskPatcher.class, "getError");
             CPatcherError error = CWrapper.mbp_ramdiskpatcher_error(mCRamdiskPatcher);
             return new PatcherError(error);
         }
 
         public String getId() {
-            log(mCRamdiskPatcher, RamdiskPatcher.class, "getId");
+            validate(mCRamdiskPatcher, RamdiskPatcher.class, "getId");
             Pointer p = CWrapper.mbp_ramdiskpatcher_id(mCRamdiskPatcher);
             return getStringAndFree(p);
         }
 
         public boolean patchRamdisk() {
-            log(mCRamdiskPatcher, RamdiskPatcher.class, "patchRamdisk");
+            validate(mCRamdiskPatcher, RamdiskPatcher.class, "patchRamdisk");
             return CWrapper.mbp_ramdiskpatcher_patch_ramdisk(mCRamdiskPatcher);
         }
     }
