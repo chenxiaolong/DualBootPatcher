@@ -411,6 +411,10 @@ bool unpack_main(int argc, char *argv[])
         prefix += "-";
     }
 
+    if (output_dir.empty()) {
+        output_dir = ".";
+    }
+
     bf::path bf_output_dir(output_dir);
 
     if (path_cmdline.empty())
@@ -760,6 +764,10 @@ bool pack_main(int argc, char *argv[])
             prefix = bf::path(output_file).filename().string();
         }
         prefix += "-";
+    }
+
+    if (input_dir.empty()) {
+        input_dir = ".";
     }
 
     bf::path bf_input_dir(input_dir);
