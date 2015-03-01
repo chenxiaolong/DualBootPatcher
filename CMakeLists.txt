@@ -38,6 +38,7 @@ if(MBP_BUILD_ANDROID)
     add_subdirectory(Android_GUI)
 else()
     add_subdirectory(gui)
+    add_subdirectory(bootimgtool)
 endif()
 
 # Third party binaries
