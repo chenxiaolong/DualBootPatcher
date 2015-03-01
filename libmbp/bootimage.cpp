@@ -217,6 +217,16 @@ private:
 
 BootImage::BootImage() : m_impl(new Impl(this))
 {
+    // Initialize to sane defaults
+    memcpy(m_impl->header.magic, BootMagic, BootMagicSize);
+    resetKernelCmdline();
+    resetBoardName();
+    resetKernelAddress();
+    resetRamdiskAddress();
+    resetSecondBootloaderAddress();
+    resetKernelTagsAddress();
+    resetPageSize();
+    m_impl->updateSHA1Hash();
 }
 
 BootImage::~BootImage()
