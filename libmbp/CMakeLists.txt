@@ -172,6 +172,10 @@ else()
         ${MBP_LIBARCHIVE_LIBRARIES}
     )
 
+    if(WIN32)
+        target_link_libraries(mbp ws2_32) # For htonl()
+    endif()
+
     # Install library
     install(
         TARGETS mbp
