@@ -67,10 +67,7 @@ enum ErrorCode
     DirectoryNotExistError,
 
     // Boot image
-    BootImageSmallerThanHeaderError,
-    BootImageNoAndroidHeaderError,
-    BootImageNoRamdiskGzipHeaderError,
-    BootImageNoRamdiskAddressError,
+    BootImageParseError,
 
     // cpio
     CpioFileAlreadyExistsError,

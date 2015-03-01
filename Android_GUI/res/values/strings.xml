@@ -315,14 +315,7 @@
     <string name="file_read_error">Failed to read from file: %s</string>
     <string name="file_write_error">Failed to write to file: %s</string>
     <string name="directory_not_exist_error">Directory does not exist: %s</string>
-    <string name="boot_image_smaller_than_header_error">The boot image file is smaller than the
-        boot image header size</string>
-    <string name="boot_image_no_android_header_error">Could not find the Android header in the
-        boot image</string>
-    <string name="boot_image_no_ramdisk_gzip_header_error">Could not find the ramdisk\'s gzip
-        header</string>
-    <string name="boot_image_no_ramdisk_address_error">Could not determine the ramdisk\'s memory
-        address</string>
+    <string name="boot_image_parse_error">Failed to parse boot image</string>
     <string name="cpio_file_already_exists_error">File already exists in cpio archive: %s</string>
     <string name="cpio_file_not_exist_error">File does not exist in cpio archive: %s</string>
     <string name="archive_read_open_error">Failed to open archive for reading</string>

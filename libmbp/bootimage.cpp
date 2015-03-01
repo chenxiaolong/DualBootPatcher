@@ -253,8 +253,9 @@ bool BootImage::load(const std::vector<unsigned char> &data)
 {
     // Check that the size of the boot image is okay
     if (data.size() < 512 + sizeof(BootImageHeader)) {
+        LOGE("The boot image is smaller than the boot image header!");
         m_impl->error = PatcherError::createBootImageError(
-                ErrorCode::BootImageSmallerThanHeaderError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 
@@ -281,8 +282,9 @@ bool BootImage::load(const std::vector<unsigned char> &data)
     }
 
     if (!isAndroid) {
+        LOGE("The boot image does not contain an boot image header");
         m_impl->error = PatcherError::createBootImageError(
-                ErrorCode::BootImageNoAndroidHeaderError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 
@@ -328,8 +330,9 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
 {
     // Make sure the file is large enough to contain the header
     if (data.size() < headerIndex + sizeof(BootImageHeader)) {
+        LOGE("The boot image is smaller than the boot image header!");
         error = PatcherError::createBootImageError(
-                ErrorCode::BootImageSmallerThanHeaderError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 
@@ -393,8 +396,9 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
 {
     // Make sure the file is large enough to contain the Loki header
     if (data.size() < 0x400 + sizeof(LokiHeader)) {
+        LOGE("The boot image is smaller than the loki header!");
         error = PatcherError::createBootImageError(
-                ErrorCode::BootImageSmallerThanHeaderError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 
@@ -440,8 +444,9 @@ bool BootImage::Impl::loadLokiNewImage(const std::vector<unsigned char> &data,
     // Find original ramdisk address
     uint32_t ramdiskAddr = lokiFindRamdiskAddress(data, loki);
     if (ramdiskAddr == 0) {
+        LOGE("Could not find ramdisk address in new loki boot image");
         error = PatcherError::createBootImageError(
-                ErrorCode::BootImageNoRamdiskAddressError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 
@@ -505,8 +510,9 @@ bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
     uint32_t gzipOffset = lokiOldFindGzipOffset(
             data, header.page_size + kernelSize);
     if (gzipOffset == 0) {
+        LOGE("Could not find gzip offset in old loki boot image");
         error = PatcherError::createBootImageError(
-                ErrorCode::BootImageNoRamdiskGzipHeaderError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 
@@ -514,8 +520,9 @@ bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
 
     ramdiskAddr = lokiFindRamdiskAddress(data, loki);
     if (ramdiskAddr == 0) {
+        LOGE("Could not find ramdisk address in old loki boot image");
         error = PatcherError::createBootImageError(
-                ErrorCode::BootImageNoRamdiskAddressError);
+                ErrorCode::BootImageParseError);
         return false;
     }
 

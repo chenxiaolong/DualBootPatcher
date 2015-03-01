@@ -116,14 +116,8 @@ public class PatcherUtils {
         case ErrorCode.DIRECTORY_NOT_EXIST_ERROR:
             return String.format(context.getString(R.string.directory_not_exist_error),
                     error.getFilename());
-        case ErrorCode.BOOT_IMAGE_SMALLER_THAN_HEADER_ERROR:
-            return context.getString(R.string.boot_image_smaller_than_header_error);
-        case ErrorCode.BOOT_IMAGE_NO_ANDROID_HEADER_ERROR:
-            return context.getString(R.string.boot_image_no_android_header_error);
-        case ErrorCode.BOOT_IMAGE_NO_RAMDISK_GZIP_HEADER_ERROR:
-            return context.getString(R.string.boot_image_no_ramdisk_gzip_header_error);
-        case ErrorCode.BOOT_IMAGE_NO_RAMDISK_ADDRESS_ERROR:
-            return context.getString(R.string.boot_image_no_ramdisk_address_error);
+        case ErrorCode.BOOT_IMAGE_PARSE_ERROR:
+            return context.getString(R.string.boot_image_parse_error);
         case ErrorCode.CPIO_FILE_ALREADY_EXIST_ERROR:
             return String.format(context.getString(R.string.cpio_file_already_exists_error),
                     error.getFilename());

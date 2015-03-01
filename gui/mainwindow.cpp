@@ -583,14 +583,8 @@ static QString errorToString(const mbp::PatcherError &error) {
     case mbp::ErrorCode::DirectoryNotExistError:
         return QObject::tr("Directory does not exist: %1")
                 .arg(QString::fromStdString(error.filename()));
-    case mbp::ErrorCode::BootImageSmallerThanHeaderError:
-        return QObject::tr("The boot image file is smaller than the boot image header size");
-    case mbp::ErrorCode::BootImageNoAndroidHeaderError:
-        return QObject::tr("Could not find the Android header in the boot image");
-    case mbp::ErrorCode::BootImageNoRamdiskGzipHeaderError:
-        return QObject::tr("Could not find the ramdisk's gzip header");
-    case mbp::ErrorCode::BootImageNoRamdiskAddressError:
-        return QObject::tr("Could not determine the ramdisk's memory address");
+    case mbp::ErrorCode::BootImageParseError:
+        return QObject::tr("Failed to parse boot image");
     case mbp::ErrorCode::CpioFileAlreadyExistsError:
         return QObject::tr("File already exists in cpio archive: %1")
                 .arg(QString::fromStdString(error.filename()));

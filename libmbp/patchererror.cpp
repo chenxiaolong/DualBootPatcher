@@ -151,10 +151,7 @@ PatcherError PatcherError::createIOError(ErrorCode error,
 PatcherError PatcherError::createBootImageError(ErrorCode error)
 {
     switch (error) {
-    case ErrorCode::BootImageSmallerThanHeaderError:
-    case ErrorCode::BootImageNoAndroidHeaderError:
-    case ErrorCode::BootImageNoRamdiskGzipHeaderError:
-    case ErrorCode::BootImageNoRamdiskAddressError:
+    case ErrorCode::BootImageParseError:
         break;
     default:
         assert(false);
