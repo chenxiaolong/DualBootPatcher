@@ -30,8 +30,10 @@ public class RomSettingsActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.rom_settings);
 
-        getFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, new RomSettingsFragment()).commit();
+        if (savedInstanceState == null) {
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.content_frame, new RomSettingsFragment()).commit();
+        }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
