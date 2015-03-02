@@ -36,6 +36,7 @@
 #include "actions.h"
 #include "lokipatch.h"
 #include "roms.h"
+#include "sepolpatch.h"
 #include "validcerts.h"
 #include "util/copy.h"
 #include "util/finally.h"
@@ -756,6 +757,9 @@ int daemon_main(int argc, char *argv[])
         daemon_usage(1);
         return EXIT_FAILURE;
     }
+
+    // Patch SELinux policy to make init permissive
+    patch_loaded_sepolicy();
 
     // Set version property if we're the system mbtool (i.e. launched by init)
     // Possible to override this with another program by double forking, letting
