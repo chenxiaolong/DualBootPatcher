@@ -42,6 +42,7 @@
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
+#include "util/selinux.h"
 #include "util/socket.h"
 
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
@@ -705,6 +706,37 @@ static void run_daemon_fork(void)
     exit(EXIT_SUCCESS);
 }
 
+static bool patch_sepolicy_daemon()
+{
+    policydb_t pdb;
+
+    if (policydb_init(&pdb) < 0) {
+        LOGE("Failed to initialize policydb");
+        return false;
+    }
+
+    if (!util::selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb)) {
+        LOGE("Failed to read SELinux policy file: {}", MB_SELINUX_POLICY_FILE);
+        policydb_destroy(&pdb);
+        return false;
+    }
+
+    LOGD("Policy version: {}", pdb.policyvers);
+
+    util::selinux_add_rule(&pdb, "untrusted_app", "init",
+                           "unix_stream_socket", "connectto");
+
+    if (!util::selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb)) {
+        LOGE("Failed to write SELinux policy file: {}", MB_SELINUX_LOAD_FILE);
+        policydb_destroy(&pdb);
+        return false;
+    }
+
+    policydb_destroy(&pdb);
+
+    return true;
+}
+
 static void daemon_usage(int error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -760,6 +792,9 @@ int daemon_main(int argc, char *argv[])
 
     // Patch SELinux policy to make init permissive
     patch_loaded_sepolicy();
+
+    // Allow untrusted_app to connect to our daemon
+    patch_sepolicy_daemon();
 
     // Set version property if we're the system mbtool (i.e. launched by init)
     // Possible to override this with another program by double forking, letting
