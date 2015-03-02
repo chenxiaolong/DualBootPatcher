@@ -435,12 +435,6 @@ int mount_fstab_main(int argc, char *argv[])
     }
 #endif
 
-    // Set property for the Android app to use
-    if (!util::set_property("ro.multiboot.mbtool.version", MBP_VERSION)) {
-        LOGE("Failed to set 'ro.multiboot.mbtool.version' to '{}'",
-             MBP_VERSION);
-    }
-
     return mount_fstab(argv[optind]) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

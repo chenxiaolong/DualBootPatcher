@@ -28,7 +28,7 @@ public class MbtoolUtils {
 
     public static Version getSystemMbtoolVersion(Context context) {
         try {
-            return new Version(SystemPropertiesProxy.get(context, "ro.multiboot.mbtool.version"));
+            return new Version(SystemPropertiesProxy.get(context, "ro.multiboot.version"));
         } catch (Exception e) {
             e.printStackTrace();
         }
