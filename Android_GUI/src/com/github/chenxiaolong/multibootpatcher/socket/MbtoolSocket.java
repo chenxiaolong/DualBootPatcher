@@ -51,6 +51,7 @@ public class MbtoolSocket {
 
     private static final String V1_COMMAND_VERSION = "VERSION";
     private static final String V1_COMMAND_LIST_ROMS = "LIST_ROMS";
+    private static final String V1_COMMAND_CURRENT_ROM = "CURRENT_ROM";
     private static final String V1_COMMAND_CHOOSE_ROM = "CHOOSE_ROM";
     private static final String V1_COMMAND_SET_KERNEL = "SET_KERNEL";
     private static final String V1_COMMAND_REBOOT = "REBOOT";
@@ -268,6 +269,31 @@ public class MbtoolSocket {
             SocketUtils.readString(mSocketIS);
 
             return roms;
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        }
+
+        return null;
+    }
+
+    public String getCurrentRom(Context context) {
+        if (!connect(context)) {
+            return null;
+        }
+
+        try {
+            sendCommand(V1_COMMAND_CURRENT_ROM);
+
+            String response = SocketUtils.readString(mSocketIS);
+            switch (response) {
+            case RESPONSE_SUCCESS:
+                return SocketUtils.readString(mSocketIS);
+            case RESPONSE_FAIL:
+                return null;
+            default:
+                throw new IOException("Invalid response: " + response);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
