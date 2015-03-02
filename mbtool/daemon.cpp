@@ -52,6 +52,7 @@
 
 #define V1_COMMAND_VERSION "VERSION"            // [Version 1] Version number
 #define V1_COMMAND_LIST_ROMS "LIST_ROMS"        // [Version 1] List installed ROMs
+#define V1_COMMAND_CURRENT_ROM "CURRENT_ROM"    // [Version 1] Get current ROM
 #define V1_COMMAND_CHOOSE_ROM "CHOOSE_ROM"      // [Version 1] Switch ROM
 #define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
 #define V1_COMMAND_REBOOT "REBOOT"              // [Version 1] Reboot
@@ -121,6 +122,72 @@ static bool v1_list_roms(int fd)
     }
 
     if (!util::socket_write_string(fd, RESPONSE_OK)) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool v1_current_rom(int fd)
+{
+    std::vector<std::shared_ptr<Rom>> roms;
+    mb_roms_add_installed(&roms);
+
+    // This is set if mbtool is handling the boot process
+    std::string prop_id;
+    util::get_property("ro.multiboot.romid", &prop_id, std::string());
+
+    if (!prop_id.empty()) {
+        auto rom = mb_find_rom_by_id(&roms, prop_id);
+        if (rom) {
+            if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+                return false;
+            }
+            if (!util::socket_write_string(fd, prop_id)) {
+                return false;
+            }
+            return true;
+        }
+    }
+
+    // If /raw/ or /raw-system/ does not exist, then this is an unpatched
+    // primary ROM
+    struct stat sb;
+    bool has_raw = stat("/raw", &sb) == 0;
+    bool has_raw_system = stat("/raw-system", &sb) == 0;
+    if (!has_raw && !has_raw_system) {
+        if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+            return false;
+        }
+        if (!util::socket_write_string(fd, "primary")) {
+            return false;
+        }
+        return true;
+    }
+
+    // Otherwise, iterate through the installed ROMs
+
+    if (stat("/system/build.prop", &sb) == 0) {
+        for (auto rom : roms) {
+            std::string build_prop(rom->system_path);
+            build_prop += "/build.prop";
+
+            struct stat sb2;
+            if (stat(build_prop.c_str(), &sb2) == 0
+                    && sb.st_dev == sb2.st_dev
+                    && sb.st_ino == sb2.st_ino) {
+                if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
+                    return false;
+                }
+                if (!util::socket_write_string(fd, rom->id)) {
+                    return false;
+                }
+                return true;
+            }
+        }
+    }
+
+    if (!util::socket_write_string(fd, RESPONSE_FAIL)) {
         return false;
     }
 
@@ -356,6 +423,7 @@ static bool connection_version_1(int fd)
 
         if (command == V1_COMMAND_VERSION
                 || command == V1_COMMAND_LIST_ROMS
+                || command == V1_COMMAND_CURRENT_ROM
                 || command == V1_COMMAND_CHOOSE_ROM
                 || command == V1_COMMAND_SET_KERNEL
                 || command == V1_COMMAND_REBOOT
@@ -382,6 +450,8 @@ static bool connection_version_1(int fd)
             ret = v1_version(fd);
         } else if (command == V1_COMMAND_LIST_ROMS) {
             ret = v1_list_roms(fd);
+        } else if (command == V1_COMMAND_CURRENT_ROM) {
+            ret = v1_current_rom(fd);
         } else if (command == V1_COMMAND_CHOOSE_ROM) {
             ret = v1_choose_rom(fd);
         } else if (command == V1_COMMAND_SET_KERNEL) {
