@@ -370,7 +370,7 @@ bool unpack_main(int argc, char *argv[])
         switch (opt) {
         case 'o':                       output_dir = optarg;          break;
         case 'p':                       prefix = optarg;              break;
-        case 'n':                       no_prefix = optarg;           break;
+        case 'n':                       no_prefix = true;             break;
         case OPT_OUTPUT_CMDLINE:        path_cmdline = optarg;        break;
         case OPT_OUTPUT_BOARD:          path_board = optarg;          break;
         case OPT_OUTPUT_BASE:           path_base = optarg;           break;
