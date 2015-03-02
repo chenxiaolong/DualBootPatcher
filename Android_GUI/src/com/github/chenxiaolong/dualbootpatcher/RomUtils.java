@@ -52,8 +52,6 @@ public class RomUtils {
         private String mCache;
         private String mData;
 
-        private boolean mUseRawPaths;
-
         // Identifiers
         private String mId;
 
@@ -74,7 +72,6 @@ public class RomUtils {
             mSystem = in.readString();
             mCache = in.readString();
             mData = in.readString();
-            mUseRawPaths = in.readInt() != 0;
             mId = in.readString();
             mVersion = in.readString();
             mBuild = in.readString();
@@ -95,7 +92,6 @@ public class RomUtils {
             dest.writeString(mSystem);
             dest.writeString(mCache);
             dest.writeString(mData);
-            dest.writeInt(mUseRawPaths ? 1 : 0);
             dest.writeString(mId);
             dest.writeString(mVersion);
             dest.writeString(mBuild);
@@ -126,7 +122,6 @@ public class RomUtils {
                     + ", system=" + mSystem
                     + ", cache=" + mCache
                     + ", data=" + mData
-                    + ", useRawPaths=" + mUseRawPaths
                     + ", version=" + mVersion
                     + ", build=" + mBuild
                     + ", thumbnailPath=" + mThumbnailPath
@@ -158,14 +153,6 @@ public class RomUtils {
 
         public void setDataPath(String data) {
             mData = data;
-        }
-
-        public boolean isUsesRawPaths() {
-            return mUseRawPaths;
-        }
-
-        public void setUsesRawPaths(boolean usesRawPaths) {
-            mUseRawPaths = usesRawPaths;
         }
 
         public String getId() {
