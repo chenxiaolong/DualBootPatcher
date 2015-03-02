@@ -20,8 +20,6 @@ package com.github.chenxiaolong.multibootpatcher.settings;
 import android.app.IntentService;
 import android.content.Intent;
 
-import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingUtils;
-
 public class RomSettingsService extends IntentService {
     private static final String TAG = RomSettingsService.class.getSimpleName();
     public static final String BROADCAST_INTENT =
@@ -40,7 +38,7 @@ public class RomSettingsService extends IntentService {
     }
 
     private void updateRamdisk() {
-        boolean success = AppSharingUtils.updateRamdisk(this);
+        boolean success = RomSettingsUtils.updateRamdisk(this);
 
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_UPDATED_RAMDISK);

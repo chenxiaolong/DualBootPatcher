@@ -18,11 +18,13 @@
 package com.github.chenxiaolong.multibootpatcher.patcher;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
@@ -45,7 +47,7 @@ public class PatcherUtils {
     public static final String RESULT_PATCH_FILE_MESSAGE = "message";
     public static final String RESULT_PATCH_FILE_FAILED = "failed";
 
-    static PatcherConfig sPC;
+    public static PatcherConfig sPC;
 
     private static String sTargetFile;
     private static String sTargetDir;
@@ -67,11 +69,30 @@ public class PatcherUtils {
     public synchronized static void initializePatcher(Context context) {
         extractPatcher(context);
 
-        sPC = new PatcherConfig();
-        sPC.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
-        sPC.setTempDirectory(context.getCacheDir().getAbsolutePath());
-        sPC.loadPatchInfos();
-        // TODO: Throw exception if patchinfo loading fails
+        if (sPC == null) {
+            sPC = new PatcherConfig();
+            sPC.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
+            sPC.setTempDirectory(context.getCacheDir().getAbsolutePath());
+            sPC.loadPatchInfos();
+            // TODO: Throw exception if patchinfo loading fails
+        }
+    }
+
+    public synchronized static Device getCurrentDevice(PatcherConfig pc) {
+        Device device = null;
+        for (Device d : pc.getDevices()) {
+            for (String codename : d.getCodenames()) {
+                if (Build.DEVICE.contains(codename)) {
+                    device = d;
+                    break;
+                }
+            }
+            if (device != null) {
+                break;
+            }
+        }
+
+        return device;
     }
 
     public synchronized static Bundle patchFile(Context context, Bundle data,
