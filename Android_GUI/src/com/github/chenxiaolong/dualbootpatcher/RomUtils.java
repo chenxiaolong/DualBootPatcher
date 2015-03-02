@@ -21,6 +21,7 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
 import com.google.gson.Gson;
@@ -39,6 +40,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RomUtils {
+    private static final String TAG = RomUtils.class.getSimpleName();
+
     private static RomInformation[] mRoms;
 
     public static final String UNKNOWN_ID = "unknown";
@@ -226,12 +229,8 @@ public class RomUtils {
     }
 
     public static RomInformation getCurrentRom(Context context) {
-        String id = null;
-        try {
-            id = SystemPropertiesProxy.get(context, "ro.multiboot.romid");
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        }
+        String id = MbtoolSocket.getInstance().getCurrentRom(context);
+        Log.d(TAG, "mbtool says current ROM ID is: " + id);
 
         if (id != null) {
             for (RomInformation rom : getRoms(context)) {
