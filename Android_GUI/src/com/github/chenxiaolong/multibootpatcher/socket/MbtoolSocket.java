@@ -196,6 +196,7 @@ public class MbtoolSocket {
                 + "/binaries/android/" + abi + "/mbtool";
 
         return CommandUtils.runRootCommand("mount -o remount,rw /") == 0
+                && CommandUtils.runRootCommand("mv /mbtool /mbtool.bak || :") == 0
                 && CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
                 && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
                 && CommandUtils.runRootCommand("mount -o remount,ro /") == 0
