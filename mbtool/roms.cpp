@@ -37,7 +37,7 @@
 namespace mb
 {
 
-Rom::Rom() : use_raw_paths(false)
+Rom::Rom()
 {
 }
 
@@ -97,30 +97,33 @@ bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms)
 
     struct stat sb;
 
-    while (!all_roms.empty()) {
-        auto r = std::move(all_roms[0]);
+    for (auto rom : all_roms) {
+        // Old style: /system -> /raw-system, etc.
+        std::string raw_bp_path_old(rom->system_path);
+        raw_bp_path_old.insert(1, "raw-");
+        raw_bp_path_old += "/build.prop";
 
-        std::string raw_bp_path("/raw");
-        raw_bp_path += r->system_path;
-        raw_bp_path += "/";
-        raw_bp_path += "build.prop";
+        // New style: /system -> /raw-system, etc.
+        std::string raw_bp_path_new("/raw");
+        raw_bp_path_new += rom->system_path;
+        raw_bp_path_new += "/build.prop";
 
-        std::string bp_path;
-        bp_path += r->system_path;
-        bp_path += "/";
-        bp_path += "build.prop";
+        // Plain path
+        std::string bp_path(rom->system_path);
+        bp_path += "/build.prop";
 
-        all_roms.erase(all_roms.begin());
-
-        if (stat(raw_bp_path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-            r->use_raw_paths = 1;
-            roms->push_back(std::move(r));
+        if (stat(raw_bp_path_old.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
+            rom->system_path.insert(1, "raw-");
+            rom->cache_path.insert(1, "raw-");
+            rom->data_path.insert(1, "raw-");
+            roms->push_back(rom);
+        } else if (stat(raw_bp_path_new.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
+            rom->system_path.insert(0, "/raw");
+            rom->cache_path.insert(0, "/raw");
+            rom->data_path.insert(0, "/raw");
+            roms->push_back(rom);
         } else if (stat(bp_path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-            r->use_raw_paths = 0;
-            roms->push_back(std::move(r));
-        } else {
-            // Rom object will be deleted once the shared pointer goes out of
-            // scope
+            roms->push_back(rom);
         }
     }
 

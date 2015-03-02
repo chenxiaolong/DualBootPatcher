@@ -83,11 +83,7 @@ static bool v1_list_roms(int fd)
     }
 
     for (auto r : roms) {
-        std::string build_prop;
-        if (r->use_raw_paths) {
-            build_prop += "/raw";
-        }
-        build_prop += r->system_path;
+        std::string build_prop(r->system_path);
         build_prop += "/build.prop";
 
         std::unordered_map<std::string, std::string> properties;
@@ -101,9 +97,7 @@ static bool v1_list_roms(int fd)
                 && util::socket_write_string(fd, "CACHE_PATH")
                 && util::socket_write_string(fd, r->cache_path)
                 && util::socket_write_string(fd, "DATA_PATH")
-                && util::socket_write_string(fd, r->data_path)
-                && util::socket_write_string(fd, "USE_RAW_PATHS")
-                && util::socket_write_int32(fd, r->use_raw_paths);
+                && util::socket_write_string(fd, r->data_path);
 
         if (success && properties.find("ro.build.version.release")
                 != properties.end()) {
