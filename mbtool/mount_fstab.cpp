@@ -336,12 +336,6 @@ bool mount_fstab(const std::string &fstab_path)
     }
 
 
-    // Set version property
-    if (!util::set_property("ro.multiboot.version", MBP_VERSION)) {
-        LOGE("Failed to set 'ro.multiboot.version' to '{}'", MBP_VERSION);
-    }
-
-
     // Global app sharing
     std::string share_app_path("/data/media/0/MultiBoot/");
     std::string share_app_asec_path("/data/media/0/MultiBoot/");

@@ -751,6 +751,16 @@ int daemon_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Set version property if we're the system mbtool (i.e. launched by init)
+    // Possible to override this with another program by double forking, letting
+    // 2nd child reparent to init, and then calling execve("/mbtool", ...), but
+    // meh ...
+    if (getppid() == 1) {
+        if (!util::set_property("ro.multiboot.version", MBP_VERSION)) {
+            LOGE("Failed to set 'ro.multiboot.version' to '{}'", MBP_VERSION);
+        }
+    }
+
     if (replace_flag) {
         PROCTAB *proc = openproc(PROC_FILLCOM | PROC_FILLSTAT);
         if (proc) {
