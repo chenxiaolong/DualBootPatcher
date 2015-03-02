@@ -42,8 +42,8 @@ typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 // Types to make permissive
 static const char *permissive_types[] = {
     "init",
-    "init_shell",
-    "recovery",
+    //"init_shell",
+    //"recovery",
     nullptr
 };
 
