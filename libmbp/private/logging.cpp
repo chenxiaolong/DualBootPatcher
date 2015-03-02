@@ -24,7 +24,42 @@
 #define LOG_TAG "libmbp"
 
 
+#if defined(__ANDROID__) && !defined(LIBMBP_MINI)
+#include <android/log.h>
+
+static void logcat(mbp::LogLevel prio, const std::string &msg)
+{
+    int logcatprio = 0;
+
+    switch (prio) {
+    case mbp::LogLevel::Error:
+        logcatprio = ANDROID_LOG_ERROR;
+        break;
+    case mbp::LogLevel::Warning:
+        logcatprio = ANDROID_LOG_WARN;
+        break;
+    case mbp::LogLevel::Info:
+        logcatprio = ANDROID_LOG_INFO;
+        break;
+    case mbp::LogLevel::Debug:
+        logcatprio = ANDROID_LOG_DEBUG;
+        break;
+    case mbp::LogLevel::Verbose:
+        logcatprio = ANDROID_LOG_VERBOSE;
+        break;
+    }
+
+    __android_log_print(logcatprio, LOG_TAG, "%s", msg.c_str());
+}
+
+static mbp::LogFunction logger = &logcat;
+
+#else
+
 static mbp::LogFunction logger = nullptr;
+
+#endif
+
 
 namespace mbp {
 
