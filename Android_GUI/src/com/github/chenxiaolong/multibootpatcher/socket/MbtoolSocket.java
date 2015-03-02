@@ -253,6 +253,7 @@ public class MbtoolSocket {
                         rom.setDataPath(SocketUtils.readString(mSocketIS));
                     } else if (ready && "USE_RAW_PATHS".equals(response)) {
                         // Ignore
+                        SocketUtils.readString(mSocketIS);
                     } else if (ready && "VERSION".equals(response)) {
                         rom.setVersion(SocketUtils.readString(mSocketIS));
                     } else if (ready && "BUILD".equals(response)) {
