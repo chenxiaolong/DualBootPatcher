@@ -156,6 +156,9 @@ static bool v1_current_rom(int fd)
     bool has_raw = stat("/raw", &sb) == 0;
     bool has_raw_system = stat("/raw-system", &sb) == 0;
     if (!has_raw && !has_raw_system) {
+        // Cache the result
+        util::set_property("ro.multiboot.romid", "primary");
+
         if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
             return false;
         }
@@ -176,6 +179,9 @@ static bool v1_current_rom(int fd)
             if (stat(build_prop.c_str(), &sb2) == 0
                     && sb.st_dev == sb2.st_dev
                     && sb.st_ino == sb2.st_ino) {
+                // Cache the result
+                util::set_property("ro.multiboot.romid", rom->id);
+
                 if (!util::socket_write_string(fd, RESPONSE_SUCCESS)) {
                     return false;
                 }
