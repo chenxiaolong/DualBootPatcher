@@ -565,7 +565,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                     return null;
                 }
 
-                return ThumbnailUtils.extractThumbnail(bitmap, 96, 96);
+                return ThumbnailUtils.extractThumbnail(bitmap, 500, 500);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
