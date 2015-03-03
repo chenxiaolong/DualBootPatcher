@@ -19,12 +19,14 @@ package com.github.chenxiaolong.multibootpatcher.socket;
 
 import android.content.Context;
 
+import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.multibootpatcher.Version;
 
 public class MbtoolUtils {
     // TODO: Handle numbering for snapshots
-    private static Version MINIMUM_VERSION = new Version("8.99.6");
+    private static Version MINIMUM_VERSION_DEBUG = new Version("8.99.6");
+    private static Version MINIMUM_VERSION_SNAPSHOT = new Version("8.0.0.r906");
 
     public static Version getSystemMbtoolVersion(Context context) {
         try {
@@ -45,6 +47,10 @@ public class MbtoolUtils {
     }
 
     public static Version getMinimumRequiredVersion() {
-        return MINIMUM_VERSION;
+        if (BuildConfig.BUILD_TYPE.equals("ci")) {
+            return MINIMUM_VERSION_SNAPSHOT;
+        } else {
+            return MINIMUM_VERSION_DEBUG;
+        }
     }
 }
