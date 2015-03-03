@@ -126,7 +126,7 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
         }
 
         if (!hasCacheLine) {
-            std::string cacheLine = "{1} /cache ext4 {2} {3}";
+            std::string cacheLine = "{0} /cache ext4 {1} {2}";
             std::string mountArgs = "nosuid,nodev,barrier=1";
             std::string voldArgs = "wait,check";
 
