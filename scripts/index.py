@@ -19,10 +19,10 @@
 
 # Generate changelogs and create HTML output
 
+import distutils.core
 import html
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -101,9 +101,10 @@ class Version():
 
 
 class HTMLWriter():
-    def __init__(self):
+    def __init__(self, initial_indent=0):
         self._file = None
         self._stack = list()
+        self._initial_indent = initial_indent
 
     def open(self, filename):
         self._file = open(filename, 'w')
@@ -117,7 +118,8 @@ class HTMLWriter():
 
     def push(self, tag, attrs=None, newline=False, indent=False):
         if indent:
-            self._file.write('    ' * (len(self._stack) + 1))
+            self._file.write('    ' * (len(self._stack) +
+                                       self._initial_indent))
 
         self._stack.append(tag)
         if attrs:
@@ -131,7 +133,8 @@ class HTMLWriter():
 
     def pop(self, tag, newline=False, indent=False):
         if indent:
-            self._file.write('    ' * (len(self._stack)))
+            self._file.write('    ' * (len(self._stack) +
+                                       self._initial_indent - 1))
 
         top_tag = self._stack.pop()
         if top_tag != tag:
@@ -198,7 +201,7 @@ if not os.path.exists(filesdir):
 
 
 # HTML output
-writer = HTMLWriter()
+writer = HTMLWriter(initial_indent=3)
 writer.open(os.path.join(filesdir, '.index.gen.html'))
 
 
@@ -244,19 +247,31 @@ for i in range(0, len(versions)):
         writer.write('Failed to determine timestamp for commit: %s'
                      % version.commit)
 
+    # Write block
+    writer.push('div', attrs={'class': 'panel panel-success'},
+                newline=True, indent=True)
+
     # Write timestamp
-    writer.push('div', attrs={'class': 'page-header'}, newline=True, indent=True)
-    writer.push('h3', indent=True)
+    writer.push('div', attrs={'class': 'panel-heading'},
+                newline=True, indent=True)
+    writer.push('h2', attrs={'class': 'panel-title',
+                             'style': 'font-size:20px;'}, indent=True)
     writer.write(str(version))
     writer.write(' ')
     writer.push('small')
     writer.write(timestamp)
     writer.pop('small')
-    writer.pop('h3', newline=True)
+    writer.pop('h2', newline=True)
     writer.pop('div', indent=True, newline=True)
 
+    writer.push('div', attrs={'class': 'panel-body'},
+                newline=True, indent=True)
+
+    # "Files" title
     writer.push('h4', indent=True)
-    writer.write('Files:')
+    writer.push('span', attrs={'class': 'mdi mdi-file-folder'})
+    writer.pop('span')
+    writer.write(' Files:')
     writer.pop('h4', newline=True)
 
     # Write files list
@@ -276,6 +291,9 @@ for i in range(0, len(versions)):
         writer.push('p', indent=True)
         writer.write('An earlier build is needed to generate a changelog')
         writer.pop('p', newline=True)
+
+        writer.pop('div', indent=True, newline=True)
+        writer.pop('div', indent=True, newline=True)
         continue
 
     new_commit = version.commit
@@ -294,12 +312,20 @@ for i in range(0, len(versions)):
         writer.push('p', indent=True)
         writer.write('WTF?? Failed to generate changelog')
         writer.pop('p', newline=True)
+
+        writer.pop('div', indent=True, newline=True)
+        writer.pop('div', indent=True, newline=True)
         continue
 
+    # "Changelog" title
     writer.push('h4', indent=True)
-    writer.write('Changelog:')
+    writer.push('span', attrs={'class': 'mdi mdi-action-schedule'})
+    writer.pop('span')
+    writer.write(' Changelog:')
     writer.pop('h4', newline=True)
-    writer.push('table', attrs={'class': 'table'}, indent=True, newline=True)
+
+    writer.push('table', attrs={'class': 'table table-striped table-hover'},
+                indent=True, newline=True)
     writer.push('thead', indent=True, newline=True)
     writer.push('tr', indent=True, newline=True)
     writer.push('th', indent=True)
@@ -330,11 +356,15 @@ for i in range(0, len(versions)):
     writer.pop('tbody', indent=True, newline=True)
     writer.pop('table', indent=True, newline=True)
 
+    writer.pop('div', indent=True, newline=True)
+    writer.pop('div', indent=True, newline=True)
+
 
 writer.close()
 
 
 sourcedir = os.path.dirname(os.path.realpath(__file__))
+resdir = os.path.join(sourcedir, 'res')
 templatefile = os.path.join(sourcedir, 'index.template.html')
 outfile = os.path.join(filesdir, 'index.html')
 genfile = os.path.join(filesdir, '.index.gen.html')
@@ -352,3 +382,5 @@ with open(templatefile, 'rb') as f_in:
             f_out.write(line)
 
 os.remove(genfile)
+
+distutils.dir_util.copy_tree(resdir, filesdir)

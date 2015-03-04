@@ -1,62 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7"><![endif]-->
+<!--[if IE 7]><html class="no-js lt-ie9 lt-ie8"><![endif]-->
+<!--[if IE 8]><html class="no-js lt-ie9"><![endif]-->
+<!--[if gt IE 8]><!--><html class="no-js"><!--<![endif]-->
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Dual Boot Patcher Changelog</title>
 
-        <title>Dual Boot Patcher snapshots</title>
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="css/vendor/bootstrap.min.css">
 
-        <!-- Latest compiled and minified CSS -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
-        <!-- Optional theme -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+        <!-- Material Design CSS -->
+        <link rel="stylesheet" href="css/vendor/material.min.css">
+        <link rel="stylesheet" href="css/vendor/ripples.min.css">
+        <link rel="stylesheet" href="css/vendor/snackbar.min.css">
 
+        <!-- Roboto Font -->
+        <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:500,300,700,400">
+
+        <!-- Main CSS -->
+        <link rel="stylesheet" href="css/main.css">
         <style>
-        body {
-            padding-top: 20px;
-            padding-bottom: 20px;
-        }
-
-        .navbar {
-            margin-bottom: 20px;
-        }
+            @media (max-width: 768px) {
+                .table {
+                    table-layout: fixed;
+                    overflow: hidden;
+                }
+            }
         </style>
+
+        <!-- Mondernizer JS and Respond JS -->
+        <script src="js/vendor/modernizr.min.js"></script>
+        <script src="js/vendor/respond.min.js"></script>
     </head>
-
-    <body role="document">
-
-        <div class="container" role="main">
-
-            <nav class="navbar navbar-default">
-                <div class="container">
-                    <div class="navbar-header">
-                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                            <span class="sr-only">Toggle navigation</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                        <a class="navbar-brand" href="#">Dual Boot Patcher</a>
-                    </div>
-                    <div id="navbar" class="collapse navbar-collapse">
-                        <ul class="nav navbar-nav">
-                            <li class="active"><a href="#">Snapshots</a></li>
-                            <li><a href="http://forum.xda-developers.com/showthread.php?t=2447534">XDA</a></li>
-                            <li><a href="https://jenkins.cxl.epac.to/job/DualBoot_Patcher/">Build Server</a></li>
-                            <li><a href="https://github.com/chenxiaolong/DualBootPatcher">Source Code</a></li>
-                        </ul>
-                    </div> <!--/.nav-collapse -->
+    <body>
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="./">Dual Boot Patcher</a>
                 </div>
-            </nav>
+                <div class="navbar-collapse collapse navbar-responsive-collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="./">Snapshots</a></li>
+                        <li><a href="http://forum.xda-developers.com/showthread.php?t=2447534" target="_blank">XDA</a></li>
+                        <li><a href="https://jenkins.cxl.epac.to/job/DualBoot_Patcher/" target="_blank">Build Sever</a></li>
+                        <li><a href="https://github.com/chenxiaolong/DualBootPatcher" target="_blank">Source</a></li>
+                    </ul>
+                </div>
+            </div> <!-- ./container -->
+        </nav> <!-- ./navbar -->
 
+        <div class="container">
             <div class="jumbotron">
-                <h1>Snapshot builds</h1>
-                <p>Below are unstable releases that are automatically build by the continuous integration server. They contain all the latest and greatest features, but have the potential of eating your hamster, cat, or dog (and of course your phone). Make sure to backup before installing and using these builds. Enjoy!
+                <h1 style="font-weight:400;">Snapshot builds</h1>
+                <p style="font-weight:400;">Below are unstable releases that are automatically build by the continuous integration server. They contain all the latest and greatest features, but have the potential of eating your hamster, cat, or dog (and of course your phone). Make sure to backup before installing and using these builds. Enjoy!</p>
+                <p><a href="http://forum.xda-developers.com/showthread.php?t=2447534" class="btn btn-primary btn-lg" target="_blank">Learn more</a></p>
             </div>
 
-            <div class="alert alert-warning" role="alert">
-                <strong>Note!</strong> These snapshots now fully support Lollipop (including 'system.new.img' block image installers), but these builds are <b>NOT</b> compatible with ROMs patched with <b>8.0.0.r436.g41f104b</b> or earlier. ROMs patched with older versions will not show up new versions of the app and vice versa.
+            <div class="alert alert-warning">
+                <p><b>Note!</b> These snapshots now fully support Lollipop (including 'system.new.img' block image installers), but these builds are <b>NOT</b> compatible with ROMs patched with <b>8.0.0.r436.g41f104b</b> or earlier. ROMs patched with older versions will not show up new versions of the app and vice versa.</p>
+            </div>
+
+            <div class="alert alert-info">
+                <p>Because the Note 4 uses the Qualcomm overlay (vs. directly accessing the framebuffer), AROMA currently does not work and flashing any patched files will cause the recovery to hang. If you see anything commits regarding this in <a href="https://github.com/amarullz/libaroma">the AROMA source code</a>, please let me know! This does not affect any devices besides the Note 4.</p>
             </div>
 
             <div class="well">
@@ -67,20 +80,40 @@
                     <li>Avoid using older versions of the patcher</li>
                 </ol>
             </div>
+        </div> <!-- ./container -->
 
-            <div class="alert alert-info" role="alert">
-                Because the Note 4 uses the Qualcomm overlay (vs. directly accessing the framebuffer), AROMA currently does not work and flashing any patched files will cause the recovery to hang. If you see anything commits regarding this in <a href="https://github.com/amarullz/libaroma">the AROMA source code</a>, please let me know! This does not affect any devices besides the Note 4.
-            </div>
+        <div class="container">
 
 INSERT GENERATED STUFF HERE
 
-        </div> <!-- /container -->
+        </div> <!-- ./container -->
 
-        <!-- Bootstrap core JavaScript
-        ================================================== -->
-        <!-- Placed at the end of the document so the pages load faster -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-        <!-- Latest compiled and minified JavaScript -->
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+        <!-- jQuery 2.x JS -->
+        <script src="//code.jquery.com/jquery-2.1.3.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-2.1.3.js"><\/script>')</script>
+
+        <!-- Bootstrap JS -->
+        <script src="js/vendor/bootstrap.min.js"></script>
+
+        <!-- Material Design JS -->
+        <script src="js/vendor/material.min.js"></script>
+        <script src="js/vendor/ripples.min.js"></script>
+        <script src="js/vendor/snackbar.min.js"></script>
+        <script src="js/vendor/jquery.nouislider.all.min.js"></script>
+
+        <!-- Main JS -->
+        <script src="js/main.js"></script>
+
+        <!-- Google Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-60356477-1', 'auto');
+            ga('send', 'pageview');
+        </script>
     </body>
 </html>
+
