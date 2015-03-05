@@ -21,27 +21,16 @@
   <string name="link_licenses">Licenze</string>
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">Un ringraziamento speciale a tutti quelli che hanno contribuito a rendere possibile questo patcher! </string>
-  <!--Message in ROM Settings screen indicating that it's waiting for root access-->
-  <string name="waiting_for_root">In attesa dei permessi di root</string>
-  <!--Title for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_title">Non ci sono i permessi di root</string>
-  <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_switcher_desc">L\'applicazione non è stata in grado di ottenere i permessi di root.
-I permessi di root sono richiesti per modificare la partizione del kernel/boot.img affinché
-possa essere effettuato lo switch tra i firmware.\n\nFai un tap per riprovare ad ottenere i permessi di root.</string>
-  <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
-  <string name="noroot_settings_desc">L\'applicazione non è stata in grado di ottenere i permessi di root.
-I permessi di root sono richiesti per configurare la condivisione delle app.\n\nFai un tap per riprovare ad ottenere i permessi di root.</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_roms">Scegli la ROM</string>
-  <!--Navigation drawer item for setting the kernel-->
-  <string name="title_set_kernel">Imposta il Kernel</string>
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Patcha File Zip</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Spazio Disponibile</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Impostazioni ROM</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Riavvia</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -60,14 +49,21 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <string name="multislot">ROM Multi Slot %s</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Non è possibile determinare la versione della ROM</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <!--Title of progress dialog shown when setting kernel-->
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">Switch avvenuto con successo</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Switch fallito</string>
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Configurazione del kernel avvenuta con successo</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Configurazione del kernel fallita</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <!--ROM menu item for setting kernel-->
+  <!--ROM menu item for changing the name-->
+  <!--ROM menu item for changing the image-->
+  <!--ROM menu item for resetting back to the default image-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo della ROM</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -77,9 +73,6 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Rinomina %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Immetti un nuovo nome per %s. Lascia in bianco per usare il nome di default. Premi sull\'icona della ROM per cambiarla.</string>
-  <!--Dialog button text for resetting the ROM icon-->
-  <string name="reset_icon">Resetta icona</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Configurazione del dispositivo e dello slot:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -89,7 +82,6 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Premi per selezionare un file da patchare</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">I file con estensione Zip e img (boot.img, boot.lok) sono supportati dal patcher. Se sarà scelto un file non supportato, appariranno delle opzioni avanzate che consentiranno di personalizzare il processo di patching.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Premi per iniziare il processo di patching</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
@@ -114,8 +106,6 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <string name="preset_custom_desc">Personalizza il processo di patching usando le opzioni sottostanti</string>
   <!--Title for the custom options card-->
   <string name="customopts_title">Opzioni personalizzate</string>
-  <!--Name for the autopatcher radio button-->
-  <string name="customopts_autopatcher">Autopatcher</string>
   <!--Name for the patch file radio button-->
   <string name="customopts_patchfile">File patch</string>
   <!--Name for the button to select a .patch or .diff file-->
@@ -124,10 +114,6 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <string name="customopts_devicecheck">Rimuovi controllo del dispositivo</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
   <string name="customopts_hasbootimage">È presente un kernel</string>
-  <!--Name for the ramdisks combobox-->
-  <string name="customopts_ramdisk">Ramdisk</string>
-  <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">Init patchato</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Kernel</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
@@ -142,8 +128,6 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <string name="overall_progress">Progresso complessivo:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">File %1$s/%2$s </string>
-  <!--Title for the partition's mount point-->
-  <string name="free_space_mount_point">Partizione:</string>
   <!--Title for total size of partition-->
   <string name="free_space_total_size">Totale:</string>
   <!--Title for occupied space on partition-->
@@ -155,23 +139,13 @@ I permessi di root sono richiesti per configurare la condivisione delle app.\n\n
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="a_s_settings_app_sharing_title">Condivisione delle applicazioni (SPERIMENTALE)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_title">Condivisione applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_desc">Condividi le applicazioni della ROM primaria con la ROM corrente (richiede riavvio).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_title">Condividi le applicazioni pagate</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_desc">
-<![CDATA[
-Condividi le applicazioni pagate della ROM primaria con la ROM corrente (richiede riavvio).
-<strong>Potrebbe non funzionare a causa dei DRM.</strong>
-]]></string>
   <!--Title for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_title">Condividi singole applicazioni </string>
   <!--Description for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_desc">Condividi individualmente le applicazioni attraverso le ROM (richiede riavvio).</string>
+  <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Aggiorna ramdisk</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
@@ -229,14 +203,6 @@ potrebbe qualche volta richiedere i permessi di root per avviare il servizio \'s
   <string name="file_read_error">Impossibile leggere dal file: %s</string>
   <string name="file_write_error">Impossibile modificare il file: %s</string>
   <string name="directory_not_exist_error">La directory non esiste: %s</string>
-  <string name="boot_image_smaller_than_header_error">Il file del kernel è più piccolo della
-dimensione dell\'header del kernel</string>
-  <string name="boot_image_no_android_header_error">Impossibile trovare l\'Android header
-nel kernel</string>
-  <string name="boot_image_no_ramdisk_gzip_header_error">Impossibile trovare l\'header gzip del ramdisk</string>
-  <string name="boot_image_no_ramdisk_size_error">Impossibile determinare la dimensione del ramdisk</string>
-  <string name="boot_image_no_kernel_size_error">Impossibile determinare la dimensione del kernel</string>
-  <string name="boot_image_no_ramdisk_address_error">Impossibile determinare </string>
   <string name="cpio_file_already_exists_error">Il file già esiste nell\'archivio cpio: %s</string>
   <string name="cpio_file_not_exist_error">Il file non esiste nell\'archivio cpio: %s</string>
   <string name="archive_read_open_error">Impossibile aprire l\'archivio per la scansione</string>
@@ -251,7 +217,7 @@ nel kernel</string>
   <string name="only_zip_supported">Solo i file ZIP sono supportati da %s</string>
   <string name="only_boot_image_supported">Solo i kernel sono supportati da %s</string>
   <string name="patching_cancelled">Il processo di patching è stato annullato</string>
-  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system
+  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system 
 o /cache nell\'updater-script.\n\nSe il file è una ROM, allora qualcosa è andato storto.
 Se il file non è una ROM (es. kernel o mod), non ha bisogno di essere patchato.</string>
   <string name="apply_patch_file_error">Impossibile applicare il file patch</string>

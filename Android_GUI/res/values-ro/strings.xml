@@ -21,32 +21,16 @@
   <string name="link_licenses">Licente.</string>
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">Mulțumiri speciale tuturor celor care au ajutat la functionarea patch-ului.</string>
-  <!--Message in ROM Settings screen indicating that it's waiting for root access-->
-  <string name="waiting_for_root">În așteptare pentru acces root.</string>
-  <!--Title for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_title">Fara acces la root.</string>
-  <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_switcher_desc">Cererea a fost în imposibilitatea de a obține acces root. Root
-
-este necesar accesul pentru scris la partiția imaginii de kernel / boot pentru a comuta intre
-
-firmware. \ n \ nTap pentru a încerca să obțină acces root din nou.</string>
-  <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
-  <string name="noroot_settings_desc">Cererea a fost în imposibilitatea de a obține acces root. Este necesar accesul Root
-
-pentru a modifica setările de partajare a aplicației. \ N \ nTap pentru a încerca să obțină acces root
-
-din nou.</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_roms">Alege ROM-ul</string>
-  <!--Navigation drawer item for setting the kernel-->
-  <string name="title_set_kernel">Setati Kernelul.</string>
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Patch fisierul ZIP.</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Spatiul liber.</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Setari ROM.</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Repornire.</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -65,14 +49,21 @@ din nou.</string>
   <string name="multislot">Sloturi multiple %s</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Nu pot detecta versiunea ROM-ului.</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <!--Title of progress dialog shown when setting kernel-->
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">Schimbare reusita,</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Schimbarea ROM-ului esuata.</string>
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Setarea Kernel reusita.</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Setare Kernel esuata.</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <!--ROM menu item for setting kernel-->
+  <!--ROM menu item for changing the name-->
+  <!--ROM menu item for changing the image-->
+  <!--ROM menu item for resetting back to the default image-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Stema ROM.</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -83,10 +74,6 @@ ca kernel pentru %s</string>
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Redenumire %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Introduceti nume nou pentru %s. Lasati spatiu liber pentru
-denumire standard. Click pe iconita ROM-ului pentru schimbarea ei.</string>
-  <!--Dialog button text for resetting the ROM icon-->
-  <string name="reset_icon">Resetare iconita.</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Configurarea partitiei si a dispozitivului.</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -98,11 +85,6 @@ instalati un manager de fișiere pentru a putea alege fișierele de patch-uri.</
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Click pentru a alege fisierul de patch-uit.</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">Fișiere Zip și imagini de boot (boot.img, boot.lok) sunt
-
-sprijinite de patcher. În cazul în care un fișier neacceptat este ales, opțiuni suplimentare vor apare
-
-care permit procesul de patch sa fie personalizat.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Click pentru a incepe patch.</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
@@ -131,8 +113,6 @@ de patch-uit.</string>
   <string name="preset_custom_desc">Customizati patch-ul folosind optiunile de mai jos.</string>
   <!--Title for the custom options card-->
   <string name="customopts_title">Optiuni modificate.</string>
-  <!--Name for the autopatcher radio button-->
-  <string name="customopts_autopatcher">Patch automat.</string>
   <!--Name for the patch file radio button-->
   <string name="customopts_patchfile">Patch fisier</string>
   <!--Name for the button to select a .patch or .diff file-->
@@ -141,10 +121,6 @@ de patch-uit.</string>
   <string name="customopts_devicecheck">Eliminați verificare dispozitiv.</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
   <string name="customopts_hasbootimage">Are imagine boot</string>
-  <!--Name for the ramdisks combobox-->
-  <string name="customopts_ramdisk">Ramdisk</string>
-  <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">Patch-uri init</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Imagine de boot</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
@@ -159,8 +135,6 @@ de patch-uit.</string>
   <string name="overall_progress">Proces general:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s file</string>
-  <!--Title for the partition's mount point-->
-  <string name="free_space_mount_point">Punct de montare:</string>
   <!--Title for total size of partition-->
   <string name="free_space_total_size">Spatiu total:</string>
   <!--Title for occupied space on partition-->
@@ -172,25 +146,13 @@ de patch-uit.</string>
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="a_s_settings_app_sharing_title">Partajare aplicatii (EXPERIMENTAL)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_title">Partajare aplicatii</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_desc">Partajarea aplicatiilor din ROM-ul principal cu
-ROM-ul curent (necesita repornire)</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_title">Partajare aplicatii platite</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_desc">
-<![CDATA[
-Partajarea aplicatiilor platite din primul ROM cu ROM-ul curent (necesita restart)
-<strong>POSIBIL SA NU FUNCTIONEZE CU DRM</strong>
-]]></string>
   <!--Title for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_title">Partajati aplicatiile individuale</string>
   <!--Description for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_desc">Partajare aplicatii individuale intre ROM-uri
-(necesita repornire)</string>
+  <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Actualizati ramdisk</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
@@ -255,16 +217,6 @@ partajarea este pornita</string>
   <string name="file_read_error">Citirea din fisier esuata: %s</string>
   <string name="file_write_error">Scrierea in fisier esuata: %s</string>
   <string name="directory_not_exist_error">Directorul nu exista: %s</string>
-  <string name="boot_image_smaller_than_header_error">Imaginea fisierului de boot este mai mica decat
-imaginea antetului de boot</string>
-  <string name="boot_image_no_android_header_error">Nu am putut găsi antetul Android în
-imagini de boot</string>
-  <string name="boot_image_no_ramdisk_gzip_header_error">Nu am gasit antetul ramdisk in
-gzip</string>
-  <string name="boot_image_no_ramdisk_size_error">Nu pot determina marimea ramdisk-ului</string>
-  <string name="boot_image_no_kernel_size_error">Nu pot determina marimea kernel-ului</string>
-  <string name="boot_image_no_ramdisk_address_error">Nu pot determina adresa memoriei
-ramdisk-ului</string>
   <string name="cpio_file_already_exists_error">Fisierul exista deja in arhiva cpio: %s</string>
   <string name="cpio_file_not_exist_error">Fisierul nu exista in arhiva cpio: %s</string>
   <string name="archive_read_open_error">Eroare in deschiderea arhivei pentru citire</string>

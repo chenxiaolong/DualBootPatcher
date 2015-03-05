@@ -21,22 +21,16 @@
   <string name="link_licenses">Лицензии</string>
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">Огромные благодарности всем кто помог реализовать этот проект!</string>
-  <!--Message in ROM Settings screen indicating that it's waiting for root access-->
-  <string name="waiting_for_root">Ждем разрешение на root доступ</string>
-  <!--Title for the card shown in the switcher when root access could not be obtained-->
-  <string name="noroot_title">Режим root доступа запрещен</string>
-  <!--Message for the card shown in the switcher when root access could not be obtained-->
-  <!--Message for the card shown in the ROM Settings screen when root access could not be obtained-->
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_roms">Выберите ROM</string>
-  <!--Navigation drawer item for setting the kernel-->
-  <string name="title_set_kernel">Установить Ядро</string>
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Прошить Zip Файл</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Свободное Место</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Настройки ROM-а</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Перегрузить</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -55,14 +49,21 @@
   <string name="multislot">Позиция # %s</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Не удалось определить версию ROM-а</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <!--Title of progress dialog shown when setting kernel-->
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">Переключение удачно</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Ошибка при переключении</string>
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Ядро установленно удачно</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Ошибка при установки ядра</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <!--ROM menu item for setting kernel-->
+  <!--ROM menu item for changing the name-->
+  <!--ROM menu item for changing the image-->
+  <!--ROM menu item for resetting back to the default image-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Эмблема ROM-а</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -73,10 +74,6 @@
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Переименовать %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Введите новие имя для %s. Очистите чтобы оставить
-имя по умолчанию. Нажмите на иконку чтобы её изменить.</string>
-  <!--Dialog button text for resetting the ROM icon-->
-  <string name="reset_icon">Сброс иконки</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Конфигурация устройства и партиций:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -87,21 +84,22 @@
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Нажмите для выбора файла</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
-  <string name="filechooser_initial_desc">Zip файлы и образы загрузочного диска (boot.img, boot.lok)
-поддерживаются этой программой. При выборе неподдерживаемого файла, появятся
-опции позволяющие нестандартныe настройки.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Нажмите чтобы начать прошивку</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
+  <string name="filechooser_ready_desc">Выбранный файлы: %s\n\nНажмите и удерживайте для выбора другого файла</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Нажмите чтобы начать прошивку</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
+  <string name="filechooser_unsupported_desc">Выбранный файл: %s\n\nВыбранный файл не поддерживается. Вы можете попробовать пропатчить файл используя настройки ниже.\n\nНажмите и удерживайте для выбора другого файла</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Прошивка завершена успешно</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_success_desc">Новый файл: %s\n\nНажмите для выбора другого файла для прошивки</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Прошивка не удачна</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
+  <string name="filechooser_failure_desc">%s\n\nНажмите для выбора другого файла для прошивки</string>
   <!--Title for the preset card-->
   <string name="preset_title">Предварительные настройки</string>
   <!--Name for the custom preset item-->
@@ -110,8 +108,6 @@
   <string name="preset_custom_desc">Настроить прошиватель пользуя следующие опции</string>
   <!--Title for the custom options card-->
   <string name="customopts_title">Нестандартные настройки</string>
-  <!--Name for the autopatcher radio button-->
-  <string name="customopts_autopatcher">Авто-прошиватель</string>
   <!--Name for the patch file radio button-->
   <string name="customopts_patchfile">Прошить файл</string>
   <!--Name for the button to select a .patch or .diff file-->
@@ -120,10 +116,6 @@
   <string name="customopts_devicecheck">Убрать проверку устройства</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
   <string name="customopts_hasbootimage">Образ загрузочного диска присытствует</string>
-  <!--Name for the ramdisks combobox-->
-  <string name="customopts_ramdisk">Виртуальный диск</string>
-  <!--Name for the patched init binary combobox-->
-  <string name="customopts_patchedinit">Прошитый инициатор</string>
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Образ загрузочного диска</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
@@ -138,8 +130,6 @@
   <string name="overall_progress">Общий прогресс:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s файлов</string>
-  <!--Title for the partition's mount point-->
-  <string name="free_space_mount_point">Точка монтирования:</string>
   <!--Title for total size of partition-->
   <string name="free_space_total_size">Обший размер:</string>
   <!--Title for occupied space on partition-->
@@ -151,26 +141,13 @@
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
-  <string name="a_s_settings_app_sharing_title">Совместное владение приложений (ЭКСПЕРИМЕНТАЛЬНО)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_title">Совместно владеть приложениями</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_desc">Владеть приложениями совместно из главного ROMа
-с текущим (перезагрузка обязательна).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_title">Совместно владеть платными приложениями</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_desc">
-<![CDATA[
-Совместно владеть приложениями из главного ROM-а с текущим (перезагрузка обязательна).
-<strong>Успех не гарантирован из-за DRM.</strong>
-]]>
-</string>
   <!--Title for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_title">Совместно владеть приложениями</string>
   <!--Description for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_desc">Совместно владеть приложениями со всеми ROM-ами
-(перезагрузка обязательна).</string>
+  <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Обновить виртуальный диск</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
@@ -220,4 +197,13 @@
   <string name="please_wait">Подождите пожалуйста</string>
   <!--Presets that should always be visible-->
   <!--Errors-->
+  <string name="no_error">Операция была успешно выполнена</string>
+  <string name="unknown_error">Неизвестная ошибка</string>
+  <string name="patcher_create_error">Невозможно создать патчер: %s</string>
+  <string name="autopatcher_create_error">Невозможно создать авто-патчер: %s</string>
+  <string name="ramdisk_patcher_create_error">Невозможно создать ramdisk-патчер: %s</string>
+  <string name="file_open_error">Невозможно открыть файл: %s</string>
+  <string name="file_read_error">Невозможно прочитать файл: %s</string>
+  <string name="file_write_error">Невозможно записать в файл: %s</string>
+  <string name="directory_not_exist_error">Путь не существует: %s</string>
 </resources>
