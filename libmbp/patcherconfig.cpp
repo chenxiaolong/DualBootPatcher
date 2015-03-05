@@ -403,11 +403,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Note 4
     device = new Device();
     device->setId("trlte");
-    device->setCodenames({ "trltetmo" });
-    device->setName("Samsung Galaxy Note 4 (T-Mobile ONLY)");
+    device->setCodenames({ "trltetmo", "trltexx" });
+    device->setName("Samsung Galaxy Note 4");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p25" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
+    // Shouldn't be an issue as long as ROMs don't touch the "hidden" partition
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26", "/dev/block/mmcblk0p27" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
     devices.push_back(device);
 
