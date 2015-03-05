@@ -22,8 +22,11 @@
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">Un ringraziamento speciale a tutti quelli che hanno contribuito a rendere possibile questo patcher! </string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">Impossibile connettersi al mbtool</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">L\'applicazione non è stata in grado di collegarsi al mbtool. Questo può accadere quando non vengono concessi i permessi di root o quando il ramdisk non è aggiornato.\n\nFai un tap per riprovare.</string>
   <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">ROMs</string>
   <!--Navigation drawer item for patching a zip file-->
   <string name="title_patch_zip">Patcha File Zip</string>
   <!--Navigation drawer item for checking free space-->
@@ -31,6 +34,7 @@
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Impostazioni ROM</string>
   <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">Condivisione delle app</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Riavvia</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -50,8 +54,11 @@
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Non è possibile determinare la versione della ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">Cambia ROM</string>
   <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">Configurazione del kernel</string>
   <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">ROM cambiata con successo</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Switch fallito</string>
   <!--Message shown when setting the kernel succeeds-->
@@ -59,11 +66,17 @@
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Configurazione del kernel fallita</string>
   <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">Versione sconosciuta</string>
   <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">Build sconosciuta</string>
   <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">Imposta il kernel</string>
   <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">Modifica nome</string>
   <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">Cambia icona</string>
   <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">Ripristina icona</string>
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo della ROM</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -73,6 +86,7 @@
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Rinomina %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Digita un nuovo nome per %s. Lascia in bianco per usare il nome di default.</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Configurazione del dispositivo e dello slot:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -82,6 +96,7 @@
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Premi per selezionare un file da patchare</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <string name="filechooser_initial_desc">Se viene scelto un file non supportato, appariranno delle opzioni aggiuntive che permetteranno di personalizzare il processo di patching.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Premi per iniziare il processo di patching</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
@@ -139,13 +154,25 @@
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the application sharing section of the ROM Settings-->
+  <string name="a_s_settings_app_sharing_title">Condivisione applicazioni (SPERIMENTALE)</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
+  <string name="a_s_settings_share_apps_title">Condividi le applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
+  <string name="a_s_settings_share_apps_desc">Condivione delle applicazioni dalla ROM primaria con la ROM corrente (richiede riavvio).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
+  <string name="a_s_settings_share_paid_apps_title">Condividi applicazioni a pagamento</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
+  <string name="a_s_settings_share_paid_apps_desc">
+<![CDATA[
+Share paid applications from the primary ROM with the current ROM (requires reboot).
+<strong>Potrebbe non funzionare a causa del DRM.</strong>
+]]></string>
   <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">Condivisione di singole applicazioni</string>
   <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">Condivisione di singole applicazioni tra le ROM (richiede riavvio).</string>
   <!--Title for preference category for boot options-->
+  <string name="rom_settings_booting_title">Opzioni di avvio</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Aggiorna ramdisk</string>
   <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
@@ -203,6 +230,7 @@ potrebbe qualche volta richiedere i permessi di root per avviare il servizio \'s
   <string name="file_read_error">Impossibile leggere dal file: %s</string>
   <string name="file_write_error">Impossibile modificare il file: %s</string>
   <string name="directory_not_exist_error">La directory non esiste: %s</string>
+  <string name="boot_image_parse_error">Impossibile analizzare il kernel</string>
   <string name="cpio_file_already_exists_error">Il file già esiste nell\'archivio cpio: %s</string>
   <string name="cpio_file_not_exist_error">Il file non esiste nell\'archivio cpio: %s</string>
   <string name="archive_read_open_error">Impossibile aprire l\'archivio per la scansione</string>
