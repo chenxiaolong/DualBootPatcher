@@ -239,5 +239,48 @@ bool selinux_lset_context(const std::string &path, const std::string &context)
                      context.c_str(), context.size() + 1, 0);
 }
 
+bool selinux_get_enforcing(int *value)
+{
+    int fd = open(MB_SELINUX_ENFORCE_FILE, O_RDONLY);
+    if (fd < 0) {
+        return false;
+    }
+
+    char buf[20];
+    memset(buf, 0, sizeof(buf));
+    int ret = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (ret < 0) {
+        return false;
+    }
+
+    int enforce = 0;
+    if (sscanf(buf, "%d", &enforce) != 1) {
+        return false;
+    }
+
+    *value = enforce;
+
+    return true;
+}
+
+bool selinux_set_enforcing(int value)
+{
+    int fd = open(MB_SELINUX_ENFORCE_FILE, O_RDWR);
+    if (fd < 0) {
+        return false;
+    }
+
+    char buf[20];
+    snprintf(buf, sizeof(buf), "%d", value);
+    int ret = write(fd, buf, strlen(buf));
+    close(fd);
+    if (ret < 0) {
+        return false;
+    }
+
+    return true;
+}
+
 }
 }
