@@ -23,6 +23,7 @@
 #include <cstring>
 
 #include "external/cppformat/format.h"
+#include "util/copy.h"
 #include "util/fts.h"
 #include "util/logging.h"
 
@@ -97,6 +98,93 @@ bool wipe_directory(const std::string &mountpoint, bool wipe_media)
 {
     WipeDirectory wd(mountpoint, wipe_media);
     return wd.run();
+}
+
+
+class CopySystem : public util::FTSWrapper {
+public:
+    CopySystem(std::string path, std::string target)
+        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        _target(std::move(target))
+    {
+    }
+
+    virtual int on_changed_path()
+    {
+        // We only care about the first level
+        if (_curr->fts_level != 1) {
+            return Action::FTS_Next;
+        }
+
+        // Don't copy multiboot directory
+        if (strcmp(_curr->fts_name, "multiboot") == 0) {
+            return Action::FTS_Skip;
+        }
+
+        _curtgtpath.clear();
+        _curtgtpath += _target;
+        _curtgtpath += "/";
+        _curtgtpath += _curr->fts_name;
+
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_directory_pre() override
+    {
+        // _target is the correct parameter here (or pathbuf and
+        // MB_COPY_EXCLUDE_TOP_LEVEL flag)
+        if (!util::copy_dir(_curr->fts_accpath, _target,
+                            util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+            _error_msg = fmt::format("{}: Failed to copy directory: {}",
+                                     _curr->fts_path, strerror(errno));
+            LOGW("{}", _error_msg);
+            return Action::FTS_Skip | Action::FTS_Fail;
+        }
+        return Action::FTS_Skip;
+    }
+
+    virtual int on_reached_file() override
+    {
+        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_symlink() override
+    {
+        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_special_file() override
+    {
+        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+private:
+    std::string _target;
+    std::string _curtgtpath;
+
+    bool copy_path()
+    {
+        if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
+                             util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+            _error_msg = fmt::format("{}: Failed to copy file: {}",
+                                     _curr->fts_path, strerror(errno));
+            LOGW("{}", _error_msg);
+            return false;
+        }
+        return true;
+    }
+};
+
+/*!
+ * \brief Copy /system directory excluding multiboot files
+ *
+ * \param source Source directory
+ * \param target Target directory
+ */
+bool copy_system(const std::string &source, const std::string &target)
+{
+    CopySystem fts(source, target);
+    return fts.run();
 }
 
 }

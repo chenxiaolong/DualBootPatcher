@@ -50,7 +50,7 @@ namespace mb
 static bool do_mount(const std::string &mountpoint)
 {
     if (mountpoint == SYSTEM) {
-        if (access("/multiboot/system.img", F_OK) < 0) {
+        if (access("/mb/system.img", F_OK) < 0) {
             // Assume we don't need the image if the wrapper didn't create it
             LOGV(TAG "Ignoring mount command for {}", mountpoint);
             return true;
@@ -68,8 +68,8 @@ static bool do_mount(const std::string &mountpoint)
             return false;
         }
 
-        if (!util::loopdev_setup_device(loopdev, "/multiboot/system.img", 0, 0)) {
-            LOGE(TAG "Failed to setup loop device {}: {}",
+        if (!util::loopdev_set_up_device(loopdev, "/mb/system.img", 0, 0)) {
+            LOGE(TAG "Failed to set up loop device {}: {}",
                  loopdev, strerror(errno));
             return false;
         }
@@ -94,7 +94,7 @@ static bool do_mount(const std::string &mountpoint)
 static bool do_unmount(const std::string &mountpoint)
 {
     if (mountpoint == SYSTEM) {
-        if (access("/multiboot/system.img", F_OK) < 0) {
+        if (access("/mb/system.img", F_OK) < 0) {
             // Assume we don't need the image if the wrapper didn't create it
             LOGV(TAG "Ignoring unmount command for {}", mountpoint);
             return true;
@@ -138,7 +138,7 @@ static bool do_format(const std::string &mountpoint)
         // Need to mount the partition if we're using an image file and it
         // hasn't been mounted
         int needs_mount = (mountpoint == SYSTEM)
-                && (access("/multiboot/system.img", F_OK) == 0)
+                && (access("/mb/system.img", F_OK) == 0)
                 && (access(STAMP_FILE, F_OK) != 0);
 
         if (needs_mount && !do_mount(mountpoint)) {

@@ -139,6 +139,7 @@ mbtool_src_base := \
 	$(EXTERNAL_DIR)/pugixml/src/pugixml.cpp
 
 mbtool_src_recovery := \
+	installer.cpp \
 	multiboot.cpp \
 	update_binary.cpp \
 	update_binary_tool.cpp
