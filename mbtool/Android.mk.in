@@ -112,6 +112,7 @@ mbutil_src := \
 	util/file.cpp \
 	util/fstab.cpp \
 	util/fts.cpp \
+	util/hash.cpp \
 	util/logging.cpp \
 	util/loopdev.cpp \
 	util/mount.cpp \
