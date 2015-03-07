@@ -39,10 +39,10 @@
 
 
 const char *main_argv0 = nullptr;
-static int first_run = 1;
 
 
-int main(int argc, char *argv[]);
+int main_multicall(int argc, char *argv[]);
+int main_normal(int argc, char *argv[]);
 static int mbtool_main(int argc, char *argv[]);
 
 
@@ -95,7 +95,7 @@ static void mbtool_usage(int error)
 static int mbtool_main(int argc, char *argv[])
 {
     if (argc > 1) {
-        return main(argc - 1, argv + 1);
+        return main_multicall(argc - 1, argv + 1);
     } else {
         mbtool_usage(1);
         return EXIT_FAILURE;
@@ -113,13 +113,8 @@ struct tool * find_tool(const char *name)
     return nullptr;
 }
 
-int main(int argc, char *argv[])
+int main_multicall(int argc, char *argv[])
 {
-    if (first_run) {
-        main_argv0 = argv[0];
-        first_run = 0;
-    }
-
     char *name;
     char *prog;
 
@@ -130,14 +125,43 @@ int main(int argc, char *argv[])
         name = argv[0];
     }
 
-    umask(0);
-
     struct tool *tool = find_tool(name);
     if (tool) {
         return tool->func(argc, argv);
     } else {
         fprintf(stderr, "%s: tool not found\n", name);
         return EXIT_FAILURE;
+    }
+}
+
+int main_normal(int argc, char *argv[])
+{
+    if (argc < 2) {
+        mbtool_usage(1);
+        return EXIT_FAILURE;
+    }
+
+    char *name = argv[1];
+    struct tool *tool = find_tool(name);
+    if (tool) {
+        return tool->func(argc - 1, argv + 1);
+    } else {
+        fprintf(stderr, "%s: tool not found\n", name);
+        return EXIT_FAILURE;
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    main_argv0 = argv[0];
+
+    umask(0);
+
+    char *no_multicall = getenv("MBTOOL_NO_MULTICALL");
+    if (no_multicall && strcmp(no_multicall, "true") == 0) {
+        return main_normal(argc, argv);
+    } else {
+        return main_multicall(argc, argv);
     }
 }
 
