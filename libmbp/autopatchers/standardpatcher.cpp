@@ -306,9 +306,9 @@ void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
     for (auto it = lines->begin(); it != lines->end(); ++it) {
         if (it->find("block_image_update") != std::string::npos) {
             // References to the system partition should become
-            // /multiboot/system.img
+            // /mb/system.img
             for (auto const &dev : systemDevs) {
-                boost::replace_all(*it, dev, "/multiboot/system.img");
+                boost::replace_all(*it, dev, "/mb/system.img");
             }
         }
     }
