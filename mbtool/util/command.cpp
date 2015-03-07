@@ -32,22 +32,16 @@ namespace mb
 namespace util
 {
 
-static void log_command(const std::vector<std::string> &argv)
+static std::string list2string(const std::vector<std::string> &list)
 {
     std::string output;
-    for (std::size_t i = 0; i < argv.size(); ++i) {
-        output += argv[i];
-        if (i != argv.size() - 1) {
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        output += list[i];
+        if (i != list.size() - 1) {
             output += ", ";
         }
     }
-
-    LOGD("Running command: [ {} ]", output);
-}
-
-static void log_command(const std::string &command)
-{
-    LOGD("Running shell command: \"{}\"", command);
+    return output;
 }
 
 int run_shell_command(const std::string &command)
@@ -55,7 +49,7 @@ int run_shell_command(const std::string &command)
     // If /sbin/sh exists (eg. in recovery), then fork and run that. Otherwise,
     // just call system().
 
-    log_command(command);
+    LOGD("Running shell command: \"{}\"", command);
 
     struct stat sb;
     if (stat("/sbin/sh", &sb) == 0) {
@@ -83,7 +77,7 @@ int run_command(const std::vector<std::string> &argv)
         return -1;
     }
 
-    log_command(argv);
+    LOGD("Running command: [ {} ]", list2string(argv));
 
     std::vector<const char *> argv_c;
     for (const std::string &arg : argv) {
@@ -113,6 +107,8 @@ int run_command_chroot(const std::string &dir,
         errno = EINVAL;
         return -1;
     }
+
+    LOGD("Running command (chroot: {}): [ {} ]", dir, list2string(argv));
 
     std::vector<const char *> argv_c;
     for (const std::string &arg : argv) {
