@@ -48,6 +48,7 @@ bool is_mounted(const std::string &mountpoint)
 {
     file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
     if (!fp) {
+        LOGE("Failed to read /proc/mounts: {}", strerror(errno));
         return false;
     }
 
