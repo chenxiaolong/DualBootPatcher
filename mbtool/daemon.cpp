@@ -54,6 +54,8 @@
 
 #define V1_COMMAND_VERSION "VERSION"            // [Version 1] Version number
 #define V1_COMMAND_LIST_ROMS "LIST_ROMS"        // [Version 1] List installed ROMs
+#define V1_COMMAND_LIST_BUILTIN_ROM_IDS "LIST_BUILTIN_ROM_IDS"
+                                                // [Version 1] List builtin ROMs
 #define V1_COMMAND_CURRENT_ROM "CURRENT_ROM"    // [Version 1] Get current ROM
 #define V1_COMMAND_CHOOSE_ROM "CHOOSE_ROM"      // [Version 1] Switch ROM
 #define V1_COMMAND_SET_KERNEL "SET_KERNEL"      // [Version 1] Set kernel
@@ -63,6 +65,8 @@
 #define V1_COMMAND_CHMOD "CHMOD"                // [Version 1] chmod file
 #define V1_COMMAND_LOKI_PATCH "LOKI_PATCH"      // [Version 1] Patch file with loki
 
+
+// TODO: Switch to protobuf instead of this hand-made crap :)
 
 namespace mb
 {
@@ -124,6 +128,24 @@ static bool v1_list_roms(int fd)
     }
 
     if (!util::socket_write_string(fd, RESPONSE_OK)) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool v1_list_builtin_rom_ids(int fd)
+{
+    std::vector<std::shared_ptr<Rom>> roms;
+    mb_roms_add_builtin(&roms);
+
+    std::vector<std::string> ids;
+
+    for (auto r : roms) {
+        ids.push_back(r->id);
+    }
+
+    if (!util::socket_write_string_array(fd, ids)) {
         return false;
     }
 
@@ -379,6 +401,7 @@ static bool connection_version_1(int fd)
 
         if (command == V1_COMMAND_VERSION
                 || command == V1_COMMAND_LIST_ROMS
+                || command == V1_COMMAND_LIST_BUILTIN_ROM_IDS
                 || command == V1_COMMAND_CURRENT_ROM
                 || command == V1_COMMAND_CHOOSE_ROM
                 || command == V1_COMMAND_SET_KERNEL
@@ -406,6 +429,8 @@ static bool connection_version_1(int fd)
             ret = v1_version(fd);
         } else if (command == V1_COMMAND_LIST_ROMS) {
             ret = v1_list_roms(fd);
+        } else if (command == V1_COMMAND_LIST_BUILTIN_ROM_IDS) {
+            ret = v1_list_builtin_rom_ids(fd);
         } else if (command == V1_COMMAND_CURRENT_ROM) {
             ret = v1_current_rom(fd);
         } else if (command == V1_COMMAND_CHOOSE_ROM) {
