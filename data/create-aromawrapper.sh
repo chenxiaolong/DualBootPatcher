@@ -2,8 +2,10 @@
 
 cd "$(dirname "${0}")"
 
+ver=2
+
 url="http://forum.xda-developers.com/devdb/project/dl/?id=286&task=get"
-target=aromawrapper.zip
+target=aromawrapper-${ver}.zip
 
 rm -f ${target}
 

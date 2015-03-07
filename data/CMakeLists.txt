@@ -24,9 +24,9 @@ set(URL_BASE "https://dl.dropboxusercontent.com/u/486665/MultiBootPatcher/prebui
 
 file(
     DOWNLOAD
-    ${URL_BASE}/aromawrapper.zip
+    ${URL_BASE}/aromawrapper-2.zip
     ${CMAKE_CURRENT_SOURCE_DIR}/aromawrapper.zip
-    EXPECTED_MD5 a4d749ab840ddf2ad69477feb5ecbf0a
+    EXPECTED_MD5 f5b72b16f35a644b187489f10fe32a64
     SHOW_PROGRESS
 )
 
