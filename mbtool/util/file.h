@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace mb
 {
@@ -31,6 +32,7 @@ bool file_first_line(const std::string &path,
                      std::string *line_out);
 bool file_write_data(const std::string &path,
                      const char *data, size_t size);
+bool file_find_one_of(const std::string &path, std::vector<std::string> items);
 
 }
 }

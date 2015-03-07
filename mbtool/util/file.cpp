@@ -23,8 +23,10 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -130,6 +132,41 @@ bool file_write_data(const std::string &path,
     } while (size > 0);
 
     return true;
+}
+
+bool file_find_one_of(const std::string &path, std::vector<std::string> items) {
+    struct stat sb;
+    void *map = MAP_FAILED;
+    int fd = -1;
+
+    if ((fd = open(path.c_str(), O_RDONLY)) < 0) {
+        return false;
+    }
+
+    auto close_fd = util::finally([&] {
+        close(fd);
+    });
+
+    if (fstat(fd, &sb) < 0) {
+        return false;
+    }
+
+    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == MAP_FAILED) {
+        return false;
+    }
+
+    auto unmap_map = util::finally([&] {
+        munmap(map, sb.st_size);
+    });
+
+    for (auto const &item : items) {
+        if (memmem(map, sb.st_size, item.data(), item.size())) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 }
