@@ -80,7 +80,7 @@ static int copy_header_and_data(struct archive *in, struct archive *out,
     return ret;
 }
 
-static bool setup_input(archive *in, const std::string &filename)
+static bool set_up_input(archive *in, const std::string &filename)
 {
     // Add more as needed
     //archive_read_support_format_all(in);
@@ -98,7 +98,7 @@ static bool setup_input(archive *in, const std::string &filename)
     return true;
 }
 
-static void setup_output(archive *out)
+static void set_up_output(archive *out)
 {
     archive_write_disk_set_options(out,
                                    ARCHIVE_EXTRACT_ACL |
@@ -129,11 +129,11 @@ bool extract_archive(const std::string &filename, const std::string &target)
         return false;
     }
 
-    if (!setup_input(in.get(), filename)) {
+    if (!set_up_input(in.get(), filename)) {
         return false;
     }
 
-    setup_output(out.get());
+    set_up_output(out.get());
 
     if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
         LOGE("{}: Failed to create directory: {}",
@@ -190,11 +190,11 @@ bool extract_files(const std::string &filename, const std::string &target,
         return false;
     }
 
-    if (!setup_input(in.get(), filename)) {
+    if (!set_up_input(in.get(), filename)) {
         return false;
     }
 
-    setup_output(out.get());
+    set_up_output(out.get());
 
     if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
         LOGE("{}: Failed to create directory: {}",
@@ -256,11 +256,11 @@ bool extract_files2(const std::string &filename,
     int ret;
     unsigned int count = 0;
 
-    if (!setup_input(in.get(), filename)) {
+    if (!set_up_input(in.get(), filename)) {
         return false;
     }
 
-    setup_output(out.get());
+    set_up_output(out.get());
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
         for (const extract_info &info : files) {
@@ -313,7 +313,7 @@ bool archive_exists(const std::string &filename,
         info.exists = false;
     }
 
-    if (!setup_input(in.get(), filename)) {
+    if (!set_up_input(in.get(), filename)) {
         return false;
     }
 

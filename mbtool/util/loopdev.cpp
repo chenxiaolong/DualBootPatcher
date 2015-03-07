@@ -65,8 +65,8 @@ std::string loopdev_find_unused(void)
     return std::string(LOOP_PREFIX) + to_string(n);
 }
 
-bool loopdev_setup_device(const std::string &loopdev, const std::string &file,
-                          uint64_t offset, bool ro)
+bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
+                           uint64_t offset, bool ro)
 {
     int ffd = -1;
     int lfd = -1;
