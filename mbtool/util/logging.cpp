@@ -44,11 +44,11 @@ public:
     virtual void log(LogLevel prio, const std::string &msg) = 0;
 };
 
-#define STDLOG_LEVEL_ERROR   "[Error]"
-#define STDLOG_LEVEL_WARNING "[Warning]"
-#define STDLOG_LEVEL_INFO    "[Info]"
-#define STDLOG_LEVEL_DEBUG   "[Debug]"
-#define STDLOG_LEVEL_VERBOSE "[Verbose]"
+#define STDLOG_LEVEL_ERROR   "[E]"
+#define STDLOG_LEVEL_WARNING "[W]"
+#define STDLOG_LEVEL_INFO    "[I]"
+#define STDLOG_LEVEL_DEBUG   "[D]"
+#define STDLOG_LEVEL_VERBOSE "[V]"
 
 class StdioLogger : public BaseLogger
 {
