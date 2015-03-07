@@ -57,6 +57,7 @@ protected:
     virtual std::string get_install_type() = 0;
     virtual ProceedState on_initialize();
     virtual ProceedState on_created_chroot();
+    virtual ProceedState on_checked_device();
     virtual ProceedState on_set_up_chroot();
     virtual ProceedState on_mounted_filesystems();
     virtual ProceedState on_pre_install();
@@ -71,20 +72,21 @@ protected:
     int _interface;
     int _output_fd;
 
-    std::string in_chroot(const std::string &path) const;
-
-
-private:
     std::string _device;
     std::string _boot_block_dev;
+    std::string _recovery_block_dev;
     unsigned char _boot_hash[SHA_DIGEST_SIZE];
     std::shared_ptr<Rom> _rom;
 
     bool _has_block_image;
     bool _is_aroma;
 
-    // Functions
+    std::string in_chroot(const std::string &path) const;
 
+    static bool is_aroma(const std::string &path);
+
+
+private:
     bool create_chroot() const;
     bool destroy_chroot() const;
 
@@ -95,8 +97,6 @@ private:
     bool system_image_copy(const std::string &source,
                            const std::string &image, bool reverse);
     bool run_real_updater();
-
-    static bool is_aroma(const std::string &path);
 
     ProceedState install_stage_initialize();
     ProceedState install_stage_create_chroot();

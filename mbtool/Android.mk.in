@@ -141,6 +141,7 @@ mbtool_src_base := \
 mbtool_src_recovery := \
 	installer.cpp \
 	multiboot.cpp \
+	rom_installer.cpp \
 	update_binary.cpp \
 	update_binary_tool.cpp
 

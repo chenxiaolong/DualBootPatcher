@@ -19,10 +19,6 @@
 
 #include "installer.h"
 
-// C++
-
-// C
-
 // Linux/posix
 #include <fcntl.h>
 #include <signal.h>
@@ -613,6 +609,11 @@ Installer::ProceedState Installer::on_created_chroot()
     return ProceedState::Continue;
 }
 
+Installer::ProceedState Installer::on_checked_device()
+{
+    return ProceedState::Continue;
+}
+
 Installer::ProceedState Installer::on_set_up_chroot()
 {
     return ProceedState::Continue;
@@ -681,10 +682,7 @@ Installer::ProceedState Installer::install_stage_create_chroot()
 
 
     // Post hook
-    ProceedState hook_ret = on_created_chroot();
-    if (hook_ret != ProceedState::Continue) return hook_ret;
-
-    return ProceedState::Continue;
+    return on_created_chroot();
 }
 
 Installer::ProceedState Installer::install_stage_set_up_environment()
@@ -773,9 +771,20 @@ Installer::ProceedState Installer::install_stage_check_device()
         _boot_block_dev = devs[0];
         LOGD("Boot block device: {}", _boot_block_dev);
 
+        // Recovery block devices
+        auto recovery_devs = d->recoveryBlockDevs();
+        if (recovery_devs.empty()) {
+            display_msg("Could not determine the recovery block device");
+            return ProceedState::Fail;
+        }
+
+        _recovery_block_dev = recovery_devs[0];
+        LOGD("Recovery block device: {}", _recovery_block_dev);
+
         // Copy any other required block devices to the chroot
         auto extra_devs = d->extraBlockDevs();
 
+        devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
         devs.insert(devs.end(), extra_devs.begin(), extra_devs.end());
 
         for (auto const &dev : devs) {
@@ -794,7 +803,7 @@ Installer::ProceedState Installer::install_stage_check_device()
                 LOGE("Failed to copy {}. Continuing anyway", dev);
             }
 
-            LOGD("Copied {} to the chroot", dev_path);
+            LOGD("Copied {} to the chroot", dev);
         }
 
         break;
@@ -805,7 +814,7 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    return ProceedState::Continue;
+    return on_checked_device();
 }
 
 Installer::ProceedState Installer::install_stage_get_install_type()
@@ -826,6 +835,20 @@ Installer::ProceedState Installer::install_stage_get_install_type()
     if (!_rom) {
         display_msg(fmt::format("Unknown ROM ID: {}", install_type));
         return ProceedState::Fail;
+    }
+
+    // Use raw paths if needed
+    struct stat sb;
+    if (stat("/raw-system", &sb) == 0) {
+        // Old style: /system -> /raw-system, etc.
+        _rom->system_path.insert(1, "raw-");
+        _rom->cache_path.insert(1, "raw-");
+        _rom->data_path.insert(1, "raw-");
+    } else if (stat("/raw", &sb) == 0) {
+        // New style: /system -> /raw/system, etc.
+        _rom->system_path.insert(0, "/raw");
+        _rom->cache_path.insert(0, "/raw");
+        _rom->data_path.insert(0, "/raw");
     }
 
     display_msg("ROM ID: " + _rom->id);
@@ -881,10 +904,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
                     util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS);
 
 
-    ProceedState hook_ret = on_set_up_chroot();
-    if (hook_ret != ProceedState::Continue) return hook_ret;
-
-    return ProceedState::Continue;
+    return on_set_up_chroot();
 }
 
 Installer::ProceedState Installer::install_stage_mount_filesystems()
@@ -950,10 +970,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     }
 
 
-    ProceedState hook_ret = on_mounted_filesystems();
-    if (hook_ret != ProceedState::Continue) return hook_ret;
-
-    return ProceedState::Continue;
+    return on_mounted_filesystems();
 }
 
 Installer::ProceedState Installer::install_stage_installation()
@@ -1013,10 +1030,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     }
 
 
-    ProceedState hook_ret = on_unmounted_filesystems();
-    if (hook_ret != ProceedState::Continue) return hook_ret;
-
-    return ProceedState::Continue;
+    return on_unmounted_filesystems();
 }
 
 Installer::ProceedState Installer::install_stage_finish()
@@ -1138,10 +1152,7 @@ Installer::ProceedState Installer::install_stage_finish()
     }
 
 
-    ProceedState hook_ret = on_finished();
-    if (hook_ret != ProceedState::Continue) return hook_ret;
-
-    return ProceedState::Continue;
+    return on_finished();
 }
 
 void Installer::install_stage_cleanup(Installer::ProceedState ret)

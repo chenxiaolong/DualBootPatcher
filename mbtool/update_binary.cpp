@@ -42,8 +42,6 @@
 namespace mb
 {
 
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
-
 
 class RecoveryInstaller : public Installer
 {
