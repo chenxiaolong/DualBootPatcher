@@ -38,5 +38,30 @@ bool ends_with(const std::string &string, const std::string &suffix)
     return string.compare(string.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+/*!
+ * \brief Convert binary data to its hex string representation
+ *
+ * The size of the output string should be at least `2 * size + 1` bytes.
+ * (Two characters in string for each byte in the binary data + one byte for
+ * the NULL terminator.)
+ *
+ * \param data Binary data
+ * \param size Size of binary data
+ */
+std::string hex_string(unsigned char *data, size_t size)
+{
+    static const char digits[] = "0123456789abcdef";
+
+    std::string result;
+    result.resize(size * 2);
+
+    for (unsigned int i = 0; i < size; ++i) {
+        result[2 * i] = digits[(data[i] >> 4) & 0xf];
+        result[2 * i + 1] = digits[data[i] & 0xf];
+    }
+
+    return result;
+}
+
 }
 }

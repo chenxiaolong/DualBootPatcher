@@ -30,6 +30,8 @@ namespace util
 bool starts_with(const std::string &string, const std::string &prefix);
 bool ends_with(const std::string &string, const std::string &suffix);
 
+std::string hex_string(unsigned char *data, size_t size);
+
 template <typename T>
 std::string to_string(const T& t)
 {
