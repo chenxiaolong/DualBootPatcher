@@ -24,9 +24,6 @@
 #include <cerrno>
 #include <cstring>
 
-#include <archive.h>
-#include <archive_entry.h>
-
 #include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
@@ -39,7 +36,7 @@ namespace util
 
 typedef std::unique_ptr<archive, int (*)(archive *)> archive_ptr;
 
-static int copy_data(struct archive *in, struct archive *out)
+int archive_copy_data(archive *in, archive *out)
 {
     const void *buff;
     size_t size;
@@ -63,8 +60,8 @@ static int copy_data(struct archive *in, struct archive *out)
     return ARCHIVE_OK;
 }
 
-static int copy_header_and_data(struct archive *in, struct archive *out,
-                                struct archive_entry *entry)
+int archive_copy_header_and_data(archive *in, archive *out,
+                                 archive_entry *entry)
 {
     int ret = ARCHIVE_OK;
 
@@ -73,7 +70,7 @@ static int copy_header_and_data(struct archive *in, struct archive *out,
         return ret;
     }
 
-    if ((ret = copy_data(in, out)) != ARCHIVE_OK) {
+    if ((ret = archive_copy_data(in, out)) != ARCHIVE_OK) {
         return ret;
     }
 
@@ -121,7 +118,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
         return false;
     }
 
-    struct archive_entry *entry;
+    archive_entry *entry;
     int ret;
     std::string cwd = get_cwd();
 
@@ -152,7 +149,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
     });
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        if (copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+        if (archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
             return false;
         }
     }
@@ -181,7 +178,7 @@ bool extract_files(const std::string &filename, const std::string &target,
         return false;
     }
 
-    struct archive_entry *entry;
+    archive_entry *entry;
     int ret;
     std::string cwd = get_cwd();
     unsigned int count = 0;
@@ -217,7 +214,7 @@ bool extract_files(const std::string &filename, const std::string &target,
                 archive_entry_pathname(entry)) != files.end()) {
             ++count;
 
-            if (copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+            if (archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
                 return false;
             }
         }
@@ -252,7 +249,7 @@ bool extract_files2(const std::string &filename,
         return false;
     }
 
-    struct archive_entry *entry;
+    archive_entry *entry;
     int ret;
     unsigned int count = 0;
 
@@ -269,7 +266,7 @@ bool extract_files2(const std::string &filename,
 
                 archive_entry_set_pathname(entry, info.to.c_str());
 
-                if (copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+                if (archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
                     return false;
                 }
 
@@ -306,7 +303,7 @@ bool archive_exists(const std::string &filename,
         return false;
     }
 
-    struct archive_entry *entry;
+    archive_entry *entry;
     int ret;
 
     for (exists_info &info : files) {

@@ -22,6 +22,9 @@
 #include <string>
 #include <vector>
 
+#include <archive.h>
+#include <archive_entry.h>
+
 namespace mb
 {
 namespace util
@@ -37,6 +40,9 @@ struct exists_info {
     bool exists;
 };
 
+int archive_copy_data(archive *in, archive *out);
+int archive_copy_header_and_data(archive *in, archive *out,
+                                 archive_entry *entry);
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,
                    const std::vector<std::string> &files);
