@@ -50,6 +50,8 @@ public:
     void setDataBlockDevs(std::vector<std::string> blockDevs);
     std::vector<std::string> bootBlockDevs() const;
     void setBootBlockDevs(std::vector<std::string> blockDevs);
+    std::vector<std::string> recoveryBlockDevs() const;
+    void setRecoveryBlockDevs(std::vector<std::string> blockDevs);
     std::vector<std::string> extraBlockDevs() const;
     void setExtraBlockDevs(std::vector<std::string> blockDevs);
 

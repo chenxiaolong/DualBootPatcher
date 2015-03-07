@@ -356,6 +356,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     const std::string qcomCache("/dev/block/platform/msm_sdcc.1/by-name/cache");
     const std::string qcomData("/dev/block/platform/msm_sdcc.1/by-name/userdata");
     const std::string qcomBoot("/dev/block/platform/msm_sdcc.1/by-name/boot");
+    const std::string qcomRecovery("/dev/block/platform/msm_sdcc.1/by-name/recovery");
 
     const std::string qcomAboot("/dev/block/platform/msm_sdcc.1/by-name/aboot");
     const std::string qcomImgdata("/dev/block/platform/msm_sdcc.1/by-name/imgdata");
@@ -375,6 +376,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p29" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p20" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
@@ -387,6 +389,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p15" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3
@@ -398,6 +401,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
     // Samsung Galaxy Note 4
@@ -410,6 +414,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Shouldn't be an issue as long as ROMs don't touch the "hidden" partition
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26", "/dev/block/mmcblk0p27" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
     // Google/LG Nexus 5
@@ -423,6 +428,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p19" });
     device->setExtraBlockDevs({ qcomAboot, qcomImgdata, qcomMisc, qcomModem,
                                 qcomRpm, qcomSbl1, qcomSdi, qcomTz });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2013)
@@ -434,6 +440,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p23" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p30" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
     // OnePlus One
@@ -445,6 +452,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p16" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
     // LG G2
@@ -456,6 +464,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p38" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
@@ -468,6 +477,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ qcomCache /*, TODO */ });
     device->setDataBlockDevs({ qcomData /*, TODO */ });
     device->setBootBlockDevs({ qcomBoot /*, TODO */ });
+    device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 }
 
