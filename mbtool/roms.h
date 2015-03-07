@@ -44,5 +44,6 @@ bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms);
 bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms);
 std::shared_ptr<Rom> mb_find_rom_by_id(std::vector<std::shared_ptr<Rom>> *roms,
                                        const std::string &id);
+std::shared_ptr<Rom> mb_get_current_rom();
 
 }

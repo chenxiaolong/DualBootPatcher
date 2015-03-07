@@ -26,6 +26,7 @@
 #include <cppformat/format.h>
 
 #include "util/logging.h"
+#include "util/properties.h"
 
 #define SYSTEM "/system"
 #define CACHE "/cache"
@@ -103,7 +104,7 @@ bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms)
         raw_bp_path_old.insert(1, "raw-");
         raw_bp_path_old += "/build.prop";
 
-        // New style: /system -> /raw-system, etc.
+        // New style: /system -> /raw/system, etc.
         std::string raw_bp_path_new("/raw");
         raw_bp_path_new += rom->system_path;
         raw_bp_path_new += "/build.prop";
@@ -136,6 +137,56 @@ std::shared_ptr<Rom> mb_find_rom_by_id(std::vector<std::shared_ptr<Rom>> *roms,
     for (auto r : *roms) {
         if (r->id == id) {
             return r;
+        }
+    }
+
+    return std::shared_ptr<Rom>();
+}
+
+std::shared_ptr<Rom> mb_get_current_rom()
+{
+    std::vector<std::shared_ptr<Rom>> roms;
+    mb_roms_add_installed(&roms);
+
+    // This is set if mbtool is handling the boot process
+    std::string prop_id;
+    util::get_property("ro.multiboot.romid", &prop_id, std::string());
+
+    if (!prop_id.empty()) {
+        auto rom = mb_find_rom_by_id(&roms, prop_id);
+        if (rom) {
+            return rom;
+        }
+    }
+
+    // If /raw/ or /raw-system/ does not exist, then this is an unpatched
+    // primary ROM
+    struct stat sb;
+    bool has_raw = stat("/raw", &sb) == 0;
+    bool has_raw_system = stat("/raw-system", &sb) == 0;
+    if (!has_raw && !has_raw_system) {
+        // Cache the result
+        util::set_property("ro.multiboot.romid", "primary");
+
+        return mb_find_rom_by_id(&roms, "primary");
+    }
+
+    // Otherwise, iterate through the installed ROMs
+
+    if (stat("/system/build.prop", &sb) == 0) {
+        for (auto rom : roms) {
+            std::string build_prop(rom->system_path);
+            build_prop += "/build.prop";
+
+            struct stat sb2;
+            if (stat(build_prop.c_str(), &sb2) == 0
+                    && sb.st_dev == sb2.st_dev
+                    && sb.st_ino == sb2.st_ino) {
+                // Cache the result
+                util::set_property("ro.multiboot.romid", rom->id);
+
+                return rom;
+            }
         }
     }
 
