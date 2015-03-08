@@ -216,24 +216,30 @@ void RecoveryInstaller::display_msg(const std::string &msg)
 
 std::string RecoveryInstaller::get_install_type()
 {
-    // Choose install type
-    if (!run_aroma_selection()) {
-        display_msg("Failed to run AROMA");
-        return std::string();
+    if (_prop.find("mbtool.installer.install-location") != _prop.end()) {
+        std::string location = _prop["mbtool.installer.install-location"];
+        display_msg("Automated installation to " + location);
+        return location;
+    } else {
+        // Choose install type
+        if (!run_aroma_selection()) {
+            display_msg("Failed to run AROMA");
+            return std::string();
+        }
+
+        std::string install_type;
+
+        if (!util::file_first_line(in_chroot("/mb/installtype"), &install_type)) {
+            display_msg("Failed to determine install type");
+            return std::string();
+        }
+
+        if (install_type == "cancelled") {
+            return CANCELLED;
+        }
+
+        return install_type;
     }
-
-    std::string install_type;
-
-    if (!util::file_first_line(in_chroot("/mb/installtype"), &install_type)) {
-        display_msg("Failed to determine install type");
-        return std::string();
-    }
-
-    if (install_type == "cancelled") {
-        return CANCELLED;
-    }
-
-    return install_type;
 }
 
 Installer::ProceedState RecoveryInstaller::on_initialize()

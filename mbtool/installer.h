@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "roms.h"
 #include "util/hash.h"
@@ -43,7 +44,7 @@ protected:
     static const std::string MULTIBOOT_UNZIP;
     static const std::string MULTIBOOT_AROMA;
     static const std::string MULTIBOOT_BBWRAPPER;
-    static const std::string MULTIBOOT_DEVICE;
+    static const std::string MULTIBOOT_INFO_PROP;
     static const std::string TEMP_SYSTEM_IMAGE;
     static const std::string CANCELLED;
 
@@ -77,6 +78,8 @@ protected:
     std::string _recovery_block_dev;
     unsigned char _boot_hash[SHA_DIGEST_SIZE];
     std::shared_ptr<Rom> _rom;
+
+    std::unordered_map<std::string, std::string> _prop;
 
     bool _has_block_image;
     bool _is_aroma;

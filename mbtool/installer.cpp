@@ -26,6 +26,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+// cppformat
+#include "external/cppformat/format.h"
+
 // libmbp
 #include <libmbp/bootimage.h>
 #include <libmbp/patcherconfig.h>
@@ -69,7 +72,7 @@ const std::string Installer::UPDATE_BINARY =
 const std::string Installer::MULTIBOOT_UNZIP = "multiboot/unzip";
 const std::string Installer::MULTIBOOT_AROMA = "multiboot/aromawrapper.zip";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
-const std::string Installer::MULTIBOOT_DEVICE = "multiboot/device";
+const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
 const std::string Installer::CANCELLED = "cancelled";
 
@@ -329,7 +332,7 @@ bool Installer::extract_multiboot_files()
         { MULTIBOOT_UNZIP,          _temp + "/unzip"            },
         { MULTIBOOT_AROMA,          _temp + "/aromawrapper.zip" },
         { MULTIBOOT_BBWRAPPER,      _temp + "/bb-wrapper.sh"    },
-        { MULTIBOOT_DEVICE,         _temp + "/device"           }
+        { MULTIBOOT_INFO_PROP,      _temp + "/info.prop"        }
     };
 
     if (!util::extract_files2(_zip_file, files)) {
@@ -701,6 +704,12 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
         return ProceedState::Fail;
     }
 
+    // Load info.prop
+    if (!util::file_get_all_properties(_temp + "/info.prop", &_prop)) {
+        display_msg("Failed to read multiboot/info.prop");
+        return ProceedState::Fail;
+    }
+
     return ProceedState::Continue;
 }
 
@@ -715,11 +724,12 @@ Installer::ProceedState Installer::install_stage_check_device()
     std::string prop_build_product;
 
     // Verify device
-    if (!util::file_first_line(_temp + "/device", &_device)) {
-        LOGE("Failed to read {}/device", _temp);
-        display_msg("Failed to determine target device");
+    if (_prop.find("mbtool.installer.device") == _prop.end()) {
+        display_msg("info.prop missing mbtool.installer.device");
         return ProceedState::Fail;
     }
+
+    _device = _prop["mbtool.installer.device"];
 
     util::get_property("ro.product.device", &prop_product_device, "");
     util::get_property("ro.build.product", &prop_build_product, "");
@@ -727,6 +737,13 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = {}", prop_product_device);
     LOGD("ro.build.product = {}", prop_build_product);
     LOGD("Target device = {}", _device);
+
+    // Check if we should skip the codename check
+    bool skip_codename_check = false;
+    if (_prop.find("mbtool.installer.ignore-codename") != _prop.end()
+            && _prop["mbtool.installer.ignore-codename"] == "true") {
+        skip_codename_check = true;
+    }
 
 
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
@@ -744,21 +761,25 @@ Installer::ProceedState Installer::install_stage_check_device()
         found_device = true;
 
         // Verify codename
-        auto codenames = d->codenames();
-        auto it = std::find_if(codenames.begin(), codenames.end(),
-                               [&](const std::string &codename) {
-            return prop_product_device.find(codename) != std::string::npos
-                    || prop_build_product.find(codename) != std::string::npos;
-        });
+        if (skip_codename_check) {
+            display_msg("Skipping device check as requested by info.prop");
+        } else {
+            auto codenames = d->codenames();
+            auto it = std::find_if(codenames.begin(), codenames.end(),
+                                   [&](const std::string &codename) {
+                return prop_product_device.find(codename) != std::string::npos
+                        || prop_build_product.find(codename) != std::string::npos;
+            });
 
-        if (it == codenames.end()) {
-            display_msg("Patched zip is for:");
-            for (const std::string &codename : d->codenames()) {
-                display_msg(fmt::format("- {}", codename));
+            if (it == codenames.end()) {
+                display_msg("Patched zip is for:");
+                for (const std::string &codename : d->codenames()) {
+                    display_msg(fmt::format("- {}", codename));
+                }
+                display_msg(fmt::format("This device is '{}'", prop_product_device));
+
+                return ProceedState::Fail;
             }
-            display_msg(fmt::format("This device is '{}'", prop_product_device));
-
-            return ProceedState::Fail;
         }
 
         // Copy boot partition block devices to the chroot
