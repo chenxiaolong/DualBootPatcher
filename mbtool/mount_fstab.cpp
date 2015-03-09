@@ -54,17 +54,6 @@ namespace mb
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
-struct FindByFsType {
-    const std::string _fs_type;
-
-    FindByFsType(std::string fs_type) : _fs_type(std::move(fs_type)) {
-    }
-
-    bool operator()(const util::fstab_rec *rec) const {
-        return rec->fs_type == _fs_type;
-    }
-};
-
 static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
                                  const std::vector<util::fstab_rec *> flags,
                                  const std::string &mount_point)
