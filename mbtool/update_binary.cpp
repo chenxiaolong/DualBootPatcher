@@ -275,7 +275,7 @@ void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
             LOGE("{}: Failed to chmod: {}", log_file, strerror(errno));
         }
 
-        if (util::chown(log_file, "media_rw", "media_rw", 0)) {
+        if (!util::chown(log_file, "media_rw", "media_rw", 0)) {
             LOGE("{}: Failed to chown: {}", log_file, strerror(errno));
             if (chown(log_file, 1023, 1023) < 0) {
                 LOGE("{}: Failed to chown: {}", log_file, strerror(errno));
