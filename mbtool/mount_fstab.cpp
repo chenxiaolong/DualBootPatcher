@@ -54,27 +54,40 @@ namespace mb
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
-static bool create_dir_and_mount(struct util::fstab_rec *rec,
-                                 struct util::fstab_rec *flags_from_rec,
+struct FindByFsType {
+    const std::string _fs_type;
+
+    FindByFsType(std::string fs_type) : _fs_type(std::move(fs_type)) {
+    }
+
+    bool operator()(const util::fstab_rec *rec) const {
+        return rec->fs_type == _fs_type;
+    }
+};
+
+static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
+                                 const std::vector<util::fstab_rec *> flags,
                                  const std::string &mount_point)
 {
-    struct stat st;
-    int ret;
-    mode_t perms;
-
-    if (!rec) {
+    if (recs.empty() || flags.empty()) {
         return false;
     }
 
-    if (stat(rec->mount_point.c_str(), &st) == 0) {
-        perms = st.st_mode & 0xfff;
+    LOGD("{:d} fstab entries for {}", recs.size(), recs[0]->mount_point);
+
+    // Copy permissions of the original mountpoint directory if it exists
+    struct stat sb;
+    mode_t perms;
+
+    if (stat(recs[0]->mount_point.c_str(), &sb) == 0) {
+        perms = sb.st_mode & 0xfff;
     } else {
         LOGW("{} found in fstab, but {} does not exist",
-             rec->mount_point, rec->mount_point);
+             recs[0]->mount_point, recs[0]->mount_point);
         perms = 0771;
     }
 
-    if (stat(mount_point.c_str(), &st) == 0) {
+    if (stat(mount_point.c_str(), &sb) == 0) {
         if (chmod(mount_point.c_str(), perms) < 0) {
             LOGE("Failed to chmod {}: {}", mount_point, strerror(errno));
             return false;
@@ -86,18 +99,39 @@ static bool create_dir_and_mount(struct util::fstab_rec *rec,
         }
     }
 
-    ret = mount(rec->blk_device.c_str(),
-                mount_point.c_str(),
-                rec->fs_type.c_str(),
-                flags_from_rec->flags,
-                flags_from_rec->fs_options.c_str());
-    if (ret < 0) {
-        LOGE("Failed to mount {} at {}: {}",
-             rec->blk_device, mount_point, strerror(errno));
-        return false;
+    // Try mounting each until we find one that works
+    for (util::fstab_rec *rec : recs) {
+        LOGD("Attempting to mount {} ({}) at {}",
+             rec->blk_device, rec->fs_type, mount_point);
+
+        // Find flags with a matching filesystem
+        auto it = std::find_if(flags.begin(), flags.end(),
+                [&rec](const util::fstab_rec *frec) {
+                    return frec->fs_type == rec->fs_type;
+                });
+        if (it == flags.end()) {
+            LOGE("Failed to find matching fstab record in flags list");
+            continue;
+        }
+
+        // Try mounting
+        int ret = mount(rec->blk_device.c_str(),
+                        mount_point.c_str(),
+                        rec->fs_type.c_str(),
+                        (*it)->flags,
+                        (*it)->fs_options.c_str());
+        if (ret < 0) {
+            LOGE("Failed to mount {} ({}) at {}: {}",
+                 rec->blk_device, rec->fs_type, mount_point, strerror(errno));
+            continue;
+        } else {
+            LOGE("Successfully mounted {} ({}) at {}",
+                 rec->blk_device, rec->fs_type, mount_point);
+            return true;
+        }
     }
 
-    return true;
+    return false;
 }
 
 static unsigned long get_api_version(void)
@@ -121,12 +155,12 @@ bool mount_fstab(const std::string &fstab_path)
     bool ret = true;
 
     std::vector<util::fstab_rec> fstab;
-    struct util::fstab_rec *rec_system = nullptr;
-    struct util::fstab_rec *rec_cache = nullptr;
-    struct util::fstab_rec *rec_data = nullptr;
-    struct util::fstab_rec *flags_system = nullptr;
-    struct util::fstab_rec *flags_cache = nullptr;
-    struct util::fstab_rec *flags_data = nullptr;
+    std::vector<util::fstab_rec *> recs_system;
+    std::vector<util::fstab_rec *> recs_cache;
+    std::vector<util::fstab_rec *> recs_data;
+    std::vector<util::fstab_rec *> flags_system;
+    std::vector<util::fstab_rec *> flags_cache;
+    std::vector<util::fstab_rec *> flags_data;
     std::string target_system;
     std::string target_cache;
     std::string target_data;
@@ -202,11 +236,11 @@ bool mount_fstab(const std::string &fstab_path)
 
     for (util::fstab_rec &rec : fstab) {
         if (rec.mount_point == "/system") {
-            rec_system = &rec;
+            recs_system.push_back(&rec);
         } else if (rec.mount_point == "/cache") {
-            rec_cache = &rec;
+            recs_cache.push_back(&rec);
         } else if (rec.mount_point == "/data") {
-            rec_data = &rec;
+            recs_data.push_back(&rec);
         } else {
             std::fprintf(out.get(), "%s\n", rec.orig_line.c_str());
         }
@@ -217,7 +251,7 @@ bool mount_fstab(const std::string &fstab_path)
     // /system and /data are always in the fstab. The patcher should create
     // an entry for /cache for the ROMs that mount it manually in one of the
     // init scripts
-    if (!rec_system || !rec_cache || !rec_data) {
+    if (recs_system.empty() || recs_cache.empty() || recs_data.empty()) {
         LOGE("fstab does not contain all of /system, /cache, and /data!");
         return false;
     }
@@ -247,33 +281,33 @@ bool mount_fstab(const std::string &fstab_path)
     // reside on the same partition.
 
     if (util::starts_with(rom->system_path, "/cache")) {
-        flags_system = rec_cache;
+        flags_system = recs_cache;
     } else {
-        flags_system = rec_system;
+        flags_system = recs_system;
     }
 
     if (util::starts_with(rom->cache_path, "/system")) {
-        flags_cache = rec_system;
+        flags_cache = recs_system;
     } else {
-        flags_cache = rec_cache;
+        flags_cache = recs_cache;
     }
 
-    flags_data = rec_data;
+    flags_data = recs_data;
 
     if (mkdir("/raw", 0755) < 0) {
         LOGE("Failed to create /raw");
         return false;
     }
 
-    if (!create_dir_and_mount(rec_system, flags_system, "/raw/system")) {
+    if (!create_dir_and_mount(recs_system, flags_system, "/raw/system")) {
         LOGE("Failed to mount /raw/system");
         return false;
     }
-    if (!create_dir_and_mount(rec_cache, flags_cache, "/raw/cache")) {
+    if (!create_dir_and_mount(recs_cache, flags_cache, "/raw/cache")) {
         LOGE("Failed to mount /raw/cache");
         return false;
     }
-    if (!create_dir_and_mount(rec_data, flags_data, "/raw/data")) {
+    if (!create_dir_and_mount(recs_data, flags_data, "/raw/data")) {
         LOGE("Failed to mount /raw/data");
         return false;
     }
