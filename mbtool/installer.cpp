@@ -395,13 +395,13 @@ bool Installer::set_up_busybox_wrapper()
 }
 
 /*!
- * \brief Create 3G temporary ext4 image
+ * \brief Create 4G temporary ext4 image
  *
  * \param path Image file path
  */
 bool Installer::create_temporary_image(const std::string &path)
 {
-    static const char *image_size = "3G";
+    static const char *image_size = "4G";
 
     remove(path.c_str());
 
@@ -444,15 +444,15 @@ bool Installer::create_temporary_image(const std::string &path)
 bool Installer::system_image_copy(const std::string &source,
                                   const std::string &image, bool reverse)
 {
-    std::string temp_image(_temp);
-    temp_image += "/.system.tmp";
+    std::string temp_mnt(_temp);
+    temp_mnt += "/.system.tmp";
 
     struct stat sb;
     std::string loopdev;
 
     auto done = util::finally([&] {
         if (!loopdev.empty()) {
-            umount(temp_image.c_str());
+            umount(temp_mnt.c_str());
             util::loopdev_remove_device(loopdev);
         }
     });
@@ -463,9 +463,9 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (stat(temp_image.c_str(), &sb) < 0
-            && mkdir(temp_image.c_str(), 0755) < 0) {
-        LOGE("Failed to create {}: {}", temp_image, strerror(errno));
+    if (stat(temp_mnt.c_str(), &sb) < 0
+            && mkdir(temp_mnt.c_str(), 0755) < 0) {
+        LOGE("Failed to create {}: {}", temp_mnt, strerror(errno));
         return false;
     }
 
@@ -480,27 +480,27 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (mount(loopdev.c_str(), temp_image.c_str(), "ext4", 0, "") < 0) {
+    if (mount(loopdev.c_str(), temp_mnt.c_str(), "ext4", 0, "") < 0) {
         LOGE("Failed to mount {}: {}", loopdev, strerror(errno));
         return false;
     }
 
     if (reverse) {
-        if (!copy_system(temp_image, source)) {
+        if (!copy_system(temp_mnt, source)) {
             LOGE("Failed to copy system files from {} to {}",
-                 temp_image, source);
+                 temp_mnt, source);
             return false;
         }
     } else {
-        if (!copy_system(source, temp_image)) {
+        if (!copy_system(source, temp_mnt)) {
             LOGE("Failed to copy system files from {} to {}",
-                 source, temp_image);
+                 source, temp_mnt);
             return false;
         }
     }
 
-    if (umount(temp_image.c_str()) < 0) {
-        LOGE("Failed to unmount {}: {}", temp_image, strerror(errno));
+    if (umount(temp_mnt.c_str()) < 0) {
+        LOGE("Failed to unmount {}: {}", temp_mnt, strerror(errno));
         return false;
     }
 
