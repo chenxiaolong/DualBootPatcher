@@ -230,13 +230,13 @@ bool selinux_add_rule(policydb_t *pdb,
 bool selinux_set_context(const std::string &path, const std::string &context)
 {
     return setxattr(path.c_str(), "security.selinux",
-                    context.c_str(), context.size() + 1, 0);
+                    context.c_str(), context.size() + 1, 0) == 0;
 }
 
 bool selinux_lset_context(const std::string &path, const std::string &context)
 {
     return lsetxattr(path.c_str(), "security.selinux",
-                     context.c_str(), context.size() + 1, 0);
+                     context.c_str(), context.size() + 1, 0) == 0;
 }
 
 bool selinux_get_enforcing(int *value)
