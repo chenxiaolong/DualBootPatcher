@@ -805,6 +805,19 @@ std::string MultiBootPatcher::Impl::createInfoProp()
 "# values may lead to unexpected behavior when this zip file is installed.\n"
 "\n"
 "\n"
+"# mbtool.installer.version\n"
+"# ------------------------\n"
+"# This field is the version of libmbp and mbtool used to patch and install this\n"
+"# file, respectively.\n"
+"#\n";
+
+    out += "mbtool.installer.version=";
+    out += pc->version();
+    out += "\n";
+
+    out +=
+"\n"
+"\n"
 "# mbtool.installer.device\n"
 "# -----------------------\n"
 "# This field specifies the target device for this zip file. Based on the value,\n"
