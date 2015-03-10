@@ -370,7 +370,10 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 4
     device = new Device();
     device->setId("jflte");
-    device->setCodenames({ "jflte" });
+    device->setCodenames({ "jactivelte", "jflte", "jflteatt", "jfltecan",
+                           "jfltecri", "jfltecsp", "jfltespr", "jfltetmo",
+                           "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
+                           "jftddxx" });
     device->setName("Samsung Galaxy S 4");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p16" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
@@ -383,7 +386,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 5
     device = new Device();
     device->setId("klte");
-    device->setCodenames({ "klte" });
+    device->setCodenames({ "klte", "kltedv", "kltespr", "klteusc", "kltevzw" });
     device->setName("Samsung Galaxy S 5");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
@@ -395,7 +398,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Note 3
     device = new Device();
     device->setId("hlte");
-    device->setCodenames({ "hlte" });
+    device->setCodenames({ "hlte", "hltespr", "hltetmo", "hlteusc",
+                           "hltevzw" });
     device->setName("Samsung Galaxy Note 3");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
@@ -407,12 +411,14 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Note 4
     device = new Device();
     device->setId("trlte");
-    device->setCodenames({ "trltetmo", "trltexx" });
+    device->setCodenames({ "trlte", "trltecan", "trltespr", "trltetmo",
+                           "trlteusc", "trltexx" });
     device->setName("Samsung Galaxy Note 4");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p25" });
     // Shouldn't be an issue as long as ROMs don't touch the "hidden" partition
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26", "/dev/block/mmcblk0p27" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26",
+                               "/dev/block/mmcblk0p27" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
     device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
@@ -471,7 +477,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Falcon
     device = new Device();
     device->setId("falcon");
-    device->setCodenames({ "falcon" });
+    device->setCodenames({ "falcon", "falcon_umts" });
     device->setName("Motorola Moto G");
     device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
     device->setCacheBlockDevs({ qcomCache /*, TODO */ });
