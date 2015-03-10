@@ -767,8 +767,8 @@ Installer::ProceedState Installer::install_stage_check_device()
             auto codenames = d->codenames();
             auto it = std::find_if(codenames.begin(), codenames.end(),
                                    [&](const std::string &codename) {
-                return prop_product_device.find(codename) != std::string::npos
-                        || prop_build_product.find(codename) != std::string::npos;
+                return prop_product_device == codename
+                        || prop_build_product == codename;
             });
 
             if (it == codenames.end()) {
