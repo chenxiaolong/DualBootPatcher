@@ -51,6 +51,7 @@ public class MbtoolSocket {
 
     private static final String V1_COMMAND_VERSION = "VERSION";
     private static final String V1_COMMAND_LIST_ROMS = "LIST_ROMS";
+    private static final String V1_COMMAND_LIST_BUILTIN_ROM_IDS = "LIST_BUILTIN_ROM_IDS";
     private static final String V1_COMMAND_CURRENT_ROM = "CURRENT_ROM";
     private static final String V1_COMMAND_CHOOSE_ROM = "CHOOSE_ROM";
     private static final String V1_COMMAND_SET_KERNEL = "SET_KERNEL";
@@ -271,6 +272,23 @@ public class MbtoolSocket {
             SocketUtils.readString(mSocketIS);
 
             return roms;
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        }
+
+        return null;
+    }
+
+    public String[] getBuiltinRomIds(Context context) {
+        if (!connect(context)) {
+            return null;
+        }
+
+        try {
+            sendCommand(V1_COMMAND_LIST_BUILTIN_ROM_IDS);
+
+            return SocketUtils.readStringArray(mSocketIS);
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
