@@ -82,7 +82,7 @@ public class PatcherUtils {
         Device device = null;
         for (Device d : pc.getDevices()) {
             for (String codename : d.getCodenames()) {
-                if (Build.DEVICE.contains(codename)) {
+                if (Build.DEVICE.equals(codename)) {
                     device = d;
                     break;
                 }

@@ -35,7 +35,7 @@ public class SwitcherUtils {
             boolean matches = false;
 
             for (String codename : d.getCodenames()) {
-                if (Build.DEVICE.contains(codename)) {
+                if (Build.DEVICE.equals(codename)) {
                     matches = true;
                     break;
                 }
