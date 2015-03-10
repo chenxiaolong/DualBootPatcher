@@ -38,8 +38,8 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.AppInformation;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.LoaderListener;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppListLoaderFragment.RomInfoResult;
-import com.nhaarman.listviewanimations.swinginadapters.AnimationAdapter;
-import com.nhaarman.listviewanimations.swinginadapters.prepared.AlphaInAnimationAdapter;
+import com.nhaarman.listviewanimations.appearance.AnimationAdapter;
+import com.nhaarman.listviewanimations.appearance.simple.AlphaInAnimationAdapter;
 
 import java.util.ArrayList;
 
