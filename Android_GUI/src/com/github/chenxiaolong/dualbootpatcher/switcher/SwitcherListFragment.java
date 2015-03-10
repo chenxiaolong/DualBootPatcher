@@ -395,11 +395,13 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                         public void onPositive(MaterialDialog dialog) {
                             EditText et = (EditText) dialog.findViewById(R.id.edittext);
                             String newName = et.getText().toString().trim();
+
                             if (newName.isEmpty()) {
-                                return;
+                                mSelectedRom.setName(null);
+                            } else {
+                                mSelectedRom.setName(newName);
                             }
 
-                            mSelectedRom.setName(newName);
                             new Thread() {
                                 @Override
                                 public void run() {
