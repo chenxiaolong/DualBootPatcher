@@ -43,6 +43,7 @@ public class RomUtils {
     private static final String TAG = RomUtils.class.getSimpleName();
 
     private static RomInformation[] mRoms;
+    private static RomInformation[] mBuiltinRoms;
 
     public static final String UNKNOWN_ID = "unknown";
     public static final String PRIMARY_ID = "primary";
@@ -262,6 +263,24 @@ public class RomUtils {
         }
 
         return mRoms;
+    }
+
+    public static RomInformation[] getBuiltinRoms(Context context) {
+        if (mBuiltinRoms == null) {
+            String[] ids = MbtoolSocket.getInstance().getBuiltinRomIds(context);
+
+            if (ids != null) {
+                mBuiltinRoms = new RomInformation[ids.length];
+                for (int i = 0; i < ids.length; i++) {
+                    RomInformation rom = new RomInformation();
+                    rom.setId(ids[i]);
+                    rom.setDefaultName(getDefaultName(context, rom));
+                    mBuiltinRoms[i] = rom;
+                }
+            }
+        }
+
+        return mBuiltinRoms;
     }
 
     public static void loadConfig(RomInformation info) {
