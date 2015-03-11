@@ -96,7 +96,7 @@ void get_property(const std::string &name,
     if (len == 0) {
         *value_out = default_value;
     } else {
-        value_out->assign(value.begin(), value.end());
+        *value_out = value.data();
     }
 }
 
