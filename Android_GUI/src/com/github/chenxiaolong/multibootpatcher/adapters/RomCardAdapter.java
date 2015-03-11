@@ -194,20 +194,20 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
     }
 
     private interface RomCardClickListener {
-        public void onCardClick(View view, int position);
+        void onCardClick(View view, int position);
 
-        public void onCardPopupClick(View view, int position, MenuItem item);
+        void onCardPopupClick(View view, int position, MenuItem item);
     }
 
     public interface RomCardActionListener {
-        public void onSelectedRom(RomInformation info);
+        void onSelectedRom(RomInformation info);
 
-        public void onSelectedSetKernel(RomInformation info);
+        void onSelectedSetKernel(RomInformation info);
 
-        public void onSelectedEditName(RomInformation info);
+        void onSelectedEditName(RomInformation info);
 
-        public void onSelectedChangeImage(RomInformation info);
+        void onSelectedChangeImage(RomInformation info);
 
-        public void onSelectedResetImage(RomInformation info);
+        void onSelectedResetImage(RomInformation info);
     }
 }
