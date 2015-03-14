@@ -19,3 +19,6 @@
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = https://github.com/zeux/pugixml.git
+[submodule "external/Android-Terminal-Emulator"]
+	path = external/Android-Terminal-Emulator
+	url = https://github.com/chenxiaolong/Android-Terminal-Emulator.git
