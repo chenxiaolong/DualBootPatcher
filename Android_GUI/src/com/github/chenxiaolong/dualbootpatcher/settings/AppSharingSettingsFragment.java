@@ -43,6 +43,7 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingSettingsFragment.NeededInfo;
 import com.github.chenxiaolong.multibootpatcher.Version;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
 
 public class AppSharingSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener, OnDismissListener,
@@ -274,7 +275,7 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
             mResult.currentRom = RomUtils.getCurrentRom(getContext());
             mResult.mbtoolVersion = MbtoolUtils.getSystemMbtoolVersion(getContext());
             mResult.haveRequiredVersion = mResult.mbtoolVersion.compareTo(
-                    MbtoolUtils.getMinimumRequiredVersion()) >= 0;
+                    MbtoolUtils.getMinimumRequiredVersion(Feature.APP_SHARING)) >= 0;
             return mResult;
         }
     }

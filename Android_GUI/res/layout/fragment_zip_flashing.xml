@@ -22,18 +22,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <include
-        android:id="@+id/card_error"
-        layout="@layout/card_v7_mbtool_connect_fail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/card_outside_side_padding"
-        android:layout_marginRight="@dimen/card_outside_side_padding" />
-
-    <android.support.v7.widget.RecyclerView
+    <com.nhaarman.listviewanimations.itemmanipulation.DynamicListView
         android:id="@+id/card_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:divider="@null"
+        android:dividerHeight="0dp"
         android:paddingLeft="@dimen/card_outside_side_padding"
         android:paddingRight="@dimen/card_outside_side_padding" />
 
@@ -44,8 +38,8 @@
         android:layout_centerInParent="true"
         android:indeterminate="true" />
 
-    <com.getbase.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_flash_zip"
+    <com.getbase.floatingactionbutton.AddFloatingActionButton
+        android:id="@+id/fab_add_zip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -54,6 +48,5 @@
         android:layout_marginEnd="@dimen/fab_margin_end"
         fab:fab_colorNormal="@color/fab_pink"
         fab:fab_colorPressed="@color/fab_pink_pressed"
-        fab:fab_icon="@drawable/ic_system_update_white_48dp"
         fab:fab_plusIconColor="@color/fab_pink_plus" />
 </RelativeLayout>

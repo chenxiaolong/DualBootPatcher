@@ -125,6 +125,36 @@
     <string name="rename_rom_desc">Enter a new name for %s. Leave blank to use the
         default name.</string>
 
+    <!-- ZIP flash activity title -->
+    <string name="zip_flashing_title">Flash ZIP files</string>
+    <!-- Title of pending action card for installing a zip file -->
+    <string name="zip_flashing_install_zip">Install zip file</string>
+    <!-- Subtitle text in pending action card showing the selected filename -->
+    <string name="zip_flashing_zip_file">Zip file: %s</string>
+    <!-- Subtitle text in pending action card showing the installation location -->
+    <string name="zip_flashing_location">Location: %s</string>
+    <!-- Title shown in dialog asking for the installation location of a zip file -->
+    <string name="zip_flashing_dialog_installation_location">Installation location:</string>
+    <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
+    <string name="zip_flashing_dialog_verifying_zip">Verifying zip</string>
+    <!-- Error message shown when the selected zip file is not found -->
+    <string name="zip_flashing_error_zip_not_found">The selected zip file was not found.</string>
+    <!-- Error message shown when the selected zip file could not be read -->
+    <string name="zip_flashing_error_zip_read_fail">Could not read the selected zip file.</string>
+    <!-- Error message shown when the selected zip file isn't patched -->
+    <string name="zip_flashing_error_not_multiboot">The zip file doesn\'t appear to be patched for
+        multiboot. Please patch the file before flashing it.</string>
+    <!-- Error message shown when the selected zip file was patched with an old version of the patcher -->
+    <string name="zip_flashing_error_version_too_old">The zip file needs to be patched with %s or
+        newer in order to use in-app flashing.</string>
+    <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
+    <string name="zip_flashing_error_no_overwrite_rom">To prevent the current system from crashing
+        or rebooting, flashing a zip on top of the current ROM is not allowed.</string>
+    <!-- Message shown in the first-use dialog for zip flashing -->
+    <string name="zip_flashing_dialog_first_use">To flash a zip file using in-app flashing, just
+        add the patched zip file by tapping big plus icon.\n\nNOTE: This feature is still
+        experimental. Please backup before continuing!</string>
+
     <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>
 

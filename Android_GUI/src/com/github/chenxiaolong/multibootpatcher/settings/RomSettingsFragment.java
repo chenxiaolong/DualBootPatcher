@@ -41,6 +41,7 @@ import com.github.chenxiaolong.multibootpatcher.Version;
 import com.github.chenxiaolong.multibootpatcher.settings.RomSettingsEventCollector
         .UpdatedRamdiskEvent;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceClickListener,
         OnDismissListener, EventCollectorListener, LoaderManager.LoaderCallbacks<Version> {
@@ -276,7 +277,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
     @Override
     public void onLoadFinished(Loader<Version> versionLoader, Version version) {
-        if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion()) >= 0) {
+        if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON)) >= 0) {
             //bootingCategory.removePreference(updateRamdisk);
             getPreferenceScreen().removePreference(mBootingCategory);
         }

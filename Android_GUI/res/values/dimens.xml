@@ -80,4 +80,8 @@
     <dimen name="card_expand_padding_horiz">8dp</dimen>
     <dimen name="card_expand_padding_vert">5dp</dimen>
 
+    <!-- Floating action button -->
+    <dimen name="fab_margin_bottom">8dp</dimen>
+    <dimen name="fab_margin_end">8dp</dimen>
+
 </resources>

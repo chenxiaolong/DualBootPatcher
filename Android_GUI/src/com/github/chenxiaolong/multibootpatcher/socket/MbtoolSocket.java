@@ -28,7 +28,9 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.multibootpatcher.Version;
+import com.github.chenxiaolong.multibootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
 
 import org.apache.commons.io.IOUtils;
 
@@ -121,8 +123,14 @@ public class MbtoolSocket {
             throw new IOException("Could not determine mbtool version");
         }
 
-        Version v1 = new Version(mMbtoolVersion);
-        Version v2 = MbtoolUtils.getMinimumRequiredVersion();
+        Version v1;
+        Version v2 = MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON);
+
+        try {
+            v1 = new Version(mMbtoolVersion);
+        } catch (VersionParseException e) {
+            throw new IOException("Invalid version number: " + mMbtoolVersion);
+        }
 
         Log.v(TAG, "mbtool version: " + v1);
         Log.v(TAG, "minimum version: " + v2);
@@ -184,6 +192,7 @@ public class MbtoolSocket {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean executeMbtool(Context context) {
         PatcherUtils.extractPatcher(context);
         String abi;
@@ -545,6 +554,7 @@ public class MbtoolSocket {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class OpenFlags {
         public static final String APPEND = "APPEND";
         public static final String CREAT = "CREAT";

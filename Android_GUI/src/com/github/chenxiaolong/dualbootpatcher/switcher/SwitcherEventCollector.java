@@ -24,6 +24,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
+import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
 import com.github.chenxiaolong.multibootpatcher.EventCollector;
 
 public class SwitcherEventCollector extends EventCollector {
@@ -49,6 +51,20 @@ public class SwitcherEventCollector extends EventCollector {
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
 
                     sendEvent(new SetKernelEvent(failed, kernelId));
+                } else if (SwitcherService.STATE_VERIFIED_ZIP.equals(state)) {
+                    VerificationResult result = (VerificationResult) bundle.getSerializable(
+                            SwitcherService.RESULT_VERIFY_ZIP);
+
+                    sendEvent(new VerifiedZipEvent(result));
+                } else if (SwitcherService.STATE_FLASHED_ZIPS.equals(state)) {
+                    int totalActions = bundle.getInt(SwitcherService.RESULT_TOTAL_ACTIONS);
+                    int failedActions = bundle.getInt(SwitcherService.RESULT_FAILED_ACTIONS);
+
+                    sendEvent(new FlashedZipsEvent(totalActions, failedActions));
+                } else if (SwitcherService.STATE_COMMAND_OUTPUT_DATA.equals(state)) {
+                    String line = bundle.getString(SwitcherService.RESULT_OUTPUT_DATA);
+
+                    sendEvent(new NewOutputEvent(line));
                 }
             }
         }
@@ -57,11 +73,7 @@ public class SwitcherEventCollector extends EventCollector {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        if (mContext == null) {
-            mContext = getActivity().getApplicationContext();
-            mContext.registerReceiver(mReceiver, new IntentFilter(
-                    SwitcherService.BROADCAST_INTENT));
-        }
+        setApplicationContext(activity);
     }
 
     @Override
@@ -69,6 +81,14 @@ public class SwitcherEventCollector extends EventCollector {
         super.onDestroy();
         if (mContext != null) {
             mContext.unregisterReceiver(mReceiver);
+        }
+    }
+
+    public void setApplicationContext(Context context) {
+        if (mContext == null) {
+            mContext = context.getApplicationContext();
+            mContext.registerReceiver(mReceiver, new IntentFilter(
+                    SwitcherService.BROADCAST_INTENT));
         }
     }
 
@@ -85,6 +105,20 @@ public class SwitcherEventCollector extends EventCollector {
         Intent intent = new Intent(mContext, SwitcherService.class);
         intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_SET_KERNEL);
         intent.putExtra(SwitcherService.PARAM_KERNEL_ID, kernelId);
+        mContext.startService(intent);
+    }
+
+    public void verifyZip(String zipFile) {
+        Intent intent = new Intent(mContext, SwitcherService.class);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_VERIFY_ZIP);
+        intent.putExtra(SwitcherService.PARAM_ZIP_FILE, zipFile);
+        mContext.startService(intent);
+    }
+
+    public void flashZips(PendingAction[] actions) {
+        Intent intent = new Intent(mContext, SwitcherService.class);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_FLASH_ZIPS);
+        intent.putExtra(SwitcherService.PARAM_PENDING_ACTIONS, actions);
         mContext.startService(intent);
     }
 
@@ -107,6 +141,32 @@ public class SwitcherEventCollector extends EventCollector {
         public SetKernelEvent(boolean failed, String kernelId) {
             this.failed = failed;
             this.kernelId = kernelId;
+        }
+    }
+
+    public class VerifiedZipEvent extends BaseEvent {
+        VerificationResult result;
+
+        public VerifiedZipEvent(VerificationResult result) {
+            this.result = result;
+        }
+    }
+
+    public class FlashedZipsEvent extends BaseEvent {
+        int totalActions;
+        int failedActions;
+
+        public FlashedZipsEvent(int totalActions, int failedActions) {
+            this.totalActions = totalActions;
+            this.failedActions = failedActions;
+        }
+    }
+
+    public class NewOutputEvent extends BaseEvent {
+        String data;
+
+        public NewOutputEvent(String data) {
+            this.data = data;
         }
     }
 }

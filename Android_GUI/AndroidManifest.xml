@@ -54,6 +54,14 @@
             android:name=".settings.AppListActivity"
             android:label="@string/a_s_settings_indiv_app_sharing_title"
             android:parentActivityName=".settings.AppSharingSettingsActivity" />
+        <activity
+            android:name=".switcher.ZipFlashingActivity"
+            android:label="@string/zip_flashing_title"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".switcher.ZipFlashingOutputActivity"
+            android:label="@string/zip_flashing_title"
+            android:parentActivityName=".switcher.ZipFlashingActivity" />
 
         <receiver android:name=".settings.AppSharingEventReceiver">
             <intent-filter>

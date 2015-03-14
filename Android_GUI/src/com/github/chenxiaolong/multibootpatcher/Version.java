@@ -30,16 +30,32 @@ public class Version implements Comparable<Version> {
     private int mRevision;
     private String mGitCommit;
 
-    public Version(String versionString) {
+    /**
+     * This factory method returns null instead of throwing an exception.
+     *
+     * @param versionString Version string
+     * @return Version object or null
+     */
+    public static Version from(String versionString) {
+        try {
+            return new Version(versionString);
+        } catch (VersionParseException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public Version(String versionString) throws VersionParseException {
         parseVersion(versionString);
     }
 
-    private void parseVersion(String versionString) {
+    private void parseVersion(String versionString) throws VersionParseException {
         Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)(.*?)?(?:-.+)?");
         Matcher m = p.matcher(versionString);
 
         if (!m.matches()) {
-            throw new IllegalArgumentException("Invalid version number");
+            throw new VersionParseException("Invalid version number");
         }
 
         mMajorVer = Integer.parseInt(m.group(1));
@@ -55,12 +71,12 @@ public class Version implements Comparable<Version> {
         }
     }
 
-    private void parseRevision() {
+    private void parseRevision() throws VersionParseException {
         Pattern p = Pattern.compile("\\.r(\\d+)(?:\\.g(.+))?");
         Matcher m = p.matcher(mSuffix);
 
         if (!m.matches()) {
-            throw new IllegalArgumentException("Invalid version suffix");
+            throw new VersionParseException("Invalid version suffix");
         }
 
         mRevision = Integer.parseInt(m.group(1));
@@ -140,6 +156,7 @@ public class Version implements Comparable<Version> {
         return sb.toString();
     }
 
+    @SuppressWarnings("unused")
     public String dump() {
         return "mMajorVer: " + mMajorVer
                 + ", mMinorVer: " + mMinorVer
@@ -147,5 +164,21 @@ public class Version implements Comparable<Version> {
                 + ", mSuffix: " + mSuffix
                 + ", mRevision: " + mRevision
                 + ", mGitCommit: " + mGitCommit;
+    }
+
+    public static class VersionParseException extends Exception {
+        public VersionParseException(String detailMessage) {
+            super(detailMessage);
+        }
+
+        @SuppressWarnings("unused")
+        public VersionParseException(String detailMessage, Throwable throwable) {
+            super(detailMessage, throwable);
+        }
+
+        @SuppressWarnings("unused")
+        public VersionParseException(Throwable throwable) {
+            super(throwable);
+        }
     }
 }

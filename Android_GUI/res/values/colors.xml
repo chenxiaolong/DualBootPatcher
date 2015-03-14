@@ -42,4 +42,9 @@
     <!-- <color name="all_caps_button_color_selected">#ff808080</color> -->
     <color name="all_caps_button_color_selected">#ffcccccc</color>
 
+    <!-- Floating action button -->
+    <color name="fab_pink">#ffd81b60</color>
+    <color name="fab_pink_pressed">#ffec407a</color>
+    <color name="fab_pink_plus">#ffffffff</color>
+
 </resources>

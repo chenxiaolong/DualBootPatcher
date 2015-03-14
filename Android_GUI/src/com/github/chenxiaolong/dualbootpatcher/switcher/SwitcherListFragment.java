@@ -49,14 +49,15 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter;
 import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter.RomCardActionListener;
 
@@ -150,6 +151,16 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
 
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
+
+        FloatingActionButton fabFlashZip = (FloatingActionButton) getActivity()
+                .findViewById(R.id.fab_flash_zip);
+        fabFlashZip.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), ZipFlashingActivity.class);
+                startActivity(intent);
+            }
+        });
 
         initErrorCard();
         initCardList();

@@ -27,11 +27,17 @@ import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class FileUtils {
     @SuppressLint("NewApi")
@@ -138,5 +144,41 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static boolean zipExtractFile(String zipFile, String filename, String destFile) {
+        ZipFile zf = null;
+        FileOutputStream fos = null;
+
+        try {
+            zf = new ZipFile(zipFile);
+
+            final Enumeration<? extends ZipEntry> entries = zf.entries();
+            while (entries.hasMoreElements()) {
+                final ZipEntry ze = entries.nextElement();
+
+                if (ze.getName().equals(filename)) {
+                    fos = new FileOutputStream(destFile);
+                    InputStream is = zf.getInputStream(ze);
+                    byte[] buffer = new byte[10240];
+
+                    int len;
+                    while ((len = is.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+
+                    return true;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(zf);
+            IOUtils.closeQuietly(fos);
+        }
+
+        return false;
     }
 }

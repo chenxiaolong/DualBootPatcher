@@ -18,28 +18,17 @@
 package com.github.chenxiaolong.multibootpatcher.patcher;
 
 import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.os.Build;
 import android.os.Bundle;
 
-import com.github.chenxiaolong.dualbootpatcher.AlertDialogFragment;
-import com.github.chenxiaolong.multibootpatcher.EventCollector;
-import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-
-import java.util.List;
+import com.github.chenxiaolong.multibootpatcher.EventCollector;
 
 public class PatcherEventCollector extends EventCollector {
     public static final String TAG = PatcherEventCollector.class.getSimpleName();
-
-    private static final int REQUEST_FILE = 1234;
 
     private Context mContext;
 
@@ -91,59 +80,9 @@ public class PatcherEventCollector extends EventCollector {
         }
     }
 
-    @Override
-    public void onActivityResult(int request, int result, Intent data) {
-        switch (request) {
-        case REQUEST_FILE:
-            if (data != null && result == Activity.RESULT_OK) {
-                final String file = FileUtils.getPathFromUri(mContext, data.getData());
-
-                sendEvent(new RequestedFileEvent(file));
-            }
-            break;
-        }
-
-        super.onActivityResult(request, result, data);
-    }
-
-    // Choose files
-
-    public void startFileChooser() {
-        Intent fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        if (Build.VERSION.SDK_INT < 19) {
-            // Intent fileIntent = new
-            // Intent(Intent.ACTION_OPEN_DOCUMENT);
-            fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        }
-        fileIntent.setType("application/zip");
-
-        Context context = getActivity().getApplicationContext();
-        final PackageManager pm = context.getPackageManager();
-        List<ResolveInfo> list = pm.queryIntentActivities(fileIntent, 0);
-
-        if (list.size() == 0) {
-            FragmentTransaction ft = getFragmentManager().beginTransaction();
-            Fragment prev = getFragmentManager().findFragmentByTag(
-                    AlertDialogFragment.TAG);
-
-            if (prev != null) {
-                ft.remove(prev);
-            }
-
-            AlertDialogFragment f = AlertDialogFragment.newInstance(
-                    context.getString(R.string.filemanager_missing_title),
-                    context.getString(R.string.filemanager_missing_desc), null,
-                    null, context.getString(R.string.ok), null);
-            f.show(ft, AlertDialogFragment.TAG);
-            return;
-        }
-
-        startActivityForResult(fileIntent, REQUEST_FILE);
-    }
-
     // Events
 
-    public class UpdateDetailsEvent extends BaseEvent {
+    public static class UpdateDetailsEvent extends BaseEvent {
         String text;
 
         public UpdateDetailsEvent(String text) {
@@ -151,7 +90,7 @@ public class PatcherEventCollector extends EventCollector {
         }
     }
 
-    public class SetMaxProgressEvent extends BaseEvent {
+    public static class SetMaxProgressEvent extends BaseEvent {
         int maxProgress;
 
         public SetMaxProgressEvent(int maxProgress) {
@@ -159,7 +98,7 @@ public class PatcherEventCollector extends EventCollector {
         }
     }
 
-    public class SetProgressEvent extends BaseEvent {
+    public static class SetProgressEvent extends BaseEvent {
         int progress;
 
         public SetProgressEvent(int progress) {
@@ -167,7 +106,7 @@ public class PatcherEventCollector extends EventCollector {
         }
     }
 
-    public class FinishedPatchingEvent extends BaseEvent {
+    public static class FinishedPatchingEvent extends BaseEvent {
         boolean failed;
         String message;
         String newFile;
@@ -176,14 +115,6 @@ public class PatcherEventCollector extends EventCollector {
             this.failed = failed;
             this.message = message;
             this.newFile = newFile;
-        }
-    }
-
-    public class RequestedFileEvent extends BaseEvent {
-        String file;
-
-        public RequestedFileEvent(String file) {
-            this.file = file;
         }
     }
 }

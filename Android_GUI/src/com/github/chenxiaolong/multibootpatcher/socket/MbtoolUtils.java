@@ -23,10 +23,24 @@ import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.multibootpatcher.Version;
 
+import java.util.HashMap;
+
 public class MbtoolUtils {
-    // TODO: Handle numbering for snapshots
-    private static Version MINIMUM_VERSION_DEBUG = new Version("8.99.6");
-    private static Version MINIMUM_VERSION_SNAPSHOT = new Version("8.0.0.r906");
+    private static HashMap<Feature, Version> sMinVersionMap = new HashMap<>();
+
+    static {
+        if (BuildConfig.BUILD_TYPE.equals("ci")) {
+            // Snapshot builds
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.0.0.r933"));
+            sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.0.0.r933"));
+            sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r948"));
+        } else {
+            // Debug/release builds
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.6"));
+            sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.99.6"));
+            sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.99.6"));
+        }
+    }
 
     public static Version getSystemMbtoolVersion(Context context) {
         try {
@@ -34,7 +48,7 @@ public class MbtoolUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new Version("0.0.0");
+        return Version.from("0.0.0");
     }
 
     public static Version getMbtoolVersion(Context context) {
@@ -43,14 +57,16 @@ public class MbtoolUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new Version("0.0.0");
+        return Version.from("0.0.0");
     }
 
-    public static Version getMinimumRequiredVersion() {
-        if (BuildConfig.BUILD_TYPE.equals("ci")) {
-            return MINIMUM_VERSION_SNAPSHOT;
-        } else {
-            return MINIMUM_VERSION_DEBUG;
-        }
+    public static Version getMinimumRequiredVersion(Feature feature) {
+        return sMinVersionMap.get(feature);
+    }
+
+    public enum Feature {
+        DAEMON,
+        APP_SHARING,
+        IN_APP_INSTALLATION
     }
 }

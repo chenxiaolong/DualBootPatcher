@@ -38,12 +38,13 @@ import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
+import com.github.chenxiaolong.multibootpatcher.FileChooserEventCollector;
+import com.github.chenxiaolong.multibootpatcher.FileChooserEventCollector.RequestedFileEvent;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.multibootpatcher.patcher.MainOptsCW.MainOptsListener;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.RequestedFileEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
@@ -59,6 +60,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private boolean mShowingProgress;
 
     private PatcherEventCollector mEventCollector;
+    private FileChooserEventCollector mFileChooserEC;
 
     private Bundle mSavedInstanceState;
 
@@ -94,6 +96,14 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         if (mEventCollector == null) {
             mEventCollector = new PatcherEventCollector();
             fm.beginTransaction().add(mEventCollector, PatcherEventCollector.TAG).commit();
+        }
+
+        mFileChooserEC = (FileChooserEventCollector) fm.findFragmentByTag
+                (FileChooserEventCollector.TAG);
+
+        if (mFileChooserEC == null) {
+            mFileChooserEC = new FileChooserEventCollector();
+            fm.beginTransaction().add(mFileChooserEC, FileChooserEventCollector.TAG).commit();
         }
 
         if (savedInstanceState != null) {
@@ -218,12 +228,14 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     public void onResume() {
         super.onResume();
         mEventCollector.attachListener(TAG, this);
+        mFileChooserEC.attachListener(TAG, this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mEventCollector.detachListener(TAG);
+        mFileChooserEC.detachListener(TAG);
     }
 
     @Override
@@ -375,7 +387,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mFileChooserCardView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                mEventCollector.startFileChooser();
+                mFileChooserEC.startFileChooser();
             }
         });
 
@@ -393,7 +405,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mFileChooserCardView.setOnLongClickListener(new OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                mEventCollector.startFileChooser();
+                mFileChooserEC.startFileChooser();
                 return true;
             }
         });
