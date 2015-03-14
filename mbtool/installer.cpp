@@ -19,11 +19,15 @@
 
 #include "installer.h"
 
+// C
+#include <cstring>
+
 // Linux/posix
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 // cppformat
@@ -75,6 +79,8 @@ const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
 const std::string Installer::CANCELLED = "cancelled";
+
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
@@ -539,13 +545,6 @@ bool Installer::run_real_updater()
         return false;
     }
 
-    std::vector<std::string> argv{
-        "/mb/updater",
-        util::to_string(_interface),
-        util::to_string(_output_fd),
-        "/mb/install.zip"
-    };
-
     pid_t parent = getppid();
 
     bool aroma = is_aroma(chroot_updater);
@@ -555,24 +554,131 @@ bool Installer::run_real_updater()
         kill(parent, SIGSTOP);
     }
 
-    int ret;
-    if ((ret = util::run_command_chroot(_chroot, argv)) != 0) {
+    auto resume_aroma = util::finally([&]{
         if (aroma) {
             kill(parent, SIGCONT);
         }
+    });
 
-        if (ret < 0) {
-            LOGE("Failed to execute {}: {}",
-                 "/mb/updater", strerror(errno));
+
+    bool passthrough = _output_fd >= 0;
+
+    int status;
+    pid_t pid;
+    int pipe_fds[2];
+    int stdio_fds[2];
+    if (!passthrough) {
+        pipe(pipe_fds);
+        pipe(stdio_fds);
+    }
+
+    // Run updater in the chroot
+    std::vector<std::string> argv{
+        "/mb/updater",
+        util::to_string(_interface),
+        util::to_string(passthrough ? _output_fd : pipe_fds[1]),
+        "/mb/install.zip"
+    };
+
+    std::vector<const char *> argv_c;
+    for (const std::string &arg : argv) {
+        argv_c.push_back(arg.c_str());
+    }
+    argv_c.push_back(nullptr);
+
+    if ((pid = fork()) >= 0) {
+        if (pid == 0) {
+            if (!passthrough) {
+                close(pipe_fds[0]);
+                close(stdio_fds[0]);
+            }
+
+            if (chdir(_chroot.c_str()) < 0) {
+                LOGE("{}; Failed to chdir: {}", _chroot, strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+            if (chroot(_chroot.c_str()) < 0) {
+                LOGE("{}: Failed to chroot: {}", _chroot, strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+
+            if (!passthrough) {
+                dup2(stdio_fds[1], STDOUT_FILENO);
+                dup2(stdio_fds[1], STDERR_FILENO);
+                close(stdio_fds[1]);
+            }
+
+            execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
+            _exit(127);
         } else {
-            LOGE("{} returned non-zero exit status",
-                 "/mb/updater");
+            if (!passthrough) {
+                close(pipe_fds[1]);
+                close(stdio_fds[1]);
+
+                int reader_status;
+                pid_t reader_pid = fork();
+
+                if (reader_pid < 0) {
+                    LOGE("Failed to fork reader process");
+                } else if (reader_pid == 0) {
+                    // Read program output in child process (stdout, stderr)
+                    char buf[1024];
+
+                    file_ptr fp(fdopen(stdio_fds[0], "rb"), fclose);
+
+                    while (fgets(buf, sizeof(buf), fp.get())) {
+                        updater_output(buf);
+                    }
+
+                    _exit(EXIT_SUCCESS);
+                } else {
+                    // Read special command fd in parent process
+
+                    char buf[1024];
+                    char *save_ptr;
+
+                    // Similar parsing to AOSP recovery
+                    file_ptr fp(fdopen(pipe_fds[0], "rb"), fclose);
+
+                    while (fgets(buf, sizeof(buf), fp.get())) {
+                        char *cmd = strtok_r(buf, " \n", &save_ptr);
+                        if (!cmd) {
+                            continue;
+                        } else if (strcmp(cmd, "progress") == 0
+                                || strcmp(cmd, "set_progress") == 0
+                                || strcmp(cmd, "wipe_cache") == 0
+                                || strcmp(cmd, "clear_display") == 0
+                                || strcmp(cmd, "enable_reboot") == 0) {
+                            // Ignore
+                        } else if (strcmp(cmd, "ui_print") == 0) {
+                            char *str = strtok_r(nullptr, "\n", &save_ptr);
+                            if (str) {
+                                updater_print(str);
+                            } else {
+                                updater_print("\n");
+                            }
+                        } else {
+                            LOGE("Unknown updater command: {}", cmd);
+                        }
+                    }
+
+                    waitpid(reader_pid, &reader_status, 0);
+                }
+            }
+
+            pid = waitpid(pid, &status, 0);
         }
+    }
+
+    if (pid < 0) {
+        LOGE("Failed to execute {}: {}",
+             "/mb/updater", strerror(errno));
         return false;
     }
 
-    if (aroma) {
-        kill(parent, SIGCONT);
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        LOGE("{} returned non-zero exit status",
+             "/mb/updater");
     }
 
     return true;
@@ -600,6 +706,18 @@ bool Installer::is_aroma(const std::string &path)
 void Installer::display_msg(const std::string &msg)
 {
     printf("%s\n", msg.c_str());
+}
+
+// Note: Only called if we're not passing through the output_fd
+void Installer::updater_print(const std::string &msg)
+{
+    printf("%s", msg.c_str());
+}
+
+// Note: Only called if we're not passing through the output_fd
+void Installer::updater_output(const std::string &line)
+{
+    printf("%s\n", line.c_str());
 }
 
 Installer::ProceedState Installer::on_initialize()

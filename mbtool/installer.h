@@ -55,6 +55,8 @@ protected:
     };
 
     virtual void display_msg(const std::string &msg);
+    virtual void updater_print(const std::string &msg);
+    virtual void updater_output(const std::string &line);
     virtual std::string get_install_type() = 0;
     virtual ProceedState on_initialize();
     virtual ProceedState on_created_chroot();
