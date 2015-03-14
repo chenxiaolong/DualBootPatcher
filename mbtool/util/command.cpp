@@ -58,7 +58,7 @@ int run_shell_command(const std::string &command)
         if ((pid = fork()) >= 0) {
             if (pid == 0) {
                 execlp("/sbin/sh", "sh", "-c", command.c_str(), nullptr);
-                exit(127);
+                _exit(127);
             } else {
                 pid = waitpid(pid, &status, 0);
             }
@@ -91,7 +91,7 @@ int run_command(const std::vector<std::string> &argv)
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
-            exit(127);
+            _exit(127);
         } else {
             pid = waitpid(pid, &status, 0);
         }
@@ -123,15 +123,15 @@ int run_command_chroot(const std::string &dir,
         if (pid == 0) {
             if (chdir(dir.c_str()) < 0) {
                 LOGE("{}; Failed to chdir: {}", dir, strerror(errno));
-                exit(EXIT_FAILURE);
+                _exit(EXIT_FAILURE);
             }
             if (chroot(dir.c_str()) < 0) {
                 LOGE("{}: Failed to chroot: {}", dir, strerror(errno));
-                exit(EXIT_FAILURE);
+                _exit(EXIT_FAILURE);
             }
 
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
-            exit(127);
+            _exit(127);
         } else {
             pid = waitpid(pid, &status, 0);
         }

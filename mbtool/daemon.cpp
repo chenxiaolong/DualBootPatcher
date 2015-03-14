@@ -676,7 +676,7 @@ static void run_daemon_fork(void)
     }
 
     run_daemon();
-    exit(EXIT_SUCCESS);
+    _exit(EXIT_SUCCESS);
 }
 
 static bool patch_sepolicy_daemon()
