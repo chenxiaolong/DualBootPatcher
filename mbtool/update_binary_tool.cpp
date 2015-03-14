@@ -218,7 +218,7 @@ int update_binary_tool_main(int argc, char *argv[])
     }
 
     // Log to stderr, so the output is ordered correctly in /tmp/recovery.log
-    util::log_set_target(util::LogTarget::STDERR);
+    util::log_set_logger(std::make_shared<util::StdioLogger>(stderr));
 
     std::string action = argv[optind];
     std::string mountpoint = argv[optind + 1];

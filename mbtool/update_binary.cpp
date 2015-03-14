@@ -379,7 +379,7 @@ int update_binary_main(int argc, char *argv[])
     zip_file = argv[3];
 
     // stdout is messed up when it's appended to /tmp/recovery.log
-    util::log_set_target(util::LogTarget::STDERR);
+    util::log_set_logger(std::make_shared<util::StdioLogger>(stderr));
 
     mbp::setLogCallback(mbp_log_cb);
 

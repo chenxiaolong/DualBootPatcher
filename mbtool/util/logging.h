@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <cppformat/format.h>
@@ -47,15 +48,6 @@ namespace mb
 namespace util
 {
 
-enum class LogTarget {
-    DEFAULT,
-    KLOG,
-#ifdef USE_ANDROID_LOG
-    LOGCAT,
-#endif
-    STDOUT,
-    STDERR
-};
 
 enum class LogLevel {
     ERROR,
@@ -65,7 +57,56 @@ enum class LogLevel {
     VERBOSE
 };
 
-void log_set_target(LogTarget target);
+
+// All loggers should be a subclass of BaseLogger
+class BaseLogger
+{
+public:
+    virtual void log(LogLevel prio, const std::string &msg) = 0;
+};
+
+
+// Logger for <stdio.h> streams
+class StdioLogger : public BaseLogger
+{
+public:
+    StdioLogger(std::FILE *stream);
+
+    virtual void log(LogLevel prio, const std::string &msg) override;
+
+private:
+    std::FILE *_stream;
+};
+
+
+// Logger for the kernel log
+class KmsgLogger : public BaseLogger
+{
+public:
+    KmsgLogger();
+
+    virtual ~KmsgLogger();
+
+    virtual void log(LogLevel prio, const std::string &msg) override;
+
+private:
+    int _fd;
+#define KMSG_BUF_SIZE 512
+    char _buf[KMSG_BUF_SIZE];
+};
+
+
+// Logger for Android's logcat (ifdef'd since usually, we can't link to liblog)
+#ifdef USE_ANDROID_LOG
+class AndroidLogger : public BaseLogger
+{
+public:
+    virtual void log(LogLevel prio, const std::string &msg) override;
+};
+#endif
+
+
+void log_set_logger(std::shared_ptr<BaseLogger> logger);
 void log(LogLevel prio, const std::string &msg);
 
 }
