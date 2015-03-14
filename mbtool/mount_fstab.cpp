@@ -434,7 +434,7 @@ int mount_fstab_main(int argc, char *argv[])
     }
 
     // Use the kernel log since logcat hasn't run yet
-    util::log_set_target(util::LogTarget::KLOG);
+    util::log_set_logger(std::make_shared<util::KmsgLogger>());
 
     // Patch SELinux policy
     if (!patch_loaded_sepolicy()) {
