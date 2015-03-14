@@ -111,13 +111,13 @@ bool bind_mount(const std::string &source, mode_t source_perms,
 
     if (stat(source.c_str(), &sb) < 0
             && !mkdir_recursive(source, source_perms)) {
-        LOGE("Failed to create {}", source);
+        LOGE("Failed to create {}: {}", source, strerror(errno));
         return false;
     }
 
     if (stat(target.c_str(), &sb) < 0
             && !mkdir_recursive(target, target_perms)) {
-        LOGE("Failed to create {}", target);
+        LOGE("Failed to create {}: {}", target, strerror(errno));
         return false;
     }
 
