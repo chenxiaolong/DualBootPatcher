@@ -42,16 +42,21 @@
 #include "util/string.h"
 
 
+static const char *log_file = "/data/media/0/MultiBoot.log";
+
 namespace mb
 {
 
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 class RomInstaller : public Installer
 {
 public:
-    RomInstaller(std::string zip_file, std::string rom_id);
+    RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp);
 
     virtual void display_msg(const std::string& msg) override;
+    virtual void updater_print(const std::string &msg) override;
+    virtual void updater_output(const std::string &line) override;
     virtual std::string get_install_type() override;
     virtual ProceedState on_checked_device() override;
     virtual ProceedState on_pre_install() override;
@@ -60,21 +65,37 @@ public:
 
 private:
     std::string _rom_id;
+    std::FILE *_log_fp;
 
     std::string _ld_library_path;
     std::string _ld_preload;
 };
 
 
-RomInstaller::RomInstaller(std::string zip_file, std::string rom_id) :
-    Installer(zip_file, "/chroot", "/multiboot", 3, STDOUT_FILENO),
-    _rom_id(std::move(rom_id))
+RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
+                           std::FILE *log_fp) :
+    Installer(zip_file, "/chroot", "/multiboot", 3, -1),
+    _rom_id(std::move(rom_id)),
+    _log_fp(log_fp)
 {
 }
 
 void RomInstaller::display_msg(const std::string &msg)
 {
     printf("[MultiBoot] %s\n", msg.c_str());
+}
+
+void RomInstaller::updater_print(const std::string &msg)
+{
+    fprintf(_log_fp, "%s", msg.c_str());
+    fflush(_log_fp);
+    printf("%s", msg.c_str());
+}
+
+void RomInstaller::updater_output(const std::string &line)
+{
+    fprintf(_log_fp, "%s", line.c_str());
+    fflush(_log_fp);
 }
 
 std::string RomInstaller::get_install_type()
@@ -213,7 +234,6 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
     (void) ret;
 
     // Fix permissions on log file
-    static const char *log_file = "/data/media/0/MultiBoot.log";
 
     if (chmod(log_file, 0664) < 0) {
         LOGE("{}: Failed to chmod: {}", log_file, strerror(errno));
@@ -265,20 +285,13 @@ static void rom_installer_usage(bool error)
             "Usage: rom-installer [zip_file] [-r romid]\n\n"
             "Options:\n"
             "  -r, --romid      ROM install type/ID (primary, dual, etc.)\n"
-            "  -h, --help       Display this help message\n"
-            "  --stdout         Force log output to stdout\n");
+            "  -h, --help       Display this help message\n");
 }
 
 int rom_installer_main(int argc, char *argv[])
 {
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
-
-    // mbtool logging
-    util::log_set_target(util::LogTarget::STDOUT);
-
-    // libmbp logging
-    mbp::setLogCallback(mbp_log_cb);
 
     std::string rom_id;
     std::string zip_file;
@@ -351,19 +364,21 @@ int rom_installer_main(int argc, char *argv[])
 
 
     if (geteuid() != 0) {
-        LOGE("rom-installer must be run as root");
+        fprintf(stderr, "rom-installer must be run as root\n");
         return EXIT_FAILURE;
     }
 
 
     // Mount / writable
     if (mount("", "/", "", MS_REMOUNT, "") < 0) {
-        LOGE("Failed to remount rootfs as rw: {}", strerror(errno));
+        fprintf(stderr, "Failed to remount rootfs as rw: %s\n",
+                strerror(errno));
     }
 
     auto remount_ro = util::finally([&] {
         if (mount("", "/", "", MS_REMOUNT | MS_RDONLY, "") < 0) {
-            LOGE("Failed to remount rootfs as ro: {}", strerror(errno));
+            fprintf(stderr, "Failed to remount rootfs as ro: %s\n",
+                    strerror(errno));
         }
     });
 
@@ -372,25 +387,38 @@ int rom_installer_main(int argc, char *argv[])
     // to permissive mode until installation is finished
     int enforcing = -1;
     if (!util::selinux_get_enforcing(&enforcing)) {
-        LOGE("Failed to get SELinux enforcing status");
+        fprintf(stderr, "Failed to get SELinux enforcing status\n");
     }
 
-    LOGD("Current SELinux enforcing status: {:d}", enforcing);
+    printf("Current SELinux enforcing status: %d\n", enforcing);
 
     auto restore_selinux = util::finally([&] {
         if (enforcing >= 0) {
             if (!util::selinux_set_enforcing(enforcing)) {
-                LOGE("Failed to set SELinux enforcing to {:d}", 0);
+                fprintf(stderr, "Failed to set SELinux enforcing to %d\n", 0);
             }
         }
     });
 
     if (!util::selinux_set_enforcing(0)) {
-        LOGE("Failed to set SELinux enforcing to {:d}", enforcing);
+        fprintf(stderr, "Failed to set SELinux enforcing to %d\n", enforcing);
     }
 
+
+    file_ptr fp(fopen(log_file, "wb"), fclose);
+    if (!fp) {
+        fprintf(stderr, "Failed to open %s: %s\n", log_file, strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    // mbtool logging
+    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
+
+    // libmbp logging
+    mbp::setLogCallback(mbp_log_cb);
+
     // Start installing!
-    RomInstaller ri(zip_file, rom_id);
+    RomInstaller ri(zip_file, rom_id, fp.get());
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
