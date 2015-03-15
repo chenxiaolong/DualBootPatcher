@@ -662,11 +662,29 @@ bool Installer::run_real_updater()
                         }
                     }
 
-                    waitpid(reader_pid, &reader_status, 0);
+                    do {
+                        if (waitpid(reader_pid, &reader_status, 0) < 0) {
+                            LOGE("Failed to waitpid(): {}", strerror(errno));
+                            break;
+                        }
+                    } while (!WIFEXITED(reader_status)
+                            && !WIFSIGNALED(reader_status));
                 }
             }
 
-            pid = waitpid(pid, &status, 0);
+            do {
+                if (waitpid(pid, &status, 0) < 0) {
+                    LOGE("Failed to waitpid(): {}", strerror(errno));
+                    return false;
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+            if (WIFEXITED(status)) {
+                LOGD("Child exited: %d\n", WEXITSTATUS(status));
+            }
+            if (WIFSIGNALED(status)) {
+                LOGD("Child killed with signal: %d\n", WTERMSIG(status));
+            }
         }
     }
 
@@ -676,7 +694,7 @@ bool Installer::run_real_updater()
         return false;
     }
 
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+    if (WEXITSTATUS(status) != 0) {
         LOGE("{} returned non-zero exit status",
              "/mb/updater");
     }

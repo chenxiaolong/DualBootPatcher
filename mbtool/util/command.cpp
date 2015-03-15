@@ -93,7 +93,11 @@ int run_command(const std::vector<std::string> &argv)
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
             _exit(127);
         } else {
-            pid = waitpid(pid, &status, 0);
+            do {
+                if (waitpid(pid, &status, 0) < 0) {
+                    return -1;
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
         }
     }
 
@@ -133,7 +137,11 @@ int run_command_chroot(const std::string &dir,
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
             _exit(127);
         } else {
-            pid = waitpid(pid, &status, 0);
+            do {
+                if (waitpid(pid, &status, 0) < 0) {
+                    return -1;
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
         }
     }
 
