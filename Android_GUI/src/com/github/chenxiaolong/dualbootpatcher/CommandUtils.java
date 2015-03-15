@@ -17,25 +17,21 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.TimeoutException;
-
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.stericson.RootShell.exceptions.RootDeniedException;
+import com.stericson.RootShell.execution.Command;
 import com.stericson.RootTools.RootTools;
-import com.stericson.RootTools.exceptions.RootDeniedException;
-import com.stericson.RootTools.execution.Command;
 
-import org.apache.commons.lang3.StringUtils;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.concurrent.TimeoutException;
 
 public final class CommandUtils {
     private static final String TAG = CommandUtils.class.getSimpleName();
@@ -43,10 +39,10 @@ public final class CommandUtils {
     public static final String STREAM_STDOUT = "stdout";
     public static final String STREAM_STDERR = "stderr";
 
-    public static interface CommandListener {
-        public void onNewOutputLine(String line, String stream);
+    public interface CommandListener {
+        void onNewOutputLine(String line, String stream);
 
-        public void onCommandCompletion(CommandResult result);
+        void onCommandCompletion(CommandResult result);
     }
 
     public static class CommandParams {
@@ -66,12 +62,10 @@ public final class CommandUtils {
         public Bundle data = new Bundle();
     }
 
-    public static interface LiveOutputFilter {
-        public void onStdoutLine(CommandParams params, CommandResult result,
-                String line);
+    public interface LiveOutputFilter {
+        void onStdoutLine(CommandParams params, CommandResult result, String line);
 
-        public void onStderrLine(CommandParams params, CommandResult result,
-                String line);
+        void onStderrLine(CommandParams params, CommandResult result, String line);
     }
 
     public static class CommandRunner extends Thread {
@@ -261,30 +255,17 @@ public final class CommandUtils {
                         if (mParams.listener != null) {
                             mParams.listener.onNewOutputLine(line);
                         }
-                    }
 
-                    @Override
-                    public void commandCompleted(int id, int exitCode) {
-                        mResult.exitCode = exitCode;
-                        synchronized (RootCommandRunner.this) {
-                            RootCommandRunner.this.notify();
-                        }
-                    }
-
-                    @Override
-                    public void commandTerminated(int id, String reason) {
-                        // Hope this never happens
-                        mResult.exitCode = -1;
-                        synchronized (RootCommandRunner.this) {
-                            RootCommandRunner.this.notify();
-                        }
+                        super.commandOutput(id, line);
                     }
                 };
 
                 RootTools.getShell(true).add(command);
 
-                synchronized (this) {
-                    wait();
+                while (!command.isFinished()) {
+                    synchronized (command) {
+                        command.wait(2000);
+                    }
                 }
 
                 // TODO: Should this be done on another thread?

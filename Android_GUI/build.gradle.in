@@ -31,7 +31,7 @@ dependencies {
     compile 'commons-io:commons-io:2.4+'
     compile project(":emulatorview")
     compile files('@CMAKE_BINARY_DIR@/thirdparty/android/jna/jna.jar')
-    compile files('libs/RootTools-3.4.jar')
+    compile files('libs/RootTools-4.1.jar')
 }
 
 android {
