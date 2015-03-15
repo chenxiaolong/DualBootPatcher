@@ -241,7 +241,7 @@ public final class CommandUtils {
             try {
                 Log.v(TAG, "Command: " + mParams.command);
 
-                Command command = new Command(0, mParams.command) {
+                Command command = new Command(0, 0, mParams.command) {
                     @Override
                     public void commandOutput(int id, String line) {
                         if (mParams.logOutput) {
