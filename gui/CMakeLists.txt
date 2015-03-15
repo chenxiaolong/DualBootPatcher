@@ -5,11 +5,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets 5.3 REQUIRED)
 
 if(${MBP_PORTABLE})
-    if(WIN32)
-        set(LOCAL_DATA_DIR "data")
-    else()
-        set(LOCAL_DATA_DIR "../data")
-    endif()
+    set(LOCAL_DATA_DIR "data")
 
     add_definitions(
         -DPORTABLE
@@ -82,7 +78,7 @@ if (${MBP_PORTABLE})
     set_target_properties(gui
         PROPERTIES
         BUILD_WITH_INSTALL_RPATH OFF
-        INSTALL_RPATH "\$ORIGIN/../lib"
+        INSTALL_RPATH "\$ORIGIN/lib"
     )
 endif()
 
