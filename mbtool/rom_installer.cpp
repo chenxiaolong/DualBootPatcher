@@ -56,7 +56,7 @@ public:
 
     virtual void display_msg(const std::string& msg) override;
     virtual void updater_print(const std::string &msg) override;
-    virtual void updater_output(const std::string &line) override;
+    virtual void command_output(const std::string &line) override;
     virtual std::string get_install_type() override;
     virtual ProceedState on_checked_device() override;
     virtual ProceedState on_pre_install() override;
@@ -92,7 +92,7 @@ void RomInstaller::updater_print(const std::string &msg)
     printf("%s", msg.c_str());
 }
 
-void RomInstaller::updater_output(const std::string &line)
+void RomInstaller::command_output(const std::string &line)
 {
     fprintf(_log_fp, "%s", line.c_str());
     fflush(_log_fp);

@@ -56,7 +56,7 @@ protected:
 
     virtual void display_msg(const std::string &msg);
     virtual void updater_print(const std::string &msg);
-    virtual void updater_output(const std::string &line);
+    virtual void command_output(const std::string &line);
     virtual std::string get_install_type() = 0;
     virtual ProceedState on_initialize();
     virtual ProceedState on_created_chroot();
@@ -74,6 +74,7 @@ protected:
     std::string _temp;
     int _interface;
     int _output_fd;
+    bool _passthrough;
 
     std::string _device;
     std::string _boot_block_dev;
@@ -92,13 +93,18 @@ protected:
 
 
 private:
-    bool create_chroot() const;
+    static void output_cb(const std::string &msg, void *data);
+    int run_command(const std::vector<std::string> &argv);
+    int run_command_chroot(const std::string &dir,
+                           const std::vector<std::string> &argv);
+
+    bool create_chroot();
     bool destroy_chroot() const;
 
     bool extract_multiboot_files();
     bool set_up_unzip();
     bool set_up_busybox_wrapper();
-    static bool create_temporary_image(const std::string &path);
+    bool create_temporary_image(const std::string &path);
     bool system_image_copy(const std::string &source,
                            const std::string &image, bool reverse);
     bool run_real_updater();

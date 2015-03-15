@@ -91,6 +91,7 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
     _interface(interface),
     _output_fd(output_fd)
 {
+    _passthrough = _output_fd >= 0;
 }
 
 Installer::~Installer()
@@ -173,6 +174,31 @@ bool log_copy_dir(const std::string &source,
  * Helper functions
  */
 
+void Installer::output_cb(const std::string &msg, void *data)
+{
+    Installer *installer = reinterpret_cast<Installer *>(data);
+    installer->command_output(msg);
+}
+
+int Installer::run_command(const std::vector<std::string> &argv)
+{
+    if (_passthrough) {
+        return util::run_command(argv);
+    } else {
+        return util::run_command_cb(argv, &output_cb, this);
+    }
+}
+
+int Installer::run_command_chroot(const std::string &dir,
+                                  const std::vector<std::string> &argv)
+{
+    if (_passthrough) {
+        return util::run_command_chroot(dir, argv);
+    } else {
+        return util::run_command_chroot_cb(dir, argv, &output_cb, this);
+    }
+}
+
 std::string Installer::in_chroot(const std::string &path) const
 {
     if (!path.empty() && path[0] == '/') {
@@ -182,13 +208,13 @@ std::string Installer::in_chroot(const std::string &path) const
     }
 }
 
-bool Installer::create_chroot() const
+bool Installer::create_chroot()
 {
     // We'll just call the recovery's mount tools directly to avoid having to
     // parse TWRP and CWM's different fstab formats
-    util::run_command({ "mount", "/system" });
-    util::run_command({ "mount", "/cache" });
-    util::run_command({ "mount", "/data" });
+    run_command({ "mount", "/system" });
+    run_command({ "mount", "/cache" });
+    run_command({ "mount", "/data" });
 
     // Make sure everything really is mounted
     if (!log_is_mounted("/system")
@@ -426,8 +452,7 @@ bool Installer::create_temporary_image(const std::string &path)
             LOGD("{}: Creating new {} ext4 image", path, image_size);
 
             // Create new image
-            if (util::run_command(
-                    { "make_ext4fs", "-l", image_size, path }) != 0) {
+            if (run_command({ "make_ext4fs", "-l", image_size, path }) != 0) {
                 LOGE("{}: Failed to create image", path);
                 return false;
             }
@@ -561,13 +586,11 @@ bool Installer::run_real_updater()
     });
 
 
-    bool passthrough = _output_fd >= 0;
-
     int status;
     pid_t pid;
     int pipe_fds[2];
     int stdio_fds[2];
-    if (!passthrough) {
+    if (!_passthrough) {
         pipe(pipe_fds);
         pipe(stdio_fds);
     }
@@ -576,7 +599,7 @@ bool Installer::run_real_updater()
     std::vector<std::string> argv{
         "/mb/updater",
         util::to_string(_interface),
-        util::to_string(passthrough ? _output_fd : pipe_fds[1]),
+        util::to_string(_passthrough ? _output_fd : pipe_fds[1]),
         "/mb/install.zip"
     };
 
@@ -588,7 +611,7 @@ bool Installer::run_real_updater()
 
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
-            if (!passthrough) {
+            if (!_passthrough) {
                 close(pipe_fds[0]);
                 close(stdio_fds[0]);
             }
@@ -602,7 +625,7 @@ bool Installer::run_real_updater()
                 _exit(EXIT_FAILURE);
             }
 
-            if (!passthrough) {
+            if (!_passthrough) {
                 dup2(stdio_fds[1], STDOUT_FILENO);
                 dup2(stdio_fds[1], STDERR_FILENO);
                 close(stdio_fds[1]);
@@ -611,7 +634,7 @@ bool Installer::run_real_updater()
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
             _exit(127);
         } else {
-            if (!passthrough) {
+            if (!_passthrough) {
                 close(pipe_fds[1]);
                 close(stdio_fds[1]);
 
@@ -627,7 +650,7 @@ bool Installer::run_real_updater()
                     file_ptr fp(fdopen(stdio_fds[0], "rb"), fclose);
 
                     while (fgets(buf, sizeof(buf), fp.get())) {
-                        updater_output(buf);
+                        command_output(buf);
                     }
 
                     _exit(EXIT_SUCCESS);
@@ -736,7 +759,7 @@ void Installer::updater_print(const std::string &msg)
 }
 
 // Note: Only called if we're not passing through the output_fd
-void Installer::updater_output(const std::string &line)
+void Installer::command_output(const std::string &line)
 {
     printf("%s\n", line.c_str());
 }
@@ -1152,7 +1175,7 @@ Installer::ProceedState Installer::install_stage_installation()
 
 #if DEBUG_SHELL
     {
-        util::run_command_chroot(_chroot, { "/sbin/sh", "-i" });
+        run_command_chroot(_chroot, { "/sbin/sh", "-i" });
     }
 #endif
 
@@ -1168,9 +1191,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     LOGD("[Installer] Filesystem unmounting stage");
 
     // Umount filesystems from inside the chroot
-    util::run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
-    util::run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
-    util::run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
 
     if (_has_block_image || _rom->id == "primary") {
         display_msg("Copying temporary image to system");
