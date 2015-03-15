@@ -94,7 +94,6 @@ public class ZipFlashingOutputFragment extends Fragment implements EventCollecto
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        System.out.println("onActivityCreated()");
         super.onActivityCreated(savedInstanceState);
 
         EmulatorView emulatorView = (EmulatorView) getActivity().findViewById(R.id.terminal);
