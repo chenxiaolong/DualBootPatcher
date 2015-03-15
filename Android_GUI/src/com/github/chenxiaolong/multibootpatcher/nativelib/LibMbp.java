@@ -407,7 +407,12 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            return mCBootImage.hashCode();
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -733,7 +738,12 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            return mCCpioFile.hashCode();
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -928,7 +938,15 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            int hashCode = 1;
+            hashCode = 31 * hashCode + mCDevice.hashCode();
+            hashCode = 31 * hashCode + (mDestroyable ? 1 : 0);
+            return hashCode;
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -1142,7 +1160,12 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            return mCFileInfo.hashCode();
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -1264,7 +1287,12 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            return mCPatcherConfig.hashCode();
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -1555,7 +1583,12 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            return mCPatcherError.hashCode();
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -1663,7 +1696,15 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            int hashCode = 1;
+            hashCode = 31 * hashCode + mCPatchInfo.hashCode();
+            hashCode = 31 * hashCode + (mDestroyable ? 1 : 0);
+            return hashCode;
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -1949,7 +1990,12 @@ public class LibMbp {
         }
 
         @Override
-        public void finalize() throws Throwable {
+        public int hashCode() {
+            return mCStringMap.hashCode();
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
             destroy();
             super.finalize();
         }
@@ -2032,6 +2078,11 @@ public class LibMbp {
         @Override
         public boolean equals(Object o) {
             return o instanceof Patcher && mCPatcher.equals(((Patcher) o).mCPatcher);
+        }
+
+        @Override
+        public int hashCode() {
+            return mCPatcher.hashCode();
         }
 
         @Override
@@ -2159,6 +2210,11 @@ public class LibMbp {
         }
 
         @Override
+        public int hashCode() {
+            return mCAutoPatcher.hashCode();
+        }
+
+        @Override
         public int describeContents() {
             return 0;
         }
@@ -2237,6 +2293,11 @@ public class LibMbp {
         public boolean equals(Object o) {
             return o instanceof RamdiskPatcher
                     && mCRamdiskPatcher.equals(((RamdiskPatcher) o).mCRamdiskPatcher);
+        }
+
+        @Override
+        public int hashCode() {
+            return mCRamdiskPatcher.hashCode();
         }
 
         @Override

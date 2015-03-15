@@ -376,6 +376,9 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
                             getString(R.string.zip_flashing_error_version_too_old),
                             MbtoolUtils.getMinimumRequiredVersion(Feature.IN_APP_INSTALLATION));
                     break;
+
+                default:
+                    throw new IllegalStateException("Invalid verification result ID");
                 }
 
                 buildConfirmDialog(CONFIRM_DIALOG_VERIFY_FAIL);
@@ -603,7 +606,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
                 return "Install " + zipFile + " to " + romId;
             default:
                 // Not reached
-                return null;
+                throw new IllegalStateException("Invalid pending action type");
             }
         }
 

@@ -226,7 +226,7 @@ public class AppListLoaderFragment extends Fragment {
         }
     }
 
-    public class RomInfoResult {
+    public static class RomInfoResult {
         RomInformation[] roms;
         String[] names;
     }

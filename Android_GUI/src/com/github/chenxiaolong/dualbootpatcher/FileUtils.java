@@ -91,7 +91,7 @@ public class FileUtils {
         // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
         String id = DocumentsContract.getDocumentId(uri);
         Uri contentUri = ContentUris.withAppendedId(Uri.parse
-                ("content://downloads/public_downloads"), Long.valueOf(id));
+                ("content://downloads/public_downloads"), Long.parseLong(id));
 
         Cursor cursor = null;
         String[] projection = {"_data"};
@@ -123,9 +123,11 @@ public class FileUtils {
     }
 
     public static void extractAsset(Context context, String src, File dest) {
+        InputStream i = null;
+        FileOutputStream o = null;
         try {
-            InputStream i = context.getAssets().open(src);
-            FileOutputStream o = new FileOutputStream(dest);
+            i = context.getAssets().open(src);
+            o = new FileOutputStream(dest);
 
             // byte[] buffer = new byte[4096];
             // int length;
@@ -137,12 +139,12 @@ public class FileUtils {
             byte[] buffer = new byte[length];
             i.read(buffer);
             o.write(buffer);
-
             o.flush();
-            o.close();
-            i.close();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            IOUtils.closeQuietly(i);
+            IOUtils.closeQuietly(o);
         }
     }
 

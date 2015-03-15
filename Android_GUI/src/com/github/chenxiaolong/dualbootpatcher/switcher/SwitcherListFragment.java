@@ -443,12 +443,12 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     @Override
     public void onActivityResult(int request, int result, Intent data) {
         switch (request) {
-            case REQUEST_IMAGE:
-                if (data != null && result == Activity.RESULT_OK) {
-                    new ResizeAndCacheImageTask(getActivity().getApplicationContext(),
-                            data.getData()).execute();
-                }
-                break;
+        case REQUEST_IMAGE:
+            if (data != null && result == Activity.RESULT_OK) {
+                new ResizeAndCacheImageTask(getActivity().getApplicationContext(),
+                        data.getData()).execute();
+            }
+            break;
         }
 
         super.onActivityResult(request, result, data);

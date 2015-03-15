@@ -430,6 +430,9 @@ public class MainActivity extends ActionBarActivity {
         case NAV_EXIT:
             finish();
             break;
+
+        default:
+            throw new IllegalStateException("Invalid drawer item");
         }
     }
 
@@ -541,6 +544,9 @@ public class MainActivity extends ActionBarActivity {
             }
 
             break;
+
+        default:
+            throw new IllegalStateException("Invalid fragment ID");
         }
 
         ft.commit();

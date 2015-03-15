@@ -35,7 +35,7 @@ import java.util.Map;
 public class EventCollector extends Fragment {
     private HashMap<String, ListenerAndQueue> mEventQueues = new HashMap<>();
 
-    private class ListenerAndQueue {
+    private static class ListenerAndQueue {
         EventCollectorListener listener;
         ArrayDeque<BaseEvent> queue = new ArrayDeque<>();
     }

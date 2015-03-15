@@ -244,7 +244,7 @@ public class RomUtils {
         return null;
     }
 
-    public static RomInformation[] getRoms(Context context) {
+    public synchronized static RomInformation[] getRoms(Context context) {
         if (mRoms == null) {
             mRoms = MbtoolSocket.getInstance().getInstalledRoms(context);
 
@@ -265,7 +265,7 @@ public class RomUtils {
         return mRoms;
     }
 
-    public static RomInformation[] getBuiltinRoms(Context context) {
+    public synchronized static RomInformation[] getBuiltinRoms(Context context) {
         if (mBuiltinRoms == null) {
             String[] ids = MbtoolSocket.getInstance().getBuiltinRomIds(context);
 

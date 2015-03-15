@@ -54,5 +54,6 @@ public class LibMiscStuff {
         boolean extract_archive(String filename, String target);
     }
 
-    public static CLibrary INSTANCE = (CLibrary) Native.loadLibrary("miscstuff", CLibrary.class);
+    public static final CLibrary INSTANCE =
+            (CLibrary) Native.loadLibrary("miscstuff", CLibrary.class);
 }

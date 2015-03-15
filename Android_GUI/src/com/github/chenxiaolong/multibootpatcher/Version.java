@@ -142,6 +142,18 @@ public class Version implements Comparable<Version> {
     }
 
     @Override
+    public int hashCode() {
+        int hashCode = 1;
+        hashCode = 31 * hashCode + mMajorVer;
+        hashCode = 31 * hashCode + mMinorVer;
+        hashCode = 31 * hashCode + mPatchVer;
+        hashCode = 31 * hashCode + (mSuffix == null ? 0 : mSuffix.hashCode());
+        hashCode = 31 * hashCode + mRevision;
+        hashCode = 31 * hashCode + (mGitCommit == null ? 0 : mGitCommit.hashCode());
+        return hashCode;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(mMajorVer).append(".");
