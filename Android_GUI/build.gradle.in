@@ -10,14 +10,13 @@ buildscript {
 apply plugin: 'com.android.application'
 
 repositories {
-    mavenCentral()
     jcenter()
 }
 dependencies {
-    compile 'com.android.support:support-v4:21.0.+'
-    compile 'com.android.support:appcompat-v7:21.0.+'
-    compile 'com.android.support:cardview-v7:21.0.+'
-    compile 'com.android.support:recyclerview-v7:21.0.+'
+    compile 'com.android.support:support-v4:22.0.0'
+    compile 'com.android.support:appcompat-v7:22.0.0'
+    compile 'com.android.support:cardview-v7:22.0.0'
+    compile 'com.android.support:recyclerview-v7:22.0.0'
     compile 'com.google.code.gson:gson:2.3.1'
     compile 'com.github.gabrielemariotti.cards:cardslib-core:2.0.1'
     compile 'com.squareup.picasso:picasso:2.3.2'
@@ -27,8 +26,8 @@ dependencies {
     compile 'com.nhaarman.listviewanimations:lib-core-slh:3.1.0@aar'
     compile 'com.afollestad:material-dialogs:0.6.3.0'
     compile 'com.getbase:floatingactionbutton:1.8.0'
-    compile 'org.apache.commons:commons-lang3:+'
-    compile 'commons-io:commons-io:2.4+'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'commons-io:commons-io:2.4'
     compile project(":emulatorview")
     compile files('@CMAKE_BINARY_DIR@/thirdparty/android/jna/jna.jar')
     compile files('libs/RootTools-4.1.jar')
