@@ -670,6 +670,9 @@ bool Installer::run_real_updater()
                     } while (!WIFEXITED(reader_status)
                             && !WIFSIGNALED(reader_status));
                 }
+
+                close(pipe_fds[0]);
+                close(stdio_fds[0]);
             }
 
             do {
