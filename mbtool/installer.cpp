@@ -680,10 +680,10 @@ bool Installer::run_real_updater()
             } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
             if (WIFEXITED(status)) {
-                LOGD("Child exited: %d\n", WEXITSTATUS(status));
+                LOGD("Child exited: {:d}", WEXITSTATUS(status));
             }
             if (WIFSIGNALED(status)) {
-                LOGD("Child killed with signal: %d\n", WTERMSIG(status));
+                LOGD("Child killed with signal: {:d}", WTERMSIG(status));
             }
         }
     }
