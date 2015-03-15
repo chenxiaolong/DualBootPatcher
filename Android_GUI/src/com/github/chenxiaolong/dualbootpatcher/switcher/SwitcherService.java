@@ -231,11 +231,11 @@ public class SwitcherService extends IntentService {
 
         try {
             if (!remountFs("/", true)) {
-                printBoldText(Color.RED, "Failed to remount / as rw");
+                printBoldText(Color.RED, "Failed to remount / as rw\n");
                 return;
             }
             if (!remountFs("/system", true)) {
-                printBoldText(Color.RED, "Failed to remount /system as rw");
+                printBoldText(Color.RED, "Failed to remount /system as rw\n");
                 return;
             }
 
@@ -262,15 +262,15 @@ public class SwitcherService extends IntentService {
 
                 // Copy to /
                 if (runRootCommand("rm -f /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to remove old /rom-installer");
+                    printBoldText(Color.RED, "Failed to remove old /rom-installer\n");
                     return;
                 }
                 if (runRootCommand("cp " + zipInstaller.getPath() + " /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to copy new /rom-installer");
+                    printBoldText(Color.RED, "Failed to copy new /rom-installer\n");
                     return;
                 }
                 if (runRootCommand("chmod 755 /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to chmod /rom-installer");
+                    printBoldText(Color.RED, "Failed to chmod /rom-installer\n");
                     return;
                 }
 
@@ -296,10 +296,10 @@ public class SwitcherService extends IntentService {
             printSeparator();
 
             if (!remountFs("/", false)) {
-                printBoldText(Color.RED, "Failed to remount / as ro");
+                printBoldText(Color.RED, "Failed to remount / as ro\n");
             }
             if (!remountFs("/system", false)) {
-                printBoldText(Color.RED, "Failed to remount /system as ro");
+                printBoldText(Color.RED, "Failed to remount /system as ro\n");
             }
         } finally {
             printSeparator();
