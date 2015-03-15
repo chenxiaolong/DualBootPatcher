@@ -32,6 +32,8 @@ namespace mb
 namespace util
 {
 
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
+
 static std::string list2string(const std::vector<std::string> &list)
 {
     std::string output;
@@ -72,6 +74,32 @@ int run_shell_command(const std::string &command)
 
 int run_command(const std::vector<std::string> &argv)
 {
+    return run_command2(argv, std::string(), nullptr, nullptr);
+}
+
+int run_command_cb(const std::vector<std::string> &argv,
+                   OutputCb cb, void *data)
+{
+    return run_command2(argv, std::string(), cb, data);
+}
+
+int run_command_chroot(const std::string &dir,
+                       const std::vector<std::string> &argv)
+{
+    return run_command2(argv, dir, nullptr, nullptr);
+}
+
+int run_command_chroot_cb(const std::string &dir,
+                          const std::vector<std::string> &argv,
+                          OutputCb cb, void *data)
+{
+    return run_command2(argv, dir, cb, data);
+}
+
+int run_command2(const std::vector<std::string> &argv,
+                 const std::string &chroot_dir,
+                 OutputCb cb, void *data)
+{
     if (argv.empty()) {
         errno = EINVAL;
         return -1;
@@ -87,56 +115,70 @@ int run_command(const std::vector<std::string> &argv)
 
     int status;
     pid_t pid;
+    int stdio_fds[2];
+
+    if (cb) {
+        pipe(stdio_fds);
+    }
 
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
-            execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
-            _exit(127);
-        } else {
-            do {
-                if (waitpid(pid, &status, 0) < 0) {
-                    return -1;
+            if (cb) {
+                close(stdio_fds[0]);
+            }
+
+            if (!chroot_dir.empty()) {
+                if (chdir(chroot_dir.c_str()) < 0) {
+                    LOGE("{}; Failed to chdir: {}", chroot_dir, strerror(errno));
+                    _exit(EXIT_FAILURE);
                 }
-            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-        }
-    }
-
-    return pid == -1 ? -1 : status;
-}
-
-int run_command_chroot(const std::string &dir,
-                       const std::vector<std::string> &argv)
-{
-    if (dir.empty() || argv.empty()) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    LOGD("Running command (chroot: {}): [ {} ]", dir, list2string(argv));
-
-    std::vector<const char *> argv_c;
-    for (const std::string &arg : argv) {
-        argv_c.push_back(arg.c_str());
-    }
-    argv_c.push_back(nullptr);
-
-    int status;
-    pid_t pid;
-
-    if ((pid = fork()) >= 0) {
-        if (pid == 0) {
-            if (chdir(dir.c_str()) < 0) {
-                LOGE("{}; Failed to chdir: {}", dir, strerror(errno));
-                _exit(EXIT_FAILURE);
+                if (chroot(chroot_dir.c_str()) < 0) {
+                    LOGE("{}: Failed to chroot: {}", chroot_dir, strerror(errno));
+                    _exit(EXIT_FAILURE);
+                }
             }
-            if (chroot(dir.c_str()) < 0) {
-                LOGE("{}: Failed to chroot: {}", dir, strerror(errno));
-                _exit(EXIT_FAILURE);
+
+            if (cb) {
+                dup2(stdio_fds[1], STDOUT_FILENO);
+                dup2(stdio_fds[1], STDERR_FILENO);
+                close(stdio_fds[1]);
             }
 
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
             _exit(127);
         } else {
+            if (cb) {
+                close(stdio_fds[1]);
+
+                int reader_status;
+                pid_t reader_pid = fork();
+
+                if (reader_pid < 0) {
+                    LOGE("Failed to fork reader process");
+                } else if (reader_pid == 0) {
+                    // Read program output in child process (stdout, stderr)
+                    char buf[1024];
+
+                    file_ptr fp(fdopen(stdio_fds[0], "rb"), fclose);
+
+                    while (fgets(buf, sizeof(buf), fp.get())) {
+                        cb(buf, data);
+                    }
+
+                    _exit(EXIT_SUCCESS);
+                } else {
+                    do {
+                        if (waitpid(reader_pid, &reader_status, 0) < 0) {
+                            LOGE("Failed to waitpid(): {}", strerror(errno));
+                            break;
+                        }
+                    } while (!WIFEXITED(reader_status)
+                            && !WIFSIGNALED(reader_status));
+                }
+
+                close(stdio_fds[0]);
+            }
+
             do {
                 if (waitpid(pid, &status, 0) < 0) {
                     return -1;
