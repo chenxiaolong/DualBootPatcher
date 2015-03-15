@@ -36,6 +36,12 @@
 const int patcherPtrTypeId = qRegisterMetaType<PatcherPtr>("PatcherPtr");
 const int fileInfoPtrTypeId = qRegisterMetaType<FileInfoPtr>("FileInfoPtr");
 
+MainWindowPrivate::MainWindowPrivate()
+    : settings(qApp->applicationDirPath() % QStringLiteral("/settings.ini"),
+               QSettings::IniFormat)
+{
+}
+
 MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
@@ -406,11 +412,15 @@ void MainWindow::chooseFile()
 {
     Q_D(MainWindow);
 
-    QString fileName = QFileDialog::getOpenFileName(
-            this, QString(), QString(), tr("Zip files (*.zip)"));
+    QString fileName = QFileDialog::getOpenFileName(this, QString(),
+            d->settings.value(QStringLiteral("last_dir")).toString(),
+            tr("Zip files (*.zip)"));
     if (fileName.isNull()) {
         return;
     }
+
+    d->settings.setValue(QStringLiteral("last_dir"),
+                         QFileInfo(fileName).dir().absolutePath());
 
     d->state = MainWindowPrivate::ChoseFile;
 

@@ -27,6 +27,7 @@
 
 #include <memory>
 
+#include <QtCore/QSettings>
 #include <QtCore/QThread>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -52,6 +53,10 @@ public:
         SupportedFile = 0x1
     };
     Q_DECLARE_FLAGS(SupportedFlags, SupportedFlag)
+
+    MainWindowPrivate();
+
+    QSettings settings;
 
     // Current state of the patcher
     State state = FirstRun;
