@@ -95,8 +95,7 @@ public class FreeSpaceFragment extends Fragment {
                 continue;
             } else if (info.mountpoint.startsWith("/mnt")
                     || info.mountpoint.startsWith("/dev")
-                    || info.mountpoint.startsWith("/proc")
-                    || info.mountpoint.startsWith("/sys")) {
+                    || info.mountpoint.startsWith("/proc")) {
                 continue;
             }
 
