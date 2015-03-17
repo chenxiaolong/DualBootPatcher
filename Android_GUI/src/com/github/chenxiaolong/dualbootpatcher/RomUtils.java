@@ -42,7 +42,6 @@ import java.util.regex.Pattern;
 public class RomUtils {
     private static final String TAG = RomUtils.class.getSimpleName();
 
-    private static RomInformation[] mRoms;
     private static RomInformation[] mBuiltinRoms;
 
     public static final String UNKNOWN_ID = "unknown";
@@ -245,24 +244,22 @@ public class RomUtils {
     }
 
     public synchronized static RomInformation[] getRoms(Context context) {
-        if (mRoms == null) {
-            mRoms = MbtoolSocket.getInstance().getInstalledRoms(context);
+        RomInformation[] roms = MbtoolSocket.getInstance().getInstalledRoms(context);
 
-            if (mRoms != null) {
-                for (RomInformation rom : mRoms) {
-                    rom.setThumbnailPath(Environment.getExternalStorageDirectory()
-                            + "/MultiBoot/" + rom.getId() + "/thumbnail.webp");
-                    rom.setConfigPath(Environment.getExternalStorageDirectory()
-                            + "/MultiBoot/" + rom.getId() + "/config.json");
-                    rom.setImageResId(R.drawable.rom_android);
-                    rom.setDefaultName(getDefaultName(context, rom));
+        if (roms != null) {
+            for (RomInformation rom : roms) {
+                rom.setThumbnailPath(Environment.getExternalStorageDirectory()
+                        + "/MultiBoot/" + rom.getId() + "/thumbnail.webp");
+                rom.setConfigPath(Environment.getExternalStorageDirectory()
+                        + "/MultiBoot/" + rom.getId() + "/config.json");
+                rom.setImageResId(R.drawable.rom_android);
+                rom.setDefaultName(getDefaultName(context, rom));
 
-                    loadConfig(rom);
-                }
+                loadConfig(rom);
             }
         }
 
-        return mRoms;
+        return roms;
     }
 
     public synchronized static RomInformation[] getBuiltinRoms(Context context) {
