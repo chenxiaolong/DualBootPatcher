@@ -127,6 +127,21 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
     return true;
 }
 
+void selinux_make_all_permissive(policydb_t *pdb)
+{
+    //char *name;
+
+    for (unsigned int i = 0; i < pdb->p_types.nprim - 1; i++) {
+        //name = pdb->p_type_val_to_name[i];
+        //if (ebitmap_get_bit(&pdb->permissive_map, i + 1)) {
+        //    LOGD("Type {} is already permissive", name);
+        //} else {
+            ebitmap_set_bit(&pdb->permissive_map, i + 1, 1);
+        //    LOGD("Made {} permissive", name);
+        //}
+    }
+}
+
 bool selinux_make_permissive(policydb_t *pdb, const std::string &type_str)
 {
     type_datum_t *type;

@@ -32,8 +32,17 @@ namespace mb
 namespace util
 {
 
+struct SelinuxRule
+{
+    std::string source;
+    std::string target;
+    std::string klass;
+    std::string perm;
+};
+
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
 bool selinux_write_policy(const std::string &path, policydb_t *pdb);
+void selinux_make_all_permissive(policydb_t *pdb);
 bool selinux_make_permissive(policydb_t *pdb, const std::string &type_str);
 bool selinux_add_rule(policydb_t *pdb,
                       const std::string &source_str,

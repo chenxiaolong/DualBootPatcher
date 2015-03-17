@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
+#include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -43,6 +44,8 @@
 
 
 static const char *log_file = "/data/media/0/MultiBoot.log";
+
+static const char *sepolicy_bak_path = "/sepolicy.rom-installer";
 
 namespace mb
 {
@@ -255,6 +258,101 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
                 "internal storage.");
 }
 
+static bool backup_sepolicy(const std::string backup_path)
+{
+    if (!util::copy_contents(MB_SELINUX_POLICY_FILE, backup_path)) {
+        fprintf(stderr, "Failed to backup current SELinux policy: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+static bool restore_sepolicy(const std::string &backup_path)
+{
+    int fd = open(backup_path.c_str(), O_RDONLY);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open backup SELinux policy file: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    auto close_fd = util::finally([&] {
+        close(fd);
+    });
+
+    struct stat sb;
+
+    if (fstat(fd, &sb) < 0) {
+        fprintf(stderr, "Failed to stat backup SELinux policy file: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    void *map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == MAP_FAILED) {
+        fprintf(stderr, "Failed to mmap backup SELinux policy file: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    auto unmap_map = util::finally([&] {
+        munmap(map, sb.st_size);
+    });
+
+    // Write policy
+    int fd_out = open(MB_SELINUX_LOAD_FILE, O_WRONLY);
+    if (fd_out < 0) {
+        fprintf(stderr, "Failed to open %s: %s\n",
+                MB_SELINUX_LOAD_FILE, strerror(errno));
+        return false;
+    }
+
+    auto close_fd_out = util::finally([&] {
+        close(fd_out);
+    });
+
+    if (write(fd_out, map, sb.st_size) < 0) {
+        fprintf(stderr, "Failed to write to %s: %s\n",
+                MB_SELINUX_LOAD_FILE, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+static bool patch_sepolicy()
+{
+    policydb_t pdb;
+
+    if (policydb_init(&pdb) < 0) {
+        fprintf(stderr, "Failed to initialize policydb\n");
+        return false;
+    }
+
+    if (!util::selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb)) {
+        fprintf(stderr, "Failed to read SELinux policy file: %s\n",
+                MB_SELINUX_POLICY_FILE);
+        policydb_destroy(&pdb);
+        return false;
+    }
+
+    printf("SELinux policy version: %d\n", pdb.policyvers);
+
+    util::selinux_make_all_permissive(&pdb);
+
+    if (!util::selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb)) {
+        fprintf(stderr, "Failed to write SELinux policy file: %s\n",
+                MB_SELINUX_LOAD_FILE);
+        policydb_destroy(&pdb);
+        return false;
+    }
+
+    policydb_destroy(&pdb);
+
+    return true;
+}
 
 static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
 {
@@ -383,26 +481,36 @@ int rom_installer_main(int argc, char *argv[])
     });
 
 
-    // Until we get a good set of rules to allow, just temporarily set SELinux
-    // to permissive mode until installation is finished
-    int enforcing = -1;
-    if (!util::selinux_get_enforcing(&enforcing)) {
-        fprintf(stderr, "Failed to get SELinux enforcing status\n");
+    // Since many stock ROMs, most notably TouchWiz, don't allow setting SELinux
+    // to be globally permissive, we'll do the next best thing: modify the
+    // policy to make every type permissive.
+
+    bool selinux_supported = true;
+    bool backup_successful = true;
+
+    struct stat sb;
+    if (stat("/sys/fs/selinux", &sb) < 0) {
+        printf("SELinux not supported. No need to modify policy\n");
+        selinux_supported = false;
     }
 
-    printf("Current SELinux enforcing status: %d\n", enforcing);
+    if (selinux_supported) {
+        backup_successful = backup_sepolicy(sepolicy_bak_path);
+
+        printf("Patching SELinux policy to make all types permissive\n");
+        if (!patch_sepolicy()) {
+            fprintf(stderr, "Failed to patch current SELinux policy\n");
+        }
+    }
 
     auto restore_selinux = util::finally([&] {
-        if (enforcing >= 0) {
-            if (!util::selinux_set_enforcing(enforcing)) {
-                fprintf(stderr, "Failed to set SELinux enforcing to %d\n", 0);
+        if (selinux_supported && backup_successful) {
+            printf("Restoring backup SELinux policy\n");
+            if (!restore_sepolicy(sepolicy_bak_path)) {
+                fprintf(stderr, "Failed to restore SELinux policy\n");
             }
         }
     });
-
-    if (!util::selinux_set_enforcing(0)) {
-        fprintf(stderr, "Failed to set SELinux enforcing to %d\n", enforcing);
-    }
 
 
     file_ptr fp(fopen(log_file, "wb"), fclose);
