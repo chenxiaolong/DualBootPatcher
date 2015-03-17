@@ -88,6 +88,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private static final int INPUT_DIALOG_EDIT_NAME = 1;
 
     private static final int REQUEST_IMAGE = 1234;
+    private static final int REQUEST_FLASH_ZIP = 2345;
 
     private boolean mPerformingAction;
 
@@ -159,7 +160,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getActivity(), ZipFlashingActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_FLASH_ZIP);
             }
         });
 
@@ -177,6 +178,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private void reloadFragment() {
         refreshErrorVisibility(false);
+        refreshRomListVisibility(false);
+        refreshFabVisibility(false);
         refreshProgressVisibility(true);
         getActivity().getLoaderManager().restartLoader(0, null, this);
     }
@@ -454,6 +457,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
                 new ResizeAndCacheImageTask(getActivity().getApplicationContext(),
                         data.getData()).execute();
             }
+            break;
+        case REQUEST_FLASH_ZIP:
+            reloadFragment();
             break;
         }
 
