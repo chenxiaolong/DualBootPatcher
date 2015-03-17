@@ -230,6 +230,11 @@ public class SwitcherService extends IntentService {
         int succeeded = 0;
 
         try {
+            if (!CommandUtils.requestRootAccess()) {
+                printBoldText(Color.RED, "Failed to obtain root privileges\n");
+                return;
+            }
+
             if (!remountFs("/", true)) {
                 printBoldText(Color.RED, "Failed to remount / as rw\n");
                 return;
