@@ -631,6 +631,13 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
+            // Make sure the updater won't run interactively
+            close(STDIN_FILENO);
+            if (open("/dev/null", O_RDONLY) < 0) {
+                LOGE("Failed to reopen stdin: {}", strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+
             execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
             _exit(127);
         } else {
