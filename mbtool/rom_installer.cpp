@@ -479,20 +479,6 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    // Mount / writable
-    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
-        fprintf(stderr, "Failed to remount rootfs as rw: %s\n",
-                strerror(errno));
-    }
-
-    auto remount_ro = util::finally([&] {
-        if (mount("", "/", "", MS_REMOUNT | MS_RDONLY, "") < 0) {
-            fprintf(stderr, "Failed to remount rootfs as ro: %s\n",
-                    strerror(errno));
-        }
-    });
-
-
     // Since many stock ROMs, most notably TouchWiz, don't allow setting SELinux
     // to be globally permissive, we'll do the next best thing: modify the
     // policy to make every type permissive.
