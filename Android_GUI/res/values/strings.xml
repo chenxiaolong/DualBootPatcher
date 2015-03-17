@@ -152,8 +152,9 @@
         or rebooting, flashing a zip on top of the current ROM is not allowed.</string>
     <!-- Message shown in the first-use dialog for zip flashing -->
     <string name="zip_flashing_dialog_first_use">To flash a zip file using in-app flashing, just
-        add the patched zip file by tapping big plus icon.\n\nNOTE: This feature is still
-        experimental. Please backup before continuing!</string>
+        add the patched zip file by tapping big plus icon.\n\nThe flashing order can be changed by
+        tapping and holding the file and a file can be removed by swiping it away.\n\nNOTE:
+        This feature is still experimental. Please backup before continuing!</string>
 
     <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>
