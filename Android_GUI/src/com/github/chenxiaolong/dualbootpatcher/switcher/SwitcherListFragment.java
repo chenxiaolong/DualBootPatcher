@@ -97,6 +97,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private RomCardAdapter mRomCardAdapter;
     private RecyclerView mCardListView;
     private ProgressBar mProgressBar;
+    private FloatingActionButton mFabFlashZip;
 
     private int mProgressDialogType;
     private AlertDialog mProgressDialog;
@@ -152,9 +153,9 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
 
-        FloatingActionButton fabFlashZip = (FloatingActionButton) getActivity()
+        mFabFlashZip = (FloatingActionButton) getActivity()
                 .findViewById(R.id.fab_flash_zip);
-        fabFlashZip.setOnClickListener(new OnClickListener() {
+        mFabFlashZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getActivity(), ZipFlashingActivity.class);
@@ -269,6 +270,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mCardListView.setLayoutManager(llm);
 
         refreshRomListVisibility(false);
+        refreshFabVisibility(false);
     }
 
     @Override
@@ -294,6 +296,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     private void refreshErrorVisibility(boolean visible) {
         mErrorCardView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    private void refreshFabVisibility(boolean visible) {
+        mFabFlashZip.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     private void updateCardUI() {
@@ -553,6 +559,7 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
         refreshProgressVisibility(false);
         refreshRomListVisibility(true);
+        refreshFabVisibility(true);
     }
 
     @Override
