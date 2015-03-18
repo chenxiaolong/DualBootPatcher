@@ -58,7 +58,7 @@
   <!--Title of progress dialog shown when setting kernel-->
   <string name="setting_kernel">Configurazione del kernel</string>
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">ROM cambiata con successo</string>
+  <string name="choose_rom_success">Switch avvenuto con successo</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Switch fallito</string>
   <!--Message shown when setting the kernel succeeds-->
@@ -88,13 +88,13 @@
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
   <string name="rename_rom_desc">Digita un nuovo nome per %s. Lascia in bianco per usare il nome di default.</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
-  <string name="devpartconfig_title">Configurazione del dispositivo e dello slot:</string>
+  <string name="devpartconfig_title">Scegli il dispositivo:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">File manager non trovato</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Non è installato un file manager adatto. Installa un file manager per poter selezionare il file da patchare.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
-  <string name="filechooser_initial_title">Premi per selezionare un file da patchare</string>
+  <string name="filechooser_initial_title">Fai un tap per selezionare un file da patchare</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
   <string name="filechooser_initial_desc">Se viene scelto un file non supportato, appariranno delle opzioni aggiuntive che permetteranno di personalizzare il processo di patching.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
@@ -104,7 +104,7 @@
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Premi per iniziare il processo di patching</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. Puoi comunque provare a patchare il file utilizzando le opzioni sottostanti.\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
+  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. Puoi comunque provare a patchare il file utilizzando le opzioni aggiuntive.\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">File patchato con successo</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -132,7 +132,7 @@
   <!--Name for the boot image text box-->
   <string name="customopts_bootimage">Kernel</string>
   <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
-  <string name="customopts_bootimage_hint">Lascia vuoto per il rilevamento automatico</string>
+  <string name="customopts_bootimage_hint">Lascia vuoto per l\'autorilevamento</string>
   <!--Accessibility text for the checkbox in the progress box-->
   <string name="task_checkbox_image">Casella di completamento delle attività</string>
   <!--Title for the details card-->
@@ -158,13 +158,13 @@
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="a_s_settings_share_apps_title">Condividi le applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_desc">Condivione delle applicazioni dalla ROM primaria con la ROM corrente (richiede riavvio).</string>
+  <string name="a_s_settings_share_apps_desc">Condivione delle applicazioni della ROM primaria con le altre ROM (richiede riavvio).</string>
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
   <string name="a_s_settings_share_paid_apps_title">Condividi applicazioni a pagamento</string>
   <!--Description of the preference for globally shareing paid applications from the primary ROM-->
   <string name="a_s_settings_share_paid_apps_desc">
 <![CDATA[
-Share paid applications from the primary ROM with the current ROM (requires reboot).
+Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (richiede riavvio).
 <strong>Potrebbe non funzionare a causa del DRM.</strong>
 ]]></string>
   <!--Title for the preference to share individual applications-->
