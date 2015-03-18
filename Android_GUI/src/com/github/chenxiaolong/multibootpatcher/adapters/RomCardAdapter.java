@@ -129,14 +129,12 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
             // Don't cache the image since we may need to refresh it
             Picasso.with(mContext)
                     .load(f)
-                    .resize(96, 96)
                     .skipMemoryCache()
                     .error(rom.getImageResId())
                     .into(holder.vThumbnail);
         } else {
             Picasso.with(mContext)
                     .load(rom.getImageResId())
-                    .resize(96, 96)
                     .into(holder.vThumbnail);
         }
     }
