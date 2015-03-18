@@ -373,7 +373,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "jactivelte", "jflte", "jflteatt", "jfltecan",
                            "jfltecri", "jfltecsp", "jfltespr", "jfltetmo",
                            "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
-                           "jftddxx" });
+                           "jftddxx", "jgedlte" });
     device->setName("Samsung Galaxy S 4");
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p16" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
