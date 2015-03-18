@@ -472,8 +472,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
             mPerformingAction = false;
             updateCardUI();
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
+            if (mProgressDialog != null) {
+                mProgressDialog.dismiss();
+                mProgressDialog = null;
+            }
             Toast.makeText(getActivity(),
                     event.failed ? R.string.choose_rom_failure : R.string.choose_rom_success,
                     Toast.LENGTH_SHORT).show();
@@ -481,8 +483,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             SetKernelEvent event = (SetKernelEvent) bEvent;
             mPerformingAction = false;
             updateCardUI();
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
+            if (mProgressDialog != null) {
+                mProgressDialog.dismiss();
+                mProgressDialog = null;
+            }
             Toast.makeText(getActivity(),
                     event.failed ? R.string.set_kernel_failure : R.string.set_kernel_success,
                     Toast.LENGTH_SHORT).show();
