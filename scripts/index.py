@@ -368,7 +368,7 @@ resdir = os.path.join(sourcedir, 'res')
 templatefile = os.path.join(sourcedir, 'index.template.html')
 outfile = os.path.join(filesdir, 'index.html')
 genfile = os.path.join(filesdir, '.index.gen.html')
-MAGIC = b'INSERT GENERATED STUFF HERE\n'
+MAGIC = b'{{CHANGELOG}}\n'
 
 f_out = open(outfile, 'wb')
 
