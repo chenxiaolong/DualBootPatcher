@@ -87,6 +87,18 @@
   <string name="rename_rom_title">Rinomina %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
   <string name="rename_rom_desc">Digita un nuovo nome per %s. Lascia in bianco per usare il nome di default.</string>
+  <!--ZIP flash activity title-->
+  <!--Title of pending action card for installing a zip file-->
+  <!--Subtitle text in pending action card showing the selected filename-->
+  <!--Subtitle text in pending action card showing the installation location-->
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <!--Error message shown when the selected zip file is not found-->
+  <!--Error message shown when the selected zip file could not be read-->
+  <!--Error message shown when the selected zip file isn't patched-->
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <!--Message shown in the first-use dialog for zip flashing-->
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Scegli il dispositivo:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
