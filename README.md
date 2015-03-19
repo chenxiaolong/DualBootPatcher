@@ -1,4 +1,4 @@
-[![Build Status](http://jenkins.cxl.epac.to/job/DualBoot_Patcher/badge/icon)](https://jenkins.cxl.epac.to/job/DualBoot_Patcher/)
+[![Build Status](https://jenkins.noobdev.io/job/DualBoot_Patcher/badge/icon)](https://jenkins.noobdev.io/job/DualBoot_Patcher/)
 
 Multi Boot Patcher
 ==================
