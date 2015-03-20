@@ -257,6 +257,11 @@ for i in range(0, len(versions)):
     writer.push('h2', attrs={'class': 'panel-title',
                              'style': 'font-size:20px;'}, indent=True)
     writer.write(str(version))
+
+    # New line on small devices
+    writer.push('p', attrs={'class': 'visible-xs'})
+    writer.pop('p')
+
     writer.write(' ')
     writer.push('small')
     writer.write(timestamp)
