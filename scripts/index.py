@@ -274,17 +274,73 @@ for i in range(0, len(versions)):
     writer.write(' Files:')
     writer.pop('h4', newline=True)
 
-    # Write files list
-    writer.push('ul', indent=True, newline=True)
+    # Get list of files
+    cur_files = dict()
+    md5sums = dict()
     for f in files:
         if version.ver in f:
+            if f.endswith('.md5sum'):
+                md5sums[f[:-7]] = f
+                continue
+
+            if f.endswith('.apk'):
+                target_os = 'Android'
+            elif f.endswith('win32.zip') or f.endswith('.7z'):
+                target_os = 'Win32'
+            else:
+                target_os = 'Other'
+
+            if target_os not in cur_files:
+                cur_files[target_os] = list()
+
+            cur_files[target_os].append(f)
+
+    # Write files list
+    writer.push('ul', indent=True, newline=True)
+    for target_os in sorted(cur_files):
+        for f in cur_files[target_os]:
+            fullpath = os.path.join(filesdir, f)
+            size = humanize_bytes(os.path.getsize(fullpath))
+
             writer.push('li', indent=True)
+
+            # Small layout
+            writer.push('div', attrs={'class': 'visible-xs'})
+            # OS
+            writer.push('a', attrs={'href': f})
+            writer.write(target_os)
+            writer.pop('a')
+            # MD5
+            if f in md5sums:
+                writer.write(' | ')
+                writer.push('a', attrs={'href': md5sums[f]})
+                writer.write('MD5')
+                writer.pop('a')
+            # Size
+            writer.write(' (%s)' % size)
+            # End small layout
+            writer.pop('div')
+
+            # Large layout
+            writer.push('div', attrs={'class': 'hidden-xs'})
+            writer.write(target_os + ': ')
+            # OS
             writer.push('a', attrs={'href': f})
             writer.write(f)
             writer.pop('a')
-            fullpath = os.path.join(filesdir, f)
-            writer.write(' (%s)' % humanize_bytes(os.path.getsize(fullpath)))
+            # MD5
+            if f in md5sums:
+                writer.write(' | ')
+                writer.push('a', attrs={'href': md5sums[f]})
+                writer.write('MD5')
+                writer.pop('a')
+            # Size
+            writer.write(' (%s)' % size)
+            # End large layout
+            writer.pop('div')
+
             writer.pop('li', newline=True)
+
     writer.pop('ul', indent=True, newline=True)
 
     if i == len(versions) - 1:
