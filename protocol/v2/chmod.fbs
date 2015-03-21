@@ -1,0 +1,11 @@
+namespace mbtool.daemon.v2;
+
+table ChmodRequest {
+    path : string;
+    mode : uint;
+}
+
+table ChmodResponse {
+    success : bool;
+    error_msg : string;
+}

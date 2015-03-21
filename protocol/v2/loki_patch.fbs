@@ -1,0 +1,12 @@
+namespace mbtool.daemon.v2;
+
+table LokiPatchRequest {
+    // Path to source boot image file
+    source : string;
+    // Path to destination boot image file
+    target : string;
+}
+
+table LokiPatchResponse {
+    success : bool;
+}

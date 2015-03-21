@@ -64,6 +64,38 @@ int64_t socket_write(int fd, const void *buf, int64_t size)
     return bytes_written;
 }
 
+bool socket_read_bytes(int fd, std::vector<uint8_t> *result)
+{
+    int32_t len;
+    if (!socket_read_int32(fd, &len)) {
+        return false;
+    }
+
+    if (len < 0) {
+        return false;
+    }
+
+    std::vector<uint8_t> buf(len);
+
+    if (socket_read(fd, buf.data(), len) == (int64_t) len) {
+        result->swap(buf);
+        return true;
+    }
+    return false;
+}
+
+bool socket_write_bytes(int fd, const uint8_t *data, size_t len)
+{
+    if (!socket_write_int32(fd, len)) {
+        return false;
+    }
+
+    if (socket_write(fd, data, len) == (int64_t) len) {
+        return true;
+    }
+    return false;
+}
+
 #define read_int_type(TYPE) \
     TYPE buf; \
     if (socket_read(fd, &buf, sizeof(TYPE)) == sizeof(TYPE)) { \

@@ -1,0 +1,18 @@
+namespace mbtool.daemon.v2;
+
+table Rom {
+    id : string;
+    system_path : string;
+    cache_path : string;
+    data_path : string;
+    version : string;
+    build : string;
+}
+
+table GetRomsListRequest {
+    // No parameters
+}
+
+table GetRomsListResponse {
+    roms : [Rom];
+}

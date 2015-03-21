@@ -1,0 +1,9 @@
+namespace mbtool.daemon.v2;
+
+table GetCurrentRomRequest {
+    // No parameters
+}
+
+table GetCurrentRomResponse {
+    rom_id : string;
+}

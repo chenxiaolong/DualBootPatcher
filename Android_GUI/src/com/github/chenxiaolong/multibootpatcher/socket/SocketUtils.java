@@ -37,6 +37,22 @@ public class SocketUtils {
         }
     }
 
+    public static byte[] readBytes(InputStream is) throws IOException {
+        int length = readInt32(is);
+        if (length < 0) {
+            throw new IOException("Invalid byte array length");
+        }
+
+        byte[] str = new byte[length];
+        readFully(is, str, 0, length);
+        return str;
+    }
+
+    public static void writeBytes(OutputStream os, byte[] bytes) throws IOException {
+        writeInt32(os, bytes.length);
+        os.write(bytes);
+    }
+
     public static short readInt16(InputStream is) throws IOException {
         byte[] buf = new byte[2];
         readFully(is, buf, 0, 2);

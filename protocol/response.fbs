@@ -1,0 +1,48 @@
+include "v2/get_version.fbs";
+include "v2/get_roms_list.fbs";
+include "v2/get_builtin_rom_ids.fbs";
+include "v2/get_current_rom.fbs";
+include "v2/switch_rom.fbs";
+include "v2/set_kernel.fbs";
+include "v2/reboot.fbs";
+include "v2/open.fbs";
+include "v2/copy.fbs";
+include "v2/chmod.fbs";
+include "v2/loki_patch.fbs";
+
+namespace mbtool.daemon.v2;
+
+enum ResponseType : short {
+    UNSUPPORTED,
+    INVALID,
+
+    GET_VERSION,
+    GET_ROMS_LIST,
+    GET_BUILTIN_ROM_IDS,
+    GET_CURRENT_ROM,
+    SWITCH_ROM,
+    SET_KERNEL,
+    REBOOT,
+    OPEN,
+    COPY,
+    CHMOD,
+    LOKI_PATCH
+}
+
+table Response {
+    type : ResponseType;
+
+    get_version_response : GetVersionResponse;
+    get_roms_list_response : GetRomsListResponse;
+    get_builtin_rom_ids_response : GetBuiltinRomIdsResponse;
+    get_current_rom_response : GetCurrentRomResponse;
+    switch_rom_response : SwitchRomResponse;
+    set_kernel_response : SetKernelResponse;
+    reboot_response : RebootResponse;
+    open_response : OpenResponse;
+    copy_response : CopyResponse;
+    chmod_response : ChmodResponse;
+    loki_patch_response : LokiPatchResponse;
+}
+
+root_type Response;

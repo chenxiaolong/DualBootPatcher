@@ -31,6 +31,7 @@ import com.github.chenxiaolong.multibootpatcher.Version;
 import com.github.chenxiaolong.multibootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
+import com.google.flatbuffers.FlatBufferBuilder;
 
 import org.apache.commons.io.IOUtils;
 
@@ -38,30 +39,47 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+
+import mbtool.daemon.v2.ChmodRequest;
+import mbtool.daemon.v2.ChmodResponse;
+import mbtool.daemon.v2.CopyRequest;
+import mbtool.daemon.v2.CopyResponse;
+import mbtool.daemon.v2.GetBuiltinRomIdsRequest;
+import mbtool.daemon.v2.GetBuiltinRomIdsResponse;
+import mbtool.daemon.v2.GetCurrentRomRequest;
+import mbtool.daemon.v2.GetCurrentRomResponse;
+import mbtool.daemon.v2.GetRomsListRequest;
+import mbtool.daemon.v2.GetRomsListResponse;
+import mbtool.daemon.v2.GetVersionRequest;
+import mbtool.daemon.v2.LokiPatchRequest;
+import mbtool.daemon.v2.LokiPatchResponse;
+import mbtool.daemon.v2.OpenRequest;
+import mbtool.daemon.v2.OpenResponse;
+import mbtool.daemon.v2.RebootRequest;
+import mbtool.daemon.v2.RebootResponse;
+import mbtool.daemon.v2.Request;
+import mbtool.daemon.v2.RequestType;
+import mbtool.daemon.v2.Response;
+import mbtool.daemon.v2.ResponseType;
+import mbtool.daemon.v2.Rom;
+import mbtool.daemon.v2.SetKernelRequest;
+import mbtool.daemon.v2.SetKernelResponse;
+import mbtool.daemon.v2.SwitchRomRequest;
+import mbtool.daemon.v2.SwitchRomResponse;
 
 public class MbtoolSocket {
     private static final String TAG = MbtoolSocket.class.getSimpleName();
 
     private static final String SOCKET_ADDRESS = "mbtool.daemon";
 
+    // Same as the C++ default
+    private static final int FBB_SIZE = 1024;
+
     private static final String RESPONSE_ALLOW = "ALLOW";
     private static final String RESPONSE_DENY = "DENY";
     private static final String RESPONSE_OK = "OK";
-    private static final String RESPONSE_SUCCESS = "SUCCESS";
-    private static final String RESPONSE_FAIL = "FAIL";
     private static final String RESPONSE_UNSUPPORTED = "UNSUPPORTED";
-
-    private static final String V1_COMMAND_VERSION = "VERSION";
-    private static final String V1_COMMAND_LIST_ROMS = "LIST_ROMS";
-    private static final String V1_COMMAND_LIST_BUILTIN_ROM_IDS = "LIST_BUILTIN_ROM_IDS";
-    private static final String V1_COMMAND_CURRENT_ROM = "CURRENT_ROM";
-    private static final String V1_COMMAND_CHOOSE_ROM = "CHOOSE_ROM";
-    private static final String V1_COMMAND_SET_KERNEL = "SET_KERNEL";
-    private static final String V1_COMMAND_REBOOT = "REBOOT";
-    private static final String V1_COMMAND_OPEN = "OPEN";
-    private static final String V1_COMMAND_COPY = "COPY";
-    private static final String V1_COMMAND_CHMOD = "CHMOD";
-    private static final String V1_COMMAND_LOKI_PATCH = "LOKI_PATCH";
 
     private static MbtoolSocket sInstance;
 
@@ -73,8 +91,7 @@ public class MbtoolSocket {
 
     // Keep this as a singleton class for now
     private MbtoolSocket() {
-        // TODO: Handle other interface versions in the future
-        mInterfaceVersion = 1;
+        mInterfaceVersion = 2;
     }
 
     public static MbtoolSocket getInstance() {
@@ -117,8 +134,15 @@ public class MbtoolSocket {
         }
 
         // Get mbtool version
-        sendCommand(V1_COMMAND_VERSION);
-        mMbtoolVersion = SocketUtils.readString(mSocketIS);
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        GetVersionRequest.startGetVersionRequest(builder);
+        int request = GetVersionRequest.endGetVersionRequest(builder);
+        Request.startRequest(builder);
+        Request.addType(builder, RequestType.GET_VERSION);
+        Request.addGetVersionRequest(builder, request);
+        builder.finish(Request.endRequest(builder));
+        Response fbresponse = sendRequest(builder, ResponseType.GET_VERSION);
+        mMbtoolVersion = fbresponse.getVersionResponse().version();
         if (mMbtoolVersion == null) {
             throw new IOException("Could not determine mbtool version");
         }
@@ -239,46 +263,35 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_LIST_ROMS);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            GetRomsListRequest.startGetRomsListRequest(builder);
+            // No parameters
+            int request = GetRomsListRequest.endGetRomsListRequest(builder);
 
-            int length = SocketUtils.readInt32(mSocketIS);
-            RomInformation[] roms = new RomInformation[length];
-            String response;
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.GET_ROMS_LIST);
+            Request.addGetRomsListRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
 
-            for (int i = 0; i < length; i++) {
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.GET_ROMS_LIST);
+            GetRomsListResponse response = fbresponse.getRomsListResponse();
+
+            RomInformation[] roms = new RomInformation[response.romsLength()];
+
+            for (int i = 0; i < response.romsLength(); i++) {
                 RomInformation rom = roms[i] = new RomInformation();
-                boolean ready = false;
+                Rom fbrom = response.roms(i);
 
-                while (true) {
-                    response = SocketUtils.readString(mSocketIS);
-
-                    if ("ROM_BEGIN".equals(response)) {
-                        ready = true;
-                    } else if (ready && "ID".equals(response)) {
-                        rom.setId(SocketUtils.readString(mSocketIS));
-                    } else if (ready && "SYSTEM_PATH".equals(response)) {
-                        rom.setSystemPath(SocketUtils.readString(mSocketIS));
-                    } else if (ready && "CACHE_PATH".equals(response)) {
-                        rom.setCachePath(SocketUtils.readString(mSocketIS));
-                    } else if (ready && "DATA_PATH".equals(response)) {
-                        rom.setDataPath(SocketUtils.readString(mSocketIS));
-                    } else if (ready && "USE_RAW_PATHS".equals(response)) {
-                        // Ignore
-                        SocketUtils.readString(mSocketIS);
-                    } else if (ready && "VERSION".equals(response)) {
-                        rom.setVersion(SocketUtils.readString(mSocketIS));
-                    } else if (ready && "BUILD".equals(response)) {
-                        rom.setBuild(SocketUtils.readString(mSocketIS));
-                    } else if (ready && "ROM_END".equals(response)) {
-                        break;
-                    } else {
-                        Log.e(TAG, "getInstalledRoms(): Unknown response: " + response);
-                    }
-                }
+                rom.setId(fbrom.id());
+                rom.setSystemPath(fbrom.systemPath());
+                rom.setCachePath(fbrom.cachePath());
+                rom.setDataPath(fbrom.dataPath());
+                rom.setVersion(fbrom.version());
+                rom.setBuild(fbrom.build());
             }
-
-            // Command always returns OK at the end
-            SocketUtils.readString(mSocketIS);
 
             return roms;
         } catch (IOException e) {
@@ -295,9 +308,28 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_LIST_BUILTIN_ROM_IDS);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            GetBuiltinRomIdsRequest.startGetBuiltinRomIdsRequest(builder);
+            // No parameters
+            int request = GetBuiltinRomIdsRequest.endGetBuiltinRomIdsRequest(builder);
 
-            return SocketUtils.readStringArray(mSocketIS);
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.GET_BUILTIN_ROM_IDS);
+            Request.addGetBuiltinRomIdsRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.GET_BUILTIN_ROM_IDS);
+            GetBuiltinRomIdsResponse response = fbresponse.getBuiltinRomIdsResponse();
+
+            String[] romIds = new String[response.romIdsLength()];
+            for (int i = 0; i < response.romIdsLength(); i++) {
+                romIds[i] = response.romIds(i);
+            }
+
+            return romIds;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
@@ -312,17 +344,23 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_CURRENT_ROM);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            GetCurrentRomRequest.startGetCurrentRomRequest(builder);
+            // No parameters
+            int request = GetCurrentRomRequest.endGetCurrentRomRequest(builder);
 
-            String response = SocketUtils.readString(mSocketIS);
-            switch (response) {
-            case RESPONSE_SUCCESS:
-                return SocketUtils.readString(mSocketIS);
-            case RESPONSE_FAIL:
-                return null;
-            default:
-                throw new IOException("Invalid response: " + response);
-            }
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.GET_CURRENT_ROM);
+            Request.addGetCurrentRomRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.GET_CURRENT_ROM);
+            GetCurrentRomResponse response = fbresponse.getCurrentRomResponse();
+
+            return response.romId();
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
@@ -337,26 +375,32 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_CHOOSE_ROM);
-
             String bootBlockDev = SwitcherUtils.getBootPartition();
             if (bootBlockDev == null) {
                 Log.e(TAG, "Failed to determine boot partition");
                 return false;
             }
 
-            SocketUtils.writeString(mSocketOS, id);
-            SocketUtils.writeString(mSocketOS, bootBlockDev);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbRomId = builder.createString(id);
+            int fbBootBlockDev = builder.createString(bootBlockDev);
+            SwitchRomRequest.startSwitchRomRequest(builder);
+            SwitchRomRequest.addRomId(builder, fbRomId);
+            SwitchRomRequest.addBootBlockdev(builder, fbBootBlockDev);
+            int request = SwitchRomRequest.endSwitchRomRequest(builder);
 
-            String response = SocketUtils.readString(mSocketIS);
-            switch (response) {
-            case RESPONSE_SUCCESS:
-                return true;
-            case RESPONSE_FAIL:
-                return false;
-            default:
-                throw new IOException("Invalid response: " + response);
-            }
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.SWITCH_ROM);
+            Request.addSwitchRomRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.SWITCH_ROM);
+            SwitchRomResponse response = fbresponse.switchRomResponse();
+
+            return response.success() != 0;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
@@ -371,26 +415,32 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_SET_KERNEL);
-
             String bootBlockDev = SwitcherUtils.getBootPartition();
             if (bootBlockDev == null) {
                 Log.e(TAG, "Failed to determine boot partition");
                 return false;
             }
 
-            SocketUtils.writeString(mSocketOS, id);
-            SocketUtils.writeString(mSocketOS, bootBlockDev);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbRomId = builder.createString(id);
+            int fbBootBlockDev = builder.createString(bootBlockDev);
+            SetKernelRequest.startSetKernelRequest(builder);
+            SetKernelRequest.addRomId(builder, fbRomId);
+            SetKernelRequest.addBootBlockdev(builder, fbBootBlockDev);
+            int request = SetKernelRequest.endSetKernelRequest(builder);
 
-            String response = SocketUtils.readString(mSocketIS);
-            switch (response) {
-            case RESPONSE_SUCCESS:
-                return true;
-            case RESPONSE_FAIL:
-                return false;
-            default:
-                throw new IOException("Invalid response: " + response);
-            }
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.SET_KERNEL);
+            Request.addSetKernelRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.SET_KERNEL);
+            SetKernelResponse response = fbresponse.setKernelResponse();
+
+            return response.success() != 0;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
@@ -405,16 +455,24 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_REBOOT);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbArg = builder.createString(arg != null ? arg : "");
+            RebootRequest.startRebootRequest(builder);
+            RebootRequest.addArg(builder, fbArg);
+            int request = RebootRequest.endRebootRequest(builder);
 
-            SocketUtils.writeString(mSocketOS, arg);
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.REBOOT);
+            Request.addRebootRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
 
-            String response = SocketUtils.readString(mSocketIS);
-            if (response.equals(RESPONSE_FAIL)) {
-                return false;
-            } else {
-                throw new IOException("Invalid response: " + response);
-            }
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.REBOOT);
+            RebootResponse response = fbresponse.rebootResponse();
+
+            return response.success() != 0;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
@@ -423,22 +481,34 @@ public class MbtoolSocket {
         return false;
     }
 
-    public FileDescriptor open(Context context, String filename, String[] flags) {
+    public FileDescriptor open(Context context, String filename, short[] flags) {
         if (!connect(context)) {
             return null;
         }
 
         try {
-            sendCommand(V1_COMMAND_OPEN);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbFilename = builder.createString(filename);
+            int fbFlags = OpenRequest.createFlagsVector(builder, flags);
+            OpenRequest.startOpenRequest(builder);
+            OpenRequest.addPath(builder, fbFilename);
+            OpenRequest.addFlags(builder, fbFlags);
+            int request = OpenRequest.endOpenRequest(builder);
 
-            SocketUtils.writeString(mSocketOS, filename);
-            SocketUtils.writeStringArray(mSocketOS, flags);
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.OPEN);
+            Request.addOpenRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
 
-            String response = SocketUtils.readString(mSocketIS);
-            if (response.equals(RESPONSE_FAIL)) {
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.OPEN);
+            OpenResponse response = fbresponse.openResponse();
+
+            if (response.success() == 0) {
+                Log.e(TAG, "Failed to open file: " + response.errorMsg());
                 return null;
-            } else if (!response.equals(RESPONSE_SUCCESS)) {
-                throw new IOException("Invalid response: " + response);
             }
 
             // Read file descriptors
@@ -466,16 +536,29 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_COPY);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbSource = builder.createString(source);
+            int fbTarget = builder.createString(target);
+            CopyRequest.startCopyRequest(builder);
+            CopyRequest.addSource(builder, fbSource);
+            CopyRequest.addTarget(builder, fbTarget);
+            int request = CopyRequest.endCopyRequest(builder);
 
-            SocketUtils.writeString(mSocketOS, source);
-            SocketUtils.writeString(mSocketOS, target);
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.COPY);
+            Request.addCopyRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
 
-            String response = SocketUtils.readString(mSocketIS);
-            if (response.equals(RESPONSE_FAIL)) {
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.COPY);
+            CopyResponse response = fbresponse.copyResponse();
+
+            if (response.success() == 0) {
+                Log.e(TAG, "Failed to copy from " + source + " to " + target + ": " +
+                        response.errorMsg());
                 return false;
-            } else if (!response.equals(RESPONSE_SUCCESS)) {
-                throw new IOException("Invalid response: " + response);
             }
 
             return true;
@@ -493,16 +576,27 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_CHMOD);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbFilename = builder.createString(filename);
+            ChmodRequest.startChmodRequest(builder);
+            ChmodRequest.addPath(builder, fbFilename);
+            ChmodRequest.addMode(builder, mode);
+            int request = ChmodRequest.endChmodRequest(builder);
 
-            SocketUtils.writeString(mSocketOS, filename);
-            SocketUtils.writeInt32(mSocketOS, mode);
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.CHMOD);
+            Request.addChmodRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
 
-            String response = SocketUtils.readString(mSocketIS);
-            if (response.equals(RESPONSE_FAIL)) {
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.CHMOD);
+            ChmodResponse response = fbresponse.chmodResponse();
+
+            if (response.success() == 0) {
+                Log.e(TAG, "Failed to chmod " + filename + ": " + response.errorMsg());
                 return false;
-            } else if (!response.equals(RESPONSE_SUCCESS)) {
-                throw new IOException("Invalid response: " + response);
             }
 
             return true;
@@ -520,19 +614,26 @@ public class MbtoolSocket {
         }
 
         try {
-            sendCommand(V1_COMMAND_LOKI_PATCH);
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbSource = builder.createString(source);
+            int fbTarget = builder.createString(target);
+            LokiPatchRequest.startLokiPatchRequest(builder);
+            LokiPatchRequest.addSource(builder, fbSource);
+            LokiPatchRequest.addTarget(builder, fbTarget);
+            int request = LokiPatchRequest.endLokiPatchRequest(builder);
 
-            SocketUtils.writeString(mSocketOS, source);
-            SocketUtils.writeString(mSocketOS, target);
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.LOKI_PATCH);
+            Request.addLokiPatchRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
 
-            String response = SocketUtils.readString(mSocketIS);
-            if (response.equals(RESPONSE_FAIL)) {
-                return false;
-            } else if (!response.equals(RESPONSE_SUCCESS)) {
-                throw new IOException("Invalid response: " + response);
-            }
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.LOKI_PATCH);
+            LokiPatchResponse response = fbresponse.lokiPatchResponse();
 
-            return true;
+            return response.success() != 0;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
@@ -543,24 +644,57 @@ public class MbtoolSocket {
 
     // Private helper functions
 
-    private void sendCommand(String command) throws IOException {
-        SocketUtils.writeString(mSocketOS, command);
+    private Response sendRequest(FlatBufferBuilder builder, short expected) throws IOException {
+        SocketUtils.writeBytes(mSocketOS, builder.sizedByteArray());
 
-        String response = SocketUtils.readString(mSocketIS);
-        if (RESPONSE_UNSUPPORTED.equals(response)) {
-            throw new IOException("Unsupported command: " + command);
-        } else if (!RESPONSE_OK.equals(response)) {
-            throw new IOException("Unknown response: " + response);
+        byte[] responseBytes = SocketUtils.readBytes(mSocketIS);
+        ByteBuffer bb = ByteBuffer.wrap(responseBytes);
+        Response response = Response.getRootAsResponse(bb);
+
+        if (response.type() == ResponseType.UNSUPPORTED) {
+            throw new IOException("Unsupported command");
+        } else if (response.type() == ResponseType.INVALID) {
+            throw new IOException("Invalid command request");
+        } else if (response.type() != expected) {
+            throw new IOException("Unexpected response type");
         }
-    }
 
-    @SuppressWarnings("unused")
-    public static class OpenFlags {
-        public static final String APPEND = "APPEND";
-        public static final String CREAT = "CREAT";
-        public static final String EXCL = "EXCL";
-        public static final String RDWR = "RDWR";
-        public static final String TRUNC = "TRUNC";
-        public static final String WRONLY = "WRONLY";
+        // We're not expecting any null responses in the methods above, so just handle them here
+        if (response.type() == ResponseType.GET_VERSION
+                && response.getVersionResponse() == null) {
+            throw new IOException("null GET_VERSION response");
+        } else if (response.type() == ResponseType.GET_ROMS_LIST
+                && response.getRomsListResponse() == null) {
+            throw new IOException("null GET_ROMS_LIST response");
+        } else if (response.type() == ResponseType.GET_BUILTIN_ROM_IDS
+                && response.getBuiltinRomIdsResponse() == null) {
+            throw new IOException("null GET_BUILTIN_ROM_IDS response");
+        } else if (response.type() == ResponseType.GET_CURRENT_ROM
+                && response.getCurrentRomResponse() == null) {
+            throw new IOException("null GET_CURRENT_ROM response");
+        } else if (response.type() == ResponseType.SWITCH_ROM
+                && response.switchRomResponse() == null) {
+            throw new IOException("null SWITCH_ROM response");
+        } else if (response.type() == ResponseType.SET_KERNEL
+                && response.setKernelResponse() == null) {
+            throw new IOException("null SET_KERNEL response");
+        } else if (response.type() == ResponseType.REBOOT
+                && response.rebootResponse() == null) {
+            throw new IOException("null REBOOT response");
+        } else if (response.type() == ResponseType.OPEN
+                && response.openResponse() == null) {
+            throw new IOException("null OPEN response");
+        } else if (response.type() == ResponseType.COPY
+                && response.copyResponse() == null) {
+            throw new IOException("null COPY response");
+        } else if (response.type() == ResponseType.CHMOD
+                && response.chmodResponse() == null) {
+            throw new IOException("null CHMOD response");
+        } else if (response.type() == ResponseType.LOKI_PATCH
+                && response.lokiPatchResponse() == null) {
+            throw new IOException("null LOKI_PATCH response");
+        }
+
+        return response;
     }
 }

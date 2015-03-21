@@ -196,6 +196,7 @@ LOCAL_C_INCLUDES := \
 	$(LIBSEPOL_DIR)/include \
 	$(PROCPS_NG_DIR)/include \
 	$(EXTERNAL_DIR) \
+	$(EXTERNAL_DIR)/flatbuffers/include \
 	$(EXTERNAL_DIR)/pugixml/src
 
 LOCAL_CFLAGS := $(mb_common_cflags)
@@ -230,6 +231,7 @@ LOCAL_C_INCLUDES := \
 	$(TOP_DIR)/libmbp \
 	$(TOP_DIR) \
 	$(EXTERNAL_DIR) \
+	$(EXTERNAL_DIR)/flatbuffers/include \
 	$(EXTERNAL_DIR)/pugixml/src
 
 LOCAL_CFLAGS := $(mb_common_cflags)

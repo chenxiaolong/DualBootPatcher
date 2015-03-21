@@ -1,0 +1,12 @@
+namespace mbtool.daemon.v2;
+
+table SwitchRomRequest {
+    // ROM ID to switch to
+    rom_id : string;
+    // Path to the boot partition's block device
+    boot_blockdev : string;
+}
+
+table SwitchRomResponse {
+    success : bool;
+}
