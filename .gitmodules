@@ -22,3 +22,6 @@
 [submodule "external/Android-Terminal-Emulator"]
 	path = external/Android-Terminal-Emulator
 	url = https://github.com/chenxiaolong/Android-Terminal-Emulator.git
+[submodule "external/flatbuffers"]
+	path = external/flatbuffers
+	url = https://github.com/google/flatbuffers.git
