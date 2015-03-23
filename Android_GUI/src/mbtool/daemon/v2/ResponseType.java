@@ -16,8 +16,9 @@ public class ResponseType {
   public static final short COPY = 10;
   public static final short CHMOD = 11;
   public static final short LOKI_PATCH = 12;
+  public static final short WIPE_ROM = 13;
 
-  private static final String[] names = { "UNSUPPORTED", "INVALID", "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", };
+  private static final String[] names = { "UNSUPPORTED", "INVALID", "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", };
 
   public static String name(int e) { return names[e]; }
 };

@@ -109,6 +109,41 @@
     <string name="rom_menu_change_image">Change image</string>
     <!-- ROM menu item for resetting back to the default image -->
     <string name="rom_menu_reset_image">Reset image</string>
+    <!-- ROM menu item for wiping the ROM -->
+    <string name="rom_menu_wipe_rom">Wipe ROM</string>
+
+    <!-- Target for wiping ROM's /system -->
+    <string name="wipe_target_system">System</string>
+    <!-- Target for wiping ROM's /cache -->
+    <string name="wipe_target_cache">Cache</string>
+    <!-- Target for wiping ROM's /data -->
+    <string name="wipe_target_data">Data</string>
+    <!-- Target for wiping ROM's dalvik cache -->
+    <string name="wipe_target_dalvik_cache">Dalvik cache</string>
+    <!-- Target for wiping ROM's multiboot files -->
+    <string name="wipe_target_multiboot_files">MultiBoot files</string>
+
+    <!-- Title of dialog box asking for which targets to wipe -->
+    <string name="wipe_rom_dialog_title">Wipe targets</string>
+    <!-- Message shown in the dialog box for ROM wiping indicating that the feature is still very
+         experimental and could unintentionally delete backups or other files on the internal
+         storage. -->
+    <string name="wipe_rom_dialog_warning_message">In-app ROM wiping is currently an experimental
+        feature, possibly having bugs that could, though unlikely, unintentionally wipe backups,
+        the internal storage, and other important data.</string>
+    <!-- Title of progress dialog shown when wiping targets -->
+    <string name="wiping_targets">Wiping targets</string>
+    <!-- Toast message indicating successfully wiped targets -->
+    <string name="wipe_rom_successfully_wiped">Successfully wiped: %s</string>
+    <!-- Toast message indicating targets that failed to wipe -->
+    <string name="wipe_rom_failed_to_wipe">Failed to wipe: %s</string>
+    <!-- Toast message indicating that the wipe process failed to start -->
+    <string name="wipe_rom_initiate_fail">Failed to initiate ROM wiping process</string>
+    <!-- Toast message shown if the user did not select any target to wipe -->
+    <string name="wipe_rom_none_selected">No wipes were performed because no targets were
+        specified.</string>
+    <!-- Toast message shown if the user attempts to wipe any target for the current ROM -->
+    <string name="wipe_rom_no_wipe_current_rom">The currently running ROM cannot be wiped.</string>
 
     <!-- Accessibility text for the ROM logo images -->
     <string name="switcher_rom_image">ROM logo</string>

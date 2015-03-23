@@ -67,6 +67,8 @@ import mbtool.daemon.v2.SetKernelRequest;
 import mbtool.daemon.v2.SetKernelResponse;
 import mbtool.daemon.v2.SwitchRomRequest;
 import mbtool.daemon.v2.SwitchRomResponse;
+import mbtool.daemon.v2.WipeRomRequest;
+import mbtool.daemon.v2.WipeRomResponse;
 
 public class MbtoolSocket {
     private static final String TAG = MbtoolSocket.class.getSimpleName();
@@ -642,6 +644,57 @@ public class MbtoolSocket {
         return false;
     }
 
+    public static class WipeResult {
+        // Targets as listed in WipeTarget
+        public short[] succeeded;
+        public short[] failed;
+    }
+
+    public WipeResult wipeRom(Context context, String romId, short[] targets) {
+        if (!connect(context)) {
+            return null;
+        }
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbRomId = builder.createString(romId);
+            int fbTargets = WipeRomRequest.createTargetsVector(builder, targets);
+            WipeRomRequest.startWipeRomRequest(builder);
+            WipeRomRequest.addRomId(builder, fbRomId);
+            WipeRomRequest.addTargets(builder, fbTargets);
+            int request = WipeRomRequest.endWipeRomRequest(builder);
+
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.WIPE_ROM);
+            Request.addWipeRomRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.WIPE_ROM);
+            WipeRomResponse response = fbresponse.wipeRomResponse();
+
+            WipeResult result = new WipeResult();
+            result.succeeded = new short[response.succeededLength()];
+            result.failed = new short[response.failedLength()];
+
+            for (int i = 0; i < response.succeededLength(); i++) {
+                result.succeeded[i] = response.succeeded(i);
+            }
+            for (int i = 0; i < response.failedLength(); i++) {
+                result.failed[i] = response.failed(i);
+            }
+
+            return result;
+        } catch (IOException e) {
+            e.printStackTrace();
+            disconnect();
+        }
+
+        return null;
+    }
+
     // Private helper functions
 
     private Response sendRequest(FlatBufferBuilder builder, short expected) throws IOException {
@@ -693,6 +746,9 @@ public class MbtoolSocket {
         } else if (response.type() == ResponseType.LOKI_PATCH
                 && response.lokiPatchResponse() == null) {
             throw new IOException("null LOKI_PATCH response");
+        } else if (response.type() == ResponseType.WIPE_ROM
+                && response.wipeRomResponse() == null) {
+            throw new IOException("null WIPE_ROM response");
         }
 
         return response;

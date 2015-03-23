@@ -65,6 +65,12 @@ public class SwitcherEventCollector extends EventCollector {
                     String line = bundle.getString(SwitcherService.RESULT_OUTPUT_DATA);
 
                     sendEvent(new NewOutputEvent(line));
+                } else if (SwitcherService.STATE_WIPED_ROM.equals(state)) {
+                    short[] succeeded = bundle.getShortArray(
+                            SwitcherService.RESULT_TARGETS_SUCCEEDED);
+                    short[] failed = bundle.getShortArray(SwitcherService.RESULT_TARGETS_FAILED);
+
+                    sendEvent(new WipedRomEvent(succeeded, failed));
                 }
             }
         }
@@ -122,6 +128,14 @@ public class SwitcherEventCollector extends EventCollector {
         mContext.startService(intent);
     }
 
+    public void wipeRom(String romId, short[] targets) {
+        Intent intent = new Intent(mContext, SwitcherService.class);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_WIPE_ROM);
+        intent.putExtra(SwitcherService.PARAM_ROM_ID, romId);
+        intent.putExtra(SwitcherService.PARAM_WIPE_TARGETS, targets);
+        mContext.startService(intent);
+    }
+
     // Events
 
     public class SwitchedRomEvent extends BaseEvent {
@@ -167,6 +181,16 @@ public class SwitcherEventCollector extends EventCollector {
 
         public NewOutputEvent(String data) {
             this.data = data;
+        }
+    }
+
+    public class WipedRomEvent extends BaseEvent {
+        short[] succeeded;
+        short[] failed;
+
+        public WipedRomEvent(short[] succeeded, short[] failed) {
+            this.succeeded = succeeded;
+            this.failed = failed;
         }
     }
 }

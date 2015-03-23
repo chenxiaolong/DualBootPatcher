@@ -38,6 +38,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.Pend
 import com.github.chenxiaolong.multibootpatcher.AnsiStuff;
 import com.github.chenxiaolong.multibootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.multibootpatcher.AnsiStuff.Color;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.WipeResult;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -72,6 +74,14 @@ public class SwitcherService extends IntentService {
     public static final String RESULT_TOTAL_ACTIONS = "total_actions";
     public static final String RESULT_FAILED_ACTIONS = "failed_actions";
     public static final String RESULT_OUTPUT_DATA = "output_line";
+
+    // Wipe ROM
+    public static final String ACTION_WIPE_ROM = "wipe_rom";
+    public static final String PARAM_ROM_ID = "rom_id";
+    public static final String PARAM_WIPE_TARGETS = "wipe_targets";
+    public static final String STATE_WIPED_ROM = "wiped_rom";
+    public static final String RESULT_TARGETS_SUCCEEDED = "targets_succeeded";
+    public static final String RESULT_TARGETS_FAILED = "targets_failed";
 
     private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
 
@@ -114,6 +124,14 @@ public class SwitcherService extends IntentService {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_COMMAND_OUTPUT_DATA);
         i.putExtra(RESULT_OUTPUT_DATA, line);
+        sendBroadcast(i);
+    }
+
+    private void onWipedRom(short[] succeeded, short[] failed) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_WIPED_ROM);
+        i.putExtra(RESULT_TARGETS_SUCCEEDED, succeeded);
+        i.putExtra(RESULT_TARGETS_FAILED, failed);
         sendBroadcast(i);
     }
 
@@ -317,6 +335,19 @@ public class SwitcherService extends IntentService {
         }
     }
 
+    private void wipeRom(Bundle data) {
+        String romId = data.getString(PARAM_ROM_ID);
+        short[] targets = data.getShortArray(PARAM_WIPE_TARGETS);
+
+        WipeResult result = MbtoolSocket.getInstance().wipeRom(this, romId, targets);
+
+        if (result == null) {
+            onWipedRom(null, null);
+        } else {
+            onWipedRom(result.succeeded, result.failed);
+        }
+    }
+
     @Override
     protected void onHandleIntent(Intent intent) {
         String action = intent.getStringExtra(ACTION);
@@ -329,6 +360,8 @@ public class SwitcherService extends IntentService {
             verifyZip(intent.getExtras());
         } else if (ACTION_FLASH_ZIPS.equals(action)) {
             flashZips(intent.getExtras());
+        } else if (ACTION_WIPE_ROM.equals(action)) {
+            wipeRom(intent.getExtras());
         }
     }
 }

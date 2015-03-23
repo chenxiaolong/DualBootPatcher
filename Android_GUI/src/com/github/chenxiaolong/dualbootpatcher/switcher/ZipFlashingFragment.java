@@ -343,8 +343,10 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
             buildSelectionDialog(SELECTION_DIALOG_ROM_ID);
         } else if (event instanceof VerifiedZipEvent) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
+            if (mProgressDialog != null) {
+                mProgressDialog.dismiss();
+                mProgressDialog = null;
+            }
 
             VerifiedZipEvent e = (VerifiedZipEvent) event;
 

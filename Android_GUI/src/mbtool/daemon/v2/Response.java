@@ -34,6 +34,8 @@ public class Response extends Table {
   public ChmodResponse chmodResponse(ChmodResponse obj) { int o = __offset(24); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
   public LokiPatchResponse lokiPatchResponse() { return lokiPatchResponse(new LokiPatchResponse()); }
   public LokiPatchResponse lokiPatchResponse(LokiPatchResponse obj) { int o = __offset(26); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public WipeRomResponse wipeRomResponse() { return wipeRomResponse(new WipeRomResponse()); }
+  public WipeRomResponse wipeRomResponse(WipeRomResponse obj) { int o = __offset(28); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createResponse(FlatBufferBuilder builder,
       short type,
@@ -47,8 +49,10 @@ public class Response extends Table {
       int open_response,
       int copy_response,
       int chmod_response,
-      int loki_patch_response) {
-    builder.startObject(12);
+      int loki_patch_response,
+      int wipe_rom_response) {
+    builder.startObject(13);
+    Response.addWipeRomResponse(builder, wipe_rom_response);
     Response.addLokiPatchResponse(builder, loki_patch_response);
     Response.addChmodResponse(builder, chmod_response);
     Response.addCopyResponse(builder, copy_response);
@@ -64,7 +68,7 @@ public class Response extends Table {
     return Response.endResponse(builder);
   }
 
-  public static void startResponse(FlatBufferBuilder builder) { builder.startObject(12); }
+  public static void startResponse(FlatBufferBuilder builder) { builder.startObject(13); }
   public static void addType(FlatBufferBuilder builder, short type) { builder.addShort(0, type, 0); }
   public static void addGetVersionResponse(FlatBufferBuilder builder, int getVersionResponseOffset) { builder.addOffset(1, getVersionResponseOffset, 0); }
   public static void addGetRomsListResponse(FlatBufferBuilder builder, int getRomsListResponseOffset) { builder.addOffset(2, getRomsListResponseOffset, 0); }
@@ -77,6 +81,7 @@ public class Response extends Table {
   public static void addCopyResponse(FlatBufferBuilder builder, int copyResponseOffset) { builder.addOffset(9, copyResponseOffset, 0); }
   public static void addChmodResponse(FlatBufferBuilder builder, int chmodResponseOffset) { builder.addOffset(10, chmodResponseOffset, 0); }
   public static void addLokiPatchResponse(FlatBufferBuilder builder, int lokiPatchResponseOffset) { builder.addOffset(11, lokiPatchResponseOffset, 0); }
+  public static void addWipeRomResponse(FlatBufferBuilder builder, int wipeRomResponseOffset) { builder.addOffset(12, wipeRomResponseOffset, 0); }
   public static int endResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

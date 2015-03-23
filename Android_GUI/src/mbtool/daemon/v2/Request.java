@@ -34,6 +34,8 @@ public class Request extends Table {
   public ChmodRequest chmodRequest(ChmodRequest obj) { int o = __offset(24); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
   public LokiPatchRequest lokiPatchRequest() { return lokiPatchRequest(new LokiPatchRequest()); }
   public LokiPatchRequest lokiPatchRequest(LokiPatchRequest obj) { int o = __offset(26); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public WipeRomRequest wipeRomRequest() { return wipeRomRequest(new WipeRomRequest()); }
+  public WipeRomRequest wipeRomRequest(WipeRomRequest obj) { int o = __offset(28); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createRequest(FlatBufferBuilder builder,
       short type,
@@ -47,8 +49,10 @@ public class Request extends Table {
       int open_request,
       int copy_request,
       int chmod_request,
-      int loki_patch_request) {
-    builder.startObject(12);
+      int loki_patch_request,
+      int wipe_rom_request) {
+    builder.startObject(13);
+    Request.addWipeRomRequest(builder, wipe_rom_request);
     Request.addLokiPatchRequest(builder, loki_patch_request);
     Request.addChmodRequest(builder, chmod_request);
     Request.addCopyRequest(builder, copy_request);
@@ -64,7 +68,7 @@ public class Request extends Table {
     return Request.endRequest(builder);
   }
 
-  public static void startRequest(FlatBufferBuilder builder) { builder.startObject(12); }
+  public static void startRequest(FlatBufferBuilder builder) { builder.startObject(13); }
   public static void addType(FlatBufferBuilder builder, short type) { builder.addShort(0, type, 0); }
   public static void addGetVersionRequest(FlatBufferBuilder builder, int getVersionRequestOffset) { builder.addOffset(1, getVersionRequestOffset, 0); }
   public static void addGetRomsListRequest(FlatBufferBuilder builder, int getRomsListRequestOffset) { builder.addOffset(2, getRomsListRequestOffset, 0); }
@@ -77,6 +81,7 @@ public class Request extends Table {
   public static void addCopyRequest(FlatBufferBuilder builder, int copyRequestOffset) { builder.addOffset(9, copyRequestOffset, 0); }
   public static void addChmodRequest(FlatBufferBuilder builder, int chmodRequestOffset) { builder.addOffset(10, chmodRequestOffset, 0); }
   public static void addLokiPatchRequest(FlatBufferBuilder builder, int lokiPatchRequestOffset) { builder.addOffset(11, lokiPatchRequestOffset, 0); }
+  public static void addWipeRomRequest(FlatBufferBuilder builder, int wipeRomRequestOffset) { builder.addOffset(12, wipeRomRequestOffset, 0); }
   public static int endRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

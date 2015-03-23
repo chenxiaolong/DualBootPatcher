@@ -14,8 +14,9 @@ public class RequestType {
   public static final short COPY = 8;
   public static final short CHMOD = 9;
   public static final short LOKI_PATCH = 10;
+  public static final short WIPE_ROM = 11;
 
-  private static final String[] names = { "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", };
+  private static final String[] names = { "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", };
 
   public static String name(int e) { return names[e]; }
 };

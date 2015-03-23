@@ -46,6 +46,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
     private static final int MENU_EDIT_NAME = Menu.FIRST + 1;
     private static final int MENU_CHANGE_IMAGE = Menu.FIRST + 2;
     private static final int MENU_RESET_IMAGE = Menu.FIRST + 3;
+    private static final int MENU_WIPE_ROM = Menu.FIRST + 4;
 
     private final Context mContext;
     private List<RomInformation> mRoms;
@@ -77,6 +78,9 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
                 case MENU_RESET_IMAGE:
                     mListener.onSelectedResetImage(rom);
                     break;
+                case MENU_WIPE_ROM:
+                    mListener.onSelectedWipeRom(rom);
+                    break;
                 }
             }
         }
@@ -101,6 +105,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
         menu.add(0, MENU_EDIT_NAME, Menu.NONE, R.string.rom_menu_edit_name);
         menu.add(0, MENU_CHANGE_IMAGE, Menu.NONE, R.string.rom_menu_change_image);
         menu.add(0, MENU_RESET_IMAGE, Menu.NONE, R.string.rom_menu_reset_image);
+        menu.add(0, MENU_WIPE_ROM, Menu.NONE, R.string.rom_menu_wipe_rom);
 
         return vh;
     }
@@ -170,7 +175,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
             vCard.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    mListener.onCardClick(view, getPosition());
+                    mListener.onCardClick(view, getAdapterPosition());
                 }
             });
 
@@ -184,7 +189,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
             mPopup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
                 @Override
                 public boolean onMenuItemClick(MenuItem menuItem) {
-                    mListener.onCardPopupClick(vCard, getPosition(), menuItem);
+                    mListener.onCardPopupClick(vCard, getAdapterPosition(), menuItem);
                     return true;
                 }
             });
@@ -207,5 +212,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
         void onSelectedChangeImage(RomInformation info);
 
         void onSelectedResetImage(RomInformation info);
+
+        void onSelectedWipeRom(RomInformation info);
     }
 }
