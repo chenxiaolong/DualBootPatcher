@@ -721,6 +721,10 @@ bool Installer::run_real_updater()
         }
     }
 
+    // Because AOSP's default updater used by just about everyone doesn't print
+    // a newline at the end...
+    updater_print("\n");
+
     if (pid < 0) {
         LOGE("Failed to execute {}: {}",
              "/mb/updater", strerror(errno));
