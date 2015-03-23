@@ -9,6 +9,7 @@ include "v2/open.fbs";
 include "v2/copy.fbs";
 include "v2/chmod.fbs";
 include "v2/loki_patch.fbs";
+include "v2/wipe_rom.fbs";
 
 namespace mbtool.daemon.v2;
 
@@ -23,7 +24,8 @@ enum RequestType : short {
     OPEN,
     COPY,
     CHMOD,
-    LOKI_PATCH
+    LOKI_PATCH,
+    WIPE_ROM
 }
 
 table Request {
@@ -40,6 +42,7 @@ table Request {
     copy_request : CopyRequest;
     chmod_request : ChmodRequest;
     loki_patch_request : LokiPatchRequest;
+    wipe_rom_request : WipeRomRequest;
 }
 
 root_type Request;

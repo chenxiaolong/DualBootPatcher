@@ -9,6 +9,7 @@ include "v2/open.fbs";
 include "v2/copy.fbs";
 include "v2/chmod.fbs";
 include "v2/loki_patch.fbs";
+include "v2/wipe_rom.fbs";
 
 namespace mbtool.daemon.v2;
 
@@ -26,7 +27,8 @@ enum ResponseType : short {
     OPEN,
     COPY,
     CHMOD,
-    LOKI_PATCH
+    LOKI_PATCH,
+    WIPE_ROM
 }
 
 table Response {
@@ -43,6 +45,7 @@ table Response {
     copy_response : CopyResponse;
     chmod_response : ChmodResponse;
     loki_patch_response : LokiPatchResponse;
+    wipe_rom_response : WipeRomResponse;
 }
 
 root_type Response;

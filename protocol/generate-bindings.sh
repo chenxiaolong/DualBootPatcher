@@ -14,6 +14,7 @@ files=(
     v2/copy.fbs
     v2/chmod.fbs
     v2/loki_patch.fbs
+    v2/wipe_rom.fbs
     request.fbs
     response.fbs
 )
