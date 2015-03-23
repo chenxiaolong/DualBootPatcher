@@ -21,6 +21,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <sys/stat.h>
 
 #include "external/cppformat/format.h"
 #include "util/copy.h"
@@ -96,6 +97,12 @@ private:
 
 bool wipe_directory(const std::string &mountpoint, bool wipe_media)
 {
+    struct stat sb;
+    if (stat(mountpoint.c_str(), &sb) < 0 && errno == ENOENT) {
+        // Don't fail if directory does not exist
+        return true;
+    }
+
     WipeDirectory wd(mountpoint, wipe_media);
     return wd.run();
 }

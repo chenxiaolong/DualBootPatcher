@@ -97,6 +97,14 @@ struct LokiPatchResponse;
 namespace mbtool {
 namespace daemon {
 namespace v2 {
+struct WipeRomRequest;
+struct WipeRomResponse;
+}  // namespace v2
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v2 {
 struct Request;
 }  // namespace v2
 }  // namespace daemon
@@ -121,11 +129,12 @@ enum ResponseType {
   ResponseType_OPEN = 9,
   ResponseType_COPY = 10,
   ResponseType_CHMOD = 11,
-  ResponseType_LOKI_PATCH = 12
+  ResponseType_LOKI_PATCH = 12,
+  ResponseType_WIPE_ROM = 13
 };
 
 inline const char **EnumNamesResponseType() {
-  static const char *names[] = { "UNSUPPORTED", "INVALID", "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", nullptr };
+  static const char *names[] = { "UNSUPPORTED", "INVALID", "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", nullptr };
   return names;
 }
 
@@ -144,6 +153,7 @@ struct Response : private flatbuffers::Table {
   const mbtool::daemon::v2::CopyResponse *copy_response() const { return GetPointer<const mbtool::daemon::v2::CopyResponse *>(22); }
   const mbtool::daemon::v2::ChmodResponse *chmod_response() const { return GetPointer<const mbtool::daemon::v2::ChmodResponse *>(24); }
   const mbtool::daemon::v2::LokiPatchResponse *loki_patch_response() const { return GetPointer<const mbtool::daemon::v2::LokiPatchResponse *>(26); }
+  const mbtool::daemon::v2::WipeRomResponse *wipe_rom_response() const { return GetPointer<const mbtool::daemon::v2::WipeRomResponse *>(28); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int16_t>(verifier, 4 /* type */) &&
@@ -169,6 +179,8 @@ struct Response : private flatbuffers::Table {
            verifier.VerifyTable(chmod_response()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 26 /* loki_patch_response */) &&
            verifier.VerifyTable(loki_patch_response()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 28 /* wipe_rom_response */) &&
+           verifier.VerifyTable(wipe_rom_response()) &&
            verifier.EndTable();
   }
 };
@@ -188,10 +200,11 @@ struct ResponseBuilder {
   void add_copy_response(flatbuffers::Offset<mbtool::daemon::v2::CopyResponse> copy_response) { fbb_.AddOffset(22, copy_response); }
   void add_chmod_response(flatbuffers::Offset<mbtool::daemon::v2::ChmodResponse> chmod_response) { fbb_.AddOffset(24, chmod_response); }
   void add_loki_patch_response(flatbuffers::Offset<mbtool::daemon::v2::LokiPatchResponse> loki_patch_response) { fbb_.AddOffset(26, loki_patch_response); }
+  void add_wipe_rom_response(flatbuffers::Offset<mbtool::daemon::v2::WipeRomResponse> wipe_rom_response) { fbb_.AddOffset(28, wipe_rom_response); }
   ResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   ResponseBuilder &operator=(const ResponseBuilder &);
   flatbuffers::Offset<Response> Finish() {
-    auto o = flatbuffers::Offset<Response>(fbb_.EndTable(start_, 12));
+    auto o = flatbuffers::Offset<Response>(fbb_.EndTable(start_, 13));
     return o;
   }
 };
@@ -208,8 +221,10 @@ inline flatbuffers::Offset<Response> CreateResponse(flatbuffers::FlatBufferBuild
    flatbuffers::Offset<mbtool::daemon::v2::OpenResponse> open_response = 0,
    flatbuffers::Offset<mbtool::daemon::v2::CopyResponse> copy_response = 0,
    flatbuffers::Offset<mbtool::daemon::v2::ChmodResponse> chmod_response = 0,
-   flatbuffers::Offset<mbtool::daemon::v2::LokiPatchResponse> loki_patch_response = 0) {
+   flatbuffers::Offset<mbtool::daemon::v2::LokiPatchResponse> loki_patch_response = 0,
+   flatbuffers::Offset<mbtool::daemon::v2::WipeRomResponse> wipe_rom_response = 0) {
   ResponseBuilder builder_(_fbb);
+  builder_.add_wipe_rom_response(wipe_rom_response);
   builder_.add_loki_patch_response(loki_patch_response);
   builder_.add_chmod_response(chmod_response);
   builder_.add_copy_response(copy_response);

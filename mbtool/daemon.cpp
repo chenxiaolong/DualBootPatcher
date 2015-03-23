@@ -35,10 +35,12 @@
 
 #include "actions.h"
 #include "lokipatch.h"
+#include "multiboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
 #include "util/copy.h"
+#include "util/delete.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
@@ -57,6 +59,7 @@
 #include "protocol/copy_generated.h"
 #include "protocol/chmod_generated.h"
 #include "protocol/loki_patch_generated.h"
+#include "protocol/wipe_rom_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
 
@@ -455,6 +458,97 @@ static bool v2_loki_patch(int fd, const v2::Request *msg)
     return v2_send_response(fd, builder);
 }
 
+static bool v2_wipe_rom(int fd, const v2::Request *msg)
+{
+    auto request = msg->wipe_rom_request();
+    if (!request || !request->rom_id()) {
+        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
+    }
+
+    // Find and verify ROM is installed
+    std::vector<std::shared_ptr<Rom>> roms;
+    mb_roms_add_installed(&roms);
+
+    auto rom = mb_find_rom_by_id(&roms, request->rom_id()->c_str());
+    if (!rom) {
+        LOGE("Tried to wipe non-installed or invalid ROM ID: {}",
+             request->rom_id()->c_str());
+        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
+    }
+
+    // The GUI should check this, but we'll enforce it here
+    auto current_rom = mb_get_current_rom();
+    if (current_rom && current_rom->id == rom->id) {
+        LOGE("Cannot wipe currently booted ROM: {}", rom->id);
+        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
+    }
+
+    // Wipe the selected targets
+    std::vector<int16_t> succeeded;
+    std::vector<int16_t> failed;
+
+    if (request->targets()) {
+        for (short target : *request->targets()) {
+            bool success = false;
+
+            if (target == v2::WipeTarget_SYSTEM) {
+                success = wipe_directory(rom->system_path, true);
+                // Try removing ROM's /system if it's empty
+                remove(rom->system_path.c_str());
+            } else if (target == v2::WipeTarget_CACHE) {
+                success = wipe_directory(rom->cache_path, true);
+                // Try removing ROM's /cache if it's empty
+                remove(rom->cache_path.c_str());
+            } else if (target == v2::WipeTarget_DATA) {
+                success = wipe_directory(rom->data_path, false);
+                // Try removing ROM's /data/media and /data if they're empty
+                remove((rom->data_path + "/media").c_str());
+                remove(rom->data_path.c_str());
+            } else if (target == v2::WipeTarget_DALVIK_CACHE) {
+                // Most ROMs use /data/dalvik-cache, but some use
+                // /cache/dalvik-cache, like the jflte CyanogenMod builds
+                std::string data_path(rom->data_path);
+                std::string cache_path(rom->cache_path);
+                data_path += "/dalvik-cache";
+                cache_path += "/dalvik-cache";
+                // util::delete_recursive() returns true if the path does not
+                // exist (ie. returns false only on errors), which is exactly
+                // what we want
+                success = util::delete_recursive(data_path) &&
+                        util::delete_recursive(cache_path);
+            } else if (target == v2::WipeTarget_MULTIBOOT) {
+                // Delete /data/media/0/MultiBoot/[ROM ID]
+                std::string multiboot_path("/data/media/0/MultiBoot/");
+                multiboot_path += rom->id;
+                success = util::delete_recursive(multiboot_path);
+            } else {
+                LOGE("Unknown wipe target {:d}", target);
+            }
+
+            if (success) {
+                succeeded.push_back(target);
+            } else {
+                failed.push_back(target);
+            }
+        }
+    }
+
+    fb::FlatBufferBuilder builder;
+
+    // Create response
+    auto fb_succeeded = builder.CreateVector(succeeded);
+    auto fb_failed = builder.CreateVector(failed);
+    auto response = v2::CreateWipeRomResponse(builder, fb_succeeded, fb_failed);
+
+    // Wrap response
+    v2::ResponseBuilder rb(builder);
+    rb.add_type(v2::ResponseType_WIPE_ROM);
+    rb.add_wipe_rom_response(response);
+    builder.Finish(rb.Finish());
+
+    return v2_send_response(fd, builder);
+}
+
 static bool connection_version_2(int fd)
 {
     std::string command;
@@ -499,6 +593,8 @@ static bool connection_version_2(int fd)
             ret = v2_chmod(fd, request);
         } else if (request->type() == v2::RequestType_LOKI_PATCH) {
             ret = v2_loki_patch(fd, request);
+        } else if (request->type() == v2::RequestType_WIPE_ROM) {
+            ret = v2_wipe_rom(fd, request);
         } else {
             // Invalid command; allow further commands
             ret = v2_send_generic_response(fd, v2::ResponseType_UNSUPPORTED);
