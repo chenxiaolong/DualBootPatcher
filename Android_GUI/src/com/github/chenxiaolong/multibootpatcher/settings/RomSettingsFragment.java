@@ -19,12 +19,8 @@ package com.github.chenxiaolong.multibootpatcher.settings;
 
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.app.LoaderManager;
-import android.content.AsyncTaskLoader;
 import android.content.Context;
-import android.content.Loader;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
@@ -43,14 +39,11 @@ import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceClickListener,
-        EventCollectorListener, LoaderManager.LoaderCallbacks<Version> {
+        EventCollectorListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
     private static final String KEY_BOOTING_CATEGORY = "booting_category";
     private static final String KEY_UPDATE_RAMDISK = "update_ramdisk";
-
-    private static final String DIALOG_INITIAL_LOAD = "initial_load";
-    private static final String DIALOG_UPDATING_RAMDISK = "updating_ramdisk";
 
     private RomSettingsEventCollector mEventCollector;
 
@@ -76,13 +69,11 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        if (savedInstanceState == null) {
-            // Only show progress dialog on initial load
-            IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
-            d.show(getFragmentManager(), DIALOG_INITIAL_LOAD);
+        Version version = MbtoolUtils.getSystemMbtoolVersion(getActivity());
+        if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON)) >= 0) {
+            //bootingCategory.removePreference(updateRamdisk);
+            getPreferenceScreen().removePreference(mBootingCategory);
         }
-
-        getActivity().getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -103,7 +94,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
         if (KEY_UPDATE_RAMDISK.equals(key)) {
             IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
-            d.show(getFragmentManager(), DIALOG_UPDATING_RAMDISK);
+            d.show(getFragmentManager(), IndeterminateProgressDialog.TAG);
 
             mEventCollector.updateRamdisk();
         }
@@ -117,7 +108,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             UpdatedRamdiskEvent e = (UpdatedRamdiskEvent) event;
 
             IndeterminateProgressDialog d = (IndeterminateProgressDialog) getFragmentManager()
-                    .findFragmentByTag(DIALOG_UPDATING_RAMDISK);
+                    .findFragmentByTag(IndeterminateProgressDialog.TAG);
             if (d != null) {
                 d.dismiss();
             }
@@ -127,59 +118,9 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         }
     }
 
-    @Override
-    public Loader<Version> onCreateLoader(int i, Bundle bundle) {
-        return new GetInfo(getActivity());
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Version> versionLoader, Version version) {
-        if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON)) >= 0) {
-            //bootingCategory.removePreference(updateRamdisk);
-            getPreferenceScreen().removePreference(mBootingCategory);
-        }
-
-        new Handler().post(new Runnable() {
-            @Override
-            public void run() {
-                IndeterminateProgressDialog d = (IndeterminateProgressDialog) getFragmentManager()
-                        .findFragmentByTag(DIALOG_INITIAL_LOAD);
-                if (d != null) {
-                    d.dismiss();
-                }
-            }
-        });
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Version> versionLoader) {
-    }
-
-    private static class GetInfo extends AsyncTaskLoader<Version> {
-        private Version mResult;
-
-        public GetInfo(Context context) {
-            super(context);
-            onContentChanged();
-        }
-
-        @Override
-        protected void onStartLoading() {
-            if (mResult != null) {
-                deliverResult(mResult);
-            } else if (takeContentChanged()) {
-                forceLoad();
-            }
-        }
-
-        @Override
-        public Version loadInBackground() {
-            mResult = MbtoolUtils.getSystemMbtoolVersion(getContext());
-            return mResult;
-        }
-    }
-
     public static class IndeterminateProgressDialog extends DialogFragment {
+        private static final String TAG = IndeterminateProgressDialog.class.getSimpleName();
+
         public static IndeterminateProgressDialog newInstance() {
             IndeterminateProgressDialog frag = new IndeterminateProgressDialog();
             return frag;
