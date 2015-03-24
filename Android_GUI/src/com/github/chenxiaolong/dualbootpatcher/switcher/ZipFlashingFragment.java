@@ -17,14 +17,11 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.LoaderManager;
 import android.content.AsyncTaskLoader;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
@@ -38,17 +35,16 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
-import com.afollestad.materialdialogs.MaterialDialog.ListCallback;
 import com.getbase.floatingactionbutton.AddFloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.switcher.FirstUseDialog.FirstUseDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
+        .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.VerifiedZipEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
@@ -68,7 +64,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class ZipFlashingFragment extends Fragment implements EventCollectorListener,
-        OnDismissListener, LoaderManager.LoaderCallbacks<LoaderResult> {
+        FirstUseDialogListener, RomIdSelectionDialogListener,
+        LoaderManager.LoaderCallbacks<LoaderResult> {
     private static final String TAG = ZipFlashingFragment.class.getSimpleName();
 
     private static final int PERFORM_ACTIONS = 1234;
@@ -76,42 +73,18 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
     private static final String EXTRA_SELECTED_FILE = "selected_file";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
-    private static final String EXTRA_VERIFICATION_ERROR = "verification_error";
-    private static final String EXTRA_SELECTION_DIALOG = "selection_dialog";
-    private static final String EXTRA_PROGRESS_DIALOG = "progress_dialog";
-    private static final String EXTRA_CONFIRM_DIALOG = "confirm_dialog";
-    private static final String EXTRA_FIRST_TIME_DIALOG = "first_time_dialog";
-
-    private static final int SELECTION_DIALOG_ROM_ID = 1;
-    private static final int PROGRESS_DIALOG_VERIFYING_ZIP = 1;
-    private static final int CONFIRM_DIALOG_VERIFY_FAIL = 1;
-    private static final int CONFIRM_DIALOG_NO_OVERWRITE_ROM = 2;
-    private static final int FIRST_TIME_DIALOG = 1;
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog";
-
-    private int mSelectionDialogType;
-    private AlertDialog mSelectionDialog;
-    private int mProgressDialogType;
-    private AlertDialog mProgressDialog;
-    private int mConfirmDialogType;
-    private AlertDialog mConfirmDialog;
-    private int mFirstTimeDialogType;
-    private AlertDialog mFirstTimeDialog;
 
     private OnReadyStateChangedListener mCallback;
 
     private SharedPreferences mPrefs;
-
-    private Bundle mSavedInstanceState;
 
     private SwitcherEventCollector mSwitcherEC;
     private FileChooserEventCollector mFileChooserEC;
     private String mSelectedFile;
     private String mSelectedRomId;
     private String mCurrentRomId;
-
-    private String mVerificationError;
 
     private DynamicListView mCardListView;
     private ProgressBar mProgressBar;
@@ -181,12 +154,9 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
             }
         });
 
-        mSavedInstanceState = savedInstanceState;
-
         if (savedInstanceState != null) {
             mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
-            mVerificationError = savedInstanceState.getString(EXTRA_VERIFICATION_ERROR);
         }
 
         try {
@@ -203,7 +173,9 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         if (savedInstanceState == null) {
             boolean shouldShow = mPrefs.getBoolean(PREF_SHOW_FIRST_USE_DIALOG, true);
             if (shouldShow) {
-                buildFirstTimeDialog(FIRST_TIME_DIALOG);
+                FirstUseDialog d = FirstUseDialog.newInstance(
+                        this, R.string.zip_flashing_title, R.string.zip_flashing_dialog_first_use);
+                d.show(getFragmentManager(), FirstUseDialog.TAG);
             }
         }
 
@@ -219,42 +191,6 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
         outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
-        outState.putString(EXTRA_VERIFICATION_ERROR, mVerificationError);
-
-        if (mSelectionDialog != null) {
-            outState.putInt(EXTRA_SELECTION_DIALOG, mSelectionDialogType);
-        }
-        if (mProgressDialog != null) {
-            outState.putInt(EXTRA_PROGRESS_DIALOG, mProgressDialogType);
-        }
-        if (mConfirmDialog != null) {
-            outState.putInt(EXTRA_CONFIRM_DIALOG, mConfirmDialogType);
-        }
-        if (mFirstTimeDialog != null) {
-            outState.putInt(EXTRA_FIRST_TIME_DIALOG, mFirstTimeDialogType);
-        }
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        if (mSelectionDialog != null) {
-            mSelectionDialog.dismiss();
-            mSelectionDialog = null;
-        }
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
-        }
-        if (mConfirmDialog != null) {
-            mConfirmDialog.dismiss();
-            mConfirmDialog = null;
-        }
-        if (mFirstTimeDialog != null) {
-            mFirstTimeDialog.dismiss();
-            mFirstTimeDialog = null;
-        }
     }
 
     @Override
@@ -269,19 +205,6 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         super.onPause();
         mSwitcherEC.detachListener(TAG);
         mFileChooserEC.detachListener(TAG);
-    }
-
-    @Override
-    public void onDismiss(DialogInterface dialog) {
-        if (mSelectionDialog == dialog) {
-            mSelectionDialog = null;
-        } else if (mProgressDialog == dialog) {
-            mProgressDialog = null;
-        } else if (mConfirmDialog == dialog) {
-            mConfirmDialog = null;
-        } else if (mFirstTimeDialog == dialog) {
-            mFirstTimeDialog = null;
-        }
     }
 
     @Override
@@ -307,28 +230,6 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         }
 
         mProgressBar.setVisibility(View.GONE);
-
-        if (mSavedInstanceState != null) {
-            int selectionDialogType = mSavedInstanceState.getInt(EXTRA_SELECTION_DIALOG);
-            if (selectionDialogType > 0) {
-                buildSelectionDialog(selectionDialogType);
-            }
-
-            int progressDialogType = mSavedInstanceState.getInt(EXTRA_PROGRESS_DIALOG);
-            if (progressDialogType > 0) {
-                buildProgressDialog(progressDialogType);
-            }
-
-            int confirmDialogType = mSavedInstanceState.getInt(EXTRA_CONFIRM_DIALOG);
-            if (confirmDialogType > 0) {
-                buildConfirmDialog(confirmDialogType);
-            }
-
-            int firstTimeDialogType = mSavedInstanceState.getInt(EXTRA_FIRST_TIME_DIALOG);
-            if (firstTimeDialogType > 0) {
-                buildFirstTimeDialog(firstTimeDialogType);
-            }
-        }
     }
 
     @Override
@@ -341,11 +242,13 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
             RequestedFileEvent e = (RequestedFileEvent) event;
             mSelectedFile = e.file;
 
-            buildSelectionDialog(SELECTION_DIALOG_ROM_ID);
+            RomIdSelectionDialog dialog = RomIdSelectionDialog.newInstance(this, mBuiltinRoms);
+            dialog.show(getFragmentManager(), RomIdSelectionDialog.TAG);
         } else if (event instanceof VerifiedZipEvent) {
-            if (mProgressDialog != null) {
-                mProgressDialog.dismiss();
-                mProgressDialog = null;
+            GenericProgressDialog dialog = (GenericProgressDialog) getFragmentManager()
+                    .findFragmentByTag(GenericProgressDialog.TAG);
+            if (dialog != null) {
+                dialog.dismiss();
             }
 
             VerifiedZipEvent e = (VerifiedZipEvent) event;
@@ -360,21 +263,23 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
                 mAdapter.add(pa);
                 mAdapter.notifyDataSetChanged();
             } else {
+                String error;
+
                 switch (e.result) {
                 case ERROR_ZIP_NOT_FOUND:
-                    mVerificationError = getString(R.string.zip_flashing_error_zip_not_found);
+                    error = getString(R.string.zip_flashing_error_zip_not_found);
                     break;
 
                 case ERROR_ZIP_READ_FAIL:
-                    mVerificationError = getString(R.string.zip_flashing_error_zip_read_fail);
+                    error = getString(R.string.zip_flashing_error_zip_read_fail);
                     break;
 
                 case ERROR_NOT_MULTIBOOT:
-                    mVerificationError = getString(R.string.zip_flashing_error_not_multiboot);
+                    error = getString(R.string.zip_flashing_error_not_multiboot);
                     break;
 
                 case ERROR_VERSION_TOO_OLD:
-                    mVerificationError = String.format(
+                    error = String.format(
                             getString(R.string.zip_flashing_error_version_too_old),
                             MbtoolUtils.getMinimumRequiredVersion(Feature.IN_APP_INSTALLATION));
                     break;
@@ -383,7 +288,8 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
                     throw new IllegalStateException("Invalid verification result ID");
                 }
 
-                buildConfirmDialog(CONFIRM_DIALOG_VERIFY_FAIL);
+                GenericConfirmDialog d = GenericConfirmDialog.newInstance(null, error);
+                d.show(getFragmentManager(), GenericConfirmDialog.TAG);
             }
         }
     }
@@ -399,151 +305,34 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    @Override
+    public void onConfirmFirstUse(boolean dontShowAgain) {
+        Editor e = mPrefs.edit();
+        e.putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !dontShowAgain);
+        e.apply();
+    }
+
+    @Override
+    public void onSelectedRomId(String romId) {
+        mSelectedRomId = romId;
+
+        if (mSelectedRomId.equals(mCurrentRomId)) {
+            GenericConfirmDialog d = GenericConfirmDialog.newInstance(
+                    0, R.string.zip_flashing_error_no_overwrite_rom);
+            d.show(getFragmentManager(), GenericConfirmDialog.TAG);
+        } else {
+            GenericProgressDialog d = GenericProgressDialog.newInstance(
+                    R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
+            d.show(getFragmentManager(), GenericProgressDialog.TAG);
+
+            mSwitcherEC.verifyZip(mSelectedFile);
+        }
+    }
+
     public void onActionBarCheckItemClicked() {
         Intent intent = new Intent(getActivity(), ZipFlashingOutputActivity.class);
         intent.putExtra(ZipFlashingOutputFragment.PARAM_PENDING_ACTIONS, getPendingActions());
         startActivityForResult(intent, PERFORM_ACTIONS);
-    }
-
-    private void buildSelectionDialog(int type) {
-        if (mSelectionDialog != null) {
-            throw new IllegalStateException("Tried to create selection dialog twice!");
-        }
-
-        switch (type) {
-        case SELECTION_DIALOG_ROM_ID:
-            mSelectionDialog = new MaterialDialog.Builder(getActivity())
-                    .title(R.string.zip_flashing_dialog_installation_location)
-                    .items(mBuiltinRomNames)
-                    .negativeText(R.string.cancel)
-                    .itemsCallbackSingleChoice(-1, new ListCallback() {
-                        @Override
-                        public void onSelection(MaterialDialog dialog, View view, int which,
-                                                CharSequence text) {
-                            mSelectedRomId = mBuiltinRoms.get(which).getId();
-
-                            if (mSelectedRomId.equals(mCurrentRomId)) {
-                                buildConfirmDialog(CONFIRM_DIALOG_NO_OVERWRITE_ROM);
-                            } else {
-                                buildProgressDialog(PROGRESS_DIALOG_VERIFYING_ZIP);
-                                mSwitcherEC.verifyZip(mSelectedFile);
-                            }
-                        }
-                    })
-                    .build();
-            break;
-        default:
-            throw new IllegalStateException("Invalid selection dialog type");
-        }
-
-        mSelectionDialogType = type;
-
-        mSelectionDialog.setOnDismissListener(this);
-        mSelectionDialog.setCanceledOnTouchOutside(false);
-        mSelectionDialog.setCancelable(false);
-        mSelectionDialog.show();
-    }
-
-    private void buildProgressDialog(int type) {
-        if (mProgressDialog != null) {
-            throw new IllegalStateException("Tried to create progress dialog twice!");
-        }
-
-        int titleResId;
-        int messageResId;
-
-        switch (type) {
-        case PROGRESS_DIALOG_VERIFYING_ZIP:
-            titleResId = R.string.zip_flashing_dialog_verifying_zip;
-            messageResId = R.string.please_wait;
-            break;
-        default:
-            throw new IllegalStateException("Invalid progress dialog type");
-        }
-
-        mProgressDialogType = type;
-
-        mProgressDialog = new MaterialDialog.Builder(getActivity())
-                .title(titleResId)
-                .content(messageResId)
-                .progress(true, 0)
-                .build();
-
-        mProgressDialog.setOnDismissListener(this);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.show();
-    }
-
-    private void buildConfirmDialog(int type) {
-        if (mConfirmDialog != null) {
-            throw new IllegalStateException("Tried to create confirm dialog twice!");
-        }
-
-        switch (type) {
-        case CONFIRM_DIALOG_VERIFY_FAIL:
-            mConfirmDialog = new MaterialDialog.Builder(getActivity())
-                    .content(mVerificationError)
-                    .positiveText(R.string.ok)
-                    .build();
-            break;
-        case CONFIRM_DIALOG_NO_OVERWRITE_ROM:
-            mConfirmDialog = new MaterialDialog.Builder(getActivity())
-                    .content(R.string.zip_flashing_error_no_overwrite_rom)
-                    .positiveText(R.string.ok)
-                    .build();
-            break;
-        default:
-            throw new IllegalStateException("Invalid confirm dialog type");
-        }
-
-        mConfirmDialogType = type;
-
-        mConfirmDialog.setOnDismissListener(this);
-        mConfirmDialog.setCanceledOnTouchOutside(false);
-        mConfirmDialog.setCancelable(false);
-        mConfirmDialog.show();
-    }
-
-    private void buildFirstTimeDialog(int type) {
-        if (mFirstTimeDialog != null) {
-            throw new IllegalStateException("Tried to create first time dialog twice!");
-        }
-
-        switch (type) {
-        case FIRST_TIME_DIALOG:
-            String message = String.format(getString(R.string.zip_flashing_dialog_first_use));
-
-            mFirstTimeDialog = new MaterialDialog.Builder(getActivity())
-                    .title(R.string.zip_flashing_title)
-                    .customView(R.layout.dialog_first_time, true)
-                    .positiveText(R.string.ok)
-                    .callback(new ButtonCallback() {
-                        @Override
-                        public void onPositive(MaterialDialog dialog) {
-                            CheckBox cb = (CheckBox) dialog.findViewById(R.id.checkbox);
-
-                            Editor e = mPrefs.edit();
-                            e.putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !cb.isChecked());
-                            e.apply();
-                        }
-                    })
-                    .build();
-
-            TextView tv = (TextView)
-                    ((MaterialDialog) mFirstTimeDialog).getCustomView().findViewById(R.id.message);
-            tv.setText(message);
-            break;
-        default:
-            throw new IllegalStateException("Invalid first time dialog type");
-        }
-
-        mFirstTimeDialogType = type;
-
-        mFirstTimeDialog.setOnDismissListener(this);
-        mFirstTimeDialog.setCanceledOnTouchOutside(false);
-        mFirstTimeDialog.setCancelable(false);
-        mFirstTimeDialog.show();
     }
 
     private PendingAction[] getPendingActions() {

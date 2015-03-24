@@ -18,14 +18,11 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.LoaderManager;
 import android.content.AsyncTaskLoader;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.Loader;
 import android.graphics.Bitmap;
@@ -42,30 +39,32 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
-import com.afollestad.materialdialogs.MaterialDialog.ListCallbackMulti;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.switcher.ExperimentalInAppWipeDialog
+        .ExperimentalInAppWipeDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
+        .RomNameInputDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
+        .SetKernelConfirmDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.WipedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment.LoaderResult;
+import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
+        .WipeTargetsSelectionDialogListener;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter;
 import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter.RomCardActionListener;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -77,25 +76,21 @@ import java.util.Collections;
 
 import mbtool.daemon.v2.WipeTarget;
 
-public class SwitcherListFragment extends Fragment implements OnDismissListener,
+public class SwitcherListFragment extends Fragment implements
         EventCollectorListener, RomCardActionListener,
+        ExperimentalInAppWipeDialogListener,
+        SetKernelConfirmDialogListener,
+        WipeTargetsSelectionDialogListener,
+        RomNameInputDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
     private static final String EXTRA_PERFORMING_ACTION = "performingAction";
     private static final String EXTRA_SELECTED_ROM = "selectedRom";
-    private static final String EXTRA_PROGRESS_DIALOG = "progressDialog";
-    private static final String EXTRA_CONFIRM_DIALOG = "confirmDialog";
-    private static final String EXTRA_INPUT_DIALOG = "inputDialog";
-    private static final String EXTRA_SELECTION_DIALOG = "selectionDialog";
 
     private static final int PROGRESS_DIALOG_SWITCH_ROM = 1;
     private static final int PROGRESS_DIALOG_SET_KERNEL = 2;
     private static final int PROGRESS_DIALOG_WIPE_ROM = 3;
-    private static final int CONFIRM_DIALOG_SET_KERNEL = 1;
-    private static final int CONFIRM_DIALOG_WIPING_EXPERIMENTAL = 2;
-    private static final int INPUT_DIALOG_EDIT_NAME = 1;
-    private static final int SELECTION_DIALOG_WIPE_TARGETS = 1;
 
     private static final int REQUEST_IMAGE = 1234;
     private static final int REQUEST_FLASH_ZIP = 2345;
@@ -109,15 +104,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     private RecyclerView mCardListView;
     private ProgressBar mProgressBar;
     private FloatingActionButton mFabFlashZip;
-
-    private int mProgressDialogType;
-    private AlertDialog mProgressDialog;
-    private int mConfirmDialogType;
-    private AlertDialog mConfirmDialog;
-    private int mInputDialogType;
-    private AlertDialog mInputDialog;
-    private int mSelectionDialogType;
-    private AlertDialog mSelectionDialog;
 
     private ArrayList<RomInformation> mRoms;
     private RomInformation mCurrentRom;
@@ -148,26 +134,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
 
             mSelectedRom = savedInstanceState.getParcelable(EXTRA_SELECTED_ROM);
-
-            int progressDialogType = savedInstanceState.getInt(EXTRA_PROGRESS_DIALOG);
-            if (progressDialogType > 0) {
-                buildProgressDialog(progressDialogType);
-            }
-
-            int confirmDialogType = savedInstanceState.getInt(EXTRA_CONFIRM_DIALOG);
-            if (confirmDialogType > 0) {
-                buildConfirmDialog(confirmDialogType);
-            }
-
-            int inputDialogType = savedInstanceState.getInt(EXTRA_INPUT_DIALOG);
-            if (inputDialogType > 0) {
-                buildInputDialog(inputDialogType);
-            }
-
-            int selectionDialogType = savedInstanceState.getInt(EXTRA_SELECTION_DIALOG);
-            if (selectionDialogType > 0) {
-                buildSelectionDialog(selectionDialogType);
-            }
         }
 
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
@@ -223,49 +189,12 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
-
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
-        }
-
-        if (mConfirmDialog != null) {
-            mConfirmDialog.dismiss();
-            mConfirmDialog = null;
-        }
-
-        if (mInputDialog != null) {
-            mInputDialog.dismiss();
-            mInputDialog = null;
-        }
-
-        if (mSelectionDialog != null) {
-            mSelectionDialog.dismiss();
-            mSelectionDialog = null;
-        }
-    }
-
-    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
         outState.putBoolean(EXTRA_PERFORMING_ACTION, mPerformingAction);
         if (mSelectedRom != null) {
             outState.putParcelable(EXTRA_SELECTED_ROM, mSelectedRom);
-        }
-        if (mProgressDialog != null) {
-            outState.putInt(EXTRA_PROGRESS_DIALOG, mProgressDialogType);
-        }
-        if (mConfirmDialog != null) {
-            outState.putInt(EXTRA_CONFIRM_DIALOG, mConfirmDialogType);
-        }
-        if (mInputDialog != null) {
-            outState.putInt(EXTRA_INPUT_DIALOG, mInputDialogType);
-        }
-        if (mSelectionDialog != null) {
-            outState.putInt(EXTRA_SELECTION_DIALOG, mSelectionDialogType);
         }
     }
 
@@ -302,22 +231,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         refreshFabVisibility(false);
     }
 
-    @Override
-    public void onDismiss(DialogInterface dialog) {
-        if (mProgressDialog == dialog) {
-            mProgressDialog = null;
-        }
-        if (mConfirmDialog == dialog) {
-            mConfirmDialog = null;
-        }
-        if (mInputDialog == dialog) {
-            mInputDialog = null;
-        }
-        if (mSelectionDialog == dialog) {
-            mSelectionDialog = null;
-        }
-    }
-
     private void refreshProgressVisibility(boolean visible) {
         mProgressBar.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
@@ -352,215 +265,6 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         }
     }
 
-    private void buildProgressDialog(int type) {
-        if (mProgressDialog != null) {
-            throw new IllegalStateException("Tried to create progress dialog twice!");
-        }
-
-        int titleResId;
-        int messageResId;
-
-        switch (type) {
-        case PROGRESS_DIALOG_SWITCH_ROM:
-            titleResId = R.string.switching_rom;
-            messageResId = R.string.please_wait;
-            break;
-        case PROGRESS_DIALOG_SET_KERNEL:
-            titleResId = R.string.setting_kernel;
-            messageResId = R.string.please_wait;
-            break;
-        case PROGRESS_DIALOG_WIPE_ROM:
-            titleResId = R.string.wiping_targets;
-            messageResId = R.string.please_wait;
-            break;
-        default:
-            throw new IllegalStateException("Invalid progress dialog type");
-        }
-
-        mProgressDialogType = type;
-
-        mProgressDialog = new MaterialDialog.Builder(getActivity())
-                .title(titleResId)
-                .content(messageResId)
-                .progress(true, 0)
-                .build();
-
-        mProgressDialog.setOnDismissListener(this);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.show();
-    }
-
-    private void buildConfirmDialog(int type) {
-        if (mConfirmDialog != null) {
-            throw new IllegalStateException("Tried to create confirm dialog twice!");
-        }
-
-        switch (type) {
-        case CONFIRM_DIALOG_SET_KERNEL:
-            String message = String.format(getString(R.string.switcher_ask_set_kernel_desc),
-                    mSelectedRom.getName());
-
-            mConfirmDialog = new MaterialDialog.Builder(getActivity())
-                    .title(R.string.switcher_ask_set_kernel_title)
-                    .content(message)
-                    .positiveText(R.string.proceed)
-                    .negativeText(R.string.cancel)
-                    .callback(new ButtonCallback() {
-                        @Override
-                        public void onPositive(MaterialDialog dialog) {
-                            setKernel(mSelectedRom);
-                        }
-                    })
-                    .build();
-            break;
-
-        case CONFIRM_DIALOG_WIPING_EXPERIMENTAL:
-            mConfirmDialog = new MaterialDialog.Builder(getActivity())
-                    .content(R.string.wipe_rom_dialog_warning_message)
-                    .positiveText(R.string.proceed)
-                    .callback(new ButtonCallback() {
-                        @Override
-                        public void onPositive(MaterialDialog dialog) {
-                            buildSelectionDialog(SELECTION_DIALOG_WIPE_TARGETS);
-                        }
-                    })
-                    .build();
-            break;
-
-        default:
-            throw new IllegalStateException("Invalid confirm dialog type");
-        }
-
-        mConfirmDialogType = type;
-
-        mConfirmDialog.setOnDismissListener(this);
-        mConfirmDialog.setCanceledOnTouchOutside(false);
-        mConfirmDialog.setCancelable(false);
-        mConfirmDialog.show();
-    }
-
-    private void buildInputDialog(int type) {
-        if (mInputDialog != null) {
-            throw new IllegalStateException("Tried to create input dialog twice!");
-        }
-
-        switch (type) {
-        case INPUT_DIALOG_EDIT_NAME:
-            String title = String.format(getString(R.string.rename_rom_title),
-                    mSelectedRom.getDefaultName());
-            String message = String.format(getString(R.string.rename_rom_desc),
-                    mSelectedRom.getDefaultName());
-
-            mInputDialog = new MaterialDialog.Builder(getActivity())
-                    .title(title)
-                    .customView(R.layout.dialog_textbox, true)
-                    .positiveText(R.string.ok)
-                    .negativeText(R.string.cancel)
-                    .callback(new ButtonCallback() {
-                        @Override
-                        public void onPositive(MaterialDialog dialog) {
-                            EditText et = (EditText) dialog.findViewById(R.id.edittext);
-                            String newName = et.getText().toString().trim();
-
-                            if (newName.isEmpty()) {
-                                mSelectedRom.setName(null);
-                            } else {
-                                mSelectedRom.setName(newName);
-                            }
-
-                            new Thread() {
-                                @Override
-                                public void run() {
-                                    RomUtils.saveConfig(mSelectedRom);
-                                }
-                            }.start();
-                            mRomCardAdapter.notifyDataSetChanged();
-                        }
-                    })
-                    .build();
-
-            TextView tv = (TextView)
-                    ((MaterialDialog) mInputDialog).getCustomView().findViewById(R.id.message);
-            tv.setText(message);
-            break;
-        default:
-            throw new IllegalStateException("Invalid input dialog type");
-        }
-
-        mInputDialogType = type;
-
-        mInputDialog.setOnDismissListener(this);
-        mInputDialog.setCanceledOnTouchOutside(false);
-        mInputDialog.setCancelable(false);
-        mInputDialog.show();
-    }
-
-    private void buildSelectionDialog(int type) {
-        if (mSelectionDialog != null) {
-            throw new IllegalStateException("Tried to create selection dialog twice!");
-        }
-
-        switch (type) {
-        case SELECTION_DIALOG_WIPE_TARGETS:
-            final String[] items = new String[] {
-                    getString(R.string.wipe_target_system),
-                    getString(R.string.wipe_target_cache),
-                    getString(R.string.wipe_target_data),
-                    getString(R.string.wipe_target_dalvik_cache),
-                    getString(R.string.wipe_target_multiboot_files)
-            };
-
-            mSelectionDialog = new MaterialDialog.Builder(getActivity())
-                    .title(R.string.wipe_rom_dialog_title)
-                    .items(items)
-                    .negativeText(R.string.cancel)
-                    .positiveText(R.string.ok)
-                    .itemsCallbackMultiChoice(null, new ListCallbackMulti() {
-                        @Override
-                        public void onSelection(MaterialDialog dialog, Integer[] which,
-                                                CharSequence[] text) {
-                            if (which.length == 0) {
-                                Toast.makeText(getActivity(), R.string.wipe_rom_none_selected,
-                                        Toast.LENGTH_LONG).show();
-                                return;
-                            }
-
-                            short[] targets = new short[which.length];
-
-                            for (int i = 0; i < which.length; i++) {
-                                int arrIndex = which[i];
-
-                                if (arrIndex == 0) {
-                                    targets[i] = WipeTarget.SYSTEM;
-                                } else if (arrIndex == 1) {
-                                    targets[i] = WipeTarget.CACHE;
-                                } else if (arrIndex == 2) {
-                                    targets[i] = WipeTarget.DATA;
-                                } else if (arrIndex == 3) {
-                                    targets[i] = WipeTarget.DALVIK_CACHE;
-                                } else if (arrIndex == 4) {
-                                    targets[i] = WipeTarget.MULTIBOOT;
-                                }
-                            }
-
-                            wipeRom(mSelectedRom, targets);
-                        }
-                    })
-                    .build();
-            break;
-        default:
-            throw new IllegalStateException("Invalid selection dialog type");
-        }
-
-        mSelectionDialogType = type;
-
-        mSelectionDialog.setOnDismissListener(this);
-        mSelectionDialog.setCanceledOnTouchOutside(false);
-        mSelectionDialog.setCancelable(false);
-        mSelectionDialog.show();
-    }
-
     @Override
     public void onActivityResult(int request, int result, Intent data) {
         switch (request) {
@@ -584,10 +288,13 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
             mPerformingAction = false;
             updateCardUI();
-            if (mProgressDialog != null) {
-                mProgressDialog.dismiss();
-                mProgressDialog = null;
+
+            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
+            if (d != null) {
+                d.dismiss();
             }
+
             Toast.makeText(getActivity(),
                     event.failed ? R.string.choose_rom_failure : R.string.choose_rom_success,
                     Toast.LENGTH_SHORT).show();
@@ -595,10 +302,13 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             SetKernelEvent event = (SetKernelEvent) bEvent;
             mPerformingAction = false;
             updateCardUI();
-            if (mProgressDialog != null) {
-                mProgressDialog.dismiss();
-                mProgressDialog = null;
+
+            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
+            if (d != null) {
+                d.dismiss();
             }
+
             Toast.makeText(getActivity(),
                     event.failed ? R.string.set_kernel_failure : R.string.set_kernel_success,
                     Toast.LENGTH_SHORT).show();
@@ -606,9 +316,11 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             WipedRomEvent event = (WipedRomEvent) bEvent;
             mPerformingAction = false;
             updateCardUI();
-            if (mProgressDialog != null) {
-                mProgressDialog.dismiss();
-                mProgressDialog = null;
+
+            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
+            if (d != null) {
+                d.dismiss();
             }
 
             if (event.succeeded == null || event.failed == null) {
@@ -667,7 +379,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mPerformingAction = true;
         updateCardUI();
 
-        buildProgressDialog(PROGRESS_DIALOG_SWITCH_ROM);
+        GenericProgressDialog d = GenericProgressDialog.newInstance(
+                R.string.switching_rom, R.string.please_wait);
+        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
+
         mEventCollector.chooseRom(info.getId());
     }
 
@@ -676,14 +391,18 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mSelectedRom = info;
 
         // Ask for confirmation
-        buildConfirmDialog(CONFIRM_DIALOG_SET_KERNEL);
+        SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstance(this, mSelectedRom);
+        d.show(getFragmentManager(), SetKernelConfirmDialog.TAG);
     }
 
     private void setKernel(RomInformation info) {
         mPerformingAction = true;
         updateCardUI();
 
-        buildProgressDialog(PROGRESS_DIALOG_SET_KERNEL);
+        GenericProgressDialog d = GenericProgressDialog.newInstance(
+                R.string.setting_kernel, R.string.please_wait);
+        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
+
         mEventCollector.setKernel(info.getId());
     }
 
@@ -691,7 +410,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
     public void onSelectedEditName(RomInformation info) {
         mSelectedRom = info;
 
-        buildInputDialog(INPUT_DIALOG_EDIT_NAME);
+        RomNameInputDialog d = RomNameInputDialog.newInstance(this, mSelectedRom);
+        d.show(getFragmentManager(), RomNameInputDialog.TAG);
     }
 
     @Override
@@ -725,7 +445,8 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
             Toast.makeText(getActivity(), R.string.wipe_rom_no_wipe_current_rom,
                     Toast.LENGTH_LONG).show();
         } else {
-            buildConfirmDialog(CONFIRM_DIALOG_WIPING_EXPERIMENTAL);
+            ExperimentalInAppWipeDialog d = ExperimentalInAppWipeDialog.newInstance(this);
+            d.show(getFragmentManager(), ExperimentalInAppWipeDialog.TAG);
         }
     }
 
@@ -733,7 +454,10 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
         mPerformingAction = true;
         updateCardUI();
 
-        buildProgressDialog(PROGRESS_DIALOG_WIPE_ROM);
+        GenericProgressDialog d = GenericProgressDialog.newInstance(
+                R.string.wiping_targets, R.string.please_wait);
+        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
+
         mEventCollector.wipeRom(info.getId(), targets);
     }
 
@@ -764,6 +488,42 @@ public class SwitcherListFragment extends Fragment implements OnDismissListener,
 
     @Override
     public void onLoaderReset(Loader<LoaderResult> loader) {
+    }
+
+    @Override
+    public void onConfirmInAppRomWipeWarning() {
+        WipeTargetsSelectionDialog d = WipeTargetsSelectionDialog.newInstance(this);
+        d.show(getFragmentManager(), WipeTargetsSelectionDialog.TAG);
+    }
+
+    @Override
+    public void onConfirmSetKernel() {
+        setKernel(mSelectedRom);
+    }
+
+    @Override
+    public void onSelectedWipeTargets(short[] targets) {
+        if (targets.length == 0) {
+            Toast.makeText(getActivity(), R.string.wipe_rom_none_selected,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        wipeRom(mSelectedRom, targets);
+    }
+
+    @Override
+    public void onRomNameChanged(String newName) {
+        mSelectedRom.setName(newName);
+
+        new Thread() {
+            @Override
+            public void run() {
+                RomUtils.saveConfig(mSelectedRom);
+            }
+        }.start();
+
+        mRomCardAdapter.notifyDataSetChanged();
     }
 
     protected class ResizeAndCacheImageTask extends AsyncTask<Void, Void, Void> {

@@ -17,19 +17,18 @@
 
 package com.github.chenxiaolong.multibootpatcher.settings;
 
-import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.LoaderManager;
 import android.content.AsyncTaskLoader;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnDismissListener;
 import android.content.Loader;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
-import android.support.annotation.NonNull;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
@@ -44,25 +43,18 @@ import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceClickListener,
-        OnDismissListener, EventCollectorListener, LoaderManager.LoaderCallbacks<Version> {
+        EventCollectorListener, LoaderManager.LoaderCallbacks<Version> {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
-
-    private static final String EXTRA_PROGRESS_DIALOG = "progressDialog";
-    private static final String EXTRA_UPDATE_RAMDISK_DIALOG = "updateRamdiskDialog";
-    private static final String EXTRA_UPDATE_RAMDISK_DONE_DIALOG = "updateRamdiskDoneDialog";
-    private static final String EXTRA_UPDATE_SUCCEEDED = "updateSucceeded";
 
     private static final String KEY_BOOTING_CATEGORY = "booting_category";
     private static final String KEY_UPDATE_RAMDISK = "update_ramdisk";
 
+    private static final String DIALOG_INITIAL_LOAD = "initial_load";
+    private static final String DIALOG_UPDATING_RAMDISK = "updating_ramdisk";
+
     private RomSettingsEventCollector mEventCollector;
 
     private PreferenceCategory mBootingCategory;
-
-    private MaterialDialog mProgressDialog;
-    private MaterialDialog mRamdiskDialog;
-    private AlertDialog mUpdateDoneDialog;
-    private boolean mUpdateSucceeded;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,45 +76,13 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        if (savedInstanceState != null) {
-            if (savedInstanceState.getBoolean(EXTRA_PROGRESS_DIALOG, false)) {
-                buildProgressDialog();
-            }
-
-            mUpdateSucceeded = savedInstanceState.getBoolean(EXTRA_UPDATE_SUCCEEDED);
-
-            if (savedInstanceState.getBoolean(EXTRA_UPDATE_RAMDISK_DIALOG, false)) {
-                buildUpdateRamdiskDialog();
-            }
-
-            if (savedInstanceState.getBoolean(EXTRA_UPDATE_RAMDISK_DONE_DIALOG, false)) {
-                buildUpdateRamdiskDoneDialog();
-            }
-        } else {
+        if (savedInstanceState == null) {
             // Only show progress dialog on initial load
-            buildProgressDialog();
+            IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
+            d.show(getFragmentManager(), DIALOG_INITIAL_LOAD);
         }
 
         getActivity().getLoaderManager().initLoader(0, null, this);
-    }
-
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        if (mProgressDialog != null) {
-            outState.putBoolean(EXTRA_PROGRESS_DIALOG, true);
-        }
-
-        outState.putBoolean(EXTRA_UPDATE_SUCCEEDED, mUpdateSucceeded);
-
-        if (mRamdiskDialog != null) {
-            outState.putBoolean(EXTRA_UPDATE_RAMDISK_DIALOG, true);
-        }
-
-        if (mUpdateDoneDialog != null) {
-            outState.putBoolean(EXTRA_UPDATE_RAMDISK_DONE_DIALOG, true);
-        }
     }
 
     @Override
@@ -138,104 +98,13 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
-
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
-        }
-
-        if (mRamdiskDialog != null) {
-            mRamdiskDialog.dismiss();
-            mRamdiskDialog = null;
-        }
-
-        if (mUpdateDoneDialog != null) {
-            mUpdateDoneDialog.dismiss();
-            mUpdateDoneDialog = null;
-        }
-    }
-
-    private void buildProgressDialog() {
-        if (mProgressDialog != null) {
-            throw new IllegalStateException("Tried to create progress dialog twice!");
-        }
-
-        mProgressDialog = new MaterialDialog.Builder(getActivity())
-                .content(R.string.please_wait)
-                .progress(true, 0)
-                .build();
-
-        mProgressDialog.setOnDismissListener(this);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.show();
-    }
-
-    private void buildUpdateRamdiskDialog() {
-        if (mRamdiskDialog != null) {
-            throw new IllegalStateException("Tried to create progress dialog twice!");
-        }
-
-        mRamdiskDialog = new MaterialDialog.Builder(getActivity())
-                .content(R.string.please_wait)
-                .progress(true, 0)
-                .build();
-
-        mRamdiskDialog.setOnDismissListener(this);
-        mRamdiskDialog.setCanceledOnTouchOutside(false);
-        mRamdiskDialog.setCancelable(false);
-        mRamdiskDialog.show();
-    }
-
-    private void buildUpdateRamdiskDoneDialog() {
-        if (mUpdateDoneDialog != null) {
-            throw new IllegalStateException("Tried to create dialog twice!");
-        }
-
-        MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
-
-        if (!mUpdateSucceeded) {
-            builder.title(R.string.update_ramdisk_failure_title);
-            builder.content(R.string.update_ramdisk_failure_desc);
-
-            builder.negativeText(R.string.ok);
-        } else {
-            builder.title(R.string.update_ramdisk_success_title);
-            builder.content(R.string.update_ramdisk_reboot_desc);
-
-            final Context context = getActivity().getApplicationContext();
-
-            builder.negativeText(R.string.reboot_later);
-            builder.positiveText(R.string.reboot_now);
-
-            builder.callback(new ButtonCallback() {
-                @Override
-                public void onPositive(MaterialDialog dialog) {
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            SwitcherUtils.reboot(context);
-                        }
-                    }.start();
-                }
-            });
-        }
-
-        mUpdateDoneDialog = builder.build();
-        mUpdateDoneDialog.setOnDismissListener(this);
-        mUpdateDoneDialog.setCanceledOnTouchOutside(false);
-        mUpdateDoneDialog.setCancelable(false);
-        mUpdateDoneDialog.show();
-    }
-
-    @Override
     public boolean onPreferenceClick(Preference preference) {
         final String key = preference.getKey();
 
         if (KEY_UPDATE_RAMDISK.equals(key)) {
-            buildUpdateRamdiskDialog();
+            IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
+            d.show(getFragmentManager(), DIALOG_UPDATING_RAMDISK);
+
             mEventCollector.updateRamdisk();
         }
 
@@ -243,30 +112,18 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     }
 
     @Override
-    public void onDismiss(DialogInterface dialog) {
-        if (mProgressDialog == dialog) {
-            mProgressDialog = null;
-        }
-
-        if (mRamdiskDialog == dialog) {
-            mRamdiskDialog = null;
-        }
-
-        if (mUpdateDoneDialog == dialog) {
-            mUpdateDoneDialog = null;
-        }
-    }
-
-    @Override
     public void onEventReceived(BaseEvent event) {
         if (event instanceof UpdatedRamdiskEvent) {
             UpdatedRamdiskEvent e = (UpdatedRamdiskEvent) event;
 
-            mRamdiskDialog.dismiss();
-            mRamdiskDialog = null;
+            IndeterminateProgressDialog d = (IndeterminateProgressDialog) getFragmentManager()
+                    .findFragmentByTag(DIALOG_UPDATING_RAMDISK);
+            if (d != null) {
+                d.dismiss();
+            }
 
-            mUpdateSucceeded = e.success;
-            buildUpdateRamdiskDoneDialog();
+            UpdateRamdiskResultDialog dialog = UpdateRamdiskResultDialog.newInstance(e.success);
+            dialog.show(getFragmentManager(), UpdateRamdiskResultDialog.TAG);
         }
     }
 
@@ -282,10 +139,16 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             getPreferenceScreen().removePreference(mBootingCategory);
         }
 
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
-        }
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                IndeterminateProgressDialog d = (IndeterminateProgressDialog) getFragmentManager()
+                        .findFragmentByTag(DIALOG_INITIAL_LOAD);
+                if (d != null) {
+                    d.dismiss();
+                }
+            }
+        });
     }
 
     @Override
@@ -313,6 +176,81 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         public Version loadInBackground() {
             mResult = MbtoolUtils.getSystemMbtoolVersion(getContext());
             return mResult;
+        }
+    }
+
+    public static class IndeterminateProgressDialog extends DialogFragment {
+        public static IndeterminateProgressDialog newInstance() {
+            IndeterminateProgressDialog frag = new IndeterminateProgressDialog();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            Dialog dialog = new MaterialDialog.Builder(getActivity())
+                    .content(R.string.please_wait)
+                    .progress(true, 0)
+                    .build();
+
+            setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+
+            return dialog;
+        }
+    }
+
+    public static class UpdateRamdiskResultDialog extends DialogFragment {
+        private static final String TAG = UpdateRamdiskResultDialog.class.getSimpleName();
+
+        private static final String ARG_SUCCEEDED = "succeeded";
+
+        public static UpdateRamdiskResultDialog newInstance(boolean succeeded) {
+            UpdateRamdiskResultDialog frag = new UpdateRamdiskResultDialog();
+            Bundle args = new Bundle();
+            args.putBoolean(ARG_SUCCEEDED, succeeded);
+            frag.setArguments(args);
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            boolean succeeded = getArguments().getBoolean(ARG_SUCCEEDED);
+
+            MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
+
+            if (!succeeded) {
+                builder.title(R.string.update_ramdisk_failure_title);
+                builder.content(R.string.update_ramdisk_failure_desc);
+
+                builder.negativeText(R.string.ok);
+            } else {
+                builder.title(R.string.update_ramdisk_success_title);
+                builder.content(R.string.update_ramdisk_reboot_desc);
+
+                final Context context = getActivity().getApplicationContext();
+
+                builder.negativeText(R.string.reboot_later);
+                builder.positiveText(R.string.reboot_now);
+
+                builder.callback(new ButtonCallback() {
+                    @Override
+                    public void onPositive(MaterialDialog dialog) {
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                SwitcherUtils.reboot(context);
+                            }
+                        }.start();
+                    }
+                });
+            }
+
+            Dialog dialog = builder.build();
+
+            setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+
+            return dialog;
         }
     }
 }
