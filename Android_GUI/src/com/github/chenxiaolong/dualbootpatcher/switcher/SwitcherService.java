@@ -39,6 +39,8 @@ import com.github.chenxiaolong.multibootpatcher.AnsiStuff;
 import com.github.chenxiaolong.multibootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.multibootpatcher.AnsiStuff.Color;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SetKernelResult;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.WipeResult;
 
 import org.apache.commons.lang3.StringUtils;
@@ -52,28 +54,31 @@ public class SwitcherService extends IntentService {
             "com.chenxiaolong.github.dualbootpatcher.BROADCAST_SWITCHER_STATE";
 
     public static final String ACTION = "action";
-    public static final String ACTION_CHOOSE_ROM = "choose_rom";
-    public static final String ACTION_SET_KERNEL = "set_kernel";
     public static final String ACTION_VERIFY_ZIP = "verify_zip";
     public static final String ACTION_FLASH_ZIPS = "flash_zips";
 
-    public static final String PARAM_KERNEL_ID = "kernel_id";
     public static final String PARAM_ZIP_FILE = "zip_file";
     public static final String PARAM_PENDING_ACTIONS = "pending_actions";
 
     public static final String STATE = "state";
-    public static final String STATE_CHOSE_ROM = "chose_rom";
-    public static final String STATE_SET_KERNEL = "set_kernel";
     public static final String STATE_VERIFIED_ZIP = "verified_zip";
     public static final String STATE_FLASHED_ZIPS = "flashed_zips";
     public static final String STATE_COMMAND_OUTPUT_DATA = "command_output_line";
 
-    public static final String RESULT_FAILED = "failed";
-    public static final String RESULT_KERNEL_ID = "kernel_id";
     public static final String RESULT_VERIFY_ZIP = "verify_zip";
     public static final String RESULT_TOTAL_ACTIONS = "total_actions";
     public static final String RESULT_FAILED_ACTIONS = "failed_actions";
     public static final String RESULT_OUTPUT_DATA = "output_line";
+
+    // Switch ROM and set kernel
+    public static final String ACTION_SWITCH_ROM = "switch_rom";
+    public static final String ACTION_SET_KERNEL = "set_kernel";
+    public static final String PARAM_KERNEL_ID = "kernel_id";
+    public static final String STATE_SWITCHED_ROM = "switched_rom";
+    public static final String STATE_SET_KERNEL = "set_kernel";
+    public static final String RESULT_KERNEL_ID = "kernel_id";
+    public static final String RESULT_SWITCH_ROM = "switch_rom";
+    public static final String RESULT_SET_KERNEL = "set_kernel";
 
     // Wipe ROM
     public static final String ACTION_WIPE_ROM = "wipe_rom";
@@ -89,19 +94,19 @@ public class SwitcherService extends IntentService {
         super(TAG);
     }
 
-    private void onChoseRom(boolean failed, String kernelId) {
+    private void onSwitchedRom(String kernelId, SwitchRomResult result) {
         Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_CHOSE_ROM);
-        i.putExtra(RESULT_FAILED, failed);
+        i.putExtra(STATE, STATE_SWITCHED_ROM);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
+        i.putExtra(RESULT_SWITCH_ROM, result);
         sendBroadcast(i);
     }
 
-    private void onSetKernel(boolean failed, String kernelId) {
+    private void onSetKernel(String kernelId, SetKernelResult result) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_SET_KERNEL);
-        i.putExtra(RESULT_FAILED, failed);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
+        i.putExtra(RESULT_SET_KERNEL, result);
         sendBroadcast(i);
     }
 
@@ -146,7 +151,7 @@ public class SwitcherService extends IntentService {
         builder.setSmallIcon(R.drawable.ic_launcher);
         builder.setOngoing(true);
 
-        if (ACTION_CHOOSE_ROM.equals(action)) {
+        if (ACTION_SWITCH_ROM.equals(action)) {
             builder.setContentTitle(getString(R.string.switching_rom));
         } else if (ACTION_SET_KERNEL.equals(action)) {
             builder.setContentTitle(getString(R.string.setting_kernel));
@@ -164,13 +169,13 @@ public class SwitcherService extends IntentService {
         nm.cancel(1);
     }
 
-    private void chooseRom(Bundle data) {
-        setupNotification(ACTION_CHOOSE_ROM);
+    private void switchRom(Bundle data) {
+        setupNotification(ACTION_SWITCH_ROM);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean failed = !SwitcherUtils.chooseRom(this, kernelId);
+        SwitchRomResult result = MbtoolSocket.getInstance().chooseRom(this, kernelId);
 
-        onChoseRom(failed, kernelId);
+        onSwitchedRom(kernelId, result);
 
         removeNotification();
     }
@@ -179,9 +184,9 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_SET_KERNEL);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean failed = !SwitcherUtils.setKernel(this, kernelId);
+        SetKernelResult result = MbtoolSocket.getInstance().setKernel(this, kernelId);
 
-        onSetKernel(failed, kernelId);
+        onSetKernel(kernelId, result);
 
         removeNotification();
     }
@@ -352,8 +357,8 @@ public class SwitcherService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         String action = intent.getStringExtra(ACTION);
 
-        if (ACTION_CHOOSE_ROM.equals(action)) {
-            chooseRom(intent.getExtras());
+        if (ACTION_SWITCH_ROM.equals(action)) {
+            switchRom(intent.getExtras());
         } else if (ACTION_SET_KERNEL.equals(action)) {
             setKernel(intent.getExtras());
         } else if (ACTION_VERIFY_ZIP.equals(action)) {

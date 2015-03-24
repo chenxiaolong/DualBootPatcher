@@ -37,6 +37,7 @@ public class GenericConfirmDialog extends DialogFragment {
         Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
         args.putString(ARG_MESSAGE, message);
+        frag.setArguments(args);
         return frag;
     }
 

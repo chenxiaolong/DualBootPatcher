@@ -96,6 +96,11 @@
     <!-- Message shown when setting the kernel fails -->
     <string name="set_kernel_failure">Failed to set kernel</string>
 
+    <!-- Message shown if the boot partition could not be detected because the device codename is
+         not recognized -->
+    <string name="unknown_boot_partition">Could not determine the boot partition because this
+        device\'s codename \'%s\' is not recognized.</string>
+
     <!-- Version text shown on ROM card if the version could not be detected -->
     <string name="rom_card_unknown_version">Unknown version</string>
     <!-- Build text shown on ROM card if the build could not be detected -->

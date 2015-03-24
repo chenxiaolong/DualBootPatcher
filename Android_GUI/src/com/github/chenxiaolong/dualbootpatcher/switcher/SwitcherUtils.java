@@ -71,14 +71,6 @@ public class SwitcherUtils {
         return bootBlockDev;
     }
 
-    public static boolean chooseRom(Context context, String id) {
-        return MbtoolSocket.getInstance().chooseRom(context, id);
-    }
-
-    public static boolean setKernel(Context context, String id) {
-        return MbtoolSocket.getInstance().setKernel(context, id);
-    }
-
     public static VerificationResult verifyZipMbtoolVersion(String zipFile) {
         ZipFile zf = null;
 

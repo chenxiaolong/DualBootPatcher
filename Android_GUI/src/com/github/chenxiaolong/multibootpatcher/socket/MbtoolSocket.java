@@ -371,16 +371,22 @@ public class MbtoolSocket {
         return null;
     }
 
-    public boolean chooseRom(Context context, String id) {
+    public enum SwitchRomResult {
+        UNKNOWN_BOOT_PARTITION,
+        SUCCEEDED,
+        FAILED
+    }
+
+    public SwitchRomResult chooseRom(Context context, String id) {
         if (!connect(context)) {
-            return false;
+            return SwitchRomResult.FAILED;
         }
 
         try {
             String bootBlockDev = SwitcherUtils.getBootPartition();
             if (bootBlockDev == null) {
                 Log.e(TAG, "Failed to determine boot partition");
-                return false;
+                return SwitchRomResult.UNKNOWN_BOOT_PARTITION;
             }
 
             // Create request
@@ -402,25 +408,31 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.SWITCH_ROM);
             SwitchRomResponse response = fbresponse.switchRomResponse();
 
-            return response.success() != 0;
+            return response.success() != 0 ? SwitchRomResult.SUCCEEDED : SwitchRomResult.FAILED;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
         }
 
-        return false;
+        return SwitchRomResult.FAILED;
     }
 
-    public boolean setKernel(Context context, String id) {
+    public enum SetKernelResult {
+        UNKNOWN_BOOT_PARTITION,
+        SUCCEEDED,
+        FAILED
+    }
+
+    public SetKernelResult setKernel(Context context, String id) {
         if (!connect(context)) {
-            return false;
+            return SetKernelResult.FAILED;
         }
 
         try {
             String bootBlockDev = SwitcherUtils.getBootPartition();
             if (bootBlockDev == null) {
                 Log.e(TAG, "Failed to determine boot partition");
-                return false;
+                return SetKernelResult.UNKNOWN_BOOT_PARTITION;
             }
 
             // Create request
@@ -442,13 +454,13 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.SET_KERNEL);
             SetKernelResponse response = fbresponse.setKernelResponse();
 
-            return response.success() != 0;
+            return response.success() != 0 ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
         } catch (IOException e) {
             e.printStackTrace();
             disconnect();
         }
 
-        return false;
+        return SetKernelResult.FAILED;
     }
 
     public boolean restart(Context context, String arg) {

@@ -30,6 +30,7 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -295,9 +296,19 @@ public class SwitcherListFragment extends Fragment implements
                 d.dismiss();
             }
 
-            Toast.makeText(getActivity(),
-                    event.failed ? R.string.choose_rom_failure : R.string.choose_rom_success,
-                    Toast.LENGTH_SHORT).show();
+            switch (event.result) {
+            case SUCCEEDED:
+                Toast.makeText(getActivity(), R.string.choose_rom_success,
+                        Toast.LENGTH_SHORT).show();
+                break;
+            case FAILED:
+                Toast.makeText(getActivity(), R.string.choose_rom_failure,
+                        Toast.LENGTH_SHORT).show();
+                break;
+            case UNKNOWN_BOOT_PARTITION:
+                showUnknownBootPartitionDialog();
+                break;
+            }
         } else if (bEvent instanceof SetKernelEvent) {
             SetKernelEvent event = (SetKernelEvent) bEvent;
             mPerformingAction = false;
@@ -309,9 +320,19 @@ public class SwitcherListFragment extends Fragment implements
                 d.dismiss();
             }
 
-            Toast.makeText(getActivity(),
-                    event.failed ? R.string.set_kernel_failure : R.string.set_kernel_success,
-                    Toast.LENGTH_SHORT).show();
+            switch (event.result) {
+            case SUCCEEDED:
+                Toast.makeText(getActivity(), R.string.set_kernel_success,
+                        Toast.LENGTH_SHORT).show();
+                break;
+            case FAILED:
+                Toast.makeText(getActivity(), R.string.set_kernel_failure,
+                        Toast.LENGTH_SHORT).show();
+                break;
+            case UNKNOWN_BOOT_PARTITION:
+                showUnknownBootPartitionDialog();
+                break;
+            }
         } else if (bEvent instanceof WipedRomEvent) {
             WipedRomEvent event = (WipedRomEvent) bEvent;
             mPerformingAction = false;
@@ -347,6 +368,13 @@ public class SwitcherListFragment extends Fragment implements
                 reloadFragment();
             }
         }
+    }
+
+    private void showUnknownBootPartitionDialog() {
+        String message = String.format(getString(R.string.unknown_boot_partition), Build.DEVICE);
+
+        GenericConfirmDialog gcd = GenericConfirmDialog.newInstance(null, message);
+        gcd.show(getFragmentManager(), GenericConfirmDialog.TAG);
     }
 
     private String targetsToString(short[] targets) {

@@ -24,7 +24,6 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
@@ -32,6 +31,8 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SetKernelResult;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SwitchRomResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -106,7 +107,8 @@ public class RomSettingsUtils {
 
         // Make sure the kernel was backed up
         if (!bootImageFile.exists()) {
-            if (!SwitcherUtils.setKernel(context, romInfo.getId())) {
+            SetKernelResult result = MbtoolSocket.getInstance().setKernel(context, romInfo.getId());
+            if (result != SetKernelResult.SUCCEEDED) {
                 Log.e(TAG, "Failed to backup boot image before modification");
                 return false;
             }
@@ -194,7 +196,8 @@ public class RomSettingsUtils {
 
         tmpKernelFile.delete();
 
-        if (!SwitcherUtils.chooseRom(context, romInfo.getId())) {
+        SwitchRomResult result = MbtoolSocket.getInstance().chooseRom(context, romInfo.getId());
+        if (result != SwitchRomResult.SUCCEEDED) {
             Log.e(TAG, "Failed to reflash boot image");
             return false;
         }

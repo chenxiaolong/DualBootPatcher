@@ -27,6 +27,8 @@ import android.os.Bundle;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
 import com.github.chenxiaolong.multibootpatcher.EventCollector;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SetKernelResult;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SwitchRomResult;
 
 public class SwitcherEventCollector extends EventCollector {
     public static final String TAG = SwitcherEventCollector.class.getSimpleName();
@@ -41,16 +43,18 @@ public class SwitcherEventCollector extends EventCollector {
             if (bundle != null) {
                 String state = bundle.getString(SwitcherService.STATE);
 
-                if (SwitcherService.STATE_CHOSE_ROM.equals(state)) {
-                    boolean failed = bundle.getBoolean(SwitcherService.RESULT_FAILED);
+                if (SwitcherService.STATE_SWITCHED_ROM.equals(state)) {
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
+                    SwitchRomResult result = (SwitchRomResult) bundle.getSerializable(
+                            SwitcherService.RESULT_SWITCH_ROM);
 
-                    sendEvent(new SwitchedRomEvent(failed, kernelId));
+                    sendEvent(new SwitchedRomEvent(kernelId, result));
                 } else if (SwitcherService.STATE_SET_KERNEL.equals(state)) {
-                    boolean failed = bundle.getBoolean(SwitcherService.RESULT_FAILED);
                     String kernelId = bundle.getString(SwitcherService.RESULT_KERNEL_ID);
+                    SetKernelResult result = (SetKernelResult) bundle.getSerializable(
+                            SwitcherService.RESULT_SET_KERNEL);
 
-                    sendEvent(new SetKernelEvent(failed, kernelId));
+                    sendEvent(new SetKernelEvent(kernelId, result));
                 } else if (SwitcherService.STATE_VERIFIED_ZIP.equals(state)) {
                     VerificationResult result = (VerificationResult) bundle.getSerializable(
                             SwitcherService.RESULT_VERIFY_ZIP);
@@ -102,7 +106,7 @@ public class SwitcherEventCollector extends EventCollector {
 
     public void chooseRom(String kernelId) {
         Intent intent = new Intent(mContext, SwitcherService.class);
-        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_CHOOSE_ROM);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_SWITCH_ROM);
         intent.putExtra(SwitcherService.PARAM_KERNEL_ID, kernelId);
         mContext.startService(intent);
     }
@@ -139,22 +143,22 @@ public class SwitcherEventCollector extends EventCollector {
     // Events
 
     public class SwitchedRomEvent extends BaseEvent {
-        boolean failed;
         String kernelId;
+        SwitchRomResult result;
 
-        public SwitchedRomEvent(boolean failed, String kernelId) {
-            this.failed = failed;
+        public SwitchedRomEvent(String kernelId, SwitchRomResult result) {
             this.kernelId = kernelId;
+            this.result = result;
         }
     }
 
     public class SetKernelEvent extends BaseEvent {
-        boolean failed;
         String kernelId;
+        SetKernelResult result;
 
-        public SetKernelEvent(boolean failed, String kernelId) {
-            this.failed = failed;
+        public SetKernelEvent(String kernelId, SetKernelResult result) {
             this.kernelId = kernelId;
+            this.result = result;
         }
     }
 
