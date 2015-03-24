@@ -17,6 +17,8 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -44,6 +46,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
@@ -419,6 +422,9 @@ public class MainActivity extends ActionBarActivity {
         }
 
         case NAV_REBOOT:
+            RebootingDialog d = RebootingDialog.newInstance();
+            d.show(getFragmentManager(), RebootingDialog.TAG);
+
             SwitcherUtils.reboot(this);
             break;
 
@@ -631,5 +637,27 @@ public class MainActivity extends ActionBarActivity {
         int item = getItemForType(NAV_EXIT);
         View view = mDrawerItemViews[item];
         view.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    public static class RebootingDialog extends DialogFragment {
+        private static final String TAG = RebootingDialog.class.getSimpleName();
+
+        public static RebootingDialog newInstance() {
+            RebootingDialog frag = new RebootingDialog();
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            Dialog dialog = new MaterialDialog.Builder(getActivity())
+                    .content(R.string.please_wait)
+                    .progress(true, 0)
+                    .build();
+
+            setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+
+            return dialog;
+        }
     }
 }
