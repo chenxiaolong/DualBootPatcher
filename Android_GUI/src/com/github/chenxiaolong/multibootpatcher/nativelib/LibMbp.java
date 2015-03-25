@@ -146,6 +146,8 @@ public class LibMbp {
         static native void mbp_device_set_name(CDevice device, String name);
         static native Pointer mbp_device_architecture(CDevice device);
         static native void mbp_device_set_architecture(CDevice device, String arch);
+        static native Pointer mbp_device_block_dev_base_dirs(CDevice device);
+        static native void mbp_device_set_block_dev_base_dirs(CDevice device, StringArray dirs);
         static native Pointer mbp_device_system_block_devs(CDevice device);
         static native void mbp_device_set_system_block_devs(CDevice device, StringArray block_devs);
         static native Pointer mbp_device_cache_block_devs(CDevice device);
@@ -1040,6 +1042,19 @@ public class LibMbp {
             ensureNotNull(arch);
 
             CWrapper.mbp_device_set_architecture(mCDevice, arch);
+        }
+
+        public String[] getBlockDevBaseDirs() {
+            validate(mCDevice, Device.class, "getBlockDevBaseDirs");
+            Pointer p = CWrapper.mbp_device_block_dev_base_dirs(mCDevice);
+            return getStringArrayAndFree(p);
+        }
+
+        public void setBlockDevBaseDirs(String[] dirs) {
+            validate(mCDevice, Device.class, "setBlockDevBaseDirs", (Object) dirs);
+            ensureNotNull(dirs);
+
+            CWrapper.mbp_device_set_block_dev_base_dirs(mCDevice, new StringArray(dirs));
         }
 
         public String[] getSystemBlockDevs() {

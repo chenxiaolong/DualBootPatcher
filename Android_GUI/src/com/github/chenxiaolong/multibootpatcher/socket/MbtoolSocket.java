@@ -393,9 +393,24 @@ public class MbtoolSocket {
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbRomId = builder.createString(id);
             int fbBootBlockDev = builder.createString(bootBlockDev);
+
+            // Blockdev search dirs
+            String[] searchDirs = SwitcherUtils.getBlockDevSearchDirs();
+            int fbSearchDirs = 0;
+            if (searchDirs != null) {
+                int[] searchDirsOffsets = new int[searchDirs.length];
+                for (int i = 0; i < searchDirs.length; i++) {
+                    searchDirsOffsets[i] = builder.createString(searchDirs[i]);
+                }
+
+                fbSearchDirs = SwitchRomRequest.createBlockdevBaseDirsVector(builder,
+                        searchDirsOffsets);
+            }
+
             SwitchRomRequest.startSwitchRomRequest(builder);
             SwitchRomRequest.addRomId(builder, fbRomId);
             SwitchRomRequest.addBootBlockdev(builder, fbBootBlockDev);
+            SwitchRomRequest.addBlockdevBaseDirs(builder, fbSearchDirs);
             int request = SwitchRomRequest.endSwitchRomRequest(builder);
 
             // Wrap request

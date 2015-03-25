@@ -71,6 +71,29 @@ public class SwitcherUtils {
         return bootBlockDev;
     }
 
+    public static String[] getBlockDevSearchDirs() {
+        PatcherConfig pc = new PatcherConfig();
+        for (Device d : pc.getDevices()) {
+            boolean matches = false;
+
+            for (String codename : d.getCodenames()) {
+                if (Build.DEVICE.equals(codename)) {
+                    matches = true;
+                    break;
+                }
+            }
+
+            if (matches) {
+                String[] dirs = d.getBlockDevBaseDirs();
+                pc.destroy();
+                return dirs;
+            }
+        }
+        pc.destroy();
+
+        return null;
+    }
+
     public static VerificationResult verifyZipMbtoolVersion(String zipFile) {
         ZipFile zf = null;
 
