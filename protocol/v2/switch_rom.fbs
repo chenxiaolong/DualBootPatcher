@@ -5,6 +5,8 @@ table SwitchRomRequest {
     rom_id : string;
     // Path to the boot partition's block device
     boot_blockdev : string;
+    // List of block device search paths
+    blockdev_base_dirs : [string];
 }
 
 table SwitchRomResponse {
