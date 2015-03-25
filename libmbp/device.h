@@ -42,6 +42,8 @@ public:
     void setName(std::string name);
     std::string architecture() const;
     void setArchitecture(std::string arch);
+    std::vector<std::string> blockDevBaseDirs() const;
+    void setBlockDevBaseDirs(std::vector<std::string> dirs);
     std::vector<std::string> systemBlockDevs() const;
     void setSystemBlockDevs(std::vector<std::string> blockDevs);
     std::vector<std::string> cacheBlockDevs() const;

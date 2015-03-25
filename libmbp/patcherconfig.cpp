@@ -352,20 +352,22 @@ void PatcherConfig::Impl::loadDefaultDevices()
 {
     Device *device;
 
-    const std::string qcomSystem("/dev/block/platform/msm_sdcc.1/by-name/system");
-    const std::string qcomCache("/dev/block/platform/msm_sdcc.1/by-name/cache");
-    const std::string qcomData("/dev/block/platform/msm_sdcc.1/by-name/userdata");
-    const std::string qcomBoot("/dev/block/platform/msm_sdcc.1/by-name/boot");
-    const std::string qcomRecovery("/dev/block/platform/msm_sdcc.1/by-name/recovery");
+    const std::string qcomBaseDir("/dev/block/platform/msm_sdcc.1/by-name");
 
-    const std::string qcomAboot("/dev/block/platform/msm_sdcc.1/by-name/aboot");
-    const std::string qcomImgdata("/dev/block/platform/msm_sdcc.1/by-name/imgdata");
-    const std::string qcomMisc("/dev/block/platform/msm_sdcc.1/by-name/misc");
-    const std::string qcomModem("/dev/block/platform/msm_sdcc.1/by-name/modem");
-    const std::string qcomRpm("/dev/block/platform/msm_sdcc.1/by-name/rpm");
-    const std::string qcomSbl1("/dev/block/platform/msm_sdcc.1/by-name/sbl1");
-    const std::string qcomSdi("/dev/block/platform/msm_sdcc.1/by-name/sdi");
-    const std::string qcomTz("/dev/block/platform/msm_sdcc.1/by-name/tz");
+    std::string qcomSystem(qcomBaseDir); qcomSystem += "/system";
+    std::string qcomCache(qcomBaseDir); qcomCache += "/cache";
+    std::string qcomData(qcomBaseDir); qcomData += "/userdata";
+    std::string qcomBoot(qcomBaseDir); qcomBoot += "/boot";
+    std::string qcomRecovery(qcomBaseDir); qcomRecovery += "/recovery";
+
+    std::string qcomAboot(qcomBaseDir); qcomAboot += "/aboot";
+    std::string qcomImgdata(qcomBaseDir); qcomImgdata += "/imgdata";
+    std::string qcomMisc(qcomBaseDir); qcomMisc += "/misc";
+    std::string qcomModem(qcomBaseDir); qcomModem += "/modem";
+    std::string qcomRpm(qcomBaseDir); qcomRpm += "/rpm";
+    std::string qcomSbl1(qcomBaseDir); qcomSbl1 += "/sbl1";
+    std::string qcomSdi(qcomBaseDir); qcomSdi += "/sdi";
+    std::string qcomTz(qcomBaseDir); qcomTz += "/tz";
 
     // Samsung Galaxy S 4
     device = new Device();
@@ -375,6 +377,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
                            "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
                            "jftddxx", "jgedlte" });
     device->setName("Samsung Galaxy S 4");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p16" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p29" });
@@ -388,6 +391,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("klte");
     device->setCodenames({ "klte", "kltedv", "kltespr", "klteusc", "kltevzw" });
     device->setName("Samsung Galaxy S 5");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
@@ -401,6 +405,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "hlte", "hltespr", "hltetmo", "hlteusc",
                            "hltevzw" });
     device->setName("Samsung Galaxy Note 3");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
@@ -414,6 +419,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "trlte", "trltecan", "trltespr", "trltetmo",
                            "trlteusc", "trltexx" });
     device->setName("Samsung Galaxy Note 4");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p25" });
     // Shouldn't be an issue as long as ROMs don't touch the "hidden" partition
@@ -428,6 +434,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("hammerhead");
     device->setCodenames({ "hammerhead" });
     device->setName("Google/LG Nexus 5");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p25" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p27" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
@@ -442,6 +449,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("flo");
     device->setCodenames({ "flo" });
     device->setName("Google/ASUS Nexus 7 (2013)");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p22" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p23" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p30" });
@@ -454,6 +462,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("bacon");
     device->setCodenames({ "bacon" });
     device->setName("OnePlus One");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p14" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p16" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
@@ -466,6 +475,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("lgg2");
     device->setCodenames({ "g2", "d800", "d802", "ls980", "vs980" });
     device->setName("LG G2");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p38" });
@@ -479,6 +489,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("falcon");
     device->setCodenames({ "falcon", "falcon_umts" });
     device->setName("Motorola Moto G");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
     device->setCacheBlockDevs({ qcomCache /*, TODO */ });
     device->setDataBlockDevs({ qcomData /*, TODO */ });

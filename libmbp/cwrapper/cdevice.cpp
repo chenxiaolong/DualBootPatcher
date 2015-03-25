@@ -177,6 +177,18 @@ void mbp_device_set_architecture(CDevice *device, const char *arch)
     d->setArchitecture(arch);
 }
 
+char ** mbp_device_block_dev_base_dirs(const CDevice *device)
+{
+    CCAST(device);
+    return vector_to_cstring_array(d->blockDevBaseDirs());
+}
+
+void mbp_device_set_block_dev_base_dirs(CDevice *device, const char **dirs)
+{
+    CAST(device);
+    d->setBlockDevBaseDirs(cstring_array_to_vector(dirs));
+}
+
 char ** mbp_device_system_block_devs(const CDevice *device)
 {
     CCAST(device);

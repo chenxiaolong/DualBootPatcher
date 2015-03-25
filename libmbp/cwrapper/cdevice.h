@@ -40,6 +40,8 @@ void mbp_device_set_name(CDevice *device, const char *name);
 char * mbp_device_architecture(const CDevice *device);
 void mbp_device_set_architecture(CDevice *device, const char *arch);
 
+char ** mbp_device_block_dev_base_dirs(const CDevice *device);
+void mbp_device_set_block_dev_base_dirs(CDevice *device, const char **dirs);
 char ** mbp_device_system_block_devs(const CDevice *device);
 void mbp_device_set_system_block_devs(CDevice *device, const char **block_devs);
 char ** mbp_device_cache_block_devs(const CDevice *device);

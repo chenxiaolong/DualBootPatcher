@@ -34,6 +34,8 @@ public:
     std::string name;
     std::string architecture;
 
+    std::vector<std::string> baseDirs;
+
     std::vector<std::string> systemDevs;
     std::vector<std::string> cacheDevs;
     std::vector<std::string> dataDevs;
@@ -131,6 +133,16 @@ std::string Device::architecture() const
 void Device::setArchitecture(std::string arch)
 {
     m_impl->architecture = std::move(arch);
+}
+
+std::vector<std::string> Device::blockDevBaseDirs() const
+{
+    return m_impl->baseDirs;
+}
+
+void Device::setBlockDevBaseDirs(std::vector<std::string> dirs)
+{
+    m_impl->baseDirs = std::move(dirs);
 }
 
 std::vector<std::string> Device::systemBlockDevs() const
