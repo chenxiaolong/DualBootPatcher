@@ -49,12 +49,16 @@ struct SwitchRomResponse;
 struct SwitchRomRequest : private flatbuffers::Table {
   const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::String *boot_blockdev() const { return GetPointer<const flatbuffers::String *>(6); }
+  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *blockdev_base_dirs() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(8); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* rom_id */) &&
            verifier.Verify(rom_id()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* boot_blockdev */) &&
            verifier.Verify(boot_blockdev()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* blockdev_base_dirs */) &&
+           verifier.Verify(blockdev_base_dirs()) &&
+           verifier.VerifyVectorOfStrings(blockdev_base_dirs()) &&
            verifier.EndTable();
   }
 };
@@ -64,18 +68,21 @@ struct SwitchRomRequestBuilder {
   flatbuffers::uoffset_t start_;
   void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) { fbb_.AddOffset(4, rom_id); }
   void add_boot_blockdev(flatbuffers::Offset<flatbuffers::String> boot_blockdev) { fbb_.AddOffset(6, boot_blockdev); }
+  void add_blockdev_base_dirs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs) { fbb_.AddOffset(8, blockdev_base_dirs); }
   SwitchRomRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   SwitchRomRequestBuilder &operator=(const SwitchRomRequestBuilder &);
   flatbuffers::Offset<SwitchRomRequest> Finish() {
-    auto o = flatbuffers::Offset<SwitchRomRequest>(fbb_.EndTable(start_, 2));
+    auto o = flatbuffers::Offset<SwitchRomRequest>(fbb_.EndTable(start_, 3));
     return o;
   }
 };
 
 inline flatbuffers::Offset<SwitchRomRequest> CreateSwitchRomRequest(flatbuffers::FlatBufferBuilder &_fbb,
    flatbuffers::Offset<flatbuffers::String> rom_id = 0,
-   flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0) {
+   flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0,
+   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs = 0) {
   SwitchRomRequestBuilder builder_(_fbb);
+  builder_.add_blockdev_base_dirs(blockdev_base_dirs);
   builder_.add_boot_blockdev(boot_blockdev);
   builder_.add_rom_id(rom_id);
   return builder_.Finish();

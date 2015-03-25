@@ -237,10 +237,19 @@ static bool v2_switch_rom(int fd, const v2::Request *msg)
         return v2_send_generic_response(fd, v2::ResponseType_INVALID);
     }
 
+    std::vector<std::string> block_dev_dirs;
+
+    if (request->blockdev_base_dirs()) {
+        for (auto const &base_dir : *request->blockdev_base_dirs()) {
+            block_dev_dirs.push_back(base_dir->c_str());
+        }
+    }
+
     fb::FlatBufferBuilder builder;
 
     bool success = action_choose_rom(request->rom_id()->c_str(),
-                                     request->boot_blockdev()->c_str());
+                                     request->boot_blockdev()->c_str(),
+                                     block_dev_dirs);
 
     // Create response
     auto response = v2::CreateSwitchRomResponse(builder, success);

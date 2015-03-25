@@ -20,11 +20,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace mb
 {
 
-bool action_choose_rom(const std::string &id, const std::string &boot_blockdev);
+bool action_choose_rom(const std::string &id, const std::string &boot_blockdev,
+                       const std::vector<std::string> &blockdev_base_dirs);
 bool action_set_kernel(const std::string &id, const std::string &boot_blockdev);
 bool action_reboot(const std::string &reboot_arg);
 
