@@ -276,6 +276,9 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
     }
     bi.setRamdiskImage(std::move(newRamdisk));
 
+    // Reapply Bump if needed
+    bi.setApplyBump(bi.wasBump());
+
     *data = bi.create();
 
     RETURN_IF_CANCELLED

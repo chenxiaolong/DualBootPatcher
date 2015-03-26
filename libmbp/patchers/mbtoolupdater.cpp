@@ -172,6 +172,9 @@ bool MbtoolUpdater::Impl::patchImage()
     }
     bi.setRamdiskImage(std::move(newRamdisk));
 
+    // Reapply bump
+    bi.setApplyBump(bi.wasBump());
+
     if (!bi.createFile(m_parent->newFilePath())) {
         error = bi.error();
         return false;
