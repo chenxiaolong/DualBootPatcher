@@ -1567,48 +1567,48 @@ public class LibMbp {
     }
 
     public static class PatcherError implements Parcelable {
-        public static interface ErrorType {
-            public static int GENERIC_ERROR = 0;
-            public static int PATCHER_CREATION_ERROR = 1;
-            public static int IO_ERROR = 2;
-            public static int BOOT_IMAGE_ERROR = 3;
-            public static int CPIO_ERROR = 4;
-            public static int ARCHIVE_ERROR = 5;
-            public static int XML_ERROR = 6;
-            public static int SUPPORTED_FILE_ERROR = 7;
-            public static int CANCELLED_ERROR = 8;
-            public static int PATCHING_ERROR = 9;
+        public interface ErrorType {
+            int GENERIC_ERROR = 0;
+            int PATCHER_CREATION_ERROR = 1;
+            int IO_ERROR = 2;
+            int BOOT_IMAGE_ERROR = 3;
+            int CPIO_ERROR = 4;
+            int ARCHIVE_ERROR = 5;
+            int XML_ERROR = 6;
+            int SUPPORTED_FILE_ERROR = 7;
+            int CANCELLED_ERROR = 8;
+            int PATCHING_ERROR = 9;
         }
 
-        public static interface ErrorCode {
-            public static int NO_ERROR = 0;
-            public static int UNKNOWN_ERROR = 1;
-            public static int PATCHER_CREATE_ERROR = 2;
-            public static int AUTOPATCHER_CREATE_ERROR = 3;
-            public static int RAMDISK_PATCHER_CREATE_ERROR = 4;
-            public static int FILE_OPEN_ERROR = 5;
-            public static int FILE_READ_ERROR = 6;
-            public static int FILE_WRITE_ERROR = 7;
-            public static int DIRECTORY_NOT_EXIST_ERROR = 8;
-            public static int BOOT_IMAGE_PARSE_ERROR = 9;
-            public static int BOOT_IMAGE_APPLY_BUMP_ERROR = 10;
-            public static int BOOT_IMAGE_APPLY_LOKI_ERROR = 11;
-            public static int CPIO_FILE_ALREADY_EXIST_ERROR = 12;
-            public static int CPIO_FILE_NOT_EXIST_ERROR = 13;
-            public static int ARCHIVE_READ_OPEN_ERROR = 14;
-            public static int ARCHIVE_READ_DATA_ERROR = 15;
-            public static int ARCHIVE_READ_HEADER_ERROR = 16;
-            public static int ARCHIVE_WRITE_OPEN_ERROR = 17;
-            public static int ARCHIVE_WRITE_DATA_ERROR = 18;
-            public static int ARCHIVE_WRITE_HEADER_ERROR = 19;
-            public static int ARCHIVE_CLOSE_ERROR = 20;
-            public static int ARCHIVE_FREE_ERROR = 21;
-            public static int XML_PARSE_FILE_ERROR = 22;
-            public static int ONLY_ZIP_SUPPORTED = 23;
-            public static int ONLY_BOOT_IMAGE_SUPPORTED = 24;
-            public static int PATCHING_CANCELLED = 25;
-            public static int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 26;
-            public static int APPLY_PATCH_FILE_ERROR = 27;
+        public interface ErrorCode {
+            int NO_ERROR = 0;
+            int UNKNOWN_ERROR = 1;
+            int PATCHER_CREATE_ERROR = 2;
+            int AUTOPATCHER_CREATE_ERROR = 3;
+            int RAMDISK_PATCHER_CREATE_ERROR = 4;
+            int FILE_OPEN_ERROR = 5;
+            int FILE_READ_ERROR = 6;
+            int FILE_WRITE_ERROR = 7;
+            int DIRECTORY_NOT_EXIST_ERROR = 8;
+            int BOOT_IMAGE_PARSE_ERROR = 9;
+            int BOOT_IMAGE_APPLY_BUMP_ERROR = 10;
+            int BOOT_IMAGE_APPLY_LOKI_ERROR = 11;
+            int CPIO_FILE_ALREADY_EXIST_ERROR = 12;
+            int CPIO_FILE_NOT_EXIST_ERROR = 13;
+            int ARCHIVE_READ_OPEN_ERROR = 14;
+            int ARCHIVE_READ_DATA_ERROR = 15;
+            int ARCHIVE_READ_HEADER_ERROR = 16;
+            int ARCHIVE_WRITE_OPEN_ERROR = 17;
+            int ARCHIVE_WRITE_DATA_ERROR = 18;
+            int ARCHIVE_WRITE_HEADER_ERROR = 19;
+            int ARCHIVE_CLOSE_ERROR = 20;
+            int ARCHIVE_FREE_ERROR = 21;
+            int XML_PARSE_FILE_ERROR = 22;
+            int ONLY_ZIP_SUPPORTED = 23;
+            int ONLY_BOOT_IMAGE_SUPPORTED = 24;
+            int PATCHING_CANCELLED = 25;
+            int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 26;
+            int APPLY_PATCH_FILE_ERROR = 27;
         }
 
         private static final HashMap<CPatcherError, Integer> sInstances = new HashMap<>();
@@ -2239,12 +2239,12 @@ public class LibMbp {
             CWrapper.mbp_patcher_cancel_patching(mCPatcher);
         }
 
-        public static interface ProgressListener {
-            public void onMaxProgressUpdated(int max);
+        public interface ProgressListener {
+            void onMaxProgressUpdated(int max);
 
-            public void onProgressUpdated(int value);
+            void onProgressUpdated(int value);
 
-            public void onDetailsUpdated(String text);
+            void onDetailsUpdated(String text);
         }
     }
 
