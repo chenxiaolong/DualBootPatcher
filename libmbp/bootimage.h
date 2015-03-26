@@ -56,7 +56,11 @@ public:
     std::vector<unsigned char> create() const;
     bool createFile(const std::string &path);
 
-    bool isLoki() const;
+    bool wasLoki() const;
+    bool wasBump() const;
+
+    void setApplyLoki(bool apply);
+    void setApplyBump(bool apply);
 
     std::string boardName() const;
     void setBoardName(const std::string &name);
@@ -105,6 +109,10 @@ public:
 
     std::vector<unsigned char> deviceTreeImage() const;
     void setDeviceTreeImage(std::vector<unsigned char> data);
+
+    // For Loki only
+    std::vector<unsigned char> abootImage() const;
+    void setAbootImage(std::vector<unsigned char> data);
 
 
 private:

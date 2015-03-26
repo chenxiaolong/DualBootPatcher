@@ -162,10 +162,28 @@ bool mbp_bootimage_create_file(CBootImage *bootImage,
     return bi->createFile(filename);
 }
 
-bool mbp_bootimage_is_loki(CBootImage *bootImage)
+bool mbp_bootimage_was_loki(CBootImage *bootImage)
 {
     CCAST(bootImage);
-    return bi->isLoki();
+    return bi->wasLoki();
+}
+
+bool mbp_bootimage_was_bump(CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return bi->wasBump();
+}
+
+void mbp_bootimage_set_apply_loki(CBootImage *bootImage, bool apply)
+{
+    CAST(bootImage);
+    bi->setApplyLoki(apply);
+}
+
+void mbp_bootimage_set_apply_bump(CBootImage* bootImage, bool apply)
+{
+    CAST(bootImage);
+    bi->setApplyBump(apply);
 }
 
 /*!
@@ -640,6 +658,19 @@ void mbp_bootimage_set_device_tree_image(CBootImage *bootImage,
 {
     CAST(bootImage);
     bi->setDeviceTreeImage(data_to_vector(data, size));
+}
+
+size_t mbp_bootimage_aboot_image(const CBootImage* bootImage, void **data)
+{
+    CCAST(bootImage);
+    return vector_to_data2(bi->abootImage(), data);
+}
+
+void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
+                                   const void *data, size_t size)
+{
+    CAST(bootImage);
+    bi->setAbootImage(data_to_vector(data, size));
 }
 
 }

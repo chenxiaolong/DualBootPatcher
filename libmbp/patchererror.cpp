@@ -152,6 +152,8 @@ PatcherError PatcherError::createBootImageError(ErrorCode error)
 {
     switch (error) {
     case ErrorCode::BootImageParseError:
+    case ErrorCode::BootImageApplyBumpError:
+    case ErrorCode::BootImageApplyLokiError:
         break;
     default:
         assert(false);

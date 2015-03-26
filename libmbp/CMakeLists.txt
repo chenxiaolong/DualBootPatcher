@@ -22,6 +22,8 @@ set(MBP_SOURCES
     patchinfo.cpp
     private/fileutils.cpp
     private/logging.cpp
+    bootimage/bumppatcher.cpp
+    bootimage/lokipatcher.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
@@ -215,6 +217,8 @@ set(MBP_MINI_SOURCES
     #cwrapper/cpatchinfo.cpp
     cwrapper/cstringmap.cpp
     cwrapper/private/util.cpp
+    bootimage/bumppatcher.cpp
+    bootimage/lokipatcher.cpp
     ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
 )
 

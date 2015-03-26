@@ -28,6 +28,9 @@
 
 #include <cppformat/format.h>
 
+#include "bootimage/header.h"
+#include "bootimage/bumppatcher.h"
+#include "bootimage/lokipatcher.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
 #include "private/portable_endian.h"
@@ -36,10 +39,10 @@
 namespace mbp
 {
 
-const char *BootImage::BootMagic = "ANDROID!";
-const uint32_t BootImage::BootMagicSize = 8;
-const uint32_t BootImage::BootNameSize = 16;
-const uint32_t BootImage::BootArgsSize = 512;
+const char *BootImage::BootMagic = BOOT_MAGIC;
+const uint32_t BootImage::BootMagicSize = BOOT_MAGIC_SIZE;
+const uint32_t BootImage::BootNameSize = BOOT_NAME_SIZE;
+const uint32_t BootImage::BootArgsSize = BOOT_ARGS_SIZE;
 
 const char *BootImage::DefaultBoard = "";
 const char *BootImage::DefaultCmdline = "";
@@ -49,82 +52,6 @@ const uint32_t BootImage::DefaultKernelOffset = 0x00008000u;
 const uint32_t BootImage::DefaultRamdiskOffset = 0x01000000u;
 const uint32_t BootImage::DefaultSecondOffset = 0x00f00000u;
 const uint32_t BootImage::DefaultTagsOffset = 0x00000100u;
-
-
-/*! \cond INTERNAL */
-struct BootImageHeader
-{
-    unsigned char magic[BootImage::BootMagicSize];
-
-    uint32_t kernel_size;   /* size in bytes */
-    uint32_t kernel_addr;   /* physical load addr */
-
-    uint32_t ramdisk_size;  /* size in bytes */
-    uint32_t ramdisk_addr;  /* physical load addr */
-
-    uint32_t second_size;   /* size in bytes */
-    uint32_t second_addr;   /* physical load addr */
-
-    uint32_t tags_addr;     /* physical addr for kernel tags */
-    uint32_t page_size;     /* flash page size we assume */
-    uint32_t dt_size;       /* device tree in bytes */
-    uint32_t unused;        /* future expansion: should be 0 */
-    unsigned char name[BootImage::BootNameSize]; /* asciiz product name */
-
-    unsigned char cmdline[BootImage::BootArgsSize];
-
-    uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
-};
-/*! \endcond */
-
-
-static const char *LOKI_MAGIC = "LOKI";
-
-/*! \cond INTERNAL */
-struct LokiHeader {
-    unsigned char magic[4]; /* 0x494b4f4c */
-    uint32_t recovery;      /* 0 = boot.img, 1 = recovery.img */
-    char build[128];        /* Build number */
-
-    uint32_t orig_kernel_size;
-    uint32_t orig_ramdisk_size;
-    uint32_t ramdisk_addr;
-};
-/*! \endcond */
-
-
-// From loki.h in the original source code:
-// https://raw.githubusercontent.com/djrbliss/loki/master/loki.h
-static const unsigned char SHELL_CODE[] =
-        "\xfe\xb5"
-        "\x0d\x4d"
-        "\xd5\xf8"
-        "\x88\x04"
-        "\xab\x68"
-        "\x98\x42"
-        "\x12\xd0"
-        "\xd5\xf8"
-        "\x90\x64"
-        "\x0a\x4c"
-        "\xd5\xf8"
-        "\x8c\x74"
-        "\x07\xf5\x80\x57"
-        "\x0f\xce"
-        "\x0f\xc4"
-        "\x10\x3f"
-        "\xfb\xdc"
-        "\xd5\xf8"
-        "\x88\x04"
-        "\x04\x49"
-        "\xd5\xf8"
-        "\x8c\x24"
-        "\xa8\x60"
-        "\x69\x61"
-        "\x2a\x61"
-        "\x00\x20"
-        "\xfe\xbd"
-        "\xff\xff\xff\xff"
-        "\xee\xee\xee\xee";
 
 
 /*! \cond INTERNAL */
@@ -142,7 +69,13 @@ public:
     std::vector<unsigned char> secondBootloaderImage;
     std::vector<unsigned char> deviceTreeImage;
 
-    bool isLoki;
+    // Used for loki only
+    std::vector<unsigned char> abootImage;
+
+    bool wasLoki = false;
+    bool wasBump = false;
+    bool applyLoki = false;
+    bool applyBump = false;
 
     PatcherError error;
 
@@ -219,7 +152,7 @@ private:
 BootImage::BootImage() : m_impl(new Impl(this))
 {
     // Initialize to sane defaults
-    memcpy(m_impl->header.magic, BootMagic, BootMagicSize);
+    memcpy(m_impl->header.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     resetKernelCmdline();
     resetBoardName();
     resetKernelAddress();
@@ -271,21 +204,22 @@ bool BootImage::load(const std::vector<unsigned char> &data)
     }
 
     // Find the Loki magic string
-    m_impl->isLoki = std::memcmp(&data[0x400], LOKI_MAGIC, 4) == 0;
+    m_impl->wasLoki = std::memcmp(&data[0x400], LOKI_MAGIC,
+                                  LOKI_MAGIC_SIZE) == 0;
 
     // Find the Android magic string
     bool isAndroid = false;
     uint32_t headerIndex;
 
     uint32_t searchRange;
-    if (m_impl->isLoki) {
+    if (m_impl->wasLoki) {
         searchRange = 32;
     } else {
         searchRange = 512;
     }
 
     for (uint32_t i = 0; i <= searchRange; ++i) {
-        if (std::memcmp(&data[i], BootMagic, BootMagicSize) == 0) {
+        if (std::memcmp(&data[i], BOOT_MAGIC, BOOT_MAGIC_SIZE) == 0) {
             isAndroid = true;
             headerIndex = i;
             break;
@@ -301,11 +235,14 @@ bool BootImage::load(const std::vector<unsigned char> &data)
 
     bool ret;
 
-    if (m_impl->isLoki) {
+    if (m_impl->wasLoki) {
         ret = m_impl->loadLokiHeader(data, headerIndex);
     } else {
         ret = m_impl->loadAndroidHeader(data, headerIndex);
     }
+
+    FLOGD("Image is Loki-patched: {:s}", m_impl->wasLoki ? "true" : "false");
+    FLOGD("Image is Bump-patched: {:s}", m_impl->wasBump ? "true" : "false");
 
     return ret;
 }
@@ -375,9 +312,16 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
 
     // Don't try to read the various images inside the boot image if it's
     // Loki'd since some offsets and sizes need to be calculated
-    if (!isLoki) {
+    if (!wasLoki) {
         uint32_t pos = sizeof(BootImageHeader);
         pos += skipPadding(sizeof(BootImageHeader), android->page_size);
+
+        if (pos + android->kernel_size > data.size()) {
+            LOGE("Kernel image exceeds boot image size");
+            error = PatcherError::createBootImageError(
+                    ErrorCode::BootImageParseError);
+            return false;
+        }
 
         kernelImage.assign(
                 data.begin() + pos,
@@ -386,12 +330,26 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += android->kernel_size;
         pos += skipPadding(android->kernel_size, android->page_size);
 
+        if (pos + android->ramdisk_size > data.size()) {
+            LOGE("Ramdisk image exceeds boot image size");
+            error = PatcherError::createBootImageError(
+                    ErrorCode::BootImageParseError);
+            return false;
+        }
+
         ramdiskImage.assign(
                 data.begin() + pos,
                 data.begin() + pos + android->ramdisk_size);
 
         pos += android->ramdisk_size;
         pos += skipPadding(android->ramdisk_size, android->page_size);
+
+        if (pos + android->second_size > data.size()) {
+            LOGE("Second bootloader image exceeds boot image size");
+            error = PatcherError::createBootImageError(
+                    ErrorCode::BootImageParseError);
+            return false;
+        }
 
         // The second bootloader may not exist
         if (android->second_size > 0) {
@@ -405,6 +363,13 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += android->second_size;
         pos += skipPadding(android->second_size, android->page_size);
 
+        if (pos + android->dt_size > data.size()) {
+            LOGE("Device tree image exceeds boot image size");
+            error = PatcherError::createBootImageError(
+                    ErrorCode::BootImageParseError);
+            return false;
+        }
+
         // The device tree image may not exist as well
         if (android->dt_size > 0) {
             deviceTreeImage.assign(
@@ -412,6 +377,15 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
                     data.begin() + pos + android->dt_size);
         } else {
             deviceTreeImage.clear();
+        }
+
+        pos += android->dt_size;
+        pos += skipPadding(android->dt_size, android->page_size);
+
+        if (pos + BUMP_MAGIC_SIZE <= data.size()
+                && memcmp(data.data() + pos, BUMP_MAGIC,
+                          BUMP_MAGIC_SIZE) == 0) {
+            wasBump = true;
         }
     }
 
@@ -700,10 +674,10 @@ uint32_t BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned char
     if (loki->ramdisk_addr != 0) {
         auto size = data.size();
 
-        for (uint32_t i = 0; i < size - (sizeof(SHELL_CODE) - 9); ++i) {
-            if (std::memcmp(&data[i], SHELL_CODE, sizeof(SHELL_CODE) - 9) == 0) {
+        for (uint32_t i = 0; i < size - (LOKI_SHELLCODE_SIZE - 9); ++i) {
+            if (std::memcmp(&data[i], LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE - 9) == 0) {
                 ramdiskAddr = *(reinterpret_cast<const uint32_t *>(
-                        &data[i] + sizeof(SHELL_CODE) - 5));
+                        &data[i] + LOKI_SHELLCODE_SIZE - 5));
                 break;
             }
         }
@@ -801,6 +775,22 @@ std::vector<unsigned char> BootImage::create() const
         data.insert(data.end(), paddingSize, 0);
     }
 
+    if (m_impl->applyBump) {
+        if (!BumpPatcher::patchImage(&data)) {
+            m_impl->error = PatcherError::createBootImageError(
+                    ErrorCode::BootImageApplyBumpError);
+            return std::vector<unsigned char>();
+        }
+    }
+
+    if (m_impl->applyLoki) {
+        if (!LokiPatcher::patchImage(&data, m_impl->abootImage)) {
+            m_impl->error = PatcherError::createBootImageError(
+                    ErrorCode::BootImageApplyLokiError);
+            return std::vector<unsigned char>();
+        }
+    }
+
     return data;
 }
 
@@ -838,9 +828,24 @@ bool BootImage::createFile(const std::string &path)
     return true;
 }
 
-bool BootImage::isLoki() const
+bool BootImage::wasLoki() const
 {
-    return m_impl->isLoki;
+    return m_impl->wasLoki;
+}
+
+bool BootImage::wasBump() const
+{
+    return m_impl->wasBump;
+}
+
+void BootImage::setApplyLoki(bool apply)
+{
+    m_impl->applyLoki = apply;
+}
+
+void BootImage::setApplyBump(bool apply)
+{
+    m_impl->applyBump = apply;
 }
 
 uint32_t BootImage::Impl::skipPadding(const uint32_t itemSize,
@@ -911,7 +916,7 @@ void BootImage::Impl::updateSHA1Hash()
 void BootImage::Impl::dumpHeader() const
 {
     FLOGD("- magic:        {:s}",
-          std::string(header.magic, header.magic + BootMagicSize));
+          std::string(header.magic, header.magic + BOOT_MAGIC_SIZE));
     FLOGD("- kernel_size:  {:d}",    header.kernel_size);
     FLOGD("- kernel_addr:  {:#08x}", header.kernel_addr);
     FLOGD("- ramdisk_size: {:d}",    header.ramdisk_size);
@@ -923,9 +928,9 @@ void BootImage::Impl::dumpHeader() const
     FLOGD("- dt_size:      {:d}",    header.dt_size);
     FLOGD("- unused:       {:#08x}", header.unused);
     FLOGD("- name:         {:s}",
-          std::string(header.name, header.name + BootNameSize));
+          std::string(header.name, header.name + BOOT_NAME_SIZE));
     FLOGD("- cmdline:      {:s}",
-          std::string(header.cmdline, header.cmdline + BootArgsSize));
+          std::string(header.cmdline, header.cmdline + BOOT_ARGS_SIZE));
     FLOGD("- id:           {:s}",
           toHex(reinterpret_cast<const unsigned char *>(header.id), 32));
 }
@@ -939,12 +944,12 @@ std::string BootImage::boardName() const
 {
     // The string may not be null terminated
     void *location;
-    if ((location = std::memchr(m_impl->header.name, 0, BootNameSize)) != nullptr) {
+    if ((location = std::memchr(m_impl->header.name, 0, BOOT_NAME_SIZE)) != nullptr) {
         return std::string(reinterpret_cast<char *>(m_impl->header.name),
                            reinterpret_cast<char *>(location));
     } else {
         return std::string(reinterpret_cast<char *>(m_impl->header.name),
-                           BootNameSize);
+                           BOOT_NAME_SIZE);
     }
 }
 
@@ -957,7 +962,7 @@ void BootImage::setBoardName(const std::string &name)
 {
     // -1 for null byte
     std::strcpy(reinterpret_cast<char *>(m_impl->header.name),
-                name.substr(0, BootNameSize - 1).c_str());
+                name.substr(0, BOOT_NAME_SIZE - 1).c_str());
 }
 
 /*!
@@ -979,12 +984,12 @@ std::string BootImage::kernelCmdline() const
 {
     // The string may not be null terminated
     void *location;
-    if ((location = std::memchr(m_impl->header.cmdline, 0, BootArgsSize)) != nullptr) {
+    if ((location = std::memchr(m_impl->header.cmdline, 0, BOOT_ARGS_SIZE)) != nullptr) {
         return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
                            reinterpret_cast<char *>(location));
     } else {
         return std::string(reinterpret_cast<char *>(m_impl->header.cmdline),
-                           BootArgsSize);
+                           BOOT_ARGS_SIZE);
     }
 }
 
@@ -997,7 +1002,7 @@ void BootImage::setKernelCmdline(const std::string &cmdline)
 {
     // -1 for null byte
     std::strcpy(reinterpret_cast<char *>(m_impl->header.cmdline),
-                cmdline.substr(0, BootArgsSize - 1).c_str());
+                cmdline.substr(0, BOOT_ARGS_SIZE - 1).c_str());
 }
 
 /*!
@@ -1280,6 +1285,16 @@ void BootImage::setDeviceTreeImage(std::vector<unsigned char> data)
     m_impl->header.dt_size = data.size();
     m_impl->deviceTreeImage = std::move(data);
     m_impl->updateSHA1Hash();
+}
+
+std::vector<unsigned char> BootImage::abootImage() const
+{
+    return m_impl->abootImage;
+}
+
+void BootImage::setAbootImage(std::vector<unsigned char> data)
+{
+    m_impl->abootImage = std::move(data);
 }
 
 }

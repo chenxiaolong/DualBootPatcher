@@ -68,6 +68,8 @@ enum ErrorCode
 
     // Boot image
     BootImageParseError,
+    BootImageApplyBumpError,
+    BootImageApplyLokiError,
 
     // cpio
     CpioFileAlreadyExistsError,
