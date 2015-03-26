@@ -1258,8 +1258,10 @@ Installer::ProceedState Installer::install_stage_finish()
         cmdline += _rom->id;
         bi.setKernelCmdline(std::move(cmdline));
 
+        bi.setApplyBump(bi.wasBump());
+
         auto bootimg = bi.create();
-        bool was_loki = bi.isLoki();
+        bool was_loki = bi.wasLoki();
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";
         std::string temp_boot_lok(_temp);
