@@ -152,7 +152,7 @@ public class MainActivity extends ActionBarActivity {
         final ViewGroup.LayoutParams params = mDrawerView.getLayoutParams();
         int toolbarHeight = getResources().getDimensionPixelSize(
                 R.dimen.abc_action_bar_default_height_material);
-        params.width = Math.min(size.x - toolbarHeight, size.y - toolbarHeight);
+        params.width = Math.min(size.x - toolbarHeight, 6 * toolbarHeight);
         mDrawerView.setLayoutParams(params);
 
         mDrawerItems.clear();
