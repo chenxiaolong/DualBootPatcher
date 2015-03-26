@@ -43,6 +43,8 @@ public class RomSettingsUtils {
     private static final String BOOT_IMAGE_PATH =
             Environment.getExternalStorageDirectory() + "/MultiBoot/%s/boot.img";
 
+    private static final String ABOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/aboot";
+
     /**
      * Update mbtool using libmbp and return the path to the new boot image
      *
@@ -131,15 +133,21 @@ public class RomSettingsUtils {
             return false;
         }
 
-        // Check if original boot image was lokid
+        // Check if original boot image was patched with loki or bump
         BootImage bi = new BootImage();
         if (!bi.load(tmpKernel)) {
             logLibMbpError(context, bi.getError());
+            bi.destroy();
             return false;
         }
+        boolean wasBump = bi.wasBump();
         boolean wasLoki = bi.wasLoki();
         boolean hasRomId = bi.getKernelCmdline().contains("romid=");
         bi.destroy();
+
+        Log.d(TAG, "Original boot image was patched with bump: " + wasBump);
+        Log.d(TAG, "Original boot image was patched with loki: " + wasLoki);
+        Log.d(TAG, "Original boot image had romid kernel parameter: " + hasRomId);
 
         // Overwrite old boot image
         try {
@@ -150,40 +158,55 @@ public class RomSettingsUtils {
             return false;
         }
 
-        // Add the ROM ID to the kernel command line if it wasn't added already
-        if (!hasRomId) {
+        // Make changes to the boot image if necessary
+        if (wasBump || wasLoki || !hasRomId) {
             bi = new BootImage();
-            if (!bi.load(tmpKernel)) {
-                logLibMbpError(context, bi.getError());
-                return false;
-            }
-            bi.setKernelCmdline(bi.getKernelCmdline() + " romid=" + romInfo.getId());
-            if (!bi.createFile(tmpKernel)) {
-                logLibMbpError(context, bi.getError());
-                return false;
-            }
-            bi.destroy();
-        }
-
-        // Repatch with loki if needed
-        if (wasLoki) {
-            String lokiKernel = context.getCacheDir() + File.separator + "boot.lok";
-
-            if (!MbtoolSocket.getInstance().lokiPatch(context, tmpKernel, lokiKernel)) {
-                Log.e(TAG, "Failed to patch boot image with loki");
-                return false;
-            }
-
-            if (!MbtoolSocket.getInstance().chmod(context, lokiKernel, 0666)) {
-                Log.e(TAG, "Failed to chmod temporary aboot image");
-                return false;
-            }
 
             try {
-                org.apache.commons.io.FileUtils.moveFile(new File(lokiKernel), tmpKernelFile);
+                if (!bi.load(tmpKernel)) {
+                    logLibMbpError(context, bi.getError());
+                    return false;
+                }
+
+                if (wasBump) {
+                    Log.d(TAG, "Will reapply bump to boot image");
+                    bi.setApplyBump(true);
+                }
+                if (wasLoki) {
+                    Log.d(TAG, "Will reapply loki to boot image");
+                    bi.setApplyLoki(true);
+
+                    File aboot = new File(context.getCacheDir() + File.separator + "aboot.img");
+
+                    MbtoolSocket socket = MbtoolSocket.getInstance();
+
+                    // Copy aboot partition to the temporary file
+                    if (!socket.copy(context, ABOOT_PARTITION, aboot.getPath()) ||
+                            !socket.chmod(context, aboot.getPath(), 0644)) {
+                        Log.e(TAG, "Failed to copy aboot partition to temporary file");
+                        bi.destroy();
+                        return false;
+                    }
+
+                    byte[] abootImage = org.apache.commons.io.FileUtils.readFileToByteArray(aboot);
+                    bi.setAbootImage(abootImage);
+
+                    aboot.delete();
+                }
+                if (!hasRomId) {
+                    Log.d(TAG, "Adding romid to kernel command line");
+                    bi.setKernelCmdline(bi.getKernelCmdline() + " romid=" + romInfo.getId());
+                }
+
+                if (!bi.createFile(tmpKernel)) {
+                    logLibMbpError(context, bi.getError());
+                    return false;
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 return false;
+            } finally {
+                bi.destroy();
             }
         }
 
