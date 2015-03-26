@@ -137,7 +137,7 @@ public class RomSettingsUtils {
             logLibMbpError(context, bi.getError());
             return false;
         }
-        boolean wasLoki = bi.isLoki();
+        boolean wasLoki = bi.wasLoki();
         boolean hasRomId = bi.getKernelCmdline().contains("romid=");
         bi.destroy();
 

@@ -139,6 +139,10 @@ public class PatcherUtils {
                     error.getFilename());
         case ErrorCode.BOOT_IMAGE_PARSE_ERROR:
             return context.getString(R.string.boot_image_parse_error);
+        case ErrorCode.BOOT_IMAGE_APPLY_BUMP_ERROR:
+            return context.getString(R.string.boot_image_apply_bump_error);
+        case ErrorCode.BOOT_IMAGE_APPLY_LOKI_ERROR:
+            return context.getString(R.string.boot_image_apply_loki_error);
         case ErrorCode.CPIO_FILE_ALREADY_EXIST_ERROR:
             return String.format(context.getString(R.string.cpio_file_already_exists_error),
                     error.getFilename());

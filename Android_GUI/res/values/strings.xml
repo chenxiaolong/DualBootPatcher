@@ -387,6 +387,8 @@
     <string name="file_write_error">Failed to write to file: %s</string>
     <string name="directory_not_exist_error">Directory does not exist: %s</string>
     <string name="boot_image_parse_error">Failed to parse boot image</string>
+    <string name="boot_image_apply_bump_error">Failed to apply Bump to boot image</string>
+    <string name="boot_image_apply_loki_error">Failed to apply Loki to boot image</string>
     <string name="cpio_file_already_exists_error">File already exists in cpio archive: %s</string>
     <string name="cpio_file_not_exist_error">File does not exist in cpio archive: %s</string>
     <string name="archive_read_open_error">Failed to open archive for reading</string>

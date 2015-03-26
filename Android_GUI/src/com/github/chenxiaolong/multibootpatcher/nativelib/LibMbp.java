@@ -81,7 +81,10 @@ public class LibMbp {
         static native boolean mbp_bootimage_load_file(CBootImage bi, String filename);
         static native void mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native boolean mbp_bootimage_create_file(CBootImage bi, String filename);
-        static native boolean mbp_bootimage_is_loki(CBootImage bi);
+        static native boolean mbp_bootimage_was_loki(CBootImage bi);
+        static native boolean mbp_bootimage_was_bump(CBootImage bi);
+        static native void mbp_bootimage_set_apply_loki(CBootImage bi, boolean apply);
+        static native void mbp_bootimage_set_apply_bump(CBootImage bi, boolean apply);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
         static native void mbp_bootimage_set_boardname(CBootImage bi, String name);
         static native void mbp_bootimage_reset_boardname(CBootImage bi);
@@ -112,6 +115,8 @@ public class LibMbp {
         static native void mbp_bootimage_set_second_bootloader_image(CBootImage bi, Pointer data, /* size_t */ int size);
         static native /* size_t */ int mbp_bootimage_device_tree_image(CBootImage bi, PointerByReference dataReturn);
         static native void mbp_bootimage_set_device_tree_image(CBootImage bi, Pointer data, int size);
+        static native /* size_t */ int mbp_bootimage_aboot_image(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_set_aboot_image(CBootImage bi, Pointer data, int size);
         // END: cbootimage.h
 
         // BEGIN: ccommon.h
@@ -499,10 +504,28 @@ public class LibMbp {
             return CWrapper.mbp_bootimage_create_file(mCBootImage, path);
         }
 
-        public boolean isLoki() {
-            validate(mCBootImage, BootImage.class, "isLoki");
+        public boolean wasLoki() {
+            validate(mCBootImage, BootImage.class, "wasLoki");
 
-            return CWrapper.mbp_bootimage_is_loki(mCBootImage);
+            return CWrapper.mbp_bootimage_was_loki(mCBootImage);
+        }
+
+        public boolean wasBump() {
+            validate(mCBootImage, BootImage.class, "wasBump");
+
+            return CWrapper.mbp_bootimage_was_bump(mCBootImage);
+        }
+
+        public void setApplyLoki(boolean apply) {
+            validate(mCBootImage, BootImage.class, "setApplyLoki", apply);
+
+            CWrapper.mbp_bootimage_set_apply_loki(mCBootImage, apply);
+        }
+
+        public void setApplyBump(boolean apply) {
+            validate(mCBootImage, BootImage.class, "setApplyBump", apply);
+
+            CWrapper.mbp_bootimage_set_apply_bump(mCBootImage, apply);
         }
 
         public String getBoardName() {
@@ -682,7 +705,7 @@ public class LibMbp {
         }
 
         public byte[] getDeviceTreeImage() {
-            validate(mCBootImage, BootImage.class, "getDeviceTreeImages");
+            validate(mCBootImage, BootImage.class, "getDeviceTreeImage");
             PointerByReference pData = new PointerByReference();
             int size = CWrapper.mbp_bootimage_device_tree_image(mCBootImage, pData);
             Pointer data = pData.getValue();
@@ -698,6 +721,25 @@ public class LibMbp {
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
             CWrapper.mbp_bootimage_set_device_tree_image(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getAbootImage() {
+            validate(mCBootImage, BootImage.class, "getAbootImage");
+            PointerByReference pData = new PointerByReference();
+            int size = CWrapper.mbp_bootimage_aboot_image(mCBootImage, pData);
+            Pointer data = pData.getValue();
+            byte[] out = data.getByteArray(0, size);
+            CWrapper.mbp_free(data);
+            return out;
+        }
+
+        public void setAbootImage(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setAbootImage", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_aboot_image(mCBootImage, mem, data.length);
         }
     }
 
@@ -1549,22 +1591,24 @@ public class LibMbp {
             public static int FILE_WRITE_ERROR = 7;
             public static int DIRECTORY_NOT_EXIST_ERROR = 8;
             public static int BOOT_IMAGE_PARSE_ERROR = 9;
-            public static int CPIO_FILE_ALREADY_EXIST_ERROR = 10;
-            public static int CPIO_FILE_NOT_EXIST_ERROR = 11;
-            public static int ARCHIVE_READ_OPEN_ERROR = 12;
-            public static int ARCHIVE_READ_DATA_ERROR = 13;
-            public static int ARCHIVE_READ_HEADER_ERROR = 14;
-            public static int ARCHIVE_WRITE_OPEN_ERROR = 15;
-            public static int ARCHIVE_WRITE_DATA_ERROR = 16;
-            public static int ARCHIVE_WRITE_HEADER_ERROR = 17;
-            public static int ARCHIVE_CLOSE_ERROR = 18;
-            public static int ARCHIVE_FREE_ERROR = 19;
-            public static int XML_PARSE_FILE_ERROR = 20;
-            public static int ONLY_ZIP_SUPPORTED = 21;
-            public static int ONLY_BOOT_IMAGE_SUPPORTED = 22;
-            public static int PATCHING_CANCELLED = 23;
-            public static int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 24;
-            public static int APPLY_PATCH_FILE_ERROR = 25;
+            public static int BOOT_IMAGE_APPLY_BUMP_ERROR = 10;
+            public static int BOOT_IMAGE_APPLY_LOKI_ERROR = 11;
+            public static int CPIO_FILE_ALREADY_EXIST_ERROR = 12;
+            public static int CPIO_FILE_NOT_EXIST_ERROR = 13;
+            public static int ARCHIVE_READ_OPEN_ERROR = 14;
+            public static int ARCHIVE_READ_DATA_ERROR = 15;
+            public static int ARCHIVE_READ_HEADER_ERROR = 16;
+            public static int ARCHIVE_WRITE_OPEN_ERROR = 17;
+            public static int ARCHIVE_WRITE_DATA_ERROR = 18;
+            public static int ARCHIVE_WRITE_HEADER_ERROR = 19;
+            public static int ARCHIVE_CLOSE_ERROR = 20;
+            public static int ARCHIVE_FREE_ERROR = 21;
+            public static int XML_PARSE_FILE_ERROR = 22;
+            public static int ONLY_ZIP_SUPPORTED = 23;
+            public static int ONLY_BOOT_IMAGE_SUPPORTED = 24;
+            public static int PATCHING_CANCELLED = 25;
+            public static int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 26;
+            public static int APPLY_PATCH_FILE_ERROR = 27;
         }
 
         private static final HashMap<CPatcherError, Integer> sInstances = new HashMap<>();
