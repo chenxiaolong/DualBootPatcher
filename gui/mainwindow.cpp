@@ -595,6 +595,10 @@ static QString errorToString(const mbp::PatcherError &error) {
                 .arg(QString::fromStdString(error.filename()));
     case mbp::ErrorCode::BootImageParseError:
         return QObject::tr("Failed to parse boot image");
+    case mbp::ErrorCode::BootImageApplyBumpError:
+        return QObject::tr("Failed to apply Bump to the boot image");
+    case mbp::ErrorCode::BootImageApplyLokiError:
+        return QObject::tr("Failed to apply Loki to the boot image");
     case mbp::ErrorCode::CpioFileAlreadyExistsError:
         return QObject::tr("File already exists in cpio archive: %1")
                 .arg(QString::fromStdString(error.filename()));
