@@ -2,11 +2,11 @@ namespace mbtool.daemon.v2;
 
 table LokiPatchRequest {
     // Path to source boot image file
-    source : string;
+    source : string (deprecated);
     // Path to destination boot image file
-    target : string;
+    target : string (deprecated);
 }
 
 table LokiPatchResponse {
-    success : bool;
+    success : bool (deprecated);
 }

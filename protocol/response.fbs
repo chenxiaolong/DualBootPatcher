@@ -44,7 +44,7 @@ table Response {
     open_response : OpenResponse;
     copy_response : CopyResponse;
     chmod_response : ChmodResponse;
-    loki_patch_response : LokiPatchResponse;
+    loki_patch_response : LokiPatchResponse (deprecated);
     wipe_rom_response : WipeRomResponse;
 }
 

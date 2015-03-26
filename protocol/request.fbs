@@ -41,7 +41,7 @@ table Request {
     open_request : OpenRequest;
     copy_request : CopyRequest;
     chmod_request : ChmodRequest;
-    loki_patch_request : LokiPatchRequest;
+    loki_patch_request : LokiPatchRequest (deprecated);
     wipe_rom_request : WipeRomRequest;
 }
 
