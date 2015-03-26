@@ -117,6 +117,10 @@ static const char PackUsage[] =
     "  --value-[item] [item value]\n"
     "                  Specify a value for an item directly\n"
     "\n"
+    "  --apply-bump    Apply the Bump exploit to the boot image\n"
+    "  --apply-loki [aboot image]\n"
+    "                  Apply the Loki exploit to the boot image\n"
+    "\n"
     "The following items are loaded to create a new boot image.\n"
     "\n"
     "  cmdline *        Kernel command line\n"
@@ -178,6 +182,10 @@ static std::string error_to_string(const mbp::PatcherError &error) {
         return "Directory does not exist: " + error.filename();
     case mbp::ErrorCode::BootImageParseError:
         return "Failed to parse boot image";
+    case mbp::ErrorCode::BootImageApplyBumpError:
+        return "Failed to apply Bump to boot image";
+    case mbp::ErrorCode::BootImageApplyLokiError:
+        return "Failed to apply Loki to boot image";
     case mbp::ErrorCode::CpioFileAlreadyExistsError:
         return "File already exists in cpio archive: " + error.filename();
     case mbp::ErrorCode::CpioFileNotExistError:
@@ -581,6 +589,7 @@ bool pack_main(int argc, char *argv[])
     std::string path_ramdisk;
     std::string path_second;
     std::string path_dt;
+    std::string path_aboot;
     // Values
     std::unordered_map<int, bool> values;
     std::string cmdline;
@@ -595,6 +604,9 @@ bool pack_main(int argc, char *argv[])
     std::vector<unsigned char> ramdisk_image;
     std::vector<unsigned char> second_image;
     std::vector<unsigned char> dt_image;
+    std::vector<unsigned char> aboot_image;
+    bool apply_bump = false;
+    bool apply_loki = false;
 
     // Arguments with no short options
     enum pack_options : int
@@ -620,7 +632,10 @@ bool pack_main(int argc, char *argv[])
         OPT_VALUE_RAMDISK_OFFSET = 20000 + 5,
         OPT_VALUE_SECOND_OFFSET  = 20000 + 6,
         OPT_VALUE_TAGS_OFFSET    = 20000 + 7,
-        OPT_VALUE_PAGE_SIZE      = 20000 + 8
+        OPT_VALUE_PAGE_SIZE      = 20000 + 8,
+        // Exploits
+        OPT_APPLY_BUMP           = 30000 + 1,
+        OPT_APPLY_LOKI           = 30000 + 2
     };
 
     static struct option long_options[] = {
@@ -650,6 +665,9 @@ bool pack_main(int argc, char *argv[])
         {"value-second_offset",  required_argument, 0, OPT_VALUE_SECOND_OFFSET},
         {"value-tags_offset",    required_argument, 0, OPT_VALUE_TAGS_OFFSET},
         {"value-page_size",      required_argument, 0, OPT_VALUE_PAGE_SIZE},
+        // Exploits
+        {"apply-bump",           no_argument,       0, OPT_APPLY_BUMP},
+        {"apply-loki",           required_argument, 0, OPT_APPLY_LOKI},
         {0, 0, 0, 0}
     };
 
@@ -672,6 +690,12 @@ bool pack_main(int argc, char *argv[])
         case OPT_INPUT_RAMDISK:        path_ramdisk = optarg;        break;
         case OPT_INPUT_SECOND:         path_second = optarg;         break;
         case OPT_INPUT_DT:             path_dt = optarg;             break;
+        case OPT_APPLY_BUMP:           apply_bump = true;            break;
+
+        case OPT_APPLY_LOKI:
+            path_aboot = optarg;
+            apply_loki = true;
+            break;
 
         case OPT_VALUE_CMDLINE:
             path_cmdline.clear();
@@ -1028,6 +1052,13 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
+    if (apply_loki) {
+        if (!read_file_data(path_aboot, &aboot_image)) {
+            fprintf(stderr, "%s: %s\n", path_aboot.c_str(), strerror(errno));
+            return false;
+        }
+    }
+
     bi.setKernelCmdline(std::move(cmdline));
     bi.setBoardName(std::move(board));
     bi.setAddresses(base, kernel_offset, ramdisk_offset, second_offset, tags_offset);
@@ -1036,6 +1067,14 @@ bool pack_main(int argc, char *argv[])
     bi.setRamdiskImage(std::move(ramdisk_image));
     bi.setSecondBootloaderImage(std::move(second_image));
     bi.setDeviceTreeImage(std::move(dt_image));
+
+    if (apply_bump) {
+        bi.setApplyBump(true);
+    }
+    if (apply_loki) {
+        bi.setAbootImage(std::move(aboot_image));
+        bi.setApplyLoki(true);
+    }
 
     // Create boot image
     if (!bi.createFile(output_file)) {
