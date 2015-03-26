@@ -52,8 +52,6 @@ import mbtool.daemon.v2.GetCurrentRomResponse;
 import mbtool.daemon.v2.GetRomsListRequest;
 import mbtool.daemon.v2.GetRomsListResponse;
 import mbtool.daemon.v2.GetVersionRequest;
-import mbtool.daemon.v2.LokiPatchRequest;
-import mbtool.daemon.v2.LokiPatchResponse;
 import mbtool.daemon.v2.OpenRequest;
 import mbtool.daemon.v2.OpenResponse;
 import mbtool.daemon.v2.RebootRequest;
@@ -637,40 +635,6 @@ public class MbtoolSocket {
         return false;
     }
 
-    public boolean lokiPatch(Context context, String source, String target) {
-        if (!connect(context)) {
-            return false;
-        }
-
-        try {
-            // Create request
-            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
-            int fbSource = builder.createString(source);
-            int fbTarget = builder.createString(target);
-            LokiPatchRequest.startLokiPatchRequest(builder);
-            LokiPatchRequest.addSource(builder, fbSource);
-            LokiPatchRequest.addTarget(builder, fbTarget);
-            int request = LokiPatchRequest.endLokiPatchRequest(builder);
-
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addType(builder, RequestType.LOKI_PATCH);
-            Request.addLokiPatchRequest(builder, request);
-            builder.finish(Request.endRequest(builder));
-
-            // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.LOKI_PATCH);
-            LokiPatchResponse response = fbresponse.lokiPatchResponse();
-
-            return response.success() != 0;
-        } catch (IOException e) {
-            e.printStackTrace();
-            disconnect();
-        }
-
-        return false;
-    }
-
     public static class WipeResult {
         // Targets as listed in WipeTarget
         public short[] succeeded;
@@ -770,9 +734,6 @@ public class MbtoolSocket {
         } else if (response.type() == ResponseType.CHMOD
                 && response.chmodResponse() == null) {
             throw new IOException("null CHMOD response");
-        } else if (response.type() == ResponseType.LOKI_PATCH
-                && response.lokiPatchResponse() == null) {
-            throw new IOException("null LOKI_PATCH response");
         } else if (response.type() == ResponseType.WIPE_ROM
                 && response.wipeRomResponse() == null) {
             throw new IOException("null WIPE_ROM response");
