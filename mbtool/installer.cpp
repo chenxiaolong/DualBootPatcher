@@ -38,7 +38,6 @@
 #include <libmbp/patcherconfig.h>
 
 // Local
-#include "lokipatch.h"
 #include "main.h"
 #include "multiboot.h"
 #include "util/archive.h"
@@ -66,6 +65,8 @@
 // Use an update-binary file not from the zip file
 #define DEBUG_USE_ALTERNATE_UPDATER 0
 #define DEBUG_ALTERNATE_UPDATER_PATH "/tmp/updater.orig"
+
+#define ABOOT_PARTITION "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
 
 namespace mb {
@@ -1259,13 +1260,21 @@ Installer::ProceedState Installer::install_stage_finish()
         bi.setKernelCmdline(std::move(cmdline));
 
         bi.setApplyBump(bi.wasBump());
+        if (bi.wasLoki()) {
+            std::vector<unsigned char> aboot_image;
+            if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
+                LOGE("Failed to read aboot partition: {}", strerror(errno));
+                display_msg("Failed to read aboot partition");
+                return ProceedState::Fail;
+            }
+
+            bi.setAbootImage(std::move(aboot_image));
+            bi.setApplyLoki(true);
+        }
 
         auto bootimg = bi.create();
-        bool was_loki = bi.wasLoki();
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";
-        std::string temp_boot_lok(_temp);
-        temp_boot_lok += "/boot.lok";
 
         // Backup kernel
 
@@ -1275,19 +1284,6 @@ Installer::ProceedState Installer::install_stage_finish()
             LOGE("Failed to write {}: {}", temp_boot_img, strerror(errno));
             display_msg(fmt::format("Failed to write {}", temp_boot_img));
             return ProceedState::Fail;
-        }
-
-        // Reloki if needed
-        if (was_loki) {
-            if (!loki_patch_file(temp_boot_img, temp_boot_lok)) {
-                display_msg("Failed to run loki");
-                return ProceedState::Fail;
-            }
-
-            display_msg("Successfully loki'd boot image");
-
-            unlink(temp_boot_img.c_str());
-            rename(temp_boot_lok.c_str(), temp_boot_img.c_str());
         }
 
         // Write to multiboot directory and boot partition

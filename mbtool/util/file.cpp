@@ -169,5 +169,27 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items) {
     return false;
 }
 
+bool file_read_all(const std::string &path,
+                   std::vector<unsigned char> *data_out)
+{
+    file_ptr fp(fopen(path.c_str(), "rb"), fclose);
+    if (!fp) {
+        return false;
+    }
+
+    fseek(fp.get(), 0, SEEK_END);
+    auto size = ftell(fp.get());
+    rewind(fp.get());
+
+    std::vector<unsigned char> data(size);
+    if (fread(data.data(), size, 1, fp.get()) != 1) {
+        return false;
+    }
+
+    data_out->swap(data);
+
+    return true;
+}
+
 }
 }

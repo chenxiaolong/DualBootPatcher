@@ -33,6 +33,8 @@ bool file_first_line(const std::string &path,
 bool file_write_data(const std::string &path,
                      const char *data, size_t size);
 bool file_find_one_of(const std::string &path, std::vector<std::string> items);
+bool file_read_all(const std::string &path,
+                   std::vector<unsigned char> *data_out);
 
 }
 }
