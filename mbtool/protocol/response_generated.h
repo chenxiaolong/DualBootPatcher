@@ -152,7 +152,6 @@ struct Response : private flatbuffers::Table {
   const mbtool::daemon::v2::OpenResponse *open_response() const { return GetPointer<const mbtool::daemon::v2::OpenResponse *>(20); }
   const mbtool::daemon::v2::CopyResponse *copy_response() const { return GetPointer<const mbtool::daemon::v2::CopyResponse *>(22); }
   const mbtool::daemon::v2::ChmodResponse *chmod_response() const { return GetPointer<const mbtool::daemon::v2::ChmodResponse *>(24); }
-  const mbtool::daemon::v2::LokiPatchResponse *loki_patch_response() const { return GetPointer<const mbtool::daemon::v2::LokiPatchResponse *>(26); }
   const mbtool::daemon::v2::WipeRomResponse *wipe_rom_response() const { return GetPointer<const mbtool::daemon::v2::WipeRomResponse *>(28); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -177,8 +176,6 @@ struct Response : private flatbuffers::Table {
            verifier.VerifyTable(copy_response()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 24 /* chmod_response */) &&
            verifier.VerifyTable(chmod_response()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 26 /* loki_patch_response */) &&
-           verifier.VerifyTable(loki_patch_response()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 28 /* wipe_rom_response */) &&
            verifier.VerifyTable(wipe_rom_response()) &&
            verifier.EndTable();
@@ -199,7 +196,6 @@ struct ResponseBuilder {
   void add_open_response(flatbuffers::Offset<mbtool::daemon::v2::OpenResponse> open_response) { fbb_.AddOffset(20, open_response); }
   void add_copy_response(flatbuffers::Offset<mbtool::daemon::v2::CopyResponse> copy_response) { fbb_.AddOffset(22, copy_response); }
   void add_chmod_response(flatbuffers::Offset<mbtool::daemon::v2::ChmodResponse> chmod_response) { fbb_.AddOffset(24, chmod_response); }
-  void add_loki_patch_response(flatbuffers::Offset<mbtool::daemon::v2::LokiPatchResponse> loki_patch_response) { fbb_.AddOffset(26, loki_patch_response); }
   void add_wipe_rom_response(flatbuffers::Offset<mbtool::daemon::v2::WipeRomResponse> wipe_rom_response) { fbb_.AddOffset(28, wipe_rom_response); }
   ResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   ResponseBuilder &operator=(const ResponseBuilder &);
@@ -221,11 +217,9 @@ inline flatbuffers::Offset<Response> CreateResponse(flatbuffers::FlatBufferBuild
    flatbuffers::Offset<mbtool::daemon::v2::OpenResponse> open_response = 0,
    flatbuffers::Offset<mbtool::daemon::v2::CopyResponse> copy_response = 0,
    flatbuffers::Offset<mbtool::daemon::v2::ChmodResponse> chmod_response = 0,
-   flatbuffers::Offset<mbtool::daemon::v2::LokiPatchResponse> loki_patch_response = 0,
    flatbuffers::Offset<mbtool::daemon::v2::WipeRomResponse> wipe_rom_response = 0) {
   ResponseBuilder builder_(_fbb);
   builder_.add_wipe_rom_response(wipe_rom_response);
-  builder_.add_loki_patch_response(loki_patch_response);
   builder_.add_chmod_response(chmod_response);
   builder_.add_copy_response(copy_response);
   builder_.add_open_response(open_response);

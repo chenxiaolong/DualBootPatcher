@@ -95,14 +95,8 @@ struct LokiPatchRequest;
 struct LokiPatchResponse;
 
 struct LokiPatchRequest : private flatbuffers::Table {
-  const flatbuffers::String *source() const { return GetPointer<const flatbuffers::String *>(4); }
-  const flatbuffers::String *target() const { return GetPointer<const flatbuffers::String *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* source */) &&
-           verifier.Verify(source()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* target */) &&
-           verifier.Verify(target()) &&
            verifier.EndTable();
   }
 };
@@ -110,8 +104,6 @@ struct LokiPatchRequest : private flatbuffers::Table {
 struct LokiPatchRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_source(flatbuffers::Offset<flatbuffers::String> source) { fbb_.AddOffset(4, source); }
-  void add_target(flatbuffers::Offset<flatbuffers::String> target) { fbb_.AddOffset(6, target); }
   LokiPatchRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   LokiPatchRequestBuilder &operator=(const LokiPatchRequestBuilder &);
   flatbuffers::Offset<LokiPatchRequest> Finish() {
@@ -120,20 +112,14 @@ struct LokiPatchRequestBuilder {
   }
 };
 
-inline flatbuffers::Offset<LokiPatchRequest> CreateLokiPatchRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> source = 0,
-   flatbuffers::Offset<flatbuffers::String> target = 0) {
+inline flatbuffers::Offset<LokiPatchRequest> CreateLokiPatchRequest(flatbuffers::FlatBufferBuilder &_fbb) {
   LokiPatchRequestBuilder builder_(_fbb);
-  builder_.add_target(target);
-  builder_.add_source(source);
   return builder_.Finish();
 }
 
 struct LokiPatchResponse : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
            verifier.EndTable();
   }
 };
@@ -141,7 +127,6 @@ struct LokiPatchResponse : private flatbuffers::Table {
 struct LokiPatchResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
   LokiPatchResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   LokiPatchResponseBuilder &operator=(const LokiPatchResponseBuilder &);
   flatbuffers::Offset<LokiPatchResponse> Finish() {
@@ -150,10 +135,8 @@ struct LokiPatchResponseBuilder {
   }
 };
 
-inline flatbuffers::Offset<LokiPatchResponse> CreateLokiPatchResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0) {
+inline flatbuffers::Offset<LokiPatchResponse> CreateLokiPatchResponse(flatbuffers::FlatBufferBuilder &_fbb) {
   LokiPatchResponseBuilder builder_(_fbb);
-  builder_.add_success(success);
   return builder_.Finish();
 }
 

@@ -143,7 +143,6 @@ struct Request : private flatbuffers::Table {
   const mbtool::daemon::v2::OpenRequest *open_request() const { return GetPointer<const mbtool::daemon::v2::OpenRequest *>(20); }
   const mbtool::daemon::v2::CopyRequest *copy_request() const { return GetPointer<const mbtool::daemon::v2::CopyRequest *>(22); }
   const mbtool::daemon::v2::ChmodRequest *chmod_request() const { return GetPointer<const mbtool::daemon::v2::ChmodRequest *>(24); }
-  const mbtool::daemon::v2::LokiPatchRequest *loki_patch_request() const { return GetPointer<const mbtool::daemon::v2::LokiPatchRequest *>(26); }
   const mbtool::daemon::v2::WipeRomRequest *wipe_rom_request() const { return GetPointer<const mbtool::daemon::v2::WipeRomRequest *>(28); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -168,8 +167,6 @@ struct Request : private flatbuffers::Table {
            verifier.VerifyTable(copy_request()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 24 /* chmod_request */) &&
            verifier.VerifyTable(chmod_request()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 26 /* loki_patch_request */) &&
-           verifier.VerifyTable(loki_patch_request()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 28 /* wipe_rom_request */) &&
            verifier.VerifyTable(wipe_rom_request()) &&
            verifier.EndTable();
@@ -190,7 +187,6 @@ struct RequestBuilder {
   void add_open_request(flatbuffers::Offset<mbtool::daemon::v2::OpenRequest> open_request) { fbb_.AddOffset(20, open_request); }
   void add_copy_request(flatbuffers::Offset<mbtool::daemon::v2::CopyRequest> copy_request) { fbb_.AddOffset(22, copy_request); }
   void add_chmod_request(flatbuffers::Offset<mbtool::daemon::v2::ChmodRequest> chmod_request) { fbb_.AddOffset(24, chmod_request); }
-  void add_loki_patch_request(flatbuffers::Offset<mbtool::daemon::v2::LokiPatchRequest> loki_patch_request) { fbb_.AddOffset(26, loki_patch_request); }
   void add_wipe_rom_request(flatbuffers::Offset<mbtool::daemon::v2::WipeRomRequest> wipe_rom_request) { fbb_.AddOffset(28, wipe_rom_request); }
   RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RequestBuilder &operator=(const RequestBuilder &);
@@ -212,11 +208,9 @@ inline flatbuffers::Offset<Request> CreateRequest(flatbuffers::FlatBufferBuilder
    flatbuffers::Offset<mbtool::daemon::v2::OpenRequest> open_request = 0,
    flatbuffers::Offset<mbtool::daemon::v2::CopyRequest> copy_request = 0,
    flatbuffers::Offset<mbtool::daemon::v2::ChmodRequest> chmod_request = 0,
-   flatbuffers::Offset<mbtool::daemon::v2::LokiPatchRequest> loki_patch_request = 0,
    flatbuffers::Offset<mbtool::daemon::v2::WipeRomRequest> wipe_rom_request = 0) {
   RequestBuilder builder_(_fbb);
   builder_.add_wipe_rom_request(wipe_rom_request);
-  builder_.add_loki_patch_request(loki_patch_request);
   builder_.add_chmod_request(chmod_request);
   builder_.add_copy_request(copy_request);
   builder_.add_open_request(open_request);

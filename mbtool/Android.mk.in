@@ -33,7 +33,6 @@ THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
 LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
-LIBLOKI_DIR := $(THIRD_PARTY)/android/libloki
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 PROCPS_NG_DIR := $(THIRD_PARTY)/android/procps-ng
 BOOST_DIR := $(THIRD_PARTY)/android/boost
@@ -56,12 +55,6 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libarchive
 LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libloki
-LOCAL_SRC_FILES := $(LIBLOKI_DIR)/lib_$(TARGET_ARCH_ABI)/libloki_static.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -126,7 +119,6 @@ mbtool_src_base := \
 	actions.cpp \
 	appsync.cpp \
 	daemon.cpp \
-	lokipatch.cpp \
 	main.cpp \
 	mount_fstab.cpp \
 	multiboot.cpp \
@@ -167,7 +159,6 @@ endif
 mb_common_includes := \
 	$(JANSSON_DIR)/include \
 	$(LIBARCHIVE_DIR)/include \
-	$(LIBLOKI_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
 	$(PROCPS_NG_DIR)/include \
 	$(TOP_DIR)/libmbp \
@@ -199,7 +190,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol libloki procps-ng
+LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol procps-ng
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 
@@ -224,7 +215,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base) $(mbtool_src_recovery)
 
 LOCAL_MODULE := mbtool_recovery
-LOCAL_STATIC_LIBRARIES := libmbutil libmbp-mini libjansson libsepol libarchive libloki liblz4 boost_filesystem boost_system gnustl_static
+LOCAL_STATIC_LIBRARIES := libmbutil libmbp-mini libjansson libsepol libarchive liblz4 boost_filesystem boost_system gnustl_static
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 

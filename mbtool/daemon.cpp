@@ -34,7 +34,6 @@
 #include <proc/readproc.h>
 
 #include "actions.h"
-#include "lokipatch.h"
 #include "multiboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
@@ -58,7 +57,6 @@
 #include "protocol/open_generated.h"
 #include "protocol/copy_generated.h"
 #include "protocol/chmod_generated.h"
-#include "protocol/loki_patch_generated.h"
 #include "protocol/wipe_rom_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
@@ -443,30 +441,6 @@ static bool v2_chmod(int fd, const v2::Request *msg)
     return v2_send_response(fd, builder);
 }
 
-static bool v2_loki_patch(int fd, const v2::Request *msg)
-{
-    auto request = msg->loki_patch_request();
-    if (!request || !request->source() || !request->target()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    bool success = loki_patch_file(request->source()->c_str(),
-                                   request->target()->c_str());
-
-    // Create response
-    auto response = v2::CreateLokiPatchResponse(builder, success);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_LOKI_PATCH);
-    rb.add_loki_patch_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
 static bool v2_wipe_rom(int fd, const v2::Request *msg)
 {
     auto request = msg->wipe_rom_request();
@@ -600,8 +574,6 @@ static bool connection_version_2(int fd)
             ret = v2_copy(fd, request);
         } else if (request->type() == v2::RequestType_CHMOD) {
             ret = v2_chmod(fd, request);
-        } else if (request->type() == v2::RequestType_LOKI_PATCH) {
-            ret = v2_loki_patch(fd, request);
         } else if (request->type() == v2::RequestType_WIPE_ROM) {
             ret = v2_wipe_rom(fd, request);
         } else {
