@@ -402,8 +402,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Note 3
     device = new Device();
     device->setId("hlte");
-    device->setCodenames({ "hlte", "hltespr", "hltetmo", "hlteusc",
-                           "hltevzw" });
+    device->setCodenames({ "hlte", "hltespr", "hltetmo", "hlteusc", "hltevzw",
+                           "hltexx" });
     device->setName("Samsung Galaxy Note 3");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
