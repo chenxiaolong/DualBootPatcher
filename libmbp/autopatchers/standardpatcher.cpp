@@ -131,8 +131,8 @@ void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 
     for (auto &line : *lines) {
         if (MBP_regex_search(line, reLine)) {
-            MBP_regex_replace(line, MBP_regex("^(\\s*assert\\s*\\()"),
-                              "\\1\"true\" == \"true\" || ");
+            line = MBP_regex_replace(line, MBP_regex("^(\\s*assert\\s*\\()"),
+                                     "$1\"true\" == \"true\" || ");
         }
     }
 }
