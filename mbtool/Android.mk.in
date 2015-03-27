@@ -138,7 +138,8 @@ mbtool_src_recovery := \
 	installer.cpp \
 	rom_installer.cpp \
 	update_binary.cpp \
-	update_binary_tool.cpp
+	update_binary_tool.cpp \
+	external/legacy_property_service.cpp
 
 mb_common_cflags := \
 	-Wall -Wextra -Werror \

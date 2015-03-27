@@ -33,6 +33,9 @@
 // cppformat
 #include "external/cppformat/format.h"
 
+// Legacy properties
+#include "external/legacy_property_service.h"
+
 // libmbp
 #include <libmbp/bootimage.h>
 #include <libmbp/patcherconfig.h>
@@ -632,6 +635,28 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
+            if (!_passthrough) {
+                // If we're not passing through the fd, then we're not running
+                // in recovery, so we'll need to handle the legacy properties
+                // ourselves. We don't need to worry about /dev/__properties__
+                // since that's not present in the chroot. Bionic will
+                // automatically fall back to getting the fd from the
+                // ANDROID_PROPERTY_WORKSPACE environment variable.
+                char tmp[32];
+                int propfd, propsz;
+                legacy_properties_init();
+                legacy_get_property_workspace(&propfd, &propsz);
+                sprintf(tmp, "%d,%d", dup(propfd), propsz);
+
+                char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
+                LOGD("Original properties environment: {}",
+                     orig_prop_env ? orig_prop_env : "null");
+
+                setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+                LOGD("Switched to legacy properties environment: {}", tmp);
+            }
+
             // Make sure the updater won't run interactively
             close(STDIN_FILENO);
             if (open("/dev/null", O_RDONLY) < 0) {
@@ -639,7 +664,7 @@ bool Installer::run_real_updater()
                 _exit(EXIT_FAILURE);
             }
 
-            execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
+            execvpe(argv_c[0], const_cast<char * const *>(argv_c.data()), environ);
             _exit(127);
         } else {
             if (!_passthrough) {
