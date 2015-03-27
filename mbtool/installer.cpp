@@ -760,6 +760,7 @@ bool Installer::run_real_updater()
     if (WEXITSTATUS(status) != 0) {
         LOGE("{} returned non-zero exit status",
              "/mb/updater");
+        return false;
     }
 
     return true;
