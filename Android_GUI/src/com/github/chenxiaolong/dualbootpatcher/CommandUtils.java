@@ -194,10 +194,10 @@ public final class CommandUtils {
         }
     }
 
-    public static interface RootCommandListener {
-        public void onNewOutputLine(String line);
+    public interface RootCommandListener {
+        void onNewOutputLine(String line);
 
-        public void onCommandCompletion(CommandResult result);
+        void onCommandCompletion(CommandResult result);
     }
 
     public static class RootCommandParams {
@@ -207,9 +207,8 @@ public final class CommandUtils {
         public boolean logOutput = true;
     }
 
-    public static interface RootLiveOutputFilter {
-        public void onOutputLine(RootCommandParams params,
-                CommandResult result, String line);
+    public interface RootLiveOutputFilter {
+        void onOutputLine(RootCommandParams params, CommandResult result, String line);
     }
 
     public static boolean requestRootAccess() {
@@ -267,6 +266,8 @@ public final class CommandUtils {
                         command.wait(2000);
                     }
                 }
+
+                mResult.exitCode = command.getExitCode();
 
                 // TODO: Should this be done on another thread?
                 if (mParams.listener != null) {
