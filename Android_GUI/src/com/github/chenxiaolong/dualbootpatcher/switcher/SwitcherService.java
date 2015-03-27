@@ -250,6 +250,9 @@ public class SwitcherService extends IntentService {
         PendingAction[] actions = new PendingAction[parcelables.length];
         System.arraycopy(parcelables, 0, actions, 0, parcelables.length);
 
+        boolean remountedRoot = false;
+        boolean remountedSystem = false;
+
         int succeeded = 0;
 
         try {
@@ -262,10 +265,13 @@ public class SwitcherService extends IntentService {
                 printBoldText(Color.RED, "Failed to remount / as rw\n");
                 return;
             }
+            remountedRoot = true;
+
             if (!remountFs("/system", true)) {
                 printBoldText(Color.RED, "Failed to remount /system as rw\n");
                 return;
             }
+            remountedSystem = true;
 
             for (PendingAction pa : actions) {
                 if (pa.type != PendingAction.Type.INSTALL_ZIP) {
@@ -320,16 +326,18 @@ public class SwitcherService extends IntentService {
                     }
                 }
             }
+        } finally {
+            if (remountedRoot || remountedSystem) {
+                printSeparator();
+            }
 
-            printSeparator();
-
-            if (!remountFs("/", false)) {
+            if (remountedRoot && !remountFs("/", false)) {
                 printBoldText(Color.RED, "Failed to remount / as ro\n");
             }
-            if (!remountFs("/system", false)) {
+            if (remountedSystem && !remountFs("/system", false)) {
                 printBoldText(Color.RED, "Failed to remount /system as ro\n");
             }
-        } finally {
+
             printSeparator();
 
             String frac = succeeded + "/" + actions.length;
