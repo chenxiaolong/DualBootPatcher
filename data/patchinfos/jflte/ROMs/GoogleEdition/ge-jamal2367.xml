@@ -2,17 +2,8 @@
     <name>jamal2367's Google Edition</name>
     <regex>^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$</regex>
 
-    <matches regex="^I9505_-_Google_Edition_v6_by_Jamal2367\.zip$">
-        <ramdisk>jflte/default</ramdisk>
-        <autopatchers>
-            <autopatcher>StandardPatcher</autopatcher>
-        </autopatchers>
-    </matches>
-
-    <not-matched>
-        <ramdisk>jflte/default</ramdisk>
-        <autopatchers>
-            <autopatcher>StandardPatcher</autopatcher>
-        </autopatchers>
-    </not-matched>
+    <ramdisk>jflte/default</ramdisk>
+    <autopatchers>
+        <autopatcher>StandardPatcher</autopatcher>
+    </autopatchers>
 </patchinfo>
