@@ -28,7 +28,7 @@ if (${MBP_PORTABLE})
         bootimgtool
         PROPERTIES
         BUILD_WITH_INSTALL_RPATH OFF
-        INSTALL_RPATH "\$ORIGIN/../lib"
+        INSTALL_RPATH "\$ORIGIN/lib"
     )
 endif()
 
