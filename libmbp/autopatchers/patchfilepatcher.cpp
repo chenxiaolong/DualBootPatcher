@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #endif
 
+#include <regex>
 #include <unordered_map>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -37,7 +38,6 @@
 
 #include "private/fileutils.h"
 #include "private/logging.h"
-#include "private/regex.h"
 
 
 namespace mbp
@@ -94,12 +94,12 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    const MBP_regex reOrigFile("---\\s+(.+?)(?:$|\t)");
+    const std::regex reOrigFile("---\\s+(.+?)(?:$|\t)");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        MBP_smatch what;
+        std::smatch what;
 
-        if (MBP_regex_search(*it, what, reOrigFile)) {
+        if (std::regex_search(*it, what, reOrigFile)) {
             std::string file = what.str(1);
             if (boost::starts_with(file, "\"") && boost::ends_with(file, "\"")) {
                 file.erase(file.begin());

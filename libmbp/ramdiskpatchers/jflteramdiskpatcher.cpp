@@ -19,13 +19,14 @@
 
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
 
+#include <regex>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
 #include "patcherconfig.h"
-#include "private/regex.h"
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 #include "ramdiskpatchers/galaxyramdiskpatcher.h"
 #include "ramdiskpatchers/qcomramdiskpatcher.h"
@@ -146,8 +147,8 @@ bool JflteDefaultRamdiskPatcher::geChargerModeMount()
     boost::split(lines, contents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (MBP_regex_search(*it, MBP_regex("mount.*/system"))
-                && MBP_regex_search(previousLine, MBP_regex("on\\s+charger"))) {
+        if (std::regex_search(*it, std::regex("mount.*/system"))
+                && std::regex_search(previousLine, std::regex("on\\s+charger"))) {
             it = lines.insert(it, "    start mbtool-charger");
             ++it;
             *it = "    wait /.fstab.jgedlte.completed 15";

@@ -19,6 +19,8 @@
 
 #include "patchers/mbtoolupdater.h"
 
+#include <regex>
+
 #include <cassert>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -31,7 +33,6 @@
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
-#include "private/regex.h"
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
@@ -191,14 +192,14 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    MBP_regex whitespace("^\\s$");
+    std::regex whitespace("^\\s$");
     bool insideService = false;
 
     // Remove old mbtooldaemon service definition
     for (auto it = lines.begin(); it != lines.end();) {
         if (boost::starts_with(*it, "service")) {
             insideService = it->find("mbtooldaemon") != std::string::npos;
-        } else if (insideService && MBP_regex_search(*it, whitespace)) {
+        } else if (insideService && std::regex_search(*it, whitespace)) {
             insideService = false;
         }
 

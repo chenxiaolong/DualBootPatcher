@@ -19,6 +19,8 @@
 
 #include "patcherconfig.h"
 
+#include <regex>
+
 #include <boost/algorithm/string/erase.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -34,7 +36,6 @@
 #include "patchinfo.h"
 #endif
 #include "private/logging.h"
-#include "private/regex.h"
 
 // Patchers
 #ifndef LIBMBP_MINI
@@ -322,13 +323,13 @@ PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
 
     for (PatchInfo *info : patchInfos(device)) {
         for (auto const &regex : info->regexes()) {
-            if (MBP_regex_search(noPath, MBP_regex(regex))) {
+            if (std::regex_search(noPath, std::regex(regex))) {
                 bool skipCurInfo = false;
 
                 // If the regex matches, make sure the filename isn't matched
                 // by one of the exclusion regexes
                 for (auto const &excludeRegex : info->excludeRegexes()) {
-                    if (MBP_regex_search(noPath, MBP_regex(excludeRegex))) {
+                    if (std::regex_search(noPath, std::regex(excludeRegex))) {
                         skipCurInfo = true;
                         break;
                     }

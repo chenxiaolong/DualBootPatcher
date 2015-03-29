@@ -19,13 +19,14 @@
 
 #include "ramdiskpatchers/galaxyramdiskpatcher.h"
 
+#include <regex>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-#include "private/regex.h"
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 
@@ -119,7 +120,7 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     boost::split(lines, contents, boost::is_any_of("\n"));
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (MBP_regex_search(*it, MBP_regex("^\\s+mount.*/cache.*$"))) {
+        if (std::regex_search(*it, std::regex("^\\s+mount.*/cache.*$"))) {
             it->insert(it->begin(), '#');
         }
     }

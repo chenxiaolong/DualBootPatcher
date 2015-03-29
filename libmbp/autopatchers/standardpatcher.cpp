@@ -19,6 +19,8 @@
 
 #include "autopatchers/standardpatcher.h"
 
+#include <regex>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -28,7 +30,6 @@
 #include <cppformat/format.h>
 
 #include "private/fileutils.h"
-#include "private/regex.h"
 
 
 namespace mbp
@@ -127,12 +128,12 @@ bool StandardPatcher::patchFiles(const std::string &directory)
  */
 void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 {
-    MBP_regex reLine("assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
+    std::regex reLine("assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
 
     for (auto &line : *lines) {
-        if (MBP_regex_search(line, reLine)) {
-            line = MBP_regex_replace(line, MBP_regex("^(\\s*assert\\s*\\()"),
-                                     "$1\"true\" == \"true\" || ");
+        if (std::regex_search(line, reLine)) {
+            line = std::regex_replace(line, std::regex("^(\\s*assert\\s*\\()"),
+                                      "$1\"true\" == \"true\" || ");
         }
     }
 }
@@ -167,21 +168,21 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
     auto const cacheDevs = device->cacheBlockDevs();
     auto const dataDevs = device->dataBlockDevs();
 
-    static auto const re1 = MBP_regex(
+    static auto const re1 = std::regex(
             RE_FUNC("mount", ""));
-    static auto const re2 = MBP_regex(
+    static auto const re2 = std::regex(
             RE_FUNC("run_program",
                     RE_ARG(RE_ARG_ANY "busybox")
                     RE_ARG_SEP
                     RE_ARG("mount")));
-    static auto const re3 = MBP_regex(
+    static auto const re3 = std::regex(
             RE_FUNC("run_program",
                     RE_ARG(RE_ARG_ANY "/mount")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        bool isMountLine = MBP_regex_search(*it, re1)
-                || MBP_regex_search(*it, re2)
-                || MBP_regex_search(*it, re3);
+        bool isMountLine = std::regex_search(*it, re1)
+                || std::regex_search(*it, re2)
+                || std::regex_search(*it, re3);
 
         if (isMountLine) {
             bool isSystem = it->find("/system") != std::string::npos
@@ -216,9 +217,9 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
     auto const cacheDevs = device->cacheBlockDevs();
     auto const dataDevs = device->dataBlockDevs();
 
-    static auto const re1 = MBP_regex(
+    static auto const re1 = std::regex(
             RE_FUNC("unmount", ""));
-    static auto const re2 = MBP_regex(
+    static auto const re2 = std::regex(
             RE_FUNC("run_program",
                     RE_ARG(RE_ARG_ANY "busybox")
                     RE_ARG_SEP
@@ -232,8 +233,8 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
             continue;
         }
 
-        bool isUnmountLine = MBP_regex_search(*it, re1)
-                || MBP_regex_search(*it, re2);
+        bool isUnmountLine = std::regex_search(*it, re1)
+                || std::regex_search(*it, re2);
 
         if (isUnmountLine) {
             bool isSystem = it->find("/system") != std::string::npos
@@ -269,7 +270,7 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
     auto const dataDevs = device->dataBlockDevs();
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        if (MBP_regex_search(*it, MBP_regex(RE_FUNC("format", "")))) {
+        if (std::regex_search(*it, std::regex(RE_FUNC("format", "")))) {
             bool isSystem = it->find("/system") != std::string::npos
                     || findItemsInString(*it, systemDevs);
             bool isCache = it->find("/cache") != std::string::npos
@@ -285,13 +286,13 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
             } else if (isData) {
                 *it = fmt::format(Format, "/data");
             }
-        } else if (MBP_regex_search(*it, MBP_regex(
+        } else if (std::regex_search(*it, std::regex(
                 RE_FUNC("delete_recursive", RE_ARG("/system"))))) {
             *it = fmt::format(Format, "/system");
-        } else if (MBP_regex_search(*it, MBP_regex(
+        } else if (std::regex_search(*it, std::regex(
                 RE_FUNC("delete_recursive", RE_ARG("/cache"))))) {
             *it = fmt::format(Format, "/cache");
-        } else if (MBP_regex_search(*it, MBP_regex(
+        } else if (std::regex_search(*it, std::regex(
                 RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh"))))) {
             *it = fmt::format(Format, "/data");
         }

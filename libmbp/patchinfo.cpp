@@ -19,11 +19,10 @@
 
 #include "patchinfo.h"
 
+#include <regex>
 #include <unordered_map>
 
 #include <boost/filesystem/path.hpp>
-
-#include "private/regex.h"
 
 
 namespace mbp
@@ -218,7 +217,7 @@ std::string PatchInfo::keyFromFilename(const std::string &fileName) const
     // The conditional regex is the key if <matches> elements are used
     // in the patchinfo xml files
     for (auto &regex : m_impl->condRegexes) {
-        if (MBP_regex_search(noPath, MBP_regex(regex))) {
+        if (std::regex_search(noPath, std::regex(regex))) {
             return regex;
         }
     }

@@ -37,32 +37,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif()
 
 
-# Use boost::regex instead on versions of gcc that don't have std::regex
-# implemented
-
-set(USE_BOOST_REGEX TRUE)
-
-if(CMAKE_COMPILER_IS_GNUCXX)
-    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
-                    OUTPUT_VARIABLE GCC_VERSION)
-    if (GCC_VERSION VERSION_GREATER 4.9 OR GCC_VERSION VERSION_EQUAL 4.9)
-        message(STATUS "Found gcc >= 4.9; std::regex will be used")
-        set(USE_BOOST_REGEX FALSE)
-    endif()
-endif()
-
-set(BOOST_COMPONENTS filesystem system)
-
-if(USE_BOOST_REGEX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_BOOST_REGEX")
-    list(APPEND BOOST_COMPONENTS regex)
-endif()
-
-
 # Dependencies
 
 # Boost
-find_package(Boost REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+find_package(Boost REQUIRED COMPONENTS filesystem system)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
