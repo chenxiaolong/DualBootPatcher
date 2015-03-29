@@ -217,9 +217,6 @@ bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
 
 bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 {
-    // Determine patchinfo key for the current file
-    const std::string key = info->patchInfo()->keyFromFilename(info->filename());
-
     BootImage bi;
     if (!bi.load(*data)) {
         error = bi.error();
@@ -236,11 +233,11 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
     RETURN_IF_CANCELLED
 
     auto *rp = pc->createRamdiskPatcher(
-            info->patchInfo()->ramdisk(key), info, &cpio);
+            info->patchInfo()->ramdisk(), info, &cpio);
     if (!rp) {
         error = PatcherError::createPatcherCreationError(
                 ErrorCode::RamdiskPatcherCreateError,
-                info->patchInfo()->ramdisk(key));
+                info->patchInfo()->ramdisk());
         return false;
     }
 
@@ -327,12 +324,10 @@ bool MultiBootPatcher::Impl::patchZip()
 {
     progress = 0;
 
-    auto const key = info->patchInfo()->keyFromFilename(info->filename());
-
     std::unordered_set<std::string> excludeFromPass1;
 
-    for (auto const &item : info->patchInfo()->autoPatchers(key)) {
-        auto args = info->patchInfo()->autoPatcherArgs(key, item);
+    for (auto const &item : info->patchInfo()->autoPatchers()) {
+        auto args = info->patchInfo()->autoPatcherArgs(item);
 
         auto *ap = pc->createAutoPatcher(item, info, args);
         if (!ap) {
@@ -495,11 +490,9 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
                                    const std::string &temporaryDir,
                                    const std::unordered_set<std::string> &exclude)
 {
-    auto const key = info->patchInfo()->keyFromFilename(info->filename());
-
     // Boot image params
-    bool hasBootImage = info->patchInfo()->hasBootImage(key);
-    auto piBootImages = info->patchInfo()->bootImages(key);
+    bool hasBootImage = info->patchInfo()->hasBootImage();
+    auto piBootImages = info->patchInfo()->bootImages();
 
     archive_entry *entry;
 

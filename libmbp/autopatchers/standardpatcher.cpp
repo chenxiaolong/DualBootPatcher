@@ -109,9 +109,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     fixBlockUpdateLines(&lines, m_impl->info->device());
 
     // Remove device check if requested
-    std::string key = m_impl->info->patchInfo()->keyFromFilename(
-            m_impl->info->filename());
-    if (!m_impl->info->patchInfo()->deviceCheck(key)) {
+    if (!m_impl->info->patchInfo()->deviceCheck()) {
         removeDeviceChecks(&lines);
     }
 

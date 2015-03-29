@@ -212,37 +212,30 @@ public class LibMbp {
         // END: cpatchererror.h
 
         // BEGIN: cpatchinfo.h
-        static native String mbp_patchinfo_default();
-        static native String mbp_patchinfo_notmatched();
         static native CPatchInfo mbp_patchinfo_create();
         static native void mbp_patchinfo_destroy(CPatchInfo info);
         static native Pointer mbp_patchinfo_id(CPatchInfo info);
         static native void mbp_patchinfo_set_id(CPatchInfo info, String id);
         static native Pointer mbp_patchinfo_name(CPatchInfo info);
         static native void mbp_patchinfo_set_name(CPatchInfo info, String name);
-        static native Pointer mbp_patchinfo_key_from_filename(CPatchInfo info, String fileName);
         static native Pointer mbp_patchinfo_regexes(CPatchInfo info);
         static native void mbp_patchinfo_set_regexes(CPatchInfo info, StringArray regexes);
         static native Pointer mbp_patchinfo_exclude_regexes(CPatchInfo info);
         static native void mbp_patchinfo_set_exclude_regexes(CPatchInfo info, StringArray regexes);
-        static native Pointer mbp_patchinfo_cond_regexes(CPatchInfo info);
-        static native void mbp_patchinfo_set_cond_regexes(CPatchInfo info, StringArray regexes);
-        static native boolean mbp_patchinfo_has_not_matched(CPatchInfo info);
-        static native void mbp_patchinfo_set_has_not_matched(CPatchInfo info, boolean hasElem);
-        static native void mbp_patchinfo_add_autopatcher(CPatchInfo info, String key, String apName, CStringMap args);
-        static native void mbp_patchinfo_remove_autopatcher(CPatchInfo info, String key, String apName);
-        static native Pointer mbp_patchinfo_autopatchers(CPatchInfo info, String key);
-        static native CStringMap mbp_patchinfo_autopatcher_args(CPatchInfo info, String key, String apName);
-        static native boolean mbp_patchinfo_has_boot_image(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_has_boot_image(CPatchInfo info, String key, boolean hasBootImage);
-        static native boolean mbp_patchinfo_autodetect_boot_images(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo info, String key, boolean autoDetect);
-        static native Pointer mbp_patchinfo_boot_images(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_boot_images(CPatchInfo info, String key, StringArray bootImages);
-        static native Pointer mbp_patchinfo_ramdisk(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_ramdisk(CPatchInfo info, String key, String ramdisk);
-        static native boolean mbp_patchinfo_device_check(CPatchInfo info, String key);
-        static native void mbp_patchinfo_set_device_check(CPatchInfo info, String key, boolean deviceCheck);
+        static native void mbp_patchinfo_add_autopatcher(CPatchInfo info, String apName, CStringMap args);
+        static native void mbp_patchinfo_remove_autopatcher(CPatchInfo info, String apName);
+        static native Pointer mbp_patchinfo_autopatchers(CPatchInfo info);
+        static native CStringMap mbp_patchinfo_autopatcher_args(CPatchInfo info, String apName);
+        static native boolean mbp_patchinfo_has_boot_image(CPatchInfo info);
+        static native void mbp_patchinfo_set_has_boot_image(CPatchInfo info, boolean hasBootImage);
+        static native boolean mbp_patchinfo_autodetect_boot_images(CPatchInfo info);
+        static native void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo info, boolean autoDetect);
+        static native Pointer mbp_patchinfo_boot_images(CPatchInfo info);
+        static native void mbp_patchinfo_set_boot_images(CPatchInfo info, StringArray bootImages);
+        static native Pointer mbp_patchinfo_ramdisk(CPatchInfo info);
+        static native void mbp_patchinfo_set_ramdisk(CPatchInfo info, String ramdisk);
+        static native boolean mbp_patchinfo_device_check(CPatchInfo info);
+        static native void mbp_patchinfo_set_device_check(CPatchInfo info, boolean deviceCheck);
         // END: cpatchinfo.h
 
         // BEGIN: cstringmap.h
@@ -1807,14 +1800,6 @@ public class LibMbp {
             }
         };
 
-        public static String Default() {
-            return CWrapper.mbp_patchinfo_default();
-        }
-
-        public static String NotMatched() {
-            return CWrapper.mbp_patchinfo_notmatched();
-        }
-
         public String getId() {
             validate(mCPatchInfo, PatchInfo.class, "getId");
             Pointer p = CWrapper.mbp_patchinfo_id(mCPatchInfo);
@@ -1839,14 +1824,6 @@ public class LibMbp {
             ensureNotNull(name);
 
             CWrapper.mbp_patchinfo_set_name(mCPatchInfo, name);
-        }
-
-        public String keyFromFilename(String fileName) {
-            validate(mCPatchInfo, PatchInfo.class, "keyFromFilename", fileName);
-            ensureNotNull(fileName);
-
-            Pointer p = CWrapper.mbp_patchinfo_key_from_filename(mCPatchInfo, fileName);
-            return getStringAndFree(p);
         }
 
         public String[] getRegexes() {
@@ -1875,32 +1852,8 @@ public class LibMbp {
             CWrapper.mbp_patchinfo_set_exclude_regexes(mCPatchInfo, new StringArray(regexes));
         }
 
-        public String[] getCondRegexes() {
-            validate(mCPatchInfo, PatchInfo.class, "getCondRegexes");
-            Pointer p = CWrapper.mbp_patchinfo_cond_regexes(mCPatchInfo);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setCondRegexes(String[] regexes) {
-            validate(mCPatchInfo, PatchInfo.class, "setCondRegexes", (Object) regexes);
-            ensureNotNull(regexes);
-
-            CWrapper.mbp_patchinfo_set_cond_regexes(mCPatchInfo, new StringArray(regexes));
-        }
-
-        public boolean hasNotMatched() {
-            validate(mCPatchInfo, PatchInfo.class, "hasNotMatched");
-            return CWrapper.mbp_patchinfo_has_not_matched(mCPatchInfo);
-        }
-
-        public void setHasNotMatched(boolean hasElem) {
-            validate(mCPatchInfo, PatchInfo.class, "setHasNotMatched", hasElem);
-            CWrapper.mbp_patchinfo_set_has_not_matched(mCPatchInfo, hasElem);
-        }
-
-        public void addAutoPatcher(String key, String apName, StringMap args) {
-            validate(mCPatchInfo, PatchInfo.class, "addAutoPatcher", key, apName, args);
-            ensureNotNull(key);
+        public void addAutoPatcher(String apName, StringMap args) {
+            validate(mCPatchInfo, PatchInfo.class, "addAutoPatcher", apName, args);
             ensureNotNull(apName);
 
             if (args == null) {
@@ -1908,106 +1861,93 @@ public class LibMbp {
             }
 
             CStringMap cArgs = args.getPointer();
-            CWrapper.mbp_patchinfo_add_autopatcher(mCPatchInfo, key, apName, cArgs);
+            CWrapper.mbp_patchinfo_add_autopatcher(mCPatchInfo, apName, cArgs);
         }
 
-        public void removeAutoPatcher(String key, String apName) {
-            validate(mCPatchInfo, PatchInfo.class, "removeAutoPatcher", key, apName);
-            ensureNotNull(key);
+        public void removeAutoPatcher(String apName) {
+            validate(mCPatchInfo, PatchInfo.class, "removeAutoPatcher", apName);
             ensureNotNull(apName);
 
-            CWrapper.mbp_patchinfo_remove_autopatcher(mCPatchInfo, key, apName);
+            CWrapper.mbp_patchinfo_remove_autopatcher(mCPatchInfo, apName);
         }
 
-        public String[] getAutoPatchers(String key) {
-            validate(mCPatchInfo, PatchInfo.class, "getAutoPatchers", key);
-            ensureNotNull(key);
+        public String[] getAutoPatchers() {
+            validate(mCPatchInfo, PatchInfo.class, "getAutoPatchers");
 
-            Pointer p = CWrapper.mbp_patchinfo_autopatchers(mCPatchInfo, key);
+            Pointer p = CWrapper.mbp_patchinfo_autopatchers(mCPatchInfo);
             return getStringArrayAndFree(p);
         }
 
-        public StringMap getAutoPatcherArgs(String key, String apName) {
-            validate(mCPatchInfo, PatchInfo.class, "getAutoPatcherArgs", key, apName);
-            ensureNotNull(key);
+        public StringMap getAutoPatcherArgs(String apName) {
+            validate(mCPatchInfo, PatchInfo.class, "getAutoPatcherArgs", apName);
             ensureNotNull(apName);
 
-            CStringMap args = CWrapper.mbp_patchinfo_autopatcher_args(mCPatchInfo, key, apName);
+            CStringMap args = CWrapper.mbp_patchinfo_autopatcher_args(mCPatchInfo, apName);
             return new StringMap(args);
         }
 
-        public boolean hasBootImage(String key) {
-            validate(mCPatchInfo, PatchInfo.class, "hasBootImage", key);
-            ensureNotNull(key);
+        public boolean hasBootImage() {
+            validate(mCPatchInfo, PatchInfo.class, "hasBootImage");
 
-            return CWrapper.mbp_patchinfo_has_boot_image(mCPatchInfo, key);
+            return CWrapper.mbp_patchinfo_has_boot_image(mCPatchInfo);
         }
 
-        public void setHasBootImage(String key, boolean hasBootImage) {
-            validate(mCPatchInfo, PatchInfo.class, "setHasBootImage", key, hasBootImage);
-            ensureNotNull(key);
+        public void setHasBootImage(boolean hasBootImage) {
+            validate(mCPatchInfo, PatchInfo.class, "setHasBootImage", hasBootImage);
 
-            CWrapper.mbp_patchinfo_set_has_boot_image(mCPatchInfo, key, hasBootImage);
+            CWrapper.mbp_patchinfo_set_has_boot_image(mCPatchInfo, hasBootImage);
         }
 
-        public boolean autoDetectBootImages(String key) {
-            validate(mCPatchInfo, PatchInfo.class, "autodetectBootImages", key);
-            ensureNotNull(key);
+        public boolean autoDetectBootImages() {
+            validate(mCPatchInfo, PatchInfo.class, "autodetectBootImages");
 
-            return CWrapper.mbp_patchinfo_autodetect_boot_images(mCPatchInfo, key);
+            return CWrapper.mbp_patchinfo_autodetect_boot_images(mCPatchInfo);
         }
 
-        public void setAutoDetectBootImages(String key, boolean autoDetect) {
-            validate(mCPatchInfo, PatchInfo.class, "setAutoDetectBootImages", key, autoDetect);
-            ensureNotNull(key);
+        public void setAutoDetectBootImages(boolean autoDetect) {
+            validate(mCPatchInfo, PatchInfo.class, "setAutoDetectBootImages", autoDetect);
 
-            CWrapper.mbp_patchinfo_set_autodetect_boot_images(mCPatchInfo, key, autoDetect);
+            CWrapper.mbp_patchinfo_set_autodetect_boot_images(mCPatchInfo, autoDetect);
         }
 
-        public String[] getBootImages(String key) {
-            validate(mCPatchInfo, PatchInfo.class, "getBootImages", key);
-            ensureNotNull(key);
+        public String[] getBootImages() {
+            validate(mCPatchInfo, PatchInfo.class, "getBootImages");
 
-            Pointer p = CWrapper.mbp_patchinfo_boot_images(mCPatchInfo, key);
+            Pointer p = CWrapper.mbp_patchinfo_boot_images(mCPatchInfo);
             return getStringArrayAndFree(p);
         }
 
-        public void setBootImages(String key, String[] bootImages) {
-            validate(mCPatchInfo, PatchInfo.class, "setBootImages", key, bootImages);
-            ensureNotNull(key);
+        public void setBootImages(String[] bootImages) {
+            validate(mCPatchInfo, PatchInfo.class, "setBootImages", bootImages);
             ensureNotNull(bootImages);
 
-            CWrapper.mbp_patchinfo_set_boot_images(mCPatchInfo, key, new StringArray(bootImages));
+            CWrapper.mbp_patchinfo_set_boot_images(mCPatchInfo, new StringArray(bootImages));
         }
 
-        public String getRamdisk(String key) {
-            validate(mCPatchInfo, PatchInfo.class, "getRamdisk", key);
-            ensureNotNull(key);
+        public String getRamdisk() {
+            validate(mCPatchInfo, PatchInfo.class, "getRamdisk");
 
-            Pointer p = CWrapper.mbp_patchinfo_ramdisk(mCPatchInfo, key);
+            Pointer p = CWrapper.mbp_patchinfo_ramdisk(mCPatchInfo);
             return getStringAndFree(p);
         }
 
-        public void setRamdisk(String key, String ramdisk) {
-            validate(mCPatchInfo, PatchInfo.class, "setRamdisk", key, ramdisk);
-            ensureNotNull(key);
+        public void setRamdisk(String ramdisk) {
+            validate(mCPatchInfo, PatchInfo.class, "setRamdisk", ramdisk);
             ensureNotNull(ramdisk);
 
-            CWrapper.mbp_patchinfo_set_ramdisk(mCPatchInfo, key, ramdisk);
+            CWrapper.mbp_patchinfo_set_ramdisk(mCPatchInfo, ramdisk);
         }
 
-        public boolean deviceCheck(String key) {
-            validate(mCPatchInfo, PatchInfo.class, "deviceCheck", key);
-            ensureNotNull(key);
+        public boolean deviceCheck() {
+            validate(mCPatchInfo, PatchInfo.class, "deviceCheck");
 
-            return CWrapper.mbp_patchinfo_device_check(mCPatchInfo, key);
+            return CWrapper.mbp_patchinfo_device_check(mCPatchInfo);
         }
 
-        public void setDeviceCheck(String key, boolean deviceCheck) {
-            validate(mCPatchInfo, PatchInfo.class, "setDeviceCheck", key, deviceCheck);
-            ensureNotNull(key);
+        public void setDeviceCheck(boolean deviceCheck) {
+            validate(mCPatchInfo, PatchInfo.class, "setDeviceCheck", deviceCheck);
 
-            CWrapper.mbp_patchinfo_set_device_check(mCPatchInfo, key, deviceCheck);
+            CWrapper.mbp_patchinfo_set_device_check(mCPatchInfo, deviceCheck);
         }
     }
 

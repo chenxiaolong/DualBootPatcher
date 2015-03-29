@@ -46,21 +46,6 @@
 
 extern "C" {
 
-// Static constants
-
-/*! \brief Key for getting the default values */
-const char * mbp_patchinfo_default(void)
-{
-    return mbp::PatchInfo::Default.c_str();
-}
-
-/*! \brief Key for getting the `<not-matched>` values */
-const char *mbp_patchinfo_notmatched(void)
-{
-    return mbp::PatchInfo::NotMatched.c_str();
-}
-
-
 /*!
  * \brief Create a new PatchInfo object.
  *
@@ -149,27 +134,6 @@ void mbp_patchinfo_set_name(CPatchInfo *info, const char *name)
 }
 
 /*!
- * \brief Get the parameter key for a filename
- *
- * \note The output data is dynamically allocated. It should be `free()`'d
- *       when it is no longer needed.
- *
- * \param info CPatchInfo object
- * \param fileName Filename
- *
- * \return Conditional regex OR mbp_patchinfo_notmatched() OR
- *         mbp_patchinfo_default()
- *
- * \sa PatchInfo::keyFromFilename()
- */
-char * mbp_patchinfo_key_from_filename(const CPatchInfo *info,
-                                       const char *fileName)
-{
-    CCAST(info);
-    return string_to_cstring(pi->keyFromFilename(fileName));
-}
-
-/*!
  * \brief List of filename matching regexes
  *
  * \note The returned array should be freed with `mbp_free_array()` when it
@@ -235,100 +199,36 @@ void mbp_patchinfo_set_exclude_regexes(CPatchInfo *info,
 }
 
 /*!
- * \brief List of conditional regexes for parameters
- *
- * \note The returned array should be freed with `mbp_free_array()` when it
- *       is no longer needed.
- *
- * \param info CPatchInfo object
- *
- * \return A NULL-terminated array containing the conditional regexes
- *
- * \sa PatchInfo::condRegexes()
- */
-char ** mbp_patchinfo_cond_regexes(const CPatchInfo *info)
-{
-    CCAST(info);
-    return vector_to_cstring_array(pi->condRegexes());
-}
-
-/*!
- * \brief Set the list of conditional regexes
- *
- * \param info CPatchInfo object
- * \param regexes NULL-terminated list of conditional regexes
- *
- * \sa PatchInfo::setCondRegexes()
- */
-void mbp_patchinfo_set_cond_regexes(CPatchInfo *info, const char **regexes)
-{
-    CAST(info);
-    pi->setCondRegexes(cstring_array_to_vector(regexes));
-}
-
-/*!
- * \brief Check if the PatchInfo has a <not-matched> element
- *
- * \param info CPatchInfo object
- *
- * \return Whether PatchInfo has a <not-matched> element
- *
- * \sa PatchInfo::hasNotMatched()
- */
-bool mbp_patchinfo_has_not_matched(const CPatchInfo *info)
-{
-    CCAST(info);
-    return pi->hasNotMatched();
-}
-
-/*!
- * \brief Set whether the PatchInfo has a <not-matched> element
- *
- * \param info CPatchInfo object
- * \param hasElem Has not matched element
- *
- * \sa PatchInfo::setHasNotMatched()
- */
-void mbp_patchinfo_set_has_not_matched(CPatchInfo *info, bool hasElem)
-{
-    CAST(info);
-    pi->setHasNotMatched(hasElem);
-}
-
-/*!
  * \brief Add AutoPatcher to PatchInfo
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param apName AutoPatcher name
  * \param args AutoPatcher arguments
  *
  * \sa PatchInfo::addAutoPatcher()
  */
-void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *key,
-                                   const char *apName, CStringMap *args)
+void mbp_patchinfo_add_autopatcher(CPatchInfo *info, const char *apName,
+                                   CStringMap *args)
 {
     CAST(info);
     mbp::PatchInfo::AutoPatcherArgs *apArgs =
             reinterpret_cast<mbp::PatchInfo::AutoPatcherArgs *>(args);
 
-    pi->addAutoPatcher(key, apName, *apArgs);
+    pi->addAutoPatcher(apName, *apArgs);
 }
 
 /*!
  * \brief Remove AutoPatcher from PatchInfo
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param apName AutoPatcher name
  *
  * \sa PatchInfo::removeAutoPatcher()
  */
-void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
-                                      const char *apName)
+void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *apName)
 {
     CAST(info);
-    pi->removeAutoPatcher(key, apName);
+    pi->removeAutoPatcher(apName);
 }
 
 /*!
@@ -338,23 +238,21 @@ void mbp_patchinfo_remove_autopatcher(CPatchInfo *info, const char *key,
  *       is no longer needed.
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  *
  * \return NULL-terminated list of AutoPatcher names
  *
  * \sa PatchInfo::autoPatchers()
  */
-char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key)
+char ** mbp_patchinfo_autopatchers(const CPatchInfo *info)
 {
     CCAST(info);
-    return vector_to_cstring_array(pi->autoPatchers(key));
+    return vector_to_cstring_array(pi->autoPatchers());
 }
 
 /*!
  * \brief Get AutoPatcher arguments
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param apName AutoPatcher name
  *
  * \return Arguments
@@ -362,12 +260,11 @@ char ** mbp_patchinfo_autopatchers(const CPatchInfo *info, const char *key)
  * \sa PatchInfo::autoPatcherArgs()
  */
 CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
-                                            const char *key,
                                             const char *apName)
 {
     CCAST(info);
     mbp::PatchInfo::AutoPatcherArgs *args =
-            new mbp::PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(key, apName));
+            new mbp::PatchInfo::AutoPatcherArgs(pi->autoPatcherArgs(apName));
     return reinterpret_cast<CStringMap *>(args);
 }
 
@@ -375,65 +272,59 @@ CStringMap * mbp_patchinfo_autopatcher_args(const CPatchInfo *info,
  * \brief Whether the patched file has a boot image
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  *
  * \return Whether the patched file has a boot image
  *
  * \sa PatchInfo::hasBootImage()
  */
-bool mbp_patchinfo_has_boot_image(const CPatchInfo *info, const char *key)
+bool mbp_patchinfo_has_boot_image(const CPatchInfo *info)
 {
     CCAST(info);
-    return pi->hasBootImage(key);
+    return pi->hasBootImage();
 }
 
 /*!
  * \brief Set whether the patched file has a boot image
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param hasBootImage Has boot image
  *
  * \sa PatchInfo::setHasBootImage()
  */
-void mbp_patchinfo_set_has_boot_image(CPatchInfo *info,
-                                      const char *key, bool hasBootImage)
+void mbp_patchinfo_set_has_boot_image(CPatchInfo *info, bool hasBootImage)
 {
     CAST(info);
-    pi->setHasBootImage(key, hasBootImage);
+    pi->setHasBootImage(hasBootImage);
 }
 
 /*!
  * \brief Whether boot images should be autodetected
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  *
  * \return Whether boot images should be autodetected
  *
  * \sa PatchInfo::autodetectBootImages()
  */
-bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info,
-                                          const char *key)
+bool mbp_patchinfo_autodetect_boot_images(const CPatchInfo *info)
 {
     CCAST(info);
-    return pi->autodetectBootImages(key);
+    return pi->autodetectBootImages();
 }
 
 /*!
  * \brief Set whether boot images should be autodetected
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param autoDetect Autodetect boot images
  *
  * \sa PatchInfo::setAutoDetectBootImages()
  */
 void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
-                                              const char *key, bool autoDetect)
+                                              bool autoDetect)
 {
     CAST(info);
-    pi->setAutoDetectBootImages(key, autoDetect);
+    pi->setAutoDetectBootImages(autoDetect);
 }
 
 /*!
@@ -443,17 +334,16 @@ void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo *info,
  *       is no longer needed.
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  *
  * \return A NULL-terminated array containing the manually specified boot
  *         images
  *
  * \sa PatchInfo::bootImages()
  */
-char ** mbp_patchinfo_boot_images(const CPatchInfo *info, const char *key)
+char ** mbp_patchinfo_boot_images(const CPatchInfo *info)
 {
     CCAST(info);
-    return vector_to_cstring_array(pi->bootImages(key));
+    return vector_to_cstring_array(pi->bootImages());
 }
 
 /*!
@@ -464,11 +354,10 @@ char ** mbp_patchinfo_boot_images(const CPatchInfo *info, const char *key)
  *
  * \sa PatchInfo::setBootImages()
  */
-void mbp_patchinfo_set_boot_images(CPatchInfo *info,
-                                   const char *key, const char **bootImages)
+void mbp_patchinfo_set_boot_images(CPatchInfo *info, const char **bootImages)
 {
     CAST(info);
-    pi->setBootImages(key, cstring_array_to_vector(bootImages));
+    pi->setBootImages(cstring_array_to_vector(bootImages));
 }
 
 /*!
@@ -478,64 +367,58 @@ void mbp_patchinfo_set_boot_images(CPatchInfo *info,
  *       when it is no longer needed.
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  *
  * \return Which ramdisk patcher to use
  *
  * \sa PatchInfo::ramdisk()
  */
-char * mbp_patchinfo_ramdisk(const CPatchInfo *info, const char *key)
+char * mbp_patchinfo_ramdisk(const CPatchInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(pi->ramdisk(key));
+    return string_to_cstring(pi->ramdisk());
 }
 
 /*!
  * \brief Set which ramdisk patcher to use
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param ramdisk Which ramdisk patcher to use
  *
  * \sa PatchInfo::setRamdisk()
  */
-void mbp_patchinfo_set_ramdisk(CPatchInfo *info,
-                               const char *key, const char *ramdisk)
+void mbp_patchinfo_set_ramdisk(CPatchInfo *info, const char *ramdisk)
 {
     CAST(info);
-    pi->setRamdisk(key, ramdisk);
+    pi->setRamdisk(ramdisk);
 }
 
 /*!
  * \brief Whether device model checks should be kept
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  *
  * \return Whether device model checks should be kept
  *
  * \sa PatchInfo::deviceCheck()
  */
-bool mbp_patchinfo_device_check(const CPatchInfo *info, const char *key)
+bool mbp_patchinfo_device_check(const CPatchInfo *info)
 {
     CCAST(info);
-    return pi->deviceCheck(key);
+    return pi->deviceCheck();
 }
 
 /*!
  * \brief Set whether device model checks should be kept
  *
  * \param info CPatchInfo object
- * \param key Parameter key
  * \param deviceCheck Keep device model checks
  *
  * \sa PatchInfo::setDeviceCheck()
  */
-void mbp_patchinfo_set_device_check(CPatchInfo *info,
-                                    const char *key, bool deviceCheck)
+void mbp_patchinfo_set_device_check(CPatchInfo *info, bool deviceCheck)
 {
     CAST(info);
-    pi->setDeviceCheck(key, deviceCheck);
+    pi->setDeviceCheck(deviceCheck);
 }
 
 }

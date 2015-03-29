@@ -521,25 +521,21 @@ void MainWindow::startPatching()
         if (d->presetSel->currentIndex() == 0) {
             d->patchInfo = new mbp::PatchInfo(); // TODO: Memory leak here!
 
-            d->patchInfo->addAutoPatcher(mbp::PatchInfo::Default,
-                                         "StandardPatcher",
+            d->patchInfo->addAutoPatcher("StandardPatcher",
                                          mbp::PatchInfo::AutoPatcherArgs());
-            d->patchInfo->setHasBootImage(mbp::PatchInfo::Default,
-                                          d->hasBootImageCb->isChecked());
-            if (d->patchInfo->hasBootImage(mbp::PatchInfo::Default)) {
-                d->patchInfo->setRamdisk(mbp::PatchInfo::Default,
-                                         d->device->id() + "/default");
+            d->patchInfo->setHasBootImage(d->hasBootImageCb->isChecked());
+            if (d->patchInfo->hasBootImage()) {
+                d->patchInfo->setRamdisk(d->device->id() + "/default");
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
                     const std::string textStdString = text.toStdString();
                     std::vector<std::string> bootImages;
                     boost::split(bootImages, textStdString, boost::is_any_of(","));
-                    d->patchInfo->setBootImages(mbp::PatchInfo::Default, bootImages);
+                    d->patchInfo->setBootImages(bootImages);
                 }
             }
 
-            d->patchInfo->setDeviceCheck(mbp::PatchInfo::Default,
-                                         !d->deviceCheckCb->isChecked());
+            d->patchInfo->setDeviceCheck(!d->deviceCheckCb->isChecked());
         } else {
             d->patchInfo = d->patchInfos[d->presetSel->currentIndex() - 1];
         }

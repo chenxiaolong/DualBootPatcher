@@ -69,27 +69,4 @@
          The assert statements are effectively disabled by prepending
          '"true" == "true" ||' to the beginning of the boolean expression. -->
     <device-check>true</device-check>
-
-    <!-- If the parameters above need to be changed based on the filename (say,
-         a certain version requires some tweaks, they can be overridden here.
-         Every parameter besides <name>, <regex>, and <regexes> can be
-         overridden.
-
-         NOTE: List parameters, like <bootimages> and <autopatchres> are
-         appended to the global parameter. If you don't want that to happen,
-         move the global parameter to <not-matched> -->
-    <matches regex="Blahblah-2.0\.zip">
-        <bootimages>
-            <bootimage>onlyinversion2.0.bin</bootimage>
-        </bootimages>
-    </matches>
-
-    <!-- These overrides are used if none of the above <matches> conditions are
-         matched. Everything that can be overriden by <matches> can also be
-         overridden by <not-matched> -->
-    <not-matched>
-        <bootimages>
-            <bootimage>onlyinotherversions.bin</bootimage>
-        </bootimages>
-    </not-matched>
 </patchinfo>

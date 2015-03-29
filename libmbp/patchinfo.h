@@ -35,9 +35,6 @@ namespace mbp
 class MBP_EXPORT PatchInfo
 {
 public:
-    static const std::string Default;
-    static const std::string NotMatched;
-
     explicit PatchInfo();
     ~PatchInfo();
 
@@ -49,8 +46,6 @@ public:
     std::string name() const;
     void setName(std::string name);
 
-    std::string keyFromFilename(const std::string &fileName) const;
-
     std::vector<std::string> regexes() const;
     void setRegexes(std::vector<std::string> regexes);
 
@@ -60,9 +55,6 @@ public:
     std::vector<std::string> condRegexes() const;
     void setCondRegexes(std::vector<std::string> regexes);
 
-    bool hasNotMatched() const;
-    void setHasNotMatched(bool hasElem);
-
     // ** For the variables below, use hashmap[Default] to get the default
     //    values and hashmap[regex] with the index in condRegexes to get
     //    the overridden values.
@@ -70,28 +62,25 @@ public:
     // NOTE: If the variable is a list, the "overridden" values are used
     //       in addition to the default values
 
-    void addAutoPatcher(const std::string &key, const std::string &apName,
-                        AutoPatcherArgs args);
-    void removeAutoPatcher(const std::string &key, const std::string &apName);
-    std::vector<std::string> autoPatchers(const std::string &key) const;
-    AutoPatcherArgs autoPatcherArgs(const std::string &key,
-                                    const std::string &apName) const;
+    void addAutoPatcher(const std::string &apName, AutoPatcherArgs args);
+    void removeAutoPatcher(const std::string &apName);
+    std::vector<std::string> autoPatchers() const;
+    AutoPatcherArgs autoPatcherArgs(const std::string &apName) const;
 
-    bool hasBootImage(const std::string &key) const;
-    void setHasBootImage(const std::string &key, bool hasBootImage);
+    bool hasBootImage() const;
+    void setHasBootImage(bool hasBootImage);
 
-    bool autodetectBootImages(const std::string &key) const;
-    void setAutoDetectBootImages(const std::string &key, bool autoDetect);
+    bool autodetectBootImages() const;
+    void setAutoDetectBootImages(bool autoDetect);
 
-    std::vector<std::string> bootImages(const std::string &key) const;
-    void setBootImages(const std::string &key,
-                       std::vector<std::string> bootImages);
+    std::vector<std::string> bootImages() const;
+    void setBootImages(std::vector<std::string> bootImages);
 
-    std::string ramdisk(const std::string &key) const;
-    void setRamdisk(const std::string &key, std::string ramdisk);
+    std::string ramdisk() const;
+    void setRamdisk(std::string ramdisk);
 
-    bool deviceCheck(const std::string &key) const;
-    void setDeviceCheck(const std::string &key, bool deviceCheck);
+    bool deviceCheck() const;
+    void setDeviceCheck(bool deviceCheck);
 
 private:
     class Impl;

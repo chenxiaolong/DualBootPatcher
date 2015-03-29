@@ -315,24 +315,21 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             if (mPCS.mPatchInfo == null) {
                 mPCS.mPatchInfo = new PatchInfo();
 
-                mPCS.mPatchInfo.addAutoPatcher(PatchInfo.Default(), "StandardPatcher", null);
+                mPCS.mPatchInfo.addAutoPatcher("StandardPatcher", null);
 
-                mPCS.mPatchInfo.setHasBootImage(PatchInfo.Default(),
-                        mMainOptsCW.isHasBootImageEnabled());
+                mPCS.mPatchInfo.setHasBootImage(mMainOptsCW.isHasBootImageEnabled());
 
-                if (mPCS.mPatchInfo.hasBootImage(PatchInfo.Default())) {
-                    mPCS.mPatchInfo.setRamdisk(PatchInfo.Default(),
-                            mPCS.mDevice.getId() + "/default");
+                if (mPCS.mPatchInfo.hasBootImage()) {
+                    mPCS.mPatchInfo.setRamdisk(mPCS.mDevice.getId() + "/default");
 
                     String bootImagesText = mMainOptsCW.getBootImage();
                     if (bootImagesText != null) {
                         String[] bootImages = bootImagesText.split(",");
-                        mPCS.mPatchInfo.setBootImages(PatchInfo.Default(), bootImages);
+                        mPCS.mPatchInfo.setBootImages(bootImages);
                     }
                 }
 
-                mPCS.mPatchInfo.setDeviceCheck(PatchInfo.Default(),
-                        mMainOptsCW.isDeviceCheckEnabled());
+                mPCS.mPatchInfo.setDeviceCheck(mMainOptsCW.isDeviceCheckEnabled());
             }
         }
 

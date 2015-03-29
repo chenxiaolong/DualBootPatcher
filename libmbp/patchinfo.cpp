@@ -29,8 +29,23 @@ namespace mbp
 {
 
 /*! \cond INTERNAL */
-class SubPatchInfo {
+class PatchInfo::Impl
+{
 public:
+    Impl();
+
+    std::string id;
+
+    // The name of the ROM
+    std::string name;
+
+    // Regular expressions for matching the filename
+    std::vector<std::string> regexes;
+
+    // If the regexes are over-encompassing, these regexes are used to
+    // exclude the filename
+    std::vector<std::string> excludeRegexes;
+
     typedef std::vector<std::pair<std::string, PatchInfo::AutoPatcherArgs>> AutoPatcherItems;
 
     // List of autopatchers to use
@@ -54,61 +69,16 @@ public:
 /*! \endcond */
 
 
-/*! \cond INTERNAL */
-class PatchInfo::Impl
-{
-public:
-    Impl();
-
-    std::string id;
-
-    // The name of the ROM
-    std::string name;
-
-    // Regular expressions for matching the filename
-    std::vector<std::string> regexes;
-
-    // If the regexes are over-encompassing, these regexes are used to
-    // exclude the filename
-    std::vector<std::string> excludeRegexes;
-
-    // List of regexes used for conditionals
-    std::vector<std::string> condRegexes;
-
-    // Whether the patchinfo has a <not-matched> elements (acts as the
-    // "else" statement for the conditionals)
-    bool hasNotMatchedElement;
-
-    // ** For the variables below, use hashmap[Default] to get the default
-    //    values and hashmap[regex] with the index in condRegexes to get
-    //    the overridden values.
-    //
-    // NOTE: If the variable is a list, the "overridden" values are used
-    //       in addition to the default values
-
-    std::unordered_map<std::string, SubPatchInfo> subPatchInfos;
-};
-/*! \endcond */
-
-
-/*! \brief Key for getting the default values */
-const std::string PatchInfo::Default = "default";
-/*! \brief Key for getting the `<not-matched>` values */
-const std::string PatchInfo::NotMatched = "not-matched";
-
 PatchInfo::Impl::Impl()
 {
-    // No <not-matched> element
-    hasNotMatchedElement = false;
-
     // Default to having a boot image
-    subPatchInfos[PatchInfo::Default].hasBootImage = true;
+    hasBootImage = true;
 
     // Default to autodetecting boot images in the zip file
-    subPatchInfos[PatchInfo::Default].autoDetectBootImages = true;
+    autoDetectBootImages = true;
 
     // Don't remove device checks
-    subPatchInfos[PatchInfo::Default].deviceCheck = true;
+    deviceCheck = true;
 }
 
 /*!
@@ -122,14 +92,6 @@ PatchInfo::Impl::Impl()
  *
  * - Regexes for matching a filename
  * - Exclusion regexes (to avoid making the regexes too complicated)
- *
- * The following parameter keys are used for configuring the patching process
- * for a particular group of files:
- *
- * - Default: Applies to all matched files
- * - Conditional regexes: Applies to the subset of files that match these
- *   conditional regexes
- * - Not matched: Applies to files that don't match the conditional regexes
  *
  * The following parameters are used to configure that patcher:
  *
@@ -199,39 +161,6 @@ void PatchInfo::setName(std::string name)
 }
 
 /*!
- * \brief Get the parameter key for a filename
- *
- * This returns the corresponding conditional regex if one matches the filename.
- * Otherwise, it will return PatchInfo::NotMatched if the PatchInfo has a
- * <not-matched> element. If it doesn't have a <not-matched> element,
- * PatchInfo::Default is returned.
- *
- * \param fileName Filename
- *
- * \return Conditional regex OR PatchInfo::NotMatched OR PatchInfo::Default
- */
-std::string PatchInfo::keyFromFilename(const std::string &fileName) const
-{
-    std::string noPath = boost::filesystem::path(fileName).filename().string();
-
-    // The conditional regex is the key if <matches> elements are used
-    // in the patchinfo xml files
-    for (auto &regex : m_impl->condRegexes) {
-        if (std::regex_search(noPath, std::regex(regex))) {
-            return regex;
-        }
-    }
-
-    // If none of those are matched, try <not-matched>
-    if (m_impl->hasNotMatchedElement) {
-        return NotMatched;
-    }
-
-    // Otherwise, use the defaults
-    return Default;
-}
-
-/*!
  * \brief List of filename matching regexes
  *
  * \return Regexes
@@ -271,46 +200,6 @@ void PatchInfo::setExcludeRegexes(std::vector<std::string> regexes)
     m_impl->excludeRegexes = std::move(regexes);
 }
 
-/*!
- * \brief List of conditional regexes for parameters
- *
- * \return Conditional regexes
- */
-std::vector<std::string> PatchInfo::condRegexes() const
-{
-    return m_impl->condRegexes;
-}
-
-/*!
- * \brief Set the list of conditional regexes
- *
- * \param regexes Conditional regexes
- */
-void PatchInfo::setCondRegexes(std::vector<std::string> regexes)
-{
-    m_impl->condRegexes = std::move(regexes);
-}
-
-/*!
- * \brief Check if the PatchInfo has a <not-matched> element
- *
- * \return Whether the PatchInfo has a <not-matched> element
- */
-bool PatchInfo::hasNotMatched() const
-{
-    return m_impl->hasNotMatchedElement;
-}
-
-/*!
- * \brief Set whether the PatchInfo has a <not-matched> element
- *
- * \param hasElem Has not matched element
- */
-void PatchInfo::setHasNotMatched(bool hasElem)
-{
-    m_impl->hasNotMatchedElement = hasElem;
-}
-
 /*! \cond INTERNAL */
 struct ByKey
 {
@@ -328,64 +217,42 @@ private:
 /*!
  * \brief Add AutoPatcher to PatchInfo
  *
- * \param key Parameter key
  * \param apName AutoPatcher name
  * \param args AutoPatcher arguments
  */
-void PatchInfo::addAutoPatcher(const std::string &key,
-                               const std::string &apName,
+void PatchInfo::addAutoPatcher(const std::string &apName,
                                PatchInfo::AutoPatcherArgs args)
 {
-    m_impl->subPatchInfos[key].autoPatchers.push_back(
+    m_impl->autoPatchers.push_back(
             std::make_pair(apName, std::move(args)));
 }
 
 /*!
  * \brief Remove AutoPatcher from PatchInfo
  *
- * \param key Parameter key
  * \param apName AutoPatcher name
  */
-void PatchInfo::removeAutoPatcher(const std::string &key,
-                                  const std::string &apName)
+void PatchInfo::removeAutoPatcher(const std::string &apName)
 {
-    if (m_impl->subPatchInfos.find(key) == m_impl->subPatchInfos.end()) {
-        return;
-    }
-
-    auto &autoPatchers = m_impl->subPatchInfos[key].autoPatchers;
-    auto it = std::find_if(autoPatchers.begin(), autoPatchers.end(), ByKey(apName));
-    if (it != autoPatchers.end()) {
-        autoPatchers.erase(it);
+    auto it = std::find_if(m_impl->autoPatchers.begin(),
+                           m_impl->autoPatchers.end(),
+                           ByKey(apName));
+    if (it != m_impl->autoPatchers.end()) {
+        m_impl->autoPatchers.erase(it);
     }
 }
 
 /*!
  * \brief Get list of AutoPatcher names
  *
- * \param key Parameter key
- *
  * \return List of AutoPatcher names
  */
-std::vector<std::string> PatchInfo::autoPatchers(const std::string &key) const
+std::vector<std::string> PatchInfo::autoPatchers() const
 {
-    bool hasKey = m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end();
-    bool hasDefault = m_impl->subPatchInfos.find(Default) != m_impl->subPatchInfos.end();
-
     std::vector<std::string> items;
 
-    if (hasDefault) {
-        auto &aps = m_impl->subPatchInfos[Default].autoPatchers;
-        for (auto const &ap : aps) {
-            items.push_back(ap.first);
-        }
-    }
-
-    if (key != Default && hasKey) {
-        auto &aps = m_impl->subPatchInfos[key].autoPatchers;
-        for (auto const &ap : aps) {
-            items.push_back(ap.first);
-        }
+    for (auto const &ap : m_impl->autoPatchers) {
+        items.push_back(ap.first);
     }
 
     return items;
@@ -394,21 +261,17 @@ std::vector<std::string> PatchInfo::autoPatchers(const std::string &key) const
 /*!
  * \brief Get AutoPatcher arguments
  *
- * \param key Parameter key
  * \param apName AutoPatcher name
  *
  * \return Arguments (empty if AutoPatcher does not exist or if there are no
  *         arguments)
  */
-PatchInfo::AutoPatcherArgs PatchInfo::autoPatcherArgs(const std::string &key,
-                                                      const std::string &apName) const
+PatchInfo::AutoPatcherArgs PatchInfo::autoPatcherArgs(const std::string &apName) const
 {
-    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
-        auto &items = m_impl->subPatchInfos[key].autoPatchers;
-        auto it = std::find_if(items.begin(), items.end(), ByKey(apName));
-        if (it != items.end()) {
-            return it->second;
-        }
+    auto &items = m_impl->autoPatchers;
+    auto it = std::find_if(items.begin(), items.end(), ByKey(apName));
+    if (it != items.end()) {
+        return it->second;
     }
 
     return AutoPatcherArgs();
@@ -417,148 +280,101 @@ PatchInfo::AutoPatcherArgs PatchInfo::autoPatcherArgs(const std::string &key,
 /*!
  * \brief Whether the patched file has a boot image
  *
- * \param key Parameter key
- *
  * \return Whether the patched file has a boot image
  */
-bool PatchInfo::hasBootImage(const std::string &key) const
+bool PatchInfo::hasBootImage() const
 {
-    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
-        return m_impl->subPatchInfos[key].hasBootImage;
-    }
-
-    return bool();
+    return m_impl->hasBootImage;
 }
 
 /*!
  * \brief Set whether the patched file has a boot image
  *
- * \param key Parameter key
  * \param hasBootImage Has boot image
  */
-void PatchInfo::setHasBootImage(const std::string &key, bool hasBootImage)
+void PatchInfo::setHasBootImage(bool hasBootImage)
 {
-    m_impl->subPatchInfos[key].hasBootImage = hasBootImage;
+    m_impl->hasBootImage = hasBootImage;
 }
 
 /*!
  * \brief Whether boot images should be autodetected
  *
- * \param key Parameter key
- *
  * \return Whether boot images should be autodetected
  */
-bool PatchInfo::autodetectBootImages(const std::string &key) const
+bool PatchInfo::autodetectBootImages() const
 {
-    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
-        return m_impl->subPatchInfos[key].autoDetectBootImages;
-    }
-
-    return bool();
+    return m_impl->autoDetectBootImages;
 }
 
 /*!
  * \brief Set whether boot images should be autodetected
  *
- * \param key Parameter key
  * \param autoDetect Autodetect boot images
  */
-void PatchInfo::setAutoDetectBootImages(const std::string &key, bool autoDetect)
+void PatchInfo::setAutoDetectBootImages(bool autoDetect)
 {
-    m_impl->subPatchInfos[key].autoDetectBootImages = autoDetect;
+    m_impl->autoDetectBootImages = autoDetect;
 }
 
 /*!
  * \brief List of manually specified boot images
  *
- * \param key Parameter key
- *
  * \return List of manually specified boot images
  */
-std::vector<std::string> PatchInfo::bootImages(const std::string &key) const
+std::vector<std::string> PatchInfo::bootImages() const
 {
-    bool hasKey = m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end();
-    bool hasDefault = m_impl->subPatchInfos.find(Default) != m_impl->subPatchInfos.end();
-
-    std::vector<std::string> items;
-
-    if (hasDefault) {
-        auto &imgs = m_impl->subPatchInfos[Default].bootImages;
-        items.insert(items.end(), imgs.begin(), imgs.end());
-    }
-
-    if (key != Default && hasKey) {
-        auto &imgs = m_impl->subPatchInfos[key].bootImages;
-        items.insert(items.end(), imgs.begin(), imgs.end());
-    }
-
-    return items;
+    return m_impl->bootImages;
 }
 
 /*!
  * \brief Set list of manually specified boot images
  *
- * \param key Parameter key
  * \param bootImages List of boot images
  */
-void PatchInfo::setBootImages(const std::string &key,
-                              std::vector<std::string> bootImages)
+void PatchInfo::setBootImages(std::vector<std::string> bootImages)
 {
-    m_impl->subPatchInfos[key].bootImages = std::move(bootImages);
+    m_impl->bootImages = std::move(bootImages);
 }
 
 /*!
  * \brief Which ramdisk patcher to use
  *
- * \param key Parameter key
- *
  * \return Which ramdisk patcher to use
  */
-std::string PatchInfo::ramdisk(const std::string &key) const
+std::string PatchInfo::ramdisk() const
 {
-    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
-        return m_impl->subPatchInfos[key].ramdiskPatcher;
-    }
-
-    return std::string();
+    return m_impl->ramdiskPatcher;
 }
 
 /*!
  * \brief Set which ramdisk patcher to use
  *
- * \param key Parameter key
  * \param ramdisk Which ramdisk patcher to use
  */
-void PatchInfo::setRamdisk(const std::string &key, std::string ramdisk)
+void PatchInfo::setRamdisk(std::string ramdisk)
 {
-    m_impl->subPatchInfos[key].ramdiskPatcher = std::move(ramdisk);
+    m_impl->ramdiskPatcher = std::move(ramdisk);
 }
 
 /*!
  * \brief Whether device model checks should be kept
  *
- * \param key Parameter key
- *
  * \return Whether device model checks should be kept
  */
-bool PatchInfo::deviceCheck(const std::string &key) const
+bool PatchInfo::deviceCheck() const
 {
-    if (m_impl->subPatchInfos.find(key) != m_impl->subPatchInfos.end()) {
-        return m_impl->subPatchInfos[key].deviceCheck;
-    }
-
-    return bool();
+    return m_impl->deviceCheck;
 }
 
 /*!
  * \brief Set whether device model checks should be kept
  *
- * \param key Parameter key
  * \param deviceCheck Keep device model checks
  */
-void PatchInfo::setDeviceCheck(const std::string &key, bool deviceCheck)
+void PatchInfo::setDeviceCheck(bool deviceCheck)
 {
-    m_impl->subPatchInfos[key].deviceCheck = deviceCheck;
+    m_impl->deviceCheck = deviceCheck;
 }
 
 }
