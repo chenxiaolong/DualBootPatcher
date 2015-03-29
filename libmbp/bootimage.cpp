@@ -24,13 +24,13 @@
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/uuid/sha1.hpp>
 
 #include <cppformat/format.h>
 
 #include "bootimage/header.h"
 #include "bootimage/bumppatcher.h"
 #include "bootimage/lokipatcher.h"
+#include "external/sha.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
 #include "private/portable_endian.h"
@@ -878,36 +878,34 @@ static std::string toHex(const unsigned char *data, uint32_t size) {
 
 void BootImage::Impl::updateSHA1Hash()
 {
-    boost::uuids::detail::sha1 hash;
-    hash.process_bytes(kernelImage.data(), kernelImage.size());
-    hash.process_bytes(reinterpret_cast<char *>(&header.kernel_size),
-                       sizeof(header.kernel_size));
-    hash.process_bytes(ramdiskImage.data(), ramdiskImage.size());
-    hash.process_bytes(reinterpret_cast<char *>(&header.ramdisk_size),
-                       sizeof(header.ramdisk_size));
+    SHA_CTX ctx;
+    SHA_init(&ctx);
+
+    SHA_update(&ctx, kernelImage.data(), kernelImage.size());
+    SHA_update(&ctx, reinterpret_cast<char *>(&header.kernel_size),
+               sizeof(header.kernel_size));
+
+    SHA_update(&ctx, ramdiskImage.data(), ramdiskImage.size());
+    SHA_update(&ctx, reinterpret_cast<char *>(&header.ramdisk_size),
+               sizeof(header.ramdisk_size));
     if (!secondBootloaderImage.empty()) {
-        hash.process_bytes(secondBootloaderImage.data(),
-                           secondBootloaderImage.size());
+        SHA_update(&ctx, secondBootloaderImage.data(),
+                   secondBootloaderImage.size());
     }
 
     // Bug in AOSP? AOSP's mkbootimg adds the second bootloader size to the SHA1
     // hash even if it's 0
-    hash.process_bytes(reinterpret_cast<char *>(&header.second_size),
-                       sizeof(header.second_size));
+    SHA_update(&ctx, reinterpret_cast<char *>(&header.second_size),
+               sizeof(header.second_size));
 
     if (!deviceTreeImage.empty()) {
-        hash.process_bytes(deviceTreeImage.data(), deviceTreeImage.size());
-        hash.process_bytes(reinterpret_cast<char *>(&header.dt_size),
-                           sizeof(header.dt_size));
+        SHA_update(&ctx, deviceTreeImage.data(), deviceTreeImage.size());
+        SHA_update(&ctx, reinterpret_cast<char *>(&header.dt_size),
+                   sizeof(header.dt_size));
     }
-
-    uint32_t digest[5];
-    hash.get_digest(digest);
 
     std::memset(header.id, 0, sizeof(header.id));
-    for (int i = 0; i < 5; ++i) {
-        header.id[i] = htobe32(digest[i]);
-    }
+    memcpy(header.id, SHA_final(&ctx), SHA_DIGEST_SIZE);
 
     // Debug...
     //std::string hexDigest = toHex(

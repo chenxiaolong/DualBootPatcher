@@ -54,6 +54,7 @@ set(MBP_SOURCES
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
+    external/sha.c
     ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
@@ -164,6 +165,8 @@ else()
         set_target_properties(mbp PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
+            C_STANDARD 99
+            C_STANDARD_REQUIRED 1
         )
     endif()
 
@@ -219,6 +222,7 @@ set(MBP_MINI_SOURCES
     cwrapper/private/util.cpp
     bootimage/bumppatcher.cpp
     bootimage/lokipatcher.cpp
+    external/sha.c
     ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
 )
 
