@@ -43,12 +43,16 @@ public class PatcherEventCollector extends EventCollector {
                 if (PatcherService.STATE_UPDATE_DETAILS.equals(state)) {
                     String details = bundle.getString(PatcherService.RESULT_DETAILS);
                     sendEvent(new UpdateDetailsEvent(details));
-                } else if (PatcherService.STATE_SET_PROGRESS_MAX.equals(state)) {
-                    int maxProgress = bundle.getInt(PatcherService.RESULT_MAX_PROGRESS);
-                    sendEvent(new SetMaxProgressEvent(maxProgress));
-                } else if (PatcherService.STATE_SET_PROGRESS.equals(state)) {
-                    int curProgress = bundle.getInt(PatcherService.RESULT_PROGRESS);
-                    sendEvent(new SetProgressEvent(curProgress));
+                } else if (PatcherService.STATE_UPDATE_PROGRESS.equals(state)) {
+                    long bytes = bundle.getLong(PatcherService.RESULT_BYTES);
+                    long maxBytes = bundle.getLong(PatcherService.RESULT_MAX_BYTES);
+
+                    sendEvent(new UpdateProgressEvent(bytes, maxBytes));
+                } else if (PatcherService.STATE_UPDATE_FILES.equals(state)) {
+                    long files = bundle.getLong(PatcherService.RESULT_FILES);
+                    long maxFiles = bundle.getLong(PatcherService.RESULT_MAX_FILES);
+
+                    sendEvent(new UpdateFilesEvent(files, maxFiles));
                 } else if (PatcherService.STATE_PATCHED_FILE.equals(state)) {
                     String done = mContext.getString(R.string.details_done);
                     sendEvent(new UpdateDetailsEvent(done));
@@ -90,19 +94,23 @@ public class PatcherEventCollector extends EventCollector {
         }
     }
 
-    public static class SetMaxProgressEvent extends BaseEvent {
-        int maxProgress;
+    public static class UpdateProgressEvent extends BaseEvent {
+        long bytes;
+        long maxBytes;
 
-        public SetMaxProgressEvent(int maxProgress) {
-            this.maxProgress = maxProgress;
+        public UpdateProgressEvent(long bytes, long maxBytes) {
+            this.bytes = bytes;
+            this.maxBytes = maxBytes;
         }
     }
 
-    public static class SetProgressEvent extends BaseEvent {
-        int progress;
+    public static class UpdateFilesEvent extends BaseEvent {
+        long files;
+        long maxFiles;
 
-        public SetProgressEvent(int progress) {
-            this.progress = progress;
+        public UpdateFilesEvent(long files, long maxFiles) {
+            this.files = files;
+            this.maxFiles = maxFiles;
         }
     }
 

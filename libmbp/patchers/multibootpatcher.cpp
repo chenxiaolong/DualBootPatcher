@@ -40,32 +40,6 @@
 #include "private/logging.h"
 
 
-#define RETURN_IF_CANCELLED \
-    if (cancelled) { \
-        return false; \
-    }
-
-#define RETURN_ERROR_IF_CANCELLED \
-    if (m_impl->cancelled) { \
-        m_impl->error = PatcherError::createCancelledError( \
-                ErrorCode::PatchingCancelled); \
-        return false; \
-    }
-
-#define MAX_PROGRESS_CB(x) \
-    if (maxProgressCb != nullptr) { \
-        maxProgressCb(x, userData); \
-    }
-#define PROGRESS_CB(x) \
-    if (progressCb != nullptr) { \
-        progressCb(x, userData); \
-    }
-#define DETAILS_CB(x) \
-    if (detailsCb != nullptr) { \
-        detailsCb(x, userData); \
-    }
-
-
 namespace mbp
 {
 
@@ -78,14 +52,18 @@ public:
     PatcherConfig *pc;
     const FileInfo *info;
 
-    int progress;
+    uint64_t bytes;
+    uint64_t maxBytes;
+    uint64_t files;
+    uint64_t maxFiles;
+
     volatile bool cancelled;
 
     PatcherError error;
 
     // Callbacks
-    MaxProgressUpdatedCallback maxProgressCb;
     ProgressUpdatedCallback progressCb;
+    FilesUpdatedCallback filesCb;
     DetailsUpdatedCallback detailsCb;
     void *userData;
 
@@ -107,6 +85,12 @@ public:
     void closeInputArchive();
     bool openOutputArchive();
     void closeOutputArchive();
+
+    void updateProgress(uint64_t bytes, uint64_t maxBytes);
+    void updateFiles(uint64_t files, uint64_t maxFiles);
+    void updateDetails(const std::string &msg);
+
+    static void laProgressCb(uint64_t bytes, void *userData);
 
     std::string createTable();
     std::string createInfoProp();
@@ -171,8 +155,8 @@ void MultiBootPatcher::cancelPatching()
     m_impl->cancelled = true;
 }
 
-bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
-                                 ProgressUpdatedCallback progressCb,
+bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
+                                 FilesUpdatedCallback filesCb,
                                  DetailsUpdatedCallback detailsCb,
                                  void *userData)
 {
@@ -186,15 +170,20 @@ bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
         return false;
     }
 
-    m_impl->maxProgressCb = maxProgressCb;
     m_impl->progressCb = progressCb;
+    m_impl->filesCb = filesCb;
     m_impl->detailsCb = detailsCb;
     m_impl->userData = userData;
 
+    m_impl->bytes = 0;
+    m_impl->maxBytes = 0;
+    m_impl->files = 0;
+    m_impl->maxFiles = 0;
+
     bool ret = m_impl->patchZip();
 
-    m_impl->maxProgressCb = nullptr;
     m_impl->progressCb = nullptr;
+    m_impl->filesCb = nullptr;
     m_impl->detailsCb = nullptr;
     m_impl->userData = nullptr;
 
@@ -210,7 +199,11 @@ bool MultiBootPatcher::patchFile(MaxProgressUpdatedCallback maxProgressCb,
         m_impl->closeOutputArchive();
     }
 
-    RETURN_ERROR_IF_CANCELLED
+    if (m_impl->cancelled) {
+        m_impl->error = PatcherError::createCancelledError(
+                ErrorCode::PatchingCancelled);
+        return false;
+    }
 
     return ret;
 }
@@ -230,7 +223,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     auto *rp = pc->createRamdiskPatcher(
             info->patchInfo()->ramdisk(), info, &cpio);
@@ -249,7 +242,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     pc->destroyRamdiskPatcher(rp);
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     // Add mbtool
     const std::string mbtool("mbtool");
@@ -264,7 +257,7 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     std::vector<unsigned char> newRamdisk;
     if (!cpio.createData(&newRamdisk)) {
@@ -278,52 +271,13 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
 
     *data = bi.create();
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     return true;
 }
 
-static std::string createTemporaryDir(const std::string &directory)
-{
-#ifdef __ANDROID__
-    // For whatever reason boost::filesystem::unique_path() returns an empty
-    // path on pre-lollipop ROMs
-
-    boost::filesystem::path dir(directory);
-    dir /= "mbp-XXXXXX";
-    const std::string dirTemplate = dir.string();
-
-    // mkdtemp modifies buffer
-    std::vector<char> buf(dirTemplate.begin(), dirTemplate.end());
-    buf.push_back('\0');
-
-    if (mkdtemp(buf.data())) {
-        return std::string(buf.data());
-    }
-
-    return std::string();
-#else
-    int count = 256;
-
-    while (count > 0) {
-        boost::filesystem::path dir(directory);
-        dir /= "mbp-%%%%%%";
-        auto path = boost::filesystem::unique_path(dir);
-        if (boost::filesystem::create_directory(path)) {
-            return path.string();
-        }
-        count--;
-    }
-
-    // Like Qt, we'll assume that 256 tries is enough ...
-    return std::string();
-#endif
-}
-
 bool MultiBootPatcher::Impl::patchZip()
 {
-    progress = 0;
-
     std::unordered_set<std::string> excludeFromPass1;
 
     for (auto const &item : info->patchInfo()->autoPatchers()) {
@@ -357,38 +311,41 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
-    unsigned int count;
-    auto result = FileUtils::laCountFiles(info->filename(), &count);
+    FileUtils::ArchiveStats stats;
+    auto result = FileUtils::laArchiveStats(info->filename(), &stats,
+                                            std::vector<std::string>());
     if (!result) {
         error = result;
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    maxBytes = stats.totalSize;
+
+    if (cancelled) return false;
 
     // +1 for mbtool_recovery (update-binary)
     // +1 for aromawrapper.zip
     // +1 for bb-wrapper.sh
     // +1 for unzip
     // +1 for info.prop
-    MAX_PROGRESS_CB(count + 5);
-    PROGRESS_CB(progress);
+    maxFiles = stats.files + 5;
+    updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
         return false;
     }
 
     // Create temporary dir for extracted files for autopatchers
-    std::string tempDir = createTemporaryDir(pc->tempDirectory());
+    std::string tempDir = FileUtils::createTemporaryDir(pc->tempDirectory());
 
     if (!pass1(aOutput, tempDir, excludeFromPass1)) {
         boost::filesystem::remove_all(tempDir);
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     // On the second pass, run the autopatchers on the rest of the files
 
@@ -399,10 +356,10 @@ bool MultiBootPatcher::Impl::patchZip()
 
     boost::filesystem::remove_all(tempDir);
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
-    PROGRESS_CB(++progress);
-    DETAILS_CB("META-INF/com/google/android/update-binary");
+    updateFiles(++files, maxFiles);
+    updateDetails("META-INF/com/google/android/update-binary");
 
     // Add mbtool_recovery
     result = FileUtils::laAddFile(
@@ -414,10 +371,10 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/aromawrapper.zip");
+    updateFiles(++files, maxFiles);
+    updateDetails("multiboot/aromawrapper.zip");
 
     // Add aromawrapper.zip
     result = FileUtils::laAddFile(
@@ -428,10 +385,10 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/bb-wrapper.sh");
+    updateFiles(++files, maxFiles);
+    updateDetails("multiboot/bb-wrapper.sh");
 
     // Add bb-wrapper.sh
     result = FileUtils::laAddFile(
@@ -442,10 +399,10 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/unzip");
+    updateFiles(++files, maxFiles);
+    updateDetails("multiboot/unzip");
 
     // Add unzip.tar.xz
     result = FileUtils::laAddFile(
@@ -457,10 +414,10 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
-    PROGRESS_CB(++progress);
-    DETAILS_CB("multiboot/info.prop");
+    updateFiles(++files, maxFiles);
+    updateDetails("multiboot/info.prop");
 
     const std::string infoProp = createInfoProp();
     result = FileUtils::laAddFile(
@@ -471,7 +428,7 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     return true;
 }
@@ -497,12 +454,12 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
     archive_entry *entry;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
-        RETURN_IF_CANCELLED
+        if (cancelled) return false;
 
         const std::string curFile = archive_entry_pathname(entry);
 
-        PROGRESS_CB(++progress);
-        DETAILS_CB(curFile);
+        updateFiles(++files, maxFiles);
+        updateDetails(curFile);
 
         // Skip files that should be patched and added in pass 2
         if (exclude.find(curFile) != exclude.end()) {
@@ -526,7 +483,8 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
             // Load the file into memory
             std::vector<unsigned char> data;
 
-            if (!FileUtils::laReadToByteArray(aInput, entry, &data)) {
+            if (!FileUtils::laReadToByteArray(aInput, entry, &data,
+                                              &laProgressCb, this)) {
                 FLOGW("libarchive: {}", archive_error_string(aInput));
                 error = PatcherError::createArchiveError(
                         ErrorCode::ArchiveReadDataError, curFile);
@@ -535,14 +493,22 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
 
             // If the file contains the boot image magic string, then
             // assume it really is a boot image and patch it
-            static const char *magic = "ANDROID!";
-            auto it = std::search(data.begin(), data.end(), magic, magic + 8);
-            if (it != data.end() && it - data.begin() <= 512) {
-                if (!patchBootImage(&data)) {
-                    return false;
-                }
+            if (data.size() >= 512) {
+                const char *magic = BootImage::BootMagic;
+                unsigned int size = BootImage::BootMagicSize;
+                auto end = data.begin() + 512;
+                auto it = std::search(data.begin(), end,
+                                      magic, magic + size);
+                if (it != end) {
+                    if (!patchBootImage(&data)) {
+                        return false;
+                    }
 
-                archive_entry_set_size(entry, data.size());
+                    // Update total size
+                    maxBytes += (data.size() - archive_entry_size(entry));
+
+                    archive_entry_set_size(entry, data.size());
+                }
             }
 
             // Write header to new file
@@ -571,16 +537,18 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
                 return false;
             }
 
-            if (!FileUtils::laCopyData(aInput, aOutput)) {
+            if (!FileUtils::laCopyData(aInput, aOutput, &laProgressCb, this)) {
                 FLOGW("libarchive: {}", archive_error_string(aInput));
                 error = PatcherError::createArchiveError(
                         ErrorCode::ArchiveWriteDataError, curFile);
                 return false;
             }
         }
+
+        bytes += archive_entry_size(entry);
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     return true;
 }
@@ -598,7 +566,7 @@ bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
                                    const std::unordered_set<std::string> &files)
 {
     for (auto *ap : autoPatchers) {
-        RETURN_IF_CANCELLED
+        if (cancelled) return false;
         if (!ap->patchFiles(temporaryDir)) {
             error = ap->error();
             return false;
@@ -608,7 +576,7 @@ bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
     // TODO Headers are being discarded
 
     for (auto const &file : files) {
-        RETURN_IF_CANCELLED
+        if (cancelled) return false;
 
         PatcherError ret;
 
@@ -630,7 +598,7 @@ bool MultiBootPatcher::Impl::pass2(archive * const aOutput,
         }
     }
 
-    RETURN_IF_CANCELLED
+    if (cancelled) return false;
 
     return true;
 }
@@ -697,6 +665,33 @@ void MultiBootPatcher::Impl::closeOutputArchive()
 
     archive_write_free(aOutput);
     aOutput = nullptr;
+}
+
+void MultiBootPatcher::Impl::updateProgress(uint64_t bytes, uint64_t maxBytes)
+{
+    if (progressCb) {
+        progressCb(bytes, maxBytes, userData);
+    }
+}
+
+void MultiBootPatcher::Impl::updateFiles(uint64_t files, uint64_t maxFiles)
+{
+    if (filesCb) {
+        filesCb(files, maxFiles, userData);
+    }
+}
+
+void MultiBootPatcher::Impl::updateDetails(const std::string &msg)
+{
+    if (detailsCb) {
+        detailsCb(msg, userData);
+    }
+}
+
+void MultiBootPatcher::Impl::laProgressCb(uint64_t bytes, void *userData)
+{
+    Impl *impl = static_cast<Impl *>(userData);
+    impl->updateProgress(impl->bytes + bytes, impl->maxBytes);
 }
 
 template<typename SomeType, typename Predicate>

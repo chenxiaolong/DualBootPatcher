@@ -56,6 +56,11 @@ public:
 
     MainWindowPrivate();
 
+    uint64_t bytes;
+    uint64_t maxBytes;
+    uint64_t files;
+    uint64_t maxFiles;
+
     QSettings settings;
 
     // Current state of the patcher

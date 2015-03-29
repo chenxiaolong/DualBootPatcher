@@ -35,6 +35,7 @@
 
 const int patcherPtrTypeId = qRegisterMetaType<PatcherPtr>("PatcherPtr");
 const int fileInfoPtrTypeId = qRegisterMetaType<FileInfoPtr>("FileInfoPtr");
+const int uint64TypeId = qRegisterMetaType<uint64_t>("uint64_t");
 
 MainWindowPrivate::MainWindowPrivate()
     : settings(qApp->applicationDirPath() % QStringLiteral("/settings.ini"),
@@ -80,10 +81,10 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
             d->task, &PatcherTask::patch);
     connect(d->task, &PatcherTask::finished,
             this, &MainWindow::onPatchingFinished);
-    connect(d->task, &PatcherTask::maxProgressUpdated,
-            this, &MainWindow::onMaxProgressUpdated);
     connect(d->task, &PatcherTask::progressUpdated,
             this, &MainWindow::onProgressUpdated);
+    connect(d->task, &PatcherTask::filesUpdated,
+            this, &MainWindow::onFilesUpdated);
     connect(d->task, &PatcherTask::detailsUpdated,
             this, &MainWindow::onDetailsUpdated);
 
@@ -166,18 +167,26 @@ void MainWindow::onHasBootImageToggled()
     }
 }
 
-void MainWindow::onMaxProgressUpdated(int max)
+void MainWindow::onProgressUpdated(uint64_t bytes, uint64_t maxBytes)
 {
     Q_D(MainWindow);
 
-    d->progressBar->setMaximum(max);
+    d->progressBar->setMaximum(maxBytes);
+    d->progressBar->setValue(bytes);
+    d->bytes = bytes;
+    d->maxBytes = maxBytes;
+
+    updateProgressText();
 }
 
-void MainWindow::onProgressUpdated(int value)
+void MainWindow::onFilesUpdated(uint64_t files, uint64_t maxFiles)
 {
     Q_D(MainWindow);
 
-    d->progressBar->setValue(value);
+    d->files = files;
+    d->maxFiles = maxFiles;
+
+    updateProgressText();
 }
 
 void MainWindow::onDetailsUpdated(const QString &text)
@@ -198,6 +207,19 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
 
     d->state = MainWindowPrivate::FinishedPatching;
     updateWidgetsVisibility();
+}
+
+void MainWindow::updateProgressText()
+{
+    Q_D(MainWindow);
+
+    double percentage = 0.0;
+    if (d->maxBytes != 0) {
+        percentage = 100.0 * d->bytes / d->maxBytes;
+    }
+
+    d->progressBar->setFormat(tr("%1% - %2 / %3 files")
+            .arg(percentage, 0, 'f', 2).arg(d->files).arg(d->maxFiles));
 }
 
 void MainWindow::addWidgets()
@@ -319,7 +341,7 @@ void MainWindow::addWidgets()
     detailsBox->setLayout(detailsLayout);
 
     d->progressBar = new QProgressBar(d->progressContainer);
-    d->progressBar->setFormat(tr("%p% - %v / %m files"));
+    //d->progressBar->setFormat(tr("%p% - %v / %m files"));
     d->progressBar->setMaximum(0);
     d->progressBar->setMinimum(0);
     d->progressBar->setValue(0);
@@ -513,6 +535,11 @@ void MainWindow::startPatching()
 {
     Q_D(MainWindow);
 
+    d->bytes = 0;
+    d->maxBytes = 0;
+    d->files = 0;
+    d->maxFiles = 0;
+
     d->progressBar->setMaximum(0);
     d->progressBar->setValue(0);
     d->detailsLbl->clear();
@@ -650,16 +677,18 @@ PatcherTask::PatcherTask(QWidget *parent)
 {
 }
 
-static void maxProgressUpdatedCbWrapper(int max, void *userData)
+static void progressUpdatedCbWrapper(uint64_t bytes, uint64_t maxBytes,
+                                     void *userData)
 {
     PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->maxProgressUpdatedCb(max);
+    task->progressUpdatedCb(bytes, maxBytes);
 }
 
-static void progressUpdatedCbWrapper(int value, void *userData)
+static void filesUpdatedCbWrapper(uint64_t files, uint64_t maxFiles,
+                                  void *userData)
 {
     PatcherTask *task = static_cast<PatcherTask *>(userData);
-    task->progressUpdatedCb(value);
+    task->filesUpdatedCb(files, maxFiles);
 }
 
 static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
@@ -672,8 +701,8 @@ void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
     patcher->setFileInfo(info);
 
-    bool ret = patcher->patchFile(&maxProgressUpdatedCbWrapper,
-                                  &progressUpdatedCbWrapper,
+    bool ret = patcher->patchFile(&progressUpdatedCbWrapper,
+                                  &filesUpdatedCbWrapper,
                                   &detailsUpdatedCbWrapper,
                                   this);
 
@@ -689,14 +718,14 @@ void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
     }
 }
 
-void PatcherTask::maxProgressUpdatedCb(int max)
+void PatcherTask::progressUpdatedCb(uint64_t bytes, uint64_t maxBytes)
 {
-    emit maxProgressUpdated(max);
+    emit progressUpdated(bytes, maxBytes);
 }
 
-void PatcherTask::progressUpdatedCb(int value)
+void PatcherTask::filesUpdatedCb(uint64_t files, uint64_t maxFiles)
 {
-    emit progressUpdated(value);
+    emit filesUpdated(files, maxFiles);
 }
 
 void PatcherTask::detailsUpdatedCb(const std::string &text)

@@ -60,30 +60,33 @@
 extern "C" {
 
 struct CallbackWrapper {
-    MaxProgressUpdatedCallback maxProgressCb;
     ProgressUpdatedCallback progressCb;
+    FilesUpdatedCallback filesCb;
     DetailsUpdatedCallback detailsCb;
     void *userData;
 };
 typedef struct CallbackWrapper CallbackWrapper;
 
-void maxProgressCbWrapper(int value, void *userData) {
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
-    if (wrapper->maxProgressCb != nullptr) {
-        wrapper->maxProgressCb(value, wrapper->userData);
-    }
-}
-
-void progressCbWrapper(int value, void *userData) {
+void progressCbWrapper(uint64_t bytes, uint64_t maxBytes, void *userData)
+{
     CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
     if (wrapper->progressCb != nullptr) {
-        wrapper->progressCb(value, wrapper->userData);
+        wrapper->progressCb(bytes, maxBytes, wrapper->userData);
     }
 }
 
-void detailsCbWrapper(const std::string &text, void *userData) {
+void filesCbWrapper(uint64_t files, uint64_t maxFiles, void *userData)
+{
     CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
-    if (wrapper->detailsCb != nullptr) {
+    if (wrapper->filesCb) {
+        wrapper->filesCb(files, maxFiles, userData);
+    }
+}
+
+void detailsCbWrapper(const std::string &text, void *userData)
+{
+    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
+    if (wrapper->detailsCb) {
         wrapper->detailsCb(text.c_str(), wrapper->userData);
     }
 }
@@ -182,21 +185,20 @@ char * mbp_patcher_new_file_path(CPatcher *patcher)
  * \sa Patcher::patchFile()
  */
 bool mbp_patcher_patch_file(CPatcher *patcher,
-                            MaxProgressUpdatedCallback maxProgressCb,
                             ProgressUpdatedCallback progressCb,
+                            FilesUpdatedCallback filesCb,
                             DetailsUpdatedCallback detailsCb,
                             void *userData)
 {
     CASTP(patcher);
 
     CallbackWrapper wrapper;
-    wrapper.maxProgressCb = maxProgressCb;
     wrapper.progressCb = progressCb;
+    wrapper.filesCb = filesCb;
     wrapper.detailsCb = detailsCb;
     wrapper.userData = userData;
 
-    return p->patchFile(&maxProgressCbWrapper, &progressCbWrapper,
-                        &detailsCbWrapper,
+    return p->patchFile(&progressCbWrapper, &filesCbWrapper, &detailsCbWrapper,
                         reinterpret_cast<void *>(&wrapper));
 }
 

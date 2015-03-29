@@ -37,13 +37,15 @@ public class PatcherService extends IntentService {
 
     public static final String STATE = "state";
     public static final String STATE_UPDATE_DETAILS = "update_details";
-    public static final String STATE_SET_PROGRESS_MAX = "set_progress_max";
-    public static final String STATE_SET_PROGRESS = "set_progress";
+    public static final String STATE_UPDATE_PROGRESS = "update_progress";
+    public static final String STATE_UPDATE_FILES = "update_files";
     public static final String STATE_PATCHED_FILE = "patched_file";
 
     public static final String RESULT_DETAILS = "details";
-    public static final String RESULT_MAX_PROGRESS = "max_progress";
-    public static final String RESULT_PROGRESS = "progress";
+    public static final String RESULT_BYTES = "bytes";
+    public static final String RESULT_MAX_BYTES = "max_bytes";
+    public static final String RESULT_FILES = "files";
+    public static final String RESULT_MAX_FILES = "max_files";
 
     public PatcherService() {
         super(TAG);
@@ -56,17 +58,19 @@ public class PatcherService extends IntentService {
         sendBroadcast(i);
     }
 
-    private void setProgressMax(int max) {
+    private void updateProgress(long bytes, long maxBytes) {
         Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_SET_PROGRESS_MAX);
-        i.putExtra(RESULT_MAX_PROGRESS, max);
+        i.putExtra(STATE, STATE_UPDATE_PROGRESS);
+        i.putExtra(RESULT_BYTES, bytes);
+        i.putExtra(RESULT_MAX_BYTES, maxBytes);
         sendBroadcast(i);
     }
 
-    private void setProgress(int value) {
+    public void updateFiles(long files, long maxFiles) {
         Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_SET_PROGRESS);
-        i.putExtra(RESULT_PROGRESS, value);
+        i.putExtra(STATE, STATE_UPDATE_FILES);
+        i.putExtra(RESULT_FILES, files);
+        i.putExtra(RESULT_MAX_FILES, maxFiles);
         sendBroadcast(i);
     }
 
@@ -97,31 +101,19 @@ public class PatcherService extends IntentService {
         nm.notify(1, builder.build());
 
         Patcher.ProgressListener listener = new Patcher.ProgressListener() {
-            private int mCurProgress;
-            private int mMaxProgress;
-
             @Override
-            public void onMaxProgressUpdated(int max) {
-                mMaxProgress = max;
-
-                builder.setContentText(String.format(getString(
-                        R.string.overall_progress_files), mCurProgress, mMaxProgress));
-                builder.setProgress(mMaxProgress, mCurProgress, false);
-                nm.notify(1, builder.build());
-
-                setProgressMax(mMaxProgress);
+            public void onProgressUpdated(long bytes, long maxBytes) {
+                updateProgress(bytes, maxBytes);
             }
 
             @Override
-            public void onProgressUpdated(int value) {
-                mCurProgress = value;
-
+            public void onFilesUpdated(long files, long maxFiles) {
                 builder.setContentText(String.format(getString(
-                        R.string.overall_progress_files), mCurProgress, mMaxProgress));
-                builder.setProgress(mMaxProgress, mCurProgress, false);
+                        R.string.overall_progress_files), files, maxFiles));
+                builder.setProgress((int) maxFiles, (int) files, false);
                 nm.notify(1, builder.build());
 
-                setProgress(mCurProgress);
+                updateFiles(files, maxFiles);
             }
 
             @Override

@@ -45,9 +45,9 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.multibootpatcher.patcher.MainOptsCW.MainOptsListener;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetMaxProgressEvent;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.SetProgressEvent;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.UpdateFilesEvent;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherEventCollector.UpdateProgressEvent;
 
 import java.util.ArrayList;
 
@@ -430,14 +430,14 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             UpdateDetailsEvent e = (UpdateDetailsEvent) event;
 
             mDetailsCW.setDetails(e.text);
-        } else if (event instanceof SetMaxProgressEvent) {
-            SetMaxProgressEvent e = (SetMaxProgressEvent) event;
+        } else if (event instanceof UpdateProgressEvent) {
+            UpdateProgressEvent e = (UpdateProgressEvent) event;
 
-            mProgressCW.setMaxProgress(e.maxProgress);
-        } else if (event instanceof SetProgressEvent) {
-            SetProgressEvent e = (SetProgressEvent) event;
+            mProgressCW.setProgress(e.bytes, e.maxBytes);
+        } else if (event instanceof UpdateFilesEvent) {
+            UpdateFilesEvent e = (UpdateFilesEvent) event;
 
-            mProgressCW.setProgress(e.progress);
+            mProgressCW.setFiles(e.files, e.maxFiles);
         } else if (event instanceof FinishedPatchingEvent) {
             FinishedPatchingEvent e = (FinishedPatchingEvent) event;
 

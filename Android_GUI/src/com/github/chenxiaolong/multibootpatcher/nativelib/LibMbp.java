@@ -249,12 +249,12 @@ public class LibMbp {
         // END: cstringmap.h
 
         // BEGIN: cpatcherinterface.h
-        interface MaxProgressUpdatedCallback extends Callback {
-            void invoke(int value, Pointer userData);
+        interface ProgressUpdatedCallback extends Callback {
+            void invoke(long bytes, long maxBytes, Pointer userData);
         }
 
-        interface ProgressUpdatedCallback extends Callback {
-            void invoke(int value, Pointer userData);
+        interface FilesUpdatedCallback extends Callback {
+            void invoke(long files, long maxFiles, Pointer userData);
         }
 
         interface DetailsUpdatedCallback extends Callback {
@@ -266,7 +266,7 @@ public class LibMbp {
         static native boolean mbp_patcher_uses_patchinfo(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
         static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
-        static native boolean mbp_patcher_patch_file(CPatcher patcher, MaxProgressUpdatedCallback maxProgressCb, ProgressUpdatedCallback progressCb, DetailsUpdatedCallback detailsCb, Pointer userData);
+        static native boolean mbp_patcher_patch_file(CPatcher patcher, ProgressUpdatedCallback progressCb, FilesUpdatedCallback filesCb, DetailsUpdatedCallback detailsCb, Pointer userData);
         static native void mbp_patcher_cancel_patching(CPatcher patcher);
 
         static native CPatcherError mbp_autopatcher_error(CAutoPatcher patcher);
@@ -2143,22 +2143,22 @@ public class LibMbp {
 
         public boolean patchFile(final ProgressListener listener) {
             validate(mCPatcher, Patcher.class, "patchFile", listener);
-            CWrapper.MaxProgressUpdatedCallback maxProgressCb = null;
             CWrapper.ProgressUpdatedCallback progressCb = null;
+            CWrapper.FilesUpdatedCallback filesCb = null;
             CWrapper.DetailsUpdatedCallback detailsCb = null;
 
             if (listener != null) {
-                maxProgressCb = new CWrapper.MaxProgressUpdatedCallback() {
+                progressCb = new CWrapper.ProgressUpdatedCallback() {
                     @Override
-                    public void invoke(int value, Pointer userData) {
-                        listener.onMaxProgressUpdated(value);
+                    public void invoke(long bytes, long maxBytes, Pointer userData) {
+                        listener.onProgressUpdated(bytes, maxBytes);
                     }
                 };
 
-                progressCb = new CWrapper.ProgressUpdatedCallback() {
+                filesCb = new CWrapper.FilesUpdatedCallback() {
                     @Override
-                    public void invoke(int value, Pointer userData) {
-                        listener.onProgressUpdated(value);
+                    public void invoke(long files, long maxFiles, Pointer userData) {
+                        listener.onFilesUpdated(files, maxFiles);
                     }
                 };
 
@@ -2171,7 +2171,7 @@ public class LibMbp {
             }
 
             return CWrapper.mbp_patcher_patch_file(mCPatcher,
-                    maxProgressCb, progressCb, detailsCb, null);
+                    progressCb, filesCb, detailsCb, null);
         }
 
         public void cancelPatching() {
@@ -2180,9 +2180,9 @@ public class LibMbp {
         }
 
         public interface ProgressListener {
-            void onMaxProgressUpdated(int max);
+            void onProgressUpdated(long bytes, long maxBytes);
 
-            void onProgressUpdated(int value);
+            void onFilesUpdated(long files, long maxFiles);
 
             void onDetailsUpdated(String text);
         }

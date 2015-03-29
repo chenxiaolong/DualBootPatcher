@@ -56,14 +56,16 @@ private slots:
     void onHasBootImageToggled();
 
     // Progress
-    void onMaxProgressUpdated(int max);
-    void onProgressUpdated(int value);
+    void onProgressUpdated(uint64_t bytes, uint64_t maxBytes);
+    void onFilesUpdated(uint64_t files, uint64_t maxFiles);
     void onDetailsUpdated(const QString &text);
 
     void onPatchingFinished(const QString &newFile, bool failed,
                             const QString &errorMessage);
 
 private:
+    void updateProgressText();
+
     void addWidgets();
     void setWidgetActions();
     void populateWidgets();
@@ -94,15 +96,15 @@ public:
 
     void patch(PatcherPtr patcher, FileInfoPtr info);
 
-    void maxProgressUpdatedCb(int max);
-    void progressUpdatedCb(int value);
+    void progressUpdatedCb(uint64_t bytes, uint64_t maxBytes);
+    void filesUpdatedCb(uint64_t files, uint64_t maxFiles);
     void detailsUpdatedCb(const std::string &text);
 
 signals:
     void finished(const QString &newFile, bool failed,
                   const QString &errorMessage);
-    void maxProgressUpdated(int max);
-    void progressUpdated(int value);
+    void progressUpdated(uint64_t bytes, uint64_t maxBytes);
+    void filesUpdated(uint64_t files, uint64_t maxFiles);
     void detailsUpdated(const QString &text);
 };
 

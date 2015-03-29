@@ -47,8 +47,8 @@ public:
 
     virtual std::string newFilePath() override;
 
-    virtual bool patchFile(MaxProgressUpdatedCallback maxProgressCb,
-                           ProgressUpdatedCallback progressCb,
+    virtual bool patchFile(ProgressUpdatedCallback progressCb,
+                           FilesUpdatedCallback filesCb,
                            DetailsUpdatedCallback detailsCb,
                            void *userData) override;
 

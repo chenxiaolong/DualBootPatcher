@@ -44,12 +44,16 @@ public:
     static PatcherError writeFromString(const std::string &path,
                                         const std::string &contents);
 
+    static std::string createTemporaryDir(const std::string &directory);
+
     // libarchive
     static bool laReadToByteArray(archive *aInput,
                                   archive_entry *entry,
-                                  std::vector<unsigned char> *output);
+                                  std::vector<unsigned char> *output,
+                                  void (*cb)(uint64_t bytes, void *), void *userData);
 
-    static bool laCopyData(archive *aInput, archive *aOutput);
+    static bool laCopyData(archive *aInput, archive *aOutput,
+                           void (*cb)(uint64_t bytes, void *), void *userData);
 
     static bool laExtractFile(archive *aInput,
                               archive_entry *entry,
@@ -63,9 +67,14 @@ public:
                                   const std::string &name,
                                   const std::string &path);
 
-    static PatcherError laCountFiles(const std::string &path,
-                                     unsigned int *count,
-                                     std::vector<std::string> ignore = std::vector<std::string>());
+    struct ArchiveStats {
+        uint64_t files;
+        uint64_t totalSize;
+    };
+
+    static PatcherError laArchiveStats(const std::string &path,
+                                       ArchiveStats *stats,
+                                       std::vector<std::string> ignore);
 };
 
 }

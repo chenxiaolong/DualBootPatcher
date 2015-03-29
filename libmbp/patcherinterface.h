@@ -40,8 +40,8 @@ namespace mbp
 class MBP_EXPORT Patcher
 {
 public:
-    typedef void (*MaxProgressUpdatedCallback) (int, void *);
-    typedef void (*ProgressUpdatedCallback) (int, void *);
+    typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
+    typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
     typedef void (*DetailsUpdatedCallback) (const std::string &, void *);
 
     virtual ~Patcher() {}
@@ -81,13 +81,13 @@ public:
         This method starts the patching operations for the current file. The
         callback parameters can be passed nullptr if they are not needed.
 
-        \param maxProgressCb Callback for receiving maximum progress value
-        \param progressCb Callback for receiving current progress value
+        \param progressCb Callback for receiving current progress values
+        \param filesCb Callback for receiving current files count
         \param detailsCb Callback for receiving detailed progress text
         \param userData Pointer to pass to callback functions
      */
-    virtual bool patchFile(MaxProgressUpdatedCallback maxProgressCb,
-                           ProgressUpdatedCallback progressCb,
+    virtual bool patchFile(ProgressUpdatedCallback progressCb,
+                           FilesUpdatedCallback filesCb,
                            DetailsUpdatedCallback detailsCb,
                            void *userData) = 0;
 

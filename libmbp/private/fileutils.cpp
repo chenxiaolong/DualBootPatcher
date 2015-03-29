@@ -124,6 +124,43 @@ PatcherError FileUtils::writeFromString(const std::string &path,
     return PatcherError();
 }
 
+std::string FileUtils::createTemporaryDir(const std::string &directory)
+{
+#ifdef __ANDROID__
+    // For whatever reason boost::filesystem::unique_path() returns an empty
+    // path on pre-lollipop ROMs
+
+    boost::filesystem::path dir(directory);
+    dir /= "mbp-XXXXXX";
+    const std::string dirTemplate = dir.string();
+
+    // mkdtemp modifies buffer
+    std::vector<char> buf(dirTemplate.begin(), dirTemplate.end());
+    buf.push_back('\0');
+
+    if (mkdtemp(buf.data())) {
+        return std::string(buf.data());
+    }
+
+    return std::string();
+#else
+    int count = 256;
+
+    while (count > 0) {
+        boost::filesystem::path dir(directory);
+        dir /= "mbp-%%%%%%";
+        auto path = boost::filesystem::unique_path(dir);
+        if (boost::filesystem::create_directory(path)) {
+            return path.string();
+        }
+        count--;
+    }
+
+    // Like Qt, we'll assume that 256 tries is enough ...
+    return std::string();
+#endif
+}
+
 /*!
     \brief Read contents of a file from libarchive into memory
 
@@ -135,7 +172,8 @@ PatcherError FileUtils::writeFromString(const std::string &path,
  */
 bool FileUtils::laReadToByteArray(archive *aInput,
                                   archive_entry *entry,
-                                  std::vector<unsigned char> *output)
+                                  std::vector<unsigned char> *output,
+                                  void (*cb)(uint64_t bytes, void *), void *userData)
 {
     std::vector<unsigned char> data;
     data.reserve(archive_entry_size(entry));
@@ -148,6 +186,10 @@ bool FileUtils::laReadToByteArray(archive *aInput,
     while ((r = archive_read_data_block(aInput,
             reinterpret_cast<const void **>(&buff),
                     &bytes_read, &offset)) == ARCHIVE_OK) {
+        if (cb) {
+            cb(data.size() + bytes_read, userData);
+        }
+
         data.insert(data.end(), buff, buff + bytes_read);
     }
 
@@ -168,19 +210,27 @@ bool FileUtils::laReadToByteArray(archive *aInput,
 
     \return Success or not
  */
-bool FileUtils::laCopyData(archive *aInput, archive *aOutput)
+bool FileUtils::laCopyData(archive *aInput, archive *aOutput,
+                           void (*cb)(uint64_t bytes, void *), void *userData)
 {
-    int r;
-    __LA_INT64_T offset;
-    const void *buff;
+    uint64_t bytes = 0;
+
+    // Exceeds Android's default stack size, unfortunately, so allocate
+    // on the heap
+    std::vector<unsigned char> buf(1024 * 1024); // 1MiB
     size_t bytes_read;
 
-    while ((r = archive_read_data_block(aInput, &buff,
-            &bytes_read, &offset)) == ARCHIVE_OK) {
-        archive_write_data(aOutput, buff, bytes_read);
+    while ((bytes_read = archive_read_data(
+            aInput, buf.data(), buf.size())) > 0) {
+        bytes += bytes_read;
+        if (cb) {
+            cb(bytes, userData);
+        }
+
+        archive_write_data(aOutput, buf.data(), bytes_read);
     }
 
-    return r >= ARCHIVE_WARN;
+    return bytes_read == 0;
 }
 
 bool FileUtils::laExtractFile(archive *aInput,
@@ -375,18 +425,20 @@ PatcherError FileUtils::laAddFile(archive * const aOutput,
 }
 
 /*!
-    \brief Counts number of files inside an archive
+    \brief Get some stats from an archive
 
     \param name Path to archive
-    \param count Pointer to output variable
+    \param stats Pointer to ArchiveStats variable
 
     \return PatcherError::NoError on success, or the appropriate error code on
             failure
  */
-PatcherError FileUtils::laCountFiles(const std::string &path,
-                                     unsigned int *count,
-                                     std::vector<std::string> ignore)
+PatcherError FileUtils::laArchiveStats(const std::string &path,
+                                       ArchiveStats *stats,
+                                       std::vector<std::string> ignore)
 {
+    assert(stats != nullptr);
+
     archive *aInput = archive_read_new();
     archive_read_support_filter_none(aInput);
     archive_read_support_format_zip(aInput);
@@ -404,20 +456,23 @@ PatcherError FileUtils::laCountFiles(const std::string &path,
 
     archive_entry *entry;
 
-    unsigned int i = 0;
+    uint64_t count = 0;
+    uint64_t totalSize = 0;
 
     while (archive_read_next_header(aInput, &entry) == ARCHIVE_OK) {
         const std::string name = archive_entry_pathname(entry);
 
         if (std::find(ignore.begin(), ignore.end(), name) == ignore.end()) {
-            ++i;
+            ++count;
+            totalSize += archive_entry_size(entry);
         }
         archive_read_data_skip(aInput);
     }
 
     archive_read_free(aInput);
 
-    *count = i;
+    stats->files = count;
+    stats->totalSize = totalSize;
 
     return PatcherError();
 }

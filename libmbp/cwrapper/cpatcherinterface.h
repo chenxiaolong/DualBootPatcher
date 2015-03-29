@@ -20,6 +20,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "cwrapper/ctypes.h"
 
@@ -28,8 +29,8 @@ extern "C" {
 #endif
 
 
-typedef void (*MaxProgressUpdatedCallback) (int, void *);
-typedef void (*ProgressUpdatedCallback) (int, void *);
+typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
+typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*DetailsUpdatedCallback) (const char *, void *);
 
 CPatcherError * mbp_patcher_error(const CPatcher *patcher);
@@ -38,8 +39,8 @@ bool mbp_patcher_uses_patchinfo(const CPatcher *patcher);
 void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
 char * mbp_patcher_new_file_path(CPatcher *patcher);
 bool mbp_patcher_patch_file(CPatcher *patcher,
-                            MaxProgressUpdatedCallback maxProgressCb,
                             ProgressUpdatedCallback progressCb,
+                            FilesUpdatedCallback filesCb,
                             DetailsUpdatedCallback detailsCb,
                             void *userData);
 void mbp_patcher_cancel_patching(CPatcher *patcher);

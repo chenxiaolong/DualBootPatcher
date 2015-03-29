@@ -113,13 +113,13 @@ void MbtoolUpdater::cancelPatching()
     // Ignore. This runs fast enough that canceling is not needed
 }
 
-bool MbtoolUpdater::patchFile(MaxProgressUpdatedCallback maxProgressCb,
-                                 ProgressUpdatedCallback progressCb,
-                                 DetailsUpdatedCallback detailsCb,
-                                 void *userData)
+bool MbtoolUpdater::patchFile(ProgressUpdatedCallback progressCb,
+                              FilesUpdatedCallback filesCb,
+                              DetailsUpdatedCallback detailsCb,
+                              void *userData)
 {
-    (void) maxProgressCb;
     (void) progressCb;
+    (void) filesCb;
     (void) detailsCb;
     (void) userData;
 

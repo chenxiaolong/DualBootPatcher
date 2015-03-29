@@ -27,8 +27,10 @@ import android.widget.TextView;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ProgressCW implements PatcherUIListener {
-    private static final String EXTRA_PROGRESS_MAX = "progress_max";
-    private static final String EXTRA_PROGRESS_CURRENT = "progress_current";
+    private static final String EXTRA_PROGRESS_BYTES = "bytes";
+    private static final String EXTRA_PROGRESS_MAX_BYTES = "max_bytes";
+    private static final String EXTRA_PROGRESS_FILES = "files";
+    private static final String EXTRA_PROGRESS_MAX_FILES = "max_files";
 
     private CardView vCard;
     private TextView vPercentage;
@@ -38,8 +40,10 @@ public class ProgressCW implements PatcherUIListener {
     private Context mContext;
     private PatcherConfigState mPCS;
 
-    private int mCurProgress = 0;
-    private int mMaxProgress = 0;
+    private long mBytes = 0;
+    private long mMaxBytes = 0;
+    private long mFiles = 0;
+    private long mMaxFiles = 0;
 
     public ProgressCW(Context context, PatcherConfigState pcs, CardView card) {
         mContext = context;
@@ -53,30 +57,31 @@ public class ProgressCW implements PatcherUIListener {
 
     private void updateProgress() {
         if (vProgress != null) {
-            vProgress.setMax(mMaxProgress);
-            vProgress.setProgress(mCurProgress);
+            vProgress.setMax((int) mMaxBytes);
+            vProgress.setProgress((int) mBytes);
         }
         if (vPercentage != null) {
-            if (mMaxProgress == 0) {
+            if (mMaxBytes == 0) {
                 vPercentage.setText("0%");
             } else {
-                vPercentage.setText(String.format("%.1f%%",
-                        (double) mCurProgress / mMaxProgress * 100));
+                vPercentage.setText(String.format("%.1f%%", 100.0 * mBytes / mMaxBytes));
             }
         }
         if (vFiles != null) {
             vFiles.setText(String.format(mContext.getString(R.string.overall_progress_files),
-                    Integer.toString(mCurProgress), Integer.toString(mMaxProgress)));
+                    Long.toString(mFiles), Long.toString(mMaxFiles)));
         }
     }
 
-    public void setProgress(int i) {
-        mCurProgress = i;
+    public void setProgress(long bytes, long maxBytes) {
+        mBytes = bytes;
+        mMaxBytes = maxBytes;
         updateProgress();
     }
 
-    public void setMaxProgress(int i) {
-        mMaxProgress = i;
+    public void setFiles(long files, long maxFiles) {
+        mFiles = files;
+        mMaxFiles = maxFiles;
         updateProgress();
     }
 
@@ -100,16 +105,20 @@ public class ProgressCW implements PatcherUIListener {
     @Override
     public void onRestoreCardState(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            mMaxProgress = savedInstanceState.getInt(EXTRA_PROGRESS_MAX);
-            mCurProgress = savedInstanceState.getInt(EXTRA_PROGRESS_CURRENT);
+            mBytes = savedInstanceState.getLong(EXTRA_PROGRESS_BYTES);
+            mMaxBytes = savedInstanceState.getLong(EXTRA_PROGRESS_MAX_BYTES);
+            mFiles = savedInstanceState.getLong(EXTRA_PROGRESS_FILES);
+            mMaxFiles = savedInstanceState.getLong(EXTRA_PROGRESS_MAX_FILES);
             updateProgress();
         }
     }
 
     @Override
     public void onSaveCardState(Bundle outState) {
-        outState.putInt(EXTRA_PROGRESS_MAX, mMaxProgress);
-        outState.putInt(EXTRA_PROGRESS_CURRENT, mCurProgress);
+        outState.putLong(EXTRA_PROGRESS_BYTES, mBytes);
+        outState.putLong(EXTRA_PROGRESS_MAX_BYTES, mMaxBytes);
+        outState.putLong(EXTRA_PROGRESS_FILES, mFiles);
+        outState.putLong(EXTRA_PROGRESS_MAX_FILES, mMaxFiles);
     }
 
     @Override
@@ -125,8 +134,10 @@ public class ProgressCW implements PatcherUIListener {
     public void onFinishedPatching() {
         vCard.setVisibility(View.GONE);
 
-        mCurProgress = 0;
-        mMaxProgress = 0;
+        mBytes = 0;
+        mMaxBytes = 0;
+        mFiles = 0;
+        mMaxFiles = 0;
         updateProgress();
     }
 }
