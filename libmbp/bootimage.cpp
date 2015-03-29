@@ -709,6 +709,9 @@ std::vector<unsigned char> BootImage::create() const
 {
     std::vector<unsigned char> data;
 
+    // Update SHA1
+    m_impl->updateSHA1Hash();
+
     switch (m_impl->header.page_size) {
     case 2048:
     case 4096:
@@ -1215,7 +1218,6 @@ void BootImage::setKernelImage(std::vector<unsigned char> data)
 {
     m_impl->header.kernel_size = data.size();
     m_impl->kernelImage = std::move(data);
-    m_impl->updateSHA1Hash();
 }
 
 /*!
@@ -1238,7 +1240,6 @@ void BootImage::setRamdiskImage(std::vector<unsigned char> data)
 {
     m_impl->header.ramdisk_size = data.size();
     m_impl->ramdiskImage = std::move(data);
-    m_impl->updateSHA1Hash();
 }
 
 /*!
@@ -1261,7 +1262,6 @@ void BootImage::setSecondBootloaderImage(std::vector<unsigned char> data)
 {
     m_impl->header.second_size = data.size();
     m_impl->secondBootloaderImage = std::move(data);
-    m_impl->updateSHA1Hash();
 }
 
 /*!
@@ -1284,7 +1284,6 @@ void BootImage::setDeviceTreeImage(std::vector<unsigned char> data)
 {
     m_impl->header.dt_size = data.size();
     m_impl->deviceTreeImage = std::move(data);
-    m_impl->updateSHA1Hash();
 }
 
 std::vector<unsigned char> BootImage::abootImage() const
