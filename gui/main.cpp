@@ -40,36 +40,11 @@
 static const QChar Sep = QLatin1Char('/');
 
 
-static void log_cb(mbp::LogLevel prio, const std::string &msg)
-{
-    switch (prio) {
-    case mbp::LogLevel::Debug:
-        std::cout << "[Debug] ";
-        break;
-    case mbp::LogLevel::Error:
-        std::cout << "[Error] ";
-        break;
-    case mbp::LogLevel::Info:
-        std::cout << "[Info] ";
-        break;
-    case mbp::LogLevel::Verbose:
-        std::cout << "[Verbose] ";
-        break;
-    case mbp::LogLevel::Warning:
-        std::cout << "[Warning] ";
-        break;
-    }
-
-    std::cout << msg << std::endl;
-}
-
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
-
-    mbp::setLogCallback(log_cb);
 
     mbp::PatcherConfig pc;
 
