@@ -56,7 +56,32 @@ static mbp::LogFunction logger = &logcat;
 
 #else
 
-static mbp::LogFunction logger = nullptr;
+static void stdlog(mbp::LogLevel prio, const std::string &msg)
+{
+    const char *fmt = "%s\n";
+
+    switch (prio) {
+    case mbp::LogLevel::Debug:
+        fmt = "[D] %s\n";
+        break;
+    case mbp::LogLevel::Error:
+        fmt = "[E] %s\n";
+        break;
+    case mbp::LogLevel::Info:
+        fmt = "[I] %s\n";
+        break;
+    case mbp::LogLevel::Verbose:
+        fmt = "[V] %s\n";
+        break;
+    case mbp::LogLevel::Warning:
+        fmt = "[W] %s\n";
+        break;
+    }
+
+    printf(fmt, msg.c_str());;
+}
+
+static mbp::LogFunction logger = stdlog;
 
 #endif
 
