@@ -31,6 +31,7 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
 #include "util/cmdline.h"
@@ -452,7 +453,13 @@ int mount_fstab_main(int argc, char *argv[])
     }
 #endif
 
-    return mount_fstab(argv[optind]) ? EXIT_SUCCESS : EXIT_FAILURE;
+    if (!mount_fstab(argv[optind])) {
+        LOGE("Failed to mount filesystems. Rebooting into recovery");
+        reboot_directly("recovery");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 }

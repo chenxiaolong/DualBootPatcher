@@ -126,9 +126,11 @@ mbtool_src_base := \
 	mount_fstab.cpp \
 	multiboot.cpp \
 	packages.cpp \
+	reboot.cpp \
 	roms.cpp \
 	sepolpatch.cpp \
 	validcerts.cpp \
+	external/android_reboot.c \
 	external/mntent.c \
 	external/sha.c \
 	$(EXTERNAL_DIR)/cppformat/format.cc \

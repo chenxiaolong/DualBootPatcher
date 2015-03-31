@@ -23,7 +23,6 @@
 #include <cstdlib>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include "roms.h"
 #include "util/chmod.h"
@@ -32,7 +31,6 @@
 #include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
-#include "util/properties.h"
 #include "util/string.h"
 
 #define MULTIBOOT_DIR "/data/media/0/MultiBoot"
@@ -190,30 +188,6 @@ bool action_choose_rom(const std::string &id, const std::string &boot_blockdev,
 bool action_set_kernel(const std::string &id, const std::string &boot_blockdev)
 {
     return choose_or_set_rom(id, boot_blockdev, {}, false);
-}
-
-bool action_reboot(const std::string &reboot_arg)
-{
-    std::string value("reboot,");
-    value.append(reboot_arg);
-
-    if (value.size() >= MB_PROP_VALUE_MAX - 1) {
-        LOGE("Reboot argument {:d} bytes too long",
-             value.size() + 1 - MB_PROP_VALUE_MAX);
-        return false;
-    }
-
-    if (!util::set_property("sys.powerctl", value)) {
-        LOGE("Failed to set property");
-        return false;
-    }
-
-    // Obviously shouldn't return
-    while (1) {
-        pause();
-    }
-
-    return true;
 }
 
 }

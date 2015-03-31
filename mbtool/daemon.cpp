@@ -35,6 +35,7 @@
 
 #include "actions.h"
 #include "multiboot.h"
+#include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
@@ -301,7 +302,7 @@ static bool v2_reboot(int fd, const v2::Request *msg)
 
     // The client probably won't get the chance to see the success message, but
     // we'll still send it for the sake of symmetry
-    bool success = action_reboot(reboot_arg);
+    bool success = reboot_via_init(reboot_arg);
 
     // Create response
     auto response = v2::CreateRebootResponse(builder, success);
