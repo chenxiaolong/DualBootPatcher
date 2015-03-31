@@ -69,7 +69,7 @@ static struct mount_flag mount_flags[] =
     { "slave",          MS_SLAVE },
     { "shared",         MS_SHARED },
     // Flags that should be ignored
-    { "ro",             0 },
+    { "rw",             0 },
     { "defaults",       0 },
     { nullptr,          0 }
 };
