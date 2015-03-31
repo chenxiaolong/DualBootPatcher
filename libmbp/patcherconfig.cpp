@@ -51,6 +51,7 @@
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
 #include "ramdiskpatchers/klteramdiskpatcher.h"
 #include "ramdiskpatchers/lgg2ramdiskpatcher.h"
+#include "ramdiskpatchers/trelteramdiskpatcher.h"
 #include "ramdiskpatchers/trlteramdiskpatcher.h"
 #endif
 
@@ -366,6 +367,16 @@ void PatcherConfig::Impl::loadDefaultDevices()
     std::string qcomSdi(qcomBaseDir); qcomSdi += "/sdi";
     std::string qcomTz(qcomBaseDir); qcomTz += "/tz";
 
+    // http://forum.xda-developers.com/showpost.php?p=59801273&postcount=5465
+    std::string n4ExynosBaseDir("/dev/block/platform/15540000.dwmmc0/by-name");
+    std::string n4ExynosSystem(n4ExynosBaseDir); n4ExynosSystem += "/SYSTEM";
+    std::string n4ExynosCache(n4ExynosBaseDir); n4ExynosCache += "/CACHE";
+    std::string n4ExynosData(n4ExynosBaseDir); n4ExynosData += "/USERDATA";
+    std::string n4ExynosBoot(n4ExynosBaseDir); n4ExynosBoot += "/BOOT";
+    std::string n4ExynosRecovery(n4ExynosBaseDir); n4ExynosRecovery += "/RECOVERY";
+    std::string n4ExynosRadio(n4ExynosBaseDir); n4ExynosRadio += "/RADIO";
+    std::string n4ExynosCdmaRadio(n4ExynosBaseDir); n4ExynosCdmaRadio += "/CDMA-RADIO";
+
     // Samsung Galaxy S 4
     device = new Device();
     device->setId("jflte");
@@ -410,12 +421,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
-    // Samsung Galaxy Note 4
+    // Samsung Galaxy Note 4 (Snapdragon)
     device = new Device();
     device->setId("trlte");
     device->setCodenames({ "trlte", "trltecan", "trltedt", "trltespr",
                            "trltetmo", "trlteusc", "trltexx" });
-    device->setName("Samsung Galaxy Note 4");
+    device->setName("Samsung Galaxy Note 4 (Snapdragon)");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p25" });
@@ -424,6 +435,21 @@ void PatcherConfig::Impl::loadDefaultDevices()
                                "/dev/block/mmcblk0p27" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
     device->setRecoveryBlockDevs({ qcomRecovery });
+    devices.push_back(device);
+
+    // Samsung Galaxy Note 4 (Exynos)
+    device = new Device();
+    device->setId("trelte");
+    device->setCodenames({ "trelte", "treltektt", "treltelgt", "trelteskt",
+                           "treltexx" });
+    device->setName("Samsung Galaxy Note 4 (Exynos)");
+    device->setBlockDevBaseDirs({ n4ExynosBaseDir });
+    device->setSystemBlockDevs({ n4ExynosSystem, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ n4ExynosCache, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ n4ExynosData, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ n4ExynosBoot, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ n4ExynosRecovery, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ n4ExynosRadio, n4ExynosCdmaRadio });
     devices.push_back(device);
 
     // Google/LG Nexus 5
@@ -539,6 +565,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         JflteDefaultRamdiskPatcher::Id,
         KlteDefaultRamdiskPatcher::Id,
         LGG2RamdiskPatcher::Id,
+        TrelteDefaultRamdiskPatcher::Id,
         TrlteDefaultRamdiskPatcher::Id
     };
 }
@@ -626,6 +653,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == LGG2RamdiskPatcher::Id) {
         rp = new LGG2RamdiskPatcher(this, info, cpio);
+    } else if (id == TrelteDefaultRamdiskPatcher::Id) {
+        rp = new TrelteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == TrlteDefaultRamdiskPatcher::Id) {
         rp = new TrlteDefaultRamdiskPatcher(this, info, cpio);
     }

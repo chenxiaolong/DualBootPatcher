@@ -53,6 +53,7 @@ set(MBP_SOURCES
     ramdiskpatchers/klteramdiskpatcher.cpp
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
+    ramdiskpatchers/trelteramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
     external/sha.c
     ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
@@ -102,6 +103,7 @@ set(MBP_NOINST_HEADERS
     ramdiskpatchers/klteramdiskpatcher.h
     ramdiskpatchers/lgg2ramdiskpatcher.h
     ramdiskpatchers/qcomramdiskpatcher.h
+    ramdiskpatchers/trelteramdiskpatcher.h
     ramdiskpatchers/trlteramdiskpatcher.h
 )
 
