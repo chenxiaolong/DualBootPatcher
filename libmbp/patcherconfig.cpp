@@ -51,6 +51,7 @@
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
 #include "ramdiskpatchers/klteramdiskpatcher.h"
 #include "ramdiskpatchers/lgg2ramdiskpatcher.h"
+#include "ramdiskpatchers/lgg3ramdiskpatcher.h"
 #include "ramdiskpatchers/trelteramdiskpatcher.h"
 #include "ramdiskpatchers/trlteramdiskpatcher.h"
 #endif
@@ -507,6 +508,20 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
+    // LG G3
+    device = new Device();
+    device->setId("lgg3");
+    device->setCodenames({ "d855" });
+    device->setName("LG G3");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p40" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p41" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p43" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p18" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setExtraBlockDevs({ qcomAboot });
+    devices.push_back(device);
+
     // Falcon
     device = new Device();
     device->setId("falcon");
@@ -565,6 +580,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         JflteDefaultRamdiskPatcher::Id,
         KlteDefaultRamdiskPatcher::Id,
         LGG2RamdiskPatcher::Id,
+        LGG3RamdiskPatcher::Id,
         TrelteDefaultRamdiskPatcher::Id,
         TrlteDefaultRamdiskPatcher::Id
     };
@@ -653,6 +669,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == LGG2RamdiskPatcher::Id) {
         rp = new LGG2RamdiskPatcher(this, info, cpio);
+    } else if (id == LGG3RamdiskPatcher::Id) {
+        rp = new LGG3RamdiskPatcher(this, info, cpio);
     } else if (id == TrelteDefaultRamdiskPatcher::Id) {
         rp = new TrelteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == TrlteDefaultRamdiskPatcher::Id) {

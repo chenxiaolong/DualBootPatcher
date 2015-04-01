@@ -52,6 +52,7 @@ set(MBP_SOURCES
     ramdiskpatchers/jflteramdiskpatcher.cpp
     ramdiskpatchers/klteramdiskpatcher.cpp
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
+    ramdiskpatchers/lgg3ramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
     ramdiskpatchers/trelteramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
@@ -102,6 +103,7 @@ set(MBP_NOINST_HEADERS
     ramdiskpatchers/jflteramdiskpatcher.h
     ramdiskpatchers/klteramdiskpatcher.h
     ramdiskpatchers/lgg2ramdiskpatcher.h
+    ramdiskpatchers/lgg3ramdiskpatcher.h
     ramdiskpatchers/qcomramdiskpatcher.h
     ramdiskpatchers/trelteramdiskpatcher.h
     ramdiskpatchers/trlteramdiskpatcher.h
