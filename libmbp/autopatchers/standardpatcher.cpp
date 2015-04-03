@@ -148,7 +148,7 @@ static bool findItemsInString(const std::string &haystack,
     return false;
 }
 
-#define RE_FUNC(name, args)     "(^|[^a-z])" name "\\s*\\(\\s*" args "[^\\)]*\\)\\s*;"
+#define RE_FUNC(name, args)     "(^|[^a-z])" name "\\s*\\(\\s*" args "[^\\)]*\\)"
 #define RE_ARG(x)               "\"" x "\""
 #define RE_ARG_ANY              "[^\"]*"
 #define RE_ARG_SEP              "\\s*,\\s*"
