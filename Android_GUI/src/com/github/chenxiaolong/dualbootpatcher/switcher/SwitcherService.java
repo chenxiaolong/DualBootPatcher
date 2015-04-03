@@ -245,6 +245,10 @@ public class SwitcherService extends IntentService {
                 EnumSet.of(color), null, EnumSet.of(Attribute.BOLD)));
     }
 
+    private static String quoteArg(String arg) {
+        return "'" + arg.replace("'", "'\"'\"'") + "'";
+    }
+
     private void flashZips(Bundle data) {
         Parcelable[] parcelables = data.getParcelableArray(PARAM_PENDING_ACTIONS);
         PendingAction[] actions = new PendingAction[parcelables.length];
@@ -308,7 +312,8 @@ public class SwitcherService extends IntentService {
                     return;
                 }
 
-                int ret = runRootCommand("/rom-installer --romid " + pa.romId + " " + pa.zipFile);
+                int ret = runRootCommand("/rom-installer --romid " + quoteArg(pa.romId) + " " +
+                        quoteArg(pa.zipFile));
 
                 zipInstaller.delete();
 
