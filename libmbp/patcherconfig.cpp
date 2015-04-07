@@ -512,7 +512,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // LG G3
     device = new Device();
     device->setId("lgg3");
-    device->setCodenames({ "g3", "d850", "d851", "d852", "d855", "vs985" });
+    device->setCodenames({ "g3", "d850", "d851", "d852", "d855", "ls990",
+                           "vs985" });
     device->setName("LG G3");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p40" });
