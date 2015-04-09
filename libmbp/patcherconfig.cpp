@@ -398,8 +398,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 5
     device = new Device();
     device->setId("klte");
-    device->setCodenames({ "klte", "kltedv", "kltespr", "klteusc", "kltevzw",
-                           "kltexx" });
+    device->setCodenames({ "klte", "kltecan", "kltedv", "kltespr", "klteusc",
+                           "kltevzw", "kltexx" });
     device->setName("Samsung Galaxy S 5");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
