@@ -23,6 +23,7 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
@@ -141,6 +142,22 @@ bool JflteDefaultRamdiskPatcher::geChargerModeMount()
         return false;
     }
 
+    // Find fstab file
+    std::string fstab;
+    for (const std::string &file : m_impl->cpio->filenames()) {
+        if (file.find('/') == std::string::npos
+                && boost::starts_with(file, "fstab")) {
+            fstab = file;
+        }
+    }
+    if (fstab.empty()) {
+        // Hopefully will never happen
+        return true;
+    }
+
+    // Paths
+    std::string completed = "/." + fstab + ".completed";
+
     std::string previousLine;
 
     std::vector<std::string> lines;
@@ -151,13 +168,13 @@ bool JflteDefaultRamdiskPatcher::geChargerModeMount()
                 && std::regex_search(previousLine, std::regex("on\\s+charger"))) {
             it = lines.insert(it, "    start mbtool-charger");
             ++it;
-            *it = "    wait /.fstab.jgedlte.completed 15";
+            *it = "    wait " + completed + " 15";
         }
 
         previousLine = *it;
     }
 
-    lines.push_back("service mbtool-charger /mbtool mount_fstab /fstab.jgedlte");
+    lines.push_back("service mbtool-charger /mbtool mount_fstab /" + fstab);
     lines.push_back("    class core");
     lines.push_back("    critical");
     lines.push_back("    oneshot");
