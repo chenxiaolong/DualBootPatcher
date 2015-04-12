@@ -245,6 +245,7 @@ bool QcomRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         lines.push_back("    class core");
         lines.push_back("    critical");
         lines.push_back("    oneshot");
+        lines.push_back("    disabled");
     }
 
     std::string strContents = boost::join(lines, "\n");

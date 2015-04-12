@@ -178,6 +178,7 @@ bool JflteDefaultRamdiskPatcher::geChargerModeMount()
     lines.push_back("    class core");
     lines.push_back("    critical");
     lines.push_back("    oneshot");
+    lines.push_back("    disabled");
 
     std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
