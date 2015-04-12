@@ -77,6 +77,22 @@
   <string name="rom_menu_change_image">Changer l\'image</string>
   <!--ROM menu item for resetting back to the default image-->
   <string name="rom_menu_reset_image">Réinitialiser l\'image</string>
+  <!--ROM menu item for wiping the ROM-->
+  <!--Target for wiping ROM's /system-->
+  <!--Target for wiping ROM's /cache-->
+  <!--Target for wiping ROM's /data-->
+  <!--Target for wiping ROM's dalvik cache-->
+  <!--Target for wiping ROM's multiboot files-->
+  <!--Title of dialog box asking for which targets to wipe-->
+  <!--Message shown in the dialog box for ROM wiping indicating that the feature is still very
+         experimental and could unintentionally delete backups or other files on the internal
+         storage.-->
+  <!--Title of progress dialog shown when wiping targets-->
+  <!--Toast message indicating successfully wiped targets-->
+  <!--Toast message indicating targets that failed to wipe-->
+  <!--Toast message indicating that the wipe process failed to start-->
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo de la rom</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
