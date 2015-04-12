@@ -54,6 +54,8 @@ import com.github.chenxiaolong.multibootpatcher.freespace.FreeSpaceFragment;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatchFileFragment;
 import com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.ArrayList;
 
 public class MainActivity extends ActionBarActivity {
@@ -97,6 +99,10 @@ public class MainActivity extends ActionBarActivity {
     public static final int FRAGMENT_ABOUT = 4;
 
     private int mFragment;
+
+    private static final String INITIAL_SCREEN_ABOUT = "ABOUT";
+    private static final String INITIAL_SCREEN_ROMS = "ROMS";
+    private static final String INITIAL_SCREEN_PATCHER = "PATCHER";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -178,8 +184,33 @@ public class MainActivity extends ActionBarActivity {
 
             mDrawerItemSelected = savedInstanceState.getInt("selectedItem");
         } else {
+            String[] initialScreens = getResources().getStringArray(
+                    R.array.initial_screen_entry_values);
+            String initialScreen = mPrefs.getString("initial_screen", null);
+            if (initialScreen == null || !ArrayUtils.contains(initialScreens, initialScreen)) {
+                initialScreen = INITIAL_SCREEN_ABOUT;
+                Editor e = mPrefs.edit();
+                e.putString("initial_screen", initialScreen);
+                e.apply();
+            }
+
+            int navId;
+            switch (initialScreen) {
+            case INITIAL_SCREEN_ABOUT:
+                navId = NAV_ABOUT;
+                break;
+            case INITIAL_SCREEN_ROMS:
+                navId = NAV_ROMS;
+                break;
+            case INITIAL_SCREEN_PATCHER:
+                navId = NAV_PATCH_FILE;
+                break;
+            default:
+                throw new IllegalStateException("Invalid initial screen value");
+            }
+
             // Show about screen by default
-            mDrawerItemSelected = getItemForType(NAV_ABOUT);
+            mDrawerItemSelected = getItemForType(navId);
         }
 
         onDrawerItemClicked(mDrawerItemSelected, false);

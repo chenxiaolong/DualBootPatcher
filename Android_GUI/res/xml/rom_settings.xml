@@ -30,6 +30,13 @@
             android:title="@string/update_ramdisk_title" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/rom_settings_patcher_title">
+        <com.afollestad.materialdialogs.prefs.MaterialListPreference
+            android:entries="@array/initial_screen_values"
+            android:entryValues="@array/initial_screen_entry_values"
+            android:key="initial_screen"
+            android:persistent="true"
+            android:summary="@string/rom_settings_initial_screen_desc"
+            android:title="@string/rom_settings_initial_screen_title" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="show_reboot"

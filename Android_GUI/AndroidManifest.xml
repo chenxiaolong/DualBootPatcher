@@ -44,6 +44,7 @@
         </activity>
         <activity
             android:name="com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/title_rom_settings"
             android:parentActivityName=".MainActivity" />
         <activity

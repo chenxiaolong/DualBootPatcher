@@ -333,6 +333,11 @@
     <string name="rom_settings_show_exit_title">Show Exit button</string>
     <!-- Title for the preference to show the reboot button in the navigation drawer -->
     <string name="rom_settings_show_reboot_title">Show Reboot button</string>
+    <!-- Title for the preference to choose the initial screen to show when opening the app -->
+    <string name="rom_settings_initial_screen_title">Initial screen</string>
+    <!-- Description for the initial screen preference -->
+    <string name="rom_settings_initial_screen_desc">First screen to show when opening the
+        app.</string>
 
     <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_dialog_title">Individual app sharing</string>
