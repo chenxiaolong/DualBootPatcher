@@ -171,8 +171,21 @@ void MainWindow::onProgressUpdated(uint64_t bytes, uint64_t maxBytes)
 {
     Q_D(MainWindow);
 
-    d->progressBar->setMaximum(maxBytes);
-    d->progressBar->setValue(bytes);
+    // Normalize values to 1000000
+    static const int normalize = 1000000;
+
+    int value;
+    int max;
+    if (maxBytes == 0) {
+        value = 0;
+        max = 0;
+    } else {
+        value = (double) bytes / maxBytes * normalize;
+        max = normalize;
+    }
+
+    d->progressBar->setMaximum(max);
+    d->progressBar->setValue(value);
     d->bytes = bytes;
     d->maxBytes = maxBytes;
 
