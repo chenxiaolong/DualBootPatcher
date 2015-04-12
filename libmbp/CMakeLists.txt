@@ -61,54 +61,6 @@ set(MBP_SOURCES
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
-set(MBP_HEADERS
-    bootimage.h
-    cpiofile.h
-    device.h
-    fileinfo.h
-    libmbp_global.h
-    logging.h
-    patcherconfig.h
-    patchererror.h
-    patcherinterface.h
-    patchinfo.h
-    cwrapper/cbootimage.h
-    cwrapper/ccommon.h
-    cwrapper/ccpiofile.h
-    cwrapper/cdevice.h
-    cwrapper/cfileinfo.h
-    cwrapper/cpatcherconfig.h
-    cwrapper/cpatchererror.h
-    cwrapper/cpatcherinterface.h
-    cwrapper/cpatchinfo.h
-    cwrapper/cstringmap.h
-    cwrapper/ctypes.h
-)
-
-set(MBP_NOINST_HEADERS
-    # Autopatchers
-    autopatchers/patchfilepatcher.h
-    autopatchers/standardpatcher.h
-    # Patchers
-    patchers/mbtoolupdater.h
-    patchers/multibootpatcher.h
-    # Ramdisk patchers
-    ramdiskpatchers/baconramdiskpatcher.h
-    ramdiskpatchers/coreramdiskpatcher.h
-    ramdiskpatchers/falconramdiskpatcher.h
-    ramdiskpatchers/floramdiskpatcher.h
-    ramdiskpatchers/galaxyramdiskpatcher.h
-    ramdiskpatchers/hammerheadramdiskpatcher.h
-    ramdiskpatchers/hlteramdiskpatcher.h
-    ramdiskpatchers/jflteramdiskpatcher.h
-    ramdiskpatchers/klteramdiskpatcher.h
-    ramdiskpatchers/lgg2ramdiskpatcher.h
-    ramdiskpatchers/lgg3ramdiskpatcher.h
-    ramdiskpatchers/qcomramdiskpatcher.h
-    ramdiskpatchers/trelteramdiskpatcher.h
-    ramdiskpatchers/trlteramdiskpatcher.h
-)
-
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
 
@@ -191,13 +143,6 @@ else()
         LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-    )
-
-    # Install headers
-    install(
-        FILES ${MBP_HEADERS}
-        DESTINATION ${HEADERS_INSTALL_DIR}/libmbp
-        COMPONENT Development
     )
 endif()
 
