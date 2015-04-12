@@ -104,15 +104,13 @@ bool TrelteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
-        m_impl->error = qcomPatcher.error();
+    if (!corePatcher.useGeneratedFstabAuto()) {
+        m_impl->error = corePatcher.error();
         return false;
     }
 
-    std::string mountFile;
-
     // TODO: Should really be moved away from QcomRamdiskPatcher
-    if (!qcomPatcher.useGeneratedFstab(InitFile)) {
+    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

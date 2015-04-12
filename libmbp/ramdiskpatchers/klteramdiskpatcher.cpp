@@ -94,6 +94,11 @@ bool KlteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
+    if (!corePatcher.useGeneratedFstabAuto()) {
+        m_impl->error = corePatcher.error();
+        return false;
+    }
+
     if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
@@ -104,18 +109,8 @@ bool KlteDefaultRamdiskPatcher::patchRamdisk()
             m_impl->error = qcomPatcher.error();
             return false;
         }
-
-        if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-            m_impl->error = qcomPatcher.error();
-            return false;
-        }
     } else {
         if (!qcomPatcher.stripManualCacheMounts("init.qcom.rc")) {
-            m_impl->error = qcomPatcher.error();
-            return false;
-        }
-
-        if (!qcomPatcher.useGeneratedFstab("init.qcom.rc")) {
             m_impl->error = qcomPatcher.error();
             return false;
         }

@@ -20,7 +20,6 @@
 #include "ramdiskpatchers/falconramdiskpatcher.h"
 
 #include "ramdiskpatchers/coreramdiskpatcher.h"
-#include "ramdiskpatchers/qcomramdiskpatcher.h"
 
 
 namespace mbp
@@ -68,23 +67,15 @@ std::string FalconRamdiskPatcher::id() const
 bool FalconRamdiskPatcher::patchRamdisk()
 {
     CoreRamdiskPatcher corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRamdiskPatcher qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
         return false;
     }
 
-    if (m_impl->cpio->exists("init.target.rc")) {
-        if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
-            m_impl->error = qcomPatcher.error();
-            return false;
-        }
-    } else {
-        if (!qcomPatcher.useGeneratedFstab("init.qcom.rc")) {
-            m_impl->error = qcomPatcher.error();
-            return false;
-        }
+    if (!corePatcher.useGeneratedFstabAuto()) {
+        m_impl->error = corePatcher.error();
+        return false;
     }
 
     return true;

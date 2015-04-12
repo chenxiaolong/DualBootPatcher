@@ -94,6 +94,11 @@ bool TrlteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
+    if (!corePatcher.useGeneratedFstabAuto()) {
+        m_impl->error = corePatcher.error();
+        return false;
+    }
+
     if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;
@@ -108,11 +113,6 @@ bool TrlteDefaultRamdiskPatcher::patchRamdisk()
     }
 
     if (!qcomPatcher.stripManualCacheMounts(mountFile)) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab(mountFile)) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

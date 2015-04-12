@@ -46,6 +46,9 @@ public:
     bool addDaemonService();
     bool fixDataMediaContext();
 
+    bool useGeneratedFstab(const std::string &filename);
+    bool useGeneratedFstabAuto();
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

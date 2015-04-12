@@ -107,6 +107,11 @@ bool JflteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
+    if (!corePatcher.useGeneratedFstabAuto()) {
+        m_impl->error = corePatcher.error();
+        return false;
+    }
+
     if (!geChargerModeMount()) {
         return false;
     }
@@ -117,11 +122,6 @@ bool JflteDefaultRamdiskPatcher::patchRamdisk()
     }
 
     if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.useGeneratedFstab("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
