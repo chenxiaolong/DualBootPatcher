@@ -57,8 +57,20 @@ public class ProgressCW implements PatcherUIListener {
 
     private void updateProgress() {
         if (vProgress != null) {
-            vProgress.setMax((int) mMaxBytes);
-            vProgress.setProgress((int) mBytes);
+            // Normalize to 0-1000000 range to prevent integer overflow
+            final int normalize = 1000000;
+            int value;
+            int max;
+            if (mMaxBytes == 0) {
+                value = 0;
+                max = 0;
+            } else {
+                value = (int) ((double) mBytes / mMaxBytes * normalize);
+                max = normalize;
+            }
+
+            vProgress.setMax(max);
+            vProgress.setProgress(value);
         }
         if (vPercentage != null) {
             if (mMaxBytes == 0) {
