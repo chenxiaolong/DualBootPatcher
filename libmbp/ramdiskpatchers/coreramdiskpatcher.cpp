@@ -20,6 +20,7 @@
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 
 #include <regex>
+#include <unordered_map>
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -44,6 +45,8 @@ public:
     CpioFile *cpio;
 
     PatcherError error;
+
+    int added_fstabs = 0;
 };
 /*! \endcond */
 
@@ -168,7 +171,7 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    std::vector<std::string> fstabs;
+    std::unordered_map<int, std::string> fstabs;
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         std::smatch what;
@@ -189,17 +192,11 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
             // sure was fun... Turns out service names > 16 characters are rejected
             // See valid_name() in https://android.googlesource.com/platform/system/core/+/master/init/init_parser.c
 
-            // Keep track of fstabs, so we can create services for them
-            int index;
-            auto it2 = std::find(fstabs.begin(), fstabs.end(), fstab);
-            if (it2 == fstabs.end()) {
-                index = fstabs.size();
-                fstabs.push_back(fstab);
-            } else {
-                index = it2 - fstabs.begin();
-            }
+            fstabs[m_impl->added_fstabs] = fstab;
 
-            std::string serviceName = fmt::format("mbtool-mount-{:03d}", index);
+            std::string serviceName = fmt::format(
+                    "mbtool-mount-{:03d}", m_impl->added_fstabs);
+            ++m_impl->added_fstabs;
 
             // Start mounting service
             it = lines.insert(it, spaces + "start " + serviceName);
@@ -212,11 +209,12 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         }
     }
 
-    for (unsigned int i = 0; i < fstabs.size(); ++i) {
-        std::string serviceName = fmt::format("mbtool-mount-{:03d}", i);
+    for (auto const &pair : fstabs) {
+        std::string serviceName =
+                fmt::format("mbtool-mount-{:03d}", pair.first);
 
         lines.push_back(fmt::format(
-                "service {} /mbtool mount_fstab {}", serviceName, fstabs[i]));
+                "service {} /mbtool mount_fstab {}", serviceName, pair.second));
         lines.push_back("    class core");
         lines.push_back("    critical");
         lines.push_back("    oneshot");
