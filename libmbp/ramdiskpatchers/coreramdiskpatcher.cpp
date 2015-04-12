@@ -46,21 +46,31 @@ public:
 
     PatcherError error;
 
-    int added_fstabs = 0;
+    std::vector<std::string> fstabs;
 };
 /*! \endcond */
 
 
-static const std::string MbtoolDaemonService
-        = "\nservice mbtooldaemon /mbtool daemon\n"
+static const std::string MbtoolDaemonService =
+        "\nservice mbtooldaemon /mbtool daemon\n"
         "    class main\n"
         "    user root\n"
         "    oneshot\n";
 
+static const std::string MbtoolMountServiceFmt =
+        "\nservice {} /mbtool mount_fstab {}\n"
+        "    class core\n"
+        "    critical\n"
+        "    oneshot\n"
+        "    disabled\n";
+
 static const std::string DataMediaContext =
         "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
 
+static const std::string ImportMultiBootRc = "import /init.multiboot.rc";
+
 static const std::string InitRc = "init.rc";
+static const std::string InitMultiBootRc = "init.multiboot.rc";
 static const std::string FileContexts = "file_contexts";
 
 CoreRamdiskPatcher::CoreRamdiskPatcher(const PatcherConfig * const pc,
@@ -89,6 +99,9 @@ std::string CoreRamdiskPatcher::id() const
 
 bool CoreRamdiskPatcher::patchRamdisk()
 {
+    if (!addMultiBootRc()) {
+        return false;
+    }
     if (!addDaemonService()) {
         return false;
     }
@@ -98,18 +111,58 @@ bool CoreRamdiskPatcher::patchRamdisk()
     return true;
 }
 
-bool CoreRamdiskPatcher::addDaemonService()
+bool CoreRamdiskPatcher::addMultiBootRc()
 {
-    std::vector<unsigned char> initRc;
-    if (!m_impl->cpio->contents(InitRc, &initRc)) {
+    if (!m_impl->cpio->addFile(
+            std::vector<unsigned char>(), InitMultiBootRc, 0750)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
 
-    initRc.insert(initRc.end(),
-                  MbtoolDaemonService.begin(), MbtoolDaemonService.end());
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitRc, &contents)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
 
-    m_impl->cpio->setContents(InitRc, std::move(initRc));
+    std::vector<std::string> lines;
+    boost::split(lines, contents, boost::is_any_of("\n"));
+
+    bool added = false;
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (!it->empty() && it->at(0) == '#') {
+            continue;
+        }
+        lines.insert(it, ImportMultiBootRc);
+        added = true;
+        break;
+    }
+
+    if (!added) {
+        lines.push_back(ImportMultiBootRc);
+    }
+
+    std::string strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(InitRc, std::move(contents));
+
+    return true;
+}
+
+bool CoreRamdiskPatcher::addDaemonService()
+{
+    std::vector<unsigned char> multiBootRc;
+    if (!m_impl->cpio->contents(InitMultiBootRc, &multiBootRc)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    multiBootRc.insert(multiBootRc.end(),
+                       MbtoolDaemonService.begin(),
+                       MbtoolDaemonService.end());
+
+    m_impl->cpio->setContents(InitMultiBootRc, std::move(multiBootRc));
 
     return true;
 }
@@ -171,7 +224,7 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    std::unordered_map<int, std::string> fstabs;
+    std::vector<std::string> newFstabs;
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         std::smatch what;
@@ -192,11 +245,18 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
             // sure was fun... Turns out service names > 16 characters are rejected
             // See valid_name() in https://android.googlesource.com/platform/system/core/+/master/init/init_parser.c
 
-            fstabs[m_impl->added_fstabs] = fstab;
+            int index;
 
-            std::string serviceName = fmt::format(
-                    "mbtool-mount-{:03d}", m_impl->added_fstabs);
-            ++m_impl->added_fstabs;
+            auto fstab_it = std::find(m_impl->fstabs.begin(),
+                                      m_impl->fstabs.end(), fstab);
+            if (fstab_it != m_impl->fstabs.end()) {
+                index = fstab_it - m_impl->fstabs.begin();
+            } else {
+                index = m_impl->fstabs.size() + newFstabs.size();
+                newFstabs.push_back(fstab);
+            }
+
+            std::string serviceName = fmt::format("mbtool-mount-{:03d}", index);
 
             // Start mounting service
             it = lines.insert(it, spaces + "start " + serviceName);
@@ -209,21 +269,30 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         }
     }
 
-    for (auto const &pair : fstabs) {
-        std::string serviceName =
-                fmt::format("mbtool-mount-{:03d}", pair.first);
-
-        lines.push_back(fmt::format(
-                "service {} /mbtool mount_fstab {}", serviceName, pair.second));
-        lines.push_back("    class core");
-        lines.push_back("    critical");
-        lines.push_back("    oneshot");
-        lines.push_back("    disabled");
-    }
-
     std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
     m_impl->cpio->setContents(filename, std::move(contents));
+
+    // Add mount services for the new fstab files to init.multiboot.rc
+    if (!newFstabs.empty()) {
+        std::vector<unsigned char> multiBootRc;
+
+        if (!m_impl->cpio->contents("init.multiboot.rc", &multiBootRc)) {
+            m_impl->error = m_impl->cpio->error();
+            return false;
+        }
+
+        for (const std::string fstab : newFstabs) {
+            std::string serviceName =
+                    fmt::format("mbtool-mount-{:03d}", m_impl->fstabs.size());
+            std::string service = fmt::format(
+                    MbtoolMountServiceFmt, serviceName, fstab);
+            multiBootRc.insert(multiBootRc.end(), service.begin(), service.end());
+            m_impl->fstabs.push_back(std::move(fstab));
+        }
+
+        m_impl->cpio->setContents("init.multiboot.rc", std::move(multiBootRc));
+    }
 
     return true;
 }

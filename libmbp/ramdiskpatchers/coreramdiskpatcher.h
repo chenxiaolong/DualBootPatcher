@@ -43,6 +43,7 @@ public:
 
     virtual bool patchRamdisk() override;
 
+    bool addMultiBootRc();
     bool addDaemonService();
     bool fixDataMediaContext();
 
