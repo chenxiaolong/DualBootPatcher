@@ -482,9 +482,9 @@ bool MultiBootPatcher::Impl::pass1(archive * const aOutput,
                                 curFile) != piBootImages.end();
         bool isExtImg = boost::ends_with(curFile, ".img");
         bool isExtLok = boost::ends_with(curFile, ".lok");
-        // Boot images should be over about 20 MiB. This check is here so the
+        // Boot images should be over about 30 MiB. This check is here so the
         // patcher won't try to read a multi-gigabyte system image into RAM
-        bool isSizeOK = archive_entry_size(entry) <= 20 * 1024 * 1024;
+        bool isSizeOK = archive_entry_size(entry) <= 30 * 1024 * 1024;
 
         if (hasBootImage && (inList || isExtImg || isExtLok) && isSizeOK) {
             // Load the file into memory
