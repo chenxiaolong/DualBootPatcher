@@ -117,7 +117,7 @@ bool TrlteDefaultRamdiskPatcher::patchRamdisk()
         mountFile = "init.qcom.rc";
     }
 
-    if (!qcomPatcher.stripManualCacheMounts(mountFile)) {
+    if (!qcomPatcher.stripManualMounts(mountFile)) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

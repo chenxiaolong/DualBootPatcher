@@ -122,7 +122,7 @@ bool JflteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.stripManualCacheMounts("init.target.rc")) {
+    if (!qcomPatcher.stripManualMounts("init.target.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }

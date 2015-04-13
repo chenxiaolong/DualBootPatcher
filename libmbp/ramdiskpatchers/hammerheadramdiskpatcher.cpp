@@ -94,7 +94,7 @@ bool HammerheadDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.stripManualCacheMounts("init.hammerhead.rc")) {
+    if (!qcomPatcher.stripManualMounts("init.hammerhead.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;
     }
