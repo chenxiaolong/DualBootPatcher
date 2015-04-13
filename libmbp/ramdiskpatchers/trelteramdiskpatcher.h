@@ -61,9 +61,6 @@ public:
     virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
-
-private:
-    bool fixChargerModeMount();
 };
 
 }

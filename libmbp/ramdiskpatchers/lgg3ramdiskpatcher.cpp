@@ -78,6 +78,11 @@ bool LGG3RamdiskPatcher::patchRamdisk()
         return false;
     }
 
+    if (!corePatcher.fixChargerMountAuto()) {
+        m_impl->error = corePatcher.error();
+        return false;
+    }
+
     return true;
 }
 

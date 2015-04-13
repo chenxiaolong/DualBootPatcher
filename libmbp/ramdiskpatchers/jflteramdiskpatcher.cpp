@@ -112,7 +112,8 @@ bool JflteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!geChargerModeMount()) {
+    if (!corePatcher.fixChargerMountAuto()) {
+        m_impl->error = corePatcher.error();
         return false;
     }
 
@@ -130,59 +131,6 @@ bool JflteDefaultRamdiskPatcher::patchRamdisk()
         m_impl->error = galaxyPatcher.error();
         return false;
     }
-
-    return true;
-}
-
-bool JflteDefaultRamdiskPatcher::geChargerModeMount()
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(InitRc, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    // Find fstab file
-    std::string fstab;
-    for (const std::string &file : m_impl->cpio->filenames()) {
-        if (file.find('/') == std::string::npos
-                && boost::starts_with(file, "fstab")) {
-            fstab = file;
-        }
-    }
-    if (fstab.empty()) {
-        // Hopefully will never happen
-        return true;
-    }
-
-    // Paths
-    std::string completed = "/." + fstab + ".completed";
-
-    std::string previousLine;
-
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, std::regex("mount.*/system"))
-                && std::regex_search(previousLine, std::regex("on\\s+charger"))) {
-            it = lines.insert(it, "    start mbtool-charger");
-            ++it;
-            *it = "    wait " + completed + " 15";
-        }
-
-        previousLine = *it;
-    }
-
-    lines.push_back("service mbtool-charger /mbtool mount_fstab /" + fstab);
-    lines.push_back("    class core");
-    lines.push_back("    critical");
-    lines.push_back("    oneshot");
-    lines.push_back("    disabled");
-
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }

@@ -100,6 +100,11 @@ bool HlteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
+    if (!corePatcher.fixChargerMountAuto()) {
+        m_impl->error = corePatcher.error();
+        return false;
+    }
+
     if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
         return false;

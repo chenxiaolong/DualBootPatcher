@@ -78,9 +78,6 @@ PatcherError TrelteBaseRamdiskPatcher::error() const
 
 const std::string TrelteDefaultRamdiskPatcher::Id = "trelte/default";
 
-static const std::string InitFile("init.universal5433.rc");
-static const std::string FstabFile("fstab.universal5433");
-
 TrelteDefaultRamdiskPatcher::TrelteDefaultRamdiskPatcher(const PatcherConfig * const pc,
                                                          const FileInfo *const info,
                                                          CpioFile *const cpio)
@@ -107,46 +104,10 @@ bool TrelteDefaultRamdiskPatcher::patchRamdisk()
         return false;
     }
 
-    if (!fixChargerModeMount()) {
+    if (!corePatcher.fixChargerMountAuto()) {
+        m_impl->error = corePatcher.error();
         return false;
     }
-
-    return true;
-}
-
-bool TrelteDefaultRamdiskPatcher::fixChargerModeMount()
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(InitFile, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    std::string previousLine;
-
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, std::regex("mount.+/system"))
-                && previousLine.find("ro.bootmode=charger") != std::string::npos) {
-            it = lines.insert(it, "    start mbtool-charger");
-            *(++it) = "    wait /.";
-            *it += FstabFile;
-            *it += " 15";
-        }
-
-        previousLine = *it;
-    }
-
-    lines.push_back("service mbtool-charger /mbtool mount_fstab " + FstabFile);
-    lines.push_back("    class core");
-    lines.push_back("    critical");
-    lines.push_back("    oneshot");
-
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
-    m_impl->cpio->setContents(InitFile, std::move(contents));
 
     return true;
 }

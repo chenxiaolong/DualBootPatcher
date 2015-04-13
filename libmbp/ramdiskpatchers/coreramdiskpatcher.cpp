@@ -312,4 +312,62 @@ bool CoreRamdiskPatcher::useGeneratedFstabAuto()
     return true;
 }
 
+bool CoreRamdiskPatcher::fixChargerMount(const std::string &filename)
+{
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(filename, &contents)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    if (m_impl->fstabs.empty()) {
+        // NOTE: This function should be called after useGeneratedFstab()
+        return true;
+    }
+
+    // Paths
+    boost::filesystem::path fstab_path(m_impl->fstabs[0]);
+    std::string dirName = fstab_path.parent_path().string();
+    std::string baseName = fstab_path.filename().string();
+    std::string completed = dirName + "/." + baseName + ".completed";
+
+    std::string previousLine;
+
+    std::vector<std::string> lines;
+    boost::split(lines, contents, boost::is_any_of("\n"));
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (std::regex_search(*it, std::regex("mount.*/system"))
+                && (std::regex_search(previousLine, std::regex("on\\s+charger"))
+                || previousLine.find("ro.bootmode=charger") != std::string::npos)) {
+            std::string spaces = whitespace(*it);
+            *it = spaces + "start mbtool-mount-000";
+            it = lines.insert(++it, spaces + "wait " + completed + " 15");
+        }
+
+        previousLine = *it;
+    }
+
+    std::string strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(filename, std::move(contents));
+
+    return true;
+}
+
+bool CoreRamdiskPatcher::fixChargerMountAuto()
+{
+    for (const std::string &file : m_impl->cpio->filenames()) {
+        if (file.find('/') == std::string::npos
+                && boost::starts_with(file, "init.")
+                && boost::ends_with(file, ".rc")) {
+            if (!fixChargerMount(file)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 }
