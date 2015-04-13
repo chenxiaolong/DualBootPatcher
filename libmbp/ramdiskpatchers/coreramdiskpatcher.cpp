@@ -243,6 +243,11 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
             std::string completed = dir_name + "/." + base_name + ".completed";
             std::string generated = dir_name + "/." + base_name + ".gen";
 
+            if (fstab.find("goldfish") != std::string::npos) {
+                // Skip over files for the Android emulator
+                continue;
+            }
+
             // Debugging this: "- exec '/system/bin/sh' failed: No such file or directory (2) -"
             // sure was fun... Turns out service names > 16 characters are rejected
             // See valid_name() in https://android.googlesource.com/platform/system/core/+/master/init/init_parser.c
