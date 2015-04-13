@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -54,6 +54,7 @@
 #include "ramdiskpatchers/lgg3ramdiskpatcher.h"
 #include "ramdiskpatchers/trelteramdiskpatcher.h"
 #include "ramdiskpatchers/trlteramdiskpatcher.h"
+#include "ramdiskpatchers/zerolteramdiskpatcher.h"
 #endif
 
 
@@ -368,6 +369,15 @@ void PatcherConfig::Impl::loadDefaultDevices()
     std::string qcomSdi(qcomBaseDir); qcomSdi += "/sdi";
     std::string qcomTz(qcomBaseDir); qcomTz += "/tz";
 
+    // http://forum.xda-developers.com/showpost.php?p=60050072&postcount=5640
+    std::string s6EdgeBaseDir("/dev/block/platform/15570000.ufs/by-name");
+    std::string s6EdgeSystem(s6EdgeBaseDir); s6EdgeSystem += "/SYSTEM";
+    std::string s6EdgeCache(s6EdgeBaseDir); s6EdgeCache += "/CACHE";
+    std::string s6EdgeData(s6EdgeBaseDir); s6EdgeData += "/USERDATA";
+    std::string s6EdgeBoot(s6EdgeBaseDir); s6EdgeBoot += "/BOOT";
+    std::string s6EdgeRecovery(s6EdgeBaseDir); s6EdgeRecovery += "/RECOVERY";
+    std::string s6EdgeRadio(s6EdgeBaseDir); s6EdgeRadio += "/RADIO";
+
     // http://forum.xda-developers.com/showpost.php?p=59801273&postcount=5465
     std::string n4ExynosBaseDir("/dev/block/platform/15540000.dwmmc0/by-name");
     std::string n4ExynosSystem(n4ExynosBaseDir); n4ExynosSystem += "/SYSTEM";
@@ -407,6 +417,20 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p15" });
     device->setRecoveryBlockDevs({ qcomRecovery });
+    devices.push_back(device);
+
+    // Samsung Galaxy S 6 Edge
+    device = new Device();
+    device->setId("zerolte");
+    device->setCodenames({ "zerolte", "zeroltetmo", "zeroltexx" });
+    device->setName("Samsung Galaxy S 6 Edge (Untested)");
+    device->setBlockDevBaseDirs({ s6EdgeBaseDir });
+    device->setSystemBlockDevs({ s6EdgeSystem, "/dev/block/sda15" });
+    device->setCacheBlockDevs({ s6EdgeCache, "/dev/block/sda16" });
+    device->setDataBlockDevs({ s6EdgeData, "/dev/block/sda17" });
+    device->setBootBlockDevs({ s6EdgeBoot, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ s6EdgeRecovery, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ s6EdgeRadio });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3
@@ -584,7 +608,8 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         LGG2RamdiskPatcher::Id,
         LGG3RamdiskPatcher::Id,
         TrelteDefaultRamdiskPatcher::Id,
-        TrlteDefaultRamdiskPatcher::Id
+        TrlteDefaultRamdiskPatcher::Id,
+        ZerolteDefaultRamdiskPatcher::Id
     };
 }
 
@@ -677,6 +702,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new TrelteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == TrlteDefaultRamdiskPatcher::Id) {
         rp = new TrlteDefaultRamdiskPatcher(this, info, cpio);
+    } else if (id == ZerolteDefaultRamdiskPatcher::Id) {
+        rp = new ZerolteDefaultRamdiskPatcher(this, info, cpio);
     }
 
     if (rp != nullptr) {

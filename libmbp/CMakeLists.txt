@@ -56,6 +56,7 @@ set(MBP_SOURCES
     ramdiskpatchers/qcomramdiskpatcher.cpp
     ramdiskpatchers/trelteramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
+    ramdiskpatchers/zerolteramdiskpatcher.cpp
     external/sha.c
     ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
