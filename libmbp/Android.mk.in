@@ -76,10 +76,10 @@ ifeq ($(MBP_MINI),true)
 LOCAL_CFLAGS += -DLIBMBP_MINI
 endif
 
-LOCAL_CFLAGS += -ffunction-sections -fdata-sections -Os
+LOCAL_CFLAGS += -ffunction-sections -fdata-sections -O2
 
 ifneq ($(MBP_MINI),true)
-LOCAL_LDFLAGS := -Wl,--gc-sections -Os
+LOCAL_LDFLAGS := -Wl,--gc-sections -O2
 
 LOCAL_LDLIBS := -lz
 LOCAL_LDLIBS += -llog
