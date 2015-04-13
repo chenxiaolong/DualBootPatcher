@@ -215,6 +215,11 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     cpio->setContents("init.rc", std::move(contents));
 
     CoreRamdiskPatcher crp(pc, info, cpio);
+
+    if (!cpio->exists("init.multiboot.rc")) {
+        crp.addMultiBootRc();
+    }
+
     crp.addDaemonService();
 }
 
