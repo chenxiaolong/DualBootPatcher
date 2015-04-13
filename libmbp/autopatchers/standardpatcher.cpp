@@ -127,10 +127,11 @@ bool StandardPatcher::patchFiles(const std::string &directory)
 void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
 {
     std::regex reLine("assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
+    std::regex reReplace("^(\\s*assert\\s*\\()");
 
     for (auto &line : *lines) {
         if (std::regex_search(line, reLine)) {
-            line = std::regex_replace(line, std::regex("^(\\s*assert\\s*\\()"),
+            line = std::regex_replace(line, reReplace,
                                       "$1\"true\" == \"true\" || ");
         }
     }
@@ -267,8 +268,16 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
     auto const cacheDevs = device->cacheBlockDevs();
     auto const dataDevs = device->dataBlockDevs();
 
+    static auto const re1 = std::regex(RE_FUNC("format", ""));
+    static auto const re2 = std::regex(
+            RE_FUNC("delete_recursive", RE_ARG("/system")));
+    static auto const re3 = std::regex(
+            RE_FUNC("delete_recursive", RE_ARG("/cache")));
+    static auto const re4 = std::regex(
+            RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh")));
+
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        if (std::regex_search(*it, std::regex(RE_FUNC("format", "")))) {
+        if (std::regex_search(*it, re1)) {
             bool isSystem = it->find("/system") != std::string::npos
                     || findItemsInString(*it, systemDevs);
             bool isCache = it->find("/cache") != std::string::npos
@@ -284,14 +293,11 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
             } else if (isData) {
                 *it = fmt::format(Format, "/data");
             }
-        } else if (std::regex_search(*it, std::regex(
-                RE_FUNC("delete_recursive", RE_ARG("/system"))))) {
+        } else if (std::regex_search(*it, re2)) {
             *it = fmt::format(Format, "/system");
-        } else if (std::regex_search(*it, std::regex(
-                RE_FUNC("delete_recursive", RE_ARG("/cache"))))) {
+        } else if (std::regex_search(*it, re3)) {
             *it = fmt::format(Format, "/cache");
-        } else if (std::regex_search(*it, std::regex(
-                RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh"))))) {
+        } else if (std::regex_search(*it, re4)) {
             *it = fmt::format(Format, "/data");
         }
     }

@@ -119,8 +119,10 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
+    static auto const re = std::regex("^\\s+mount.*/cache.*$");
+
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, std::regex("^\\s+mount.*/cache.*$"))) {
+        if (std::regex_search(*it, re)) {
             it->insert(it->begin(), '#');
         }
     }
