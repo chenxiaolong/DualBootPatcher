@@ -30,7 +30,6 @@
 #include "external/sha.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
-#include "private/portable_endian.h"
 
 
 namespace mbp
