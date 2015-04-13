@@ -216,6 +216,10 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         return false;
     }
 
+    // Release memory since BootImage keeps a copy of the separate components
+    data->clear();
+    data->shrink_to_fit();
+
     // Load the ramdisk cpio
     CpioFile cpio;
     if (!cpio.load(bi.ramdiskImage())) {
