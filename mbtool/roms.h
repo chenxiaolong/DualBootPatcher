@@ -35,7 +35,6 @@ public:
     std::string system_path;
     std::string cache_path;
     std::string data_path;
-    std::vector<std::shared_ptr<Package>> pkgs;
 
     Rom();
 };
