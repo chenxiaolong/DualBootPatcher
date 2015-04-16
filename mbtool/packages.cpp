@@ -71,6 +71,16 @@ static const char *ATTR_USER_ID              = "userId";
 static const char *ATTR_UT                   = "ut";
 static const char *ATTR_VERSION              = "version";
 
+// Samsung-specific
+static const char *ATTR_SAMSUNG_DM           = "dm";
+static const char *ATTR_SAMSUNG_DT           = "dt";
+static const char *ATTR_SAMSUNG_NATIVE_LIBRARY_DIR
+                                             = "nativeLibraryDir";
+static const char *ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_DIR
+                                             = "nativeLibraryRootDir";
+static const char *ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_REQUIRES_ISA
+                                             = "nativeLibraryRootRequiresIsa";
+
 static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
                            std::shared_ptr<Package> pkg);
 static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs,
@@ -376,6 +386,12 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
             pkg->last_update_time = strtoull(value, nullptr, 16);
         } else if (strcmp(name, ATTR_VERSION) == 0) {
             pkg->version = strtol(value, nullptr, 10);
+        } else if (strcmp(name, ATTR_SAMSUNG_DM) == 0
+                || strcmp(name, ATTR_SAMSUNG_DT) == 0
+                || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_DIR) == 0
+                || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_DIR) == 0
+                || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_REQUIRES_ISA) == 0) {
+            // Ignore Samsung-specific attributes
         } else {
             LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_PACKAGE);
         }
@@ -445,6 +461,15 @@ std::shared_ptr<Package> Packages::find_by_uid(uid_t uid)
     auto it = std::find_if(pkgs.begin(), pkgs.end(),
                            [&](const std::shared_ptr<Package> &pkg) {
         return !pkg->is_shared_user && pkg->user_id == static_cast<int>(uid);
+    });
+    return it == pkgs.end() ? std::shared_ptr<Package>() : *it;
+}
+
+std::shared_ptr<Package> Packages::find_by_pkg(const std::string &pkg_id)
+{
+    auto it = std::find_if(pkgs.begin(), pkgs.end(),
+                           [&](const std::shared_ptr<Package> &pkg) {
+        return pkg->name == pkg_id;
     });
     return it == pkgs.end() ? std::shared_ptr<Package>() : *it;
 }
