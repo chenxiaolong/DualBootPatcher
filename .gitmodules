@@ -25,3 +25,6 @@
 [submodule "external/flatbuffers"]
 	path = external/flatbuffers
 	url = https://github.com/google/flatbuffers.git
+[submodule "external/libaxmlparser"]
+	path = external/libaxmlparser
+	url = https://github.com/chenxiaolong/libaxmlparser.git
