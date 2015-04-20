@@ -424,6 +424,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("zerolte");
     device->setCodenames({ "zerolte", "zeroltetmo", "zeroltexx" });
     device->setName("Samsung Galaxy S 6 Edge (Untested)");
+    device->setArchitecture("arm64-v8a");
     device->setBlockDevBaseDirs({ s6EdgeBaseDir });
     device->setSystemBlockDevs({ s6EdgeSystem, "/dev/block/sda15" });
     device->setCacheBlockDevs({ s6EdgeCache, "/dev/block/sda16" });
