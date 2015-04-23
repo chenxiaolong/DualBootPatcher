@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 set -e
 
-ver=1.57.0
+ver=1.58.0
 
 name="boost_${ver//./_}"
 tarball="${name}.tar.bz2"
