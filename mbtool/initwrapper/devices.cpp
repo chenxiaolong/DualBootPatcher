@@ -128,17 +128,6 @@ static void add_platform_device(const char *path)
         }
     }
 
-    for (auto it = platform_names.rbegin(); it != platform_names.rend(); ++it) {
-        const struct platform_node &bus = *it;
-
-        if ((bus.path_len < path_len) &&
-                (path[bus.path_len] == '/') &&
-                strncmp(path, bus.path, bus.path_len) == 0) {
-            // Subdevice of an existing platform, ignore it
-            return;
-        }
-    }
-
 #if UEVENT_LOGGING
     LOGI("adding platform device %s (%s)", name, path);
 #endif
