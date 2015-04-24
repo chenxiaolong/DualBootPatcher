@@ -27,6 +27,11 @@
 
 #include "private/logging.h"
 
+#ifdef _WIN32
+#define USEWIN32IOAPI
+#include "external/minizip/iowin32.h"
+#endif
+
 
 namespace mbp
 {
@@ -473,6 +478,479 @@ PatcherError FileUtils::laArchiveStats(const std::string &path,
 
     stats->files = count;
     stats->totalSize = totalSize;
+
+    return PatcherError();
+}
+
+unzFile FileUtils::mzOpenInputFile(const std::string &path)
+{
+#ifdef USEWIN32IOAPI
+    zlib_filefunc64_def zFunc;
+    memset(&zFunc, 0, sizeof(zFunc));
+    fill_win32_filefunc64A(&zFunc);
+    return unzOpen2_64(path.c_str(), &zFunc);
+#else
+    return unzOpen64(path.c_str());
+#endif
+}
+
+zipFile FileUtils::mzOpenOutputFile(const std::string &path)
+{
+#ifdef USEWIN32IOAPI
+    zlib_filefunc64_def zFunc;
+    memset(&zFunc, 0, sizeof(zFunc));
+    fill_win32_filefunc64A(&zFunc);
+    return zipOpen2_64(path.c_str(), 0, nullptr, &zFunc);
+#else
+    return zipOpen64(path.c_str(), 0);
+#endif
+}
+
+int FileUtils::mzCloseInputFile(unzFile uf)
+{
+    return unzClose(uf);
+}
+
+int FileUtils::mzCloseOutputFile(zipFile zf)
+{
+    return zipClose(zf, nullptr);
+}
+
+PatcherError FileUtils::mzArchiveStats(const std::string &path,
+                                       FileUtils::ArchiveStats *stats,
+                                       std::vector<std::string> ignore)
+{
+    assert(stats != nullptr);
+
+    unzFile uf = mzOpenInputFile(path);
+
+    if (!uf) {
+        FLOGE("minizip: Failed to open for reading: {}", path);
+        return PatcherError::createArchiveError(
+                ErrorCode::ArchiveReadOpenError, path);
+    }
+
+    uint64_t count = 0;
+    uint64_t totalSize = 0;
+    std::string name;
+    unz_file_info64 fi;
+    memset(&fi, 0, sizeof(fi));
+
+    int ret = unzGoToFirstFile(uf);
+    if (ret != UNZ_OK) {
+        mzCloseInputFile(uf);
+        return PatcherError::createArchiveError(
+                ErrorCode::ArchiveReadHeaderError, std::string());
+    }
+
+    do {
+        if (!mzGetInfo(uf, &fi, &name)) {
+            mzCloseInputFile(uf);
+            return PatcherError::createArchiveError(
+                    ErrorCode::ArchiveReadHeaderError, std::string());
+        }
+
+        if (std::find(ignore.begin(), ignore.end(), name) == ignore.end()) {
+            ++count;
+            totalSize += fi.uncompressed_size;
+        }
+    } while ((ret = unzGoToNextFile(uf)) == UNZ_OK);
+
+    if (ret != UNZ_END_OF_LIST_OF_FILE) {
+        mzCloseInputFile(uf);
+        return PatcherError::createArchiveError(
+                ErrorCode::ArchiveReadHeaderError, std::string());
+    }
+
+    mzCloseInputFile(uf);
+
+    stats->files = count;
+    stats->totalSize = totalSize;
+
+    return PatcherError();
+}
+
+bool FileUtils::mzGetInfo(unzFile uf,
+                          unz_file_info64 *fi,
+                          std::string *filename)
+{
+    unz_file_info64 info;
+    memset(&info, 0, sizeof(info));
+
+    // First query to get filename size
+    int ret = unzGetCurrentFileInfo64(
+        uf,                     // file
+        &info,                  // pfile_info
+        nullptr,                // filename
+        0,                      // filename_size
+        nullptr,                // extrafield
+        0,                      // extrafield_size
+        nullptr,                // comment
+        0                       // comment_size
+    );
+
+    if (ret != UNZ_OK) {
+        return false;
+    }
+
+    if (filename) {
+        std::vector<char> buf(info.size_filename + 1);
+
+        ret = unzGetCurrentFileInfo64(
+            uf,             // file
+            &info,          // pfile_info
+            buf.data(),     // filename
+            buf.size(),     // filename_size
+            nullptr,        // extrafield
+            0,              // extrafield_size
+            nullptr,        // comment
+            0               // comment_size
+        );
+
+        if (ret != UNZ_OK) {
+            return false;
+        }
+
+        *filename = buf.data();
+    }
+
+    if (fi) {
+        *fi = info;
+    }
+
+    return true;
+}
+
+bool FileUtils::mzCopyFileRaw(unzFile uf,
+                              zipFile zf,
+                              const std::string &name,
+                              void (*cb)(uint64_t bytes, void *), void *userData)
+{
+    unz_file_info64 ufi;
+
+    if (!mzGetInfo(uf, &ufi, nullptr)) {
+        return false;
+    }
+
+    bool zip64 = ufi.uncompressed_size >= ((1ull << 32) - 1);
+
+    zip_fileinfo zfi;
+    memset(&zfi, 0, sizeof(zfi));
+
+    zfi.dosDate = ufi.dosDate;
+    zfi.tmz_date.tm_sec = ufi.tmu_date.tm_sec;
+    zfi.tmz_date.tm_min = ufi.tmu_date.tm_min;
+    zfi.tmz_date.tm_hour = ufi.tmu_date.tm_hour;
+    zfi.tmz_date.tm_mday = ufi.tmu_date.tm_mday;
+    zfi.tmz_date.tm_mon = ufi.tmu_date.tm_mon;
+    zfi.tmz_date.tm_year = ufi.tmu_date.tm_year;
+    zfi.internal_fa = ufi.internal_fa;
+    zfi.external_fa = ufi.external_fa;
+
+    int method;
+    int level;
+
+    // Open raw file in input zip
+    int ret = unzOpenCurrentFile2(
+        uf,                     // file
+        &method,                // method
+        &level,                 // level
+        1                       // raw
+    );
+    if (ret != UNZ_OK) {
+        return false;
+    }
+
+    // Open raw file in output zip
+    ret = zipOpenNewFileInZip2_64(
+        zf,             // file
+        name.c_str(),   // filename
+        &zfi,           // zip_fileinfo
+        nullptr,        // extrafield_local
+        0,              // size_extrafield_local
+        nullptr,        // extrafield_global
+        0,              // size_extrafield_global
+        nullptr,        // comment
+        method,         // method
+        level,          // level
+        1,              // raw
+        zip64           // zip64
+    );
+    if (ret != ZIP_OK) {
+        unzCloseCurrentFile(uf);
+        return false;
+    }
+
+    uint64_t bytes = 0;
+
+    // Exceeds Android's default stack size, unfortunately, so allocate
+    // on the heap
+    std::vector<unsigned char> buf(1024 * 1024); // 1MiB
+    int bytes_read;
+    double ratio;
+
+    while ((bytes_read = unzReadCurrentFile(uf, buf.data(), buf.size())) > 0) {
+        bytes += bytes_read;
+        if (cb) {
+            // Scale this to the uncompressed size for the purposes of a
+            // progress bar
+            ratio = (double) bytes / ufi.compressed_size;
+            cb(ratio * ufi.uncompressed_size, userData);
+        }
+
+        ret = zipWriteInFileInZip(zf, buf.data(), bytes_read);
+        if (ret != ZIP_OK) {
+            unzCloseCurrentFile(uf);
+            zipCloseFileInZip(zf);
+            return false;
+        }
+    }
+
+    unzCloseCurrentFile(uf);
+    zipCloseFileInZipRaw64(zf, ufi.uncompressed_size, ufi.crc);
+
+    return bytes_read == 0;
+}
+
+bool FileUtils::mzReadToMemory(unzFile uf,
+                               std::vector<unsigned char> *output,
+                               void (*cb)(uint64_t bytes, void *), void *userData)
+{
+    unz_file_info64 fi;
+
+    if (!mzGetInfo(uf, &fi, nullptr)) {
+        return false;
+    }
+
+    std::vector<unsigned char> data;
+    data.reserve(fi.uncompressed_size);
+
+    int ret = unzOpenCurrentFile(uf);
+    if (ret != UNZ_OK) {
+        return false;
+    }
+
+    int n;
+    char buf[32768];
+
+    while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
+        if (cb) {
+            cb(data.size() + n, userData);
+        }
+
+        data.insert(data.end(), buf, buf + n);
+    }
+
+    unzCloseCurrentFile(uf);
+
+    if (n != 0) {
+        return false;
+    }
+
+    data.swap(*output);
+    return true;
+}
+
+bool FileUtils::mzExtractFile(unzFile uf,
+                              const std::string &directory)
+{
+    unz_file_info64 fi;
+    std::string filename;
+
+    if (!mzGetInfo(uf, &fi, &filename)) {
+        return false;
+    }
+
+    std::string fullPath(directory);
+    fullPath += "/";
+    fullPath += filename;
+
+    boost::filesystem::path path(fullPath);
+    boost::filesystem::create_directories(path.parent_path());
+
+    std::ofstream file(fullPath, std::ios::binary);
+    if (file.fail()) {
+        return false;
+    }
+
+    int ret = unzOpenCurrentFile(uf);
+    if (ret != UNZ_OK) {
+        return false;
+    }
+
+    int n;
+    char buf[32768];
+
+    while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
+        file.write(buf, n);
+    }
+
+    unzCloseCurrentFile(uf);
+
+    return n == 0;
+}
+
+static bool mzGetFileTime(const std::string &filename,
+                          tm_zip *tmzip, uLong *dostime)
+{
+    // Don't fail when building with -Werror
+    (void) filename;
+    (void) tmzip;
+    (void) dostime;
+
+#ifdef _WIN32
+    FILETIME ftLocal;
+    HANDLE hFind;
+    WIN32_FIND_DATAA ff32;
+
+    hFind = FindFirstFileA(filename.c_str(), &ff32);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        FileTimeToLocalFileTime(&ff32.ftLastWriteTime, &ftLocal);
+        FileTimeToDosDateTime(&ftLocal,
+                              ((LPWORD) dostime) + 1,
+                              ((LPWORD) dostime) + 0);
+        FindClose(hFind);
+        return true;
+    }
+#elif defined unix || defined __APPLE__ /* || defined __ANDROID__ */
+    struct stat sb;
+    struct tm *t;
+
+    if (stat(filename.c_str(), &sb) == 0) {
+        t = localtime(&sb.st_mtime);
+
+        tmzip->tm_sec  = t->tm_sec;
+        tmzip->tm_min  = t->tm_min;
+        tmzip->tm_hour = t->tm_hour;
+        tmzip->tm_mday = t->tm_mday;
+        tmzip->tm_mon  = t->tm_mon ;
+        tmzip->tm_year = t->tm_year;
+
+        return true;
+    }
+#endif
+    return false;
+}
+
+PatcherError FileUtils::mzAddFile(zipFile zf,
+                                  const std::string &name,
+                                  const std::vector<unsigned char> &contents)
+{
+    // Obviously never true, but we'll keep it here just in case
+    bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
+
+    zip_fileinfo zi;
+    memset(&zi, 0, sizeof(zi));
+
+    int ret = zipOpenNewFileInZip2_64(
+        zf,                     // file
+        name.c_str(),           // filename
+        &zi,                    // zip_fileinfo
+        nullptr,                // extrafield_local
+        0,                      // size_extrafield_local
+        nullptr,                // extrafield_global
+        0,                      // size_extrafield_global
+        nullptr,                // comment
+        Z_DEFLATED,             // method
+        Z_DEFAULT_COMPRESSION,  // level
+        0,                      // raw
+        zip64                   // zip64
+    );
+
+    if (ret != ZIP_OK) {
+        FLOGW("minizip: Failed to add file (error code: {}): [memory]", ret);
+
+        return PatcherError::createArchiveError(
+                ErrorCode::ArchiveWriteDataError, name);
+    }
+
+    // Write data to file
+    ret = zipWriteInFileInZip(zf, contents.data(), contents.size());
+    if (ret != ZIP_OK) {
+        FLOGW("minizip: Failed to write data (error code: {}): [memory]", ret);
+        zipCloseFileInZip(zf);
+
+        return PatcherError::createArchiveError(
+                ErrorCode::ArchiveWriteDataError, name);
+    }
+
+    zipCloseFileInZip(zf);
+
+    return PatcherError();
+}
+
+PatcherError FileUtils::mzAddFile(zipFile zf,
+                                  const std::string &name,
+                                  const std::string &path)
+{
+    // Copy file into archive
+    std::ifstream file(path, std::ios::binary);
+    if (file.fail()) {
+        return PatcherError::createIOError(
+                ErrorCode::FileOpenError, path);
+    }
+
+    file.seekg(0, std::ios::end);
+    auto size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    bool zip64 = (uint64_t) size >= ((1ull << 32) - 1);
+
+    zip_fileinfo zi;
+    memset(&zi, 0, sizeof(zi));
+
+    mzGetFileTime(path, &zi.tmz_date, &zi.dosDate);
+
+    int ret = zipOpenNewFileInZip2_64(
+        zf,                     // file
+        name.c_str(),           // filename
+        &zi,                    // zip_fileinfo
+        nullptr,                // extrafield_local
+        0,                      // size_extrafield_local
+        nullptr,                // extrafield_global
+        0,                      // size_extrafield_global
+        nullptr,                // comment
+        Z_DEFLATED,             // method
+        Z_DEFAULT_COMPRESSION,  // level
+        0,                      // raw
+        zip64                   // zip64
+    );
+
+    if (ret != ZIP_OK) {
+        FLOGW("minizip: Failed to add file (error code: {}): {}", ret, path);
+
+        return PatcherError::createArchiveError(
+                ErrorCode::ArchiveWriteDataError, name);
+    }
+
+    // Write data to file
+    char buf[32768];
+    std::streamsize n;
+
+    while (!file.eof()) {
+        file.read(buf, 32768);
+        n = file.gcount();
+
+        ret = zipWriteInFileInZip(zf, buf, n);
+        if (ret != ZIP_OK) {
+            FLOGW("minizip: Failed to write data (error code: {}): {}",
+                  ret, path);
+            zipCloseFileInZip(zf);
+
+            return PatcherError::createArchiveError(
+                    ErrorCode::ArchiveWriteDataError, name);
+        }
+    }
+
+    if (file.bad()) {
+        zipCloseFileInZip(zf);
+
+        return PatcherError::createIOError(
+                ErrorCode::FileReadError, path);
+    }
+
+    zipCloseFileInZip(zf);
 
     return PatcherError();
 }

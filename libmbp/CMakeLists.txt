@@ -109,6 +109,7 @@ else()
     add_definitions(
         -DLIBMBP_LIBRARY
         -DLIBMBP_VERSION="${MBP_VERSION}"
+        -DSTRICTZIPUNZIP
     )
 
     add_library(mbp SHARED ${MBP_SOURCES})
@@ -132,6 +133,7 @@ else()
         ${MBP_ZLIB_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}
+        minizip
     )
 
     if(WIN32)

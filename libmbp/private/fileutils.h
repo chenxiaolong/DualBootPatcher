@@ -25,6 +25,9 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "external/minizip/unzip.h"
+#include "external/minizip/zip.h"
+
 #include "patchererror.h"
 
 
@@ -75,6 +78,42 @@ public:
     static PatcherError laArchiveStats(const std::string &path,
                                        ArchiveStats *stats,
                                        std::vector<std::string> ignore);
+
+    static unzFile mzOpenInputFile(const std::string &path);
+
+    static zipFile mzOpenOutputFile(const std::string &path);
+
+    static int mzCloseInputFile(unzFile uf);
+
+    static int mzCloseOutputFile(zipFile zf);
+
+    static PatcherError mzArchiveStats(const std::string &path,
+                                       ArchiveStats *stats,
+                                       std::vector<std::string> ignore);
+
+    static bool mzGetInfo(unzFile uf,
+                          unz_file_info64 *fi,
+                          std::string *filename);
+
+    static bool mzCopyFileRaw(unzFile uf,
+                              zipFile zf,
+                              const std::string &name,
+                              void (*cb)(uint64_t bytes, void *), void *userData);
+
+    static bool mzReadToMemory(unzFile uf,
+                               std::vector<unsigned char> *output,
+                               void (*cb)(uint64_t bytes, void *), void *userData);
+
+    static bool mzExtractFile(unzFile uf,
+                              const std::string &directory);
+
+    static PatcherError mzAddFile(zipFile zf,
+                                  const std::string &name,
+                                  const std::vector<unsigned char> &contents);
+
+    static PatcherError mzAddFile(zipFile zf,
+                                  const std::string &name,
+                                  const std::string &path);
 };
 
 }

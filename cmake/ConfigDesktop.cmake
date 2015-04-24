@@ -47,6 +47,9 @@ link_directories(${Boost_LIBRARY_DIRS})
 # Qt5
 find_package(Qt5Core 5.3 REQUIRED)
 
+# Minizip
+add_subdirectory(external/minizip)
+
 
 # Same logic as CMakeLists.txt from the CMake source
 set(EXTERNAL_LIBRARIES LIBARCHIVE LIBLZMA LZ4 ZLIB)
