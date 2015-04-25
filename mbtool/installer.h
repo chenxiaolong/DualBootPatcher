@@ -41,7 +41,6 @@ public:
 protected:
     static const std::string HELPER_TOOL;
     static const std::string UPDATE_BINARY;
-    static const std::string MULTIBOOT_UNZIP;
     static const std::string MULTIBOOT_AROMA;
     static const std::string MULTIBOOT_BBWRAPPER;
     static const std::string MULTIBOOT_INFO_PROP;
@@ -102,7 +101,6 @@ private:
     bool destroy_chroot() const;
 
     bool extract_multiboot_files();
-    bool set_up_unzip();
     bool set_up_busybox_wrapper();
     bool create_temporary_image(const std::string &path);
     bool system_image_copy(const std::string &source,

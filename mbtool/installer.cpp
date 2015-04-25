@@ -77,7 +77,6 @@ namespace mb {
 const std::string Installer::HELPER_TOOL = "/update-binary-tool";
 const std::string Installer::UPDATE_BINARY =
         "META-INF/com/google/android/update-binary";
-const std::string Installer::MULTIBOOT_UNZIP = "multiboot/unzip";
 const std::string Installer::MULTIBOOT_AROMA = "multiboot/aromawrapper.zip";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
@@ -365,7 +364,6 @@ bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
         { UPDATE_BINARY + ".orig",  _temp + "/updater"          },
-        { MULTIBOOT_UNZIP,          _temp + "/unzip"            },
         { MULTIBOOT_AROMA,          _temp + "/aromawrapper.zip" },
         { MULTIBOOT_BBWRAPPER,      _temp + "/bb-wrapper.sh"    },
         { MULTIBOOT_INFO_PROP,      _temp + "/info.prop"        }
@@ -373,31 +371,6 @@ bool Installer::extract_multiboot_files()
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
-        return false;
-    }
-
-    return true;
-}
-
-/*!
- * \brief Replace /sbin/unzip in the chroot with one supporting zip flags 1 & 8
- */
-bool Installer::set_up_unzip()
-{
-    std::string temp_unzip = _temp + "/unzip";
-    std::string sbin_unzip = in_chroot("/sbin/unzip");
-
-    remove(sbin_unzip.c_str());
-
-    if (!util::copy_file(temp_unzip, sbin_unzip,
-                         util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
-        LOGE("Failed to copy {} to {}: {}",
-             temp_unzip, sbin_unzip, strerror(errno));
-        return false;
-    }
-
-    if (chmod(sbin_unzip.c_str(), 0555) < 0) {
-        LOGE("Failed to chmod {}: {}", sbin_unzip, strerror(errno));
         return false;
     }
 
@@ -1096,12 +1069,6 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     // Save a copy of the boot image that we'll restore if the installation fails
     if (!util::copy_contents(_boot_block_dev, _temp + "/boot.orig")) {
         display_msg("Failed to backup boot partition");
-        return ProceedState::Fail;
-    }
-
-    // Extract busybox's unzip tool with support for zip file data descriptors
-    if (!set_up_unzip()) {
-        display_msg("Failed to extract unzip tool");
         return ProceedState::Fail;
     }
 
