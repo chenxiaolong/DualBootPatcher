@@ -82,7 +82,7 @@ static bool set_up_input(archive *in, const std::string &filename)
     // Add more as needed
     //archive_read_support_format_all(in);
     //archive_read_support_filter_all(in);
-    archive_read_support_format_tar(in);
+    //archive_read_support_format_tar(in);
     archive_read_support_format_zip(in);
     //archive_read_support_filter_xz(in);
 
