@@ -9,6 +9,7 @@
 [submodule "external/zlib"]
 	path = external/zlib
 	url = https://github.com/madler/zlib.git
+	ignore = dirty
 [submodule "external/lz4"]
 	path = external/lz4
 	url = https://github.com/chenxiaolong/lz4.git
