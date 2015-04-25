@@ -1,4 +1,4 @@
-LOCAL_PATH := $(call my-dir)
+_LOCAL_PATH := $(call my-dir)
 
 # Whether ccache should be used (highly recommended!)
 USE_CCACHE := true
@@ -9,6 +9,11 @@ LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
+
+
+ifneq ($(MBP_MINI),true)
+include $(EXTERNAL_DIR)/minizip/Android.mk
+endif
 
 
 include $(CLEAR_VARS)
@@ -40,6 +45,7 @@ TARGET_CC := ccache $(TARGET_CC)
 TARGET_CXX := ccache $(TARGET_CXX)
 endif
 
+LOCAL_PATH := $(_LOCAL_PATH)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := @MBP_SOURCES_STR@
@@ -55,7 +61,8 @@ LOCAL_C_INCLUDES := \
 	$(BOOST_DIR)/include \
 	$(LIBARCHIVE_DIR)/include \
 	$(EXTERNAL_DIR) \
-	$(EXTERNAL_DIR)/pugixml/src
+	$(EXTERNAL_DIR)/pugixml/src \
+	$(TOP_DIR)
 
 #LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
 LOCAL_CFLAGS := -Wall -Wextra -pedantic
@@ -71,6 +78,8 @@ LOCAL_CFLAGS += -Wno-error=unused-local-typedefs -Wno-unused-local-typedefs
 LOCAL_CFLAGS += -Wno-error=comment
 # Version number
 LOCAL_CFLAGS += -DLIBMBP_VERSION=\"@MBP_VERSION@\"
+# minizip type safety
+LOCAL_CFLAGS += -DSTRICTZIPUNZIP
 
 ifeq ($(MBP_MINI),true)
 LOCAL_CFLAGS += -DLIBMBP_MINI
@@ -89,7 +98,8 @@ LOCAL_STATIC_LIBRARIES := \
 	boost_filesystem \
 	boost_system \
 	libarchive \
-	liblz4
+	liblz4 \
+	libminizip
 
 ifeq ($(MBP_MINI),true)
 include $(BUILD_STATIC_LIBRARY)

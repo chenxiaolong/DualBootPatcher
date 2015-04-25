@@ -28,3 +28,6 @@
 [submodule "external/libaxmlparser"]
 	path = external/libaxmlparser
 	url = https://github.com/chenxiaolong/libaxmlparser.git
+[submodule "external/minizip"]
+	path = external/minizip
+	url = https://github.com/chenxiaolong/minizip.git
