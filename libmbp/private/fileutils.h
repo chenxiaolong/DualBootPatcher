@@ -22,9 +22,6 @@
 #include <string>
 #include <vector>
 
-#include <archive.h>
-#include <archive_entry.h>
-
 #include "external/minizip/unzip.h"
 #include "external/minizip/zip.h"
 
@@ -49,35 +46,10 @@ public:
 
     static std::string createTemporaryDir(const std::string &directory);
 
-    // libarchive
-    static bool laReadToByteArray(archive *aInput,
-                                  archive_entry *entry,
-                                  std::vector<unsigned char> *output,
-                                  void (*cb)(uint64_t bytes, void *), void *userData);
-
-    static bool laCopyData(archive *aInput, archive *aOutput,
-                           void (*cb)(uint64_t bytes, void *), void *userData);
-
-    static bool laExtractFile(archive *aInput,
-                              archive_entry *entry,
-                              const std::string &directory);
-
-    static PatcherError laAddFile(archive * const aOutput,
-                                  const std::string &name,
-                                  const std::vector<unsigned char> &contents);
-
-    static PatcherError laAddFile(archive * const aOutput,
-                                  const std::string &name,
-                                  const std::string &path);
-
     struct ArchiveStats {
         uint64_t files;
         uint64_t totalSize;
     };
-
-    static PatcherError laArchiveStats(const std::string &path,
-                                       ArchiveStats *stats,
-                                       std::vector<std::string> ignore);
 
     static unzFile mzOpenInputFile(const std::string &path);
 

@@ -21,8 +21,6 @@
 
 #include <memory>
 
-#include <archive.h>
-
 #include "patcherconfig.h"
 #include "patcherinterface.h"
 
