@@ -332,9 +332,8 @@ bool MultiBootPatcher::Impl::patchZip()
     // +1 for mbtool_recovery (update-binary)
     // +1 for aromawrapper.zip
     // +1 for bb-wrapper.sh
-    // +1 for unzip
     // +1 for info.prop
-    maxFiles = stats.files + 5;
+    maxFiles = stats.files + 4;
     updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
@@ -398,21 +397,6 @@ bool MultiBootPatcher::Impl::patchZip()
     result = FileUtils::laAddFile(
         aOutput, "multiboot/bb-wrapper.sh",
         pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (!result) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateFiles(++files, maxFiles);
-    updateDetails("multiboot/unzip");
-
-    // Add unzip.tar.xz
-    result = FileUtils::laAddFile(
-            aOutput, "multiboot/unzip",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/unzip");
     if (!result) {
         error = result;
         return false;
