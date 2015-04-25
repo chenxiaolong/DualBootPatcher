@@ -19,23 +19,57 @@
 
 #include "util/string.h"
 
+#include <cstring>
+
 namespace mb
 {
 namespace util
 {
 
+bool starts_with_internal(const char *string, std::size_t len_string,
+                          const char *prefix, std::size_t len_prefix,
+                          bool case_insensitive)
+{
+    return len_string < len_prefix ? false :
+            (case_insensitive ? strncasecmp : strncmp)
+                    (string, prefix, len_prefix) == 0;
+}
+
+bool ends_with_internal(const char *string, std::size_t len_string,
+                        const char *suffix, std::size_t len_suffix,
+                        bool case_insensitive)
+{
+    return len_string < len_suffix ? false :
+            (case_insensitive ? strncasecmp : strncmp)
+                    (string + len_string - len_suffix, suffix, len_suffix) == 0;
+}
+
 bool starts_with(const std::string &string, const std::string &prefix)
 {
-    return string.compare(0, prefix.length(), prefix) == 0;
+    return starts_with_internal(string.c_str(), string.size(),
+                                prefix.c_str(), prefix.length(),
+                                false);
+}
+
+bool starts_with(const char *string, const char *prefix)
+{
+    return starts_with_internal(string, strlen(string),
+                                prefix, strlen(prefix),
+                                false);
 }
 
 bool ends_with(const std::string &string, const std::string &suffix)
 {
-    if (string.size() < suffix.size()) {
-        return false;
-    }
+    return ends_with_internal(string.c_str(), string.size(),
+                              suffix.c_str(), suffix.size(),
+                              false);
+}
 
-    return string.compare(string.size() - suffix.size(), suffix.size(), suffix) == 0;
+bool ends_with(const char *string, const char *suffix)
+{
+    return ends_with_internal(string, strlen(string),
+                              suffix, strlen(suffix),
+                              false);
 }
 
 /*!

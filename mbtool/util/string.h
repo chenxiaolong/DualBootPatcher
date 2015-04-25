@@ -28,7 +28,9 @@ namespace util
 {
 
 bool starts_with(const std::string &string, const std::string &prefix);
+bool starts_with(const char *string, const char *prefix);
 bool ends_with(const std::string &string, const std::string &suffix);
+bool ends_with(const char *string, const char *suffix);
 
 std::string hex_string(unsigned char *data, size_t size);
 
