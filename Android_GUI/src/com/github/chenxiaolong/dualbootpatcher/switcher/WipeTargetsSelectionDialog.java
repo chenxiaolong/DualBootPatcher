@@ -23,7 +23,7 @@ import android.app.Fragment;
 import android.os.Bundle;
 
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ListCallbackMulti;
+import com.afollestad.materialdialogs.MaterialDialog.ListCallbackMultiChoice;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 import mbtool.daemon.v2.WipeTarget;
@@ -67,10 +67,10 @@ public class WipeTargetsSelectionDialog extends DialogFragment {
                 .items(items)
                 .negativeText(R.string.cancel)
                 .positiveText(R.string.ok)
-                .itemsCallbackMultiChoice(null, new ListCallbackMulti() {
+                .itemsCallbackMultiChoice(null, new ListCallbackMultiChoice() {
                     @Override
-                    public void onSelection(MaterialDialog dialog, Integer[] which,
-                                            CharSequence[] text) {
+                    public boolean onSelection(MaterialDialog dialog, Integer[] which,
+                                               CharSequence[] text) {
                         short[] targets = new short[which.length];
 
                         for (int i = 0; i < which.length; i++) {
@@ -93,6 +93,8 @@ public class WipeTargetsSelectionDialog extends DialogFragment {
                         if (owner != null) {
                             owner.onSelectedWipeTargets(targets);
                         }
+
+                        return true;
                     }
                 })
                 .build();

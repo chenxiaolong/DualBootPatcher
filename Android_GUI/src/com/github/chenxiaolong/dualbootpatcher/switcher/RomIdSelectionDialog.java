@@ -24,7 +24,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ListCallback;
+import com.afollestad.materialdialogs.MaterialDialog.ListCallbackSingleChoice;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
@@ -73,16 +73,18 @@ public class RomIdSelectionDialog extends DialogFragment {
                 .title(R.string.zip_flashing_dialog_installation_location)
                 .items(names)
                 .negativeText(R.string.cancel)
-                .itemsCallbackSingleChoice(-1, new ListCallback() {
+                .itemsCallbackSingleChoice(-1, new ListCallbackSingleChoice() {
                     @Override
-                    public void onSelection(MaterialDialog dialog, View view, int which,
-                                            CharSequence text) {
+                    public boolean onSelection(MaterialDialog dialog, View view, int which,
+                                               CharSequence text) {
                         RomInformation info = infos.get(which);
 
                         RomIdSelectionDialogListener owner = getOwner();
                         if (owner != null) {
                             owner.onSelectedRomId(info.getId());
                         }
+
+                        return true;
                     }
                 })
                 .build();
