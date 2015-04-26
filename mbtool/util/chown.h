@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include <sys/types.h>
+
 namespace mb
 {
 namespace util
@@ -35,6 +37,10 @@ enum ChownFlags : int
 bool chown(const std::string &path,
            const std::string &user,
            const std::string &group,
+           int flags);
+bool chown(const std::string &path,
+           uid_t user,
+           gid_t group,
            int flags);
 
 }

@@ -35,37 +35,11 @@ namespace mb
 namespace util
 {
 
-// WARNING: Not thread safe! Android doesn't have getpwnam_r() or getgrnam_r()
 static bool chown_internal(const std::string &path,
-                           const std::string &user,
-                           const std::string &group,
+                           uid_t uid,
+                           gid_t gid,
                            bool follow_symlinks)
 {
-    uid_t uid;
-    gid_t gid;
-
-    errno = 0;
-    struct passwd *pw = getpwnam(user.c_str());
-    if (!pw) {
-        if (!errno) {
-            errno = EINVAL; // User does not exist
-        }
-        return false;
-    } else {
-        uid = pw->pw_uid;
-    }
-
-    errno = 0;
-    struct group *gr = getgrnam(group.c_str());
-    if (!gr) {
-        if (!errno) {
-            errno = EINVAL; // Group does not exist
-        }
-        return false;
-    } else {
-        gid = gr->gr_gid;
-    }
-
     if (follow_symlinks) {
         return ::chown(path.c_str(), uid, gid) == 0;
     } else {
@@ -75,11 +49,11 @@ static bool chown_internal(const std::string &path,
 
 class RecursiveChown : public FTSWrapper {
 public:
-    RecursiveChown(std::string path, std::string user, std::string group,
+    RecursiveChown(std::string path, uid_t uid, gid_t gid,
                    bool follow_symlinks)
         : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _user(std::move(user)),
-        _group(std::move(group)),
+        _uid(uid),
+        _gid(gid),
         _follow_symlinks(follow_symlinks)
     {
     }
@@ -112,13 +86,13 @@ public:
     }
 
 private:
-    std::string _user;
-    std::string _group;
+    uid_t _uid;
+    gid_t _gid;
     bool _follow_symlinks;
 
     bool chown_path()
     {
-        if (!chown_internal(_curr->fts_accpath, _user, _group, _follow_symlinks)) {
+        if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
             _error_msg = fmt::format("{}: Failed to chown: {}",
                                      _curr->fts_path, strerror(errno));
             LOGW("{}", _error_msg);
@@ -128,17 +102,50 @@ private:
     }
 };
 
+// WARNING: Not thread safe! Android doesn't have getpwnam_r() or getgrnam_r()
 bool chown(const std::string &path,
            const std::string &user,
            const std::string &group,
            int flags)
 {
+    uid_t uid;
+    gid_t gid;
+
+    errno = 0;
+    struct passwd *pw = getpwnam(user.c_str());
+    if (!pw) {
+        if (!errno) {
+            errno = EINVAL; // User does not exist
+        }
+        return false;
+    } else {
+        uid = pw->pw_uid;
+    }
+
+    errno = 0;
+    struct group *gr = getgrnam(group.c_str());
+    if (!gr) {
+        if (!errno) {
+            errno = EINVAL; // Group does not exist
+        }
+        return false;
+    } else {
+        gid = gr->gr_gid;
+    }
+
+    return chown(path, uid, gid, flags);
+}
+
+bool chown(const std::string &path,
+           uid_t uid,
+           gid_t gid,
+           int flags)
+{
     if (flags & MB_CHOWN_RECURSIVE) {
-        RecursiveChown fts(path, user, group, flags & MB_CHOWN_FOLLOW_SYMLINKS);
+        RecursiveChown fts(path, uid, gid, flags & MB_CHOWN_FOLLOW_SYMLINKS);
         return fts.run();
     } else {
-        return chown_internal(path, user, group,
-                              flags & MB_CHOWN_FOLLOW_SYMLINKS);
+        return chown_internal(path, uid, gid, flags & MB_CHOWN_FOLLOW_SYMLINKS);
     }
 }
 
