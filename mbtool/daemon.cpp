@@ -35,6 +35,7 @@
 
 #include "actions.h"
 #include "multiboot.h"
+#include "packages.h"
 #include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
