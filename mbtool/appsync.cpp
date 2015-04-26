@@ -47,6 +47,8 @@
 #include "util/socket.h"
 #include "util/string.h"
 
+#define LOG_FILE                        "/sdcard/MultiBoot/appsync.log"
+
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
 
@@ -433,7 +435,9 @@ static bool prepare_appsync()
                 LOGW("Failed to chown {}: {}", target, strerror(errno));
             }
 
-            LOGV("Mounting {} at {}", data_path, target);
+            LOGV("Bind mounting data directory:");
+            LOGV("- Source: {}", data_path);
+            LOGV("- Target: {}", target);
             // TODO: Actually mount here
             LOGV("[TODO] (Would actually mount something now)");
         }
@@ -687,9 +691,9 @@ static bool do_install(const std::vector<std::string> &args)
     LOGD(TAG "gid = {}", gid);
     LOGD(TAG "seinfo = {}", seinfo);
 
-    std::string apk = find_apk("/data/app", pkgname);
+    std::string apk = find_apk(USER_APP_DIR, pkgname);
     if (apk.empty()) {
-        LOGW(TAG "Could not find apk in {}", "/data/app");
+        LOGW(TAG "Could not find apk in {}", USER_APP_DIR);
         LOGW(TAG "This package might be a paid app, which is not supported by appsync yet");
         return false;
     } else {
@@ -708,6 +712,13 @@ static bool do_remove(const std::vector<std::string> &args)
 
     LOGD(TAG "pkgname = {}", pkgname);
     LOGD(TAG "userid = {}", userid);
+
+    std::string apk = find_apk(USER_APP_DIR, pkgname);
+    if (apk.empty()) {
+        LOGW(TAG "Could not find apk in {}", USER_APP_DIR);
+    } else {
+        LOGW(TAG "Found apk at {}", apk);
+    }
 
     return true;
 #undef TAG
@@ -1024,14 +1035,23 @@ int appsync_main(int argc, char *argv[])
 
     typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
-    file_ptr fp(fopen("/sdcard/appsync.log", "wb"), fclose);
+    if (!util::mkdir_parent(LOG_FILE, 0775) && errno != EEXIST) {
+        fprintf(stderr, "Failed to create parent directory of %s: %s\n",
+                LOG_FILE, strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    file_ptr fp(fopen(LOG_FILE, "w"), fclose);
     if (!fp) {
-        fprintf(stderr, "Failed to open log: %s\n", strerror(errno));
+        fprintf(stderr, "Failed to open log file %s: %s\n",
+                LOG_FILE, strerror(errno));
         return EXIT_FAILURE;
     }
 
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
+
+    LOGI("=== APPSYNC VERSION {} ===", MBP_VERSION);
 
 
     // Allow installd to read and write to our socket
