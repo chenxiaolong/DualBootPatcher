@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -31,10 +31,21 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <jansson.h>
+
+#include "apk.h"
+#include "packages.h"
+#include "roms.h"
+#include "util/chown.h"
+#include "util/copy.h"
+#include "util/delete.h"
+#include "util/directory.h"
 #include "util/finally.h"
+#include "util/fts.h"
 #include "util/logging.h"
 #include "util/selinux.h"
 #include "util/socket.h"
+#include "util/string.h"
 
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
@@ -52,18 +63,384 @@
 
 #define COMMAND_BUF_SIZE                1024
 
+#define CONFIG_PATH_FMT                 "/data/media/0/MultiBoot/{}/config.json"
+
+#define CONFIG_KEY_APP_SHARING          "app_sharing"
+#define CONFIG_KEY_GLOBAL_APP_SHARING   "global"
+#define CONFIG_KEY_GLOBAL_APP_SHARING_PAID "global_paid"
+#define CONFIG_KEY_INDIVIDUAL_APP_SHARING "individual"
+#define CONFIG_KEY_PACKAGES             "packages"
+#define CONFIG_KEY_PACKAGE_ID           "pkg_id"
+#define CONFIG_KEY_SHARE_APK            "share_apk"
+#define CONFIG_KEY_SHARE_DATA           "share_data"
+
+#define PACKAGES_XML                    "/data/system/packages.xml"
+
+#define APP_SHARING_APP_DIR             "/data/multiboot/_appsharing/app"
+#define APP_SHARING_APP_ASEC_DIR        "/data/multiboot/_appsharing/app-asec"
+#define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
+
+#define USER_APP_DIR                    "/data/app"
+#define USER_APP_ASEC_DIR               "/data/app-asec"
+#define USER_DATA_DIR                   "/data/data"
 
 namespace mb
 {
 
-//static int launch_installd()
-//{
-//    const char *argv[] = { INSTALLD_PATH, nullptr };
-//    if (execve(argv[0], const_cast<char * const *>(argv), environ) < 0) {
-//        LOGE("Failed to launch installd: {}", strerror(errno));
-//        return -1;
-//    }
-//}
+struct SharedPackage {
+    std::string pkg_id;
+    bool share_apk;
+    bool share_data;
+};
+
+static std::vector<std::shared_ptr<SharedPackage>> shared_pkgs;
+bool app_sharing_global = false;
+bool app_sharing_global_paid = false;
+bool app_sharing_individual = false;
+
+/*!
+ * \brief Try loading the config file in /data/media/0/MultiBoot/[ROM ID]/config.json
+ */
+static bool load_config_file()
+{
+    auto rom = mb_get_current_rom();
+    if (!rom) {
+        LOGE("Failed to determine current ROM");
+        return false;
+    }
+
+    std::string path = fmt::format(CONFIG_PATH_FMT, rom->id);
+
+    json_t *root;
+    json_error_t error;
+
+    root = json_load_file(path.c_str(), 0, &error);
+    if (!root) {
+        LOGE("JSON error on line {:d}: {}", error.line, error.text);
+        return false;
+    }
+
+    auto free_on_return = util::finally([&]{
+        json_decref(root);
+    });
+
+    if (!json_is_object(root)) {
+        LOGE("JSON root is not an object");
+        return false;
+    }
+
+    json_t *app_sharing = json_object_get(root, CONFIG_KEY_APP_SHARING);
+    if (!json_is_object(app_sharing)) {
+        LOGI("ROM config does not contain app sharing configuration");
+        return true;
+    }
+
+    // Global app sharing
+    json_t *global = json_object_get(
+            app_sharing, CONFIG_KEY_GLOBAL_APP_SHARING);
+    app_sharing_global = json_is_true(global);
+
+    // Global paid app sharing
+    json_t *global_paid = json_object_get(
+            app_sharing, CONFIG_KEY_GLOBAL_APP_SHARING_PAID);
+    app_sharing_global_paid = global_paid;
+
+    // Individual app sharing
+    json_t *individual = json_object_get(
+            app_sharing, CONFIG_KEY_INDIVIDUAL_APP_SHARING);
+    app_sharing_individual = individual;
+
+    // Individual app sharing packages
+    json_t *pkgs = json_object_get(
+            individual, CONFIG_KEY_PACKAGES);
+    if (!json_is_array(pkgs)) {
+        LOGE("JSON packages object is not an array");
+        return false;
+    }
+
+    for (size_t i = 0; i < json_array_size(pkgs); ++i) {
+        json_t *data = json_array_get(pkgs, i);
+        if (!json_is_object(data)) {
+            LOGE("JSON packages array element {} is not an object", i);
+            return false;
+        }
+
+        json_t *pkg_id = json_object_get(data, CONFIG_KEY_PACKAGE_ID);
+        if (!json_is_string(pkg_id)) {
+            LOGE("JSON package ID is not a string");
+            return false;
+        }
+
+        json_t *share_apk = json_object_get(data, CONFIG_KEY_SHARE_APK);
+        json_t *share_data = json_object_get(data, CONFIG_KEY_SHARE_DATA);
+
+        std::shared_ptr<SharedPackage> pkg(new SharedPackage());
+        pkg->pkg_id = json_string_value(pkg_id);
+        pkg->share_apk = json_is_true(share_apk);
+        pkg->share_data = json_is_true(share_data);
+
+        LOGD("Shared package:");
+        LOGD("- Package:    {}", pkg->pkg_id);
+        LOGD("- Share apk:  {}", pkg->share_apk ? "true" : "false");
+        LOGD("- Share data: {}", pkg->share_data ? "true" : "false");
+
+        shared_pkgs.push_back(std::move(pkg));
+    }
+
+    return true;
+}
+
+class FixPermissions : public util::FTSWrapper {
+public:
+    FixPermissions(std::string path)
+        : FTSWrapper(path, FTS_GroupSpecialFiles)
+    {
+    }
+
+    virtual int on_changed_path() override
+    {
+        util::chown(_curr->fts_accpath, "system", "system", 0);
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_file() override
+    {
+        chmod(_curr->fts_accpath, 0644);
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_directory_pre() override
+    {
+        chmod(_curr->fts_accpath, 0755);
+        return Action::FTS_OK;
+    }
+};
+
+static std::string get_shared_apk_path(const std::string &pkg)
+{
+    std::string path(APP_SHARING_APP_DIR);
+    path += "/";
+    path += pkg;
+    path += "/";
+    path += "base.apk";
+    return path;
+}
+
+static std::string get_shared_data_path(const std::string &pkg)
+{
+    std::string path(APP_SHARING_DATA_DIR);
+    path += "/";
+    path += pkg;
+    return path;
+}
+
+static bool chown_wrapper(const std::string &path,
+                          const std::shared_ptr<Package> &pkg,
+                          bool recursive)
+{
+    if (pkg->is_shared_user) {
+        return util::chown(path, pkg->shared_user_id, pkg->shared_user_id,
+                           recursive ? util::MB_CHOWN_RECURSIVE : 0);
+    } else {
+        return util::chown(path, pkg->user_id, pkg->user_id,
+                           recursive ? util::MB_CHOWN_RECURSIVE : 0);
+    }
+}
+
+/*!
+ * \brief Copy the apk from USER_APP_DIR to APP_SHARING_APP_DIR
+ */
+static bool ensure_apk_exists_in_app_sharing_dir(const std::string &pkg)
+{
+    std::string full_path = get_shared_apk_path(pkg);
+
+    struct stat sb;
+    if (stat(full_path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
+        return true;
+    }
+
+    LOGD("Package {} does not exist in the shared app directory. "
+         "Attempting to copy it from {}", pkg, USER_APP_DIR);
+
+    std::string apk_path = find_apk(USER_APP_DIR, pkg);
+    if (apk_path.empty()) {
+        LOGW("Failed to find package {} in {}", pkg, USER_APP_DIR);
+        return false;
+    }
+
+    if (!util::mkdir_parent(full_path, 0755)) {
+        LOGW("Failed to create parent directories for {}", full_path);
+        return false;
+    }
+
+    // Make sure we preserve the inode when copying, so all of the shared apk's
+    // hardlinks are preserved
+    if (!util::copy_contents(apk_path, full_path)) {
+        LOGW("Failed to copy contents from {} to {}", apk_path, full_path);
+        return false;
+    }
+
+    return true;
+}
+
+static bool relink_apk_to_target(const std::shared_ptr<Package> &pkg)
+{
+    std::string apk_path = get_shared_apk_path(pkg->name);
+    std::string target(pkg->code_path);
+    bool is_directory = false;
+
+    if (!util::ends_with(pkg->code_path, ".apk")) {
+        is_directory = true;
+        target += "/base.apk";
+    }
+
+    struct stat sb1;
+    struct stat sb2;
+
+    if (stat(apk_path.c_str(), &sb1) < 0) {
+        LOGW("Failed to stat {}: {}", apk_path, strerror(errno));
+        return false;
+    }
+
+    if (stat(target.c_str(), &sb2) == 0
+            && sb1.st_dev == sb2.st_dev
+            && sb1.st_ino == sb2.st_ino) {
+        // File is already linked correctly
+        return true;
+    }
+
+    if (is_directory) {
+        // Android >=5.0 structure
+        if (!util::delete_recursive(pkg->code_path)) {
+            LOGW("Failed to remove {}: {}",
+                 pkg->code_path, strerror(errno));
+        }
+        if (mkdir(pkg->code_path.c_str(), 0755) < 0) {
+            LOGW("Failed to create directory {}: {}",
+                 pkg->code_path, strerror(errno));
+        }
+        if (!chown_wrapper(pkg->code_path, pkg, true)) {
+            LOGW("Failed to chown {}: {}",
+                 pkg->code_path, strerror(errno));
+        }
+        if (link(apk_path.c_str(), target.c_str()) < 0) {
+            LOGW("Failed to hard link {} to {}: {}",
+                 apk_path, target, strerror(errno));
+            return false;
+        }
+    } else {
+        // Android <5.0 structure
+        if (unlink(target.c_str()) < 0) {
+            LOGW("Failed to unlink {}: {}",
+                 target, strerror(errno));
+        }
+        if (link(apk_path.c_str(), target.c_str()) < 0) {
+            LOGW("Failed to hard link {} to {}: {}",
+                 apk_path, target, strerror(errno));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool prepare_appsync()
+{
+    Packages pkgs;
+    if (!pkgs.load_xml(PACKAGES_XML)) {
+        LOGE("Failed to load {}", PACKAGES_XML);
+        return false;
+    }
+
+    for (auto it = shared_pkgs.begin(); it != shared_pkgs.end();) {
+        std::shared_ptr<SharedPackage> &shared_pkg = *it;
+
+        // Ensure package is installed, so we can get its UID
+        auto pkg = pkgs.find_by_pkg(shared_pkg->pkg_id);
+        if (!pkg) {
+            LOGW("Package {} won't be shared because it is not installed",
+                 shared_pkg->pkg_id);
+            it = shared_pkgs.erase(it);
+            continue;
+        }
+
+        // Ensure that the package is not a system package if we're sharing the
+        // apk file
+        if (shared_pkg->share_apk && ((pkg->pkg_flags & Package::FLAG_SYSTEM)
+                || (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP))) {
+            LOGW("Package {} is a system app or an update to a system app. "
+                 "Its apk will not be shared", shared_pkg->pkg_id);
+            shared_pkg->share_apk = false;
+        }
+
+        // Ensure that code_path is set to something sane
+        if (!util::starts_with(pkg->code_path, "/data/")) {
+            LOGW("The code_path for package {} is not in /data. "
+                 "Its apk will not be shared", shared_pkg->pkg_id);
+            shared_pkg->share_apk = false;
+        }
+
+        // Ensure that the apk exists in the shared directory
+        if (shared_pkg->share_apk
+                && !ensure_apk_exists_in_app_sharing_dir(shared_pkg->pkg_id)) {
+            shared_pkg->share_apk = false;
+        }
+
+        // Ensure that the data directory exists if data sharing is enabled
+        std::string data_path = get_shared_data_path(shared_pkg->pkg_id);
+        if (shared_pkg->share_data && !util::mkdir_recursive(data_path, 0755)) {
+            LOGW("Failed to create {}. App data will not be shared", data_path);
+            shared_pkg->share_data = false;
+        }
+
+        // Ensure that the shared data directory permissions are correct
+        if (shared_pkg->share_data && !chown_wrapper(data_path, pkg, true)) {
+            LOGW("Failed to chown {}. App data will not be shared", data_path);
+            shared_pkg->share_data = false;
+        }
+
+        ++it;
+    }
+
+    // Ensure that the shared apk permissions are correct
+    if (!FixPermissions(APP_SHARING_APP_DIR).run()) {
+        LOGW("Failed to fix permissions on {}", APP_SHARING_APP_DIR);
+    }
+
+    // Actually share the apk and data
+    for (std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
+        auto pkg = pkgs.find_by_pkg(shared_pkg->pkg_id);
+
+        if (shared_pkg->share_apk && !relink_apk_to_target(pkg)) {
+            LOGW("Failed to link shared apk to user app directory");
+            if (shared_pkg->share_data) {
+                LOGW("To prevent issues due to the error, "
+                     "data will not be shared");
+            }
+            continue;
+        }
+
+        if (shared_pkg->share_data) {
+            std::string data_path = get_shared_data_path(shared_pkg->pkg_id);
+            std::string target(USER_DATA_DIR);
+            target += "/";
+            target += shared_pkg->pkg_id;
+
+            if (!util::mkdir_recursive(target, 0755)) {
+                LOGW("Failed to mkdir {}: {}", target, strerror(errno));
+            }
+            if (!chown_wrapper(target, pkg, true)) {
+                LOGW("Failed to chown {}: {}", target, strerror(errno));
+            }
+
+            LOGV("Mounting {} at {}", data_path, target);
+            // TODO: Actually mount here
+            LOGV("[TODO] (Would actually mount something now)");
+        }
+    }
+
+    return true;
+}
 
 /*!
  * \brief Get installd socket fd created by init from ANDROID_SOCKET_installd
@@ -297,6 +674,73 @@ static std::string args_to_string(const std::vector<std::string> &args)
     return output;
 }
 
+static bool do_install(const std::vector<std::string> &args)
+{
+#define TAG "[install] "
+    const std::string &pkgname = args[0];
+    const int uid = strtol(args[1].c_str(), nullptr, 10);
+    const int gid = strtol(args[2].c_str(), nullptr, 10);
+    const std::string &seinfo = args[3];
+
+    LOGD(TAG "pkgname = {}", pkgname);
+    LOGD(TAG "uid = {}", uid);
+    LOGD(TAG "gid = {}", gid);
+    LOGD(TAG "seinfo = {}", seinfo);
+
+    std::string apk = find_apk("/data/app", pkgname);
+    if (apk.empty()) {
+        LOGW(TAG "Could not find apk in {}", "/data/app");
+        LOGW(TAG "This package might be a paid app, which is not supported by appsync yet");
+        return false;
+    } else {
+        LOGD(TAG "Found apk at {}", apk);
+    }
+
+    return true;
+#undef TAG
+}
+
+static bool do_remove(const std::vector<std::string> &args)
+{
+#define TAG "[remove] "
+    const std::string &pkgname = args[0];
+    const int userid = strtol(args[1].c_str(), nullptr, 10);
+
+    LOGD(TAG "pkgname = {}", pkgname);
+    LOGD(TAG "userid = {}", userid);
+
+    return true;
+#undef TAG
+}
+
+struct CommandInfo {
+    const char *name;
+    unsigned int nargs;
+    bool (*func)(const std::vector<std::string> &args);
+};
+
+static struct CommandInfo cmds[] = {
+    { "install", 4, do_install },
+    { "remove",  2, do_remove },
+};
+
+static void handle_command(const std::vector<std::string> &args)
+{
+    for (std::size_t i = 0; i < sizeof(cmds) / sizeof(cmds[0]); ++i) {
+        if (args[0] == cmds[i].name) {
+            if (args.size() - 1 != cmds[i].nargs) {
+                LOGE("{} requires {} arguments ({} given)",
+                     cmds[i].name, cmds[i].nargs, args.size() - 1);
+                LOGE("{} command won't be hooked", cmds[i].name);
+            } else {
+                LOGD("Hooking {} command", cmds[i].name);
+                cmds[i].func(std::vector<std::string>(
+                        args.begin() + 1, args.end()));
+            }
+        }
+    }
+}
+
 /**
  * \brief Main function for capturing and relaying the daemon commands
  *
@@ -404,6 +848,8 @@ static bool proxy_process(int fd)
                         || cmd == "restorecondata"
                         || cmd == "patchoat") {
                     LOGD("Received command: {}", args_to_string(args));
+
+                    handle_command(args);
                 } else {
                     LOGW("Unrecognized command: {}", args_to_string(args));
                 }
@@ -595,10 +1041,17 @@ int appsync_main(int argc, char *argv[])
     } else {
         LOGV("Patching SELinux policy to allow installd connection");
         if (!patch_sepolicy()) {
-            LOGE("Failed to patch current SELinux policy");
+            LOGW("Failed to patch current SELinux policy");
         }
     }
 
+    // Try to load config file
+    if (!load_config_file()) {
+        LOGW("Failed to load configuration file; app sharing will not work");
+        LOGW("Continuing to proxy installd anyway...");
+    } else {
+        prepare_appsync();
+    }
 
     return hijack_socket() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
