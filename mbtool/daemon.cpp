@@ -121,12 +121,12 @@ static bool v2_get_roms_list(int fd, const v2::Request *msg)
 
     fb::FlatBufferBuilder builder;
 
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_installed(&roms);
+    Roms roms;
+    roms.add_installed();
 
     std::vector<fb::Offset<v2::Rom>> fb_roms;
 
-    for (auto r : roms) {
+    for (auto r : roms.roms) {
         auto fb_id = builder.CreateString(r->id);
         auto fb_system_path = builder.CreateString(r->system_path);
         auto fb_cache_path = builder.CreateString(r->cache_path);
@@ -181,12 +181,12 @@ static bool v2_get_builtin_rom_ids(int fd, const v2::Request *msg)
 
     fb::FlatBufferBuilder builder;
 
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_builtin(&roms);
+    Roms roms;
+    roms.add_builtin();
 
     std::vector<fb::Offset<fb::String>> ids;
 
-    for (auto r : roms) {
+    for (auto r : roms.roms) {
         ids.push_back(builder.CreateString(r->id));
     }
 
@@ -213,7 +213,7 @@ static bool v2_get_current_rom(int fd, const v2::Request *msg)
     fb::FlatBufferBuilder builder;
 
     fb::Offset<fb::String> id;
-    auto rom = mb_get_current_rom();
+    auto rom = Roms::get_current_rom();
     if (rom) {
         id = builder.CreateString(rom->id);
     }
@@ -451,10 +451,10 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
     }
 
     // Find and verify ROM is installed
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_installed(&roms);
+    Roms roms;
+    roms.add_installed();
 
-    auto rom = mb_find_rom_by_id(&roms, request->rom_id()->c_str());
+    auto rom = roms.find_by_id(request->rom_id()->c_str());
     if (!rom) {
         LOGE("Tried to wipe non-installed or invalid ROM ID: {}",
              request->rom_id()->c_str());
@@ -462,7 +462,7 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
     }
 
     // The GUI should check this, but we'll enforce it here
-    auto current_rom = mb_get_current_rom();
+    auto current_rom = Roms::get_current_rom();
     if (current_rom && current_rom->id == rom->id) {
         LOGE("Cannot wipe currently booted ROM: {}", rom->id);
         return v2_send_generic_response(fd, v2::ResponseType_INVALID);

@@ -1015,8 +1015,8 @@ Installer::ProceedState Installer::install_stage_get_install_type()
 {
     LOGD("[Installer] Retrieve install type stage");
 
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_builtin(&roms);
+    Roms roms;
+    roms.add_builtin();
 
     std::string install_type = get_install_type();
 
@@ -1025,7 +1025,7 @@ Installer::ProceedState Installer::install_stage_get_install_type()
         return ProceedState::Cancel;
     }
 
-    _rom = mb_find_rom_by_id(&roms, install_type);
+    _rom = roms.find_by_id(install_type);
     if (!_rom) {
         display_msg(fmt::format("Unknown ROM ID: {}", install_type));
         return ProceedState::Fail;

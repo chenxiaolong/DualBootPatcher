@@ -135,10 +135,10 @@ static bool choose_or_set_rom(const std::string &id,
     bootimg_path += "/boot.img";
 
     // Verify ROM ID
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_installed(&roms);
+    Roms roms;
+    roms.add_installed();
 
-    auto r = mb_find_rom_by_id(&roms, id);
+    auto r = roms.find_by_id(id);
     if (!r) {
         LOGE("Invalid ROM ID: {}", id);
         return false;

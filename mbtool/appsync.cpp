@@ -103,7 +103,7 @@ bool app_sharing_individual = false;
  */
 static bool load_config_file()
 {
-    auto rom = mb_get_current_rom();
+    auto rom = Roms::get_current_rom();
     if (!rom) {
         LOGE("Failed to determine current ROM");
         return false;

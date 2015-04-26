@@ -451,16 +451,16 @@ int rom_installer_main(int argc, char *argv[])
 
 
     // Make sure install type is valid
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_builtin(&roms);
+    Roms roms;
+    roms.add_builtin();
 
-    if (!mb_find_rom_by_id(&roms, rom_id)) {
+    if (!roms.find_by_id(rom_id)) {
         fprintf(stderr, "Invalid ROM ID: %s\n", rom_id.c_str());
         return EXIT_FAILURE;
     }
 
     // TODO: Don't overwrite current ROM
-    auto rom = mb_get_current_rom();
+    auto rom = Roms::get_current_rom();
     if (!rom) {
         fprintf(stderr, "Could not determine current ROM\n");
         return EXIT_FAILURE;

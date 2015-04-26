@@ -38,11 +38,7 @@
 namespace mb
 {
 
-Rom::Rom()
-{
-}
-
-bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms)
+void Roms::add_builtin()
 {
     // Primary
     std::shared_ptr<Rom> primary(new Rom());
@@ -50,7 +46,7 @@ bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms)
     primary->system_path = SYSTEM;
     primary->cache_path = CACHE;
     primary->data_path = DATA;
-    roms->push_back(std::move(primary));
+    roms.push_back(std::move(primary));
 
     // Secondary
     std::shared_ptr<Rom> dual(new Rom());
@@ -67,7 +63,7 @@ bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms)
                    .append("multiboot").append("/")
                    .append("dual").append("/")
                    .append("data");
-    roms->push_back(std::move(dual));
+    roms.push_back(std::move(dual));
 
     // Multislots
     for (int i = 1; i <= 3; ++i) {
@@ -85,20 +81,18 @@ bool mb_roms_add_builtin(std::vector<std::shared_ptr<Rom>> *roms)
                             .append("multiboot").append("/")
                             .append(multislot->id).append("/")
                             .append("data");
-        roms->push_back(multislot);
+        roms.push_back(std::move(multislot));
     }
-
-    return true;
 }
 
-bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms)
+void Roms::add_installed()
 {
-    std::vector<std::shared_ptr<Rom>> all_roms;
-    mb_roms_add_builtin(&all_roms);
+    Roms all_roms;
+    all_roms.add_builtin();
 
     struct stat sb;
 
-    for (auto rom : all_roms) {
+    for (auto rom : all_roms.roms) {
         // Old style: /system -> /raw-system, etc.
         std::string raw_bp_path_old(rom->system_path);
         raw_bp_path_old.insert(1, "raw-");
@@ -117,24 +111,21 @@ bool mb_roms_add_installed(std::vector<std::shared_ptr<Rom>> *roms)
             rom->system_path.insert(1, "raw-");
             rom->cache_path.insert(1, "raw-");
             rom->data_path.insert(1, "raw-");
-            roms->push_back(rom);
+            roms.push_back(rom);
         } else if (stat(raw_bp_path_new.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
             rom->system_path.insert(0, "/raw");
             rom->cache_path.insert(0, "/raw");
             rom->data_path.insert(0, "/raw");
-            roms->push_back(rom);
+            roms.push_back(rom);
         } else if (stat(bp_path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-            roms->push_back(rom);
+            roms.push_back(rom);
         }
     }
-
-    return true;
 }
 
-std::shared_ptr<Rom> mb_find_rom_by_id(std::vector<std::shared_ptr<Rom>> *roms,
-                                       const std::string &id)
+std::shared_ptr<Rom> Roms::find_by_id(const std::string &id) const
 {
-    for (auto r : *roms) {
+    for (auto r : roms) {
         if (r->id == id) {
             return r;
         }
@@ -143,17 +134,17 @@ std::shared_ptr<Rom> mb_find_rom_by_id(std::vector<std::shared_ptr<Rom>> *roms,
     return std::shared_ptr<Rom>();
 }
 
-std::shared_ptr<Rom> mb_get_current_rom()
+std::shared_ptr<Rom> Roms::get_current_rom()
 {
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_installed(&roms);
+    Roms roms;
+    roms.add_installed();
 
     // This is set if mbtool is handling the boot process
     std::string prop_id;
     util::get_property("ro.multiboot.romid", &prop_id, std::string());
 
     if (!prop_id.empty()) {
-        auto rom = mb_find_rom_by_id(&roms, prop_id);
+        auto rom = roms.find_by_id(prop_id);
         if (rom) {
             return rom;
         }
@@ -168,13 +159,13 @@ std::shared_ptr<Rom> mb_get_current_rom()
         // Cache the result
         util::set_property("ro.multiboot.romid", "primary");
 
-        return mb_find_rom_by_id(&roms, "primary");
+        return roms.find_by_id("primary");
     }
 
     // Otherwise, iterate through the installed ROMs
 
     if (stat("/system/build.prop", &sb) == 0) {
-        for (auto rom : roms) {
+        for (auto rom : roms.roms) {
             std::string build_prop(rom->system_path);
             build_prop += "/build.prop";
 

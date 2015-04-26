@@ -165,8 +165,8 @@ bool mount_fstab(const std::string &fstab_path)
     std::shared_ptr<Rom> rom;
     std::string rom_id;
 
-    std::vector<std::shared_ptr<Rom>> roms;
-    mb_roms_add_builtin(&roms);
+    Roms roms;
+    roms.add_builtin();
 
     base_name = util::base_name(fstab_path);
     dir_name = util::dir_name(fstab_path);
@@ -252,7 +252,7 @@ bool mount_fstab(const std::string &fstab_path)
         return false;
     }
 
-    rom = mb_find_rom_by_id(&roms, rom_id);
+    rom = roms.find_by_id(rom_id);
     if (!rom) {
         LOGE("Unknown ROM ID: {}", rom_id);
         return false;
