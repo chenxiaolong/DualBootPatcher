@@ -357,6 +357,22 @@ static bool prepare_appsync()
         return false;
     }
 
+    if (!util::mkdir_recursive(APP_SHARING_APP_DIR, 0751) && errno != EEXIST) {
+        LOGE("Failed to create {}: {}", APP_SHARING_APP_DIR,
+             strerror(errno));
+        return false;
+    }
+    if (!util::mkdir_recursive(APP_SHARING_APP_ASEC_DIR, 0751) && errno != EEXIST) {
+        LOGW("Failed to create {}: {}", APP_SHARING_APP_ASEC_DIR,
+             strerror(errno));
+        return false;
+    }
+    if (!util::mkdir_recursive(APP_SHARING_DATA_DIR, 0751) && errno != EEXIST) {
+        LOGW("Failed to create {}: {}", APP_SHARING_DATA_DIR,
+             strerror(errno));
+        return false;
+    }
+
     for (auto it = shared_pkgs.begin(); it != shared_pkgs.end();) {
         std::shared_ptr<SharedPackage> &shared_pkg = *it;
 
