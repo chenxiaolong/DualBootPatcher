@@ -30,6 +30,7 @@
 #include <sepol/sepol.h>
 
 #include "util/finally.h"
+#include "util/fts.h"
 #include "util/logging.h"
 
 
@@ -37,6 +38,50 @@ namespace mb
 {
 namespace util
 {
+
+class RecursiveSetContext : public FTSWrapper {
+public:
+    RecursiveSetContext(std::string path, std::string context,
+                        bool follow_symlinks)
+        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        _context(std::move(context)),
+        _follow_symlinks(follow_symlinks)
+    {
+    }
+
+    virtual int on_reached_directory_post() override
+    {
+        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_file() override
+    {
+        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_symlink() override
+    {
+        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_special_file() override
+    {
+        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+private:
+    std::string _context;
+    bool _follow_symlinks;
+
+    bool set_context()
+    {
+        if (_follow_symlinks) {
+            return selinux_set_context(_curr->fts_accpath, _context);
+        } else {
+            return selinux_lset_context(_curr->fts_accpath, _context);
+        }
+    }
+};
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 {
@@ -252,6 +297,18 @@ bool selinux_lset_context(const std::string &path, const std::string &context)
 {
     return lsetxattr(path.c_str(), "security.selinux",
                      context.c_str(), context.size() + 1, 0) == 0;
+}
+
+bool selinux_set_context_recursive(const std::string &path,
+                                   const std::string &context)
+{
+    return RecursiveSetContext(path, context, true).run();
+}
+
+bool selinux_lset_context_recursive(const std::string &path,
+                                    const std::string &context)
+{
+    return RecursiveSetContext(path, context, false).run();
 }
 
 bool selinux_get_enforcing(int *value)
