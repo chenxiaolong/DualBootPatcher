@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
+#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -459,8 +460,17 @@ static bool prepare_appsync()
             LOGV("Bind mounting data directory:");
             LOGV("- Source: {}", data_path);
             LOGV("- Target: {}", target);
-            // TODO: Actually mount here
-            LOGV("[TODO] (Would actually mount something now)");
+
+            if (umount(target.c_str()) < 0 && errno != EINVAL) {
+                LOGW("Failed to unmount: {}", strerror(errno));
+                shared_pkg->share_data = false;
+            } else if (mount(data_path.c_str(), target.c_str(),
+                             "", MS_BIND, "") < 0) {
+                LOGW("Failed to bind mount: {}", strerror(errno));
+                LOGW("To prevent damage to shared data, data sharing is "
+                     "temporarily disabled for this package");
+                shared_pkg->share_data = false;
+            }
         }
     }
 
