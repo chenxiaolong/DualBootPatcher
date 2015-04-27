@@ -78,6 +78,8 @@
 
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
+#define APP_DATA_SELINUX_CONTEXT        "u:object_r:app_data_file:s0"
+
 #define APP_SHARING_APP_DIR             "/data/multiboot/_appsharing/app"
 #define APP_SHARING_APP_ASEC_DIR        "/data/multiboot/_appsharing/app-asec"
 #define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
@@ -413,6 +415,17 @@ static bool prepare_appsync()
         LOGW("Failed to fix permissions on {}", APP_SHARING_APP_DIR);
     }
 
+    // Ensure that the shared data is under the u:object_r:app_data_file:s0
+    // context. Otherwise, apps won't be able to write to the shared directory
+    bool disable_data_sharing = false;
+    if (!util::selinux_lset_context_recursive(
+            APP_SHARING_DATA_DIR, APP_DATA_SELINUX_CONTEXT)) {
+        LOGW("Failed to set context on {}: {}", APP_SHARING_DATA_DIR,
+             strerror(errno));
+        LOGW("Data sharing will be disabled for all packages");
+        disable_data_sharing = true;
+    }
+
     // Actually share the apk and data
     for (std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
         auto pkg = pkgs.find_by_pkg(shared_pkg->pkg_id);
@@ -424,6 +437,10 @@ static bool prepare_appsync()
                      "data will not be shared");
             }
             continue;
+        }
+
+        if (disable_data_sharing) {
+            shared_pkg->share_data = false;
         }
 
         if (shared_pkg->share_data) {
