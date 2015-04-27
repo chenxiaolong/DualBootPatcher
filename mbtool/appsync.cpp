@@ -390,12 +390,16 @@ static bool prepare_appsync()
 
         // Ensure that the data directory exists if data sharing is enabled
         std::string data_path = get_shared_data_path(shared_pkg->pkg_id);
-        if (shared_pkg->share_data && !util::mkdir_recursive(data_path, 0755)) {
+        if (shared_pkg->share_data && !util::mkdir_recursive(data_path, 0751)) {
             LOGW("Failed to create {}. App data will not be shared", data_path);
             shared_pkg->share_data = false;
         }
 
         // Ensure that the shared data directory permissions are correct
+        if (shared_pkg->share_data && chmod(data_path.c_str(), 0751) < 0) {
+            LOGW("Failed to chmod {}. App data will not be shared", data_path);
+            shared_pkg->share_data = false;
+        }
         if (shared_pkg->share_data && !chown_wrapper(data_path, pkg, true)) {
             LOGW("Failed to chown {}. App data will not be shared", data_path);
             shared_pkg->share_data = false;
