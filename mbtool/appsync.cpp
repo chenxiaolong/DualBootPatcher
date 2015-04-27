@@ -770,7 +770,7 @@ static void handle_command(const std::vector<std::string> &args)
  * \return False if accepting the socket connection fails. Otherwise, does not
  *         return
  */
-static bool proxy_process(int fd)
+static bool proxy_process(int fd, bool can_appsync)
 {
     while (true) {
         int client_fd = accept(fd, nullptr, nullptr);
@@ -860,7 +860,9 @@ static bool proxy_process(int fd)
                         || cmd == "patchoat") {
                     LOGD("Received command: {}", args_to_string(args));
 
-                    handle_command(args);
+                    if (can_appsync) {
+                        handle_command(args);
+                    }
                 } else {
                     LOGW("Unrecognized command: {}", args_to_string(args));
                 }
@@ -893,7 +895,7 @@ static bool proxy_process(int fd)
 /*!
  * \brief Set up the environment for proxying the installd socket
  */
-static bool hijack_socket()
+static bool hijack_socket(bool can_appsync)
 {
     LOGD("Starting appsync");
 
@@ -928,7 +930,7 @@ static bool hijack_socket()
     LOGD("Ready! Waiting for connections");
 
     // Start processing commands!
-    if (!proxy_process(orig_fd)) {
+    if (!proxy_process(orig_fd, can_appsync)) {
         return false;
     }
 
@@ -1065,15 +1067,21 @@ int appsync_main(int argc, char *argv[])
         }
     }
 
+    bool can_appsync = false;
+
     // Try to load config file
     if (!load_config_file()) {
         LOGW("Failed to load configuration file; app sharing will not work");
         LOGW("Continuing to proxy installd anyway...");
     } else {
-        prepare_appsync();
+        can_appsync = prepare_appsync();
+        if (!can_appsync) {
+            LOGW("appsync preparation failed. "
+                 "App sharing is completely disabled");
+        }
     }
 
-    return hijack_socket() ? EXIT_SUCCESS : EXIT_FAILURE;
+    return hijack_socket(can_appsync) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 }
