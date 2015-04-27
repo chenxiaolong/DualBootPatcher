@@ -58,13 +58,6 @@ public:
     {
     }
 
-    virtual int on_reached_directory_pre() override
-    {
-        // Do nothing. Need depth-first search, so directories are deleted in
-        // on_reached_directory_post()
-        return Action::FTS_OK;
-    }
-
     virtual int on_reached_directory_post() override
     {
         return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
