@@ -767,6 +767,26 @@ static bool do_remove(const std::vector<std::string> &args)
         LOGW(TAG "Found apk at {}", apk);
     }
 
+    for (const std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
+        if (shared_pkg->pkg_id != pkgname) {
+            continue;
+        }
+
+        if (shared_pkg->share_data) {
+            // If data is shared, make sure the dta directory is unmounted
+            // before Android wipes it clean
+            std::string target(USER_DATA_DIR);
+            target += "/";
+            target += shared_pkg->pkg_id;
+
+            LOGV(TAG "Attempting to unmount shared data directory");
+            if (umount(target.c_str()) < 0) {
+                LOGW(TAG "Failed to unmount {}: {}", target, strerror(errno));
+                return false;
+            }
+        }
+    }
+
     return true;
 #undef TAG
 }
