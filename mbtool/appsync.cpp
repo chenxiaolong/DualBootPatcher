@@ -725,26 +725,61 @@ static std::string args_to_string(const std::vector<std::string> &args)
     return output;
 }
 
-static bool do_install(const std::vector<std::string> &args)
+static bool do_linklib(const std::vector<std::string> &args)
 {
-#define TAG "[install] "
+#define TAG "[linklib] "
     const std::string &pkgname = args[0];
-    const int uid = strtol(args[1].c_str(), nullptr, 10);
-    const int gid = strtol(args[2].c_str(), nullptr, 10);
-    const std::string &seinfo = args[3];
+    const std::string &aseclibdir = args[1];
+    const int userid = strtol(args[2].c_str(), nullptr, 10);
 
     LOGD(TAG "pkgname = {}", pkgname);
-    LOGD(TAG "uid = {}", uid);
-    LOGD(TAG "gid = {}", gid);
-    LOGD(TAG "seinfo = {}", seinfo);
+    LOGD(TAG "aseclibdir = {}", aseclibdir);
+    LOGD(TAG "userid = {}", userid);
 
-    std::string apk = find_apk(USER_APP_DIR, pkgname);
-    if (apk.empty()) {
+    bool is_shared = false;
+    for (const std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
+        if (shared_pkg->pkg_id == pkgname) {
+            is_shared = true;
+            break;
+        }
+    }
+
+    if (!is_shared) {
+        LOGD(TAG, "Package is not shared");
+        return true;
+    }
+
+    std::string apk_path = find_apk(USER_APP_DIR, pkgname);
+    if (apk_path.empty()) {
         LOGW(TAG "Could not find apk in {}", USER_APP_DIR);
-        LOGW(TAG "This package might be a paid app, which is not supported by appsync yet");
+        LOGW(TAG "If this package is a paid app, apk sharing is not supported");
         return false;
-    } else {
-        LOGD(TAG "Found apk at {}", apk);
+    }
+
+    std::string full_path = get_shared_apk_path(pkgname);
+
+    LOGD(TAG "Hard linking {} to {}", apk_path, full_path);
+
+    if (!util::mkdir_parent(full_path, 0755)) {
+        LOGW("Failed to create parent directories for {}", full_path);
+        return false;
+    }
+
+    // Make sure we preserve the inode when copying, so all of the shared apk's
+    // hardlinks are preserved
+    if (!util::copy_contents(apk_path, full_path)) {
+        LOGW("Failed to copy contents from {} to {}", apk_path, full_path);
+        return false;
+    }
+
+    if (unlink(apk_path.c_str()) < 0) {
+        LOGW("Failed to unlink {}: {}",
+             apk_path, strerror(errno));
+    }
+    if (link(full_path.c_str(), apk_path.c_str()) < 0) {
+        LOGW("Failed to hard link {} to {}: {}",
+             full_path, apk_path, strerror(errno));
+        return false;
     }
 
     return true;
@@ -798,8 +833,8 @@ struct CommandInfo {
 };
 
 static struct CommandInfo cmds[] = {
-    { "install", 4, do_install },
-    { "remove",  2, do_remove },
+    { "linklib", 3, do_linklib },
+    { "remove",  2, do_remove }
 };
 
 static void handle_command(const std::vector<std::string> &args)
