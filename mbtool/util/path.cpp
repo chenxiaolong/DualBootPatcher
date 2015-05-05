@@ -21,7 +21,9 @@
 
 #include <vector>
 #include <cerrno>
+#include <cstring>
 #include <libgen.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "util/logging.h"
@@ -63,6 +65,15 @@ std::string base_name(const std::string &path)
     return std::string(ptr);
 }
 
+std::string real_path(const std::string &path)
+{
+    char actual_path[PATH_MAX + 1];
+    if (!realpath(path.c_str(), actual_path)) {
+        return std::string();
+    }
+    return std::string(actual_path);
+}
+
 bool read_link(const std::string &path, std::string *out)
 {
     std::vector<char> buf;
@@ -84,6 +95,63 @@ bool read_link(const std::string &path, std::string *out)
     buf[len] = '\0';
     out->assign(buf.data());
     return true;
+}
+
+bool inodes_equal(const std::string &path1, const std::string &path2)
+{
+    struct stat sb1;
+    struct stat sb2;
+
+    if (lstat(path1.c_str(), &sb1) < 0) {
+        LOGE("{}: Failed to stat: {}", path1, strerror(errno));
+        return false;
+    }
+
+    if (lstat(path2.c_str(), &sb2) < 0) {
+        LOGE("{}: Failed to stat: {}", path2, strerror(errno));
+        return false;
+    }
+
+    return sb1.st_dev == sb2.st_dev && sb1.st_ino == sb2.st_ino;
+}
+
+std::vector<std::string> path_split(const std::string &path)
+{
+    char *p;
+    char *save_ptr;
+    std::vector<char> copy(path.begin(), path.end());
+    copy.push_back('\0');
+
+    std::vector<std::string> split;
+
+    // For absolute paths
+    if (!path.empty() && path[0] == '/') {
+        split.push_back(std::string());
+    }
+
+    p = strtok_r(copy.data(), "/", &save_ptr);
+    while (p != nullptr) {
+        split.push_back(p);
+        p = strtok_r(nullptr, "/", &save_ptr);
+    }
+
+    return split;
+}
+
+std::string path_join(const std::vector<std::string> &components)
+{
+    std::string path;
+    for (auto it = components.begin(); it != components.end(); ++it) {
+        if (it->empty()) {
+            path += "/";
+        } else {
+            path += *it;
+            if (it != components.end() - 1) {
+                path += "/";
+            }
+        }
+    }
+    return path;
 }
 
 }
