@@ -112,6 +112,11 @@ Package::Package() :
 {
 }
 
+uid_t Package::get_uid()
+{
+    return is_shared_user ? shared_user_id : user_id;
+}
+
 static char * time_to_string(uint64_t time)
 {
     static char buf[50];

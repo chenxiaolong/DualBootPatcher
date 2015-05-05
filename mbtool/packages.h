@@ -94,6 +94,8 @@ public:
     // Functions
     Package();
 
+    uid_t get_uid();
+
     void dump();
 };
 
