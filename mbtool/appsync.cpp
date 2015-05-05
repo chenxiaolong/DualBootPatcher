@@ -744,11 +744,16 @@ static bool proxy_process(int fd, bool can_appsync)
                 if (cmd == "ping"
                         || cmd == "freecache") {
                     LOGD("Received unimportant command: [{}, ...]", cmd);
+                } else if (cmd == "aapt"
+                        || cmd == "aapt_with_common") {
+                    LOGD("Received CyanogenMod-specific command: {}",
+                         args_to_string(args));
                 } else if (cmd == "getsize") {
                     // Get size is so annoying we don't want it to show... EVER!
                     log_result = false;
                 } else if (cmd == "install"
                         || cmd == "dexopt"
+                        || cmd == "markbootcomplete"
                         || cmd == "movedex"
                         || cmd == "rmdex"
                         || cmd == "remove"
