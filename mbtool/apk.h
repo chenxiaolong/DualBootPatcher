@@ -24,6 +24,19 @@
 namespace mb
 {
 
+class ApkFile
+{
+public:
+    bool open(const std::string &path);
+
+    std::string package;
+    unsigned int version_code;
+    std::string version_name;
+
+private:
+    bool parse_manifest(const void *data, const std::size_t size);
+};
+
 std::string find_apk(const std::string &directory, const std::string &pkgname);
 
 }

@@ -130,6 +130,7 @@ mbtool_src_base := \
 	actions.cpp \
 	apk.cpp \
 	appsync.cpp \
+	appsyncmanager.cpp \
 	daemon.cpp \
 	main.cpp \
 	mount_fstab.cpp \

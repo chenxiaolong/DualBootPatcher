@@ -35,6 +35,7 @@
 #include <jansson.h>
 
 #include "apk.h"
+#include "appsyncmanager.h"
 #include "packages.h"
 #include "roms.h"
 #include "util/chown.h"
@@ -78,16 +79,6 @@
 #define CONFIG_KEY_SHARE_DATA           "share_data"
 
 #define PACKAGES_XML                    "/data/system/packages.xml"
-
-#define APP_DATA_SELINUX_CONTEXT        "u:object_r:app_data_file:s0"
-
-#define APP_SHARING_APP_DIR             "/data/multiboot/_appsharing/app"
-#define APP_SHARING_APP_ASEC_DIR        "/data/multiboot/_appsharing/app-asec"
-#define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
-
-#define USER_APP_DIR                    "/data/app"
-#define USER_APP_ASEC_DIR               "/data/app-asec"
-#define USER_DATA_DIR                   "/data/data"
 
 namespace mb
 {
@@ -195,181 +186,21 @@ static bool load_config_file()
     return true;
 }
 
-class FixPermissions : public util::FTSWrapper {
-public:
-    FixPermissions(std::string path)
-        : FTSWrapper(path, FTS_GroupSpecialFiles)
-    {
-    }
-
-    virtual int on_changed_path() override
-    {
-        util::chown(_curr->fts_accpath, "system", "system", 0);
-        return Action::FTS_OK;
-    }
-
-    virtual int on_reached_file() override
-    {
-        chmod(_curr->fts_accpath, 0644);
-        return Action::FTS_OK;
-    }
-
-    virtual int on_reached_directory_pre() override
-    {
-        chmod(_curr->fts_accpath, 0755);
-        return Action::FTS_OK;
-    }
-};
-
-static std::string get_shared_apk_path(const std::string &pkg)
-{
-    std::string path(APP_SHARING_APP_DIR);
-    path += "/";
-    path += pkg;
-    path += "/";
-    path += "base.apk";
-    return path;
-}
-
-static std::string get_shared_data_path(const std::string &pkg)
-{
-    std::string path(APP_SHARING_DATA_DIR);
-    path += "/";
-    path += pkg;
-    return path;
-}
-
-static bool chown_wrapper(const std::string &path,
-                          const std::shared_ptr<Package> &pkg,
-                          bool recursive)
-{
-    if (pkg->is_shared_user) {
-        return util::chown(path, pkg->shared_user_id, pkg->shared_user_id,
-                           recursive ? util::MB_CHOWN_RECURSIVE : 0);
-    } else {
-        return util::chown(path, pkg->user_id, pkg->user_id,
-                           recursive ? util::MB_CHOWN_RECURSIVE : 0);
-    }
-}
-
-/*!
- * \brief Copy the apk from USER_APP_DIR to APP_SHARING_APP_DIR
- */
-static bool ensure_apk_exists_in_app_sharing_dir(const std::string &pkg)
-{
-    std::string full_path = get_shared_apk_path(pkg);
-
-    struct stat sb;
-    if (stat(full_path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-        return true;
-    }
-
-    LOGD("Package {} does not exist in the shared app directory. "
-         "Attempting to copy it from {}", pkg, USER_APP_DIR);
-
-    std::string apk_path = find_apk(USER_APP_DIR, pkg);
-    if (apk_path.empty()) {
-        LOGW("Failed to find package {} in {}", pkg, USER_APP_DIR);
-        return false;
-    }
-
-    if (!util::mkdir_parent(full_path, 0755)) {
-        LOGW("Failed to create parent directories for {}", full_path);
-        return false;
-    }
-
-    // Make sure we preserve the inode when copying, so all of the shared apk's
-    // hardlinks are preserved
-    if (!util::copy_contents(apk_path, full_path)) {
-        LOGW("Failed to copy contents from {} to {}", apk_path, full_path);
-        return false;
-    }
-
-    return true;
-}
-
-static bool relink_apk_to_target(const std::shared_ptr<Package> &pkg)
-{
-    std::string apk_path = get_shared_apk_path(pkg->name);
-    std::string target(pkg->code_path);
-    bool is_directory = false;
-
-    if (!util::ends_with(pkg->code_path, ".apk")) {
-        is_directory = true;
-        target += "/base.apk";
-    }
-
-    struct stat sb1;
-    struct stat sb2;
-
-    if (stat(apk_path.c_str(), &sb1) < 0) {
-        LOGW("Failed to stat {}: {}", apk_path, strerror(errno));
-        return false;
-    }
-
-    if (stat(target.c_str(), &sb2) == 0
-            && sb1.st_dev == sb2.st_dev
-            && sb1.st_ino == sb2.st_ino) {
-        // File is already linked correctly
-        return true;
-    }
-
-    if (is_directory) {
-        // Android >=5.0 structure
-        if (!util::delete_recursive(pkg->code_path)) {
-            LOGW("Failed to remove {}: {}",
-                 pkg->code_path, strerror(errno));
-        }
-        if (mkdir(pkg->code_path.c_str(), 0755) < 0) {
-            LOGW("Failed to create directory {}: {}",
-                 pkg->code_path, strerror(errno));
-        }
-        if (!chown_wrapper(pkg->code_path, pkg, true)) {
-            LOGW("Failed to chown {}: {}",
-                 pkg->code_path, strerror(errno));
-        }
-        if (link(apk_path.c_str(), target.c_str()) < 0) {
-            LOGW("Failed to hard link {} to {}: {}",
-                 apk_path, target, strerror(errno));
-            return false;
-        }
-    } else {
-        // Android <5.0 structure
-        if (unlink(target.c_str()) < 0) {
-            LOGW("Failed to unlink {}: {}",
-                 target, strerror(errno));
-        }
-        if (link(apk_path.c_str(), target.c_str()) < 0) {
-            LOGW("Failed to hard link {} to {}: {}",
-                 apk_path, target, strerror(errno));
-            return false;
-        }
-    }
-
-    return true;
-}
-
 static bool prepare_appsync()
 {
+    // On boot we want to:
+    // - For each shared package:
+    //     - Copy the user apk to shared directory if it's newer
+    //     - Remove the user apk and hard link the shared apk (if not already)
+    //     - Remove shared libraries and let Android re-extract them
+
     Packages pkgs;
     if (!pkgs.load_xml(PACKAGES_XML)) {
         LOGE("Failed to load {}", PACKAGES_XML);
         return false;
     }
 
-    if (!util::mkdir_recursive(APP_SHARING_APP_DIR, 0751) && errno != EEXIST) {
-        LOGE("Failed to create {}: {}", APP_SHARING_APP_DIR,
-             strerror(errno));
-        return false;
-    }
-    if (!util::mkdir_recursive(APP_SHARING_APP_ASEC_DIR, 0751) && errno != EEXIST) {
-        LOGW("Failed to create {}: {}", APP_SHARING_APP_ASEC_DIR,
-             strerror(errno));
-        return false;
-    }
-    if (!util::mkdir_recursive(APP_SHARING_DATA_DIR, 0751) && errno != EEXIST) {
-        LOGW("Failed to create {}: {}", APP_SHARING_DATA_DIR,
-             strerror(errno));
+    if (!AppSyncManager::initialize_directories()) {
         return false;
     }
 
@@ -403,24 +234,16 @@ static bool prepare_appsync()
 
         // Ensure that the apk exists in the shared directory
         if (shared_pkg->share_apk
-                && !ensure_apk_exists_in_app_sharing_dir(shared_pkg->pkg_id)) {
+                && !AppSyncManager::copy_apk_user_to_shared(shared_pkg->pkg_id)) {
             shared_pkg->share_apk = false;
         }
 
         // Ensure that the data directory exists if data sharing is enabled
-        std::string data_path = get_shared_data_path(shared_pkg->pkg_id);
-        if (shared_pkg->share_data && !util::mkdir_recursive(data_path, 0751)) {
-            LOGW("Failed to create {}. App data will not be shared", data_path);
-            shared_pkg->share_data = false;
-        }
-
-        // Ensure that the shared data directory permissions are correct
-        if (shared_pkg->share_data && chmod(data_path.c_str(), 0751) < 0) {
-            LOGW("Failed to chmod {}. App data will not be shared", data_path);
-            shared_pkg->share_data = false;
-        }
-        if (shared_pkg->share_data && !chown_wrapper(data_path, pkg, true)) {
-            LOGW("Failed to chown {}. App data will not be shared", data_path);
+        if (shared_pkg->share_data
+                && !AppSyncManager::create_shared_data_directory(
+                        shared_pkg->pkg_id, pkg->get_uid())) {
+            LOGW("Failed to create shared data directory for package {}. "
+                 "App data will not be shared", shared_pkg->pkg_id);
             shared_pkg->share_data = false;
         }
 
@@ -428,17 +251,18 @@ static bool prepare_appsync()
     }
 
     // Ensure that the shared apk permissions are correct
-    if (!FixPermissions(APP_SHARING_APP_DIR).run()) {
-        LOGW("Failed to fix permissions on {}", APP_SHARING_APP_DIR);
+    bool disable_apk_sharing = false;
+    if (!AppSyncManager::fix_shared_apk_permissions()) {
+        LOGW("Failed to fix permissions on shared apk directory");
+        LOGW("Apk sharing will be disabled for all packages");
+        disable_apk_sharing = true;
     }
 
     // Ensure that the shared data is under the u:object_r:app_data_file:s0
     // context. Otherwise, apps won't be able to write to the shared directory
     bool disable_data_sharing = false;
-    if (!util::selinux_lset_context_recursive(
-            APP_SHARING_DATA_DIR, APP_DATA_SELINUX_CONTEXT)) {
-        LOGW("Failed to set context on {}: {}", APP_SHARING_DATA_DIR,
-             strerror(errno));
+    if (!AppSyncManager::fix_shared_data_permissions()) {
+        LOGW("Failed to fix permissions on shared data directory");
         LOGW("Data sharing will be disabled for all packages");
         disable_data_sharing = true;
     }
@@ -447,46 +271,35 @@ static bool prepare_appsync()
     for (std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
         auto pkg = pkgs.find_by_pkg(shared_pkg->pkg_id);
 
-        if (shared_pkg->share_apk && !relink_apk_to_target(pkg)) {
-            LOGW("Failed to link shared apk to user app directory");
-            if (shared_pkg->share_data) {
-                LOGW("To prevent issues due to the error, "
-                     "data will not be shared");
-            }
-            continue;
+        if (disable_apk_sharing) {
+            shared_pkg->share_apk = false;
         }
-
         if (disable_data_sharing) {
             shared_pkg->share_data = false;
         }
 
-        if (shared_pkg->share_data) {
-            std::string data_path = get_shared_data_path(shared_pkg->pkg_id);
-            std::string target(USER_DATA_DIR);
-            target += "/";
-            target += shared_pkg->pkg_id;
+        if (shared_pkg->share_apk
+                && !AppSyncManager::wipe_shared_libraries(pkg)) {
+            LOGW("Failed to remove shared libraries for package {}", pkg->name);
+            LOGW("To prevent issues with starting the app, "
+                 "apk will not be shared");
+            shared_pkg->share_apk = false;
+        }
 
-            if (!util::mkdir_recursive(target, 0755)) {
-                LOGW("Failed to mkdir {}: {}", target, strerror(errno));
-            }
-            if (!chown_wrapper(target, pkg, true)) {
-                LOGW("Failed to chown {}: {}", target, strerror(errno));
-            }
-
-            LOGV("Bind mounting data directory:");
-            LOGV("- Source: {}", data_path);
-            LOGV("- Target: {}", target);
-
-            if (umount(target.c_str()) < 0 && errno != EINVAL) {
-                LOGW("Failed to unmount: {}", strerror(errno));
-                shared_pkg->share_data = false;
-            } else if (mount(data_path.c_str(), target.c_str(),
-                             "", MS_BIND, "") < 0) {
-                LOGW("Failed to bind mount: {}", strerror(errno));
-                LOGW("To prevent damage to shared data, data sharing is "
-                     "temporarily disabled for this package");
+        if (shared_pkg->share_apk
+                && !AppSyncManager::link_apk_shared_to_user(pkg)) {
+            LOGW("Failed to link shared apk to user app directory");
+            if (shared_pkg->share_data) {
+                LOGW("To prevent issues due to the error, "
+                     "data will not be shared");
                 shared_pkg->share_data = false;
             }
+        }
+
+        if (shared_pkg->share_data && !AppSyncManager::mount_shared_directory(
+                pkg->name, pkg->get_uid())) {
+            LOGW("Failed to mount shared data directory");
+            shared_pkg->share_data = false;
         }
     }
 
@@ -745,40 +558,13 @@ static bool do_linklib(const std::vector<std::string> &args)
     }
 
     if (!is_shared) {
-        LOGD(TAG, "Package is not shared");
+        LOGD(TAG "Package is not shared");
         return true;
     }
 
-    std::string apk_path = find_apk(USER_APP_DIR, pkgname);
-    if (apk_path.empty()) {
-        LOGW(TAG "Could not find apk in {}", USER_APP_DIR);
-        LOGW(TAG "If this package is a paid app, apk sharing is not supported");
-        return false;
-    }
-
-    std::string full_path = get_shared_apk_path(pkgname);
-
-    LOGD(TAG "Hard linking {} to {}", apk_path, full_path);
-
-    if (!util::mkdir_parent(full_path, 0755)) {
-        LOGW("Failed to create parent directories for {}", full_path);
-        return false;
-    }
-
-    // Make sure we preserve the inode when copying, so all of the shared apk's
-    // hardlinks are preserved
-    if (!util::copy_contents(apk_path, full_path)) {
-        LOGW("Failed to copy contents from {} to {}", apk_path, full_path);
-        return false;
-    }
-
-    if (unlink(apk_path.c_str()) < 0) {
-        LOGW("Failed to unlink {}: {}",
-             apk_path, strerror(errno));
-    }
-    if (link(full_path.c_str(), apk_path.c_str()) < 0) {
-        LOGW("Failed to hard link {} to {}: {}",
-             full_path, apk_path, strerror(errno));
+    // Update apk in the shared directory
+    if (!AppSyncManager::copy_apk_user_to_shared(pkgname)) {
+        LOGW(TAG "Failed to copy user apk to shared directory");
         return false;
     }
 
@@ -795,11 +581,30 @@ static bool do_remove(const std::vector<std::string> &args)
     LOGD(TAG "pkgname = {}", pkgname);
     LOGD(TAG "userid = {}", userid);
 
-    std::string apk = find_apk(USER_APP_DIR, pkgname);
-    if (apk.empty()) {
-        LOGW(TAG "Could not find apk in {}", USER_APP_DIR);
-    } else {
-        LOGW(TAG "Found apk at {}", apk);
+    for (auto it = shared_pkgs.begin(); it != shared_pkgs.end(); ++it) {
+        std::shared_ptr<SharedPackage> shared_pkg = *it;
+
+        if (shared_pkg->pkg_id != pkgname) {
+            continue;
+        }
+
+        // Need to remove from the shared_pkgs list to prevent the linklib hook
+        // from triggering if the user decides to reinstall a package that was
+        // previously shared.
+        shared_pkgs.erase(it);
+
+        if (shared_pkg->share_data) {
+            // If data is shared, make sure the data directory is unmounted
+            // before Android wipes it clean
+            LOGV(TAG "Attempting to unmount shared data directory");
+            if (!AppSyncManager::unmount_shared_directory(pkgname)) {
+                return false;
+            }
+        } else {
+            LOGD(TAG "Data is not shared");
+        }
+
+        return true;
     }
 
     for (const std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
@@ -808,20 +613,20 @@ static bool do_remove(const std::vector<std::string> &args)
         }
 
         if (shared_pkg->share_data) {
-            // If data is shared, make sure the dta directory is unmounted
+            // If data is shared, make sure the data directory is unmounted
             // before Android wipes it clean
-            std::string target(USER_DATA_DIR);
-            target += "/";
-            target += shared_pkg->pkg_id;
-
             LOGV(TAG "Attempting to unmount shared data directory");
-            if (umount(target.c_str()) < 0) {
-                LOGW(TAG "Failed to unmount {}: {}", target, strerror(errno));
+            if (!AppSyncManager::unmount_shared_directory(pkgname)) {
                 return false;
             }
+        } else {
+            LOGD(TAG "Data is not shared");
         }
+
+        return true;
     }
 
+    LOGD(TAG "Package is not shared");
     return true;
 #undef TAG
 }
