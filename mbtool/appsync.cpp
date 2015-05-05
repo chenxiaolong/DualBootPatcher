@@ -194,6 +194,9 @@ static bool prepare_appsync()
     //     - Remove the user apk and hard link the shared apk (if not already)
     //     - Remove shared libraries and let Android re-extract them
 
+    // Detect directory locations
+    AppSyncManager::detect_directories();
+
     Packages pkgs;
     if (!pkgs.load_xml(PACKAGES_XML)) {
         LOGE("Failed to load {}", PACKAGES_XML);

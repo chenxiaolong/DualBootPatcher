@@ -36,6 +36,24 @@
 #include "util/string.h"
 
 #include "apk.h"
+#include "roms.h"
+
+#define APP_DATA_SELINUX_CONTEXT        "u:object_r:app_data_file:s0"
+
+#define APP_SHARING_APP_DIR             "/data/multiboot/_appsharing/app"
+#define APP_SHARING_APP_ASEC_DIR        "/data/multiboot/_appsharing/app-asec"
+#define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
+
+#define USER_APP_DIR                    "/data/app"
+#define USER_APP_ASEC_DIR               "/data/app-asec"
+#define USER_DATA_DIR                   "/data/data"
+
+static std::string _as_app_dir;
+static std::string _as_app_asec_dir;
+static std::string _as_data_dir;
+static std::string _user_app_dir;
+static std::string _user_app_asec_dir;
+static std::string _user_data_dir;
 
 namespace mb
 {
@@ -70,12 +88,29 @@ public:
     }
 };
 
+void AppSyncManager::detect_directories()
+{
+    _as_app_dir = get_raw_path(APP_SHARING_APP_DIR);
+    _as_app_asec_dir = get_raw_path(APP_SHARING_APP_ASEC_DIR);
+    _as_data_dir = get_raw_path(APP_SHARING_DATA_DIR);
+    _user_app_dir = USER_APP_DIR;
+    _user_app_asec_dir = USER_APP_ASEC_DIR;
+    _user_data_dir = USER_DATA_DIR;
+
+    LOGD("App sharing app directory:      {}", _as_app_dir);
+    LOGD("App sharing app-asec directory: {}", _as_app_asec_dir);
+    LOGD("App sharing app data directory: {}", _as_data_dir);
+    LOGD("User app directory:             {}", _user_app_dir);
+    LOGD("User app-asec directory:        {}", _user_app_asec_dir);
+    LOGD("User app data directory:        {}", _user_data_dir);
+}
+
 /*!
  * \brief Get shared APK path for a package
  */
 std::string AppSyncManager::get_shared_apk_path(const std::string &pkg)
 {
-    std::string path(APP_SHARING_APP_DIR);
+    std::string path(_as_app_dir);
     path += "/";
     path += pkg;
     path += "/";
@@ -88,7 +123,7 @@ std::string AppSyncManager::get_shared_apk_path(const std::string &pkg)
  */
 std::string AppSyncManager::get_shared_data_path(const std::string &pkg)
 {
-    std::string path(APP_SHARING_DATA_DIR);
+    std::string path(_as_data_dir);
     path += "/";
     path += pkg;
     return path;
@@ -112,9 +147,9 @@ std::string AppSyncManager::get_shared_data_path(const std::string &pkg)
 bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
 {
     std::string shared_apk = get_shared_apk_path(pkg);
-    std::string user_apk = find_apk(USER_APP_DIR, pkg);
+    std::string user_apk = find_apk(_user_app_dir, pkg);
     if (user_apk.empty()) {
-        LOGW("{}: Failed to find apk for package {}", USER_APP_DIR, pkg);
+        LOGW("{}: Failed to find apk for package {}", _user_app_dir, pkg);
         return false;
     }
 
@@ -233,18 +268,18 @@ bool AppSyncManager::wipe_shared_libraries(const std::shared_ptr<Package> &pkg)
 
 bool AppSyncManager::initialize_directories()
 {
-    if (!util::mkdir_recursive(APP_SHARING_APP_DIR, 0751) && errno != EEXIST) {
-        LOGE("{}: Failed to create directory: {}", APP_SHARING_APP_DIR,
+    if (!util::mkdir_recursive(_as_app_dir, 0751) && errno != EEXIST) {
+        LOGE("{}: Failed to create directory: {}", _as_app_dir,
              strerror(errno));
         return false;
     }
-    if (!util::mkdir_recursive(APP_SHARING_APP_ASEC_DIR, 0751) && errno != EEXIST) {
-        LOGW("{}: Failed to create directory: {}", APP_SHARING_APP_ASEC_DIR,
+    if (!util::mkdir_recursive(_as_app_asec_dir, 0751) && errno != EEXIST) {
+        LOGW("{}: Failed to create directory: {}", _as_app_asec_dir,
              strerror(errno));
         return false;
     }
-    if (!util::mkdir_recursive(APP_SHARING_DATA_DIR, 0751) && errno != EEXIST) {
-        LOGW("{}: Failed to create directory: {}", APP_SHARING_DATA_DIR,
+    if (!util::mkdir_recursive(_as_data_dir, 0751) && errno != EEXIST) {
+        LOGW("{}: Failed to create directory: {}", _as_data_dir,
              strerror(errno));
         return false;
     }
@@ -277,15 +312,15 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 
 bool AppSyncManager::fix_shared_apk_permissions()
 {
-    return FixPermissions(APP_SHARING_APP_DIR).run();
+    return FixPermissions(_as_app_dir).run();
 }
 
 bool AppSyncManager::fix_shared_data_permissions()
 {
     if (!util::selinux_lset_context_recursive(
-            APP_SHARING_DATA_DIR, APP_DATA_SELINUX_CONTEXT)) {
+            _as_data_dir, APP_DATA_SELINUX_CONTEXT)) {
         LOGW("{}: Failed to set context recursively to {}: {}",
-             APP_SHARING_DATA_DIR, APP_DATA_SELINUX_CONTEXT, strerror(errno));
+             _as_data_dir, APP_DATA_SELINUX_CONTEXT, strerror(errno));
         return false;
     }
 
@@ -295,7 +330,7 @@ bool AppSyncManager::fix_shared_data_permissions()
 bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
 {
     std::string data_path = get_shared_data_path(pkg);
-    std::string target(USER_DATA_DIR);
+    std::string target(_user_data_dir);
     target += "/";
     target += pkg;
 
@@ -324,7 +359,7 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
 
 bool AppSyncManager::unmount_shared_directory(const std::string &pkg)
 {
-    std::string target(USER_DATA_DIR);
+    std::string target(_user_data_dir);
     target += "/";
     target += pkg;
 

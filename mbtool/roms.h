@@ -48,4 +48,6 @@ public:
     static std::shared_ptr<Rom> get_current_rom();
 };
 
+std::string get_raw_path(const std::string &path);
+
 }

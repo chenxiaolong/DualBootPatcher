@@ -23,23 +23,14 @@
 
 #include "packages.h"
 
-#define APP_DATA_SELINUX_CONTEXT        "u:object_r:app_data_file:s0"
-
-#define APP_SHARING_APP_DIR             "/data/multiboot/_appsharing/app"
-#define APP_SHARING_APP_ASEC_DIR        "/data/multiboot/_appsharing/app-asec"
-#define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
-
-#define USER_APP_DIR                    "/data/app"
-#define USER_APP_ASEC_DIR               "/data/app-asec"
-#define USER_DATA_DIR                   "/data/data"
-#define USER_LEGACY_LIB_DIR             "/data/app-lib"
-
 namespace mb
 {
 
 class AppSyncManager
 {
 public:
+    static void detect_directories();
+
     static std::string get_shared_apk_path(const std::string &pkg);
     static std::string get_shared_data_path(const std::string &pkg);
 

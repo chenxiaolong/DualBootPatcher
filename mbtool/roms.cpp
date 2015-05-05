@@ -184,4 +184,19 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     return std::shared_ptr<Rom>();
 }
 
+std::string get_raw_path(const std::string &path)
+{
+    struct stat sb;
+    if (stat("/raw", &sb) == 0 && S_ISDIR(sb.st_mode)) {
+        std::string result("/raw");
+        if (!path.empty() && path[0] != '/') {
+            result += "/";
+        }
+        result += path;
+        return result;
+    } else {
+        return path;
+    }
+}
+
 }
