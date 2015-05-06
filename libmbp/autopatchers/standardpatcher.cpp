@@ -107,6 +107,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     replaceUnmountLines(&lines, m_impl->info->device());
     replaceFormatLines(&lines, m_impl->info->device());
     fixBlockUpdateLines(&lines, m_impl->info->device());
+    fixImageExtractLines(&lines, m_impl->info->device());
 
     // Remove device check if requested
     if (!m_impl->info->patchInfo()->deviceCheck()) {
@@ -310,8 +311,22 @@ void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
         if (it->find("block_image_update") != std::string::npos) {
-            // References to the system partition should become
-            // /mb/system.img
+            // References to the system partition should become /mb/system.img
+            for (auto const &dev : systemDevs) {
+                boost::replace_all(*it, dev, "/mb/system.img");
+            }
+        }
+    }
+}
+
+void StandardPatcher::fixImageExtractLines(std::vector<std::string> *lines,
+                                           Device *device)
+{
+    auto const systemDevs = device->systemBlockDevs();
+
+    for (auto it = lines->begin(); it != lines->end(); ++it) {
+        if (it->find("package_extract_file") != std::string::npos) {
+            // References to the system partition should become /mb/system.img
             for (auto const &dev : systemDevs) {
                 boost::replace_all(*it, dev, "/mb/system.img");
             }
