@@ -44,6 +44,7 @@
 #include "main.h"
 #include "multiboot.h"
 #include "util/archive.h"
+#include "util/chmod.h"
 #include "util/chown.h"
 #include "util/command.h"
 #include "util/copy.h"
@@ -1354,6 +1355,11 @@ Installer::ProceedState Installer::install_stage_finish()
             // Non-fatal
             LOGE("{}: Failed to chown: {}", path, strerror(errno));
         }
+    }
+
+    if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
+        // Non-fatal
+        LOGE("{}: Failed to chmod: {}", MULTIBOOT_DIR, strerror(errno));
     }
 
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
