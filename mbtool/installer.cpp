@@ -71,6 +71,8 @@
 
 #define ABOOT_PARTITION "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
+#define MULTIBOOT_DIR "/data/media/0/MultiBoot"
+
 
 namespace mb {
 
@@ -1298,7 +1300,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
         // Write to multiboot directory and boot partition
 
-        std::string path("/data/media/0/MultiBoot/");
+        std::string path(MULTIBOOT_DIR);
+        path += "/";
         path += _rom->id;
         path += "/boot.img";
         if (!util::mkdir_parent(path, 0775)) {
@@ -1353,6 +1356,11 @@ Installer::ProceedState Installer::install_stage_finish()
         }
     }
 
+    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
+                     util::MB_CHOWN_RECURSIVE)) {
+        // Non-fatal
+        LOGE("{}: Failed to chown: {}", MULTIBOOT_DIR, strerror(errno));
+    }
 
     return on_finished();
 }
