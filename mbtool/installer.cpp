@@ -835,11 +835,21 @@ Installer::ProceedState Installer::install_stage_initialize()
 {
     LOGD("[Installer] Initialization stage");
 
-    std::vector<util::exists_info> info{{ "system.transfer.list", false }};
+    std::vector<util::exists_info> info{
+        { "system.transfer.list", false },
+        { "system.new.dat", false },
+        { "system.img", false }
+    };
     if (!util::archive_exists(_zip_file, info)) {
         LOGE("Failed to read zip file");
     } else {
-        _has_block_image = info[0].exists;
+        _has_block_image = false;
+        for (auto const &item : info) {
+            if (item.exists) {
+                _has_block_image = true;
+                break;
+            }
+        }
     }
 
     return on_initialize();
