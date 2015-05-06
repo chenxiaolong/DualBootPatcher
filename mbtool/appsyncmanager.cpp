@@ -183,7 +183,7 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
         // User apk is the same version or older than the shared apk
         if (af_user.version_code <= af_shared.version_code) {
             LOGD("Not copying user apk to shared apk for package {}", pkg);
-            LOGD("User version ({}) <= shared version({})",
+            LOGD("User version ({}) <= shared version ({})",
                  af_user.version_code, af_shared.version_code);
             return true;
         }
