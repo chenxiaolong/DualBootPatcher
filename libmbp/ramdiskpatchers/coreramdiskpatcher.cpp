@@ -25,6 +25,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -106,6 +107,9 @@ bool CoreRamdiskPatcher::patchRamdisk()
         return false;
     }
     if (!fixDataMediaContext()) {
+        return false;
+    }
+    if (!fixDataContextRegex()) {
         return false;
     }
     return true;
@@ -196,6 +200,37 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
 
     if (!hasDataMediaContext) {
         lines.push_back(DataMediaContext);
+    }
+
+    std::string strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(FileContexts, std::move(contents));
+
+    return true;
+}
+
+/*!
+ * Prevent the primary ROM from setting the context for /data/multiboot/*
+ */
+bool CoreRamdiskPatcher::fixDataContextRegex()
+{
+    if (!m_impl->cpio->exists(FileContexts)) {
+        return true;
+    }
+
+    std::vector<unsigned char> contents;
+    m_impl->cpio->contents(FileContexts, &contents);
+
+    std::vector<std::string> lines;
+    boost::split(lines, contents, boost::is_any_of("\n"));
+
+    const std::string origRegex("/data(/.*)?");
+    const std::string newRegex("/data(/(?!multiboot).*)?");
+
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::starts_with(*it, origRegex)) {
+            boost::replace_first(*it, origRegex, newRegex);
+        }
     }
 
     std::string strContents = boost::join(lines, "\n");
