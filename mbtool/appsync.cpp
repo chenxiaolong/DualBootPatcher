@@ -552,16 +552,22 @@ static bool do_linklib(const std::vector<std::string> &args)
     LOGD(TAG "aseclibdir = {}", aseclibdir);
     LOGD(TAG "userid = {}", userid);
 
-    bool is_shared = false;
+    std::shared_ptr<SharedPackage> sp;
+
     for (const std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
         if (shared_pkg->pkg_id == pkgname) {
-            is_shared = true;
+            sp = shared_pkg;
             break;
         }
     }
 
-    if (!is_shared) {
+    if (!sp) {
         LOGD(TAG "Package is not shared");
+        return true;
+    }
+
+    if (!sp->share_apk) {
+        LOGD(TAG "apk sharing not enabled for this package");
         return true;
     }
 
