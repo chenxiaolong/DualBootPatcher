@@ -328,7 +328,11 @@ public class LibMbp {
     private static String getSig(PointerType ptr, Class clazz, String method, Object... params) {
         StringBuilder sb = new StringBuilder();
         sb.append('(');
-        sb.append(ptr.getPointer().getNativeLong(0));
+        if (ptr == null) {
+            sb.append("null");
+        } else {
+            sb.append(ptr.getPointer().getNativeLong(0));
+        }
         sb.append(") ");
         sb.append(clazz.getSimpleName());
         sb.append('.');
@@ -363,7 +367,7 @@ public class LibMbp {
             Log.d("libmbp", signature);
         }
 
-        if (ptr == null) {
+        if (ptr == null && !method.equals("destroy")) {
             throw new IllegalStateException("Called on a destroyed object! " + signature);
         }
     }
