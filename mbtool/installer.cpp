@@ -441,7 +441,7 @@ bool Installer::create_temporary_image(const std::string &path)
             LOGD("{}: Creating new {} ext4 image", path, image_size);
 
             // Create new image
-            if (run_command({ "make_ext4fs", "-l", image_size, path }) != 0) {
+            if (run_command({ "/sbin/make_ext4fs", "-l", image_size, path }) != 0) {
                 LOGE("{}: Failed to create image", path);
                 return false;
             }
