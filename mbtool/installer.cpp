@@ -98,6 +98,8 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
     _output_fd(output_fd)
 {
     _passthrough = _output_fd >= 0;
+
+    LOGD("Initialized installer for zip file: {}", _zip_file);
 }
 
 Installer::~Installer()
