@@ -46,7 +46,7 @@ public:
     bool addMultiBootRc();
     bool addDaemonService();
     bool fixDataMediaContext();
-    bool fixDataContextRegex();
+    bool removeRestoreconData();
 
     bool useGeneratedFstab(const std::string &filename);
     bool useGeneratedFstabAuto();

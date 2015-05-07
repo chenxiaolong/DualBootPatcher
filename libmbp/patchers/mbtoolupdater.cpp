@@ -222,7 +222,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
 
     crp.addDaemonService();
     crp.fixDataMediaContext();
-    crp.fixDataContextRegex();
+    crp.removeRestoreconData();
 }
 
 }

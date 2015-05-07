@@ -109,7 +109,7 @@ bool CoreRamdiskPatcher::patchRamdisk()
     if (!fixDataMediaContext()) {
         return false;
     }
-    if (!fixDataContextRegex()) {
+    if (!removeRestoreconData()) {
         return false;
     }
     return true;
@@ -209,33 +209,35 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
     return true;
 }
 
-/*!
- * Prevent the primary ROM from setting the context for /data/multiboot/*
- */
-bool CoreRamdiskPatcher::fixDataContextRegex()
+bool CoreRamdiskPatcher::removeRestoreconData()
 {
-    if (!m_impl->cpio->exists(FileContexts)) {
+    // This use to change the "/data(/.*)?" regex in file_contexts to
+    // "/data(/(?!multiboot).*)?". Unfortunately, older versions of Android's
+    // fork of libselinux use POSIX regex functions instead of PCRE, so
+    // lookahead isn't supported. The regex will fail to compile and the system
+    // will just reboot.
+
+    if (!m_impl->cpio->exists(InitRc)) {
         return true;
     }
 
     std::vector<unsigned char> contents;
-    m_impl->cpio->contents(FileContexts, &contents);
+    m_impl->cpio->contents(InitRc, &contents);
 
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    const std::string origRegex("/data(/.*)?");
-    const std::string newRegex("/data(/(?!multiboot).*)?");
+    const std::regex re("^\\s*restorecon_recursive\\s+/data\\s*");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::starts_with(*it, origRegex)) {
-            boost::replace_first(*it, origRegex, newRegex);
+        if (std::regex_search(*it, re)) {
+            it->insert(it->begin(), '#');
         }
     }
 
     std::string strContents = boost::join(lines, "\n");
     contents.assign(strContents.begin(), strContents.end());
-    m_impl->cpio->setContents(FileContexts, std::move(contents));
+    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }
