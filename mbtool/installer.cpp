@@ -278,9 +278,9 @@ bool Installer::create_chroot()
     // there. Also, for whatever reason, bind mounting /sbin results in EINVAL
     // no matter if it's done from here or from busybox.
     if (!log_copy_dir("/sbin", in_chroot("/sbin"),
-                      util::MB_COPY_ATTRIBUTES
-                    | util::MB_COPY_XATTRS
-                    | util::MB_COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::COPY_ATTRIBUTES
+                    | util::COPY_XATTRS
+                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
         return false;
     }
 
@@ -315,15 +315,15 @@ bool Installer::create_chroot()
     // We need /dev/input/* and /dev/graphics/* for AROMA
 #if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
-                      util::MB_COPY_ATTRIBUTES
-                    | util::MB_COPY_XATTRS
-                    | util::MB_COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::COPY_ATTRIBUTES
+                    | util::COPY_XATTRS
+                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
         return false;
     }
     if (!log_copy_dir("/dev/graphics", in_chroot("/dev/graphics"),
-                      util::MB_COPY_ATTRIBUTES
-                    | util::MB_COPY_XATTRS
-                    | util::MB_COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::COPY_ATTRIBUTES
+                    | util::COPY_XATTRS
+                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
         return false;
     }
 #else
@@ -399,7 +399,7 @@ bool Installer::set_up_busybox_wrapper()
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
     if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
         LOGE("Failed to copy {} to {}: {}",
              temp_busybox, sbin_busybox, strerror(errno));
         return false;
@@ -545,7 +545,7 @@ bool Installer::run_real_updater()
     std::string chroot_updater = in_chroot("/mb/updater");
 
     if (!util::copy_file(updater, chroot_updater,
-                         util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
         LOGE("Failed to copy {} to {}: {}",
              updater, chroot_updater, strerror(errno));
         return false;
@@ -1011,9 +1011,9 @@ Installer::ProceedState Installer::install_stage_check_device()
             }
 
             // Follow symlinks just in case the symlink source isn't in the list
-            if (!util::copy_file(dev, dev_path, util::MB_COPY_ATTRIBUTES
-                                              | util::MB_COPY_XATTRS
-                                              | util::MB_COPY_FOLLOW_SYMLINKS)) {
+            if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
+                                              | util::COPY_XATTRS
+                                              | util::COPY_FOLLOW_SYMLINKS)) {
                 LOGE("Failed to copy {}. Continuing anyway", dev);
             }
 
@@ -1100,16 +1100,16 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 
     // Copy ourself for the real update-binary to use
     util::copy_file(mb_self_get_path(), in_chroot(HELPER_TOOL),
-                    util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS);
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
     util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS);
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
     // Copy file_contexts
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS);
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
 
     return on_set_up_chroot();
@@ -1363,7 +1363,7 @@ Installer::ProceedState Installer::install_stage_finish()
     }
 
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::MB_CHOWN_RECURSIVE)) {
+                     util::CHOWN_RECURSIVE)) {
         // Non-fatal
         LOGE("{}: Failed to chown: {}", MULTIBOOT_DIR, strerror(errno));
     }

@@ -302,7 +302,7 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
         return false;
     }
 
-    if (!util::chown(data_path, uid, uid, util::MB_CHOWN_RECURSIVE)) {
+    if (!util::chown(data_path, uid, uid, util::CHOWN_RECURSIVE)) {
         LOGW("{}: Failed to chown: {}", data_path, strerror(errno));
         return false;
     }
@@ -338,7 +338,7 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
         LOGW("{}: Failed to create directory: {}", target, strerror(errno));
         return false;
     }
-    if (!util::chown(target, uid, uid, util::MB_CHOWN_RECURSIVE)) {
+    if (!util::chown(target, uid, uid, util::CHOWN_RECURSIVE)) {
         LOGW("{}: Failed to chown: {}", target, strerror(errno));
         return false;
     }

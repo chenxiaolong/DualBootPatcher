@@ -232,7 +232,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
     }
 
     struct stat sb;
-    if (((flags & MB_COPY_FOLLOW_SYMLINKS)
+    if (((flags & COPY_FOLLOW_SYMLINKS)
             ? stat : lstat)(source.c_str(), &sb) < 0) {
         LOGE("{}: Failed to stat: {}",
              source, strerror(errno));
@@ -265,7 +265,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         break;
 
     case S_IFLNK:
-        if (!(flags & MB_COPY_FOLLOW_SYMLINKS)) {
+        if (!(flags & COPY_FOLLOW_SYMLINKS)) {
             std::string symlink_path;
             if (!read_link(source, &symlink_path)) {
                 LOGW("{}: Failed to read symlink path: {}",
@@ -302,12 +302,12 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         return false;
     }
 
-    if ((flags & MB_COPY_ATTRIBUTES)
+    if ((flags & COPY_ATTRIBUTES)
             && !copy_stat(source, target)) {
         LOGE("{}: Failed to copy attributes: {}", target, strerror(errno));
         return false;
     }
-    if ((flags & MB_COPY_XATTRS)
+    if ((flags & COPY_XATTRS)
             && !copy_xattrs(source, target)) {
         LOGE("{}: Failed to copy xattrs: {}", target, strerror(errno));
         return false;
@@ -326,8 +326,8 @@ public:
     virtual bool on_pre_execute() override
     {
         // This is almost *never* useful, so we won't allow it
-        if (_copyflags & MB_COPY_FOLLOW_SYMLINKS) {
-            _error_msg = "MB_COPY_FOLLOW_SYMLINKS not allowed for recursive copies";
+        if (_copyflags & COPY_FOLLOW_SYMLINKS) {
+            _error_msg = "COPY_FOLLOW_SYMLINKS not allowed for recursive copies";
             LOGE("{}", _error_msg);
             return false;
         }
@@ -379,7 +379,7 @@ public:
         char *relpath = _curr->fts_path + _path.size();
 
         _curtgtpath += _target;
-        if (!(_copyflags & MB_COPY_EXCLUDE_TOP_LEVEL)) {
+        if (!(_copyflags & COPY_EXCLUDE_TOP_LEVEL)) {
             if (_curtgtpath.back() != '/') {
                 _curtgtpath += "/";
             }
@@ -610,7 +610,7 @@ private:
 
     bool cp_attrs()
     {
-        if ((_copyflags & MB_COPY_ATTRIBUTES)
+        if ((_copyflags & COPY_ATTRIBUTES)
                 && !copy_stat(_curr->fts_accpath, _curtgtpath)) {
             _error_msg = fmt::format("{}: Failed to copy attributes: {}",
                                      _curtgtpath, strerror(errno));
@@ -622,7 +622,7 @@ private:
 
     bool cp_xattrs()
     {
-        if ((_copyflags & MB_COPY_XATTRS)
+        if ((_copyflags & COPY_XATTRS)
                 && !copy_xattrs(_curr->fts_accpath, _curtgtpath)) {
             _error_msg = fmt::format("{}: Failed to copy xattrs: {}",
                                      _curtgtpath, strerror(errno));

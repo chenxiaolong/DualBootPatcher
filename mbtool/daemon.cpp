@@ -826,8 +826,8 @@ static bool patch_sepolicy_daemon()
         return false;
     }
 
-    if (!util::selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", MB_SELINUX_POLICY_FILE);
+    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
+        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -837,8 +837,8 @@ static bool patch_sepolicy_daemon()
     util::selinux_add_rule(&pdb, "untrusted_app", "init",
                            "unix_stream_socket", "connectto");
 
-    if (!util::selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", MB_SELINUX_LOAD_FILE);
+    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
+        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
         policydb_destroy(&pdb);
         return false;
     }

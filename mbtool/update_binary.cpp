@@ -113,8 +113,8 @@ bool RecoveryInstaller::patch_sepolicy()
         return false;
     }
 
-    if (!util::selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", MB_SELINUX_POLICY_FILE);
+    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
+        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -136,8 +136,8 @@ bool RecoveryInstaller::patch_sepolicy()
     util::selinux_add_rule(&pdb, "rootfs", "tmpfs",          "filesystem", "associate");
     util::selinux_add_rule(&pdb, "tmpfs",  "rootfs",         "filesystem", "associate");
 
-    if (!util::selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", MB_SELINUX_LOAD_FILE);
+    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
+        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -169,7 +169,7 @@ bool RecoveryInstaller::run_aroma_selection()
 
     if (!util::copy_file(_temp + "/aromawrapper.zip",
                          in_chroot("/mb/aromawrapper.zip"),
-                         util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
         LOGE("Failed to copy {} to {}: {}",
              _temp + "/aromawrapper.zip", in_chroot("/mb/aromawrapper.zip"),
              strerror(errno));
@@ -248,7 +248,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
     if (stat("/sys/fs/selinux", &sb) == 0) {
         if (!patch_sepolicy()) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
-            int fd = open(MB_SELINUX_ENFORCE_FILE, O_WRONLY);
+            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY);
             if (fd >= 0) {
                 write(fd, "0", 1);
                 close(fd);

@@ -260,7 +260,7 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
 
 static bool backup_sepolicy(const std::string backup_path)
 {
-    if (!util::copy_contents(MB_SELINUX_POLICY_FILE, backup_path)) {
+    if (!util::copy_contents(SELINUX_POLICY_FILE, backup_path)) {
         fprintf(stderr, "Failed to backup current SELinux policy: %s\n",
                 strerror(errno));
         return false;
@@ -302,10 +302,10 @@ static bool restore_sepolicy(const std::string &backup_path)
     });
 
     // Write policy
-    int fd_out = open(MB_SELINUX_LOAD_FILE, O_WRONLY);
+    int fd_out = open(SELINUX_LOAD_FILE, O_WRONLY);
     if (fd_out < 0) {
         fprintf(stderr, "Failed to open %s: %s\n",
-                MB_SELINUX_LOAD_FILE, strerror(errno));
+                SELINUX_LOAD_FILE, strerror(errno));
         return false;
     }
 
@@ -315,7 +315,7 @@ static bool restore_sepolicy(const std::string &backup_path)
 
     if (write(fd_out, map, sb.st_size) < 0) {
         fprintf(stderr, "Failed to write to %s: %s\n",
-                MB_SELINUX_LOAD_FILE, strerror(errno));
+                SELINUX_LOAD_FILE, strerror(errno));
         return false;
     }
 
@@ -331,9 +331,9 @@ static bool patch_sepolicy()
         return false;
     }
 
-    if (!util::selinux_read_policy(MB_SELINUX_POLICY_FILE, &pdb)) {
+    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
         fprintf(stderr, "Failed to read SELinux policy file: %s\n",
-                MB_SELINUX_POLICY_FILE);
+                SELINUX_POLICY_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -342,9 +342,9 @@ static bool patch_sepolicy()
 
     util::selinux_make_all_permissive(&pdb);
 
-    if (!util::selinux_write_policy(MB_SELINUX_LOAD_FILE, &pdb)) {
+    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
         fprintf(stderr, "Failed to write SELinux policy file: %s\n",
-                MB_SELINUX_LOAD_FILE);
+                SELINUX_LOAD_FILE);
         policydb_destroy(&pdb);
         return false;
     }

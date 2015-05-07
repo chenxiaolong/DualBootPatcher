@@ -313,7 +313,7 @@ bool selinux_lset_context_recursive(const std::string &path,
 
 bool selinux_get_enforcing(int *value)
 {
-    int fd = open(MB_SELINUX_ENFORCE_FILE, O_RDONLY);
+    int fd = open(SELINUX_ENFORCE_FILE, O_RDONLY);
     if (fd < 0) {
         return false;
     }
@@ -338,7 +338,7 @@ bool selinux_get_enforcing(int *value)
 
 bool selinux_set_enforcing(int value)
 {
-    int fd = open(MB_SELINUX_ENFORCE_FILE, O_RDWR);
+    int fd = open(SELINUX_ENFORCE_FILE, O_RDWR);
     if (fd < 0) {
         return false;
     }

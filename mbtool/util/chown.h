@@ -30,8 +30,8 @@ namespace util
 
 enum ChownFlags : int
 {
-    MB_CHOWN_FOLLOW_SYMLINKS = 0x1,
-    MB_CHOWN_RECURSIVE       = 0x2
+    CHOWN_FOLLOW_SYMLINKS = 0x1,
+    CHOWN_RECURSIVE       = 0x2
 };
 
 bool chown(const std::string &path,

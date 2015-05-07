@@ -139,9 +139,9 @@ public:
     virtual int on_reached_directory_pre() override
     {
         // _target is the correct parameter here (or pathbuf and
-        // MB_COPY_EXCLUDE_TOP_LEVEL flag)
+        // COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
-                            util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+                            util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
             _error_msg = fmt::format("{}: Failed to copy directory: {}",
                                      _curr->fts_path, strerror(errno));
             LOGW("{}", _error_msg);
@@ -172,7 +172,7 @@ private:
     bool copy_path()
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
-                             util::MB_COPY_ATTRIBUTES | util::MB_COPY_XATTRS)) {
+                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
             _error_msg = fmt::format("{}: Failed to copy file: {}",
                                      _curr->fts_path, strerror(errno));
             LOGW("{}", _error_msg);

@@ -90,7 +90,7 @@ bool patch_loaded_sepolicy()
 {
     int is_enforcing = 0;
 
-    file_ptr fp(std::fopen(MB_SELINUX_ENFORCE_FILE, "rb"), std::fclose);
+    file_ptr fp(std::fopen(SELINUX_ENFORCE_FILE, "rb"), std::fclose);
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't
@@ -98,13 +98,13 @@ bool patch_loaded_sepolicy()
             LOGV("Kernel does not support SELinux. Policy won't be patched");
             return true;
         } else {
-            LOGE("Failed to open {}: {}", MB_SELINUX_ENFORCE_FILE, strerror(errno));
+            LOGE("Failed to open {}: {}", SELINUX_ENFORCE_FILE, strerror(errno));
             return false;
         }
     }
 
     if (std::fscanf(fp.get(), "%d", &is_enforcing) != 1) {
-        LOGE("Failed to parse {}: {}", MB_SELINUX_ENFORCE_FILE, strerror(errno));
+        LOGE("Failed to parse {}: {}", SELINUX_ENFORCE_FILE, strerror(errno));
         return false;
     }
 
@@ -113,7 +113,7 @@ bool patch_loaded_sepolicy()
         return true;
     }
 
-    return patch_sepolicy_internal(MB_SELINUX_POLICY_FILE, MB_SELINUX_LOAD_FILE);
+    return patch_sepolicy_internal(SELINUX_POLICY_FILE, SELINUX_LOAD_FILE);
 }
 
 static void sepolpatch_usage(int error)
@@ -205,10 +205,10 @@ int sepolpatch_main(int argc, char *argv[])
     }
 
     if (!source_file) {
-        source_file = MB_SELINUX_POLICY_FILE;
+        source_file = SELINUX_POLICY_FILE;
     }
     if (!target_file) {
-        target_file = MB_SELINUX_LOAD_FILE;
+        target_file = SELINUX_LOAD_FILE;
     }
 
     return patch_sepolicy(source_file, target_file) ? EXIT_SUCCESS : EXIT_FAILURE;

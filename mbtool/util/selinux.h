@@ -23,9 +23,9 @@
 
 #include <sepol/policydb/policydb.h>
 
-#define MB_SELINUX_ENFORCE_FILE "/sys/fs/selinux/enforce"
-#define MB_SELINUX_POLICY_FILE "/sys/fs/selinux/policy"
-#define MB_SELINUX_LOAD_FILE "/sys/fs/selinux/load"
+#define SELINUX_ENFORCE_FILE "/sys/fs/selinux/enforce"
+#define SELINUX_POLICY_FILE "/sys/fs/selinux/policy"
+#define SELINUX_LOAD_FILE "/sys/fs/selinux/load"
 
 namespace mb
 {

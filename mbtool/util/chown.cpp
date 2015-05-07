@@ -134,11 +134,11 @@ bool chown(const std::string &path,
            gid_t gid,
            int flags)
 {
-    if (flags & MB_CHOWN_RECURSIVE) {
-        RecursiveChown fts(path, uid, gid, flags & MB_CHOWN_FOLLOW_SYMLINKS);
+    if (flags & CHOWN_RECURSIVE) {
+        RecursiveChown fts(path, uid, gid, flags & CHOWN_FOLLOW_SYMLINKS);
         return fts.run();
     } else {
-        return chown_internal(path, uid, gid, flags & MB_CHOWN_FOLLOW_SYMLINKS);
+        return chown_internal(path, uid, gid, flags & CHOWN_FOLLOW_SYMLINKS);
     }
 }
 

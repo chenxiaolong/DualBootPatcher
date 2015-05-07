@@ -158,7 +158,7 @@ static bool choose_or_set_rom(const std::string &id,
 
     // Fix permissions
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::MB_CHOWN_RECURSIVE)) {
+                     util::CHOWN_RECURSIVE)) {
         LOGE("Failed to chown {}", MULTIBOOT_DIR);
         return false;
     }
