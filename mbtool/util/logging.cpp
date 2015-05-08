@@ -138,7 +138,7 @@ void KmsgLogger::log(LogLevel prio, const std::string &msg)
         break;
     }
 
-    snprintf(_buf, KMSG_BUF_SIZE, "%s" LOG_TAG ": %s", kprio, msg.c_str());
+    snprintf(_buf, KMSG_BUF_SIZE, "%s" LOG_TAG ": %s\n", kprio, msg.c_str());
     write(_fd, _buf, strlen(_buf));
 }
 
