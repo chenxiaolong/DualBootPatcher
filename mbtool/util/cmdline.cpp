@@ -23,6 +23,7 @@
 #include <cstring>
 
 #include "util/file.h"
+#include "util/logging.h"
 #include "util/string.h"
 
 namespace mb
@@ -35,8 +36,12 @@ bool kernel_cmdline_get_option(const std::string &option,
 {
     std::string line;
     if (!file_first_line("/proc/cmdline", &line)) {
+        LOGE("Failed to read first line in /proc/cmdline: {}", strerror(errno));
         return false;
     }
+
+    LOGD("Kernel cmdline: {}", line);
+
     std::vector<char> linebuf(line.begin(), line.end());
     linebuf.resize(linebuf.size() + 1);
 
