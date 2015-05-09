@@ -35,6 +35,7 @@ import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -54,6 +55,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
         .RomNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
         .SetKernelConfirmDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelNeededDialog
+        .SetKernelNeededDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.WipedRomEvent;
@@ -64,6 +67,10 @@ import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter;
 import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter.RomCardActionListener;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
+import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
+import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
 
 import org.apache.commons.io.IOUtils;
 
@@ -81,6 +88,7 @@ public class SwitcherListFragment extends Fragment implements
         EventCollectorListener, RomCardActionListener,
         ExperimentalInAppWipeDialogListener,
         SetKernelConfirmDialogListener,
+        SetKernelNeededDialogListener,
         WipeTargetsSelectionDialogListener,
         RomNameInputDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
@@ -88,6 +96,7 @@ public class SwitcherListFragment extends Fragment implements
 
     private static final String EXTRA_PERFORMING_ACTION = "performingAction";
     private static final String EXTRA_SELECTED_ROM = "selectedRom";
+    private static final String EXTRA_SHOWED_SET_KERNEL_WARNING = "showedSetKernelWarning";
 
     private static final int PROGRESS_DIALOG_SWITCH_ROM = 1;
     private static final int PROGRESS_DIALOG_SET_KERNEL = 2;
@@ -109,6 +118,8 @@ public class SwitcherListFragment extends Fragment implements
     private ArrayList<RomInformation> mRoms;
     private RomInformation mCurrentRom;
     private RomInformation mSelectedRom;
+
+    private boolean mShowedSetKernelWarning;
 
     public static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
@@ -135,6 +146,9 @@ public class SwitcherListFragment extends Fragment implements
             mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
 
             mSelectedRom = savedInstanceState.getParcelable(EXTRA_SELECTED_ROM);
+
+            mShowedSetKernelWarning = savedInstanceState.getBoolean(
+                    EXTRA_SHOWED_SET_KERNEL_WARNING);
         }
 
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
@@ -197,6 +211,7 @@ public class SwitcherListFragment extends Fragment implements
         if (mSelectedRom != null) {
             outState.putParcelable(EXTRA_SELECTED_ROM, mSelectedRom);
         }
+        outState.putBoolean(EXTRA_SHOWED_SET_KERNEL_WARNING, mShowedSetKernelWarning);
     }
 
     /**
@@ -367,6 +382,22 @@ public class SwitcherListFragment extends Fragment implements
                 // We don't want deleted ROMs to still show up
                 reloadFragment();
             }
+        } else if (bEvent instanceof ShowSetKernelNeededEvent) {
+            ShowSetKernelNeededEvent event = (ShowSetKernelNeededEvent) bEvent;
+
+            if (!mShowedSetKernelWarning) {
+                mShowedSetKernelWarning = true;
+
+                if (event.kernelStatus == CurrentKernelStatus.DIFFERENT) {
+                    SetKernelNeededDialog dialog = SetKernelNeededDialog.newInstance(
+                            this, R.string.kernel_different_from_saved_desc);
+                    dialog.show(getFragmentManager(), SetKernelNeededDialog.TAG);
+                } else if (event.kernelStatus == CurrentKernelStatus.UNSET) {
+                    SetKernelNeededDialog dialog = SetKernelNeededDialog.newInstance(
+                            this, R.string.kernel_not_set_desc);
+                    dialog.show(getFragmentManager(), SetKernelNeededDialog.TAG);
+                }
+            }
         }
     }
 
@@ -512,6 +543,13 @@ public class SwitcherListFragment extends Fragment implements
         refreshProgressVisibility(false);
         refreshRomListVisibility(true);
         refreshFabVisibility(true);
+
+        // Show a dialog if the kernel is different or unset. We can't directly show the
+        // DialogFragment here because this method might be called after the state has already been
+        // saved (leading to an IllegalStateException). Instead we'll just use EventCollector to
+        // tell SwitcherListFragment that we want to show a dialog. If the fragment is still valid,
+        // it will be shown immediately. Otherwise, it'll be shown when the fragment is recreated.
+        mEventCollector.postEvent(new ShowSetKernelNeededEvent(result.kernelStatus));
     }
 
     @Override
@@ -527,6 +565,11 @@ public class SwitcherListFragment extends Fragment implements
     @Override
     public void onConfirmSetKernel() {
         setKernel(mSelectedRom);
+    }
+
+    @Override
+    public void onConfirmSetKernelNeeded() {
+        setKernel(mCurrentRom);
     }
 
     @Override
@@ -552,6 +595,14 @@ public class SwitcherListFragment extends Fragment implements
         }.start();
 
         mRomCardAdapter.notifyDataSetChanged();
+    }
+
+    public class ShowSetKernelNeededEvent extends BaseEvent {
+        CurrentKernelStatus kernelStatus;
+
+        public ShowSetKernelNeededEvent(CurrentKernelStatus kernelStatus) {
+            this.kernelStatus = kernelStatus;
+        }
     }
 
     protected class ResizeAndCacheImageTask extends AsyncTask<Void, Void, Void> {
@@ -586,6 +637,10 @@ public class SwitcherListFragment extends Fragment implements
         @Override
         protected Void doInBackground(Void... params) {
             Bitmap thumbnail = getThumbnail(mUri);
+
+            if (thumbnail == null) {
+                return null;
+            }
 
             // Write the image to a temporary file. If the user selects it,
             // the move it to the appropriate location.
@@ -638,12 +693,87 @@ public class SwitcherListFragment extends Fragment implements
             mResult = new LoaderResult();
             mResult.roms = RomUtils.getRoms(getContext());
             mResult.currentRom = RomUtils.getCurrentRom(getContext());
+            long start = System.currentTimeMillis();
+            mResult.kernelStatus = getKernelStatus(mResult.currentRom);
+            long end = System.currentTimeMillis();
+            Log.d(TAG, "It took " + (end - start) + " milliseconds to complete the boot image " +
+                    "status check");
+            Log.d(TAG, "Kernel status: " + mResult.kernelStatus.name());
             return mResult;
         }
+
+        private CurrentKernelStatus getKernelStatus(RomInformation currentRom) {
+            if (currentRom == null) {
+                return CurrentKernelStatus.UNKNOWN;
+            }
+
+            String savedImage = RomUtils.getBootImagePath(currentRom.getId());
+            File savedImageFile = new File(savedImage);
+
+            if (!savedImageFile.isFile()) {
+                return CurrentKernelStatus.UNSET;
+            }
+
+            // Create temporary copy of the boot partition
+            String bootPartition = SwitcherUtils.getBootPartition();
+            if (bootPartition == null) {
+                Log.e(TAG, "Failed to determine boot partition when finding kernel status");
+                return CurrentKernelStatus.UNKNOWN;
+            }
+
+            String tmpImage = getContext().getCacheDir() + File.separator + "boot.img";
+            File tmpImageFile = new File(tmpImage);
+
+            MbtoolSocket socket = MbtoolSocket.getInstance();
+
+            // Copy boot partition to the temporary file
+            if (!socket.copy(getContext(), bootPartition, tmpImage) ||
+                    !socket.chmod(getContext(), tmpImage, 0644)) {
+                Log.e(TAG, "Failed to copy boot partition to temporary file");
+                return CurrentKernelStatus.UNKNOWN;
+            }
+
+            BootImage biSaved = new BootImage();
+            BootImage biRunning = new BootImage();
+
+            try {
+                if (!biSaved.load(savedImage)) {
+                    PatcherError error = biSaved.getError();
+                    Log.e(TAG, "libmbp error: " +
+                            PatcherUtils.getErrorMessage(getContext(), error));
+                    error.destroy();
+                    return CurrentKernelStatus.UNKNOWN;
+                }
+                if (!biRunning.load(tmpImage)) {
+                    PatcherError error = biRunning.getError();
+                    Log.e(TAG, "libmbp error: " +
+                            PatcherUtils.getErrorMessage(getContext(), error));
+                    error.destroy();
+                    return CurrentKernelStatus.UNKNOWN;
+                }
+
+                return biSaved.equals(biRunning)
+                        ? CurrentKernelStatus.SET
+                        : CurrentKernelStatus.DIFFERENT;
+            } finally {
+                biSaved.destroy();
+                biRunning.destroy();
+
+                tmpImageFile.delete();
+            }
+        }
+    }
+
+    protected enum CurrentKernelStatus {
+        UNSET,
+        DIFFERENT,
+        SET,
+        UNKNOWN
     }
 
     protected static class LoaderResult {
         RomInformation[] roms;
         RomInformation currentRom;
+        CurrentKernelStatus kernelStatus;
     }
 }

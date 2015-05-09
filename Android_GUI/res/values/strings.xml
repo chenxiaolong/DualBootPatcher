@@ -165,6 +165,17 @@
     <string name="rename_rom_desc">Enter a new name for %s. Leave blank to use the
         default name.</string>
 
+    <!-- Dialog message shown when the kernel has not been set -->
+    <string name="kernel_not_set_desc">The kernel has not yet been set for the current ROM.
+        Would you like to set the kernel now?</string>
+    <!-- Dialog message shown when the saved kernel is different from the currently running kernel -->
+    <string name="kernel_different_from_saved_desc">The saved kernel is different from the
+        currently running kernel. Would you like to set the kernel now?</string>
+    <!-- Positive dialog button shown for the above two messages -->
+    <string name="set_kernel_now">Set now</string>
+    <!-- Negative dialog button shown for the above two messages -->
+    <string name="set_kernel_later">Set later</string>
+
     <!-- ZIP flash activity title -->
     <string name="zip_flashing_title">Flash ZIP files</string>
     <!-- Title of pending action card for installing a zip file -->

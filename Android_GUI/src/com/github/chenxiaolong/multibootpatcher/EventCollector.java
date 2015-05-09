@@ -19,6 +19,7 @@ package com.github.chenxiaolong.multibootpatcher;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.os.Handler;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -99,5 +100,14 @@ public class EventCollector extends Fragment {
                 lq.queue.add(event);
             }
         }
+    }
+
+    public void postEvent(final BaseEvent event) {
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                sendEvent(event);
+            }
+        });
     }
 }

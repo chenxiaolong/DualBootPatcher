@@ -337,4 +337,11 @@ public class RomUtils {
 
         return UNKNOWN_ID;
     }
+
+    public static String getBootImagePath(String romId) {
+        return Environment.getExternalStorageDirectory() +
+                File.separator + "MultiBoot" +
+                File.separator + romId +
+                File.separator + "boot.img";
+    }
 }

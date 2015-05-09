@@ -40,9 +40,6 @@ import java.io.IOException;
 public class RomSettingsUtils {
     private static final String TAG = RomSettingsUtils.class.getSimpleName();
 
-    private static final String BOOT_IMAGE_PATH =
-            Environment.getExternalStorageDirectory() + "/MultiBoot/%s/boot.img";
-
     private static final String ABOOT_PARTITION = "/dev/block/platform/msm_sdcc.1/by-name/aboot";
 
     /**
@@ -104,7 +101,7 @@ public class RomSettingsUtils {
             return false;
         }
 
-        String bootImage = String.format(BOOT_IMAGE_PATH, romInfo.getId());
+        String bootImage = RomUtils.getBootImagePath(romInfo.getId());
         File bootImageFile = new File(bootImage);
 
         // Make sure the kernel was backed up
