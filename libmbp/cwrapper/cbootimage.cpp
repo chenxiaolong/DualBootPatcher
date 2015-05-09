@@ -673,4 +673,20 @@ void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
     bi->setAbootImage(data_to_vector(data, size));
 }
 
+bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs)
+{
+    const mbp::BootImage *biLhs = reinterpret_cast<const mbp::BootImage *>(lhs);
+    const mbp::BootImage *biRhs = reinterpret_cast<const mbp::BootImage *>(rhs);
+    if (biLhs == biRhs) {
+        return true;
+    }
+    if (!biLhs) {
+        return false;
+    }
+    if (!biRhs) {
+        return false;
+    }
+    return *biLhs == *biRhs;
+}
+
 }

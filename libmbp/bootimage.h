@@ -114,6 +114,9 @@ public:
     std::vector<unsigned char> abootImage() const;
     void setAbootImage(std::vector<unsigned char> data);
 
+    bool operator==(const BootImage &other) const;
+    bool operator!=(const BootImage &other) const;
+
 
 private:
     class Impl;

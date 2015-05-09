@@ -116,6 +116,8 @@ size_t mbp_bootimage_aboot_image(const CBootImage *bootImage,
 void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
                                    const void *data, size_t size);
 
+bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs);
+
 #ifdef __cplusplus
 }
 #endif

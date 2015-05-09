@@ -1290,4 +1290,46 @@ void BootImage::setAbootImage(std::vector<unsigned char> data)
     m_impl->abootImage = std::move(data);
 }
 
+bool BootImage::operator==(const BootImage &other) const
+{
+    // Check that the images, addresses, and metadata are equal. This doesn't
+    // care if eg. one boot image is loki'd and the other is not as long as the
+    // contents are the same.
+    return
+            // Images
+            m_impl->kernelImage == other.m_impl->kernelImage
+            && m_impl->ramdiskImage == other.m_impl->ramdiskImage
+            && m_impl->secondBootloaderImage == other.m_impl->secondBootloaderImage
+            && m_impl->deviceTreeImage == other.m_impl->deviceTreeImage
+            && m_impl->abootImage == other.m_impl->abootImage
+            // Header's integral values
+            && m_impl->header.kernel_size == other.m_impl->header.kernel_size
+            && m_impl->header.kernel_addr == other.m_impl->header.kernel_addr
+            && m_impl->header.ramdisk_size == other.m_impl->header.ramdisk_size
+            && m_impl->header.ramdisk_addr == other.m_impl->header.ramdisk_addr
+            && m_impl->header.second_size == other.m_impl->header.second_size
+            && m_impl->header.second_addr == other.m_impl->header.second_addr
+            && m_impl->header.tags_addr == other.m_impl->header.tags_addr
+            && m_impl->header.page_size == other.m_impl->header.page_size
+            && m_impl->header.dt_size == other.m_impl->header.dt_size
+            //&& m_impl->header.unused == other.m_impl->header.unused
+            // ID
+            && m_impl->header.id[0] == other.m_impl->header.id[0]
+            && m_impl->header.id[1] == other.m_impl->header.id[1]
+            && m_impl->header.id[2] == other.m_impl->header.id[2]
+            && m_impl->header.id[3] == other.m_impl->header.id[3]
+            && m_impl->header.id[4] == other.m_impl->header.id[4]
+            && m_impl->header.id[5] == other.m_impl->header.id[5]
+            && m_impl->header.id[6] == other.m_impl->header.id[6]
+            && m_impl->header.id[7] == other.m_impl->header.id[7]
+            // Header's string values
+            && boardName() == other.boardName()
+            && kernelCmdline() == other.kernelCmdline();
+}
+
+bool BootImage::operator!=(const BootImage &other) const
+{
+    return !(*this == other);
+}
+
 }

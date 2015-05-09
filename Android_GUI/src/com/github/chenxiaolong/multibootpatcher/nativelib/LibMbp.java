@@ -117,6 +117,7 @@ public class LibMbp {
         static native void mbp_bootimage_set_device_tree_image(CBootImage bi, Pointer data, int size);
         static native /* size_t */ int mbp_bootimage_aboot_image(CBootImage bi, PointerByReference dataReturn);
         static native void mbp_bootimage_set_aboot_image(CBootImage bi, Pointer data, int size);
+        static native boolean mbp_bootimage_equals(CBootImage lhs, CBootImage rhs);
         // END: cbootimage.h
 
         // BEGIN: ccommon.h
@@ -407,7 +408,17 @@ public class LibMbp {
 
         @Override
         public boolean equals(Object o) {
-            return o instanceof BootImage && mCBootImage.equals(((BootImage) o).mCBootImage);
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof BootImage)) {
+                return false;
+            }
+
+            BootImage bi = (BootImage) o;
+
+            return mCBootImage.equals(bi.mCBootImage) ||
+                    CWrapper.mbp_bootimage_equals(mCBootImage, bi.mCBootImage);
         }
 
         @Override
