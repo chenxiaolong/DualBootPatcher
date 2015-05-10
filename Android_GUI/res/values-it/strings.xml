@@ -78,21 +78,32 @@
   <!--ROM menu item for resetting back to the default image-->
   <string name="rom_menu_reset_image">Ripristina icona</string>
   <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">Elimina ROM</string>
   <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">System</string>
   <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">Cache</string>
   <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">Data</string>
   <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">Dalvik cache</string>
   <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">File del MultiBoot</string>
   <!--Title of dialog box asking for which targets to wipe-->
   <!--Message shown in the dialog box for ROM wiping indicating that the feature is still very
          experimental and could unintentionally delete backups or other files on the internal
          storage.-->
+  <string name="wipe_rom_dialog_warning_message">L\'eliminazione delle ROM dall\'app è ancora una funzione sperimentale, può avere dei bug che potrebbero, anche se improbabile, involontariamente eliminare i backup, la memoria interna e dati sensibili.</string>
   <!--Title of progress dialog shown when wiping targets-->
   <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">Eliminato con successo: %s</string>
   <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">Impossibile eliminare: %s</string>
   <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">Impossibile iniziare il processo di eliminazione della ROM</string>
   <!--Toast message shown if the user did not select any target to wipe-->
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">La ROM attualmente in uso non può essere eliminata.</string>
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo della ROM</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -104,17 +115,28 @@
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
   <string name="rename_rom_desc">Digita un nuovo nome per %s. Lascia in bianco per usare il nome di default.</string>
   <!--ZIP flash activity title-->
+  <string name="zip_flashing_title">Flasha file ZIP</string>
   <!--Title of pending action card for installing a zip file-->
+  <string name="zip_flashing_install_zip">Installa file ZIP</string>
   <!--Subtitle text in pending action card showing the selected filename-->
+  <string name="zip_flashing_zip_file">File ZIP: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
+  <string name="zip_flashing_location">Posizione: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="zip_flashing_dialog_installation_location">Luogo d\'installazione:</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="zip_flashing_dialog_verifying_zip">Verificando lo ZIP</string>
   <!--Error message shown when the selected zip file is not found-->
+  <string name="zip_flashing_error_zip_not_found">Il file ZIP selezionato non è stato trovato.</string>
   <!--Error message shown when the selected zip file could not be read-->
+  <string name="zip_flashing_error_zip_read_fail">Impossibile leggere il file ZIP selezionato.</string>
   <!--Error message shown when the selected zip file isn't patched-->
+  <string name="zip_flashing_error_not_multiboot">Il file ZIP sembra non essere patchato per il multiboot. Per favore, patcha il file prima di flasharlo.</string>
   <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="zip_flashing_error_version_too_old">Il file ZIP deve essere patchato con %s o superiore per poter essere flashato direttamente dall\'app.</string>
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
   <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="zip_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Scegli il dispositivo:</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
