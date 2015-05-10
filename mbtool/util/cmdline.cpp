@@ -26,12 +26,6 @@
 #include "util/logging.h"
 #include "util/string.h"
 
-// TODO: REMOVE REMOVE REMOVE
-#include "util/copy.h"
-#include "util/chown.h"
-#include <sys/stat.h>
-// TODO: REMOVE REMOVE REMOVE
-
 namespace mb
 {
 namespace util
@@ -48,12 +42,6 @@ bool kernel_cmdline_get_option(const std::string &option,
 
     LOGD("Kernel cmdline: {}", line);
 
-    // TODO: REMOVE REMOVE REMOVE
-    copy_file("/proc/cmdline", "/data/media/0/cmdline.txt", 0);
-    chmod("/data/media/0/cmdline.txt", 0775);
-    chown("/data/media/0/cmdline.txt", "media_rw", "media_rw", 0);
-    // TODO: REMOVE REMOVE REMOVE
-
     std::vector<char> linebuf(line.begin(), line.end());
     linebuf.resize(linebuf.size() + 1);
 
@@ -62,9 +50,6 @@ bool kernel_cmdline_get_option(const std::string &option,
 
     token = strtok_r(linebuf.data(), " ", &temp);
     while (token != nullptr) {
-        // TODO: REMOVE REMOVE REMOVE
-        LOGD("CMDLINE TOKEN: {}", token);
-        // TODO: REMOVE REMOVE REMOVE
         if (starts_with(token, option)) {
             char *p = token + option.size();
             if (*p == '\0' || *p == ' ') {
