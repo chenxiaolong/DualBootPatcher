@@ -38,6 +38,7 @@
 
 // libmbp
 #include <libmbp/bootimage.h>
+#include <libmbp/cpiofile.h>
 #include <libmbp/patcherconfig.h>
 
 // Local
@@ -1269,11 +1270,36 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
+        // Add the ROM ID to the kernel command line
         std::string cmdline = bi.kernelCmdline();
         cmdline += " romid=";
         cmdline += _rom->id;
         bi.setKernelCmdline(std::move(cmdline));
 
+        // Also add the ROM ID to /romid in the ramdisk for Exynos devices that
+        // completely ignore the cmdline in the boot image
+        mbp::CpioFile cpio;
+        if (!cpio.load(bi.ramdiskImage())) {
+            LOGE("Failed to read ramdisk image for adding /romid");
+            display_msg("Failed to read ramdisk image");
+            return ProceedState::Fail;
+        }
+        cpio.remove("romid");
+        std::vector<unsigned char> id_data(_rom->id.begin(), _rom->id.end());
+        if (!cpio.addFile(std::move(id_data), "romid", 0664)) {
+            LOGE("Failed to write ROM ID to /romid in the ramdisk");
+            display_msg("Failed to add ROM ID to ramdisk");
+            return ProceedState::Fail;
+        }
+        std::vector<unsigned char> new_ramdisk;
+        if (!cpio.createData(&new_ramdisk)) {
+            LOGE("Failed to create new ramdisk image");
+            display_msg("Failed to create new ramdisk image");
+            return ProceedState::Fail;
+        }
+        bi.setRamdiskImage(std::move(new_ramdisk));
+
+        // Reapply hacks if needed
         bi.setApplyBump(bi.wasBump());
         if (bi.wasLoki()) {
             std::vector<unsigned char> aboot_image;

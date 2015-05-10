@@ -247,7 +247,8 @@ bool mount_fstab(const std::string &fstab_path)
     }
 
     // Mount raw partitions to /raw/*
-    if (!util::kernel_cmdline_get_option("romid", &rom_id)) {
+    if (!util::kernel_cmdline_get_option("romid", &rom_id)
+            && !util::file_first_line("/romid", &rom_id)) {
         LOGE("Failed to determine ROM ID");
         return false;
     }
