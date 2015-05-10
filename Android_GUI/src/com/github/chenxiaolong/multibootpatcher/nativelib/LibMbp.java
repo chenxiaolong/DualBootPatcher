@@ -166,8 +166,6 @@ public class LibMbp {
         static native void mbp_device_set_recovery_block_devs(CDevice device, StringArray block_devs);
         static native Pointer mbp_device_extra_block_devs(CDevice device);
         static native void mbp_device_set_extra_block_devs(CDevice device, StringArray block_devs);
-        static native boolean mbp_device_supports_aroma(CDevice device);
-        static native void mbp_device_set_supports_aroma(CDevice device, boolean supported);
         // END: cdevice.h
 
         // BEGIN: cfileinfo.h
@@ -1185,18 +1183,6 @@ public class LibMbp {
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_extra_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public boolean isSupportsAroma() {
-            validate(mCDevice, Device.class, "isSupportsAroma");
-
-            return CWrapper.mbp_device_supports_aroma(mCDevice);
-        }
-
-        public void setSupportsAroma(boolean supported) {
-            validate(mCDevice, Device.class, "setSupportsAroma", supported);
-
-            CWrapper.mbp_device_set_supports_aroma(mCDevice, supported);
         }
     }
 

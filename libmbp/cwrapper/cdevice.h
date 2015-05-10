@@ -55,9 +55,6 @@ void mbp_device_set_recovery_block_devs(CDevice *device, const char **block_devs
 char ** mbp_device_extra_block_devs(const CDevice *device);
 void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs);
 
-bool mbp_device_supports_aroma(const CDevice *device);
-void mbp_device_set_supports_aroma(CDevice *device, bool supported);
-
 #ifdef __cplusplus
 }
 #endif

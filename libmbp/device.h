@@ -56,8 +56,6 @@ public:
     void setRecoveryBlockDevs(std::vector<std::string> blockDevs);
     std::vector<std::string> extraBlockDevs() const;
     void setExtraBlockDevs(std::vector<std::string> blockDevs);
-    bool supportsAroma() const;
-    void setSupportsAroma(bool supported);
 
 private:
     class Impl;
