@@ -47,6 +47,7 @@ set(MBP_SOURCES
     ramdiskpatchers/falconramdiskpatcher.cpp
     ramdiskpatchers/floramdiskpatcher.cpp
     ramdiskpatchers/galaxyramdiskpatcher.cpp
+    ramdiskpatchers/ghostramdiskpatcher.cpp
     ramdiskpatchers/hammerheadramdiskpatcher.cpp
     ramdiskpatchers/hlteramdiskpatcher.cpp
     ramdiskpatchers/jflteramdiskpatcher.cpp

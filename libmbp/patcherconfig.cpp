@@ -46,6 +46,7 @@
 #include "ramdiskpatchers/baconramdiskpatcher.h"
 #include "ramdiskpatchers/falconramdiskpatcher.h"
 #include "ramdiskpatchers/floramdiskpatcher.h"
+#include "ramdiskpatchers/ghostramdiskpatcher.h"
 #include "ramdiskpatchers/hammerheadramdiskpatcher.h"
 #include "ramdiskpatchers/hlteramdiskpatcher.h"
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
@@ -549,16 +550,32 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
-    // Falcon
+    // Motorola Moto G (2013)
     device = new Device();
     device->setId("falcon");
     device->setCodenames({ "falcon", "falcon_umts", "falcon_umtsds" });
-    device->setName("Motorola Moto G");
+    device->setName("Motorola Moto G (2013)");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
     device->setCacheBlockDevs({ qcomCache /*, TODO */ });
     device->setDataBlockDevs({ qcomData /*, TODO */ });
     device->setBootBlockDevs({ qcomBoot /*, TODO */ });
+    device->setRecoveryBlockDevs({ qcomRecovery });
+    devices.push_back(device);
+
+    // Motorola Moto X (2013)
+    device = new Device();
+    device->setId("ghost");
+    device->setCodenames({ "ghost", "ghost_att", "ghost_rcica", "ghost_retail",
+                           "ghost_sprint", "ghost_usc", "ghost_verizon",
+                           "xt1052", "xt1053", "xt1055", "xt1056", "xt1058",
+                           "xt1060", });
+    device->setName("Motorola Moto X (2013)");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p38" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p36" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p40" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p33" });
     device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 }
@@ -602,6 +619,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         BaconRamdiskPatcher::Id,
         FalconRamdiskPatcher::Id,
         FloAOSPRamdiskPatcher::Id,
+        GhostRamdiskPatcher::Id,
         HammerheadDefaultRamdiskPatcher::Id,
         HlteDefaultRamdiskPatcher::Id,
         JflteDefaultRamdiskPatcher::Id,
@@ -687,6 +705,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new FalconRamdiskPatcher(this, info, cpio);
     } else if (id == FloAOSPRamdiskPatcher::Id) {
         rp = new FloAOSPRamdiskPatcher(this, info, cpio);
+    } else if (id == GhostRamdiskPatcher::Id) {
+        rp = new GhostRamdiskPatcher(this, info, cpio);
     } else if (id == HammerheadDefaultRamdiskPatcher::Id) {
         rp = new HammerheadDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == HlteDefaultRamdiskPatcher::Id) {
