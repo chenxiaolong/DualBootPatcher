@@ -463,6 +463,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
                                "/dev/block/mmcblk0p27" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
     device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setSupportsAroma(false);
     devices.push_back(device);
 
     // Samsung Galaxy Note 4 (Exynos)
