@@ -55,7 +55,6 @@ public:
 
 private:
     static bool patch_sepolicy();
-    bool run_aroma_selection();
 };
 
 
@@ -147,67 +146,6 @@ bool RecoveryInstaller::patch_sepolicy()
     return true;
 }
 
-/*!
- * \brief Run AROMA wrapper for ROM installation selection
- */
-bool RecoveryInstaller::run_aroma_selection()
-{
-    std::vector<util::extract_info> aroma_files{
-        { .from = UPDATE_BINARY, .to = in_chroot("/mb/updater") }
-    };
-
-    if (!util::extract_files2(_temp + "/aromawrapper.zip", aroma_files)) {
-        LOGE("Failed to extract {}", UPDATE_BINARY);
-        return false;
-    }
-
-    if (chmod(in_chroot("/mb/updater").c_str(), 0555) < 0) {
-        LOGE("{}: Failed to chmod: {}",
-             in_chroot("/mb/updater"), strerror(errno));
-        return false;
-    }
-
-    if (!util::copy_file(_temp + "/aromawrapper.zip",
-                         in_chroot("/mb/aromawrapper.zip"),
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-        LOGE("Failed to copy {} to {}: {}",
-             _temp + "/aromawrapper.zip", in_chroot("/mb/aromawrapper.zip"),
-             strerror(errno));
-        return false;
-    }
-
-    std::vector<std::string> argv{
-        "/mb/updater",
-        util::to_string(_interface),
-        // Force output to stderr
-        "2",
-        "/mb/aromawrapper.zip"
-    };
-
-    // Stop parent process (/sbin/recovery), so AROMA doesn't fight over the
-    // framebuffer. AROMA normally already does this, but when we wrap it, it
-    // just stops the wraapper.
-    pid_t parent = getppid();
-
-    kill(parent, SIGSTOP);
-
-    int ret;
-    if ((ret = util::run_command_chroot(_chroot, argv)) != 0) {
-        kill(parent, SIGCONT);
-
-        if (ret < 0) {
-            LOGE("Failed to execute {}: {}", "/mb/updater", strerror(errno));
-        } else {
-            LOGE("{} returned non-zero exit status", "/mb/updater");
-        }
-        return false;
-    }
-
-    kill(parent, SIGCONT);
-
-    return true;
-}
-
 void RecoveryInstaller::display_msg(const std::string &msg)
 {
     dprintf(_output_fd, "ui_print [MultiBoot] %s\n", msg.c_str());
@@ -218,27 +156,11 @@ std::string RecoveryInstaller::get_install_type()
 {
     if (_prop.find("mbtool.installer.install-location") != _prop.end()) {
         std::string location = _prop["mbtool.installer.install-location"];
-        display_msg("Automated installation to " + location);
+        display_msg("Installing to " + location);
         return location;
     } else {
-        // Choose install type
-        if (!run_aroma_selection()) {
-            display_msg("Failed to run AROMA");
-            return std::string();
-        }
-
-        std::string install_type;
-
-        if (!util::file_first_line(in_chroot("/mb/installtype"), &install_type)) {
-            display_msg("Failed to determine install type");
-            return std::string();
-        }
-
-        if (install_type == "cancelled") {
-            return CANCELLED;
-        }
-
-        return install_type;
+        display_msg("Installation location not specified");
+        return CANCELLED;
     }
 }
 

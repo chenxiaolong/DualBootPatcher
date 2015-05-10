@@ -81,7 +81,6 @@ namespace mb {
 const std::string Installer::HELPER_TOOL = "/update-binary-tool";
 const std::string Installer::UPDATE_BINARY =
         "META-INF/com/google/android/update-binary";
-const std::string Installer::MULTIBOOT_AROMA = "multiboot/aromawrapper.zip";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
@@ -377,7 +376,6 @@ bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
         { UPDATE_BINARY + ".orig",  _temp + "/updater"          },
-        { MULTIBOOT_AROMA,          _temp + "/aromawrapper.zip" },
         { MULTIBOOT_BBWRAPPER,      _temp + "/bb-wrapper.sh"    },
         { MULTIBOOT_INFO_PROP,      _temp + "/info.prop"        }
     };
