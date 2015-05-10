@@ -30,12 +30,12 @@ namespace mbp
 {
 
 /*!
-    \class Patcher
-    \brief Handles the patching of zip files and boot images
-
-    This is the main class for the patching of files. All of the patching
-    operations are performed here and the current patching progress is reported
-    from this class as well.
+ * \class Patcher
+ * \brief Handles the patching of zip files and boot images
+ *
+ * This is the main class for the patching of files. All of the patching
+ * operations are performed here and the current patching progress is reported
+ * from this class as well.
  */
 class MBP_EXPORT Patcher
 {
@@ -47,44 +47,44 @@ public:
     virtual ~Patcher() {}
 
     /*!
-        \brief The error
-
-        Returns a PatcherError. The value is invalid if nothing has failed.
-
-        \return PatcherError error
+     * \brief The error
+     *
+     * Returns a PatcherError. The value is invalid if nothing has failed.
+     *
+     * \return PatcherError error
      */
     virtual PatcherError error() const = 0;
 
     /*!
-        \brief The patcher's identifier
+     * \brief The patcher's identifier
      */
     virtual std::string id() const = 0;
 
     /*!
-        \brief Whether or not the patcher uses patchinfo files
+     * \brief Whether or not the patcher uses patchinfo files
      */
     virtual bool usesPatchInfo() const = 0;
 
     /*!
-        \brief Sets the FileInfo object corresponding to the file to patch
+     * \brief Sets the FileInfo object corresponding to the file to patch
      */
     virtual void setFileInfo(const FileInfo * const info) = 0;
 
     /*!
-        \brief The path of the newly patched file
+     * \brief The path of the newly patched file
      */
     virtual std::string newFilePath() = 0;
 
     /*!
-        \brief Start patching the file
-
-        This method starts the patching operations for the current file. The
-        callback parameters can be passed nullptr if they are not needed.
-
-        \param progressCb Callback for receiving current progress values
-        \param filesCb Callback for receiving current files count
-        \param detailsCb Callback for receiving detailed progress text
-        \param userData Pointer to pass to callback functions
+     * \brief Start patching the file
+     *
+     * This method starts the patching operations for the current file. The
+     * callback parameters can be passed nullptr if they are not needed.
+     *
+     * \param progressCb Callback for receiving current progress values
+     * \param filesCb Callback for receiving current files count
+     * \param detailsCb Callback for receiving detailed progress text
+     * \param userData Pointer to pass to callback functions
      */
     virtual bool patchFile(ProgressUpdatedCallback progressCb,
                            FilesUpdatedCallback filesCb,
@@ -92,24 +92,24 @@ public:
                            void *userData) = 0;
 
     /*!
-        \brief Cancel the patching of a file
-
-        This method allows the patching process to be cancelled. This is only
-        useful if the patching operation is being done on a thread.
+     * \brief Cancel the patching of a file
+     *
+     * This method allows the patching process to be cancelled. This is only
+     * useful if the patching operation is being done on a thread.
      */
     virtual void cancelPatching() = 0;
 };
 
 
 /*!
-    \class AutoPatcher
-    \brief Handles common patching operations of files within a zip archive
-
-    This is a helper class for the patching of zip files. This class is usually
-    called by a Patcher to perform common or repetitive patching tasks for files
-    within a zip archive.
-
-    \sa Patcher
+ * \class AutoPatcher
+ * \brief Handles common patching operations of files within a zip archive
+ *
+ * This is a helper class for the patching of zip files. This class is usually
+ * called by a Patcher to perform common or repetitive patching tasks for files
+ * within a zip archive.
+ *
+ * \sa Patcher
  */
 class AutoPatcher
 {
@@ -117,50 +117,50 @@ public:
     virtual ~AutoPatcher() {}
 
     /*!
-        \brief The error
-
-        Returns a PatcherError. The value is invalid if nothing has failed.
-
-        \return PatcherError error
+     * \brief The error
+     *
+     * Returns a PatcherError. The value is invalid if nothing has failed.
+     *
+     * \return PatcherError error
      */
     virtual PatcherError error() const = 0;
 
     /*!
-        \brief The autopatcher's identifier
+     * \brief The autopatcher's identifier
      */
     virtual std::string id() const = 0;
 
     /*!
-        \brief List of new files added by the autopatcher
-
-        \warning Currently unimplemented. A valid list returned by a child class
-                 will be ignored.
+     * \brief List of new files added by the autopatcher
+     *
+     * \warning Currently unimplemented. A valid list returned by a child class
+     *          will be ignored.
      */
     virtual std::vector<std::string> newFiles() const = 0;
 
     /*!
-        \brief List of existing files to be patched in the zip file
+     * \brief List of existing files to be patched in the zip file
      */
     virtual std::vector<std::string> existingFiles() const = 0;
 
     /*!
-        \brief Start patching the file
-
-        \param directory Directory containing the files to be patched
+     * \brief Start patching the file
+     *
+     * \param directory Directory containing the files to be patched
      */
     virtual bool patchFiles(const std::string &directory) = 0;
 };
 
 
 /*!
-    \class RamdiskPatcher
-    \brief Handles common patching operations of boot images
-
-    This is a helper class for the patching of boot images. This class is
-    usually called by a Patcher to perform common or repetitive patching tasks
-    for boot images (either standalone or from a zip file).
-
-    \sa Patcher
+ * \class RamdiskPatcher
+ * \brief Handles common patching operations of boot images
+ *
+ * This is a helper class for the patching of boot images. This class is
+ * usually called by a Patcher to perform common or repetitive patching tasks
+ * for boot images (either standalone or from a zip file).
+ *
+ * \sa Patcher
  */
 class RamdiskPatcher
 {
@@ -168,21 +168,21 @@ public:
     virtual ~RamdiskPatcher() {}
 
     /*!
-        \brief The error
-
-        Returns a PatcherError. The value is invalid if nothing has failed.
-
-        \return PatcherError error
+     * \brief The error
+     *
+     * Returns a PatcherError. The value is invalid if nothing has failed.
+     *
+     * \return PatcherError error
      */
     virtual PatcherError error() const = 0;
 
     /*!
-        \brief The ramdisk patcher's identifier
+     * \brief The ramdisk patcher's identifier
      */
     virtual std::string id() const = 0;
 
     /*!
-        \brief Start patching the ramdisk
+     * \brief Start patching the ramdisk
      */
     virtual bool patchRamdisk() = 0;
 };
