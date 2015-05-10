@@ -49,6 +49,7 @@ signals:
 
 private slots:
     void onDeviceSelected(int index);
+    void onInstallationLocationSelected(int index);
     void onButtonClicked(QAbstractButton *button);
 
     // Unsupported files
@@ -71,6 +72,7 @@ private:
     void populateWidgets();
     void setWidgetDefaults();
 
+    void refreshInstallationLocations();
     void refreshPresets();
 
     void chooseFile();

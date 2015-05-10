@@ -68,6 +68,7 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
     setWidgetActions();
     populateWidgets();
     setWidgetDefaults();
+    refreshInstallationLocations();
     updateWidgetsVisibility();
 
     // Create thread
@@ -120,6 +121,15 @@ void MainWindow::onDeviceSelected(int index)
 
     checkSupported();
     updateWidgetsVisibility();
+}
+
+void MainWindow::onInstallationLocationSelected(int index)
+{
+    Q_D(MainWindow);
+
+    if (index >= 0) {
+        d->instLocDesc->setText(d->instLocs[index].description);
+    }
 }
 
 void MainWindow::onButtonClicked(QAbstractButton *button)
@@ -245,14 +255,20 @@ void MainWindow::addWidgets()
 
     // Selectors and file chooser
     d->deviceSel = new QComboBox(d->mainContainer);
+    d->instLocSel = new QComboBox(d->mainContainer);
+    d->instLocDesc = new QLabel(d->mainContainer);
 
     // Labels
     d->deviceLbl = new QLabel(tr("Device:"), d->mainContainer);
+    d->instLocLbl = new QLabel(tr("Install to:"), d->mainContainer);
 
     QGridLayout *layout = new QGridLayout(d->mainContainer);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(d->deviceLbl, i, 0);
     layout->addWidget(d->deviceSel, i, 1, 1, -1);
+    layout->addWidget(d->instLocLbl, ++i, 0);
+    layout->addWidget(d->instLocSel, i, 1, 1, -1);
+    layout->addWidget(d->instLocDesc, ++i, 1, 1, -1);
 
     // Add items for unsupported files
     d->messageLbl = new QLabel(d->mainContainer);
@@ -386,6 +402,10 @@ void MainWindow::setWidgetActions()
     connect(d->deviceSel, indexChangedInt,
             this, &MainWindow::onDeviceSelected);
 
+    // Installation location
+    connect(d->instLocSel, indexChangedInt,
+            this, &MainWindow::onInstallationLocationSelected);
+
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
             this, &MainWindow::onButtonClicked);
@@ -440,6 +460,41 @@ void MainWindow::refreshPresets()
     std::sort(d->patchInfos.begin(), d->patchInfos.end(), sortByPatchInfoId);
     for (mbp::PatchInfo *info : d->patchInfos) {
         d->presetSel->addItem(QString::fromStdString(info->id()));
+    }
+}
+
+void MainWindow::refreshInstallationLocations()
+{
+    Q_D(MainWindow);
+
+    d->instLocs << InstallLocation{
+        QStringLiteral("primary"),
+        tr("Primary ROM Upgrade"),
+        tr("Update primary ROM without affecting other ROMS")
+    };
+    d->instLocs << InstallLocation{
+        QStringLiteral("dual"),
+        tr("Secondary"),
+        tr("Installs ROM to /system/multiboot/dual")
+    };
+    d->instLocs << InstallLocation{
+        QStringLiteral("multi-slot-1"),
+        tr("Multi-slot 1"),
+        tr("Installs ROM to /cache/multiboot/multi-slot-1")
+    };
+    d->instLocs << InstallLocation{
+        QStringLiteral("multi-slot-2"),
+        tr("Multi-slot 2"),
+        tr("Installs ROM to /cache/multiboot/multi-slot-2")
+    };
+    d->instLocs << InstallLocation{
+        QStringLiteral("multi-slot-3"),
+        tr("Multi-slot 3"),
+        tr("Installs ROM to /cache/multiboot/multi-slot-3")
+    };
+
+    for (const InstallLocation &instLoc : d->instLocs) {
+        d->instLocSel->addItem(instLoc.name);
     }
 }
 
@@ -588,6 +643,8 @@ void MainWindow::startPatching()
     fileInfo->setFilename(d->fileName.toStdString());
     fileInfo->setDevice(d->device);
     fileInfo->setPatchInfo(d->patchInfo);
+    fileInfo->setRomId(
+            d->instLocs[d->instLocSel->currentIndex()].id.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }
