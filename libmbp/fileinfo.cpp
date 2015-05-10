@@ -30,6 +30,7 @@ public:
     PatchInfo *patchinfo;
     Device *device;
     std::string filename;
+    std::string romId;
 };
 /*! \endcond */
 
@@ -113,6 +114,16 @@ Device * FileInfo::device() const
 void FileInfo::setDevice(Device * const device)
 {
     m_impl->device = device;
+}
+
+std::string FileInfo::romId() const
+{
+    return m_impl->romId;
+}
+
+void FileInfo::setRomId(std::string id)
+{
+    m_impl->romId = std::move(id);
 }
 
 }

@@ -141,7 +141,8 @@ std::string MultiBootPatcher::newFilePath()
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
-    fileName += "_patched";
+    fileName += "_";
+    fileName += m_impl->info->romId();
     fileName += path.extension();
 
     if (path.has_parent_path()) {
@@ -827,9 +828,11 @@ std::string MultiBootPatcher::Impl::createInfoProp()
 "# It is okay to change this value after the file has already been patched.\n"
 "#\n"
 "# Valid values: primary, dual, multi-slot-1, multi-slot-2, multi-slot-3\n"
-"#\n"
-"#mbtool.installer.install-location=chosen_location\n"
-"\n";
+"#\n";
+
+    out += "mbtool.installer.install-location=";
+    out += info->romId();
+    out += "\n\n";
 
     return out;
 }

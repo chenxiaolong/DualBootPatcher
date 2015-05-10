@@ -45,6 +45,9 @@ public:
     Device * device() const;
     void setDevice(Device * const device);
 
+    std::string romId() const;
+    void setRomId(std::string id);
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
