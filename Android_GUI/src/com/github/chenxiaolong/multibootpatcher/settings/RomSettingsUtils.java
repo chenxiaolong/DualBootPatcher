@@ -19,12 +19,12 @@ package com.github.chenxiaolong.multibootpatcher.settings;
 
 import android.content.Context;
 import android.os.Build;
-import android.os.Environment;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Patcher;
@@ -36,6 +36,7 @@ import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SwitchRomRes
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 public class RomSettingsUtils {
     private static final String TAG = RomSettingsUtils.class.getSimpleName();
@@ -140,11 +141,22 @@ public class RomSettingsUtils {
         boolean wasBump = bi.wasBump();
         boolean wasLoki = bi.wasLoki();
         boolean hasRomId = bi.getKernelCmdline().contains("romid=");
+        boolean hasRomIdFile;
+
+        CpioFile cpio = new CpioFile();
+        if (!cpio.load(bi.getRamdiskImage())) {
+            logLibMbpError(context, cpio.getError());
+            return false;
+        }
+        hasRomIdFile = cpio.isExists("romid");
+        cpio.destroy();
+
         bi.destroy();
 
         Log.d(TAG, "Original boot image was patched with bump: " + wasBump);
         Log.d(TAG, "Original boot image was patched with loki: " + wasLoki);
         Log.d(TAG, "Original boot image had romid kernel parameter: " + hasRomId);
+        Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
 
         // Overwrite old boot image
         try {
@@ -156,7 +168,7 @@ public class RomSettingsUtils {
         }
 
         // Make changes to the boot image if necessary
-        if (wasBump || wasLoki || !hasRomId) {
+        if (wasBump || wasLoki || !hasRomId || !hasRomIdFile) {
             bi = new BootImage();
 
             try {
@@ -193,6 +205,21 @@ public class RomSettingsUtils {
                 if (!hasRomId) {
                     Log.d(TAG, "Adding romid to kernel command line");
                     bi.setKernelCmdline(bi.getKernelCmdline() + " romid=" + romInfo.getId());
+                }
+                if (!hasRomIdFile) {
+                    cpio = new CpioFile();
+                    if (!cpio.load(bi.getRamdiskImage())) {
+                        logLibMbpError(context, cpio.getError());
+                        return false;
+                    }
+                    cpio.remove("romid");
+                    if (!cpio.addFile(romInfo.getId().getBytes(Charset.forName("UTF-8")),
+                            "romid", 0644)) {
+                        logLibMbpError(context, cpio.getError());
+                        return false;
+                    }
+                    bi.setRamdiskImage(cpio.createData());
+                    cpio.destroy();
                 }
 
                 if (!bi.createFile(tmpKernel)) {
