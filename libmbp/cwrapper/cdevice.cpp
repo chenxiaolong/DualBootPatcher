@@ -261,4 +261,16 @@ void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs)
     d->setExtraBlockDevs(cstring_array_to_vector(block_devs));
 }
 
+bool mbp_device_supports_aroma(const CDevice *device)
+{
+    CCAST(device);
+    return d->supportsAroma();
+}
+
+void mbp_device_set_supports_aroma(CDevice *device, bool supported)
+{
+    CAST(device);
+    d->setSupportsAroma(supported);
+}
+
 }

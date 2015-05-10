@@ -42,6 +42,8 @@ public:
     std::vector<std::string> bootDevs;
     std::vector<std::string> recoveryDevs;
     std::vector<std::string> extraDevs;
+
+    bool supportsAroma;
 };
 /*! \endcond */
 
@@ -55,6 +57,9 @@ Device::Device() : m_impl(new Impl())
 {
     // Other architectures currently aren't supported
     m_impl->architecture = "armeabi-v7a";
+
+    // Assume AROMA is supported by default
+    m_impl->supportsAroma = true;
 }
 
 Device::~Device()
@@ -203,6 +208,16 @@ std::vector<std::string> Device::extraBlockDevs() const
 void Device::setExtraBlockDevs(std::vector<std::string> blockDevs)
 {
     m_impl->extraDevs = std::move(blockDevs);
+}
+
+bool Device::supportsAroma() const
+{
+    return m_impl->supportsAroma;
+}
+
+void Device::setSupportsAroma(bool supported)
+{
+    m_impl->supportsAroma = supported;
 }
 
 }
