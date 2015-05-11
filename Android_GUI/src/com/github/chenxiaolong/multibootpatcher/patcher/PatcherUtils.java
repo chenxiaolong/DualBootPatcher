@@ -266,4 +266,17 @@ public class PatcherUtils {
 
         return sInstallLocations;
     }
+
+    public static InstallLocation getDataSlotInstallLocation(Context context, String dataSlotId) {
+        InstallLocation location = new InstallLocation();
+        location.id = getDataSlotRomId(dataSlotId);
+        location.name = String.format(context.getString(R.string.dataslot), dataSlotId);
+        location.description = String.format(context.getString(R.string.install_location_desc),
+                "/data/multiboot/data-slot-" + dataSlotId);
+        return location;
+    }
+
+    public static String getDataSlotRomId(String dataSlotId) {
+        return "data-slot-" + dataSlotId;
+    }
 }

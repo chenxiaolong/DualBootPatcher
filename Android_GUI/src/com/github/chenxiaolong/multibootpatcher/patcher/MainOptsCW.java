@@ -25,6 +25,8 @@ import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,9 +59,13 @@ public class MainOptsCW implements PatcherUIListener {
         void onPresetSelected(PatchInfo info);
     }
 
+    private static final String EXTRA_IS_DATA_SLOT = "is_data_slot";
+
     private CardView vCard;
+    private View vDummy;
     private Spinner vDeviceSpinner;
     private Spinner vRomIdSpinner;
+    private EditText vRomIdDataSlotId;
     private TextView vRomIdDesc;
     private LinearLayout vUnsupportedContainer;
     private Spinner vPresetSpinner;
@@ -81,6 +87,8 @@ public class MainOptsCW implements PatcherUIListener {
     private ArrayAdapter<String> mPresetAdapter;
     private ArrayList<String> mPresets = new ArrayList<>();
 
+    private boolean mIsDataSlot;
+
     public MainOptsCW(Context context, PatcherConfigState pcs, CardView card,
                       MainOptsListener listener) {
         mContext = context;
@@ -88,8 +96,10 @@ public class MainOptsCW implements PatcherUIListener {
         mListener = listener;
 
         vCard = card;
+        vDummy = card.findViewById(R.id.customopts_dummylayout);
         vDeviceSpinner = (Spinner) card.findViewById(R.id.spinner_device);
         vRomIdSpinner = (Spinner) card.findViewById(R.id.spinner_rom_id);
+        vRomIdDataSlotId = (EditText) card.findViewById(R.id.rom_id_data_slot_id);
         vRomIdDesc = (TextView) card.findViewById(R.id.rom_id_desc);
         vUnsupportedContainer = (LinearLayout) card.findViewById(R.id.unsupported_container);
         vPresetSpinner = (Spinner) card.findViewById(R.id.spinner_preset);
@@ -135,16 +145,50 @@ public class MainOptsCW implements PatcherUIListener {
         vRomIdSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mIsDataSlot = (position >= 0 && position == mRomIds.size() - 1);
+
                 onRomIdSelected(position);
 
                 if (mListener != null) {
-                    InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
-                    mListener.onRomIdSelected(locations[position].id);
+                    mListener.onRomIdSelected(getRomId());
                 }
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        vRomIdDataSlotId.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!mIsDataSlot) {
+                    return;
+                }
+
+                String text = s.toString();
+
+                if (text.isEmpty()) {
+                    vRomIdDataSlotId.setError(mContext.getString(
+                            R.string.install_location_data_slot_id_error_is_empty));
+                } else if (!text.matches("[a-z0-9]+")) {
+                    vRomIdDataSlotId.setError(mContext.getString(
+                            R.string.install_location_data_slot_id_error_invalid));
+                }
+
+                onDataSlotIdChanged(s.toString());
+
+                if (mListener != null) {
+                    mListener.onRomIdSelected(getRomId());
+                }
             }
         });
     }
@@ -172,27 +216,37 @@ public class MainOptsCW implements PatcherUIListener {
     }
 
     private void initActions() {
-        // Ugly hack to prevent the text box from keeping its focus
-        vBootImageText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo
-                        .IME_ACTION_DONE || event.getAction() == KeyEvent.ACTION_DOWN && event
-                        .getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                    vBootImageText.clearFocus();
-                    InputMethodManager imm = (InputMethodManager) mContext.getSystemService
-                            (Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(vBootImageText.getApplicationWindowToken(), 0);
-                }
-                return false;
-            }
-        });
+        preventTextViewKeepFocus(vRomIdDataSlotId);
+        preventTextViewKeepFocus(vBootImageText);
 
         vHasBootImageBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 buttonView.setClickable(false);
                 onHasBootImageChecked(isChecked);
+            }
+        });
+    }
+
+    /**
+     * Ugly hack to prevent the text box from keeping its focus.
+     */
+    private void preventTextViewKeepFocus(final TextView tv) {
+        tv.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH
+                        || actionId == EditorInfo.IME_ACTION_DONE
+                        || (event != null
+                        && event.getAction() == KeyEvent.ACTION_DOWN
+                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                    tv.clearFocus();
+                    InputMethodManager imm = (InputMethodManager)
+                            mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(vBootImageText.getApplicationWindowToken(), 0);
+                    vDummy.requestFocus();
+                }
+                return false;
             }
         });
     }
@@ -243,10 +297,21 @@ public class MainOptsCW implements PatcherUIListener {
 
     @Override
     public void onRestoreCardState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            mIsDataSlot = savedInstanceState.getBoolean(EXTRA_IS_DATA_SLOT, false);
+        }
+
+        // Show data slot ID text box if data-slot is chosen
+        if (mIsDataSlot) {
+            expandDataSlotId();
+        } else {
+            collapseDataSlotId();
+        }
     }
 
     @Override
     public void onSaveCardState(Bundle outState) {
+        outState.putBoolean(EXTRA_IS_DATA_SLOT, mIsDataSlot);
     }
 
     @Override
@@ -293,6 +358,7 @@ public class MainOptsCW implements PatcherUIListener {
         for (InstallLocation location : PatcherUtils.getInstallLocations(mContext)) {
             mRomIds.add(location.name);
         }
+        mRomIds.add(mContext.getString(R.string.install_location_data_slot));
         mRomIdAdapter.notifyDataSetChanged();
     }
 
@@ -312,7 +378,23 @@ public class MainOptsCW implements PatcherUIListener {
     }
 
     private void onRomIdSelected(int position) {
-        vRomIdDesc.setText(PatcherUtils.getInstallLocations(mContext)[position].description);
+        if (mIsDataSlot) {
+            onDataSlotIdChanged(vRomIdDataSlotId.getText().toString());
+            animateExpandDataSlotId();
+        } else {
+            InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
+            vRomIdDesc.setText(locations[position].description);
+            animateCollapseDataSlotId();
+        }
+    }
+
+    private void onDataSlotIdChanged(String text) {
+        if (text.isEmpty()) {
+            vRomIdDesc.setText(R.string.install_location_data_slot_id_empty);
+        } else {
+            InstallLocation location = PatcherUtils.getDataSlotInstallLocation(mContext, text);
+            vRomIdDesc.setText(location.description);
+        }
     }
 
     /**
@@ -413,6 +495,32 @@ public class MainOptsCW implements PatcherUIListener {
             }
         });
         return animator;
+    }
+
+    private void expandDataSlotId() {
+        vRomIdDataSlotId.setVisibility(View.VISIBLE);
+    }
+
+    private void collapseDataSlotId() {
+        vRomIdDataSlotId.setVisibility(View.GONE);
+    }
+
+    private void animateExpandDataSlotId() {
+        if (vRomIdDataSlotId.getVisibility() == View.VISIBLE) {
+            return;
+        }
+
+        Animator animator = createExpandLayoutAnimator(vRomIdDataSlotId);
+        animator.start();
+    }
+
+    private void animateCollapseDataSlotId() {
+        if (vRomIdDataSlotId.getVisibility() == View.GONE) {
+            return;
+        }
+
+        Animator animator = createCollapseLayoutAnimator(vRomIdDataSlotId);
+        animator.start();
     }
 
     /**
@@ -581,6 +689,20 @@ public class MainOptsCW implements PatcherUIListener {
         LayoutParams params = view.getLayoutParams();
         params.height = LayoutParams.WRAP_CONTENT;
         view.setLayoutParams(params);
+    }
+
+    private String getRomId() {
+        if (mIsDataSlot) {
+            return PatcherUtils.getDataSlotRomId(vRomIdDataSlotId.getText().toString());
+        } else {
+            int pos = vRomIdSpinner.getSelectedItemPosition();
+            if (pos >= 0) {
+                InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
+                return locations[pos].id;
+            } else {
+                return null;
+            }
+        }
     }
 
     /**

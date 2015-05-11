@@ -47,6 +47,23 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
 
+        <!-- Prevent EditText from getting focus -->
+
+        <LinearLayout
+            android:id="@+id/customopts_dummylayout"
+            android:layout_width="0px"
+            android:layout_height="0px"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:orientation="horizontal" />
+
+        <EditText
+            android:id="@+id/rom_id_data_slot_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/install_location_data_slot_id_hint"
+            android:inputType="textNoSuggestions" />
+
         <TextView
             android:id="@+id/rom_id_desc"
             style="@style/card_message"
@@ -131,16 +148,6 @@
                         android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
                         android:labelFor="@+id/customopts_bootimage"
                         android:text="@string/customopts_bootimage" />
-
-                    <!-- Prevent EditText from getting focus -->
-
-                    <LinearLayout
-                        android:id="@+id/customopts_dummylayout"
-                        android:layout_width="0px"
-                        android:layout_height="0px"
-                        android:focusable="true"
-                        android:focusableInTouchMode="true"
-                        android:orientation="horizontal" />
 
                     <EditText
                         android:id="@+id/customopts_bootimage"
