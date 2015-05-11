@@ -57,6 +57,7 @@
 #include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/properties.h"
+#include "util/selinux.h"
 #include "util/string.h"
 
 
@@ -1392,6 +1393,13 @@ Installer::ProceedState Installer::install_stage_finish()
                      util::CHOWN_RECURSIVE)) {
         // Non-fatal
         LOGE("{}: Failed to chown: {}", MULTIBOOT_DIR, strerror(errno));
+    }
+
+    if (!util::selinux_lset_context_recursive(
+            MULTIBOOT_DIR, "u:object_r:media_rw_data_file:s0")) {
+        // Non-fatal
+        LOGE("{}: Failed to set SELinux context: {}",
+             MULTIBOOT_DIR, strerror(errno));
     }
 
     return on_finished();
