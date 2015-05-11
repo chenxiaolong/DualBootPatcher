@@ -210,6 +210,14 @@
     <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>
 
+    <!-- Name for primary ROM upgrade installation location -->
+    <string name="install_location_primary_upgrade">Primary ROM Upgrade</string>
+    <!-- Description for primary ROM upgrade installation location -->
+    <string name="install_location_primary_upgrade_desc">Update primary ROM without affecting other
+        ROMS</string>
+    <!-- Description for all other installation locations -->
+    <string name="install_location_desc">Installs ROM to %s</string>
+
     <!-- Title for the dialog box indicating that no file manager is installed -->
     <string name="filemanager_missing_title">No file manager</string>
     <!-- Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file -->

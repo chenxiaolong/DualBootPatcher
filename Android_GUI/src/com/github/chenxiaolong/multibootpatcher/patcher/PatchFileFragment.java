@@ -286,6 +286,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         mPCS.setupInitial();
 
         mMainOptsCW.refreshDevices();
+        mMainOptsCW.refreshRomIds();
         mMainOptsCW.refreshPresets();
 
         restoreCardStates();
@@ -337,6 +338,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         fileInfo.setFilename(mPCS.mFilename);
         fileInfo.setDevice(mPCS.mDevice);
         fileInfo.setPatchInfo(mPCS.mPatchInfo);
+        fileInfo.setRomId(mPCS.mRomId);
 
         Context context = getActivity().getApplicationContext();
         Intent intent = new Intent(context, PatcherService.class);
@@ -417,6 +419,11 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
         // Reload presets specific to the device
         mMainOptsCW.refreshPresets();
+    }
+
+    @Override
+    public void onRomIdSelected(String id) {
+        mPCS.mRomId = id;
     }
 
     @Override

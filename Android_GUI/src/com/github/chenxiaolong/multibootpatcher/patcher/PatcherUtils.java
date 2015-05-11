@@ -34,6 +34,7 @@ import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError.Er
 import com.github.chenxiaolong.multibootpatcher.nativelib.LibMiscStuff;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class PatcherUtils {
     public static final String TAG = PatcherUtils.class.getSimpleName();
@@ -51,6 +52,8 @@ public class PatcherUtils {
 
     private static String sTargetFile;
     private static String sTargetDir;
+
+    private static InstallLocation[] sInstallLocations;
 
     static {
         String version = BuildConfig.VERSION_NAME.split("-")[0];
@@ -223,5 +226,44 @@ public class PatcherUtils {
             // Delete archive
             targetFile.delete();
         }
+    }
+
+    public static class InstallLocation {
+        public String id;
+        public String name;
+        public String description;
+    }
+
+    public static InstallLocation[] getInstallLocations(Context context) {
+        if (sInstallLocations == null) {
+            ArrayList<InstallLocation> locations = new ArrayList<>();
+
+            InstallLocation location = new InstallLocation();
+            location.id = "primary";
+            location.name = context.getString(R.string.install_location_primary_upgrade);
+            location.description = context.getString(R.string.install_location_primary_upgrade_desc);
+
+            locations.add(location);
+
+            location = new InstallLocation();
+            location.id = "dual";
+            location.name = context.getString(R.string.secondary);
+            location.description = String.format(context.getString(R.string.install_location_desc),
+                    "/system/multiboot/dual");
+            locations.add(location);
+
+            for (int i = 1; i <= 3; i++) {
+                location = new InstallLocation();
+                location.id = "multi-slot-" + i;
+                location.name = String.format(context.getString(R.string.multislot), i);
+                location.description = String.format(context.getString(R.string.install_location_desc),
+                        "/cache/multiboot/multi-slot-" + i);
+                locations.add(location);
+            }
+
+            sInstallLocations = locations.toArray(new InstallLocation[locations.size()]);
+        }
+
+        return sInstallLocations;
     }
 }

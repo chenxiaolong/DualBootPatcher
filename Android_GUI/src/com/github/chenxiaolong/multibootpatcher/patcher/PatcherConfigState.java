@@ -149,6 +149,9 @@ public class PatcherConfigState implements Parcelable {
     // Selected device
     public Device mDevice;
 
+    // Selected ROM ID
+    public String mRomId;
+
     // List of patchinfos for selected device
     public PatchInfo[] mPatchInfos;
     // Selected patchinfo

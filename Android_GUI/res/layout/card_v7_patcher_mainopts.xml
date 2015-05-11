@@ -41,6 +41,19 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
 
+        <Spinner
+            android:id="@+id/spinner_rom_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
+
+        <TextView
+            android:id="@+id/rom_id_desc"
+            style="@style/card_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/card_v7_normal_view_margin_top" />
+
         <LinearLayout
             android:id="@+id/unsupported_container"
             android:layout_width="match_parent"
