@@ -119,6 +119,7 @@ public:
     QLabel *instLocLbl;
     QComboBox *instLocSel;
     QLabel *instLocDesc;
+    QLineEdit *instLocLe;
 
     QLabel *messageLbl;
 

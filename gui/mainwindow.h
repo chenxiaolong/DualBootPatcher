@@ -50,6 +50,7 @@ signals:
 private slots:
     void onDeviceSelected(int index);
     void onInstallationLocationSelected(int index);
+    void onInstallationLocationIdChanged(const QString &text);
     void onButtonClicked(QAbstractButton *button);
 
     // Unsupported files
@@ -65,6 +66,7 @@ private slots:
                             const QString &errorMessage);
 
 private:
+    void updateDataRomIdDescText(const QString &text);
     void updateProgressText();
 
     void addWidgets();

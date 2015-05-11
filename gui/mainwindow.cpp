@@ -127,8 +127,36 @@ void MainWindow::onInstallationLocationSelected(int index)
 {
     Q_D(MainWindow);
 
-    if (index >= 0) {
+    if (index < 0) {
+        return;
+    } else if (index < d->instLocs.size()) {
         d->instLocDesc->setText(d->instLocs[index].description);
+        d->instLocLe->setVisible(false);
+    } else {
+        updateDataRomIdDescText(d->instLocLe->text());
+        d->instLocLe->setVisible(true);
+    }
+}
+
+void MainWindow::onInstallationLocationIdChanged(const QString &text)
+{
+    Q_D(MainWindow);
+
+    updateDataRomIdDescText(text);
+}
+
+void MainWindow::updateDataRomIdDescText(const QString &text)
+{
+    Q_D(MainWindow);
+
+    d->buttons->setEnabled(!text.isEmpty());
+
+    if (text.isEmpty()) {
+        d->instLocDesc->setText(tr("Enter an ID above"));
+    } else {
+        d->instLocDesc->setText(
+                tr("Installs ROM to /data/multiboot/data-slot-%1")
+                .arg(d->instLocLe->text()));
     }
 }
 
@@ -262,12 +290,20 @@ void MainWindow::addWidgets()
     d->deviceLbl = new QLabel(tr("Device:"), d->mainContainer);
     d->instLocLbl = new QLabel(tr("Install to:"), d->mainContainer);
 
+    // Text boxes
+    d->instLocLe = new QLineEdit(d->mainContainer);
+    d->instLocLe->setPlaceholderText(tr("Enter an ID"));
+    QRegExp re(QStringLiteral("[a-z0-9]+"));
+    QValidator *validator = new QRegExpValidator(re, this);
+    d->instLocLe->setValidator(validator);
+
     QGridLayout *layout = new QGridLayout(d->mainContainer);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(d->deviceLbl, i, 0);
     layout->addWidget(d->deviceSel, i, 1, 1, -1);
     layout->addWidget(d->instLocLbl, ++i, 0);
     layout->addWidget(d->instLocSel, i, 1, 1, -1);
+    layout->addWidget(d->instLocLe, ++i, 1, 1, -1);
     layout->addWidget(d->instLocDesc, ++i, 1, 1, -1);
 
     // Add items for unsupported files
@@ -405,6 +441,8 @@ void MainWindow::setWidgetActions()
     // Installation location
     connect(d->instLocSel, indexChangedInt,
             this, &MainWindow::onInstallationLocationSelected);
+    connect(d->instLocLe, &QLineEdit::textChanged,
+            this, &MainWindow::onInstallationLocationIdChanged);
 
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
@@ -496,6 +534,8 @@ void MainWindow::refreshInstallationLocations()
     for (const InstallLocation &instLoc : d->instLocs) {
         d->instLocSel->addItem(instLoc.name);
     }
+
+    d->instLocSel->addItem(tr("Data-slot"));
 }
 
 void MainWindow::chooseFile()
@@ -643,8 +683,13 @@ void MainWindow::startPatching()
     fileInfo->setFilename(d->fileName.toStdString());
     fileInfo->setDevice(d->device);
     fileInfo->setPatchInfo(d->patchInfo);
-    fileInfo->setRomId(
-            d->instLocs[d->instLocSel->currentIndex()].id.toStdString());
+    QString romId;
+    if (d->instLocSel->currentIndex() >= d->instLocs.size()) {
+        romId = QStringLiteral("data-slot-%1").arg(d->instLocLe->text());
+    } else {
+        romId = d->instLocs[d->instLocSel->currentIndex()].id;
+    }
+    fileInfo->setRomId(romId.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }
