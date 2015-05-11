@@ -253,11 +253,17 @@ bool mount_fstab(const std::string &fstab_path)
         return false;
     }
 
-    rom = roms.find_by_id(rom_id);
-    if (!rom) {
-        LOGE("Unknown ROM ID: {}", rom_id);
-        return false;
+    if (Roms::is_named_rom(rom_id)) {
+        rom = Roms::create_named_rom(rom_id);
+    } else {
+        rom = roms.find_by_id(rom_id);
+        if (!rom) {
+            LOGE("Unknown ROM ID: {}", rom_id);
+            return false;
+        }
     }
+
+    LOGD("ROM ID is: {}", rom_id);
 
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom_id)) {

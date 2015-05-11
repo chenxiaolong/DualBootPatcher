@@ -1047,10 +1047,14 @@ Installer::ProceedState Installer::install_stage_get_install_type()
         return ProceedState::Cancel;
     }
 
-    _rom = roms.find_by_id(install_type);
-    if (!_rom) {
-        display_msg(fmt::format("Unknown ROM ID: {}", install_type));
-        return ProceedState::Fail;
+    if (Roms::is_named_rom(install_type)) {
+        _rom = Roms::create_named_rom(install_type);
+    } else {
+        _rom = roms.find_by_id(install_type);
+        if (!_rom) {
+            display_msg(fmt::format("Unknown ROM ID: {}", install_type));
+            return ProceedState::Fail;
+        }
     }
 
     // Use raw paths if needed

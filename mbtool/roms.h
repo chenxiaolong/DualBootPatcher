@@ -41,11 +41,15 @@ public:
     std::vector<std::shared_ptr<Rom>> roms;
 
     void add_builtin();
+    void add_data_roms();
     void add_installed();
 
     std::shared_ptr<Rom> find_by_id(const std::string &id) const;
 
     static std::shared_ptr<Rom> get_current_rom();
+
+    static bool is_named_rom(const std::string &id);
+    static std::shared_ptr<Rom> create_named_rom(const std::string &id);
 };
 
 std::string get_raw_path(const std::string &path);
