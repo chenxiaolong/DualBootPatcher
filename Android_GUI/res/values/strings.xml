@@ -80,6 +80,8 @@
     <string name="secondary">Secondary</string>
     <!-- Default name for the multi-slot ROMs -->
     <string name="multislot">Multi Slot %s</string>
+    <!-- Default name for the data-slot ROMs -->
+    <string name="dataslot">%s (Data slot)</string>
     <!-- Text shown when a ROM's version could not be detected -->
     <string name="couldnt_determine_version">Couldn\'t determine ROM version</string>
 

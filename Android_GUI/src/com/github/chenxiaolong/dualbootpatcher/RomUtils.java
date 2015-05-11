@@ -36,8 +36,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RomUtils {
     private static final String TAG = RomUtils.class.getSimpleName();
@@ -48,6 +46,7 @@ public class RomUtils {
     public static final String PRIMARY_ID = "primary";
     public static final String SECONDARY_ID = "dual";
     public static final String MULTI_ID_PREFIX = "multi-slot-";
+    public static final String DATA_ID_PREFIX = "data-slot-";
 
     public static class RomInformation implements Parcelable {
         // Mount points
@@ -326,13 +325,11 @@ public class RomUtils {
         } else if (info.getId().equals(SECONDARY_ID)) {
             return context.getString(R.string.secondary);
         } else if (info.getId().startsWith(MULTI_ID_PREFIX)) {
-            Pattern p = Pattern.compile("^" + MULTI_ID_PREFIX + "(.+)");
-            Matcher m = p.matcher(info.getId());
-            String num;
-            if (m.find()) {
-                num = m.group(1);
-                return String.format(context.getString(R.string.multislot), num);
-            }
+            String num = info.getId().substring(MULTI_ID_PREFIX.length());
+            return String.format(context.getString(R.string.multislot), num);
+        } else if (info.getId().startsWith(DATA_ID_PREFIX)) {
+            String id = info.getId().substring(DATA_ID_PREFIX.length());
+            return String.format(context.getString(R.string.dataslot), id);
         }
 
         return UNKNOWN_ID;
