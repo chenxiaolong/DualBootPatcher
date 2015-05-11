@@ -43,6 +43,7 @@ public class SwitcherUtils {
     private static final String ZIP_MULTIBOOT_DIR = "multiboot/";
     private static final String ZIP_INFO_PROP = ZIP_MULTIBOOT_DIR + "info.prop";
     private static final String PROP_INSTALLER_VERSION = "mbtool.installer.version";
+    private static final String PROP_INSTALL_LOCATION = "mbtool.installer.install-location";
 
     public static String getBootPartition() {
         String bootBlockDev = null;
@@ -143,6 +144,41 @@ public class SwitcherUtils {
         } catch (VersionParseException e) {
             e.printStackTrace();
             return VerificationResult.ERROR_VERSION_TOO_OLD;
+        } finally {
+            IOUtils.closeQuietly(zf);
+        }
+    }
+
+    public static String getTargetInstallLocation(String zipFile) {
+        ZipFile zf = null;
+
+        try {
+            zf = new ZipFile(zipFile);
+
+            Properties prop = null;
+
+            final Enumeration<? extends ZipEntry> entries = zf.entries();
+            while (entries.hasMoreElements()) {
+                final ZipEntry ze = entries.nextElement();
+
+                if (ze.getName().equals(ZIP_INFO_PROP)) {
+                    prop = new Properties();
+                    prop.load(zf.getInputStream(ze));
+                    break;
+                }
+            }
+
+            if (prop == null) {
+                return null;
+            }
+
+            return prop.getProperty(PROP_INSTALL_LOCATION, null);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
         } finally {
             IOUtils.closeQuietly(zf);
         }

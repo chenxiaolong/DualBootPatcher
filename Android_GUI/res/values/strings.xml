@@ -203,6 +203,13 @@
     <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
     <string name="zip_flashing_error_no_overwrite_rom">To prevent the current system from crashing
         or rebooting, flashing a zip on top of the current ROM is not allowed.</string>
+    <!-- Dialog message asking if the user wants to change the installation location of the zip -->
+    <string name="zip_flashing_change_install_location_desc">The zip was originally patched for
+        installation to %s. Would you like to change the installation location?</string>
+    <!-- Dialog button for keeping the current installation location -->
+    <string name="zip_flashing_keep_current_location">Keep location</string>
+    <!-- Dialog button for changing the installation location -->
+    <string name="zip_flashing_change_install_location">Change location</string>
     <!-- Message shown in the first-use dialog for zip flashing -->
     <string name="zip_flashing_dialog_first_use">To flash a zip file using in-app flashing, just
         add the patched zip file by tapping big plus icon.\n\nThe flashing order can be changed by
