@@ -21,12 +21,15 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
 #include <sys/stat.h>
 
 #include <cppformat/format.h>
 
+#include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
+#include "util/string.h"
 
 #define SYSTEM "/system"
 #define CACHE "/cache"
@@ -85,10 +88,46 @@ void Roms::add_builtin()
     }
 }
 
+void Roms::add_data_roms()
+{
+    LOGD("Looking for named ROMs in /data/multiboot");
+
+    std::string system = get_raw_path("/data");
+    system += "/multiboot";
+
+    DIR *dp = opendir(system.c_str());
+    if (!dp ) {
+        LOGE("{}: Failed to open directory: {}", system, strerror(errno));
+        return;
+    }
+
+    auto close_dp = util::finally([&]{
+        closedir(dp);
+    });
+
+    struct stat sb;
+
+    struct dirent *ent;
+    while ((ent = readdir(dp))) {
+        if (!util::starts_with(ent->d_name, "data-slot-")) {
+            continue;
+        }
+
+        std::string fullpath(system);
+        fullpath += "/";
+        fullpath += ent->d_name;
+
+        if (stat(fullpath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            roms.push_back(create_named_rom(ent->d_name));
+        }
+    }
+}
+
 void Roms::add_installed()
 {
     Roms all_roms;
     all_roms.add_builtin();
+    all_roms.add_data_roms();
 
     struct stat sb;
 
@@ -182,6 +221,34 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     }
 
     return std::shared_ptr<Rom>();
+}
+
+bool Roms::is_named_rom(const std::string &id)
+{
+    return util::starts_with(id, "data-slot-");
+}
+
+std::shared_ptr<Rom> Roms::create_named_rom(const std::string &id)
+{
+    if (util::starts_with(id, "data-slot-")) {
+        std::shared_ptr<Rom> rom(new Rom());
+        rom->id = id;
+        rom->system_path.append(DATA).append("/")
+                        .append("multiboot").append("/")
+                        .append(rom->id).append("/")
+                        .append("system");
+        rom->cache_path.append(CACHE).append("/")
+                       .append("multiboot").append("/")
+                       .append(rom->id).append("/")
+                       .append("cache");
+        rom->data_path.append(DATA).append("/")
+                      .append("multiboot").append("/")
+                      .append(rom->id).append("/")
+                      .append("data");
+        return rom;
+    } else {
+        return std::shared_ptr<Rom>();
+    }
 }
 
 std::string get_raw_path(const std::string &path)

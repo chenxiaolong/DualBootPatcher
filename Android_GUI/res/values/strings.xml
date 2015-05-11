@@ -80,6 +80,8 @@
     <string name="secondary">Secondary</string>
     <!-- Default name for the multi-slot ROMs -->
     <string name="multislot">Multi Slot %s</string>
+    <!-- Default name for the data-slot ROMs -->
+    <string name="dataslot">%s (Data slot)</string>
     <!-- Text shown when a ROM's version could not be detected -->
     <string name="couldnt_determine_version">Couldn\'t determine ROM version</string>
 
@@ -201,6 +203,13 @@
     <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
     <string name="zip_flashing_error_no_overwrite_rom">To prevent the current system from crashing
         or rebooting, flashing a zip on top of the current ROM is not allowed.</string>
+    <!-- Dialog message asking if the user wants to change the installation location of the zip -->
+    <string name="zip_flashing_change_install_location_desc">The zip was originally patched for
+        installation to %s. Would you like to change the installation location?</string>
+    <!-- Dialog button for keeping the current installation location -->
+    <string name="zip_flashing_keep_current_location">Keep location</string>
+    <!-- Dialog button for changing the installation location -->
+    <string name="zip_flashing_change_install_location">Change location</string>
     <!-- Message shown in the first-use dialog for zip flashing -->
     <string name="zip_flashing_dialog_first_use">To flash a zip file using in-app flashing, just
         add the patched zip file by tapping big plus icon.\n\nThe flashing order can be changed by
@@ -209,6 +218,26 @@
 
     <!-- Title for the patcher card asking for the device and partition configuration -->
     <string name="devpartconfig_title">Device and partition configuration:</string>
+
+    <!-- Name for primary ROM upgrade installation location -->
+    <string name="install_location_primary_upgrade">Primary ROM Upgrade</string>
+    <!-- Description for primary ROM upgrade installation location -->
+    <string name="install_location_primary_upgrade_desc">Update primary ROM without affecting other
+        ROMS</string>
+    <!-- Description for all other installation locations -->
+    <string name="install_location_desc">Installs ROM to %s</string>
+    <!-- Text box hint for specifying the data slot ID -->
+    <string name="install_location_data_slot_id_hint">Enter an ID</string>
+    <!-- Description text shown if the data slot ID is empty -->
+    <string name="install_location_data_slot_id_empty">Enter an ID above</string>
+    <!-- Error tooltip shown if the data slot ID is empty -->
+    <string name="install_location_data_slot_id_error_is_empty">The data slot ID cannot be
+        empty.</string>
+    <!-- Error tooltip shown if the data slot ID contains invalid characters -->
+    <string name="install_location_data_slot_id_error_invalid">The data slot ID must contain only
+        lowercase English letters and/or numbers.</string>
+    <!-- Name for the data-slot installation location -->
+    <string name="install_location_data_slot">Data slot</string>
 
     <!-- Title for the dialog box indicating that no file manager is installed -->
     <string name="filemanager_missing_title">No file manager</string>

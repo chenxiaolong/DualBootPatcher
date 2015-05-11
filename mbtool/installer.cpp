@@ -57,6 +57,7 @@
 #include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/properties.h"
+#include "util/selinux.h"
 #include "util/string.h"
 
 
@@ -81,7 +82,6 @@ namespace mb {
 const std::string Installer::HELPER_TOOL = "/update-binary-tool";
 const std::string Installer::UPDATE_BINARY =
         "META-INF/com/google/android/update-binary";
-const std::string Installer::MULTIBOOT_AROMA = "multiboot/aromawrapper.zip";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
@@ -377,7 +377,6 @@ bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
         { UPDATE_BINARY + ".orig",  _temp + "/updater"          },
-        { MULTIBOOT_AROMA,          _temp + "/aromawrapper.zip" },
         { MULTIBOOT_BBWRAPPER,      _temp + "/bb-wrapper.sh"    },
         { MULTIBOOT_INFO_PROP,      _temp + "/info.prop"        }
     };
@@ -1048,10 +1047,14 @@ Installer::ProceedState Installer::install_stage_get_install_type()
         return ProceedState::Cancel;
     }
 
-    _rom = roms.find_by_id(install_type);
-    if (!_rom) {
-        display_msg(fmt::format("Unknown ROM ID: {}", install_type));
-        return ProceedState::Fail;
+    if (Roms::is_named_rom(install_type)) {
+        _rom = Roms::create_named_rom(install_type);
+    } else {
+        _rom = roms.find_by_id(install_type);
+        if (!_rom) {
+            display_msg(fmt::format("Unknown ROM ID: {}", install_type));
+            return ProceedState::Fail;
+        }
     }
 
     // Use raw paths if needed
@@ -1394,6 +1397,13 @@ Installer::ProceedState Installer::install_stage_finish()
                      util::CHOWN_RECURSIVE)) {
         // Non-fatal
         LOGE("{}: Failed to chown: {}", MULTIBOOT_DIR, strerror(errno));
+    }
+
+    if (!util::selinux_lset_context_recursive(
+            MULTIBOOT_DIR, "u:object_r:media_rw_data_file:s0")) {
+        // Non-fatal
+        LOGE("{}: Failed to set SELinux context: {}",
+             MULTIBOOT_DIR, strerror(errno));
     }
 
     return on_finished();

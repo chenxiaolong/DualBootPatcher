@@ -54,18 +54,15 @@ public class SwitcherService extends IntentService {
             "com.chenxiaolong.github.dualbootpatcher.BROADCAST_SWITCHER_STATE";
 
     public static final String ACTION = "action";
-    public static final String ACTION_VERIFY_ZIP = "verify_zip";
     public static final String ACTION_FLASH_ZIPS = "flash_zips";
 
     public static final String PARAM_ZIP_FILE = "zip_file";
     public static final String PARAM_PENDING_ACTIONS = "pending_actions";
 
     public static final String STATE = "state";
-    public static final String STATE_VERIFIED_ZIP = "verified_zip";
     public static final String STATE_FLASHED_ZIPS = "flashed_zips";
     public static final String STATE_COMMAND_OUTPUT_DATA = "command_output_line";
 
-    public static final String RESULT_VERIFY_ZIP = "verify_zip";
     public static final String RESULT_TOTAL_ACTIONS = "total_actions";
     public static final String RESULT_FAILED_ACTIONS = "failed_actions";
     public static final String RESULT_OUTPUT_DATA = "output_line";
@@ -87,6 +84,12 @@ public class SwitcherService extends IntentService {
     public static final String STATE_WIPED_ROM = "wiped_rom";
     public static final String RESULT_TARGETS_SUCCEEDED = "targets_succeeded";
     public static final String RESULT_TARGETS_FAILED = "targets_failed";
+
+    // Verify ZIP for in-app flashing
+    public static final String ACTION_VERIFY_ZIP = "verify_zip";
+    public static final String STATE_VERIFIED_ZIP = "verified_zip";
+    public static final String RESULT_VERIFY_ZIP = "verify_zip";
+    public static final String RESULT_ROM_ID = "rom_id";
 
     private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
 
@@ -110,10 +113,11 @@ public class SwitcherService extends IntentService {
         sendBroadcast(i);
     }
 
-    private void onVerifiedZip(VerificationResult result) {
+    private void onVerifiedZip(VerificationResult result, String romId) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_VERIFIED_ZIP);
         i.putExtra(RESULT_VERIFY_ZIP, result);
+        i.putExtra(RESULT_ROM_ID, romId);
         sendBroadcast(i);
     }
 
@@ -194,7 +198,8 @@ public class SwitcherService extends IntentService {
     private void verifyZip(Bundle data) {
         String zipFile = data.getString(PARAM_ZIP_FILE);
         VerificationResult result = SwitcherUtils.verifyZipMbtoolVersion(zipFile);
-        onVerifiedZip(result);
+        String romId = SwitcherUtils.getTargetInstallLocation(zipFile);
+        onVerifiedZip(result, romId);
     }
 
     private int runRootCommand(String command) {

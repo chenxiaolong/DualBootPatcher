@@ -42,9 +42,14 @@ import com.getbase.floatingactionbutton.AddFloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
+        .ChangeInstallLocationDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.DataSlotIdInputDialog
+        .DataSlotIdInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.VerifiedZipEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
@@ -64,7 +69,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class ZipFlashingFragment extends Fragment implements EventCollectorListener,
-        FirstUseDialogListener, RomIdSelectionDialogListener,
+        FirstUseDialogListener, RomIdSelectionDialogListener, DataSlotIdInputDialogListener,
+        ChangeInstallLocationDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     private static final String TAG = ZipFlashingFragment.class.getSimpleName();
 
@@ -73,6 +79,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
     private static final String EXTRA_SELECTED_FILE = "selected_file";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
+    private static final String EXTRA_ZIP_ROM_ID = "zip_rom_id";
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog";
 
@@ -85,6 +92,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     private String mSelectedFile;
     private String mSelectedRomId;
     private String mCurrentRomId;
+    private String mZipRomId;
 
     private DynamicListView mCardListView;
     private ProgressBar mProgressBar;
@@ -157,6 +165,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         if (savedInstanceState != null) {
             mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
+            mZipRomId = savedInstanceState.getString(EXTRA_ZIP_ROM_ID);
         }
 
         try {
@@ -191,6 +200,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
         outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
+        outState.putString(EXTRA_ZIP_ROM_ID, mZipRomId);
     }
 
     @Override
@@ -242,8 +252,11 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
             RequestedFileEvent e = (RequestedFileEvent) event;
             mSelectedFile = e.file;
 
-            RomIdSelectionDialog dialog = RomIdSelectionDialog.newInstance(this, mBuiltinRoms);
-            dialog.show(getFragmentManager(), RomIdSelectionDialog.TAG);
+            GenericProgressDialog d = GenericProgressDialog.newInstance(
+                    R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
+            d.show(getFragmentManager(), GenericProgressDialog.TAG);
+
+            mSwitcherEC.verifyZip(mSelectedFile);
         } else if (event instanceof VerifiedZipEvent) {
             GenericProgressDialog dialog = (GenericProgressDialog) getFragmentManager()
                     .findFragmentByTag(GenericProgressDialog.TAG);
@@ -253,15 +266,16 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
             VerifiedZipEvent e = (VerifiedZipEvent) event;
 
-            if (e.result == VerificationResult.NO_ERROR) {
-                mCallback.onReady(true);
+            mZipRomId = e.romId;
 
-                PendingAction pa = new PendingAction();
-                pa.type = Type.INSTALL_ZIP;
-                pa.zipFile = mSelectedFile;
-                pa.romId = mSelectedRomId;
-                mAdapter.add(pa);
-                mAdapter.notifyDataSetChanged();
+            if (e.result == VerificationResult.NO_ERROR) {
+                if (e.romId != null) {
+                    ChangeInstallLocationDialog cild =
+                            ChangeInstallLocationDialog.newInstance(this, e.romId);
+                    cild.show(getFragmentManager(), ChangeInstallLocationDialog.TAG);
+                } else {
+                    showRomIdSelectionDialog();
+                }
             } else {
                 String error;
 
@@ -313,20 +327,55 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     }
 
     @Override
-    public void onSelectedRomId(String romId) {
-        mSelectedRomId = romId;
+    public void onSelectedRomId(RomIdType type, String romId) {
+        switch (type) {
+        case BUILT_IN_ROM_ID:
+            mSelectedRomId = romId;
+            onHaveRomId();
+            break;
+        case NAMED_DATA_SLOT:
+            DataSlotIdInputDialog d = DataSlotIdInputDialog.newInstance(this);
+            d.show(getFragmentManager(), DataSlotIdInputDialog.TAG);
+            break;
+        }
+    }
 
+    @Override
+    public void onSelectedDataSlotRomId(String romId) {
+        mSelectedRomId = romId;
+        onHaveRomId();
+    }
+
+    @Override
+    public void onChangeInstallLocationClicked(boolean changeInstallLocation) {
+        if (changeInstallLocation) {
+            showRomIdSelectionDialog();
+        } else {
+            mSelectedRomId = mZipRomId;
+            onHaveRomId();
+        }
+    }
+
+    private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
             GenericConfirmDialog d = GenericConfirmDialog.newInstance(
                     0, R.string.zip_flashing_error_no_overwrite_rom);
             d.show(getFragmentManager(), GenericConfirmDialog.TAG);
         } else {
-            GenericProgressDialog d = GenericProgressDialog.newInstance(
-                    R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
-            d.show(getFragmentManager(), GenericProgressDialog.TAG);
+            mCallback.onReady(true);
 
-            mSwitcherEC.verifyZip(mSelectedFile);
+            PendingAction pa = new PendingAction();
+            pa.type = Type.INSTALL_ZIP;
+            pa.zipFile = mSelectedFile;
+            pa.romId = mSelectedRomId;
+            mAdapter.add(pa);
+            mAdapter.notifyDataSetChanged();
         }
+    }
+
+    private void showRomIdSelectionDialog() {
+        RomIdSelectionDialog dialog = RomIdSelectionDialog.newInstance(this, mBuiltinRoms);
+        dialog.show(getFragmentManager(), RomIdSelectionDialog.TAG);
     }
 
     public void onActionBarCheckItemClicked() {

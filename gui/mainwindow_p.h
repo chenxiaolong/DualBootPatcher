@@ -38,6 +38,14 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
 
+class InstallLocation
+{
+public:
+    QString id;
+    QString name;
+    QString description;
+};
+
 class MainWindowPrivate
 {
 public:
@@ -91,6 +99,9 @@ public:
     // Selected device
     mbp::Device *device = nullptr;
 
+    // List of installation locations
+    QList<InstallLocation> instLocs;
+
     // List of available patchinfos
     std::vector<mbp::PatchInfo *> patchInfos;
 
@@ -105,6 +116,10 @@ public:
     // Main widgets
     QLabel *deviceLbl;
     QComboBox *deviceSel;
+    QLabel *instLocLbl;
+    QComboBox *instLocSel;
+    QLabel *instLocDesc;
+    QLineEdit *instLocLe;
 
     QLabel *messageLbl;
 

@@ -33,10 +33,15 @@ import java.util.ArrayList;
 public class RomIdSelectionDialog extends DialogFragment {
     public static final String TAG = RomIdSelectionDialog.class.getSimpleName();
 
+    enum RomIdType {
+        BUILT_IN_ROM_ID,
+        NAMED_DATA_SLOT
+    }
+
     private static final String ARG_INFOS = "infos";
 
     public interface RomIdSelectionDialogListener {
-        void onSelectedRomId(String romId);
+        void onSelectedRomId(RomIdType type, String romId);
     }
 
     public static RomIdSelectionDialog newInstance(Fragment parent,
@@ -63,11 +68,13 @@ public class RomIdSelectionDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         final ArrayList<RomInformation> infos = getArguments().getParcelableArrayList(ARG_INFOS);
-        final String[] names = new String[infos.size()];
+        final String[] names = new String[infos.size() + 1];
 
         for (int i = 0; i < infos.size(); i++) {
             names[i] = infos.get(i).getDefaultName();
         }
+
+        names[infos.size()] = getString(R.string.install_location_data_slot);
 
         Dialog dialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.zip_flashing_dialog_installation_location)
@@ -77,11 +84,14 @@ public class RomIdSelectionDialog extends DialogFragment {
                     @Override
                     public boolean onSelection(MaterialDialog dialog, View view, int which,
                                                CharSequence text) {
-                        RomInformation info = infos.get(which);
-
                         RomIdSelectionDialogListener owner = getOwner();
                         if (owner != null) {
-                            owner.onSelectedRomId(info.getId());
+                            if (which == infos.size()) {
+                                owner.onSelectedRomId(RomIdType.NAMED_DATA_SLOT, null);
+                            } else {
+                                RomInformation info = infos.get(which);
+                                owner.onSelectedRomId(RomIdType.BUILT_IN_ROM_ID, info.getId());
+                            }
                         }
 
                         return true;

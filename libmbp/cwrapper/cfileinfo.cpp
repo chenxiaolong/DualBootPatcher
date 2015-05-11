@@ -159,4 +159,16 @@ void mbp_fileinfo_set_device(CFileInfo *info, CDevice *device)
     fi->setDevice(reinterpret_cast<mbp::Device *>(device));
 }
 
+char * mbp_fileinfo_rom_id(const CFileInfo *info)
+{
+    CCAST(info);
+    return string_to_cstring(fi->romId());
+}
+
+void mbp_fileinfo_set_rom_id(CFileInfo *info, const char *id)
+{
+    CAST(info);
+    fi->setRomId(id);
+}
+
 }

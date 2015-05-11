@@ -177,6 +177,8 @@ public class LibMbp {
         static native void mbp_fileinfo_set_patchinfo(CFileInfo info, CPatchInfo pInfo);
         static native CDevice mbp_fileinfo_device(CFileInfo info);
         static native void mbp_fileinfo_set_device(CFileInfo info, CDevice device);
+        static native Pointer mbp_fileinfo_rom_id(CFileInfo info);
+        static native void mbp_fileinfo_set_rom_id(CFileInfo info, String id);
         // END: cfileinfo.h
 
         // BEGIN: cpatcherconfig.h
@@ -1309,6 +1311,19 @@ public class LibMbp {
             ensureNotNull(device);
 
             CWrapper.mbp_fileinfo_set_device(mCFileInfo, device.getPointer());
+        }
+
+        public String getRomId() {
+            validate(mCFileInfo, FileInfo.class, "getRomId");
+            Pointer p = CWrapper.mbp_fileinfo_rom_id(mCFileInfo);
+            return getStringAndFree(p);
+        }
+
+        public void setRomId(String id) {
+            validate(mCFileInfo, FileInfo.class, "setRomId", id);
+            ensureNotNull(id);
+
+            CWrapper.mbp_fileinfo_set_rom_id(mCFileInfo, id);
         }
     }
 

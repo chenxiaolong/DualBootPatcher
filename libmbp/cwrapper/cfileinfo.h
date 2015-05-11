@@ -37,6 +37,9 @@ void mbp_fileinfo_set_patchinfo(CFileInfo *info, CPatchInfo *pInfo);
 CDevice * mbp_fileinfo_device(const CFileInfo *info);
 void mbp_fileinfo_set_device(CFileInfo *info, CDevice * device);
 
+char * mbp_fileinfo_rom_id(const CFileInfo *info);
+void mbp_fileinfo_set_rom_id(CFileInfo *info, const char *id);
+
 #ifdef __cplusplus
 }
 #endif

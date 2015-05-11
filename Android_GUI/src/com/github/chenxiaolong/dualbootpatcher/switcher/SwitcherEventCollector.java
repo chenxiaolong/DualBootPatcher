@@ -58,8 +58,9 @@ public class SwitcherEventCollector extends EventCollector {
                 } else if (SwitcherService.STATE_VERIFIED_ZIP.equals(state)) {
                     VerificationResult result = (VerificationResult) bundle.getSerializable(
                             SwitcherService.RESULT_VERIFY_ZIP);
+                    String romId = bundle.getString(SwitcherService.RESULT_ROM_ID);
 
-                    sendEvent(new VerifiedZipEvent(result));
+                    sendEvent(new VerifiedZipEvent(result, romId));
                 } else if (SwitcherService.STATE_FLASHED_ZIPS.equals(state)) {
                     int totalActions = bundle.getInt(SwitcherService.RESULT_TOTAL_ACTIONS);
                     int failedActions = bundle.getInt(SwitcherService.RESULT_FAILED_ACTIONS);
@@ -164,9 +165,11 @@ public class SwitcherEventCollector extends EventCollector {
 
     public class VerifiedZipEvent extends BaseEvent {
         VerificationResult result;
+        String romId;
 
-        public VerifiedZipEvent(VerificationResult result) {
+        public VerifiedZipEvent(VerificationResult result, String romId) {
             this.result = result;
+            this.romId = romId;
         }
     }
 

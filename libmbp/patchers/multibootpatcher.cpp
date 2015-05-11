@@ -141,7 +141,8 @@ std::string MultiBootPatcher::newFilePath()
 
     boost::filesystem::path path(m_impl->info->filename());
     boost::filesystem::path fileName = path.stem();
-    fileName += "_patched";
+    fileName += "_";
+    fileName += m_impl->info->romId();
     fileName += path.extension();
 
     if (path.has_parent_path()) {
@@ -331,10 +332,9 @@ bool MultiBootPatcher::Impl::patchZip()
     if (cancelled) return false;
 
     // +1 for mbtool_recovery (update-binary)
-    // +1 for aromawrapper.zip
     // +1 for bb-wrapper.sh
     // +1 for info.prop
-    maxFiles = stats.files + 4;
+    maxFiles = stats.files + 3;
     updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
@@ -370,20 +370,6 @@ bool MultiBootPatcher::Impl::patchZip()
             zOutput, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
-    if (!result) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateFiles(++files, maxFiles);
-    updateDetails("multiboot/aromawrapper.zip");
-
-    // Add aromawrapper.zip
-    result = FileUtils::mzAddFile(
-            zOutput, "multiboot/aromawrapper.zip",
-            pc->dataDirectory() + "/aromawrapper.zip");
     if (!result) {
         error = result;
         return false;
@@ -838,17 +824,15 @@ std::string MultiBootPatcher::Impl::createInfoProp()
 "\n"
 "# mbtool.installer.install-location\n"
 "# ---------------------------------\n"
-"# If this field is set, mbtool will not show the AROMA selection screen for\n"
-"# choosing the installation location. If an invalid value is specified, then the\n"
-"# installation will fail. This is disabled by default.\n"
-"#\n"
-"# This value is completely ignored if this zip is flashed from the app. It only\n"
-"# applies when flashing from recovery.\n"
+"# This field should be set to the desired installation location for the ROM.\n"
+"# It is okay to change this value after the file has already been patched.\n"
 "#\n"
 "# Valid values: primary, dual, multi-slot-1, multi-slot-2, multi-slot-3\n"
-"#\n"
-"#mbtool.installer.install-location=chosen_location\n"
-"\n";
+"#\n";
+
+    out += "mbtool.installer.install-location=";
+    out += info->romId();
+    out += "\n\n";
 
     return out;
 }

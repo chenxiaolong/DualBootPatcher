@@ -454,7 +454,7 @@ int rom_installer_main(int argc, char *argv[])
     Roms roms;
     roms.add_builtin();
 
-    if (!roms.find_by_id(rom_id)) {
+    if (!roms.find_by_id(rom_id) && !Roms::is_named_rom(rom_id)) {
         fprintf(stderr, "Invalid ROM ID: %s\n", rom_id.c_str());
         return EXIT_FAILURE;
     }
