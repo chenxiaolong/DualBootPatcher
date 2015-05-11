@@ -42,9 +42,12 @@ import com.getbase.floatingactionbutton.AddFloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.switcher.DataSlotIdInputDialog
+        .DataSlotIdInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.VerifiedZipEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
@@ -64,7 +67,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class ZipFlashingFragment extends Fragment implements EventCollectorListener,
-        FirstUseDialogListener, RomIdSelectionDialogListener,
+        FirstUseDialogListener, RomIdSelectionDialogListener, DataSlotIdInputDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     private static final String TAG = ZipFlashingFragment.class.getSimpleName();
 
@@ -313,9 +316,26 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     }
 
     @Override
-    public void onSelectedRomId(String romId) {
-        mSelectedRomId = romId;
+    public void onSelectedRomId(RomIdType type, String romId) {
+        switch (type) {
+        case BUILT_IN_ROM_ID:
+            mSelectedRomId = romId;
+            onHaveRomId();
+            break;
+        case NAMED_DATA_SLOT:
+            DataSlotIdInputDialog d = DataSlotIdInputDialog.newInstance(this);
+            d.show(getFragmentManager(), DataSlotIdInputDialog.TAG);
+            break;
+        }
+    }
 
+    @Override
+    public void onSelectedDataSlotRomId(String romId) {
+        mSelectedRomId = romId;
+        onHaveRomId();
+    }
+
+    private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
             GenericConfirmDialog d = GenericConfirmDialog.newInstance(
                     0, R.string.zip_flashing_error_no_overwrite_rom);
