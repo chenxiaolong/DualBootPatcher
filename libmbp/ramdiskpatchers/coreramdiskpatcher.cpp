@@ -168,34 +168,42 @@ bool CoreRamdiskPatcher::addMultiBootRc()
 
 bool CoreRamdiskPatcher::addDaemonService()
 {
-    std::vector<unsigned char> multiBootRc;
-    if (!m_impl->cpio->contents(InitMultiBootRc, &multiBootRc)) {
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitMultiBootRc, &contents)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
 
-    multiBootRc.insert(multiBootRc.end(),
-                       MbtoolDaemonService.begin(),
-                       MbtoolDaemonService.end());
+    const std::string serviceName("mbtooldaemon");
+    if (std::search(contents.begin(), contents.end(),
+                    serviceName.begin(), serviceName.end()) == contents.end()) {
+        contents.insert(contents.end(),
+                        MbtoolDaemonService.begin(),
+                        MbtoolDaemonService.end());
 
-    m_impl->cpio->setContents(InitMultiBootRc, std::move(multiBootRc));
+        m_impl->cpio->setContents(InitMultiBootRc, std::move(contents));
+    }
 
     return true;
 }
 
 bool CoreRamdiskPatcher::addAppsyncService()
 {
-    std::vector<unsigned char> multiBootRc;
-    if (!m_impl->cpio->contents(InitMultiBootRc, &multiBootRc)) {
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitMultiBootRc, &contents)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
 
-    multiBootRc.insert(multiBootRc.end(),
-                       MbtoolAppsyncService.begin(),
-                       MbtoolAppsyncService.end());
+    const std::string serviceName("appsync");
+    if (std::search(contents.begin(), contents.end(),
+                    serviceName.begin(), serviceName.end()) == contents.end()) {
+        contents.insert(contents.end(),
+                        MbtoolAppsyncService.begin(),
+                        MbtoolAppsyncService.end());
 
-    m_impl->cpio->setContents(InitMultiBootRc, std::move(multiBootRc));
+        m_impl->cpio->setContents(InitMultiBootRc, std::move(contents));
+    }
 
     return true;
 }
