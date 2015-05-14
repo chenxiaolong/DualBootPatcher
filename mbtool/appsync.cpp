@@ -899,7 +899,17 @@ int appsync_main(int argc, char *argv[])
         LOGV("SELinux not supported. No need to modify policy");
     } else {
         LOGV("Patching SELinux policy to allow installd connection");
-        if (!patch_sepolicy()) {
+        int attempt;
+        for (attempt = 0; attempt < 5; ++attempt) {
+            LOGV("Patching SELinux policy [Attempt {}/{}]", attempt + 1, 5);
+            if (!patch_sepolicy()) {
+                sleep(1);
+            } else {
+                break;
+            }
+        }
+
+        if (attempt == 5) {
             LOGW("Failed to patch current SELinux policy");
         }
     }
