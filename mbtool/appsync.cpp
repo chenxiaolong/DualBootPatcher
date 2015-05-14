@@ -19,6 +19,8 @@
 
 #include "appsync.h"
 
+#include <algorithm>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -37,6 +39,7 @@
 #include "apk.h"
 #include "appsyncmanager.h"
 #include "packages.h"
+#include "romconfig.h"
 #include "roms.h"
 #include "util/chown.h"
 #include "util/copy.h"
@@ -69,30 +72,12 @@
 
 #define CONFIG_PATH_FMT                 "/data/media/0/MultiBoot/{}/config.json"
 
-#define CONFIG_KEY_APP_SHARING          "app_sharing"
-#define CONFIG_KEY_GLOBAL_APP_SHARING   "global"
-#define CONFIG_KEY_GLOBAL_APP_SHARING_PAID "global_paid"
-#define CONFIG_KEY_INDIVIDUAL_APP_SHARING "individual"
-#define CONFIG_KEY_PACKAGES             "packages"
-#define CONFIG_KEY_PACKAGE_ID           "pkg_id"
-#define CONFIG_KEY_SHARE_APK            "share_apk"
-#define CONFIG_KEY_SHARE_DATA           "share_data"
-
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
 namespace mb
 {
 
-struct SharedPackage {
-    std::string pkg_id;
-    bool share_apk;
-    bool share_data;
-};
-
-static std::vector<std::shared_ptr<SharedPackage>> shared_pkgs;
-bool app_sharing_global = false;
-bool app_sharing_global_paid = false;
-bool app_sharing_individual = false;
+static RomConfig config;
 
 /*!
  * \brief Try loading the config file in /data/media/0/MultiBoot/[ROM ID]/config.json
@@ -107,80 +92,26 @@ static bool load_config_file()
 
     std::string path = fmt::format(CONFIG_PATH_FMT, rom->id);
 
-    json_t *root;
-    json_error_t error;
-
-    root = json_load_file(path.c_str(), 0, &error);
-    if (!root) {
-        LOGE("JSON error on line {:d}: {}", error.line, error.text);
+    if (!config.load_file(path)) {
         return false;
     }
 
-    auto free_on_return = util::finally([&]{
-        json_decref(root);
-    });
+    LOGD("[Config] ROM ID:                    {}", config.id);
+    LOGD("[Config] ROM Name:                  {}", config.name);
+    LOGD("[Config] Global app sharing:        {}",
+         config.global_app_sharing ? "true" : "false");
+    LOGD("[Config] Global app sharing (paid): {}",
+         config.global_paid_app_sharing ? "true" : "false");
+    LOGD("[Config] Individual app sharing:    {}",
+         config.indiv_app_sharing ? "true" : "false");
 
-    if (!json_is_object(root)) {
-        LOGE("JSON root is not an object");
-        return false;
-    }
-
-    json_t *app_sharing = json_object_get(root, CONFIG_KEY_APP_SHARING);
-    if (!json_is_object(app_sharing)) {
-        LOGI("ROM config does not contain app sharing configuration");
-        return true;
-    }
-
-    // Global app sharing
-    json_t *global = json_object_get(
-            app_sharing, CONFIG_KEY_GLOBAL_APP_SHARING);
-    app_sharing_global = json_is_true(global);
-
-    // Global paid app sharing
-    json_t *global_paid = json_object_get(
-            app_sharing, CONFIG_KEY_GLOBAL_APP_SHARING_PAID);
-    app_sharing_global_paid = global_paid;
-
-    // Individual app sharing
-    json_t *individual = json_object_get(
-            app_sharing, CONFIG_KEY_INDIVIDUAL_APP_SHARING);
-    app_sharing_individual = individual;
-
-    // Individual app sharing packages
-    json_t *pkgs = json_object_get(
-            individual, CONFIG_KEY_PACKAGES);
-    if (!json_is_array(pkgs)) {
-        LOGE("JSON packages object is not an array");
-        return false;
-    }
-
-    for (size_t i = 0; i < json_array_size(pkgs); ++i) {
-        json_t *data = json_array_get(pkgs, i);
-        if (!json_is_object(data)) {
-            LOGE("JSON packages array element {} is not an object", i);
-            return false;
-        }
-
-        json_t *pkg_id = json_object_get(data, CONFIG_KEY_PACKAGE_ID);
-        if (!json_is_string(pkg_id)) {
-            LOGE("JSON package ID is not a string");
-            return false;
-        }
-
-        json_t *share_apk = json_object_get(data, CONFIG_KEY_SHARE_APK);
-        json_t *share_data = json_object_get(data, CONFIG_KEY_SHARE_DATA);
-
-        std::shared_ptr<SharedPackage> pkg(new SharedPackage());
-        pkg->pkg_id = json_string_value(pkg_id);
-        pkg->share_apk = json_is_true(share_apk);
-        pkg->share_data = json_is_true(share_data);
-
-        LOGD("Shared package:");
-        LOGD("- Package:    {}", pkg->pkg_id);
-        LOGD("- Share apk:  {}", pkg->share_apk ? "true" : "false");
-        LOGD("- Share data: {}", pkg->share_data ? "true" : "false");
-
-        shared_pkgs.push_back(std::move(pkg));
+    for (const SharedPackage &pkg : config.shared_pkgs) {
+        LOGD("[Config] Shared package:");
+        LOGD("[Config] - Package:                 {}", pkg.pkg_id);
+        LOGD("[Config] - Share apk:               {}",
+             pkg.share_apk ? "true" : "false");
+        LOGD("[Config] - Share data:              {}",
+             pkg.share_data ? "true" : "false");
     }
 
     return true;
@@ -207,47 +138,48 @@ static bool prepare_appsync()
         return false;
     }
 
-    for (auto it = shared_pkgs.begin(); it != shared_pkgs.end();) {
-        std::shared_ptr<SharedPackage> &shared_pkg = *it;
+    for (auto it = config.shared_pkgs.begin();
+            it != config.shared_pkgs.end();) {
+        SharedPackage &shared_pkg = *it;
 
         // Ensure package is installed, so we can get its UID
-        auto pkg = pkgs.find_by_pkg(shared_pkg->pkg_id);
+        auto pkg = pkgs.find_by_pkg(shared_pkg.pkg_id);
         if (!pkg) {
             LOGW("Package {} won't be shared because it is not installed",
-                 shared_pkg->pkg_id);
-            it = shared_pkgs.erase(it);
+                 shared_pkg.pkg_id);
+            it = config.shared_pkgs.erase(it);
             continue;
         }
 
         // Ensure that the package is not a system package if we're sharing the
         // apk file
-        if (shared_pkg->share_apk && ((pkg->pkg_flags & Package::FLAG_SYSTEM)
+        if (shared_pkg.share_apk && ((pkg->pkg_flags & Package::FLAG_SYSTEM)
                 || (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP))) {
             LOGW("Package {} is a system app or an update to a system app. "
-                 "Its apk will not be shared", shared_pkg->pkg_id);
-            shared_pkg->share_apk = false;
+                 "Its apk will not be shared", shared_pkg.pkg_id);
+            shared_pkg.share_apk = false;
         }
 
         // Ensure that code_path is set to something sane
         if (!util::starts_with(pkg->code_path, "/data/")) {
             LOGW("The code_path for package {} is not in /data. "
-                 "Its apk will not be shared", shared_pkg->pkg_id);
-            shared_pkg->share_apk = false;
+                 "Its apk will not be shared", shared_pkg.pkg_id);
+            shared_pkg.share_apk = false;
         }
 
         // Ensure that the apk exists in the shared directory
-        if (shared_pkg->share_apk
-                && !AppSyncManager::copy_apk_user_to_shared(shared_pkg->pkg_id)) {
-            shared_pkg->share_apk = false;
+        if (shared_pkg.share_apk
+                && !AppSyncManager::copy_apk_user_to_shared(shared_pkg.pkg_id)) {
+            shared_pkg.share_apk = false;
         }
 
         // Ensure that the data directory exists if data sharing is enabled
-        if (shared_pkg->share_data
+        if (shared_pkg.share_data
                 && !AppSyncManager::create_shared_data_directory(
-                        shared_pkg->pkg_id, pkg->get_uid())) {
+                        shared_pkg.pkg_id, pkg->get_uid())) {
             LOGW("Failed to create shared data directory for package {}. "
-                 "App data will not be shared", shared_pkg->pkg_id);
-            shared_pkg->share_data = false;
+                 "App data will not be shared", shared_pkg.pkg_id);
+            shared_pkg.share_data = false;
         }
 
         ++it;
@@ -271,38 +203,38 @@ static bool prepare_appsync()
     }
 
     // Actually share the apk and data
-    for (std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
-        auto pkg = pkgs.find_by_pkg(shared_pkg->pkg_id);
+    for (SharedPackage &shared_pkg : config.shared_pkgs) {
+        auto pkg = pkgs.find_by_pkg(shared_pkg.pkg_id);
 
         if (disable_apk_sharing) {
-            shared_pkg->share_apk = false;
+            shared_pkg.share_apk = false;
         }
         if (disable_data_sharing) {
-            shared_pkg->share_data = false;
+            shared_pkg.share_data = false;
         }
 
-        if (shared_pkg->share_apk
+        if (shared_pkg.share_apk
                 && !AppSyncManager::wipe_shared_libraries(pkg)) {
             LOGW("Failed to remove shared libraries for package {}", pkg->name);
             LOGW("To prevent issues with starting the app, "
                  "apk will not be shared");
-            shared_pkg->share_apk = false;
+            shared_pkg.share_apk = false;
         }
 
-        if (shared_pkg->share_apk
+        if (shared_pkg.share_apk
                 && !AppSyncManager::link_apk_shared_to_user(pkg)) {
             LOGW("Failed to link shared apk to user app directory");
-            if (shared_pkg->share_data) {
+            if (shared_pkg.share_data) {
                 LOGW("To prevent issues due to the error, "
                      "data will not be shared");
-                shared_pkg->share_data = false;
+                shared_pkg.share_data = false;
             }
         }
 
-        if (shared_pkg->share_data && !AppSyncManager::mount_shared_directory(
+        if (shared_pkg.share_data && !AppSyncManager::mount_shared_directory(
                 pkg->name, pkg->get_uid())) {
             LOGW("Failed to mount shared data directory");
-            shared_pkg->share_data = false;
+            shared_pkg.share_data = false;
         }
     }
 
@@ -552,21 +484,20 @@ static bool do_linklib(const std::vector<std::string> &args)
     LOGD(TAG "aseclibdir = {}", aseclibdir);
     LOGD(TAG "userid = {}", userid);
 
-    std::shared_ptr<SharedPackage> sp;
-
-    for (const std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
-        if (shared_pkg->pkg_id == pkgname) {
-            sp = shared_pkg;
-            break;
+    auto it = std::find_if(config.shared_pkgs.begin(), config.shared_pkgs.end(),
+                           [&](const SharedPackage &shared_pkg) {
+            return shared_pkg.pkg_id == pkgname;
         }
-    }
+    );
 
-    if (!sp) {
+    if (it == config.shared_pkgs.end()) {
         LOGD(TAG "Package is not shared");
         return true;
     }
 
-    if (!sp->share_apk) {
+    const SharedPackage &sp = *it;
+
+    if (!sp.share_apk) {
         LOGD(TAG "apk sharing not enabled for this package");
         return true;
     }
@@ -590,38 +521,20 @@ static bool do_remove(const std::vector<std::string> &args)
     LOGD(TAG "pkgname = {}", pkgname);
     LOGD(TAG "userid = {}", userid);
 
-    for (auto it = shared_pkgs.begin(); it != shared_pkgs.end(); ++it) {
-        std::shared_ptr<SharedPackage> shared_pkg = *it;
+    for (auto it = config.shared_pkgs.begin();
+            it != config.shared_pkgs.end(); ++it) {
+        const SharedPackage &shared_pkg = *it;
 
-        if (shared_pkg->pkg_id != pkgname) {
+        if (shared_pkg.pkg_id != pkgname) {
             continue;
         }
 
         // Need to remove from the shared_pkgs list to prevent the linklib hook
         // from triggering if the user decides to reinstall a package that was
         // previously shared.
-        shared_pkgs.erase(it);
+        config.shared_pkgs.erase(it);
 
-        if (shared_pkg->share_data) {
-            // If data is shared, make sure the data directory is unmounted
-            // before Android wipes it clean
-            LOGV(TAG "Attempting to unmount shared data directory");
-            if (!AppSyncManager::unmount_shared_directory(pkgname)) {
-                return false;
-            }
-        } else {
-            LOGD(TAG "Data is not shared");
-        }
-
-        return true;
-    }
-
-    for (const std::shared_ptr<SharedPackage> &shared_pkg : shared_pkgs) {
-        if (shared_pkg->pkg_id != pkgname) {
-            continue;
-        }
-
-        if (shared_pkg->share_data) {
+        if (shared_pkg.share_data) {
             // If data is shared, make sure the data directory is unmounted
             // before Android wipes it clean
             LOGV(TAG "Attempting to unmount shared data directory");
