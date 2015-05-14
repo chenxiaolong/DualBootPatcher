@@ -192,7 +192,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    std::regex whitespace("^\\s$");
+    std::regex whitespace("^\\s*$");
     bool insideService = false;
 
     // Remove old mbtooldaemon service definition
@@ -221,6 +221,8 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     }
 
     crp.addDaemonService();
+    crp.addAppsyncService();
+    crp.disableInstalldService();
     crp.fixDataMediaContext();
     crp.removeRestoreconData();
 }
