@@ -45,6 +45,8 @@ public:
 
     bool addMultiBootRc();
     bool addDaemonService();
+    bool addAppsyncService();
+    bool disableInstalldService();
     bool fixDataMediaContext();
     bool removeRestoreconData();
 
