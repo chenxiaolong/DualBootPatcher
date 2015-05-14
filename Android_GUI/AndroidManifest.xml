@@ -48,13 +48,13 @@
             android:label="@string/title_rom_settings"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name=".settings.AppSharingSettingsActivity"
+            android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity"
             android:label="@string/title_app_sharing"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name=".settings.AppListActivity"
+            android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppListActivity"
             android:label="@string/a_s_settings_indiv_app_sharing_title"
-            android:parentActivityName=".settings.AppSharingSettingsActivity" />
+            android:parentActivityName="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity" />
         <activity
             android:name=".switcher.ZipFlashingActivity"
             android:label="@string/zip_flashing_title"
@@ -64,7 +64,7 @@
             android:label="@string/zip_flashing_title"
             android:parentActivityName=".switcher.ZipFlashingActivity" />
 
-        <receiver android:name=".settings.AppSharingEventReceiver">
+        <receiver android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingEventReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
 
@@ -75,7 +75,7 @@
         <service android:name="com.github.chenxiaolong.multibootpatcher.patcher.PatcherService" />
         <service android:name="com.github.chenxiaolong.multibootpatcher.settings.RomSettingsService" />
         <service android:name=".switcher.SwitcherService" />
-        <service android:name=".settings.AppSharingService" />
+        <service android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingService" />
     </application>
 
 </manifest>

@@ -18,18 +18,16 @@
 -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              style="@style/card_expand_layout"
-              android:id="@+id/expanded_layout"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical">
 
-    <TextView
-        style="@style/card_expand_title"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/share_apks_across_title" />
+    <include layout="@layout/toolbar" />
 
-    <!-- Dynamically generated checkboxes inserted here -->
+    <fragment
+        android:id="@+id/app_list_fragment"
+        android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppListFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </LinearLayout>

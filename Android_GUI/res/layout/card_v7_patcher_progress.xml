@@ -30,7 +30,7 @@
         android:padding="@dimen/card_v7_main_content_padding">
 
         <TextView
-            style="@style/card_title"
+            style="@style/card_v7_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/overall_progress" />

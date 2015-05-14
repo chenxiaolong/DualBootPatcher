@@ -38,8 +38,8 @@
 
         <View
             style="@style/separator"
-            android:layout_marginBottom="@dimen/card_separator_padding"
-            android:layout_marginTop="@dimen/card_separator_padding" />
+            android:layout_marginBottom="@dimen/card_v7_separator_padding"
+            android:layout_marginTop="@dimen/card_v7_separator_padding" />
 
         <LinearLayout
             android:layout_width="match_parent"

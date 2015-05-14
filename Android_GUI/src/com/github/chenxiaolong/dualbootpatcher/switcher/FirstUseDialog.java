@@ -64,8 +64,7 @@ public class FirstUseDialog extends DialogFragment {
         int titleResId = getArguments().getInt(ARG_TITLE_RES_ID);
         int messageResId = getArguments().getInt(ARG_MESSAGE_RES_ID);
 
-        Dialog dialog = new MaterialDialog.Builder(getActivity())
-                .title(titleResId)
+        MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity())
                 .customView(R.layout.dialog_first_time, true)
                 .positiveText(R.string.ok)
                 .callback(new ButtonCallback() {
@@ -78,12 +77,19 @@ public class FirstUseDialog extends DialogFragment {
                             owner.onConfirmFirstUse(cb.isChecked());
                         }
                     }
-                })
-                .build();
+                });
 
-        TextView tv = (TextView)
-                ((MaterialDialog) dialog).getCustomView().findViewById(R.id.message);
-        tv.setText(messageResId);
+        if (titleResId != 0) {
+            builder.title(titleResId);
+        }
+
+        Dialog dialog = builder.build();
+
+        if (messageResId != 0) {
+            TextView tv = (TextView)
+                    ((MaterialDialog) dialog).getCustomView().findViewById(R.id.message);
+            tv.setText(messageResId);
+        }
 
         setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);

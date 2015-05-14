@@ -334,7 +334,7 @@
         current ROM (requires reboot).</string>
     <!-- Name of the preference for globally sharing paid applications from the primary ROM -->
     <string name="a_s_settings_share_paid_apps_title">Share paid applications</string>
-    <!-- Description of the preference for globally shareing paid applications from the primary ROM -->
+    <!-- Description of the preference for globally sharing paid applications from the primary ROM -->
     <string name="a_s_settings_share_paid_apps_desc">
         <![CDATA[
             Share paid applications from the primary ROM with the current ROM (requires reboot).
@@ -342,11 +342,24 @@
         ]]>
     </string>
 
+    <!-- Description of the global app sharing preferences when booted in the primary ROM -->
+    <string name="a_s_settings_global_incompat_primary">Global app sharing cannot be used in the
+        primary ROM.</string>
+
     <!-- Title for the preference to share individual applications -->
     <string name="a_s_settings_indiv_app_sharing_title">Share individual applications</string>
     <!-- Description for the preference to share individual applications -->
     <string name="a_s_settings_indiv_app_sharing_desc">Share individual applications across ROMs
         (requires reboot).</string>
+    <!-- Title for the preference to manage shared apps for individual app sharing -->
+    <string name="a_s_settings_manage_shared_apps_title">Manage shared applications</string>
+    <!-- Description for the preference to manage shared apps for individual app sharing -->
+    <string name="a_s_settings_manage_shared_apps_desc">Choose which applications should be shared
+        for individual app sharing.</string>
+
+    <!-- Dialog message shown the the mbtool version is too old and needs to be updated -->
+    <string name="a_s_settings_version_too_old">mbtool must be updated to take advantage of the
+        app sharing features. Please update the ramdisk.</string>
 
     <!-- Title for preference category for boot options -->
     <string name="rom_settings_booting_title">Booting options</string>
@@ -380,22 +393,38 @@
         app.</string>
 
     <!-- Title for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_dialog_title">Individual app sharing</string>
+    <string name="indiv_app_sharing_intro_dialog_title">Individual app sharing</string>
     <!-- Description for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_dialog_desc">Individual app sharing allows the device to keep
-        one copy of an app for every selected ROM in order to save space. It also ensures that the app is
-        updated in each ROM.\n\nWhen an app is installed, upgraded, or removed, the patcher will
-        sometimes request root access to start up the \'syncdaemon\' service. Please allow the
-        request for the syncing to succeed.</string>
+    <string name="indiv_app_sharing_intro_dialog_desc">Individual app sharing allows apps and their
+        data to be stored in a shared location accessible by every ROM. Using a shared APK saves
+        space by keeping only one copy of the app for each ROM. Using shared data synchronizes the
+        app\'s data across the ROMs (eg. Chrome tabs).\n\nNOTE: A reboot is required for the changes
+        to take effect.\n\nTo use individual app sharing, the APK/data sharing has to be enabled in
+        each ROM. For example: From the primary ROM, enable data sharing for Chrome. Chrome will
+        start using the shared data directory. Then boot into another ROM and also enable data
+        sharing for Chrome. It will now use the same shared directory. The same applies for
+        shared APK.</string>
 
-    <!-- Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled. -->
-    <string name="indiv_app_sharing_incompat_global">Cannot be used while global application
-        sharing is enabled.</string>
+    <!-- App label in the individual app sharing screen shown if the app uses shared apk -->
+    <string name="indiv_app_sharing_shared_apk">Shared APK</string>
+    <!-- App label in the individual app sharing screen shown if the app uses shared data -->
+    <string name="indiv_app_sharing_shared_data">Shared data</string>
+    <!-- App label in the individual app sharing screen shown if the app uses shared apk and data -->
+    <string name="indiv_app_sharing_shared_apk_and_data">Shared APK and data</string>
+    <!-- App label in the individual app sharing screen shown if the app is not shared -->
+    <string name="indiv_app_sharing_not_shared">Not shared</string>
 
-    <!-- Description in the app sharing list showing which ROMs the application is installed in -->
-    <string name="installed_in_roms">Currently installed in:</string>
-    <!-- Description for the checkboxes indicating which ROMs the application should be shared across -->
-    <string name="share_apks_across_title">Use the same apk across:</string>
+    <!-- App sharing dialog checkbox text for using shared apk -->
+    <string name="indiv_app_sharing_dialog_share_apk">Use shared APK</string>
+    <!-- App sharing dialog checkbox text for using shared app data -->
+    <string name="indiv_app_sharing_dialog_share_data">Use shared data</string>
+    <!-- App sharing dialog message shown by default -->
+    <string name="indiv_app_sharing_dialog_default_message">Choose whether the app should use a
+        shared APK file and a shared data directory.</string>
+    <!-- App sharing dialog message shown if the app is a system app -->
+    <string name="indiv_app_sharing_dialog_system_app_message">Since this app is a system app
+        (or an update to a system app), a shared APK cannot be used. However, the app can still
+        use shared data.</string>
 
     <!-- Word/phrase for None (used in eg. a list) -->
     <string name="none">None</string>

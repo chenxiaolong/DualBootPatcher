@@ -15,28 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.settings;
+package com.github.chenxiaolong.multibootpatcher.appsharing;
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.view.MenuItem;
+import android.app.FragmentManager;
 
-import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.multibootpatcher.EventCollector;
 
-public class AppListActivity extends Activity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.app_list_activity);
-    }
+public class AppSharingEventCollector extends EventCollector {
+    public static final String TAG = AppSharingEventCollector.class.getSimpleName();
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                return true;
+    public static AppSharingEventCollector getInstance(FragmentManager fm) {
+        AppSharingEventCollector asec = (AppSharingEventCollector) fm.findFragmentByTag(TAG);
+        if (asec == null) {
+            asec = new AppSharingEventCollector();
+            fm.beginTransaction().add(asec, AppSharingEventCollector.TAG).commit();
         }
-        return super.onOptionsItemSelected(item);
+        return asec;
     }
 }

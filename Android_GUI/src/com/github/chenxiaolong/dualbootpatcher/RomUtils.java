@@ -23,19 +23,11 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.github.chenxiaolong.multibootpatcher.RomConfig;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-
-import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 
 public class RomUtils {
     private static final String TAG = RomUtils.class.getSimpleName();
@@ -222,11 +214,6 @@ public class RomUtils {
         }
     }
 
-    private static class RomConfig {
-        public String id;
-        public String name;
-    }
-
     public static RomInformation getCurrentRom(Context context) {
         String id = MbtoolSocket.getInstance().getCurrentRom(context);
         Log.d(TAG, "mbtool says current ROM ID is: " + id);
@@ -280,42 +267,20 @@ public class RomUtils {
     }
 
     public static void loadConfig(RomInformation info) {
-        RomConfig config = null;
-        Gson gson = new Gson();
-        try {
-            config = gson.fromJson(new JsonReader(new FileReader(info.getConfigPath())),
-                    RomConfig.class);
-        } catch (FileNotFoundException e) {
-            // Ignore
-        }
-
-        // Pretty minimal config file right now
-        if (config != null) {
-            info.setName(config.name);
-        }
+        RomConfig config = RomConfig.getConfig(info.getConfigPath());
+        info.setName(config.getName());
     }
 
     public static void saveConfig(RomInformation info) {
-        File configFile = new File(info.getConfigPath());
-        configFile.getParentFile().mkdirs();
+        RomConfig config = RomConfig.getConfig(info.getConfigPath());
 
-        RomConfig config = new RomConfig();
-        config.id = info.getId();
-        config.name = info.getName();
+        config.setId(info.getId());
+        config.setName(info.getName());
 
-        Gson gson = new Gson();
-
-        JsonWriter writer = null;
         try {
-            writer = new JsonWriter(new OutputStreamWriter(
-                    new FileOutputStream(configFile), "UTF-8"));
-            gson.toJson(config, RomConfig.class, writer);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            config.commit();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            IOUtils.closeQuietly(writer);
+            Log.e(TAG, "Failed to save ROM config", e);
         }
     }
 

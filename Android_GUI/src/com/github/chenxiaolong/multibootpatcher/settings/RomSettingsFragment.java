@@ -33,6 +33,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.multibootpatcher.Version;
+import com.github.chenxiaolong.multibootpatcher.dialogs.IndeterminateProgressDialog;
 import com.github.chenxiaolong.multibootpatcher.settings.RomSettingsEventCollector
         .UpdatedRamdiskEvent;
 import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
@@ -115,28 +116,6 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
             UpdateRamdiskResultDialog dialog = UpdateRamdiskResultDialog.newInstance(e.success);
             dialog.show(getFragmentManager(), UpdateRamdiskResultDialog.TAG);
-        }
-    }
-
-    public static class IndeterminateProgressDialog extends DialogFragment {
-        private static final String TAG = IndeterminateProgressDialog.class.getSimpleName();
-
-        public static IndeterminateProgressDialog newInstance() {
-            IndeterminateProgressDialog frag = new IndeterminateProgressDialog();
-            return frag;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            Dialog dialog = new MaterialDialog.Builder(getActivity())
-                    .content(R.string.please_wait)
-                    .progress(true, 0)
-                    .build();
-
-            setCancelable(false);
-            dialog.setCanceledOnTouchOutside(false);
-
-            return dialog;
         }
     }
 

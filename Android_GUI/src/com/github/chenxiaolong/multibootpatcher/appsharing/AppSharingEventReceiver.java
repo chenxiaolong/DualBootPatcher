@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.settings;
+package com.github.chenxiaolong.multibootpatcher.appsharing;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

@@ -25,7 +25,7 @@
         android:id="@+id/mountpoints"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingLeft="@dimen/card_outside_side_padding"
-        android:paddingRight="@dimen/card_outside_side_padding" />
+        android:paddingLeft="@dimen/card_v7_outside_side_padding"
+        android:paddingRight="@dimen/card_v7_outside_side_padding" />
 
 </RelativeLayout>

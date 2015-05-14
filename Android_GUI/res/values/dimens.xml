@@ -38,13 +38,6 @@
     <dimen name="nav_item_separator_padding">8dp</dimen>
     <dimen name="nav_item_progress_size">48dp</dimen>
 
-    <!-- All caps button -->
-    <dimen name="all_caps_button_width">120dp</dimen>
-    <dimen name="all_caps_button_height">24dp</dimen>
-    <dimen name="all_caps_button_margin">5dp</dimen>
-    <dimen name="all_caps_button_padding">8dp</dimen>
-    <dimen name="all_caps_button_text_size">12sp</dimen>
-
     <!-- Cards -->
     <dimen name="card_v7_thumbnail_width">80dp</dimen>
     <dimen name="card_v7_thumbnail_height">80dp</dimen>
@@ -55,18 +48,8 @@
     <dimen name="card_v7_overflow_button_margins">4dp</dimen>
     <dimen name="card_v7_normal_view_margin_top">4dp</dimen>
     <dimen name="card_v7_title_view_margin_top">18dp</dimen>
-
-
-
-
-
-    <dimen name="card_outside_side_padding">8dp</dimen>
-    <dimen name="card_thumbnail_padding">5dp</dimen>
-    <dimen name="card_separator_padding">16dp</dimen>
-    <dimen name="card_internal_separator_padding">8dp</dimen>
-    <dimen name="card_content_minimal_padding">4dp</dimen>
-    <dimen name="card_external_margin_top">6dp</dimen>
-    <dimen name="card_external_margin_bottom">6dp</dimen>
+    <dimen name="card_v7_outside_side_padding">8dp</dimen>
+    <dimen name="card_v7_separator_padding">16dp</dimen>
 
     <!-- Free space card -->
     <dimen name="circular_progress_bar_size">72dp</dimen>
@@ -75,10 +58,6 @@
     <!-- Patcher card -->
     <dimen name="patcher_card_spinner_margin">5dp</dimen>
     <dimen name="patcher_card_label_margin">5dp</dimen>
-
-    <!-- Card expand section -->
-    <dimen name="card_expand_padding_horiz">8dp</dimen>
-    <dimen name="card_expand_padding_vert">5dp</dimen>
 
     <!-- Floating action button -->
     <dimen name="fab_margin_bottom">8dp</dimen>
