@@ -921,10 +921,12 @@ int appsync_main(int argc, char *argv[])
         LOGW("Failed to load configuration file; app sharing will not work");
         LOGW("Continuing to proxy installd anyway...");
     } else {
-        can_appsync = prepare_appsync();
-        if (!can_appsync) {
-            LOGW("appsync preparation failed. "
-                 "App sharing is completely disabled");
+        if (config.indiv_app_sharing) {
+            can_appsync = prepare_appsync();
+            if (!can_appsync) {
+                LOGW("appsync preparation failed. "
+                     "App sharing is completely disabled");
+            }
         }
     }
 
