@@ -42,6 +42,7 @@
 #include "romconfig.h"
 #include "roms.h"
 #include "util/chown.h"
+#include "util/command.h"
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/directory.h"
@@ -913,6 +914,9 @@ int appsync_main(int argc, char *argv[])
             LOGW("Failed to patch current SELinux policy");
         }
     }
+
+    // Stop installd in case libmbp couldn't patch the ramdisk entry away
+    util::run_command({ "stop", "installd" });
 
     bool can_appsync = false;
 
