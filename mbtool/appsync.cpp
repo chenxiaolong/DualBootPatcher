@@ -53,7 +53,7 @@
 #include "util/socket.h"
 #include "util/string.h"
 
-#define LOG_FILE                        "/sdcard/MultiBoot/appsync.log"
+#define LOG_FILE                        "/data/media/0/MultiBoot/appsync.log"
 
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
@@ -887,6 +887,9 @@ int appsync_main(int argc, char *argv[])
                 LOG_FILE, strerror(errno));
         return EXIT_FAILURE;
     }
+
+    util::chown(LOG_FILE, "media_rw", "media_rw", 0);
+    chmod(LOG_FILE, 0775);
 
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
