@@ -307,7 +307,7 @@ bool CoreRamdiskPatcher::removeRestoreconData()
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    const std::regex re("^\\s*restorecon_recursive\\s+/data\\s*");
+    const std::regex re("^\\s*restorecon_recursive\\s+/data\\s*$");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (std::regex_search(*it, re)) {
