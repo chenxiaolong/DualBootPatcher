@@ -134,11 +134,10 @@ public class Version implements Comparable<Version> {
         return mMajorVer == vOther.mMajorVer
                 && mMinorVer == vOther.mMinorVer
                 && mPatchVer == vOther.mPatchVer
-                && mSuffix == null ? vOther.mSuffix == null :
-                mSuffix.equals(vOther.mSuffix)
-                        && mRevision == vOther.mRevision
-                        && mGitCommit == null ? vOther.mGitCommit == null :
-                        mGitCommit.equals(vOther.mGitCommit);
+                && (mSuffix == null ? vOther.mSuffix == null : mSuffix.equals(vOther.mSuffix))
+                && mRevision == vOther.mRevision
+                && (mGitCommit == null ? vOther.mGitCommit == null :
+                        mGitCommit.equals(vOther.mGitCommit));
     }
 
     @Override
