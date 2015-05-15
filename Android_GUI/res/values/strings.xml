@@ -17,7 +17,7 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<resources>
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
     <!-- Name of the app built in release mode -->
     <string name="app_name_release">Dual Boot Patcher</string>
     <!-- Name of the app built in debug mode -->
@@ -366,10 +366,17 @@
 
     <!-- Preference for updating the ramdisk -->
     <string name="update_ramdisk_title">Update ramdisk</string>
-    <!-- Description for updating the ramdisk. Avoids having to repatch the ROM -->
-    <string name="update_ramdisk_desc">The ramdisk needs to be updated to use the application
-        sharing features.</string>
+
+    <!-- Description for the ramdisk update preference when the ramdisk doesn't contain mbtool -->
+    <string name="update_ramdisk_missing_desc">The ramdisk currently does not have any version of
+        mbtool.</string>
+    <!-- Description for the ramdisk update preference when the ramdisk is outdated -->
+    <string name="update_ramdisk_outdated_desc">The ramdisk currently has an outdated version of
+        mbtool.</string>
+    <!-- Description for the ramdisk update preference when the ramdisk is already up to date -->
+    <string name="update_ramdisk_up_to_date_desc">The ramdisk is already up to date.</string>
     <!-- Title when ramdisk is successfully updated -->
+
     <string name="update_ramdisk_success_title">Successfully updated ramdisk</string>
     <!-- Message asking user to reboot when the ramdisk updating succeeds -->
     <string name="update_ramdisk_reboot_desc">The ramdisk was successfully updated. Would you like
@@ -379,6 +386,16 @@
     <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
     <string name="update_ramdisk_failure_desc">The ramdisk failed to update. Application
         sharing most likely will not work properly.</string>
+
+    <!-- Toast popup message containing the countdown for forcing a ramdisk update -->
+    <plurals name="force_update_ramdisk_countdown">
+        <item quantity="one">You are now <xliff:g id="step_count">%1$d</xliff:g> step away from
+            force updating the ramdisk.</item>
+        <item quantity="other">You are now <xliff:g id="step_count">%1$d</xliff:g> steps away from
+            force updating the ramdisk.</item>
+    </plurals>
+    <!-- Toast popup message shown when the user forces a ramdisk update -->
+    <string name="force_updating_ramdisk">Force updating ramdisk</string>
 
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>

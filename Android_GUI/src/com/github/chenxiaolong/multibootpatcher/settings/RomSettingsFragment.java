@@ -23,8 +23,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
+import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
@@ -43,12 +43,16 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         EventCollectorListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
-    private static final String KEY_BOOTING_CATEGORY = "booting_category";
     private static final String KEY_UPDATE_RAMDISK = "update_ramdisk";
+
+    private static final int FORCE_UPDATE_TAPS = 7;
 
     private RomSettingsEventCollector mEventCollector;
 
-    private PreferenceCategory mBootingCategory;
+    private Preference mUpdateRamdisk;
+
+    private int mCountdown;
+    private Toast mToast;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,10 +64,8 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
         addPreferencesFromResource(R.xml.rom_settings);
 
-        mBootingCategory = (PreferenceCategory) findPreference(KEY_BOOTING_CATEGORY);
-
-        Preference updateRamdisk = findPreference(KEY_UPDATE_RAMDISK);
-        updateRamdisk.setOnPreferenceClickListener(this);
+        mUpdateRamdisk = findPreference(KEY_UPDATE_RAMDISK);
+        mUpdateRamdisk.setOnPreferenceClickListener(this);
     }
 
     @Override
@@ -72,8 +74,15 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
         Version version = MbtoolUtils.getSystemMbtoolVersion(getActivity());
         if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON)) >= 0) {
-            //bootingCategory.removePreference(updateRamdisk);
-            getPreferenceScreen().removePreference(mBootingCategory);
+            mCountdown = FORCE_UPDATE_TAPS;
+            mUpdateRamdisk.setSummary(R.string.update_ramdisk_up_to_date_desc);
+        } else {
+            mCountdown = -1;
+            if (version.equals(Version.from("0.0.0"))) {
+                mUpdateRamdisk.setSummary(R.string.update_ramdisk_missing_desc);
+            } else {
+                mUpdateRamdisk.setSummary(R.string.update_ramdisk_outdated_desc);
+            }
         }
     }
 
@@ -93,11 +102,40 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     public boolean onPreferenceClick(Preference preference) {
         final String key = preference.getKey();
 
+        // Act like Android settings app :)
         if (KEY_UPDATE_RAMDISK.equals(key)) {
-            IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
-            d.show(getFragmentManager(), IndeterminateProgressDialog.TAG);
+            if (mCountdown > 0) {
+                mCountdown--;
+                if (mCountdown == 0) {
+                    if (mToast != null) {
+                        mToast.cancel();
+                    }
+                    mToast = Toast.makeText(getActivity(), R.string.force_updating_ramdisk,
+                            Toast.LENGTH_LONG);
+                    mToast.show();
 
-            mEventCollector.updateRamdisk();
+                    updateRamdisk();
+
+                    mCountdown = FORCE_UPDATE_TAPS;
+                } else if (mCountdown > 0
+                        && mCountdown < (FORCE_UPDATE_TAPS - 2)) {
+                    if (mToast != null) {
+                        mToast.cancel();
+                    }
+                    mToast = Toast.makeText(getActivity(), getResources().getQuantityString(
+                                    R.plurals.force_update_ramdisk_countdown,
+                                    mCountdown, mCountdown),
+                            Toast.LENGTH_SHORT);
+                    mToast.show();
+                }
+            } else if (mCountdown < 0) {
+                // Already enabled
+                if (mToast != null) {
+                    mToast.cancel();
+                }
+
+                updateRamdisk();
+            }
         }
 
         return true;
@@ -117,6 +155,13 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             UpdateRamdiskResultDialog dialog = UpdateRamdiskResultDialog.newInstance(e.success);
             dialog.show(getFragmentManager(), UpdateRamdiskResultDialog.TAG);
         }
+    }
+
+    private void updateRamdisk() {
+        IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
+        d.show(getFragmentManager(), IndeterminateProgressDialog.TAG);
+
+        mEventCollector.updateRamdisk();
     }
 
     public static class UpdateRamdiskResultDialog extends DialogFragment {
