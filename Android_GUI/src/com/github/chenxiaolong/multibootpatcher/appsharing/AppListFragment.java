@@ -35,6 +35,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -129,6 +130,9 @@ public class AppListFragment extends Fragment implements
 
         mConfig.setIndivAppSharingPackages(sharedPkgs);
         mConfig.apply();
+
+        Toast.makeText(getActivity(), R.string.indiv_app_sharing_reboot_needed_message,
+                Toast.LENGTH_LONG).show();
     }
 
     @Override
