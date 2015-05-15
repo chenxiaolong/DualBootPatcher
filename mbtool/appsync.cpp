@@ -221,7 +221,8 @@ static bool prepare_appsync()
         }
 
         // Ensure that code_path is set to something sane
-        if (!util::starts_with(pkg->code_path, "/data/")) {
+        if (shared_pkg.share_apk
+                && !util::starts_with(pkg->code_path, "/data/")) {
             LOGW("The code_path for package {} is not in /data. "
                  "Its apk will not be shared", shared_pkg.pkg_id);
             shared_pkg.share_apk = false;
