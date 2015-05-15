@@ -445,8 +445,6 @@ static bool send_message(int fd, const char *command)
  */
 static int connect_to_installd()
 {
-    patch_sepolicy_wrapper();
-
     struct sockaddr_un addr;
 
     memset(&addr, 0, sizeof(addr));
@@ -677,6 +675,8 @@ static bool proxy_process(int fd, bool can_appsync)
         });
 
         LOGD("Accepted new client connection");
+
+        patch_sepolicy_wrapper();
 
         LOGD("Launching installd");
         pid_t pid = spawn_installd();
