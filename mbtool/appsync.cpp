@@ -118,6 +118,65 @@ static bool load_config_file()
     return true;
 }
 
+/*!
+ * \brief Patch SEPolicy to allow installd to connect to our fd
+ */
+static bool patch_sepolicy()
+{
+    policydb_t pdb;
+
+    if (policydb_init(&pdb) < 0) {
+        LOGE("Failed to initialize policydb");
+        return false;
+    }
+
+    auto destroy_pdb = util::finally([&]{
+        policydb_destroy(&pdb);
+    });
+
+    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
+        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
+        return false;
+    }
+
+    LOGD("Policy version: {}", pdb.policyvers);
+
+    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "accept");
+    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "listen");
+    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "read");
+    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "write");
+
+    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
+        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
+        return false;
+    }
+
+    return true;
+}
+
+static void patch_sepolicy_wrapper()
+{
+    struct stat sb;
+    if (stat("/sys/fs/selinux", &sb) < 0) {
+        LOGV("SELinux not supported. No need to modify policy");
+    } else {
+        LOGV("Patching SELinux policy to allow installd connection");
+        int attempt;
+        for (attempt = 0; attempt < 5; ++attempt) {
+            LOGV("Patching SELinux policy [Attempt {}/{}]", attempt + 1, 5);
+            if (!patch_sepolicy()) {
+                sleep(1);
+            } else {
+                break;
+            }
+        }
+
+        if (attempt == 5) {
+            LOGW("Failed to patch current SELinux policy");
+        }
+    }
+}
+
 static bool prepare_appsync()
 {
     // On boot we want to:
@@ -386,6 +445,8 @@ static bool send_message(int fd, const char *command)
  */
 static int connect_to_installd()
 {
+    patch_sepolicy_wrapper();
+
     struct sockaddr_un addr;
 
     memset(&addr, 0, sizeof(addr));
@@ -403,6 +464,7 @@ static int connect_to_installd()
     for (attempt = 0; attempt < 5; ++attempt) {
         LOGV("Connecting to installd [Attempt {}/{}]", attempt + 1, 5);
         if (connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+            LOGW("Failed: {}", strerror(errno));
             sleep(1);
         } else {
             break;
@@ -743,6 +805,8 @@ static bool hijack_socket(bool can_appsync)
         return false;
     }
 
+    LOGD("Got socket fd from environment: {}", orig_fd);
+
     fcntl(orig_fd, F_SETFD, FD_CLOEXEC);
 
     // Listen on the original socket
@@ -762,6 +826,8 @@ static bool hijack_socket(bool can_appsync)
         close(new_fd);
     });
 
+    LOGD("Putting new socket fd for installd to environment: {}", new_fd);
+
     // Put the new fd in the environment
     put_socket_to_env(SOCKET_PATH, new_fd);
 
@@ -771,42 +837,6 @@ static bool hijack_socket(bool can_appsync)
     if (!proxy_process(orig_fd, can_appsync)) {
         return false;
     }
-
-    return true;
-}
-
-/*!
- * \brief Patch SEPolicy to allow installd to connect to our fd
- */
-static bool patch_sepolicy()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        LOGE("Failed to initialize policydb");
-        return false;
-    }
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    LOGD("Policy version: {}", pdb.policyvers);
-
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "accept");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "listen");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "read");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "write");
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    policydb_destroy(&pdb);
 
     return true;
 }
@@ -895,28 +925,6 @@ int appsync_main(int argc, char *argv[])
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
 
     LOGI("=== APPSYNC VERSION {} ===", MBP_VERSION);
-
-
-    // Allow installd to read and write to our socket
-    struct stat sb;
-    if (stat("/sys/fs/selinux", &sb) < 0) {
-        LOGV("SELinux not supported. No need to modify policy");
-    } else {
-        LOGV("Patching SELinux policy to allow installd connection");
-        int attempt;
-        for (attempt = 0; attempt < 5; ++attempt) {
-            LOGV("Patching SELinux policy [Attempt {}/{}]", attempt + 1, 5);
-            if (!patch_sepolicy()) {
-                sleep(1);
-            } else {
-                break;
-            }
-        }
-
-        if (attempt == 5) {
-            LOGW("Failed to patch current SELinux policy");
-        }
-    }
 
     // Stop installd in case libmbp couldn't patch the ramdisk entry away
     util::run_command({ "stop", "installd" });
