@@ -449,8 +449,7 @@ int mount_fstab_main(int argc, char *argv[])
     if (!patch_loaded_sepolicy()) {
         LOGE("Failed to patch loaded SELinux policy. Continuing anyway");
     } else {
-        LOGV("SELinux policy patching completed. Waiting 1 second for policy reload");
-        sleep(1);
+        LOGV("SELinux policy patching completed");
     }
 
 #if FORCE_SELINUX_PERMISSIVE
