@@ -74,7 +74,8 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         super.onActivityCreated(savedInstanceState);
 
         Version version = MbtoolUtils.getSystemMbtoolVersion(getActivity());
-        if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON)) >= 0) {
+        if (version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.APP_SHARING)) >= 0
+                && version.compareTo(MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON)) >= 0) {
             mCountdown = FORCE_UPDATE_TAPS;
             mUpdateRamdisk.setSummary(R.string.update_ramdisk_up_to_date_desc);
         } else {
