@@ -19,14 +19,10 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory
-        android:key="booting_category"
-        android:title="@string/rom_settings_booting_title">
-
+    <PreferenceCategory android:title="@string/rom_settings_booting_title">
         <Preference
             android:key="update_ramdisk"
             android:persistent="false"
-            android:summary="@string/update_ramdisk_desc"
             android:title="@string/update_ramdisk_title" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/rom_settings_patcher_title">

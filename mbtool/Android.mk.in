@@ -137,6 +137,7 @@ mbtool_src_base := \
 	multiboot.cpp \
 	packages.cpp \
 	reboot.cpp \
+	romconfig.cpp \
 	roms.cpp \
 	sepolpatch.cpp \
 	validcerts.cpp \

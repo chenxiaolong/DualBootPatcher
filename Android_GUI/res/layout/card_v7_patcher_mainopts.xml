@@ -66,7 +66,7 @@
 
         <TextView
             android:id="@+id/rom_id_desc"
-            style="@style/card_message"
+            style="@style/card_v7_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="@dimen/card_v7_normal_view_margin_top" />
@@ -94,7 +94,7 @@
 
             <TextView
                 android:id="@+id/preset_name"
-                style="@style/card_message"
+                style="@style/card_v7_message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
@@ -133,13 +133,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
-
-                    <!--
-                    <View
-                        style="@style/separator"
-                        android:layout_marginBottom="@dimen/card_internal_separator_padding"
-                        android:layout_marginTop="@dimen/card_internal_separator_padding" />
-                    -->
 
                     <TextView
                         style="@style/card_v7_section_title"

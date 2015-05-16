@@ -82,79 +82,21 @@
         <item name="android:textColor">@color/card_v7_text_color_dim</item>
     </style>
 
-
-
-
-
-
-
-
-
-    <style name="card_content_minimal_padding" parent="@style/card.native.content_outer_layout">
-        <item name="android:paddingLeft">@dimen/card_content_minimal_padding</item>
-        <item name="android:paddingRight">@dimen/card_content_minimal_padding</item>
-        <item name="android:paddingTop">@dimen/card_content_minimal_padding</item>
-        <item name="android:paddingBottom">@dimen/card_content_minimal_padding</item>
-    </style>
-
-    <style name="card_external_minimal_margins" parent="@style/card_external">
-        <item name="android:layout_marginTop">@dimen/card_external_margin_top</item>
-        <item name="android:layout_marginBottom">@dimen/card_external_margin_bottom</item>
-    </style>
-
-    <style name="card_layout">
-        <item name="android:layout_marginBottom">10dp</item>
-        <item name="android:layout_marginLeft">10dp</item>
-        <item name="android:layout_marginRight">10dp</item>
-        <item name="android:layout_marginTop">10dp</item>
-    </style>
-
-    <style name="card_content_frame_layout" >
-        <item name="android:layout_width">match_parent</item>
-        <!-- <item name="android:minHeight">@dimen/card_base_empty_height</item> -->
-        <item name="android:paddingLeft">@dimen/card_main_content_native_default_paddingLeft</item>
-        <item name="android:paddingRight">@dimen/card_main_content_native_default_paddingRight</item>
-        <item name="android:paddingTop">@dimen/card_main_content_native_default_paddingTop</item>
-        <item name="android:paddingBottom">@dimen/card_main_content_native_default_paddingBottom</item>
-    </style>
-
-    <style name="card_title">
+    <style name="card_v7_title">
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">@color/standardtext</item>
         <item name="android:layout_marginTop">2dp</item>
     </style>
 
-    <style name="card_subtitle_dim">
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@android:color/darker_gray</item>
-    </style>
-
-    <style name="card_message">
+    <style name="card_v7_message">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/standardtext</item>
     </style>
 
-    <style name="card_message_italicized">
+    <style name="card_v7_message_italicized">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/standardtext</item>
         <item name="android:textStyle">italic</item>
-    </style>
-
-    <style name="card_expand_title">
-        <item name="android:textSize">16sp</item>
-        <!-- <item name="android:textStyle">bold</item> -->
-        <item name="android:textColor">@android:color/white</item>
-    </style>
-
-    <style name="card_expand_layout">
-        <item name="android:paddingLeft">@dimen/card_expand_padding_horiz</item>
-        <item name="android:paddingRight">@dimen/card_expand_padding_horiz</item>
-        <item name="android:paddingBottom">@dimen/card_expand_padding_vert</item>
-        <item name="android:paddingTop">@dimen/card_expand_padding_vert</item>
-    </style>
-
-    <style name="card_expand_checkbox">
-        <item name="android:textColor">@android:color/white</item>
     </style>
 
     <style name="free_space_main_title">

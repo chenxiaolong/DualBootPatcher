@@ -15,23 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.settings;
+package com.github.chenxiaolong.multibootpatcher.appsharing;
 
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class AppSharingSettingsActivity extends ActionBarActivity {
+public class AppListActivity extends AppCompatActivity {
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.rom_settings);
-
-        getFragmentManager().beginTransaction()
-                .replace(R.id.content_frame, new AppSharingSettingsFragment()).commit();
+        setContentView(R.layout.activity_app_list);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -41,9 +38,9 @@ public class AppSharingSettingsActivity extends ActionBarActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-        case android.R.id.home:
-            finish();
-            return true;
+            case android.R.id.home:
+                finish();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }

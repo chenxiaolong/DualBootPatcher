@@ -65,6 +65,12 @@ static const std::string MbtoolMountServiceFmt =
         "    oneshot\n"
         "    disabled\n";
 
+static const std::string MbtoolAppsyncService =
+        "\nservice appsync /mbtool appsync\n"
+        "    class main\n"
+        "    socket installd stream 600 system system\n";
+
+
 static const std::string DataMediaContext =
         "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
 
@@ -104,6 +110,12 @@ bool CoreRamdiskPatcher::patchRamdisk()
         return false;
     }
     if (!addDaemonService()) {
+        return false;
+    }
+    if (!addAppsyncService()) {
+        return false;
+    }
+    if (!disableInstalldService()) {
         return false;
     }
     if (!fixDataMediaContext()) {
@@ -156,17 +168,85 @@ bool CoreRamdiskPatcher::addMultiBootRc()
 
 bool CoreRamdiskPatcher::addDaemonService()
 {
-    std::vector<unsigned char> multiBootRc;
-    if (!m_impl->cpio->contents(InitMultiBootRc, &multiBootRc)) {
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitMultiBootRc, &contents)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
 
-    multiBootRc.insert(multiBootRc.end(),
-                       MbtoolDaemonService.begin(),
-                       MbtoolDaemonService.end());
+    const std::string serviceName("mbtooldaemon");
+    if (std::search(contents.begin(), contents.end(),
+                    serviceName.begin(), serviceName.end()) == contents.end()) {
+        contents.insert(contents.end(),
+                        MbtoolDaemonService.begin(),
+                        MbtoolDaemonService.end());
 
-    m_impl->cpio->setContents(InitMultiBootRc, std::move(multiBootRc));
+        m_impl->cpio->setContents(InitMultiBootRc, std::move(contents));
+    }
+
+    return true;
+}
+
+bool CoreRamdiskPatcher::addAppsyncService()
+{
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitMultiBootRc, &contents)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    const std::string serviceName("appsync");
+    if (std::search(contents.begin(), contents.end(),
+                    serviceName.begin(), serviceName.end()) == contents.end()) {
+        contents.insert(contents.end(),
+                        MbtoolAppsyncService.begin(),
+                        MbtoolAppsyncService.end());
+
+        m_impl->cpio->setContents(InitMultiBootRc, std::move(contents));
+    }
+
+    return true;
+}
+
+bool CoreRamdiskPatcher::disableInstalldService()
+{
+    std::vector<unsigned char> contents;
+    if (!m_impl->cpio->contents(InitRc, &contents)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    std::vector<std::string> lines;
+    boost::split(lines, contents, boost::is_any_of("\n"));
+
+    std::regex whitespace("^\\s*$");
+    bool insideService = false;
+    bool isDisabled = false;
+    std::vector<std::string>::iterator installdIter = lines.end();
+
+    // Remove old mbtooldaemon service definition
+    for (auto it = lines.begin(); it != lines.end(); ++it) {
+        if (boost::starts_with(*it, "service")) {
+            insideService = it->find("installd") != std::string::npos;
+            if (insideService) {
+                installdIter = it;
+            }
+        } else if (insideService && std::regex_search(*it, whitespace)) {
+            insideService = false;
+        }
+
+        if (insideService && it->find("disabled") != std::string::npos) {
+            isDisabled = true;
+        }
+    }
+
+    if (!isDisabled && installdIter != lines.end()) {
+        lines.insert(++installdIter, "    disabled");
+    }
+
+    std::string strContents = boost::join(lines, "\n");
+    contents.assign(strContents.begin(), strContents.end());
+    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }
@@ -227,7 +307,7 @@ bool CoreRamdiskPatcher::removeRestoreconData()
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    const std::regex re("^\\s*restorecon_recursive\\s+/data\\s*");
+    const std::regex re("^\\s*restorecon_recursive\\s+/data\\s*$");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
         if (std::regex_search(*it, re)) {

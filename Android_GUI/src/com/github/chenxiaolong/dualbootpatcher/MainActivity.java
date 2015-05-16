@@ -47,7 +47,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.github.chenxiaolong.dualbootpatcher.settings.AppSharingSettingsActivity;
+import com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.multibootpatcher.freespace.FreeSpaceFragment;

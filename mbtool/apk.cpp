@@ -193,6 +193,12 @@ bool ApkFile::parse_manifest(const void *data, const std::size_t size)
                         android::Res_value value;
                         tree.getAttributeValue(i, &value);
 
+                        // We can't resolve the string reference, so just ignore it
+                        if (value.dataType == android::Res_value::TYPE_REFERENCE
+                                || value.dataType == android::Res_value::TYPE_DYNAMIC_REFERENCE) {
+                            continue;
+                        }
+
                         if (value.dataType != android::Res_value::TYPE_STRING) {
                             LOGE("android:versionName attribute in <manifest> is not a string");
                             return false;

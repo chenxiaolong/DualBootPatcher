@@ -32,16 +32,6 @@
 
     <color name="card_v7_text_color_dim">#80000000</color>
 
-    <!-- All caps button -->
-    <!-- <color name="all_caps_button_text_color">#ffffffff</color> -->
-    <color name="all_caps_button_text_color">#ff000000</color>
-    <!-- <color name="all_caps_button_color_default">#ff999999</color> -->
-    <color name="all_caps_button_color_default">#ffffffff</color>
-    <!-- <color name="all_caps_button_color_pressed">#ff808080</color> -->
-    <color name="all_caps_button_color_pressed">#ffcccccc</color>
-    <!-- <color name="all_caps_button_color_selected">#ff808080</color> -->
-    <color name="all_caps_button_color_selected">#ffcccccc</color>
-
     <!-- Floating action button -->
     <color name="fab_pink">#ffd81b60</color>
     <color name="fab_pink_pressed">#ffec407a</color>

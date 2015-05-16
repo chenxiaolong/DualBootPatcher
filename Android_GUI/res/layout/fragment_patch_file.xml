@@ -36,16 +36,16 @@
                 layout="@layout/card_v7_patcher_mainopts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_outside_side_padding"
-                android:layout_marginRight="@dimen/card_outside_side_padding" />
+                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
+                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
 
             <include
                 android:id="@+id/card_file_chooser"
                 layout="@layout/card_v7_patcher_file_chooser"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_outside_side_padding"
-                android:layout_marginRight="@dimen/card_outside_side_padding" />
+                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
+                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
 
             <!-- Cards to show patching progress -->
 
@@ -54,16 +54,16 @@
                 layout="@layout/card_v7_patcher_details"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_outside_side_padding"
-                android:layout_marginRight="@dimen/card_outside_side_padding" />
+                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
+                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
 
             <include
                 android:id="@+id/card_progress"
                 layout="@layout/card_v7_patcher_progress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_outside_side_padding"
-                android:layout_marginRight="@dimen/card_outside_side_padding" />
+                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
+                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
         </LinearLayout>
     </ScrollView>
 

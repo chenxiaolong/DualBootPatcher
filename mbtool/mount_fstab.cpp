@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "reboot.h"
+#include "romconfig.h"
 #include "roms.h"
 #include "sepolpatch.h"
 #include "util/cmdline.h"
@@ -160,8 +161,6 @@ bool mount_fstab(const std::string &fstab_path)
     std::string base_name;
     std::string dir_name;
     struct stat st;
-    bool share_app = false;
-    bool share_app_asec = false;
     std::shared_ptr<Rom> rom;
     std::string rom_id;
 
@@ -368,33 +367,35 @@ bool mount_fstab(const std::string &fstab_path)
 
 
     // Global app sharing
-    std::string share_app_path("/data/media/0/MultiBoot/");
-    std::string share_app_asec_path("/data/media/0/MultiBoot/");
-    share_app_path += rom->id;
-    share_app_asec_path += rom->id;
-    share_app_path += "/share-app";
-    share_app_asec_path += "/share-app-asec";
-    share_app = stat(share_app_path.c_str(), &st) == 0;
-    share_app_asec = stat(share_app_asec_path.c_str(), &st) == 0;
+    std::string config_path("/data/media/0/MultiBoot/");
+    config_path += rom->id;
+    config_path += "/config.json";
 
-    if (share_app || share_app_asec) {
-        if (!util::bind_mount("/raw/data/app-lib", 0771,
-                              "/data/app-lib", 0771)) {
-            return false;
-        }
-    }
-
-    if (share_app) {
-        if (!util::bind_mount("/raw/data/app", 0771,
-                              "/data/app", 0771)) {
-            return false;
-        }
-    }
-
-    if (share_app_asec) {
-        if (!util::bind_mount("/raw/data/app-asec", 0771,
-                              "/data/app-asec", 0771)) {
-            return false;
+    RomConfig config;
+    if (config.load_file(config_path)) {
+        if (config.indiv_app_sharing && (config.global_app_sharing
+                || config.global_paid_app_sharing)) {
+            LOGW("Both individual and global sharing are enabled");
+            LOGW("Global sharing settings will be ignored");
+        } else {
+            if (config.global_app_sharing || config.global_paid_app_sharing) {
+                if (!util::bind_mount("/raw/data/app-lib", 0771,
+                                      "/data/app-lib", 0771)) {
+                    return false;
+                }
+            }
+            if (config.global_app_sharing) {
+                if (!util::bind_mount("/raw/data/app", 0771,
+                                      "/data/app", 0771)) {
+                    return false;
+                }
+            }
+            if (config.global_paid_app_sharing) {
+                if (!util::bind_mount("/raw/data/app-asec", 0771,
+                                      "/data/app-asec", 0771)) {
+                    return false;
+                }
+            }
         }
     }
 

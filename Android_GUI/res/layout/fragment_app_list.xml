@@ -18,9 +18,8 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent">
 
     <ProgressBar
         android:id="@+id/loading"
@@ -29,13 +28,11 @@
         android:layout_centerInParent="true"
         android:indeterminate="true" />
 
-    <it.gmariotti.cardslib.library.view.CardListView
+    <android.support.v7.widget.RecyclerView
         android:id="@+id/apps"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fadingEdge="vertical"
-        android:scrollbars="vertical"
-        card:list_card_layout_resourceID="@layout/cardlistlayout_app" />
-    <!-- android:fastScrollEnabled="true" -->
+        android:paddingLeft="@dimen/card_v7_outside_side_padding"
+        android:paddingRight="@dimen/card_v7_outside_side_padding" />
 
 </RelativeLayout>
