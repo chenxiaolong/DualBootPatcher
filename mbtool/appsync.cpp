@@ -396,7 +396,7 @@ static bool receive_message(int fd, char *buf, size_t size)
     unsigned short count;
 
     if (!util::socket_read_uint16(fd, &count)) {
-        LOGE("Failed to read command size");
+        LOGE("Failed to read command size: {}", strerror(errno));
         return false;
     }
 
@@ -406,7 +406,7 @@ static bool receive_message(int fd, char *buf, size_t size)
     }
 
     if (util::socket_read(fd, buf, count) != count) {
-        LOGE("Failed to read command");
+        LOGE("Failed to read command: {}", strerror(errno));
         return false;
     }
 
@@ -423,12 +423,12 @@ static bool send_message(int fd, const char *command)
     unsigned short count = strlen(command);
 
     if (!util::socket_write_uint16(fd, count)) {
-        LOGE("Failed to write command size");
+        LOGE("Failed to write command size: {}", strerror(errno));
         return false;
     }
 
     if (util::socket_write(fd, command, count) != count) {
-        LOGE("Failed to write command");
+        LOGE("Failed to write command: {}", strerror(errno));
         return false;
     }
 
