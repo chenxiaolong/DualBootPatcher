@@ -18,13 +18,13 @@
 package com.github.chenxiaolong.multibootpatcher.settings;
 
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class RomSettingsActivity extends ActionBarActivity {
+public class RomSettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -31,8 +31,8 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Display;
 import android.view.Gravity;
@@ -47,9 +47,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+import com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity;
 import com.github.chenxiaolong.multibootpatcher.freespace.FreeSpaceFragment;
 import com.github.chenxiaolong.multibootpatcher.patcher.PatchFileFragment;
 import com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity;
@@ -58,7 +58,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends AppCompatActivity {
     private static final int[] RES_NAV_TITLES = new int[] {
             R.string.title_roms, R.string.title_patch_zip, R.string.title_free_space,
             R.string.title_rom_settings, R.string.title_app_sharing, R.string.title_reboot,

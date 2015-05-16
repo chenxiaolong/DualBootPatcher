@@ -21,7 +21,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,7 +31,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment
         .OnReadyStateChangedListener;
 
-public class ZipFlashingActivity extends ActionBarActivity implements OnReadyStateChangedListener {
+public class ZipFlashingActivity extends AppCompatActivity implements OnReadyStateChangedListener {
     boolean mShowCheckIcon;
 
     @Override

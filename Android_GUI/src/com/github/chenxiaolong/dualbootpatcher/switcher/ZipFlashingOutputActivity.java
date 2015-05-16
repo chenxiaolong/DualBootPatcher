@@ -18,7 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.WindowManager;
@@ -26,7 +26,7 @@ import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class ZipFlashingOutputActivity extends ActionBarActivity {
+public class ZipFlashingOutputActivity extends AppCompatActivity {
     ZipFlashingOutputFragment mFragment;
 
     @Override
