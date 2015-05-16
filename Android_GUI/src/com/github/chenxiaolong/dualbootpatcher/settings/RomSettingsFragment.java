@@ -145,6 +145,8 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     @Override
     public void onEventReceived(BaseEvent event) {
         if (event instanceof UpdatedRamdiskEvent) {
+            mUpdateRamdisk.setEnabled(true);
+
             UpdatedRamdiskEvent e = (UpdatedRamdiskEvent) event;
 
             IndeterminateProgressDialog d = (IndeterminateProgressDialog) getFragmentManager()
@@ -159,6 +161,8 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     }
 
     private void updateRamdisk() {
+        mUpdateRamdisk.setEnabled(false);
+
         IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
         d.show(getFragmentManager(), IndeterminateProgressDialog.TAG);
 
