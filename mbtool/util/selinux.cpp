@@ -270,19 +270,29 @@ bool selinux_add_rule(policydb_t *pdb,
     key.specified = AVTAB_ALLOWED;
     av = avtab_search(&pdb->te_avtab, &key);
 
+    bool exists = false;
+
     if (!av) {
         avtab_datum_t av_new;
-        av_new.data = 1U << (perm->s.value - 1);
+        av_new.data = (1U << (perm->s.value - 1));
         if (avtab_insert(&pdb->te_avtab, &key, &av_new) != 0) {
             LOGE("Failed to add rule to avtab");
             return false;
         }
     } else {
-        av->data |= 1U << (perm->s.value - 1);
+        if (av->data & (1U << (perm->s.value - 1))) {
+            exists = true;
+        }
+        av->data |= (1U << (perm->s.value - 1));
     }
 
-    LOGD("Added rule: \"allow {} {}:{} {};\"",
-         source_str, target_str, class_str, perm_str);
+    if (exists) {
+        LOGD("Rule already exists: \"allow {} {}:{} {};\"",
+             source_str, target_str, class_str, perm_str);
+    } else {
+        LOGD("Added rule: \"allow {} {}:{} {};\"",
+             source_str, target_str, class_str, perm_str);
+    }
 
     return true;
 }
