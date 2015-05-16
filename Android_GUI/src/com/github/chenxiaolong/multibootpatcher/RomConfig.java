@@ -278,6 +278,7 @@ public class RomConfig {
             fos = new FileOutputStream(configFile);
             osw = new OutputStreamWriter(fos, Charsets.UTF_8);
             writer = new JsonWriter(osw);
+            writer.setIndent("    ");
             RawRoot root = serialize();
             gson.toJson(root, RawRoot.class, writer);
         } finally {
