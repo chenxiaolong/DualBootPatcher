@@ -1273,14 +1273,6 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        // Add the ROM ID to the kernel command line
-        std::string cmdline = bi.kernelCmdline();
-        cmdline += " romid=";
-        cmdline += _rom->id;
-        bi.setKernelCmdline(std::move(cmdline));
-
-        // Also add the ROM ID to /romid in the ramdisk for Exynos devices that
-        // completely ignore the cmdline in the boot image
         mbp::CpioFile cpio;
         if (!cpio.load(bi.ramdiskImage())) {
             LOGE("Failed to read ramdisk image for adding /romid");
