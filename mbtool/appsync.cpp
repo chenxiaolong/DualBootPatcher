@@ -715,6 +715,7 @@ static bool proxy_process(int fd, bool can_appsync)
 
         while (true) {
             if (!receive_message(client_fd, buf, sizeof(buf))) {
+                LOGE("Failed to receive request from client");
                 break;
             }
 
@@ -770,10 +771,12 @@ static bool proxy_process(int fd, bool can_appsync)
             }
 
             if (!send_message(installd_fd, buf)) {
+                LOGE("Failed to send request to installd");
                 break;
             }
 
             if (!receive_message(installd_fd, buf, sizeof(buf))) {
+                LOGE("Failed to receive reply from installd");
                 break;
             }
 
@@ -784,6 +787,7 @@ static bool proxy_process(int fd, bool can_appsync)
             }
 
             if (!send_message(client_fd, buf)) {
+                LOGE("Failed to send reply to client");
                 break;
             }
         }
