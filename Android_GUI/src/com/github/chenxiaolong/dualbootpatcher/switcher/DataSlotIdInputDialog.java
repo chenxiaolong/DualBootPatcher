@@ -30,8 +30,8 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.InputCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils.InstallLocation;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
 
 public class DataSlotIdInputDialog extends DialogFragment {
     public static final String TAG = DataSlotIdInputDialog.class.getSimpleName();

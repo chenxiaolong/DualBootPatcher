@@ -17,8 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.app.Dialog;
-import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -46,13 +44,13 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
+import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsActivity;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.freespace.FreeSpaceFragment;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
+import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
-import com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity;
-import com.github.chenxiaolong.multibootpatcher.freespace.FreeSpaceFragment;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatchFileFragment;
-import com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -453,8 +451,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         case NAV_REBOOT:
-            RebootingDialog d = RebootingDialog.newInstance();
-            d.show(getFragmentManager(), RebootingDialog.TAG);
+            GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
+            d.show(getFragmentManager(), GenericProgressDialog.TAG);
 
             SwitcherUtils.reboot(this);
             break;
@@ -589,6 +587,7 @@ public class MainActivity extends AppCompatActivity {
         ft.commit();
     }
 
+    @SuppressWarnings("unused")
     public void lockNavigation() {
         mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
@@ -668,27 +667,5 @@ public class MainActivity extends AppCompatActivity {
         int item = getItemForType(NAV_EXIT);
         View view = mDrawerItemViews[item];
         view.setVisibility(visible ? View.VISIBLE : View.GONE);
-    }
-
-    public static class RebootingDialog extends DialogFragment {
-        private static final String TAG = RebootingDialog.class.getSimpleName();
-
-        public static RebootingDialog newInstance() {
-            RebootingDialog frag = new RebootingDialog();
-            return frag;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            Dialog dialog = new MaterialDialog.Builder(getActivity())
-                    .content(R.string.please_wait)
-                    .progress(true, 0)
-                    .build();
-
-            setCancelable(false);
-            dialog.setCanceledOnTouchOutside(false);
-
-            return dialog;
-        }
     }
 }

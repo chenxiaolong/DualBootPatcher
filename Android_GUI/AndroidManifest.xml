@@ -43,18 +43,18 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.github.chenxiaolong.multibootpatcher.settings.RomSettingsActivity"
+            android:name=".settings.RomSettingsActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/title_rom_settings"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity"
+            android:name=".appsharing.AppSharingSettingsActivity"
             android:label="@string/title_app_sharing"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppListActivity"
+            android:name=".appsharing.AppListActivity"
             android:label="@string/a_s_settings_indiv_app_sharing_title"
-            android:parentActivityName="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingSettingsActivity" />
+            android:parentActivityName=".appsharing.AppSharingSettingsActivity" />
         <activity
             android:name=".switcher.ZipFlashingActivity"
             android:label="@string/zip_flashing_title"
@@ -64,7 +64,7 @@
             android:label="@string/zip_flashing_title"
             android:parentActivityName=".switcher.ZipFlashingActivity" />
 
-        <receiver android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingEventReceiver">
+        <receiver android:name=".appsharing.AppSharingEventReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
 
@@ -72,10 +72,10 @@
             </intent-filter>
         </receiver>
 
-        <service android:name="com.github.chenxiaolong.multibootpatcher.patcher.PatcherService" />
-        <service android:name="com.github.chenxiaolong.multibootpatcher.settings.RomSettingsService" />
+        <service android:name=".patcher.PatcherService" />
+        <service android:name=".settings.RomSettingsService" />
         <service android:name=".switcher.SwitcherService" />
-        <service android:name="com.github.chenxiaolong.multibootpatcher.appsharing.AppSharingService" />
+        <service android:name=".appsharing.AppSharingService" />
     </application>
 
 </manifest>

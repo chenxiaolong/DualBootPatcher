@@ -24,11 +24,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 
+import com.github.chenxiaolong.dualbootpatcher.EventCollector;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
-import com.github.chenxiaolong.multibootpatcher.EventCollector;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SetKernelResult;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SwitchRomResult;
 
 public class SwitcherEventCollector extends EventCollector {
     public static final String TAG = SwitcherEventCollector.class.getSimpleName();

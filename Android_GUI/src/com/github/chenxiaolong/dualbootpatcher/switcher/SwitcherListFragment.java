@@ -45,12 +45,21 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherError;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ExperimentalInAppWipeDialog
         .ExperimentalInAppWipeDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardActionListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
         .RomNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
@@ -63,14 +72,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.W
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
-import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter;
-import com.github.chenxiaolong.multibootpatcher.adapters.RomCardAdapter.RomCardActionListener;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.BootImage;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherError;
-import com.github.chenxiaolong.multibootpatcher.patcher.PatcherUtils;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
 
 import org.apache.commons.io.IOUtils;
 

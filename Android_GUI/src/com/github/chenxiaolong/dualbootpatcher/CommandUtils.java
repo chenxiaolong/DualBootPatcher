@@ -17,8 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.content.Context;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -189,7 +187,7 @@ public final class CommandUtils {
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Process was interrupted", e);
             }
         }
     }
@@ -276,11 +274,11 @@ public final class CommandUtils {
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Process was interrupted", e);
             } catch (TimeoutException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Process timed out", e);
             } catch (RootDeniedException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Root access was denied", e);
             }
         }
     }
@@ -334,44 +332,6 @@ public final class CommandUtils {
         @Override
         public void onCommandCompletion(CommandResult result) {
             result.data.putString("output", mOutput.toString());
-        }
-    }
-
-    public static int getUid(Context context) {
-        int uid = 0;
-
-        try {
-            uid = context.getPackageManager().getApplicationInfo(context.getPackageName(), 0).uid;
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        if (uid == 0) {
-            Log.e(TAG, "Couldn't determine UID");
-            return -1;
-        }
-
-        return uid;
-    }
-
-    private static class FirstLineListener implements CommandListener {
-        private String mLine;
-
-        @Override
-        public void onNewOutputLine(String line, String stream) {
-            if (stream.equals(STREAM_STDOUT)) {
-                if (mLine == null) {
-                    mLine = line;
-                }
-            }
-        }
-
-        @Override
-        public void onCommandCompletion(CommandResult result) {
-        }
-
-        public String getLine() {
-            return mLine;
         }
     }
 }

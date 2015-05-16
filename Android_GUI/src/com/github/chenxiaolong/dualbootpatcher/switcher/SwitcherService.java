@@ -25,6 +25,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 
+import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
+import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
+import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandListener;
@@ -33,15 +36,12 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.WipeResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
-import com.github.chenxiaolong.multibootpatcher.AnsiStuff;
-import com.github.chenxiaolong.multibootpatcher.AnsiStuff.Attribute;
-import com.github.chenxiaolong.multibootpatcher.AnsiStuff.Color;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SetKernelResult;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.SwitchRomResult;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket.WipeResult;
 
 import org.apache.commons.lang3.StringUtils;
 

@@ -23,8 +23,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
-import com.github.chenxiaolong.multibootpatcher.RomConfig;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +39,7 @@ public class RomUtils {
     public static final String MULTI_ID_PREFIX = "multi-slot-";
     public static final String DATA_ID_PREFIX = "data-slot-";
 
+    @SuppressWarnings("unused")
     public static class RomInformation implements Parcelable {
         // Mount points
         private String mSystem;

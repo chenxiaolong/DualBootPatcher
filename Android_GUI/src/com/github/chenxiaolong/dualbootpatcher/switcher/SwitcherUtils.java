@@ -20,13 +20,13 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 import android.content.Context;
 import android.os.Build;
 
-import com.github.chenxiaolong.multibootpatcher.Version;
-import com.github.chenxiaolong.multibootpatcher.Version.VersionParseException;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.multibootpatcher.nativelib.LibMbp.PatcherConfig;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
+import com.github.chenxiaolong.dualbootpatcher.Version;
+import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 
 import org.apache.commons.io.IOUtils;
 

@@ -85,7 +85,7 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <com.github.chenxiaolong.multibootpatcher.views.CircularProgressBar
+            <com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar
                 android:id="@+id/mountpoint_usage"
                 android:layout_width="@dimen/circular_progress_bar_size"
                 android:layout_height="@dimen/circular_progress_bar_size"

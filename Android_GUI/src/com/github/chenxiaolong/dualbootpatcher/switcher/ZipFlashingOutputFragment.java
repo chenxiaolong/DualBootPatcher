@@ -26,12 +26,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.FlashedZipsEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.NewOutputEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
 
 import org.apache.commons.io.output.NullOutputStream;
 

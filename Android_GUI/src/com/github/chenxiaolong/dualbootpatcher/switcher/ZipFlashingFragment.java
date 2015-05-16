@@ -39,14 +39,23 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.AddFloatingActionButton;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
+import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
+import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector;
+import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.RequestedFileEvent;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.DataSlotIdInputDialog
         .DataSlotIdInputDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
@@ -54,12 +63,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.V
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction.Type;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.multibootpatcher.EventCollector.EventCollectorListener;
-import com.github.chenxiaolong.multibootpatcher.FileChooserEventCollector;
-import com.github.chenxiaolong.multibootpatcher.FileChooserEventCollector.RequestedFileEvent;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils;
-import com.github.chenxiaolong.multibootpatcher.socket.MbtoolUtils.Feature;
 import com.nhaarman.listviewanimations.ArrayAdapter;
 import com.nhaarman.listviewanimations.itemmanipulation.DynamicListView;
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.OnDismissCallback;
