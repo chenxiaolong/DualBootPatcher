@@ -91,7 +91,7 @@ public class RomSettingsUtils {
         error.destroy();
     }
 
-    public static boolean updateRamdisk(Context context) {
+    public synchronized static boolean updateRamdisk(Context context) {
         // libmbp's MbtoolUpdater needs to grab a copy of the latest mbtool from the data archive
         PatcherUtils.extractPatcher(context);
 
