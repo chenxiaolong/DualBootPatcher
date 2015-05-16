@@ -140,7 +140,6 @@ public class RomSettingsUtils {
         }
         boolean wasBump = bi.wasBump();
         boolean wasLoki = bi.wasLoki();
-        boolean hasRomId = bi.getKernelCmdline().contains("romid=");
         boolean hasRomIdFile;
 
         CpioFile cpio = new CpioFile();
@@ -155,7 +154,6 @@ public class RomSettingsUtils {
 
         Log.d(TAG, "Original boot image was patched with bump: " + wasBump);
         Log.d(TAG, "Original boot image was patched with loki: " + wasLoki);
-        Log.d(TAG, "Original boot image had romid kernel parameter: " + hasRomId);
         Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
 
         // Overwrite old boot image
@@ -168,7 +166,7 @@ public class RomSettingsUtils {
         }
 
         // Make changes to the boot image if necessary
-        if (wasBump || wasLoki || !hasRomId || !hasRomIdFile) {
+        if (wasBump || wasLoki || !hasRomIdFile) {
             bi = new BootImage();
 
             try {
@@ -201,10 +199,6 @@ public class RomSettingsUtils {
                     bi.setAbootImage(abootImage);
 
                     aboot.delete();
-                }
-                if (!hasRomId) {
-                    Log.d(TAG, "Adding romid to kernel command line");
-                    bi.setKernelCmdline(bi.getKernelCmdline() + " romid=" + romInfo.getId());
                 }
                 if (!hasRomIdFile) {
                     cpio = new CpioFile();
