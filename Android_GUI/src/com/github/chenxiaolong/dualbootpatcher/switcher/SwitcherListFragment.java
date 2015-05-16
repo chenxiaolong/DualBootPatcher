@@ -532,8 +532,10 @@ public class SwitcherListFragment extends Fragment implements
 
         if (result.roms != null) {
             Collections.addAll(mRoms, result.roms);
+            refreshFabVisibility(true);
         } else {
             refreshErrorVisibility(true);
+            refreshFabVisibility(false);
         }
 
         mCurrentRom = result.currentRom;
@@ -543,7 +545,6 @@ public class SwitcherListFragment extends Fragment implements
 
         refreshProgressVisibility(false);
         refreshRomListVisibility(true);
-        refreshFabVisibility(true);
 
         // Show a dialog if the kernel is different or unset. We can't directly show the
         // DialogFragment here because this method might be called after the state has already been
