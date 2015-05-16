@@ -25,6 +25,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <getopt.h>
+#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -473,6 +474,12 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
     std::vector<int16_t> failed;
 
     if (request->targets()) {
+        std::string raw_system = get_raw_path("/system");
+        if (mount("", raw_system.c_str(), "", MS_REMOUNT, "") < 0) {
+            LOGW("Failed to mount {} as writable: {}",
+                 raw_system, strerror(errno));
+        }
+
         for (short target : *request->targets()) {
             bool success = false;
 
