@@ -713,7 +713,8 @@ static bool proxy_process(int fd, bool can_appsync)
                         || cmd == "aapt_with_common") {
                     LOGD("Received CyanogenMod-specific command: {}",
                          args_to_string(args));
-                } else if (cmd == "rmrcl") {
+                } else if (cmd == "rmrcl"
+                        || cmd == "asyncDexopt") {
                     LOGD("Received Touchwiz-specific command: {}",
                          args_to_string(args));
                 } else if (cmd == "getsize") {
