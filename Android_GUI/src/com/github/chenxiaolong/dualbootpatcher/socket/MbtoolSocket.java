@@ -381,7 +381,7 @@ public class MbtoolSocket {
         }
 
         try {
-            String bootBlockDev = SwitcherUtils.getBootPartition();
+            String bootBlockDev = SwitcherUtils.getBootPartition(context);
             if (bootBlockDev == null) {
                 Log.e(TAG, "Failed to determine boot partition");
                 return SwitchRomResult.UNKNOWN_BOOT_PARTITION;
@@ -393,7 +393,7 @@ public class MbtoolSocket {
             int fbBootBlockDev = builder.createString(bootBlockDev);
 
             // Blockdev search dirs
-            String[] searchDirs = SwitcherUtils.getBlockDevSearchDirs();
+            String[] searchDirs = SwitcherUtils.getBlockDevSearchDirs(context);
             int fbSearchDirs = 0;
             if (searchDirs != null) {
                 int[] searchDirsOffsets = new int[searchDirs.length];
@@ -442,7 +442,7 @@ public class MbtoolSocket {
         }
 
         try {
-            String bootBlockDev = SwitcherUtils.getBootPartition();
+            String bootBlockDev = SwitcherUtils.getBootPartition(context);
             if (bootBlockDev == null) {
                 Log.e(TAG, "Failed to determine boot partition");
                 return SetKernelResult.UNKNOWN_BOOT_PARTITION;

@@ -18,7 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -60,9 +59,10 @@ public class RomSettingsUtils {
         FileInfo fi = new FileInfo();
         fi.setFilename(path);
 
-        Device device = PatcherUtils.getCurrentDevice(PatcherUtils.sPC);
+        Device device = PatcherUtils.getCurrentDevice(context, PatcherUtils.sPC);
+        String codename = RomUtils.getDeviceCodename(context);
         if (device == null) {
-            Log.e(TAG, "Current device " + Build.DEVICE + " does not appear to be supported");
+            Log.e(TAG, "Current device " + codename + " does not appear to be supported");
             return null;
         }
         fi.setDevice(device);

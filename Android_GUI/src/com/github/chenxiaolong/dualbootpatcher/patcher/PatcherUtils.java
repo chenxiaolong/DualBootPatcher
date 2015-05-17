@@ -18,12 +18,12 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
@@ -81,11 +81,13 @@ public class PatcherUtils {
         }
     }
 
-    public synchronized static Device getCurrentDevice(PatcherConfig pc) {
+    public synchronized static Device getCurrentDevice(Context context, PatcherConfig pc) {
+        String realCodename = RomUtils.getDeviceCodename(context);
+
         Device device = null;
         for (Device d : pc.getDevices()) {
             for (String codename : d.getCodenames()) {
-                if (Build.DEVICE.equals(codename)) {
+                if (realCodename.equals(codename)) {
                     device = d;
                     break;
                 }

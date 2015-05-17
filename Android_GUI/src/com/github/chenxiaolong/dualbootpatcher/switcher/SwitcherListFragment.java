@@ -30,7 +30,6 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -403,7 +402,8 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     private void showUnknownBootPartitionDialog() {
-        String message = String.format(getString(R.string.unknown_boot_partition), Build.DEVICE);
+        String codename = RomUtils.getDeviceCodename(getActivity());
+        String message = String.format(getString(R.string.unknown_boot_partition), codename);
 
         GenericConfirmDialog gcd = GenericConfirmDialog.newInstance(null, message);
         gcd.show(getFragmentManager(), GenericConfirmDialog.TAG);
@@ -717,7 +717,7 @@ public class SwitcherListFragment extends Fragment implements
             }
 
             // Create temporary copy of the boot partition
-            String bootPartition = SwitcherUtils.getBootPartition();
+            String bootPartition = SwitcherUtils.getBootPartition(getContext());
             if (bootPartition == null) {
                 Log.e(TAG, "Failed to determine boot partition when finding kernel status");
                 return CurrentKernelStatus.UNKNOWN;

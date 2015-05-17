@@ -18,8 +18,8 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
-import android.os.Build;
 
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
@@ -45,7 +45,8 @@ public class SwitcherUtils {
     private static final String PROP_INSTALLER_VERSION = "mbtool.installer.version";
     private static final String PROP_INSTALL_LOCATION = "mbtool.installer.install-location";
 
-    public static String getBootPartition() {
+    public static String getBootPartition(Context context) {
+        String realCodename = RomUtils.getDeviceCodename(context);
         String bootBlockDev = null;
 
         PatcherConfig pc = new PatcherConfig();
@@ -53,7 +54,7 @@ public class SwitcherUtils {
             boolean matches = false;
 
             for (String codename : d.getCodenames()) {
-                if (Build.DEVICE.equals(codename)) {
+                if (realCodename.equals(codename)) {
                     matches = true;
                     break;
                 }
@@ -72,13 +73,14 @@ public class SwitcherUtils {
         return bootBlockDev;
     }
 
-    public static String[] getBlockDevSearchDirs() {
+    public static String[] getBlockDevSearchDirs(Context context) {
+        String realCodename = RomUtils.getDeviceCodename(context);
         PatcherConfig pc = new PatcherConfig();
         for (Device d : pc.getDevices()) {
             boolean matches = false;
 
             for (String codename : d.getCodenames()) {
-                if (Build.DEVICE.equals(codename)) {
+                if (realCodename.equals(codename)) {
                     matches = true;
                     break;
                 }

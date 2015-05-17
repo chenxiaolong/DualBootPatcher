@@ -18,9 +18,11 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
@@ -305,5 +307,10 @@ public class RomUtils {
                 File.separator + "MultiBoot" +
                 File.separator + romId +
                 File.separator + "boot.img";
+    }
+
+    @NonNull
+    public static String getDeviceCodename(Context context) {
+        return SystemPropertiesProxy.get(context, "ro.patcher.device", Build.DEVICE);
     }
 }
