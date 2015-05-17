@@ -931,9 +931,6 @@ int appsync_main(int argc, char *argv[])
 
     LOGI("=== APPSYNC VERSION {} ===", MBP_VERSION);
 
-    // Stop installd in case libmbp couldn't patch the ramdisk entry away
-    util::run_command({ "stop", "installd" });
-
     bool can_appsync = false;
 
     // Try to load config file
