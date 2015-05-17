@@ -114,6 +114,15 @@ public class RomSettingsUtils {
             }
         }
 
+        String bootImageBackup = bootImage + ".before-ramdisk-update";
+        File bootImageBackupFile = new File(bootImageBackup);
+
+        try {
+            org.apache.commons.io.FileUtils.copyFile(bootImageFile, bootImageBackupFile);
+        } catch (IOException e) {
+            Log.w(TAG, "Failed to copy " + bootImage + " to " + bootImageBackupFile, e);
+        }
+
         // Create temporary copy of the boot image
         String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
         File tmpKernelFile = new File(tmpKernel);
