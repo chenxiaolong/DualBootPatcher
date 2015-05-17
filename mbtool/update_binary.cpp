@@ -204,9 +204,11 @@ void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
             }
         }
 
-        if (!util::selinux_set_context(
-                log_file, "u:object_r:media_rw_data_file:s0")) {
-            LOGE("{}: Failed to set context: {}", log_file, strerror(errno));
+        std::string context;
+        if (util::selinux_lget_context("/data/media/0", &context)
+                && !util::selinux_lset_context(log_file, context)) {
+            LOGE("{}: Failed to set context to {}: {}",
+                 log_file, context, strerror(errno));
         }
 
         display_msg("The log file was saved as MultiBoot.log on the "

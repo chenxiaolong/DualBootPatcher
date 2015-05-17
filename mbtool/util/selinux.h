@@ -49,6 +49,8 @@ bool selinux_add_rule(policydb_t *pdb,
                       const std::string &target_str,
                       const std::string &class_str,
                       const std::string &perm_str);
+bool selinux_get_context(const std::string &path, std::string *context);
+bool selinux_lget_context(const std::string &path, std::string *context);
 bool selinux_set_context(const std::string &path, const std::string &context);
 bool selinux_lset_context(const std::string &path, const std::string &context);
 bool selinux_set_context_recursive(const std::string &path,

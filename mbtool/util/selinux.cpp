@@ -297,6 +297,52 @@ bool selinux_add_rule(policydb_t *pdb,
     return true;
 }
 
+bool selinux_get_context(const std::string &path, std::string *context)
+{
+    ssize_t size;
+    std::vector<char> value;
+
+    size = getxattr(path.c_str(), "security.selinux", nullptr, 0);
+    if (size < 0) {
+        return false;
+    }
+
+    value.resize(size);
+
+    size = getxattr(path.c_str(), "security.selinux", value.data(), size);
+    if (size < 0) {
+        return false;
+    }
+
+    value.push_back('\0');
+    *context = value.data();
+
+    return true;
+}
+
+bool selinux_lget_context(const std::string &path, std::string *context)
+{
+    ssize_t size;
+    std::vector<char> value;
+
+    size = lgetxattr(path.c_str(), "security.selinux", nullptr, 0);
+    if (size < 0) {
+        return false;
+    }
+
+    value.resize(size);
+
+    size = lgetxattr(path.c_str(), "security.selinux", value.data(), size);
+    if (size < 0) {
+        return false;
+    }
+
+    value.push_back('\0');
+    *context = value.data();
+
+    return true;
+}
+
 bool selinux_set_context(const std::string &path, const std::string &context)
 {
     return setxattr(path.c_str(), "security.selinux",

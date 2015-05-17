@@ -31,6 +31,7 @@
 #include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
+#include "util/selinux.h"
 #include "util/string.h"
 
 #define MULTIBOOT_DIR "/data/media/0/MultiBoot"
@@ -165,6 +166,14 @@ static bool choose_or_set_rom(const std::string &id,
 
     if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
         LOGE("Failed to chmod {}", MULTIBOOT_DIR);
+        return false;
+    }
+
+    std::string context;
+    if (util::selinux_lget_context("/data/media/0", &context)
+            && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
+        LOGE("{}: Failed to set context to {}: {}",
+             MULTIBOOT_DIR, context, strerror(errno));
         return false;
     }
 
