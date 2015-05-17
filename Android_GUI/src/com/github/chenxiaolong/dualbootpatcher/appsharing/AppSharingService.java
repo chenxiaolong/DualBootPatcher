@@ -19,8 +19,12 @@ package com.github.chenxiaolong.dualbootpatcher.appsharing;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomConfig;
 import com.github.chenxiaolong.dualbootpatcher.RomConfig.SharedItems;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -40,7 +44,7 @@ public class AppSharingService extends IntentService {
         super(TAG);
     }
 
-    private void onPackageRemoved(String pkg) {
+    private void onPackageRemoved(final String pkg) {
         RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
         if (info == null) {
             Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");
@@ -55,6 +59,15 @@ public class AppSharingService extends IntentService {
             sharedPkgs.remove(pkg);
             config.setIndivAppSharingPackages(sharedPkgs);
             config.apply();
+
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    String message = getString(R.string.indiv_app_sharing_app_no_longer_shared);
+                    Toast.makeText(AppSharingService.this, String.format(message, pkg),
+                            Toast.LENGTH_LONG).show();
+                }
+            });
         }
     }
 

@@ -447,6 +447,9 @@
     <string name="indiv_app_sharing_reboot_needed_message">The changes will take effect on the
         next reboot.</string>
 
+    <!-- Toast popup message shown when a shared app is uninstalled (and thus becomes unshared) -->
+    <string name="indiv_app_sharing_app_no_longer_shared">The \'%s\' app is no longer shared.</string>
+
     <!-- Word/phrase for None (used in eg. a list) -->
     <string name="none">None</string>
     <!-- Word/phrase for OK (used in dialog boxes) -->
