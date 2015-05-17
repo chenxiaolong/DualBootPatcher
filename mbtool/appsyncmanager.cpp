@@ -216,7 +216,23 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
 bool AppSyncManager::link_apk_shared_to_user(const std::shared_ptr<Package> &pkg)
 {
     std::string shared_apk = get_shared_apk_path(pkg->name);
-    std::string user_apk = pkg->code_path;
+    std::string user_apk;
+
+    if (!util::starts_with(pkg->code_path, "/data")) {
+        LOGW("{}: Does not reside in /data", pkg->code_path);
+        return false;
+    }
+
+    // We need to get the path in /raw since pre-Android 5.0 has a bug with
+    // linking across bind mounts.
+    auto rom = Roms::get_current_rom();
+    if (!rom) {
+        LOGW("Failed to determine current ROM");
+        return false;
+    }
+
+    user_apk += rom->data_path;
+    user_apk += pkg->code_path.substr(5); // For "/data"
 
     if (!util::ends_with(pkg->code_path, ".apk")) {
         user_apk += "/base.apk";
