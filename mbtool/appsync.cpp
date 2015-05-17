@@ -714,7 +714,8 @@ static bool proxy_process(int fd, bool can_appsync)
                     LOGD("Received CyanogenMod-specific command: {}",
                          args_to_string(args));
                 } else if (cmd == "rmrcl"
-                        || cmd == "asyncDexopt") {
+                        || cmd == "asyncDexopt"
+                        || cmd == "changeDexOwner") {
                     LOGD("Received Touchwiz-specific command: {}",
                          args_to_string(args));
                 } else if (cmd == "getsize") {
