@@ -677,32 +677,10 @@ static bool proxy_process(int fd, bool can_appsync)
 
         LOGD("Accepted new client connection");
 
-        patch_sepolicy_wrapper();
-
-        LOGD("Launching installd");
-        pid_t pid = spawn_installd();
-        if (pid < 0) {
-            continue;
-        }
-
-        // Kill installd when we exit
-        auto kill_installd = util::finally([&]{
-            kill(pid, SIGINT);
-
-            int status;
-
-            do {
-                if (waitpid(pid, &status, 0) < 0) {
-                    LOGE("Failed to waitpid(): {}", strerror(errno));
-                    break;
-                }
-            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-        });
-
         // Connect to installd
         int installd_fd = connect_to_installd();
         if (installd_fd < 0) {
-            continue;
+            return false;
         }
 
         auto close_installd_fd = util::finally([&]{
@@ -772,12 +750,12 @@ static bool proxy_process(int fd, bool can_appsync)
 
             if (!send_message(installd_fd, buf)) {
                 LOGE("Failed to send request to installd");
-                break;
+                return false;
             }
 
             if (!receive_message(installd_fd, buf, sizeof(buf))) {
                 LOGE("Failed to receive reply from installd");
-                break;
+                return false;
             }
 
             args = parse_args(buf);
@@ -835,6 +813,29 @@ static bool hijack_socket(bool can_appsync)
 
     // Put the new fd in the environment
     put_socket_to_env(SOCKET_PATH, new_fd);
+
+    // Patch SELinux policy
+    patch_sepolicy_wrapper();
+
+    LOGD("Launching installd");
+    pid_t pid = spawn_installd();
+    if (pid < 0) {
+        return false;
+    }
+
+    // Kill installd when we exit
+    auto kill_installd = util::finally([&]{
+        kill(pid, SIGINT);
+
+        int status;
+
+        do {
+            if (waitpid(pid, &status, 0) < 0) {
+                LOGE("Failed to waitpid(): {}", strerror(errno));
+                break;
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    });
 
     LOGD("Ready! Waiting for connections");
 
