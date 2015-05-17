@@ -121,7 +121,7 @@ bool CoreRamdiskPatcher::patchRamdisk()
     if (!fixDataMediaContext()) {
         return false;
     }
-    if (!removeRestoreconData()) {
+    if (!removeRestorecon()) {
         return false;
     }
     return true;
@@ -289,7 +289,7 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
     return true;
 }
 
-bool CoreRamdiskPatcher::removeRestoreconData()
+bool CoreRamdiskPatcher::removeRestorecon()
 {
     // This use to change the "/data(/.*)?" regex in file_contexts to
     // "/data(/(?!multiboot).*)?". Unfortunately, older versions of Android's
@@ -307,10 +307,11 @@ bool CoreRamdiskPatcher::removeRestoreconData()
     std::vector<std::string> lines;
     boost::split(lines, contents, boost::is_any_of("\n"));
 
-    const std::regex re("^\\s*restorecon_recursive\\s+/data\\s*$");
+    const std::regex re1("^\\s*restorecon_recursive\\s+/data\\s*$");
+    const std::regex re2("^\\s*restorecon_recursive\\s+/cache\\s*$");
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, re)) {
+        if (std::regex_search(*it, re1) || std::regex_search(*it, re2)) {
             it->insert(it->begin(), '#');
         }
     }

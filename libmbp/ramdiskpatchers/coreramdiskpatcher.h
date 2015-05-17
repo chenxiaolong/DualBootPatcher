@@ -48,7 +48,7 @@ public:
     bool addAppsyncService();
     bool disableInstalldService();
     bool fixDataMediaContext();
-    bool removeRestoreconData();
+    bool removeRestorecon();
 
     bool useGeneratedFstab(const std::string &filename);
     bool useGeneratedFstabAuto();
