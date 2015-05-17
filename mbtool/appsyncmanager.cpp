@@ -363,7 +363,7 @@ bool AppSyncManager::unmount_shared_directory(const std::string &pkg)
     target += "/";
     target += pkg;
 
-    if (umount(target.c_str()) < 0 && errno != EINVAL) {
+    if (umount2(target.c_str(), MNT_DETACH) < 0 && errno != EINVAL) {
         LOGW("{}: Failed to unmount: {}", target, strerror(errno));
         return false;
     }
