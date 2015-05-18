@@ -49,8 +49,10 @@ import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingChangeShared
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -262,8 +264,6 @@ public class AppListFragment extends Fragment implements
             PackageManager pm = getContext().getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(0);
 
-            Collections.sort(apps, new ApplicationInfo.DisplayNameComparator(pm));
-
             ArrayList<AppInformation> appInfos = new ArrayList<>();
 
             for (ApplicationInfo app : apps) {
@@ -293,6 +293,8 @@ public class AppListFragment extends Fragment implements
                 appInfos.add(appInfo);
             }
 
+            Collections.sort(appInfos, new AppInformationComparator());
+
             mResult = new LoaderResult();
             mResult.appInfos = appInfos;
             mResult.config = config;
@@ -301,6 +303,15 @@ public class AppListFragment extends Fragment implements
             Log.d(TAG, "Retrieving apps took: " + (stop - start) + "ms");
 
             return mResult;
+        }
+    }
+
+    private static class AppInformationComparator implements Comparator<AppInformation> {
+        private final Collator sCollator = Collator.getInstance();
+
+        @Override
+        public int compare(AppInformation appInfo1, AppInformation appInfo2) {
+            return sCollator.compare(appInfo1.name, appInfo2.name);
         }
     }
 }
