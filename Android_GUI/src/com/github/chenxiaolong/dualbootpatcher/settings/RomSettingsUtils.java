@@ -114,7 +114,7 @@ public class RomSettingsUtils {
             }
         }
 
-        String bootImageBackup = bootImage + ".before-ramdisk-update";
+        String bootImageBackup = bootImage + ".before-ramdisk-update.img";
         File bootImageBackupFile = new File(bootImageBackup);
 
         try {
