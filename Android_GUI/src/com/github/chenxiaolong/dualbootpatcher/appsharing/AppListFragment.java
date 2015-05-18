@@ -51,7 +51,6 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDi
 
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -369,8 +368,7 @@ public class AppListFragment extends Fragment implements
                 appInfo.pkg = app.packageName;
                 appInfo.name = app.loadLabel(mPM).toString();
                 appInfo.icon = app.loadIcon(mPM);
-                appInfo.isSystem = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0
-                        || (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+                appInfo.isSystem = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
 
                 SharedItems sharedItems = mSharedPkgs.get(appInfo.pkg);
                 if (sharedItems != null) {
@@ -392,8 +390,8 @@ public class AppListFragment extends Fragment implements
                     }
                 }
 
-                // Make sure we're not sharing the apk if it's a system app or an update to a system
-                // app. Of course, mbtool will skip it anyway, but we don't want to confuse the user
+                // Make sure we're not sharing the apk if it's a system app. Of course, mbtool will
+                // skip it anyway, but we don't want to confuse the user.
                 if (appInfo.isSystem) {
                     appInfo.shareApk = false;
                 }
