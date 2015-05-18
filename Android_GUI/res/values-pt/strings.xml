@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<resources>
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
   <!--Name of the app built in release mode-->
   <string name="app_name_release">Adaptador Duplo Boot</string>
   <!--Name of the app built in debug mode-->
@@ -47,6 +47,7 @@
   <string name="secondary">Secundária</string>
   <!--Default name for the multi-slot ROMs-->
   <string name="multislot">MultiROM %s</string>
+  <!--Default name for the data-slot ROMs-->
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Não foi possível determinar a versão da ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
@@ -58,6 +59,8 @@
   <string name="set_kernel_success">Configuração do kernel com sucesso</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Falha ao configurar o kernel</string>
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
   <!--Version text shown on ROM card if the version could not be detected-->
   <!--Build text shown on ROM card if the build could not be detected-->
   <!--ROM menu item for setting kernel-->
@@ -89,6 +92,10 @@
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Renomear %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <!--Dialog message shown when the kernel has not been set-->
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <!--Positive dialog button shown for the above two messages-->
+  <!--Negative dialog button shown for the above two messages-->
   <!--ZIP flash activity title-->
   <!--Title of pending action card for installing a zip file-->
   <!--Subtitle text in pending action card showing the selected filename-->
@@ -100,9 +107,20 @@
   <!--Error message shown when the selected zip file isn't patched-->
   <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <!--Dialog button for keeping the current installation location-->
+  <!--Dialog button for changing the installation location-->
   <!--Message shown in the first-use dialog for zip flashing-->
   <!--Title for the patcher card asking for the device and partition configuration-->
   <string name="devpartconfig_title">Configuração do aparelho e das partições:</string>
+  <!--Name for primary ROM upgrade installation location-->
+  <!--Description for primary ROM upgrade installation location-->
+  <!--Description for all other installation locations-->
+  <!--Text box hint for specifying the data slot ID-->
+  <!--Description text shown if the data slot ID is empty-->
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <!--Name for the data-slot installation location-->
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Sem gerenciador de arquivos</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
@@ -176,14 +194,19 @@ Clique para escolher outro ficheiro a adaptar.</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <!--Description of the preference for globally shareing paid applications from the primary ROM-->
+  <!--Description of the preference for globally sharing paid applications from the primary ROM-->
+  <!--Description of the global app sharing preferences when booted in the primary ROM-->
   <!--Title for the preference to share individual applications-->
   <!--Description for the preference to share individual applications-->
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Atualizar o Ramdisk</string>
-  <!--Description for updating the ramdisk. Avoids having to repatch the ROM-->
-  <string name="update_ramdisk_desc">Para utilizar as funções de partilha de aplicativos, o Ramdisk precisa ser atualizado.</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
   <!--Title when ramdisk is successfully updated-->
   <string name="update_ramdisk_success_title">Ramdisk atualizado com sucesso</string>
   <!--Message asking user to reboot when the ramdisk updating succeeds-->
@@ -194,25 +217,28 @@ Deseja reiniciar agora?</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
   <string name="update_ramdisk_failure_desc">Falha ao atualizar o Ramdisk. A partilha de aplicativos
 poderá não funcionar corretamente.</string>
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <!--Toast popup message shown when the user forces a ramdisk update-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Adaptador</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
   <string name="rom_settings_show_exit_title">Mostrar botão Sair</string>
   <!--Title for the preference to show the reboot button in the navigation drawer-->
   <string name="rom_settings_show_reboot_title">Mostrar botão Reiniciar</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <!--Description for the initial screen preference-->
   <!--Title for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_dialog_title">Partilhar aplicativos específicos</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_dialog_desc">A partilha de aplicativos específicos permite ao dispositivo
-manter apenas uma cópia de cada aplicativo por ROM para libertar espaço.
-Também assegura que o aplicativo é actualizado em cada ROM.\n\nQuando o aplicativo é instalado, actualizado ou removido o adaptador poderá pedir acesso root para inicilizar o serviço \'syncdaemon\'. Aceite o pedido para que a sincronização seja bem sucedida.</string>
-  <!--Description for the individual app sharing preference indicating that is cannot be used when global app sharing is enabled.-->
-  <string name="indiv_app_sharing_incompat_global">Não pode ser utilizado quando a
-partilha global de aplicativos estiver activada.</string>
-  <!--Description in the app sharing list showing which ROMs the application is installed in-->
-  <string name="installed_in_roms">Atualmente instalado em:</string>
-  <!--Description for the checkboxes indicating which ROMs the application should be shared across-->
-  <string name="share_apks_across_title">Utilize o mesmo apk entre as ROMs:</string>
+  <!--App label in the individual app sharing screen shown if the app uses shared apk-->
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <!--App label in the individual app sharing screen shown if the app uses shared apk and data-->
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <!--App sharing dialog checkbox text for using shared apk-->
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <!--App sharing dialog message shown by default-->
+  <!--App sharing dialog message shown if the app is a system app-->
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">Nenhum(a)</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
