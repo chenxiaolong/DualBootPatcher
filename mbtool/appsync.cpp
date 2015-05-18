@@ -213,9 +213,8 @@ static bool prepare_appsync()
 
         // Ensure that the package is not a system package if we're sharing the
         // apk file
-        if (shared_pkg.share_apk && ((pkg->pkg_flags & Package::FLAG_SYSTEM)
-                || (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP))) {
-            LOGW("Package {} is a system app or an update to a system app. "
+        if (shared_pkg.share_apk && (pkg->pkg_flags & Package::FLAG_SYSTEM)) {
+            LOGW("Package {} is a system app. "
                  "Its apk will not be shared", shared_pkg.pkg_id);
             shared_pkg.share_apk = false;
         }
