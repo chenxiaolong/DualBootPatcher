@@ -938,7 +938,7 @@ int appsync_main(int argc, char *argv[])
     LOGI("=== APPSYNC VERSION {} ===", MBP_VERSION);
 
     LOGI("Calling restorecon on /data/media/obb");
-    util::run_command({ "restorecon", "-R", "/data/media/obb" });
+    util::run_command({ "restorecon", "-R", "-F", "/data/media/obb" });
 
     bool can_appsync = false;
 

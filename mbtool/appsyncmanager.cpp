@@ -346,7 +346,7 @@ bool AppSyncManager::fix_shared_data_permissions()
 
 bool AppSyncManager::fix_user_apk_context()
 {
-    return util::run_command({ "restorecon", "-R", _user_app_dir }) == 0;
+    return util::run_command({ "restorecon", "-R", "-F", _user_app_dir }) == 0;
 }
 
 bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
