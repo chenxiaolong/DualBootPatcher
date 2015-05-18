@@ -64,22 +64,21 @@ public class FileChooserEventCollector extends EventCollector {
     // Choose files
 
     public void startFileChooser() {
-        Intent fileIntent;
+        PackageManager pm = mContext.getPackageManager();
 
-        if (Build.VERSION.SDK_INT < 19) {
-            fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-            fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            fileIntent.setType("application/zip");
-        } else {
-            fileIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            fileIntent.setType("application/zip");
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+
+        if (Build.VERSION.SDK_INT >= 19) {
+            // Prefer ACTION_GET_CONTENT because Samsung's DocumentsUI isn't implemented correctly:
+            // https://code.google.com/p/android/issues/detail?id=70697
+            if (!canHandleIntent(pm, intent)) {
+                intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
+            }
         }
 
-        final PackageManager pm = mContext.getPackageManager();
-        List<ResolveInfo> list = pm.queryIntentActivities(fileIntent, 0);
-
-        if (list.size() == 0) {
+        if (!canHandleIntent(pm, intent)) {
             Fragment prev = getFragmentManager().findFragmentByTag("no_file_chooser");
 
             if (prev == null) {
@@ -89,8 +88,13 @@ public class FileChooserEventCollector extends EventCollector {
                 dialog.show(getFragmentManager(), "no_file_chooser");
             }
         } else {
-            startActivityForResult(fileIntent, REQUEST_FILE);
+            startActivityForResult(intent, REQUEST_FILE);
         }
+    }
+
+    private static boolean canHandleIntent(PackageManager pm, Intent intent) {
+        List<ResolveInfo> list = pm.queryIntentActivities(intent, 0);
+        return list.size() > 0;
     }
 
     // Events
