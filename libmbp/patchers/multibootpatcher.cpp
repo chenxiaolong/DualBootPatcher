@@ -73,6 +73,7 @@ public:
     zipFile zOutput = nullptr;
     std::vector<AutoPatcher *> autoPatchers;
 
+    bool patchRamdisk(std::vector<unsigned char> *data);
     bool patchBootImage(std::vector<unsigned char> *data);
     bool patchZip();
 
@@ -210,21 +211,11 @@ bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
     return ret;
 }
 
-bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
+bool MultiBootPatcher::Impl::patchRamdisk(std::vector<unsigned char> *data)
 {
-    BootImage bi;
-    if (!bi.load(*data)) {
-        error = bi.error();
-        return false;
-    }
-
-    // Release memory since BootImage keeps a copy of the separate components
-    data->clear();
-    data->shrink_to_fit();
-
     // Load the ramdisk cpio
     CpioFile cpio;
-    if (!cpio.load(bi.ramdiskImage())) {
+    if (!cpio.load(*data)) {
         error = cpio.error();
         return false;
     }
@@ -270,7 +261,32 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
         error = cpio.error();
         return false;
     }
-    bi.setRamdiskImage(std::move(newRamdisk));
+
+    data->swap(newRamdisk);
+
+    if (cancelled) return false;
+
+    return true;
+}
+
+bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
+{
+    BootImage bi;
+    if (!bi.load(*data)) {
+        error = bi.error();
+        return false;
+    }
+
+    // Release memory since BootImage keeps a copy of the separate components
+    data->clear();
+    data->shrink_to_fit();
+
+    std::vector<unsigned char> ramdiskImage = bi.ramdiskImage();
+    if (!patchRamdisk(&ramdiskImage)) {
+        return false;
+    }
+
+    bi.setRamdiskImage(std::move(ramdiskImage));
 
     // Reapply Bump if needed
     bi.setApplyBump(bi.wasBump());
@@ -465,11 +481,12 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
                                 curFile) != piBootImages.end();
         bool isExtImg = boost::ends_with(curFile, ".img");
         bool isExtLok = boost::ends_with(curFile, ".lok");
+        bool isExtGz = boost::ends_with(curFile, ".gz");
         // Boot images should be over about 30 MiB. This check is here so the
         // patcher won't try to read a multi-gigabyte system image into RAM
         bool isSizeOK = fi.uncompressed_size <= 30 * 1024 * 1024;
 
-        if (hasBootImage && (inList || isExtImg || isExtLok) && isSizeOK) {
+        if (hasBootImage && (inList || isExtImg || isExtLok || isExtGz) && isSizeOK) {
             // Load the file into memory
             std::vector<unsigned char> data;
 
@@ -480,23 +497,31 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
                 return false;
             }
 
-            // If the file contains the boot image magic string, then
-            // assume it really is a boot image and patch it
-            if (data.size() >= 512) {
-                const char *magic = BootImage::BootMagic;
-                unsigned int size = BootImage::BootMagicSize;
-                auto end = data.begin() + 512;
-                auto it = std::search(data.begin(), end,
-                                      magic, magic + size);
-                if (it != end) {
-                    if (!patchBootImage(&data)) {
-                        return false;
+            if (isExtGz) {
+                // Some zips build the boot image at install time and the zip
+                // just includes the split out parts of the boot image
+                if (!patchRamdisk(&data)) {
+                    // Just ignore for now
+                }
+            } else {
+                // If the file contains the boot image magic string, then
+                // assume it really is a boot image and patch it
+                if (data.size() >= 512) {
+                    const char *magic = BootImage::BootMagic;
+                    unsigned int size = BootImage::BootMagicSize;
+                    auto end = data.begin() + 512;
+                    auto it = std::search(data.begin(), end,
+                                          magic, magic + size);
+                    if (it != end) {
+                        if (!patchBootImage(&data)) {
+                            return false;
+                        }
                     }
-
-                    // Update total size
-                    maxBytes += (data.size() - fi.uncompressed_size);
                 }
             }
+
+            // Update total size
+            maxBytes += (data.size() - fi.uncompressed_size);
 
             auto ret2 = FileUtils::mzAddFile(zOutput, curFile, data);
             if (!ret2) {
