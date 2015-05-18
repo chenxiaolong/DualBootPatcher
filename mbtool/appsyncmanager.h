@@ -43,6 +43,7 @@ public:
     static bool create_shared_data_directory(const std::string &pkg, uid_t uid);
     static bool fix_shared_apk_permissions();
     static bool fix_shared_data_permissions();
+    static bool fix_user_apk_context();
 
     static bool mount_shared_directory(const std::string &pkg, uid_t uid);
     static bool unmount_shared_directory(const std::string &pkg);

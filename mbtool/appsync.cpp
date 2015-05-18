@@ -299,6 +299,9 @@ static bool prepare_appsync()
         }
     }
 
+    // Fix SELinux context in /data/app
+    AppSyncManager::fix_user_apk_context();
+
     return true;
 }
 

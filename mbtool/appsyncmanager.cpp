@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "util/chown.h"
+#include "util/command.h"
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/directory.h"
@@ -341,6 +342,11 @@ bool AppSyncManager::fix_shared_data_permissions()
     }
 
     return true;
+}
+
+bool AppSyncManager::fix_user_apk_context()
+{
+    return util::run_command({ "restorecon", "-R", _user_app_dir }) == 0;
 }
 
 bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
