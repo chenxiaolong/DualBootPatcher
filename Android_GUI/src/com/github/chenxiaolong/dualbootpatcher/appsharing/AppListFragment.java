@@ -55,6 +55,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AppListFragment extends Fragment implements
         FirstUseDialogListener, AppCardActionListener, AppSharingChangeSharedDialogListener,
@@ -266,31 +267,34 @@ public class AppListFragment extends Fragment implements
 
             ArrayList<AppInformation> appInfos = new ArrayList<>();
 
-            for (ApplicationInfo app : apps) {
-                if (pm.getLaunchIntentForPackage(app.packageName) == null) {
-                    continue;
+            int numThreads = Runtime.getRuntime().availableProcessors();
+            int partitionSize = apps.size() / numThreads;
+            if (apps.size() % numThreads != 0) {
+                partitionSize++;
+            }
+
+            Log.d(TAG, "Loading apps with " + numThreads + " threads");
+            Log.d(TAG, "Total apps: " + apps.size());
+
+            ArrayList<LoaderThread> threads = new ArrayList<>();
+            for (int i = 0; i < apps.size(); i += partitionSize) {
+                int begin = i;
+                int end = i + Math.min(partitionSize, apps.size() - i);
+
+                LoaderThread thread = new LoaderThread(pm, apps, sharedPkgs, appInfos, begin, end);
+                thread.start();
+                threads.add(thread);
+
+                Log.d(TAG, "Loading partition [" + begin + ", " + end + ") on thread " +
+                        threads.size());
+            }
+
+            for (LoaderThread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Thread was interrupted", e);
                 }
-
-                AppInformation appInfo = new AppInformation();
-                appInfo.pkg = app.packageName;
-                appInfo.name = app.loadLabel(pm).toString();
-                appInfo.icon = app.loadIcon(pm);
-                appInfo.isSystem = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0
-                        || (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
-
-                SharedItems sharedItems = sharedPkgs.get(appInfo.pkg);
-                if (sharedItems != null) {
-                    appInfo.shareApk = sharedItems.sharedApk;
-                    appInfo.shareData = sharedItems.sharedData;
-                }
-
-                // Make sure we're not sharing the apk if it's a system app or an update to a system
-                // app. Of course, mbtool will skip it anyway, but we don't want to confuse the user
-                if (appInfo.isSystem) {
-                    appInfo.shareApk = false;
-                }
-
-                appInfos.add(appInfo);
             }
 
             Collections.sort(appInfos, new AppInformationComparator());
@@ -303,6 +307,60 @@ public class AppListFragment extends Fragment implements
             Log.d(TAG, "Retrieving apps took: " + (stop - start) + "ms");
 
             return mResult;
+        }
+    }
+
+    private static class LoaderThread extends Thread {
+        private final PackageManager mPM;
+        private final List<ApplicationInfo> mApps;
+        private final Map<String, SharedItems> mSharedPkgs;
+        private final List<AppInformation> mAppInfos;
+        private final int mStart;
+        private final int mStop;
+
+        public LoaderThread(PackageManager pm, List<ApplicationInfo> apps,
+                            Map<String, SharedItems> sharedPkgs, List<AppInformation> appInfos,
+                            int start, int stop) {
+            mPM = pm;
+            mApps = apps;
+            mSharedPkgs = sharedPkgs;
+            mAppInfos = appInfos;
+            mStart = start;
+            mStop = stop;
+        }
+
+        @Override
+        public void run() {
+            for (int i = mStart; i < mStop; i++) {
+                ApplicationInfo app = mApps.get(i);
+
+                if (mPM.getLaunchIntentForPackage(app.packageName) == null) {
+                    continue;
+                }
+
+                AppInformation appInfo = new AppInformation();
+                appInfo.pkg = app.packageName;
+                appInfo.name = app.loadLabel(mPM).toString();
+                appInfo.icon = app.loadIcon(mPM);
+                appInfo.isSystem = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0
+                        || (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+
+                SharedItems sharedItems = mSharedPkgs.get(appInfo.pkg);
+                if (sharedItems != null) {
+                    appInfo.shareApk = sharedItems.sharedApk;
+                    appInfo.shareData = sharedItems.sharedData;
+                }
+
+                // Make sure we're not sharing the apk if it's a system app or an update to a system
+                // app. Of course, mbtool will skip it anyway, but we don't want to confuse the user
+                if (appInfo.isSystem) {
+                    appInfo.shareApk = false;
+                }
+
+                synchronized (mAppInfos) {
+                    mAppInfos.add(appInfo);
+                }
+            }
         }
     }
 
