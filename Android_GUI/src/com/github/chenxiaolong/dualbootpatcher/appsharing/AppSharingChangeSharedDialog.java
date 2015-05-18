@@ -36,6 +36,8 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
     private static final String ARG_SHARE_APK = "share_apk";
     private static final String ARG_SHARE_DATA = "share_data";
     private static final String ARG_IS_SYSTEM_APP = "is_system_app";
+    private static final String ARG_ROMS_USING_SHARED_APK = "roms_using_shared_apk";
+    private static final String ARG_ROMS_USING_SHARED_DATA = "roms_using_shared_data";
 
     public interface AppSharingChangeSharedDialogListener {
         void onChangedShared(String pkg, boolean shareApk, boolean shareData);
@@ -43,7 +45,9 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
 
     public static AppSharingChangeSharedDialog newInstance(Fragment parent, String pkg, String name,
                                                            boolean shareApk, boolean shareData,
-                                                           boolean isSystemApp) {
+                                                           boolean isSystemApp,
+                                                           ArrayList<String> romsUsingSharedApk,
+                                                           ArrayList<String> romsUsingSharedData) {
         if (parent != null) {
             if (!(parent instanceof AppSharingChangeSharedDialogListener)) {
                 throw new IllegalStateException(
@@ -59,6 +63,8 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         args.putBoolean(ARG_SHARE_APK, shareApk);
         args.putBoolean(ARG_SHARE_DATA, shareData);
         args.putBoolean(ARG_IS_SYSTEM_APP, isSystemApp);
+        args.putStringArrayList(ARG_ROMS_USING_SHARED_APK, romsUsingSharedApk);
+        args.putStringArrayList(ARG_ROMS_USING_SHARED_DATA, romsUsingSharedData);
         frag.setArguments(args);
         return frag;
     }
@@ -75,6 +81,10 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         final boolean shareApk = args.getBoolean(ARG_SHARE_APK);
         final boolean shareData = args.getBoolean(ARG_SHARE_DATA);
         final boolean isSystemApp = args.getBoolean(ARG_IS_SYSTEM_APP);
+        final ArrayList<String> romsUsingSharedApk =
+                args.getStringArrayList(ARG_ROMS_USING_SHARED_APK);
+        final ArrayList<String> romsUsingSharedData =
+                args.getStringArrayList(ARG_ROMS_USING_SHARED_DATA);
 
         final String shareApkItem = getString(R.string.indiv_app_sharing_dialog_share_apk);
         final String shareDataItem = getString(R.string.indiv_app_sharing_dialog_share_data);
@@ -82,7 +92,20 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         final int shareApkIndex;
         final int shareDataIndex;
         final String[] items;
-        final String message;
+        final StringBuilder message = new StringBuilder();
+
+        if (!romsUsingSharedApk.isEmpty()) {
+            String fmt = getString(R.string.indiv_app_sharing_other_roms_using_shared_apk);
+            String roms = arrayListToString(romsUsingSharedApk);
+            message.append(String.format(fmt, roms));
+            message.append("\n\n");
+        }
+        if (!romsUsingSharedData.isEmpty()) {
+            String fmt = getString(R.string.indiv_app_sharing_other_roms_using_shared_data);
+            String roms = arrayListToString(romsUsingSharedData);
+            message.append(String.format(fmt, roms));
+            message.append("\n\n");
+        }
 
         ArrayList<Integer> selected = new ArrayList<>();
 
@@ -94,7 +117,7 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
             if (shareData) {
                 selected.add(shareDataIndex);
             }
-            message = getString(R.string.indiv_app_sharing_dialog_system_app_message);
+            message.append(getString(R.string.indiv_app_sharing_dialog_system_app_message));
         } else {
             shareApkIndex = 0;
             shareDataIndex = 1;
@@ -105,7 +128,7 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
             if (shareData) {
                 selected.add(shareDataIndex);
             }
-            message = getString(R.string.indiv_app_sharing_dialog_default_message);
+            message.append(getString(R.string.indiv_app_sharing_dialog_default_message));
         }
 
         Integer[] selectedIndices = selected.toArray(new Integer[selected.size()]);
@@ -145,5 +168,19 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         dialog.setCanceledOnTouchOutside(false);
 
         return dialog;
+    }
+
+    private static String arrayListToString(ArrayList<String> array) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String s : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(s);
+        }
+        return sb.toString();
     }
 }

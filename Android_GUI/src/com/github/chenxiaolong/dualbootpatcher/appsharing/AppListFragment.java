@@ -51,6 +51,7 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDi
 
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -182,7 +183,8 @@ public class AppListFragment extends Fragment implements
     @Override
     public void onSelectedApp(AppInformation info) {
         AppSharingChangeSharedDialog d = AppSharingChangeSharedDialog.newInstance(
-                this, info.pkg, info.name, info.shareApk, info.shareData, info.isSystem);
+                this, info.pkg, info.name, info.shareApk, info.shareData, info.isSystem,
+                info.romsThatShareApk, info.romsThatShareData);
         d.show(getFragmentManager(), AppSharingChangeSharedDialog.TAG);
     }
 
@@ -219,6 +221,8 @@ public class AppListFragment extends Fragment implements
         public boolean isSystem;
         public boolean shareApk;
         public boolean shareData;
+        public ArrayList<String> romsThatShareApk = new ArrayList<>();
+        public ArrayList<String> romsThatShareData = new ArrayList<>();
     }
 
     protected static class LoaderResult {
@@ -261,6 +265,8 @@ public class AppListFragment extends Fragment implements
             }
 
             HashMap<String, SharedItems> sharedPkgs = config.getIndivAppSharingPackages();
+            HashMap<String, HashMap<String, SharedItems>> sharedPkgsMap =
+                    getSharedPkgsForOtherRoms(info);
 
             PackageManager pm = getContext().getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(0);
@@ -281,7 +287,8 @@ public class AppListFragment extends Fragment implements
                 int begin = i;
                 int end = i + Math.min(partitionSize, apps.size() - i);
 
-                LoaderThread thread = new LoaderThread(pm, apps, sharedPkgs, appInfos, begin, end);
+                LoaderThread thread = new LoaderThread(
+                        pm, apps, sharedPkgs, sharedPkgsMap, appInfos, begin, end);
                 thread.start();
                 threads.add(thread);
 
@@ -308,22 +315,42 @@ public class AppListFragment extends Fragment implements
 
             return mResult;
         }
+
+        private HashMap<String, HashMap<String, SharedItems>> getSharedPkgsForOtherRoms
+                (RomInformation currentRom) {
+            HashMap<String, HashMap<String, SharedItems>> sharedPkgsMap = new HashMap<>();
+
+            RomInformation[] roms = RomUtils.getRoms(getContext());
+            for (RomInformation rom : roms) {
+                if (rom.getId().equals(currentRom.getId())) {
+                    continue;
+                }
+
+                RomConfig config = RomConfig.getConfig(rom.getConfigPath());
+                sharedPkgsMap.put(rom.getId(), config.getIndivAppSharingPackages());
+            }
+
+            return sharedPkgsMap;
+        }
     }
 
     private static class LoaderThread extends Thread {
         private final PackageManager mPM;
         private final List<ApplicationInfo> mApps;
         private final Map<String, SharedItems> mSharedPkgs;
+        private final Map<String, HashMap<String, SharedItems>> mSharedPkgsMap;
         private final List<AppInformation> mAppInfos;
         private final int mStart;
         private final int mStop;
 
         public LoaderThread(PackageManager pm, List<ApplicationInfo> apps,
-                            Map<String, SharedItems> sharedPkgs, List<AppInformation> appInfos,
-                            int start, int stop) {
+                            Map<String, SharedItems> sharedPkgs,
+                            Map<String, HashMap<String, SharedItems>> sharedPkgsMap,
+                            List<AppInformation> appInfos, int start, int stop) {
             mPM = pm;
             mApps = apps;
             mSharedPkgs = sharedPkgs;
+            mSharedPkgsMap = sharedPkgsMap;
             mAppInfos = appInfos;
             mStart = start;
             mStop = stop;
@@ -349,6 +376,20 @@ public class AppListFragment extends Fragment implements
                 if (sharedItems != null) {
                     appInfo.shareApk = sharedItems.sharedApk;
                     appInfo.shareData = sharedItems.sharedData;
+                }
+
+                // Get list of other ROMs that have this package shared
+                for (Map.Entry<String, HashMap<String, SharedItems>> entry :
+                        mSharedPkgsMap.entrySet()) {
+                    sharedItems = entry.getValue().get(appInfo.pkg);
+                    if (sharedItems != null) {
+                        if (sharedItems.sharedApk) {
+                            appInfo.romsThatShareApk.add(entry.getKey());
+                        }
+                        if (sharedItems.sharedData) {
+                            appInfo.romsThatShareData.add(entry.getKey());
+                        }
+                    }
                 }
 
                 // Make sure we're not sharing the apk if it's a system app or an update to a system
