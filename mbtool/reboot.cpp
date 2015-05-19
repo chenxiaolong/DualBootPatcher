@@ -34,7 +34,7 @@ bool reboot_via_init(const std::string &reboot_arg)
     value.append(reboot_arg);
 
     if (value.size() >= MB_PROP_VALUE_MAX - 1) {
-        LOGE("Reboot argument {:d} bytes too long",
+        LOGE("Reboot argument %zu bytes too long",
              value.size() + 1 - MB_PROP_VALUE_MAX);
         return false;
     }
@@ -55,7 +55,7 @@ bool reboot_via_init(const std::string &reboot_arg)
 bool reboot_directly(const std::string &reboot_arg)
 {
     if (android_reboot(ANDROID_RB_RESTART2, reboot_arg.c_str()) < 0) {
-        LOGE("Failed to reboot: {}", strerror(errno));
+        LOGE("Failed to reboot: %s", strerror(errno));
         return false;
     }
 

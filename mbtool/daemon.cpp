@@ -457,7 +457,7 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
 
     auto rom = roms.find_by_id(request->rom_id()->c_str());
     if (!rom) {
-        LOGE("Tried to wipe non-installed or invalid ROM ID: {}",
+        LOGE("Tried to wipe non-installed or invalid ROM ID: %s",
              request->rom_id()->c_str());
         return v2_send_generic_response(fd, v2::ResponseType_INVALID);
     }
@@ -465,7 +465,7 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
     // The GUI should check this, but we'll enforce it here
     auto current_rom = Roms::get_current_rom();
     if (current_rom && current_rom->id == rom->id) {
-        LOGE("Cannot wipe currently booted ROM: {}", rom->id);
+        LOGE("Cannot wipe currently booted ROM: %s", rom->id.c_str());
         return v2_send_generic_response(fd, v2::ResponseType_INVALID);
     }
 
@@ -476,8 +476,8 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
     if (request->targets()) {
         std::string raw_system = get_raw_path("/system");
         if (mount("", raw_system.c_str(), "", MS_REMOUNT, "") < 0) {
-            LOGW("Failed to mount {} as writable: {}",
-                 raw_system, strerror(errno));
+            LOGW("Failed to mount %s as writable: %s",
+                 raw_system.c_str(), strerror(errno));
         }
 
         for (short target : *request->targets()) {
@@ -514,7 +514,7 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
                 multiboot_path += rom->id;
                 success = util::delete_recursive(multiboot_path);
             } else {
-                LOGE("Unknown wipe target {:d}", target);
+                LOGE("Unknown wipe target %d", target);
             }
 
             if (success) {
@@ -614,28 +614,28 @@ static bool verify_credentials(uid_t uid)
 
     std::shared_ptr<Package> pkg = pkgs.find_by_uid(uid);
     if (!pkg) {
-        LOGE("Failed to find package for UID {:d}", uid);
+        LOGE("Failed to find package for UID %u", uid);
         return false;
     }
 
     pkg->dump();
-    LOGD("{} has {:d} signatures", pkg->name, pkg->sig_indexes.size());
+    LOGD("%s has %zu signatures", pkg->name.c_str(), pkg->sig_indexes.size());
 
     for (const std::string &index : pkg->sig_indexes) {
         if (pkgs.sigs.find(index) == pkgs.sigs.end()) {
-            LOGW("Signature index {} has no key", index);
+            LOGW("Signature index %s has no key", index.c_str());
             continue;
         }
 
         const std::string &key = pkgs.sigs[index];
         if (std::find(valid_certs.begin(), valid_certs.end(), key)
                 != valid_certs.end()) {
-            LOGV("{} matches whitelisted signatures", pkg->name);
+            LOGV("%s matches whitelisted signatures", pkg->name.c_str());
             return true;
         }
     }
 
-    LOGE("{} does not match whitelisted signatures", pkg->name);
+    LOGE("%s does not match whitelisted signatures", pkg->name.c_str());
     return false;
 }
 
@@ -648,19 +648,19 @@ static bool client_connection(int fd)
         }
     });
 
-    LOGD("Accepted connection from {:d}", fd);
+    LOGD("Accepted connection from %d", fd);
 
     struct ucred cred;
     socklen_t cred_len = sizeof(struct ucred);
 
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
-        LOGE("Failed to get socket credentials: {}", strerror(errno));
+        LOGE("Failed to get socket credentials: %s", strerror(errno));
         return ret = false;
     }
 
-    LOGD("Client PID: {:d}", cred.pid);
-    LOGD("Client UID: {:d}", cred.uid);
-    LOGD("Client GID: {:d}", cred.gid);
+    LOGD("Client PID: %u", cred.pid);
+    LOGD("Client UID: %u", cred.uid);
+    LOGD("Client GID: %u", cred.gid);
 
     if (verify_credentials(cred.uid)) {
         if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
@@ -690,7 +690,7 @@ static bool client_connection(int fd)
         }
         return true;
     } else {
-        LOGE("Unsupported interface version: {:d}", version);
+        LOGE("Unsupported interface version: %d", version);
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return ret = false;
     }
@@ -705,7 +705,7 @@ static bool run_daemon(void)
 
     fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
-        LOGE("Failed to create socket: {}", strerror(errno));
+        LOGE("Failed to create socket: %s", strerror(errno));
         return false;
     }
 
@@ -725,13 +725,13 @@ static bool run_daemon(void)
     socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
 
     if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
-        LOGE("Failed to bind socket: {}", strerror(errno));
+        LOGE("Failed to bind socket: %s", strerror(errno));
         LOGE("Is another instance running?");
         return false;
     }
 
     if (listen(fd, 3) < 0) {
-        LOGE("Failed to listen on socket: {}", strerror(errno));
+        LOGE("Failed to listen on socket: %s", strerror(errno));
         return false;
     }
 
@@ -742,7 +742,7 @@ static bool run_daemon(void)
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
     if (sigaction(SIGCHLD, &sa, 0) < 0) {
-        LOGE("Failed to set SIGCHLD handler: {}", strerror(errno));
+        LOGE("Failed to set SIGCHLD handler: %s", strerror(errno));
         return false;
     }
 
@@ -752,7 +752,7 @@ static bool run_daemon(void)
     while ((client_fd = accept(fd, nullptr, nullptr)) >= 0) {
         pid_t child_pid = fork();
         if (child_pid < 0) {
-            LOGE("Failed to fork: {}", strerror(errno));
+            LOGE("Failed to fork: %s", strerror(errno));
         } else if (child_pid == 0) {
             bool ret = client_connection(client_fd);
             close(client_fd);
@@ -762,7 +762,7 @@ static bool run_daemon(void)
     }
 
     if (client_fd < 0) {
-        LOGE("Failed to accept connection on socket: {}", strerror(errno));
+        LOGE("Failed to accept connection on socket: %s", strerror(errno));
         return false;
     }
 
@@ -774,14 +774,14 @@ static void run_daemon_fork(void)
 {
     pid_t pid = fork();
     if (pid < 0) {
-        LOGE("Failed to fork: {}", strerror(errno));
+        LOGE("Failed to fork: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     } else if (pid > 0) {
         _exit(EXIT_SUCCESS);
     }
 
     if (setsid() < 0) {
-        LOGE("Failed to become session leader: {}", strerror(errno));
+        LOGE("Failed to become session leader: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
 
@@ -789,14 +789,14 @@ static void run_daemon_fork(void)
 
     pid = fork();
     if (pid < 0) {
-        LOGE("Failed to fork: {}", strerror(errno));
+        LOGE("Failed to fork: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     } else if (pid > 0) {
         _exit(EXIT_SUCCESS);
     }
 
     if (chdir("/") < 0) {
-        LOGE("Failed to change cwd to /: {}", strerror(errno));
+        LOGE("Failed to change cwd to /: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
 
@@ -808,15 +808,15 @@ static void run_daemon_fork(void)
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
     if (open("/dev/null", O_RDONLY) < 0) {
-        LOGE("Failed to reopen stdin: {}", strerror(errno));
+        LOGE("Failed to reopen stdin: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
-    if (open("/dev/null",O_WRONLY) == -1) {
-        LOGE("Failed to reopen stdout: {}", strerror(errno));
+    if (open("/dev/null", O_WRONLY) < 0) {
+        LOGE("Failed to reopen stdout: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
-    if (open("/dev/null",O_RDWR) == -1) {
-        LOGE("Failed to reopen stderr: {}", strerror(errno));
+    if (open("/dev/null", O_RDWR) < 0) {
+        LOGE("Failed to reopen stderr: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
 
@@ -834,18 +834,18 @@ static bool patch_sepolicy_daemon()
     }
 
     if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
+        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
         policydb_destroy(&pdb);
         return false;
     }
 
-    LOGD("Policy version: {}", pdb.policyvers);
+    LOGD("Policy version: %u", pdb.policyvers);
 
     util::selinux_add_rule(&pdb, "untrusted_app", "init",
                            "unix_stream_socket", "connectto");
 
     if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
+        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -920,7 +920,7 @@ int daemon_main(int argc, char *argv[])
     // meh ...
     if (getppid() == 1) {
         if (!util::set_property("ro.multiboot.version", MBP_VERSION)) {
-            LOGE("Failed to set 'ro.multiboot.version' to '{}'", MBP_VERSION);
+            LOGE("Failed to set 'ro.multiboot.version' to '%s'", MBP_VERSION);
         }
     }
 

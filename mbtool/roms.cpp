@@ -24,8 +24,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include <cppformat/format.h>
-
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
@@ -71,7 +69,7 @@ void Roms::add_builtin()
     // Multislots
     for (int i = 1; i <= 3; ++i) {
         std::shared_ptr<Rom> multislot(new Rom());
-        multislot->id = fmt::format("multi-slot-{:d}", i);
+        multislot->id = util::format("multi-slot-%d", i);
         multislot->system_path.append(CACHE).append("/")
                               .append("multiboot").append("/")
                               .append(multislot->id).append("/")
@@ -97,7 +95,8 @@ void Roms::add_data_roms()
 
     DIR *dp = opendir(system.c_str());
     if (!dp ) {
-        LOGE("{}: Failed to open directory: {}", system, strerror(errno));
+        LOGE("%s: Failed to open directory: %s",
+             system.c_str(), strerror(errno));
         return;
     }
 

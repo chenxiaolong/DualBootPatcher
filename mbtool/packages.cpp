@@ -19,6 +19,8 @@
 
 #include "packages.h"
 
+#include <algorithm>
+
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -132,28 +134,28 @@ static char * time_to_string(uint64_t time)
 
 void Package::dump()
 {
-    static const char *fmt_string = "- {:<22} {}";
-    static const char *fmt_int    = "- {:<22} {:d}";
-    static const char *fmt_hex    = "- {:<22} {:#x}";
-    static const char *fmt_flag   = "- {:<22} {} ({:#x})";
+    static const char *fmt_string = "- %-22s %s";
+    static const char *fmt_int    = "- %-22s %d";
+    static const char *fmt_hex    = "- %-22s 0x%x";
+    static const char *fmt_flag   = "- %-22s %s (0x%x)";
 
     LOGD("Package:");
     if (!name.empty())
-        LOGD(fmt_string, "Name:", name);
+        LOGD(fmt_string, "Name:", name.c_str());
     if (!real_name.empty())
-        LOGD(fmt_string, "Real name:", real_name);
+        LOGD(fmt_string, "Real name:", real_name.c_str());
     if (!code_path.empty())
-        LOGD(fmt_string, "Code path:", code_path);
+        LOGD(fmt_string, "Code path:", code_path.c_str());
     if (!resource_path.empty())
-        LOGD(fmt_string, "Resource path:", resource_path);
+        LOGD(fmt_string, "Resource path:", resource_path.c_str());
     if (!native_library_path.empty())
-        LOGD(fmt_string, "Native library path:", native_library_path);
+        LOGD(fmt_string, "Native library path:", native_library_path.c_str());
     if (!primary_cpu_abi.empty())
-        LOGD(fmt_string, "Primary CPU ABI:", primary_cpu_abi);
+        LOGD(fmt_string, "Primary CPU ABI:", primary_cpu_abi.c_str());
     if (!secondary_cpu_abi.empty())
-        LOGD(fmt_string, "Secondary CPU ABI:", secondary_cpu_abi);
+        LOGD(fmt_string, "Secondary CPU ABI:", secondary_cpu_abi.c_str());
     if (!cpu_abi_override.empty())
-        LOGD(fmt_string, "CPU ABI override:", cpu_abi_override);
+        LOGD(fmt_string, "CPU ABI override:", cpu_abi_override.c_str());
 
     LOGD(fmt_hex, "Flags:", static_cast<uint64_t>(pkg_flags));
     if (pkg_flags & Package::FLAG_SYSTEM)
@@ -237,11 +239,11 @@ void Package::dump()
     }
 
     if (!uid_error.empty())
-        LOGD(fmt_string, "UID error:", uid_error);
+        LOGD(fmt_string, "UID error:", uid_error.c_str());
     if (!install_status.empty())
-        LOGD(fmt_string, "Install status:", install_status);
+        LOGD(fmt_string, "Install status:", install_status.c_str());
     if (!installer.empty())
-        LOGD(fmt_string, "Installer:", installer);
+        LOGD(fmt_string, "Installer:", installer.c_str());
 }
 
 bool Packages::load_xml(const std::string &path)
@@ -252,7 +254,8 @@ bool Packages::load_xml(const std::string &path)
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(path.c_str());
     if (!result) {
-        LOGE("Failed to parse XML file: {}: {}", path, result.description());
+        LOGE("Failed to parse XML file: %s: %s",
+             path.c_str(), result.description());
         return false;
     }
 
@@ -268,7 +271,7 @@ bool Packages::load_xml(const std::string &path)
                 return false;
             }
         } else {
-            LOGW("Unrecognized root tag: {}", cur_node.name());
+            LOGW("Unrecognized root tag: %s", cur_node.name());
         }
     }
 
@@ -292,12 +295,12 @@ static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
         } else if (strcmp(name, ATTR_KEY) == 0) {
             key = value;
         } else {
-            LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_CERT);
+            LOGW("Unrecognized attribute '%s' in <%s>", name, TAG_CERT);
         }
     }
 
     if (index.empty()) {
-        LOGW("Missing or empty index in <{}>", TAG_CERT);
+        LOGW("Missing or empty index in <%s>", TAG_CERT);
     } else {
         pkg->sig_indexes.push_back(index);
     }
@@ -306,7 +309,8 @@ static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
         if (it != pkgs->sigs.end()) {
             // Make sure key matches if it's already in the map
             if (it->second != key) {
-                LOGE("Error: Index \"{}\" assigned to multiple keys", index);
+                LOGE("Error: Index \"%s\" assigned to multiple keys",
+                     index.c_str());
                 return false;
             }
         } else {
@@ -329,13 +333,13 @@ static bool parse_tag_sigs(pugi::xml_node node, Packages *pkgs,
         }
 
         if (strcmp(cur_node.name(), TAG_SIGS) == 0) {
-            LOGW("Nested <{}> is not allowed", TAG_SIGS);
+            LOGW("Nested <%s> is not allowed", TAG_SIGS);
         } else if (strcmp(cur_node.name(), TAG_CERT) == 0) {
             if (!parse_tag_cert(cur_node, pkgs, pkg)) {
                 return false;
             }
         } else {
-            LOGW("Unrecognized <{}> within <{}>", cur_node.name(), TAG_SIGS);
+            LOGW("Unrecognized <%s> within <%s>", cur_node.name(), TAG_SIGS);
         }
     }
 
@@ -398,7 +402,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
                 || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_REQUIRES_ISA) == 0) {
             // Ignore Samsung-specific attributes
         } else {
-            LOGW("Unrecognized attribute '{}' in <{}>", name, TAG_PACKAGE);
+            LOGW("Unrecognized attribute '%s' in <%s>", name, TAG_PACKAGE);
         }
     }
 
@@ -408,7 +412,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         }
 
         if (strcmp(cur_node.name(), TAG_PACKAGE) == 0) {
-            LOGW("Nested <{}> is not allowed", TAG_PACKAGE);
+            LOGW("Nested <%s> is not allowed", TAG_PACKAGE);
         } else if (strcmp(cur_node.name(), TAG_DEFINED_KEYSET) == 0
                 || strcmp(cur_node.name(), TAG_PERMS) == 0
                 || strcmp(cur_node.name(), TAG_PROPER_SIGNING_KEYSET) == 0
@@ -420,7 +424,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
                 return false;
             }
         } else {
-            LOGW("Unrecognized <{}> within <{}>", cur_node.name(), TAG_PACKAGE);
+            LOGW("Unrecognized <%s> within <%s>", cur_node.name(), TAG_PACKAGE);
         }
     }
 
@@ -439,7 +443,7 @@ static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs)
         }
 
         if (strcmp(cur_node.name(), TAG_PACKAGES) == 0) {
-            LOGW("Nested <{}> is not allowed", TAG_PACKAGES);
+            LOGW("Nested <%s> is not allowed", TAG_PACKAGES);
         } else if (strcmp(cur_node.name(), TAG_PACKAGE) == 0) {
             if (!parse_tag_package(cur_node, pkgs)) {
                 return false;
@@ -454,7 +458,7 @@ static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs)
                 || strcmp(cur_node.name(), TAG_UPDATED_PACKAGE) == 0) {
             // Ignore
         } else {
-            LOGW("Unrecognized <{}> within <{}>", cur_node.name(), TAG_PACKAGES);
+            LOGW("Unrecognized <%s> within <%s>", cur_node.name(), TAG_PACKAGES);
         }
     }
 

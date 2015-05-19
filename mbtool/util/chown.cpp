@@ -25,10 +25,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <cppformat/format.h>
-
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 namespace mb
 {
@@ -86,9 +85,9 @@ private:
     bool chown_path()
     {
         if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
-            _error_msg = fmt::format("{}: Failed to chown: {}",
-                                     _curr->fts_path, strerror(errno));
-            LOGW("{}", _error_msg);
+            _error_msg = format("%s: Failed to chown: %s",
+                                _curr->fts_path, strerror(errno));
+            LOGW("%s", _error_msg.c_str());
             return false;
         }
         return true;

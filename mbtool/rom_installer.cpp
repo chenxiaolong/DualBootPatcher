@@ -30,7 +30,6 @@
 #include <libmbp/bootimage.h>
 #include <libmbp/logging.h>
 
-#include "external/cppformat/format.h"
 #include "installer.h"
 #include "util/archive.h"
 #include "util/chown.h"
@@ -141,7 +140,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     int ret = archive_read_open_memory(in.get(),
             const_cast<unsigned char *>(ramdisk.data()), ramdisk.size());
     if (ret != ARCHIVE_OK) {
-        LOGW("Failed to open recovery ramdisk: {}",
+        LOGW("Failed to open recovery ramdisk: %s",
              archive_error_string(in.get()));
         return ProceedState::Fail;
     }
@@ -164,7 +163,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
             continue;
         }
 
-        LOGE("Copying from recovery: {}", path);
+        LOGE("Copying from recovery: %s", path.c_str());
 
         archive_entry_set_pathname(entry, (_chroot + "/" + path).c_str());
 
@@ -176,7 +175,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Archive extraction ended without reaching EOF: {}",
+        LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return ProceedState::Fail;
     }
@@ -203,11 +202,11 @@ Installer::ProceedState RomInstaller::on_pre_install()
     }
 
     if (setenv("LD_LIBRARY_PATH", "/sbin", 1) < 0) {
-        LOGE("Failed to set LD_LIBRARY_PATH: {}", strerror(errno));
+        LOGE("Failed to set LD_LIBRARY_PATH: %s", strerror(errno));
         return ProceedState::Fail;
     }
     if (unsetenv("LD_PRELOAD") < 0) {
-        LOGE("Failed to unset LD_PRELOAD: {}", strerror(errno));
+        LOGE("Failed to unset LD_PRELOAD: %s", strerror(errno));
         return ProceedState::Fail;
     }
 
@@ -218,13 +217,13 @@ Installer::ProceedState RomInstaller::on_unmounted_filesystems()
 {
     if (!_ld_library_path.empty()) {
         if (setenv("LD_LIBRARY_PATH", _ld_library_path.c_str(), 1) < 0) {
-            LOGE("Failed to set LD_LIBRARY_PATH: {}", strerror(errno));
+            LOGE("Failed to set LD_LIBRARY_PATH: %s", strerror(errno));
             return ProceedState::Fail;
         }
     }
     if (!_ld_preload.empty()) {
         if (setenv("LD_PRELOAD", _ld_preload.c_str(), 1) < 0) {
-            LOGE("Failed to set LD_PRELOAD: {}", strerror(errno));
+            LOGE("Failed to set LD_PRELOAD: %s", strerror(errno));
             return ProceedState::Fail;
         }
     }
@@ -239,21 +238,21 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
     // Fix permissions on log file
 
     if (chmod(log_file, 0664) < 0) {
-        LOGE("{}: Failed to chmod: {}", log_file, strerror(errno));
+        LOGE("%s: Failed to chmod: %s", log_file, strerror(errno));
     }
 
     if (!util::chown(log_file, "media_rw", "media_rw", 0)) {
-        LOGE("{}: Failed to chown: {}", log_file, strerror(errno));
+        LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
         if (chown(log_file, 1023, 1023) < 0) {
-            LOGE("{}: Failed to chown: {}", log_file, strerror(errno));
+            LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
         }
     }
 
     std::string context;
     if (util::selinux_lget_context("/data/media/0", &context)
             && !util::selinux_lset_context(log_file, context)) {
-        LOGE("{}: Failed to set context to {}: {}",
-             log_file, context, strerror(errno));
+        LOGE("%s: Failed to set context to %s: %s",
+             log_file, context.c_str(), strerror(errno));
     }
 
     display_msg("The log file was saved as MultiBoot.log on the "
@@ -360,19 +359,19 @@ static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
 {
     switch (prio) {
     case mbp::LogLevel::Debug:
-        LOGD("{}", msg);
+        LOGD("%s", msg.c_str());
         break;
     case mbp::LogLevel::Error:
-        LOGE("{}", msg);
+        LOGE("%s", msg.c_str());
         break;
     case mbp::LogLevel::Info:
-        LOGI("{}", msg);
+        LOGI("%s", msg.c_str());
         break;
     case mbp::LogLevel::Verbose:
-        LOGV("{}", msg);
+        LOGV("%s", msg.c_str());
         break;
     case mbp::LogLevel::Warning:
-        LOGW("{}", msg);
+        LOGW("%s", msg.c_str());
         break;
     }
 }

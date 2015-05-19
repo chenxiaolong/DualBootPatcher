@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <libgen.h>
 #include <sys/stat.h>
@@ -38,7 +39,7 @@ std::string get_cwd()
     char *cwd = nullptr;
 
     if (!(cwd = getcwd(nullptr, 0))) {
-        LOGE("Failed to get cwd: {}", strerror(errno));
+        LOGE("Failed to get cwd: %s", strerror(errno));
         return std::string();
     }
 
@@ -103,12 +104,12 @@ bool inodes_equal(const std::string &path1, const std::string &path2)
     struct stat sb2;
 
     if (lstat(path1.c_str(), &sb1) < 0) {
-        LOGE("{}: Failed to stat: {}", path1, strerror(errno));
+        LOGE("%s: Failed to stat: %s", path1.c_str(), strerror(errno));
         return false;
     }
 
     if (lstat(path2.c_str(), &sb2) < 0) {
-        LOGE("{}: Failed to stat: {}", path2, strerror(errno));
+        LOGE("%s: Failed to stat: %s", path2.c_str(), strerror(errno));
         return false;
     }
 

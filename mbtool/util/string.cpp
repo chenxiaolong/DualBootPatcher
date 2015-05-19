@@ -19,12 +19,32 @@
 
 #include "util/string.h"
 
+#include <memory>
+
+#include <cstdarg>
 #include <cstring>
 
 namespace mb
 {
 namespace util
 {
+
+std::string format(const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    std::size_t size = vsnprintf(nullptr, 0, fmt, ap) + 1;
+    va_end(ap);
+
+    std::unique_ptr<char[]> buf(new char[size]);
+
+    va_start(ap, fmt);
+    vsnprintf(buf.get(), size, fmt, ap);
+    va_end(ap);
+
+    return std::string(buf.get(), buf.get() + size - 1);
+}
 
 bool starts_with_internal(const char *string, std::size_t len_string,
                           const char *prefix, std::size_t len_prefix,

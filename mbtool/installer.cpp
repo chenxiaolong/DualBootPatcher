@@ -19,6 +19,9 @@
 
 #include "installer.h"
 
+// C++
+#include <algorithm>
+
 // C
 #include <cstring>
 
@@ -29,9 +32,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-// cppformat
-#include "external/cppformat/format.h"
 
 // Legacy properties
 #include "external/legacy_property_service.h"
@@ -100,7 +100,7 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
 {
     _passthrough = _output_fd >= 0;
 
-    LOGD("Initialized installer for zip file: {}", _zip_file);
+    LOGD("Initialized installer for zip file: %s", _zip_file.c_str());
 }
 
 Installer::~Installer()
@@ -115,7 +115,7 @@ Installer::~Installer()
 int log_mkdir(const char *pathname, mode_t mode)
 {
     if (mkdir(pathname, mode) < 0) {
-        LOGE("Failed to create {}: {}", pathname, strerror(errno));
+        LOGE("Failed to create %s: %s", pathname, strerror(errno));
         return false;
     }
     return true;
@@ -125,7 +125,7 @@ int log_mount(const char *source, const char *target, const char *fstype,
               long unsigned int mountflags, const void *data)
 {
     if (mount(source, target, fstype, mountflags, data) < 0) {
-        LOGE("Failed to mount {} ({}) at {}: {}",
+        LOGE("Failed to mount %s (%s) at %s: %s",
              source, fstype, target, strerror(errno));
         return false;
     }
@@ -135,7 +135,7 @@ int log_mount(const char *source, const char *target, const char *fstype,
 int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 {
     if (mknod(pathname, mode, dev) < 0) {
-        LOGE("Failed to create special file {}: {}", pathname, strerror(errno));
+        LOGE("Failed to create special file %s: %s", pathname, strerror(errno));
         return false;
     }
     return true;
@@ -144,7 +144,7 @@ int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 bool log_is_mounted(const std::string &mountpoint)
 {
     if (!util::is_mounted(mountpoint)) {
-        LOGE("{} is not mounted", mountpoint);
+        LOGE("%s is not mounted", mountpoint.c_str());
         return false;
     }
     return true;
@@ -153,7 +153,7 @@ bool log_is_mounted(const std::string &mountpoint)
 bool log_unmount_all(const std::string &dir)
 {
     if (!util::unmount_all(dir)) {
-        LOGE("Failed to unmount all mountpoints within {}", dir);
+        LOGE("Failed to unmount all mountpoints within %s", dir.c_str());
         return false;
     }
     return true;
@@ -162,7 +162,7 @@ bool log_unmount_all(const std::string &dir)
 bool log_delete_recursive(const std::string &path)
 {
     if (!util::delete_recursive(path)) {
-        LOGE("Failed to recursively remove {}", path);
+        LOGE("Failed to recursively remove %s", path.c_str());
         return false;
     }
     return true;
@@ -172,7 +172,8 @@ bool log_copy_dir(const std::string &source,
                   const std::string &target, int flags)
 {
     if (!util::copy_dir(source, target, flags)) {
-        LOGE("Failed to copy contents of {}/ to {}/", source, target);
+        LOGE("Failed to copy contents of %s/ to %s/",
+             source.c_str(), target.c_str());
         return false;
     }
     return true;
@@ -272,8 +273,9 @@ bool Installer::create_chroot()
     if (log_mount("none", in_chroot("/sys/fs/selinux").c_str(), "selinuxfs", 0, "") < 0
             && errno != ENOENT) {
         LOGV("Ignoring /sys/fs/selinux mount");
-        LOGE("Failed to mount {} ({}) at {}: {}",
-             "none", "selinuxfs", in_chroot("/sys/fs/selinux"), strerror(errno));
+        LOGE("Failed to mount %s (%s) at %s: %s",
+             "none", "selinuxfs", in_chroot("/sys/fs/selinux").c_str(),
+             strerror(errno));
         return false;
     }
 
@@ -361,7 +363,7 @@ bool Installer::destroy_chroot() const
 
     // Unmount everything previously mounted in the chroot
     if (!util::unmount_all(_chroot)) {
-        LOGE("Failed to unmount previous mount points in {}", _chroot);
+        LOGE("Failed to unmount previous mount points in %s", _chroot.c_str());
         return false;
     }
 
@@ -402,13 +404,13 @@ bool Installer::set_up_busybox_wrapper()
 
     if (!util::copy_file(temp_busybox, sbin_busybox,
                          util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-        LOGE("Failed to copy {} to {}: {}",
-             temp_busybox, sbin_busybox, strerror(errno));
+        LOGE("Failed to copy %s to %s: %s",
+             temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
         return false;
     }
 
     if (chmod(sbin_busybox.c_str(), 0555) < 0) {
-        LOGE("Failed to chmod {}: {}", sbin_busybox, strerror(errno));
+        LOGE("Failed to chmod %s: %s", sbin_busybox.c_str(), strerror(errno));
         return false;
     }
 
@@ -427,29 +429,29 @@ bool Installer::create_temporary_image(const std::string &path)
     remove(path.c_str());
 
     if (!util::mkdir_parent(path, S_IRWXU)) {
-        LOGE("{}: Failed to create parent directory: {}",
-             path, strerror(errno));
+        LOGE("%s: Failed to create parent directory: %s",
+             path.c_str(), strerror(errno));
         return false;
     }
 
     struct stat sb;
     if (stat(path.c_str(), &sb) < 0) {
         if (errno != ENOENT) {
-            LOGE("{}: Failed to stat: {}", path, strerror(errno));
+            LOGE("%s: Failed to stat: %s", path.c_str(), strerror(errno));
             return false;
         } else {
-            LOGD("{}: Creating new {} ext4 image", path, image_size);
+            LOGD("%s: Creating new %s ext4 image", path.c_str(), image_size);
 
             // Create new image
             if (run_command({ "make_ext4fs", "-l", image_size, path }) != 0) {
-                LOGE("{}: Failed to create image", path);
+                LOGE("%s: Failed to create image", path.c_str());
                 return false;
             }
             return true;
         }
     }
 
-    LOGE("{}: File already exists", path);
+    LOGE("%s: File already exists", path.c_str());
     return false;
 }
 
@@ -479,53 +481,55 @@ bool Installer::system_image_copy(const std::string &source,
 
     if (stat(source.c_str(), &sb) < 0
             && !util::mkdir_recursive(source, 0755)) {
-        LOGE("Failed to create {}: {}", source, strerror(errno));
+        LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
         return false;
     }
 
     if (stat(temp_mnt.c_str(), &sb) < 0
             && mkdir(temp_mnt.c_str(), 0755) < 0) {
-        LOGE("Failed to create {}: {}", temp_mnt, strerror(errno));
+        LOGE("Failed to create %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
 
     loopdev = util::loopdev_find_unused();
     if (loopdev.empty()) {
-        LOGE("Failed to find unused loop device: {}", strerror(errno));
+        LOGE("Failed to find unused loop device: %s", strerror(errno));
         return false;
     }
 
     if (!util::loopdev_set_up_device(loopdev, image, 0, 0)) {
-        LOGE("Failed to set up loop device {}: {}", loopdev, strerror(errno));
+        LOGE("Failed to set up loop device %s: %s",
+             loopdev.c_str(), strerror(errno));
         return false;
     }
 
     if (mount(loopdev.c_str(), temp_mnt.c_str(), "ext4", 0, "") < 0) {
-        LOGE("Failed to mount {}: {}", loopdev, strerror(errno));
+        LOGE("Failed to mount %s: %s", loopdev.c_str(), strerror(errno));
         return false;
     }
 
     if (reverse) {
         if (!copy_system(temp_mnt, source)) {
-            LOGE("Failed to copy system files from {} to {}",
-                 temp_mnt, source);
+            LOGE("Failed to copy system files from %s to %s",
+                 temp_mnt.c_str(), source.c_str());
             return false;
         }
     } else {
         if (!copy_system(source, temp_mnt)) {
-            LOGE("Failed to copy system files from {} to {}",
-                 source, temp_mnt);
+            LOGE("Failed to copy system files from %s to %s",
+                 source.c_str(), temp_mnt.c_str());
             return false;
         }
     }
 
     if (umount(temp_mnt.c_str()) < 0) {
-        LOGE("Failed to unmount {}: {}", temp_mnt, strerror(errno));
+        LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
 
     if (!util::loopdev_remove_device(loopdev)) {
-        LOGE("Failed to remove loop device {}: {}", loopdev, strerror(errno));
+        LOGE("Failed to remove loop device %s: %s",
+             loopdev.c_str(), strerror(errno));
         return false;
     }
 
@@ -548,21 +552,21 @@ bool Installer::run_real_updater()
 
     if (!util::copy_file(updater, chroot_updater,
                          util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-        LOGE("Failed to copy {} to {}: {}",
-             updater, chroot_updater, strerror(errno));
+        LOGE("Failed to copy %s to %s: %s",
+             updater.c_str(), chroot_updater.c_str(), strerror(errno));
         return false;
     }
 
     if (chmod(chroot_updater.c_str(), 0555) < 0) {
-        LOGE("{}: Failed to chmod: {}",
-             chroot_updater, strerror(errno));
+        LOGE("%s: Failed to chmod: %s",
+             chroot_updater.c_str(), strerror(errno));
         return false;
     }
 
     pid_t parent = getppid();
 
     bool aroma = is_aroma(chroot_updater);
-    LOGD("update-binary is AROMA: {}", aroma);
+    LOGD("update-binary is AROMA: %d", aroma);
 
     if (aroma) {
         kill(parent, SIGSTOP);
@@ -606,11 +610,13 @@ bool Installer::run_real_updater()
             }
 
             if (chdir(_chroot.c_str()) < 0) {
-                LOGE("{}; Failed to chdir: {}", _chroot, strerror(errno));
+                LOGE("%s: Failed to chdir: %s",
+                     _chroot.c_str(), strerror(errno));
                 _exit(EXIT_FAILURE);
             }
             if (chroot(_chroot.c_str()) < 0) {
-                LOGE("{}: Failed to chroot: {}", _chroot, strerror(errno));
+                LOGE("%s: Failed to chroot: %s",
+                     _chroot.c_str(), strerror(errno));
                 _exit(EXIT_FAILURE);
             }
 
@@ -634,18 +640,18 @@ bool Installer::run_real_updater()
                 sprintf(tmp, "%d,%d", dup(propfd), propsz);
 
                 char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
-                LOGD("Original properties environment: {}",
+                LOGD("Original properties environment: %s",
                      orig_prop_env ? orig_prop_env : "null");
 
                 setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
 
-                LOGD("Switched to legacy properties environment: {}", tmp);
+                LOGD("Switched to legacy properties environment: %s", tmp);
             }
 
             // Make sure the updater won't run interactively
             close(STDIN_FILENO);
             if (open("/dev/null", O_RDONLY) < 0) {
-                LOGE("Failed to reopen stdin: {}", strerror(errno));
+                LOGE("Failed to reopen stdin: %s", strerror(errno));
                 _exit(EXIT_FAILURE);
             }
 
@@ -699,13 +705,13 @@ bool Installer::run_real_updater()
                                 updater_print("\n");
                             }
                         } else {
-                            LOGE("Unknown updater command: {}", cmd);
+                            LOGE("Unknown updater command: %s", cmd);
                         }
                     }
 
                     do {
                         if (waitpid(reader_pid, &reader_status, 0) < 0) {
-                            LOGE("Failed to waitpid(): {}", strerror(errno));
+                            LOGE("Failed to waitpid(): %s", strerror(errno));
                             break;
                         }
                     } while (!WIFEXITED(reader_status)
@@ -718,16 +724,16 @@ bool Installer::run_real_updater()
 
             do {
                 if (waitpid(pid, &status, 0) < 0) {
-                    LOGE("Failed to waitpid(): {}", strerror(errno));
+                    LOGE("Failed to waitpid(): %s", strerror(errno));
                     return false;
                 }
             } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
             if (WIFEXITED(status)) {
-                LOGD("Child exited: {:d}", WEXITSTATUS(status));
+                LOGD("Child exited: %d", WEXITSTATUS(status));
             }
             if (WIFSIGNALED(status)) {
-                LOGD("Child killed with signal: {:d}", WTERMSIG(status));
+                LOGD("Child killed with signal: %d", WTERMSIG(status));
             }
         }
     }
@@ -737,13 +743,13 @@ bool Installer::run_real_updater()
     updater_print("\n");
 
     if (pid < 0) {
-        LOGE("Failed to execute {}: {}",
+        LOGE("Failed to execute %s: %s",
              "/mb/updater", strerror(errno));
         return false;
     }
 
     if (WEXITSTATUS(status) != 0) {
-        LOGE("{} returned non-zero exit status",
+        LOGE("%s returned non-zero exit status",
              "/mb/updater");
         return false;
     }
@@ -913,7 +919,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("[Installer] Device verification stage");
 
     mbp::PatcherConfig pc;
-    LOGD("libmbp-mini version: {}", pc.version());
+    LOGD("libmbp-mini version: %s", pc.version().c_str());
 
     std::string prop_product_device;
     std::string prop_build_product;
@@ -929,9 +935,9 @@ Installer::ProceedState Installer::install_stage_check_device()
     util::get_property("ro.product.device", &prop_product_device, "");
     util::get_property("ro.build.product", &prop_build_product, "");
 
-    LOGD("ro.product.device = {}", prop_product_device);
-    LOGD("ro.build.product = {}", prop_build_product);
-    LOGD("Target device = {}", _device);
+    LOGD("ro.product.device = %s", prop_product_device.c_str());
+    LOGD("ro.build.product = %s", prop_build_product.c_str());
+    LOGD("Target device = %s", _device.c_str());
 
     // Check if we should skip the codename check
     bool skip_codename_check = false;
@@ -969,9 +975,10 @@ Installer::ProceedState Installer::install_stage_check_device()
             if (it == codenames.end()) {
                 display_msg("Patched zip is for:");
                 for (const std::string &codename : d->codenames()) {
-                    display_msg(fmt::format("- {}", codename));
+                    display_msg(util::format("- %s", codename.c_str()));
                 }
-                display_msg(fmt::format("This device is '{}'", prop_product_device));
+                display_msg(util::format(
+                        "This device is '%s'", prop_product_device.c_str()));
 
                 return ProceedState::Fail;
             }
@@ -985,7 +992,7 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         _boot_block_dev = devs[0];
-        LOGD("Boot block device: {}", _boot_block_dev);
+        LOGD("Boot block device: %s", _boot_block_dev.c_str());
 
         // Recovery block devices
         auto recovery_devs = d->recoveryBlockDevs();
@@ -995,7 +1002,7 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         _recovery_block_dev = recovery_devs[0];
-        LOGD("Recovery block device: {}", _recovery_block_dev);
+        LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
 
         // Copy any other required block devices to the chroot
         auto extra_devs = d->extraBlockDevs();
@@ -1009,17 +1016,18 @@ Installer::ProceedState Installer::install_stage_check_device()
             dev_path += dev;
 
             if (!util::mkdir_parent(dev_path, 0755)) {
-                LOGE("Failed to create parent directory of {}", dev_path);
+                LOGE("Failed to create parent directory of %s",
+                     dev_path.c_str());
             }
 
             // Follow symlinks just in case the symlink source isn't in the list
             if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
                                               | util::COPY_XATTRS
                                               | util::COPY_FOLLOW_SYMLINKS)) {
-                LOGE("Failed to copy {}. Continuing anyway", dev);
+                LOGE("Failed to copy %s. Continuing anyway", dev.c_str());
             }
 
-            LOGD("Copied {} to the chroot", dev);
+            LOGD("Copied %s to the chroot", dev.c_str());
         }
 
         break;
@@ -1052,7 +1060,8 @@ Installer::ProceedState Installer::install_stage_get_install_type()
     } else {
         _rom = roms.find_by_id(install_type);
         if (!_rom) {
-            display_msg(fmt::format("Unknown ROM ID: {}", install_type));
+            display_msg(util::format(
+                    "Unknown ROM ID: %s", install_type.c_str()));
             return ProceedState::Fail;
         }
     }
@@ -1090,7 +1099,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     }
 
     std::string digest = util::hex_string(_boot_hash, SHA_DIGEST_SIZE);
-    LOGD("Boot partition SHA1sum: {}", digest);
+    LOGD("Boot partition SHA1sum: %s", digest.c_str());
 
     // Save a copy of the boot image that we'll restore if the installation fails
     if (!util::copy_contents(_boot_block_dev, _temp + "/boot.orig")) {
@@ -1128,15 +1137,17 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     // Mount target filesystems
     if (!util::bind_mount(_rom->cache_path, 0771,
                           in_chroot("/cache"), 0771)) {
-        display_msg(fmt::format("Failed to bind mount {} to {}",
-                                _rom->cache_path, in_chroot("/cache")));
+        display_msg(util::format("Failed to bind mount %s to %s",
+                                 _rom->cache_path.c_str(),
+                                 in_chroot("/cache").c_str()));
         return ProceedState::Fail;
     }
 
     if (!util::bind_mount(_rom->data_path, 0771,
                           in_chroot("/data"), 0771)) {
-        display_msg(fmt::format("Failed to bind mount {} to {}",
-                                _rom->data_path, in_chroot("/data")));
+        display_msg(util::format("Failed to bind mount %s to %s",
+                                 _rom->data_path.c_str(),
+                                 in_chroot("/data").c_str()));
         return ProceedState::Fail;
     }
 
@@ -1145,8 +1156,9 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     if (!_has_block_image && _rom->id != "primary") {
         if (!util::bind_mount(_rom->system_path, 0771,
                               in_chroot("/system"), 0771)) {
-            display_msg(fmt::format("Failed to bind mount {} to {}",
-                                    _rom->system_path, in_chroot("/system")));
+            display_msg(util::format("Failed to bind mount %s to %s",
+                                     _rom->system_path.c_str(),
+                                     in_chroot("/system").c_str()));
             return ProceedState::Fail;
         }
     } else {
@@ -1154,15 +1166,16 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
         // Create temporary image in /data
         if (!create_temporary_image(TEMP_SYSTEM_IMAGE)) {
-            display_msg(fmt::format("Failed to create temporary image {}",
-                                    TEMP_SYSTEM_IMAGE));
+            display_msg(util::format("Failed to create temporary image %s",
+                                     TEMP_SYSTEM_IMAGE.c_str()));
             return ProceedState::Fail;
         }
 
         // Copy current /system files to the image
         if (!system_image_copy(_rom->system_path, TEMP_SYSTEM_IMAGE, false)) {
-            display_msg(fmt::format("Failed to copy {} to {}",
-                                    _rom->system_path, TEMP_SYSTEM_IMAGE));
+            display_msg(util::format("Failed to copy %s to %s",
+                                     _rom->system_path.c_str(),
+                                     TEMP_SYSTEM_IMAGE.c_str()));
             return ProceedState::Fail;
         }
 
@@ -1231,14 +1244,16 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
 
         // Format system directory
         if (!wipe_directory(_rom->system_path, true)) {
-            display_msg(fmt::format("Failed to wipe {}", _rom->system_path));
+            display_msg(util::format("Failed to wipe %s",
+                                     _rom->system_path.c_str()));
             return ProceedState::Fail;
         }
 
         // Copy image back to system directory
         if (!system_image_copy(_rom->system_path, TEMP_SYSTEM_IMAGE, true)) {
-            display_msg(fmt::format("Failed to copy {} to {}",
-                                    TEMP_SYSTEM_IMAGE, _rom->system_path));
+            display_msg(util::format("Failed to copy %s to %s",
+                                     TEMP_SYSTEM_IMAGE.c_str(),
+                                     _rom->system_path.c_str()));
             return ProceedState::Fail;
         }
     }
@@ -1260,8 +1275,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
     std::string old_digest = util::hex_string(_boot_hash, SHA_DIGEST_SIZE);
     std::string new_digest = util::hex_string(new_hash, SHA_DIGEST_SIZE);
-    LOGD("Old boot partition SHA1sum: {}", old_digest);
-    LOGD("New boot partition SHA1sum: {}", new_digest);
+    LOGD("Old boot partition SHA1sum: %s", old_digest.c_str());
+    LOGD("New boot partition SHA1sum: %s", new_digest.c_str());
 
     // Set kernel if it was changed
     if (memcmp(_boot_hash, new_hash, SHA_DIGEST_SIZE) != 0) {
@@ -1299,7 +1314,7 @@ Installer::ProceedState Installer::install_stage_finish()
         if (bi.wasLoki()) {
             std::vector<unsigned char> aboot_image;
             if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
-                LOGE("Failed to read aboot partition: {}", strerror(errno));
+                LOGE("Failed to read aboot partition: %s", strerror(errno));
                 display_msg("Failed to read aboot partition");
                 return ProceedState::Fail;
             }
@@ -1317,8 +1332,10 @@ Installer::ProceedState Installer::install_stage_finish()
         if (!util::file_write_data(temp_boot_img,
                                    reinterpret_cast<char *>(bootimg.data()),
                                    bootimg.size())) {
-            LOGE("Failed to write {}: {}", temp_boot_img, strerror(errno));
-            display_msg(fmt::format("Failed to write {}", temp_boot_img));
+            LOGE("Failed to write %s: %s",
+                 temp_boot_img.c_str(), strerror(errno));
+            display_msg(util::format("Failed to write %s",
+                                     temp_boot_img.c_str()));
             return ProceedState::Fail;
         }
 
@@ -1329,13 +1346,14 @@ Installer::ProceedState Installer::install_stage_finish()
         path += _rom->id;
         path += "/boot.img";
         if (!util::mkdir_parent(path, 0775)) {
-            display_msg(fmt::format("Failed to create {}", path));
+            display_msg(util::format("Failed to create %s", path.c_str()));
             return ProceedState::Fail;
         }
 
         int fd_source = open(temp_boot_img.c_str(), O_RDONLY);
         if (fd_source < 0) {
-            LOGE("Failed to open {}: {}", temp_boot_img, strerror(errno));
+            LOGE("Failed to open %s: %s",
+                 temp_boot_img.c_str(), strerror(errno));
             return ProceedState::Fail;
         }
 
@@ -1343,7 +1361,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
         int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY);
         if (fd_boot < 0) {
-            LOGE("Failed to open {}: {}", _boot_block_dev, strerror(errno));
+            LOGE("Failed to open %s: %s",
+                 _boot_block_dev.c_str(), strerror(errno));
             return ProceedState::Fail;
         }
 
@@ -1351,52 +1370,53 @@ Installer::ProceedState Installer::install_stage_finish()
 
         int fd_backup = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0775);
         if (fd_backup < 0) {
-            LOGE("Failed to open {}: {}", path, strerror(errno));
+            LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
             return ProceedState::Fail;
         }
 
         auto close_fd_backup = util::finally([&] { close(fd_backup); });
 
         if (!util::copy_data_fd(fd_source, fd_boot)) {
-            LOGE("Failed to write {}: {}", _boot_block_dev, strerror(errno));
+            LOGE("Failed to write %s: %s",
+                 _boot_block_dev.c_str(), strerror(errno));
             return ProceedState::Fail;
         }
 
         lseek(fd_source, 0, SEEK_SET);
 
         if (!util::copy_data_fd(fd_source, fd_backup)) {
-            LOGE("Failed to write {}: {}", path, strerror(errno));
+            LOGE("Failed to write %s: %s", path.c_str(), strerror(errno));
             return ProceedState::Fail;
         }
 
         if (fchmod(fd_backup, 0775) < 0) {
             // Non-fatal
-            LOGE("{}: Failed to chmod: {}", path, strerror(errno));
+            LOGE("%s: Failed to chmod: %s", path.c_str(), strerror(errno));
         }
 
         if (!util::chown(path, "media_rw", "media_rw", 0)) {
             // Non-fatal
-            LOGE("{}: Failed to chown: {}", path, strerror(errno));
+            LOGE("%s: Failed to chown: %s", path.c_str(), strerror(errno));
         }
     }
 
     if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
         // Non-fatal
-        LOGE("{}: Failed to chmod: {}", MULTIBOOT_DIR, strerror(errno));
+        LOGE("%s: Failed to chmod: %s", MULTIBOOT_DIR, strerror(errno));
     }
 
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
                      util::CHOWN_RECURSIVE)) {
         // Non-fatal
-        LOGE("{}: Failed to chown: {}", MULTIBOOT_DIR, strerror(errno));
+        LOGE("%s: Failed to chown: %s", MULTIBOOT_DIR, strerror(errno));
     }
 
     std::string context;
     if (util::selinux_lget_context("/data/media/0", &context)
             && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
         // Non-fatal
-        LOGE("{}: Failed to set SELinux context to {}: {}",
-             MULTIBOOT_DIR, context, strerror(errno));
+        LOGE("%s: Failed to set SELinux context to %s: %s",
+             MULTIBOOT_DIR, context.c_str(), strerror(errno));
     }
 
     return on_finished();
@@ -1416,7 +1436,7 @@ void Installer::install_stage_cleanup(Installer::ProceedState ret)
 
     if (ret == ProceedState::Fail && !_boot_block_dev.empty()
             && !util::copy_contents(_temp + "/boot.orig", _boot_block_dev)) {
-        LOGE("Failed to restore boot partition: {}", strerror(errno));
+        LOGE("Failed to restore boot partition: %s", strerror(errno));
         display_msg("Failed to restore boot partition");
     }
 

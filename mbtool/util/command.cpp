@@ -51,7 +51,7 @@ int run_shell_command(const std::string &command)
     // If /sbin/sh exists (eg. in recovery), then fork and run that. Otherwise,
     // just call system().
 
-    LOGD("Running shell command: \"{}\"", command);
+    LOGD("Running shell command: \"%s\"", command.c_str());
 
     struct stat sb;
     if (stat("/sbin/sh", &sb) == 0) {
@@ -105,7 +105,7 @@ int run_command2(const std::vector<std::string> &argv,
         return -1;
     }
 
-    LOGD("Running command: [ {} ]", list2string(argv));
+    LOGD("Running command: [ %s ]", list2string(argv).c_str());
 
     std::vector<const char *> argv_c;
     for (const std::string &arg : argv) {
@@ -129,11 +129,13 @@ int run_command2(const std::vector<std::string> &argv,
 
             if (!chroot_dir.empty()) {
                 if (chdir(chroot_dir.c_str()) < 0) {
-                    LOGE("{}; Failed to chdir: {}", chroot_dir, strerror(errno));
+                    LOGE("%s: Failed to chdir: %s",
+                         chroot_dir.c_str(), strerror(errno));
                     _exit(EXIT_FAILURE);
                 }
                 if (chroot(chroot_dir.c_str()) < 0) {
-                    LOGE("{}: Failed to chroot: {}", chroot_dir, strerror(errno));
+                    LOGE("%s: Failed to chroot: %s",
+                         chroot_dir.c_str(), strerror(errno));
                     _exit(EXIT_FAILURE);
                 }
             }
@@ -169,7 +171,7 @@ int run_command2(const std::vector<std::string> &argv,
                 } else {
                     do {
                         if (waitpid(reader_pid, &reader_status, 0) < 0) {
-                            LOGE("Failed to waitpid(): {}", strerror(errno));
+                            LOGE("Failed to waitpid(): %s", strerror(errno));
                             break;
                         }
                     } while (!WIFEXITED(reader_status)

@@ -20,28 +20,15 @@
 #pragma once
 
 #include <memory>
-#include <string>
 
-#include <cppformat/format.h>
+#include <cstdarg>
+#include <cstdio>
 
-#if 0
-#define LOGE(msg) mb::util::log(mb::util::LogLevel::ERROR, msg)
-#define LOGW(msg) mb::util::log(mb::util::LogLevel::WARNING, msg)
-#define LOGI(msg) mb::util::log(mb::util::LogLevel::INFO, msg)
-#define LOGD(msg) mb::util::log(mb::util::LogLevel::DEBUG, msg)
-#define LOGV(msg) mb::util::log(mb::util::LogLevel::VERBOSE, msg)
-#define FLOGE(...) mb::util::log(mb::util::LogLevel::ERROR, fmt::format(__VA_ARGS__))
-#define FLOGW(...) mb::util::log(mb::util::LogLevel::WARNING, fmt::format(__VA_ARGS__))
-#define FLOGI(...) mb::util::log(mb::util::LogLevel::INFO, fmt::format(__VA_ARGS__))
-#define FLOGD(...) mb::util::log(mb::util::LogLevel::DEBUG, fmt::format(__VA_ARGS__))
-#define FLOGV(...) mb::util::log(mb::util::LogLevel::VERBOSE, fmt::format(__VA_ARGS__))
-#else
-#define LOGE(...) mb::util::log(mb::util::LogLevel::ERROR, fmt::format(__VA_ARGS__))
-#define LOGW(...) mb::util::log(mb::util::LogLevel::WARNING, fmt::format(__VA_ARGS__))
-#define LOGI(...) mb::util::log(mb::util::LogLevel::INFO, fmt::format(__VA_ARGS__))
-#define LOGD(...) mb::util::log(mb::util::LogLevel::DEBUG, fmt::format(__VA_ARGS__))
-#define LOGV(...) mb::util::log(mb::util::LogLevel::VERBOSE, fmt::format(__VA_ARGS__))
-#endif
+#define LOGE(...) mb::util::log(mb::util::LogLevel::ERROR, __VA_ARGS__)
+#define LOGW(...) mb::util::log(mb::util::LogLevel::WARNING, __VA_ARGS__)
+#define LOGI(...) mb::util::log(mb::util::LogLevel::INFO, __VA_ARGS__)
+#define LOGD(...) mb::util::log(mb::util::LogLevel::DEBUG, __VA_ARGS__)
+#define LOGV(...) mb::util::log(mb::util::LogLevel::VERBOSE, __VA_ARGS__)
 
 namespace mb
 {
@@ -62,7 +49,7 @@ enum class LogLevel {
 class BaseLogger
 {
 public:
-    virtual void log(LogLevel prio, const std::string &msg) = 0;
+    virtual void log(LogLevel prio, const char *fmt, va_list ap) = 0;
 };
 
 
@@ -72,7 +59,7 @@ class StdioLogger : public BaseLogger
 public:
     StdioLogger(std::FILE *stream);
 
-    virtual void log(LogLevel prio, const std::string &msg) override;
+    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
 
 private:
     std::FILE *_stream;
@@ -87,7 +74,7 @@ public:
 
     virtual ~KmsgLogger();
 
-    virtual void log(LogLevel prio, const std::string &msg) override;
+    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
 
 private:
     int _fd;
@@ -101,13 +88,14 @@ private:
 class AndroidLogger : public BaseLogger
 {
 public:
-    virtual void log(LogLevel prio, const std::string &msg) override;
+    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
 };
 #endif
 
 
 void log_set_logger(std::shared_ptr<BaseLogger> logger);
-void log(LogLevel prio, const std::string &msg);
+__attribute__((format(printf, 2, 3)))
+void log(LogLevel prio, const char *fmt, ...);
 
 }
 }

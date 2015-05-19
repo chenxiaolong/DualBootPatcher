@@ -77,7 +77,7 @@ void get_property(const std::string &name,
 
     void *handle = dlopen(LIBC, RTLD_LOCAL);
     if (!handle) {
-        LOGE("Failed to dlopen() {}: {}", LIBC, dlerror());
+        LOGE("Failed to dlopen() %s: %s", LIBC, dlerror());
         return;
     }
 
@@ -108,7 +108,7 @@ bool set_property(const std::string &name,
 
     void *handle = dlopen(LIBC, RTLD_LOCAL);
     if (!handle) {
-        LOGE("Failed to dlopen() {}: {}", LIBC, dlerror());
+        LOGE("Failed to dlopen() %s: %s", LIBC, dlerror());
         return false;
     }
 

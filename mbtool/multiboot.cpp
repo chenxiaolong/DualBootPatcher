@@ -23,10 +23,10 @@
 #include <cstring>
 #include <sys/stat.h>
 
-#include "external/cppformat/format.h"
 #include "util/copy.h"
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 
 namespace mb
@@ -86,9 +86,9 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            _error_msg = fmt::format("{}: Failed to remove: {}",
-                                     _curr->fts_path, strerror(errno));
-            LOGW("{}", _error_msg);
+            _error_msg = util::format("%s: Failed to remove: %s",
+                                      _curr->fts_path, strerror(errno));
+            LOGW("%s", _error_msg.c_str());
             return false;
         }
         return true;
@@ -142,9 +142,9 @@ public:
         // COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            _error_msg = fmt::format("{}: Failed to copy directory: {}",
-                                     _curr->fts_path, strerror(errno));
-            LOGW("{}", _error_msg);
+            _error_msg = util::format("%s: Failed to copy directory: %s",
+                                      _curr->fts_path, strerror(errno));
+            LOGW("%s", _error_msg.c_str());
             return Action::FTS_Skip | Action::FTS_Fail;
         }
         return Action::FTS_Skip;
@@ -173,9 +173,9 @@ private:
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
                              util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            _error_msg = fmt::format("{}: Failed to copy file: {}",
-                                     _curr->fts_path, strerror(errno));
-            LOGW("{}", _error_msg);
+            _error_msg = util::format("%s: Failed to copy file: %s",
+                                      _curr->fts_path, strerror(errno));
+            LOGW("%s", _error_msg.c_str());
             return false;
         }
         return true;

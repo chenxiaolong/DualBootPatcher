@@ -144,7 +144,6 @@ mbtool_src_base := \
 	external/android_reboot.c \
 	external/mntent.c \
 	external/sha.c \
-	$(EXTERNAL_DIR)/cppformat/format.cc \
 	$(EXTERNAL_DIR)/pugixml/src/pugixml.cpp
 
 mbtool_src_recovery := \

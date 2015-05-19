@@ -52,7 +52,7 @@ static bool do_mount(const std::string &mountpoint)
     if (mountpoint == SYSTEM) {
         if (access("/mb/system.img", F_OK) < 0) {
             // Assume we don't need the image if the wrapper didn't create it
-            LOGV(TAG "Ignoring mount command for {}", mountpoint);
+            LOGV(TAG "Ignoring mount command for %s", mountpoint.c_str());
             return true;
         }
 
@@ -64,28 +64,28 @@ static bool do_mount(const std::string &mountpoint)
         std::string loopdev = util::loopdev_find_unused();
 
         if (loopdev.empty()) {
-            LOGE(TAG "Failed to find unused loop device: {}", strerror(errno));
+            LOGE(TAG "Failed to find unused loop device: %s", strerror(errno));
             return false;
         }
 
         if (!util::loopdev_set_up_device(loopdev, "/mb/system.img", 0, 0)) {
-            LOGE(TAG "Failed to set up loop device {}: {}",
-                 loopdev, strerror(errno));
+            LOGE(TAG "Failed to set up loop device %s: %s",
+                 loopdev.c_str(), strerror(errno));
             return false;
         }
 
         if (mount(loopdev.c_str(), SYSTEM, "ext4", 0, "") < 0) {
-            LOGE(TAG "Failed to mount {}: {}",
-                 loopdev, strerror(errno));
+            LOGE(TAG "Failed to mount %s: %s",
+                 loopdev.c_str(), strerror(errno));
             util::loopdev_remove_device(loopdev);
             return false;
         }
 
         util::file_write_data(STAMP_FILE, loopdev.data(), loopdev.size());
 
-        LOGD(TAG "Mounted {} at {}", loopdev, SYSTEM);
+        LOGD(TAG "Mounted %s at %s", loopdev.c_str(), SYSTEM);
     } else {
-        LOGV(TAG "Ignoring mount command for {}", mountpoint);
+        LOGV(TAG "Ignoring mount command for %s", mountpoint.c_str());
     }
 
     return true;
@@ -96,7 +96,7 @@ static bool do_unmount(const std::string &mountpoint)
     if (mountpoint == SYSTEM) {
         if (access("/mb/system.img", F_OK) < 0) {
             // Assume we don't need the image if the wrapper didn't create it
-            LOGV(TAG "Ignoring unmount command for {}", mountpoint);
+            LOGV(TAG "Ignoring unmount command for %s", mountpoint.c_str());
             return true;
         }
 
@@ -112,21 +112,21 @@ static bool do_unmount(const std::string &mountpoint)
         }
 
         if (umount(SYSTEM) < 0) {
-            LOGE(TAG "Failed to unmount {}: {}", SYSTEM, strerror(errno));
+            LOGE(TAG "Failed to unmount %s: %s", SYSTEM, strerror(errno));
             return false;
         }
 
         if (!util::loopdev_remove_device(loopdev)) {
-            LOGE(TAG "Failed to remove loop device {}: {}",
-                 loopdev, strerror(errno));
+            LOGE(TAG "Failed to remove loop device %s: %s",
+                 loopdev.c_str(), strerror(errno));
             return false;
         }
 
         remove(STAMP_FILE);
 
-        LOGD(TAG "Unmounted {}", SYSTEM);
+        LOGD(TAG "Unmounted %s", SYSTEM);
     } else {
-        LOGV(TAG "Ignoring unmount command for {}", mountpoint);
+        LOGV(TAG "Ignoring unmount command for %s", mountpoint.c_str());
     }
 
     return true;
@@ -142,27 +142,27 @@ static bool do_format(const std::string &mountpoint)
                 && (access(STAMP_FILE, F_OK) != 0);
 
         if (needs_mount && !do_mount(mountpoint)) {
-            LOGE(TAG "Failed to mount {}", mountpoint);
+            LOGE(TAG "Failed to mount %s", mountpoint.c_str());
             return false;
         }
 
         if (!wipe_directory(mountpoint, true)) {
-            LOGE(TAG "Failed to wipe {}", mountpoint);
+            LOGE(TAG "Failed to wipe %s", mountpoint.c_str());
             return false;
         }
 
         if (needs_mount && !do_unmount(mountpoint)) {
-            LOGE(TAG "Failed to unmount {}", mountpoint);
+            LOGE(TAG "Failed to unmount %s", mountpoint.c_str());
             return false;
         }
     } else if (mountpoint == DATA) {
         if (!wipe_directory(mountpoint, false)) {
-            LOGE(TAG "Failed to wipe {}", mountpoint);
+            LOGE(TAG "Failed to wipe %s", mountpoint.c_str());
             return false;
         }
     }
 
-    LOGD(TAG "Formatted {}", mountpoint);
+    LOGD(TAG "Formatted %s", mountpoint.c_str());
 
     return true;
 }

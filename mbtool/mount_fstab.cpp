@@ -19,6 +19,8 @@
 
 #include "mount_fstab.h"
 
+#include <algorithm>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -64,7 +66,7 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
         return false;
     }
 
-    LOGD("{:d} fstab entries for {}", recs.size(), recs[0]->mount_point);
+    LOGD("%zu fstab entries for %s", recs.size(), recs[0]->mount_point.c_str());
 
     // Copy permissions of the original mountpoint directory if it exists
     struct stat sb;
@@ -73,27 +75,29 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
     if (stat(recs[0]->mount_point.c_str(), &sb) == 0) {
         perms = sb.st_mode & 0xfff;
     } else {
-        LOGW("{} found in fstab, but {} does not exist",
-             recs[0]->mount_point, recs[0]->mount_point);
+        LOGW("%s found in fstab, but %s does not exist",
+             recs[0]->mount_point.c_str(), recs[0]->mount_point.c_str());
         perms = 0771;
     }
 
     if (stat(mount_point.c_str(), &sb) == 0) {
         if (chmod(mount_point.c_str(), perms) < 0) {
-            LOGE("Failed to chmod {}: {}", mount_point, strerror(errno));
+            LOGE("Failed to chmod %s: %s",
+                 mount_point.c_str(), strerror(errno));
             return false;
         }
     } else {
         if (mkdir(mount_point.c_str(), perms) < 0) {
-            LOGE("Failed to create {}: {}", mount_point, strerror(errno));
+            LOGE("Failed to create %s: %s",
+                 mount_point.c_str(), strerror(errno));
             return false;
         }
     }
 
     // Try mounting each until we find one that works
     for (util::fstab_rec *rec : recs) {
-        LOGD("Attempting to mount {} ({}) at {}",
-             rec->blk_device, rec->fs_type, mount_point);
+        LOGD("Attempting to mount %s (%s) at %s",
+             rec->blk_device.c_str(), rec->fs_type.c_str(), mount_point.c_str());
 
         // Find flags with a matching filesystem
         auto it = std::find_if(flags.begin(), flags.end(),
@@ -112,12 +116,14 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
                         (*it)->flags,
                         (*it)->fs_options.c_str());
         if (ret < 0) {
-            LOGE("Failed to mount {} ({}) at {}: {}",
-                 rec->blk_device, rec->fs_type, mount_point, strerror(errno));
+            LOGE("Failed to mount %s (%s) at %s: %s",
+                 rec->blk_device.c_str(), rec->fs_type.c_str(),
+                 mount_point.c_str(), strerror(errno));
             continue;
         } else {
-            LOGE("Successfully mounted {} ({}) at {}",
-                 rec->blk_device, rec->fs_type, mount_point);
+            LOGE("Successfully mounted %s (%s) at %s",
+                 rec->blk_device.c_str(), rec->fs_type.c_str(),
+                 mount_point.c_str());
             return true;
         }
     }
@@ -205,21 +211,21 @@ bool mount_fstab(const std::string &fstab_path)
 
     // Remount rootfs as read-write so a new fstab file can be written
     if (mount("", "/", "", MS_REMOUNT, "") < 0) {
-        LOGE("Failed to remount rootfs as rw: {}", strerror(errno));
+        LOGE("Failed to remount rootfs as rw: %s", strerror(errno));
     }
 
     // Read original fstab
     fstab = util::read_fstab(fstab_path);
     if (fstab.empty()) {
-        LOGE("Failed to read {}", fstab_path);
+        LOGE("Failed to read %s", fstab_path.c_str());
         return false;
     }
 
     // Generate new fstab without /system, /cache, or /data entries
     file_ptr out(std::fopen(path_fstab_gen.c_str(), "wb"), std::fclose);
     if (!out) {
-        LOGE("Failed to open {} for writing: {}",
-             path_fstab_gen, strerror(errno));
+        LOGE("Failed to open %s for writing: %s",
+             path_fstab_gen.c_str(), strerror(errno));
         return false;
     }
 
@@ -257,16 +263,16 @@ bool mount_fstab(const std::string &fstab_path)
     } else {
         rom = roms.find_by_id(rom_id);
         if (!rom) {
-            LOGE("Unknown ROM ID: {}", rom_id);
+            LOGE("Unknown ROM ID: %s", rom_id.c_str());
             return false;
         }
     }
 
-    LOGD("ROM ID is: {}", rom_id);
+    LOGD("ROM ID is: %s", rom_id.c_str());
 
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom_id)) {
-        LOGE("Failed to set 'ro.multiboot.romid' to '{}'", rom_id);
+        LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom_id.c_str());
     }
 
     // Because of how Android deals with partitions, if, say, the source path
@@ -361,7 +367,7 @@ bool mount_fstab(const std::string &fstab_path)
     static std::string context("u:object_r:install_data_file:s0");
     if (lsetxattr("/data/.layout_version", "security.selinux",
                   context.c_str(), context.size() + 1, 0) < 0) {
-        LOGE("{}: Failed to set SELinux context: {}",
+        LOGE("%s: Failed to set SELinux context: %s",
              "/data/.layout_version", strerror(errno));
     }
 

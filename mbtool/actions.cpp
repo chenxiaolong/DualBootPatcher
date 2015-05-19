@@ -99,22 +99,24 @@ static bool flash_extra_images(const std::string &multiboot_dir,
 
         // Blacklist non-modem partition
         if (partition != "mdm" && partition != "modem") {
-            LOGW("Partition {} is not whitelisted for flashing", partition);
+            LOGW("Partition %s is not whitelisted for flashing",
+                 partition.c_str());
             continue;
         }
 
         std::string block_dev = find_block_dev(block_dev_dirs, partition);
         if (block_dev.empty()) {
-            LOGW("Couldn't find block device for partition {}", partition);
+            LOGW("Couldn't find block device for partition %s",
+                 partition.c_str());
             continue;
         }
 
         LOGD("Flashing extra image");
-        LOGD("- Source: {}", path);
-        LOGD("- Target: {}", block_dev);
+        LOGD("- Source: %s", path.c_str());
+        LOGD("- Target: %s", block_dev.c_str());
 
         if (!util::copy_contents(path, block_dev)) {
-            LOGE("Failed to write {}", block_dev);
+            LOGE("Failed to write %s", block_dev.c_str());
             return false;
         }
     }
@@ -141,39 +143,40 @@ static bool choose_or_set_rom(const std::string &id,
 
     auto r = roms.find_by_id(id);
     if (!r) {
-        LOGE("Invalid ROM ID: {}", id);
+        LOGE("Invalid ROM ID: %s", id.c_str());
         return false;
     }
 
     if (!util::mkdir_recursive(multiboot_path, 0775)) {
-        LOGE("Failed to create directory {}", multiboot_path);
+        LOGE("Failed to create directory %s", multiboot_path.c_str());
         return false;
     }
 
     // Flash or set kernel
     if (!util::copy_contents(choose ? bootimg_path : boot_blockdev,
                              choose ? boot_blockdev : bootimg_path)) {
-        LOGE("Failed to write {}", choose ? boot_blockdev : bootimg_path);
+        LOGE("Failed to write %s",
+             choose ? boot_blockdev.c_str() : bootimg_path.c_str());
         return false;
     }
 
     // Fix permissions
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
                      util::CHOWN_RECURSIVE)) {
-        LOGE("Failed to chown {}", MULTIBOOT_DIR);
+        LOGE("Failed to chown %s", MULTIBOOT_DIR);
         return false;
     }
 
     if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
-        LOGE("Failed to chmod {}", MULTIBOOT_DIR);
+        LOGE("Failed to chmod %s", MULTIBOOT_DIR);
         return false;
     }
 
     std::string context;
     if (util::selinux_lget_context("/data/media/0", &context)
             && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
-        LOGE("{}: Failed to set context to {}: {}",
-             MULTIBOOT_DIR, context, strerror(errno));
+        LOGE("%s: Failed to set context to %s: %s",
+             MULTIBOOT_DIR, context.c_str(), strerror(errno));
         return false;
     }
 

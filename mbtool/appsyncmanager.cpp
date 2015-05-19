@@ -100,12 +100,12 @@ void AppSyncManager::detect_directories()
     _user_app_asec_dir = USER_APP_ASEC_DIR;
     _user_data_dir = USER_DATA_DIR;
 
-    LOGD("App sharing app directory:      {}", _as_app_dir);
-    LOGD("App sharing app-asec directory: {}", _as_app_asec_dir);
-    LOGD("App sharing app data directory: {}", _as_data_dir);
-    LOGD("User app directory:             {}", _user_app_dir);
-    LOGD("User app-asec directory:        {}", _user_app_asec_dir);
-    LOGD("User app data directory:        {}", _user_data_dir);
+    LOGD("App sharing app directory:      %s", _as_app_dir.c_str());
+    LOGD("App sharing app-asec directory: %s", _as_app_asec_dir.c_str());
+    LOGD("App sharing app data directory: %s", _as_data_dir.c_str());
+    LOGD("User app directory:             %s", _user_app_dir.c_str());
+    LOGD("User app-asec directory:        %s", _user_app_asec_dir.c_str());
+    LOGD("User app data directory:        %s", _user_data_dir.c_str());
 }
 
 /*!
@@ -152,7 +152,8 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
     std::string shared_apk = get_shared_apk_path(pkg);
     std::string user_apk = find_apk(_user_app_dir, pkg);
     if (user_apk.empty()) {
-        LOGW("{}: Failed to find apk for package {}", _user_app_dir, pkg);
+        LOGW("%s: Failed to find apk for package %s",
+             _user_app_dir.c_str(), pkg.c_str());
         return false;
     }
 
@@ -161,55 +162,58 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
         // Shared apk already exists, check version
 
         if (!S_ISREG(sb.st_mode)) {
-            LOGW("{}: Shared apk path is not a regular file", shared_apk);
+            LOGW("%s: Shared apk path is not a regular file",
+                 shared_apk.c_str());
             return false;
         }
 
         ApkFile af_user;
         if (!af_user.open(user_apk)) {
-            LOGW("{}: Failed to open or parse apk", user_apk);
+            LOGW("%s: Failed to open or parse apk", user_apk.c_str());
             return false;
         }
 
         ApkFile af_shared;
         if (!af_shared.open(shared_apk)) {
-            LOGW("{}: Failed to open or parse apk", shared_apk);
+            LOGW("%s: Failed to open or parse apk", shared_apk.c_str());
             return false;
         }
 
         if (af_user.package != af_shared.package) {
-            LOGW("Conflicting package names between {} and {}",
-                 user_apk, shared_apk);
+            LOGW("Conflicting package names between %s and %s",
+                 user_apk.c_str(), shared_apk.c_str());
             return false;
         }
 
         // User apk is the same version or older than the shared apk
         if (af_user.version_code <= af_shared.version_code) {
-            LOGD("Not copying user apk to shared apk for package {}", pkg);
-            LOGD("User version ({}) <= shared version ({})",
+            LOGD("Not copying user apk to shared apk for package %s",
+                 pkg.c_str());
+            LOGD("User version (%u) <= shared version (%u)",
                  af_user.version_code, af_shared.version_code);
             return true;
         }
     } else if (errno != ENOENT) {
         // Continue only if the shared apk is missing
-        LOGW("{}: stat() failed with errno != ENOENT: {}",
-             shared_apk, strerror(errno));
+        LOGW("%s: stat() failed with errno != ENOENT: %s",
+             shared_apk.c_str(), strerror(errno));
         return false;
     }
 
-    LOGD("Copying user apk to shared apk for package {}", pkg);
-    LOGD("- User apk:   {}", user_apk);
-    LOGD("- Shared apk: {}", shared_apk);
+    LOGD("Copying user apk to shared apk for package %s", pkg.c_str());
+    LOGD("- User apk:   %s", user_apk.c_str());
+    LOGD("- Shared apk: %s", shared_apk.c_str());
 
     if (!util::mkdir_parent(shared_apk, 0755)) {
-        LOGW("Failed to create parent directories for {}", shared_apk);
+        LOGW("Failed to create parent directories for %s", shared_apk.c_str());
         return false;
     }
 
     // Make sure we preserve the inode when copying, so all of the hard links to
     // the shared apk are preserved
     if (!util::copy_contents(user_apk, shared_apk)) {
-        LOGW("Failed to copy contents from {} to {}", user_apk, shared_apk);
+        LOGW("Failed to copy contents from %s to %s",
+             user_apk.c_str(), shared_apk.c_str());
         return false;
     }
 
@@ -223,13 +227,13 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
 bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
                                              const std::vector<RomConfigAndPackages> &cfg_pkgs_list)
 {
-    LOGD("Syncing {} to all ROMs where it is shared", pkgname);
+    LOGD("Syncing %s to all ROMs where it is shared", pkgname.c_str());
 
     std::string shared_apk = get_shared_apk_path(pkgname);
 
     struct stat sb_shared;
     if (stat(shared_apk.c_str(), &sb_shared) < 0) {
-        LOGE("{}: Failed to stat: {}", shared_apk, strerror(errno));
+        LOGE("%s: Failed to stat: %s", shared_apk.c_str(), strerror(errno));
         return false;
     }
 
@@ -256,8 +260,8 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
 
         // Ensure that the user apk resides in /data/app
         if (!util::starts_with(pkg->code_path, _user_app_dir)) {
-            LOGW("{}: Does not reside in /data [ROM: {}]",
-                 pkg->code_path, rom->id);
+            LOGW("%s: Does not reside in /data [ROM: %s]",
+                 pkg->code_path.c_str(), rom->id.c_str());
             continue;
         }
 
@@ -284,24 +288,24 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
             if (!S_ISREG(sb_user.st_mode)) {
                 // User apk is not a regular file. Skip and move on to the next
                 // ROM
-                LOGW("{}: apk is not a regular file [ROM: {}]",
-                     user_apk, rom->id);
+                LOGW("%s: apk is not a regular file [ROM: %s]",
+                     user_apk.c_str(), rom->id.c_str());
                 continue;
             }
         }
 
-        LOGD("- Linking shared apk to user apk in {}", rom->id);
+        LOGD("- Linking shared apk to user apk in %s", rom->id.c_str());
 
         // Remove old user apk
         if (unlink(user_apk.c_str()) < 0 && errno != ENOENT) {
-            LOGW("{}: Failed to unlink: {}", user_apk, strerror(errno));
+            LOGW("%s: Failed to unlink: %s", user_apk.c_str(), strerror(errno));
             return false;
         }
 
         // Hard link shared apk to user apk
         if (link(shared_apk.c_str(), user_apk.c_str()) < 0) {
-            LOGW("Failed to hard link {} to {}: {}",
-                 shared_apk, user_apk, strerror(errno));
+            LOGW("Failed to hard link %s to %s: %s",
+                 shared_apk.c_str(), user_apk.c_str(), strerror(errno));
             return false;
         }
     }
@@ -312,8 +316,8 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
 bool AppSyncManager::wipe_shared_libraries(const std::shared_ptr<Package> &pkg)
 {
     if (!util::delete_recursive(pkg->native_library_path)) {
-        LOGW("{}: Failed to remove: {}",
-             pkg->native_library_path, strerror(errno));
+        LOGW("%s: Failed to remove: %s",
+             pkg->native_library_path.c_str(), strerror(errno));
         return false;
     }
 
@@ -323,17 +327,17 @@ bool AppSyncManager::wipe_shared_libraries(const std::shared_ptr<Package> &pkg)
 bool AppSyncManager::initialize_directories()
 {
     if (!util::mkdir_recursive(_as_app_dir, 0751) && errno != EEXIST) {
-        LOGE("{}: Failed to create directory: {}", _as_app_dir,
+        LOGE("%s: Failed to create directory: %s", _as_app_dir.c_str(),
              strerror(errno));
         return false;
     }
     if (!util::mkdir_recursive(_as_app_asec_dir, 0751) && errno != EEXIST) {
-        LOGW("{}: Failed to create directory: {}", _as_app_asec_dir,
+        LOGW("%s: Failed to create directory: %s", _as_app_asec_dir.c_str(),
              strerror(errno));
         return false;
     }
     if (!util::mkdir_recursive(_as_data_dir, 0751) && errno != EEXIST) {
-        LOGW("{}: Failed to create directory: {}", _as_data_dir,
+        LOGW("%s: Failed to create directory: %s", _as_data_dir.c_str(),
              strerror(errno));
         return false;
     }
@@ -346,18 +350,19 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
     std::string data_path = get_shared_data_path(pkg);
 
     if (!util::mkdir_recursive(data_path, 0751)) {
-        LOGW("{}: Failed to create directory: {}", data_path, strerror(errno));
+        LOGW("%s: Failed to create directory: %s",
+             data_path.c_str(), strerror(errno));
         return false;
     }
 
     // Ensure that the shared data directory permissions are correct
     if (chmod(data_path.c_str(), 0751) < 0) {
-        LOGW("{}: Failed to chmod: {}", data_path, strerror(errno));
+        LOGW("%s: Failed to chmod: %s", data_path.c_str(), strerror(errno));
         return false;
     }
 
     if (!util::chown(data_path, uid, uid, util::CHOWN_RECURSIVE)) {
-        LOGW("{}: Failed to chown: {}", data_path, strerror(errno));
+        LOGW("%s: Failed to chown: %s", data_path.c_str(), strerror(errno));
         return false;
     }
 
@@ -373,8 +378,8 @@ bool AppSyncManager::fix_shared_data_permissions()
 {
     if (!util::selinux_lset_context_recursive(
             _as_data_dir, APP_DATA_SELINUX_CONTEXT)) {
-        LOGW("{}: Failed to set context recursively to {}: {}",
-             _as_data_dir, APP_DATA_SELINUX_CONTEXT, strerror(errno));
+        LOGW("%s: Failed to set context recursively to %s: %s",
+             _as_data_dir.c_str(), APP_DATA_SELINUX_CONTEXT, strerror(errno));
         return false;
     }
 
@@ -394,22 +399,23 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
     target += pkg;
 
     if (!util::mkdir_recursive(target, 0755)) {
-        LOGW("{}: Failed to create directory: {}", target, strerror(errno));
+        LOGW("%s: Failed to create directory: %s",
+             target.c_str(), strerror(errno));
         return false;
     }
     if (!util::chown(target, uid, uid, util::CHOWN_RECURSIVE)) {
-        LOGW("{}: Failed to chown: {}", target, strerror(errno));
+        LOGW("%s: Failed to chown: %s", target.c_str(), strerror(errno));
         return false;
     }
 
     LOGV("Bind mounting data directory:");
-    LOGV("- Source: {}", data_path);
-    LOGV("- Target: {}", target);
+    LOGV("- Source: %s", data_path.c_str());
+    LOGV("- Target: %s", target.c_str());
 
     if (!unmount_shared_directory(pkg)) {
         return false;
     } else if (mount(data_path.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
-        LOGW("Failed to bind mount: {}", strerror(errno));
+        LOGW("Failed to bind mount: %s", strerror(errno));
         return false;
     }
 
@@ -423,7 +429,7 @@ bool AppSyncManager::unmount_shared_directory(const std::string &pkg)
     target += pkg;
 
     if (umount2(target.c_str(), MNT_DETACH) < 0 && errno != EINVAL) {
-        LOGW("{}: Failed to unmount: {}", target, strerror(errno));
+        LOGW("%s: Failed to unmount: %s", target.c_str(), strerror(errno));
         return false;
     }
 

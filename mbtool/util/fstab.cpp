@@ -83,7 +83,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 {
     file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
     if (!fp) {
-        LOGE("Failed to open file {}: {}", path, strerror(errno));
+        LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
         return std::vector<fstab_rec>();
     }
 
@@ -158,25 +158,25 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
         rec.orig_line = line;
 
         if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
-            LOGE("No source path/device found in entry: {}", line);
+            LOGE("No source path/device found in entry: %s", line);
             return std::vector<fstab_rec>();
         }
         rec.blk_device = temp;
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount point found in entry: {}", line);
+            LOGE("No mount point found in entry: %s", line);
             return std::vector<fstab_rec>();
         }
         rec.mount_point = temp;
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No filesystem type found in entry: {}", line);
+            LOGE("No filesystem type found in entry: %s", line);
             return std::vector<fstab_rec>();
         }
         rec.fs_type = temp;
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount options found in entry: {}", line);
+            LOGE("No mount options found in entry: %s", line);
             return std::vector<fstab_rec>();
         }
         rec.flags = options_to_flags(temp, temp_mount_args, 1024);
@@ -186,7 +186,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
         }
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No fs_mgr/vold options found in entry: {}", line);
+            LOGE("No fs_mgr/vold options found in entry: %s", line);
             return std::vector<fstab_rec>();
         }
         rec.vold_args = temp;
@@ -224,7 +224,7 @@ static int options_to_flags(char *args, char *new_args, int size)
                 strlcat(new_args, temp, size);
                 strlcat(new_args, ",", size);
             } else {
-                LOGW("Only universal mount options expected, but found {}", temp);
+                LOGW("Only universal mount options expected, but found %s", temp);
             }
         }
 

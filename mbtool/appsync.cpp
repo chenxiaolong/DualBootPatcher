@@ -71,9 +71,9 @@
 
 #define COMMAND_BUF_SIZE                1024
 
-#define CONFIG_PATH_FMT                 "/data/media/0/MultiBoot/{}/config.json"
+#define CONFIG_PATH_FMT                 "/data/media/0/MultiBoot/%s/config.json"
 
-#define PACKAGES_XML_PATH_FMT           "{}/system/packages.xml"
+#define PACKAGES_XML_PATH_FMT           "%s/system/packages.xml"
 
 namespace mb
 {
@@ -98,9 +98,10 @@ static bool load_config_files()
     roms.add_installed();
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
-        std::string config_path = fmt::format(CONFIG_PATH_FMT, rom->id);
+        std::string config_path =
+                util::format(CONFIG_PATH_FMT, rom->id.c_str());
         std::string packages_path =
-                fmt::format(PACKAGES_XML_PATH_FMT, rom->data_path);
+                util::format(PACKAGES_XML_PATH_FMT, rom->data_path.c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;
@@ -109,12 +110,12 @@ static bool load_config_files()
         Packages &rom_packages = cfg_pkgs_list.back().packages;
 
         if (!rom_config.load_file(config_path)) {
-            LOGW("{}: Failed to load config for ROM {}",
-                 config_path, rom->id);
+            LOGW("%s: Failed to load config for ROM %s",
+                 config_path.c_str(), rom->id.c_str());
         }
         if (!rom_packages.load_xml(packages_path)) {
-            LOGW("{}: Failed to load packages for ROM {}",
-                 packages_path, rom->id);
+            LOGW("%s: Failed to load packages for ROM %s",
+                 packages_path.c_str(), rom->id.c_str());
         }
 
         if (rom->id == current_rom->id) {
@@ -123,21 +124,21 @@ static bool load_config_files()
         }
     }
 
-    LOGD("[Config] ROM ID:                    {}", config.id);
-    LOGD("[Config] ROM Name:                  {}", config.name);
-    LOGD("[Config] Global app sharing:        {}",
+    LOGD("[Config] ROM ID:                    %s", config.id.c_str());
+    LOGD("[Config] ROM Name:                  %s", config.name.c_str());
+    LOGD("[Config] Global app sharing:        %s",
          config.global_app_sharing ? "true" : "false");
-    LOGD("[Config] Global app sharing (paid): {}",
+    LOGD("[Config] Global app sharing (paid): %s",
          config.global_paid_app_sharing ? "true" : "false");
-    LOGD("[Config] Individual app sharing:    {}",
+    LOGD("[Config] Individual app sharing:    %s",
          config.indiv_app_sharing ? "true" : "false");
 
     for (const SharedPackage &pkg : config.shared_pkgs) {
         LOGD("[Config] Shared package:");
-        LOGD("[Config] - Package:                 {}", pkg.pkg_id);
-        LOGD("[Config] - Share apk:               {}",
+        LOGD("[Config] - Package:                 %s", pkg.pkg_id.c_str());
+        LOGD("[Config] - Share apk:               %s",
              pkg.share_apk ? "true" : "false");
-        LOGD("[Config] - Share data:              {}",
+        LOGD("[Config] - Share data:              %s",
              pkg.share_data ? "true" : "false");
     }
 
@@ -161,11 +162,11 @@ static bool patch_sepolicy()
     });
 
     if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
+        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
         return false;
     }
 
-    LOGD("Policy version: {}", pdb.policyvers);
+    LOGD("Policy version: %u", pdb.policyvers);
 
     util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "accept");
     util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "listen");
@@ -173,7 +174,7 @@ static bool patch_sepolicy()
     util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "write");
 
     if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
+        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
         return false;
     }
 
@@ -189,7 +190,7 @@ static void patch_sepolicy_wrapper()
         LOGV("Patching SELinux policy to allow installd connection");
         int attempt;
         for (attempt = 0; attempt < 5; ++attempt) {
-            LOGV("Patching SELinux policy [Attempt {}/{}]", attempt + 1, 5);
+            LOGV("Patching SELinux policy [Attempt %d/%d]", attempt + 1, 5);
             if (!patch_sepolicy()) {
                 sleep(1);
             } else {
@@ -225,8 +226,8 @@ static bool prepare_appsync()
         // Ensure package is installed, so we can get its UID
         auto pkg = packages.find_by_pkg(shared_pkg.pkg_id);
         if (!pkg) {
-            LOGW("Package {} won't be shared because it is not installed",
-                 shared_pkg.pkg_id);
+            LOGW("Package %s won't be shared because it is not installed",
+                 shared_pkg.pkg_id.c_str());
             it = config.shared_pkgs.erase(it);
             continue;
         }
@@ -234,16 +235,16 @@ static bool prepare_appsync()
         // Ensure that the package is not a system package if we're sharing the
         // apk file
         if (shared_pkg.share_apk && (pkg->pkg_flags & Package::FLAG_SYSTEM)) {
-            LOGW("Package {} is a system app. "
-                 "Its apk will not be shared", shared_pkg.pkg_id);
+            LOGW("Package %s is a system app. "
+                 "Its apk will not be shared", shared_pkg.pkg_id.c_str());
             shared_pkg.share_apk = false;
         }
 
         // Ensure that code_path is set to something sane
         if (shared_pkg.share_apk
                 && !util::starts_with(pkg->code_path, "/data/")) {
-            LOGW("The code_path for package {} is not in /data. "
-                 "Its apk will not be shared", shared_pkg.pkg_id);
+            LOGW("The code_path for package %s is not in /data. "
+                 "Its apk will not be shared", shared_pkg.pkg_id.c_str());
             shared_pkg.share_apk = false;
         }
 
@@ -257,8 +258,8 @@ static bool prepare_appsync()
         if (shared_pkg.share_data
                 && !AppSyncManager::create_shared_data_directory(
                         shared_pkg.pkg_id, pkg->get_uid())) {
-            LOGW("Failed to create shared data directory for package {}. "
-                 "App data will not be shared", shared_pkg.pkg_id);
+            LOGW("Failed to create shared data directory for package %s. "
+                 "App data will not be shared", shared_pkg.pkg_id.c_str());
             shared_pkg.share_data = false;
         }
 
@@ -295,7 +296,8 @@ static bool prepare_appsync()
 
         if (shared_pkg.share_apk
                 && !AppSyncManager::wipe_shared_libraries(pkg)) {
-            LOGW("Failed to remove shared libraries for package {}", pkg->name);
+            LOGW("Failed to remove shared libraries for package %s",
+                 pkg->name.c_str());
             LOGW("To prevent issues with starting the app, "
                  "apk will not be shared");
             shared_pkg.share_apk = false;
@@ -372,7 +374,7 @@ static int create_new_socket()
 
     fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
-        LOGE("Failed to create socket: {}", strerror(errno));
+        LOGE("Failed to create socket: %s", strerror(errno));
         return -1;
     }
 
@@ -382,13 +384,13 @@ static int create_new_socket()
              INSTALLD_SOCKET_PATH);
 
     if (unlink(addr.sun_path) < 0 && errno != ENOENT) {
-        LOGE("Failed to unlink old socket: {}", strerror(errno));
+        LOGE("Failed to unlink old socket: %s", strerror(errno));
         close(fd);
         return -1;
     }
 
     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-        LOGE("Failed to bind socket: {}", strerror(errno));
+        LOGE("Failed to bind socket: %s", strerror(errno));
         unlink(addr.sun_path);
         close(fd);
         return -1;
@@ -413,22 +415,22 @@ static int create_new_socket()
 /*!
  * \brief Receive a message from a socket
  */
-static bool receive_message(int fd, char *buf, size_t size)
+static bool receive_message(int fd, char *buf, std::size_t size)
 {
     unsigned short count;
 
     if (!util::socket_read_uint16(fd, &count)) {
-        LOGE("Failed to read command size: {}", strerror(errno));
+        LOGE("Failed to read command size: %s", strerror(errno));
         return false;
     }
 
     if (count < 1 || count >= size) {
-        LOGE("Invalid size {:d}", count);
+        LOGE("Invalid size %u", count);
         return false;
     }
 
     if (util::socket_read(fd, buf, count) != count) {
-        LOGE("Failed to read command: {}", strerror(errno));
+        LOGE("Failed to read command: %s", strerror(errno));
         return false;
     }
 
@@ -445,12 +447,12 @@ static bool send_message(int fd, const char *command)
     unsigned short count = strlen(command);
 
     if (!util::socket_write_uint16(fd, count)) {
-        LOGE("Failed to write command size: {}", strerror(errno));
+        LOGE("Failed to write command size: %s", strerror(errno));
         return false;
     }
 
     if (util::socket_write(fd, command, count) != count) {
-        LOGE("Failed to write command: {}", strerror(errno));
+        LOGE("Failed to write command: %s", strerror(errno));
         return false;
     }
 
@@ -477,15 +479,15 @@ static int connect_to_installd()
 
     int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
-        LOGE("Failed to create socket: {}", strerror(errno));
+        LOGE("Failed to create socket: %s", strerror(errno));
         return -1;
     }
 
     int attempt;
     for (attempt = 0; attempt < 5; ++attempt) {
-        LOGV("Connecting to installd [Attempt {}/{}]", attempt + 1, 5);
+        LOGV("Connecting to installd [Attempt %d/%d]", attempt + 1, 5);
         if (connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-            LOGW("Failed: {}", strerror(errno));
+            LOGW("Failed: %s", strerror(errno));
             sleep(1);
         } else {
             break;
@@ -517,10 +519,10 @@ static pid_t spawn_installd()
     if (pid == 0) {
         const char *argv[] = { INSTALLD_PATH, nullptr };
         execve(argv[0], const_cast<char * const *>(argv), environ);
-        LOGE("Failed to launch installd: {}", strerror(errno));
+        LOGE("Failed to launch installd: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     } else if (pid < 0) {
-        LOGD("Failed to fork: {}", strerror(errno));
+        LOGD("Failed to fork: %s", strerror(errno));
         return -1;
     }
     return pid;
@@ -564,9 +566,9 @@ static bool do_linklib(const std::vector<std::string> &args)
     const std::string &aseclibdir = args[1];
     const int userid = strtol(args[2].c_str(), nullptr, 10);
 
-    LOGD(TAG "pkgname = {}", pkgname);
-    LOGD(TAG "aseclibdir = {}", aseclibdir);
-    LOGD(TAG "userid = {}", userid);
+    LOGD(TAG "pkgname = %s", pkgname.c_str());
+    LOGD(TAG "aseclibdir = %s", aseclibdir.c_str());
+    LOGD(TAG "userid = %d", userid);
 
     auto it = std::find_if(config.shared_pkgs.begin(), config.shared_pkgs.end(),
                            [&](const SharedPackage &shared_pkg) {
@@ -607,8 +609,8 @@ static bool do_remove(const std::vector<std::string> &args)
     const std::string &pkgname = args[0];
     const int userid = strtol(args[1].c_str(), nullptr, 10);
 
-    LOGD(TAG "pkgname = {}", pkgname);
-    LOGD(TAG "userid = {}", userid);
+    LOGD(TAG "pkgname = %s", pkgname.c_str());
+    LOGD(TAG "userid = %d", userid);
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end(); ++it) {
@@ -658,11 +660,11 @@ static void handle_command(const std::vector<std::string> &args)
     for (std::size_t i = 0; i < sizeof(cmds) / sizeof(cmds[0]); ++i) {
         if (args[0] == cmds[i].name) {
             if (args.size() - 1 != cmds[i].nargs) {
-                LOGE("{} requires {} arguments ({} given)",
+                LOGE("%s requires %u arguments (%zu given)",
                      cmds[i].name, cmds[i].nargs, args.size() - 1);
-                LOGE("{} command won't be hooked", cmds[i].name);
+                LOGE("%s command won't be hooked", cmds[i].name);
             } else {
-                LOGD("Hooking {} command", cmds[i].name);
+                LOGD("Hooking %s command", cmds[i].name);
                 cmds[i].func(std::vector<std::string>(
                         args.begin() + 1, args.end()));
             }
@@ -693,7 +695,7 @@ static bool proxy_process(int fd, bool can_appsync)
     while (true) {
         int client_fd = accept(fd, nullptr, nullptr);
         if (client_fd < 0) {
-            LOGE("Failed to accept client connection: {}", strerror(errno));
+            LOGE("Failed to accept client connection: %s", strerror(errno));
             return false;
         }
 
@@ -735,16 +737,17 @@ static bool proxy_process(int fd, bool can_appsync)
 
                 if (cmd == "ping"
                         || cmd == "freecache") {
-                    LOGD("Received unimportant command: [{}, ...]", cmd);
+                    LOGD("Received unimportant command: [%s, ...]",
+                         cmd.c_str());
                 } else if (cmd == "aapt"
                         || cmd == "aapt_with_common") {
-                    LOGD("Received CyanogenMod-specific command: {}",
-                         args_to_string(args));
+                    LOGD("Received CyanogenMod-specific command: %s",
+                         args_to_string(args).c_str());
                 } else if (cmd == "rmrcl"
                         || cmd == "asyncDexopt"
                         || cmd == "changeDexOwner") {
-                    LOGD("Received Touchwiz-specific command: {}",
-                         args_to_string(args));
+                    LOGD("Received Touchwiz-specific command: %s",
+                         args_to_string(args).c_str());
                 } else if (cmd == "getsize") {
                     // Get size is so annoying we don't want it to show... EVER!
                     log_result = false;
@@ -767,13 +770,14 @@ static bool proxy_process(int fd, bool can_appsync)
                         || cmd == "idmap"
                         || cmd == "restorecondata"
                         || cmd == "patchoat") {
-                    LOGD("Received command: {}", args_to_string(args));
+                    LOGD("Received command: %s", args_to_string(args).c_str());
 
                     if (can_appsync) {
                         handle_command(args);
                     }
                 } else {
-                    LOGW("Unrecognized command: {}", args_to_string(args));
+                    LOGW("Unrecognized command: %s",
+                         args_to_string(args).c_str());
                 }
             }
 
@@ -790,7 +794,7 @@ static bool proxy_process(int fd, bool can_appsync)
             args = parse_args(buf);
 
             if (log_result) {
-                LOGD("Sending reply: {}", args_to_string(args));
+                LOGD("Sending reply: %s", args_to_string(args).c_str());
             }
 
             if (!send_message(client_fd, buf)) {
@@ -817,13 +821,13 @@ static bool hijack_socket(bool can_appsync)
         return false;
     }
 
-    LOGD("Got socket fd from environment: {}", orig_fd);
+    LOGD("Got socket fd from environment: %d", orig_fd);
 
     fcntl(orig_fd, F_SETFD, FD_CLOEXEC);
 
     // Listen on the original socket
     if (listen(orig_fd, 5) < 0) {
-        LOGE("Failed to listen on socket: {}", strerror(errno));
+        LOGE("Failed to listen on socket: %s", strerror(errno));
         return false;
     }
 
@@ -838,7 +842,7 @@ static bool hijack_socket(bool can_appsync)
         close(new_fd);
     });
 
-    LOGD("Putting new socket fd for installd to environment: {}", new_fd);
+    LOGD("Putting new socket fd for installd to environment: %d", new_fd);
 
     // Put the new fd in the environment
     put_socket_to_env(SOCKET_PATH, new_fd);
@@ -860,7 +864,7 @@ static bool hijack_socket(bool can_appsync)
 
         do {
             if (waitpid(pid, &status, 0) < 0) {
-                LOGE("Failed to waitpid(): {}", strerror(errno));
+                LOGE("Failed to waitpid(): %s", strerror(errno));
                 break;
             }
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
@@ -959,7 +963,7 @@ int appsync_main(int argc, char *argv[])
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
 
-    LOGI("=== APPSYNC VERSION {} ===", MBP_VERSION);
+    LOGI("=== APPSYNC VERSION %s ===", MBP_VERSION);
 
     LOGI("Calling restorecon on /data/media/obb");
     util::run_command({ "restorecon", "-R", "-F", "/data/media/obb" });

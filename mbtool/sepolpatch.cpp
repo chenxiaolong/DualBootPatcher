@@ -58,19 +58,19 @@ static bool patch_sepolicy_internal(const std::string &source,
     }
 
     if (!util::selinux_read_policy(source, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", source);
+        LOGE("Failed to read SELinux policy file: %s", source.c_str());
         policydb_destroy(&pdb);
         return false;
     }
 
-    LOGD("Policy version: {}", pdb.policyvers);
+    LOGD("Policy version: %u", pdb.policyvers);
 
     for (const char **iter = permissive_types; *iter; ++iter) {
         util::selinux_make_permissive(&pdb, *iter);
     }
 
     if (!util::selinux_write_policy(target, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", target);
+        LOGE("Failed to write SELinux policy file: %s", target.c_str());
         policydb_destroy(&pdb);
         return false;
     }
@@ -98,13 +98,13 @@ bool patch_loaded_sepolicy()
             LOGV("Kernel does not support SELinux. Policy won't be patched");
             return true;
         } else {
-            LOGE("Failed to open {}: {}", SELINUX_ENFORCE_FILE, strerror(errno));
+            LOGE("Failed to open %s: %s", SELINUX_ENFORCE_FILE, strerror(errno));
             return false;
         }
     }
 
     if (std::fscanf(fp.get(), "%d", &is_enforcing) != 1) {
-        LOGE("Failed to parse {}: {}", SELINUX_ENFORCE_FILE, strerror(errno));
+        LOGE("Failed to parse %s: %s", SELINUX_ENFORCE_FILE, strerror(errno));
         return false;
     }
 

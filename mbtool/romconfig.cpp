@@ -68,7 +68,7 @@ bool RomConfig::load_file(const std::string &path)
 
     root = json_load_file(path.c_str(), 0, &error);
     if (!root) {
-        LOGE("JSON error on line {:d}: {}", error.line, error.text);
+        LOGE("JSON error on line %d: %s", error.line, error.text);
         return false;
     }
 
@@ -154,7 +154,7 @@ bool RomConfig::load_file(const std::string &path)
                 json_t *j_data = json_array_get(j_pkgs, i);
                 if (j_data) {
                     if (!json_is_object(j_data)) {
-                        LOGE("[root]->app_sharing->packages[{}]: Not an object", i);
+                        LOGE("[root]->app_sharing->packages[%zu]: Not an object", i);
                         return false;
                     }
 
@@ -165,7 +165,7 @@ bool RomConfig::load_file(const std::string &path)
                             j_data, CONFIG_KEY_PACKAGE_ID);
                     if (j_pkg_id) {
                         if (!json_is_string(j_pkg_id)) {
-                            LOGE("[root]->app_sharing->packages[{}]->pkg_id: Not a string", i);
+                            LOGE("[root]->app_sharing->packages[%zu]->pkg_id: Not a string", i);
                             return false;
                         }
                         shared_pkg.pkg_id = json_string_value(j_pkg_id);
@@ -179,7 +179,7 @@ bool RomConfig::load_file(const std::string &path)
                             j_data, CONFIG_KEY_SHARE_APK);
                     if (j_share_apk) {
                         if (!json_is_boolean(j_share_apk)) {
-                            LOGE("[root]->app_sharing->packages[{}]->share_apk: Not a boolean", i);
+                            LOGE("[root]->app_sharing->packages[%zu]->share_apk: Not a boolean", i);
                             return false;
                         }
                         shared_pkg.share_apk = json_is_true(j_share_apk);
@@ -190,7 +190,7 @@ bool RomConfig::load_file(const std::string &path)
                             j_data, CONFIG_KEY_SHARE_DATA);
                     if (j_share_data) {
                         if (!json_is_boolean(j_share_data)) {
-                            LOGE("[root]->app_sharing->packages[{}]->share_data: Not a boolean", i);
+                            LOGE("[root]->app_sharing->packages[%zu]->share_data: Not a boolean", i);
                             return false;
                         }
                         shared_pkg.share_data = json_is_true(j_share_data);

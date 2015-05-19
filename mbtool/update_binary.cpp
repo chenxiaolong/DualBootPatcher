@@ -27,7 +27,6 @@
 
 #include <libmbp/logging.h>
 
-#include "external/cppformat/format.h"
 #include "installer.h"
 #include "util/archive.h"
 #include "util/chown.h"
@@ -113,12 +112,12 @@ bool RecoveryInstaller::patch_sepolicy()
     }
 
     if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: {}", SELINUX_POLICY_FILE);
+        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
         policydb_destroy(&pdb);
         return false;
     }
 
-    LOGD("Policy version: {}", pdb.policyvers);
+    LOGD("Policy version: %u", pdb.policyvers);
 
     // Debugging rules (for CWM and Philz)
     util::selinux_add_rule(&pdb, "adbd",  "block_device",    "blk_file",   "relabelto");
@@ -136,7 +135,7 @@ bool RecoveryInstaller::patch_sepolicy()
     util::selinux_add_rule(&pdb, "tmpfs",  "rootfs",         "filesystem", "associate");
 
     if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: {}", SELINUX_LOAD_FILE);
+        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
         policydb_destroy(&pdb);
         return false;
     }
@@ -190,25 +189,25 @@ void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
 
     if (ret == ProceedState::Fail) {
         if (!util::copy_file("/tmp/recovery.log", log_file, 0)) {
-            LOGE("Failed to copy log file: {}", strerror(errno));
+            LOGE("Failed to copy log file: %s", strerror(errno));
         }
 
         if (chmod(log_file, 0664) < 0) {
-            LOGE("{}: Failed to chmod: {}", log_file, strerror(errno));
+            LOGE("%s: Failed to chmod: %s", log_file, strerror(errno));
         }
 
         if (!util::chown(log_file, "media_rw", "media_rw", 0)) {
-            LOGE("{}: Failed to chown: {}", log_file, strerror(errno));
+            LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
             if (chown(log_file, 1023, 1023) < 0) {
-                LOGE("{}: Failed to chown: {}", log_file, strerror(errno));
+                LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
             }
         }
 
         std::string context;
         if (util::selinux_lget_context("/data/media/0", &context)
                 && !util::selinux_lset_context(log_file, context)) {
-            LOGE("{}: Failed to set context to {}: {}",
-                 log_file, context, strerror(errno));
+            LOGE("%s: Failed to set context to %s: %s",
+                 log_file, context.c_str(), strerror(errno));
         }
 
         display_msg("The log file was saved as MultiBoot.log on the "
@@ -221,19 +220,19 @@ static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
 {
     switch (prio) {
     case mbp::LogLevel::Debug:
-        LOGD("{}", msg);
+        LOGD("%s", msg.c_str());
         break;
     case mbp::LogLevel::Error:
-        LOGE("{}", msg);
+        LOGE("%s", msg.c_str());
         break;
     case mbp::LogLevel::Info:
-        LOGI("{}", msg);
+        LOGI("%s", msg.c_str());
         break;
     case mbp::LogLevel::Verbose:
-        LOGV("{}", msg);
+        LOGV("%s", msg.c_str());
         break;
     case mbp::LogLevel::Warning:
-        LOGW("{}", msg);
+        LOGW("%s", msg.c_str());
         break;
     }
 }

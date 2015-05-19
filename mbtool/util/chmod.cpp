@@ -23,10 +23,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cppformat/format.h>
-
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 namespace mb
 {
@@ -61,7 +60,7 @@ public:
     virtual int on_reached_symlink() override
     {
         // Avoid security issue
-        LOGW("{}: Not setting permissions on symlink",
+        LOGW("%s: Not setting permissions on symlink",
              _curr->fts_path);
         return Action::FTS_Skip;
     }
@@ -77,9 +76,9 @@ private:
     bool chmod_path()
     {
         if (chmod(_curr->fts_accpath, _perms) < 0) {
-            _error_msg = fmt::format("{}: Failed to chmod: {}",
-                                     _curr->fts_path, strerror(errno));
-            LOGW("{}", _error_msg);
+            _error_msg = format("%s: Failed to chmod: %s",
+                                _curr->fts_path, strerror(errno));
+            LOGW("%s", _error_msg.c_str());
             return false;
         }
         return true;

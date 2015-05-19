@@ -22,7 +22,7 @@
 #include <memory>
 #include <cstdio>
 
-#include <util/logging.h>
+#include "util/logging.h"
 
 namespace mb
 {
@@ -44,7 +44,7 @@ bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_SIZE])
 {
     file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
     if (!fp) {
-        LOGE("{}: Failed to open: {}", path, strerror(errno));
+        LOGE("%s: Failed to open: %s", path.c_str(), strerror(errno));
         return false;
     }
 
@@ -62,7 +62,7 @@ bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_SIZE])
     }
 
     if (ferror(fp.get())) {
-        LOGE("{}: Failed to read file", path);
+        LOGE("%s: Failed to read file", path.c_str());
         errno = EIO;
         return false;
     }

@@ -27,6 +27,9 @@ namespace mb
 namespace util
 {
 
+__attribute__((format(printf, 1, 2)))
+std::string format(const char *fmt, ...);
+
 bool starts_with(const std::string &string, const std::string &prefix);
 bool starts_with(const char *string, const char *prefix);
 bool ends_with(const std::string &string, const std::string &suffix);

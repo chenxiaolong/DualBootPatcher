@@ -23,10 +23,9 @@
 #include <cstring>
 #include <sys/stat.h>
 
-#include <cppformat/format.h>
-
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 namespace mb
 {
@@ -71,9 +70,9 @@ private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            _error_msg = fmt::format("{}: Failed to remove: {}",
-                                     _curr->fts_path, strerror(errno));
-            LOGE("{}", _error_msg);
+            _error_msg = format("%s: Failed to remove: %s",
+                                _curr->fts_path, strerror(errno));
+            LOGE("%s", _error_msg.c_str());
             return false;
         }
         return true;

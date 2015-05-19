@@ -36,11 +36,11 @@ bool kernel_cmdline_get_option(const std::string &option,
 {
     std::string line;
     if (!file_first_line("/proc/cmdline", &line)) {
-        LOGE("Failed to read first line in /proc/cmdline: {}", strerror(errno));
+        LOGE("Failed to read first line in /proc/cmdline: %s", strerror(errno));
         return false;
     }
 
-    LOGD("Kernel cmdline: {}", line);
+    LOGD("Kernel cmdline: %s", line.c_str());
 
     std::vector<char> linebuf(line.begin(), line.end());
     linebuf.resize(linebuf.size() + 1);

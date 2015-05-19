@@ -29,6 +29,8 @@
 #include <android/log.h>
 #endif
 
+#include "util/string.h"
+
 #define LOG_TAG "mbtool"
 
 namespace mb
@@ -46,7 +48,7 @@ StdioLogger::StdioLogger(std::FILE *stream) : _stream(stream)
 {
 }
 
-void StdioLogger::log(LogLevel prio, const std::string &msg)
+void StdioLogger::log(LogLevel prio, const char *fmt, va_list ap)
 {
     if (!_stream) {
         return;
@@ -71,7 +73,9 @@ void StdioLogger::log(LogLevel prio, const std::string &msg)
         stdprio = STDLOG_LEVEL_VERBOSE;
         break;
     }
-    fprintf(_stream, "%s %s\n", stdprio, msg.c_str());
+    fprintf(_stream, "%s ", stdprio);
+    vfprintf(_stream, fmt, ap);
+    fprintf(_stream, "\n");
     fflush(_stream);
 }
 
@@ -112,7 +116,7 @@ KmsgLogger::~KmsgLogger()
     }
 }
 
-void KmsgLogger::log(LogLevel prio, const std::string &msg)
+void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
 {
     if (_fd < 0) {
         return;
@@ -138,13 +142,15 @@ void KmsgLogger::log(LogLevel prio, const std::string &msg)
         break;
     }
 
-    snprintf(_buf, KMSG_BUF_SIZE, "%s" LOG_TAG ": %s\n", kprio, msg.c_str());
+    std::string new_fmt = format("%s" LOG_TAG ": %s\n", kprio, fmt);
+    vsnprintf(_buf, KMSG_BUF_SIZE, new_fmt.c_str(), ap);
     write(_fd, _buf, strlen(_buf));
+    //vdprintf(_fd, new_fmt.c_str(), ap);
 }
 
 
 #ifdef USE_ANDROID_LOG
-void AndroidLogger::log(LogLevel prio, const std::string &msg)
+void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
 {
     int logcatprio;
 
@@ -166,7 +172,7 @@ void AndroidLogger::log(LogLevel prio, const std::string &msg)
         break;
     }
 
-    __android_log_print(logcatprio, LOG_TAG, "%s", msg.c_str());
+    __android_log_vprint(logcatprio, LOG_TAG, fmt, ap);
 }
 #endif
 
@@ -178,13 +184,18 @@ void log_set_logger(std::shared_ptr<BaseLogger> logger_local)
     logger = std::move(logger_local);
 }
 
-void log(LogLevel prio, const std::string &msg)
+void log(LogLevel prio, const char *fmt, ...)
 {
     if (!logger) {
         logger = std::make_shared<StdioLogger>(stdout);
     }
 
-    logger->log(prio, msg);
+    va_list ap;
+    va_start(ap, fmt);
+
+    logger->log(prio, fmt, ap);
+
+    va_end(ap);
 }
 
 }

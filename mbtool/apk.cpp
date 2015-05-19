@@ -81,7 +81,7 @@ bool ApkFile::open(const std::string &path)
 {
     unzFile uf = unzOpen(path.c_str());
     if (!uf) {
-        LOGE("{}: Failed to open archive", path.c_str());
+        LOGE("%s: Failed to open archive", path.c_str());
         return false;
     }
 
@@ -90,13 +90,13 @@ bool ApkFile::open(const std::string &path)
     });
 
     if (unzLocateFile(uf, "AndroidManifest.xml", nullptr) != UNZ_OK) {
-        LOGE("{}: package does not contain AndroidManifest.xml", path.c_str());
+        LOGE("%s: package does not contain AndroidManifest.xml", path.c_str());
         return false;
     }
 
     std::vector<unsigned char> data;
     if (!read_to_memory(uf, &data)) {
-        LOGE("{}: Failed to extract AndroidManifest.xml", path.c_str());
+        LOGE("%s: Failed to extract AndroidManifest.xml", path.c_str());
         return false;
     }
 
@@ -237,13 +237,13 @@ bool ApkFile::parse_manifest(const void *data, const std::size_t size)
                 pr = "<DEF>";
             }
             if (ns.prefix != pr) {
-                LOGE("Bad end namespace prefix (found={}, expected={})",
+                LOGE("Bad end namespace prefix (found=%s, expected=%s)",
                      pr.string(), ns.prefix.string());
             }
 
             android::String8 uri(tree.getNamespaceUri(&len));
             if (ns.uri != uri) {
-                LOGE("Bad end namespace URI (found={}, expected={})",
+                LOGE("Bad end namespace URI (found=%s, expected=%s)",
                      uri.string(), ns.uri.string());
             }
 
@@ -285,7 +285,7 @@ public:
 
         ApkFile af;
         if (!af.open(_curr->fts_accpath)) {
-            LOGE("{}: Failed to open or parse apk", _curr->fts_path);
+            LOGE("%s: Failed to open or parse apk", _curr->fts_path);
             return Action::FTS_Skip;
         }
 

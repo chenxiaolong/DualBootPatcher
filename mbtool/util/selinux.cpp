@@ -92,7 +92,7 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 
     fd = open(path.c_str(), O_RDONLY);
     if (fd < 0) {
-        LOGE("Failed to open {}: {}", path, strerror(errno));
+        LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
         return false;
     }
 
@@ -101,13 +101,13 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
     });
 
     if (fstat(fd, &sb) < 0) {
-        LOGE("Failed to stat {}: {}", path, strerror(errno));
+        LOGE("Failed to stat %s: %s", path.c_str(), strerror(errno));
         return false;
     }
 
     map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
-        LOGE("Failed to mmap {}: {}", path, strerror(errno));
+        LOGE("Failed to mmap %s: %s", path.c_str(), strerror(errno));
         return false;
     }
 
@@ -156,7 +156,7 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
 
     fd = open(path.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
     if (fd < 0) {
-        LOGE("Failed to open {}: {}", path, strerror(errno));
+        LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
         return false;
     }
 
@@ -165,7 +165,7 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
     });
 
     if (write(fd, data, len) < 0) {
-        LOGE("Failed to write to {}: {}", path, strerror(errno));
+        LOGE("Failed to write to %s: %s", path.c_str(), strerror(errno));
         return false;
     }
 
@@ -179,10 +179,10 @@ void selinux_make_all_permissive(policydb_t *pdb)
     for (unsigned int i = 0; i < pdb->p_types.nprim - 1; i++) {
         //name = pdb->p_type_val_to_name[i];
         //if (ebitmap_get_bit(&pdb->permissive_map, i + 1)) {
-        //    LOGD("Type {} is already permissive", name);
+        //    LOGD("Type %s is already permissive", name);
         //} else {
             ebitmap_set_bit(&pdb->permissive_map, i + 1, 1);
-        //    LOGD("Made {} permissive", name);
+        //    LOGD("Made %s permissive", name);
         //}
     }
 }
@@ -194,21 +194,22 @@ bool selinux_make_permissive(policydb_t *pdb, const std::string &type_str)
     type = (type_datum_t *) hashtab_search(
             pdb->p_types.table, (hashtab_key_t) type_str.c_str());
     if (!type) {
-        LOGV("Type {} not found in policy", type_str);
+        LOGV("Type %s not found in policy", type_str.c_str());
         return false;
     }
 
     if (ebitmap_get_bit(&pdb->permissive_map, type->s.value)) {
-        LOGV("Type {} is already permissive", type_str);
+        LOGV("Type %s is already permissive", type_str.c_str());
         return true;
     }
 
     if (ebitmap_set_bit(&pdb->permissive_map, type->s.value, 1) < 0) {
-        LOGE("Failed to set bit for type {} in the permissive map", type_str);
+        LOGE("Failed to set bit for type %s in the permissive map",
+             type_str.c_str());
         return false;
     }
 
-    LOGD("Type {} is now permissive", type_str);
+    LOGD("Type %s is now permissive", type_str.c_str());
 
     return true;
 }
@@ -232,33 +233,35 @@ bool selinux_add_rule(policydb_t *pdb,
     source = (type_datum_t *) hashtab_search(
             pdb->p_types.table, (hashtab_key_t) source_str.c_str());
     if (!source) {
-        LOGE("Source type {} does not exist", source_str);
+        LOGE("Source type %s does not exist", source_str.c_str());
         return false;
     }
     target = (type_datum_t *) hashtab_search(
             pdb->p_types.table, (hashtab_key_t) target_str.c_str());
     if (!target) {
-        LOGE("Target type {} does not exist", target_str);
+        LOGE("Target type %s does not exist", target_str.c_str());
         return false;
     }
     clazz = (class_datum_t *) hashtab_search(
             pdb->p_classes.table, (hashtab_key_t) class_str.c_str());
     if (!clazz) {
-        LOGE("Class {} does not exist", class_str);
+        LOGE("Class %s does not exist", class_str.c_str());
         return false;
     }
     perm = (perm_datum_t *) hashtab_search(
             clazz->permissions.table, (hashtab_key_t) perm_str.c_str());
     if (!perm) {
         if (clazz->comdatum == nullptr) {
-            LOGE("Perm {} does not exist in class {}", perm_str, class_str);
+            LOGE("Perm %s does not exist in class %s",
+                 perm_str.c_str(), class_str.c_str());
             return false;
         }
         perm = (perm_datum_t *) hashtab_search(
                 clazz->comdatum->permissions.table,
                 (hashtab_key_t) perm_str.c_str());
         if (!perm) {
-            LOGE("Perm {} does not exist in class {}", perm_str, class_str);
+            LOGE("Perm %s does not exist in class %s",
+                 perm_str.c_str(), class_str.c_str());
             return false;
         }
     }
@@ -287,11 +290,13 @@ bool selinux_add_rule(policydb_t *pdb,
     }
 
     if (exists) {
-        LOGD("Rule already exists: \"allow {} {}:{} {};\"",
-             source_str, target_str, class_str, perm_str);
+        LOGD("Rule already exists: \"allow %s %s:%s %s;\"",
+             source_str.c_str(), target_str.c_str(), class_str.c_str(),
+             perm_str.c_str());
     } else {
-        LOGD("Added rule: \"allow {} {}:{} {};\"",
-             source_str, target_str, class_str, perm_str);
+        LOGD("Added rule: \"allow %s %s:%s %s;\"",
+             source_str.c_str(), target_str.c_str(), class_str.c_str(),
+             perm_str.c_str());
     }
 
     return true;

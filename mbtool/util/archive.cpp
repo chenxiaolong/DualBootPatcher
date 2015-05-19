@@ -46,13 +46,13 @@ int archive_copy_data(archive *in, archive *out)
     while ((ret = archive_read_data_block(
             in, &buff, &size, &offset)) == ARCHIVE_OK) {
         if (archive_write_data_block(out, buff, size, offset) != ARCHIVE_OK) {
-            LOGE("Failed to write data: {}", archive_error_string(out));
+            LOGE("Failed to write data: %s", archive_error_string(out));
             return ARCHIVE_FAILED;
         }
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Data copy ended without reaching EOF: {}",
+        LOGE("Data copy ended without reaching EOF: %s",
              archive_error_string(in));
         return ARCHIVE_FAILED;
     }
@@ -66,7 +66,7 @@ int archive_copy_header_and_data(archive *in, archive *out,
     int ret = ARCHIVE_OK;
 
     if ((ret = archive_write_header(out, entry)) != ARCHIVE_OK) {
-        LOGE("Failed to write header: {}", archive_error_string(out));
+        LOGE("Failed to write header: %s", archive_error_string(out));
         return ret;
     }
 
@@ -87,8 +87,8 @@ static bool set_up_input(archive *in, const std::string &filename)
     //archive_read_support_filter_xz(in);
 
     if (archive_read_open_filename(in, filename.c_str(), 10240) != ARCHIVE_OK) {
-        LOGE("{}: Failed to open archive: {}",
-             filename, archive_error_string(in));
+        LOGE("%s: Failed to open archive: %s",
+             filename.c_str(), archive_error_string(in));
         return false;
     }
 
@@ -133,14 +133,14 @@ bool extract_archive(const std::string &filename, const std::string &target)
     set_up_output(out.get());
 
     if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
-        LOGE("{}: Failed to create directory: {}",
-             target, strerror(errno));
+        LOGE("%s: Failed to create directory: %s",
+             target.c_str(), strerror(errno));
         return false;
     }
 
     if (chdir(target.c_str()) < 0) {
-        LOGE("{}: Failed to change to target directory: {}",
-             target, strerror(errno));
+        LOGE("%s: Failed to change to target directory: %s",
+             target.c_str(), strerror(errno));
         return false;
     }
 
@@ -155,7 +155,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Archive extraction ended without reaching EOF: {}",
+        LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return false;
     }
@@ -194,14 +194,14 @@ bool extract_files(const std::string &filename, const std::string &target,
     set_up_output(out.get());
 
     if (!mkdir_recursive(target, S_IRWXU | S_IRWXG | S_IRWXO)) {
-        LOGE("{}: Failed to create directory: {}",
-             target, strerror(errno));
+        LOGE("%s: Failed to create directory: %s",
+             target.c_str(), strerror(errno));
         return false;
     }
 
     if (chdir(target.c_str()) < 0) {
-        LOGE("{}: Failed to change to target directory: {}",
-             target, strerror(errno));
+        LOGE("%s: Failed to change to target directory: %s",
+             target.c_str(), strerror(errno));
         return false;
     }
 
@@ -221,7 +221,7 @@ bool extract_files(const std::string &filename, const std::string &target,
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Archive extraction ended without reaching EOF: {}",
+        LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return false;
     }
@@ -276,7 +276,7 @@ bool extract_files2(const std::string &filename,
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Archive extraction ended without reaching EOF: {}",
+        LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return false;
     }
@@ -323,7 +323,7 @@ bool archive_exists(const std::string &filename,
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Archive extraction ended without reaching EOF: {}",
+        LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return false;
     }
