@@ -461,7 +461,7 @@ static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs)
     return true;
 }
 
-std::shared_ptr<Package> Packages::find_by_uid(uid_t uid)
+std::shared_ptr<Package> Packages::find_by_uid(uid_t uid) const
 {
     auto it = std::find_if(pkgs.begin(), pkgs.end(),
                            [&](const std::shared_ptr<Package> &pkg) {
@@ -470,7 +470,7 @@ std::shared_ptr<Package> Packages::find_by_uid(uid_t uid)
     return it == pkgs.end() ? std::shared_ptr<Package>() : *it;
 }
 
-std::shared_ptr<Package> Packages::find_by_pkg(const std::string &pkg_id)
+std::shared_ptr<Package> Packages::find_by_pkg(const std::string &pkg_id) const
 {
     auto it = std::find_if(pkgs.begin(), pkgs.end(),
                            [&](const std::shared_ptr<Package> &pkg) {

@@ -73,28 +73,54 @@
 
 #define CONFIG_PATH_FMT                 "/data/media/0/MultiBoot/{}/config.json"
 
-#define PACKAGES_XML                    "/data/system/packages.xml"
+#define PACKAGES_XML_PATH_FMT           "{}/system/packages.xml"
 
 namespace mb
 {
 
 static RomConfig config;
+static Packages packages;
+
+static std::vector<RomConfigAndPackages> cfg_pkgs_list; // 'dat naming tho ;)
 
 /*!
  * \brief Try loading the config file in /data/media/0/MultiBoot/[ROM ID]/config.json
  */
-static bool load_config_file()
+static bool load_config_files()
 {
-    auto rom = Roms::get_current_rom();
-    if (!rom) {
+    auto current_rom = Roms::get_current_rom();
+    if (!current_rom) {
         LOGE("Failed to determine current ROM");
         return false;
     }
 
-    std::string path = fmt::format(CONFIG_PATH_FMT, rom->id);
+    Roms roms;
+    roms.add_installed();
 
-    if (!config.load_file(path)) {
-        return false;
+    for (const std::shared_ptr<Rom> &rom : roms.roms) {
+        std::string config_path = fmt::format(CONFIG_PATH_FMT, rom->id);
+        std::string packages_path =
+                fmt::format(PACKAGES_XML_PATH_FMT, rom->data_path);
+
+        cfg_pkgs_list.emplace_back();
+        cfg_pkgs_list.back().rom = rom;
+
+        RomConfig &rom_config = cfg_pkgs_list.back().config;
+        Packages &rom_packages = cfg_pkgs_list.back().packages;
+
+        if (!rom_config.load_file(config_path)) {
+            LOGW("{}: Failed to load config for ROM {}",
+                 config_path, rom->id);
+        }
+        if (!rom_packages.load_xml(packages_path)) {
+            LOGW("{}: Failed to load packages for ROM {}",
+                 packages_path, rom->id);
+        }
+
+        if (rom->id == current_rom->id) {
+            config = rom_config;
+            packages = rom_packages;
+        }
     }
 
     LOGD("[Config] ROM ID:                    {}", config.id);
@@ -188,12 +214,6 @@ static bool prepare_appsync()
     // Detect directory locations
     AppSyncManager::detect_directories();
 
-    Packages pkgs;
-    if (!pkgs.load_xml(PACKAGES_XML)) {
-        LOGE("Failed to load {}", PACKAGES_XML);
-        return false;
-    }
-
     if (!AppSyncManager::initialize_directories()) {
         return false;
     }
@@ -203,7 +223,7 @@ static bool prepare_appsync()
         SharedPackage &shared_pkg = *it;
 
         // Ensure package is installed, so we can get its UID
-        auto pkg = pkgs.find_by_pkg(shared_pkg.pkg_id);
+        auto pkg = packages.find_by_pkg(shared_pkg.pkg_id);
         if (!pkg) {
             LOGW("Package {} won't be shared because it is not installed",
                  shared_pkg.pkg_id);
@@ -264,7 +284,7 @@ static bool prepare_appsync()
 
     // Actually share the apk and data
     for (SharedPackage &shared_pkg : config.shared_pkgs) {
-        auto pkg = pkgs.find_by_pkg(shared_pkg.pkg_id);
+        auto pkg = packages.find_by_pkg(shared_pkg.pkg_id);
 
         if (disable_apk_sharing) {
             shared_pkg.share_apk = false;
@@ -281,9 +301,9 @@ static bool prepare_appsync()
             shared_pkg.share_apk = false;
         }
 
-        if (shared_pkg.share_apk
-                && !AppSyncManager::link_apk_shared_to_user(pkg)) {
-            LOGW("Failed to link shared apk to user app directory");
+        if (shared_pkg.share_apk && !AppSyncManager::sync_apk_shared_to_user(
+                pkg->name, cfg_pkgs_list)) {
+            LOGW("Failed to link shared apk to user app directory for all ROMs");
             if (shared_pkg.share_data) {
                 LOGW("To prevent issues due to the error, "
                      "data will not be shared");
@@ -569,6 +589,11 @@ static bool do_linklib(const std::vector<std::string> &args)
     // Update apk in the shared directory
     if (!AppSyncManager::copy_apk_user_to_shared(pkgname)) {
         LOGW(TAG "Failed to copy user apk to shared directory");
+        return false;
+    }
+
+    if (!AppSyncManager::sync_apk_shared_to_user(pkgname, cfg_pkgs_list)) {
+        LOGW("Failed to link shared apk to user app directory for all ROMs");
         return false;
     }
 
@@ -942,7 +967,7 @@ int appsync_main(int argc, char *argv[])
     bool can_appsync = false;
 
     // Try to load config file
-    if (!load_config_file()) {
+    if (!load_config_files()) {
         LOGW("Failed to load configuration file; app sharing will not work");
         LOGW("Continuing to proxy installd anyway...");
     } else {

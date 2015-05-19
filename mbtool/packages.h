@@ -107,8 +107,8 @@ public:
 
     bool load_xml(const std::string &path);
 
-    std::shared_ptr<Package> find_by_uid(uid_t uid);
-    std::shared_ptr<Package> find_by_pkg(const std::string &pkg_id);
+    std::shared_ptr<Package> find_by_uid(uid_t uid) const;
+    std::shared_ptr<Package> find_by_pkg(const std::string &pkg_id) const;
 };
 
 }

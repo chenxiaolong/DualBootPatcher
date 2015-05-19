@@ -19,6 +19,8 @@
 
 #include "appsyncmanager.h"
 
+#include <algorithm>
+
 #include <cerrno>
 
 #include <sys/mount.h>
@@ -214,59 +216,94 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
     return true;
 }
 
-bool AppSyncManager::link_apk_shared_to_user(const std::shared_ptr<Package> &pkg)
+/*!
+ * For each installed ROM, if the apk is shared, unlink the apk and hard link
+ * the shared apk to it.
+ */
+bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
+                                             const std::vector<RomConfigAndPackages> &cfg_pkgs_list)
 {
-    std::string shared_apk = get_shared_apk_path(pkg->name);
-    std::string user_apk;
+    LOGD("Syncing {} to all ROMs where it is shared", pkgname);
 
-    if (!util::starts_with(pkg->code_path, "/data")) {
-        LOGW("{}: Does not reside in /data", pkg->code_path);
+    std::string shared_apk = get_shared_apk_path(pkgname);
+
+    struct stat sb_shared;
+    if (stat(shared_apk.c_str(), &sb_shared) < 0) {
+        LOGE("{}: Failed to stat: {}", shared_apk, strerror(errno));
         return false;
     }
 
-    // We need to get the path in /raw since pre-Android 5.0 has a bug with
-    // linking across bind mounts.
-    auto rom = Roms::get_current_rom();
-    if (!rom) {
-        LOGW("Failed to determine current ROM");
-        return false;
-    }
+    for (const RomConfigAndPackages &cfg_pkgs : cfg_pkgs_list) {
+        const std::shared_ptr<Rom> &rom = cfg_pkgs.rom;
+        const RomConfig &config = cfg_pkgs.config;
+        const Packages &packages = cfg_pkgs.packages;
 
-    user_apk += rom->data_path;
-    user_apk += pkg->code_path.substr(5); // For "/data"
-
-    if (!util::ends_with(pkg->code_path, ".apk")) {
-        user_apk += "/base.apk";
-    }
-
-    struct stat sb1;
-    struct stat sb2;
-
-    if (stat(shared_apk.c_str(), &sb1) < 0) {
-        LOGW("{}: Failed to stat: {}", shared_apk, strerror(errno));
-        return false;
-    }
-
-    if (stat(user_apk.c_str(), &sb2) == 0) {
-        if (sb1.st_dev == sb2.st_dev && sb1.st_ino == sb2.st_ino) {
-            // File is already linked correctly
-            return true;
+        // Ensure the package is installed in this ROM
+        auto pkg = packages.find_by_pkg(pkgname);
+        if (!pkg) {
+            continue;
         }
-        if (!S_ISREG(sb2.st_mode)) {
-            LOGW("{}: apk is not a regular file", user_apk);
+
+        // Ensure the user wants the app to be shared in this ROM
+        auto it = std::find_if(config.shared_pkgs.begin(),
+                               config.shared_pkgs.end(),
+                               [&](const SharedPackage &shared_pkg){
+            return shared_pkg.pkg_id == pkgname;
+        });
+        if (it == config.shared_pkgs.end()) {
+            continue;
+        }
+
+        // Ensure that the user apk resides in /data/app
+        if (!util::starts_with(pkg->code_path, _user_app_dir)) {
+            LOGW("{}: Does not reside in /data [ROM: {}]",
+                 pkg->code_path, rom->id);
+            continue;
+        }
+
+        // We need to get the non-bind mounted path since pre-Android 5.0 libc
+        // has a bug linking across bind mounts, even if st_dev is the same.
+        std::string user_apk;
+        user_apk += rom->data_path;
+        user_apk += pkg->code_path.substr(5); // For "/data"
+        if (!util::ends_with(pkg->code_path, ".apk")) {
+            // Android >= 5.0
+            user_apk += "/base.apk";
+        }
+
+        struct stat sb_user;
+
+        // Try to stat the user apk
+        if (stat(user_apk.c_str(), &sb_user) == 0) {
+            if (sb_shared.st_dev == sb_user.st_dev
+                    && sb_shared.st_ino == sb_user.st_ino) {
+                // User apk is already linked to the shared apk. Move on to the
+                // next ROM
+                continue;
+            }
+            if (!S_ISREG(sb_user.st_mode)) {
+                // User apk is not a regular file. Skip and move on to the next
+                // ROM
+                LOGW("{}: apk is not a regular file [ROM: {}]",
+                     user_apk, rom->id);
+                continue;
+            }
+        }
+
+        LOGD("- Linking shared apk to user apk in {}", rom->id);
+
+        // Remove old user apk
+        if (unlink(user_apk.c_str()) < 0 && errno != ENOENT) {
+            LOGW("{}: Failed to unlink: {}", user_apk, strerror(errno));
             return false;
         }
-    }
 
-    if (unlink(user_apk.c_str()) < 0 && errno != ENOENT) {
-        LOGW("{}: Failed to unlink: {}", user_apk, strerror(errno));
-        return false;
-    }
-
-    if (link(shared_apk.c_str(), user_apk.c_str()) < 0) {
-        LOGW("Failed to hard link {} to {}: {}",
-             shared_apk, user_apk, strerror(errno));
-        return false;
+        // Hard link shared apk to user apk
+        if (link(shared_apk.c_str(), user_apk.c_str()) < 0) {
+            LOGW("Failed to hard link {} to {}: {}",
+                 shared_apk, user_apk, strerror(errno));
+            return false;
+        }
     }
 
     return true;

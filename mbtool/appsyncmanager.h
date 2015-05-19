@@ -22,9 +22,18 @@
 #include <string>
 
 #include "packages.h"
+#include "roms.h"
+#include "romconfig.h"
 
 namespace mb
 {
+
+struct RomConfigAndPackages
+{
+    std::shared_ptr<Rom> rom;
+    RomConfig config;
+    Packages packages;
+};
 
 class AppSyncManager
 {
@@ -35,7 +44,8 @@ public:
     static std::string get_shared_data_path(const std::string &pkg);
 
     static bool copy_apk_user_to_shared(const std::string &pkg);
-    static bool link_apk_shared_to_user(const std::shared_ptr<Package> &pkg);
+    static bool sync_apk_shared_to_user(const std::string &pkg,
+                                        const std::vector<RomConfigAndPackages> &cfg_pkgs_list);
 
     static bool wipe_shared_libraries(const std::shared_ptr<Package> &pkg);
 
