@@ -19,11 +19,8 @@
 
 #pragma once
 
-#include <memory>
-
-#include <cppformat/format.h>
-
 #include "../logging.h"
+#include "private/stringutils.h"
 
 
 #define LOGE(str) log(mbp::LogLevel::Error, str)
@@ -31,10 +28,10 @@
 #define LOGI(str) log(mbp::LogLevel::Info, str)
 #define LOGD(str) log(mbp::LogLevel::Debug, str)
 #define LOGV(str) log(mbp::LogLevel::Verbose, str)
-#define FLOGE(...) log(mbp::LogLevel::Error, fmt::format(__VA_ARGS__))
-#define FLOGW(...) log(mbp::LogLevel::Warning, fmt::format(__VA_ARGS__))
-#define FLOGI(...) log(mbp::LogLevel::Info, fmt::format(__VA_ARGS__))
-#define FLOGD(...) log(mbp::LogLevel::Debug, fmt::format(__VA_ARGS__))
-#define FLOGV(...) log(mbp::LogLevel::Verbose, fmt::format(__VA_ARGS__))
+#define FLOGE(...) log(mbp::LogLevel::Error, StringUtils::format(__VA_ARGS__))
+#define FLOGW(...) log(mbp::LogLevel::Warning, StringUtils::format(__VA_ARGS__))
+#define FLOGI(...) log(mbp::LogLevel::Info, StringUtils::format(__VA_ARGS__))
+#define FLOGD(...) log(mbp::LogLevel::Debug, StringUtils::format(__VA_ARGS__))
+#define FLOGV(...) log(mbp::LogLevel::Verbose, StringUtils::format(__VA_ARGS__))
 
 void log(mbp::LogLevel level, const std::string &str);

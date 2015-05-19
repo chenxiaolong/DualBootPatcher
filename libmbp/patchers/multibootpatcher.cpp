@@ -540,7 +540,7 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
 
             if (!FileUtils::mzCopyFileRaw(zInput, zOutput, curFile,
                                           &laProgressCb, this)) {
-                FLOGW("minizip: Failed to copy raw data: {}", curFile);
+                FLOGW("minizip: Failed to copy raw data: %s", curFile.c_str());
                 error = PatcherError::createArchiveError(
                         ErrorCode::ArchiveWriteDataError, curFile);
                 return false;
@@ -618,7 +618,8 @@ bool MultiBootPatcher::Impl::openInputArchive()
     zInput = FileUtils::mzOpenInputFile(info->filename());
 
     if (!zInput) {
-        FLOGE("minizip: Failed to open for reading: {}", info->filename());
+        FLOGE("minizip: Failed to open for reading: %s",
+              info->filename().c_str());
         error = PatcherError::createArchiveError(
                 ErrorCode::ArchiveReadOpenError, info->filename());
         return false;
@@ -633,7 +634,7 @@ void MultiBootPatcher::Impl::closeInputArchive()
 
     int ret = FileUtils::mzCloseInputFile(zInput);
     if (ret != UNZ_OK) {
-        FLOGW("minizip: Failed to close archive (error code: {})", ret);
+        FLOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
     zInput = nullptr;
@@ -648,7 +649,7 @@ bool MultiBootPatcher::Impl::openOutputArchive()
     zOutput = FileUtils::mzOpenOutputFile(newPath);
 
     if (!zOutput) {
-        FLOGE("minizip: Failed to open for writing: {}", newPath);
+        FLOGE("minizip: Failed to open for writing: %s", newPath.c_str());
         error = PatcherError::createArchiveError(
                 ErrorCode::ArchiveWriteOpenError, newPath);
         return false;
@@ -663,7 +664,7 @@ void MultiBootPatcher::Impl::closeOutputArchive()
 
     int ret = FileUtils::mzCloseOutputFile(zOutput);
     if (ret != ZIP_OK) {
-        FLOGW("minizip: Failed to close archive (error code: {})", ret);
+        FLOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
     zOutput = nullptr;
@@ -766,21 +767,25 @@ std::string MultiBootPatcher::Impl::createTable()
     }
 
     const std::string rowFmt =
-            fmt::format("# | {{:<{}}} | {{:<{}}} | {{:<{}}} |\n",
-                        maxLenId, maxLenCodenames, maxLenName);
-    const std::string sepFmt =
-            fmt::format("# |{{:-<{}}}|{{:-<{}}}|{{:-<{}}}|\n",
-                        maxLenId + 2, maxLenCodenames + 2, maxLenName + 2);
+            StringUtils::format("# | %%-%zus | %%-%zus | %%-%zus |\n",
+                                maxLenId, maxLenCodenames, maxLenName);
 
     // Titles
-    out += fmt::format(rowFmt, titleDevice, titleCodenames, titleName);
+    out += StringUtils::format(rowFmt.c_str(),
+                               titleDevice.c_str(), titleCodenames.c_str(),
+                               titleName.c_str());
 
     // Separator
-    out += fmt::format(sepFmt, std::string(), std::string(), std::string());
+    out += StringUtils::format("# |%s|%s|%s|\n",
+                               std::string(maxLenId + 2, '-').c_str(),
+                               std::string(maxLenCodenames + 2, '-').c_str(),
+                               std::string(maxLenName + 2, '-').c_str());
 
     // Devices
     for (std::size_t i = 0; i < devices.size(); ++i) {
-        out += fmt::format(rowFmt, ids[i], codenames[i], names[i]);
+        out += StringUtils::format(rowFmt.c_str(),
+                                   ids[i].c_str(), codenames[i].c_str(),
+                                   names[i].c_str());
     }
 
     return out;

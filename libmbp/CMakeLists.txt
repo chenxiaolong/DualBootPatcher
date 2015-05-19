@@ -22,6 +22,7 @@ set(MBP_SOURCES
     patchinfo.cpp
     private/fileutils.cpp
     private/logging.cpp
+    private/stringutils.cpp
     bootimage/bumppatcher.cpp
     bootimage/lokipatcher.cpp
     cwrapper/cbootimage.cpp
@@ -59,7 +60,6 @@ set(MBP_SOURCES
     ramdiskpatchers/trlteramdiskpatcher.cpp
     ramdiskpatchers/zerolteramdiskpatcher.cpp
     external/sha.c
-    ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
@@ -164,6 +164,7 @@ set(MBP_MINI_SOURCES
     #patchinfo.cpp
     private/fileutils.cpp
     private/logging.cpp
+    private/stringutils.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
@@ -176,7 +177,6 @@ set(MBP_MINI_SOURCES
     bootimage/bumppatcher.cpp
     bootimage/lokipatcher.cpp
     external/sha.c
-    ${CMAKE_SOURCE_DIR}/external/cppformat/format.cc
 )
 
 # Wordaround semicolon separated list issue

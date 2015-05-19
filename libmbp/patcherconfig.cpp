@@ -880,7 +880,7 @@ bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
             info->setId(pathId);
             patchInfos.push_back(info);
         } else {
-            FLOGW("Unknown tag: {}", curNode.name());
+            FLOGW("Unknown tag: %s", curNode.name());
         }
     }
 
@@ -914,7 +914,7 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(pugi::xml_node node,
         } else if (strcmp(curNode.name(), PatchInfoTagDeviceCheck) == 0) {
             parsePatchInfoTagDeviceCheck(curNode, info);
         } else {
-            FLOGW("Unrecognized tag within <patchinfo>: {}", curNode.name());
+            FLOGW("Unrecognized tag within <patchinfo>: %s", curNode.name());
         }
     }
 }
@@ -1004,7 +1004,7 @@ void PatcherConfig::Impl::parsePatchInfoTagRegexes(pugi::xml_node node,
         } else if (strcmp(curNode.name(), PatchInfoTagExcludeRegex) == 0) {
             parsePatchInfoTagExcludeRegex(curNode, info);
         } else {
-            FLOGW("Unrecognized tag within <regexes>: {}", curNode.name());
+            FLOGW("Unrecognized tag within <regexes>: %s", curNode.name());
         }
     }
 }
@@ -1026,7 +1026,7 @@ void PatcherConfig::Impl::parsePatchInfoTagHasBootImage(pugi::xml_node node,
         } else if (strcmp(curNode.value(), XmlTextFalse) == 0) {
             info->setHasBootImage(false);
         } else {
-            FLOGW("Unknown value for <has-boot-image>: {}", curNode.value());
+            FLOGW("Unknown value for <has-boot-image>: %s", curNode.value());
         }
     }
 
@@ -1074,7 +1074,7 @@ void PatcherConfig::Impl::parsePatchInfoTagAutopatchers(pugi::xml_node node,
         } else if (strcmp(curNode.name(), PatchInfoTagAutopatcher) == 0) {
             parsePatchInfoTagAutopatcher(curNode, info);
         } else {
-            FLOGW("Unrecognized tag within <autopatchers>: {}", curNode.name());
+            FLOGW("Unrecognized tag within <autopatchers>: %s", curNode.name());
         }
     }
 }
@@ -1125,7 +1125,7 @@ void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(pugi::xml_node node,
         } else if (strcmp(curNode.value(), XmlTextFalse) == 0) {
             info->setDeviceCheck(false);
         } else {
-            FLOGW("Unknown value for <device-check>: {}", curNode.value());
+            FLOGW("Unknown value for <device-check>: %s", curNode.value());
         }
     }
 

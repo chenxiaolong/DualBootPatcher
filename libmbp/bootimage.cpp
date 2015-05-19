@@ -19,10 +19,10 @@
 
 #include "bootimage.h"
 
+#include <algorithm>
+
 #include <cstring>
 #include <fstream>
-
-#include <cppformat/format.h>
 
 #include "bootimage/header.h"
 #include "bootimage/bumppatcher.h"
@@ -237,8 +237,8 @@ bool BootImage::load(const std::vector<unsigned char> &data)
         ret = m_impl->loadAndroidHeader(data, headerIndex);
     }
 
-    FLOGD("Image is Loki-patched: {:s}", m_impl->wasLoki ? "true" : "false");
-    FLOGD("Image is Bump-patched: {:s}", m_impl->wasBump ? "true" : "false");
+    FLOGD("Image is Loki-patched: %s", m_impl->wasLoki ? "true" : "false");
+    FLOGD("Image is Bump-patched: %s", m_impl->wasBump ? "true" : "false");
 
     return ret;
 }
@@ -283,7 +283,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
     // Read the Android boot image header
     auto android = reinterpret_cast<const BootImageHeader *>(&data[headerIndex]);
 
-    FLOGD("Found Android boot image header at: {:d}", headerIndex);
+    FLOGD("Found Android boot image header at: %u", headerIndex);
 
     // Save the header struct
     header = *android;
@@ -298,7 +298,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
     case 131072:
         break;
     default:
-        FLOGE("Invalid page size: {:d}", android->page_size);
+        FLOGE("Invalid page size: %u", android->page_size);
         error = PatcherError::createBootImageError(
                 ErrorCode::BootImageParseError);
         return false;
@@ -313,7 +313,8 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(sizeof(BootImageHeader), android->page_size);
 
         if (pos + android->kernel_size > data.size()) {
-            LOGE("Kernel image exceeds boot image size");
+            FLOGE("Kernel image exceeds boot image size by %zu bytes",
+                  pos + android->kernel_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
             return false;
@@ -327,7 +328,8 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(android->kernel_size, android->page_size);
 
         if (pos + android->ramdisk_size > data.size()) {
-            LOGE("Ramdisk image exceeds boot image size");
+            FLOGE("Ramdisk image exceeds boot image size by %zu bytes",
+                  pos + android->ramdisk_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
             return false;
@@ -341,7 +343,8 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(android->ramdisk_size, android->page_size);
 
         if (pos + android->second_size > data.size()) {
-            LOGE("Second bootloader image exceeds boot image size");
+            FLOGE("Second bootloader image exceeds boot image size by %zu bytes",
+                  pos + android->second_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
             return false;
@@ -360,7 +363,8 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(android->second_size, android->page_size);
 
         if (pos + android->dt_size > data.size()) {
-            LOGE("Device tree image exceeds boot image size");
+            FLOGE("Device tree image exceeds boot image size by %zu bytes",
+                  pos + android->dt_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
             return false;
@@ -406,13 +410,13 @@ bool BootImage::Impl::loadLokiHeader(const std::vector<unsigned char> &data,
 
     const LokiHeader *loki = reinterpret_cast<const LokiHeader *>(&data[0x400]);
 
-    FLOGD("Found Loki boot image header at {:#x}", 0x400);
-    FLOGD("- magic:             {:s}", std::string(loki->magic, loki->magic + 4));
-    FLOGD("- recovery:          {:d}", loki->recovery);
-    FLOGD("- build:             {:s}", std::string(loki->build, loki->build + 128));
-    FLOGD("- orig_kernel_size:  {:d}", loki->orig_kernel_size);
-    FLOGD("- orig_ramdisk_size: {:d}", loki->orig_ramdisk_size);
-    FLOGD("- ramdisk_addr:      {:#08x}", loki->ramdisk_addr);
+    FLOGD("Found Loki boot image header at 0x%x", 0x400);
+    FLOGD("- magic:             %s", std::string(loki->magic, loki->magic + 4).c_str());
+    FLOGD("- recovery:          %u", loki->recovery);
+    FLOGD("- build:             %s", std::string(loki->build, loki->build + 128).c_str());
+    FLOGD("- orig_kernel_size:  %u", loki->orig_kernel_size);
+    FLOGD("- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
+    FLOGD("- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
 
     if (loki->orig_kernel_size != 0
             && loki->orig_ramdisk_size != 0
@@ -487,7 +491,7 @@ bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
 
     // The kernel tags address is invalid in the old loki images
     m_parent->resetKernelTagsAddress();
-    FLOGD("Setting kernel tags address to default: {:#08x}", header.tags_addr);
+    FLOGD("Setting kernel tags address to default: 0x%08x", header.tags_addr);
 
     uint32_t kernelSize;
     uint32_t ramdiskSize;
@@ -499,7 +503,7 @@ bool BootImage::Impl::loadLokiOldImage(const std::vector<unsigned char> &data,
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
     kernelSize = *(reinterpret_cast<const int32_t *>(
             &data[header.page_size + 0x2c]));
-    FLOGD("Kernel size: {:d}", kernelSize);
+    FLOGD("Kernel size: %u", kernelSize);
 
 
     // The ramdisk always comes after the kernel in boot images, so start the
@@ -581,19 +585,19 @@ uint32_t BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned char>
         }
 
         if (data[curOffset + 3] == '\x08') {
-            FLOGD("Found a gzip header (flag 0x08) at {:#x}", curOffset);
+            FLOGD("Found a gzip header (flag 0x08) at 0x%x", curOffset);
             offsetsFlag8.push_back(curOffset);
         } else if (data[curOffset + 3] == '\x00') {
-            FLOGD("Found a gzip header (flag 0x00) at {:#x}", curOffset);
+            FLOGD("Found a gzip header (flag 0x00) at 0x%x", curOffset);
             offsetsFlag0.push_back(curOffset);
         } else {
-            FLOGW("Unexpected flag {:#02x} found in gzip header at {:#x}",
+            FLOGW("Unexpected flag 0x%02x found in gzip header at 0x%x",
                   static_cast<int32_t>(data[curOffset + 3]), curOffset);
             continue;
         }
     }
 
-    FLOGD("Found {:d} total gzip headers",
+    FLOGD("Found %zu total gzip headers",
           offsetsFlag8.size() + offsetsFlag0.size());
 
     uint32_t gzipOffset = 0;
@@ -613,7 +617,7 @@ uint32_t BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned char>
         }
     }
 
-    FLOGD("Using offset {:#x}", gzipOffset);
+    FLOGD("Using offset 0x%x", gzipOffset);
 
     return gzipOffset;
 }
@@ -651,10 +655,10 @@ uint32_t BootImage::Impl::lokiOldFindRamdiskSize(const std::vector<unsigned char
     }
 
     if (!found) {
-        FLOGD("Ramdisk size: {:d} (may include some padding)", ramdiskSize);
+        FLOGD("Ramdisk size: %u (may include some padding)", ramdiskSize);
     } else {
         ramdiskSize = location - ramdiskOffset;
-        FLOGD("Ramdisk size: {:d} (with padding removed)", ramdiskSize);
+        FLOGD("Ramdisk size: %u (with padding removed)", ramdiskSize);
     }
 
     return ramdiskSize;
@@ -683,11 +687,11 @@ uint32_t BootImage::Impl::lokiFindRamdiskAddress(const std::vector<unsigned char
             return 0;
         }
 
-        FLOGD("Original ramdisk address: {:#08x}", ramdiskAddr);
+        FLOGD("Original ramdisk address: 0x%08x", ramdiskAddr);
     } else {
         // Otherwise, use the default for jflte
         ramdiskAddr = header.kernel_addr - 0x00008000 + 0x02000000;
-        FLOGD("Default ramdisk address: {:#08x}", ramdiskAddr);
+        FLOGD("Default ramdisk address: 0x%08x", ramdiskAddr);
     }
 
     return ramdiskAddr;
@@ -718,7 +722,7 @@ std::vector<unsigned char> BootImage::create() const
     case 131072:
         break;
     default:
-        FLOGE("Invalid page size: {:d}", m_impl->header.page_size);
+        FLOGE("Invalid page size: %u", m_impl->header.page_size);
         m_impl->error = PatcherError::createBootImageError(
                 ErrorCode::BootImageParseError);
         return std::vector<unsigned char>();
@@ -907,29 +911,29 @@ void BootImage::Impl::updateSHA1Hash()
     //std::string hexDigest = toHex(
     //        reinterpret_cast<const unsigned char *>(header.id), sizeof(digest));
 
-    //FLOGD("Computed new ID hash: {:s}", hexDigest);
+    //FLOGD("Computed new ID hash: %s", hexDigest.c_str());
 }
 
 void BootImage::Impl::dumpHeader() const
 {
-    FLOGD("- magic:        {:s}",
-          std::string(header.magic, header.magic + BOOT_MAGIC_SIZE));
-    FLOGD("- kernel_size:  {:d}",    header.kernel_size);
-    FLOGD("- kernel_addr:  {:#08x}", header.kernel_addr);
-    FLOGD("- ramdisk_size: {:d}",    header.ramdisk_size);
-    FLOGD("- ramdisk_addr: {:#08x}", header.ramdisk_addr);
-    FLOGD("- second_size:  {:d}",    header.second_size);
-    FLOGD("- second_addr:  {:#08x}", header.second_addr);
-    FLOGD("- tags_addr:    {:#08x}", header.tags_addr);
-    FLOGD("- page_size:    {:d}",    header.page_size);
-    FLOGD("- dt_size:      {:d}",    header.dt_size);
-    FLOGD("- unused:       {:#08x}", header.unused);
-    FLOGD("- name:         {:s}",
-          std::string(header.name, header.name + BOOT_NAME_SIZE));
-    FLOGD("- cmdline:      {:s}",
-          std::string(header.cmdline, header.cmdline + BOOT_ARGS_SIZE));
-    FLOGD("- id:           {:s}",
-          toHex(reinterpret_cast<const unsigned char *>(header.id), 32));
+    FLOGD("- magic:        %s",
+          std::string(header.magic, header.magic + BOOT_MAGIC_SIZE).c_str());
+    FLOGD("- kernel_size:  %u",     header.kernel_size);
+    FLOGD("- kernel_addr:  0x%08x", header.kernel_addr);
+    FLOGD("- ramdisk_size: %u",     header.ramdisk_size);
+    FLOGD("- ramdisk_addr: 0x%08x", header.ramdisk_addr);
+    FLOGD("- second_size:  %u",     header.second_size);
+    FLOGD("- second_addr:  0x%08x", header.second_addr);
+    FLOGD("- tags_addr:    0x%08x", header.tags_addr);
+    FLOGD("- page_size:    %u",     header.page_size);
+    FLOGD("- dt_size:      %u",     header.dt_size);
+    FLOGD("- unused:       0x%08x", header.unused);
+    FLOGD("- name:         %s",
+          std::string(header.name, header.name + BOOT_NAME_SIZE).c_str());
+    FLOGD("- cmdline:      %s",
+          std::string(header.cmdline, header.cmdline + BOOT_ARGS_SIZE).c_str());
+    FLOGD("- id:           %s",
+          toHex(reinterpret_cast<const unsigned char *>(header.id), 32).c_str());
 }
 
 /*!

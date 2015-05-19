@@ -187,7 +187,7 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
         return false;
     }
 
-    FLOGD("[Loki] Detected target {} {} build {}",
+    FLOGD("[Loki] Detected target %s %s build %s",
           tgt->vendor, tgt->device, tgt->build);
 
     BootImageHeader *hdr = reinterpret_cast<BootImageHeader *>(data->data());
@@ -204,8 +204,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
     uint32_t origKernelSize = hdr->kernel_size;
     uint32_t origRamdiskSize = hdr->ramdisk_size;
 
-    FLOGD("[Loki] Original kernel address: {:#08x}", hdr->kernel_addr);
-    FLOGD("[Loki] Original ramdisk address: {:#08x}", hdr->ramdisk_addr);
+    FLOGD("[Loki] Original kernel address: 0x%08x", hdr->kernel_addr);
+    FLOGD("[Loki] Original ramdisk address: 0x%08x", hdr->ramdisk_addr);
 
     // Store the original values in unused fields of the header
     lokiHdr->orig_kernel_size = origKernelSize;

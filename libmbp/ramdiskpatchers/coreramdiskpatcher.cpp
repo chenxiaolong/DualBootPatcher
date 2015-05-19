@@ -29,9 +29,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include <cppformat/format.h>
-
 #include "patcherconfig.h"
+#include "private/stringutils.h"
 
 
 namespace mbp
@@ -58,8 +57,8 @@ static const std::string MbtoolDaemonService =
         "    user root\n"
         "    oneshot\n";
 
-static const std::string MbtoolMountServiceFmt =
-        "\nservice {} /mbtool mount_fstab {}\n"
+static const char *MbtoolMountServiceFmt =
+        "\nservice %s /mbtool mount_fstab %s\n"
         "    class core\n"
         "    critical\n"
         "    oneshot\n"
@@ -381,7 +380,8 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
                 newFstabs.push_back(fstab);
             }
 
-            std::string serviceName = fmt::format("mbtool-mount-{:03d}", index);
+            std::string serviceName =
+                    StringUtils::format("mbtool-mount-%03d", index);
 
             // Start mounting service
             it = lines.insert(it, spaces + "start " + serviceName);
@@ -408,10 +408,10 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         }
 
         for (const std::string fstab : newFstabs) {
-            std::string serviceName =
-                    fmt::format("mbtool-mount-{:03d}", m_impl->fstabs.size());
-            std::string service = fmt::format(
-                    MbtoolMountServiceFmt, serviceName, fstab);
+            std::string serviceName = StringUtils::format(
+                    "mbtool-mount-%03zu", m_impl->fstabs.size());
+            std::string service = StringUtils::format(
+                    MbtoolMountServiceFmt, serviceName.c_str(), fstab.c_str());
             multiBootRc.insert(multiBootRc.end(), service.begin(), service.end());
             m_impl->fstabs.push_back(std::move(fstab));
         }

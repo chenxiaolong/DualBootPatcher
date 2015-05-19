@@ -211,7 +211,7 @@ PatcherError FileUtils::mzArchiveStats(const std::string &path,
     unzFile uf = mzOpenInputFile(path);
 
     if (!uf) {
-        FLOGE("minizip: Failed to open for reading: {}", path);
+        FLOGE("minizip: Failed to open for reading: %s", path.c_str());
         return PatcherError::createArchiveError(
                 ErrorCode::ArchiveReadOpenError, path);
     }
@@ -545,7 +545,7 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
     );
 
     if (ret != ZIP_OK) {
-        FLOGW("minizip: Failed to add file (error code: {}): [memory]", ret);
+        FLOGW("minizip: Failed to add file (error code: %d): [memory]", ret);
 
         return PatcherError::createArchiveError(
                 ErrorCode::ArchiveWriteDataError, name);
@@ -554,7 +554,7 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
     // Write data to file
     ret = zipWriteInFileInZip(zf, contents.data(), contents.size());
     if (ret != ZIP_OK) {
-        FLOGW("minizip: Failed to write data (error code: {}): [memory]", ret);
+        FLOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
         zipCloseFileInZip(zf);
 
         return PatcherError::createArchiveError(
@@ -604,7 +604,8 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
     );
 
     if (ret != ZIP_OK) {
-        FLOGW("minizip: Failed to add file (error code: {}): {}", ret, path);
+        FLOGW("minizip: Failed to add file (error code: %d): %s",
+              ret, path.c_str());
 
         return PatcherError::createArchiveError(
                 ErrorCode::ArchiveWriteDataError, name);
@@ -620,8 +621,8 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
 
         ret = zipWriteInFileInZip(zf, buf, n);
         if (ret != ZIP_OK) {
-            FLOGW("minizip: Failed to write data (error code: {}): {}",
-                  ret, path);
+            FLOGW("minizip: Failed to write data (error code: %d): %s",
+                  ret, path.c_str());
             zipCloseFileInZip(zf);
 
             return PatcherError::createArchiveError(

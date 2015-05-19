@@ -27,9 +27,8 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-#include <cppformat/format.h>
-
 #include "private/fileutils.h"
+#include "private/stringutils.h"
 
 
 namespace mbp
@@ -50,12 +49,13 @@ const std::string StandardPatcher::Id
 
 const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
-static const std::string Mount
-        = "run_program(\"/update-binary-tool\", \"mount\", \"{}\");";
-static const std::string Unmount
-        = "run_program(\"/update-binary-tool\", \"unmount\", \"{}\");";
-static const std::string Format
-        = "run_program(\"/update-binary-tool\", \"format\", \"{}\");";
+
+#define MOUNT_FMT \
+        "run_program(\"/update-binary-tool\", \"mount\", \"%s\");"
+#define UNMOUNT_FMT \
+        "run_program(\"/update-binary-tool\", \"unmount\", \"%s\");"
+#define FORMAT_FMT \
+        "run_program(\"/update-binary-tool\", \"format\", \"%s\");"
 
 
 StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
@@ -194,11 +194,11 @@ void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
                     || findItemsInString(*it, dataDevs);
 
             if (isSystem) {
-                *it = fmt::format(Mount, "/system");
+                *it = StringUtils::format(MOUNT_FMT, "/system");
             } else if (isCache) {
-                *it = fmt::format(Mount, "/cache");
+                *it = StringUtils::format(MOUNT_FMT, "/cache");
             } else if (isData) {
-                *it = fmt::format(Mount, "/data");
+                *it = StringUtils::format(MOUNT_FMT, "/data");
             }
         }
     }
@@ -246,11 +246,11 @@ void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
                     || findItemsInString(*it, dataDevs);
 
             if (isSystem) {
-                *it = fmt::format(Unmount, "/system");
+                *it = StringUtils::format(UNMOUNT_FMT, "/system");
             } else if (isCache) {
-                *it = fmt::format(Unmount, "/cache");
+                *it = StringUtils::format(UNMOUNT_FMT, "/cache");
             } else if (isData) {
-                *it = fmt::format(Unmount, "/data");
+                *it = StringUtils::format(UNMOUNT_FMT, "/data");
             }
         }
     }
@@ -288,18 +288,18 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
                     || findItemsInString(*it, dataDevs);
 
             if (isSystem) {
-                *it = fmt::format(Format, "/system");
+                *it = StringUtils::format(FORMAT_FMT, "/system");
             } else if (isCache) {
-                *it = fmt::format(Format, "/cache");
+                *it = StringUtils::format(FORMAT_FMT, "/cache");
             } else if (isData) {
-                *it = fmt::format(Format, "/data");
+                *it = StringUtils::format(FORMAT_FMT, "/data");
             }
         } else if (std::regex_search(*it, re2)) {
-            *it = fmt::format(Format, "/system");
+            *it = StringUtils::format(FORMAT_FMT, "/system");
         } else if (std::regex_search(*it, re3)) {
-            *it = fmt::format(Format, "/cache");
+            *it = StringUtils::format(FORMAT_FMT, "/cache");
         } else if (std::regex_search(*it, re4)) {
-            *it = fmt::format(Format, "/data");
+            *it = StringUtils::format(FORMAT_FMT, "/data");
         }
     }
 }

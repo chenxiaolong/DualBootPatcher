@@ -26,8 +26,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-#include <cppformat/format.h>
-
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 #include "private/logging.h"
 
@@ -127,12 +125,9 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
         }
 
         if (!hasCacheLine) {
-            std::string cacheLine = "{0} /cache ext4 {1} {2}";
-            std::string mountArgs = "nosuid,nodev,barrier=1";
-            std::string voldArgs = "wait,check";
-
-            lines.push_back(fmt::format(
-                    cacheLine, CachePartition, mountArgs, voldArgs));
+            lines.push_back(StringUtils::format(
+                    "%s /cache ext4 nosuid,nodev,barrier=1 wait,check",
+                    CachePartition.c_str()));
         }
 
         std::string strContents = boost::join(lines, "\n");
