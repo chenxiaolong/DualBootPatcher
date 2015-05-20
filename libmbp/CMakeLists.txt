@@ -23,6 +23,7 @@ set(MBP_SOURCES
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
+    private/utf8.cpp
     bootimage/bumppatcher.cpp
     bootimage/lokipatcher.cpp
     cwrapper/cbootimage.cpp
@@ -165,6 +166,7 @@ set(MBP_MINI_SOURCES
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
+    private/utf8.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp

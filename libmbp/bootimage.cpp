@@ -20,9 +20,9 @@
 #include "bootimage.h"
 
 #include <algorithm>
+#include <fstream>
 
 #include <cstring>
-#include <fstream>
 
 #include "bootimage/header.h"
 #include "bootimage/bumppatcher.h"
