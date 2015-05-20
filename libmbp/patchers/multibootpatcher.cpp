@@ -24,7 +24,6 @@
 #include <unordered_set>
 
 #include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 
 #include "bootimage.h"
 #include "cpiofile.h"
@@ -136,17 +135,12 @@ std::string MultiBootPatcher::newFilePath()
 {
     assert(m_impl->info != nullptr);
 
-    boost::filesystem::path path(m_impl->info->filename());
-    boost::filesystem::path fileName = path.stem();
-    fileName += "_";
-    fileName += m_impl->info->romId();
-    fileName += path.extension();
+    // Insert ROM ID before ".zip"
+    std::string path(m_impl->info->filename());
+    path.insert(path.size() - 4, "_");
+    path.insert(path.size() - 4, m_impl->info->romId());
 
-    if (path.has_parent_path()) {
-        return (path.parent_path() / fileName).string();
-    } else {
-        return fileName.string();
-    }
+    return path;
 }
 
 void MultiBootPatcher::cancelPatching()

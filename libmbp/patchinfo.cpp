@@ -19,10 +19,7 @@
 
 #include "patchinfo.h"
 
-#include <regex>
-#include <unordered_map>
-
-#include <boost/filesystem/path.hpp>
+#include <algorithm>
 
 
 namespace mbp

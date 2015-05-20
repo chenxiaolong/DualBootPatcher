@@ -23,8 +23,6 @@
 
 #include <cassert>
 
-#include <boost/filesystem/path.hpp>
-
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
@@ -93,16 +91,11 @@ std::string MbtoolUpdater::newFilePath()
 {
     assert(m_impl->info != nullptr);
 
-    boost::filesystem::path path(m_impl->info->filename());
-    boost::filesystem::path fileName = path.stem();
-    fileName += "_patched";
-    fileName += path.extension();
+    // Insert "_patched" before ".img"/".lok"
+    std::string path(m_impl->info->filename());
+    path.insert(path.size() - 4, "_patched");
 
-    if (path.has_parent_path()) {
-        return (path.parent_path() / fileName).string();
-    } else {
-        return fileName.string();
-    }
+    return path;
 }
 
 void MbtoolUpdater::cancelPatching()
