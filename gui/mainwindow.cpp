@@ -575,7 +575,7 @@ void MainWindow::checkSupported()
 
         // Otherwise, check if it really is supported
         else if ((d->patchInfo = d->pc->findMatchingPatchInfo(
-                d->device, d->fileName.toStdString())) != nullptr) {
+                d->device, d->fileName.toUtf8().constData())) != nullptr) {
             d->supported |= MainWindowPrivate::SupportedFile;
         }
     }
@@ -663,7 +663,7 @@ void MainWindow::startPatching()
                 d->patchInfo->setRamdisk(d->device->id() + "/default");
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
-                    const std::string textStdString = text.toStdString();
+                    const std::string textStdString = text.toUtf8().constData();
                     std::vector<std::string> bootImages;
                     boost::split(bootImages, textStdString, boost::is_any_of(","));
                     d->patchInfo->setBootImages(bootImages);
@@ -680,7 +680,7 @@ void MainWindow::startPatching()
     updateWidgetsVisibility();
 
     FileInfoPtr fileInfo = new mbp::FileInfo();
-    fileInfo->setFilename(d->fileName.toStdString());
+    fileInfo->setFilename(d->fileName.toUtf8().constData());
     fileInfo->setDevice(d->device);
     fileInfo->setPatchInfo(d->patchInfo);
     QString romId;
@@ -689,7 +689,7 @@ void MainWindow::startPatching()
     } else {
         romId = d->instLocs[d->instLocSel->currentIndex()].id;
     }
-    fileInfo->setRomId(romId.toStdString());
+    fileInfo->setRomId(romId.toUtf8().constData());
 
     emit runThread(d->patcher, fileInfo);
 }
