@@ -21,12 +21,6 @@
 
 #include <regex>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
-
 #include "private/fileutils.h"
 #include "private/stringutils.h"
 
@@ -100,8 +94,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     std::string contents;
 
     FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::split(contents, '\n');
 
     replaceMountLines(&lines, m_impl->info->device());
     replaceUnmountLines(&lines, m_impl->info->device());
@@ -114,7 +107,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
         removeDeviceChecks(&lines);
     }
 
-    contents = boost::join(lines, "\n");
+    contents = StringUtils::join(lines, '\n');
     FileUtils::writeFromString(directory + "/" + UpdaterScript, contents);
 
     return true;
@@ -313,7 +306,7 @@ void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
         if (it->find("block_image_update") != std::string::npos) {
             // References to the system partition should become /mb/system.img
             for (auto const &dev : systemDevs) {
-                boost::replace_all(*it, dev, "/mb/system.img");
+                StringUtils::replace_all(&(*it), dev, "/mb/system.img");
             }
         }
     }
@@ -328,7 +321,7 @@ void StandardPatcher::fixImageExtractLines(std::vector<std::string> *lines,
         if (it->find("package_extract_file") != std::string::npos) {
             // References to the system partition should become /mb/system.img
             for (auto const &dev : systemDevs) {
-                boost::replace_all(*it, dev, "/mb/system.img");
+                StringUtils::replace_all(&(*it), dev, "/mb/system.img");
             }
         }
     }

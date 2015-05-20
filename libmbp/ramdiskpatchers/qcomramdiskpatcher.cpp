@@ -21,11 +21,6 @@
 
 #include <regex>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/split.hpp>
-
 #include "ramdiskpatchers/coreramdiskpatcher.h"
 #include "private/logging.h"
 
@@ -90,7 +85,7 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
 {
     std::vector<std::string> fstabs;
     for (auto const &file : m_impl->cpio->filenames()) {
-        if (boost::starts_with(file, "fstab.")) {
+        if (StringUtils::starts_with(file, "fstab.")) {
             fstabs.push_back(file);
         }
     }
@@ -105,8 +100,7 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
             return false;
         }
 
-        std::vector<std::string> lines;
-        boost::split(lines, contents, boost::is_any_of("\n"));
+        std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
         // Some Android 4.2 ROMs mount the cache partition in the init
         // scripts, so the fstab has no cache line
@@ -130,8 +124,7 @@ bool QcomRamdiskPatcher::addMissingCacheInFstab(const std::vector<std::string> &
                     CachePartition.c_str()));
         }
 
-        std::string strContents = boost::join(lines, "\n");
-        contents.assign(strContents.begin(), strContents.end());
+        contents = StringUtils::joinData(lines, '\n');
         m_impl->cpio->setContents(fstab, std::move(contents));
     }
 
@@ -146,8 +139,7 @@ bool QcomRamdiskPatcher::stripManualMounts(const std::string &filename)
         return false;
     }
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     const std::regex reWaitCache("^\\s+wait\\s+/dev/.*/cache");
     const std::regex reCheckFsCache("^\\s+check_fs\\s+/dev/.*/cache");
@@ -167,8 +159,7 @@ bool QcomRamdiskPatcher::stripManualMounts(const std::string &filename)
         }
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(filename, std::move(contents));
 
     return true;

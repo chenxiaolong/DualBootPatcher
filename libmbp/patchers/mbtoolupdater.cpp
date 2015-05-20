@@ -23,17 +23,14 @@
 
 #include <cassert>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
 #include "ramdiskpatchers/coreramdiskpatcher.h"
+
+#include "private/stringutils.h"
 
 
 namespace mbp
@@ -125,8 +122,8 @@ bool MbtoolUpdater::patchFile(ProgressUpdatedCallback progressCb,
 
     assert(m_impl->info != nullptr);
 
-    bool isImg = boost::iends_with(m_impl->info->filename(), ".img");
-    bool isLok = boost::iends_with(m_impl->info->filename(), ".lok");
+    bool isImg = StringUtils::iends_with(m_impl->info->filename(), ".img");
+    bool isLok = StringUtils::iends_with(m_impl->info->filename(), ".lok");
 
     if (!isImg && !isLok) {
         m_impl->error = PatcherError::createSupportedFileError(
@@ -189,15 +186,14 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     std::vector<unsigned char> contents;
     cpio->contents("init.rc", &contents);
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     std::regex whitespace("^\\s*$");
     bool insideService = false;
 
     // Remove old mbtooldaemon service definition
     for (auto it = lines.begin(); it != lines.end();) {
-        if (boost::starts_with(*it, "service")) {
+        if (StringUtils::starts_with(*it, "service")) {
             insideService = it->find("mbtooldaemon") != std::string::npos;
         } else if (insideService && std::regex_search(*it, whitespace)) {
             insideService = false;
@@ -210,8 +206,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
         }
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     cpio->setContents("init.rc", std::move(contents));
 
     CoreRamdiskPatcher crp(pc, info, cpio);

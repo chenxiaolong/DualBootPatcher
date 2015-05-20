@@ -21,13 +21,9 @@
 
 #include <regex>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
-
 #include "ramdiskpatchers/coreramdiskpatcher.h"
+
+#include "private/stringutils.h"
 
 
 namespace mbp
@@ -116,8 +112,7 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
     std::vector<unsigned char> contents;
     m_impl->cpio->contents(Msm8960LpmRc, &contents);
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     static auto const re = std::regex("^\\s+mount.*/cache.*$");
 
@@ -127,8 +122,7 @@ bool GalaxyRamdiskPatcher::getwModifyMsm8960LpmRc()
         }
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(Msm8960LpmRc, std::move(contents));
 
     return true;

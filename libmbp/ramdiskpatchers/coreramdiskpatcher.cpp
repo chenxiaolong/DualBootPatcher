@@ -22,11 +22,6 @@
 #include <regex>
 #include <unordered_map>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include "patcherconfig.h"
@@ -140,8 +135,7 @@ bool CoreRamdiskPatcher::addMultiBootRc()
         return false;
     }
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     bool added = false;
 
@@ -158,8 +152,7 @@ bool CoreRamdiskPatcher::addMultiBootRc()
         lines.push_back(ImportMultiBootRc);
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
@@ -215,8 +208,7 @@ bool CoreRamdiskPatcher::disableInstalldService()
         return false;
     }
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     std::regex whitespace("^\\s*$");
     bool insideService = false;
@@ -225,7 +217,7 @@ bool CoreRamdiskPatcher::disableInstalldService()
 
     // Remove old mbtooldaemon service definition
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::starts_with(*it, "service")) {
+        if (StringUtils::starts_with(*it, "service")) {
             insideService = it->find("installd") != std::string::npos;
             if (insideService) {
                 installdIter = it;
@@ -243,8 +235,7 @@ bool CoreRamdiskPatcher::disableInstalldService()
         lines.insert(++installdIter, "    disabled");
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
@@ -268,11 +259,10 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
     std::vector<unsigned char> contents;
     m_impl->cpio->contents(FileContexts, &contents);
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (boost::starts_with(*it, "/data/media")) {
+        if (StringUtils::starts_with(*it, "/data/media")) {
             hasDataMediaContext = true;
         }
     }
@@ -281,8 +271,7 @@ bool CoreRamdiskPatcher::fixDataMediaContext()
         lines.push_back(DataMediaContext);
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(FileContexts, std::move(contents));
 
     return true;
@@ -303,8 +292,7 @@ bool CoreRamdiskPatcher::removeRestorecon()
     std::vector<unsigned char> contents;
     m_impl->cpio->contents(InitRc, &contents);
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     const std::regex re1("^\\s*restorecon_recursive\\s+/data\\s*$");
     const std::regex re2("^\\s*restorecon_recursive\\s+/cache\\s*$");
@@ -315,8 +303,7 @@ bool CoreRamdiskPatcher::removeRestorecon()
         }
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
@@ -341,8 +328,7 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
     static auto const reMountAll =
             std::regex("^\\s+mount_all\\s+([^\\s]+)\\s*(#.*)?$");
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     std::vector<std::string> newFstabs;
 
@@ -394,8 +380,7 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
         }
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(filename, std::move(contents));
 
     // Add mount services for the new fstab files to init.multiboot.rc
@@ -426,8 +411,8 @@ bool CoreRamdiskPatcher::useGeneratedFstabAuto()
 {
     for (const std::string &file : m_impl->cpio->filenames()) {
         if (file.find('/') == std::string::npos
-                && boost::starts_with(file, "init.")
-                && boost::ends_with(file, ".rc")) {
+                && StringUtils::starts_with(file, "init.")
+                && StringUtils::ends_with(file, ".rc")) {
             if (!useGeneratedFstab(file)) {
                 return false;
             }
@@ -458,8 +443,7 @@ bool CoreRamdiskPatcher::fixChargerMount(const std::string &filename)
 
     std::string previousLine;
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
 
     static auto const reMountSystem = std::regex("mount.*/system");
     static auto const reOnCharger = std::regex("on\\s+charger");
@@ -476,8 +460,7 @@ bool CoreRamdiskPatcher::fixChargerMount(const std::string &filename)
         previousLine = *it;
     }
 
-    std::string strContents = boost::join(lines, "\n");
-    contents.assign(strContents.begin(), strContents.end());
+    contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(filename, std::move(contents));
 
     return true;
@@ -487,8 +470,8 @@ bool CoreRamdiskPatcher::fixChargerMountAuto()
 {
     for (const std::string &file : m_impl->cpio->filenames()) {
         if (file.find('/') == std::string::npos
-                && boost::starts_with(file, "init.")
-                && boost::ends_with(file, ".rc")) {
+                && StringUtils::starts_with(file, "init.")
+                && StringUtils::ends_with(file, ".rc")) {
             if (!fixChargerMount(file)) {
                 return false;
             }

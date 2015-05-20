@@ -20,10 +20,32 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 class StringUtils
 {
 public:
     __attribute__((format(printf, 1, 2)))
     static std::string format(const char *fmt, ...);
+
+    static bool starts_with(const std::string &string, const std::string &prefix);
+    static bool starts_with(const char *string, const char *prefix);
+    static bool ends_with(const std::string &string, const std::string &suffix);
+    static bool ends_with(const char *string, const char *suffix);
+    static bool istarts_with(const std::string &string, const std::string &prefix);
+    static bool istarts_with(const char *string, const char *prefix);
+    static bool iends_with(const std::string &string, const std::string &suffix);
+    static bool iends_with(const char *string, const char *suffix);
+
+    static std::vector<std::string> splitData(const std::vector<unsigned char> &data,
+                                              unsigned char delim);
+    static std::vector<std::string> split(const std::string &str, char delim);
+    static std::vector<unsigned char> joinData(std::vector<std::string> &list,
+                                               unsigned char delim);
+    static std::string join(std::vector<std::string> &list, char delim);
+
+    static void replace(std::string *source,
+                        const std::string &from, const std::string &to);
+    static void replace_all(std::string *source,
+                            const std::string &from, const std::string &to);
 };

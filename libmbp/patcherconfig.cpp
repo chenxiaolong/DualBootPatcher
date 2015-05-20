@@ -21,8 +21,6 @@
 
 #include <regex>
 
-#include <boost/algorithm/string/erase.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -284,13 +282,13 @@ std::vector<PatchInfo *> PatcherConfig::patchInfos(const Device * const device) 
     std::vector<PatchInfo *> l;
 
     for (PatchInfo *info : m_impl->patchInfos) {
-        if (boost::starts_with(info->id(), device->id())) {
+        if (StringUtils::starts_with(info->id(), device->id())) {
             l.push_back(info);
             continue;
         }
 
         for (auto const &include : m_impl->patchinfoIncludeDirs) {
-            if (boost::starts_with(info->id(), include)) {
+            if (StringUtils::starts_with(info->id(), include)) {
                 l.push_back(info);
                 break;
             }
@@ -836,7 +834,7 @@ bool PatcherConfig::loadPatchInfos()
                     && it->path().extension() == ".xml") {
                 boost::filesystem::path relPath = makeRelative(dirPath, it->path());
                 std::string id = relPath.string();
-                boost::erase_tail(id, 4);
+                id.erase(id.end() - 4);
 
                 if (!m_impl->loadPatchInfoXml(it->path().string(), id)) {
                     m_impl->error = PatcherError::createXmlError(

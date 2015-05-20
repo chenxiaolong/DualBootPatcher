@@ -23,10 +23,6 @@
 
 #include <unordered_set>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -167,7 +163,7 @@ bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
 
     assert(m_impl->info != nullptr);
 
-    if (!boost::iends_with(m_impl->info->filename(), ".zip")) {
+    if (!StringUtils::iends_with(m_impl->info->filename(), ".zip")) {
         m_impl->error = PatcherError::createSupportedFileError(
                 ErrorCode::OnlyZipSupported, Id);
         return false;
@@ -479,9 +475,9 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
 
         bool inList = std::find(piBootImages.begin(), piBootImages.end(),
                                 curFile) != piBootImages.end();
-        bool isExtImg = boost::ends_with(curFile, ".img");
-        bool isExtLok = boost::ends_with(curFile, ".lok");
-        bool isExtGz = boost::ends_with(curFile, ".gz");
+        bool isExtImg = StringUtils::ends_with(curFile, ".img");
+        bool isExtLok = StringUtils::ends_with(curFile, ".lok");
+        bool isExtGz = StringUtils::ends_with(curFile, ".gz");
         // Boot images should be over about 30 MiB. This check is here so the
         // patcher won't try to read a multi-gigabyte system image into RAM
         bool isSizeOK = fi.uncompressed_size <= 30 * 1024 * 1024;

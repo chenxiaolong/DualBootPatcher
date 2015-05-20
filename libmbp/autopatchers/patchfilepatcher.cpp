@@ -32,10 +32,6 @@
 #include <regex>
 #include <unordered_map>
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/split.hpp>
-
 #include "private/fileutils.h"
 #include "private/logging.h"
 
@@ -91,8 +87,7 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
         return;
     }
 
-    std::vector<std::string> lines;
-    boost::split(lines, contents, boost::is_any_of("\n"));
+    std::vector<std::string> lines = StringUtils::split(contents, '\n');
 
     const std::regex reOrigFile("---\\s+(.+?)(?:$|\t)");
 
@@ -101,7 +96,8 @@ PatchFilePatcher::PatchFilePatcher(const PatcherConfig * const pc,
 
         if (std::regex_search(*it, what, reOrigFile)) {
             std::string file = what.str(1);
-            if (boost::starts_with(file, "\"") && boost::ends_with(file, "\"")) {
+            if (StringUtils::starts_with(file, "\"")
+                    && StringUtils::ends_with(file, "\"")) {
                 file.erase(file.begin());
                 file.erase(file.end() - 1);
             }
@@ -182,7 +178,7 @@ bool PatchFilePatcher::patchFiles(const std::string &directory)
     bool error = !m_impl->runProcess(patch, args, &output, &exitCode)
             || exitCode != 0;
 
-    boost::split(lines, output, boost::is_any_of("\n"));
+    lines = StringUtils::split(output, '\n');
     for (auto &line : lines) {
         FLOGE("patch output: %s", line.c_str());
     }
