@@ -93,7 +93,8 @@ public:
 
 #ifndef LIBMBP_MINI
     // XML parsing functions for the patchinfo files
-    bool loadPatchInfoXml(const std::string &path, const std::string &pathId);
+    bool loadPatchInfosXml(const std::string &path);
+    void parsePatchInfoTagPatchinfos(pugi::xml_node node);
     void parsePatchInfoTagPatchinfo(pugi::xml_node node, PatchInfo * const info);
     void parsePatchInfoTagName(pugi::xml_node node, PatchInfo * const info);
     void parsePatchInfoTagRegex(pugi::xml_node node, PatchInfo * const info);
@@ -110,6 +111,7 @@ public:
 
 
 #ifndef LIBMBP_MINI
+const char *PatchInfoTagPatchinfos = "patchinfos";
 const char *PatchInfoTagPatchinfo = "patchinfo";
 const char *PatchInfoTagName = "name";
 const char *PatchInfoTagRegex = "regex";
@@ -121,7 +123,7 @@ const char *PatchInfoTagAutopatchers = "autopatchers";
 const char *PatchInfoTagAutopatcher = "autopatcher";
 const char *PatchInfoTagDeviceCheck = "device-check";
 
-const char *PatchInfoAttrRegex = "regex";
+const char *PatchInfoAttrId = "id";
 
 const char *XmlTextTrue = "true";
 const char *XmlTextFalse = "false";
@@ -138,8 +140,8 @@ PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
     m_impl->loadDefaultDevices();
 
-    m_impl->patchinfoIncludeDirs.push_back("Google_Apps");
-    m_impl->patchinfoIncludeDirs.push_back("Other");
+    m_impl->patchinfoIncludeDirs.push_back("Google_Apps/");
+    m_impl->patchinfoIncludeDirs.push_back("Other/");
 
     m_impl->version = LIBMBP_VERSION;
 }
@@ -783,39 +785,6 @@ void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
     delete patcher;
 }
 
-// Based on the code from:
-// [1] https://svn.boost.org/trac/boost/ticket/1976
-// [2] https://svn.boost.org/trac/boost/ticket/6249
-// [3] https://svn.boost.org/trac/boost/attachment/ticket/6249/make_relative_append_example.cpp
-static boost::filesystem::path makeRelative(boost::filesystem::path from,
-                                            boost::filesystem::path to)
-{
-    from = boost::filesystem::absolute(from);
-    to = boost::filesystem::absolute(to);
-    boost::filesystem::path ret;
-    boost::filesystem::path::const_iterator iterFrom(from.begin());
-    boost::filesystem::path::const_iterator iterTo(to.begin());
-
-    // Find common base
-    for (boost::filesystem::path::const_iterator toEnd(to.end()), fromEnd(from.end());
-            iterFrom != fromEnd && iterTo != toEnd && *iterFrom == *iterTo;
-            ++iterFrom, ++iterTo);
-
-    // Navigate backwards in directory to reach previously found base
-    for (boost::filesystem::path::const_iterator fromEnd(from.end());
-            iterFrom != fromEnd; ++iterFrom) {
-        if (*iterFrom != ".") {
-            ret /= "..";
-        }
-    }
-
-    // Now navigate down the directory branch
-    for (; iterTo != to.end(); ++iterTo) {
-        ret /= *iterTo;
-    }
-    return ret;
-}
-
 /*!
  * \brief Load all PatchInfo XML files
  *
@@ -823,38 +792,19 @@ static boost::filesystem::path makeRelative(boost::filesystem::path from,
  */
 bool PatcherConfig::loadPatchInfos()
 {
-    try {
-        const boost::filesystem::path dirPath(dataDirectory() + "/patchinfos");
+    std::string path(dataDirectory());
+    path += "/patchinfos.gen.xml";
 
-        boost::filesystem::recursive_directory_iterator it(dirPath);
-        boost::filesystem::recursive_directory_iterator end;
-
-        for (; it != end; ++it) {
-            if (boost::filesystem::is_regular_file(it->status())
-                    && it->path().extension() == ".xml") {
-                boost::filesystem::path relPath = makeRelative(dirPath, it->path());
-                std::string id = relPath.string();
-                id.erase(id.end() - 4);
-
-                if (!m_impl->loadPatchInfoXml(it->path().string(), id)) {
-                    m_impl->error = PatcherError::createXmlError(
-                            ErrorCode::XmlParseFileError,
-                            it->path().string());
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    } catch (std::exception &e) {
-        LOGW(e.what());
+    if (!m_impl->loadPatchInfosXml(path)) {
+        m_impl->error = PatcherError::createXmlError(
+                ErrorCode::XmlParseFileError, path);
+        return false;
     }
 
-    return false;
+    return true;
 }
 
-bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
-                                           const std::string &pathId)
+bool PatcherConfig::Impl::loadPatchInfosXml(const std::string &path)
 {
     pugi::xml_document doc;
 
@@ -872,18 +822,53 @@ bool PatcherConfig::Impl::loadPatchInfoXml(const std::string &path,
             continue;
         }
 
-        if (strcmp(curNode.name(), PatchInfoTagPatchinfo) == 0) {
-            PatchInfo *info = new PatchInfo();
-            parsePatchInfoTagPatchinfo(curNode, info);
-            info->setId(pathId);
-            patchInfos.push_back(info);
+        if (strcmp(curNode.name(), PatchInfoTagPatchinfos) == 0) {
+            parsePatchInfoTagPatchinfos(curNode);
         } else {
-            FLOGW("Unknown tag: %s", curNode.name());
+            FLOGW("Unknown root tag: %s", curNode.name());
         }
     }
 
     return true;
 }
+
+void PatcherConfig::Impl::parsePatchInfoTagPatchinfos(pugi::xml_node node)
+{
+    assert(strcmp(node.name(), PatchInfoTagPatchinfos) == 0);
+
+    for (pugi::xml_node curNode : node.children()) {
+        if (curNode.type() != pugi::xml_node_type::node_element) {
+            continue;
+        }
+
+        if (strcmp(curNode.name(), PatchInfoTagPatchinfos) == 0) {
+            LOGW("Nested <patchinfos> is not allowed");
+        } else if (strcmp(curNode.name(), PatchInfoTagPatchinfo) == 0) {
+            std::string id;
+            bool hasId = false;
+            for (pugi::xml_attribute attr : curNode.attributes()) {
+                if (strcmp(PatchInfoAttrId, attr.name()) == 0) {
+                    hasId = true;
+                    id = attr.value();
+                    break;
+                }
+            }
+
+            if (!hasId) {
+                LOGW("<patchinfo> does not contain the id attribute");
+                continue;
+            }
+
+            PatchInfo *info = new PatchInfo();
+            parsePatchInfoTagPatchinfo(curNode, info);
+            info->setId(id);
+            patchInfos.push_back(info);
+        } else {
+            FLOGW("Unrecognized tag within <patchinfos>: %s", curNode.name());
+        }
+    }
+}
+
 
 void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(pugi::xml_node node,
                                                      PatchInfo * const info)
