@@ -33,6 +33,7 @@
 #include "external/minizip/iowin32.h"
 #include <wchar.h>
 #else
+#include <libgen.h>
 #include <sys/stat.h>
 #endif
 
@@ -252,6 +253,71 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
 
     // Like Qt, we'll assume that 256 tries is enough ...
     return std::string();
+#endif
+}
+
+std::string FileUtils::baseName(const std::string &path)
+{
+#ifdef _WIN32
+    std::wstring wPath = utf8::utf8ToUtf16(path);
+    std::vector<wchar_t> buf(wPath.size());
+    std::vector<wchar_t> extbuf(wPath.size());
+
+    errno_t ret = _wsplitpath_s(
+        wPath.c_str(),  // path
+        nullptr,        // drive
+        0,              // driveNumberOfElements
+        nullptr,        // dir
+        0,              // dirNumberOfElements
+        buf.data(),     // fname
+        buf.size(),     // nameNumberOfElements
+        extbuf.data(),  // ext
+        extbuf.size()   // extNumberOfElements
+    );
+
+    if (ret != 0) {
+        return std::string();
+    } else {
+        return utf8::utf16ToUtf8(buf.data()) + utf8::utf16ToUtf8(extbuf.data());
+    }
+#else
+    std::vector<char> buf(path.begin(), path.end());
+    buf.push_back('\0');
+
+    char *ptr = basename(buf.data());
+    return std::string(ptr);
+#endif
+}
+
+std::string FileUtils::dirName(const std::string &path)
+{
+#ifdef _WIN32
+    std::wstring wPath = utf8::utf8ToUtf16(path);
+    std::vector<wchar_t> buf(wPath.size());
+
+    errno_t ret = _wsplitpath_s(
+        wPath.c_str(),  // path
+        nullptr,        // drive
+        0,              // driveNumberOfElements
+        buf.data(),     // dir
+        buf.size(),     // dirNumberOfElements
+        nullptr,        // fname
+        0,              // nameNumberOfElements
+        nullptr,        // ext
+        0               // extNumberOfElements
+    );
+
+    if (ret != 0) {
+        return std::string();
+    } else {
+        return utf8::utf16ToUtf8(buf.data());
+    }
+#else
+    std::vector<char> buf(path.begin(), path.end());
+    buf.push_back('\0');
+
+    char *ptr = dirname(buf.data());
+    return std::string(ptr);
 #endif
 }
 

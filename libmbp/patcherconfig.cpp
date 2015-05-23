@@ -21,8 +21,7 @@
 
 #include <regex>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <cassert>
 
 #ifndef LIBMBP_MINI
 #include <pugixml.hpp>
@@ -320,7 +319,7 @@ PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
         return nullptr;
     }
 
-    std::string noPath = boost::filesystem::path(filename).filename().string();
+    std::string noPath = FileUtils::baseName(filename);
 
     for (PatchInfo *info : patchInfos(device)) {
         for (auto const &regex : info->regexes()) {
