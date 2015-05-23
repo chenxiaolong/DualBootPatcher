@@ -166,7 +166,8 @@ mb_common_cflags += \
 mb_common_ldflags := \
 	-Wl,--gc-sections
 
-mb_common_cflags += -DFMT_EXCEPTIONS=0 -DPUGIXML_NO_EXCEPTIONS
+mb_common_cflags += -DFMT_EXCEPTIONS=0 -DPUGIXML_NO_EXCEPTIONS \
+					-DPUGIXML_NO_STL -DPUGIXML_NO_XPATH
 
 ifeq ($(DEBUGGING),true)
 mb_common_cflags += -DMB_LIBC_DEBUG
