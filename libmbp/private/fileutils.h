@@ -44,6 +44,8 @@ public:
     static PatcherError writeFromString(const std::string &path,
                                         const std::string &contents);
 
+    static std::string systemTemporaryDir();
+
     static std::string createTemporaryDir(const std::string &directory);
 
     struct ArchiveStats {

@@ -31,6 +31,7 @@
 #ifdef _WIN32
 #define USEWIN32IOAPI
 #include "external/minizip/iowin32.h"
+#include <wchar.h>
 #else
 #include <sys/stat.h>
 #endif
@@ -152,6 +153,69 @@ PatcherError FileUtils::writeFromString(const std::string &path,
     }
 
     return PatcherError();
+}
+
+#ifdef _WIN32
+static bool directoryExists(const wchar_t *path)
+{
+    DWORD dwAttrib = GetFileAttributesW(path);
+
+    return (dwAttrib != INVALID_FILE_ATTRIBUTES)
+            && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+}
+#else
+static bool directoryExists(const char *path)
+{
+    struct stat sb;
+    return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+}
+#endif
+
+std::string FileUtils::systemTemporaryDir()
+{
+#ifdef _WIN32
+    const wchar_t *value;
+
+    if ((value = _wgetenv(L"TMP")) && directoryExists(value)) {
+        return utf8::utf16ToUtf8(value);
+    }
+    if ((value = _wgetenv(L"TEMP")) && directoryExists(value)) {
+        return utf8::utf16ToUtf8(value);
+    }
+    if ((value = _wgetenv(L"LOCALAPPDATA"))) {
+        std::wstring path(value);
+        path += L"\\Temp";
+        if (directoryExists(path.c_str())) {
+            return utf8::utf16ToUtf8(path);
+        }
+    }
+    if ((value = _wgetenv(L"USERPROFILE"))) {
+        std::wstring path(value);
+        path += L"\\Temp";
+        if (directoryExists(path.c_str())) {
+            return utf8::utf16ToUtf8(path);
+        }
+    }
+
+    return std::string();
+#else
+    const char *value;
+
+    if ((value = getenv("TMPDIR")) && directoryExists(value)) {
+        return value;
+    }
+    if ((value = getenv("TMP")) && directoryExists(value)) {
+        return value;
+    }
+    if ((value = getenv("TEMP")) && directoryExists(value)) {
+        return value;
+    }
+    if ((value = getenv("TEMPDIR")) && directoryExists(value)) {
+        return value;
+    }
+
+    return "/tmp";
+#endif
 }
 
 std::string FileUtils::createTemporaryDir(const std::string &directory)

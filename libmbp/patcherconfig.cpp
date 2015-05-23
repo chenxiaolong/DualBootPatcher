@@ -33,6 +33,7 @@
 #include "patcherinterface.h"
 #include "patchinfo.h"
 #endif
+#include "private/fileutils.h"
 #include "private/logging.h"
 
 // Patchers
@@ -211,7 +212,7 @@ std::string PatcherConfig::dataDirectory() const
 std::string PatcherConfig::tempDirectory() const
 {
     if (m_impl->tempDir.empty()) {
-        return boost::filesystem::temp_directory_path().string();
+        return FileUtils::systemTemporaryDir();
     } else {
         return m_impl->tempDir;
     }
