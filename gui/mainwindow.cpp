@@ -140,8 +140,6 @@ void MainWindow::onInstallationLocationSelected(int index)
 
 void MainWindow::onInstallationLocationIdChanged(const QString &text)
 {
-    Q_D(MainWindow);
-
     updateDataRomIdDescText(text);
 }
 
