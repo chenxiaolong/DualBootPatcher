@@ -32,14 +32,13 @@ namespace utf8
 
 #ifdef _WIN32
 
-std::string utf16ToUtf8(const std::wstring &wstr)
+std::string utf16ToUtf8(const wchar_t *wstr)
 {
     std::string convertedString;
-    int requiredSize = WideCharToMultiByte(
-            CP_UTF8, 0, wstr.c_str(), -1, 0, 0, 0, 0);
+    int requiredSize = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, 0, 0, 0, 0);
     if (requiredSize > 0) {
         std::vector<char> buffer(requiredSize);
-        WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1,
+        WideCharToMultiByte(CP_UTF8, 0, wstr, -1,
                             buffer.data(), requiredSize, 0, 0);
         convertedString.assign(buffer.begin(), buffer.end() - 1);
     }
@@ -47,18 +46,29 @@ std::string utf16ToUtf8(const std::wstring &wstr)
     return convertedString;
 }
 
-std::wstring utf8ToUtf16(const std::string &str)
+std::wstring utf8ToUtf16(const char *str)
 {
     std::wstring convertedString;
-    int requiredSize = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, 0, 0);
+    int requiredSize = MultiByteToWideChar(CP_UTF8, 0, str, -1, 0, 0);
     if (requiredSize > 0) {
         std::vector<wchar_t> buffer(requiredSize);
-        MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1,
+        MultiByteToWideChar(CP_UTF8, 0, str, -1,
                             buffer.data(), requiredSize);
         convertedString.assign(buffer.begin(), buffer.end() - 1);
     }
 
     return convertedString;
+
+}
+
+std::string utf16ToUtf8(const std::wstring &wstr)
+{
+    return utf16ToUtf8(wstr.c_str());
+}
+
+std::wstring utf8ToUtf16(const std::string &str)
+{
+    return utf8ToUtf16(str.c_str());
 }
 
 #endif

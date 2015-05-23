@@ -20,12 +20,12 @@
 #include "private/fileutils.h"
 
 #include <algorithm>
-#include <fstream>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include "private/logging.h"
+#include "private/io.h"
 #include "private/utf8.h"
 
 #ifdef _WIN32
@@ -50,19 +50,24 @@ namespace mbp
 PatcherError FileUtils::readToMemory(const std::string &path,
                                      std::vector<unsigned char> *contents)
 {
-    std::ifstream file(path, std::ios::binary);
-
-    if (file.fail()) {
+    io::File file;
+    if (!file.open(path, io::File::OpenRead)) {
+        FLOGE("%s: Failed to open for reading: %s",
+              path.c_str(), file.errorString().c_str());
         return PatcherError::createIOError(ErrorCode::FileOpenError, path);
     }
 
-    file.seekg(0, std::ios::end);
-    auto size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    uint64_t size;
+    file.seek(0, io::File::SeekEnd);
+    file.tell(&size);
+    file.seek(0, io::File::SeekBegin);
 
     std::vector<unsigned char> data(size);
 
-    if (!file.read(reinterpret_cast<char *>(data.data()), size)) {
+    uint64_t bytesRead;
+    if (!file.read(data.data(), data.size(), &bytesRead) || bytesRead != size) {
+        FLOGE("%s: Failed to read file: %s",
+              path.c_str(), file.errorString().c_str());
         return PatcherError::createIOError(ErrorCode::FileReadError, path);
     }
 
@@ -82,20 +87,25 @@ PatcherError FileUtils::readToMemory(const std::string &path,
 PatcherError FileUtils::readToString(const std::string &path,
                                      std::string *contents)
 {
-    std::ifstream file(path, std::ios::binary);
-
-    if (file.fail()) {
+    io::File file;
+    if (!file.open(path, io::File::OpenRead)) {
+        FLOGE("%s: Failed to open for reading: %s",
+              path.c_str(), file.errorString().c_str());
         return PatcherError::createIOError(ErrorCode::FileOpenError, path);
     }
 
-    file.seekg(0, std::ios::end);
-    auto size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    uint64_t size;
+    file.seek(0, io::File::SeekEnd);
+    file.tell(&size);
+    file.seek(0, io::File::SeekBegin);
 
     std::string data;
     data.resize(size);
 
-    if (!file.read(&data[0], size)) {
+    uint64_t bytesRead;
+    if (!file.read(&data[0], size, &bytesRead) || bytesRead != size) {
+        FLOGE("%s: Failed to read file: %s",
+              path.c_str(), file.errorString().c_str());
         return PatcherError::createIOError(ErrorCode::FileReadError, path);
     }
 
@@ -107,13 +117,19 @@ PatcherError FileUtils::readToString(const std::string &path,
 PatcherError FileUtils::writeFromMemory(const std::string &path,
                                         const std::vector<unsigned char> &contents)
 {
-    std::ofstream file(path, std::ios::binary);
-
-    if (file.fail()) {
+    io::File file;
+    if (!file.open(path, io::File::OpenWrite)) {
+        FLOGE("%s: Failed to open for writing: %s",
+              path.c_str(), file.errorString().c_str());
         return PatcherError::createIOError(ErrorCode::FileOpenError, path);
     }
 
-    file.write(reinterpret_cast<const char *>(contents.data()), contents.size());
+    uint64_t bytesWritten;
+    if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
+        FLOGE("%s: Failed to write file: %s",
+              path.c_str(), file.errorString().c_str());
+        return PatcherError::createIOError(ErrorCode::FileWriteError, path);
+    }
 
     return PatcherError();
 }
@@ -121,13 +137,19 @@ PatcherError FileUtils::writeFromMemory(const std::string &path,
 PatcherError FileUtils::writeFromString(const std::string &path,
                                         const std::string &contents)
 {
-    std::ofstream file(path, std::ios::binary);
-
-    if (file.fail()) {
+    io::File file;
+    if (!file.open(path, io::File::OpenWrite)) {
+        FLOGE("%s: Failed to open for writing: %s",
+              path.c_str(), file.errorString().c_str());
         return PatcherError::createIOError(ErrorCode::FileOpenError, path);
     }
 
-    file.write(contents.data(), contents.size());
+    uint64_t bytesWritten;
+    if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
+        FLOGE("%s: Failed to write file: %s",
+              path.c_str(), file.errorString().c_str());
+        return PatcherError::createIOError(ErrorCode::FileWriteError, path);
+    }
 
     return PatcherError();
 }
@@ -455,8 +477,10 @@ bool FileUtils::mzExtractFile(unzFile uf,
     boost::filesystem::path path(fullPath);
     boost::filesystem::create_directories(path.parent_path());
 
-    std::ofstream file(fullPath, std::ios::binary);
-    if (file.fail()) {
+    io::File file;
+    if (!file.open(fullPath, io::File::OpenWrite)) {
+        FLOGE("%s: Failed to open for writing: %s",
+              path.c_str(), file.errorString().c_str());
         return false;
     }
 
@@ -467,9 +491,14 @@ bool FileUtils::mzExtractFile(unzFile uf,
 
     int n;
     char buf[32768];
+    uint64_t bytesWritten;
 
     while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        file.write(buf, n);
+        if (!file.write(buf, n, &bytesWritten)) {
+            FLOGE("%s: Failed to write file: %s",
+                  path.c_str(), file.errorString().c_str());
+            return false;
+        }
     }
 
     unzCloseCurrentFile(uf);
@@ -572,17 +601,19 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
                                   const std::string &path)
 {
     // Copy file into archive
-    std::ifstream file(path, std::ios::binary);
-    if (file.fail()) {
-        return PatcherError::createIOError(
-                ErrorCode::FileOpenError, path);
+    io::File file;
+    if (!file.open(path, io::File::OpenRead)) {
+        FLOGE("%s: Failed to open for reading: %s",
+              path.c_str(), file.errorString().c_str());
+        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
     }
 
-    file.seekg(0, std::ios::end);
-    auto size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    uint64_t size;
+    file.seek(0, io::File::SeekEnd);
+    file.tell(&size);
+    file.seek(0, io::File::SeekBegin);
 
-    bool zip64 = (uint64_t) size >= ((1ull << 32) - 1);
+    bool zip64 = size >= ((1ull << 32) - 1);
 
     zip_fileinfo zi;
     memset(&zi, 0, sizeof(zi));
@@ -614,13 +645,10 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
 
     // Write data to file
     char buf[32768];
-    std::streamsize n;
+    uint64_t bytesRead;
 
-    while (!file.eof()) {
-        file.read(buf, 32768);
-        n = file.gcount();
-
-        ret = zipWriteInFileInZip(zf, buf, n);
+    while (file.read(buf, sizeof(buf), &bytesRead)) {
+        ret = zipWriteInFileInZip(zf, buf, bytesRead);
         if (ret != ZIP_OK) {
             FLOGW("minizip: Failed to write data (error code: %d): %s",
                   ret, path.c_str());
@@ -630,12 +658,12 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
                     ErrorCode::ArchiveWriteDataError, name);
         }
     }
-
-    if (file.bad()) {
+    if (file.error() != io::File::ErrorEndOfFile) {
         zipCloseFileInZip(zf);
 
-        return PatcherError::createIOError(
-                ErrorCode::FileReadError, path);
+        FLOGE("%s: Failed to read file: %s",
+              path.c_str(), file.errorString().c_str());
+        return PatcherError::createIOError(ErrorCode::FileReadError, path);
     }
 
     zipCloseFileInZip(zf);

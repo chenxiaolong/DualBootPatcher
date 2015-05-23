@@ -19,18 +19,30 @@
 
 #pragma once
 
-#ifdef _WIN32
-#include <string>
-#endif
+#include "private/iocommon.h"
 
-namespace utf8
+#include <memory>
+
+class FileAndroid : public FileBase
 {
+public:
+    FileAndroid();
+    virtual ~FileAndroid();
 
-#ifdef _WIN32
-std::string utf16ToUtf8(const wchar_t *wstr);
-std::wstring utf8ToUtf16(const char *str);
-std::string utf16ToUtf8(const std::wstring &wstr);
-std::wstring utf8ToUtf16(const std::string &str);
-#endif
+    virtual bool open(const char *filename, int mode) override;
+    virtual bool open(const std::string &filename, int mode) override;
+    virtual bool close() override;
+    virtual bool isOpen() override;
+    virtual bool read(void *buf, uint64_t size, uint64_t *bytesRead) override;
+    virtual bool write(const void *buf, uint64_t size, uint64_t *bytesWritten) override;
+    virtual bool tell(uint64_t *pos) override;
+    virtual bool seek(int64_t offset, int origin) override;
+    virtual int error() override;
 
-}
+protected:
+    virtual std::string platformErrorString() override;
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
+};

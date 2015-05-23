@@ -20,7 +20,6 @@
 #include "bootimage.h"
 
 #include <algorithm>
-#include <fstream>
 
 #include <cstring>
 
@@ -29,6 +28,7 @@
 #include "bootimage/lokipatcher.h"
 #include "external/sha.h"
 #include "private/fileutils.h"
+#include "private/io.h"
 #include "private/logging.h"
 
 
@@ -809,8 +809,11 @@ std::vector<unsigned char> BootImage::create() const
  */
 bool BootImage::createFile(const std::string &path)
 {
-    std::ofstream file(path, std::ios::binary);
-    if (file.fail()) {
+    io::File file;
+    if (!file.open(path, io::File::OpenWrite)) {
+        FLOGE("%s: Failed to open for writing: %s",
+              path.c_str(), file.errorString().c_str());
+
         m_impl->error = PatcherError::createIOError(
                 ErrorCode::FileOpenError, path);
         return false;
@@ -821,8 +824,11 @@ bool BootImage::createFile(const std::string &path)
         return false;
     }
 
-    file.write(reinterpret_cast<const char *>(data.data()), data.size());
-    if (file.bad()) {
+    uint64_t bytesWritten;
+    if (!file.write(data.data(), data.size(), &bytesWritten)) {
+        FLOGE("%s: Failed to write file: %s",
+              path.c_str(), file.errorString().c_str());
+
         m_impl->error = PatcherError::createIOError(
                 ErrorCode::FileWriteError, path);
         return false;

@@ -17,20 +17,28 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "private/iocommon.h"
 
-#ifdef _WIN32
-#include <string>
-#endif
-
-namespace utf8
+FileBase::~FileBase()
 {
+}
 
-#ifdef _WIN32
-std::string utf16ToUtf8(const wchar_t *wstr);
-std::wstring utf8ToUtf16(const char *str);
-std::string utf16ToUtf8(const std::wstring &wstr);
-std::wstring utf8ToUtf16(const std::string &str);
-#endif
-
+std::string FileBase::errorString()
+{
+    switch (error()) {
+    case ErrorInvalidFilename:
+        return "Invalid or null filename";
+    case ErrorInvalidOpenMode:
+        return "Invalid open mode";
+    case ErrorInvalidSeekOrigin:
+        return "Invalid seek origin";
+    case ErrorFileIsNotOpen:
+        return "File is not open";
+    case ErrorEndOfFile:
+        return "End of file";
+    case ErrorPlatformError:
+        return platformErrorString();
+    default:
+        return std::string();
+    }
 }

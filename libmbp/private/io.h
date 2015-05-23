@@ -17,20 +17,23 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#ifdef _WIN32
-#include <string>
+#if defined(_WIN32)
+#include "private/iowin32.h"
+#elif defined(__ANDROID__)
+#include "private/ioandroid.h"
+#else
+#include "private/ioposix.h"
 #endif
 
-namespace utf8
+namespace io
 {
 
-#ifdef _WIN32
-std::string utf16ToUtf8(const wchar_t *wstr);
-std::wstring utf8ToUtf16(const char *str);
-std::string utf16ToUtf8(const std::wstring &wstr);
-std::wstring utf8ToUtf16(const std::string &str);
+#if defined(_WIN32)
+typedef ::FileWin32 File;
+#elif defined(__ANDROID__)
+typedef ::FileAndroid File;
+#else
+typedef ::FilePosix File;
 #endif
 
 }

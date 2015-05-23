@@ -21,6 +21,7 @@ set(MBP_SOURCES
     patchererror.cpp
     patchinfo.cpp
     private/fileutils.cpp
+    private/iocommon.cpp
     private/logging.cpp
     private/stringutils.cpp
     private/utf8.cpp
@@ -63,6 +64,18 @@ set(MBP_SOURCES
     external/sha.c
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
+
+if(WIN32)
+    set(MBP_SOURCES
+        ${MBP_SOURCES}
+        private/iowin32.cpp
+    )
+else()
+    set(MBP_SOURCES
+        ${MBP_SOURCES}
+        private/ioposix.cpp
+    )
+endif()
 
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
@@ -164,6 +177,8 @@ set(MBP_MINI_SOURCES
     patchererror.cpp
     #patchinfo.cpp
     private/fileutils.cpp
+    private/ioandroid.cpp
+    private/iocommon.cpp
     private/logging.cpp
     private/stringutils.cpp
     private/utf8.cpp
