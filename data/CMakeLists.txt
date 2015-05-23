@@ -7,8 +7,8 @@ install(
 
 # patchinfo files
 install(
-    DIRECTORY patchinfos/
-    DESTINATION ${DATA_INSTALL_DIR}/patchinfos
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/patchinfos.gen.xml
+    DESTINATION ${DATA_INSTALL_DIR}/
     COMPONENT Libraries
 )
 
