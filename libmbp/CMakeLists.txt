@@ -61,7 +61,7 @@ set(MBP_SOURCES
     ramdiskpatchers/trelteramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp
     ramdiskpatchers/zerolteramdiskpatcher.cpp
-    external/sha.c
+    external/sha.cpp
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
@@ -193,7 +193,7 @@ set(MBP_MINI_SOURCES
     cwrapper/private/util.cpp
     bootimage/bumppatcher.cpp
     bootimage/lokipatcher.cpp
-    external/sha.c
+    external/sha.cpp
 )
 
 # Wordaround semicolon separated list issue

@@ -35,6 +35,8 @@
 
 #define rol(bits, value) (((value) << (bits)) | ((value) >> (32 - (bits))))
 
+extern "C" {
+
 static void SHA1_Transform(SHA_CTX* ctx) {
     uint32_t W[80];
     uint32_t A, B, C, D, E;
@@ -152,4 +154,6 @@ const uint8_t* SHA_hash(const void* data, int len, uint8_t* digest) {
     SHA_update(&ctx, data, len);
     memcpy(digest, SHA_final(&ctx), SHA_DIGEST_SIZE);
     return digest;
+}
+
 }
