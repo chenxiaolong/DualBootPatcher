@@ -591,8 +591,8 @@ bool Installer::run_real_updater()
     // Run updater in the chroot
     std::vector<std::string> argv{
         "/mb/updater",
-        util::to_string(_interface),
-        util::to_string(_passthrough ? _output_fd : pipe_fds[1]),
+        util::format("%d", _interface),
+        util::format("%d", _passthrough ? _output_fd : pipe_fds[1]),
         "/mb/install.zip"
     };
 

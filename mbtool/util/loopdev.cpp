@@ -36,8 +36,8 @@
 // See https://lkml.org/lkml/2011/7/30/110
 
 
-#define LOOP_CONTROL "/dev/loop-control"
-#define LOOP_PREFIX  "/dev/block/loop"
+#define LOOP_CONTROL    "/dev/loop-control"
+#define LOOP_FMT        "/dev/block/loop%d"
 
 
 namespace mb
@@ -62,7 +62,7 @@ std::string loopdev_find_unused(void)
         return std::string();
     }
 
-    return std::string(LOOP_PREFIX) + to_string(n);
+    return format(LOOP_FMT, n);
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,

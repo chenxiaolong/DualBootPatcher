@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <sstream>
 #include <string>
 
 namespace mb
@@ -36,14 +35,6 @@ bool ends_with(const std::string &string, const std::string &suffix);
 bool ends_with(const char *string, const char *suffix);
 
 std::string hex_string(unsigned char *data, size_t size);
-
-template <typename T>
-std::string to_string(const T& t)
-{
-    std::ostringstream ss;
-    ss << t;
-    return ss.str();
-}
 
 }
 }
