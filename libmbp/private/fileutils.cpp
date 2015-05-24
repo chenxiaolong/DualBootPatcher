@@ -21,8 +21,8 @@
 
 #include <algorithm>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <cassert>
+#include <cstring>
 
 #include "private/logging.h"
 #include "private/io.h"
@@ -517,6 +517,59 @@ bool FileUtils::deleteRecursively(const std::string &path)
 #endif
 }
 
+bool FileUtils::createDirectories(const std::string &path)
+{
+#ifdef _WIN32
+    static const char *delim = "/\\";
+    static const char *pathsep = "\\";
+#else
+    static const char *delim = "/";
+    static const char *pathsep = "/";
+#endif
+    char *p;
+    char *save_ptr;
+    std::vector<char> temp;
+    std::vector<char> copy;
+#ifdef _WIN32
+    std::wstring wTemp;
+#endif
+
+    if (path.empty()) {
+        return false;
+    }
+
+    copy.assign(path.begin(), path.end());
+    copy.push_back('\0');
+    temp.resize(path.size() + 2);
+    temp[0] = '\0';
+
+    // Add leading separator if needed
+    if (strchr(delim, path[0])) {
+        temp[0] = path[0];
+        temp[1] = '\0';
+    }
+
+    p = strtok_r(copy.data(), delim, &save_ptr);
+    while (p != nullptr) {
+        strcat(temp.data(), p);
+        strcat(temp.data(), pathsep);
+
+#ifdef _WIN32
+        wTemp = utf8::utf8ToUtf16(temp.data());
+        if (!CreateDirectoryW(wTemp.c_str(), nullptr)
+                && GetLastError() != ERROR_ALREADY_EXISTS) {
+#else
+        if (mkdir(temp.data(), 0755) < 0 && errno != EEXIST) {
+#endif
+            return false;
+        }
+
+        p = strtok_r(nullptr, delim, &save_ptr);
+    }
+
+    return true;
+}
+
 unzFile FileUtils::mzOpenInputFile(const std::string &path)
 {
 #ifdef USEWIN32IOAPI
@@ -800,13 +853,12 @@ bool FileUtils::mzExtractFile(unzFile uf,
     fullPath += "/";
     fullPath += filename;
 
-    boost::filesystem::path path(fullPath);
-    boost::filesystem::create_directories(path.parent_path());
+    createDirectories(dirName(fullPath));
 
     io::File file;
     if (!file.open(fullPath, io::File::OpenWrite)) {
         FLOGE("%s: Failed to open for writing: %s",
-              path.c_str(), file.errorString().c_str());
+              fullPath.c_str(), file.errorString().c_str());
         return false;
     }
 
@@ -822,7 +874,7 @@ bool FileUtils::mzExtractFile(unzFile uf,
     while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
         if (!file.write(buf, n, &bytesWritten)) {
             FLOGE("%s: Failed to write file: %s",
-                  path.c_str(), file.errorString().c_str());
+                  fullPath.c_str(), file.errorString().c_str());
             return false;
         }
     }

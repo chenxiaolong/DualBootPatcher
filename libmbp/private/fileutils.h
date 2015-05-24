@@ -53,6 +53,8 @@ public:
 
     static bool deleteRecursively(const std::string &path);
 
+    static bool createDirectories(const std::string &path);
+
     struct ArchiveStats {
         uint64_t files;
         uint64_t totalSize;
