@@ -19,11 +19,10 @@
 
 #include "patchers/multibootpatcher.h"
 
-#include <cassert>
-
+#include <algorithm>
 #include <unordered_set>
 
-#include <boost/filesystem/operations.hpp>
+#include <cassert>
 
 #include "bootimage.h"
 #include "cpiofile.h"
@@ -351,7 +350,7 @@ bool MultiBootPatcher::Impl::patchZip()
     std::string tempDir = FileUtils::createTemporaryDir(pc->tempDirectory());
 
     if (!pass1(zOutput, tempDir, excludeFromPass1)) {
-        boost::filesystem::remove_all(tempDir);
+        FileUtils::deleteRecursively(tempDir);
         return false;
     }
 
@@ -360,11 +359,11 @@ bool MultiBootPatcher::Impl::patchZip()
     // On the second pass, run the autopatchers on the rest of the files
 
     if (!pass2(zOutput, tempDir, excludeFromPass1)) {
-        boost::filesystem::remove_all(tempDir);
+        FileUtils::deleteRecursively(tempDir);
         return false;
     }
 
-    boost::filesystem::remove_all(tempDir);
+    FileUtils::deleteRecursively(tempDir);
 
     if (cancelled) return false;
 

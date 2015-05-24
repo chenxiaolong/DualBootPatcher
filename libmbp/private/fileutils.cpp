@@ -33,6 +33,7 @@
 #include "external/minizip/iowin32.h"
 #include <wchar.h>
 #else
+#include <ftw.h>
 #include <libgen.h>
 #include <sys/stat.h>
 #endif
@@ -318,6 +319,142 @@ std::string FileUtils::dirName(const std::string &path)
 
     char *ptr = dirname(buf.data());
     return std::string(ptr);
+#endif
+}
+
+#ifdef _WIN32
+class ScopedFindHandle {
+public:
+    ScopedFindHandle(HANDLE h) : handle(h)
+    {
+    }
+
+    ~ScopedFindHandle() {
+        FindClose(handle);
+    }
+
+private:
+    HANDLE handle;
+};
+
+static std::string win32ErrorToString(DWORD win32Error)
+{
+    LPWSTR messageBuffer = nullptr;
+    size_t size = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER
+            | FORMAT_MESSAGE_FROM_SYSTEM
+            | FORMAT_MESSAGE_IGNORE_INSERTS,            // dwFlags
+        nullptr,                                        // lpSource
+        win32Error,                                     // dwMessageId
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
+        (LPWSTR) &messageBuffer,                        // lpBuffer
+        0,                                              // nSize
+        nullptr                                         // Arguments
+    );
+
+    std::wstring message(messageBuffer, size);
+    LocalFree(messageBuffer);
+
+    return utf8::utf16ToUtf8(message);
+}
+
+static bool win32RecursiveDelete(const std::wstring &path)
+{
+    std::wstring mask(path);
+    mask += L"\\*";
+
+    WIN32_FIND_DATAW findData;
+
+    // First, delete the contents of the directory, recursively for subdirectories
+    HANDLE searchHandle = FindFirstFileExW(
+        mask.c_str(),           // lpFileName
+        FindExInfoBasic,        // fInfoLevelId
+        &findData,              // lpFindFileData
+        FindExSearchNameMatch,  // fSearchOp
+        nullptr,                // lpSearchFilter
+        0                       // dwAdditionalFlags
+    );
+    if (searchHandle == INVALID_HANDLE_VALUE) {
+        DWORD error = GetLastError();
+        if (error != ERROR_FILE_NOT_FOUND) {
+            FLOGE("%s: FindFirstFileExW() failed: %s",
+                  utf8::utf16ToUtf8(path).c_str(),
+                  win32ErrorToString(error).c_str());
+            return false;
+        }
+    } else {
+        ScopedFindHandle scope(searchHandle);
+        while (true) {
+            if (wcscmp(findData.cFileName, L".") != 0
+                    && wcscmp(findData.cFileName, L"..") != 0) {
+                bool isDirectory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                        || (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT);
+                std::wstring childPath(path);
+                childPath += L'\\';
+                childPath += findData.cFileName;
+
+                if (isDirectory) {
+                    if (!win32RecursiveDelete(childPath)) {
+                        return false;
+                    }
+                } else {
+                    if (!DeleteFileW(childPath.c_str())) {
+                        DWORD error = GetLastError();
+                        FLOGE("%s: DeleteFileW() failed: %s",
+                              utf8::utf16ToUtf8(childPath).c_str(),
+                              win32ErrorToString(error).c_str());
+                        return false;
+                    }
+                }
+            }
+
+            // Advance to the next file in the directory
+            if (!FindNextFileW(searchHandle, &findData)) {
+                DWORD error = GetLastError();
+                if (error != ERROR_NO_MORE_FILES) {
+                    FLOGE("%s: FindNextFileW() failed: %s",
+                          utf8::utf16ToUtf8(path).c_str(),
+                          win32ErrorToString(error).c_str());
+                    return false;
+                }
+                break;
+            }
+        }
+    }
+
+    if (!RemoveDirectoryW(path.c_str())) {
+        DWORD error = GetLastError();
+        FLOGE("%s: RemoveDirectoryW() failed: %s",
+              utf8::utf16ToUtf8(path).c_str(),
+              win32ErrorToString(error).c_str());
+        return false;
+    }
+
+    return true;
+}
+#else
+static int posixDeleteNftw(const char *fpath, const struct stat *sb,
+                           int typeflag, struct FTW *ftwbuf)
+{
+    (void) sb;
+    (void) typeflag;
+    (void) ftwbuf;
+
+    int ret = remove(fpath);
+    if (ret < 0) {
+        FLOGE("%s: Failed to remove: %s", fpath, strerror(errno));
+    }
+    return ret;
+}
+#endif
+
+bool FileUtils::deleteRecursively(const std::string &path)
+{
+#ifdef _WIN32
+    std::wstring wPath = utf8::utf8ToUtf16(path);
+    return win32RecursiveDelete(wPath);
+#else
+    return nftw(path.c_str(), posixDeleteNftw, 64, FTW_DEPTH | FTW_PHYS);
 #endif
 }
 
