@@ -220,39 +220,119 @@ std::string FileUtils::systemTemporaryDir()
 #endif
 }
 
+#ifdef _WIN32
+static std::string win32ErrorToString(DWORD win32Error)
+{
+    LPWSTR messageBuffer = nullptr;
+    size_t size = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER
+            | FORMAT_MESSAGE_FROM_SYSTEM
+            | FORMAT_MESSAGE_IGNORE_INSERTS,            // dwFlags
+        nullptr,                                        // lpSource
+        win32Error,                                     // dwMessageId
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
+        (LPWSTR) &messageBuffer,                        // lpBuffer
+        0,                                              // nSize
+        nullptr                                         // Arguments
+    );
+
+    std::wstring message(messageBuffer, size);
+    LocalFree(messageBuffer);
+
+    return utf8::utf16ToUtf8(message);
+}
+#endif
+
 std::string FileUtils::createTemporaryDir(const std::string &directory)
 {
-#ifdef __ANDROID__
-    // For whatever reason boost::filesystem::unique_path() returns an empty
-    // path on pre-lollipop ROMs
+#ifdef _WIN32
+    // This Win32 code is adapted from the awesome libuv library (MIT-licensed)
+    // https://github.com/libuv/libuv/blob/v1.x/src/win/fs.c
 
-    boost::filesystem::path dir(directory);
-    dir /= "mbp-XXXXXX";
-    const std::string dirTemplate = dir.string();
+    static const char *possible =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    static const size_t numChars = 62;
+    static const size_t numX = 6;
+    static const char *suffix = "\\mbp-";
+
+    HCRYPTPROV hProv;
+    std::string newPath;
+
+    bool ret = CryptAcquireContext(
+        &hProv,                 // phProv
+        nullptr,                // pszContainer
+        nullptr,                // pszProvider
+        PROV_RSA_FULL,          // dwProvType
+        CRYPT_VERIFYCONTEXT     // dwFlags
+    );
+    if (!ret) {
+        FLOGE("CryptAcquireContext() failed: %s",
+              win32ErrorToString(GetLastError()));
+        return std::string();
+    }
+
+    std::vector<char> buf(directory.begin(), directory.end()); // Path
+    buf.insert(buf.end(), suffix, suffix + strlen(suffix));    // "\mbp-"
+    buf.resize(buf.size() + numX);                             // Unique part
+    buf.push_back('\0');                                       // 0-terminator
+    char *unique = buf.data() + buf.size() - numX - 1;
+
+    unsigned int tries = TMP_MAX;
+    do {
+        uint64_t v;
+
+        ret = CryptGenRandom(
+            hProv,      // hProv
+            sizeof(v),  // dwLen
+            (BYTE *) &v // pbBuffer
+        );
+        if (!ret) {
+            FLOGE("CryptGenRandom() failed: %s",
+                  win32ErrorToString(GetLastError()));
+            break;
+        }
+
+        for (size_t i = 0; i < numX; ++i) {
+            unique[i] = possible[v % numChars];
+            v /= numChars;
+        }
+
+        // This is not particularly fast, but it'll do for now
+        std::wstring wBuf = utf8::utf8ToUtf16(buf.data());
+
+        ret = CreateDirectoryW(
+            wBuf.c_str(),       // lpPathName
+            nullptr             // lpSecurityAttributes
+        );
+        if (ret) {
+            newPath = buf.data();
+            break;
+        } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
+            FLOGE("CreateDirectoryW() failed: %s",
+                  win32ErrorToString(GetLastError()));
+            break;
+        }
+    } while (--tries);
+
+    bool released = CryptReleaseContext(
+        hProv,  // hProv
+        0       // dwFlags
+    );
+    assert(released);
+
+    return newPath;
+#else
+    std::string dirTemplate(directory);
+    dirTemplate += "/mbp-XXXXXX";
 
     // mkdtemp modifies buffer
     std::vector<char> buf(dirTemplate.begin(), dirTemplate.end());
     buf.push_back('\0');
 
     if (mkdtemp(buf.data())) {
-        return std::string(buf.data());
+        return buf.data();
     }
 
-    return std::string();
-#else
-    int count = 256;
-
-    while (count > 0) {
-        boost::filesystem::path dir(directory);
-        dir /= "mbp-%%%%%%";
-        auto path = boost::filesystem::unique_path(dir);
-        if (boost::filesystem::create_directory(path)) {
-            return path.string();
-        }
-        count--;
-    }
-
-    // Like Qt, we'll assume that 256 tries is enough ...
     return std::string();
 #endif
 }
@@ -336,27 +416,6 @@ public:
 private:
     HANDLE handle;
 };
-
-static std::string win32ErrorToString(DWORD win32Error)
-{
-    LPWSTR messageBuffer = nullptr;
-    size_t size = FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER
-            | FORMAT_MESSAGE_FROM_SYSTEM
-            | FORMAT_MESSAGE_IGNORE_INSERTS,            // dwFlags
-        nullptr,                                        // lpSource
-        win32Error,                                     // dwMessageId
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
-        (LPWSTR) &messageBuffer,                        // lpBuffer
-        0,                                              // nSize
-        nullptr                                         // Arguments
-    );
-
-    std::wstring message(messageBuffer, size);
-    LocalFree(messageBuffer);
-
-    return utf8::utf16ToUtf8(message);
-}
 
 static bool win32RecursiveDelete(const std::wstring &path)
 {
