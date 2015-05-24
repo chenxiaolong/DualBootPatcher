@@ -41,33 +41,6 @@ install(
 
 
 ################################################################################
-# boost for Android
-################################################################################
-
-set(BOOST_VER "1.58.0")
-
-file(
-    DOWNLOAD
-    ${URL_BASE}/boost-${BOOST_VER}_android.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
-    EXPECTED_MD5 474bd0305a7e057fd282ecc3a0ad7a02
-    SHOW_PROGRESS
-)
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/boost)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/boost
-    )
-
-    message(STATUS "Extracting boost for Android ...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/boost-${BOOST_VER}_android.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/boost
-    )
-endif()
-
-
-################################################################################
 # libarchive for Android
 ################################################################################
 
