@@ -144,7 +144,6 @@ else()
     endif()
 
     target_link_libraries(mbp
-        ${Boost_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}
