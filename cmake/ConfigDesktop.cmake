@@ -39,11 +39,6 @@ endif()
 
 # Dependencies
 
-# Boost
-find_package(Boost REQUIRED COMPONENTS filesystem system)
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
-
 # Qt5
 find_package(Qt5Core 5.3 REQUIRED)
 
