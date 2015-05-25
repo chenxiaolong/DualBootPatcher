@@ -19,81 +19,47 @@
 
 #include "libmbpio/path.h"
 
-#include <vector>
-
 #include "libmbpio/private/common.h"
-#include "libmbpio/private/utf8.h"
-
-#if IO_PLATFORM_ANDROID || IO_PLATFORM_POSIX
-#include <libgen.h>
-#endif
 
 namespace io
 {
 
+#if IO_PLATFORM_WINDOWS
+static const char *delims = "/\\";
+#else
+static const char *delims = "/";
+#endif
+
+/*!
+ * \brief Get filename part of a path
+ *
+ * Returns everything after the last path separator (slash)
+ */
 std::string baseName(const std::string &path)
 {
-#if IO_PLATFORM_WINDOWS
-    std::wstring wPath = utf8::utf8ToUtf16(path);
-    std::vector<wchar_t> buf(wPath.size());
-    std::vector<wchar_t> extbuf(wPath.size());
-
-    errno_t ret = _wsplitpath_s(
-        wPath.c_str(),  // path
-        nullptr,        // drive
-        0,              // driveNumberOfElements
-        nullptr,        // dir
-        0,              // dirNumberOfElements
-        buf.data(),     // fname
-        buf.size(),     // nameNumberOfElements
-        extbuf.data(),  // ext
-        extbuf.size()   // extNumberOfElements
-    );
-
-    if (ret != 0) {
-        return std::string();
-    } else {
-        return utf8::utf16ToUtf8(buf.data()) + utf8::utf16ToUtf8(extbuf.data());
+    std::size_t pos = path.find_last_of(delims);
+    if (pos == std::string::npos) {
+        // No slash, return full path
+        return path;
     }
-#else
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
 
-    char *ptr = basename(buf.data());
-    return std::string(ptr);
-#endif
+    return path.substr(pos + 1);
 }
 
+/*!
+ * \brief Get directory part of a path
+ *
+ * Returns everything up to and including the last path separator (slash)
+ */
 std::string dirName(const std::string &path)
 {
-#if IO_PLATFORM_WINDOWS
-    std::wstring wPath = utf8::utf8ToUtf16(path);
-    std::vector<wchar_t> buf(wPath.size());
-
-    errno_t ret = _wsplitpath_s(
-        wPath.c_str(),  // path
-        nullptr,        // drive
-        0,              // driveNumberOfElements
-        buf.data(),     // dir
-        buf.size(),     // dirNumberOfElements
-        nullptr,        // fname
-        0,              // nameNumberOfElements
-        nullptr,        // ext
-        0               // extNumberOfElements
-    );
-
-    if (ret != 0) {
+    std::size_t pos = path.find_last_of(delims);
+    if (pos == std::string::npos) {
+        // No slash, return empty string
         return std::string();
-    } else {
-        return utf8::utf16ToUtf8(buf.data());
     }
-#else
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
 
-    char *ptr = dirname(buf.data());
-    return std::string(ptr);
-#endif
+    return path.substr(0, pos + 1);
 }
 
 }
