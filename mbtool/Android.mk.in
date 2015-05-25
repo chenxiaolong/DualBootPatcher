@@ -1,4 +1,5 @@
-_LOCAL_PATH := $(call my-dir)
+#_LOCAL_PATH := $(call my-dir)
+_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 
 # To debug using valgrind, set DEBUGGING to true and push
 # <build dir>/mbtool/mbtool-prefix/tmp/local/armeabi-v7a/mbtool_recovery

@@ -2,7 +2,7 @@ include(ExternalProject)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
     @ONLY
 )
 
@@ -17,6 +17,7 @@ ExternalProject_Add(
                   NDK_APPLICATION_MK=Application.mk
                   NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
                   NDK_OUT=<TMP_DIR>
+                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
                   ${NDK_ARGS}
     INSTALL_COMMAND ""
 )
