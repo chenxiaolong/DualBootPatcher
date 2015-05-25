@@ -5,7 +5,6 @@ The following packages are needed for compiling:
 
 - cmake
 - gcc-multilib
-- boost
 - libarchive
 - lz4
 - xz

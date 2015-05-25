@@ -11,7 +11,6 @@ Note: All commands below should be run within `VS2013 x86 Native Tools Command P
 The following packages need to be downloaded and installed:
 
 - [Android NDK (Windows 32-bit)](https://developer.android.com/tools/sdk/ndk/index.html)
-- [Boost 1.57.0](http://downloads.sourceforge.net/project/boost/boost-binaries/1.57.0/boost_1_57_0-msvc-12.0-32.exe)
 - [CMake 3.1 or later](http://www.cmake.org/)
 - [TortoiseGit](https://code.google.com/p/tortoisegit/)
 
@@ -62,8 +61,6 @@ The following packages need to be downloaded and installed:
 
    ```dos
    set PATH="%PATH%;C:\QtMinimal\5.4.0"
-   set BOOST_ROOT="C:\local\boost_1_57_0"
-   set BOOST_LIBRARYDIR="C:\local\boost_1_57_0\lib32-msvc-12.0"
    set QTDIR="c:\QtMinimal\5.4.0"
    set PATH="%PATH%;C:\Program Files (x86)\CMake\bin"
    ```
@@ -75,8 +72,6 @@ The following packages need to be downloaded and installed:
    cd build
    cmake .. ^
        -DMBP_PORTABLE=ON ^
-       -DBOOST_ROOT="%BOOST_ROOT%" ^
-       -DBOOST_LIBRARYDIR="%BOOST_LIBRARYDIR%" ^
        -DCMAKE_PREFIX_PATH="%QTDIR%\lib\cmake"
    cmake --build . --config Release
    cpack -G ZIP -D CPACK_BUILD_CONFIG=Release
@@ -86,9 +81,6 @@ The following packages need to be downloaded and installed:
 
 3. Extract `DualBootPatcher-[version]-win32.zip` and copy the following files to the `DualBootPatcher-[version]-win32` directory
 
-    - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_filesystem-vc120-mt-1_57.dll
-    - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_regex-vc120-mt-1_57.dll
-    - C:\local\boost_1_57_0\lib32-msvc-12.0\boost_system-vc120-mt-1_57.dll
     - C:\QtMinimal\5.4.0\bin\Qt5Core.dll
     - C:\QtMinimal\5.4.0\bin\Qt5Gui.dll
     - C:\QtMinimal\5.4.0\bin\Qt5Widgets.dll

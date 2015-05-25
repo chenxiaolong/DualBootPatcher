@@ -20,7 +20,6 @@ To cross-compile DualBootPatcher, the following packages are needed:
 
 Additionally, the following mingw-compiled packages are needed:
 
-- boost
 - qt5
 - xz
 
@@ -31,7 +30,6 @@ On Arch Linux, the following command will install some of the needed packages:
 The remaining packages will have to be installed from the AUR. I'd highly recommend against using AUR helpers for this, since they build in `/tmp/`. Some of these packages need more than 6GB of disk space to build!
 
 - android-ndk
-- mingw-w64-boost
 - mingw-w64-qt5-base
 - mingw-w64-xz
 
@@ -96,8 +94,6 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     pushd DualBootPatcher-<version>-win32
 
     dlls=(
-        libboost_filesystem-mt.dll
-        libboost_system-mt.dll
         libgcc_s_sjlj-1.dll
         libGLESv2.dll
         libiconv-2.dll
