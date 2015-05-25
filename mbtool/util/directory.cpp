@@ -34,7 +34,6 @@ namespace util
 
 bool mkdir_recursive(const std::string &dir, mode_t mode)
 {
-    struct stat st;
     char *p;
     char *save_ptr;
     std::vector<char> temp;
@@ -59,7 +58,7 @@ bool mkdir_recursive(const std::string &dir, mode_t mode)
         strcat(temp.data(), p);
         strcat(temp.data(), "/");
 
-        if (stat(temp.data(), &st) < 0 && mkdir(temp.data(), mode) < 0) {
+        if (mkdir(temp.data(), mode) < 0 && errno != EEXIST) {
             return false;
         }
 
