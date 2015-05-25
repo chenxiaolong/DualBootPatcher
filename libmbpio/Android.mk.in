@@ -1,0 +1,23 @@
+#LOCAL_PATH := $(call my-dir)
+LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+
+# Whether ccache should be used (highly recommended!)
+USE_CCACHE := true
+
+TOP_DIR := @CMAKE_SOURCE_DIR@
+
+ifeq ($(USE_CCACHE),true)
+TARGET_CC := ccache $(TARGET_CC)
+TARGET_CXX := ccache $(TARGET_CXX)
+endif
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := @MBP_IO_SOURCES_STR@
+LOCAL_MODULE := libmbpio
+LOCAL_C_INCLUDES := $(TOP_DIR)
+LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
+LOCAL_CFLAGS += -pie
+LOCAL_CFLAGS += -Wl,--no-undefined
+LOCAL_CFLAGS += -fno-exceptions -fno-rtti
+LOCAL_CFLAGS += -ffunction-sections -fdata-sections -O2
+include $(BUILD_STATIC_LIBRARY)

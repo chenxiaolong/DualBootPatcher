@@ -29,6 +29,7 @@ include(cmake/AndroidNDK.cmake)
 include(cmake/LogicalCoreCount.cmake)
 
 # Main patcher
+add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
 add_subdirectory(data)
 add_subdirectory(mbtool)
