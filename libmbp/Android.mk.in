@@ -1,4 +1,5 @@
-_LOCAL_PATH := $(call my-dir)
+#_LOCAL_PATH := $(call my-dir)
+_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 
 # Whether ccache should be used (highly recommended!)
 USE_CCACHE := true

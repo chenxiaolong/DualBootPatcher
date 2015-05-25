@@ -75,7 +75,7 @@ if(MBP_BUILD_ANDROID)
 
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-        ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk
+        ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
         @ONLY
     )
 
@@ -90,7 +90,7 @@ if(MBP_BUILD_ANDROID)
                       NDK_APPLICATION_MK=Application.mk
                       NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
                       NDK_OUT=<TMP_DIR>
-                      APP_BUILD_SCRIPT=Android.mk
+                      APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
                       ${NDK_ARGS}
         INSTALL_COMMAND ""
     )
@@ -188,7 +188,7 @@ endforeach()
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android-mini.mk
+    ${CMAKE_CURRENT_BINARY_DIR}/Android-mini.mk
     @ONLY
 )
 
@@ -203,7 +203,7 @@ ExternalProject_Add(
                   NDK_APPLICATION_MK=Application.mk
                   NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out-mini
                   NDK_OUT=<TMP_DIR>
-                  APP_BUILD_SCRIPT=Android-mini.mk
+                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android-mini.mk
                   ${NDK_ARGS}
                   MBP_MINI=true
     INSTALL_COMMAND ""
