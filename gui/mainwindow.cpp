@@ -20,10 +20,10 @@
 #include "mainwindow.h"
 #include "mainwindow_p.h"
 
+#include <cassert>
+
 #include <libmbp/patchinfo.h>
 #include <libmbp/patchererror.h>
-
-#include <boost/algorithm/string.hpp>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>
@@ -457,7 +457,7 @@ void MainWindow::setWidgetActions()
 
 bool sortByPatchInfoId(mbp::PatchInfo *pi1, mbp::PatchInfo *pi2)
 {
-    return boost::ilexicographical_compare(pi1->id(), pi2->id());
+    return strcasecmp(pi1->id().c_str(), pi2->id().c_str()) <= 0;
 }
 
 void MainWindow::populateWidgets()
@@ -661,10 +661,12 @@ void MainWindow::startPatching()
                 d->patchInfo->setRamdisk(d->device->id() + "/default");
                 QString text = d->bootImageLe->text().trimmed();
                 if (!text.isEmpty()) {
-                    const std::string textStdString = text.toUtf8().constData();
+                    QStringList split = text.split(QStringLiteral(","));
                     std::vector<std::string> bootImages;
-                    boost::split(bootImages, textStdString, boost::is_any_of(","));
-                    d->patchInfo->setBootImages(bootImages);
+                    for (const QString &bootImage : split) {
+                        bootImages.push_back(bootImage.toUtf8().constData());
+                    }
+                    d->patchInfo->setBootImages(std::move(bootImages));
                 }
             }
 
