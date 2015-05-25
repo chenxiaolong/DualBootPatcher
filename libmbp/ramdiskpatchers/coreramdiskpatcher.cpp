@@ -22,8 +22,9 @@
 #include <regex>
 #include <unordered_map>
 
+#include "libmbpio/path.h"
+
 #include "patcherconfig.h"
-#include "private/fileutils.h"
 #include "private/stringutils.h"
 
 
@@ -339,8 +340,8 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
             std::string spaces = whitespace(*it);
 
             std::string fstab = what[1];
-            std::string dir_name = FileUtils::dirName(fstab);
-            std::string base_name = FileUtils::baseName(fstab);
+            std::string dir_name = io::dirName(fstab);
+            std::string base_name = io::baseName(fstab);
             std::string completed = dir_name + "/." + base_name + ".completed";
             std::string generated = dir_name + "/." + base_name + ".gen";
 
@@ -434,8 +435,8 @@ bool CoreRamdiskPatcher::fixChargerMount(const std::string &filename)
     }
 
     // Paths
-    std::string dirName = FileUtils::dirName(m_impl->fstabs[0]);
-    std::string baseName = FileUtils::baseName(m_impl->fstabs[0]);
+    std::string dirName = io::dirName(m_impl->fstabs[0]);
+    std::string baseName = io::baseName(m_impl->fstabs[0]);
     std::string completed = dirName + "/." + baseName + ".completed";
 
     std::string previousLine;

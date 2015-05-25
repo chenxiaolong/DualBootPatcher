@@ -48,13 +48,6 @@ public:
 
     static std::string createTemporaryDir(const std::string &directory);
 
-    static std::string baseName(const std::string &path);
-    static std::string dirName(const std::string &path);
-
-    static bool deleteRecursively(const std::string &path);
-
-    static bool createDirectories(const std::string &path);
-
     struct ArchiveStats {
         uint64_t files;
         uint64_t totalSize;

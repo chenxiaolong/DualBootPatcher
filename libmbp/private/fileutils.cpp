@@ -24,17 +24,18 @@
 #include <cassert>
 #include <cstring>
 
+#include "libmbpio/directory.h"
+#include "libmbpio/file.h"
+#include "libmbpio/path.h"
+#include "libmbpio/private/utf8.h"
+
 #include "private/logging.h"
-#include "private/io.h"
-#include "private/utf8.h"
 
 #ifdef _WIN32
 #define USEWIN32IOAPI
 #include "external/minizip/iowin32.h"
 #include <wchar.h>
 #else
-#include <ftw.h>
-#include <libgen.h>
 #include <sys/stat.h>
 #endif
 
@@ -337,239 +338,6 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
 #endif
 }
 
-std::string FileUtils::baseName(const std::string &path)
-{
-#ifdef _WIN32
-    std::wstring wPath = utf8::utf8ToUtf16(path);
-    std::vector<wchar_t> buf(wPath.size());
-    std::vector<wchar_t> extbuf(wPath.size());
-
-    errno_t ret = _wsplitpath_s(
-        wPath.c_str(),  // path
-        nullptr,        // drive
-        0,              // driveNumberOfElements
-        nullptr,        // dir
-        0,              // dirNumberOfElements
-        buf.data(),     // fname
-        buf.size(),     // nameNumberOfElements
-        extbuf.data(),  // ext
-        extbuf.size()   // extNumberOfElements
-    );
-
-    if (ret != 0) {
-        return std::string();
-    } else {
-        return utf8::utf16ToUtf8(buf.data()) + utf8::utf16ToUtf8(extbuf.data());
-    }
-#else
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
-
-    char *ptr = basename(buf.data());
-    return std::string(ptr);
-#endif
-}
-
-std::string FileUtils::dirName(const std::string &path)
-{
-#ifdef _WIN32
-    std::wstring wPath = utf8::utf8ToUtf16(path);
-    std::vector<wchar_t> buf(wPath.size());
-
-    errno_t ret = _wsplitpath_s(
-        wPath.c_str(),  // path
-        nullptr,        // drive
-        0,              // driveNumberOfElements
-        buf.data(),     // dir
-        buf.size(),     // dirNumberOfElements
-        nullptr,        // fname
-        0,              // nameNumberOfElements
-        nullptr,        // ext
-        0               // extNumberOfElements
-    );
-
-    if (ret != 0) {
-        return std::string();
-    } else {
-        return utf8::utf16ToUtf8(buf.data());
-    }
-#else
-    std::vector<char> buf(path.begin(), path.end());
-    buf.push_back('\0');
-
-    char *ptr = dirname(buf.data());
-    return std::string(ptr);
-#endif
-}
-
-#ifdef _WIN32
-class ScopedFindHandle {
-public:
-    ScopedFindHandle(HANDLE h) : handle(h)
-    {
-    }
-
-    ~ScopedFindHandle() {
-        FindClose(handle);
-    }
-
-private:
-    HANDLE handle;
-};
-
-static bool win32RecursiveDelete(const std::wstring &path)
-{
-    std::wstring mask(path);
-    mask += L"\\*";
-
-    WIN32_FIND_DATAW findData;
-
-    // First, delete the contents of the directory, recursively for subdirectories
-    HANDLE searchHandle = FindFirstFileExW(
-        mask.c_str(),           // lpFileName
-        FindExInfoBasic,        // fInfoLevelId
-        &findData,              // lpFindFileData
-        FindExSearchNameMatch,  // fSearchOp
-        nullptr,                // lpSearchFilter
-        0                       // dwAdditionalFlags
-    );
-    if (searchHandle == INVALID_HANDLE_VALUE) {
-        DWORD error = GetLastError();
-        if (error != ERROR_FILE_NOT_FOUND) {
-            FLOGE("%s: FindFirstFileExW() failed: %s",
-                  utf8::utf16ToUtf8(path).c_str(),
-                  win32ErrorToString(error).c_str());
-            return false;
-        }
-    } else {
-        ScopedFindHandle scope(searchHandle);
-        while (true) {
-            if (wcscmp(findData.cFileName, L".") != 0
-                    && wcscmp(findData.cFileName, L"..") != 0) {
-                bool isDirectory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                        || (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT);
-                std::wstring childPath(path);
-                childPath += L'\\';
-                childPath += findData.cFileName;
-
-                if (isDirectory) {
-                    if (!win32RecursiveDelete(childPath)) {
-                        return false;
-                    }
-                } else {
-                    if (!DeleteFileW(childPath.c_str())) {
-                        DWORD error = GetLastError();
-                        FLOGE("%s: DeleteFileW() failed: %s",
-                              utf8::utf16ToUtf8(childPath).c_str(),
-                              win32ErrorToString(error).c_str());
-                        return false;
-                    }
-                }
-            }
-
-            // Advance to the next file in the directory
-            if (!FindNextFileW(searchHandle, &findData)) {
-                DWORD error = GetLastError();
-                if (error != ERROR_NO_MORE_FILES) {
-                    FLOGE("%s: FindNextFileW() failed: %s",
-                          utf8::utf16ToUtf8(path).c_str(),
-                          win32ErrorToString(error).c_str());
-                    return false;
-                }
-                break;
-            }
-        }
-    }
-
-    if (!RemoveDirectoryW(path.c_str())) {
-        DWORD error = GetLastError();
-        FLOGE("%s: RemoveDirectoryW() failed: %s",
-              utf8::utf16ToUtf8(path).c_str(),
-              win32ErrorToString(error).c_str());
-        return false;
-    }
-
-    return true;
-}
-#else
-static int posixDeleteNftw(const char *fpath, const struct stat *sb,
-                           int typeflag, struct FTW *ftwbuf)
-{
-    (void) sb;
-    (void) typeflag;
-    (void) ftwbuf;
-
-    int ret = remove(fpath);
-    if (ret < 0) {
-        FLOGE("%s: Failed to remove: %s", fpath, strerror(errno));
-    }
-    return ret;
-}
-#endif
-
-bool FileUtils::deleteRecursively(const std::string &path)
-{
-#ifdef _WIN32
-    std::wstring wPath = utf8::utf8ToUtf16(path);
-    return win32RecursiveDelete(wPath);
-#else
-    return nftw(path.c_str(), posixDeleteNftw, 64, FTW_DEPTH | FTW_PHYS);
-#endif
-}
-
-bool FileUtils::createDirectories(const std::string &path)
-{
-#ifdef _WIN32
-    static const char *delim = "/\\";
-    static const char *pathsep = "\\";
-#else
-    static const char *delim = "/";
-    static const char *pathsep = "/";
-#endif
-    char *p;
-    char *save_ptr;
-    std::vector<char> temp;
-    std::vector<char> copy;
-#ifdef _WIN32
-    std::wstring wTemp;
-#endif
-
-    if (path.empty()) {
-        return false;
-    }
-
-    copy.assign(path.begin(), path.end());
-    copy.push_back('\0');
-    temp.resize(path.size() + 2);
-    temp[0] = '\0';
-
-    // Add leading separator if needed
-    if (strchr(delim, path[0])) {
-        temp[0] = path[0];
-        temp[1] = '\0';
-    }
-
-    p = strtok_r(copy.data(), delim, &save_ptr);
-    while (p != nullptr) {
-        strcat(temp.data(), p);
-        strcat(temp.data(), pathsep);
-
-#ifdef _WIN32
-        wTemp = utf8::utf8ToUtf16(temp.data());
-        if (!CreateDirectoryW(wTemp.c_str(), nullptr)
-                && GetLastError() != ERROR_ALREADY_EXISTS) {
-#else
-        if (mkdir(temp.data(), 0755) < 0 && errno != EEXIST) {
-#endif
-            return false;
-        }
-
-        p = strtok_r(nullptr, delim, &save_ptr);
-    }
-
-    return true;
-}
-
 unzFile FileUtils::mzOpenInputFile(const std::string &path)
 {
 #ifdef USEWIN32IOAPI
@@ -853,7 +621,7 @@ bool FileUtils::mzExtractFile(unzFile uf,
     fullPath += "/";
     fullPath += filename;
 
-    createDirectories(dirName(fullPath));
+    io::createDirectories(io::dirName(fullPath));
 
     io::File file;
     if (!file.open(fullPath, io::File::OpenWrite)) {

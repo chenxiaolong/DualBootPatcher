@@ -23,12 +23,13 @@
 
 #include <cstring>
 
+#include "libmbpio/file.h"
+
 #include "bootimage/header.h"
 #include "bootimage/bumppatcher.h"
 #include "bootimage/lokipatcher.h"
 #include "external/sha.h"
 #include "private/fileutils.h"
-#include "private/io.h"
 #include "private/logging.h"
 
 

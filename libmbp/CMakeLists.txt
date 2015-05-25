@@ -21,10 +21,8 @@ set(MBP_SOURCES
     patchererror.cpp
     patchinfo.cpp
     private/fileutils.cpp
-    private/iocommon.cpp
     private/logging.cpp
     private/stringutils.cpp
-    private/utf8.cpp
     bootimage/bumppatcher.cpp
     bootimage/lokipatcher.cpp
     cwrapper/cbootimage.cpp
@@ -64,18 +62,6 @@ set(MBP_SOURCES
     external/sha.cpp
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
-
-if(WIN32)
-    set(MBP_SOURCES
-        ${MBP_SOURCES}
-        private/iowin32.cpp
-    )
-else()
-    set(MBP_SOURCES
-        ${MBP_SOURCES}
-        private/ioposix.cpp
-    )
-endif()
 
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
@@ -118,6 +104,11 @@ if(MBP_BUILD_ANDROID)
         ALWAYS 1
         COMMAND ""
     )
+
+    add_dependencies(
+        mbp
+        mbpio-android
+    )
 else()
     # For desktop machines, we'll build with cmake
 
@@ -144,15 +135,12 @@ else()
     endif()
 
     target_link_libraries(mbp
+        mbpio
         ${MBP_ZLIB_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}
         minizip
     )
-
-    if(WIN32)
-        target_link_libraries(mbp ws2_32) # For htonl()
-    endif()
 
     # Install library
     install(
@@ -176,11 +164,8 @@ set(MBP_MINI_SOURCES
     patchererror.cpp
     #patchinfo.cpp
     private/fileutils.cpp
-    private/ioandroid.cpp
-    private/iocommon.cpp
     private/logging.cpp
     private/stringutils.cpp
-    private/utf8.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
@@ -232,12 +217,4 @@ ExternalProject_Add_Step(
     DEPENDERS configure
     ALWAYS 1
     COMMAND ""
-)
-
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out-mini/
-    DESTINATION ${DATA_INSTALL_DIR}/libraries/
-    COMPONENT Libraries
-    FILES_MATCHING
-    PATTERN libmbp-mini.so
 )

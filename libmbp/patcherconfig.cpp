@@ -25,6 +25,8 @@
 
 #ifndef LIBMBP_MINI
 #include <pugixml.hpp>
+
+#include "libmbpio/path.h"
 #endif
 
 #include "device.h"
@@ -319,7 +321,7 @@ PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
         return nullptr;
     }
 
-    std::string noPath = FileUtils::baseName(filename);
+    std::string noPath = io::baseName(filename);
 
     for (PatchInfo *info : patchInfos(device)) {
         for (auto const &regex : info->regexes()) {

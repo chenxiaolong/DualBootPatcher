@@ -24,6 +24,8 @@
 
 #include <cassert>
 
+#include "libmbpio/delete.h"
+
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
@@ -350,7 +352,7 @@ bool MultiBootPatcher::Impl::patchZip()
     std::string tempDir = FileUtils::createTemporaryDir(pc->tempDirectory());
 
     if (!pass1(zOutput, tempDir, excludeFromPass1)) {
-        FileUtils::deleteRecursively(tempDir);
+        io::deleteRecursively(tempDir);
         return false;
     }
 
@@ -359,11 +361,11 @@ bool MultiBootPatcher::Impl::patchZip()
     // On the second pass, run the autopatchers on the rest of the files
 
     if (!pass2(zOutput, tempDir, excludeFromPass1)) {
-        FileUtils::deleteRecursively(tempDir);
+        io::deleteRecursively(tempDir);
         return false;
     }
 
-    FileUtils::deleteRecursively(tempDir);
+    io::deleteRecursively(tempDir);
 
     if (cancelled) return false;
 
