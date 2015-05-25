@@ -39,7 +39,6 @@ LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 PROCPS_NG_DIR := $(THIRD_PARTY)/android/procps-ng
-BOOST_DIR := $(THIRD_PARTY)/android/boost
 MBP_MINI_DIR := @CMAKE_BINARY_DIR@/libmbp/mbp-mini-prefix/tmp/local
 MBP_IO_DIR := @CMAKE_BINARY_DIR@/libmbpio/mbpio-android-prefix/tmp/local
 TOP_DIR := @CMAKE_SOURCE_DIR@
@@ -91,20 +90,6 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := liblz4
 LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-# Only needed for linking libmbp-mini
-include $(CLEAR_VARS)
-LOCAL_MODULE    := boost_filesystem
-LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_filesystem-mt.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-# Only needed for linking libmbp-mini
-include $(CLEAR_VARS)
-LOCAL_MODULE    := boost_system
-LOCAL_SRC_FILES := $(BOOST_DIR)/lib_$(TARGET_ARCH_ABI)/libboost_system-mt.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -247,7 +232,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base) $(mbtool_src_recovery)
 
 LOCAL_MODULE := mbtool_recovery
-LOCAL_STATIC_LIBRARIES := libmbutil libmbp-mini libmbpio libjansson libsepol libarchive liblz4 boost_filesystem boost_system gnustl_static
+LOCAL_STATIC_LIBRARIES := libmbutil libmbp-mini libmbpio libjansson libsepol libarchive liblz4 gnustl_static
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 
