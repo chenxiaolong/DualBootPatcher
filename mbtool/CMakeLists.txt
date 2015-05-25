@@ -35,6 +35,7 @@ ExternalProject_Add_Step(
 add_dependencies(
     mbtool
     mbp-mini
+    mbpio-android
 )
 
 install(
