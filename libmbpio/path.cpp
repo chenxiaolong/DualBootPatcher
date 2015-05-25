@@ -26,8 +26,10 @@ namespace io
 
 #if IO_PLATFORM_WINDOWS
 static const char *delims = "/\\";
+static const char *pathsep = "\\";
 #else
 static const char *delims = "/";
+static const char *pathsep = "/";
 #endif
 
 /*!
@@ -60,6 +62,22 @@ std::string dirName(const std::string &path)
     }
 
     return path.substr(0, pos + 1);
+}
+
+std::string pathJoin(const std::vector<std::string> &components)
+{
+    std::string path;
+    for (auto it = components.begin(); it != components.end(); ++it) {
+        if (it->empty()) {
+            path += pathsep;
+        } else {
+            path += *it;
+            if (it != components.end() - 1) {
+                path += pathsep;
+            }
+        }
+    }
+    return path;
 }
 
 }

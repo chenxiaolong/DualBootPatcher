@@ -20,11 +20,14 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace io
 {
 
 std::string baseName(const std::string &path);
 std::string dirName(const std::string &path);
+
+std::string pathJoin(const std::vector<std::string> &components);
 
 }
