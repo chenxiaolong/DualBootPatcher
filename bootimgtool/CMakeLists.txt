@@ -10,7 +10,7 @@ add_executable(bootimgtool ${BOOTIMGTOOL_SOURCES})
 target_link_libraries(
     bootimgtool
     mbp
-    ${Boost_LIBRARIES}
+    mbpio
 )
 
 if(NOT MSVC)

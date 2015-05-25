@@ -27,7 +27,9 @@
 
 #include <getopt.h>
 
-#include <boost/filesystem.hpp>
+#include <libmbpio/directory.h>
+#include <libmbpio/error.h>
+#include <libmbpio/path.h>
 
 #include <libmbp/bootimage.h>
 #include <libmbp/logging.h>
@@ -35,8 +37,6 @@
 
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
-
-namespace bf = boost::filesystem;
 
 
 static const char MainUsage[] =
@@ -414,7 +414,7 @@ bool unpack_main(int argc, char *argv[])
         prefix.clear();
     } else {
         if (prefix.empty()) {
-            prefix = bf::path(input_file).filename().string();
+            prefix = io::baseName(input_file);
         }
         prefix += "-";
     }
@@ -423,32 +423,30 @@ bool unpack_main(int argc, char *argv[])
         output_dir = ".";
     }
 
-    bf::path bf_output_dir(output_dir);
-
     if (path_cmdline.empty())
-        path_cmdline = (bf_output_dir / (prefix + "cmdline")).string();
+        path_cmdline = io::pathJoin({output_dir, prefix + "cmdline"});
     if (path_board.empty())
-        path_board = (bf_output_dir / (prefix + "board")).string();
+        path_board = io::pathJoin({output_dir, prefix + "board"});
     if (path_base.empty())
-        path_base = (bf_output_dir / (prefix + "base")).string();
+        path_base = io::pathJoin({output_dir, prefix + "base"});
     if (path_kernel_offset.empty())
-        path_kernel_offset = (bf_output_dir / (prefix + "kernel_offset")).string();
+        path_kernel_offset = io::pathJoin({output_dir, prefix + "kernel_offset"});
     if (path_ramdisk_offset.empty())
-        path_ramdisk_offset = (bf_output_dir / (prefix + "ramdisk_offset")).string();
+        path_ramdisk_offset = io::pathJoin({output_dir, prefix + "ramdisk_offset"});
     if (path_second_offset.empty())
-        path_second_offset = (bf_output_dir / (prefix + "second_offset")).string();
+        path_second_offset = io::pathJoin({output_dir, prefix + "second_offset"});
     if (path_tags_offset.empty())
-        path_tags_offset = (bf_output_dir / (prefix + "tags_offset")).string();
+        path_tags_offset = io::pathJoin({output_dir, prefix + "tags_offset"});
     if (path_page_size.empty())
-        path_page_size = (bf_output_dir / (prefix + "page_size")).string();
+        path_page_size = io::pathJoin({output_dir, prefix + "page_size"});
     if (path_kernel.empty())
-        path_kernel = (bf_output_dir / (prefix + "kernel")).string();
+        path_kernel = io::pathJoin({output_dir, prefix + "kernel"});
     if (path_ramdisk.empty())
-        path_ramdisk = (bf_output_dir / (prefix + "ramdisk")).string();
+        path_ramdisk = io::pathJoin({output_dir, prefix + "ramdisk"});
     if (path_second.empty())
-        path_second = (bf_output_dir / (prefix + "second")).string();
+        path_second = io::pathJoin({output_dir, prefix + "second"});
     if (path_dt.empty())
-        path_dt = (bf_output_dir / (prefix + "dt")).string();
+        path_dt = io::pathJoin({output_dir, prefix + "dt"});
 
     printf("Output files:\n");
     printf("- cmdline:        %s\n", path_cmdline.c_str());
@@ -465,11 +463,10 @@ bool unpack_main(int argc, char *argv[])
     printf("- dt:             %s\n", path_dt.c_str());
     printf("\n");
 
-    if (!bf::exists(bf_output_dir)) {
-        if (!bf::create_directories(bf_output_dir)) {
-            fprintf(stderr, "Failed to create %s\n", output_dir.c_str());
-            return false;
-        }
+    if (!io::createDirectories(output_dir)) {
+        fprintf(stderr, "%s: Failed to create directory: %s\n",
+                output_dir.c_str(), io::lastErrorString().c_str());
+        return false;
     }
 
     // Load the boot image
@@ -785,7 +782,7 @@ bool pack_main(int argc, char *argv[])
         prefix.clear();
     } else {
         if (prefix.empty()) {
-            prefix = bf::path(output_file).filename().string();
+            prefix = io::baseName(output_file);
         }
         prefix += "-";
     }
@@ -794,32 +791,30 @@ bool pack_main(int argc, char *argv[])
         input_dir = ".";
     }
 
-    bf::path bf_input_dir(input_dir);
-
     if (path_cmdline.empty() && !values[OPT_VALUE_CMDLINE])
-        path_cmdline = (bf_input_dir / (prefix + "cmdline")).string();
+        path_cmdline = io::pathJoin({input_dir, prefix + "cmdline"});
     if (path_board.empty() && !values[OPT_VALUE_BOARD])
-        path_board = (bf_input_dir / (prefix + "board")).string();
+        path_board = io::pathJoin({input_dir, prefix + "board"});
     if (path_base.empty() && !values[OPT_VALUE_BASE])
-        path_base = (bf_input_dir / (prefix + "base")).string();
+        path_base = io::pathJoin({input_dir, prefix + "base"});
     if (path_kernel_offset.empty() && !values[OPT_VALUE_KERNEL_OFFSET])
-        path_kernel_offset = (bf_input_dir / (prefix + "kernel_offset")).string();
+        path_kernel_offset = io::pathJoin({input_dir, prefix + "kernel_offset"});
     if (path_ramdisk_offset.empty() && !values[OPT_VALUE_RAMDISK_OFFSET])
-        path_ramdisk_offset = (bf_input_dir / (prefix + "ramdisk_offset")).string();
+        path_ramdisk_offset = io::pathJoin({input_dir, prefix + "ramdisk_offset"});
     if (path_second_offset.empty() && !values[OPT_VALUE_SECOND_OFFSET])
-        path_second_offset = (bf_input_dir / (prefix + "second_offset")).string();
+        path_second_offset = io::pathJoin({input_dir, prefix + "second_offset"});
     if (path_tags_offset.empty() && !values[OPT_VALUE_TAGS_OFFSET])
-        path_tags_offset = (bf_input_dir / (prefix + "tags_offset")).string();
+        path_tags_offset = io::pathJoin({input_dir, prefix + "tags_offset"});
     if (path_page_size.empty() && !values[OPT_VALUE_PAGE_SIZE])
-        path_page_size = (bf_input_dir / (prefix + "page_size")).string();
+        path_page_size = io::pathJoin({input_dir, prefix + "page_size"});
     if (path_kernel.empty())
-        path_kernel = (bf_input_dir / (prefix + "kernel")).string();
+        path_kernel = io::pathJoin({input_dir, prefix + "kernel"});
     if (path_ramdisk.empty())
-        path_ramdisk = (bf_input_dir / (prefix + "ramdisk")).string();
+        path_ramdisk = io::pathJoin({input_dir, prefix + "ramdisk"});
     if (path_second.empty())
-        path_second = (bf_input_dir / (prefix + "second")).string();
+        path_second = io::pathJoin({input_dir, prefix + "second"});
     if (path_dt.empty())
-        path_dt = (bf_input_dir / (prefix + "dt")).string();
+        path_dt = io::pathJoin({input_dir, prefix + "dt"});
 
     printf("Input files:\n");
     if (!path_cmdline.empty())
@@ -859,11 +854,6 @@ bool pack_main(int argc, char *argv[])
     printf("- second:         (path)  %s\n", path_second.c_str());
     printf("- dt:             (path)  %s\n", path_dt.c_str());
     printf("\n");
-
-    if (!bf::exists(bf_input_dir)) {
-        fprintf(stderr, "%s does not exist\n", input_dir.c_str());
-        return false;
-    }
 
     // Create new boot image
     mbp::BootImage bi;
