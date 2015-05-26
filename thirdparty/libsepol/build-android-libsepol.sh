@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 url="https://github.com/SELinuxProject/selinux.git"
-commit="98d497389bb1994d3b738ca5bf0dfeb6c685dd46"
+commit="674256be882fc379f0737de74550e8e7121898a0"
 ver="2.3-${commit:0:7}"
 
 set -e
