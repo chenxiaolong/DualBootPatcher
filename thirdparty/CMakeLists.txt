@@ -44,13 +44,13 @@ install(
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.1.2.r443.g687ac8d")
+set(LIBARCHIVE_VER "3.1.2.r538.gb6173a2")
 
 file(
     DOWNLOAD
     ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-    EXPECTED_MD5 507f280567b2bded29039123861784e1
+    EXPECTED_MD5 ee6cf9505250679451b0ca88f59989e8
     SHOW_PROGRESS
 )
 

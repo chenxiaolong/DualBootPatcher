@@ -17,11 +17,11 @@
 
 set -e
 
-xz_ver='5.2.0'
-lz4_ver='r127'
+xz_ver='5.2.1'
+lz4_ver='r128'
 
 url='https://github.com/libarchive/libarchive.git'
-commit='cf053b6b1825eb77f6271a7724e492cec01785b9'
+commit='0fae2fe8091d7c905fbae63e77e9c5a3dc63f11f'
 
 if [ ! -f ../liblzma/liblzma-${xz_ver}_android.tar.bz2 ]; then
     echo "Please run thirdparty/liblzma/build-android-liblzma.sh first"
