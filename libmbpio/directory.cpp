@@ -78,7 +78,10 @@ bool createDirectories(const std::string &path)
 
 #if IO_PLATFORM_WINDOWS
         wTemp = utf8::utf8ToUtf16(temp.data());
-        if (!CreateDirectoryW(wTemp.c_str(), nullptr)
+        DWORD dwAttrib = GetFileAttributesW(wTemp.c_str());
+        bool exists = (dwAttrib != INVALID_FILE_ATTRIBUTES)
+                && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+        if (!exists && !CreateDirectoryW(wTemp.c_str(), nullptr)
                 && GetLastError() != ERROR_ALREADY_EXISTS) {
             setLastError(Error::PlatformError, priv::format(
                     "%s: Failed to create directory: %s",
