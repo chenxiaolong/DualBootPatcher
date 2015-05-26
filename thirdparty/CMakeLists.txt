@@ -266,6 +266,32 @@ if(WIN32)
     )
 
 
+    set(LIBGCC_VER "4.9.2-3")
+    set(LIBGCC_TAR "libgcc1-${LIBGCC_VER}.tar.xz")
+
+    file(
+        DOWNLOAD
+        http://mirrors.kernel.org/sourceware/cygwin/x86/release/gcc/libgcc1/${LIBGCC_TAR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/${LIBGCC_TAR}
+        EXPECTED_MD5 44466a0d3ff046cc79694de4263345c8
+        SHOW_PROGRESS
+    )
+
+    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/cygwin/usr/bin/cyggcc_s-1.dll)
+        message(STATUS "Extracting libgcc for Windows ...")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/${LIBGCC_TAR}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cygwin
+        )
+    endif()
+
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/cygwin/usr/bin/cyggcc_s-1.dll
+        DESTINATION ${DATA_INSTALL_DIR}/binaries/windows/
+        COMPONENT Libraries
+    )
+
+
     set(LIBATTR_VER "2.4.46-1")
     set(LIBATTR_TAR "libattr1-${LIBATTR_VER}.tar.bz2")
 
