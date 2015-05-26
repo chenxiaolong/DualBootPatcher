@@ -93,7 +93,7 @@ outdir="$(mktemp -d)"
 # Build GNU patch
 ################################################################################
 
-ver_patch="2.7.1"
+ver_patch="2.7.5"
 name_patch="patch-${ver_patch}"
 tar_patch="${name_patch}.tar.xz"
 url_patch="ftp://ftp.gnu.org/gnu/patch/${tar_patch}"

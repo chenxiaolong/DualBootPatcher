@@ -9,13 +9,13 @@ set(URL_BASE "https://dl.dropboxusercontent.com/u/486665/MultiBootPatcher/prebui
 # patch for Android
 ################################################################################
 
-set(PATCH_VER "2.7.1")
+set(PATCH_VER "2.7.5")
 
 file(
     DOWNLOAD
     ${URL_BASE}/patch-${PATCH_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/patch-${PATCH_VER}_android.tar.bz2
-    EXPECTED_MD5 1ff85704c4906d86c52090a990f9062c
+    EXPECTED_MD5 42fc4fa332029f62076d6ab6a535f591
     SHOW_PROGRESS
 )
 
