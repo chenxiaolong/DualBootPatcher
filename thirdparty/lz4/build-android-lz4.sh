@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 url="https://github.com/Cyan4973/lz4.git"
-ver="r127"
+ver="r128"
 
 set -e
 

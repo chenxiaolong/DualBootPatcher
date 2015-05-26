@@ -98,13 +98,13 @@ endif()
 # liblz4 for Android
 ################################################################################
 
-set(LIBLZ4_VER "r127")
+set(LIBLZ4_VER "r128")
 
 file(
     DOWNLOAD
     ${URL_BASE}/liblz4-${LIBLZ4_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/liblz4-${LIBLZ4_VER}_android.tar.bz2
-    EXPECTED_MD5 7120178f62782fb0908c609e1a2a667b
+    EXPECTED_MD5 4dc6cd165ac73c4594a341735b9f63a1
     SHOW_PROGRESS
 )
 
