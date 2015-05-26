@@ -393,7 +393,7 @@ bool CoreRamdiskPatcher::useGeneratedFstab(const std::string &filename)
 
         for (const std::string fstab : newFstabs) {
             std::string serviceName = StringUtils::format(
-                    "mbtool-mount-%03zu", m_impl->fstabs.size());
+                    "mbtool-mount-%03" PRIzu, m_impl->fstabs.size());
             std::string service = StringUtils::format(
                     MbtoolMountServiceFmt, serviceName.c_str(), fstab.c_str());
             multiBootRc.insert(multiBootRc.end(), service.begin(), service.end());

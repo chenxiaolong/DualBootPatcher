@@ -758,7 +758,7 @@ std::string MultiBootPatcher::Impl::createTable()
     }
 
     const std::string rowFmt =
-            StringUtils::format("# | %%-%zus | %%-%zus | %%-%zus |\n",
+            StringUtils::format("# | %%-%" PRIzu "s | %%-%" PRIzu "s | %%-%" PRIzu "s |\n",
                                 maxLenId, maxLenCodenames, maxLenName);
 
     // Titles

@@ -268,7 +268,7 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
     );
     if (!ret) {
         FLOGE("CryptAcquireContext() failed: %s",
-              win32ErrorToString(GetLastError()));
+              win32ErrorToString(GetLastError()).c_str());
         return std::string();
     }
 
@@ -289,7 +289,7 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
         );
         if (!ret) {
             FLOGE("CryptGenRandom() failed: %s",
-                  win32ErrorToString(GetLastError()));
+                  win32ErrorToString(GetLastError()).c_str());
             break;
         }
 
@@ -310,7 +310,7 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
             break;
         } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
             FLOGE("CreateDirectoryW() failed: %s",
-                  win32ErrorToString(GetLastError()));
+                  win32ErrorToString(GetLastError()).c_str());
             break;
         }
     } while (--tries);

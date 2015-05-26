@@ -314,7 +314,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(sizeof(BootImageHeader), android->page_size);
 
         if (pos + android->kernel_size > data.size()) {
-            FLOGE("Kernel image exceeds boot image size by %zu bytes",
+            FLOGE("Kernel image exceeds boot image size by %" PRIzu " bytes",
                   pos + android->kernel_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
@@ -329,7 +329,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(android->kernel_size, android->page_size);
 
         if (pos + android->ramdisk_size > data.size()) {
-            FLOGE("Ramdisk image exceeds boot image size by %zu bytes",
+            FLOGE("Ramdisk image exceeds boot image size by %" PRIzu " bytes",
                   pos + android->ramdisk_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
@@ -344,7 +344,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(android->ramdisk_size, android->page_size);
 
         if (pos + android->second_size > data.size()) {
-            FLOGE("Second bootloader image exceeds boot image size by %zu bytes",
+            FLOGE("Second bootloader image exceeds boot image size by %" PRIzu " bytes",
                   pos + android->second_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
@@ -364,7 +364,7 @@ bool BootImage::Impl::loadAndroidHeader(const std::vector<unsigned char> &data,
         pos += skipPadding(android->second_size, android->page_size);
 
         if (pos + android->dt_size > data.size()) {
-            FLOGE("Device tree image exceeds boot image size by %zu bytes",
+            FLOGE("Device tree image exceeds boot image size by %" PRIzu " bytes",
                   pos + android->dt_size - data.size());
             error = PatcherError::createBootImageError(
                     ErrorCode::BootImageParseError);
@@ -598,7 +598,7 @@ uint32_t BootImage::Impl::lokiOldFindGzipOffset(const std::vector<unsigned char>
         }
     }
 
-    FLOGD("Found %zu total gzip headers",
+    FLOGD("Found %" PRIzu " total gzip headers",
           offsetsFlag8.size() + offsetsFlag0.size());
 
     uint32_t gzipOffset = 0;
