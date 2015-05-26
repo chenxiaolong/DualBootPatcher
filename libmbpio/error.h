@@ -26,6 +26,7 @@ namespace io
 
 enum class Error
 {
+    NoError,
     InvalidArguments,
     PlatformError
 };
@@ -35,7 +36,5 @@ std::string lastErrorString();
 
 // TODO: Put in private header
 void setLastError(Error error, std::string errorString);
-void setLastError(Error error);
-void setLastErrorString(std::string error);
 
 }
