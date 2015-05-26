@@ -292,14 +292,14 @@ if(WIN32)
     )
 
 
-    set(LIBICONV2_VER "1.14-2")
-    set(LIBICONV2_TAR "libiconv2-${LIBICONV2_VER}.tar.bz2")
+    set(LIBICONV2_VER "1.14-3")
+    set(LIBICONV2_TAR "libiconv2-${LIBICONV2_VER}.tar.xz")
 
     file(
         DOWNLOAD
         http://mirrors.kernel.org/sourceware/cygwin/x86/release/libiconv/libiconv2/${LIBICONV2_TAR}
         ${CMAKE_CURRENT_SOURCE_DIR}/${LIBICONV2_TAR}
-        EXPECTED_MD5 a78340002d86f7f586de40887e213944
+        EXPECTED_MD5 d9df418d5cc50dfcbfad971282d6fe1f
         SHOW_PROGRESS
     )
 
