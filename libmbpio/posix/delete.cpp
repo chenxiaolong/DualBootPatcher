@@ -19,6 +19,7 @@
 
 #include "libmbpio/posix/delete.h"
 
+#include <cerrno>
 #include <cstring>
 
 #include <ftw.h>
