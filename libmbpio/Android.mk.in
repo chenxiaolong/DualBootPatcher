@@ -12,9 +12,23 @@ TARGET_CXX := ccache $(TARGET_CXX)
 endif
 
 include $(CLEAR_VARS)
+LOCAL_SRC_FILES := \
+	external/android-libc/ftw.c \
+	external/android-libc/nftw.c
+LOCAL_MODULE := libc_compat
+LOCAL_C_INCLUDES := external/android-libc
+LOCAL_CFLAGS := -Wall -Wextra -Werror
+LOCAL_CFLAGS += -pie
+LOCAL_CFLAGS += -Wl,--no-undefined
+LOCAL_CFLAGS += -ffunction-sections -fdata-sections -O2
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_SRC_FILES := @MBP_IO_SOURCES_STR@
 LOCAL_MODULE := libmbpio
-LOCAL_C_INCLUDES := $(TOP_DIR)
+LOCAL_C_INCLUDES := \
+	$(TOP_DIR) \
+	external/android-libc
 LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
 LOCAL_CFLAGS += -pie
 LOCAL_CFLAGS += -Wl,--no-undefined
