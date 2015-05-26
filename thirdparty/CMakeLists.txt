@@ -176,33 +176,6 @@ endif()
 
 
 ################################################################################
-# libloki for Android
-################################################################################
-
-set(LIBLOKI_VER "r87.38680b6")
-
-file(
-    DOWNLOAD
-    ${URL_BASE}/libloki-${LIBLOKI_VER}_android.tar.bz2
-    ${CMAKE_CURRENT_SOURCE_DIR}/libloki-${LIBLOKI_VER}_android.tar.bz2
-    EXPECTED_MD5 a6131ac0cfecdf0720f9a2e2beae448a
-    SHOW_PROGRESS
-)
-
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libloki)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libloki
-    )
-
-    message(STATUS "Extracting libloki for Android ...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libloki-${LIBLOKI_VER}_android.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libloki
-    )
-endif()
-
-
-################################################################################
 # procps-ng for Android
 ################################################################################
 
