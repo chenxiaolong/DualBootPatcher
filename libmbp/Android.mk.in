@@ -7,6 +7,7 @@ USE_CCACHE := true
 THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
+MBP_IO_DIR := @CMAKE_BINARY_DIR@/libmbpio/mbpio-android-prefix/tmp/local
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
 
@@ -25,6 +26,18 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := liblz4
 LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libmbpio
+LOCAL_SRC_FILES := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libmbpio.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libc_compat
+LOCAL_SRC_FILES := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libc_compat.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -77,14 +90,26 @@ LOCAL_CFLAGS += -ffunction-sections -fdata-sections -O2
 ifneq ($(MBP_MINI),true)
 LOCAL_LDFLAGS := -Wl,--gc-sections -O2
 
-LOCAL_LDLIBS := -lz
+# Link libc statically, so we can use API 21 functions, like nftw(). Also
+# needed for minimal LFS support (open64, etc.)
+#TARGET_LDLIBS := -lgcc
+#LOCAL_LDLIBS += -nodefaultlibs -Wl,-Bstatic -lc -lm -Wl,-Bdynamic
+#LOCAL_LDLIBS += -static-libgcc -Wl,-Bstatic -lc -lm -Wl,-Bdynamic
+#LOCAL_LDLIBS += -lm
+
+LOCAL_LDLIBS += -lz
 LOCAL_LDLIBS += -llog
 endif
 
 LOCAL_STATIC_LIBRARIES := \
+	libmbpio \
 	libarchive \
 	liblz4 \
 	libminizip
+
+ifneq ($(MBP_MINI),true)
+LOCAL_STATIC_LIBRARIES += libc_compat
+endif
 
 ifeq ($(MBP_MINI),true)
 include $(BUILD_STATIC_LIBRARY)
