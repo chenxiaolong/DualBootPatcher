@@ -75,7 +75,7 @@ bool FileWin32::open(const char *filename, int mode)
         break;
     case OpenWrite:
         dwDesiredAccess = GENERIC_WRITE;
-        dwCreationDisposition = OPEN_ALWAYS;
+        dwCreationDisposition = CREATE_ALWAYS;
         break;
     case OpenAppend:
         dwDesiredAccess = FILE_APPEND_DATA;
