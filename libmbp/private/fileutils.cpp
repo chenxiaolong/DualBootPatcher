@@ -25,6 +25,7 @@
 #include <cstring>
 
 #include "libmbpio/directory.h"
+#include "libmbpio/error.h"
 #include "libmbpio/file.h"
 #include "libmbpio/path.h"
 #include "libmbpio/private/utf8.h"
@@ -621,7 +622,11 @@ bool FileUtils::mzExtractFile(unzFile uf,
     fullPath += "/";
     fullPath += filename;
 
-    io::createDirectories(io::dirName(fullPath));
+    std::string parentPath = io::dirName(fullPath);
+    if (!io::createDirectories(parentPath)) {
+        FLOGW("%s: Failed to create directory: %s",
+              parentPath.c_str(), io::lastErrorString().c_str());
+    }
 
     io::File file;
     if (!file.open(fullPath, io::File::OpenWrite)) {
