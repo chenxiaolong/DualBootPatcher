@@ -266,14 +266,14 @@ if(WIN32)
     )
 
 
-    set(LIBINTL8_VER "0.18.3.2-2")
+    set(LIBINTL8_VER "0.19.4-1")
     set(LIBINTL8_TAR "libintl8-${LIBINTL8_VER}.tar.xz")
 
     file(
         DOWNLOAD
         http://mirrors.kernel.org/sourceware/cygwin/x86/release/gettext/libintl8/${LIBINTL8_TAR}
         ${CMAKE_CURRENT_SOURCE_DIR}/${LIBINTL8_TAR}
-        EXPECTED_MD5 48db59bcca1d1437b5facb2997165777
+        EXPECTED_MD5 7020560199ede8aaeec6cff1b535e27a
         SHOW_PROGRESS
     )
 
