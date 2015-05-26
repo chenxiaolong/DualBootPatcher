@@ -266,6 +266,32 @@ if(WIN32)
     )
 
 
+    set(LIBATTR_VER "2.4.46-1")
+    set(LIBATTR_TAR "libattr1-${LIBATTR_VER}.tar.bz2")
+
+    file(
+        DOWNLOAD
+        http://mirrors.kernel.org/sourceware/cygwin/x86/release/attr/libattr1/${LIBATTR_TAR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/${LIBATTR_TAR}
+        EXPECTED_MD5 2c60a11de348a3a694492cd482adfb7e
+        SHOW_PROGRESS
+    )
+
+    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/cygwin/usr/bin/cygattr-1.dll)
+        message(STATUS "Extracting libattr for Windows ...")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/${LIBATTR_TAR}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cygwin
+        )
+    endif()
+
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/cygwin/usr/bin/cygattr-1.dll
+        DESTINATION ${DATA_INSTALL_DIR}/binaries/windows/
+        COMPONENT Libraries
+    )
+
+
     set(LIBINTL8_VER "0.19.4-1")
     set(LIBINTL8_TAR "libintl8-${LIBINTL8_VER}.tar.xz")
 
