@@ -32,11 +32,16 @@
 
 #include "private/logging.h"
 
-#ifdef _WIN32
-#define USEWIN32IOAPI
-#include "external/minizip/iowin32.h"
-#include <wchar.h>
-#else
+#if defined(_WIN32)
+#  define MINIZIP_WIN32
+#  include "external/minizip/iowin32.h"
+#  include <wchar.h>
+#elif defined(__ANDROID__)
+#  define MINIZIP_ANDROID
+#  include "external/minizip/ioandroid.h"
+#endif
+
+#ifndef _WIN32
 #include <sys/stat.h>
 #endif
 
@@ -341,11 +346,16 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
 
 unzFile FileUtils::mzOpenInputFile(const std::string &path)
 {
-#ifdef USEWIN32IOAPI
+#if defined(MINIZIP_WIN32)
     zlib_filefunc64_def zFunc;
     memset(&zFunc, 0, sizeof(zFunc));
     fill_win32_filefunc64W(&zFunc);
     return unzOpen2_64(utf8::utf8ToUtf16(path).c_str(), &zFunc);
+#elif defined(MINIZIP_ANDROID)
+    zlib_filefunc64_def zFunc;
+    memset(&zFunc, 0, sizeof(zFunc));
+    fill_android_filefunc64(&zFunc);
+    return unzOpen2_64(path.c_str(), &zFunc);
 #else
     return unzOpen64(path.c_str());
 #endif
@@ -353,11 +363,16 @@ unzFile FileUtils::mzOpenInputFile(const std::string &path)
 
 zipFile FileUtils::mzOpenOutputFile(const std::string &path)
 {
-#ifdef USEWIN32IOAPI
+#if defined(MINIZIP_WIN32)
     zlib_filefunc64_def zFunc;
     memset(&zFunc, 0, sizeof(zFunc));
     fill_win32_filefunc64W(&zFunc);
     return zipOpen2_64(utf8::utf8ToUtf16(path).c_str(), 0, nullptr, &zFunc);
+#elif defined(MINIZIP_ANDROID)
+    zlib_filefunc64_def zFunc;
+    memset(&zFunc, 0, sizeof(zFunc));
+    fill_android_filefunc64(&zFunc);
+    return zipOpen2_64(path.c_str(), 0, nullptr, &zFunc);
 #else
     return zipOpen64(path.c_str(), 0);
 #endif
