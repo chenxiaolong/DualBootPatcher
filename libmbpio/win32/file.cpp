@@ -103,6 +103,8 @@ bool FileWin32::open(const char *filename, int mode)
         return false;
     }
 
+    m_impl->handle = handle;
+
     return true;
 }
 
