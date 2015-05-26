@@ -218,3 +218,8 @@ ExternalProject_Add_Step(
     ALWAYS 1
     COMMAND ""
 )
+
+add_dependencies(
+    mbp-mini
+    mbpio-android
+)
