@@ -154,7 +154,7 @@ bool FileWin32::read(void *buf, uint64_t size, uint64_t *bytesRead)
         m_impl->win32Error = GetLastError();
         m_impl->win32ErrorString = errorToWString(m_impl->win32Error);
         return false;
-    } else if (bytesRead == 0) {
+    } else if (n == 0) {
         m_impl->error = ErrorEndOfFile;
         return false;
     }
