@@ -240,14 +240,14 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/cygwin
     )
 
-    set(CYGWIN_VER "1.7.34-005")
+    set(CYGWIN_VER "2.0.2-1")
     set(CYGWIN_TAR "cygwin-${CYGWIN_VER}.tar.xz")
 
     file(
         DOWNLOAD
         http://mirrors.kernel.org/sourceware/cygwin/x86/release/cygwin/${CYGWIN_TAR}
         ${CMAKE_CURRENT_SOURCE_DIR}/${CYGWIN_TAR}
-        EXPECTED_MD5 750c465312a7ab5837882349babfc106
+        EXPECTED_MD5 f587b4538fb1045fb5fabd5a6bee9201
         SHOW_PROGRESS
     )
 
