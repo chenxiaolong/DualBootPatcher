@@ -318,14 +318,14 @@ if(WIN32)
     )
 
 
-    set(PATCH_VER "2.7.1-1")
-    set(PATCH_TAR "patch-${PATCH_VER}.tar.bz2")
+    set(PATCH_VER "2.7.4-1")
+    set(PATCH_TAR "patch-${PATCH_VER}.tar.xz")
 
     file(
         DOWNLOAD
         http://mirrors.kernel.org/sourceware/cygwin/x86/release/patch/${PATCH_TAR}
         ${CMAKE_CURRENT_SOURCE_DIR}/${PATCH_TAR}
-        EXPECTED_MD5 73428366ed536bd7881754a51d61762d
+        EXPECTED_MD5 b652c0c0815e74b195cd29892515ffa0
         SHOW_PROGRESS
     )
 
