@@ -25,6 +25,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#if __ANDROID_API__ >= 21
+#define OPEN_FUNC open64
+#else
+#define OPEN_FUNC open
+#endif
+
 // TODO: Switch back to buffered API when bionic gets LFS support
 
 namespace io
@@ -75,7 +81,7 @@ bool FileAndroid::open(const char *filename, int mode)
         return false;
     }
 
-    m_impl->fd = open64(filename, openMode, 0666);
+    m_impl->fd = ::OPEN_FUNC(filename, openMode, 0666);
     if (m_impl->fd < 0) {
         m_impl->error = ErrorPlatformError;
         m_impl->errnoCode = errno;
