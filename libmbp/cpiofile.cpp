@@ -253,6 +253,7 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
     // Use same compression as before
     if (m_impl->compression == GZIP) {
         archive_write_add_filter_gzip(a);
+        archive_write_set_filter_option(a, nullptr, "compression-level", "9");
     } else if (m_impl->compression == LZ4) {
         archive_write_add_filter_lz4(a);
     } else {
