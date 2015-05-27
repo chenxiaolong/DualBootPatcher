@@ -439,8 +439,9 @@
     <string name="indiv_app_sharing_dialog_default_message">Choose whether the app should use a
         shared APK file and a shared data directory.</string>
     <!-- App sharing dialog message shown if the app is a system app -->
-    <string name="indiv_app_sharing_dialog_system_app_message">Since this app is a system app, a
-        shared APK cannot be used. However, the app can still use shared data.</string>
+    <string name="indiv_app_sharing_dialog_system_app_message">Since this app is a system app
+        (or an update to a system app), a shared APK cannot be used. However, the app can still
+        use shared data.</string>
     <!-- Message in the app sharing dialog showing the list of ROMs using the shared APK -->
     <string name="indiv_app_sharing_other_roms_using_shared_apk">Other ROMs using the shared APK:
         %s</string>
