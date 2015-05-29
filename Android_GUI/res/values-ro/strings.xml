@@ -238,6 +238,8 @@ partajate mai mult ca sigur nu vor functiona corect.</string>
   <!--App sharing dialog checkbox text for using shared app data-->
   <!--App sharing dialog message shown by default-->
   <!--App sharing dialog message shown if the app is a system app-->
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared APK-->
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <!--Word/phrase for None (used in eg. a list)-->
