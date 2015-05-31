@@ -20,21 +20,21 @@
   <!--Licenses link text-->
   <string name="link_licenses">Licenze</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Un ringraziamento speciale a tutti quelli che hanno contribuito a rendere possibile questo patcher! </string>
+  <string name="credits">Un ringraziamento speciale va a tutte le persone che hanno contribuito a rendere possibile questo Patcher!</string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
-  <string name="mbtool_connect_fail_title">Impossibile connettersi al mbtool</string>
+  <string name="mbtool_connect_fail_title">Impossibile connettersi all\'mbtool</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
-  <string name="mbtool_connect_fail_message">L\'applicazione non è stata in grado di collegarsi al mbtool. Questo può accadere quando non vengono concessi i permessi di root o quando il ramdisk non è aggiornato.\n\nFai un tap per riprovare.</string>
+  <string name="mbtool_connect_fail_message">L\'applicazione non è stata in grado di collegarsi all\'mbtool. Questo può accadere quando non vengono concessi i permessi di root o quando il ramdisk non è aggiornato.\n\nFai un tap per riprovare.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_roms">ROM</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">Patcha file ZIP</string>
+  <string name="title_patch_zip">Patcha File ZIP</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Spazio Disponibile</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Impostazioni</string>
   <!--Navigation drawer item for changing the app sharing settings-->
-  <string name="title_app_sharing">Condivisione delle app</string>
+  <string name="title_app_sharing">Condivisione delle App</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Riavvia</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -54,7 +54,7 @@
   <!--Default name for the data-slot ROMs-->
   <string name="dataslot">%s (Data slot)</string>
   <!--Text shown when a ROM's version could not be detected-->
-  <string name="couldnt_determine_version">Non è possibile determinare la versione della ROM</string>
+  <string name="couldnt_determine_version">Impossibile determinare la versione della ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
   <string name="switching_rom">Cambia ROM</string>
   <!--Title of progress dialog shown when setting kernel-->
@@ -64,12 +64,12 @@
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Switch fallito</string>
   <!--Message shown when setting the kernel succeeds-->
-  <string name="set_kernel_success">Configurazione del kernel avvenuta con successo</string>
+  <string name="set_kernel_success">Kernel impostato con successo</string>
   <!--Message shown when setting the kernel fails-->
-  <string name="set_kernel_failure">Configurazione del kernel fallita</string>
+  <string name="set_kernel_failure">Impossibile impostare il kernel</string>
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
-  <string name="unknown_boot_partition">Impossibile determinare la partizione del kernel perchè il modello del dispositivo \'%s\' non è riconosciuto.</string>
+  <string name="unknown_boot_partition">Impossibile determinare la partizione del kernel perchè il dispositivo \'%s\' non è riconosciuto.</string>
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Versione sconosciuta</string>
   <!--Build text shown on ROM card if the build could not be detected-->
@@ -123,13 +123,13 @@
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
   <string name="rename_rom_desc">Digita un nuovo nome per %s. Lascia in bianco per usare il nome di default.</string>
   <!--Dialog message shown when the kernel has not been set-->
-  <string name="kernel_not_set_desc">Il kernel non è stato impostato per la ROM corrente. Vorresti impostarlo adesso?</string>
+  <string name="kernel_not_set_desc">Nessun kernel è stato impostato per la ROM corrente. Vorresti impostarlo adesso?</string>
   <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
   <string name="kernel_different_from_saved_desc">Il kernel impostato è diverso da quello attualmente in esecuzione. Vorresti impostarlo adesso?</string>
   <!--Positive dialog button shown for the above two messages-->
   <string name="set_kernel_now">Imposta ora</string>
   <!--Negative dialog button shown for the above two messages-->
-  <string name="set_kernel_later">Posponi</string>
+  <string name="set_kernel_later">Imposta dopo</string>
   <!--ZIP flash activity title-->
   <string name="zip_flashing_title">Flasha file ZIP</string>
   <!--Title of pending action card for installing a zip file-->
@@ -161,11 +161,11 @@
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
   <!--Title for the patcher card asking for the device and partition configuration-->
-  <string name="devpartconfig_title">Scegli il dispositivo:</string>
+  <string name="devpartconfig_title">Scegli dispositivo e partizione:</string>
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">Aggiornamento ROM primaria</string>
   <!--Description for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade_desc">Aggiorna la ROM primaria lasciando intatte le altre ROM</string>
+  <string name="install_location_primary_upgrade_desc">Aggiorna la ROM primaria senza intaccare le altre ROM</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Installa ROM in %s</string>
   <!--Text box hint for specifying the data slot ID-->
@@ -183,15 +183,15 @@
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Non è installato un file manager adatto. Installa un file manager per poter selezionare il file da patchare.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
-  <string name="filechooser_initial_title">Fai un tap per selezionare un file da patchare</string>
+  <string name="filechooser_initial_title">Fai un tap per selezionare un file da patchare.</string>
   <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
   <string name="filechooser_initial_desc">Se viene scelto un file non supportato, appariranno delle opzioni aggiuntive che permetteranno di personalizzare il processo di patching.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_ready_title">Premi per iniziare il processo di patching</string>
+  <string name="filechooser_ready_title">Fai un tap per iniziare il processo di patching.</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
   <string name="filechooser_ready_desc">File selezionato: %s\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_unsupported_title">Premi per iniziare il processo di patching</string>
+  <string name="filechooser_unsupported_title">Fai un tap per iniziare il processo di patching.</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
   <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. Puoi comunque provare a patchare il file utilizzando le opzioni aggiuntive.\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
@@ -259,15 +259,15 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Description of the global app sharing preferences when booted in the primary ROM-->
   <string name="a_s_settings_global_incompat_primary">La condivisione globale delle app non può essere usata nella ROM primaria.</string>
   <!--Title for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_title">Condivisione di singole applicazioni</string>
+  <string name="a_s_settings_indiv_app_sharing_title">Condividi singole applicazioni</string>
   <!--Description for the preference to share individual applications-->
   <string name="a_s_settings_indiv_app_sharing_desc">Condivisione di singole applicazioni tra le ROM (richiede riavvio).</string>
   <!--Title for the preference to manage shared apps for individual app sharing-->
   <string name="a_s_settings_manage_shared_apps_title">Gestisci applicazioni condivise</string>
   <!--Description for the preference to manage shared apps for individual app sharing-->
-  <string name="a_s_settings_manage_shared_apps_desc">Scegli quali applicazioni devono essere condivise con la condivisione individuale.</string>
+  <string name="a_s_settings_manage_shared_apps_desc">Scegli quali applicazioni devono essere condivise</string>
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
-  <string name="a_s_settings_version_too_old">Bisogna aggiornare l\'mbtool per poter usufruire delle funzioni di condivisione delle app. Per favore, aggiorna il ramdisk.</string>
+  <string name="a_s_settings_version_too_old">Per poter usufruire delle funzioni di condivisione delle app, bisogna aggiornare l\'mbtool. Per favore, aggiorna il ramdisk.</string>
   <!--Title for preference category for boot options-->
   <string name="rom_settings_booting_title">Opzioni di avvio</string>
   <!--Preference for updating the ramdisk-->
@@ -275,7 +275,7 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
   <string name="update_ramdisk_missing_desc">Attualmente il ramdisk non possiede alcuna versione dell\'mbtool.</string>
   <!--Description for the ramdisk update preference when the ramdisk is outdated-->
-  <string name="update_ramdisk_outdated_desc">Attualmente il ramdisk possiede una versione obsoleta del ramdisk.</string>
+  <string name="update_ramdisk_outdated_desc">Attualmente il ramdisk possiede una versione obsoleta dell\'mbtool.</string>
   <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
   <string name="update_ramdisk_up_to_date_desc">Il ramdisk è già aggiornato.</string>
   <!--Title when ramdisk is successfully updated-->
@@ -289,10 +289,10 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
     <item quantity="one">Tu sei a &lt;xliff:g id=\"step_count\"&gt;%1$d&lt;/xliff:g&gt; passi per forzare l\'aggiornamento del ramdisk</item>
-    <item quantity="other">Tu sei a &lt;xliff:g id=\"step_count\"&gt;%1$d&lt;/xliff:g&gt; passi per forzare l\'aggiornamento del ramdisk</item>
+    <item quantity="other">Ti mancano &lt;xliff:g id=\"step_count\"&gt;%1$d&lt;/xliff:g&gt; passaggi per forzare l\'aggiornamento del ramdisk.</item>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
-  <string name="force_updating_ramdisk">Forza aggiornamento ramdisk</string>
+  <string name="force_updating_ramdisk">Aggiornamento ramdisk</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -306,7 +306,7 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Condivisione individuale delle applicazioni</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_intro_dialog_desc">La condivisione delle app permette alle app ed ai loro dati di essere memorizzati in un luogo condiviso ed accessibile da tutte le ROM. Utilizzando la condivisione dei dati, sincronizza i dati delle app con le altre ROM (ad es. i tabs di Chrome).\n\nNOTA: Un riavvio è richiesto per applicare i cambiamenti.\n\nPer utilizzare la condivisione individuale delle app, la condivisione degli APK/dati deve essere attivata in ogni ROM. Per esempio: Nella ROM primaria, si attiva la condivisione dei dati di Chrome. Chrome inizierà ad utilizzare la directory specifica per la condivisione dei dati. Poi si avvia un\'altra ROM e, anche qui, si attiva la condivisione dei dati di Chrome. Quindi, Chrome, inizierà ad usare la stessa cartella di condivisione. Lo stesso vale per gli APK.</string>
+  <string name="indiv_app_sharing_intro_dialog_desc">La condivisione delle app permette alle app stesse ed ai relativi dati di essere memorizzati in una directory condivisa ed accessibile da tutte le ROM. Condividendo i dati, questi ultimi vengono sincronizzati con le altre ROM (Ad es. i tab di Chrome).\n\nNOTA: Un riavvio è richiesto per applicare i cambiamenti.\n\nAffinché la condivisione funzioni, deve essere attivata in ogni ROM. Per esempio: Nella ROM primaria si attiva la condivisione dei dati di Chrome il quale di conseguenza inizierà ad utilizzare la directory condivisa per conservare i dati. Successivamente si avvia un\'altra ROM ed anche qui bisognerà attivare la condivisione dei dati di Chrome. Quindi Chrome inizierà ad utilizzare la stessa directory di condivisione. Lo stesso vale per gli APK.</string>
   <!--App label in the individual app sharing screen shown if the app uses shared apk-->
   <string name="indiv_app_sharing_shared_apk">APK condiviso</string>
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
@@ -316,13 +316,13 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--App label in the individual app sharing screen shown if the app is not shared-->
   <string name="indiv_app_sharing_not_shared">Non condiviso</string>
   <!--App sharing dialog checkbox text for using shared apk-->
-  <string name="indiv_app_sharing_dialog_share_apk">Utilizza APK condiviso</string>
+  <string name="indiv_app_sharing_dialog_share_apk">Condividi APK</string>
   <!--App sharing dialog checkbox text for using shared app data-->
-  <string name="indiv_app_sharing_dialog_share_data">Utilizza dati condivisi</string>
+  <string name="indiv_app_sharing_dialog_share_data">Condividi dati</string>
   <!--App sharing dialog message shown by default-->
-  <string name="indiv_app_sharing_dialog_default_message">Scegli se l\'app deve utilizzare una directory per la condivisione dell\'APK e dei dati.</string>
+  <string name="indiv_app_sharing_dialog_default_message">Scegli cosa condividere:</string>
   <!--App sharing dialog message shown if the app is a system app-->
-  <string name="indiv_app_sharing_dialog_system_app_message">Siccome quest\'app è un\'app di sistema, non puoi condividerne l\'APK. Puoi comunque condividerne i dati.</string>
+  <string name="indiv_app_sharing_dialog_system_app_message">Siccome questa è un\'app di sistema, non puoi condividere l\'APK. Puoi comunque condividere i dati.</string>
   <!--Message in the app sharing dialog showing the list of ROMs using the shared APK-->
   <string name="indiv_app_sharing_other_roms_using_shared_apk">Altre ROM che utilizzano l\'APK condiviso:
 %s</string>
@@ -330,7 +330,7 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <string name="indiv_app_sharing_other_roms_using_shared_data">Altre ROM che utilizzano i dati condivisi:
 %s</string>
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
-  <string name="indiv_app_sharing_reboot_needed_message">I cambiamenti verranno applicati al successivo riavvio.</string>
+  <string name="indiv_app_sharing_reboot_needed_message">Riavvia per applicare i cambiamenti.</string>
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <string name="indiv_app_sharing_app_no_longer_shared">L\'app \'%s\' non è più condivisa.</string>
   <!--Word/phrase for None (used in eg. a list)-->
@@ -348,10 +348,10 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
   <string name="do_not_show_again">Non mostrare di nuovo</string>
   <!--Text shown in a progress dialog asking the user to wait-->
-  <string name="please_wait">Per favore, attendi</string>
+  <string name="please_wait">Attendere, per favore.</string>
   <!--Presets that should always be visible-->
   <!--Errors-->
-  <string name="no_error">Non si è verificato alcun errore</string>
+  <string name="no_error">Nessun errore si è verificato</string>
   <string name="unknown_error">Si è verificato un errore sconosciuto</string>
   <string name="patcher_create_error">Creazione patcher fallita: %s</string>
   <string name="autopatcher_create_error">Creazione autopatcher fallita: %s</string>
