@@ -17,7 +17,7 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+<resources>
     <!-- Name of the app built in release mode -->
     <string name="app_name_release">Dual Boot Patcher</string>
     <!-- Name of the app built in debug mode -->
@@ -389,9 +389,9 @@
 
     <!-- Toast popup message containing the countdown for forcing a ramdisk update -->
     <plurals name="force_update_ramdisk_countdown">
-        <item quantity="one">You are now <xliff:g id="step_count">%1$d</xliff:g> step away from
+        <item quantity="one">You are now %1$d step away from
             force updating the ramdisk.</item>
-        <item quantity="other">You are now <xliff:g id="step_count">%1$d</xliff:g> steps away from
+        <item quantity="other">You are now %1$d steps away from
             force updating the ramdisk.</item>
     </plurals>
     <!-- Toast popup message shown when the user forces a ramdisk update -->
