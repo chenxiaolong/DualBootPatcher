@@ -519,7 +519,7 @@ int rom_installer_main(int argc, char *argv[])
     }
 
     // mbtool logging
-    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
+    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), false));
 
     // libmbp logging
     mbp::setLogCallback(mbp_log_cb);

@@ -962,7 +962,7 @@ int appsync_main(int argc, char *argv[])
     chmod(LOG_FILE, 0775);
 
     // mbtool logging
-    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get()));
+    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
 
     LOGI("=== APPSYNC VERSION %s ===", MBP_VERSION);
 

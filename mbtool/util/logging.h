@@ -57,12 +57,13 @@ public:
 class StdioLogger : public BaseLogger
 {
 public:
-    StdioLogger(std::FILE *stream);
+    StdioLogger(std::FILE *stream, bool show_timestamps);
 
     virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
 
 private:
     std::FILE *_stream;
+    bool _show_timestamps;
 };
 
 

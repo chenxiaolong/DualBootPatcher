@@ -21,6 +21,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -44,7 +45,8 @@ namespace util
 #define STDLOG_LEVEL_DEBUG   "[D]"
 #define STDLOG_LEVEL_VERBOSE "[V]"
 
-StdioLogger::StdioLogger(std::FILE *stream) : _stream(stream)
+StdioLogger::StdioLogger(std::FILE *stream, bool show_timestamps)
+    : _stream(stream), _show_timestamps(show_timestamps)
 {
 }
 
@@ -73,6 +75,18 @@ void StdioLogger::log(LogLevel prio, const char *fmt, va_list ap)
         stdprio = STDLOG_LEVEL_VERBOSE;
         break;
     }
+
+    if (_show_timestamps) {
+        struct timespec res;
+        struct tm tm;
+        clock_gettime(CLOCK_REALTIME, &res);
+        localtime_r(&res.tv_sec, &tm);
+
+        char buf[100];
+        strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S %Z", &tm);
+        fprintf(_stream, "[%s]", buf);
+    }
+
     fprintf(_stream, "%s ", stdprio);
     vfprintf(_stream, fmt, ap);
     fprintf(_stream, "\n");
@@ -187,7 +201,7 @@ void log_set_logger(std::shared_ptr<BaseLogger> logger_local)
 void log(LogLevel prio, const char *fmt, ...)
 {
     if (!logger) {
-        logger = std::make_shared<StdioLogger>(stdout);
+        logger = std::make_shared<StdioLogger>(stdout, false);
     }
 
     va_list ap;
