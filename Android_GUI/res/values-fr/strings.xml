@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+<resources>
   <!--Name of the app built in release mode-->
   <string name="app_name_release">Dual Boot Patcher</string>
   <!--Name of the app built in debug mode-->
@@ -294,10 +294,6 @@ Partager des applications payantes depuis la ROM primaire avec la ROM en cours (
   <string name="update_ramdisk_failure_desc">Le disque virtuel n\'a pu être mis à jour.
 Le partage ne fonctionnera probablement pas correctement.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
-  <plurals name="force_update_ramdisk_countdown">
-    <item quantity="one">Vous êtes maintenant dépassé de &lt;xliff:g id=\"step_count\"&gt;%1$d&lt;/xliff:g&gt; et forcer de mettre à jour le disque virtuel.</item>
-    <item quantity="other">Vous êtes maintenant dépassé de &lt;xliff:g id=\"step_count\"&gt;%1$d&lt;/xliff:g&gt; et forcer de mettre à jour le disque virtuel.</item>
-  </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Oblige la MAJ du disque virtuel</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->

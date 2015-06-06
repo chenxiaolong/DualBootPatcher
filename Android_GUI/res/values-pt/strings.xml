@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+<resources>
   <!--Name of the app built in release mode-->
   <string name="app_name_release">Adaptador Duplo Boot</string>
   <!--Name of the app built in debug mode-->
