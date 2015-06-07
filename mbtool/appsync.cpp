@@ -52,6 +52,7 @@
 #include "util/selinux.h"
 #include "util/socket.h"
 #include "util/string.h"
+#include "util/time.h"
 
 #define LOG_FILE                        "/data/media/0/MultiBoot/appsync.log"
 
@@ -565,11 +566,8 @@ static bool do_linklib(const std::vector<std::string> &args)
 #define TAG "[linklib] "
     const std::string &pkgname = args[0];
     const std::string &aseclibdir = args[1];
+    __attribute__((unused))
     const int userid = strtol(args[2].c_str(), nullptr, 10);
-
-    LOGD(TAG "pkgname = %s", pkgname.c_str());
-    LOGD(TAG "aseclibdir = %s", aseclibdir.c_str());
-    LOGD(TAG "userid = %d", userid);
 
     auto it = std::find_if(config.shared_pkgs.begin(), config.shared_pkgs.end(),
                            [&](const SharedPackage &shared_pkg) {
@@ -608,10 +606,8 @@ static bool do_remove(const std::vector<std::string> &args)
 {
 #define TAG "[remove] "
     const std::string &pkgname = args[0];
+    __attribute__((unused))
     const int userid = strtol(args[1].c_str(), nullptr, 10);
-
-    LOGD(TAG "pkgname = %s", pkgname.c_str());
-    LOGD(TAG "userid = %d", userid);
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end(); ++it) {
@@ -721,11 +717,20 @@ static bool proxy_process(int fd, bool can_appsync)
         // Use the same buffer size as installd
         char buf[COMMAND_BUF_SIZE];
 
+        LOGD("---");
+
         while (true) {
+            uint64_t time_start, time_stop;
+            uint64_t time_start_installd, time_stop_installd;
+            uint64_t time_start_hook = 0, time_stop_hook = 0;
+            uint64_t time_start_send, time_stop_send;
+
             if (!receive_message(client_fd, buf, sizeof(buf))) {
                 LOGE("Failed to receive request from client");
                 break;
             }
+
+            time_start = util::current_time_ms();
 
             std::vector<std::string> args = parse_args(buf);
 
@@ -774,7 +779,9 @@ static bool proxy_process(int fd, bool can_appsync)
                     LOGD("Received command: %s", args_to_string(args).c_str());
 
                     if (can_appsync) {
+                        time_start_hook = util::current_time_ms();
                         handle_command(args);
+                        time_stop_hook = util::current_time_ms();
                     }
                 } else {
                     LOGW("Unrecognized command: %s",
@@ -782,15 +789,16 @@ static bool proxy_process(int fd, bool can_appsync)
                 }
             }
 
+            time_start_installd = util::current_time_ms();
             if (!send_message(installd_fd, buf)) {
                 LOGE("Failed to send request to installd");
                 return false;
             }
-
             if (!receive_message(installd_fd, buf, sizeof(buf))) {
                 LOGE("Failed to receive reply from installd");
                 return false;
             }
+            time_stop_installd = util::current_time_ms();
 
             args = parse_args(buf);
 
@@ -798,9 +806,28 @@ static bool proxy_process(int fd, bool can_appsync)
                 LOGD("Sending reply: %s", args_to_string(args).c_str());
             }
 
+            time_start_send = util::current_time_ms();
             if (!send_message(client_fd, buf)) {
                 LOGE("Failed to send reply to client");
                 break;
+            }
+            time_stop_send = util::current_time_ms();
+
+            time_stop = util::current_time_ms();
+
+            if (log_result) {
+                LOGD("Command stats:");
+                LOGD("- Time to send result back to client:  %" PRIu64 "ms",
+                     time_stop_send - time_start_send);
+                LOGD("- Time to complete installd command:   %" PRIu64 "ms",
+                     time_stop_installd - time_start_installd);
+                if (can_appsync) {
+                    LOGD("- Time to hook installd command:       %" PRIu64 "ms",
+                         time_stop_hook - time_start_hook);
+                }
+                LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
+                     time_stop - time_start);
+                LOGD("---");
             }
         }
     }

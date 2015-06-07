@@ -117,7 +117,8 @@ mbutil_src := \
 	util/properties.cpp \
 	util/selinux.cpp \
 	util/socket.cpp \
-	util/string.cpp
+	util/string.cpp \
+	util/time.cpp
 
 mbtool_src_base := \
 	actions.cpp \
