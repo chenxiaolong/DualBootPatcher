@@ -75,7 +75,7 @@
   <!--Build text shown on ROM card if the build could not be detected-->
   <string name="rom_card_unknown_build">Build sconosciuta</string>
   <!--ROM menu item for setting kernel-->
-  <string name="rom_menu_set_kernel">Imposta il kernel</string>
+  <string name="rom_menu_set_kernel">Imposta kernel</string>
   <!--ROM menu item for changing the name-->
   <string name="rom_menu_edit_name">Modifica nome</string>
   <!--ROM menu item for changing the image-->
@@ -131,9 +131,9 @@
   <!--Negative dialog button shown for the above two messages-->
   <string name="set_kernel_later">Imposta dopo</string>
   <!--ZIP flash activity title-->
-  <string name="zip_flashing_title">Flasha file ZIP</string>
+  <string name="zip_flashing_title">Flasha File ZIP</string>
   <!--Title of pending action card for installing a zip file-->
-  <string name="zip_flashing_install_zip">Installa file ZIP</string>
+  <string name="zip_flashing_install_zip">Installa File ZIP</string>
   <!--Subtitle text in pending action card showing the selected filename-->
   <string name="zip_flashing_zip_file">File ZIP: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
@@ -265,11 +265,11 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Title for the preference to manage shared apps for individual app sharing-->
   <string name="a_s_settings_manage_shared_apps_title">Gestisci applicazioni condivise</string>
   <!--Description for the preference to manage shared apps for individual app sharing-->
-  <string name="a_s_settings_manage_shared_apps_desc">Scegli quali applicazioni devono essere condivise</string>
+  <string name="a_s_settings_manage_shared_apps_desc">Scegli quali applicazioni condividere.</string>
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <string name="a_s_settings_version_too_old">Per poter usufruire delle funzioni di condivisione delle app, bisogna aggiornare l\'mbtool. Per favore, aggiorna il ramdisk.</string>
   <!--Title for preference category for boot options-->
-  <string name="rom_settings_booting_title">Opzioni di avvio</string>
+  <string name="rom_settings_booting_title">Opzioni del kernel</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Aggiorna ramdisk</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -288,17 +288,17 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <string name="update_ramdisk_failure_desc">Aggiornamento ramdisk fallito. La condivisione delle applicazioni molto probabilmente presenterà malfunzionamenti.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
-    <item quantity="one">Ti manca %1$d passaggio per forzare l\'aggiornamento del ramdisk.</item>
-    <item quantity="other">Ti mancano %1$d passaggi per forzare l\'aggiornamento del ramdisk.</item>
+    <item quantity="one">Ti manca %1$d passaggio per tentare un aggiornamento forzato del ramdisk.</item>
+    <item quantity="other">Ti mancano %1$d passaggi per tentare un aggiornamento forzato del ramdisk.</item>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Aggiornamento ramdisk</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
-  <string name="rom_settings_show_exit_title">Mostra bottone Esci</string>
+  <string name="rom_settings_show_exit_title">Mostra bottone \"Esci\"</string>
   <!--Title for the preference to show the reboot button in the navigation drawer-->
-  <string name="rom_settings_show_reboot_title">Mostra bottone Riavvia</string>
+  <string name="rom_settings_show_reboot_title">Mostra bottone \"Riavvia\"</string>
   <!--Title for the preference to choose the initial screen to show when opening the app-->
   <string name="rom_settings_initial_screen_title">Schermata iniziale</string>
   <!--Description for the initial screen preference-->
