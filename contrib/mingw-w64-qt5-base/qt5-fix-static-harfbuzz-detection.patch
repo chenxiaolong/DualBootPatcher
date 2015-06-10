@@ -1,0 +1,7 @@
+--- qtbase-opensource-src-5.4.1/config.tests/unix/harfbuzz/harfbuzz.pro.orig	2015-03-08 17:47:58.522991158 +0100
++++ qtbase-opensource-src-5.4.1/config.tests/unix/harfbuzz/harfbuzz.pro	2015-03-08 17:48:19.491340185 +0100
+@@ -1,3 +1,3 @@
+ SOURCES = harfbuzz.cpp
+ CONFIG -= qt dylib
+-LIBS += -lharfbuzz
++LIBS += -lharfbuzz -lglib-2.0 -lws2_32 -lole32 -lwinmm -lshlwapi -lintl

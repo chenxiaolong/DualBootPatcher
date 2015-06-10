@@ -2,7 +2,7 @@
 # Contributor: Filip Brcic <brcha@gna.org>
 # Contributor: jellysheep <max.mail@dameweb.de>
 pkgname=mingw-w64-qt5-base
-pkgver=5.4.1
+pkgver=5.4.2
 pkgrel=1
 pkgdesc="A cross-platform application and UI framework (mingw-w64)"
 arch=(i686 x86_64)
@@ -20,7 +20,8 @@ optdepends=(
   "qtchooser"
 )
 makedepends=(mingw-w64-gcc
-             mingw-w64-pkg-config)
+             mingw-w64-pkg-config
+             `# mingw-w64-glib2`)
 options=(!strip !buildflags staticlibs)
 _pkgfqn="qtbase-opensource-src-${pkgver}"
 source=("http://download.qt-project.org/official_releases/qt/5.4/${pkgver}/submodules/${_pkgfqn}.tar.xz"
@@ -37,11 +38,14 @@ source=("http://download.qt-project.org/official_releases/qt/5.4/${pkgver}/submo
         "qt5-dont-add-resource-files-to-qmake-libs.patch"
         "qt5-prevent-debug-library-names-in-pkgconfig-files.patch"
         "qt5-qmake-implib-dll-a.patch"
+        "qt5-fix-static-dbus-detection.patch"
+        "qt5-fix-static-harfbuzz-detection.patch"
         "qt5-use-win32-g++-mkspecs-profile.patch"
         "qt5-use-system-zlib-in-host-libs.patch"
         "qt-5.1.x-win_flex-replace.patch"
-        "fix-opengl-to-many-sections.patch")
-md5sums=('9507825e558c980fed602de1f16ec7ae'
+        "fix-opengl-to-many-sections.patch"
+        "fix-static-psql-mysql.patch")
+md5sums=('67a95eec79ffc4a14f516ad6f3d24c96'
          'f51eb2b176b10af943831d33925c1251'
          '8c6bda3ce8aca368b1f50f57e5f25aa7'
          'af4ac76fb9d1ea383359ea881ffcd8e3'
@@ -55,10 +59,13 @@ md5sums=('9507825e558c980fed602de1f16ec7ae'
          '47b2aa0c6251c24c3c36c86b86a99c4c'
          '6a6bc88f35ac8080869de39bc128ce5b'
          '474de0e31122ecd140ebc19fe3960057'
+         '40de3aaf7d713034e06f4eece665b1ba'
+         '1a7921cadeb5c3db383dea068519e8d3'
          'f0e068b82ca41ae32c0d72587f070dd8'
          'a265dea62755caf38187114143999224'
          '852519f457e33e0d1e9d2a2df872967d'
-         '612a4dfb9f1a3898a1920c28bb999159')
+         '612a4dfb9f1a3898a1920c28bb999159'
+         'd0eb81aef1a21c65813fe4ddabbc4206')
 _architectures="x86_64-w64-mingw32 i686-w64-mingw32"
 
 # Helper functions for the split builds
@@ -122,8 +129,12 @@ prepare() {
   # Fix qmake to create implibs with .dll.a extension for MinGW
   patch -p1 -i "${srcdir}/qt5-qmake-implib-dll-a.patch"
 
+  # As of Qt 5.4.1 the detection of the static DBus and Harfbuzz libraries got broken
+  patch -p1 -i ../qt5-fix-static-dbus-detection.patch
+  #patch -p1 -i ../qt5-fix-static-harfbuzz-detection.patch
+
   # Patch the win32-g++ mkspecs profile to match our environment
-  patch -p0 -i "${srcdir}/qt5-use-win32-g++-mkspecs-profile.patch"
+  #patch -p0 -i "${srcdir}/qt5-use-win32-g++-mkspecs-profile.patch"
 
   # The bundled pcre is built as static library by default
   # As we're not using the bundled copy but our own copy
@@ -161,6 +172,10 @@ prepare() {
 
   # As well as our external PCRE library and zlib
   rm -rf src/3rdparty/{pcre,zlib}
+
+  if isStatic; then
+    patch -p0 -i ../fix-static-psql-mysql.patch
+  fi
 
   if isInternalAngle; then
     # fix make[6]: win_flex: Command not found
@@ -322,7 +337,10 @@ package() {
       strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/libQt5Bootstrap".so.${pkgver}
     fi
     
-    # keeping prl files since qbs seems to need them.
+    # keeping prl files for base build since qbs seems to need them.
+    if isStatic; then
+      rm -f "${pkgdir}/usr/${_arch}/lib"{,/qt/plugins/*}/*.prl
+    fi
     find "${pkgdir}/usr/${_arch}" -name "*.exe" -o -name "*.bat" -o -name "*.def" -o -name "*.exp" | xargs -rtl1 rm
     find "${pkgdir}/usr/${_arch}" -name "*.dll" -exec ${_arch}-strip --strip-unneeded {} \;
     find "${pkgdir}/usr/${_arch}" -name "*.a" -o -name "*.dll" | xargs -rtl1 ${_arch}-strip -g

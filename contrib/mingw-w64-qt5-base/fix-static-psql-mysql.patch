@@ -1,0 +1,15 @@
+--- config.tests/unix/psql/psql.pro.orig	2015-02-16 21:56:55.000000000 -0700
++++ config.tests/unix/psql/psql.pro	2015-03-09 21:45:44.746755052 -0600
+@@ -1,3 +1,3 @@
+ SOURCES = psql.cpp
+ CONFIG -= qt dylib
+-LIBS *= -lpq
++LIBS *= -lpq -lintl -liconv -lssl -lcrypto -lwldap32 -lshfolder -lwsock32 -lws2_32 -lsecur32 -lgdi32
+
+--- config.tests/unix/mysql/mysql.pro.orig	2015-02-16 21:56:55.000000000 -0700
++++ config.tests/unix/mysql/mysql.pro	2015-03-09 21:38:59.930405876 -0600
+@@ -1,3 +1,3 @@
+ SOURCES = mysql.cpp
+ CONFIG -= qt dylib
+-LIBS += -lmysqlclient
++LIBS += -lmariadbclient -lws2_32 -lpthread -lz -lm -lssl -lcrypto

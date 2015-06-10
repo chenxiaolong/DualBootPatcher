@@ -1,0 +1,13 @@
+--- qtbase-opensource-src-5.4.1/config.tests/unix/dbus/dbus.cpp.orig	2015-03-08 17:05:21.216593135 +0100
++++ qtbase-opensource-src-5.4.1/config.tests/unix/dbus/dbus.cpp	2015-03-08 17:06:35.276826201 +0100
+@@ -31,6 +31,10 @@
+ **
+ ****************************************************************************/
+ 
++#ifdef QT_STATIC
++#define DBUS_STATIC_BUILD
++#endif
++
+ #define DBUS_API_SUBJECT_TO_CHANGE
+ #include <dbus/dbus.h>
+ 
