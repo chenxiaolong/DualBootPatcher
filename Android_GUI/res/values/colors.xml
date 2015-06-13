@@ -37,4 +37,14 @@
     <color name="fab_pink_pressed">#ffec407a</color>
     <color name="fab_pink_plus">#ffffffff</color>
 
+    <!-- Swipe to refresh -->
+    <color name="green">#ff0f9d58</color>
+    <color name="bright_red2">#ffdd4b37</color>
+    <color name="accent_blue">#ff4285f4</color>
+    <color name="dark_orange">#fff4b400</color>
+    <color name="swipe_refresh_color1">@color/green</color>
+    <color name="swipe_refresh_color2">@color/bright_red2</color>
+    <color name="swipe_refresh_color3">@color/accent_blue</color>
+    <color name="swipe_refresh_color4">@color/dark_orange</color>
+
 </resources>

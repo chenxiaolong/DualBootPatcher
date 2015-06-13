@@ -87,6 +87,9 @@ public class FreeSpaceFragment extends Fragment {
             }
         });
 
+        srl.setColorSchemeResources(R.color.swipe_refresh_color1, R.color.swipe_refresh_color2,
+                R.color.swipe_refresh_color3, R.color.swipe_refresh_color4);
+
         refreshMounts();
     }
 
