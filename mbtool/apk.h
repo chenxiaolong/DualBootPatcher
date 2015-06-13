@@ -37,6 +37,4 @@ private:
     bool parse_manifest(const void *data, const std::size_t size);
 };
 
-std::string find_apk(const std::string &directory, const std::string &pkgname);
-
 }

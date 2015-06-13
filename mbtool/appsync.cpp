@@ -254,7 +254,7 @@ static bool prepare_appsync()
 
         // Ensure that the apk exists in the shared directory
         if (shared_pkg.share_apk
-                && !AppSyncManager::copy_apk_user_to_shared(shared_pkg.pkg_id)) {
+                && !AppSyncManager::copy_apk_user_to_shared(pkg)) {
             shared_pkg.share_apk = false;
         }
 
@@ -597,8 +597,17 @@ static bool do_linklib(const std::vector<std::string> &args)
         return true;
     }
 
+    // Package must exist in packages.xml at this point. Otherwise, a
+    // SharedPackage object wouldn't have been created
+    auto pkg = packages.find_by_pkg(pkgname);
+    if (!pkg) {
+        LOGW(TAG "Package object missing despite presence of SharedPackage object: %s",
+             pkgname.c_str());
+        return false;
+    }
+
     // Update apk in the shared directory
-    if (!AppSyncManager::copy_apk_user_to_shared(pkgname)) {
+    if (!AppSyncManager::copy_apk_user_to_shared(pkg)) {
         LOGW(TAG "Failed to copy user apk to shared directory");
         return false;
     }
