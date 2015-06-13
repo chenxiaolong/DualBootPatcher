@@ -21,6 +21,8 @@ import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.ViewHolder;
@@ -44,6 +46,7 @@ public class FreeSpaceFragment extends Fragment {
     public static final String TAG = FreeSpaceFragment.class.getSimpleName();
 
     private ArrayList<MountInfo> mMounts = new ArrayList<>();
+    private MountInfoAdapter mAdapter;
 
     private static final int[] COLORS = new int[] {
             Color.parseColor("#F44336"),
@@ -63,6 +66,38 @@ public class FreeSpaceFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        mAdapter = new MountInfoAdapter(getActivity(), mMounts, COLORS);
+
+        RecyclerView rv = (RecyclerView) getActivity().findViewById(R.id.mountpoints);
+        rv.setHasFixedSize(true);
+        rv.setAdapter(mAdapter);
+
+        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        rv.setLayoutManager(llm);
+
+        final SwipeRefreshLayout srl =
+                (SwipeRefreshLayout) getActivity().findViewById(R.id.swiperefresh);
+        srl.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshMounts();
+                srl.setRefreshing(false);
+            }
+        });
+
+        refreshMounts();
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_free_space, container, false);
+    }
+
+    private void refreshMounts() {
+        mMounts.clear();
 
         Pointer stream = LibMiscStuff.INSTANCE.setmntent("/proc/mounts", "r");
         mntent ent;
@@ -108,19 +143,7 @@ public class FreeSpaceFragment extends Fragment {
 
         LibMiscStuff.INSTANCE.endmntent(stream);
 
-        RecyclerView rv = (RecyclerView) getActivity().findViewById(R.id.mountpoints);
-        rv.setHasFixedSize(true);
-        rv.setAdapter(new MountInfoAdapter(getActivity(), mMounts, COLORS));
-
-        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
-        llm.setOrientation(LinearLayoutManager.VERTICAL);
-        rv.setLayoutManager(llm);
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_free_space, container, false);
+        mAdapter.notifyDataSetChanged();
     }
 
     private static class MountInfo {

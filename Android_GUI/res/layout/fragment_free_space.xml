@@ -21,11 +21,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/mountpoints"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swiperefresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingLeft="@dimen/card_v7_outside_side_padding"
-        android:paddingRight="@dimen/card_v7_outside_side_padding" />
+        android:layout_height="match_parent">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/mountpoints"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingLeft="@dimen/card_v7_outside_side_padding"
+            android:paddingRight="@dimen/card_v7_outside_side_padding" />
+    </android.support.v4.widget.SwipeRefreshLayout>
 
 </RelativeLayout>
