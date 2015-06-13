@@ -28,6 +28,7 @@
 #include "rom_installer.h"
 #include "update_binary.h"
 #include "update_binary_tool.h"
+#include "utilities.h"
 #else
 #include "appsync.h"
 #include "daemon.h"
@@ -61,6 +62,7 @@ struct tool tools[] = {
     { "updater", mb::update_binary_main }, // TWRP
     { "update_binary", mb::update_binary_main }, // CWM, Philz
     { "update-binary-tool", mb::update_binary_tool_main },
+    { "utilities", mb::utilities_main },
 #else
     { "appsync", mb::appsync_main },
     { "daemon", mb::daemon_main },

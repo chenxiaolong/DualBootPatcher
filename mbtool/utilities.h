@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,27 +19,9 @@
 
 #pragma once
 
-#include <string>
-
 namespace mb
 {
-namespace util
-{
 
-__attribute__((format(printf, 1, 2)))
-std::string format(const char *fmt, ...);
+int utilities_main(int argc, char *argv[]);
 
-bool starts_with(const std::string &string, const std::string &prefix);
-bool starts_with(const char *string, const char *prefix);
-bool ends_with(const std::string &string, const std::string &suffix);
-bool ends_with(const char *string, const char *suffix);
-
-void replace(std::string *source,
-             const std::string &from, const std::string &to);
-void replace_all(std::string *source,
-                 const std::string &from, const std::string &to);
-
-std::string hex_string(unsigned char *data, size_t size);
-
-}
 }

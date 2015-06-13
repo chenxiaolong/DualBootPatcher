@@ -88,15 +88,15 @@ void Roms::add_builtin()
 
 void Roms::add_data_roms()
 {
-    LOGD("Looking for named ROMs in /data/multiboot");
+    //LOGD("Looking for named ROMs in /data/multiboot");
 
     std::string system = get_raw_path("/data");
     system += "/multiboot";
 
     DIR *dp = opendir(system.c_str());
     if (!dp ) {
-        LOGE("%s: Failed to open directory: %s",
-             system.c_str(), strerror(errno));
+        //LOGE("%s: Failed to open directory: %s",
+        //     system.c_str(), strerror(errno));
         return;
     }
 
