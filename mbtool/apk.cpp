@@ -25,6 +25,7 @@
 #include "util/finally.h"
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 #include "external/minizip/unzip.h"
 
@@ -252,6 +253,67 @@ bool ApkFile::parse_manifest(const void *data, const std::size_t size)
 
     LOGE("<manifest> element not found");
     return false;
+}
+
+/*!
+ * \brief Find apk in directory using the AndroidManifest.xml metadata
+ */
+class ApkFinder : public util::FTSWrapper {
+public:
+    ApkFinder(std::string path, std::string package)
+        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        _package(package)
+    {
+    }
+
+    virtual int on_changed_path() override
+    {
+        // Don't search beyond the 2nd level
+        if (_curr->fts_level > 2) {
+            return Action::FTS_Skip;
+        }
+
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_file() override
+    {
+        // Skip non-APK files
+        if (!util::ends_with(_curr->fts_name, ".apk")) {
+            return Action::FTS_Skip;
+        }
+
+        ApkFile af;
+        if (!af.open(_curr->fts_accpath)) {
+            LOGE("%s: Failed to open or parse apk", _curr->fts_path);
+            return Action::FTS_Skip;
+        }
+
+        if (af.package == _package) {
+            _apk = _curr->fts_path;
+            return Action::FTS_Stop;
+        }
+
+        return Action::FTS_OK;
+    }
+
+    std::string find()
+    {
+        if (run() && !_apk.empty()) {
+            return _apk;
+        }
+        return std::string();
+    }
+
+private:
+    std::string _package;
+    std::string _apk;
+};
+
+std::string find_apk(const std::string &directory, const std::string &pkgname)
+{
+    ApkFinder af(directory, pkgname);
+    return af.find();
 }
 
 }
