@@ -220,6 +220,8 @@ static bool prepare_appsync()
         return false;
     }
 
+    uint64_t start = util::current_time_ms(), stop;
+
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end();) {
         SharedPackage &shared_pkg = *it;
@@ -285,6 +287,11 @@ static bool prepare_appsync()
         disable_data_sharing = true;
     }
 
+    stop = util::current_time_ms();
+    LOGD("Initialization stage 1 took %" PRIu64 "ms", stop - start);
+
+    start = util::current_time_ms();
+
     // Actually share the apk and data
     for (SharedPackage &shared_pkg : config.shared_pkgs) {
         auto pkg = packages.find_by_pkg(shared_pkg.pkg_id);
@@ -324,6 +331,9 @@ static bool prepare_appsync()
 
     // Fix SELinux context in /data/app
     AppSyncManager::fix_user_apk_context();
+
+    stop = util::current_time_ms();
+    LOGD("Initialization stage 2 took %" PRIu64 "ms", stop - start);
 
     return true;
 }
@@ -1004,11 +1014,14 @@ int appsync_main(int argc, char *argv[])
         LOGW("Continuing to proxy installd anyway...");
     } else {
         if (config.indiv_app_sharing) {
+            uint64_t start = util::current_time_ms();
             can_appsync = prepare_appsync();
+            uint64_t stop = util::current_time_ms();
             if (!can_appsync) {
                 LOGW("appsync preparation failed. "
                      "App sharing is completely disabled");
             }
+            LOGD("Entire appsync preparation took %" PRIu64 "ms", stop - start);
         }
     }
 

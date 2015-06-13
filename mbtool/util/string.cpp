@@ -122,6 +122,23 @@ void replace_all(std::string *source,
     replace_internal(source, from, to, false);
 }
 
+std::string join(std::vector<std::string> &list, std::string delim)
+{
+    std::string result;
+    bool first = true;
+
+    for (const std::string &str : list) {
+        if (!first) {
+            result += delim;
+        } else {
+            first = false;
+        }
+        result += str;
+    }
+
+    return result;
+}
+
 /*!
  * \brief Convert binary data to its hex string representation
  *

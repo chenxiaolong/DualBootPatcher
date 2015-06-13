@@ -152,8 +152,8 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
     std::string shared_apk = get_shared_apk_path(pkg);
     std::string user_apk = find_apk(_user_app_dir, pkg);
     if (user_apk.empty()) {
-        LOGW("%s: Failed to find apk for package %s",
-             _user_app_dir.c_str(), pkg.c_str());
+        LOGW("[%s] %s: Failed to find apk",
+             pkg.c_str(), _user_app_dir.c_str());
         return false;
     }
 
@@ -162,58 +162,60 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
         // Shared apk already exists, check version
 
         if (!S_ISREG(sb.st_mode)) {
-            LOGW("%s: Shared apk path is not a regular file",
-                 shared_apk.c_str());
+            LOGW("[%s] %s: Shared apk path is not a regular file",
+                 pkg.c_str(), shared_apk.c_str());
             return false;
         }
 
         ApkFile af_user;
         if (!af_user.open(user_apk)) {
-            LOGW("%s: Failed to open or parse apk", user_apk.c_str());
+            LOGW("[%s] %s: Failed to open or parse apk",
+                 pkg.c_str(), user_apk.c_str());
             return false;
         }
 
         ApkFile af_shared;
         if (!af_shared.open(shared_apk)) {
-            LOGW("%s: Failed to open or parse apk", shared_apk.c_str());
+            LOGW("[%s] %s: Failed to open or parse apk",
+                 pkg.c_str(), shared_apk.c_str());
             return false;
         }
 
         if (af_user.package != af_shared.package) {
-            LOGW("Conflicting package names between %s and %s",
-                 user_apk.c_str(), shared_apk.c_str());
+            LOGW("[%s] Conflicting package names between %s and %s",
+                 pkg.c_str(), user_apk.c_str(), shared_apk.c_str());
             return false;
         }
 
         // User apk is the same version or older than the shared apk
         if (af_user.version_code <= af_shared.version_code) {
-            LOGD("Not copying user apk to shared apk for package %s",
-                 pkg.c_str());
-            LOGD("User version (%u) <= shared version (%u)",
-                 af_user.version_code, af_shared.version_code);
+            LOGI("[%s] Skipped user -> shared copy because "
+                 "user version (%u) <= shared version (%u)",
+                 pkg.c_str(), af_user.version_code, af_shared.version_code);
             return true;
         }
     } else if (errno != ENOENT) {
         // Continue only if the shared apk is missing
-        LOGW("%s: stat() failed with errno != ENOENT: %s",
-             shared_apk.c_str(), strerror(errno));
+        LOGW("[%s] %s: stat() failed with errno != ENOENT: %s",
+             pkg.c_str(), shared_apk.c_str(), strerror(errno));
         return false;
     }
 
-    LOGD("Copying user apk to shared apk for package %s", pkg.c_str());
-    LOGD("- User apk:   %s", user_apk.c_str());
-    LOGD("- Shared apk: %s", shared_apk.c_str());
+    LOGI("[%s] Copying user apk to shared apk", pkg.c_str());
+    LOGI("[%s] - User apk:   %s", pkg.c_str(), user_apk.c_str());
+    LOGI("[%s] - Shared apk: %s", pkg.c_str(), shared_apk.c_str());
 
     if (!util::mkdir_parent(shared_apk, 0755)) {
-        LOGW("Failed to create parent directories for %s", shared_apk.c_str());
+        LOGW("[%s] Failed to create parent directories for %s",
+             pkg.c_str(), shared_apk.c_str());
         return false;
     }
 
     // Make sure we preserve the inode when copying, so all of the hard links to
     // the shared apk are preserved
     if (!util::copy_contents(user_apk, shared_apk)) {
-        LOGW("Failed to copy contents from %s to %s",
-             user_apk.c_str(), shared_apk.c_str());
+        LOGW("[%s] Failed to copy contents from %s to %s",
+             pkg.c_str(), user_apk.c_str(), shared_apk.c_str());
         return false;
     }
 
@@ -227,13 +229,18 @@ bool AppSyncManager::copy_apk_user_to_shared(const std::string &pkg)
 bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
                                              const std::vector<RomConfigAndPackages> &cfg_pkgs_list)
 {
-    LOGD("Syncing %s to all ROMs where it is shared", pkgname.c_str());
+    LOGD("[%s] Syncing to all ROMs where it is shared", pkgname.c_str());
+
+    std::vector<std::string> roms_all;
+    std::vector<std::string> roms_linked;
+    std::vector<std::string> roms_not_linked;
 
     std::string shared_apk = get_shared_apk_path(pkgname);
 
     struct stat sb_shared;
     if (stat(shared_apk.c_str(), &sb_shared) < 0) {
-        LOGE("%s: Failed to stat: %s", shared_apk.c_str(), strerror(errno));
+        LOGE("[%s] %s: Failed to stat: %s",
+             pkgname.c_str(), shared_apk.c_str(), strerror(errno));
         return false;
     }
 
@@ -248,6 +255,8 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
             continue;
         }
 
+        roms_all.push_back(rom->id);
+
         // Ensure the user wants the app to be shared in this ROM
         auto it = std::find_if(config.shared_pkgs.begin(),
                                config.shared_pkgs.end(),
@@ -260,8 +269,8 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
 
         // Ensure that the user apk resides in /data/app
         if (!util::starts_with(pkg->code_path, _user_app_dir)) {
-            LOGW("%s: Does not reside in /data [ROM: %s]",
-                 pkg->code_path.c_str(), rom->id.c_str());
+            LOGW("[%s] %s: Does not reside in /data [ROM: %s]",
+                 pkgname.c_str(), pkg->code_path.c_str(), rom->id.c_str());
             continue;
         }
 
@@ -283,31 +292,45 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
                     && sb_shared.st_ino == sb_user.st_ino) {
                 // User apk is already linked to the shared apk. Move on to the
                 // next ROM
+                roms_linked.push_back(rom->id);
                 continue;
             }
             if (!S_ISREG(sb_user.st_mode)) {
                 // User apk is not a regular file. Skip and move on to the next
                 // ROM
-                LOGW("%s: apk is not a regular file [ROM: %s]",
-                     user_apk.c_str(), rom->id.c_str());
+                LOGW("[%s] %s: apk is not a regular file [ROM: %s]",
+                     pkgname.c_str(), user_apk.c_str(), rom->id.c_str());
                 continue;
             }
         }
 
-        LOGD("- Linking shared apk to user apk in %s", rom->id.c_str());
+        roms_not_linked.push_back(rom->id);
+
+        LOGI("[%s] Linking shared apk to user apk [ROM: %s]",
+             pkgname.c_str(), rom->id.c_str());
 
         // Remove old user apk
         if (unlink(user_apk.c_str()) < 0 && errno != ENOENT) {
-            LOGW("%s: Failed to unlink: %s", user_apk.c_str(), strerror(errno));
+            LOGW("[%s] %s: Failed to unlink: %s",
+                 pkgname.c_str(), user_apk.c_str(), strerror(errno));
             return false;
         }
 
         // Hard link shared apk to user apk
         if (link(shared_apk.c_str(), user_apk.c_str()) < 0) {
-            LOGW("Failed to hard link %s to %s: %s",
+            LOGW("[%s] Failed to hard link %s to %s: %s", pkgname.c_str(),
                  shared_apk.c_str(), user_apk.c_str(), strerror(errno));
             return false;
         }
+    }
+
+    if (!roms_all.empty()) {
+        LOGI("[%s] Shared in:      %s", pkgname.c_str(),
+             util::join(roms_all, ", ").c_str());
+        LOGI("[%s] Already linked: %s", pkgname.c_str(),
+             roms_linked.empty() ? "(none)" : util::join(roms_linked, ", ").c_str());
+        LOGI("[%s] Newly linked:   %s", pkgname.c_str(),
+             roms_not_linked.empty() ? "(none)" : util::join(roms_not_linked, ", ").c_str());
     }
 
     return true;

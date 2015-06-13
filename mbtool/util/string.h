@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace mb
 {
@@ -38,6 +39,8 @@ void replace(std::string *source,
              const std::string &from, const std::string &to);
 void replace_all(std::string *source,
                  const std::string &from, const std::string &to);
+
+std::string join(std::vector<std::string> &list, std::string delim);
 
 std::string hex_string(unsigned char *data, size_t size);
 
