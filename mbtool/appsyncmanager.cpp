@@ -338,10 +338,13 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
 bool AppSyncManager::wipe_shared_libraries(const std::shared_ptr<Package> &pkg)
 {
     if (!util::delete_recursive(pkg->native_library_path)) {
-        LOGW("%s: Failed to remove: %s",
+        LOGW("[%s] %s: Failed to remove: %s", pkg->name.c_str(),
              pkg->native_library_path.c_str(), strerror(errno));
         return false;
     }
+
+    LOGV("[%s] Removed shared libraries at %s",
+         pkg->name.c_str(), pkg->native_library_path.c_str());
 
     return true;
 }
@@ -372,19 +375,21 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
     std::string data_path = get_shared_data_path(pkg);
 
     if (!util::mkdir_recursive(data_path, 0751)) {
-        LOGW("%s: Failed to create directory: %s",
-             data_path.c_str(), strerror(errno));
+        LOGW("[%s] %s: Failed to create directory: %s",
+             pkg.c_str(), data_path.c_str(), strerror(errno));
         return false;
     }
 
     // Ensure that the shared data directory permissions are correct
     if (chmod(data_path.c_str(), 0751) < 0) {
-        LOGW("%s: Failed to chmod: %s", data_path.c_str(), strerror(errno));
+        LOGW("[%s] %s: Failed to chmod: %s",
+             pkg.c_str(), data_path.c_str(), strerror(errno));
         return false;
     }
 
     if (!util::chown(data_path, uid, uid, util::CHOWN_RECURSIVE)) {
-        LOGW("%s: Failed to chown: %s", data_path.c_str(), strerror(errno));
+        LOGW("[%s] %s: Failed to chown: %s",
+             pkg.c_str(), data_path.c_str(), strerror(errno));
         return false;
     }
 
@@ -421,23 +426,24 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
     target += pkg;
 
     if (!util::mkdir_recursive(target, 0755)) {
-        LOGW("%s: Failed to create directory: %s",
-             target.c_str(), strerror(errno));
+        LOGW("[%s] %s: Failed to create directory: %s",
+             pkg.c_str(), target.c_str(), strerror(errno));
         return false;
     }
     if (!util::chown(target, uid, uid, util::CHOWN_RECURSIVE)) {
-        LOGW("%s: Failed to chown: %s", target.c_str(), strerror(errno));
+        LOGW("[%s] %s: Failed to chown: %s",
+             pkg.c_str(), target.c_str(), strerror(errno));
         return false;
     }
 
-    LOGV("Bind mounting data directory:");
-    LOGV("- Source: %s", data_path.c_str());
-    LOGV("- Target: %s", target.c_str());
+    LOGV("[%s] Bind mounting data directory:", pkg.c_str());
+    LOGV("[%s] - Source: %s", pkg.c_str(), data_path.c_str());
+    LOGV("[%s] - Target: %s", pkg.c_str(), target.c_str());
 
     if (!unmount_shared_directory(pkg)) {
         return false;
     } else if (mount(data_path.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
-        LOGW("Failed to bind mount: %s", strerror(errno));
+        LOGW("[%s] Failed to bind mount: %s", pkg.c_str(), strerror(errno));
         return false;
     }
 
@@ -451,7 +457,8 @@ bool AppSyncManager::unmount_shared_directory(const std::string &pkg)
     target += pkg;
 
     if (umount2(target.c_str(), MNT_DETACH) < 0 && errno != EINVAL) {
-        LOGW("%s: Failed to unmount: %s", target.c_str(), strerror(errno));
+        LOGW("[%s] %s: Failed to unmount: %s",
+             pkg.c_str(), target.c_str(), strerror(errno));
         return false;
     }
 
