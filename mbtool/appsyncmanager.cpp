@@ -32,6 +32,7 @@
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/directory.h"
+#include "util/file.h"
 #include "util/fts.h"
 #include "util/logging.h"
 #include "util/path.h"
@@ -336,16 +337,77 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
     return true;
 }
 
+/*!
+ * Wipe shared libraries if necessary. If version.txt exists and matches the
+ * installed version, then wiping is skipped. Otherwise version.txt is created.
+ * This way, the shared libraries will only be extracted a maximum of two times:
+ * once during initial installation or update and a second time during the next
+ * boot.
+ */
 bool AppSyncManager::wipe_shared_libraries(const std::shared_ptr<Package> &pkg)
 {
-    if (!util::delete_recursive(pkg->native_library_path)) {
-        LOGW("[%s] %s: Failed to remove: %s", pkg->name.c_str(),
-             pkg->native_library_path.c_str(), strerror(errno));
+    std::string user_apk(pkg->code_path);
+    if (!util::ends_with(user_apk, ".apk")) {
+        // Android >= 5.0
+        user_apk += "/base.apk";
+    }
+
+    // Open the apk file to determine the version. We cannot rely on
+    // pkg->version because the package might have been updated while booted in
+    // another ROM.
+    ApkFile af;
+    if (!af.open(user_apk)) {
+        LOGE("[%s] %s: Failed to open apk",
+             pkg->name.c_str(), user_apk.c_str());
         return false;
     }
 
-    LOGV("[%s] Removed shared libraries at %s",
-         pkg->name.c_str(), pkg->native_library_path.c_str());
+    bool should_wipe = true;
+
+    std::string version_path(pkg->native_library_path);
+    version_path += "/version.txt";
+
+    // Skip wipe if the apk version matches version.txt
+    std::string version;
+    if (util::file_first_line(version_path, &version)) {
+        char *temp;
+        unsigned long version_code = strtoul(version.c_str(), &temp, 0);
+        if (*temp == '\0' && af.version_code == version_code) {
+            should_wipe = false;
+        }
+    }
+
+    if (should_wipe) {
+        // If we're wiping the libraries, we'll recreate the directory and put
+        // version.txt inside.
+
+        if (!util::delete_recursive(pkg->native_library_path)) {
+            LOGW("[%s] %s: Failed to remove: %s", pkg->name.c_str(),
+                 pkg->native_library_path.c_str(), strerror(errno));
+            return false;
+        }
+
+        LOGV("[%s] Removed shared libraries at %s",
+             pkg->name.c_str(), pkg->native_library_path.c_str());
+
+        if (!util::mkdir_recursive(pkg->native_library_path, 0755)) {
+            LOGW("[%s] %s: Failed to create directory: %s", pkg->name.c_str(),
+                 pkg->native_library_path.c_str(), strerror(errno));
+            return false;
+        }
+
+        // Write new version file
+        std::string new_version = util::format("%d", af.version_code);
+        util::file_write_data(version_path,
+                              new_version.data(), new_version.size());
+        LOGV("[%s] Created version stamp file", pkg->name.c_str());
+
+        FixPermissions(pkg->native_library_path).run();
+        util::run_command({ "restorecon", "-R", "-F", pkg->native_library_path });
+    } else {
+        LOGV("[%s] Not wiping libraries because they match the apk version",
+             pkg->name.c_str());
+    }
 
     return true;
 }
