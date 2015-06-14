@@ -163,7 +163,7 @@ public class SwitcherListFragment extends Fragment implements
         });
 
         mSwipeRefresh = (SwipeRefreshLayoutWorkaround)
-                getActivity().findViewById(R.id.swiperefresh);
+                getActivity().findViewById(R.id.swiperefreshroms);
         mSwipeRefresh.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {

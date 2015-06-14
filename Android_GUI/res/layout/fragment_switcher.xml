@@ -31,7 +31,7 @@
         android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
 
     <com.github.chenxiaolong.dualbootpatcher.views.SwipeRefreshLayoutWorkaround
-        android:id="@+id/swiperefresh"
+        android:id="@+id/swiperefreshroms"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
