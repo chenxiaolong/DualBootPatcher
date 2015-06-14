@@ -31,6 +31,7 @@ import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -40,7 +41,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -71,6 +71,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.W
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.views.SwipeRefreshLayoutWorkaround;
 
 import org.apache.commons.io.IOUtils;
 
@@ -112,8 +113,8 @@ public class SwitcherListFragment extends Fragment implements
     private CardView mErrorCardView;
     private RomCardAdapter mRomCardAdapter;
     private RecyclerView mCardListView;
-    private ProgressBar mProgressBar;
     private FloatingActionButton mFabFlashZip;
+    private SwipeRefreshLayoutWorkaround mSwipeRefresh;
 
     private ArrayList<RomInformation> mRoms;
     private RomInformation mCurrentRom;
@@ -151,8 +152,6 @@ public class SwitcherListFragment extends Fragment implements
                     EXTRA_SHOWED_SET_KERNEL_WARNING);
         }
 
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
-
         mFabFlashZip = (FloatingActionButton) getActivity()
                 .findViewById(R.id.fab_flash_zip);
         mFabFlashZip.setOnClickListener(new OnClickListener() {
@@ -163,14 +162,25 @@ public class SwitcherListFragment extends Fragment implements
             }
         });
 
+        mSwipeRefresh = (SwipeRefreshLayoutWorkaround)
+                getActivity().findViewById(R.id.swiperefresh);
+        mSwipeRefresh.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                reloadFragment();
+            }
+        });
+
+        mSwipeRefresh.setColorSchemeResources(R.color.swipe_refresh_color1,
+                R.color.swipe_refresh_color2, R.color.swipe_refresh_color3,
+                R.color.swipe_refresh_color4);
+
         initErrorCard();
         initCardList();
         refreshErrorVisibility(false);
 
         // Show progress bar on initial load, not on rotation
-        if (savedInstanceState != null) {
-            refreshProgressVisibility(false);
-        }
+        refreshProgressVisibility(savedInstanceState == null);
 
         getActivity().getLoaderManager().initLoader(0, null, this);
     }
@@ -248,7 +258,7 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     private void refreshProgressVisibility(boolean visible) {
-        mProgressBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+        mSwipeRefresh.setRefreshing(visible);
     }
 
     private void refreshRomListVisibility(boolean visible) {
