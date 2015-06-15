@@ -142,6 +142,10 @@ else()
         minizip
     )
 
+    if(UNIX)
+        target_link_libraries(mbp pthread)
+    endif()
+
     # Install library
     install(
         TARGETS mbp

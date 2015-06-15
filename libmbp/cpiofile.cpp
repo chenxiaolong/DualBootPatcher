@@ -40,7 +40,8 @@ typedef std::pair<archive_entry *, std::vector<unsigned char>> FilePair;
 enum Compression {
     NONE,
     GZIP,
-    LZ4
+    LZ4,
+    LZMA
 };
 
 /*! \cond INTERNAL */
@@ -122,6 +123,9 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
             && std::memcmp(data.data(), "\x02\x21\x4c\x18", 4) == 0) {
         // Magic number is 0x184C2102 (little endian)
         m_impl->compression = LZ4;
+    } else if (data.size() >= 1 && (data[0] == 0x5d || data[0] == 0x5e)) {
+        // Very hacky, but the properties field is almost always 0x5d or 0x5e
+        m_impl->compression = LZMA;
     } else {
         m_impl->compression = NONE;
     }
@@ -135,6 +139,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
     // (libarchive is awesome)
     archive_read_support_filter_gzip(a);
     archive_read_support_filter_lz4(a);
+    archive_read_support_filter_lzma(a);
     archive_read_support_format_cpio(a);
 
     int ret = archive_read_open_memory(a,
@@ -256,6 +261,8 @@ bool CpioFile::createData(std::vector<unsigned char> *dataOut)
         archive_write_set_filter_option(a, nullptr, "compression-level", "9");
     } else if (m_impl->compression == LZ4) {
         archive_write_add_filter_lz4(a);
+    } else if (m_impl->compression == LZMA) {
+        archive_write_add_filter_lzma(a);
     } else {
         archive_write_add_filter_none(a);
     }
