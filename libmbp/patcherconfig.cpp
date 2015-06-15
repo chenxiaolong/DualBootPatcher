@@ -50,6 +50,7 @@
 #include "ramdiskpatchers/hammerheadramdiskpatcher.h"
 #include "ramdiskpatchers/hlteramdiskpatcher.h"
 #include "ramdiskpatchers/jflteramdiskpatcher.h"
+#include "ramdiskpatchers/klimtwifiramdiskpatcher.h"
 #include "ramdiskpatchers/klteramdiskpatcher.h"
 #include "ramdiskpatchers/lgg2ramdiskpatcher.h"
 #include "ramdiskpatchers/lgg3ramdiskpatcher.h"
@@ -391,6 +392,16 @@ void PatcherConfig::Impl::loadDefaultDevices()
     std::string n4ExynosRadio(n4ExynosBaseDir); n4ExynosRadio += "/RADIO";
     std::string n4ExynosCdmaRadio(n4ExynosBaseDir); n4ExynosCdmaRadio += "/CDMA-RADIO";
 
+    // https://github.com/CyanogenMod/android_device_samsung_klimtwifi/blob/cm-12.1/rootdir/etc/fstab.universal5420
+    std::string klimtwifiBaseDir("/dev/block/platform/dw_mmc.0/by-name");
+    std::string klimtwifiSystem(klimtwifiBaseDir); klimtwifiSystem += "/SYSTEM";
+    std::string klimtwifiCache(klimtwifiBaseDir); klimtwifiCache += "/CACHE";
+    std::string klimtwifiData(klimtwifiBaseDir); klimtwifiData += "/USERDATA";
+    std::string klimtwifiBoot(klimtwifiBaseDir); klimtwifiBoot += "/BOOT";
+    std::string klimtwifiRecovery(klimtwifiBaseDir); klimtwifiRecovery += "/RECOVERY";
+    std::string klimtwifiRadio(klimtwifiBaseDir); klimtwifiRadio += "/RADIO";
+    std::string klimtwifiCdmaRadio(klimtwifiBaseDir); klimtwifiCdmaRadio += "/CDMA-RADIO";
+
     // Samsung Galaxy S 4
     device = new Device();
     device->setId("jflte");
@@ -480,6 +491,20 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ n4ExynosBoot, "/dev/block/mmcblk0p9" });
     device->setRecoveryBlockDevs({ n4ExynosRecovery, "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ n4ExynosRadio, n4ExynosCdmaRadio });
+    devices.push_back(device);
+
+    // Samsung Galaxy Tab S 8.4 (Wifi)
+    device = new Device();
+    device->setId("klimtwifi");
+    device->setCodenames({ "klimtwifi", "klimtwifikx" });
+    device->setName("Samsung Galaxy Tab S 8.4 (Wifi)");
+    device->setBlockDevBaseDirs({ klimtwifiBaseDir });
+    device->setSystemBlockDevs({ klimtwifiSystem, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ klimtwifiCache, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ klimtwifiData, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ klimtwifiBoot, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ klimtwifiRecovery, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ klimtwifiRadio, klimtwifiCdmaRadio });
     devices.push_back(device);
 
     // Google/LG Nexus 5
@@ -625,6 +650,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         HammerheadDefaultRamdiskPatcher::Id,
         HlteDefaultRamdiskPatcher::Id,
         JflteDefaultRamdiskPatcher::Id,
+        KlimtwifiDefaultRamdiskPatcher::Id,
         KlteDefaultRamdiskPatcher::Id,
         LGG2RamdiskPatcher::Id,
         LGG3RamdiskPatcher::Id,
@@ -715,6 +741,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new HlteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == JflteDefaultRamdiskPatcher::Id) {
         rp = new JflteDefaultRamdiskPatcher(this, info, cpio);
+    } else if (id == KlimtwifiDefaultRamdiskPatcher::Id) {
+        rp = new KlimtwifiDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == KlteDefaultRamdiskPatcher::Id) {
         rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == LGG2RamdiskPatcher::Id) {

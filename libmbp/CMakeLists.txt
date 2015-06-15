@@ -52,6 +52,7 @@ set(MBP_SOURCES
     ramdiskpatchers/hammerheadramdiskpatcher.cpp
     ramdiskpatchers/hlteramdiskpatcher.cpp
     ramdiskpatchers/jflteramdiskpatcher.cpp
+    ramdiskpatchers/klimtwifiramdiskpatcher.cpp
     ramdiskpatchers/klteramdiskpatcher.cpp
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/lgg3ramdiskpatcher.cpp
