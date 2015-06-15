@@ -549,7 +549,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p43" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p18" });
     device->setRecoveryBlockDevs({ qcomRecovery });
-    device->setExtraBlockDevs({ qcomAboot });
+    device->setExtraBlockDevs({ qcomAboot, qcomModem });
     devices.push_back(device);
 
     // Motorola Moto G (2013)
