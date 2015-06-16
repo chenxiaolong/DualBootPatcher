@@ -247,6 +247,11 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
 
     @Override
     public void onLoadFinished(Loader<NeededInfo> loader, NeededInfo result) {
+        if (result == null) {
+            getActivity().finish();
+            return;
+        }
+
         if (result.currentRom == null) {
             getActivity().finish();
             return;
