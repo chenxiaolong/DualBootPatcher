@@ -87,7 +87,7 @@ static bool flash_extra_images(const std::string &multiboot_dir,
             // Skip non-images
             continue;
         }
-        if (name == "boot.img") {
+        if (util::starts_with(name, "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }
