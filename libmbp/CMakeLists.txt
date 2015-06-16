@@ -56,6 +56,7 @@ set(MBP_SOURCES
     ramdiskpatchers/klteramdiskpatcher.cpp
     ramdiskpatchers/lgg2ramdiskpatcher.cpp
     ramdiskpatchers/lgg3ramdiskpatcher.cpp
+    ramdiskpatchers/mondrianwifiramdiskpatcher.cpp
     ramdiskpatchers/qcomramdiskpatcher.cpp
     ramdiskpatchers/trelteramdiskpatcher.cpp
     ramdiskpatchers/trlteramdiskpatcher.cpp

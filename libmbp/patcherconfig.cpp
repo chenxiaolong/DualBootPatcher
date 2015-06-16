@@ -54,6 +54,7 @@
 #include "ramdiskpatchers/klteramdiskpatcher.h"
 #include "ramdiskpatchers/lgg2ramdiskpatcher.h"
 #include "ramdiskpatchers/lgg3ramdiskpatcher.h"
+#include "ramdiskpatchers/mondrianwifiramdiskpatcher.h"
 #include "ramdiskpatchers/trelteramdiskpatcher.h"
 #include "ramdiskpatchers/trlteramdiskpatcher.h"
 #include "ramdiskpatchers/zerolteramdiskpatcher.h"
@@ -507,6 +508,19 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ klimtwifiRadio, klimtwifiCdmaRadio });
     devices.push_back(device);
 
+    // Samsung Galaxy Tab Pro 8.4 (Wifi)
+    device = new Device();
+    device->setId("mondrianwifi");
+    device->setCodenames({ "mondrianwifi", "mondrianwifiue", "mondrianwifixx" });
+    device->setName("Samsung Galaxy Tab Pro 8.4 (Wifi)");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ qcomRecovery, "/dev/block/mmcblk0p15" });
+    devices.push_back(device);
+
     // Google/LG Nexus 5
     device = new Device();
     device->setId("hammerhead");
@@ -654,6 +668,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         KlteDefaultRamdiskPatcher::Id,
         LGG2RamdiskPatcher::Id,
         LGG3RamdiskPatcher::Id,
+        MondrianwifiDefaultRamdiskPatcher::Id,
         TrelteDefaultRamdiskPatcher::Id,
         TrlteDefaultRamdiskPatcher::Id,
         ZerolteDefaultRamdiskPatcher::Id
@@ -749,6 +764,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new LGG2RamdiskPatcher(this, info, cpio);
     } else if (id == LGG3RamdiskPatcher::Id) {
         rp = new LGG3RamdiskPatcher(this, info, cpio);
+    } else if (id == MondrianwifiDefaultRamdiskPatcher::Id) {
+        rp = new MondrianwifiDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == TrelteDefaultRamdiskPatcher::Id) {
         rp = new TrelteDefaultRamdiskPatcher(this, info, cpio);
     } else if (id == TrlteDefaultRamdiskPatcher::Id) {
