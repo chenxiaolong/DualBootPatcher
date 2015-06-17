@@ -43,24 +43,24 @@ set(MBP_SOURCES
     patchers/mbtoolupdater.cpp
     patchers/multibootpatcher.cpp
     # Ramdisk patchers
-    ramdiskpatchers/baconramdiskpatcher.cpp
-    ramdiskpatchers/coreramdiskpatcher.cpp
-    ramdiskpatchers/falconramdiskpatcher.cpp
-    ramdiskpatchers/floramdiskpatcher.cpp
-    ramdiskpatchers/galaxyramdiskpatcher.cpp
-    ramdiskpatchers/ghostramdiskpatcher.cpp
-    ramdiskpatchers/hammerheadramdiskpatcher.cpp
-    ramdiskpatchers/hlteramdiskpatcher.cpp
-    ramdiskpatchers/jflteramdiskpatcher.cpp
-    ramdiskpatchers/klimtwifiramdiskpatcher.cpp
-    ramdiskpatchers/klteramdiskpatcher.cpp
-    ramdiskpatchers/lgg2ramdiskpatcher.cpp
-    ramdiskpatchers/lgg3ramdiskpatcher.cpp
-    ramdiskpatchers/mondrianwifiramdiskpatcher.cpp
-    ramdiskpatchers/qcomramdiskpatcher.cpp
-    ramdiskpatchers/trelteramdiskpatcher.cpp
-    ramdiskpatchers/trlteramdiskpatcher.cpp
-    ramdiskpatchers/zerolteramdiskpatcher.cpp
+    ramdiskpatchers/bacon.cpp
+    ramdiskpatchers/core.cpp
+    ramdiskpatchers/falcon.cpp
+    ramdiskpatchers/flo.cpp
+    ramdiskpatchers/galaxy.cpp
+    ramdiskpatchers/ghost.cpp
+    ramdiskpatchers/hammerhead.cpp
+    ramdiskpatchers/hlte.cpp
+    ramdiskpatchers/jflte.cpp
+    ramdiskpatchers/klimtwifi.cpp
+    ramdiskpatchers/klte.cpp
+    ramdiskpatchers/lgg2.cpp
+    ramdiskpatchers/lgg3.cpp
+    ramdiskpatchers/mondrianwifi.cpp
+    ramdiskpatchers/qcom.cpp
+    ramdiskpatchers/trelte.cpp
+    ramdiskpatchers/trlte.cpp
+    ramdiskpatchers/zerolte.cpp
     external/sha.cpp
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )

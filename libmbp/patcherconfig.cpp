@@ -43,21 +43,21 @@
 #include "patchers/multibootpatcher.h"
 #include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
-#include "ramdiskpatchers/baconramdiskpatcher.h"
-#include "ramdiskpatchers/falconramdiskpatcher.h"
-#include "ramdiskpatchers/floramdiskpatcher.h"
-#include "ramdiskpatchers/ghostramdiskpatcher.h"
-#include "ramdiskpatchers/hammerheadramdiskpatcher.h"
-#include "ramdiskpatchers/hlteramdiskpatcher.h"
-#include "ramdiskpatchers/jflteramdiskpatcher.h"
-#include "ramdiskpatchers/klimtwifiramdiskpatcher.h"
-#include "ramdiskpatchers/klteramdiskpatcher.h"
-#include "ramdiskpatchers/lgg2ramdiskpatcher.h"
-#include "ramdiskpatchers/lgg3ramdiskpatcher.h"
-#include "ramdiskpatchers/mondrianwifiramdiskpatcher.h"
-#include "ramdiskpatchers/trelteramdiskpatcher.h"
-#include "ramdiskpatchers/trlteramdiskpatcher.h"
-#include "ramdiskpatchers/zerolteramdiskpatcher.h"
+#include "ramdiskpatchers/bacon.h"
+#include "ramdiskpatchers/falcon.h"
+#include "ramdiskpatchers/flo.h"
+#include "ramdiskpatchers/ghost.h"
+#include "ramdiskpatchers/hammerhead.h"
+#include "ramdiskpatchers/hlte.h"
+#include "ramdiskpatchers/jflte.h"
+#include "ramdiskpatchers/klimtwifi.h"
+#include "ramdiskpatchers/klte.h"
+#include "ramdiskpatchers/lgg2.h"
+#include "ramdiskpatchers/lgg3.h"
+#include "ramdiskpatchers/mondrianwifi.h"
+#include "ramdiskpatchers/trelte.h"
+#include "ramdiskpatchers/trlte.h"
+#include "ramdiskpatchers/zerolte.h"
 #endif
 
 
@@ -657,21 +657,21 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
 std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 {
     return {
-        BaconRamdiskPatcher::Id,
-        FalconRamdiskPatcher::Id,
-        FloAOSPRamdiskPatcher::Id,
-        GhostRamdiskPatcher::Id,
-        HammerheadDefaultRamdiskPatcher::Id,
-        HlteDefaultRamdiskPatcher::Id,
-        JflteDefaultRamdiskPatcher::Id,
-        KlimtwifiDefaultRamdiskPatcher::Id,
-        KlteDefaultRamdiskPatcher::Id,
-        LGG2RamdiskPatcher::Id,
-        LGG3RamdiskPatcher::Id,
-        MondrianwifiDefaultRamdiskPatcher::Id,
-        TrelteDefaultRamdiskPatcher::Id,
-        TrlteDefaultRamdiskPatcher::Id,
-        ZerolteDefaultRamdiskPatcher::Id
+        BaconRP::Id,
+        FalconRP::Id,
+        FloAOSPRP::Id,
+        GhostRP::Id,
+        HammerheadDefaultRP::Id,
+        HlteDefaultRP::Id,
+        JflteDefaultRP::Id,
+        KlimtwifiDefaultRP::Id,
+        KlteDefaultRP::Id,
+        LGG2RP::Id,
+        LGG3RP::Id,
+        MondrianwifiDefaultRP::Id,
+        TrelteDefaultRP::Id,
+        TrlteDefaultRP::Id,
+        ZerolteDefaultRP::Id
     };
 }
 
@@ -742,36 +742,36 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
 {
     RamdiskPatcher *rp = nullptr;
 
-    if (id == BaconRamdiskPatcher::Id) {
-        rp = new BaconRamdiskPatcher(this, info, cpio);
-    } else if (id == FalconRamdiskPatcher::Id) {
-        rp = new FalconRamdiskPatcher(this, info, cpio);
-    } else if (id == FloAOSPRamdiskPatcher::Id) {
-        rp = new FloAOSPRamdiskPatcher(this, info, cpio);
-    } else if (id == GhostRamdiskPatcher::Id) {
-        rp = new GhostRamdiskPatcher(this, info, cpio);
-    } else if (id == HammerheadDefaultRamdiskPatcher::Id) {
-        rp = new HammerheadDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == HlteDefaultRamdiskPatcher::Id) {
-        rp = new HlteDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == JflteDefaultRamdiskPatcher::Id) {
-        rp = new JflteDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == KlimtwifiDefaultRamdiskPatcher::Id) {
-        rp = new KlimtwifiDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == KlteDefaultRamdiskPatcher::Id) {
-        rp = new KlteDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == LGG2RamdiskPatcher::Id) {
-        rp = new LGG2RamdiskPatcher(this, info, cpio);
-    } else if (id == LGG3RamdiskPatcher::Id) {
-        rp = new LGG3RamdiskPatcher(this, info, cpio);
-    } else if (id == MondrianwifiDefaultRamdiskPatcher::Id) {
-        rp = new MondrianwifiDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == TrelteDefaultRamdiskPatcher::Id) {
-        rp = new TrelteDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == TrlteDefaultRamdiskPatcher::Id) {
-        rp = new TrlteDefaultRamdiskPatcher(this, info, cpio);
-    } else if (id == ZerolteDefaultRamdiskPatcher::Id) {
-        rp = new ZerolteDefaultRamdiskPatcher(this, info, cpio);
+    if (id == BaconRP::Id) {
+        rp = new BaconRP(this, info, cpio);
+    } else if (id == FalconRP::Id) {
+        rp = new FalconRP(this, info, cpio);
+    } else if (id == FloAOSPRP::Id) {
+        rp = new FloAOSPRP(this, info, cpio);
+    } else if (id == GhostRP::Id) {
+        rp = new GhostRP(this, info, cpio);
+    } else if (id == HammerheadDefaultRP::Id) {
+        rp = new HammerheadDefaultRP(this, info, cpio);
+    } else if (id == HlteDefaultRP::Id) {
+        rp = new HlteDefaultRP(this, info, cpio);
+    } else if (id == JflteDefaultRP::Id) {
+        rp = new JflteDefaultRP(this, info, cpio);
+    } else if (id == KlimtwifiDefaultRP::Id) {
+        rp = new KlimtwifiDefaultRP(this, info, cpio);
+    } else if (id == KlteDefaultRP::Id) {
+        rp = new KlteDefaultRP(this, info, cpio);
+    } else if (id == LGG2RP::Id) {
+        rp = new LGG2RP(this, info, cpio);
+    } else if (id == LGG3RP::Id) {
+        rp = new LGG3RP(this, info, cpio);
+    } else if (id == MondrianwifiDefaultRP::Id) {
+        rp = new MondrianwifiDefaultRP(this, info, cpio);
+    } else if (id == TrelteDefaultRP::Id) {
+        rp = new TrelteDefaultRP(this, info, cpio);
+    } else if (id == TrlteDefaultRP::Id) {
+        rp = new TrlteDefaultRP(this, info, cpio);
+    } else if (id == ZerolteDefaultRP::Id) {
+        rp = new ZerolteDefaultRP(this, info, cpio);
     }
 
     if (rp != nullptr) {

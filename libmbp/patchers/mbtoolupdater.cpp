@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -26,7 +26,7 @@
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
-#include "ramdiskpatchers/coreramdiskpatcher.h"
+#include "ramdiskpatchers/core.h"
 
 #include "private/stringutils.h"
 
@@ -202,7 +202,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     contents = StringUtils::joinData(lines, '\n');
     cpio->setContents("init.rc", std::move(contents));
 
-    CoreRamdiskPatcher crp(pc, info, cpio);
+    CoreRP crp(pc, info, cpio);
 
     if (!cpio->exists("init.multiboot.rc")) {
         crp.addMultiBootRc();
