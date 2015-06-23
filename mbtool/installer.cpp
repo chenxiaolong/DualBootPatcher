@@ -1283,7 +1283,7 @@ Installer::ProceedState Installer::install_stage_finish()
         display_msg("Boot partition was modified. Setting kernel");
 
         mbp::BootImage bi;
-        if (!bi.load(_boot_block_dev)) {
+        if (!bi.loadFile(_boot_block_dev)) {
             display_msg("Failed to load boot partition image");
             return ProceedState::Fail;
         }
@@ -1310,8 +1310,9 @@ Installer::ProceedState Installer::install_stage_finish()
         bi.setRamdiskImage(std::move(new_ramdisk));
 
         // Reapply hacks if needed
-        bi.setApplyBump(bi.wasBump());
-        if (bi.wasLoki()) {
+        if (bi.wasType() == mbp::BootImage::Type::Bump) {
+            bi.setType(mbp::BootImage::Type::Bump);
+        } else if (bi.wasType() == mbp::BootImage::Type::Loki) {
             std::vector<unsigned char> aboot_image;
             if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
                 LOGE("Failed to read aboot partition: %s", strerror(errno));
@@ -1320,10 +1321,11 @@ Installer::ProceedState Installer::install_stage_finish()
             }
 
             bi.setAbootImage(std::move(aboot_image));
-            bi.setApplyLoki(true);
+            bi.setType(mbp::BootImage::Type::Loki);
         }
 
-        auto bootimg = bi.create();
+        std::vector<unsigned char> bootimg;
+        bi.create(&bootimg);
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";
 

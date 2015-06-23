@@ -115,7 +115,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     typedef std::unique_ptr<archive, int (*)(archive *)> archive_ptr;
 
     mbp::BootImage bi;
-    if (!bi.load(_recovery_block_dev)) {
+    if (!bi.loadFile(_recovery_block_dev)) {
         display_msg("Failed to load recovery partition image");
         return ProceedState::Fail;
     }
