@@ -280,9 +280,14 @@ bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
     bi.setRamdiskImage(std::move(ramdiskImage));
 
     // Reapply Bump if needed
-    bi.setApplyBump(bi.wasBump());
+    if (bi.wasType() == BootImage::Type::Bump) {
+        bi.setType(BootImage::Type::Bump);
+    }
 
-    *data = bi.create();
+    if (!bi.create(data)) {
+        error = bi.error();
+        return false;
+    }
 
     if (cancelled) return false;
 

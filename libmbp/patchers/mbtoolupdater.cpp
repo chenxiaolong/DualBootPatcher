@@ -130,7 +130,7 @@ bool MbtoolUpdater::patchFile(ProgressUpdatedCallback progressCb,
 bool MbtoolUpdater::Impl::patchImage()
 {
     BootImage bi;
-    if (!bi.load(info->filename())) {
+    if (!bi.loadFile(info->filename())) {
         error = bi.error();
         return false;
     }
@@ -164,7 +164,9 @@ bool MbtoolUpdater::Impl::patchImage()
     bi.setRamdiskImage(std::move(newRamdisk));
 
     // Reapply bump
-    bi.setApplyBump(bi.wasBump());
+    if (bi.wasType() == BootImage::Type::Bump) {
+        bi.setType(BootImage::Type::Bump);
+    }
 
     if (!bi.createFile(m_parent->newFilePath())) {
         error = bi.error();

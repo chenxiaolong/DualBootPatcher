@@ -55,4 +55,8 @@ public:
                         const std::string &from, const std::string &to);
     static void replace_all(std::string *source,
                             const std::string &from, const std::string &to);
+
+    static std::string toHex(const unsigned char *data, std::size_t size);
+
+    static std::string toMaxString(const char *str, std::size_t maxSize);
 };

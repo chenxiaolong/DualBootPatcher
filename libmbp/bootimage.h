@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -46,46 +46,62 @@ public:
     static const uint32_t DefaultSecondOffset;
     static const uint32_t DefaultTagsOffset;
 
+    enum class Type : int
+    {
+        Android = 1,
+        Loki = 2,
+        Bump = 3
+    };
+
     BootImage();
     ~BootImage();
 
     PatcherError error() const;
 
+    bool load(const unsigned char *data, std::size_t size);
     bool load(const std::vector<unsigned char> &data);
-    bool load(const std::string &filename);
-    std::vector<unsigned char> create() const;
+    bool loadFile(const std::string &filename);
+    bool create(std::vector<unsigned char> *data) const;
     bool createFile(const std::string &path);
 
-    bool wasLoki() const;
-    bool wasBump() const;
+    Type wasType() const;
+    void setType(Type type);
 
-    void setApplyLoki(bool apply);
-    void setApplyBump(bool apply);
-
-    std::string boardName() const;
-    void setBoardName(const std::string &name);
+    // Board name
+    const std::string & boardName() const;
+    void setBoardName(std::string name);
+    const char * boardNameC() const;
+    void setBoardNameC(const char *name);
     void resetBoardName();
 
-    std::string kernelCmdline() const;
-    void setKernelCmdline(const std::string &cmdline);
+    // Kernel cmdline
+    const std::string & kernelCmdline() const;
+    void setKernelCmdline(std::string cmdline);
+    const char * kernelCmdlineC() const;
+    void setKernelCmdlineC(const char *cmdline);
     void resetKernelCmdline();
 
+    // Page size
     uint32_t pageSize() const;
     void setPageSize(uint32_t size);
     void resetPageSize();
 
+    // Kernel address
     uint32_t kernelAddress() const;
     void setKernelAddress(uint32_t address);
     void resetKernelAddress();
 
+    // Ramdisk address
     uint32_t ramdiskAddress() const;
     void setRamdiskAddress(uint32_t address);
     void resetRamdiskAddress();
 
+    // Second bootloader address
     uint32_t secondBootloaderAddress() const;
     void setSecondBootloaderAddress(uint32_t address);
     void resetSecondBootloaderAddress();
 
+    // Kernel tags address
     uint32_t kernelTagsAddress() const;
     void setKernelTagsAddress(uint32_t address);
     void resetKernelTagsAddress();
@@ -96,27 +112,38 @@ public:
                       uint32_t secondBootloaderOffset,
                       uint32_t kernelTagsOffset);
 
-    // For setting the various images
-
-    std::vector<unsigned char> kernelImage() const;
+    // Kernel image
+    const std::vector<unsigned char> & kernelImage() const;
     void setKernelImage(std::vector<unsigned char> data);
+    void kernelImageC(const unsigned char **data, std::size_t *size) const;
+    void setKernelImageC(const unsigned char *data, std::size_t size);
 
-    std::vector<unsigned char> ramdiskImage() const;
+    // Ramdisk image
+    const std::vector<unsigned char> & ramdiskImage() const;
     void setRamdiskImage(std::vector<unsigned char> data);
+    void ramdiskImageC(const unsigned char **data, std::size_t *size) const;
+    void setRamdiskImageC(const unsigned char *data, std::size_t size);
 
-    std::vector<unsigned char> secondBootloaderImage() const;
+    // Second bootloader image
+    const std::vector<unsigned char> & secondBootloaderImage() const;
     void setSecondBootloaderImage(std::vector<unsigned char> data);
+    void secondBootloaderImageC(const unsigned char **data, std::size_t *size) const;
+    void setSecondBootloaderImageC(const unsigned char *data, std::size_t size);
 
-    std::vector<unsigned char> deviceTreeImage() const;
+    // Device tree image
+    const std::vector<unsigned char> & deviceTreeImage() const;
     void setDeviceTreeImage(std::vector<unsigned char> data);
+    void deviceTreeImageC(const unsigned char **data, std::size_t *size) const;
+    void setDeviceTreeImageC(const unsigned char *data, std::size_t size);
 
-    // For Loki only
-    std::vector<unsigned char> abootImage() const;
+    // Aboot image
+    const std::vector<unsigned char> & abootImage() const;
     void setAbootImage(std::vector<unsigned char> data);
+    void abootImageC(const unsigned char **data, std::size_t *size) const;
+    void setAbootImageC(const unsigned char *data, std::size_t size);
 
     bool operator==(const BootImage &other) const;
     bool operator!=(const BootImage &other) const;
-
 
 private:
     class Impl;

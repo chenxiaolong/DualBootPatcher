@@ -23,7 +23,11 @@ set(MBP_SOURCES
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
+    bootimage/androidformat.cpp
+    bootimage/bumpformat.cpp
     bootimage/bumppatcher.cpp
+    bootimage/fileformat.cpp
+    bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
@@ -181,7 +185,11 @@ set(MBP_MINI_SOURCES
     #cwrapper/cpatchinfo.cpp
     cwrapper/cstringmap.cpp
     cwrapper/private/util.cpp
+    bootimage/androidformat.cpp
+    bootimage/bumpformat.cpp
     bootimage/bumppatcher.cpp
+    bootimage/fileformat.cpp
+    bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
     external/sha.cpp
 )

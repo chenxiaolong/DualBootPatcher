@@ -210,3 +210,27 @@ void StringUtils::replace_all(std::string *source,
 {
     replace_internal(source, from, to, false);
 }
+
+std::string StringUtils::toHex(const unsigned char *data, std::size_t size)
+{
+    static const char digits[] = "0123456789abcdef";
+
+    std::string hex;
+    hex.reserve(2 * sizeof(size));
+    for (uint32_t i = 0; i < size; ++i) {
+        hex += digits[(data[i] >> 4) & 0xf];
+        hex += digits[data[i] & 0xf];
+    }
+
+    return hex;
+}
+
+std::string StringUtils::toMaxString(const char *str, std::size_t maxSize)
+{
+    const char *location;
+    if ((location = static_cast<const char *>(std::memchr(str, 0, maxSize)))) {
+        return std::string(str, location);
+    } else {
+        return std::string(str, maxSize);
+    }
+}
