@@ -115,7 +115,7 @@ static bool patchShellcode(uint32_t header, uint32_t ramdisk,
     bool foundRamdisk = false;
     uint32_t *ptr;
 
-    for (size_t i = 0; i < LOKI_SHELLCODE_SIZE; ++i) {
+    for (size_t i = 0; i < LOKI_SHELLCODE_SIZE - sizeof(uint32_t); ++i) {
         ptr = reinterpret_cast<uint32_t *>(&patch[i]);
         if (*ptr == 0xffffffff) {
             *ptr = header;
@@ -240,6 +240,12 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
 
     std::vector<unsigned char> newImage;
 
+    if (pageSize > data->size()) {
+        FLOGE("Header exceeds boot image size by %" PRIzu " bytes",
+              pageSize - data->size());
+        return false;
+    }
+
     // Write the image header
     newImage.insert(newImage.end(),
                     data->data(),
@@ -247,12 +253,24 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
 
     uint32_t pageKernelSize = (origKernelSize + pageMask) & ~pageMask;
 
+    if (pageSize + pageKernelSize > data->size()) {
+        FLOGE("Kernel exceeds boot image size by %" PRIzu " bytes",
+              pageSize + pageKernelSize - data->size());
+        return false;
+    }
+
     // Write the kernel
     newImage.insert(newImage.end(),
                     data->data() + pageSize,
                     data->data() + pageSize + pageKernelSize);
 
     uint32_t pageRamdiskSize = (origRamdiskSize + pageMask) & ~pageMask;
+
+    if (pageSize + pageKernelSize + pageRamdiskSize > data->size()) {
+        FLOGE("Ramdisk exceeds boot image size by %" PRIzu " bytes",
+              pageSize + pageKernelSize + pageRamdiskSize - data->size());
+        return false;
+    }
 
     // Write the ramdisk
     newImage.insert(newImage.end(),
@@ -269,6 +287,12 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
 
     if (hdr->dt_size) {
         LOGD("[Loki] Writing device tree");
+
+        if (pageSize + pageKernelSize + pageRamdiskSize + hdr->dt_size > data->size()) {
+            FLOGE("Device tree image exceeds boot image size by %" PRIzu " bytes",
+                  pageSize + pageKernelSize + pageRamdiskSize + hdr->dt_size - data->size());
+            return false;
+        }
 
         newImage.insert(newImage.end(),
                         data->data() + pageSize + pageKernelSize + pageRamdiskSize,
