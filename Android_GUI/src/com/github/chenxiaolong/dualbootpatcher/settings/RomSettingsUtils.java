@@ -23,6 +23,7 @@ import android.util.Log;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage.Type;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
@@ -147,8 +148,7 @@ public class RomSettingsUtils {
             bi.destroy();
             return false;
         }
-        boolean wasBump = bi.wasBump();
-        boolean wasLoki = bi.wasLoki();
+        int wasType = bi.wasType();
         boolean hasRomIdFile;
 
         CpioFile cpio = new CpioFile();
@@ -161,8 +161,7 @@ public class RomSettingsUtils {
 
         bi.destroy();
 
-        Log.d(TAG, "Original boot image was patched with bump: " + wasBump);
-        Log.d(TAG, "Original boot image was patched with loki: " + wasLoki);
+        Log.d(TAG, "Original boot image type: " + wasType);
         Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
 
         // Overwrite old boot image
@@ -175,7 +174,7 @@ public class RomSettingsUtils {
         }
 
         // Make changes to the boot image if necessary
-        if (wasBump || wasLoki || !hasRomIdFile) {
+        if (wasType != Type.ANDROID || !hasRomIdFile) {
             bi = new BootImage();
 
             try {
@@ -184,13 +183,12 @@ public class RomSettingsUtils {
                     return false;
                 }
 
-                if (wasBump) {
+                if (wasType == Type.BUMP) {
                     Log.d(TAG, "Will reapply bump to boot image");
-                    bi.setApplyBump(true);
-                }
-                if (wasLoki) {
+                    bi.setType(Type.BUMP);
+                } else if (wasType == Type.LOKI) {
                     Log.d(TAG, "Will reapply loki to boot image");
-                    bi.setApplyLoki(true);
+                    bi.setType(Type.LOKI);
 
                     File aboot = new File(context.getCacheDir() + File.separator + "aboot.img");
 

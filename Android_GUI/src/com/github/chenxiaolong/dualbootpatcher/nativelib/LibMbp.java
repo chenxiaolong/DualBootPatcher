@@ -79,12 +79,10 @@ public class LibMbp {
         static native CPatcherError mbp_bootimage_error(CBootImage bi);
         static native boolean mbp_bootimage_load_data(CBootImage bi, Pointer data, int size);
         static native boolean mbp_bootimage_load_file(CBootImage bi, String filename);
-        static native void mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
+        static native boolean mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native boolean mbp_bootimage_create_file(CBootImage bi, String filename);
-        static native boolean mbp_bootimage_was_loki(CBootImage bi);
-        static native boolean mbp_bootimage_was_bump(CBootImage bi);
-        static native void mbp_bootimage_set_apply_loki(CBootImage bi, boolean apply);
-        static native void mbp_bootimage_set_apply_bump(CBootImage bi, boolean apply);
+        static native int /* BootImageType */ mbp_bootimage_was_type(CBootImage bi);
+        static native void mbp_bootimage_set_type(CBootImage bi, /* BootImageType */ int type);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
         static native void mbp_bootimage_set_boardname(CBootImage bi, String name);
         static native void mbp_bootimage_reset_boardname(CBootImage bi);
@@ -107,15 +105,15 @@ public class LibMbp {
         static native void mbp_bootimage_set_kernel_tags_address(CBootImage bi, int address);
         static native void mbp_bootimage_reset_kernel_tags_address(CBootImage bi);
         static native void mbp_bootimage_set_addresses(CBootImage bi, int base, int kernelOffset, int ramdiskOffset, int secondBootloaderOffset, int kernelTagsOffset);
-        static native /* size_t */ int mbp_bootimage_kernel_image(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_kernel_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_kernel_image(CBootImage bi, Pointer data, /* size_t */ int size);
-        static native /* size_t */ int mbp_bootimage_ramdisk_image(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_ramdisk_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_ramdisk_image(CBootImage bi, Pointer data, /* size_t */ int size);
-        static native /* size_t */ int mbp_bootimage_second_bootloader_image(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_second_bootloader_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_second_bootloader_image(CBootImage bi, Pointer data, /* size_t */ int size);
-        static native /* size_t */ int mbp_bootimage_device_tree_image(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_device_tree_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_device_tree_image(CBootImage bi, Pointer data, int size);
-        static native /* size_t */ int mbp_bootimage_aboot_image(CBootImage bi, PointerByReference dataReturn);
+        static native void mbp_bootimage_aboot_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_aboot_image(CBootImage bi, Pointer data, int size);
         static native boolean mbp_bootimage_equals(CBootImage lhs, CBootImage rhs);
         // END: cbootimage.h
@@ -376,6 +374,12 @@ public class LibMbp {
     }
 
     public static class BootImage implements Parcelable {
+        public interface Type {
+            int ANDROID = 1;
+            int LOKI = 2;
+            int BUMP = 3;
+        }
+
         private static final HashMap<CBootImage, Integer> sInstances = new HashMap<>();
         private CBootImage mCBootImage;
 
@@ -498,7 +502,10 @@ public class LibMbp {
             PointerByReference pData = new PointerByReference();
             IntByReference pSize = new IntByReference();
 
-            CWrapper.mbp_bootimage_create_data(mCBootImage, pData, pSize);
+            boolean ret = CWrapper.mbp_bootimage_create_data(mCBootImage, pData, pSize);
+            if (!ret) {
+                return null;
+            }
 
             int size = pSize.getValue();
             Pointer data = pData.getValue();
@@ -514,34 +521,22 @@ public class LibMbp {
             return CWrapper.mbp_bootimage_create_file(mCBootImage, path);
         }
 
-        public boolean wasLoki() {
-            validate(mCBootImage, BootImage.class, "wasLoki");
+        public /* BootImageType */ int wasType() {
+            validate(mCBootImage, BootImage.class, "wasType");
 
-            return CWrapper.mbp_bootimage_was_loki(mCBootImage);
+            return CWrapper.mbp_bootimage_was_type(mCBootImage);
         }
 
-        public boolean wasBump() {
-            validate(mCBootImage, BootImage.class, "wasBump");
+        public void setType(/* BootImageType */ int type) {
+            validate(mCBootImage, BootImage.class, "setType", type);
 
-            return CWrapper.mbp_bootimage_was_bump(mCBootImage);
-        }
-
-        public void setApplyLoki(boolean apply) {
-            validate(mCBootImage, BootImage.class, "setApplyLoki", apply);
-
-            CWrapper.mbp_bootimage_set_apply_loki(mCBootImage, apply);
-        }
-
-        public void setApplyBump(boolean apply) {
-            validate(mCBootImage, BootImage.class, "setApplyBump", apply);
-
-            CWrapper.mbp_bootimage_set_apply_bump(mCBootImage, apply);
+            CWrapper.mbp_bootimage_set_type(mCBootImage, type);
         }
 
         public String getBoardName() {
             validate(mCBootImage, BootImage.class, "getBoardName");
             Pointer p = CWrapper.mbp_bootimage_boardname(mCBootImage);
-            return getStringAndFree(p);
+            return p.getString(0);
         }
 
         public void setBoardName(String name) {
@@ -559,7 +554,7 @@ public class LibMbp {
         public String getKernelCmdline() {
             validate(mCBootImage, BootImage.class, "getKernelCmdline");
             Pointer p = CWrapper.mbp_bootimage_kernel_cmdline(mCBootImage);
-            return getStringAndFree(p);
+            return p.getString(0);
         }
 
         public void setKernelCmdline(String cmdline) {
@@ -660,11 +655,11 @@ public class LibMbp {
         public byte[] getKernelImage() {
             validate(mCBootImage, BootImage.class, "getKernelImage");
             PointerByReference pData = new PointerByReference();
-            int size = CWrapper.mbp_bootimage_kernel_image(mCBootImage, pData);
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_kernel_image(mCBootImage, pData, pSize);
             Pointer data = pData.getValue();
-            byte[] out = data.getByteArray(0, size);
-            CWrapper.mbp_free(data);
-            return out;
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
         }
 
         public void setKernelImage(byte[] data) {
@@ -679,11 +674,11 @@ public class LibMbp {
         public byte[] getRamdiskImage() {
             validate(mCBootImage, BootImage.class, "getRamdiskImage");
             PointerByReference pData = new PointerByReference();
-            int size = CWrapper.mbp_bootimage_ramdisk_image(mCBootImage, pData);
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_ramdisk_image(mCBootImage, pData, pSize);
             Pointer data = pData.getValue();
-            byte[] out = data.getByteArray(0, size);
-            CWrapper.mbp_free(data);
-            return out;
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
         }
 
         public void setRamdiskImage(byte[] data) {
@@ -698,11 +693,11 @@ public class LibMbp {
         public byte[] getSecondBootloaderImage() {
             validate(mCBootImage, BootImage.class, "getSecondBootloaderImage");
             PointerByReference pData = new PointerByReference();
-            int size = CWrapper.mbp_bootimage_second_bootloader_image(mCBootImage, pData);
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_second_bootloader_image(mCBootImage, pData, pSize);
             Pointer data = pData.getValue();
-            byte[] out = data.getByteArray(0, size);
-            CWrapper.mbp_free(data);
-            return out;
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
         }
 
         public void setSecondBootloaderImage(byte[] data) {
@@ -717,11 +712,11 @@ public class LibMbp {
         public byte[] getDeviceTreeImage() {
             validate(mCBootImage, BootImage.class, "getDeviceTreeImage");
             PointerByReference pData = new PointerByReference();
-            int size = CWrapper.mbp_bootimage_device_tree_image(mCBootImage, pData);
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_device_tree_image(mCBootImage, pData, pSize);
             Pointer data = pData.getValue();
-            byte[] out = data.getByteArray(0, size);
-            CWrapper.mbp_free(data);
-            return out;
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
         }
 
         public void setDeviceTreeImage(byte[] data) {
@@ -736,11 +731,11 @@ public class LibMbp {
         public byte[] getAbootImage() {
             validate(mCBootImage, BootImage.class, "getAbootImage");
             PointerByReference pData = new PointerByReference();
-            int size = CWrapper.mbp_bootimage_aboot_image(mCBootImage, pData);
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_aboot_image(mCBootImage, pData, pSize);
             Pointer data = pData.getValue();
-            byte[] out = data.getByteArray(0, size);
-            CWrapper.mbp_free(data);
-            return out;
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
         }
 
         public void setAbootImage(byte[] data) {
