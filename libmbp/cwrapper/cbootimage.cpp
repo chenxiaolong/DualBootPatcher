@@ -103,10 +103,10 @@ CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
  * \sa BootImage::load(const std::vector<unsigned char> &)
  */
 bool mbp_bootimage_load_data(CBootImage *bootImage,
-                             const void *data, size_t size)
+                             const unsigned char *data, size_t size)
 {
     CAST(bootImage);
-    return bi->load(data_to_vector(data, size));
+    return bi->load(data, size);
 }
 
 /*!
@@ -123,7 +123,7 @@ bool mbp_bootimage_load_file(CBootImage *bootImage,
                              const char *filename)
 {
     CAST(bootImage);
-    return bi->load(filename);
+    return bi->loadFile(filename);
 }
 
 /*!
@@ -138,11 +138,17 @@ bool mbp_bootimage_load_file(CBootImage *bootImage,
  *
  * \sa BootImage::create()
  */
-void mbp_bootimage_create_data(const CBootImage *bootImage, void **data, size_t *size)
+bool mbp_bootimage_create_data(const CBootImage *bootImage,
+                               unsigned char **data, size_t *size)
 {
     CCAST(bootImage);
-    std::vector<unsigned char> vData = bi->create();
-    vector_to_data(vData, data, size);
+    std::vector<unsigned char> vData;
+    if (bi->create(&vData)) {
+        vector_to_data(vData, reinterpret_cast<void **>(data), size);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /*!
@@ -162,35 +168,20 @@ bool mbp_bootimage_create_file(CBootImage *bootImage,
     return bi->createFile(filename);
 }
 
-bool mbp_bootimage_was_loki(CBootImage *bootImage)
+enum BootImageType mbp_bootimage_was_type(const CBootImage *bootImage)
 {
     CCAST(bootImage);
-    return bi->wasLoki();
+    return static_cast<BootImageType>(bi->wasType());
 }
 
-bool mbp_bootimage_was_bump(CBootImage *bootImage)
-{
-    CCAST(bootImage);
-    return bi->wasBump();
-}
-
-void mbp_bootimage_set_apply_loki(CBootImage *bootImage, bool apply)
+void mbp_bootimage_set_type(CBootImage *bootImage, enum BootImageType type)
 {
     CAST(bootImage);
-    bi->setApplyLoki(apply);
-}
-
-void mbp_bootimage_set_apply_bump(CBootImage* bootImage, bool apply)
-{
-    CAST(bootImage);
-    bi->setApplyBump(apply);
+    bi->setType(static_cast<mbp::BootImage::Type>(type));
 }
 
 /*!
  * \brief Board name field in the boot image header
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
  *
  * \param bootImage CBootImage object
  *
@@ -198,10 +189,10 @@ void mbp_bootimage_set_apply_bump(CBootImage* bootImage, bool apply)
  *
  * \sa BootImage::boardName()
  */
-char * mbp_bootimage_boardname(const CBootImage *bootImage)
+const char * mbp_bootimage_boardname(const CBootImage *bootImage)
 {
     CCAST(bootImage);
-    return string_to_cstring(bi->boardName());
+    return bi->boardNameC();
 }
 
 /*!
@@ -216,7 +207,7 @@ void mbp_bootimage_set_boardname(CBootImage *bootImage,
                                  const char *name)
 {
     CAST(bootImage);
-    bi->setBoardName(name);
+    bi->setBoardNameC(name);
 }
 
 /*!
@@ -235,19 +226,16 @@ void mbp_bootimage_reset_boardname(CBootImage *bootImage)
 /*!
  * \brief Kernel cmdline in the boot image header
  *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
  * \param bootImage CBootImage object
  *
  * \return Kernel cmdline
  *
  * \sa BootImage::kernelCmdline()
  */
-char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage)
+const char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage)
 {
     CCAST(bootImage);
-    return string_to_cstring(bi->kernelCmdline());
+    return bi->kernelCmdlineC();
 }
 
 /*!
@@ -262,7 +250,7 @@ void mbp_bootimage_set_kernel_cmdline(CBootImage *bootImage,
                                       const char *cmdline)
 {
     CAST(bootImage);
-    bi->setKernelCmdline(cmdline);
+    bi->setKernelCmdlineC(cmdline);
 }
 
 /*!
@@ -521,20 +509,17 @@ void mbp_bootimage_set_addresses(CBootImage *bootImage,
 /*!
  * \brief Kernel image
  *
- * \note The output data is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
  * \param bootImage CBootImage object
  * \param data Output data
- *
- * \return Size of output data
+ * \param size Output size
  *
  * \sa BootImage::kernelImage()
  */
-size_t mbp_bootimage_kernel_image(const CBootImage *bootImage, void **data)
+void mbp_bootimage_kernel_image(const CBootImage *bootImage,
+                                const unsigned char **data, size_t *size)
 {
     CCAST(bootImage);
-    return vector_to_data2(bi->kernelImage(), data);
+    bi->kernelImageC(data, size);
 }
 
 /*!
@@ -547,29 +532,26 @@ size_t mbp_bootimage_kernel_image(const CBootImage *bootImage, void **data)
  * \sa BootImage::setKernelImage()
  */
 void mbp_bootimage_set_kernel_image(CBootImage *bootImage,
-                                    const void *data, size_t size)
+                                    const unsigned char *data, size_t size)
 {
     CAST(bootImage);
-    bi->setKernelImage(data_to_vector(data, size));
+    bi->setKernelImageC(data, size);
 }
 
 /*!
  * \brief Ramdisk image
  *
- * \note The output data is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
  * \param bootImage CBootImage object
  * \param data Output data
- *
- * \return Size of output data
+ * \param size Output size
  *
  * \sa BootImage::ramdiskImage()
  */
-size_t mbp_bootimage_ramdisk_image(const CBootImage *bootImage, void **data)
+void mbp_bootimage_ramdisk_image(const CBootImage *bootImage,
+                                 const unsigned char **data, size_t *size)
 {
     CCAST(bootImage);
-    return vector_to_data2(bi->ramdiskImage(), data);
+    bi->ramdiskImageC(data, size);
 }
 
 /*!
@@ -582,30 +564,26 @@ size_t mbp_bootimage_ramdisk_image(const CBootImage *bootImage, void **data)
  * \sa BootImage::setRamdiskImage()
  */
 void mbp_bootimage_set_ramdisk_image(CBootImage *bootImage,
-                                     const void *data, size_t size)
+                                     const unsigned char *data, size_t size)
 {
     CAST(bootImage);
-    bi->setRamdiskImage(data_to_vector(data, size));
+    bi->setRamdiskImageC(data, size);
 }
 
 /*!
  * \brief Second bootloader image
  *
- * \note The output data is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
  * \param bootImage CBootImage object
  * \param data Output data
- *
- * \return Size of output data
+ * \param size Output size
  *
  * \sa BootImage::secondBootloaderImage()
  */
-size_t mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
-                                             void **data)
+void mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
+                                           const unsigned char **data, size_t *size)
 {
     CCAST(bootImage);
-    return vector_to_data2(bi->secondBootloaderImage(), data);
+    bi->secondBootloaderImageC(data, size);
 }
 
 /*!
@@ -618,30 +596,26 @@ size_t mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
  * \sa BootImage::setSecondBootloaderImage()
  */
 void mbp_bootimage_set_second_bootloader_image(CBootImage *bootImage,
-                                               const void *data, size_t size)
+                                               const unsigned char *data, size_t size)
 {
     CAST(bootImage);
-    bi->setSecondBootloaderImage(data_to_vector(data, size));
+    bi->setSecondBootloaderImageC(data, size);
 }
 
 /*!
  * \brief Device tree image
  *
- * \note The output data is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
  * \param bootImage CBootImage object
  * \param data Output data
- *
- * \return Size of output data
+ * \param size Output size
  *
  * \sa BootImage::deviceTreeImage()
  */
-size_t mbp_bootimage_device_tree_image(const CBootImage *bootImage,
-                                       void **data)
+void mbp_bootimage_device_tree_image(const CBootImage *bootImage,
+                                     const unsigned char **data, size_t *size)
 {
     CCAST(bootImage);
-    return vector_to_data2(bi->deviceTreeImage(), data);
+    bi->deviceTreeImageC(data, size);
 }
 
 /*!
@@ -654,23 +628,24 @@ size_t mbp_bootimage_device_tree_image(const CBootImage *bootImage,
  * \sa BootImage::setDeviceTreeImage()
  */
 void mbp_bootimage_set_device_tree_image(CBootImage *bootImage,
-                                         const void *data, size_t size)
+                                         const unsigned char *data, size_t size)
 {
     CAST(bootImage);
-    bi->setDeviceTreeImage(data_to_vector(data, size));
+    bi->setDeviceTreeImageC(data, size);
 }
 
-size_t mbp_bootimage_aboot_image(const CBootImage* bootImage, void **data)
+void mbp_bootimage_aboot_image(const CBootImage *bootImage,
+                               const unsigned char **data, size_t *size)
 {
     CCAST(bootImage);
-    return vector_to_data2(bi->abootImage(), data);
+    bi->abootImageC(data, size);
 }
 
 void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
-                                   const void *data, size_t size)
+                                   const unsigned char *data, size_t size)
 {
     CAST(bootImage);
-    bi->setAbootImage(data_to_vector(data, size));
+    bi->setAbootImageC(data, size);
 }
 
 bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs)

@@ -29,33 +29,37 @@
 extern "C" {
 #endif
 
+enum BootImageType
+{
+    Android = 1,
+    Loki = 2,
+    Bump = 3
+};
+
 CBootImage * mbp_bootimage_create(void);
 void mbp_bootimage_destroy(CBootImage *bootImage);
 
 CPatcherError * mbp_bootimage_error(const CBootImage *bootImage);
 
 bool mbp_bootimage_load_data(CBootImage *bootImage,
-                             const void *data, size_t size);
+                             const unsigned char *data, size_t size);
 bool mbp_bootimage_load_file(CBootImage *bootImage,
                              const char *filename);
 
-void mbp_bootimage_create_data(const CBootImage *bootImage,
-                               void **data, size_t *size);
+bool mbp_bootimage_create_data(const CBootImage *bootImage,
+                               unsigned char **data, size_t *size);
 bool mbp_bootimage_create_file(CBootImage *bootImage,
                                const char *filename);
 
-bool mbp_bootimage_was_loki(CBootImage *bootImage);
-bool mbp_bootimage_was_bump(CBootImage *bootImage);
+enum BootImageType mbp_bootimage_was_type(const CBootImage *bootImage);
+void mbp_bootimage_set_type(CBootImage *bootImage, enum BootImageType type);
 
-void mbp_bootimage_set_apply_loki(CBootImage *bootImage, bool apply);
-void mbp_bootimage_set_apply_bump(CBootImage *bootImage, bool apply);
-
-char * mbp_bootimage_boardname(const CBootImage *bootImage);
+const char * mbp_bootimage_boardname(const CBootImage *bootImage);
 void mbp_bootimage_set_boardname(CBootImage *bootImage,
                                  const char *name);
 void mbp_bootimage_reset_boardname(CBootImage *bootImage);
 
-char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage);
+const char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage);
 void mbp_bootimage_set_kernel_cmdline(CBootImage *bootImage,
                                       const char *cmdline);
 void mbp_bootimage_reset_kernel_cmdline(CBootImage *bootImage);
@@ -91,30 +95,30 @@ void mbp_bootimage_set_addresses(CBootImage *bootImage,
                                  uint32_t secondBootloaderOffset,
                                  uint32_t kernelTagsOffset);
 
-size_t mbp_bootimage_kernel_image(const CBootImage *bootImage,
-                                  void **data);
+void mbp_bootimage_kernel_image(const CBootImage *bootImage,
+                                const unsigned char **data, size_t *size);
 void mbp_bootimage_set_kernel_image(CBootImage *bootImage,
-                                    const void *data, size_t size);
+                                    const unsigned char *data, size_t size);
 
-size_t mbp_bootimage_ramdisk_image(const CBootImage *bootImage,
-                                   void **data);
+void mbp_bootimage_ramdisk_image(const CBootImage *bootImage,
+                                 const unsigned char **data, size_t *size);
 void mbp_bootimage_set_ramdisk_image(CBootImage *bootImage,
-                                     const void *data, size_t size);
+                                     const unsigned char *data, size_t size);
 
-size_t mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
-                                             void **data);
+void mbp_bootimage_second_bootloader_image(const CBootImage *bootImage,
+                                           const unsigned char **data, size_t *size);
 void mbp_bootimage_set_second_bootloader_image(CBootImage *bootImage,
-                                               const void *data, size_t size);
+                                               const unsigned char *data, size_t size);
 
-size_t mbp_bootimage_device_tree_image(const CBootImage *bootImage,
-                                       void **data);
+void mbp_bootimage_device_tree_image(const CBootImage *bootImage,
+                                     const unsigned char **data, size_t *size);
 void mbp_bootimage_set_device_tree_image(CBootImage *bootImage,
-                                         const void *data, size_t size);
+                                         const unsigned char *data, size_t size);
 
-size_t mbp_bootimage_aboot_image(const CBootImage *bootImage,
-                                 void **data);
+void mbp_bootimage_aboot_image(const CBootImage *bootImage,
+                               const unsigned char **data, size_t *size);
 void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
-                                   const void *data, size_t size);
+                                   const unsigned char *data, size_t size);
 
 bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs);
 
