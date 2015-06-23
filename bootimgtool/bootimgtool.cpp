@@ -112,14 +112,13 @@ static const char PackUsage[] =
     "  -p, --prefix [prefix]\n"
     "                  Prefix to prepend to item filenames\n"
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n"
+    "  -t, --type [type]\n"
+    "                  Output type of the boot image\n"
+    "                  [android, bump, loki]\n"
     "  --input-[item] [item path]\n"
     "                  Custom path for a particular item\n"
     "  --value-[item] [item value]\n"
     "                  Specify a value for an item directly\n"
-    "\n"
-    "  --apply-bump    Apply the Bump exploit to the boot image\n"
-    "  --apply-loki [aboot image]\n"
-    "                  Apply the Loki exploit to the boot image\n"
     "\n"
     "The following items are loaded to create a new boot image.\n"
     "\n"
@@ -135,6 +134,7 @@ static const char PackUsage[] =
     "  ramdisk          Ramdisk image\n"
     "  second           Second bootloader image\n"
     "  dt               Device tree image\n"
+    "  aboot            Aboot image (only used for loki)\n"
     "\n"
     "Items marked with an asterisk can be specified by value using the --value-*\n"
     "options. (eg. --value-page_size=2048).\n"
@@ -471,7 +471,7 @@ bool unpack_main(int argc, char *argv[])
 
     // Load the boot image
     mbp::BootImage bi;
-    if (!bi.load(input_file)) {
+    if (!bi.loadFile(input_file)) {
         fprintf(stderr, "%s\n", error_to_string(bi.error()).c_str());
         return false;
     }
@@ -602,8 +602,7 @@ bool pack_main(int argc, char *argv[])
     std::vector<unsigned char> second_image;
     std::vector<unsigned char> dt_image;
     std::vector<unsigned char> aboot_image;
-    bool apply_bump = false;
-    bool apply_loki = false;
+    mbp::BootImage::Type type = mbp::BootImage::Type::Android;
 
     // Arguments with no short options
     enum pack_options : int
@@ -621,6 +620,7 @@ bool pack_main(int argc, char *argv[])
         OPT_INPUT_RAMDISK        = 10000 + 10,
         OPT_INPUT_SECOND         = 10000 + 11,
         OPT_INPUT_DT             = 10000 + 12,
+        OPT_INPUT_ABOOT          = 10000 + 13,
         // Values
         OPT_VALUE_CMDLINE        = 20000 + 1,
         OPT_VALUE_BOARD          = 20000 + 2,
@@ -629,10 +629,7 @@ bool pack_main(int argc, char *argv[])
         OPT_VALUE_RAMDISK_OFFSET = 20000 + 5,
         OPT_VALUE_SECOND_OFFSET  = 20000 + 6,
         OPT_VALUE_TAGS_OFFSET    = 20000 + 7,
-        OPT_VALUE_PAGE_SIZE      = 20000 + 8,
-        // Exploits
-        OPT_APPLY_BUMP           = 30000 + 1,
-        OPT_APPLY_LOKI           = 30000 + 2
+        OPT_VALUE_PAGE_SIZE      = 20000 + 8
     };
 
     static struct option long_options[] = {
@@ -640,6 +637,7 @@ bool pack_main(int argc, char *argv[])
         {"input",                required_argument, 0, 'i'},
         {"prefix",               required_argument, 0, 'p'},
         {"noprefix",             required_argument, 0, 'n'},
+        {"type",                 required_argument, 0, 't'},
         // Arguments without short versions
         {"input-cmdline",        required_argument, 0, OPT_INPUT_CMDLINE},
         {"input-board",          required_argument, 0, OPT_INPUT_BOARD},
@@ -653,6 +651,7 @@ bool pack_main(int argc, char *argv[])
         {"input-ramdisk",        required_argument, 0, OPT_INPUT_RAMDISK},
         {"input-second",         required_argument, 0, OPT_INPUT_SECOND},
         {"input-dt",             required_argument, 0, OPT_INPUT_DT},
+        {"input-aboot",          required_argument, 0, OPT_INPUT_ABOOT},
         // Value arguments
         {"value-cmdline",        required_argument, 0, OPT_VALUE_CMDLINE},
         {"value-board",          required_argument, 0, OPT_VALUE_BOARD},
@@ -662,15 +661,12 @@ bool pack_main(int argc, char *argv[])
         {"value-second_offset",  required_argument, 0, OPT_VALUE_SECOND_OFFSET},
         {"value-tags_offset",    required_argument, 0, OPT_VALUE_TAGS_OFFSET},
         {"value-page_size",      required_argument, 0, OPT_VALUE_PAGE_SIZE},
-        // Exploits
-        {"apply-bump",           no_argument,       0, OPT_APPLY_BUMP},
-        {"apply-loki",           required_argument, 0, OPT_APPLY_LOKI},
         {0, 0, 0, 0}
     };
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "i:p:n", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "i:p:nt:", long_options, &long_index)) != -1) {
         switch (opt) {
         case 'i':                      input_dir = optarg;           break;
         case 'p':                      prefix = optarg;              break;
@@ -687,12 +683,7 @@ bool pack_main(int argc, char *argv[])
         case OPT_INPUT_RAMDISK:        path_ramdisk = optarg;        break;
         case OPT_INPUT_SECOND:         path_second = optarg;         break;
         case OPT_INPUT_DT:             path_dt = optarg;             break;
-        case OPT_APPLY_BUMP:           apply_bump = true;            break;
-
-        case OPT_APPLY_LOKI:
-            path_aboot = optarg;
-            apply_loki = true;
-            break;
+        case OPT_INPUT_ABOOT:          path_aboot = optarg;          break;
 
         case OPT_VALUE_CMDLINE:
             path_cmdline.clear();
@@ -760,6 +751,19 @@ bool pack_main(int argc, char *argv[])
             }
             break;
 
+        case 't':
+            if (strcmp(optarg, "android") == 0) {
+                type = mbp::BootImage::Type::Android;
+            } else if (strcmp(optarg, "bump") == 0) {
+                type = mbp::BootImage::Type::Bump;
+            } else if (strcmp(optarg, "loki") == 0) {
+                type = mbp::BootImage::Type::Loki;
+            } else {
+                fprintf(stderr, "Invalid type: %s\n", optarg);
+                return false;
+            }
+            break;
+
         case 'h':
             fprintf(stdout, PackUsage);
             return true;
@@ -770,7 +774,12 @@ bool pack_main(int argc, char *argv[])
         }
     }
 
-    // There should be one other arguments
+    if (type == mbp::BootImage::Type::Loki && path_aboot.empty()) {
+        fprintf(stderr, "An aboot image must be specified to create a loki image\n");
+        return false;
+    }
+
+    // There should be one other argument
     if (argc - optind != 1) {
         fprintf(stderr, PackUsage);
         return false;
@@ -1042,11 +1051,10 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    if (apply_loki) {
-        if (!read_file_data(path_aboot, &aboot_image)) {
-            fprintf(stderr, "%s: %s\n", path_aboot.c_str(), strerror(errno));
-            return false;
-        }
+    // Read aboot image
+    if (!read_file_data(path_aboot, &aboot_image) && errno != ENOENT) {
+        fprintf(stderr, "%s: %s\n", path_aboot.c_str(), strerror(errno));
+        return false;
     }
 
     bi.setKernelCmdline(std::move(cmdline));
@@ -1057,14 +1065,9 @@ bool pack_main(int argc, char *argv[])
     bi.setRamdiskImage(std::move(ramdisk_image));
     bi.setSecondBootloaderImage(std::move(second_image));
     bi.setDeviceTreeImage(std::move(dt_image));
+    bi.setAbootImage(std::move(aboot_image));
 
-    if (apply_bump) {
-        bi.setApplyBump(true);
-    }
-    if (apply_loki) {
-        bi.setAbootImage(std::move(aboot_image));
-        bi.setApplyLoki(true);
-    }
+    bi.setType(type);
 
     // Create boot image
     if (!bi.createFile(output_file)) {
