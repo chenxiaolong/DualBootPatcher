@@ -216,8 +216,8 @@ std::string StringUtils::toHex(const unsigned char *data, std::size_t size)
     static const char digits[] = "0123456789abcdef";
 
     std::string hex;
-    hex.reserve(2 * sizeof(size));
-    for (uint32_t i = 0; i < size; ++i) {
+    hex.reserve(2 * size);
+    for (std::size_t i = 0; i < size; ++i) {
         hex += digits[(data[i] >> 4) & 0xf];
         hex += digits[data[i] & 0xf];
     }
