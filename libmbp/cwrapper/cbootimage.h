@@ -33,7 +33,8 @@ enum BootImageType
 {
     Android = 1,
     Loki = 2,
-    Bump = 3
+    Bump = 3,
+    SonyElf = 4
 };
 
 CBootImage * mbp_bootimage_create(void);
@@ -89,6 +90,26 @@ void mbp_bootimage_set_kernel_tags_address(CBootImage *bootImage,
                                            uint32_t address);
 void mbp_bootimage_reset_kernel_tags_address(CBootImage *bootImage);
 
+uint32_t mbp_bootimage_ipl_address(const CBootImage *bootImage);
+void mbp_bootimage_set_ipl_address(CBootImage *bootImage,
+                                   uint32_t address);
+void mbp_bootimage_reset_ipl_address(CBootImage *bootImage);
+
+uint32_t mbp_bootimage_rpm_address(const CBootImage *bootImage);
+void mbp_bootimage_set_rpm_address(CBootImage *bootImage,
+                                   uint32_t address);
+void mbp_bootimage_reset_rpm_address(CBootImage *bootImage);
+
+uint32_t mbp_bootimage_appsbl_address(const CBootImage *bootImage);
+void mbp_bootimage_set_appsbl_address(CBootImage *bootImage,
+                                      uint32_t address);
+void mbp_bootimage_reset_appsbl_address(CBootImage *bootImage);
+
+uint32_t mbp_bootimage_entrypoint_address(const CBootImage *bootImage);
+void mbp_bootimage_set_entrypoint_address(CBootImage *bootImage,
+                                          uint32_t address);
+void mbp_bootimage_reset_entrypoint_address(CBootImage *bootImage);
+
 void mbp_bootimage_set_addresses(CBootImage *bootImage,
                                  uint32_t base, uint32_t kernelOffset,
                                  uint32_t ramdiskOffset,
@@ -119,6 +140,31 @@ void mbp_bootimage_aboot_image(const CBootImage *bootImage,
                                const unsigned char **data, size_t *size);
 void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
                                    const unsigned char *data, size_t size);
+
+void mbp_bootimage_ipl_image(const CBootImage *bootImage,
+                             const unsigned char **data, size_t *size);
+void mbp_bootimage_set_ipl_image(CBootImage *bootImage,
+                                 const unsigned char *data, size_t size);
+
+void mbp_bootimage_rpm_image(const CBootImage *bootImage,
+                             const unsigned char **data, size_t *size);
+void mbp_bootimage_set_rpm_image(CBootImage *bootImage,
+                                 const unsigned char *data, size_t size);
+
+void mbp_bootimage_appsbl_image(const CBootImage *bootImage,
+                                const unsigned char **data, size_t *size);
+void mbp_bootimage_set_appsbl_image(CBootImage *bootImage,
+                                   const unsigned char *data, size_t size);
+
+void mbp_bootimage_sin_image(const CBootImage *bootImage,
+                             const unsigned char **data, size_t *size);
+void mbp_bootimage_set_sin_image(CBootImage *bootImage,
+                                 const unsigned char *data, size_t size);
+
+void mbp_bootimage_sin_header(const CBootImage *bootImage,
+                              const unsigned char **data, size_t *size);
+void mbp_bootimage_set_sin_header(CBootImage *bootImage,
+                                  const unsigned char *data, size_t size);
 
 bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs);
 

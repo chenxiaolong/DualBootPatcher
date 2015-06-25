@@ -45,12 +45,17 @@ public:
     static const uint32_t DefaultRamdiskOffset;
     static const uint32_t DefaultSecondOffset;
     static const uint32_t DefaultTagsOffset;
+    static const uint32_t DefaultIplAddress;
+    static const uint32_t DefaultRpmAddress;
+    static const uint32_t DefaultAppsblAddress;
+    static const uint32_t DefaultEntrypointAddress;
 
     enum class Type : int
     {
         Android = 1,
         Loki = 2,
-        Bump = 3
+        Bump = 3,
+        SonyElf = 4
     };
 
     BootImage();
@@ -106,6 +111,26 @@ public:
     void setKernelTagsAddress(uint32_t address);
     void resetKernelTagsAddress();
 
+    // Sony ipl address
+    uint32_t iplAddress() const;
+    void setIplAddress(uint32_t address);
+    void resetIplAddress();
+
+    // Sony rpm address
+    uint32_t rpmAddress() const;
+    void setRpmAddress(uint32_t address);
+    void resetRpmAddress();
+
+    // Sony appsbl address
+    uint32_t appsblAddress() const;
+    void setAppsblAddress(uint32_t address);
+    void resetAppsblAddress();
+
+    // Sony entrypoint address
+    uint32_t entrypointAddress() const;
+    void setEntrypointAddress(uint32_t address);
+    void resetEntrypointAddress();
+
     // Set addresses using a base and offsets
     void setAddresses(uint32_t base, uint32_t kernelOffset,
                       uint32_t ramdiskOffset,
@@ -141,6 +166,36 @@ public:
     void setAbootImage(std::vector<unsigned char> data);
     void abootImageC(const unsigned char **data, std::size_t *size) const;
     void setAbootImageC(const unsigned char *data, std::size_t size);
+
+    // Sony ipl image
+    const std::vector<unsigned char> & iplImage() const;
+    void setIplImage(std::vector<unsigned char> data);
+    void iplImageC(const unsigned char **data, std::size_t *size) const;
+    void setIplImageC(const unsigned char *data, std::size_t size);
+
+    // Sony rpm image
+    const std::vector<unsigned char> & rpmImage() const;
+    void setRpmImage(std::vector<unsigned char> data);
+    void rpmImageC(const unsigned char **data, std::size_t *size) const;
+    void setRpmImageC(const unsigned char *data, std::size_t size);
+
+    // Sony appsbl image
+    const std::vector<unsigned char> & appsblImage() const;
+    void setAppsblImage(std::vector<unsigned char> data);
+    void appsblImageC(const unsigned char **data, std::size_t *size) const;
+    void setAppsblImageC(const unsigned char *data, std::size_t size);
+
+    // Sony SIN! image
+    const std::vector<unsigned char> & sinImage() const;
+    void setSinImage(std::vector<unsigned char> data);
+    void sinImageC(const unsigned char **data, std::size_t *size) const;
+    void setSinImageC(const unsigned char *data, std::size_t size);
+
+    // Sony SIN! header
+    const std::vector<unsigned char> & sinHeader() const;
+    void setSinHeader(std::vector<unsigned char> data);
+    void sinHeaderC(const unsigned char **data, std::size_t *size) const;
+    void setSinHeaderC(const unsigned char *data, std::size_t size);
 
     bool operator==(const BootImage &other) const;
     bool operator!=(const BootImage &other) const;

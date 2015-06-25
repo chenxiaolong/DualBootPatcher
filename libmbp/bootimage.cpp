@@ -28,6 +28,7 @@
 #include "bootimage/androidformat.h"
 #include "bootimage/bumpformat.h"
 #include "bootimage/lokiformat.h"
+#include "bootimage/sonyelfformat.h"
 
 #include "external/sha.h"
 #include "private/fileutils.h"
@@ -50,6 +51,10 @@ const uint32_t BootImage::DefaultKernelOffset = 0x00008000u;
 const uint32_t BootImage::DefaultRamdiskOffset = 0x01000000u;
 const uint32_t BootImage::DefaultSecondOffset = 0x00f00000u;
 const uint32_t BootImage::DefaultTagsOffset = 0x00000100u;
+const uint32_t BootImage::DefaultIplAddress = 0u;
+const uint32_t BootImage::DefaultRpmAddress = 0u;
+const uint32_t BootImage::DefaultAppsblAddress = 0u;
+const uint32_t BootImage::DefaultEntrypointAddress = 0u;
 
 
 /*! \cond INTERNAL */
@@ -127,6 +132,10 @@ BootImage::BootImage() : m_impl(new Impl(this))
     resetRamdiskAddress();
     resetSecondBootloaderAddress();
     resetKernelTagsAddress();
+    resetIplAddress();
+    resetRpmAddress();
+    resetAppsblAddress();
+    resetEntrypointAddress();
     resetPageSize();
     // Prevent valgrind warning about uninitialized bytes when writing file
     m_impl->i10e.hdrUnused = 0;
@@ -165,6 +174,10 @@ bool BootImage::load(const unsigned char *data, std::size_t size)
         LOGD("Boot image is a plain boot image");
         m_impl->sourceType = Type::Android;
         ret = AndroidFormat(&m_impl->i10e).loadImage(data, size);
+    } else if (SonyElfFormat::isValid(data, size)) {
+        LOGD("Boot image is a Sony ELF32 boot image");
+        m_impl->sourceType = Type::SonyElf;
+        ret = SonyElfFormat(&m_impl->i10e).loadImage(data, size);
     } else {
         LOGD("Unknown boot image type");
     }
@@ -246,6 +259,10 @@ bool BootImage::create(std::vector<unsigned char> *data) const
     case Type::Loki:
         LOGD("Creating loki'd Android boot image");
         ret = LokiFormat(&m_impl->i10e).createImage(data);
+        break;
+    case Type::SonyElf:
+        LOGD("Creating Sony ELF32 boot image");
+        ret = SonyElfFormat(&m_impl->i10e).createImage(data);
         break;
     default:
         LOGE("Unknown boot image type");
@@ -559,6 +576,66 @@ void BootImage::resetKernelTagsAddress()
     setKernelTagsAddress(DefaultBase + DefaultTagsOffset);
 }
 
+uint32_t BootImage::iplAddress() const
+{
+    return m_impl->i10e.iplAddr;
+}
+
+void BootImage::setIplAddress(uint32_t address)
+{
+    m_impl->i10e.iplAddr = address;
+}
+
+void BootImage::resetIplAddress()
+{
+    setIplAddress(DefaultIplAddress);
+}
+
+uint32_t BootImage::rpmAddress() const
+{
+    return m_impl->i10e.rpmAddr;
+}
+
+void BootImage::setRpmAddress(uint32_t address)
+{
+    m_impl->i10e.rpmAddr = address;
+}
+
+void BootImage::resetRpmAddress()
+{
+    setRpmAddress(DefaultRpmAddress);
+}
+
+uint32_t BootImage::appsblAddress() const
+{
+    return m_impl->i10e.appsblAddr;
+}
+
+void BootImage::setAppsblAddress(uint32_t address)
+{
+    m_impl->i10e.appsblAddr = address;
+}
+
+void BootImage::resetAppsblAddress()
+{
+    setAppsblAddress(DefaultAppsblAddress);
+}
+
+uint32_t BootImage::entrypointAddress() const
+{
+    return m_impl->i10e.hdrEntrypoint;
+}
+
+void BootImage::setEntrypointAddress(uint32_t address)
+{
+    m_impl->i10e.hdrEntrypoint = address;
+}
+
+void BootImage::resetEntrypointAddress()
+{
+    setEntrypointAddress(DefaultEntrypointAddress);
+}
+
 /*!
  * \brief Set all of the addresses using offsets and a base address
  *
@@ -777,6 +854,146 @@ void BootImage::setAbootImageC(const unsigned char *data, std::size_t size)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Sony ipl image
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::iplImage() const
+{
+    return m_impl->i10e.iplImage;
+}
+
+void BootImage::setIplImage(std::vector<unsigned char> data)
+{
+    m_impl->i10e.iplImage = std::move(data);
+}
+
+void BootImage::iplImageC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.iplImage.data();
+    *size = m_impl->i10e.iplImage.size();
+}
+
+void BootImage::setIplImageC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.iplImage.clear();
+    m_impl->i10e.iplImage.shrink_to_fit();
+    m_impl->i10e.iplImage.resize(size);
+    std::memcpy(m_impl->i10e.iplImage.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Sony rpm image
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::rpmImage() const
+{
+    return m_impl->i10e.rpmImage;
+}
+
+void BootImage::setRpmImage(std::vector<unsigned char> data)
+{
+    m_impl->i10e.rpmImage = std::move(data);
+}
+
+void BootImage::rpmImageC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.rpmImage.data();
+    *size = m_impl->i10e.rpmImage.size();
+}
+
+void BootImage::setRpmImageC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.rpmImage.clear();
+    m_impl->i10e.rpmImage.shrink_to_fit();
+    m_impl->i10e.rpmImage.resize(size);
+    std::memcpy(m_impl->i10e.rpmImage.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Sony appsbl image
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::appsblImage() const
+{
+    return m_impl->i10e.appsblImage;
+}
+
+void BootImage::setAppsblImage(std::vector<unsigned char> data)
+{
+    m_impl->i10e.appsblImage = std::move(data);
+}
+
+void BootImage::appsblImageC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.appsblImage.data();
+    *size = m_impl->i10e.appsblImage.size();
+}
+
+void BootImage::setAppsblImageC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.appsblImage.clear();
+    m_impl->i10e.appsblImage.shrink_to_fit();
+    m_impl->i10e.appsblImage.resize(size);
+    std::memcpy(m_impl->i10e.appsblImage.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Sony SIN! image
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::sinImage() const
+{
+    return m_impl->i10e.sonySinImage;
+}
+
+void BootImage::setSinImage(std::vector<unsigned char> data)
+{
+    m_impl->i10e.sonySinImage = std::move(data);
+}
+
+void BootImage::sinImageC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.sonySinImage.data();
+    *size = m_impl->i10e.sonySinImage.size();
+}
+
+void BootImage::setSinImageC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.sonySinImage.clear();
+    m_impl->i10e.sonySinImage.shrink_to_fit();
+    m_impl->i10e.sonySinImage.resize(size);
+    std::memcpy(m_impl->i10e.sonySinImage.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Sony SIN! header
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::sinHeader() const
+{
+    return m_impl->i10e.sonySinHdr;
+}
+
+void BootImage::setSinHeader(std::vector<unsigned char> data)
+{
+    m_impl->i10e.sonySinHdr = std::move(data);
+}
+
+void BootImage::sinHeaderC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.sonySinHdr.data();
+    *size = m_impl->i10e.sonySinHdr.size();
+}
+
+void BootImage::setSinHeaderC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.sonySinHdr.clear();
+    m_impl->i10e.sonySinHdr.shrink_to_fit();
+    m_impl->i10e.sonySinHdr.resize(size);
+    std::memcpy(m_impl->i10e.sonySinHdr.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 bool BootImage::operator==(const BootImage &other) const
 {
@@ -790,6 +1007,12 @@ bool BootImage::operator==(const BootImage &other) const
             && m_impl->i10e.secondImage == other.m_impl->i10e.secondImage
             && m_impl->i10e.dtImage == other.m_impl->i10e.dtImage
             && m_impl->i10e.abootImage == other.m_impl->i10e.abootImage
+            // Sony images
+            && m_impl->i10e.iplImage == other.m_impl->i10e.iplImage
+            && m_impl->i10e.rpmImage == other.m_impl->i10e.rpmImage
+            && m_impl->i10e.appsblImage == other.m_impl->i10e.appsblImage
+            && m_impl->i10e.sonySinImage == other.m_impl->i10e.sonySinImage
+            && m_impl->i10e.sonySinHdr == other.m_impl->i10e.sonySinHdr
             // Header's integral values
             && m_impl->i10e.hdrKernelSize == other.m_impl->i10e.hdrKernelSize
             && m_impl->i10e.kernelAddr == other.m_impl->i10e.kernelAddr

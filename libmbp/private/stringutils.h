@@ -59,4 +59,6 @@ public:
     static std::string toHex(const unsigned char *data, std::size_t size);
 
     static std::string toMaxString(const char *str, std::size_t maxSize);
+
+    static std::string toPrintable(const unsigned char *data, std::size_t size);
 };

@@ -234,3 +234,40 @@ std::string StringUtils::toMaxString(const char *str, std::size_t maxSize)
         return std::string(str, maxSize);
     }
 }
+
+std::string StringUtils::toPrintable(const unsigned char *data, std::size_t size)
+{
+    static const char digits[] = "0123456789abcdef";
+
+    std::string output;
+
+    // Most characters are unprintable, resulting in 4 bytes of output per byte
+    // of input
+    output.reserve(4 * size);
+
+    for (std::size_t i = 0; i < size; ++i) {
+        if (isprint(data[i])) {
+            output += static_cast<char>(data[i]);
+        } else if (data[i] == '\a') {
+            output += "\\a";
+        } else if (data[i] == '\b') {
+            output += "\\b";
+        } else if (data[i] == '\f') {
+            output += "\\f";
+        } else if (data[i] == '\n') {
+            output += "\\n";
+        } else if (data[i] == '\r') {
+            output += "\\r";
+        } else if (data[i] == '\t') {
+            output += "\\t";
+        } else if (data[i] == '\v') {
+            output += "\\v";
+        } else {
+            output += "\\x";
+            output += digits[(data[i] >> 4) & 0xf];
+            output += digits[data[i] & 0xf];
+        }
+    }
+
+    return output;
+}

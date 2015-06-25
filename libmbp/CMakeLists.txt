@@ -29,6 +29,7 @@ set(MBP_SOURCES
     bootimage/fileformat.cpp
     bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
+    bootimage/sonyelfformat.cpp
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
@@ -191,6 +192,7 @@ set(MBP_MINI_SOURCES
     bootimage/fileformat.cpp
     bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
+    bootimage/sonyelfformat.cpp
     external/sha.cpp
 )
 

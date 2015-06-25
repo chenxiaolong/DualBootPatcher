@@ -482,6 +482,79 @@ void mbp_bootimage_reset_kernel_tags_address(CBootImage *bootImage)
     bi->resetKernelTagsAddress();
 }
 
+uint32_t mbp_bootimage_ipl_address(const CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return bi->iplAddress();
+}
+
+void mbp_bootimage_set_ipl_address(CBootImage *bootImage, uint32_t address)
+{
+    CAST(bootImage);
+    bi->setIplAddress(address);
+}
+
+void mbp_bootimage_reset_ipl_address(CBootImage *bootImage)
+{
+    CAST(bootImage);
+    bi->resetIplAddress();
+}
+
+uint32_t mbp_bootimage_rpm_address(const CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return bi->rpmAddress();
+}
+
+void mbp_bootimage_set_rpm_address(CBootImage *bootImage, uint32_t address)
+{
+    CAST(bootImage);
+    bi->setRpmAddress(address);
+}
+
+void mbp_bootimage_reset_rpm_address(CBootImage *bootImage)
+{
+    CAST(bootImage);
+    bi->resetRpmAddress();
+}
+
+uint32_t mbp_bootimage_appsbl_address(const CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return bi->appsblAddress();
+}
+
+void mbp_bootimage_set_appsbl_address(CBootImage *bootImage, uint32_t address)
+{
+    CAST(bootImage);
+    bi->setAppsblAddress(address);
+}
+
+void mbp_bootimage_reset_appsbl_address(CBootImage *bootImage)
+{
+    CAST(bootImage);
+    bi->resetAppsblAddress();
+}
+
+uint32_t mbp_bootimage_entrypoint_address(const CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return bi->entrypointAddress();
+}
+
+void mbp_bootimage_set_entrypoint_address(CBootImage *bootImage,
+                                          uint32_t address)
+{
+    CAST(bootImage);
+    bi->setEntrypointAddress(address);
+}
+
+void mbp_bootimage_reset_entrypoint_address(CBootImage *bootImage)
+{
+    CAST(bootImage);
+    bi->resetEntrypointAddress();
+}
+
 /*!
  * \brief Set all of the addresses using offsets and a base address
  *
@@ -646,6 +719,76 @@ void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
 {
     CAST(bootImage);
     bi->setAbootImageC(data, size);
+}
+
+void mbp_bootimage_ipl_image(const CBootImage *bootImage,
+                             const unsigned char **data, size_t *size)
+{
+    CCAST(bootImage);
+    bi->iplImageC(data, size);
+}
+
+void mbp_bootimage_set_ipl_image(CBootImage *bootImage,
+                                 const unsigned char *data, size_t size)
+{
+    CAST(bootImage);
+    bi->setIplImageC(data, size);
+}
+
+void mbp_bootimage_rpm_image(const CBootImage *bootImage,
+                             const unsigned char **data, size_t *size)
+{
+    CCAST(bootImage);
+    bi->rpmImageC(data, size);
+}
+
+void mbp_bootimage_set_rpm_image(CBootImage *bootImage,
+                                 const unsigned char *data, size_t size)
+{
+    CAST(bootImage);
+    bi->setRpmImageC(data, size);
+}
+
+void mbp_bootimage_appsbl_image(const CBootImage *bootImage,
+                                const unsigned char **data, size_t *size)
+{
+    CCAST(bootImage);
+    bi->appsblImageC(data, size);
+}
+
+void mbp_bootimage_set_appsbl_image(CBootImage *bootImage,
+                                    const unsigned char *data, size_t size)
+{
+    CAST(bootImage);
+    bi->setAppsblImageC(data, size);
+}
+
+void mbp_bootimage_sin_image(const CBootImage *bootImage,
+                             const unsigned char **data, size_t *size)
+{
+    CCAST(bootImage);
+    bi->sinImageC(data, size);
+}
+
+void mbp_bootimage_set_sin_image(CBootImage *bootImage,
+                                 const unsigned char *data, size_t size)
+{
+    CAST(bootImage);
+    bi->setSinImageC(data, size);
+}
+
+void mbp_bootimage_sin_header(const CBootImage *bootImage,
+                              const unsigned char **data, size_t *size)
+{
+    CCAST(bootImage);
+    bi->sinHeaderC(data, size);
+}
+
+void mbp_bootimage_set_sin_header(CBootImage *bootImage,
+                                  const unsigned char *data, size_t size)
+{
+    CAST(bootImage);
+    bi->setSinHeaderC(data, size);
 }
 
 bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs)
