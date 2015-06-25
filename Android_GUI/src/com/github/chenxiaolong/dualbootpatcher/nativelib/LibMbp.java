@@ -104,6 +104,18 @@ public class LibMbp {
         static native int mbp_bootimage_kernel_tags_address(CBootImage bi);
         static native void mbp_bootimage_set_kernel_tags_address(CBootImage bi, int address);
         static native void mbp_bootimage_reset_kernel_tags_address(CBootImage bi);
+        static native int mbp_bootimage_ipl_address(CBootImage bi);
+        static native void mbp_bootimage_set_ipl_address(CBootImage bi, int address);
+        static native void mbp_bootimage_reset_ipl_address(CBootImage bi);
+        static native int mbp_bootimage_rpm_address(CBootImage bi);
+        static native void mbp_bootimage_set_rpm_address(CBootImage bi, int address);
+        static native void mbp_bootimage_reset_rpm_address(CBootImage bi);
+        static native int mbp_bootimage_appsbl_address(CBootImage bi);
+        static native void mbp_bootimage_set_appsbl_address(CBootImage bi, int address);
+        static native void mbp_bootimage_reset_appsbl_address(CBootImage bi);
+        static native int mbp_bootimage_entrypoint_address(CBootImage bi);
+        static native void mbp_bootimage_set_entrypoint_address(CBootImage bi, int address);
+        static native void mbp_bootimage_reset_entrypoint_address(CBootImage bi);
         static native void mbp_bootimage_set_addresses(CBootImage bi, int base, int kernelOffset, int ramdiskOffset, int secondBootloaderOffset, int kernelTagsOffset);
         static native void mbp_bootimage_kernel_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_kernel_image(CBootImage bi, Pointer data, /* size_t */ int size);
@@ -115,6 +127,16 @@ public class LibMbp {
         static native void mbp_bootimage_set_device_tree_image(CBootImage bi, Pointer data, int size);
         static native void mbp_bootimage_aboot_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_aboot_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_ipl_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_ipl_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_rpm_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_rpm_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_appsbl_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_appsbl_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_sin_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_sin_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_sin_header(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_sin_header(CBootImage bi, Pointer data, int size);
         static native boolean mbp_bootimage_equals(CBootImage lhs, CBootImage rhs);
         // END: cbootimage.h
 
@@ -378,6 +400,7 @@ public class LibMbp {
             int ANDROID = 1;
             int LOKI = 2;
             int BUMP = 3;
+            int SONY_ELF = 4;
         }
 
         private static final HashMap<CBootImage, Integer> sInstances = new HashMap<>();
@@ -644,6 +667,66 @@ public class LibMbp {
             CWrapper.mbp_bootimage_reset_kernel_tags_address(mCBootImage);
         }
 
+        public int getIplAddress() {
+            validate(mCBootImage, BootImage.class, "getIplAddress");
+            return CWrapper.mbp_bootimage_ipl_address(mCBootImage);
+        }
+
+        public void setIplAddress(int address) {
+            validate(mCBootImage, BootImage.class, "setIplAddress", address);
+            CWrapper.mbp_bootimage_set_ipl_address(mCBootImage, address);
+        }
+
+        public void resetIplAddress() {
+            validate(mCBootImage, BootImage.class, "resetIplAddress");
+            CWrapper.mbp_bootimage_reset_ipl_address(mCBootImage);
+        }
+
+        public int getRpmAddress() {
+            validate(mCBootImage, BootImage.class, "getRpmAddress");
+            return CWrapper.mbp_bootimage_rpm_address(mCBootImage);
+        }
+
+        public void setRpmAddress(int address) {
+            validate(mCBootImage, BootImage.class, "setRpmAddress", address);
+            CWrapper.mbp_bootimage_set_rpm_address(mCBootImage, address);
+        }
+
+        public void resetRpmAddress() {
+            validate(mCBootImage, BootImage.class, "resetRpmAddress");
+            CWrapper.mbp_bootimage_reset_rpm_address(mCBootImage);
+        }
+
+        public int getAppsblAddress() {
+            validate(mCBootImage, BootImage.class, "getAppsblAddress");
+            return CWrapper.mbp_bootimage_appsbl_address(mCBootImage);
+        }
+
+        public void setAppsblAddress(int address) {
+            validate(mCBootImage, BootImage.class, "setAppsblAddress", address);
+            CWrapper.mbp_bootimage_set_appsbl_address(mCBootImage, address);
+        }
+
+        public void resetAppsblAddress() {
+            validate(mCBootImage, BootImage.class, "resetAppsblAddress");
+            CWrapper.mbp_bootimage_reset_appsbl_address(mCBootImage);
+        }
+
+        public int getEntrypointAddress() {
+            validate(mCBootImage, BootImage.class, "getEntrypointAddress");
+            return CWrapper.mbp_bootimage_entrypoint_address(mCBootImage);
+        }
+
+        public void setEntrypointAddress(int address) {
+            validate(mCBootImage, BootImage.class, "setEntrypointAddress", address);
+            CWrapper.mbp_bootimage_set_entrypoint_address(mCBootImage, address);
+        }
+
+        public void resetEntrypointAddress() {
+            validate(mCBootImage, BootImage.class, "resetEntrypointAddress");
+            CWrapper.mbp_bootimage_reset_entrypoint_address(mCBootImage);
+        }
+
         public void setAddresses(int base, int kernelOffset, int ramdiskOffset,
                                  int secondBootloaderOffset, int kernelTagsOffset) {
             validate(mCBootImage, BootImage.class, "setAddresses", base, kernelOffset,
@@ -745,6 +828,82 @@ public class LibMbp {
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
             CWrapper.mbp_bootimage_set_aboot_image(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getIplImage() {
+            validate(mCBootImage, BootImage.class, "getIplImage");
+            PointerByReference pData = new PointerByReference();
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_ipl_image(mCBootImage, pData, pSize);
+            Pointer data = pData.getValue();
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
+        }
+
+        public void setIplImage(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setIplImage", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_ipl_image(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getRpmImage() {
+            validate(mCBootImage, BootImage.class, "getRpmImage");
+            PointerByReference pData = new PointerByReference();
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_rpm_image(mCBootImage, pData, pSize);
+            Pointer data = pData.getValue();
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
+        }
+
+        public void setRpmImage(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setRpmImage", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_rpm_image(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getAppsblImage() {
+            validate(mCBootImage, BootImage.class, "getAppsblImage");
+            PointerByReference pData = new PointerByReference();
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_appsbl_image(mCBootImage, pData, pSize);
+            Pointer data = pData.getValue();
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
+        }
+
+        public void setAppsblImage(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setAppsblImage", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_appsbl_image(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getSinImage() {
+            validate(mCBootImage, BootImage.class, "getSinImage");
+            PointerByReference pData = new PointerByReference();
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_sin_image(mCBootImage, pData, pSize);
+            Pointer data = pData.getValue();
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
+        }
+
+        public void setSinImage(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setSinImage", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_sin_image(mCBootImage, mem, data.length);
         }
     }
 
