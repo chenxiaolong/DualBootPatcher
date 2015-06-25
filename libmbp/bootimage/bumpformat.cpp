@@ -37,8 +37,9 @@ BumpFormat::~BumpFormat()
 
 bool BumpFormat::isValid(const unsigned char *data, std::size_t size)
 {
-    return size >= BUMP_MAGIC_SIZE && std::memcmp(
-            data + size - BUMP_MAGIC_SIZE, BUMP_MAGIC, BUMP_MAGIC_SIZE);
+    return size >= BUMP_MAGIC_SIZE
+            && std::memcmp(data + size - BUMP_MAGIC_SIZE,
+                           BUMP_MAGIC, BUMP_MAGIC_SIZE) == 0;
 }
 
 bool BumpFormat::createImage(std::vector<unsigned char> *dataOut)
