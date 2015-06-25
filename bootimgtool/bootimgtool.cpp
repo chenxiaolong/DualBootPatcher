@@ -63,18 +63,34 @@ static const char UnpackUsage[] =
     "The following items are extracted from the boot image. These files contain\n"
     "all of the information necessary to recreate an identical boot image.\n"
     "\n"
-    "  cmdline         Kernel command line\n"
-    "  board           Board name field in the header\n"
-    "  base            Base address for offsets\n"
-    "  kernel_offset   Address offset of the kernel image\n"
-    "  ramdisk_offset  Address offset of the ramdisk image\n"
-    "  second_offset   Address offset of the second bootloader image\n"
-    "  tags_offset     Address offset of the kernel tags image\n"
-    "  page_size       Page size\n"
-    "  kernel`         Kernel image\n"
-    "  ramdisk         Ramdisk image\n"
-    "  second          Second bootloader image\n"
-    "  dt              Device tree image\n"
+    "  cmdline         Kernel command line                           [ABLS]\n"
+    "  board           Board name field in the header                [ABL ]\n"
+    "  base            Base address for offsets                      [ABL ]\n"
+    "  kernel_offset   Address offset of the kernel image            [ABLS]\n"
+    "  ramdisk_offset  Address offset of the ramdisk image           [ABLS]\n"
+    "  second_offset   Address offset of the second bootloader image [ABL ]\n"
+    "  tags_offset     Address offset of the kernel tags image       [ABL ]\n"
+    "  ipl_address     Address of the ipl image                      [   S]\n"
+    "  rpm_address     Address of the rpm image                      [   S]\n"
+    "  appsbl_address  Address of the appsbl image                   [   S]\n"
+    "  entrypoint      Address of the entry point                    [   S]\n"
+    "  page_size       Page size                                     [ABL ]\n"
+    "  kernel`         Kernel image                                  [ABLS]\n"
+    "  ramdisk         Ramdisk image                                 [ABLS]\n"
+    "  second          Second bootloader image                       [ABL ]\n"
+    "  dt              Device tree image                             [ABL ]\n"
+    "  ipl             Ipl image                                     [   S]\n"
+    "  rpm             Rpm image                                     [   S]\n"
+    "  appsbl          Appsbl image                                  [   S]\n"
+    "  sin             Sin image                                     [   S]\n"
+    "  sinhdr          Sin header                                    [   S]\n"
+    "\n"
+    "Legend:\n"
+    "  [A B L S]\n"
+    "   | | | `- Used by Sony ELF boot images\n"
+    "   | | `- Used by Loki'd Android boot images\n"
+    "   | `- Used by bump'd Android boot images\n"
+    "   `- Used by plain Android boot images\n"
     "\n"
     "Output files:\n"
     "\n"
@@ -114,7 +130,7 @@ static const char PackUsage[] =
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n"
     "  -t, --type [type]\n"
     "                  Output type of the boot image\n"
-    "                  [android, bump, loki]\n"
+    "                  [android, bump, loki, sonyelf]\n"
     "  --input-[item] [item path]\n"
     "                  Custom path for a particular item\n"
     "  --value-[item] [item value]\n"
@@ -122,19 +138,35 @@ static const char PackUsage[] =
     "\n"
     "The following items are loaded to create a new boot image.\n"
     "\n"
-    "  cmdline *        Kernel command line\n"
-    "  board *          Board name field in the header\n"
-    "  base *           Base address for offsets\n"
-    "  kernel_offset *  Address offset of the kernel image\n"
-    "  ramdisk_offset * Address offset of the ramdisk image\n"
-    "  second_offset *  Address offset of the second bootloader image\n"
-    "  tags_offset *    Address offset of the kernel tags image\n"
-    "  page_size *      Page size\n"
-    "  kernel`          Kernel image\n"
-    "  ramdisk          Ramdisk image\n"
-    "  second           Second bootloader image\n"
-    "  dt               Device tree image\n"
-    "  aboot            Aboot image (only used for loki)\n"
+    "  cmdline *        Kernel command line                           [ABLS]\n"
+    "  board *          Board name field in the header                [ABL ]\n"
+    "  base *           Base address for offsets                      [ABL ]\n"
+    "  kernel_offset *  Address offset of the kernel image            [ABLS]\n"
+    "  ramdisk_offset * Address offset of the ramdisk image           [ABLS]\n"
+    "  second_offset *  Address offset of the second bootloader image [ABL ]\n"
+    "  tags_offset *    Address offset of the kernel tags image       [ABL ]\n"
+    "  ipl_address *    Address of the ipl image                      [   S]\n"
+    "  rpm_address *    Address of the rpm image                      [   S]\n"
+    "  appsbl_address * Address of the appsbl image                   [   S]\n"
+    "  entrypoint *     Address of the entrypoint                     [   S]\n"
+    "  page_size *      Page size                                     [ABL ]\n"
+    "  kernel`          Kernel image                                  [ABLS]\n"
+    "  ramdisk          Ramdisk image                                 [ABLS]\n"
+    "  second           Second bootloader image                       [ABL ]\n"
+    "  dt               Device tree image                             [ABL ]\n"
+    "  aboot            Aboot image                                   [  L ]\n"
+    "  ipl              Ipl image                                     [   S]\n"
+    "  rpm              Rpm image                                     [   S]\n"
+    "  appsbl           Appsbl image                                  [   S]\n"
+    "  sin              Sin image                                     [   S]\n"
+    "  sinhdr           Sin header                                    [   S]\n"
+    "\n"
+    "Legend:\n"
+    "  [A B L S]\n"
+    "   | | | `- Used by Sony ELF boot images\n"
+    "   | | `- Used by Loki'd Android boot images\n"
+    "   | `- Used by bump'd Android boot images\n"
+    "   `- Used by plain Android boot images\n"
     "\n"
     "Items marked with an asterisk can be specified by value using the --value-*\n"
     "options. (eg. --value-page_size=2048).\n"
@@ -328,11 +360,20 @@ bool unpack_main(int argc, char *argv[])
     std::string path_ramdisk_offset;
     std::string path_second_offset;
     std::string path_tags_offset;
+    std::string path_ipl_address;
+    std::string path_rpm_address;
+    std::string path_appsbl_address;
+    std::string path_entrypoint;
     std::string path_page_size;
     std::string path_kernel;
     std::string path_ramdisk;
     std::string path_second;
     std::string path_dt;
+    std::string path_ipl;
+    std::string path_rpm;
+    std::string path_appsbl;
+    std::string path_sin;
+    std::string path_sinhdr;
 
     // Arguments with no short options
     enum unpack_options : int
@@ -344,11 +385,20 @@ bool unpack_main(int argc, char *argv[])
         OPT_OUTPUT_RAMDISK_OFFSET = 10000 + 5,
         OPT_OUTPUT_SECOND_OFFSET  = 10000 + 6,
         OPT_OUTPUT_TAGS_OFFSET    = 10000 + 7,
-        OPT_OUTPUT_PAGE_SIZE      = 10000 + 8,
-        OPT_OUTPUT_KERNEL         = 10000 + 9,
-        OPT_OUTPUT_RAMDISK        = 10000 + 10,
-        OPT_OUTPUT_SECOND         = 10000 + 11,
-        OPT_OUTPUT_DT             = 10000 + 12
+        OPT_OUTPUT_IPL_ADDRESS    = 10000 + 8,
+        OPT_OUTPUT_RPM_ADDRESS    = 10000 + 9,
+        OPT_OUTPUT_APPSBL_ADDRESS = 10000 + 10,
+        OPT_OUTPUT_ENTRYPOINT     = 10000 + 11,
+        OPT_OUTPUT_PAGE_SIZE      = 10000 + 12,
+        OPT_OUTPUT_KERNEL         = 10000 + 13,
+        OPT_OUTPUT_RAMDISK        = 10000 + 14,
+        OPT_OUTPUT_SECOND         = 10000 + 15,
+        OPT_OUTPUT_DT             = 10000 + 16,
+        OPT_OUTPUT_IPL            = 10000 + 17,
+        OPT_OUTPUT_RPM            = 10000 + 18,
+        OPT_OUTPUT_APPSBL         = 10000 + 19,
+        OPT_OUTPUT_SIN            = 10000 + 20,
+        OPT_OUTPUT_SINHDR         = 10000 + 21
     };
 
     static struct option long_options[] = {
@@ -364,11 +414,20 @@ bool unpack_main(int argc, char *argv[])
         {"output-ramdisk_offset", required_argument, 0, OPT_OUTPUT_RAMDISK_OFFSET},
         {"output-second_offset",  required_argument, 0, OPT_OUTPUT_SECOND_OFFSET},
         {"output-tags_offset",    required_argument, 0, OPT_OUTPUT_TAGS_OFFSET},
+        {"output-ipl_address",    required_argument, 0, OPT_OUTPUT_IPL_ADDRESS},
+        {"output-rpm_address",    required_argument, 0, OPT_OUTPUT_RPM_ADDRESS},
+        {"output-appsbl_address", required_argument, 0, OPT_OUTPUT_APPSBL_ADDRESS},
+        {"output-entrypoint",     required_argument, 0, OPT_OUTPUT_ENTRYPOINT},
         {"output-page_size",      required_argument, 0, OPT_OUTPUT_PAGE_SIZE},
         {"output-kernel",         required_argument, 0, OPT_OUTPUT_KERNEL},
         {"output-ramdisk",        required_argument, 0, OPT_OUTPUT_RAMDISK},
         {"output-second",         required_argument, 0, OPT_OUTPUT_SECOND},
         {"output-dt",             required_argument, 0, OPT_OUTPUT_DT},
+        {"output-ipl",            required_argument, 0, OPT_OUTPUT_IPL},
+        {"output-rpm",            required_argument, 0, OPT_OUTPUT_RPM},
+        {"output-appsbl",         required_argument, 0, OPT_OUTPUT_APPSBL},
+        {"output-sin",            required_argument, 0, OPT_OUTPUT_SIN},
+        {"output-sinhdr",         required_argument, 0, OPT_OUTPUT_SINHDR},
         {0, 0, 0, 0}
     };
 
@@ -386,11 +445,20 @@ bool unpack_main(int argc, char *argv[])
         case OPT_OUTPUT_RAMDISK_OFFSET: path_ramdisk_offset = optarg; break;
         case OPT_OUTPUT_SECOND_OFFSET:  path_second_offset = optarg;  break;
         case OPT_OUTPUT_TAGS_OFFSET:    path_tags_offset = optarg;    break;
+        case OPT_OUTPUT_IPL_ADDRESS:    path_ipl_address = optarg;    break;
+        case OPT_OUTPUT_RPM_ADDRESS:    path_rpm_address = optarg;    break;
+        case OPT_OUTPUT_APPSBL_ADDRESS: path_appsbl_address = optarg; break;
+        case OPT_OUTPUT_ENTRYPOINT:     path_entrypoint = optarg;     break;
         case OPT_OUTPUT_PAGE_SIZE:      path_page_size = optarg;      break;
         case OPT_OUTPUT_KERNEL:         path_kernel = optarg;         break;
         case OPT_OUTPUT_RAMDISK:        path_ramdisk = optarg;        break;
         case OPT_OUTPUT_SECOND:         path_second = optarg;         break;
         case OPT_OUTPUT_DT:             path_dt = optarg;             break;
+        case OPT_OUTPUT_IPL:            path_ipl = optarg;            break;
+        case OPT_OUTPUT_RPM:            path_rpm = optarg;            break;
+        case OPT_OUTPUT_APPSBL:         path_appsbl = optarg;         break;
+        case OPT_OUTPUT_SIN:            path_sin = optarg;            break;
+        case OPT_OUTPUT_SINHDR:         path_sinhdr = optarg;         break;
 
         case 'h':
             fprintf(stdout, UnpackUsage);
@@ -437,6 +505,14 @@ bool unpack_main(int argc, char *argv[])
         path_second_offset = io::pathJoin({output_dir, prefix + "second_offset"});
     if (path_tags_offset.empty())
         path_tags_offset = io::pathJoin({output_dir, prefix + "tags_offset"});
+    if (path_ipl_address.empty())
+        path_ipl_address = io::pathJoin({output_dir, prefix + "ipl_address"});
+    if (path_rpm_address.empty())
+        path_rpm_address = io::pathJoin({output_dir, prefix + "rpm_address"});
+    if (path_appsbl_address.empty())
+        path_appsbl_address = io::pathJoin({output_dir, prefix + "appsbl_address"});
+    if (path_entrypoint.empty())
+        path_entrypoint = io::pathJoin({output_dir, prefix + "entrypoint"});
     if (path_page_size.empty())
         path_page_size = io::pathJoin({output_dir, prefix + "page_size"});
     if (path_kernel.empty())
@@ -447,6 +523,16 @@ bool unpack_main(int argc, char *argv[])
         path_second = io::pathJoin({output_dir, prefix + "second"});
     if (path_dt.empty())
         path_dt = io::pathJoin({output_dir, prefix + "dt"});
+    if (path_ipl.empty())
+        path_ipl = io::pathJoin({output_dir, prefix + "ipl"});
+    if (path_rpm.empty())
+        path_rpm = io::pathJoin({output_dir, prefix + "rpm"});
+    if (path_appsbl.empty())
+        path_appsbl = io::pathJoin({output_dir, prefix + "appsbl"});
+    if (path_sin.empty())
+        path_sin = io::pathJoin({output_dir, prefix + "sin"});
+    if (path_sinhdr.empty())
+        path_sinhdr = io::pathJoin({output_dir, prefix + "sinhdr"});
 
     printf("Output files:\n");
     printf("- cmdline:        %s\n", path_cmdline.c_str());
@@ -456,11 +542,20 @@ bool unpack_main(int argc, char *argv[])
     printf("- ramdisk_offset: %s\n", path_ramdisk_offset.c_str());
     printf("- second_offset:  %s\n", path_second_offset.c_str());
     printf("- tags_offset:    %s\n", path_tags_offset.c_str());
+    printf("- ipl_address:    %s\n", path_ipl_address.c_str());
+    printf("- rpm_address:    %s\n", path_rpm_address.c_str());
+    printf("- appsbl_address: %s\n", path_appsbl_address.c_str());
+    printf("- entrypoint:     %s\n", path_entrypoint.c_str());
     printf("- page_size:      %s\n", path_page_size.c_str());
     printf("- kernel:         %s\n", path_kernel.c_str());
     printf("- ramdisk:        %s\n", path_ramdisk.c_str());
     printf("- second:         %s\n", path_second.c_str());
     printf("- dt:             %s\n", path_dt.c_str());
+    printf("- ipl:            %s\n", path_ipl.c_str());
+    printf("- rpm:            %s\n", path_rpm.c_str());
+    printf("- appsbl:         %s\n", path_appsbl.c_str());
+    printf("- sin:            %s\n", path_sin.c_str());
+    printf("- sinhdr:         %s\n", path_sinhdr.c_str());
     printf("\n");
 
     if (!io::createDirectories(output_dir)) {
@@ -527,38 +622,87 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
+    // Write ipl address
+    if (!write_file_fmt(path_ipl_address, "%08x\n", bi.iplAddress())) {
+        fprintf(stderr, "%s: %s\n", path_ipl_address.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write rpm address
+    if (!write_file_fmt(path_rpm_address, "%08x\n", bi.rpmAddress())) {
+        fprintf(stderr, "%s: %s\n", path_rpm_address.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write appsbl address
+    if (!write_file_fmt(path_appsbl_address, "%08x\n", bi.appsblAddress())) {
+        fprintf(stderr, "%s: %s\n", path_appsbl_address.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write entrypoint address
+    if (!write_file_fmt(path_entrypoint, "%08x\n", bi.entrypointAddress())) {
+        fprintf(stderr, "%s: %s\n", path_entrypoint.c_str(), strerror(errno));
+        return false;
+    }
+
     // Write page size
     if (!write_file_fmt(path_page_size, "%u\n", bi.pageSize())) {
         fprintf(stderr, "%s: %s\n", path_page_size.c_str(), strerror(errno));
         return false;
     }
 
-    std::vector<unsigned char> kernel_image = bi.kernelImage();
-    std::vector<unsigned char> ramdisk_image = bi.ramdiskImage();
-    std::vector<unsigned char> second_image = bi.secondBootloaderImage();
-    std::vector<unsigned char> dt_image = bi.deviceTreeImage();
-
     // Write kernel image
-    if (!write_file_data(path_kernel, kernel_image)) {
+    if (!write_file_data(path_kernel, bi.kernelImage())) {
         fprintf(stderr, "%s: %s\n", path_kernel.c_str(), strerror(errno));
         return false;
     }
 
     // Write ramdisk image
-    if (!write_file_data(path_ramdisk, ramdisk_image)) {
+    if (!write_file_data(path_ramdisk, bi.ramdiskImage())) {
         fprintf(stderr, "%s: %s\n", path_ramdisk.c_str(), strerror(errno));
         return false;
     }
 
     // Write second bootloader image
-    if (!write_file_data(path_second, second_image)) {
+    if (!write_file_data(path_second, bi.secondBootloaderImage())) {
         fprintf(stderr, "%s: %s\n", path_second.c_str(), strerror(errno));
         return false;
     }
 
     // Write device tree image
-    if (!write_file_data(path_dt, dt_image)) {
+    if (!write_file_data(path_dt, bi.deviceTreeImage())) {
         fprintf(stderr, "%s: %s\n", path_dt.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write ipl image
+    if (!write_file_data(path_ipl, bi.iplImage())) {
+        fprintf(stderr, "%s: %s\n", path_ipl.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write rpm image
+    if (!write_file_data(path_rpm, bi.rpmImage())) {
+        fprintf(stderr, "%s: %s\n", path_rpm.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write appsbl image
+    if (!write_file_data(path_appsbl, bi.appsblImage())) {
+        fprintf(stderr, "%s: %s\n", path_appsbl.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write sin image
+    if (!write_file_data(path_sin, bi.sinImage())) {
+        fprintf(stderr, "%s: %s\n", path_sin.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Write sinhdr image
+    if (!write_file_data(path_sinhdr, bi.sinHeader())) {
+        fprintf(stderr, "%s: %s\n", path_sinhdr.c_str(), strerror(errno));
         return false;
     }
 
@@ -581,12 +725,21 @@ bool pack_main(int argc, char *argv[])
     std::string path_ramdisk_offset;
     std::string path_second_offset;
     std::string path_tags_offset;
+    std::string path_ipl_address;
+    std::string path_rpm_address;
+    std::string path_appsbl_address;
+    std::string path_entrypoint;
     std::string path_page_size;
     std::string path_kernel;
     std::string path_ramdisk;
     std::string path_second;
     std::string path_dt;
     std::string path_aboot;
+    std::string path_ipl;
+    std::string path_rpm;
+    std::string path_appsbl;
+    std::string path_sin;
+    std::string path_sinhdr;
     // Values
     std::unordered_map<int, bool> values;
     std::string cmdline;
@@ -596,12 +749,21 @@ bool pack_main(int argc, char *argv[])
     uint32_t ramdisk_offset;
     uint32_t second_offset;
     uint32_t tags_offset;
+    uint32_t ipl_address;
+    uint32_t rpm_address;
+    uint32_t appsbl_address;
+    uint32_t entrypoint;
     uint32_t page_size;
     std::vector<unsigned char> kernel_image;
     std::vector<unsigned char> ramdisk_image;
     std::vector<unsigned char> second_image;
     std::vector<unsigned char> dt_image;
     std::vector<unsigned char> aboot_image;
+    std::vector<unsigned char> ipl_image;
+    std::vector<unsigned char> rpm_image;
+    std::vector<unsigned char> appsbl_image;
+    std::vector<unsigned char> sin_image;
+    std::vector<unsigned char> sin_header;
     mbp::BootImage::Type type = mbp::BootImage::Type::Android;
 
     // Arguments with no short options
@@ -615,12 +777,21 @@ bool pack_main(int argc, char *argv[])
         OPT_INPUT_RAMDISK_OFFSET = 10000 + 5,
         OPT_INPUT_SECOND_OFFSET  = 10000 + 6,
         OPT_INPUT_TAGS_OFFSET    = 10000 + 7,
-        OPT_INPUT_PAGE_SIZE      = 10000 + 8,
-        OPT_INPUT_KERNEL         = 10000 + 9,
-        OPT_INPUT_RAMDISK        = 10000 + 10,
-        OPT_INPUT_SECOND         = 10000 + 11,
-        OPT_INPUT_DT             = 10000 + 12,
-        OPT_INPUT_ABOOT          = 10000 + 13,
+        OPT_INPUT_IPL_ADDRESS    = 10000 + 8,
+        OPT_INPUT_RPM_ADDRESS    = 10000 + 9,
+        OPT_INPUT_APPSBL_ADDRESS = 10000 + 10,
+        OPT_INPUT_ENTRYPOINT     = 10000 + 11,
+        OPT_INPUT_PAGE_SIZE      = 10000 + 12,
+        OPT_INPUT_KERNEL         = 10000 + 13,
+        OPT_INPUT_RAMDISK        = 10000 + 14,
+        OPT_INPUT_SECOND         = 10000 + 15,
+        OPT_INPUT_DT             = 10000 + 16,
+        OPT_INPUT_ABOOT          = 10000 + 17,
+        OPT_INPUT_IPL            = 10000 + 18,
+        OPT_INPUT_RPM            = 10000 + 19,
+        OPT_INPUT_APPSBL         = 10000 + 20,
+        OPT_INPUT_SIN            = 10000 + 21,
+        OPT_INPUT_SINHDR         = 10000 + 22,
         // Values
         OPT_VALUE_CMDLINE        = 20000 + 1,
         OPT_VALUE_BOARD          = 20000 + 2,
@@ -629,7 +800,11 @@ bool pack_main(int argc, char *argv[])
         OPT_VALUE_RAMDISK_OFFSET = 20000 + 5,
         OPT_VALUE_SECOND_OFFSET  = 20000 + 6,
         OPT_VALUE_TAGS_OFFSET    = 20000 + 7,
-        OPT_VALUE_PAGE_SIZE      = 20000 + 8
+        OPT_VALUE_IPL_ADDRESS    = 20000 + 8,
+        OPT_VALUE_RPM_ADDRESS    = 20000 + 9,
+        OPT_VALUE_APPSBL_ADDRESS = 20000 + 10,
+        OPT_VALUE_ENTRYPOINT     = 20000 + 11,
+        OPT_VALUE_PAGE_SIZE      = 20000 + 12
     };
 
     static struct option long_options[] = {
@@ -646,12 +821,21 @@ bool pack_main(int argc, char *argv[])
         {"input-ramdisk_offset", required_argument, 0, OPT_INPUT_RAMDISK_OFFSET},
         {"input-second_offset",  required_argument, 0, OPT_INPUT_SECOND_OFFSET},
         {"input-tags_offset",    required_argument, 0, OPT_INPUT_TAGS_OFFSET},
+        {"input-ipl_address",    required_argument, 0, OPT_INPUT_IPL_ADDRESS},
+        {"input-rpm_address",    required_argument, 0, OPT_INPUT_RPM_ADDRESS},
+        {"input-appsbl_address", required_argument, 0, OPT_INPUT_APPSBL_ADDRESS},
+        {"input-entrypoint",     required_argument, 0, OPT_INPUT_ENTRYPOINT},
         {"input-page_size",      required_argument, 0, OPT_INPUT_PAGE_SIZE},
         {"input-kernel",         required_argument, 0, OPT_INPUT_KERNEL},
         {"input-ramdisk",        required_argument, 0, OPT_INPUT_RAMDISK},
         {"input-second",         required_argument, 0, OPT_INPUT_SECOND},
         {"input-dt",             required_argument, 0, OPT_INPUT_DT},
         {"input-aboot",          required_argument, 0, OPT_INPUT_ABOOT},
+        {"input-ipl",            required_argument, 0, OPT_INPUT_IPL},
+        {"input-rpm",            required_argument, 0, OPT_INPUT_RPM},
+        {"input-appsbl",         required_argument, 0, OPT_INPUT_APPSBL},
+        {"input-sin",            required_argument, 0, OPT_INPUT_SIN},
+        {"input-sinhdr",         required_argument, 0, OPT_INPUT_SINHDR},
         // Value arguments
         {"value-cmdline",        required_argument, 0, OPT_VALUE_CMDLINE},
         {"value-board",          required_argument, 0, OPT_VALUE_BOARD},
@@ -678,12 +862,21 @@ bool pack_main(int argc, char *argv[])
         case OPT_INPUT_RAMDISK_OFFSET: path_ramdisk_offset = optarg; break;
         case OPT_INPUT_SECOND_OFFSET:  path_second_offset = optarg;  break;
         case OPT_INPUT_TAGS_OFFSET:    path_tags_offset = optarg;    break;
+        case OPT_INPUT_IPL_ADDRESS:    path_ipl_address = optarg;    break;
+        case OPT_INPUT_RPM_ADDRESS:    path_rpm_address = optarg;    break;
+        case OPT_INPUT_APPSBL_ADDRESS: path_appsbl_address = optarg; break;
+        case OPT_INPUT_ENTRYPOINT:     path_entrypoint = optarg;     break;
         case OPT_INPUT_PAGE_SIZE:      path_page_size = optarg;      break;
         case OPT_INPUT_KERNEL:         path_kernel = optarg;         break;
         case OPT_INPUT_RAMDISK:        path_ramdisk = optarg;        break;
         case OPT_INPUT_SECOND:         path_second = optarg;         break;
         case OPT_INPUT_DT:             path_dt = optarg;             break;
         case OPT_INPUT_ABOOT:          path_aboot = optarg;          break;
+        case OPT_INPUT_IPL:            path_ipl = optarg;            break;
+        case OPT_INPUT_RPM:            path_rpm = optarg;            break;
+        case OPT_INPUT_APPSBL:         path_appsbl = optarg;         break;
+        case OPT_INPUT_SIN:            path_sin = optarg;            break;
+        case OPT_INPUT_SINHDR:         path_sinhdr = optarg;         break;
 
         case OPT_VALUE_CMDLINE:
             path_cmdline.clear();
@@ -742,6 +935,42 @@ bool pack_main(int argc, char *argv[])
             }
             break;
 
+        case OPT_VALUE_IPL_ADDRESS:
+            path_ipl_address.clear();
+            values[opt] = true;
+            if (!str_to_uint32(&ipl_address, optarg, 16)) {
+                fprintf(stderr, "Invalid ipl_address: %s\n", optarg);
+                return false;
+            }
+            break;
+
+        case OPT_VALUE_RPM_ADDRESS:
+            path_rpm_address.clear();
+            values[opt] = true;
+            if (!str_to_uint32(&rpm_address, optarg, 16)) {
+                fprintf(stderr, "Invalid rpm_address: %s\n", optarg);
+                return false;
+            }
+            break;
+
+        case OPT_VALUE_APPSBL_ADDRESS:
+            path_appsbl_address.clear();
+            values[opt] = true;
+            if (!str_to_uint32(&appsbl_address, optarg, 16)) {
+                fprintf(stderr, "Invalid appsbl_address: %s\n", optarg);
+                return false;
+            }
+            break;
+
+        case OPT_VALUE_ENTRYPOINT:
+            path_entrypoint.clear();
+            values[opt] = true;
+            if (!str_to_uint32(&entrypoint, optarg, 16)) {
+                fprintf(stderr, "Invalid entrypoint: %s\n", optarg);
+                return false;
+            }
+            break;
+
         case OPT_VALUE_PAGE_SIZE:
             path_page_size.clear();
             values[opt] = true;
@@ -758,6 +987,8 @@ bool pack_main(int argc, char *argv[])
                 type = mbp::BootImage::Type::Bump;
             } else if (strcmp(optarg, "loki") == 0) {
                 type = mbp::BootImage::Type::Loki;
+            } else if (strcmp(optarg, "sonyelf") == 0) {
+                type = mbp::BootImage::Type::SonyElf;
             } else {
                 fprintf(stderr, "Invalid type: %s\n", optarg);
                 return false;
@@ -814,6 +1045,14 @@ bool pack_main(int argc, char *argv[])
         path_second_offset = io::pathJoin({input_dir, prefix + "second_offset"});
     if (path_tags_offset.empty() && !values[OPT_VALUE_TAGS_OFFSET])
         path_tags_offset = io::pathJoin({input_dir, prefix + "tags_offset"});
+    if (path_ipl_address.empty() && !values[OPT_VALUE_IPL_ADDRESS])
+        path_ipl_address = io::pathJoin({input_dir, prefix + "ipl_address"});
+    if (path_rpm_address.empty() && !values[OPT_VALUE_RPM_ADDRESS])
+        path_rpm_address = io::pathJoin({input_dir, prefix + "rpm_address"});
+    if (path_appsbl_address.empty() && !values[OPT_VALUE_APPSBL_ADDRESS])
+        path_appsbl_address = io::pathJoin({input_dir, prefix + "appsbl_address"});
+    if (path_entrypoint.empty() && !values[OPT_VALUE_ENTRYPOINT])
+        path_entrypoint = io::pathJoin({input_dir, prefix + "entrypoint"});
     if (path_page_size.empty() && !values[OPT_VALUE_PAGE_SIZE])
         path_page_size = io::pathJoin({input_dir, prefix + "page_size"});
     if (path_kernel.empty())
@@ -824,6 +1063,16 @@ bool pack_main(int argc, char *argv[])
         path_second = io::pathJoin({input_dir, prefix + "second"});
     if (path_dt.empty())
         path_dt = io::pathJoin({input_dir, prefix + "dt"});
+    if (path_ipl.empty())
+        path_ipl = io::pathJoin({input_dir, prefix + "ipl"});
+    if (path_rpm.empty())
+        path_rpm = io::pathJoin({input_dir, prefix + "rpm"});
+    if (path_appsbl.empty())
+        path_appsbl = io::pathJoin({input_dir, prefix + "appsbl"});
+    if (path_sin.empty())
+        path_sin = io::pathJoin({input_dir, prefix + "sin"});
+    if (path_sinhdr.empty())
+        path_sinhdr = io::pathJoin({input_dir, prefix + "sinhdr"});
 
     printf("Input files:\n");
     if (!path_cmdline.empty())
@@ -854,6 +1103,22 @@ bool pack_main(int argc, char *argv[])
         printf("- tags_offset:    (path)  %s\n", path_tags_offset.c_str());
     else
         printf("- tags_offset:    (value) %08x\n", tags_offset);
+    if (!path_ipl_address.empty())
+        printf("- ipl_address:    (path)  %s\n", path_ipl_address.c_str());
+    else
+        printf("- ipl_address:    (value) %08x\n", ipl_address);
+    if (!path_rpm_address.empty())
+        printf("- rpm_address:    (path)  %s\n", path_rpm_address.c_str());
+    else
+        printf("- rpm_address:    (value) %08x\n", rpm_address);
+    if (!path_appsbl_address.empty())
+        printf("- appsbl_address: (path)  %s\n", path_appsbl_address.c_str());
+    else
+        printf("- appsbl_address: (value) %08x\n", appsbl_address);
+    if (!path_entrypoint.empty())
+        printf("- entrypoint:     (path)  %s\n", path_entrypoint.c_str());
+    else
+        printf("- entrypoint:     (value) %08x\n", entrypoint);
     if (!path_page_size.empty())
         printf("- page_size:      (path)  %s\n", path_page_size.c_str());
     else
@@ -862,6 +1127,11 @@ bool pack_main(int argc, char *argv[])
     printf("- ramdisk:        (path)  %s\n", path_ramdisk.c_str());
     printf("- second:         (path)  %s\n", path_second.c_str());
     printf("- dt:             (path)  %s\n", path_dt.c_str());
+    printf("- ipl:            (path)  %s\n", path_ipl.c_str());
+    printf("- rpm:            (path)  %s\n", path_rpm.c_str());
+    printf("- appsbl:         (path)  %s\n", path_appsbl.c_str());
+    printf("- sin:            (path)  %s\n", path_sin.c_str());
+    printf("- sinhdr:         (path)  %s\n", path_sinhdr.c_str());
     printf("\n");
 
     // Create new boot image
@@ -1008,6 +1278,82 @@ bool pack_main(int argc, char *argv[])
         }
     }
 
+    // Read ipl address
+    if (!values[OPT_VALUE_IPL_ADDRESS]) {
+        file_ptr fp(fopen(path_ipl_address.c_str(), "rb"), fclose);
+        if (fp) {
+            int count = fscanf(fp.get(), "%08x", &ipl_address);
+            if (count == EOF && ferror(fp.get())) {
+                fprintf(stderr, "%s: %s\n",
+                        path_ipl_address.c_str(), strerror(errno));
+                return false;
+            } else if (count != 1) {
+                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                        path_ipl_address.c_str());
+                return false;
+            }
+        } else {
+            ipl_address = mbp::BootImage::DefaultIplAddress;
+        }
+    }
+
+    // Read rpm address
+    if (!values[OPT_VALUE_RPM_ADDRESS]) {
+        file_ptr fp(fopen(path_rpm_address.c_str(), "rb"), fclose);
+        if (fp) {
+            int count = fscanf(fp.get(), "%08x", &rpm_address);
+            if (count == EOF && ferror(fp.get())) {
+                fprintf(stderr, "%s: %s\n",
+                        path_rpm_address.c_str(), strerror(errno));
+                return false;
+            } else if (count != 1) {
+                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                        path_rpm_address.c_str());
+                return false;
+            }
+        } else {
+            rpm_address = mbp::BootImage::DefaultRpmAddress;
+        }
+    }
+
+    // Read appsbl address
+    if (!values[OPT_VALUE_APPSBL_ADDRESS]) {
+        file_ptr fp(fopen(path_appsbl_address.c_str(), "rb"), fclose);
+        if (fp) {
+            int count = fscanf(fp.get(), "%08x", &appsbl_address);
+            if (count == EOF && ferror(fp.get())) {
+                fprintf(stderr, "%s: %s\n",
+                        path_appsbl_address.c_str(), strerror(errno));
+                return false;
+            } else if (count != 1) {
+                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                        path_appsbl_address.c_str());
+                return false;
+            }
+        } else {
+            appsbl_address = mbp::BootImage::DefaultAppsblAddress;
+        }
+    }
+
+    // Read entrypoint address
+    if (!values[OPT_VALUE_ENTRYPOINT]) {
+        file_ptr fp(fopen(path_entrypoint.c_str(), "rb"), fclose);
+        if (fp) {
+            int count = fscanf(fp.get(), "%08x", &entrypoint);
+            if (count == EOF && ferror(fp.get())) {
+                fprintf(stderr, "%s: %s\n",
+                        path_entrypoint.c_str(), strerror(errno));
+                return false;
+            } else if (count != 1) {
+                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                        path_entrypoint.c_str());
+                return false;
+            }
+        } else {
+            entrypoint = mbp::BootImage::DefaultEntrypointAddress;
+        }
+    }
+
     // Read page size
     if (!values[OPT_VALUE_PAGE_SIZE]) {
         file_ptr fp(fopen(path_page_size.c_str(), "rb"), fclose);
@@ -1057,6 +1403,36 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
+    // Read ipl image
+    if (!read_file_data(path_ipl, &ipl_image) && errno != ENOENT) {
+        fprintf(stderr, "%s: %s\n", path_ipl.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Read rpm image
+    if (!read_file_data(path_rpm, &rpm_image) && errno != ENOENT) {
+        fprintf(stderr, "%s: %s\n", path_rpm.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Read appsbl image
+    if (!read_file_data(path_appsbl, &appsbl_image) && errno != ENOENT) {
+        fprintf(stderr, "%s: %s\n", path_appsbl.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Read sin image
+    if (!read_file_data(path_sin, &sin_image) && errno != ENOENT) {
+        fprintf(stderr, "%s: %s\n", path_sin.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Read sin header
+    if (!read_file_data(path_sinhdr, &sin_header) && errno != ENOENT) {
+        fprintf(stderr, "%s: %s\n", path_sinhdr.c_str(), strerror(errno));
+        return false;
+    }
+
     bi.setKernelCmdline(std::move(cmdline));
     bi.setBoardName(std::move(board));
     bi.setAddresses(base, kernel_offset, ramdisk_offset, second_offset, tags_offset);
@@ -1066,6 +1442,11 @@ bool pack_main(int argc, char *argv[])
     bi.setSecondBootloaderImage(std::move(second_image));
     bi.setDeviceTreeImage(std::move(dt_image));
     bi.setAbootImage(std::move(aboot_image));
+    bi.setIplImage(std::move(ipl_image));
+    bi.setRpmImage(std::move(rpm_image));
+    bi.setAppsblImage(std::move(appsbl_image));
+    bi.setSinImage(std::move(sin_image));
+    bi.setSinHeader(std::move(sin_header));
 
     bi.setType(type);
 
