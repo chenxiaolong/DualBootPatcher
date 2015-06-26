@@ -82,7 +82,8 @@ public class LibMbp {
         static native boolean mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native boolean mbp_bootimage_create_file(CBootImage bi, String filename);
         static native int /* BootImageType */ mbp_bootimage_was_type(CBootImage bi);
-        static native void mbp_bootimage_set_type(CBootImage bi, /* BootImageType */ int type);
+        static native int /* BootImageType */ mbp_bootimage_target_type(CBootImage bi);
+        static native void mbp_bootimage_set_target_type(CBootImage bi, /* BootImageType */ int type);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
         static native void mbp_bootimage_set_boardname(CBootImage bi, String name);
         static native void mbp_bootimage_reset_boardname(CBootImage bi);
@@ -550,10 +551,16 @@ public class LibMbp {
             return CWrapper.mbp_bootimage_was_type(mCBootImage);
         }
 
-        public void setType(/* BootImageType */ int type) {
-            validate(mCBootImage, BootImage.class, "setType", type);
+        public /* BootImageType */ int targetType() {
+            validate(mCBootImage, BootImage.class, "targetType");
 
-            CWrapper.mbp_bootimage_set_type(mCBootImage, type);
+            return CWrapper.mbp_bootimage_target_type(mCBootImage);
+        }
+
+        public void setTargetType(/* BootImageType */ int type) {
+            validate(mCBootImage, BootImage.class, "setTargetType", type);
+
+            CWrapper.mbp_bootimage_set_target_type(mCBootImage, type);
         }
 
         public String getBoardName() {

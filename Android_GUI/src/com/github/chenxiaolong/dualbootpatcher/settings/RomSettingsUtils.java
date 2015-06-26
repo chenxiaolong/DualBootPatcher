@@ -174,7 +174,7 @@ public class RomSettingsUtils {
         }
 
         // Make changes to the boot image if necessary
-        if (wasType != Type.ANDROID || !hasRomIdFile) {
+        if (wasType == Type.LOKI || !hasRomIdFile) {
             bi = new BootImage();
 
             try {
@@ -183,12 +183,9 @@ public class RomSettingsUtils {
                     return false;
                 }
 
-                if (wasType == Type.BUMP) {
-                    Log.d(TAG, "Will reapply bump to boot image");
-                    bi.setType(Type.BUMP);
-                } else if (wasType == Type.LOKI) {
+                if (wasType == Type.LOKI) {
                     Log.d(TAG, "Will reapply loki to boot image");
-                    bi.setType(Type.LOKI);
+                    bi.setTargetType(Type.LOKI);
 
                     File aboot = new File(context.getCacheDir() + File.separator + "aboot.img");
 
