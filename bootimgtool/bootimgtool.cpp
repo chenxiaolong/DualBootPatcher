@@ -1452,7 +1452,7 @@ bool pack_main(int argc, char *argv[])
     bi.setSinImage(std::move(sin_image));
     bi.setSinHeader(std::move(sin_header));
 
-    bi.setType(type);
+    bi.setTargetType(type);
 
     // Create boot image
     if (!bi.createFile(output_file)) {

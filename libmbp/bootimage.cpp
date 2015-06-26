@@ -165,18 +165,24 @@ bool BootImage::load(const unsigned char *data, std::size_t size)
     if (LokiFormat::isValid(data, size)) {
         LOGD("Boot image is a loki'd Android boot image");
         m_impl->sourceType = Type::Loki;
+        // We can't repatch with Loki until we have access to the aboot
+        // partition
+        m_impl->type = Type::Android;
         ret = LokiFormat(&m_impl->i10e).loadImage(data, size);
     } else if (BumpFormat::isValid(data, size)) {
         LOGD("Boot image is a bump'd Android boot image");
         m_impl->sourceType = Type::Bump;
+        m_impl->type = Type::Bump;
         ret = BumpFormat(&m_impl->i10e).loadImage(data, size);
     } else if (AndroidFormat::isValid(data, size)) {
         LOGD("Boot image is a plain boot image");
         m_impl->sourceType = Type::Android;
+        m_impl->type = Type::Android;
         ret = AndroidFormat(&m_impl->i10e).loadImage(data, size);
     } else if (SonyElfFormat::isValid(data, size)) {
         LOGD("Boot image is a Sony ELF32 boot image");
         m_impl->sourceType = Type::SonyElf;
+        m_impl->type = Type::SonyElf;
         ret = SonyElfFormat(&m_impl->i10e).loadImage(data, size);
     } else {
         LOGD("Unknown boot image type");
@@ -328,7 +334,12 @@ BootImage::Type BootImage::wasType() const
     return m_impl->sourceType;
 }
 
-void BootImage::setType(BootImage::Type type)
+BootImage::Type BootImage::targetType() const
+{
+    return m_impl->type;
+}
+
+void BootImage::setTargetType(BootImage::Type type)
 {
     m_impl->type = type;
 }

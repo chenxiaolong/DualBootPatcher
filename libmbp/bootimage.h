@@ -70,7 +70,8 @@ public:
     bool createFile(const std::string &path);
 
     Type wasType() const;
-    void setType(Type type);
+    Type targetType() const;
+    void setTargetType(Type type);
 
     // Board name
     const std::string & boardName() const;

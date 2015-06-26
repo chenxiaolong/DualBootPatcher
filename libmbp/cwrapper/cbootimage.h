@@ -53,7 +53,8 @@ bool mbp_bootimage_create_file(CBootImage *bootImage,
                                const char *filename);
 
 enum BootImageType mbp_bootimage_was_type(const CBootImage *bootImage);
-void mbp_bootimage_set_type(CBootImage *bootImage, enum BootImageType type);
+enum BootImageType mbp_bootimage_target_type(const CBootImage *bootImage);
+void mbp_bootimage_set_target_type(CBootImage *bootImage, enum BootImageType type);
 
 const char * mbp_bootimage_boardname(const CBootImage *bootImage);
 void mbp_bootimage_set_boardname(CBootImage *bootImage,

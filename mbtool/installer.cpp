@@ -1310,9 +1310,7 @@ Installer::ProceedState Installer::install_stage_finish()
         bi.setRamdiskImage(std::move(new_ramdisk));
 
         // Reapply hacks if needed
-        if (bi.wasType() == mbp::BootImage::Type::Bump) {
-            bi.setType(mbp::BootImage::Type::Bump);
-        } else if (bi.wasType() == mbp::BootImage::Type::Loki) {
+        if (bi.wasType() == mbp::BootImage::Type::Loki) {
             std::vector<unsigned char> aboot_image;
             if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
                 LOGE("Failed to read aboot partition: %s", strerror(errno));
@@ -1321,7 +1319,7 @@ Installer::ProceedState Installer::install_stage_finish()
             }
 
             bi.setAbootImage(std::move(aboot_image));
-            bi.setType(mbp::BootImage::Type::Loki);
+            bi.setTargetType(mbp::BootImage::Type::Loki);
         }
 
         std::vector<unsigned char> bootimg;

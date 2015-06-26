@@ -174,10 +174,16 @@ enum BootImageType mbp_bootimage_was_type(const CBootImage *bootImage)
     return static_cast<BootImageType>(bi->wasType());
 }
 
-void mbp_bootimage_set_type(CBootImage *bootImage, enum BootImageType type)
+enum BootImageType mbp_bootimage_target_type(const CBootImage *bootImage)
+{
+    CCAST(bootImage);
+    return static_cast<BootImageType>(bi->targetType());
+}
+
+void mbp_bootimage_set_target_type(CBootImage *bootImage, enum BootImageType type)
 {
     CAST(bootImage);
-    bi->setType(static_cast<mbp::BootImage::Type>(type));
+    bi->setTargetType(static_cast<mbp::BootImage::Type>(type));
 }
 
 /*!
