@@ -978,7 +978,7 @@ bool pack_main(int argc, char *argv[])
         case OPT_VALUE_PAGE_SIZE:
             path_page_size.clear();
             values[opt] = true;
-            if (!str_to_uint32(&page_size, optarg, 16)) {
+            if (!str_to_uint32(&page_size, optarg, 10)) {
                 fprintf(stderr, "Invalid page_size: %s\n", optarg);
                 return false;
             }
