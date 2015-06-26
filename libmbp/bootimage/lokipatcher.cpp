@@ -134,6 +134,11 @@ static bool patchShellcode(uint32_t header, uint32_t ramdisk,
 bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
                              std::vector<unsigned char> aboot)
 {
+    if (aboot.empty()) {
+        FLOGE("Aboot image cannot be empty");
+        return false;
+    }
+
     // Prevent reading out of bounds
     data->resize((data->size() + 0x2000 + 0xfff) & ~0xfff);
     aboot.resize((aboot.size() + 0xfff) & ~0xfff);
@@ -276,6 +281,12 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
     newImage.insert(newImage.end(),
                     data->data() + pageSize + pageKernelSize,
                     data->data() + pageSize + pageKernelSize + pageRamdiskSize);
+
+    if (tgt->check_sigs - abootBase - offset + fakeSize > aboot.size()) {
+        FLOGE("Requested aboot segment exceeds aboot size by %" PRIzu " bytes",
+              tgt->check_sigs - abootBase - offset + fakeSize - aboot.size());
+        return false;
+    }
 
     // Write fake size bytes of original code to the output
     newImage.insert(newImage.end(),
