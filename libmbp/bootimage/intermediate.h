@@ -39,7 +39,7 @@ struct BootImageIntermediate
     std::vector<unsigned char> ramdiskImage; // | X       | X    | X    | X    |
     std::vector<unsigned char> secondImage;  // | X       | X    | X    |      |
     std::vector<unsigned char> dtImage;      // | X       | X    | X    |      |
-    std::vector<unsigned char> abootImage;   // | X       | X    | X    |      |
+    std::vector<unsigned char> abootImage;   // |         | X    |      |      |
     std::vector<unsigned char> iplImage;     // |         |      |      | X    |
     std::vector<unsigned char> rpmImage;     // |         |      |      | X    |
     std::vector<unsigned char> appsblImage;  // |         |      |      | X    |
