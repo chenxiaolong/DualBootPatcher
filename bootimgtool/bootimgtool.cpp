@@ -844,6 +844,10 @@ bool pack_main(int argc, char *argv[])
         {"value-ramdisk_offset", required_argument, 0, OPT_VALUE_RAMDISK_OFFSET},
         {"value-second_offset",  required_argument, 0, OPT_VALUE_SECOND_OFFSET},
         {"value-tags_offset",    required_argument, 0, OPT_VALUE_TAGS_OFFSET},
+        {"value-ipl_address",    required_argument, 0, OPT_VALUE_IPL_ADDRESS},
+        {"value-rpm_address",    required_argument, 0, OPT_VALUE_RPM_ADDRESS},
+        {"value-appsbl_address", required_argument, 0, OPT_VALUE_APPSBL_ADDRESS},
+        {"value-entrypoint",     required_argument, 0, OPT_VALUE_ENTRYPOINT},
         {"value-page_size",      required_argument, 0, OPT_VALUE_PAGE_SIZE},
         {0, 0, 0, 0}
     };
