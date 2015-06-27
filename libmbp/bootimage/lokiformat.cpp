@@ -37,6 +37,11 @@ LokiFormat::~LokiFormat()
 {
 }
 
+uint64_t LokiFormat::typeSupportMask()
+{
+    return AndroidFormat::typeSupportMask() | SUPPORTS_ABOOT_IMAGE;
+}
+
 bool LokiFormat::isValid(const unsigned char *data, std::size_t size)
 {
     // Check that the size of the boot image is okay

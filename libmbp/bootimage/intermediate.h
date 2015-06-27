@@ -25,8 +25,8 @@ class BootImageFormat;
 struct BootImageIntermediate
 {
     // Used in:                                 | Android | Loki | Bump | Sony |
-    uint32_t kernelAddr;                     // | X       | X    | X    |      |
-    uint32_t ramdiskAddr;                    // | X       | X    | X    |      |
+    uint32_t kernelAddr;                     // | X       | X    | X    | X    |
+    uint32_t ramdiskAddr;                    // | X       | X    | X    | X    |
     uint32_t secondAddr;                     // | X       | X    | X    |      |
     uint32_t tagsAddr;                       // | X       | X    | X    |      |
     uint32_t iplAddr;                        // |         |      |      | X    |

@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include <cstring>
 
+#include "bootimage-common.h"
 #include "bootimage/sonyelf.h"
 #include "private/logging.h"
 
@@ -36,6 +37,24 @@ SonyElfFormat::SonyElfFormat(BootImageIntermediate *i10e)
 
 SonyElfFormat::~SonyElfFormat()
 {
+}
+
+uint64_t SonyElfFormat::typeSupportMask()
+{
+    return SUPPORTS_KERNEL_ADDRESS
+            | SUPPORTS_RAMDISK_ADDRESS
+            | SUPPORTS_IPL_ADDRESS
+            | SUPPORTS_RPM_ADDRESS
+            | SUPPORTS_APPSBL_ADDRESS
+            | SUPPORTS_CMDLINE
+            | SUPPORTS_KERNEL_IMAGE
+            | SUPPORTS_RAMDISK_IMAGE
+            | SUPPORTS_IPL_IMAGE
+            | SUPPORTS_RPM_IMAGE
+            | SUPPORTS_APPSBL_IMAGE
+            | SUPPORTS_SONY_SIN_IMAGE
+            | SUPPORTS_SONY_SIN_HEADER
+            | SUPPORTS_ENTRYPOINT;
 }
 
 bool SonyElfFormat::isValid(const unsigned char *data, std::size_t size)

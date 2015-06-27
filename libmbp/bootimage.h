@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 
+#include "bootimage-common.h"
 #include "libmbp_global.h"
 #include "patchererror.h"
 
@@ -72,6 +73,8 @@ public:
     Type wasType() const;
     Type targetType() const;
     void setTargetType(Type type);
+
+    static uint64_t typeSupportMask(Type type);
 
     // Board name
     const std::string & boardName() const;

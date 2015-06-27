@@ -31,6 +31,8 @@ public:
     LokiFormat(BootImageIntermediate *i10e);
     virtual ~LokiFormat();
 
+    static uint64_t typeSupportMask();
+
     static bool isValid(const unsigned char *data, std::size_t size);
 
     virtual bool loadImage(const unsigned char *data, std::size_t size) override;

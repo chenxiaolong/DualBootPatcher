@@ -344,6 +344,22 @@ void BootImage::setTargetType(BootImage::Type type)
     m_impl->type = type;
 }
 
+uint64_t BootImage::typeSupportMask(BootImage::Type type)
+{
+    switch (type) {
+    case Type::Android:
+        return AndroidFormat::typeSupportMask();
+    case Type::Bump:
+        return BumpFormat::typeSupportMask();
+    case Type::Loki:
+        return LokiFormat::typeSupportMask();
+    case Type::SonyElf:
+        return SonyElfFormat::typeSupportMask();
+    default:
+        return 0;
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Board name
 ////////////////////////////////////////////////////////////////////////////////

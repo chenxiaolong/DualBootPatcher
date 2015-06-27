@@ -21,6 +21,7 @@
 
 #include <cstring>
 
+#include "bootimage-common.h"
 #include "external/sha.h"
 #include "private/logging.h"
 
@@ -34,6 +35,21 @@ AndroidFormat::AndroidFormat(BootImageIntermediate *i10e)
 
 AndroidFormat::~AndroidFormat()
 {
+}
+
+uint64_t AndroidFormat::typeSupportMask()
+{
+    return SUPPORTS_KERNEL_ADDRESS
+            | SUPPORTS_RAMDISK_ADDRESS
+            | SUPPORTS_SECOND_ADDRESS
+            | SUPPORTS_TAGS_ADDRESS
+            | SUPPORTS_PAGE_SIZE
+            | SUPPORTS_BOARD_NAME
+            | SUPPORTS_CMDLINE
+            | SUPPORTS_KERNEL_IMAGE
+            | SUPPORTS_RAMDISK_IMAGE
+            | SUPPORTS_SECOND_IMAGE
+            | SUPPORTS_DT_IMAGE;
 }
 
 bool AndroidFormat::isValid(const unsigned char *data, std::size_t size)
