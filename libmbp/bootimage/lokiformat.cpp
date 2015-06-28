@@ -171,7 +171,8 @@ bool LokiFormat::loadLokiOldImage(const unsigned char *data, std::size_t size,
     LOGD("This is an old loki image");
 
     // The kernel tags address is invalid in the old loki images
-    mI10e->tagsAddr = BootImage::DefaultBase + BootImage::DefaultTagsOffset;
+    mI10e->tagsAddr =
+            BootImage::AndroidDefaultBase + BootImage::AndroidDefaultTagsOffset;
     FLOGD("Setting kernel tags address to default: 0x%08x", mI10e->tagsAddr);
 
     uint32_t kernelSize;

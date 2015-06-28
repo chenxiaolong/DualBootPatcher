@@ -38,23 +38,30 @@
 namespace mbp
 {
 
-const char *BootImage::BootMagic = BOOT_MAGIC;
-const uint32_t BootImage::BootMagicSize = BOOT_MAGIC_SIZE;
-const uint32_t BootImage::BootNameSize = BOOT_NAME_SIZE;
-const uint32_t BootImage::BootArgsSize = BOOT_ARGS_SIZE;
+const char *BootImage::AndroidBootMagic = BOOT_MAGIC;
+const uint32_t BootImage::AndroidBootMagicSize = BOOT_MAGIC_SIZE;
+const uint32_t BootImage::AndroidBootNameSize = BOOT_NAME_SIZE;
+const uint32_t BootImage::AndroidBootArgsSize = BOOT_ARGS_SIZE;
 
-const char *BootImage::DefaultBoard = "";
+// Universal defaults
 const char *BootImage::DefaultCmdline = "";
-const uint32_t BootImage::DefaultPageSize = 2048u;
-const uint32_t BootImage::DefaultBase = 0x10000000u;
-const uint32_t BootImage::DefaultKernelOffset = 0x00008000u;
-const uint32_t BootImage::DefaultRamdiskOffset = 0x01000000u;
-const uint32_t BootImage::DefaultSecondOffset = 0x00f00000u;
-const uint32_t BootImage::DefaultTagsOffset = 0x00000100u;
-const uint32_t BootImage::DefaultIplAddress = 0u;
-const uint32_t BootImage::DefaultRpmAddress = 0u;
-const uint32_t BootImage::DefaultAppsblAddress = 0u;
-const uint32_t BootImage::DefaultEntrypointAddress = 0u;
+
+// Android-based boot image defaults
+const char *BootImage::AndroidDefaultBoard = "";
+const uint32_t BootImage::AndroidDefaultPageSize = 2048u;
+const uint32_t BootImage::AndroidDefaultBase = 0x10000000u;
+const uint32_t BootImage::AndroidDefaultKernelOffset = 0x00008000u;
+const uint32_t BootImage::AndroidDefaultRamdiskOffset = 0x01000000u;
+const uint32_t BootImage::AndroidDefaultSecondOffset = 0x00f00000u;
+const uint32_t BootImage::AndroidDefaultTagsOffset = 0x00000100u;
+
+// Sony ELF boot image defaults
+const uint32_t BootImage::SonyElfDefaultKernelAddress = 0u;
+const uint32_t BootImage::SonyElfDefaultRamdiskAddress = 0u;
+const uint32_t BootImage::SonyElfDefaultIplAddress = 0u;
+const uint32_t BootImage::SonyElfDefaultRpmAddress = 0u;
+const uint32_t BootImage::SonyElfDefaultAppsblAddress = 0u;
+const uint32_t BootImage::SonyElfDefaultEntrypointAddress = 0u;
 
 
 /*! \cond INTERNAL */

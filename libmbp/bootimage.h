@@ -33,23 +33,30 @@ namespace mbp
 class MBP_EXPORT BootImage
 {
 public:
-    static const char *BootMagic;
-    static const uint32_t BootMagicSize;
-    static const uint32_t BootNameSize;
-    static const uint32_t BootArgsSize;
+    static const char *AndroidBootMagic;
+    static const uint32_t AndroidBootMagicSize;
+    static const uint32_t AndroidBootNameSize;
+    static const uint32_t AndroidBootArgsSize;
 
-    static const char *DefaultBoard;
+    // Universal defaults
     static const char *DefaultCmdline;
-    static const uint32_t DefaultPageSize;
-    static const uint32_t DefaultBase;
-    static const uint32_t DefaultKernelOffset;
-    static const uint32_t DefaultRamdiskOffset;
-    static const uint32_t DefaultSecondOffset;
-    static const uint32_t DefaultTagsOffset;
-    static const uint32_t DefaultIplAddress;
-    static const uint32_t DefaultRpmAddress;
-    static const uint32_t DefaultAppsblAddress;
-    static const uint32_t DefaultEntrypointAddress;
+
+    // Android-based boot image defaults
+    static const char *AndroidDefaultBoard;
+    static const uint32_t AndroidDefaultPageSize;
+    static const uint32_t AndroidDefaultBase;
+    static const uint32_t AndroidDefaultKernelOffset;
+    static const uint32_t AndroidDefaultRamdiskOffset;
+    static const uint32_t AndroidDefaultSecondOffset;
+    static const uint32_t AndroidDefaultTagsOffset;
+
+    // Sony ELF boot image defaults
+    static const uint32_t SonyElfDefaultKernelAddress;
+    static const uint32_t SonyElfDefaultRamdiskAddress;
+    static const uint32_t SonyElfDefaultIplAddress;
+    static const uint32_t SonyElfDefaultRpmAddress;
+    static const uint32_t SonyElfDefaultAppsblAddress;
+    static const uint32_t SonyElfDefaultEntrypointAddress;
 
     enum class Type : int
     {
