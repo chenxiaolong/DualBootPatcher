@@ -81,65 +81,48 @@ public:
     void setBoardName(std::string name);
     const char * boardNameC() const;
     void setBoardNameC(const char *name);
-    void resetBoardName();
 
     // Kernel cmdline
     const std::string & kernelCmdline() const;
     void setKernelCmdline(std::string cmdline);
     const char * kernelCmdlineC() const;
     void setKernelCmdlineC(const char *cmdline);
-    void resetKernelCmdline();
 
     // Page size
     uint32_t pageSize() const;
     void setPageSize(uint32_t size);
-    void resetPageSize();
 
     // Kernel address
     uint32_t kernelAddress() const;
     void setKernelAddress(uint32_t address);
-    void resetKernelAddress();
 
     // Ramdisk address
     uint32_t ramdiskAddress() const;
     void setRamdiskAddress(uint32_t address);
-    void resetRamdiskAddress();
 
     // Second bootloader address
     uint32_t secondBootloaderAddress() const;
     void setSecondBootloaderAddress(uint32_t address);
-    void resetSecondBootloaderAddress();
 
     // Kernel tags address
     uint32_t kernelTagsAddress() const;
     void setKernelTagsAddress(uint32_t address);
-    void resetKernelTagsAddress();
 
     // Sony ipl address
     uint32_t iplAddress() const;
     void setIplAddress(uint32_t address);
-    void resetIplAddress();
 
     // Sony rpm address
     uint32_t rpmAddress() const;
     void setRpmAddress(uint32_t address);
-    void resetRpmAddress();
 
     // Sony appsbl address
     uint32_t appsblAddress() const;
     void setAppsblAddress(uint32_t address);
-    void resetAppsblAddress();
 
     // Sony entrypoint address
     uint32_t entrypointAddress() const;
     void setEntrypointAddress(uint32_t address);
-    void resetEntrypointAddress();
-
-    // Set addresses using a base and offsets
-    void setAddresses(uint32_t base, uint32_t kernelOffset,
-                      uint32_t ramdiskOffset,
-                      uint32_t secondBootloaderOffset,
-                      uint32_t kernelTagsOffset);
 
     // Kernel image
     const std::vector<unsigned char> & kernelImage() const;

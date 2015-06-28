@@ -217,19 +217,6 @@ void mbp_bootimage_set_boardname(CBootImage *bootImage,
 }
 
 /*!
- * \brief Resets the board name field in the boot image header to the default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetBoardName()
- */
-void mbp_bootimage_reset_boardname(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetBoardName();
-}
-
-/*!
  * \brief Kernel cmdline in the boot image header
  *
  * \param bootImage CBootImage object
@@ -257,19 +244,6 @@ void mbp_bootimage_set_kernel_cmdline(CBootImage *bootImage,
 {
     CAST(bootImage);
     bi->setKernelCmdlineC(cmdline);
-}
-
-/*!
- * \brief Resets the kernel cmdline to the default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetKernelCmdline()
- */
-void mbp_bootimage_reset_kernel_cmdline(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetKernelCmdline();
 }
 
 /*!
@@ -303,19 +277,6 @@ void mbp_bootimage_set_page_size(CBootImage *bootImage,
 }
 
 /*!
- * \brief Resets the page size field in the header to the default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetPageSize()
- */
-void mbp_bootimage_reset_page_size(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetPageSize();
-}
-
-/*!
  * \brief Kernel address field in the boot image header
  *
  * \param bootImage CBootImage object
@@ -343,19 +304,6 @@ void mbp_bootimage_set_kernel_address(CBootImage *bootImage,
 {
     CAST(bootImage);
     bi->setKernelAddress(address);
-}
-
-/*!
- * \brief Resets the kernel address field in the header to the default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetKernelAddress()
- */
-void mbp_bootimage_reset_kernel_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetKernelAddress();
 }
 
 /*!
@@ -389,19 +337,6 @@ void mbp_bootimage_set_ramdisk_address(CBootImage *bootImage,
 }
 
 /*!
- * \brief Resets the ramdisk address field in the header to the default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetRamdiskAddress()
- */
-void mbp_bootimage_reset_ramdisk_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetRamdiskAddress();
-}
-
-/*!
  * \brief Second bootloader address field in the boot image header
  *
  * \param bootImage CBootImage object
@@ -429,20 +364,6 @@ void mbp_bootimage_set_second_bootloader_address(CBootImage *bootImage,
 {
     CAST(bootImage);
     bi->setSecondBootloaderAddress(address);
-}
-
-/*!
- * \brief Resets the second bootloader address field in the header to the
- *        default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetSecondBootloaderAddress()
- */
-void mbp_bootimage_reset_second_bootloader_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetSecondBootloaderAddress();
 }
 
 /*!
@@ -475,19 +396,6 @@ void mbp_bootimage_set_kernel_tags_address(CBootImage *bootImage,
     bi->setKernelTagsAddress(address);
 }
 
-/*!
- * \brief Resets the kernel tags address field in the header to the default
- *
- * \param bootImage CBootImage object
- *
- * \sa BootImage::resetKernelTagsAddress()
- */
-void mbp_bootimage_reset_kernel_tags_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetKernelTagsAddress();
-}
-
 uint32_t mbp_bootimage_ipl_address(const CBootImage *bootImage)
 {
     CCAST(bootImage);
@@ -498,12 +406,6 @@ void mbp_bootimage_set_ipl_address(CBootImage *bootImage, uint32_t address)
 {
     CAST(bootImage);
     bi->setIplAddress(address);
-}
-
-void mbp_bootimage_reset_ipl_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetIplAddress();
 }
 
 uint32_t mbp_bootimage_rpm_address(const CBootImage *bootImage)
@@ -518,12 +420,6 @@ void mbp_bootimage_set_rpm_address(CBootImage *bootImage, uint32_t address)
     bi->setRpmAddress(address);
 }
 
-void mbp_bootimage_reset_rpm_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetRpmAddress();
-}
-
 uint32_t mbp_bootimage_appsbl_address(const CBootImage *bootImage)
 {
     CCAST(bootImage);
@@ -534,12 +430,6 @@ void mbp_bootimage_set_appsbl_address(CBootImage *bootImage, uint32_t address)
 {
     CAST(bootImage);
     bi->setAppsblAddress(address);
-}
-
-void mbp_bootimage_reset_appsbl_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetAppsblAddress();
 }
 
 uint32_t mbp_bootimage_entrypoint_address(const CBootImage *bootImage)
@@ -553,36 +443,6 @@ void mbp_bootimage_set_entrypoint_address(CBootImage *bootImage,
 {
     CAST(bootImage);
     bi->setEntrypointAddress(address);
-}
-
-void mbp_bootimage_reset_entrypoint_address(CBootImage *bootImage)
-{
-    CAST(bootImage);
-    bi->resetEntrypointAddress();
-}
-
-/*!
- * \brief Set all of the addresses using offsets and a base address
- *
- * \param bootImage CBootImage object
- * \param base Base address
- * \param kernelOffset Kernel offset
- * \param ramdiskOffset Ramdisk offset
- * \param secondBootloaderOffset Second bootloader offset
- * \param kernelTagsOffset Kernel tags offset
- *
- * \sa BootImage::setAddresses()
- */
-void mbp_bootimage_set_addresses(CBootImage *bootImage,
-                                 uint32_t base,
-                                 uint32_t kernelOffset,
-                                 uint32_t ramdiskOffset,
-                                 uint32_t secondBootloaderOffset,
-                                 uint32_t kernelTagsOffset)
-{
-    CAST(bootImage);
-    bi->setAddresses(base, kernelOffset, ramdiskOffset,
-                     secondBootloaderOffset, kernelTagsOffset);
 }
 
 /*!

@@ -59,63 +59,46 @@ void mbp_bootimage_set_target_type(CBootImage *bootImage, enum BootImageType typ
 const char * mbp_bootimage_boardname(const CBootImage *bootImage);
 void mbp_bootimage_set_boardname(CBootImage *bootImage,
                                  const char *name);
-void mbp_bootimage_reset_boardname(CBootImage *bootImage);
 
 const char * mbp_bootimage_kernel_cmdline(const CBootImage *bootImage);
 void mbp_bootimage_set_kernel_cmdline(CBootImage *bootImage,
                                       const char *cmdline);
-void mbp_bootimage_reset_kernel_cmdline(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_page_size(const CBootImage *bootImage);
 void mbp_bootimage_set_page_size(CBootImage *bootImage,
                                  uint32_t pageSize);
-void mbp_bootimage_reset_page_size(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_kernel_address(const CBootImage *bootImage);
 void mbp_bootimage_set_kernel_address(CBootImage *bootImage,
                                       uint32_t address);
-void mbp_bootimage_reset_kernel_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_ramdisk_address(const CBootImage *bootImage);
 void mbp_bootimage_set_ramdisk_address(CBootImage *bootImage,
                                        uint32_t address);
-void mbp_bootimage_reset_ramdisk_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_second_bootloader_address(const CBootImage *bootImage);
 void mbp_bootimage_set_second_bootloader_address(CBootImage *bootImage,
                                                  uint32_t address);
-void mbp_bootimage_reset_second_bootloader_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_kernel_tags_address(const CBootImage *bootImage);
 void mbp_bootimage_set_kernel_tags_address(CBootImage *bootImage,
                                            uint32_t address);
-void mbp_bootimage_reset_kernel_tags_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_ipl_address(const CBootImage *bootImage);
 void mbp_bootimage_set_ipl_address(CBootImage *bootImage,
                                    uint32_t address);
-void mbp_bootimage_reset_ipl_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_rpm_address(const CBootImage *bootImage);
 void mbp_bootimage_set_rpm_address(CBootImage *bootImage,
                                    uint32_t address);
-void mbp_bootimage_reset_rpm_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_appsbl_address(const CBootImage *bootImage);
 void mbp_bootimage_set_appsbl_address(CBootImage *bootImage,
                                       uint32_t address);
-void mbp_bootimage_reset_appsbl_address(CBootImage *bootImage);
 
 uint32_t mbp_bootimage_entrypoint_address(const CBootImage *bootImage);
 void mbp_bootimage_set_entrypoint_address(CBootImage *bootImage,
                                           uint32_t address);
-void mbp_bootimage_reset_entrypoint_address(CBootImage *bootImage);
-
-void mbp_bootimage_set_addresses(CBootImage *bootImage,
-                                 uint32_t base, uint32_t kernelOffset,
-                                 uint32_t ramdiskOffset,
-                                 uint32_t secondBootloaderOffset,
-                                 uint32_t kernelTagsOffset);
 
 void mbp_bootimage_kernel_image(const CBootImage *bootImage,
                                 const unsigned char **data, size_t *size);

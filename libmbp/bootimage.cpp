@@ -125,20 +125,6 @@ private:
 
 BootImage::BootImage() : m_impl(new Impl(this))
 {
-    // Initialize to sane defaults
-    resetKernelCmdline();
-    resetBoardName();
-    resetKernelAddress();
-    resetRamdiskAddress();
-    resetSecondBootloaderAddress();
-    resetKernelTagsAddress();
-    resetIplAddress();
-    resetRpmAddress();
-    resetAppsblAddress();
-    resetEntrypointAddress();
-    resetPageSize();
-    // Prevent valgrind warning about uninitialized bytes when writing file
-    m_impl->i10e.hdrUnused = 0;
 }
 
 BootImage::~BootImage()
@@ -394,16 +380,6 @@ void BootImage::setBoardNameC(const char *name)
     m_impl->i10e.boardName = name;
 }
 
-/*!
- * \brief Resets the board name field in the boot image header to the default
- *
- * The board name field is empty by default.
- */
-void BootImage::resetBoardName()
-{
-    setBoardName(DefaultBoard);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Kernel cmdline
 ////////////////////////////////////////////////////////////////////////////////
@@ -438,16 +414,6 @@ void BootImage::setKernelCmdlineC(const char *cmdline)
     m_impl->i10e.cmdline = cmdline;
 }
 
-/*!
- * \brief Resets the kernel cmdline to the default
- *
- * The kernel cmdline is empty by default.
- */
-void BootImage::resetKernelCmdline()
-{
-    setKernelCmdline(DefaultCmdline);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 /*!
@@ -474,16 +440,6 @@ void BootImage::setPageSize(uint32_t size)
 }
 
 /*!
- * \brief Resets the page size field in the header to the default
- *
- * The default page size is 2048 bytes.
- */
-void BootImage::resetPageSize()
-{
-    setPageSize(DefaultPageSize);
-}
-
-/*!
  * \brief Kernel address field in the boot image header
  *
  * \return Kernel address
@@ -501,16 +457,6 @@ uint32_t BootImage::kernelAddress() const
 void BootImage::setKernelAddress(uint32_t address)
 {
     m_impl->i10e.kernelAddr = address;
-}
-
-/*!
- * \brief Resets the kernel address field in the header to the default
- *
- * The default kernel address is 0x10000000 + 0x00008000.
- */
-void BootImage::resetKernelAddress()
-{
-    setKernelAddress(DefaultBase + DefaultKernelOffset);
 }
 
 /*!
@@ -534,16 +480,6 @@ void BootImage::setRamdiskAddress(uint32_t address)
 }
 
 /*!
- * \brief Resets the ramdisk address field in the header to the default
- *
- * The default ramdisk address is 0x10000000 + 0x01000000.
- */
-void BootImage::resetRamdiskAddress()
-{
-    setRamdiskAddress(DefaultBase + DefaultRamdiskOffset);
-}
-
-/*!
  * \brief Second bootloader address field in the boot image header
  *
  * \return Second bootloader address
@@ -561,16 +497,6 @@ uint32_t BootImage::secondBootloaderAddress() const
 void BootImage::setSecondBootloaderAddress(uint32_t address)
 {
     m_impl->i10e.secondAddr = address;
-}
-
-/*!
- * \brief Resets the second bootloader address field in the header to the default
- *
- * The default second bootloader address is 0x10000000 + 0x00f00000.
- */
-void BootImage::resetSecondBootloaderAddress()
-{
-    setSecondBootloaderAddress(DefaultBase + DefaultSecondOffset);
 }
 
 /*!
@@ -593,16 +519,6 @@ void BootImage::setKernelTagsAddress(uint32_t address)
     m_impl->i10e.tagsAddr = address;
 }
 
-/*!
- * \brief Resets the kernel tags address field in the header to the default
- *
- * The default kernel tags address is 0x10000000 + 0x00000100.
- */
-void BootImage::resetKernelTagsAddress()
-{
-    setKernelTagsAddress(DefaultBase + DefaultTagsOffset);
-}
-
 uint32_t BootImage::iplAddress() const
 {
     return m_impl->i10e.iplAddr;
@@ -611,11 +527,6 @@ uint32_t BootImage::iplAddress() const
 void BootImage::setIplAddress(uint32_t address)
 {
     m_impl->i10e.iplAddr = address;
-}
-
-void BootImage::resetIplAddress()
-{
-    setIplAddress(DefaultIplAddress);
 }
 
 uint32_t BootImage::rpmAddress() const
@@ -628,11 +539,6 @@ void BootImage::setRpmAddress(uint32_t address)
     m_impl->i10e.rpmAddr = address;
 }
 
-void BootImage::resetRpmAddress()
-{
-    setRpmAddress(DefaultRpmAddress);
-}
-
 uint32_t BootImage::appsblAddress() const
 {
     return m_impl->i10e.appsblAddr;
@@ -643,11 +549,6 @@ void BootImage::setAppsblAddress(uint32_t address)
     m_impl->i10e.appsblAddr = address;
 }
 
-void BootImage::resetAppsblAddress()
-{
-    setAppsblAddress(DefaultAppsblAddress);
-}
-
 uint32_t BootImage::entrypointAddress() const
 {
     return m_impl->i10e.hdrEntrypoint;
@@ -656,36 +557,6 @@ uint32_t BootImage::entrypointAddress() const
 void BootImage::setEntrypointAddress(uint32_t address)
 {
     m_impl->i10e.hdrEntrypoint = address;
-}
-
-void BootImage::resetEntrypointAddress()
-{
-    setEntrypointAddress(DefaultEntrypointAddress);
-}
-
-/*!
- * \brief Set all of the addresses using offsets and a base address
- *
- * - `[Kernel address] = [Base] + [Kernel offset]`
- * - `[Ramdisk address] = [Base] + [Ramdisk offset]`
- * - `[Second bootloader address] = [Base] + [Second bootloader offset]`
- * - `[Kernel tags address] = [Base] + [Kernel tags offset]`
- *
- * \param base Base address
- * \param kernelOffset Kernel offset
- * \param ramdiskOffset Ramdisk offset
- * \param secondBootloaderOffset Second bootloader offset
- * \param kernelTagsOffset Kernel tags offset
- */
-void BootImage::setAddresses(uint32_t base, uint32_t kernelOffset,
-                             uint32_t ramdiskOffset,
-                             uint32_t secondBootloaderOffset,
-                             uint32_t kernelTagsOffset)
-{
-    setKernelAddress(base + kernelOffset);
-    setRamdiskAddress(base + ramdiskOffset);
-    setSecondBootloaderAddress(base + secondBootloaderOffset);
-    setKernelTagsAddress(base + kernelTagsOffset);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

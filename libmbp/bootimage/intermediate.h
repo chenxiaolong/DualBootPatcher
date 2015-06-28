@@ -25,14 +25,14 @@ class BootImageFormat;
 struct BootImageIntermediate
 {
     // Used in:                                 | Android | Loki | Bump | Sony |
-    uint32_t kernelAddr;                     // | X       | X    | X    | X    |
-    uint32_t ramdiskAddr;                    // | X       | X    | X    | X    |
-    uint32_t secondAddr;                     // | X       | X    | X    |      |
-    uint32_t tagsAddr;                       // | X       | X    | X    |      |
-    uint32_t iplAddr;                        // |         |      |      | X    |
-    uint32_t rpmAddr;                        // |         |      |      | X    |
-    uint32_t appsblAddr;                     // |         |      |      | X    |
-    uint32_t pageSize;                       // | X       | X    | X    |      |
+    uint32_t kernelAddr = 0;                 // | X       | X    | X    | X    |
+    uint32_t ramdiskAddr = 0;                // | X       | X    | X    | X    |
+    uint32_t secondAddr = 0;                 // | X       | X    | X    |      |
+    uint32_t tagsAddr = 0;                   // | X       | X    | X    |      |
+    uint32_t iplAddr = 0;                    // |         |      |      | X    |
+    uint32_t rpmAddr = 0;                    // |         |      |      | X    |
+    uint32_t appsblAddr = 0;                 // |         |      |      | X    |
+    uint32_t pageSize = 0;                   // | X       | X    | X    |      |
     std::string boardName;                   // | X       | X    | X    |      |
     std::string cmdline;                     // | X       | X    | X    |      |
     std::vector<unsigned char> kernelImage;  // | X       | X    | X    | X    |
@@ -46,11 +46,11 @@ struct BootImageIntermediate
     std::vector<unsigned char> sonySinImage; // |         |      |      | X    |
     std::vector<unsigned char> sonySinHdr;   // |         |      |      | X    |
     // Raw header values                        |---------|------|------|------|
-    uint32_t hdrKernelSize;                  // | X       | X    | X    |      |
-    uint32_t hdrRamdiskSize;                 // | X       | X    | X    |      |
-    uint32_t hdrSecondSize;                  // | X       | X    | X    |      |
-    uint32_t hdrDtSize;                      // | X       | X    | X    |      |
-    uint32_t hdrUnused;                      // | X       | X    | X    |      |
+    uint32_t hdrKernelSize = 0;              // | X       | X    | X    |      |
+    uint32_t hdrRamdiskSize = 0;             // | X       | X    | X    |      |
+    uint32_t hdrSecondSize = 0;              // | X       | X    | X    |      |
+    uint32_t hdrDtSize = 0;                  // | X       | X    | X    |      |
+    uint32_t hdrUnused = 0;                  // | X       | X    | X    |      |
     uint32_t hdrId[8];                       // | X       | X    | X    |      |
-    uint32_t hdrEntrypoint;                  // |         |      |      | X    |
+    uint32_t hdrEntrypoint = 0;              // |         |      |      | X    |
 };
