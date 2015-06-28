@@ -579,8 +579,8 @@ bool unpack_main(int argc, char *argv[])
     /* Extract all the stuff! */
 
     // Use base relative to the default kernel offset
-    uint32_t base = bi.kernelAddress() - mbp::BootImage::DefaultKernelOffset;
-    uint32_t kernel_offset = mbp::BootImage::DefaultKernelOffset;
+    uint32_t base = bi.kernelAddress() - mbp::BootImage::AndroidDefaultKernelOffset;
+    uint32_t kernel_offset = mbp::BootImage::AndroidDefaultKernelOffset;
     uint32_t ramdisk_offset = bi.ramdiskAddress() - base;
     uint32_t second_offset = bi.secondBootloaderAddress() - base;
     uint32_t tags_offset = bi.kernelTagsAddress() - base;
@@ -1057,8 +1057,8 @@ bool pack_main(int argc, char *argv[])
 
             file_ptr fp(fopen(path_cmdline.c_str(), "rb"), fclose);
             if (fp) {
-                std::vector<char> buf(mbp::BootImage::BootArgsSize + 1);
-                if (!fgets(buf.data(), mbp::BootImage::BootArgsSize + 1, fp.get())) {
+                std::vector<char> buf(mbp::BootImage::AndroidBootArgsSize + 1);
+                if (!fgets(buf.data(), mbp::BootImage::AndroidBootArgsSize + 1, fp.get())) {
                     if (ferror(fp.get())) {
                         fprintf(stderr, "%s: %s\n",
                                 path_cmdline.c_str(), strerror(errno));
@@ -1102,8 +1102,8 @@ bool pack_main(int argc, char *argv[])
 
             file_ptr fp(fopen(path_board.c_str(), "rb"), fclose);
             if (fp) {
-                std::vector<char> buf(mbp::BootImage::BootNameSize + 1);
-                if (!fgets(buf.data(), mbp::BootImage::BootNameSize + 1, fp.get())) {
+                std::vector<char> buf(mbp::BootImage::AndroidBootNameSize + 1);
+                if (!fgets(buf.data(), mbp::BootImage::AndroidBootNameSize + 1, fp.get())) {
                     if (ferror(fp.get())) {
                         fprintf(stderr, "%s: %s\n",
                                 path_board.c_str(), strerror(errno));
@@ -1120,7 +1120,7 @@ bool pack_main(int argc, char *argv[])
                         path_board.c_str(), strerror(errno));
                 return false;
             } else {
-                board = mbp::BootImage::DefaultBoard;
+                board = mbp::BootImage::AndroidDefaultBoard;
             }
         }
 
@@ -1163,9 +1163,10 @@ bool pack_main(int argc, char *argv[])
                 return false;
             } else {
                 if (type == mbp::BootImage::Type::SonyElf) {
+                    // We use absolute addresses for Sony ELF boot images
                     base = 0;
                 } else {
-                    base = mbp::BootImage::DefaultBase;
+                    base = mbp::BootImage::AndroidDefaultBase;
                 }
             }
         }
@@ -1209,9 +1210,9 @@ bool pack_main(int argc, char *argv[])
                 return false;
             } else {
                 if (type == mbp::BootImage::Type::SonyElf) {
-                    kernel_offset = 0;
+                    kernel_offset = mbp::BootImage::SonyElfDefaultKernelAddress;
                 } else {
-                    kernel_offset = mbp::BootImage::DefaultKernelOffset;
+                    kernel_offset = mbp::BootImage::AndroidDefaultKernelOffset;
                 }
             }
         }
@@ -1255,9 +1256,9 @@ bool pack_main(int argc, char *argv[])
                 return false;
             } else {
                 if (type == mbp::BootImage::Type::SonyElf) {
-                    ramdisk_offset = 0;
+                    ramdisk_offset = mbp::BootImage::SonyElfDefaultRamdiskAddress;
                 } else {
-                    ramdisk_offset = mbp::BootImage::DefaultRamdiskOffset;
+                    ramdisk_offset = mbp::BootImage::AndroidDefaultRamdiskOffset;
                 }
             }
         }
@@ -1300,7 +1301,7 @@ bool pack_main(int argc, char *argv[])
                         path_second_offset.c_str(), strerror(errno));
                 return false;
             } else {
-                second_offset = mbp::BootImage::DefaultSecondOffset;
+                second_offset = mbp::BootImage::AndroidDefaultSecondOffset;
             }
         }
 
@@ -1342,7 +1343,7 @@ bool pack_main(int argc, char *argv[])
                         path_tags_offset.c_str(), strerror(errno));
                 return false;
             } else {
-                tags_offset = mbp::BootImage::DefaultTagsOffset;
+                tags_offset = mbp::BootImage::AndroidDefaultTagsOffset;
             }
         }
 
@@ -1384,7 +1385,7 @@ bool pack_main(int argc, char *argv[])
                         path_ipl_address.c_str(), strerror(errno));
                 return false;
             } else {
-                ipl_address = mbp::BootImage::DefaultIplAddress;
+                ipl_address = mbp::BootImage::SonyElfDefaultIplAddress;
             }
         }
 
@@ -1426,7 +1427,7 @@ bool pack_main(int argc, char *argv[])
                         path_rpm_address.c_str(), strerror(errno));
                 return false;
             } else {
-                rpm_address = mbp::BootImage::DefaultRpmAddress;
+                rpm_address = mbp::BootImage::SonyElfDefaultRpmAddress;
             }
         }
 
@@ -1468,7 +1469,7 @@ bool pack_main(int argc, char *argv[])
                         path_appsbl_address.c_str(), strerror(errno));
                 return false;
             } else {
-                appsbl_address = mbp::BootImage::DefaultAppsblAddress;
+                appsbl_address = mbp::BootImage::SonyElfDefaultAppsblAddress;
             }
         }
 
@@ -1510,7 +1511,7 @@ bool pack_main(int argc, char *argv[])
                         path_entrypoint.c_str(), strerror(errno));
                 return false;
             } else {
-                entrypoint = mbp::BootImage::DefaultEntrypointAddress;
+                entrypoint = mbp::BootImage::SonyElfDefaultEntrypointAddress;
             }
         }
 
@@ -1552,7 +1553,7 @@ bool pack_main(int argc, char *argv[])
                         path_page_size.c_str(), strerror(errno));
                 return false;
             } else {
-                page_size = mbp::BootImage::DefaultPageSize;
+                page_size = mbp::BootImage::AndroidDefaultPageSize;
             }
         }
 
