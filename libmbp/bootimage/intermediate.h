@@ -51,6 +51,6 @@ struct BootImageIntermediate
     uint32_t hdrSecondSize = 0;              // | X       | X    | X    |      |
     uint32_t hdrDtSize = 0;                  // | X       | X    | X    |      |
     uint32_t hdrUnused = 0;                  // | X       | X    | X    |      |
-    uint32_t hdrId[8];                       // | X       | X    | X    |      |
+    uint32_t hdrId[8] = { 0 };               // | X       | X    | X    |      |
     uint32_t hdrEntrypoint = 0;              // |         |      |      | X    |
 };
