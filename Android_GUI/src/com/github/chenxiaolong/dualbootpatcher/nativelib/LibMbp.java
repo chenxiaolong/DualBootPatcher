@@ -993,9 +993,7 @@ public class LibMbp {
 
             int size = pSize.getValue();
             Pointer data = pData.getValue();
-            byte[] out = data.getByteArray(0, size);
-            CWrapper.mbp_free(data);
-            return out;
+            return data.getByteArray(0, size);
         }
 
         public boolean setContents(String name, byte[] data) {
