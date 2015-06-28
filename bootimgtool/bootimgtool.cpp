@@ -534,30 +534,6 @@ bool unpack_main(int argc, char *argv[])
     if (path_sinhdr.empty())
         path_sinhdr = io::pathJoin({output_dir, prefix + "sinhdr"});
 
-    printf("Output files:\n");
-    printf("- cmdline:        %s\n", path_cmdline.c_str());
-    printf("- board:          %s\n", path_board.c_str());
-    printf("- base:           %s\n", path_base.c_str());
-    printf("- kernel_offset:  %s\n", path_kernel_offset.c_str());
-    printf("- ramdisk_offset: %s\n", path_ramdisk_offset.c_str());
-    printf("- second_offset:  %s\n", path_second_offset.c_str());
-    printf("- tags_offset:    %s\n", path_tags_offset.c_str());
-    printf("- ipl_address:    %s\n", path_ipl_address.c_str());
-    printf("- rpm_address:    %s\n", path_rpm_address.c_str());
-    printf("- appsbl_address: %s\n", path_appsbl_address.c_str());
-    printf("- entrypoint:     %s\n", path_entrypoint.c_str());
-    printf("- page_size:      %s\n", path_page_size.c_str());
-    printf("- kernel:         %s\n", path_kernel.c_str());
-    printf("- ramdisk:        %s\n", path_ramdisk.c_str());
-    printf("- second:         %s\n", path_second.c_str());
-    printf("- dt:             %s\n", path_dt.c_str());
-    printf("- ipl:            %s\n", path_ipl.c_str());
-    printf("- rpm:            %s\n", path_rpm.c_str());
-    printf("- appsbl:         %s\n", path_appsbl.c_str());
-    printf("- sin:            %s\n", path_sin.c_str());
-    printf("- sinhdr:         %s\n", path_sinhdr.c_str());
-    printf("\n");
-
     if (!io::createDirectories(output_dir)) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
                 output_dir.c_str(), io::lastErrorString().c_str());
@@ -571,6 +547,35 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
+    uint64_t supportMask = mbp::BootImage::typeSupportMask(bi.wasType());
+    printf("\nOutput files:\n");
+#define PRINT_IF(supported, fmt, ...) \
+    if (supportMask & (supported)) { \
+        printf(fmt, __VA_ARGS__); \
+    }
+    PRINT_IF(SUPPORTS_CMDLINE,         "- cmdline:        %s\n", path_cmdline.c_str());
+    PRINT_IF(SUPPORTS_BOARD_NAME,      "- board:          %s\n", path_board.c_str());
+    PRINT_IF(SUPPORTS_OFFSET_BASE,     "- base:           %s\n", path_base.c_str());
+    PRINT_IF(SUPPORTS_KERNEL_ADDRESS,  "- kernel_offset:  %s\n", path_kernel_offset.c_str());
+    PRINT_IF(SUPPORTS_RAMDISK_ADDRESS, "- ramdisk_offset: %s\n", path_ramdisk_offset.c_str());
+    PRINT_IF(SUPPORTS_SECOND_ADDRESS,  "- second_offset:  %s\n", path_second_offset.c_str());
+    PRINT_IF(SUPPORTS_TAGS_ADDRESS,    "- tags_offset:    %s\n", path_tags_offset.c_str());
+    PRINT_IF(SUPPORTS_IPL_ADDRESS,     "- ipl_address:    %s\n", path_ipl_address.c_str());
+    PRINT_IF(SUPPORTS_RPM_ADDRESS,     "- rpm_address:    %s\n", path_rpm_address.c_str());
+    PRINT_IF(SUPPORTS_APPSBL_ADDRESS,  "- appsbl_address: %s\n", path_appsbl_address.c_str());
+    PRINT_IF(SUPPORTS_ENTRYPOINT,      "- entrypoint:     %s\n", path_entrypoint.c_str());
+    PRINT_IF(SUPPORTS_PAGE_SIZE,       "- page_size:      %s\n", path_page_size.c_str());
+    PRINT_IF(SUPPORTS_KERNEL_IMAGE,    "- kernel:         %s\n", path_kernel.c_str());
+    PRINT_IF(SUPPORTS_RAMDISK_IMAGE,   "- ramdisk:        %s\n", path_ramdisk.c_str());
+    PRINT_IF(SUPPORTS_SECOND_IMAGE,    "- second:         %s\n", path_second.c_str());
+    PRINT_IF(SUPPORTS_DT_IMAGE,        "- dt:             %s\n", path_dt.c_str());
+    PRINT_IF(SUPPORTS_IPL_IMAGE,       "- ipl:            %s\n", path_ipl.c_str());
+    PRINT_IF(SUPPORTS_RPM_IMAGE,       "- rpm:            %s\n", path_rpm.c_str());
+    PRINT_IF(SUPPORTS_APPSBL_IMAGE,    "- appsbl:         %s\n", path_appsbl.c_str());
+    PRINT_IF(SUPPORTS_SONY_SIN_IMAGE,  "- sin:            %s\n", path_sin.c_str());
+    PRINT_IF(SUPPORTS_SONY_SIN_HEADER, "- sinhdr:         %s\n", path_sinhdr.c_str());
+#undef PRINT_IF
+
     /* Extract all the stuff! */
 
     // Use base relative to the default kernel offset
@@ -580,131 +585,126 @@ bool unpack_main(int argc, char *argv[])
     uint32_t second_offset = bi.secondBootloaderAddress() - base;
     uint32_t tags_offset = bi.kernelTagsAddress() - base;
 
+#define WRITE_FILE_FMT(file, fmt, ...) \
+    if (!write_file_fmt(file, fmt, __VA_ARGS__)) { \
+        fprintf(stderr, "%s: %s\n", (file).c_str(), strerror(errno)); \
+        return false; \
+    }
+
     // Write kernel command line
-    if (!write_file_fmt(path_cmdline, "%s\n", bi.kernelCmdline().c_str())) {
-        fprintf(stderr, "%s: %s\n", path_cmdline.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_CMDLINE) {
+        WRITE_FILE_FMT(path_cmdline, "%s\n", bi.kernelCmdlineC());
     }
 
     // Write board name field
-    if (!write_file_fmt(path_board, "%s\n", bi.boardName().c_str())) {
-        fprintf(stderr, "%s: %s\n", path_board.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_BOARD_NAME) {
+        WRITE_FILE_FMT(path_board, "%s\n", bi.boardNameC());
     }
 
     // Write base address on which the offsets are applied
-    if (!write_file_fmt(path_base, "%08x\n", base)) {
-        fprintf(stderr, "%s: %s\n", path_base.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_OFFSET_BASE) {
+        WRITE_FILE_FMT(path_base, "%08x\n", base);
     }
 
     // Write kernel offset
-    if (!write_file_fmt(path_kernel_offset, "%08x\n", kernel_offset)) {
-        fprintf(stderr, "%s: %s\n", path_kernel_offset.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_KERNEL_ADDRESS) {
+        WRITE_FILE_FMT(path_kernel_offset, "%08x\n", kernel_offset);
     }
 
     // Write ramdisk offset
-    if (!write_file_fmt(path_ramdisk_offset, "%08x\n", ramdisk_offset)) {
-        fprintf(stderr, "%s: %s\n", path_ramdisk_offset.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_RAMDISK_ADDRESS) {
+        WRITE_FILE_FMT(path_ramdisk_offset, "%08x\n", ramdisk_offset);
     }
 
     // Write second bootloader offset
-    if (!write_file_fmt(path_second_offset, "%08x\n", second_offset)) {
-        fprintf(stderr, "%s: %s\n", path_second_offset.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_SECOND_ADDRESS) {
+        WRITE_FILE_FMT(path_second_offset, "%08x\n", second_offset);
     }
 
     // Write kernel tags offset
-    if (!write_file_fmt(path_tags_offset, "%08x\n", tags_offset)) {
-        fprintf(stderr, "%s: %s\n", path_tags_offset.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_TAGS_ADDRESS) {
+        WRITE_FILE_FMT(path_tags_offset, "%08x\n", tags_offset);
     }
 
     // Write ipl address
-    if (!write_file_fmt(path_ipl_address, "%08x\n", bi.iplAddress())) {
-        fprintf(stderr, "%s: %s\n", path_ipl_address.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_IPL_ADDRESS) {
+        WRITE_FILE_FMT(path_ipl_address, "%08x\n", bi.iplAddress());
     }
 
     // Write rpm address
-    if (!write_file_fmt(path_rpm_address, "%08x\n", bi.rpmAddress())) {
-        fprintf(stderr, "%s: %s\n", path_rpm_address.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_RPM_ADDRESS) {
+        WRITE_FILE_FMT(path_rpm_address, "%08x\n", bi.rpmAddress());
     }
 
     // Write appsbl address
-    if (!write_file_fmt(path_appsbl_address, "%08x\n", bi.appsblAddress())) {
-        fprintf(stderr, "%s: %s\n", path_appsbl_address.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_APPSBL_ADDRESS) {
+        WRITE_FILE_FMT(path_appsbl_address, "%08x\n", bi.appsblAddress());
     }
 
     // Write entrypoint address
-    if (!write_file_fmt(path_entrypoint, "%08x\n", bi.entrypointAddress())) {
-        fprintf(stderr, "%s: %s\n", path_entrypoint.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_ENTRYPOINT) {
+        WRITE_FILE_FMT(path_entrypoint, "%08x\n", bi.entrypointAddress());
     }
 
     // Write page size
-    if (!write_file_fmt(path_page_size, "%u\n", bi.pageSize())) {
-        fprintf(stderr, "%s: %s\n", path_page_size.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_PAGE_SIZE) {
+        WRITE_FILE_FMT(path_page_size, "%u\n", bi.pageSize());
+    }
+
+#undef WRITE_FILE_FMT
+
+#define WRITE_FILE_DATA(file, data) \
+    if (!write_file_data(file, data)) { \
+        fprintf(stderr, "%s: %s\n", (file).c_str(), strerror(errno)); \
+        return false; \
     }
 
     // Write kernel image
-    if (!write_file_data(path_kernel, bi.kernelImage())) {
-        fprintf(stderr, "%s: %s\n", path_kernel.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_KERNEL_IMAGE) {
+        WRITE_FILE_DATA(path_kernel, bi.kernelImage());
     }
 
     // Write ramdisk image
-    if (!write_file_data(path_ramdisk, bi.ramdiskImage())) {
-        fprintf(stderr, "%s: %s\n", path_ramdisk.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_RAMDISK_IMAGE) {
+        WRITE_FILE_DATA(path_ramdisk, bi.ramdiskImage());
     }
 
     // Write second bootloader image
-    if (!write_file_data(path_second, bi.secondBootloaderImage())) {
-        fprintf(stderr, "%s: %s\n", path_second.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_SECOND_IMAGE) {
+        WRITE_FILE_DATA(path_second, bi.secondBootloaderImage());
     }
 
     // Write device tree image
-    if (!write_file_data(path_dt, bi.deviceTreeImage())) {
-        fprintf(stderr, "%s: %s\n", path_dt.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_DT_IMAGE) {
+        WRITE_FILE_DATA(path_dt, bi.deviceTreeImage());
     }
 
     // Write ipl image
-    if (!write_file_data(path_ipl, bi.iplImage())) {
-        fprintf(stderr, "%s: %s\n", path_ipl.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_IPL_IMAGE) {
+        WRITE_FILE_DATA(path_ipl, bi.iplImage());
     }
 
     // Write rpm image
-    if (!write_file_data(path_rpm, bi.rpmImage())) {
-        fprintf(stderr, "%s: %s\n", path_rpm.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_RPM_IMAGE) {
+        WRITE_FILE_DATA(path_rpm, bi.rpmImage());
     }
 
     // Write appsbl image
-    if (!write_file_data(path_appsbl, bi.appsblImage())) {
-        fprintf(stderr, "%s: %s\n", path_appsbl.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_APPSBL_IMAGE) {
+        WRITE_FILE_DATA(path_appsbl, bi.appsblImage());
     }
 
     // Write sin image
-    if (!write_file_data(path_sin, bi.sinImage())) {
-        fprintf(stderr, "%s: %s\n", path_sin.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_SONY_SIN_IMAGE) {
+        WRITE_FILE_DATA(path_sin, bi.sinImage());
     }
 
     // Write sinhdr image
-    if (!write_file_data(path_sinhdr, bi.sinHeader())) {
-        fprintf(stderr, "%s: %s\n", path_sinhdr.c_str(), strerror(errno));
-        return false;
+    if (supportMask & SUPPORTS_SONY_SIN_HEADER) {
+        WRITE_FILE_DATA(path_sinhdr, bi.sinHeader());
     }
+
+#undef WRITE_FILE_DATA
 
     printf("\nDone\n");
 
@@ -1009,11 +1009,6 @@ bool pack_main(int argc, char *argv[])
         }
     }
 
-    if (type == mbp::BootImage::Type::Loki && path_aboot.empty()) {
-        fprintf(stderr, "An aboot image must be specified to create a loki image\n");
-        return false;
-    }
-
     // There should be one other argument
     if (argc - optind != 1) {
         fprintf(stderr, PackUsage);
@@ -1035,426 +1030,757 @@ bool pack_main(int argc, char *argv[])
         input_dir = ".";
     }
 
-    if (path_cmdline.empty() && !values[OPT_VALUE_CMDLINE])
-        path_cmdline = io::pathJoin({input_dir, prefix + "cmdline"});
-    if (path_board.empty() && !values[OPT_VALUE_BOARD])
-        path_board = io::pathJoin({input_dir, prefix + "board"});
-    if (path_base.empty() && !values[OPT_VALUE_BASE])
-        path_base = io::pathJoin({input_dir, prefix + "base"});
-    if (path_kernel_offset.empty() && !values[OPT_VALUE_KERNEL_OFFSET])
-        path_kernel_offset = io::pathJoin({input_dir, prefix + "kernel_offset"});
-    if (path_ramdisk_offset.empty() && !values[OPT_VALUE_RAMDISK_OFFSET])
-        path_ramdisk_offset = io::pathJoin({input_dir, prefix + "ramdisk_offset"});
-    if (path_second_offset.empty() && !values[OPT_VALUE_SECOND_OFFSET])
-        path_second_offset = io::pathJoin({input_dir, prefix + "second_offset"});
-    if (path_tags_offset.empty() && !values[OPT_VALUE_TAGS_OFFSET])
-        path_tags_offset = io::pathJoin({input_dir, prefix + "tags_offset"});
-    if (path_ipl_address.empty() && !values[OPT_VALUE_IPL_ADDRESS])
-        path_ipl_address = io::pathJoin({input_dir, prefix + "ipl_address"});
-    if (path_rpm_address.empty() && !values[OPT_VALUE_RPM_ADDRESS])
-        path_rpm_address = io::pathJoin({input_dir, prefix + "rpm_address"});
-    if (path_appsbl_address.empty() && !values[OPT_VALUE_APPSBL_ADDRESS])
-        path_appsbl_address = io::pathJoin({input_dir, prefix + "appsbl_address"});
-    if (path_entrypoint.empty() && !values[OPT_VALUE_ENTRYPOINT])
-        path_entrypoint = io::pathJoin({input_dir, prefix + "entrypoint"});
-    if (path_page_size.empty() && !values[OPT_VALUE_PAGE_SIZE])
-        path_page_size = io::pathJoin({input_dir, prefix + "page_size"});
-    if (path_kernel.empty())
-        path_kernel = io::pathJoin({input_dir, prefix + "kernel"});
-    if (path_ramdisk.empty())
-        path_ramdisk = io::pathJoin({input_dir, prefix + "ramdisk"});
-    if (path_second.empty())
-        path_second = io::pathJoin({input_dir, prefix + "second"});
-    if (path_dt.empty())
-        path_dt = io::pathJoin({input_dir, prefix + "dt"});
-    if (path_ipl.empty())
-        path_ipl = io::pathJoin({input_dir, prefix + "ipl"});
-    if (path_rpm.empty())
-        path_rpm = io::pathJoin({input_dir, prefix + "rpm"});
-    if (path_appsbl.empty())
-        path_appsbl = io::pathJoin({input_dir, prefix + "appsbl"});
-    if (path_sin.empty())
-        path_sin = io::pathJoin({input_dir, prefix + "sin"});
-    if (path_sinhdr.empty())
-        path_sinhdr = io::pathJoin({input_dir, prefix + "sinhdr"});
-
-    printf("Input files:\n");
-    if (!path_cmdline.empty())
-        printf("- cmdline:        (path)  %s\n", path_cmdline.c_str());
-    else
-        printf("- cmdline:        (value) %s\n", cmdline.c_str());
-    if (!path_board.empty())
-        printf("- board:          (path)  %s\n", path_board.c_str());
-    else
-        printf("- board:          (value) %s\n", board.c_str());
-    if (!path_base.empty())
-        printf("- base:           (path)  %s\n", path_base.c_str());
-    else
-        printf("- base:           (value) %08x\n", base);
-    if (!path_kernel_offset.empty())
-        printf("- kernel_offset:  (path)  %s\n", path_kernel_offset.c_str());
-    else
-        printf("- kernel_offset:  (value) %08x\n", kernel_offset);
-    if (!path_ramdisk_offset.empty())
-        printf("- ramdisk_offset: (path)  %s\n", path_ramdisk_offset.c_str());
-    else
-        printf("- ramdisk_offset: (value) %08x\n", ramdisk_offset);
-    if (!path_second_offset.empty())
-        printf("- second_offset:  (path)  %s\n", path_second_offset.c_str());
-    else
-        printf("- second_offset:  (value) %08x\n", second_offset);
-    if (!path_tags_offset.empty())
-        printf("- tags_offset:    (path)  %s\n", path_tags_offset.c_str());
-    else
-        printf("- tags_offset:    (value) %08x\n", tags_offset);
-    if (!path_ipl_address.empty())
-        printf("- ipl_address:    (path)  %s\n", path_ipl_address.c_str());
-    else
-        printf("- ipl_address:    (value) %08x\n", ipl_address);
-    if (!path_rpm_address.empty())
-        printf("- rpm_address:    (path)  %s\n", path_rpm_address.c_str());
-    else
-        printf("- rpm_address:    (value) %08x\n", rpm_address);
-    if (!path_appsbl_address.empty())
-        printf("- appsbl_address: (path)  %s\n", path_appsbl_address.c_str());
-    else
-        printf("- appsbl_address: (value) %08x\n", appsbl_address);
-    if (!path_entrypoint.empty())
-        printf("- entrypoint:     (path)  %s\n", path_entrypoint.c_str());
-    else
-        printf("- entrypoint:     (value) %08x\n", entrypoint);
-    if (!path_page_size.empty())
-        printf("- page_size:      (path)  %s\n", path_page_size.c_str());
-    else
-        printf("- page_size:      (value) %u\n", page_size);
-    printf("- kernel:         (path)  %s\n", path_kernel.c_str());
-    printf("- ramdisk:        (path)  %s\n", path_ramdisk.c_str());
-    printf("- second:         (path)  %s\n", path_second.c_str());
-    printf("- dt:             (path)  %s\n", path_dt.c_str());
-    printf("- ipl:            (path)  %s\n", path_ipl.c_str());
-    printf("- rpm:            (path)  %s\n", path_rpm.c_str());
-    printf("- appsbl:         (path)  %s\n", path_appsbl.c_str());
-    printf("- sin:            (path)  %s\n", path_sin.c_str());
-    printf("- sinhdr:         (path)  %s\n", path_sinhdr.c_str());
-    printf("\n");
-
     // Create new boot image
     mbp::BootImage bi;
 
-    /* Load all the stuff! */
+    uint64_t support_mask = mbp::BootImage::typeSupportMask(type);
 
-    // Read kernel command line
-    if (!values[OPT_VALUE_CMDLINE]) {
-        file_ptr fp(fopen(path_cmdline.c_str(), "rb"), fclose);
-        if (fp) {
-            std::vector<char> buf(mbp::BootImage::BootArgsSize);
-            if (!fgets(buf.data(), mbp::BootImage::BootArgsSize, fp.get())) {
-                if (ferror(fp.get())) {
-                    fprintf(stderr, "%s: %s\n",
-                            path_cmdline.c_str(), strerror(errno));
-                    return false;
-                }
-            }
-            cmdline = buf.data();
-            auto pos = cmdline.find('\n');
-            if (pos != std::string::npos) {
-                cmdline.erase(pos);
-            }
+    static const char *not_supported =
+            "Warning: Target type does not support %s\n";
+    static const char *fmt_path   = "- %-14s (path)  %s\n";
+    static const char *fmt_string = "- %-14s (value) %s\n";
+    static const char *fmt_hex    = "- %-14s (value) 0x%08x\n";
+    static const char *fmt_uint   = "- %-14s (value) %u\n";
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Kernel cmdline
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_CMDLINE) {
+        if (values[OPT_VALUE_CMDLINE]) {
+            printf(fmt_string, "cmdline", cmdline.c_str());
         } else {
-            cmdline = mbp::BootImage::DefaultCmdline;
+            if (path_cmdline.empty())
+                path_cmdline = io::pathJoin({input_dir, prefix + "cmdline"});
+
+            printf(fmt_path, "cmdline", path_cmdline.c_str());
+
+            file_ptr fp(fopen(path_cmdline.c_str(), "rb"), fclose);
+            if (fp) {
+                std::vector<char> buf(mbp::BootImage::BootArgsSize + 1);
+                if (!fgets(buf.data(), mbp::BootImage::BootArgsSize + 1, fp.get())) {
+                    if (ferror(fp.get())) {
+                        fprintf(stderr, "%s: %s\n",
+                                path_cmdline.c_str(), strerror(errno));
+                        return false;
+                    }
+                }
+                cmdline = buf.data();
+                auto pos = cmdline.find('\n');
+                if (pos != std::string::npos) {
+                    cmdline.erase(pos);
+                }
+            } else if (errno != ENOENT) {
+                fprintf(stderr, "%s: %s\n",
+                        path_cmdline.c_str(), strerror(errno));
+                return false;
+            } else {
+                cmdline = mbp::BootImage::DefaultCmdline;
+            }
         }
+
+        bi.setKernelCmdline(std::move(cmdline));
+    } else {
+        if (!path_cmdline.empty())
+            printf(not_supported, "--input-cmdline");
+        if (values[OPT_VALUE_CMDLINE])
+            printf(not_supported, "--value-cmdline");
     }
 
-    // Read board name
-    if (!values[OPT_VALUE_BOARD]) {
-        file_ptr fp(fopen(path_board.c_str(), "rb"), fclose);
-        if (fp) {
-            std::vector<char> buf(mbp::BootImage::BootNameSize);
-            if (!fgets(buf.data(), mbp::BootImage::BootNameSize, fp.get())) {
-                if (ferror(fp.get())) {
-                    fprintf(stderr, "%s: %s\n",
-                            path_board.c_str(), strerror(errno));
-                    return false;
-                }
-            }
-            board = buf.data();
-            auto pos = board.find('\n');
-            if (pos != std::string::npos) {
-                board.erase(pos);
-            }
+    ////////////////////////////////////////////////////////////////////////////
+    // Board name
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_BOARD_NAME) {
+        if (values[OPT_VALUE_BOARD]) {
+            printf(fmt_string, "board", board.c_str());
         } else {
-            board = mbp::BootImage::DefaultBoard;
+            if (path_board.empty())
+                path_board = io::pathJoin({input_dir, prefix + "board"});
+
+            printf(fmt_path, "board", path_board.c_str());
+
+            file_ptr fp(fopen(path_board.c_str(), "rb"), fclose);
+            if (fp) {
+                std::vector<char> buf(mbp::BootImage::BootNameSize + 1);
+                if (!fgets(buf.data(), mbp::BootImage::BootNameSize + 1, fp.get())) {
+                    if (ferror(fp.get())) {
+                        fprintf(stderr, "%s: %s\n",
+                                path_board.c_str(), strerror(errno));
+                        return false;
+                    }
+                }
+                board = buf.data();
+                auto pos = board.find('\n');
+                if (pos != std::string::npos) {
+                    board.erase(pos);
+                }
+            } else if (errno != ENOENT) {
+                fprintf(stderr, "%s: %s\n",
+                        path_board.c_str(), strerror(errno));
+                return false;
+            } else {
+                board = mbp::BootImage::DefaultBoard;
+            }
         }
+
+        bi.setBoardName(std::move(board));
+    } else {
+        if (!path_board.empty())
+            printf(not_supported, "--input-board");
+        if (values[OPT_VALUE_BOARD])
+            printf(not_supported, "--value-board");
     }
 
-    // Read base address on which the offsets are applied
-    if (!values[OPT_VALUE_BASE]) {
-        file_ptr fp(fopen(path_base.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &base);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Base for address offsets
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_OFFSET_BASE) {
+        if (values[OPT_VALUE_BASE]) {
+            printf(fmt_hex, "base", base);
+        } else {
+            if (path_base.empty())
+                path_base = io::pathJoin({input_dir, prefix + "base"});
+
+            printf(fmt_path, "base", path_base.c_str());
+
+            file_ptr fp(fopen(path_base.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &base);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_base.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_base.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_base.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_base.c_str());
-                return false;
+            } else {
+                if (type == mbp::BootImage::Type::SonyElf) {
+                    base = 0;
+                } else {
+                    base = mbp::BootImage::DefaultBase;
+                }
             }
-        } else {
-            base = mbp::BootImage::DefaultBase;
         }
+
+        // The base will be used by the offsets below
+    } else {
+        if (!path_base.empty())
+            printf(not_supported, "--input-base");
+        if (values[OPT_VALUE_BASE])
+            printf(not_supported, "--value-base");
     }
 
-    // Read kernel offset
-    if (!values[OPT_VALUE_KERNEL_OFFSET]) {
-        file_ptr fp(fopen(path_kernel_offset.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &kernel_offset);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Kernel offset
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_KERNEL_ADDRESS) {
+        if (values[OPT_VALUE_KERNEL_OFFSET]) {
+            printf(fmt_hex, "kernel_offset", kernel_offset);
+        } else {
+            if (path_kernel_offset.empty())
+                path_kernel_offset = io::pathJoin({input_dir, prefix + "kernel_offset"});
+
+            printf(fmt_path, "kernel_offset", path_kernel_offset.c_str());
+
+            file_ptr fp(fopen(path_kernel_offset.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &kernel_offset);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_kernel_offset.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_kernel_offset.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_kernel_offset.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_kernel_offset.c_str());
-                return false;
+            } else {
+                if (type == mbp::BootImage::Type::SonyElf) {
+                    kernel_offset = 0;
+                } else {
+                    kernel_offset = mbp::BootImage::DefaultKernelOffset;
+                }
             }
-        } else {
-            kernel_offset = mbp::BootImage::DefaultKernelOffset;
         }
+
+        bi.setKernelAddress(base + kernel_offset);
+    } else {
+        if (!path_kernel_offset.empty())
+            printf(not_supported, "--input-kernel_offset");
+        if (values[OPT_VALUE_KERNEL_OFFSET])
+            printf(not_supported, "--value-kernel_offset");
     }
 
-    // Read ramdisk offset
-    if (!values[OPT_VALUE_RAMDISK_OFFSET]) {
-        file_ptr fp(fopen(path_ramdisk_offset.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &ramdisk_offset);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Ramdisk offset
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_RAMDISK_ADDRESS) {
+        if (values[OPT_VALUE_RAMDISK_OFFSET]) {
+            printf(fmt_hex, "ramdisk_offset", ramdisk_offset);
+        } else {
+            if (path_ramdisk_offset.empty())
+                path_ramdisk_offset = io::pathJoin({input_dir, prefix + "ramdisk_offset"});
+
+            printf(fmt_path, "ramdisk_offset", path_ramdisk_offset.c_str());
+
+            file_ptr fp(fopen(path_ramdisk_offset.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &ramdisk_offset);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_ramdisk_offset.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_ramdisk_offset.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_ramdisk_offset.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_ramdisk_offset.c_str());
-                return false;
+            } else {
+                if (type == mbp::BootImage::Type::SonyElf) {
+                    ramdisk_offset = 0;
+                } else {
+                    ramdisk_offset = mbp::BootImage::DefaultRamdiskOffset;
+                }
             }
-        } else {
-            ramdisk_offset = mbp::BootImage::DefaultRamdiskOffset;
         }
+
+        bi.setRamdiskAddress(base + ramdisk_offset);
+    } else {
+        if (!path_ramdisk_offset.empty())
+            printf(not_supported, "--input-ramdisk_offset");
+        if (values[OPT_VALUE_RAMDISK_OFFSET])
+            printf(not_supported, "--value-ramdisk_offset");
     }
 
-    // Read second bootloader offset
-    if (!values[OPT_VALUE_SECOND_OFFSET]) {
-        file_ptr fp(fopen(path_second_offset.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &second_offset);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Second bootloader offset
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_SECOND_ADDRESS) {
+        if (values[OPT_VALUE_SECOND_OFFSET]) {
+            printf(fmt_hex, "second_offset", second_offset);
+        } else {
+            if (path_second_offset.empty())
+                path_second_offset = io::pathJoin({input_dir, prefix + "second_offset"});
+
+            printf(fmt_path, "second_offset", path_second_offset.c_str());
+
+            file_ptr fp(fopen(path_second_offset.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &second_offset);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_second_offset.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_second_offset.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_second_offset.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_second_offset.c_str());
-                return false;
+            } else {
+                second_offset = mbp::BootImage::DefaultSecondOffset;
             }
-        } else {
-            second_offset = mbp::BootImage::DefaultSecondOffset;
         }
+
+        bi.setSecondBootloaderAddress(base + second_offset);
+    } else {
+        if (!path_second_offset.empty())
+            printf(not_supported, "--input-second_offset");
+        if (values[OPT_VALUE_SECOND_OFFSET])
+            printf(not_supported, "--value-second_offset");
     }
 
-    // Read kernel tags offset
-    if (!values[OPT_VALUE_TAGS_OFFSET]) {
-        file_ptr fp(fopen(path_tags_offset.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &tags_offset);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Kernel tags offset
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_TAGS_ADDRESS) {
+        if (values[OPT_VALUE_TAGS_OFFSET]) {
+            printf(fmt_hex, "tags_offset", tags_offset);
+        } else {
+            if (path_tags_offset.empty())
+                path_tags_offset = io::pathJoin({input_dir, prefix + "tags_offset"});
+
+            printf(fmt_path, "tags_offset", path_tags_offset.c_str());
+
+            file_ptr fp(fopen(path_tags_offset.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &tags_offset);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_tags_offset.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_tags_offset.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_tags_offset.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_tags_offset.c_str());
-                return false;
+            } else {
+                tags_offset = mbp::BootImage::DefaultTagsOffset;
             }
-        } else {
-            tags_offset = mbp::BootImage::DefaultTagsOffset;
         }
+
+        bi.setKernelTagsAddress(base + tags_offset);
+    } else {
+        if (!path_tags_offset.empty())
+            printf(not_supported, "--input-tags_offset");
+        if (values[OPT_VALUE_TAGS_OFFSET])
+            printf(not_supported, "--value-tags_offset");
     }
 
-    // Read ipl address
-    if (!values[OPT_VALUE_IPL_ADDRESS]) {
-        file_ptr fp(fopen(path_ipl_address.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &ipl_address);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Ipl address
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_IPL_ADDRESS) {
+        if (values[OPT_VALUE_IPL_ADDRESS]) {
+            printf(fmt_hex, "ipl_address", ipl_address);
+        } else {
+            if (path_ipl_address.empty())
+                path_ipl_address = io::pathJoin({input_dir, prefix + "ipl_address"});
+
+            printf(fmt_path, "ipl_address", path_ipl_address.c_str());
+
+            file_ptr fp(fopen(path_ipl_address.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &ipl_address);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_ipl_address.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_ipl_address.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_ipl_address.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_ipl_address.c_str());
-                return false;
+            } else {
+                ipl_address = mbp::BootImage::DefaultIplAddress;
             }
-        } else {
-            ipl_address = mbp::BootImage::DefaultIplAddress;
         }
+
+        bi.setIplAddress(ipl_address);
+    } else {
+        if (!path_ipl_address.empty())
+            printf(not_supported, "--input-ipl_address");
+        if (values[OPT_VALUE_IPL_ADDRESS])
+            printf(not_supported, "--value-ipl_address");
     }
 
-    // Read rpm address
-    if (!values[OPT_VALUE_RPM_ADDRESS]) {
-        file_ptr fp(fopen(path_rpm_address.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &rpm_address);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Rpm address
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_RPM_ADDRESS) {
+        if (values[OPT_VALUE_RPM_ADDRESS]) {
+            printf(fmt_hex, "rpm_address", rpm_address);
+        } else {
+            if (path_rpm_address.empty())
+                path_rpm_address = io::pathJoin({input_dir, prefix + "rpm_address"});
+
+            printf(fmt_path, "rpm_address", path_rpm_address.c_str());
+
+            file_ptr fp(fopen(path_rpm_address.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &rpm_address);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_rpm_address.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_rpm_address.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_rpm_address.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_rpm_address.c_str());
-                return false;
+            } else {
+                rpm_address = mbp::BootImage::DefaultRpmAddress;
             }
-        } else {
-            rpm_address = mbp::BootImage::DefaultRpmAddress;
         }
+
+        bi.setRpmAddress(rpm_address);
+    } else {
+        if (!path_rpm_address.empty())
+            printf(not_supported, "--input-rpm_address");
+        if (values[OPT_VALUE_RPM_ADDRESS])
+            printf(not_supported, "--value-rpm_address");
     }
 
-    // Read appsbl address
-    if (!values[OPT_VALUE_APPSBL_ADDRESS]) {
-        file_ptr fp(fopen(path_appsbl_address.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &appsbl_address);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Appsbl address
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_APPSBL_ADDRESS) {
+        if (values[OPT_VALUE_APPSBL_ADDRESS]) {
+            printf(fmt_hex, "appsbl_address", appsbl_address);
+        } else {
+            if (path_appsbl_address.empty())
+                path_appsbl_address = io::pathJoin({input_dir, prefix + "appsbl_address"});
+
+            printf(fmt_path, "appsbl_address", path_appsbl_address.c_str());
+
+            file_ptr fp(fopen(path_appsbl_address.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &appsbl_address);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_appsbl_address.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_appsbl_address.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_appsbl_address.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_appsbl_address.c_str());
-                return false;
+            } else {
+                appsbl_address = mbp::BootImage::DefaultAppsblAddress;
             }
-        } else {
-            appsbl_address = mbp::BootImage::DefaultAppsblAddress;
         }
+
+        bi.setAppsblAddress(appsbl_address);
+    } else {
+        if (!path_appsbl_address.empty())
+            printf(not_supported, "--input-appsbl_address");
+        if (values[OPT_VALUE_APPSBL_ADDRESS])
+            printf(not_supported, "--value-appsbl_address");
     }
 
-    // Read entrypoint address
-    if (!values[OPT_VALUE_ENTRYPOINT]) {
-        file_ptr fp(fopen(path_entrypoint.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%08x", &entrypoint);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Entrypoint address
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_ENTRYPOINT) {
+        if (values[OPT_VALUE_ENTRYPOINT]) {
+            printf(fmt_hex, "entrypoint", entrypoint);
+        } else {
+            if (path_entrypoint.empty())
+                path_entrypoint = io::pathJoin({input_dir, prefix + "entrypoint"});
+
+            printf(fmt_path, "entrypoint", path_entrypoint.c_str());
+
+            file_ptr fp(fopen(path_entrypoint.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%08x", &entrypoint);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_entrypoint.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%08x' format\n",
+                            path_entrypoint.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_entrypoint.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%08x' format\n",
-                        path_entrypoint.c_str());
-                return false;
+            } else {
+                entrypoint = mbp::BootImage::DefaultEntrypointAddress;
             }
-        } else {
-            entrypoint = mbp::BootImage::DefaultEntrypointAddress;
         }
+
+        bi.setEntrypointAddress(entrypoint);
+    } else {
+        if (!path_entrypoint.empty())
+            printf(not_supported, "--input-entrypoint");
+        if (values[OPT_VALUE_ENTRYPOINT])
+            printf(not_supported, "--value-entrypoint");
     }
 
-    // Read page size
-    if (!values[OPT_VALUE_PAGE_SIZE]) {
-        file_ptr fp(fopen(path_page_size.c_str(), "rb"), fclose);
-        if (fp) {
-            int count = fscanf(fp.get(), "%u", &page_size);
-            if (count == EOF && ferror(fp.get())) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Page size
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_PAGE_SIZE) {
+        if (values[OPT_VALUE_PAGE_SIZE]) {
+            printf(fmt_uint, "page_size", page_size);
+        } else {
+            if (path_page_size.empty())
+                path_page_size = io::pathJoin({input_dir, prefix + "page_size"});
+
+            printf(fmt_path, "page_size", path_page_size.c_str());
+
+            file_ptr fp(fopen(path_page_size.c_str(), "rb"), fclose);
+            if (fp) {
+                int count = fscanf(fp.get(), "%u", &page_size);
+                if (count == EOF && ferror(fp.get())) {
+                    fprintf(stderr, "%s: %s\n",
+                            path_page_size.c_str(), strerror(errno));
+                    return false;
+                } else if (count != 1) {
+                    fprintf(stderr, "%s: Error: expected '%%u' format\n",
+                            path_page_size.c_str());
+                    return false;
+                }
+            } else if (errno != ENOENT) {
                 fprintf(stderr, "%s: %s\n",
                         path_page_size.c_str(), strerror(errno));
                 return false;
-            } else if (count != 1) {
-                fprintf(stderr, "%s: Error: expected '%%u' format\n",
-                        path_page_size.c_str());
-                return false;
+            } else {
+                page_size = mbp::BootImage::DefaultPageSize;
             }
-        } else {
-            page_size = mbp::BootImage::DefaultPageSize;
         }
+
+        bi.setPageSize(page_size);
+    } else {
+        if (!path_page_size.empty())
+            printf(not_supported, "--input-page_size");
+        if (values[OPT_VALUE_PAGE_SIZE])
+            printf(not_supported, "--value-page_size");
     }
 
-    // Read kernel image
-    if (!read_file_data(path_kernel, &kernel_image)) {
-        fprintf(stderr, "%s: %s\n", path_kernel.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Kernel image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_KERNEL_IMAGE) {
+        if (path_kernel.empty())
+            path_kernel = io::pathJoin({input_dir, prefix + "kernel"});
+
+        printf(fmt_path, "kernel", path_kernel.c_str());
+
+        if (!read_file_data(path_kernel, &kernel_image)) {
+            fprintf(stderr, "%s: %s\n", path_kernel.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setKernelImage(std::move(kernel_image));
+    } else {
+        if (!path_kernel.empty())
+            printf(not_supported, "--input-kernel");
     }
 
-    // Read ramdisk image
-    if (!read_file_data(path_ramdisk, &ramdisk_image)) {
-        fprintf(stderr, "%s: %s\n", path_ramdisk.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Ramdisk image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_RAMDISK_IMAGE) {
+        if (path_ramdisk.empty())
+            path_ramdisk = io::pathJoin({input_dir, prefix + "ramdisk"});
+
+        printf(fmt_path, "ramdisk", path_ramdisk.c_str());
+
+        if (!read_file_data(path_ramdisk, &ramdisk_image)) {
+            fprintf(stderr, "%s: %s\n", path_ramdisk.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setRamdiskImage(std::move(ramdisk_image));
+    } else {
+        if (!path_ramdisk.empty())
+            printf(not_supported, "--input-ramdisk");
     }
 
-    // Read second bootloader image
-    if (!read_file_data(path_second, &second_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_second.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Second bootloader image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_SECOND_IMAGE) {
+        if (path_second.empty())
+            path_second = io::pathJoin({input_dir, prefix + "second"});
+
+        printf(fmt_path, "second", path_second.c_str());
+
+        if (!read_file_data(path_second, &second_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_second.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setSecondBootloaderImage(std::move(second_image));
+    } else {
+        if (!path_second.empty())
+            printf(not_supported, "--input-second");
     }
 
-    // Read device tree image
-    if (!read_file_data(path_dt, &dt_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_dt.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Device tree image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_DT_IMAGE) {
+        if (path_dt.empty())
+            path_dt = io::pathJoin({input_dir, prefix + "dt"});
+
+        printf(fmt_path, "dt", path_dt.c_str());
+
+        if (!read_file_data(path_dt, &dt_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_dt.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setDeviceTreeImage(std::move(dt_image));
+    } else {
+        if (!path_dt.empty())
+            printf(not_supported, "--input-dt");
     }
 
-    // Read aboot image
-    if (!read_file_data(path_aboot, &aboot_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_aboot.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Aboot image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_ABOOT_IMAGE) {
+        if (path_aboot.empty()) {
+            // The aboot image is required
+            fprintf(stderr, "An aboot image must be specified to create a loki image\n");
+            return false;
+        }
+
+        printf(fmt_path, "aboot", path_aboot.c_str());
+
+        if (!read_file_data(path_aboot, &aboot_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_aboot.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setAbootImage(std::move(aboot_image));
+    } else {
+        if (!path_aboot.empty())
+            printf(not_supported, "--input-aboot");
     }
 
-    // Read ipl image
-    if (!read_file_data(path_ipl, &ipl_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_ipl.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Ipl image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_IPL_IMAGE) {
+        if (path_ipl.empty())
+            path_ipl = io::pathJoin({input_dir, prefix + "ipl"});
+
+        printf(fmt_path, "ipl", path_ipl.c_str());
+
+        if (!read_file_data(path_ipl, &ipl_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_ipl.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setIplImage(std::move(ipl_image));
+    } else {
+        if (!path_ipl.empty())
+            printf(not_supported, "--input-ipl");
     }
 
-    // Read rpm image
-    if (!read_file_data(path_rpm, &rpm_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_rpm.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Rpm image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_RPM_IMAGE) {
+        if (path_rpm.empty())
+            path_rpm = io::pathJoin({input_dir, prefix + "rpm"});
+
+        printf(fmt_path, "rpm", path_rpm.c_str());
+
+        if (!read_file_data(path_rpm, &rpm_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_rpm.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setRpmImage(std::move(rpm_image));
+    } else {
+        if (!path_rpm.empty())
+            printf(not_supported, "--input-rpm");
     }
 
-    // Read appsbl image
-    if (!read_file_data(path_appsbl, &appsbl_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_appsbl.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Appsbl image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_APPSBL_IMAGE) {
+        if (path_appsbl.empty())
+            path_appsbl = io::pathJoin({input_dir, prefix + "appsbl"});
+
+        printf(fmt_path, "appsbl", path_appsbl.c_str());
+
+        if (!read_file_data(path_appsbl, &appsbl_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_appsbl.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setAppsblImage(std::move(appsbl_image));
+    } else {
+        if (!path_appsbl.empty())
+            printf(not_supported, "--input-appsbl");
     }
 
-    // Read sin image
-    if (!read_file_data(path_sin, &sin_image) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_sin.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Sony SIN! image
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_SONY_SIN_IMAGE) {
+        if (path_sin.empty())
+            path_sin = io::pathJoin({input_dir, prefix + "sin"});
+
+        printf(fmt_path, "sin", path_sin.c_str());
+
+        if (!read_file_data(path_sin, &sin_image) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_sin.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setSinImage(std::move(sin_image));
+    } else {
+        if (!path_sin.empty())
+            printf(not_supported, "--input-sin");
     }
 
-    // Read sin header
-    if (!read_file_data(path_sinhdr, &sin_header) && errno != ENOENT) {
-        fprintf(stderr, "%s: %s\n", path_sinhdr.c_str(), strerror(errno));
-        return false;
+    ////////////////////////////////////////////////////////////////////////////
+    // Sony SIN! header
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_SONY_SIN_HEADER) {
+        if (path_sinhdr.empty())
+            path_sinhdr = io::pathJoin({input_dir, prefix + "sinhdr"});
+
+        printf(fmt_path, "sinhdr", path_sinhdr.c_str());
+
+        if (!read_file_data(path_sinhdr, &sin_header) && errno != ENOENT) {
+            fprintf(stderr, "%s: %s\n", path_sinhdr.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setSinHeader(std::move(sin_header));
+    } else {
+        if (!path_sinhdr.empty())
+            printf(not_supported, "--input-sinhdr");
     }
 
-    bi.setKernelCmdline(std::move(cmdline));
-    bi.setBoardName(std::move(board));
-    bi.setAddresses(base, kernel_offset, ramdisk_offset, second_offset, tags_offset);
-    bi.setPageSize(page_size);
-    bi.setKernelImage(std::move(kernel_image));
-    bi.setRamdiskImage(std::move(ramdisk_image));
-    bi.setSecondBootloaderImage(std::move(second_image));
-    bi.setDeviceTreeImage(std::move(dt_image));
-    bi.setAbootImage(std::move(aboot_image));
-    bi.setIplImage(std::move(ipl_image));
-    bi.setRpmImage(std::move(rpm_image));
-    bi.setAppsblImage(std::move(appsbl_image));
-    bi.setSinImage(std::move(sin_image));
-    bi.setSinHeader(std::move(sin_header));
+    // Create boot image
 
     bi.setTargetType(type);
 
-    // Create boot image
     if (!bi.createFile(output_file)) {
         fprintf(stderr, "Failed to create boot image\n");
         return false;
