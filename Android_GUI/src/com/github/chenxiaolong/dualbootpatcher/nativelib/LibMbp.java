@@ -86,38 +86,26 @@ public class LibMbp {
         static native void mbp_bootimage_set_target_type(CBootImage bi, /* BootImageType */ int type);
         static native Pointer mbp_bootimage_boardname(CBootImage bi);
         static native void mbp_bootimage_set_boardname(CBootImage bi, String name);
-        static native void mbp_bootimage_reset_boardname(CBootImage bi);
         static native Pointer mbp_bootimage_kernel_cmdline(CBootImage bi);
         static native void mbp_bootimage_set_kernel_cmdline(CBootImage bi, String cmdline);
-        static native void mbp_bootimage_reset_kernel_cmdline(CBootImage bi);
         static native int mbp_bootimage_page_size(CBootImage bi);
         static native void mbp_bootimage_set_page_size(CBootImage bi, int pageSize);
-        static native void mbp_bootimage_reset_page_size(CBootImage bi);
         static native int mbp_bootimage_kernel_address(CBootImage bi);
         static native void mbp_bootimage_set_kernel_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_kernel_address(CBootImage bi);
         static native int mbp_bootimage_ramdisk_address(CBootImage bi);
         static native void mbp_bootimage_set_ramdisk_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_ramdisk_address(CBootImage bi);
         static native int mbp_bootimage_second_bootloader_address(CBootImage bi);
         static native void mbp_bootimage_set_second_bootloader_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_second_bootloader_address(CBootImage bi);
         static native int mbp_bootimage_kernel_tags_address(CBootImage bi);
         static native void mbp_bootimage_set_kernel_tags_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_kernel_tags_address(CBootImage bi);
         static native int mbp_bootimage_ipl_address(CBootImage bi);
         static native void mbp_bootimage_set_ipl_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_ipl_address(CBootImage bi);
         static native int mbp_bootimage_rpm_address(CBootImage bi);
         static native void mbp_bootimage_set_rpm_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_rpm_address(CBootImage bi);
         static native int mbp_bootimage_appsbl_address(CBootImage bi);
         static native void mbp_bootimage_set_appsbl_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_appsbl_address(CBootImage bi);
         static native int mbp_bootimage_entrypoint_address(CBootImage bi);
         static native void mbp_bootimage_set_entrypoint_address(CBootImage bi, int address);
-        static native void mbp_bootimage_reset_entrypoint_address(CBootImage bi);
-        static native void mbp_bootimage_set_addresses(CBootImage bi, int base, int kernelOffset, int ramdiskOffset, int secondBootloaderOffset, int kernelTagsOffset);
         static native void mbp_bootimage_kernel_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_kernel_image(CBootImage bi, Pointer data, /* size_t */ int size);
         static native void mbp_bootimage_ramdisk_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
@@ -576,11 +564,6 @@ public class LibMbp {
             CWrapper.mbp_bootimage_set_boardname(mCBootImage, name);
         }
 
-        public void resetBoardName() {
-            validate(mCBootImage, BootImage.class, "resetBoardName");
-            CWrapper.mbp_bootimage_reset_boardname(mCBootImage);
-        }
-
         public String getKernelCmdline() {
             validate(mCBootImage, BootImage.class, "getKernelCmdline");
             Pointer p = CWrapper.mbp_bootimage_kernel_cmdline(mCBootImage);
@@ -594,11 +577,6 @@ public class LibMbp {
             CWrapper.mbp_bootimage_set_kernel_cmdline(mCBootImage, cmdline);
         }
 
-        public void resetKernelCmdline() {
-            validate(mCBootImage, BootImage.class, "resetKernelCmdline");
-            CWrapper.mbp_bootimage_reset_kernel_cmdline(mCBootImage);
-        }
-
         public int getPageSize() {
             validate(mCBootImage, BootImage.class, "getPageSize");
             return CWrapper.mbp_bootimage_page_size(mCBootImage);
@@ -607,11 +585,6 @@ public class LibMbp {
         public void setPageSize(int size) {
             validate(mCBootImage, BootImage.class, "setPageSize", size);
             CWrapper.mbp_bootimage_set_page_size(mCBootImage, size);
-        }
-
-        public void resetPageSize() {
-            validate(mCBootImage, BootImage.class, "resetPageSize");
-            CWrapper.mbp_bootimage_reset_page_size(mCBootImage);
         }
 
         public int getKernelAddress() {
@@ -624,11 +597,6 @@ public class LibMbp {
             CWrapper.mbp_bootimage_set_kernel_address(mCBootImage, address);
         }
 
-        public void resetKernelAddress() {
-            validate(mCBootImage, BootImage.class, "resetKernelAddress");
-            CWrapper.mbp_bootimage_reset_kernel_address(mCBootImage);
-        }
-
         public int getRamdiskAddress() {
             validate(mCBootImage, BootImage.class, "getRamdiskAddress");
             return CWrapper.mbp_bootimage_ramdisk_address(mCBootImage);
@@ -637,11 +605,6 @@ public class LibMbp {
         public void setRamdiskAddress(int address) {
             validate(mCBootImage, BootImage.class, "setRamdiskAddress", address);
             CWrapper.mbp_bootimage_set_ramdisk_address(mCBootImage, address);
-        }
-
-        public void resetRamdiskAddress() {
-            validate(mCBootImage, BootImage.class, "resetRamdiskAddress");
-            CWrapper.mbp_bootimage_reset_ramdisk_address(mCBootImage);
         }
 
         public int getSecondBootloaderAddress() {
@@ -654,11 +617,6 @@ public class LibMbp {
             CWrapper.mbp_bootimage_set_second_bootloader_address(mCBootImage, address);
         }
 
-        public void resetSecondBootloaderAddress() {
-            validate(mCBootImage, BootImage.class, "resetSecondBootloaderAddress");
-            CWrapper.mbp_bootimage_reset_second_bootloader_address(mCBootImage);
-        }
-
         public int getKernelTagsAddress() {
             validate(mCBootImage, BootImage.class, "getKernelTagsAddress");
             return CWrapper.mbp_bootimage_kernel_tags_address(mCBootImage);
@@ -667,11 +625,6 @@ public class LibMbp {
         public void setKernelTagsAddress(int address) {
             validate(mCBootImage, BootImage.class, "setKernelTagsAddress", address);
             CWrapper.mbp_bootimage_set_kernel_tags_address(mCBootImage, address);
-        }
-
-        public void resetKernelTagsAddress() {
-            validate(mCBootImage, BootImage.class, "resetKernelTagsAddress");
-            CWrapper.mbp_bootimage_reset_kernel_tags_address(mCBootImage);
         }
 
         public int getIplAddress() {
@@ -684,11 +637,6 @@ public class LibMbp {
             CWrapper.mbp_bootimage_set_ipl_address(mCBootImage, address);
         }
 
-        public void resetIplAddress() {
-            validate(mCBootImage, BootImage.class, "resetIplAddress");
-            CWrapper.mbp_bootimage_reset_ipl_address(mCBootImage);
-        }
-
         public int getRpmAddress() {
             validate(mCBootImage, BootImage.class, "getRpmAddress");
             return CWrapper.mbp_bootimage_rpm_address(mCBootImage);
@@ -697,11 +645,6 @@ public class LibMbp {
         public void setRpmAddress(int address) {
             validate(mCBootImage, BootImage.class, "setRpmAddress", address);
             CWrapper.mbp_bootimage_set_rpm_address(mCBootImage, address);
-        }
-
-        public void resetRpmAddress() {
-            validate(mCBootImage, BootImage.class, "resetRpmAddress");
-            CWrapper.mbp_bootimage_reset_rpm_address(mCBootImage);
         }
 
         public int getAppsblAddress() {
@@ -714,11 +657,6 @@ public class LibMbp {
             CWrapper.mbp_bootimage_set_appsbl_address(mCBootImage, address);
         }
 
-        public void resetAppsblAddress() {
-            validate(mCBootImage, BootImage.class, "resetAppsblAddress");
-            CWrapper.mbp_bootimage_reset_appsbl_address(mCBootImage);
-        }
-
         public int getEntrypointAddress() {
             validate(mCBootImage, BootImage.class, "getEntrypointAddress");
             return CWrapper.mbp_bootimage_entrypoint_address(mCBootImage);
@@ -727,19 +665,6 @@ public class LibMbp {
         public void setEntrypointAddress(int address) {
             validate(mCBootImage, BootImage.class, "setEntrypointAddress", address);
             CWrapper.mbp_bootimage_set_entrypoint_address(mCBootImage, address);
-        }
-
-        public void resetEntrypointAddress() {
-            validate(mCBootImage, BootImage.class, "resetEntrypointAddress");
-            CWrapper.mbp_bootimage_reset_entrypoint_address(mCBootImage);
-        }
-
-        public void setAddresses(int base, int kernelOffset, int ramdiskOffset,
-                                 int secondBootloaderOffset, int kernelTagsOffset) {
-            validate(mCBootImage, BootImage.class, "setAddresses", base, kernelOffset,
-                    ramdiskOffset, secondBootloaderOffset, kernelTagsOffset);
-            CWrapper.mbp_bootimage_set_addresses(mCBootImage, base, kernelOffset,
-                    ramdiskOffset, secondBootloaderOffset, kernelTagsOffset);
         }
 
         public byte[] getKernelImage() {
