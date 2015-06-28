@@ -85,6 +85,11 @@ public:
     bool loadPatchInfos();
 #endif
 
+    PatcherConfig(const PatcherConfig &) = delete;
+    PatcherConfig(PatcherConfig &&) = default;
+    PatcherConfig & operator=(const PatcherConfig &) & = delete;
+    PatcherConfig & operator=(PatcherConfig &&) & = default;
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

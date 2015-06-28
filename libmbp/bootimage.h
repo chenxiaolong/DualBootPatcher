@@ -194,6 +194,11 @@ public:
     bool operator==(const BootImage &other) const;
     bool operator!=(const BootImage &other) const;
 
+    BootImage(const BootImage &) = delete;
+    BootImage(BootImage &&) = default;
+    BootImage & operator=(const BootImage &) & = delete;
+    BootImage & operator=(BootImage &&) & = default;
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

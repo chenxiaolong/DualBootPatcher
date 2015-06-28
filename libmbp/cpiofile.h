@@ -67,6 +67,11 @@ public:
     bool addFileC(const unsigned char *data, std::size_t size,
                   const std::string &name, unsigned int perms);
 
+    CpioFile(const CpioFile &) = delete;
+    CpioFile(CpioFile &&) = default;
+    CpioFile & operator=(const CpioFile &) & = delete;
+    CpioFile & operator=(CpioFile &&) & = default;
+
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
