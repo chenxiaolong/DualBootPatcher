@@ -342,7 +342,7 @@ bool AndroidFormat::loadHeader(const unsigned char *data, std::size_t size,
     mI10e->hdrSecondSize = hdr->second_size;
     mI10e->hdrDtSize = hdr->dt_size;
     mI10e->hdrUnused = hdr->unused;
-    for (std::size_t i = 0; i < sizeof(hdr->id) / (hdr->id[0]); ++i) {
+    for (std::size_t i = 0; i < sizeof(hdr->id) / sizeof(hdr->id[0]); ++i) {
         mI10e->hdrId[i] = hdr->id[i];
     }
 
