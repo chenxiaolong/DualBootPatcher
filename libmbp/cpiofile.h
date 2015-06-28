@@ -37,6 +37,7 @@ public:
 
     PatcherError error() const;
 
+    bool load(const unsigned char *data, std::size_t size);
     bool load(const std::vector<unsigned char> &data);
     bool createData(std::vector<unsigned char> *dataOut);
 
@@ -51,6 +52,10 @@ public:
                   std::vector<unsigned char> *dataOut) const;
     bool setContents(const std::string &name,
                      std::vector<unsigned char> data);
+    bool contentsC(const std::string &name,
+                   const unsigned char **data, std::size_t *size) const;
+    bool setContentsC(const std::string &name,
+                      const unsigned char *data, std::size_t size);
 
     // Adding new files
 
@@ -59,6 +64,8 @@ public:
                  unsigned int perms);
     bool addFile(std::vector<unsigned char> contents,
                  const std::string &name, unsigned int perms);
+    bool addFileC(const unsigned char *data, std::size_t size,
+                  const std::string &name, unsigned int perms);
 
 private:
     class Impl;

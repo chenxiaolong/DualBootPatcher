@@ -115,15 +115,14 @@ PatcherError CpioFile::error() const
  *
  * \return Whether the cpio archive was successfully read
  */
-bool CpioFile::load(const std::vector<unsigned char> &data)
+bool CpioFile::load(const unsigned char *data, std::size_t size)
 {
-    if (data.size() >= 2 && std::memcmp(data.data(), "\x1f\x8b", 2) == 0) {
+    if (size >= 2 && std::memcmp(data, "\x1f\x8b", 2) == 0) {
         m_impl->compression = GZIP;
-    } else if (data.size() >= 4
-            && std::memcmp(data.data(), "\x02\x21\x4c\x18", 4) == 0) {
+    } else if (size >= 4 && std::memcmp(data, "\x02\x21\x4c\x18", 4) == 0) {
         // Magic number is 0x184C2102 (little endian)
         m_impl->compression = LZ4;
-    } else if (data.size() >= 1 && (data[0] == 0x5d || data[0] == 0x5e)) {
+    } else if (size >= 1 && (data[0] == 0x5d || data[0] == 0x5e)) {
         // Very hacky, but the properties field is almost always 0x5d or 0x5e
         m_impl->compression = LZMA;
     } else {
@@ -143,7 +142,7 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
     archive_read_support_format_cpio(a);
 
     int ret = archive_read_open_memory(a,
-            const_cast<unsigned char *>(data.data()), data.size());
+            const_cast<unsigned char *>(data), size);
     if (ret != ARCHIVE_OK) {
         FLOGW("libarchive: %s", archive_error_string(a));
         archive_read_free(a);
@@ -205,6 +204,11 @@ bool CpioFile::load(const std::vector<unsigned char> &data)
     }
 
     return true;
+}
+
+bool CpioFile::load(const std::vector<unsigned char> &data)
+{
+    return load(data.data(), data.size());
 }
 
 static int archiveOpenCallback(archive *a, void *clientData)
@@ -434,6 +438,41 @@ bool CpioFile::setContents(const std::string &name,
     return false;
 }
 
+bool CpioFile::contentsC(const std::string &name,
+                         const unsigned char **data, std::size_t *size) const
+{
+    for (auto const &p : m_impl->files) {
+        if (name == archive_entry_pathname(p.first)) {
+            *data = p.second.data();
+            *size = p.second.size();
+            return true;
+        }
+    }
+
+    m_impl->error = PatcherError::createCpioError(
+            ErrorCode::CpioFileNotExistError, name);
+    return false;
+}
+
+bool CpioFile::setContentsC(const std::string &name,
+                            const unsigned char *data, std::size_t size)
+{
+    for (auto &p : m_impl->files) {
+        if (name == archive_entry_pathname(p.first)) {
+            archive_entry_set_size(p.first, size);
+            p.second.clear();
+            p.second.shrink_to_fit();
+            p.second.resize(size);
+            std::memcpy(p.second.data(), data, size);
+            return true;
+        }
+    }
+
+    m_impl->error = PatcherError::createCpioError(
+            ErrorCode::CpioFileNotExistError, name);
+    return false;
+}
+
 /*!
  * \brief Add a symbolic link to the archive
  *
@@ -545,6 +584,40 @@ bool CpioFile::addFile(std::vector<unsigned char> contents,
     archive_entry_set_perm(entry, perms);
 
     m_impl->files.push_back(std::make_pair(entry, std::move(contents)));
+
+    std::sort(m_impl->files.begin(), m_impl->files.end(), sortByName);
+
+    return true;
+}
+
+bool CpioFile::addFileC(const unsigned char *data, std::size_t size,
+                        const std::string &name, unsigned int perms)
+{
+    if (exists(name)) {
+        m_impl->error = PatcherError::createCpioError(
+                ErrorCode::CpioFileAlreadyExistsError, name);
+        return false;
+    }
+
+    archive_entry *entry = archive_entry_new();
+
+    archive_entry_set_uid(entry, 0);
+    archive_entry_set_gid(entry, 0);
+    archive_entry_set_nlink(entry, 1);
+    archive_entry_set_mtime(entry, 0, 0);
+    archive_entry_set_devmajor(entry, 0);
+    archive_entry_set_devminor(entry, 0);
+    archive_entry_set_rdevmajor(entry, 0);
+    archive_entry_set_rdevminor(entry, 0);
+
+    archive_entry_set_pathname(entry, name.c_str());
+    archive_entry_set_size(entry, size);
+
+    archive_entry_set_filetype(entry, AE_IFREG);
+    archive_entry_set_perm(entry, perms);
+
+    m_impl->files.push_back(std::make_pair(
+            entry, std::vector<unsigned char>(data, data + size)));
 
     std::sort(m_impl->files.begin(), m_impl->files.end(), sortByName);
 

@@ -56,17 +56,3 @@ void vector_to_data(const std::vector<unsigned char> &data,
     *size_out = data.size();
     std::memcpy(*data_out, data.data(), data.size());
 }
-
-size_t vector_to_data2(const std::vector<unsigned char> &data, void **data_out)
-{
-    size_t size;
-    vector_to_data(data, data_out, &size);
-    return size;
-}
-
-std::vector<unsigned char> data_to_vector(const void *data, size_t size)
-{
-    std::vector<unsigned char> v(size);
-    std::memcpy(v.data(), data, size);
-    return v;
-}

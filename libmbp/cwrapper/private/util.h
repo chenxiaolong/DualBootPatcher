@@ -29,7 +29,3 @@ std::vector<std::string> cstring_array_to_vector(const char **array);
 
 void vector_to_data(const std::vector<unsigned char> &data,
                     void **data_out, size_t *size_out);
-size_t vector_to_data2(const std::vector<unsigned char> &data,
-                       void **data_out);
-
-std::vector<unsigned char> data_to_vector(const void *data, size_t size);

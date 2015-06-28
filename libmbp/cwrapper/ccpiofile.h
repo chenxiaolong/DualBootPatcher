@@ -34,10 +34,10 @@ void mbp_cpiofile_destroy(CCpioFile *cpio);
 CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio);
 
 bool mbp_cpiofile_load_data(CCpioFile *cpio,
-                            const void *data, size_t size);
+                            const unsigned char *data, size_t size);
 
 bool mbp_cpiofile_create_data(CCpioFile *cpio,
-                              void **data, size_t *size);
+                              unsigned char **data, size_t *size);
 
 bool mbp_cpiofile_exists(const CCpioFile *cpio,
                          const char *filename);
@@ -48,10 +48,10 @@ char ** mbp_cpiofile_filenames(const CCpioFile *cpio);
 
 bool mbp_cpiofile_contents(const CCpioFile *cpio,
                            const char *filename,
-                           void **data, size_t *size);
+                           const unsigned char **data, size_t *size);
 bool mbp_cpiofile_set_contents(CCpioFile *cpio,
                                const char *filename,
-                               const void *data, size_t size);
+                               const unsigned char *data, size_t size);
 
 bool mbp_cpiofile_add_symlink(CCpioFile *cpio,
                               const char *source, const char *target);
@@ -59,7 +59,7 @@ bool mbp_cpiofile_add_file(CCpioFile *cpio,
                            const char *path, const char *name,
                            unsigned int perms);
 bool mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
-                                     const void *data, size_t size,
+                                     const unsigned char *data, size_t size,
                                      const char *name, unsigned int perms);
 
 #ifdef __cplusplus

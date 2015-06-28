@@ -103,10 +103,10 @@ CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
  * \sa CpioFile::load()
  */
 bool mbp_cpiofile_load_data(CCpioFile *cpio,
-                            const void *data, size_t size)
+                            const unsigned char *data, size_t size)
 {
     CAST(cpio);
-    return cf->load(data_to_vector(data, size));
+    return cf->load(data, size);
 }
 
 /*!
@@ -124,16 +124,16 @@ bool mbp_cpiofile_load_data(CCpioFile *cpio,
  * \sa CpioFile::createData()
  */
 bool mbp_cpiofile_create_data(CCpioFile *cpio,
-                              void **data, size_t *size)
+                              unsigned char **data, size_t *size)
 {
     CAST(cpio);
     std::vector<unsigned char> vData;
-    if (!cf->createData(&vData)) {
+    if (cf->createData(&vData)) {
+        vector_to_data(vData, reinterpret_cast<void **>(data), size);
+        return true;
+    } else {
         return false;
     }
-
-    vector_to_data(vData, data, size);
-    return true;
 }
 
 /*!
@@ -187,9 +187,6 @@ char ** mbp_cpiofile_filenames(const CCpioFile *cpio)
 /*!
  * \brief Get contents of a file in the archive
  *
- * \note The output data is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
  * \param cpio CCpioFile object
  * \param filename Filename
  * \param data Output data
@@ -201,16 +198,10 @@ char ** mbp_cpiofile_filenames(const CCpioFile *cpio)
  */
 bool mbp_cpiofile_contents(const CCpioFile *cpio,
                            const char *filename,
-                           void **data, size_t *size)
+                           const unsigned char **data, size_t *size)
 {
     CCAST(cpio);
-    std::vector<unsigned char> vData;
-    if (!cf->contents(filename, &vData)) {
-        return false;
-    }
-
-    vector_to_data(vData, data, size);
-    return true;
+    return cf->contentsC(filename, data, size);
 }
 
 /*!
@@ -227,10 +218,10 @@ bool mbp_cpiofile_contents(const CCpioFile *cpio,
  */
 bool mbp_cpiofile_set_contents(CCpioFile *cpio,
                                const char *filename,
-                               const void *data, size_t size)
+                               const unsigned char *data, size_t size)
 {
     CAST(cpio);
-    return cf->setContents(filename, data_to_vector(data, size));
+    return cf->setContentsC(filename, data, size);
 }
 
 /*!
@@ -288,11 +279,11 @@ bool mbp_cpiofile_add_file(CCpioFile *cpio,
  * \sa CpioFile::addFile(std::vector<unsigned char>, const std::string &, unsigned int)
  */
 bool mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
-                                     const void *data, size_t size,
+                                     const unsigned char *data, size_t size,
                                      const char *name, unsigned int perms)
 {
     CAST(cpio);
-    return cf->addFile(data_to_vector(data, size), name, perms);
+    return cf->addFileC(data, size, name, perms);
 }
 
 }
