@@ -100,6 +100,9 @@ std::string CoreRP::id() const
 
 bool CoreRP::patchRamdisk()
 {
+    if (!addMbtool()) {
+        return false;
+    }
     if (!addMultiBootRc()) {
         return false;
     }
@@ -118,6 +121,26 @@ bool CoreRP::patchRamdisk()
     if (!removeRestorecon()) {
         return false;
     }
+    return true;
+}
+
+bool CoreRP::addMbtool()
+{
+    const std::string mbtool("mbtool");
+    std::string mbtoolPath(m_impl->pc->dataDirectory());
+    mbtoolPath += "/binaries/android/";
+    mbtoolPath += m_impl->info->device()->architecture();
+    mbtoolPath += "/mbtool";
+
+    if (m_impl->cpio->exists(mbtool)) {
+        m_impl->cpio->remove(mbtool);
+    }
+
+    if (!m_impl->cpio->addFile(mbtoolPath, mbtool, 0750)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
     return true;
 }
 

@@ -142,17 +142,6 @@ bool MbtoolUpdater::Impl::patchImage()
         return false;
     }
 
-    // Add mbtool
-    const std::string mbtool("mbtool");
-    if (cpio.exists(mbtool)) {
-        cpio.remove(mbtool);
-    }
-    if (!cpio.addFile(pc->dataDirectory() + "/binaries/android/"
-            + info->device()->architecture() + "/mbtool", mbtool, 0750)) {
-        error = cpio.error();
-        return false;
-    }
-
     // Make sure init.rc has the mbtooldaemon service
     patchInitRc(&cpio);
 
@@ -205,6 +194,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
         crp.addMultiBootRc();
     }
 
+    crp.addMbtool();
     crp.addDaemonService();
     crp.addAppsyncService();
     crp.disableInstalldService();

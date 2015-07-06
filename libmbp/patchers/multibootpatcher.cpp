@@ -232,21 +232,6 @@ bool MultiBootPatcher::Impl::patchRamdisk(std::vector<unsigned char> *data)
 
     if (cancelled) return false;
 
-    // Add mbtool
-    const std::string mbtool("mbtool");
-
-    if (cpio.exists(mbtool)) {
-        cpio.remove(mbtool);
-    }
-
-    if (!cpio.addFile(pc->dataDirectory() + "/binaries/android/"
-            + info->device()->architecture() + "/mbtool", mbtool, 0750)) {
-        error = cpio.error();
-        return false;
-    }
-
-    if (cancelled) return false;
-
     std::vector<unsigned char> newRamdisk;
     if (!cpio.createData(&newRamdisk)) {
         error = cpio.error();
