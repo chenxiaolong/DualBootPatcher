@@ -151,6 +151,14 @@ PatcherError BootImage::error() const
     return m_impl->error;
 }
 
+bool BootImage::isValid(const unsigned char *data, std::size_t size)
+{
+    return LokiFormat::isValid(data, size)
+            || BumpFormat::isValid(data, size)
+            || AndroidFormat::isValid(data, size)
+            || SonyElfFormat::isValid(data, size);
+}
+
 bool BootImage::load(const unsigned char *data, std::size_t size)
 {
     bool ret = false;

@@ -71,6 +71,8 @@ public:
 
     PatcherError error() const;
 
+    static bool isValid(const unsigned char *data, std::size_t size);
+
     bool load(const unsigned char *data, std::size_t size);
     bool load(const std::vector<unsigned char> &data);
     bool loadFile(const std::string &filename);
