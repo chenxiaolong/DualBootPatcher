@@ -482,16 +482,9 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
             } else {
                 // If the file contains the boot image magic string, then
                 // assume it really is a boot image and patch it
-                if (data.size() >= 512) {
-                    const char *magic = BootImage::AndroidBootMagic;
-                    unsigned int size = BootImage::AndroidBootMagicSize;
-                    auto end = data.begin() + 512;
-                    auto it = std::search(data.begin(), end,
-                                          magic, magic + size);
-                    if (it != end) {
-                        if (!patchBootImage(&data)) {
-                            return false;
-                        }
+                if (BootImage::isValid(data.data(), data.size())) {
+                    if (!patchBootImage(&data)) {
+                        return false;
                     }
                 }
             }
