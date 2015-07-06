@@ -55,6 +55,7 @@
 #include "ramdiskpatchers/lgg2.h"
 #include "ramdiskpatchers/lgg3.h"
 #include "ramdiskpatchers/mondrianwifi.h"
+#include "ramdiskpatchers/pepper.h"
 #include "ramdiskpatchers/trelte.h"
 #include "ramdiskpatchers/trlte.h"
 #include "ramdiskpatchers/zerolte.h"
@@ -619,6 +620,17 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p33" });
     device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
+
+    // Sony Xperia Sola
+    device = new Device();
+    device->setId("pepper");
+    device->setCodenames({ "pepper", "MT27a", "MT27i" });
+    device->setName("Sony Xperia Sola");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p10" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p12" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p11" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
+    devices.push_back(device);
 }
 
 #ifndef LIBMBP_MINI
@@ -669,6 +681,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         LGG2RP::Id,
         LGG3RP::Id,
         MondrianwifiDefaultRP::Id,
+        PepperDefaultRP::Id,
         TrelteDefaultRP::Id,
         TrlteDefaultRP::Id,
         ZerolteDefaultRP::Id
@@ -766,6 +779,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new LGG3RP(this, info, cpio);
     } else if (id == MondrianwifiDefaultRP::Id) {
         rp = new MondrianwifiDefaultRP(this, info, cpio);
+    } else if (id == PepperDefaultRP::Id) {
+        rp = new PepperDefaultRP(this, info, cpio);
     } else if (id == TrelteDefaultRP::Id) {
         rp = new TrelteDefaultRP(this, info, cpio);
     } else if (id == TrlteDefaultRP::Id) {
