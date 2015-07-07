@@ -115,9 +115,6 @@ bool CoreRP::patchRamdisk()
     if (!disableInstalldService()) {
         return false;
     }
-    if (!fixDataMediaContext()) {
-        return false;
-    }
     if (!removeRestorecon()) {
         return false;
     }
@@ -260,42 +257,6 @@ bool CoreRP::disableInstalldService()
 
     contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(InitRc, std::move(contents));
-
-    return true;
-}
-
-/*!
- * Some ROMs omit the line in /file_contexts that sets the context of
- * /data/media/* to u:object_r:media_rw_data_file:s0. This is fine if SELinux
- * is set to permissive mode or if the SELinux policy has no restriction on
- * the u:object_r:device:s0 context (inherited from /data), but after restorecon
- * is run, the incorrect context may affect ROMs that have a stricter policy.
- */
-bool CoreRP::fixDataMediaContext()
-{
-    if (!m_impl->cpio->exists(FileContexts)) {
-        return true;
-    }
-
-    bool hasDataMediaContext = false;
-
-    std::vector<unsigned char> contents;
-    m_impl->cpio->contents(FileContexts, &contents);
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (StringUtils::starts_with(*it, "/data/media")) {
-            hasDataMediaContext = true;
-        }
-    }
-
-    if (!hasDataMediaContext) {
-        lines.push_back(DataMediaContext);
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    m_impl->cpio->setContents(FileContexts, std::move(contents));
 
     return true;
 }

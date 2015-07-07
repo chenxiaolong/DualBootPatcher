@@ -226,7 +226,6 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     crp.addDaemonService();
     crp.addAppsyncService();
     crp.disableInstalldService();
-    crp.fixDataMediaContext();
     crp.removeRestorecon();
 }
 
