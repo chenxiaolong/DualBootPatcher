@@ -128,11 +128,6 @@ else()
 
     add_library(mbp SHARED ${MBP_SOURCES})
 
-    set_target_properties(mbp PROPERTIES
-        VERSION 1.0.0
-        SOVERSION 1
-    )
-
     if(NOT MSVC)
         set_target_properties(mbp PROPERTIES
             CXX_STANDARD 11
