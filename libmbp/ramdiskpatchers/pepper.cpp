@@ -88,8 +88,7 @@ bool PepperDefaultRP::patchRamdisk()
     const unsigned char *data;
     std::size_t size;
     if (!m_impl->cpio->contentsC("sbin/ramdisk.cpio", &data, &size)) {
-        m_impl->error = PatcherError::createCpioError(
-                ErrorCode::CpioFileNotExistError, "sbin/ramdisk.cpio");
+        m_impl->error = m_impl->cpio->error();
         return false;
     }
 
