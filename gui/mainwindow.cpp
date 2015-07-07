@@ -132,6 +132,7 @@ void MainWindow::onInstallationLocationSelected(int index)
     } else if (index < d->instLocs.size()) {
         d->instLocDesc->setText(d->instLocs[index].description);
         d->instLocLe->setVisible(false);
+        d->buttons->setEnabled(true);
     } else {
         updateDataRomIdDescText(d->instLocLe->text());
         d->instLocLe->setVisible(true);
