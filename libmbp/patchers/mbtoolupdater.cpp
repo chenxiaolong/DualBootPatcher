@@ -135,19 +135,47 @@ bool MbtoolUpdater::Impl::patchImage()
         return false;
     }
 
+    CpioFile mainCpio;
+    CpioFile cpioInCpio;
+    CpioFile *target;
+
     // Load the ramdisk cpio
-    CpioFile cpio;
-    if (!cpio.load(bi.ramdiskImage())) {
-        error = cpio.error();
+    if (!mainCpio.load(bi.ramdiskImage())) {
+        error = mainCpio.error();
         return false;
     }
 
+    const unsigned char *data;
+    std::size_t size;
+    if (mainCpio.contentsC("sbin/ramdisk.cpio", &data, &size)) {
+        // Mess with the Android cpio archive for ramdisks on Sony devices with
+        // combined boot/recovery partitions
+        if (!cpioInCpio.load(data, size)) {
+            error = cpioInCpio.error();
+            return false;
+        }
+
+        target = &cpioInCpio;
+    } else {
+        target = &mainCpio;
+    }
+
     // Make sure init.rc has the mbtooldaemon service
-    patchInitRc(&cpio);
+    patchInitRc(target);
+
+    if (target == &cpioInCpio) {
+        // Store new internal cpio archive
+        std::vector<unsigned char> newContents;
+        if (!cpioInCpio.createData(&newContents)) {
+            error = cpioInCpio.error();
+            return false;
+        }
+        mainCpio.setContents("sbin/ramdisk.cpio", std::move(newContents));
+    }
 
     std::vector<unsigned char> newRamdisk;
-    if (!cpio.createData(&newRamdisk)) {
-        error = cpio.error();
+    if (!mainCpio.createData(&newRamdisk)) {
+        error = mainCpio.error();
         return false;
     }
     bi.setRamdiskImage(std::move(newRamdisk));
