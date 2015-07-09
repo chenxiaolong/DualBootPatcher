@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=DualBootPatcher
+Comment=Patch Android ROMs for dual booting
+Icon=mbp
+Exec=DualBootPatcher
+Categories=Development;System;Qt;
+Type=Application
+Terminal=false

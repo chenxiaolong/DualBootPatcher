@@ -87,3 +87,16 @@ install(
     RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
     COMPONENT Applications
 )
+
+# Linux-specific files
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" AND NOT ${MBP_PORTABLE})
+    install(
+        FILES icon.png
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
+        RENAME mbp.png
+    )
+    install(
+        FILES mbp.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+endif()
