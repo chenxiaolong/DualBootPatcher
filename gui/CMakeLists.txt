@@ -13,7 +13,7 @@ if(${MBP_PORTABLE})
     )
 else()
     add_definitions(
-        -DDATA_DIR="${DATA_INSTALL_DIR}"
+        -DDATA_DIR="${DATA_FULL_INSTALL_DIR}"
     )
 endif()
 
