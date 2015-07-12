@@ -25,9 +25,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <libgen.h>
+#include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/xattr.h>
@@ -57,6 +59,7 @@ namespace mb
 {
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
+typedef std::unique_ptr<DIR, int (*)(DIR *)> dir_ptr;
 
 static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
                                  const std::vector<util::fstab_rec *> flags,
@@ -145,6 +148,44 @@ static unsigned long get_api_version(void)
     } else {
         return 0;
     }
+}
+
+static bool is_int(const char *str)
+{
+    char *temp;
+    strtol(str, &temp, 0);
+    return *temp == '\0';
+}
+
+static pid_t find_ueventd_pid()
+{
+    dir_ptr dir(opendir("/proc"), closedir);
+    if (!dir) {
+        LOGE("Failed to open /proc");
+        return -1;
+    }
+
+    struct dirent *ent;
+    while ((ent = readdir(dir.get()))) {
+        // We only care about the PID directories
+        if (!is_int(ent->d_name)) {
+            continue;
+        }
+
+        std::string cmdline_path("/proc/");
+        cmdline_path += ent->d_name;
+        cmdline_path += "/cmdline";
+
+        std::string cmdline;
+        util::file_first_line(cmdline_path, &cmdline);
+
+        if (util::starts_with(cmdline.c_str(), "/sbin/ueventd")) {
+            return strtol(ent->d_name, nullptr, 0);
+        }
+    }
+
+    LOGD("uevent doesn't appear to be running");
+    return -1;
 }
 
 bool mount_fstab(const std::string &fstab_path)
@@ -465,6 +506,26 @@ int mount_fstab_main(int argc, char *argv[])
         close(fd);
     }
 #endif
+
+    // Temporarily stop ueventd to prevent it from loading firmware before the
+    // partitions are mounted. The trlte kernel is affected by this. If the
+    // audience es705 firmware fails to load, the driver dereferences a NULL
+    // pointer (due to lack of return value checking...) causing a kernel panic.
+    pid_t ueventd_pid = find_ueventd_pid();
+    if (ueventd_pid > 0) {
+        LOGD("/sbin/ueventd's PID is %d", ueventd_pid);
+
+        int ret = kill(ueventd_pid, SIGSTOP);
+        LOGD("kill(%d, SIGSTOP) = %d: %s", ueventd_pid, ret,
+             ret == 0 ? "Success" : strerror(errno));
+    }
+    auto ueventd_sigcont = util::finally([&]{
+        if (ueventd_pid > 0) {
+            int ret = kill(ueventd_pid, SIGCONT);
+            LOGD("kill(%d, SIGCONT) = %d: %s", ueventd_pid, ret,
+                 ret == 0 ? "Success" : strerror(errno));
+        }
+    });
 
     if (!mount_fstab(argv[optind])) {
         LOGE("Failed to mount filesystems. Rebooting into recovery");
