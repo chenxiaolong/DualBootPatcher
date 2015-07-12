@@ -55,6 +55,7 @@ set(MBP_SOURCES
     ramdiskpatchers/galaxy.cpp
     ramdiskpatchers/ghost.cpp
     ramdiskpatchers/hammerhead.cpp
+    ramdiskpatchers/hllte.cpp
     ramdiskpatchers/hlte.cpp
     ramdiskpatchers/jflte.cpp
     ramdiskpatchers/klimtwifi.cpp

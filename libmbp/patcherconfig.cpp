@@ -48,6 +48,7 @@
 #include "ramdiskpatchers/flo.h"
 #include "ramdiskpatchers/ghost.h"
 #include "ramdiskpatchers/hammerhead.h"
+#include "ramdiskpatchers/hllte.h"
 #include "ramdiskpatchers/hlte.h"
 #include "ramdiskpatchers/jflte.h"
 #include "ramdiskpatchers/klimtwifi.h"
@@ -395,15 +396,14 @@ void PatcherConfig::Impl::loadDefaultDevices()
     std::string n4ExynosRadio(n4ExynosBaseDir); n4ExynosRadio += "/RADIO";
     std::string n4ExynosCdmaRadio(n4ExynosBaseDir); n4ExynosCdmaRadio += "/CDMA-RADIO";
 
-    // https://github.com/CyanogenMod/android_device_samsung_klimtwifi/blob/cm-12.1/rootdir/etc/fstab.universal5420
-    std::string klimtwifiBaseDir("/dev/block/platform/dw_mmc.0/by-name");
-    std::string klimtwifiSystem(klimtwifiBaseDir); klimtwifiSystem += "/SYSTEM";
-    std::string klimtwifiCache(klimtwifiBaseDir); klimtwifiCache += "/CACHE";
-    std::string klimtwifiData(klimtwifiBaseDir); klimtwifiData += "/USERDATA";
-    std::string klimtwifiBoot(klimtwifiBaseDir); klimtwifiBoot += "/BOOT";
-    std::string klimtwifiRecovery(klimtwifiBaseDir); klimtwifiRecovery += "/RECOVERY";
-    std::string klimtwifiRadio(klimtwifiBaseDir); klimtwifiRadio += "/RADIO";
-    std::string klimtwifiCdmaRadio(klimtwifiBaseDir); klimtwifiCdmaRadio += "/CDMA-RADIO";
+    std::string dwmmcBaseDir("/dev/block/platform/dw_mmc.0/by-name");
+    std::string dwmmcSystem(dwmmcBaseDir); dwmmcSystem += "/SYSTEM";
+    std::string dwmmcCache(dwmmcBaseDir); dwmmcCache += "/CACHE";
+    std::string dwmmcData(dwmmcBaseDir); dwmmcData += "/USERDATA";
+    std::string dwmmcBoot(dwmmcBaseDir); dwmmcBoot += "/BOOT";
+    std::string dwmmcRecovery(dwmmcBaseDir); dwmmcRecovery += "/RECOVERY";
+    std::string dwmmcRadio(dwmmcBaseDir); dwmmcRadio += "/RADIO";
+    std::string dwmmcCdmaRadio(dwmmcBaseDir); dwmmcCdmaRadio += "/CDMA-RADIO";
 
     // Samsung Galaxy S 4
     device = new Device();
@@ -427,6 +427,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("serranods");
     device->setCodenames({ "serranods", "serranodsxx" });
     device->setName("Samsung Galaxy S 4 Mini Duos");
+    device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p21" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p22" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p24" });
@@ -477,6 +478,20 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
+    // Samsung Galaxy Note 3 Neo
+    device = new Device();
+    device->setId("hllte");
+    device->setCodenames({ "hllte", "hlltexx" });
+    device->setName("Samsung Galaxy Note 3 Neo");
+    device->setBlockDevBaseDirs({ dwmmcBaseDir });
+    device->setSystemBlockDevs({ dwmmcSystem, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ dwmmcCache, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ dwmmcData, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ dwmmcBoot, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ dwmmcRecovery, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ dwmmcRadio, dwmmcCdmaRadio });
+    devices.push_back(device);
+
     // Samsung Galaxy Note 4 (Snapdragon)
     device = new Device();
     device->setId("trlte");
@@ -513,13 +528,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("klimtwifi");
     device->setCodenames({ "klimtwifi", "klimtwifikx" });
     device->setName("Samsung Galaxy Tab S 8.4 (Wifi)");
-    device->setBlockDevBaseDirs({ klimtwifiBaseDir });
-    device->setSystemBlockDevs({ klimtwifiSystem, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ klimtwifiCache, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ klimtwifiData, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ klimtwifiBoot, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ klimtwifiRecovery, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ klimtwifiRadio, klimtwifiCdmaRadio });
+    device->setBlockDevBaseDirs({ dwmmcBaseDir });
+    device->setSystemBlockDevs({ dwmmcSystem, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ dwmmcCache, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ dwmmcData, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ dwmmcBoot, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ dwmmcRecovery, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ dwmmcRadio, dwmmcCdmaRadio });
     devices.push_back(device);
 
     // Samsung Galaxy Tab Pro 8.4 (Wifi)
@@ -687,6 +702,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         FloAOSPRP::Id,
         GhostRP::Id,
         HammerheadDefaultRP::Id,
+        HllteDefaultRP::Id,
         HlteDefaultRP::Id,
         JflteDefaultRP::Id,
         KlimtwifiDefaultRP::Id,
@@ -779,6 +795,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new GhostRP(this, info, cpio);
     } else if (id == HammerheadDefaultRP::Id) {
         rp = new HammerheadDefaultRP(this, info, cpio);
+    } else if (id == HllteDefaultRP::Id) {
+        rp = new HllteDefaultRP(this, info, cpio);
     } else if (id == HlteDefaultRP::Id) {
         rp = new HlteDefaultRP(this, info, cpio);
     } else if (id == JflteDefaultRP::Id) {
