@@ -91,7 +91,8 @@ static bool switch_rom(const std::string &rom_id)
 static bool wipe_system(const std::string &rom_id)
 {
     Roms roms;
-    roms.add_installed();
+    roms.add_builtin();
+    roms.add_data_roms();
 
     auto rom = roms.find_by_id(rom_id);
     if (!rom) {
@@ -107,7 +108,8 @@ static bool wipe_system(const std::string &rom_id)
 static bool wipe_cache(const std::string &rom_id)
 {
     Roms roms;
-    roms.add_installed();
+    roms.add_builtin();
+    roms.add_data_roms();
 
     auto rom = roms.find_by_id(rom_id);
     if (!rom) {
@@ -123,7 +125,8 @@ static bool wipe_cache(const std::string &rom_id)
 static bool wipe_data(const std::string &rom_id)
 {
     Roms roms;
-    roms.add_installed();
+    roms.add_builtin();
+    roms.add_data_roms();
 
     auto rom = roms.find_by_id(rom_id);
     if (!rom) {
@@ -140,7 +143,8 @@ static bool wipe_data(const std::string &rom_id)
 static bool wipe_dalvik_cache(const std::string &rom_id)
 {
     Roms roms;
-    roms.add_installed();
+    roms.add_builtin();
+    roms.add_data_roms();
 
     auto rom = roms.find_by_id(rom_id);
     if (!rom) {
@@ -163,7 +167,8 @@ static bool wipe_dalvik_cache(const std::string &rom_id)
 static bool wipe_multiboot(const std::string &rom_id)
 {
     Roms roms;
-    roms.add_installed();
+    roms.add_builtin();
+    roms.add_data_roms();
 
     auto rom = roms.find_by_id(rom_id);
     if (!rom) {
