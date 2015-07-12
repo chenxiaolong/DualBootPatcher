@@ -63,6 +63,7 @@ set(MBP_SOURCES
     ramdiskpatchers/lgg3.cpp
     ramdiskpatchers/mondrianwifi.cpp
     ramdiskpatchers/pepper.cpp
+    ramdiskpatchers/serranods.cpp
     ramdiskpatchers/qcom.cpp
     ramdiskpatchers/trelte.cpp
     ramdiskpatchers/trlte.cpp

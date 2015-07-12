@@ -56,6 +56,7 @@
 #include "ramdiskpatchers/lgg3.h"
 #include "ramdiskpatchers/mondrianwifi.h"
 #include "ramdiskpatchers/pepper.h"
+#include "ramdiskpatchers/serranods.h"
 #include "ramdiskpatchers/trelte.h"
 #include "ramdiskpatchers/trlte.h"
 #include "ramdiskpatchers/zerolte.h"
@@ -421,6 +422,18 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ qcomAboot });
     devices.push_back(device);
 
+    // Samsung Galaxy S 4 Mini Duos
+    device = new Device();
+    device->setId("serranods");
+    device->setCodenames({ "serranods", "serranodsxx" });
+    device->setName("Samsung Galaxy S 4 Mini Duos");
+    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p22" });
+    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p24" });
+    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p13" });
+    device->setRecoveryBlockDevs({ qcomRecovery });
+    devices.push_back(device);
+
     // Samsung Galaxy S 5
     device = new Device();
     device->setId("klte");
@@ -682,6 +695,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         LGG3RP::Id,
         MondrianwifiDefaultRP::Id,
         PepperDefaultRP::Id,
+        SerranodsDefaultRP::Id,
         TrelteDefaultRP::Id,
         TrlteDefaultRP::Id,
         ZerolteDefaultRP::Id
@@ -781,6 +795,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new MondrianwifiDefaultRP(this, info, cpio);
     } else if (id == PepperDefaultRP::Id) {
         rp = new PepperDefaultRP(this, info, cpio);
+    } else if (id == SerranodsDefaultRP::Id) {
+        rp = new SerranodsDefaultRP(this, info, cpio);
     } else if (id == TrelteDefaultRP::Id) {
         rp = new TrelteDefaultRP(this, info, cpio);
     } else if (id == TrlteDefaultRP::Id) {
