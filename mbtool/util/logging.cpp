@@ -157,7 +157,14 @@ void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
     }
 
     std::string new_fmt = format("%s" LOG_TAG ": %s\n", kprio, fmt);
-    vsnprintf(_buf, KMSG_BUF_SIZE, new_fmt.c_str(), ap);
+    std::size_t len = vsnprintf(_buf, KMSG_BUF_SIZE, new_fmt.c_str(), ap);
+
+    // Make user aware of any truncation
+    if (len >= KMSG_BUF_SIZE) {
+        static const char trunc[] = " [trunc...]\n";
+        memcpy(_buf + sizeof(_buf) - sizeof(trunc), trunc, sizeof(trunc));
+    }
+
     write(_fd, _buf, strlen(_buf));
     //vdprintf(_fd, new_fmt.c_str(), ap);
 }
