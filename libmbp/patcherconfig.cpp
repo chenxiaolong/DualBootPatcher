@@ -47,6 +47,7 @@
 #include "ramdiskpatchers/falcon.h"
 #include "ramdiskpatchers/flo.h"
 #include "ramdiskpatchers/ghost.h"
+#include "ramdiskpatchers/ha3g.h"
 #include "ramdiskpatchers/hammerhead.h"
 #include "ramdiskpatchers/hllte.h"
 #include "ramdiskpatchers/hlte.h"
@@ -464,18 +465,32 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ s6EdgeRadio });
     devices.push_back(device);
 
-    // Samsung Galaxy Note 3
+    // Samsung Galaxy Note 3 (Snapdragon)
     device = new Device();
     device->setId("hlte");
     device->setCodenames({ "hlte", "hltecan", "hltespr", "hltetmo", "hlteusc",
                            "hltevzw", "hltexx" });
-    device->setName("Samsung Galaxy Note 3");
+    device->setName("Samsung Galaxy Note 3 (Snapdragon)");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ qcomRecovery });
+    devices.push_back(device);
+
+    // Samsung Galaxy Note 3 (Exynos)
+    device = new Device();
+    device->setId("ha3g");
+    device->setCodenames({ "ha3g" });
+    device->setName("Samsung Galaxy Note 3 (Exynos)");
+    device->setBlockDevBaseDirs({ dwmmcBaseDir });
+    device->setSystemBlockDevs({ dwmmcSystem, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ dwmmcCache, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ dwmmcData, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ dwmmcBoot, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ dwmmcRecovery, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ dwmmcRadio, dwmmcCdmaRadio });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3 Neo
@@ -701,6 +716,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
         FalconRP::Id,
         FloAOSPRP::Id,
         GhostRP::Id,
+        Ha3gDefaultRP::Id,
         HammerheadDefaultRP::Id,
         HllteDefaultRP::Id,
         HlteDefaultRP::Id,
@@ -793,6 +809,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
         rp = new FloAOSPRP(this, info, cpio);
     } else if (id == GhostRP::Id) {
         rp = new GhostRP(this, info, cpio);
+    } else if (id == Ha3gDefaultRP::Id) {
+        rp = new Ha3gDefaultRP(this, info, cpio);
     } else if (id == HammerheadDefaultRP::Id) {
         rp = new HammerheadDefaultRP(this, info, cpio);
     } else if (id == HllteDefaultRP::Id) {
