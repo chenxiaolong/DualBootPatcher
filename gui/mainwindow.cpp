@@ -467,7 +467,7 @@ void MainWindow::populateWidgets()
 
     // Populate devices
     for (mbp::Device *device : d->pc->devices()) {
-        d->deviceSel->addItem(QStringLiteral("%1 (%2)")
+        d->deviceSel->addItem(QStringLiteral("%1 - %2")
                 .arg(QString::fromStdString(device->id()))
                 .arg(QString::fromStdString(device->name())));
     }
