@@ -345,7 +345,7 @@ public class MainOptsCW implements PatcherUIListener {
     public void refreshDevices() {
         mDevices.clear();
         for (Device device : PatcherUtils.sPC.getDevices()) {
-            mDevices.add(String.format("%s (%s)", device.getId(), device.getName()));
+            mDevices.add(String.format("%s - %s", device.getId(), device.getName()));
         }
         mDeviceAdapter.notifyDataSetChanged();
     }
