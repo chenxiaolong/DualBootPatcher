@@ -469,7 +469,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 6 Reg./Edge (Sprint)
     device = new Device();
     device->setId("zeroltespr");
-    device->setCodenames({ "zeroltespr" });
+    device->setCodenames({
+        // Regular variant
+        "zerofltespr",
+        // Edge variant
+        "zeroltespr"
+    });
     device->setName("Samsung Galaxy S 6 Reg./Edge (Sprint)");
     device->setArchitecture("arm64-v8a");
     device->setBlockDevBaseDirs({ s6EdgeBaseDir });
