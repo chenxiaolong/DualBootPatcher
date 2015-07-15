@@ -612,7 +612,7 @@ void MainWindow::updateWidgetsVisibility()
 
         if ((d->supported & MainWindowPrivate::SupportedFile) == 0) {
             message.append(newLines);
-            message.append(tr("The file you have selected is not supported. You can attempt to patch the file anyway using the options below."));
+            message.append(tr("The file you have selected does not have a preset. You can customize the patcher using the options below."));
         } else {
             // If the patcher uses patchinfo files, show the detected message
             if (d->patcher->usesPatchInfo()) {
