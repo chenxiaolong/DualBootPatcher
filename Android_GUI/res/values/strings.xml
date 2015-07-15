@@ -259,10 +259,10 @@
 
     <!-- Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching -->
     <string name="filechooser_unsupported_title">Tap to begin patching</string>
-    <!-- Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options -->
+    <!-- Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options -->
     <string name="filechooser_unsupported_desc">Selected file: %s\n\nThe file you have selected
-        is not supported. You can attempt to patch the file anyway using the options
-        below.\n\nTap and hold to choose a different file.</string>
+        does not have a preset. You can customize the patcher using the options above.\n\nTap and
+        hold to choose a different file.</string>
 
     <!-- Title for the file chooser card indicating that the file was successfully patched -->
     <string name="filechooser_success_title">Successfully patched file</string>
