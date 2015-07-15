@@ -511,7 +511,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device = new Device();
     device->setId("trlte");
     device->setCodenames({ "trlte", "trltecan", "trltedt", "trltespr",
-                           "trltetmo", "trlteusc", "trltexx" });
+                           "trltetmo", "trlteusc", "trltevzw", "trltexx" });
     device->setName("Samsung Galaxy Note 4 (Snapdragon)");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
