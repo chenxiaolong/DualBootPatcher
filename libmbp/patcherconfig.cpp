@@ -388,6 +388,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     std::string s6EdgeRadio(s6EdgeBaseDir); s6EdgeRadio += "/RADIO";
 
     // http://forum.xda-developers.com/showpost.php?p=59801273&postcount=5465
+    // http://forum.xda-developers.com/showpost.php?p=61876479&postcount=6443
     std::string n4ExynosBaseDir("/dev/block/platform/15540000.dwmmc0/by-name");
     std::string n4ExynosSystem(n4ExynosBaseDir); n4ExynosSystem += "/SYSTEM";
     std::string n4ExynosCache(n4ExynosBaseDir); n4ExynosCache += "/CACHE";
@@ -450,11 +451,11 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ qcomRecovery });
     devices.push_back(device);
 
-    // Samsung Galaxy S 6 Edge
+    // Samsung Galaxy S 6 Reg./Edge
     device = new Device();
     device->setId("zerolte");
     device->setCodenames({ "zerolte", "zeroltetmo", "zeroltexx" });
-    device->setName("Samsung Galaxy S 6 Edge");
+    device->setName("Samsung Galaxy S 6 Reg./Edge");
     device->setArchitecture("arm64-v8a");
     device->setBlockDevBaseDirs({ s6EdgeBaseDir });
     device->setSystemBlockDevs({ s6EdgeSystem, "/dev/block/sda15" });
@@ -462,6 +463,21 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setDataBlockDevs({ s6EdgeData, "/dev/block/sda17" });
     device->setBootBlockDevs({ s6EdgeBoot, "/dev/block/sda5" });
     device->setRecoveryBlockDevs({ s6EdgeRecovery, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ s6EdgeRadio });
+    devices.push_back(device);
+
+    // Samsung Galaxy S 6 Reg./Edge (Sprint)
+    device = new Device();
+    device->setId("zeroltespr");
+    device->setCodenames({ "zeroltespr" });
+    device->setName("Samsung Galaxy S 6 Reg./Edge (Sprint)");
+    device->setArchitecture("arm64-v8a");
+    device->setBlockDevBaseDirs({ s6EdgeBaseDir });
+    device->setSystemBlockDevs({ s6EdgeSystem, "/dev/block/sda18" });
+    device->setCacheBlockDevs({ s6EdgeCache, "/dev/block/sda19" });
+    device->setDataBlockDevs({ s6EdgeData, "/dev/block/sda21" });
+    device->setBootBlockDevs({ s6EdgeBoot, "/dev/block/sda8" });
+    device->setRecoveryBlockDevs({ s6EdgeRecovery, "/dev/block/sda9" });
     device->setExtraBlockDevs({ s6EdgeRadio });
     devices.push_back(device);
 

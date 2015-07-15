@@ -42,9 +42,9 @@ public:
 
 /*!
     \class ZerolteRP
-    \brief Handles common ramdisk patching operations for the Samsung Galaxy S 6 Edge
+    \brief Handles common ramdisk patching operations for the Samsung Galaxy S 6 Reg./Edge
 
-    This patcher handles the patching of ramdisks for the Samsung Galaxy S 6 Edge.
+    This patcher handles the patching of ramdisks for the Samsung Galaxy S 6 Reg./Edge.
     Starting from version 9.0.0, every Android ramdisk is supported.
  */
 
@@ -105,6 +105,22 @@ bool ZerolteDefaultRP::patchRamdisk()
     }
 
     return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const std::string ZeroltesprDefaultRP::Id = "zeroltespr/default";
+
+ZeroltesprDefaultRP::ZeroltesprDefaultRP(const PatcherConfig * const pc,
+                                         const FileInfo *const info,
+                                         CpioFile *const cpio)
+    : ZerolteDefaultRP(pc, info, cpio)
+{
+}
+
+std::string ZeroltesprDefaultRP::id() const
+{
+    return Id;
 }
 
 }

@@ -63,4 +63,16 @@ public:
     virtual bool patchRamdisk() override;
 };
 
+class ZeroltesprDefaultRP : public ZerolteDefaultRP
+{
+public:
+    explicit ZeroltesprDefaultRP(const PatcherConfig * const pc,
+                                 const FileInfo * const info,
+                                 CpioFile * const cpio);
+
+    static const std::string Id;
+
+    virtual std::string id() const override;
+};
+
 }
