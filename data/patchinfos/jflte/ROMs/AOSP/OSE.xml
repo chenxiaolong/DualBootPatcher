@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>OSE nightly</name>
-    <regex>^OSE-.+\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

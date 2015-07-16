@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>PAC-Man</name>
-    <regex>^pac_[a-z0-9]+_.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

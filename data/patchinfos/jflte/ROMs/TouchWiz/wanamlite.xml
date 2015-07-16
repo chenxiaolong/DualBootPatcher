@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>WanamLite</name>
-    <regex>^GT-I9505_WanamLite.+\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

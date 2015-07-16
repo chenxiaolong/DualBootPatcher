@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>BAM Android</name>
-    <regex>^BAM-Rom.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

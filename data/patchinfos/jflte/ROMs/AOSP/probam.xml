@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>AOSB/ProBAM</name>
-    <regex>^(aosb|probam).*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

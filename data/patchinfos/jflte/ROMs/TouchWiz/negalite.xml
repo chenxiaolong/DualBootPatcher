@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Negalite</name>
-    <regex>^negalite-.+\.zip</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

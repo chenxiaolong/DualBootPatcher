@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>MIUI (Tquetski)</name>
-    <regex>^MIUIv5-S4International-.+\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

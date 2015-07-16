@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>IOKP</name>
-    <regex>^iokp_.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

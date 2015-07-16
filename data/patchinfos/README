@@ -1,9 +1,5 @@
 "Google_Apps" and "Other" are hardcoded folders. All files will be read from
 these folders regardless of what device the patch is for.
 
-To add support for a new device, create a new folder with the device name.
-
-Currently supported devices:
-
-  jflte      -- Qualcomm Samsung Galaxy S4
-  hammerhead -- Google/LG Nexus 5
+Device-specific patchinfo files should be named after the device ID, as
+specified in patcherconfig.cpp.

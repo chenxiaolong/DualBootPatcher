@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Smasher X</name>
-    <regex>^Smasher X.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Infamous kernel</name>
-    <regex>^Infamous_S4_Kernel.v.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

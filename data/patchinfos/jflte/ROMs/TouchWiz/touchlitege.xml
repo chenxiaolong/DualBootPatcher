@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>TouchliteGE TouchWiz</name>
-    <regex>^touchliteGE.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

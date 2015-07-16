@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>AOKP Google Apps</name>
-    <regex>^aokp-(full_|mini_)?gapps.+\.zip$</regex>
-
-    <has-boot-image>false</has-boot-image>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

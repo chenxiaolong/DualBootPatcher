@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>jamal2367's Google Edition</name>
-    <regex>^I9505_-_Official_Google_Edition_.*Jamal2367.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Dandroid</name>
-    <regex>^([Dd]anvdh-GP?E|Dandroid).*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

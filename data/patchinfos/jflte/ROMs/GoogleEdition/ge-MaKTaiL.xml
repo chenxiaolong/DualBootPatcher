@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>MaKTaiL's Google Edition</name>
-    <regex>^i9505-ge-untouched-4.3-.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

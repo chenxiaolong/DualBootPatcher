@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>ChronicKernel</name>
-    <regex>^ChronicKernel-KK4.4-AOSP-.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

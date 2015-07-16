@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>SlimRoms Google Apps</name>
-    <regex>^Slim_AIO_gapps.*.zip$</regex>
-
-    <has-boot-image>false</has-boot-image>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Imperium</name>
-    <regex>^Imperium_.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

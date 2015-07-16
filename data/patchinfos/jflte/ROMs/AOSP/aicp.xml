@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>AICP ROM</name>
-    <regex>^aicp_.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

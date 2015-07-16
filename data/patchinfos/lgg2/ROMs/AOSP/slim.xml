@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>SlimRoms</name>
-    <regex>^Slim-.*.zip$</regex>
-
-    <ramdisk>lgg2/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

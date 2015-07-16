@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>CyanFox</name>
-    <regex>^CyanFox.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

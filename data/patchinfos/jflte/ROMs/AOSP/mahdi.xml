@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Mahdi</name>
-    <regex>^mahdi-.*jflte.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

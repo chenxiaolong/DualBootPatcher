@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Alucard TouchWiz kernel</name>
-    <regex>^Kernel-Alucard.*TW.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

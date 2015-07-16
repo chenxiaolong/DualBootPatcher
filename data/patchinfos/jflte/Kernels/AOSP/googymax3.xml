@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>GoogyMax3 CyanogenMod Kernel</name>
-    <regex>GoogyMax3_CM.+\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

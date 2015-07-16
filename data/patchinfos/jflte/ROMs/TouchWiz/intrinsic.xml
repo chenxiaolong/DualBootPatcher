@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>iNTriNsiC</name>
-    <regex>iNTriNsiC 8-6-13.zip</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>BeanStalk</name>
-    <regex>^BeanStalk-.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

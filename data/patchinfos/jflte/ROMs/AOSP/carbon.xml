@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Carbon</name>
-    <regex>CARBON-(JB|KK)-.*-[a-z0-9]+\.zip</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

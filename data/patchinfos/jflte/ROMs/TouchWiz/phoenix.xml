@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>PhoeniX</name>
-    <regex>^PhoeniX.ROM.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

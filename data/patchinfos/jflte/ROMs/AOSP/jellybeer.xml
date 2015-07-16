@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>JellyBeer</name>
-    <regex>^JellyBeer-.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

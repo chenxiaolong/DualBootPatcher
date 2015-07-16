@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>AOKP</name>
-    <regex>^aokp_hammerhead_.*\.zip$</regex>
-
-    <ramdisk>hammerhead/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

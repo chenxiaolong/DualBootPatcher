@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>Adam kernel</name>
-    <regex>^.*_AdamKernel.V[0-9\.]+\.CWM\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>

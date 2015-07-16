@@ -1,9 +1,0 @@
-<patchinfo>
-    <name>BoBCaTROM</name>
-    <regex>^.*BoBCaTROM_GE.*\.zip$</regex>
-
-    <ramdisk>jflte/default</ramdisk>
-    <autopatchers>
-        <autopatcher>StandardPatcher</autopatcher>
-    </autopatchers>
-</patchinfo>
