@@ -456,9 +456,9 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("zerolte");
     device->setCodenames({
         // Regular variant
-        "zeroflte", "zerofltetmo", "zerofltexx",
+        "zeroflte", "zerofltebmc", "zerofltetmo", "zerofltexx",
         // Edge variant
-        "zerolte", "zeroltetmo", "zeroltexx"
+        "zerolte", "zeroltebmc", "zeroltetmo", "zeroltexx"
     });
     device->setName("Samsung Galaxy S 6 Reg./Edge");
     device->setArchitecture("arm64-v8a");
