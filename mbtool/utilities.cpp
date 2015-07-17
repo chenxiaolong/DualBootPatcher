@@ -46,6 +46,23 @@
 namespace mb
 {
 
+static bool wipe_directory_print(const std::string &mountpoint, bool wipe_media)
+{
+    LOGV("Wiping %s%s", mountpoint.c_str(),
+         wipe_media ? "" : " (excluding media directory)");
+    bool ret = wipe_directory(mountpoint, wipe_media);
+    LOGV("-> %s", ret ? "Succeeded" : "Failed");
+    return ret;
+}
+
+static bool delete_recursive_print(const std::string &path)
+{
+    LOGV("Recursively deleting %s", path.c_str());
+    bool ret = util::delete_recursive(path);
+    LOGV("-> %s", ret ? "Succeeded" : "Failed");
+    return ret;
+}
+
 static bool switch_rom(const std::string &rom_id)
 {
     mbp::PatcherConfig pc;
@@ -99,7 +116,7 @@ static bool wipe_system(const std::string &rom_id)
         return false;
     }
 
-    bool ret = wipe_directory(rom->system_path, true);
+    bool ret = wipe_directory_print(rom->system_path, true);
     // Try removing ROM's /system if it's empty
     remove(rom->system_path.c_str());
     return ret;
@@ -116,7 +133,7 @@ static bool wipe_cache(const std::string &rom_id)
         return false;
     }
 
-    bool ret = wipe_directory(rom->cache_path, true);
+    bool ret = wipe_directory_print(rom->cache_path, true);
     // Try removing ROM's /cache if it's empty
     remove(rom->cache_path.c_str());
     return ret;
@@ -133,7 +150,7 @@ static bool wipe_data(const std::string &rom_id)
         return false;
     }
 
-    bool ret = wipe_directory(rom->data_path, false);
+    bool ret = wipe_directory_print(rom->data_path, false);
     // Try removing ROM's /data/media and /data if they're empty
     remove((rom->data_path + "/media").c_str());
     remove(rom->data_path.c_str());
@@ -160,8 +177,8 @@ static bool wipe_dalvik_cache(const std::string &rom_id)
     // util::delete_recursive() returns true if the path does not
     // exist (ie. returns false only on errors), which is exactly
     // what we want
-    return util::delete_recursive(data_path)
-            && util::delete_recursive(cache_path);
+    return delete_recursive_print(data_path)
+            && delete_recursive_print(cache_path);
 }
 
 static bool wipe_multiboot(const std::string &rom_id)
@@ -178,7 +195,7 @@ static bool wipe_multiboot(const std::string &rom_id)
     // Delete /data/media/0/MultiBoot/[ROM ID]
     std::string multiboot_path("/data/media/0/MultiBoot/");
     multiboot_path += rom->id;
-    return util::delete_recursive(multiboot_path);
+    return delete_recursive_print(multiboot_path);
 }
 
 static void generate_aroma_config(std::vector<unsigned char> *data)
