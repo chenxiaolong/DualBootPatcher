@@ -137,10 +137,7 @@ arquivos a serem adaptados.</string>
 Clique e mantenha pressionado para escolher outro ficheiro.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Toque para começar a adaptação</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Seleccionado o ficheiro: %s\n\nO ficheiro escolhido não é suportado.
-Pode tentar adaptar o ficheiro usando as opções abaixo.
-Clique e mantenha pressionado para escolher outro ficheiro.</string>
+  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Arquivo adaptado com sucesso</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -190,7 +187,8 @@ Clique para escolher outro ficheiro a adaptar.</string>
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the application sharing section of the ROM Settings-->
+  <!--Title for the global application sharing section of the ROM Settings-->
+  <!--Title for the individual application sharing section of the ROM settings-->
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->

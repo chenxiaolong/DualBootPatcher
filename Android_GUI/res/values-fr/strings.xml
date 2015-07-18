@@ -194,10 +194,7 @@ spécifiées.</string>
 Appuyez et maintenez pour choisir un fichier different.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Appuyer pour commencer le patchage</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Fichier sélectionné: %s 
-Le fichier que vous avez sélectionné n\'est pas supporté. Vous pouvez essayer de patcher le fichier de toute façon en utilisant les options ci-dessous.
-Tapez et maintenez pour choisir un fichier différent.</string>
+  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Fichier patché avec succès</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -248,8 +245,8 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the application sharing section of the ROM Settings-->
-  <string name="a_s_settings_app_sharing_title">Partage d\'applications (EXPERIMENTAL)</string>
+  <!--Title for the global application sharing section of the ROM Settings-->
+  <!--Title for the individual application sharing section of the ROM settings-->
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="a_s_settings_share_apps_title">Partager des applications</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->

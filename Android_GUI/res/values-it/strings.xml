@@ -192,8 +192,7 @@
   <string name="filechooser_ready_desc">File selezionato: %s\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Fai un tap per iniziare il processo di patching.</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file che hai selezionato non è supportato. Puoi comunque provare a patchare il file utilizzando le opzioni aggiuntive.\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
+  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">File patchato con successo</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -242,8 +241,8 @@
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the application sharing section of the ROM Settings-->
-  <string name="a_s_settings_app_sharing_title">Condivisione applicazioni (SPERIMENTALE)</string>
+  <!--Title for the global application sharing section of the ROM Settings-->
+  <!--Title for the individual application sharing section of the ROM settings-->
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="a_s_settings_share_apps_title">Condividi le applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->

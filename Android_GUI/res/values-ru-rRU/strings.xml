@@ -136,8 +136,7 @@
   <string name="filechooser_ready_desc">Выбранный файлы: %s\n\nНажмите и удерживайте для выбора другого файла</string>
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Нажмите чтобы начать прошивку</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file is not supported. The file can still be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">Выбранный файл: %s\n\nВыбранный файл не поддерживается. Вы можете попробовать пропатчить файл используя настройки ниже.\n\nНажмите и удерживайте для выбора другого файла</string>
+  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Прошивка завершена успешно</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -186,7 +185,8 @@
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the application sharing section of the ROM Settings-->
+  <!--Title for the global application sharing section of the ROM Settings-->
+  <!--Title for the individual application sharing section of the ROM settings-->
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
   <!--Name of the preference for globally sharing paid applications from the primary ROM-->
