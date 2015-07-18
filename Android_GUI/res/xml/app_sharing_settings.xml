@@ -20,8 +20,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-        android:key="app_sharing_category"
-        android:title="@string/a_s_settings_app_sharing_title">
+        android:title="@string/a_s_settings_global_app_sharing_section_title">
 
         <CheckBoxPreference
             android:key="share_apps"
@@ -31,6 +30,10 @@
             android:key="share_paid_apps"
             android:persistent="false"
             android:title="@string/a_s_settings_share_paid_apps_title" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/a_s_settings_indiv_app_sharing_section_title">
 
         <CheckBoxPreference
             android:key="share_indiv_apps"
