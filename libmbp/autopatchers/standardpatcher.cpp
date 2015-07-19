@@ -269,9 +269,11 @@ void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
             RE_FUNC("delete_recursive", RE_ARG("/cache")));
     static auto const re4 = std::regex(
             RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh")));
+    static auto const re5 = std::regex(
+            RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/mke2fs")));
 
     for (auto it = lines->begin(); it != lines->end(); ++it) {
-        if (std::regex_search(*it, re1)) {
+        if (std::regex_search(*it, re1) || std::regex_search(*it, re5)) {
             bool isSystem = it->find("/system") != std::string::npos
                     || findItemsInString(*it, systemDevs);
             bool isCache = it->find("/cache") != std::string::npos
