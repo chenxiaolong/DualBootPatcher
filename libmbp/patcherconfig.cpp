@@ -552,8 +552,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Note 4 (Exynos)
     device = new Device();
     device->setId("trelte");
-    device->setCodenames({ "trelte", "treltektt", "treltelgt", "trelteskt",
-                           "treltexx" });
+    device->setCodenames({
+        // N910C
+        "trelte", "treltektt", "treltelgt", "trelteskt", "treltexx",
+        // N910H
+        "tre3g"
+    });
     device->setName("Samsung Galaxy Note 4 (Exynos)");
     device->setBlockDevBaseDirs({ n4ExynosBaseDir });
     device->setSystemBlockDevs({ n4ExynosSystem, "/dev/block/mmcblk0p18" });
