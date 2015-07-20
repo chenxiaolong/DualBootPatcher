@@ -44,6 +44,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
@@ -306,6 +307,21 @@ public class MainOptsCW implements PatcherUIListener {
             expandDataSlotId();
         } else {
             collapseDataSlotId();
+        }
+
+        // Select our device on initial startup
+        if (savedInstanceState == null) {
+            String realCodename = RomUtils.getDeviceCodename(mContext);
+            Device[] devices = PatcherUtils.sPC.getDevices();
+            outer:
+            for (int i = 0; i < devices.length; i++) {
+                for (String codename : devices[i].getCodenames()) {
+                    if (realCodename.equals(codename)) {
+                        vDeviceSpinner.setSelection(i);
+                        break outer;
+                    }
+                }
+            }
         }
     }
 
