@@ -21,6 +21,7 @@
 
 #include <algorithm>
 
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -46,6 +47,7 @@
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/directory.h"
+#include "util/file.h"
 #include "util/finally.h"
 #include "util/fts.h"
 #include "util/logging.h"
@@ -427,9 +429,19 @@ static int create_new_socket()
 /*!
  * \brief Receive a message from a socket
  */
-static bool receive_message(int fd, char *buf, std::size_t size)
+static bool receive_message(int fd, char *buf, std::size_t size,
+                            bool is_async, int *async_id)
 {
     unsigned short count;
+
+    if (is_async) {
+        assert(async_id != nullptr);
+
+        if (!util::socket_read_int32(fd, async_id)) {
+            LOGE("Failed to receive async command ID: %s", strerror(errno));
+            return false;
+        }
+    }
 
     if (!util::socket_read_uint16(fd, &count)) {
         LOGE("Failed to read command size: %s", strerror(errno));
@@ -454,9 +466,17 @@ static bool receive_message(int fd, char *buf, std::size_t size)
 /*!
  * \brief Send a message to a socket
  */
-static bool send_message(int fd, const char *command)
+static bool send_message(int fd, const char *command,
+                         bool is_async, int async_id)
 {
     unsigned short count = strlen(command);
+
+    if (is_async) {
+        if (!util::socket_write_int32(fd, async_id)) {
+            LOGE("Failed to write async command ID: %s", strerror(errno));
+            return false;
+        }
+    }
 
     if (!util::socket_write_uint16(fd, count)) {
         LOGE("Failed to write command size: %s", strerror(errno));
@@ -724,6 +744,14 @@ static bool proxy_process(int fd, bool can_appsync)
             close(installd_fd);
         });
 
+        // Check if we're using some variant of the CyanogenMood async installd
+        // NOTE: We'll effectively make the connection sychronous because we
+        //       always wait for a reply before receiving the next command.
+        // See: https://github.com/CyanogenMod/android_frameworks_native/commit/8124b181d4b5a3a44796fdb0e3ea4e4171f102c7
+        bool is_async = util::file_find_one_of(
+                INSTALLD_PATH, { "failed to read transaction id" });
+        LOGD("installd is CyanogenMod async version: %d", is_async);
+
         // Use the same buffer size as installd
         char buf[COMMAND_BUF_SIZE];
 
@@ -735,7 +763,10 @@ static bool proxy_process(int fd, bool can_appsync)
             uint64_t time_start_hook = 0, time_stop_hook = 0;
             uint64_t time_start_send, time_stop_send;
 
-            if (!receive_message(client_fd, buf, sizeof(buf))) {
+            int async_id;
+
+            if (!receive_message(
+                    client_fd, buf, sizeof(buf), is_async, &async_id)) {
                 LOGE("Failed to receive request from client");
                 break;
             }
@@ -800,11 +831,12 @@ static bool proxy_process(int fd, bool can_appsync)
             }
 
             time_start_installd = util::current_time_ms();
-            if (!send_message(installd_fd, buf)) {
+            if (!send_message(installd_fd, buf, is_async, async_id)) {
                 LOGE("Failed to send request to installd");
                 return false;
             }
-            if (!receive_message(installd_fd, buf, sizeof(buf))) {
+            if (!receive_message(
+                    installd_fd, buf, sizeof(buf), is_async, &async_id)) {
                 LOGE("Failed to receive reply from installd");
                 return false;
             }
@@ -817,7 +849,7 @@ static bool proxy_process(int fd, bool can_appsync)
             }
 
             time_start_send = util::current_time_ms();
-            if (!send_message(client_fd, buf)) {
+            if (!send_message(client_fd, buf, is_async, async_id)) {
                 LOGE("Failed to send reply to client");
                 break;
             }
