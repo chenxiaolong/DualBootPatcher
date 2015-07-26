@@ -33,7 +33,6 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <sys/wait.h>
-#include <sys/xattr.h>
 #include <unistd.h>
 
 #include <jansson.h>
@@ -247,9 +246,8 @@ static void create_layout_version()
         LOGE("Failed to open /data/.layout_version to disable migration");
     }
 
-    static std::string context("u:object_r:install_data_file:s0");
-    if (lsetxattr("/data/.layout_version", "security.selinux",
-                  context.c_str(), context.size() + 1, 0) < 0) {
+    if (!util::selinux_set_context(
+            "/data/.layout_version", "u:object_r:install_data_file:s0")) {
         LOGE("%s: Failed to set SELinux context: %s",
              "/data/.layout_version", strerror(errno));
     }
