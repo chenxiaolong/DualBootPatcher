@@ -32,6 +32,7 @@
 #else
 #include "appsync.h"
 #include "daemon.h"
+#include "init.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
 #endif
@@ -66,6 +67,7 @@ struct tool tools[] = {
 #else
     { "appsync", mb::appsync_main },
     { "daemon", mb::daemon_main },
+    { "init", mb::init_main },
     { "mount_fstab", mb::mount_fstab_main },
     { "sepolpatch", mb::sepolpatch_main },
 #endif

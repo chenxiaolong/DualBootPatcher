@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <sys/wait.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 #include <jansson.h>
@@ -51,6 +52,7 @@
 #include "util/finally.h"
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/properties.h"
 #include "util/selinux.h"
 #include "util/socket.h"
 #include "util/string.h"
@@ -80,6 +82,8 @@
 
 namespace mb
 {
+
+typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 static RomConfig config;
 static Packages packages;
@@ -204,6 +208,50 @@ static void patch_sepolicy_wrapper()
         if (attempt == 5) {
             LOGW("Failed to patch current SELinux policy");
         }
+    }
+}
+
+static unsigned long get_api_version(void)
+{
+    std::string api_str;
+    util::file_get_property("/system/build.prop",
+                            "ro.build.version.sdk",
+                            &api_str, "");
+
+    char *temp;
+    unsigned long api = strtoul(api_str.c_str(), &temp, 0);
+    if (*temp == '\0') {
+        return api;
+    } else {
+        return 0;
+    }
+}
+
+static void create_layout_version()
+{
+    // Prevent installd from dying because it can't unmount /data/media for
+    // multi-user migration. Since <= 4.2 devices aren't supported anyway,
+    // we'll bypass this.
+    file_ptr fp(std::fopen("/data/.layout_version", "wb"), std::fclose);
+    if (fp) {
+        const char *layout_version;
+        if (get_api_version() >= 21) {
+            layout_version = "3";
+        } else {
+            layout_version = "2";
+        }
+
+        fwrite(layout_version, 1, strlen(layout_version), fp.get());
+        fp.reset();
+    } else {
+        LOGE("Failed to open /data/.layout_version to disable migration");
+    }
+
+    static std::string context("u:object_r:install_data_file:s0");
+    if (lsetxattr("/data/.layout_version", "security.selinux",
+                  context.c_str(), context.size() + 1, 0) < 0) {
+        LOGE("%s: Failed to set SELinux context: %s",
+             "/data/.layout_version", strerror(errno));
     }
 }
 
@@ -1034,6 +1082,9 @@ int appsync_main(int argc, char *argv[])
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
 
     LOGI("=== APPSYNC VERSION %s ===", MBP_VERSION);
+
+    LOGI("Creating /data/.layout_version");
+    create_layout_version();
 
     LOGI("Calling restorecon on /data/media/obb");
     util::run_command({ "restorecon", "-R", "-F", "/data/media/obb" });

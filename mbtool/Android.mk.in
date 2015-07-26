@@ -134,6 +134,7 @@ mbtool_src_base := \
 	appsync.cpp \
 	appsyncmanager.cpp \
 	daemon.cpp \
+	init.cpp \
 	main.cpp \
 	mount_fstab.cpp \
 	multiboot.cpp \
@@ -146,6 +147,9 @@ mbtool_src_base := \
 	external/android_reboot.c \
 	external/mntent.c \
 	external/sha.c \
+	initwrapper/cutils/uevent.cpp \
+	initwrapper/devices.cpp \
+	initwrapper/util.cpp \
 	$(EXTERNAL_DIR)/pugixml/src/pugixml.cpp
 
 mbtool_src_recovery := \

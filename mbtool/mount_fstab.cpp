@@ -32,7 +32,6 @@
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
-#include <sys/xattr.h>
 #include <unistd.h>
 
 #include "reboot.h"
@@ -59,7 +58,6 @@ namespace mb
 {
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
-typedef std::unique_ptr<DIR, int (*)(DIR *)> dir_ptr;
 
 static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
                                  const std::vector<util::fstab_rec *> flags,
@@ -134,61 +132,44 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
     return false;
 }
 
-static unsigned long get_api_version(void)
+static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
 {
-    std::string api_str;
-    util::file_get_property("/system/build.prop",
-                            "ro.build.version.sdk",
-                            &api_str, "");
+    std::string config_path("/data/media/0/MultiBoot/");
+    config_path += rom->id;
+    config_path += "/config.json";
 
-    char *temp;
-    unsigned long api = strtoul(api_str.c_str(), &temp, 0);
-    if (*temp == '\0') {
-        return api;
-    } else {
-        return 0;
-    }
-}
-
-static bool is_int(const char *str)
-{
-    char *temp;
-    strtol(str, &temp, 0);
-    return *temp == '\0';
-}
-
-static pid_t find_ueventd_pid()
-{
-    dir_ptr dir(opendir("/proc"), closedir);
-    if (!dir) {
-        LOGE("Failed to open /proc");
-        return -1;
-    }
-
-    struct dirent *ent;
-    while ((ent = readdir(dir.get()))) {
-        // We only care about the PID directories
-        if (!is_int(ent->d_name)) {
-            continue;
-        }
-
-        std::string cmdline_path("/proc/");
-        cmdline_path += ent->d_name;
-        cmdline_path += "/cmdline";
-
-        std::string cmdline;
-        util::file_first_line(cmdline_path, &cmdline);
-
-        if (util::starts_with(cmdline.c_str(), "/sbin/ueventd")) {
-            return strtol(ent->d_name, nullptr, 0);
+    RomConfig config;
+    if (config.load_file(config_path)) {
+        if (config.indiv_app_sharing && (config.global_app_sharing
+                || config.global_paid_app_sharing)) {
+            LOGW("Both individual and global sharing are enabled");
+            LOGW("Global sharing settings will be ignored");
+        } else {
+            if (config.global_app_sharing || config.global_paid_app_sharing) {
+                if (!util::bind_mount("/raw/data/app-lib", 0771,
+                                      "/data/app-lib", 0771)) {
+                    return false;
+                }
+            }
+            if (config.global_app_sharing) {
+                if (!util::bind_mount("/raw/data/app", 0771,
+                                      "/data/app", 0771)) {
+                    return false;
+                }
+            }
+            if (config.global_paid_app_sharing) {
+                if (!util::bind_mount("/raw/data/app-asec", 0771,
+                                      "/data/app-asec", 0771)) {
+                    return false;
+                }
+            }
         }
     }
 
-    LOGD("uevent doesn't appear to be running");
-    return -1;
+    return true;
 }
 
-bool mount_fstab(const std::string &fstab_path)
+bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 {
     bool ret = true;
 
@@ -283,6 +264,11 @@ bool mount_fstab(const std::string &fstab_path)
     }
 
     out.reset();
+
+    if (overwrite_fstab) {
+        unlink(fstab_path.c_str());
+        rename(path_fstab_gen.c_str(), fstab_path.c_str());
+    }
 
     // /system and /data are always in the fstab. The patcher should create
     // an entry for /cache for the ROMs that mount it manually in one of the
@@ -387,63 +373,8 @@ bool mount_fstab(const std::string &fstab_path)
         return false;
     }
 
-    // Prevent installd from dying because it can't unmount /data/media for
-    // multi-user migration. Since <= 4.2 devices aren't supported anyway,
-    // we'll bypass this.
-    file_ptr fp(std::fopen("/data/.layout_version", "wb"), std::fclose);
-    if (fp) {
-        const char *layout_version;
-        if (get_api_version() >= 21) {
-            layout_version = "3";
-        } else {
-            layout_version = "2";
-        }
-
-        fwrite(layout_version, 1, strlen(layout_version), fp.get());
-        fp.reset();
-    } else {
-        LOGE("Failed to open /data/.layout_version to disable migration");
-    }
-
-    static std::string context("u:object_r:install_data_file:s0");
-    if (lsetxattr("/data/.layout_version", "security.selinux",
-                  context.c_str(), context.size() + 1, 0) < 0) {
-        LOGE("%s: Failed to set SELinux context: %s",
-             "/data/.layout_version", strerror(errno));
-    }
-
-
-    // Global app sharing
-    std::string config_path("/data/media/0/MultiBoot/");
-    config_path += rom->id;
-    config_path += "/config.json";
-
-    RomConfig config;
-    if (config.load_file(config_path)) {
-        if (config.indiv_app_sharing && (config.global_app_sharing
-                || config.global_paid_app_sharing)) {
-            LOGW("Both individual and global sharing are enabled");
-            LOGW("Global sharing settings will be ignored");
-        } else {
-            if (config.global_app_sharing || config.global_paid_app_sharing) {
-                if (!util::bind_mount("/raw/data/app-lib", 0771,
-                                      "/data/app-lib", 0771)) {
-                    return false;
-                }
-            }
-            if (config.global_app_sharing) {
-                if (!util::bind_mount("/raw/data/app", 0771,
-                                      "/data/app", 0771)) {
-                    return false;
-                }
-            }
-            if (config.global_paid_app_sharing) {
-                if (!util::bind_mount("/raw/data/app-asec", 0771,
-                                      "/data/app-asec", 0771)) {
-                    return false;
-                }
-            }
-        }
+    if (!apply_global_app_sharing(rom)) {
+        return false;
     }
 
     return true;
@@ -507,27 +438,7 @@ int mount_fstab_main(int argc, char *argv[])
     }
 #endif
 
-    // Temporarily stop ueventd to prevent it from loading firmware before the
-    // partitions are mounted. The trlte kernel is affected by this. If the
-    // audience es705 firmware fails to load, the driver dereferences a NULL
-    // pointer (due to lack of return value checking...) causing a kernel panic.
-    pid_t ueventd_pid = find_ueventd_pid();
-    if (ueventd_pid > 0) {
-        LOGD("/sbin/ueventd's PID is %d", ueventd_pid);
-
-        int ret = kill(ueventd_pid, SIGSTOP);
-        LOGD("kill(%d, SIGSTOP) = %d: %s", ueventd_pid, ret,
-             ret == 0 ? "Success" : strerror(errno));
-    }
-    auto ueventd_sigcont = util::finally([&]{
-        if (ueventd_pid > 0) {
-            int ret = kill(ueventd_pid, SIGCONT);
-            LOGD("kill(%d, SIGCONT) = %d: %s", ueventd_pid, ret,
-                 ret == 0 ? "Success" : strerror(errno));
-        }
-    });
-
-    if (!mount_fstab(argv[optind])) {
+    if (!mount_fstab(argv[optind], false)) {
         LOGE("Failed to mount filesystems. Rebooting into recovery");
         reboot_directly("recovery");
         return EXIT_FAILURE;
