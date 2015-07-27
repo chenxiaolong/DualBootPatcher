@@ -49,9 +49,6 @@ public:
     bool addAppsyncService();
     bool disableInstalldService();
 
-    bool fixChargerMount(const std::string &filename);
-    bool fixChargerMountAuto();
-
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

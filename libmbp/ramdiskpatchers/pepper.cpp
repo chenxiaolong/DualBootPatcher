@@ -106,11 +106,6 @@ bool PepperDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (!corePatcher.fixChargerMountAuto()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
     std::vector<unsigned char> newContents;
     if (!cpioInCpio.createData(&newContents)) {
         m_impl->error = cpioInCpio.error();

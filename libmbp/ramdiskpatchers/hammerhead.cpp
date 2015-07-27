@@ -84,11 +84,6 @@ bool HammerheadDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (!corePatcher.fixChargerMountAuto()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
     if (!qcomPatcher.stripManualMounts("init.hammerhead.rc")) {
         m_impl->error = qcomPatcher.error();
         return false;

@@ -52,13 +52,6 @@ static const std::string MbtoolDaemonService =
         "    user root\n"
         "    oneshot\n";
 
-static const char *MbtoolMountServiceFmt =
-        "\nservice %s /mbtool mount_fstab %s\n"
-        "    class core\n"
-        "    critical\n"
-        "    oneshot\n"
-        "    disabled\n";
-
 static const std::string MbtoolAppsyncService =
         "\nservice appsync /mbtool appsync\n"
         "    class main\n"
@@ -250,72 +243,6 @@ bool CoreRP::disableInstalldService()
 
     contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents(InitRc, std::move(contents));
-
-    return true;
-}
-
-static std::string whitespace(const std::string &str) {
-    auto nonSpace = std::find_if(str.begin(), str.end(),
-                                 std::not1(std::ptr_fun<int, int>(isspace)));
-    int count = std::distance(str.begin(), nonSpace);
-
-    return str.substr(0, count);
-}
-
-bool CoreRP::fixChargerMount(const std::string &filename)
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(filename, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    if (m_impl->fstabs.empty()) {
-        // NOTE: This function should be called after useGeneratedFstab()
-        return true;
-    }
-
-    // Paths
-    std::string dirName = io::dirName(m_impl->fstabs[0]);
-    std::string baseName = io::baseName(m_impl->fstabs[0]);
-    std::string completed = dirName + "/." + baseName + ".completed";
-
-    std::string previousLine;
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    static auto const reMountSystem = std::regex("mount.*/system");
-    static auto const reOnCharger = std::regex("on\\s+charger");
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, reMountSystem)
-                && (std::regex_search(previousLine, reOnCharger)
-                || previousLine.find("ro.bootmode=charger") != std::string::npos)) {
-            std::string spaces = whitespace(*it);
-            *it = spaces + "start mbtool-mount-000";
-            it = lines.insert(++it, spaces + "wait " + completed + " 15");
-        }
-
-        previousLine = *it;
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    m_impl->cpio->setContents(filename, std::move(contents));
-
-    return true;
-}
-
-bool CoreRP::fixChargerMountAuto()
-{
-    for (const std::string &file : m_impl->cpio->filenames()) {
-        if (file.find('/') == std::string::npos
-                && StringUtils::starts_with(file, "init.")
-                && StringUtils::ends_with(file, ".rc")) {
-            if (!fixChargerMount(file)) {
-                return false;
-            }
-        }
-    }
 
     return true;
 }
