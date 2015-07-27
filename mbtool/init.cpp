@@ -116,9 +116,20 @@ static std::string find_fstab()
                 }
             }
 
+            // Check if we need to strip "/." and ".gen" to remain compatible
+            // with boot images patched by an older version of libmbp
+            char *slash_ptr = strstr(ptr, "/.");
+            if (slash_ptr && util::ends_with(slash_ptr, ".gen")) {
+                ptr = slash_ptr + 2;
+                ptr[strlen(ptr) - 4] = '\0';
+            }
+
+            LOGD("Trying fstab: %s", ptr);
+
             // Check if fstab exists
             struct stat sb;
             if (stat(ptr, &sb) < 0) {
+                LOGE("Failed to stat fstab %s: %s", ptr, strerror(errno));
                 continue;
             }
 

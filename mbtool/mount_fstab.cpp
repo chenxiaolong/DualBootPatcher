@@ -39,6 +39,7 @@
 #include "roms.h"
 #include "sepolpatch.h"
 #include "util/cmdline.h"
+#include "util/copy.h"
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/finally.h"
@@ -266,8 +267,11 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     out.reset();
 
     if (overwrite_fstab) {
-        unlink(fstab_path.c_str());
-        rename(path_fstab_gen.c_str(), fstab_path.c_str());
+        // For backwards compatibility, keep the old generated fstab as the
+        // init.*.rc file will refer to it under the generated name
+        util::copy_contents(path_fstab_gen, fstab_path);
+        //unlink(fstab_path.c_str());
+        //rename(path_fstab_gen.c_str(), fstab_path.c_str());
     }
 
     // /system and /data are always in the fstab. The patcher should create
