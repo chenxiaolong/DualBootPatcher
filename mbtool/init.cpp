@@ -175,15 +175,27 @@ static bool fix_file_contexts()
             "/data/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
-    // Close files
-    fp_old.reset();
-    fp_new.reset();
+    struct stat sb;
+    if (fstat(fileno(fp_old.get()), &sb) < 0) {
+        LOGE("Failed to stat /file_contexts: %s", strerror(errno));
+        return false;
+    }
 
     if (rename("/file_contexts.new", "/file_contexts") < 0) {
         LOGE("Failed to rename /file_contexts.new to /file_contexts: %s",
              strerror(errno));
         return false;
     }
+
+    if (fchmod(fileno(fp_new.get()), sb.st_mode & 0777) < 0) {
+        LOGE("Failed to chmod /file_contexts: %s",
+             strerror(errno));
+        return false;
+    }
+
+    // Close files
+    fp_old.reset();
+    fp_new.reset();
 
     return true;
 }
