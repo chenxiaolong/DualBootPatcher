@@ -87,7 +87,6 @@ std::string ZerolteDefaultRP::id() const
 bool ZerolteDefaultRP::patchRamdisk()
 {
     CoreRP corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRP qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
