@@ -49,8 +49,6 @@ public:
     bool addAppsyncService();
     bool disableInstalldService();
 
-    bool useGeneratedFstab(const std::string &filename);
-    bool useGeneratedFstabAuto();
     bool fixChargerMount(const std::string &filename);
     bool fixChargerMountAuto();
 

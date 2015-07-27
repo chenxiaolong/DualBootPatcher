@@ -101,11 +101,6 @@ bool JflteDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (!corePatcher.useGeneratedFstabAuto()) {
-        m_impl->error = corePatcher.error();
-        return false;
-    }
-
     if (!corePatcher.fixChargerMountAuto()) {
         m_impl->error = corePatcher.error();
         return false;
