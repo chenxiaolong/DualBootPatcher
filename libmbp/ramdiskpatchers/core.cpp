@@ -65,14 +65,10 @@ static const std::string MbtoolAppsyncService =
         "    socket installd stream 600 system system\n";
 
 
-static const std::string DataMediaContext =
-        "/data/media(/.*)? u:object_r:media_rw_data_file:s0";
-
 static const std::string ImportMultiBootRc = "import /init.multiboot.rc";
 
 static const std::string InitRc = "init.rc";
 static const std::string InitMultiBootRc = "init.multiboot.rc";
-static const std::string FileContexts = "file_contexts";
 
 CoreRP::CoreRP(const PatcherConfig * const pc,
                const FileInfo * const info,
@@ -113,9 +109,6 @@ bool CoreRP::patchRamdisk()
         return false;
     }
     if (!disableInstalldService()) {
-        return false;
-    }
-    if (!removeRestorecon()) {
         return false;
     }
     return true;
@@ -253,38 +246,6 @@ bool CoreRP::disableInstalldService()
 
     if (!isDisabled && installdIter != lines.end()) {
         lines.insert(++installdIter, "    disabled");
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    m_impl->cpio->setContents(InitRc, std::move(contents));
-
-    return true;
-}
-
-bool CoreRP::removeRestorecon()
-{
-    // This use to change the "/data(/.*)?" regex in file_contexts to
-    // "/data(/(?!multiboot).*)?". Unfortunately, older versions of Android's
-    // fork of libselinux use POSIX regex functions instead of PCRE, so
-    // lookahead isn't supported. The regex will fail to compile and the system
-    // will just reboot.
-
-    if (!m_impl->cpio->exists(InitRc)) {
-        return true;
-    }
-
-    std::vector<unsigned char> contents;
-    m_impl->cpio->contents(InitRc, &contents);
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    const std::regex re1("^\\s*restorecon_recursive\\s+/data\\s*$");
-    const std::regex re2("^\\s*restorecon_recursive\\s+/cache\\s*$");
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, re1) || std::regex_search(*it, re2)) {
-            it->insert(it->begin(), '#');
-        }
     }
 
     contents = StringUtils::joinData(lines, '\n');
