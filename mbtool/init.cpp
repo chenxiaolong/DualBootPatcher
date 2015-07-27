@@ -116,6 +116,11 @@ static std::string find_fstab()
                 }
             }
 
+            if (strstr(ptr, "goldfish")) {
+                LOGV("Skipping goldfish fstab file: %s", ptr);
+                continue;
+            }
+
             // Check if we need to strip "/." and ".gen" to remain compatible
             // with boot images patched by an older version of libmbp
             char *slash_ptr = strstr(ptr, "/.");
