@@ -244,6 +244,12 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         return false;
     }
 
+    if (stat(fstab_path.c_str(), &st) < 0) {
+        LOGE("Failed to stat fstab %s: %s",
+             fstab_path.c_str(), strerror(errno));
+        return false;
+    }
+
     // Generate new fstab without /system, /cache, or /data entries
     file_ptr out(std::fopen(path_fstab_gen.c_str(), "wb"), std::fclose);
     if (!out) {
@@ -251,6 +257,8 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
              path_fstab_gen.c_str(), strerror(errno));
         return false;
     }
+
+    fchmod(fileno(out.get()), st.st_mode & 0777);
 
     for (util::fstab_rec &rec : fstab) {
         if (rec.mount_point == "/system") {
