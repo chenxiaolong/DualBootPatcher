@@ -46,23 +46,6 @@ public:
 /*! \endcond */
 
 
-static const std::string MbtoolDaemonService =
-        "\nservice mbtooldaemon /mbtool daemon\n"
-        "    class main\n"
-        "    user root\n"
-        "    oneshot\n";
-
-static const std::string MbtoolAppsyncService =
-        "\nservice appsync /mbtool appsync\n"
-        "    class main\n"
-        "    socket installd stream 600 system system\n";
-
-
-static const std::string ImportMultiBootRc = "import /init.multiboot.rc";
-
-static const std::string InitRc = "init.rc";
-static const std::string InitMultiBootRc = "init.multiboot.rc";
-
 CoreRP::CoreRP(const PatcherConfig * const pc,
                const FileInfo * const info,
                CpioFile * const cpio) :
@@ -92,18 +75,6 @@ bool CoreRP::patchRamdisk()
     if (!addMbtool()) {
         return false;
     }
-    if (!addMultiBootRc()) {
-        return false;
-    }
-    if (!addDaemonService()) {
-        return false;
-    }
-    if (!addAppsyncService()) {
-        return false;
-    }
-    if (!disableInstalldService()) {
-        return false;
-    }
     return true;
 }
 
@@ -123,126 +94,6 @@ bool CoreRP::addMbtool()
         m_impl->error = m_impl->cpio->error();
         return false;
     }
-
-    return true;
-}
-
-bool CoreRP::addMultiBootRc()
-{
-    if (!m_impl->cpio->addFile(
-            std::vector<unsigned char>(), InitMultiBootRc, 0750)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(InitRc, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    bool added = false;
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (!it->empty() && it->at(0) == '#') {
-            continue;
-        }
-        lines.insert(it, ImportMultiBootRc);
-        added = true;
-        break;
-    }
-
-    if (!added) {
-        lines.push_back(ImportMultiBootRc);
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    m_impl->cpio->setContents(InitRc, std::move(contents));
-
-    return true;
-}
-
-bool CoreRP::addDaemonService()
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(InitMultiBootRc, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    const std::string serviceName("mbtooldaemon");
-    if (std::search(contents.begin(), contents.end(),
-                    serviceName.begin(), serviceName.end()) == contents.end()) {
-        contents.insert(contents.end(),
-                        MbtoolDaemonService.begin(),
-                        MbtoolDaemonService.end());
-
-        m_impl->cpio->setContents(InitMultiBootRc, std::move(contents));
-    }
-
-    return true;
-}
-
-bool CoreRP::addAppsyncService()
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(InitMultiBootRc, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    const std::string serviceName("appsync");
-    if (std::search(contents.begin(), contents.end(),
-                    serviceName.begin(), serviceName.end()) == contents.end()) {
-        contents.insert(contents.end(),
-                        MbtoolAppsyncService.begin(),
-                        MbtoolAppsyncService.end());
-
-        m_impl->cpio->setContents(InitMultiBootRc, std::move(contents));
-    }
-
-    return true;
-}
-
-bool CoreRP::disableInstalldService()
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(InitRc, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    std::regex whitespace("^\\s*$");
-    bool insideService = false;
-    bool isDisabled = false;
-    std::vector<std::string>::iterator installdIter = lines.end();
-
-    // Remove old mbtooldaemon service definition
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (StringUtils::starts_with(*it, "service")) {
-            insideService = it->find("installd") != std::string::npos;
-            if (insideService) {
-                installdIter = it;
-            }
-        } else if (insideService && std::regex_search(*it, whitespace)) {
-            insideService = false;
-        }
-
-        if (insideService && it->find("disabled") != std::string::npos) {
-            isDisabled = true;
-        }
-    }
-
-    if (!isDisabled && installdIter != lines.end()) {
-        lines.insert(++installdIter, "    disabled");
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    m_impl->cpio->setContents(InitRc, std::move(contents));
 
     return true;
 }

@@ -44,10 +44,6 @@ public:
     virtual bool patchRamdisk() override;
 
     bool addMbtool();
-    bool addMultiBootRc();
-    bool addDaemonService();
-    bool addAppsyncService();
-    bool disableInstalldService();
 
 private:
     class Impl;

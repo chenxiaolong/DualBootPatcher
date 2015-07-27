@@ -217,15 +217,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     cpio->setContents("init.rc", std::move(contents));
 
     CoreRP crp(pc, info, cpio);
-
-    if (!cpio->exists("init.multiboot.rc")) {
-        crp.addMultiBootRc();
-    }
-
     crp.addMbtool();
-    crp.addDaemonService();
-    crp.addAppsyncService();
-    crp.disableInstalldService();
 }
 
 }
