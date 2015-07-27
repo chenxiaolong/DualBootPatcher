@@ -129,6 +129,65 @@ static std::string find_fstab()
     return std::string();
 }
 
+static bool fix_file_contexts()
+{
+    file_ptr fp_old(std::fopen("/file_contexts", "rb"), std::fclose);
+    if (!fp_old) {
+        if (errno == ENOENT) {
+            return true;
+        } else {
+            LOGE("Failed to open /file_contexts: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    file_ptr fp_new(std::fopen("/file_contexts.new", "wb"), std::fclose);
+    if (!fp_new) {
+        LOGE("Failed to open /file_contexts.new for writing: %s",
+             strerror(errno));
+        return false;
+    }
+
+    char *line = nullptr;
+    size_t len = 0;
+    ssize_t read = 0;
+
+    auto free_line = util::finally([&]{
+        free(line);
+    });
+
+    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
+        if (util::starts_with(line, "/data/media(")
+                && !strstr(line, "<<none>>")) {
+            continue;
+        }
+
+        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+            LOGE("Failed to write to /file_contexts.new: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    static const char *new_contexts =
+            "\n"
+            "/data/media(/.*)?      <<none>>\n"
+            "/raw(/.*)?             <<none>>\n"
+            "/data/multiboot(/.*)?  <<none>>\n";
+    fputs(new_contexts, fp_new.get());
+
+    // Close files
+    fp_old.reset();
+    fp_new.reset();
+
+    if (rename("/file_contexts.new", "/file_contexts") < 0) {
+        LOGE("Failed to rename /file_contexts.new to /file_contexts: %s",
+             strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 int init_main(int argc, char *argv[])
 {
     int opt;
@@ -198,6 +257,8 @@ int init_main(int argc, char *argv[])
     }
 
     LOGE("Successfully mounted fstab");
+
+    fix_file_contexts();
 
     // Kill uevent thread and close uevent socket
     device_close();
