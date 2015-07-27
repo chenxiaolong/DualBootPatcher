@@ -200,6 +200,134 @@ static bool fix_file_contexts()
     return true;
 }
 
+static bool is_completely_whitespace(const char *str)
+{
+    while (*str) {
+        if (!isspace(*str)) {
+            return false;
+        }
+        ++str;
+    }
+    return true;
+}
+
+static bool add_mbtool_services()
+{
+    file_ptr fp_old(std::fopen("/init.rc", "rb"), std::fclose);
+    if (!fp_old) {
+        if (errno == ENOENT) {
+            return true;
+        } else {
+            LOGE("Failed to open /init.rc: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    file_ptr fp_new(std::fopen("/init.rc.new", "wb"), std::fclose);
+    if (!fp_new) {
+        LOGE("Failed to open /init.rc.new for writing: %s",
+             strerror(errno));
+        return false;
+    }
+
+    char *line = nullptr;
+    size_t len = 0;
+    ssize_t read = 0;
+
+    auto free_line = util::finally([&]{
+        free(line);
+    });
+
+    bool has_init_multiboot_rc = false;
+    bool has_disabled_installd = false;
+    bool inside_service = false;
+
+    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
+        if (strstr(line, "import /init.multiboot.rc")) {
+            has_init_multiboot_rc = true;
+        }
+
+        if (util::starts_with(line, "service")) {
+            inside_service = strstr(line, "installd") != nullptr;
+        } else if (inside_service && is_completely_whitespace(line)) {
+            inside_service = false;
+        }
+
+        if (inside_service && strstr(line, "disabled")) {
+            has_disabled_installd = true;
+        }
+    }
+
+    rewind(fp_old.get());
+
+    while ((read = getline(&line, &len, fp_old.get())) >= 0) {
+        // Load /init.multiboot.rc
+        if (!has_init_multiboot_rc && line[0] != '#') {
+            has_init_multiboot_rc = true;
+            fputs("import /init.multiboot.rc\n", fp_new.get());
+        }
+
+        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+            LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
+            return false;
+        }
+
+        // Disable installd. mbtool's appsync will spawn it on demand
+        if (!has_disabled_installd
+                && util::starts_with(line, "service")
+                && strstr(line, "installd")) {
+            fputs("    disabled\n", fp_new.get());
+        }
+    }
+
+    struct stat sb;
+    if (fstat(fileno(fp_old.get()), &sb) < 0) {
+        LOGE("Failed to stat /init.rc: %s", strerror(errno));
+        return false;
+    }
+
+    if (rename("/init.rc.new", "/init.rc") < 0) {
+        LOGE("Failed to rename /init.rc.new to /init.rc: %s",
+             strerror(errno));
+        return false;
+    }
+
+    if (fchmod(fileno(fp_new.get()), sb.st_mode & 0777) < 0) {
+        LOGE("Failed to chmod /init.rc: %s",
+             strerror(errno));
+        return false;
+    }
+
+    // Close files
+    fp_old.reset();
+    fp_new.reset();
+
+    // Create /init.multiboot.rc
+    file_ptr fp_multiboot(std::fopen("/init.multiboot.rc", "wb"), std::fclose);
+    if (!fp_multiboot) {
+        LOGE("Failed to open /init.multiboot.rc for writing: %s",
+             strerror(errno));
+        return false;
+    }
+
+    static const char *init_multiboot_rc =
+            "service mbtooldaemon /mbtool daemon\n"
+            "    class main\n"
+            "    user root\n"
+            "    oneshot\n"
+            "\n"
+            "service appsync /mbtool appsync\n"
+            "    class main\n"
+            "    socket installd stream 600 system system\n";
+
+    fputs(init_multiboot_rc, fp_multiboot.get());
+
+    fchmod(fileno(fp_multiboot.get()), 0750);
+    fp_multiboot.reset();
+
+    return true;
+}
+
 int init_main(int argc, char *argv[])
 {
     int opt;
@@ -271,6 +399,7 @@ int init_main(int argc, char *argv[])
     LOGE("Successfully mounted fstab");
 
     fix_file_contexts();
+    add_mbtool_services();
 
     // Kill uevent thread and close uevent socket
     device_close();
