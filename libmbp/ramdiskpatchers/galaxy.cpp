@@ -40,10 +40,6 @@ public:
 /*! \endcond */
 
 
-static const std::string InitRc("init.rc");
-static const std::string InitTargetRc("init.target.rc");
-static const std::string UeventdRc("ueventd.rc");
-static const std::string UeventdQcomRc("ueventd.qcom.rc");
 static const std::string Msm8960LpmRc("MSM8960_lpm.rc");
 
 

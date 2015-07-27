@@ -43,9 +43,6 @@ public:
 /*! \endcond */
 
 
-static const std::string InitRc = "init.rc";
-
-
 /*!
     \class SerranodsRP
     \brief Handles common ramdisk patching operations for the Samsung Galaxy S 4 Mini Duos
