@@ -67,6 +67,8 @@ public:
     bool addFileC(const unsigned char *data, std::size_t size,
                   const std::string &name, unsigned int perms);
 
+    bool rename(const std::string &source, const std::string &target);
+
     CpioFile(const CpioFile &) = delete;
     CpioFile(CpioFile &&) = default;
     CpioFile & operator=(const CpioFile &) & = delete;

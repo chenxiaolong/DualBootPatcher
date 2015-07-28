@@ -75,6 +75,9 @@ bool CoreRP::patchRamdisk()
     if (!addMbtool()) {
         return false;
     }
+    if (!setUpInitWrapper()) {
+        return false;
+    }
     return true;
 }
 
@@ -91,6 +94,27 @@ bool CoreRP::addMbtool()
     }
 
     if (!m_impl->cpio->addFile(mbtoolPath, mbtool, 0750)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreRP::setUpInitWrapper()
+{
+    if (m_impl->cpio->exists("init.orig")) {
+        // NOTE: If this assumption ever becomes an issue, we'll check the
+        //       /init -> /mbtool symlink
+        return true;
+    }
+
+    if (!m_impl->cpio->rename("init", "init.orig")) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    if (!m_impl->cpio->addSymlink("mbtool", "init")) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }

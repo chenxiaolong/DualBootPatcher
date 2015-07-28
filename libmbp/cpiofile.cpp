@@ -624,4 +624,24 @@ bool CpioFile::addFileC(const unsigned char *data, std::size_t size,
     return true;
 }
 
+bool CpioFile::rename(const std::string &source, const std::string &target)
+{
+    if (exists(target)) {
+        m_impl->error = PatcherError::createCpioError(
+                ErrorCode::CpioFileAlreadyExistsError, target);
+        return false;
+    }
+
+    for (auto &p : m_impl->files) {
+        if (source == archive_entry_pathname(p.first)) {
+            archive_entry_set_pathname(p.first, target.c_str());
+            return true;
+        }
+    }
+
+    m_impl->error = PatcherError::createCpioError(
+            ErrorCode::CpioFileNotExistError, source);
+    return false;
+}
+
 }

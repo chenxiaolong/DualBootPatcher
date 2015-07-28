@@ -44,6 +44,7 @@ public:
     virtual bool patchRamdisk() override;
 
     bool addMbtool();
+    bool setUpInitWrapper();
 
 private:
     class Impl;
