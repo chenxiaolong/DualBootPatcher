@@ -52,7 +52,6 @@ set(MBP_SOURCES
     ramdiskpatchers/core.cpp
     ramdiskpatchers/falcon.cpp
     ramdiskpatchers/flo.cpp
-    ramdiskpatchers/galaxy.cpp
     ramdiskpatchers/ghost.cpp
     ramdiskpatchers/ha3g.cpp
     ramdiskpatchers/hammerhead.cpp

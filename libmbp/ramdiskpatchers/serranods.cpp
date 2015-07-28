@@ -23,7 +23,6 @@
 
 #include "patcherconfig.h"
 #include "ramdiskpatchers/core.h"
-#include "ramdiskpatchers/galaxy.h"
 #include "ramdiskpatchers/qcom.h"
 
 
@@ -91,7 +90,6 @@ bool SerranodsDefaultRP::patchRamdisk()
 {
     CoreRP corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
     QcomRP qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    GalaxyRP galaxyPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
@@ -100,11 +98,6 @@ bool SerranodsDefaultRP::patchRamdisk()
 
     if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
         m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
-    if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
-        m_impl->error = galaxyPatcher.error();
         return false;
     }
 
