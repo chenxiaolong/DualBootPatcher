@@ -210,9 +210,11 @@ static bool fix_file_contexts()
 
     static const char *new_contexts =
             "\n"
-            "/data/media(/.*)?      <<none>>\n"
-            "/raw(/.*)?             <<none>>\n"
-            "/data/multiboot(/.*)?  <<none>>\n";
+            "/data/media(/.*)?        <<none>>\n"
+            "/raw(/.*)?               <<none>>\n"
+            "/data/multiboot(/.*)?    <<none>>\n"
+            "/cache/multiboot(/.*)?   <<none>>\n"
+            "/system/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
     return replace_file("/file_contexts", "/file_contexts.new");
