@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -29,38 +29,25 @@
 namespace mbp
 {
 
-class JflteBaseRP : public RamdiskPatcher
+class DefaultRP : public RamdiskPatcher
 {
 public:
-    explicit JflteBaseRP(const PatcherConfig * const pc,
-                         const FileInfo * const info,
-                         CpioFile * const cpio);
-    virtual ~JflteBaseRP();
-
-    virtual PatcherError error() const override;
-
-    virtual std::string id() const override = 0;
-
-    virtual bool patchRamdisk() override = 0;
-
-protected:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
-};
-
-
-class JflteDefaultRP : public JflteBaseRP
-{
-public:
-    explicit JflteDefaultRP(const PatcherConfig * const pc,
-                            const FileInfo * const info,
-                            CpioFile * const cpio);
+    explicit DefaultRP(const PatcherConfig * const pc,
+                       const FileInfo * const info,
+                       CpioFile * const cpio);
+    virtual ~DefaultRP();
 
     static const std::string Id;
+
+    virtual PatcherError error() const override;
 
     virtual std::string id() const override;
 
     virtual bool patchRamdisk() override;
+
+protected:
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 };
 
 }

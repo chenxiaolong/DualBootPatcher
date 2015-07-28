@@ -48,26 +48,9 @@ set(MBP_SOURCES
     patchers/mbtoolupdater.cpp
     patchers/multibootpatcher.cpp
     # Ramdisk patchers
-    ramdiskpatchers/bacon.cpp
     ramdiskpatchers/core.cpp
-    ramdiskpatchers/falcon.cpp
-    ramdiskpatchers/flo.cpp
-    ramdiskpatchers/ghost.cpp
-    ramdiskpatchers/ha3g.cpp
-    ramdiskpatchers/hammerhead.cpp
-    ramdiskpatchers/hllte.cpp
-    ramdiskpatchers/hlte.cpp
-    ramdiskpatchers/jflte.cpp
-    ramdiskpatchers/klimtwifi.cpp
-    ramdiskpatchers/klte.cpp
-    ramdiskpatchers/lgg2.cpp
-    ramdiskpatchers/lgg3.cpp
-    ramdiskpatchers/mondrianwifi.cpp
+    ramdiskpatchers/default.cpp
     ramdiskpatchers/pepper.cpp
-    ramdiskpatchers/serranods.cpp
-    ramdiskpatchers/trelte.cpp
-    ramdiskpatchers/trlte.cpp
-    ramdiskpatchers/zerolte.cpp
     external/sha.cpp
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )

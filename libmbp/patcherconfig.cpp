@@ -43,25 +43,8 @@
 #include "patchers/multibootpatcher.h"
 #include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
-#include "ramdiskpatchers/bacon.h"
-#include "ramdiskpatchers/falcon.h"
-#include "ramdiskpatchers/flo.h"
-#include "ramdiskpatchers/ghost.h"
-#include "ramdiskpatchers/ha3g.h"
-#include "ramdiskpatchers/hammerhead.h"
-#include "ramdiskpatchers/hllte.h"
-#include "ramdiskpatchers/hlte.h"
-#include "ramdiskpatchers/jflte.h"
-#include "ramdiskpatchers/klimtwifi.h"
-#include "ramdiskpatchers/klte.h"
-#include "ramdiskpatchers/lgg2.h"
-#include "ramdiskpatchers/lgg3.h"
-#include "ramdiskpatchers/mondrianwifi.h"
+#include "ramdiskpatchers/default.h"
 #include "ramdiskpatchers/pepper.h"
-#include "ramdiskpatchers/serranods.h"
-#include "ramdiskpatchers/trelte.h"
-#include "ramdiskpatchers/trlte.h"
-#include "ramdiskpatchers/zerolte.h"
 #endif
 
 
@@ -742,25 +725,8 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
 std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 {
     return {
-        BaconRP::Id,
-        FalconRP::Id,
-        FloAOSPRP::Id,
-        GhostRP::Id,
-        Ha3gDefaultRP::Id,
-        HammerheadDefaultRP::Id,
-        HllteDefaultRP::Id,
-        HlteDefaultRP::Id,
-        JflteDefaultRP::Id,
-        KlimtwifiDefaultRP::Id,
-        KlteDefaultRP::Id,
-        LGG2RP::Id,
-        LGG3RP::Id,
-        MondrianwifiDefaultRP::Id,
+        DefaultRP::Id,
         PepperDefaultRP::Id,
-        SerranodsDefaultRP::Id,
-        TrelteDefaultRP::Id,
-        TrlteDefaultRP::Id,
-        ZerolteDefaultRP::Id
     };
 }
 
@@ -831,44 +797,10 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
 {
     RamdiskPatcher *rp = nullptr;
 
-    if (id == BaconRP::Id) {
-        rp = new BaconRP(this, info, cpio);
-    } else if (id == FalconRP::Id) {
-        rp = new FalconRP(this, info, cpio);
-    } else if (id == FloAOSPRP::Id) {
-        rp = new FloAOSPRP(this, info, cpio);
-    } else if (id == GhostRP::Id) {
-        rp = new GhostRP(this, info, cpio);
-    } else if (id == Ha3gDefaultRP::Id) {
-        rp = new Ha3gDefaultRP(this, info, cpio);
-    } else if (id == HammerheadDefaultRP::Id) {
-        rp = new HammerheadDefaultRP(this, info, cpio);
-    } else if (id == HllteDefaultRP::Id) {
-        rp = new HllteDefaultRP(this, info, cpio);
-    } else if (id == HlteDefaultRP::Id) {
-        rp = new HlteDefaultRP(this, info, cpio);
-    } else if (id == JflteDefaultRP::Id) {
-        rp = new JflteDefaultRP(this, info, cpio);
-    } else if (id == KlimtwifiDefaultRP::Id) {
-        rp = new KlimtwifiDefaultRP(this, info, cpio);
-    } else if (id == KlteDefaultRP::Id) {
-        rp = new KlteDefaultRP(this, info, cpio);
-    } else if (id == LGG2RP::Id) {
-        rp = new LGG2RP(this, info, cpio);
-    } else if (id == LGG3RP::Id) {
-        rp = new LGG3RP(this, info, cpio);
-    } else if (id == MondrianwifiDefaultRP::Id) {
-        rp = new MondrianwifiDefaultRP(this, info, cpio);
+    if (id == DefaultRP::Id) {
+        rp = new DefaultRP(this, info, cpio);
     } else if (id == PepperDefaultRP::Id) {
         rp = new PepperDefaultRP(this, info, cpio);
-    } else if (id == SerranodsDefaultRP::Id) {
-        rp = new SerranodsDefaultRP(this, info, cpio);
-    } else if (id == TrelteDefaultRP::Id) {
-        rp = new TrelteDefaultRP(this, info, cpio);
-    } else if (id == TrlteDefaultRP::Id) {
-        rp = new TrlteDefaultRP(this, info, cpio);
-    } else if (id == ZerolteDefaultRP::Id) {
-        rp = new ZerolteDefaultRP(this, info, cpio);
     }
 
     if (rp != nullptr) {

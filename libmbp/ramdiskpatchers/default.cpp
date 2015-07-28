@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ramdiskpatchers/klte.h"
+#include "ramdiskpatchers/default.h"
 
 #include "patcherconfig.h"
 #include "ramdiskpatchers/core.h"
@@ -27,7 +27,7 @@ namespace mbp
 {
 
 /*! \cond INTERNAL */
-class KlteBaseRP::Impl
+class DefaultRP::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -40,50 +40,37 @@ public:
 
 
 /*!
-    \class KlteRP
-    \brief Handles common ramdisk patching operations for the Samsung Galaxy S 5
-
-    This patcher handles the patching of ramdisks for the Samsung Galaxy S 5.
-    Starting from version 9.0.0, every Android ramdisk is supported.
+ * \class DefaultRP
+ * \brief Handles common ramdisk patching operations for most devices
  */
 
+const std::string DefaultRP::Id = "default";
 
-KlteBaseRP::KlteBaseRP(const PatcherConfig * const pc,
-                       const FileInfo * const info,
-                       CpioFile * const cpio) :
-    m_impl(new Impl())
+DefaultRP::DefaultRP(const PatcherConfig * const pc,
+                     const FileInfo * const info,
+                     CpioFile * const cpio)
+    : m_impl(new Impl())
 {
     m_impl->pc = pc;
     m_impl->info = info;
     m_impl->cpio = cpio;
 }
 
-KlteBaseRP::~KlteBaseRP()
+DefaultRP::~DefaultRP()
 {
 }
 
-PatcherError KlteBaseRP::error() const
+PatcherError DefaultRP::error() const
 {
     return m_impl->error;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-const std::string KlteDefaultRP::Id = "klte/default";
-
-KlteDefaultRP::KlteDefaultRP(const PatcherConfig * const pc,
-                             const FileInfo *const info,
-                             CpioFile *const cpio)
-    : KlteBaseRP(pc, info, cpio)
-{
-}
-
-std::string KlteDefaultRP::id() const
+std::string DefaultRP::id() const
 {
     return Id;
 }
 
-bool KlteDefaultRP::patchRamdisk()
+bool DefaultRP::patchRamdisk()
 {
     CoreRP corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
