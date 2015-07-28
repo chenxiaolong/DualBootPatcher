@@ -99,16 +99,6 @@ bool MondrianwifiDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (m_impl->cpio->exists("init.target.rc")
-            && !qcomPatcher.stripManualMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-    }
-
-    if (!qcomPatcher.stripManualMounts("init.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
     return true;
 }
 

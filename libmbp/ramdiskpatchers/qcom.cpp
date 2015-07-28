@@ -130,38 +130,4 @@ bool QcomRP::addMissingCacheInFstab(const std::vector<std::string> &additionalFs
     return true;
 }
 
-bool QcomRP::stripManualMounts(const std::string &filename)
-{
-    std::vector<unsigned char> contents;
-    if (!m_impl->cpio->contents(filename, &contents)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    const std::regex reWaitCache("^\\s+wait\\s+/dev/.*/cache");
-    const std::regex reCheckFsCache("^\\s+check_fs\\s+/dev/.*/cache");
-    const std::regex reMountCache("^\\s+mount\\s+ext4\\s+/dev/.*/cache");
-    const std::regex reWaitData("^\\s+wait\\s+/dev/.*/userdata");
-    const std::regex reCheckFsData("^\\s+check_fs\\s+/dev/.*/userdata");
-    const std::regex reMountData("^\\s+mount\\s+ext4\\s+/dev/.*/userdata");
-
-    for (auto it = lines.begin(); it != lines.end(); ++it) {
-        if (std::regex_search(*it, reWaitCache)
-                || std::regex_search(*it, reCheckFsCache)
-                || std::regex_search(*it, reMountCache)
-                || std::regex_search(*it, reWaitData)
-                || std::regex_search(*it, reCheckFsData)
-                || std::regex_search(*it, reMountData)) {
-            it->insert(it->begin(), '#');
-        }
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    m_impl->cpio->setContents(filename, std::move(contents));
-
-    return true;
-}
-
 }

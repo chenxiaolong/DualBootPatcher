@@ -45,8 +45,6 @@ public:
 
     bool addMissingCacheInFstab(const std::vector<std::string> &additionalFstabs);
 
-    bool stripManualMounts(const std::string &filename);
-
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

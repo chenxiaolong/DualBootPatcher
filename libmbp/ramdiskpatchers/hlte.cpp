@@ -100,11 +100,6 @@ bool HlteDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.stripManualMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
     return true;
 }
 

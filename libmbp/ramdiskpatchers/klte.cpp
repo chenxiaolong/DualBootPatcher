@@ -99,18 +99,6 @@ bool KlteDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (m_impl->cpio->exists("init.target.rc")) {
-        if (!qcomPatcher.stripManualMounts("init.target.rc")) {
-            m_impl->error = qcomPatcher.error();
-            return false;
-        }
-    } else {
-        if (!qcomPatcher.stripManualMounts("init.qcom.rc")) {
-            m_impl->error = qcomPatcher.error();
-            return false;
-        }
-    }
-
     return true;
 }
 

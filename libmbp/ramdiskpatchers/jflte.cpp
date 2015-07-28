@@ -103,11 +103,6 @@ bool JflteDefaultRP::patchRamdisk()
         return false;
     }
 
-    if (!qcomPatcher.stripManualMounts("init.target.rc")) {
-        m_impl->error = qcomPatcher.error();
-        return false;
-    }
-
     if (!galaxyPatcher.getwModifyMsm8960LpmRc()) {
         m_impl->error = galaxyPatcher.error();
         return false;
