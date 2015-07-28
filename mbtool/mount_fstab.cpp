@@ -170,11 +170,28 @@ static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
     return true;
 }
 
+static std::vector<util::fstab_rec> generic_fstab_cache_entries()
+{
+    return std::vector<util::fstab_rec>{
+        {
+            .blk_device = "/dev/block/platform/msm_sdcc.1/by-name/cache",
+            .mount_point = "/cache",
+            .fs_type = "ext4",
+            .flags = MS_NOSUID | MS_NODEV,
+            .fs_options = "barrier=1",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        }
+        // Add more as necessary...
+    };
+}
+
 bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 {
     bool ret = true;
 
     std::vector<util::fstab_rec> fstab;
+    std::vector<util::fstab_rec> fstab_cache;
     std::vector<util::fstab_rec *> recs_system;
     std::vector<util::fstab_rec *> recs_cache;
     std::vector<util::fstab_rec *> recs_data;
@@ -280,6 +297,15 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         util::copy_contents(path_fstab_gen, fstab_path);
         //unlink(fstab_path.c_str());
         //rename(path_fstab_gen.c_str(), fstab_path.c_str());
+    }
+
+    // Some ROMs mount /cache in one of the init.*.rc files. If that's the case
+    // try using a generic fstab entry for it.
+    if (recs_cache.empty()) {
+        fstab_cache = generic_fstab_cache_entries();
+        for (util::fstab_rec &rec : fstab_cache) {
+            recs_cache.push_back(&rec);
+        }
     }
 
     // /system and /data are always in the fstab. The patcher should create
