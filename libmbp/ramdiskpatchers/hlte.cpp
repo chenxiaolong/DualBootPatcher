@@ -21,7 +21,6 @@
 
 #include "patcherconfig.h"
 #include "ramdiskpatchers/core.h"
-#include "ramdiskpatchers/qcom.h"
 
 
 namespace mbp
@@ -88,15 +87,9 @@ std::string HlteDefaultRP::id() const
 bool HlteDefaultRP::patchRamdisk()
 {
     CoreRP corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRP qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
-        return false;
-    }
-
-    if (!qcomPatcher.addMissingCacheInFstab(std::vector<std::string>())) {
-        m_impl->error = qcomPatcher.error();
         return false;
     }
 

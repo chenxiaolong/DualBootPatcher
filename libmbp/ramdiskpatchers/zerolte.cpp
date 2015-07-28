@@ -21,7 +21,6 @@
 
 #include "patcherconfig.h"
 #include "ramdiskpatchers/core.h"
-#include "ramdiskpatchers/qcom.h"
 
 
 namespace mbp

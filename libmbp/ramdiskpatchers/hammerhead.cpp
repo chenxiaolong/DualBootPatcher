@@ -20,7 +20,6 @@
 #include "ramdiskpatchers/hammerhead.h"
 
 #include "ramdiskpatchers/core.h"
-#include "ramdiskpatchers/qcom.h"
 
 
 namespace mbp
@@ -77,7 +76,6 @@ std::string HammerheadDefaultRP::id() const
 bool HammerheadDefaultRP::patchRamdisk()
 {
     CoreRP corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
-    QcomRP qcomPatcher(m_impl->pc, m_impl->info, m_impl->cpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();

@@ -21,7 +21,6 @@
 
 #include "patcherconfig.h"
 #include "ramdiskpatchers/core.h"
-#include "ramdiskpatchers/qcom.h"
 
 
 namespace mbp
@@ -99,7 +98,6 @@ bool PepperDefaultRP::patchRamdisk()
     }
 
     CoreRP corePatcher(m_impl->pc, m_impl->info, &cpioInCpio);
-    QcomRP qcomPatcher(m_impl->pc, m_impl->info, &cpioInCpio);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
