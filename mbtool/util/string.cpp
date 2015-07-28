@@ -139,6 +139,26 @@ std::string join(std::vector<std::string> &list, std::string delim)
     return result;
 }
 
+std::vector<std::string> tokenize(const std::string &str,
+                                  const std::string &delims)
+{
+    std::vector<char> linebuf(str.begin(), str.end());
+    linebuf.resize(linebuf.size() + 1);
+    std::vector<std::string> tokens;
+
+    char *temp;
+    char *token;
+
+    token = strtok_r(linebuf.data(), delims.c_str(), &temp);
+    while (token != nullptr) {
+        tokens.push_back(token);
+
+        token = strtok_r(nullptr, delims.c_str(), &temp);
+    }
+
+    return tokens;
+}
+
 /*!
  * \brief Convert binary data to its hex string representation
  *

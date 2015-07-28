@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -41,6 +41,8 @@ void replace_all(std::string *source,
                  const std::string &from, const std::string &to);
 
 std::string join(std::vector<std::string> &list, std::string delim);
+std::vector<std::string> tokenize(const std::string &str,
+                                  const std::string &delims);
 
 std::string hex_string(unsigned char *data, size_t size);
 
