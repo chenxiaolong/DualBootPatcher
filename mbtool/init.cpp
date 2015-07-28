@@ -20,6 +20,7 @@
 #include "init.h"
 
 #include <memory>
+#include <unordered_set>
 
 #include <cerrno>
 #include <cstdlib>
@@ -145,6 +146,29 @@ static std::string find_fstab()
     return std::string();
 }
 
+// Operating on paths instead of fd's should be safe enough since, at this
+// point, we're the only process alive on the system.
+static bool replace_file(const char *replace, const char *with)
+{
+    struct stat sb;
+    if (stat(replace, &sb) < 0) {
+        LOGE("Failed to stat %s: %s", replace, strerror(errno));
+        return false;
+    }
+
+    if (rename(with, replace) < 0) {
+        LOGE("Failed to rename %s to %s: %s", with, replace, strerror(errno));
+        return false;
+    }
+
+    if (chmod(replace, sb.st_mode & 0777) < 0) {
+        LOGE("Failed to chmod %s: %s", replace, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 static bool fix_file_contexts()
 {
     file_ptr fp_old(std::fopen("/file_contexts", "rb"), std::fclose);
@@ -191,29 +215,7 @@ static bool fix_file_contexts()
             "/data/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
-    struct stat sb;
-    if (fstat(fileno(fp_old.get()), &sb) < 0) {
-        LOGE("Failed to stat /file_contexts: %s", strerror(errno));
-        return false;
-    }
-
-    if (rename("/file_contexts.new", "/file_contexts") < 0) {
-        LOGE("Failed to rename /file_contexts.new to /file_contexts: %s",
-             strerror(errno));
-        return false;
-    }
-
-    if (fchmod(fileno(fp_new.get()), sb.st_mode & 0777) < 0) {
-        LOGE("Failed to chmod /file_contexts: %s",
-             strerror(errno));
-        return false;
-    }
-
-    // Close files
-    fp_old.reset();
-    fp_new.reset();
-
-    return true;
+    return replace_file("/file_contexts", "/file_contexts.new");
 }
 
 static bool is_completely_whitespace(const char *str)
@@ -296,27 +298,9 @@ static bool add_mbtool_services()
         }
     }
 
-    struct stat sb;
-    if (fstat(fileno(fp_old.get()), &sb) < 0) {
-        LOGE("Failed to stat /init.rc: %s", strerror(errno));
+    if (!replace_file("/init.rc", "/init.rc.new")) {
         return false;
     }
-
-    if (rename("/init.rc.new", "/init.rc") < 0) {
-        LOGE("Failed to rename /init.rc.new to /init.rc: %s",
-             strerror(errno));
-        return false;
-    }
-
-    if (fchmod(fileno(fp_new.get()), sb.st_mode & 0777) < 0) {
-        LOGE("Failed to chmod /init.rc: %s",
-             strerror(errno));
-        return false;
-    }
-
-    // Close files
-    fp_old.reset();
-    fp_new.reset();
 
     // Create /init.multiboot.rc
     file_ptr fp_multiboot(std::fopen("/init.multiboot.rc", "wb"), std::fclose);
@@ -339,7 +323,94 @@ static bool add_mbtool_services()
     fputs(init_multiboot_rc, fp_multiboot.get());
 
     fchmod(fileno(fp_multiboot.get()), 0750);
-    fp_multiboot.reset();
+
+    return true;
+}
+
+static bool strip_manual_mounts()
+{
+    dir_ptr dir(opendir("/"), closedir);
+    if (!dir) {
+        return true;
+    }
+
+    struct dirent *ent;
+    while ((ent = readdir(dir.get()))) {
+        // Look for *.rc files
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
+                || !util::ends_with(ent->d_name, ".rc")) {
+            continue;
+        }
+
+        std::string path("/");
+        path += ent->d_name;
+
+        file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+        if (!fp) {
+            LOGE("Failed to open %s for reading: %s",
+                 path.c_str(), strerror(errno));
+            continue;
+        }
+
+        char *line = nullptr;
+        size_t len = 0;
+        ssize_t read = 0;
+
+        auto free_line = util::finally([&]{
+            free(line);
+        });
+
+        std::size_t count = 0;
+        std::unordered_set<std::size_t> comment_out;
+
+        // Find out which lines need to be commented out
+        while ((read = getline(&line, &len, fp.get())) >= 0) {
+            if (strstr(line, "mount")
+                    && (strstr(line, "/system")
+                    || strstr(line, "/cache")
+                    || strstr(line, "/data"))) {
+                std::vector<std::string> tokens = util::tokenize(line, " \t\n");
+                if (tokens.size() >= 4 && tokens[0] == "mount"
+                        && (tokens[3] == "/system"
+                        || tokens[3] == "/cache"
+                        || tokens[3] == "/data")) {
+                    comment_out.insert(count);
+                }
+            }
+
+            ++count;
+        }
+
+        if (comment_out.empty()) {
+            continue;
+        }
+
+        // Go back to beginning of file for reread
+        rewind(fp.get());
+        count = 0;
+
+        std::string new_path(path);
+        new_path += ".new";
+
+        file_ptr fp_new(std::fopen(new_path.c_str(), "w"), std::fclose);
+        if (!fp_new) {
+            LOGE("Failed to open %s for writing: %s",
+                 new_path.c_str(), strerror(errno));
+            continue;
+        }
+
+        // Actually comment out the lines
+        while ((read = getline(&line, &len, fp.get())) >= 0) {
+            if (comment_out.find(count) != comment_out.end()) {
+                fputs("#", fp_new.get());
+            }
+            fputs(line, fp_new.get());
+
+            ++count;
+        }
+
+        replace_file(path.c_str(), new_path.c_str());
+    }
 
     return true;
 }
@@ -416,6 +487,7 @@ int init_main(int argc, char *argv[])
 
     fix_file_contexts();
     add_mbtool_services();
+    strip_manual_mounts();
 
     // Kill uevent thread and close uevent socket
     device_close();
