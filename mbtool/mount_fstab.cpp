@@ -60,8 +60,46 @@ namespace mb
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
-static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
-                                 const std::vector<util::fstab_rec *> flags,
+static std::shared_ptr<Rom> determine_rom()
+{
+    std::shared_ptr<Rom> rom;
+    std::string rom_id;
+
+    Roms roms;
+    roms.add_builtin();
+
+    // Mount raw partitions to /raw/*
+    if (!util::kernel_cmdline_get_option("romid", &rom_id)
+            && !util::file_first_line("/romid", &rom_id)) {
+        LOGE("Failed to determine ROM ID");
+        return false;
+    }
+
+    if (Roms::is_named_rom(rom_id)) {
+        rom = Roms::create_named_rom(rom_id);
+    } else {
+        rom = roms.find_by_id(rom_id);
+        if (rom) {
+            LOGD("ROM ID is: %s", rom_id.c_str());
+        } else {
+            LOGE("Unknown ROM ID: %s", rom_id.c_str());
+        }
+    }
+
+    return rom;
+}
+
+/*!
+ * \brief Try mounting each entry in a list of fstab entry until one works.
+ *
+ * \param recs List of fstab entries for the given mount point
+ * \param flags List of fstab entries to use as a reference for fs flags
+ * \param mount_point Target mount point
+ *
+ * \return Whether some fstab entry was successfully mounted at the mount point
+ */
+static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
+                                 const std::vector<util::fstab_rec *> &flags,
                                  const std::string &mount_point)
 {
     if (recs.empty() || flags.empty()) {
@@ -133,6 +171,18 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> recs,
     return false;
 }
 
+/*!
+ * \note This really is a horrible app sharing method and should be removed at
+ * some point.
+ *
+ * If global app sharing is enabled:
+ *   1. Bind mount /raw/data/app-lib  -> /data/app-lib
+ *   2. Bind mount /raw/data/app      -> /data/app
+ *   3. Bind mount /raw/data/app-asec -> /data/app-asec
+ *
+ * If individual app sharing is enabled, it takes precedence over global app
+ * sharing.
+ */
 static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
 {
     std::string config_path("/data/media/0/MultiBoot/");
@@ -170,6 +220,10 @@ static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
     return true;
 }
 
+/*!
+ * \brief Get list of generic /cache fstab entries for ROMs that mount the
+ *        partition manually
+ */
 static std::vector<util::fstab_rec> generic_fstab_cache_entries()
 {
     return std::vector<util::fstab_rec>{
@@ -186,32 +240,116 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
     };
 }
 
+/*!
+ * \brief Write new fstab file
+ */
+static bool write_generated_fstab(const std::vector<util::fstab_rec *> &recs,
+                                  const std::string &path, mode_t mode)
+{
+    // Generate new fstab without /system, /cache, or /data entries
+    file_ptr out(std::fopen(path.c_str(), "wb"), std::fclose);
+    if (!out) {
+        LOGE("Failed to open %s for writing: %s",
+             path.c_str(), strerror(errno));
+        return false;
+    }
+
+    fchmod(fileno(out.get()), mode & 0777);
+
+    for (util::fstab_rec *rec : recs) {
+        std::fprintf(out.get(), "%s\n", rec->orig_line.c_str());
+    }
+
+    return true;
+}
+
+/*!
+ * \brief Mount specified /system, /cache, and /data fstab entries
+ */
+static bool mount_fstab_entries(const std::vector<util::fstab_rec *> &system_recs,
+                                const std::vector<util::fstab_rec *> &system_flags,
+                                const std::vector<util::fstab_rec *> &cache_recs,
+                                const std::vector<util::fstab_rec *> &cache_flags,
+                                const std::vector<util::fstab_rec *> &data_recs,
+                                const std::vector<util::fstab_rec *> &data_flags,
+                                const std::shared_ptr<Rom> &rom)
+{
+    if (mkdir("/raw", 0755) < 0) {
+        LOGE("Failed to create /raw: %s", strerror(errno));
+        return false;
+    }
+
+    // Mount raw partitions
+    if (!create_dir_and_mount(system_recs, system_flags, "/raw/system")) {
+        LOGE("Failed to mount /raw/system");
+        return false;
+    }
+    if (!create_dir_and_mount(cache_recs, cache_flags, "/raw/cache")) {
+        LOGE("Failed to mount /raw/cache");
+        return false;
+    }
+    if (!create_dir_and_mount(data_recs, data_flags, "/raw/data")) {
+        LOGE("Failed to mount /raw/data");
+        return false;
+    }
+
+    // Make paths use /raw/...
+    if (rom->system_path.empty()
+            || rom->cache_path.empty()
+            || rom->data_path.empty()) {
+        LOGE("Invalid or empty paths");
+        return false;
+    }
+
+    std::string target_system("/raw");
+    std::string target_cache("/raw");
+    std::string target_data("/raw");
+    target_system += rom->system_path;
+    target_cache += rom->cache_path;
+    target_data += rom->data_path;
+
+    // Bind mount proper /system, /cache, and /data directories
+    if (!util::bind_mount(target_system, 0771, "/system", 0771)) {
+        return false;
+    }
+    if (!util::bind_mount(target_cache, 0771, "/cache", 0771)) {
+        return false;
+    }
+    if (!util::bind_mount(target_data, 0771, "/data", 0771)) {
+        return false;
+    }
+
+    // Bind mount internal SD directory
+    if (!util::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
+        return false;
+    }
+
+    return true;
+}
+
 bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 {
-    bool ret = true;
-
     std::vector<util::fstab_rec> fstab;
     std::vector<util::fstab_rec> fstab_cache;
+    std::vector<util::fstab_rec *> recs_gen;
     std::vector<util::fstab_rec *> recs_system;
     std::vector<util::fstab_rec *> recs_cache;
     std::vector<util::fstab_rec *> recs_data;
     std::vector<util::fstab_rec *> flags_system;
     std::vector<util::fstab_rec *> flags_cache;
     std::vector<util::fstab_rec *> flags_data;
-    std::string target_system;
-    std::string target_cache;
-    std::string target_data;
     std::string path_fstab_gen;
     std::string path_completed;
-    std::string path_failed;
     std::string base_name;
     std::string dir_name;
     struct stat st;
     std::shared_ptr<Rom> rom;
     std::string rom_id;
 
-    Roms roms;
-    roms.add_builtin();
+    rom = determine_rom();
+    if (!rom) {
+        return false;
+    }
 
     base_name = util::base_name(fstab_path);
     dir_name = util::dir_name(fstab_path);
@@ -224,34 +362,12 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     path_completed += "/.";
     path_completed += base_name;
     path_completed += ".completed";
-    path_failed += dir_name;
-    path_failed += "/.";
-    path_failed += base_name;
-    path_failed += ".failed";
-
-    auto on_finish = util::finally([&] {
-        if (ret) {
-            util::create_empty_file(path_completed);
-            LOGI("Successfully mounted partitions");
-        } else {
-            util::create_empty_file(path_failed);
-        }
-    });
 
     // This is a oneshot operation
     if (stat(path_completed.c_str(), &st) == 0) {
+        util::create_empty_file(path_completed);
         LOGV("Filesystems already successfully mounted");
         return true;
-    }
-
-    if (stat(path_failed.c_str(), &st) == 0) {
-        LOGE("Failed to mount partitions ealier. No further attempts will be made");
-        return false;
-    }
-
-    // Remount rootfs as read-write so a new fstab file can be written
-    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
-        LOGE("Failed to remount rootfs as rw: %s", strerror(errno));
     }
 
     // Read original fstab
@@ -268,15 +384,6 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     }
 
     // Generate new fstab without /system, /cache, or /data entries
-    file_ptr out(std::fopen(path_fstab_gen.c_str(), "wb"), std::fclose);
-    if (!out) {
-        LOGE("Failed to open %s for writing: %s",
-             path_fstab_gen.c_str(), strerror(errno));
-        return false;
-    }
-
-    fchmod(fileno(out.get()), st.st_mode & 0777);
-
     for (util::fstab_rec &rec : fstab) {
         if (rec.mount_point == "/system") {
             recs_system.push_back(&rec);
@@ -285,11 +392,13 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         } else if (rec.mount_point == "/data") {
             recs_data.push_back(&rec);
         } else {
-            std::fprintf(out.get(), "%s\n", rec.orig_line.c_str());
+            recs_gen.push_back(&rec);
         }
     }
 
-    out.reset();
+    if (!write_generated_fstab(recs_gen, path_fstab_gen, st.st_mode)) {
+        return false;
+    }
 
     if (overwrite_fstab) {
         // For backwards compatibility, keep the old generated fstab as the
@@ -316,30 +425,6 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         return false;
     }
 
-    // Mount raw partitions to /raw/*
-    if (!util::kernel_cmdline_get_option("romid", &rom_id)
-            && !util::file_first_line("/romid", &rom_id)) {
-        LOGE("Failed to determine ROM ID");
-        return false;
-    }
-
-    if (Roms::is_named_rom(rom_id)) {
-        rom = Roms::create_named_rom(rom_id);
-    } else {
-        rom = roms.find_by_id(rom_id);
-        if (!rom) {
-            LOGE("Unknown ROM ID: %s", rom_id.c_str());
-            return false;
-        }
-    }
-
-    LOGD("ROM ID is: %s", rom_id.c_str());
-
-    // Set property for the Android app to use
-    if (!util::set_property("ro.multiboot.romid", rom_id)) {
-        LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom_id.c_str());
-    }
-
     // Because of how Android deals with partitions, if, say, the source path
     // for the /system bind mount resides on /cache, then the cache partition
     // must be mounted with the system partition's flags. In this future, this
@@ -361,53 +446,8 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 
     flags_data = recs_data;
 
-    if (mkdir("/raw", 0755) < 0) {
-        LOGE("Failed to create /raw");
-        return false;
-    }
-
-    if (!create_dir_and_mount(recs_system, flags_system, "/raw/system")) {
-        LOGE("Failed to mount /raw/system");
-        return false;
-    }
-    if (!create_dir_and_mount(recs_cache, flags_cache, "/raw/cache")) {
-        LOGE("Failed to mount /raw/cache");
-        return false;
-    }
-    if (!create_dir_and_mount(recs_data, flags_data, "/raw/data")) {
-        LOGE("Failed to mount /raw/data");
-        return false;
-    }
-
-    // Make paths use /raw/...
-    if (rom->system_path.empty()
-            || rom->cache_path.empty()
-            || rom->data_path.empty()) {
-        LOGE("Invalid or empty paths");
-        return false;
-    }
-
-    target_system += "/raw";
-    target_system += rom->system_path;
-    target_cache += "/raw";
-    target_cache += rom->cache_path;
-    target_data += "/raw";
-    target_data += rom->data_path;
-
-    if (!util::bind_mount(target_system, 0771, "/system", 0771)) {
-        return false;
-    }
-
-    if (!util::bind_mount(target_cache, 0771, "/cache", 0771)) {
-        return false;
-    }
-
-    if (!util::bind_mount(target_data, 0771, "/data", 0771)) {
-        return false;
-    }
-
-    // Bind mount internal SD directory
-    if (!util::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
+    if (!mount_fstab_entries(recs_system, flags_system, recs_cache, flags_cache,
+                             recs_data, flags_data, rom)) {
         return false;
     }
 
@@ -415,6 +455,13 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         return false;
     }
 
+    // Set property for the Android app to use
+    if (!util::set_property("ro.multiboot.romid", rom_id)) {
+        LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom_id.c_str());
+    }
+
+    util::create_empty_file(path_completed);
+    LOGI("Successfully mounted partitions");
     return true;
 }
 
@@ -475,6 +522,11 @@ int mount_fstab_main(int argc, char *argv[])
         close(fd);
     }
 #endif
+
+    // Remount rootfs as read-write so a new fstab file can be written
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        LOGE("Failed to remount rootfs as rw: %s", strerror(errno));
+    }
 
     if (!mount_fstab(argv[optind], false)) {
         LOGE("Failed to mount filesystems. Rebooting into recovery");
