@@ -213,8 +213,14 @@ bool MultiBootPatcher::Impl::patchRamdisk(std::vector<unsigned char> *data)
 
     if (cancelled) return false;
 
-    auto *rp = pc->createRamdiskPatcher(
-            info->patchInfo()->ramdisk(), info, &cpio);
+    // For backwards compatibility, translate '<device>/default' to 'default' if
+    // a ramdisk patcher named '<device>/default' does not exist
+    std::string rpId = info->patchInfo()->ramdisk();
+    auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
+    if (!rp && rpId == info->device()->id() + "/default") {
+        rpId = "default";
+        rp = pc->createRamdiskPatcher(rpId, info, &cpio);
+    }
     if (!rp) {
         error = PatcherError::createPatcherCreationError(
                 ErrorCode::RamdiskPatcherCreateError,
