@@ -118,18 +118,9 @@ public:
 
     virtual int on_changed_path()
     {
+        // We'll set attrs and xattrs after visiting children
         if (_curr->fts_level == 0) {
-            if (!util::copy_stat(_curr->fts_accpath, _target)) {
-                LOGE("%s: Failed to copy attributes: %s",
-                     _target.c_str(), strerror(errno));
-                return Action::FTS_Fail;
-            }
-            if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
-                LOGE("%s: Failed to copy xattrs: %s",
-                     _target.c_str(), strerror(errno));
-                return Action::FTS_Fail;
-            }
-            return Action::FTS_Next;
+            return Action::FTS_OK;
         }
 
         // We only care about the first level
@@ -152,6 +143,10 @@ public:
 
     virtual int on_reached_directory_pre() override
     {
+        if (_curr->fts_level == 0) {
+            return Action::FTS_OK;
+        }
+
         // _target is the correct parameter here (or pathbuf and
         // COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
@@ -164,18 +159,44 @@ public:
         return Action::FTS_Skip;
     }
 
+    virtual int on_reached_directory_post() override
+    {
+        if (_curr->fts_level == 0) {
+            if (!util::copy_stat(_curr->fts_accpath, _target)) {
+                LOGE("%s: Failed to copy attributes: %s",
+                     _target.c_str(), strerror(errno));
+                return Action::FTS_Fail;
+            }
+            if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
+                LOGE("%s: Failed to copy xattrs: %s",
+                     _target.c_str(), strerror(errno));
+                return Action::FTS_Fail;
+            }
+        }
+        return Action::FTS_OK;
+    }
+
     virtual int on_reached_file() override
     {
+        if (_curr->fts_level == 0) {
+            return Action::FTS_OK;
+        }
         return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
     virtual int on_reached_symlink() override
     {
+        if (_curr->fts_level == 0) {
+            return Action::FTS_OK;
+        }
         return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
     virtual int on_reached_special_file() override
     {
+        if (_curr->fts_level == 0) {
+            return Action::FTS_OK;
+        }
         return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
