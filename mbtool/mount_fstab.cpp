@@ -416,6 +416,11 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
             rec->flags &= ~MS_NOSUID;
         }
     }
+    if (util::starts_with(rom->cache_path, "/system")) {
+        for (util::fstab_rec *rec : recs_system) {
+            rec->flags &= ~MS_RDONLY;
+        }
+    }
 
     if (!mount_fstab_entries(recs_system, recs_cache, recs_data, rom)) {
         return false;
