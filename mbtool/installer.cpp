@@ -1294,6 +1294,8 @@ Installer::ProceedState Installer::install_stage_finish()
             display_msg("Failed to read ramdisk image");
             return ProceedState::Fail;
         }
+
+        // Set ROM ID in /romid
         cpio.remove("romid");
         std::vector<unsigned char> id_data(_rom->id.begin(), _rom->id.end());
         if (!cpio.addFile(std::move(id_data), "romid", 0664)) {
@@ -1301,6 +1303,20 @@ Installer::ProceedState Installer::install_stage_finish()
             display_msg("Failed to add ROM ID to ramdisk");
             return ProceedState::Fail;
         }
+
+        // Set ro.patcher.device=<device ID> in /default.prop
+        std::vector<unsigned char> default_prop;
+        if (cpio.contents("default.prop", &default_prop)) {
+            std::string prop = util::format(
+                    "\nro.patcher.device=%s\n", _device.c_str());
+            default_prop.insert(default_prop.end(), prop.begin(), prop.end());
+            if (!cpio.setContents("default.prop", std::move(default_prop))) {
+                LOGE("Failed to modify /default.prop in the ramdisk");
+                display_msg("Failed to add device ID to ramdisk");
+                return ProceedState::Fail;
+            }
+        }
+
         std::vector<unsigned char> new_ramdisk;
         if (!cpio.createData(&new_ramdisk)) {
             LOGE("Failed to create new ramdisk image");
