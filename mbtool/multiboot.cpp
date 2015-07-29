@@ -118,6 +118,20 @@ public:
 
     virtual int on_changed_path()
     {
+        if (_curr->fts_level == 0) {
+            if (!util::copy_stat(_curr->fts_accpath, _target)) {
+                LOGE("%s: Failed to copy attributes: %s",
+                     _target.c_str(), strerror(errno));
+                return Action::FTS_Fail;
+            }
+            if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
+                LOGE("%s: Failed to copy xattrs: %s",
+                     _target.c_str(), strerror(errno));
+                return Action::FTS_Fail;
+            }
+            return Action::FTS_Next;
+        }
+
         // We only care about the first level
         if (_curr->fts_level != 1) {
             return Action::FTS_Next;

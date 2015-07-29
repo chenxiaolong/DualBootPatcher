@@ -35,6 +35,8 @@ enum CopyFlags : int
 };
 
 bool copy_data_fd(int fd_source, int fd_target);
+bool copy_xattrs(const std::string &source, const std::string &target);
+bool copy_stat(const std::string &source, const std::string &target);
 bool copy_contents(const std::string &source, const std::string &target);
 bool copy_file(const std::string &source, const std::string &target, int flags);
 bool copy_dir(const std::string &source, const std::string &target, int flags);

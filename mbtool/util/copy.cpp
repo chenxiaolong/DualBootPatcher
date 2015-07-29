@@ -94,7 +94,7 @@ static bool copy_data(const std::string &source, const std::string &target)
     return true;
 }
 
-static bool copy_xattrs(const std::string &source, const std::string &target)
+bool copy_xattrs(const std::string &source, const std::string &target)
 {
     ssize_t size;
     std::vector<char> names;
@@ -163,7 +163,7 @@ static bool copy_xattrs(const std::string &source, const std::string &target)
     return true;
 }
 
-static bool copy_stat(const std::string &source, const std::string &target)
+bool copy_stat(const std::string &source, const std::string &target)
 {
     struct stat sb;
 
