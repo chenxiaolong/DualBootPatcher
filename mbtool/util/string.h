@@ -40,6 +40,8 @@ void replace(std::string *source,
 void replace_all(std::string *source,
                  const std::string &from, const std::string &to);
 
+std::vector<std::string> split(const std::string &str,
+                               const std::string &delim);
 std::string join(std::vector<std::string> &list, std::string delim);
 std::vector<std::string> tokenize(const std::string &str,
                                   const std::string &delims);

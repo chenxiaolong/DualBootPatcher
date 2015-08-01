@@ -122,6 +122,23 @@ void replace_all(std::string *source,
     replace_internal(source, from, to, false);
 }
 
+std::vector<std::string> split(const std::string &str, const std::string &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string> result;
+
+    if (!delim.empty()) {
+        while ((end = str.find(delim, begin)) != std::string::npos) {
+            result.push_back(str.substr(begin, end - begin));
+            begin = end + delim.size();
+        }
+        result.push_back(str.substr(begin));
+    }
+
+    return result;
+}
+
 std::string join(std::vector<std::string> &list, std::string delim)
 {
     std::string result;
