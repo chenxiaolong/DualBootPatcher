@@ -30,6 +30,9 @@ dependencies {
     compile project(":emulatorview")
     compile files('@CMAKE_BINARY_DIR@/thirdparty/android/jna/jna.jar')
     compile files('libs/RootTools-4.1.jar')
+
+    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.3.1'
+    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.3.1'
 }
 
 android {
