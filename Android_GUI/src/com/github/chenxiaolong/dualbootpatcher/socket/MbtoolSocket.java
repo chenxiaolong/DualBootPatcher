@@ -26,6 +26,7 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
@@ -689,6 +690,8 @@ public class MbtoolSocket {
     // Private helper functions
 
     private Response sendRequest(FlatBufferBuilder builder, short expected) throws IOException {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
         SocketUtils.writeBytes(mSocketOS, builder.sizedByteArray());
 
         byte[] responseBytes = SocketUtils.readBytes(mSocketIS);
