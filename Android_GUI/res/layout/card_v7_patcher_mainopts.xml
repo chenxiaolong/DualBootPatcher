@@ -33,13 +33,20 @@
             style="@style/card_v7_section_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/devpartconfig_title" />
+            android:text="@string/patcher_device_title" />
 
         <Spinner
             android:id="@+id/spinner_device"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/card_v7_normal_view_margin_top" />
+
+        <TextView
+            style="@style/card_v7_section_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
+            android:text="@string/patcher_partconfig_title" />
 
         <Spinner
             android:id="@+id/spinner_rom_id"
@@ -63,6 +70,13 @@
             android:layout_height="wrap_content"
             android:hint="@string/install_location_data_slot_id_hint"
             android:inputType="textNoSuggestions" />
+
+        <TextView
+            style="@style/card_v7_section_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
+            android:text="@string/patcher_partconfig_desc_title" />
 
         <TextView
             android:id="@+id/rom_id_desc"

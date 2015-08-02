@@ -216,8 +216,12 @@
         tapping and holding the file and a file can be removed by swiping it away.\n\nNOTE:
         This feature is still experimental. Please backup before continuing!</string>
 
-    <!-- Title for the patcher card asking for the device and partition configuration -->
-    <string name="devpartconfig_title">Device and partition configuration:</string>
+    <!-- Title of the device selection box in the patcher -->
+    <string name="patcher_device_title">Device:</string>
+    <!-- Title of the partition configuration box in the patcher -->
+    <string name="patcher_partconfig_title">Partition configuration:</string>
+    <!-- Title of the partition configuration description in the patcher -->
+    <string name="patcher_partconfig_desc_title">Description:</string>
 
     <!-- Name for primary ROM upgrade installation location -->
     <string name="install_location_primary_upgrade">Primary ROM Upgrade</string>
