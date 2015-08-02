@@ -38,6 +38,9 @@
         <item name="android:textColor">@color/text_color</item>
     </style>
 
+    <style name="DrawerActivityTheme" parent="AppTheme">
+    </style>
+
     <!-- Toolbar theme -->
     <style name="ToolbarTheme" parent="AppTheme">
         <item name="android:textColorPrimary">@color/text_color_primary</item>

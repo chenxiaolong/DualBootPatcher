@@ -38,7 +38,6 @@ import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector;
 import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.RequestedFileEvent;
-import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
@@ -264,20 +263,12 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         case PatcherConfigState.STATE_PATCHING:
             // Keep screen on
             getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-            // Show progress spinner in navigation bar
-            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_PATCH_FILE, true);
-
             break;
 
         case PatcherConfigState.STATE_INITIAL:
         case PatcherConfigState.STATE_FINISHED:
             // Don't keep screen on
             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-            // Hide progress spinner in navigation bar
-            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_PATCH_FILE, false);
-
             break;
         }
     }

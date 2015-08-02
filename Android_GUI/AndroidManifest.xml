@@ -36,7 +36,8 @@
         tools:replace="android:label">
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name_release">
+            android:label="@string/app_name_release"
+            android:theme="@style/DrawerActivityTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -1,5 +1,5 @@
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -27,16 +27,11 @@
 
     <dimen name="separator_height">1dp</dimen>
 
-    <!-- Navigation Drawer -->
-    <!-- See http://www.google.com/design/spec/layout/metrics-keylines.html#metrics-keylines-keylines-spacing -->
-    <dimen name="nav_item_height">48dp</dimen>
-    <dimen name="nav_item_side_padding">16dp</dimen>
-    <dimen name="nav_item_icon_size">24dp</dimen>
-    <!-- 72dp relative to edge of screen (16dp + 56dp) -->
-    <dimen name="nav_item_text_left_padding">56dp</dimen>
-    <dimen name="nav_item_text_size">14sp</dimen>
-    <dimen name="nav_item_separator_padding">8dp</dimen>
-    <dimen name="nav_item_progress_size">48dp</dimen>
+    <!-- Navigation drawer header -->
+    <dimen name="nav_header_height">190dp</dimen>
+    <dimen name="nav_header_text_size">14sp</dimen>
+    <dimen name="nav_header_margin_start">12dp</dimen>
+    <dimen name="nav_header_margin_bottom">8dp</dimen>
 
     <!-- Cards -->
     <dimen name="card_v7_thumbnail_width">80dp</dimen>

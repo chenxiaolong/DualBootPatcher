@@ -46,7 +46,6 @@ import android.widget.Toast;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
-import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -280,18 +279,10 @@ public class SwitcherListFragment extends Fragment implements
     private void updateCardUI() {
         if (mPerformingAction) {
             // Keep screen on
-            getActivity().getWindow().addFlags(
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-            // Show progress spinner in navigation bar
-            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_ROMS, true);
+            getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {
             // Don't keep screen on
-            getActivity().getWindow().clearFlags(
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-            // Hide progress spinner in navigation bar
-            ((MainActivity) getActivity()).showProgress(MainActivity.FRAGMENT_ROMS, false);
+            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
     }
 

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+   * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   *
+   * This program is free software: you can redistribute it and/or modify
+   * it under the terms of the GNU General Public License as published by
+   * the Free Software Foundation, either version 3 of the License, or
+   * (at your option) any later version.
+   *
+   * This program is distributed in the hope that it will be useful,
+   * but WITHOUT ANY WARRANTY; without even the implied warranty of
+   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   * GNU General Public License for more details.
+   *
+   * You should have received a copy of the GNU General Public License
+   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:id="@+id/nav_primary_group">
+        <item
+            android:id="@+id/nav_roms"
+            android:checkable="true"
+            android:icon="@drawable/check"
+            android:title="@string/title_roms" />
+        <item
+            android:id="@+id/nav_patch_zip"
+            android:checkable="true"
+            android:icon="@drawable/split"
+            android:title="@string/title_patch_zip" />
+        <item
+            android:id="@+id/nav_free_space"
+            android:checkable="true"
+            android:icon="@drawable/storage"
+            android:title="@string/title_free_space" />
+    </group>
+
+    <group android:id="@+id/nav_secondary_group">
+        <item
+            android:id="@+id/nav_rom_settings"
+            android:icon="@drawable/settings"
+            android:title="@string/title_rom_settings" />
+        <item
+            android:id="@+id/nav_app_sharing"
+            android:icon="@drawable/dashboard"
+            android:title="@string/title_app_sharing" />
+        <item
+            android:id="@+id/nav_reboot"
+            android:icon="@drawable/refresh"
+            android:title="@string/title_reboot" />
+        <item
+            android:id="@+id/nav_about"
+            android:checkable="true"
+            android:icon="@drawable/about"
+            android:title="@string/title_about" />
+        <item
+            android:id="@+id/nav_exit"
+            android:icon="@drawable/exit"
+            android:title="@string/title_exit" />
+    </group>
+
+</menu>

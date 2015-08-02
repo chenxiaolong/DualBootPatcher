@@ -20,8 +20,10 @@
 <android.support.v4.widget.DrawerLayout
     android:id="@+id/drawer_layout"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -36,18 +38,12 @@
             android:layout_height="match_parent" />
     </LinearLayout>
 
-    <ScrollView
+    <android.support.design.widget.NavigationView
         android:id="@+id/left_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/navigation_background">
-
-        <LinearLayout
-            android:id="@+id/drawer_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
-
+        android:background="@color/navigation_background"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/nav_items" />
 </android.support.v4.widget.DrawerLayout>
