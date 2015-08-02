@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
@@ -198,7 +199,12 @@ public class SwitcherUtils {
         new Thread() {
             @Override
             public void run() {
-                MbtoolSocket.getInstance().restart(context, "");
+                try {
+                    MbtoolSocket.getInstance().restart(context, "");
+                } catch (IOException e) {
+                    // Ignore
+                    Log.e(TAG, "mbtool communication error", e);
+                }
             }
         }.start();
     }

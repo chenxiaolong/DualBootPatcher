@@ -18,14 +18,19 @@
 package com.github.chenxiaolong.dualbootpatcher.socket;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.dualbootpatcher.Version;
+import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 public class MbtoolUtils {
+    private static final String TAG = MbtoolUtils.class.getSimpleName();
+
     private static HashMap<Feature, Version> sMinVersionMap = new HashMap<>();
 
     static {
@@ -52,10 +57,14 @@ public class MbtoolUtils {
     }
 
     public static Version getMbtoolVersion(Context context) {
+        String version = null;
         try {
-            return new Version(MbtoolSocket.getInstance().version(context));
-        } catch (Exception e) {
-            e.printStackTrace();
+            version = MbtoolSocket.getInstance().version(context);
+            return new Version(version);
+        } catch (VersionParseException e) {
+            Log.e(TAG, "Failed to parse mbtool version: " + version);
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
         }
         return Version.from("0.0.0");
     }

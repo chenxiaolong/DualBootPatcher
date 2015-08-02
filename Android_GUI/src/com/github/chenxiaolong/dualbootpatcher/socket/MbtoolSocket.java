@@ -22,6 +22,8 @@ import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.net.LocalSocketAddress.Namespace;
 import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -175,12 +177,11 @@ public class MbtoolSocket {
      * 3. If that fails, then return false
      *
      * @param context Application context
-     * @return True if successfully connected or if already connected. False, otherwise
      */
-    public boolean connect(Context context) {
+    public void connect(Context context) throws IOException {
         // If we're already connected, then we're good
         if (mSocket != null) {
-            return true;
+            return;
         }
 
         // Try connecting to the socket
@@ -188,7 +189,7 @@ public class MbtoolSocket {
             mSocket = new LocalSocket();
             mSocket.connect(new LocalSocketAddress(SOCKET_ADDRESS, Namespace.ABSTRACT));
             initializeConnection();
-            return true;
+            return;
         } catch (IOException e) {
             Log.e(TAG, "Could not connect to mbtool socket", e);
             disconnect();
@@ -197,24 +198,24 @@ public class MbtoolSocket {
         Log.v(TAG, "Launching bundled mbtool");
 
         if (!executeMbtool(context)) {
-            Log.e(TAG, "Failed to execute mbtool");
-            return false;
+            throw new IOException("Failed to execute mbtool");
+        }
+
+        // Give mbtool a little bit of time to start listening on the socket
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         try {
-            Thread.sleep(1000);
             mSocket = new LocalSocket();
             mSocket.connect(new LocalSocketAddress(SOCKET_ADDRESS, Namespace.ABSTRACT));
             initializeConnection();
-            return true;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            Log.e(TAG, "Could not connect to mbtool socket", e);
             disconnect();
+            throw new IOException("Could not connect to mbtool socket", e);
         }
-
-        return false;
     }
 
     @SuppressWarnings("deprecation")
@@ -250,18 +251,33 @@ public class MbtoolSocket {
         mMbtoolVersion = null;
     }
 
-    public String version(Context context) {
-        if (!connect(context)) {
-            return null;
-        }
+    /**
+     * Get version of the mbtool daemon.
+     *
+     * @param context Application context
+     * @return String containing the mbtool version
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public String version(Context context) throws IOException {
+        connect(context);
 
         return mMbtoolVersion;
     }
 
-    public RomInformation[] getInstalledRoms(Context context) {
-        if (!connect(context)) {
-            return null;
-        }
+    /**
+     * Get list of installed ROMs.
+     *
+     * NOTE: The list of ROMs will be re-queried and a new array will be returned every time this
+     *       method is called. It may be a good idea to cache the results after the initial call.
+     *
+     * @param context Application context
+     * @return Array of {@link RomInformation} objects representing the list of installed ROMs
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public RomInformation[] getInstalledRoms(Context context) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -296,17 +312,21 @@ public class MbtoolSocket {
 
             return roms;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return null;
     }
 
-    public String[] getBuiltinRomIds(Context context) {
-        if (!connect(context)) {
-            return null;
-        }
+    /**
+     * Get list of supported non-data-slot ROM IDs.
+     *
+     * @param context Application context
+     * @return List of strings containing the ROM IDs
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public String[] getBuiltinRomIds(Context context) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -332,17 +352,21 @@ public class MbtoolSocket {
 
             return romIds;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return null;
     }
 
-    public String getCurrentRom(Context context) {
-        if (!connect(context)) {
-            return null;
-        }
+    /**
+     * Get the current ROM ID.
+     *
+     * @param context Application context
+     * @return String containing the current ROM ID
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public String getCurrentRom(Context context) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -363,11 +387,9 @@ public class MbtoolSocket {
 
             return response.romId();
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return null;
     }
 
     public enum SwitchRomResult {
@@ -376,10 +398,23 @@ public class MbtoolSocket {
         FAILED
     }
 
-    public SwitchRomResult chooseRom(Context context, String id) {
-        if (!connect(context)) {
-            return SwitchRomResult.FAILED;
-        }
+    /**
+     * Switch to another ROM.
+     *
+     * NOTE: If {@link SwitchRomResult#FAILED} is returned, there is no way of determining the cause
+     *       of failure programmatically. However, mbtool will likely print debugging information
+     *       (errno, etc.) to the logcat for manual reviewing.
+     *
+     * @param context Application context
+     * @param id ID of ROM to switch to
+     * @return {@link SwitchRomResult#UNKNOWN_BOOT_PARTITION} if the boot partition could not be determined
+     *         {@link SwitchRomResult#SUCCEEDED} if the ROM was successfully switched
+     *         {@link SwitchRomResult#FAILED} if the ROM failed to switch
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public SwitchRomResult chooseRom(Context context, String id) throws IOException {
+        connect(context);
 
         try {
             String bootBlockDev = SwitcherUtils.getBootPartition(context);
@@ -424,11 +459,9 @@ public class MbtoolSocket {
 
             return response.success() != 0 ? SwitchRomResult.SUCCEEDED : SwitchRomResult.FAILED;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return SwitchRomResult.FAILED;
     }
 
     public enum SetKernelResult {
@@ -437,10 +470,23 @@ public class MbtoolSocket {
         FAILED
     }
 
-    public SetKernelResult setKernel(Context context, String id) {
-        if (!connect(context)) {
-            return SetKernelResult.FAILED;
-        }
+    /**
+     * Set the kernel for a ROM.
+     *
+     * NOTE: If {@link SetKernelResult#FAILED} is returned, there is no way of determining the cause
+     *       of failure programmatically. However, mbtool will likely print debugging information
+     *       (errno, etc.) to the logcat for manual reviewing.
+     *
+     * @param context Application context
+     * @param id ID of ROM to set the kernel for
+     * @return {@link SetKernelResult#UNKNOWN_BOOT_PARTITION} if the boot partition could not be determined
+     *         {@link SetKernelResult#SUCCEEDED} if setting the kernel was successful
+     *         {@link SetKernelResult#FAILED} if setting the kernel failed
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public SetKernelResult setKernel(Context context, String id) throws IOException {
+        connect(context);
 
         try {
             String bootBlockDev = SwitcherUtils.getBootPartition(context);
@@ -470,17 +516,22 @@ public class MbtoolSocket {
 
             return response.success() != 0 ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return SetKernelResult.FAILED;
     }
 
-    public boolean restart(Context context, String arg) {
-        if (!connect(context)) {
-            return false;
-        }
+    /**
+     * Reboots the device.
+     *
+     * @param context Application context
+     * @param arg Reboot argument (eg. "recovery", "download", "bootloader"). Pass "" for a regular
+     *            reboot.
+     * @return True if the call to init succeeded and a reboot is pending. False, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    public boolean restart(Context context, String arg) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -502,17 +553,23 @@ public class MbtoolSocket {
 
             return response.success() != 0;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return false;
     }
 
-    public FileDescriptor open(Context context, String filename, short[] flags) {
-        if (!connect(context)) {
-            return null;
-        }
+    /**
+     * Opens a file with mbtool and pass the file descriptor to the app.
+     *
+     * @param context Application context
+     * @param filename Absolute path to the file
+     * @param flags List of {@link mbtool.daemon.v2.OpenFlag}s
+     * @return {@link FileDescriptor} if file was successfully opened. null, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    @Nullable
+    public FileDescriptor open(Context context, String filename, short[] flags) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -551,17 +608,26 @@ public class MbtoolSocket {
 
             return fds[0];
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return null;
     }
 
-    public boolean copy(Context context, String source, String target) {
-        if (!connect(context)) {
-            return false;
-        }
+    /**
+     * Copy a file using mbtool.
+     *
+     * NOTE: If false is returned, there is no way of determining the cause of failure
+     *       programmatically. However, mbtool will likely print debugging information (errno, etc.)
+     *       to the logcat for manual reviewing.
+     *
+     * @param context Application context
+     * @param source Absolute source path
+     * @param target Absolute target path
+     * @return True if the operation was successful. False, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    public boolean copy(Context context, String source, String target) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -591,17 +657,26 @@ public class MbtoolSocket {
 
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return false;
     }
 
-    public boolean chmod(Context context, String filename, int mode) {
-        if (!connect(context)) {
-            return false;
-        }
+    /**
+     * Chmod a file using mbtool.
+     *
+     * NOTE: If false is returned, there is no way of determining the cause of failure
+     *       programmatically. However, mbtool will likely print debugging information (errno, etc.)
+     *       to the logcat for manual reviewing.
+     *
+     * @param context Application context
+     * @param filename Absolute path
+     * @param mode Unix permissions number (will be AND'ed with 0777 by mbtool for security reasons)
+     * @return True if the operation was successful. False, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    public boolean chmod(Context context, String filename, int mode) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -629,11 +704,9 @@ public class MbtoolSocket {
 
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return false;
     }
 
     public static class WipeResult {
@@ -642,10 +715,18 @@ public class MbtoolSocket {
         public short[] failed;
     }
 
-    public WipeResult wipeRom(Context context, String romId, short[] targets) {
-        if (!connect(context)) {
-            return null;
-        }
+    /**
+     * Wipe a ROM.
+     *
+     * @param context Application context
+     * @param romId ROM ID to wipe
+     * @param targets List of {@link mbtool.daemon.v2.WipeTarget}s indicating the wipe targets
+     * @return {@link WipeResult} containing the list of succeeded and failed wipe targets
+     * @throws IOException When any socket communication error occurs
+     */
+    @NonNull
+    public WipeResult wipeRom(Context context, String romId, short[] targets) throws IOException {
+        connect(context);
 
         try {
             // Create request
@@ -680,11 +761,9 @@ public class MbtoolSocket {
 
             return result;
         } catch (IOException e) {
-            e.printStackTrace();
             disconnect();
+            throw e;
         }
-
-        return null;
     }
 
     // Private helper functions

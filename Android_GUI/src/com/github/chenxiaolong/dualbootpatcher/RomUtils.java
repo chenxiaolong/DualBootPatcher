@@ -23,12 +23,14 @@ import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public class RomUtils {
     private static final String TAG = RomUtils.class.getSimpleName();
@@ -216,25 +218,31 @@ public class RomUtils {
         }
     }
 
+    @Nullable
     public static RomInformation getCurrentRom(Context context) {
-        String id = MbtoolSocket.getInstance().getCurrentRom(context);
-        Log.d(TAG, "mbtool says current ROM ID is: " + id);
+        try {
+            String id = MbtoolSocket.getInstance().getCurrentRom(context);
+            Log.d(TAG, "mbtool says current ROM ID is: " + id);
 
-        if (id != null) {
             for (RomInformation rom : getRoms(context)) {
                 if (rom.getId().equals(id)) {
                     return rom;
                 }
             }
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
         }
 
         return null;
     }
 
+    @NonNull
     public synchronized static RomInformation[] getRoms(Context context) {
-        RomInformation[] roms = MbtoolSocket.getInstance().getInstalledRoms(context);
+        RomInformation[] roms = new RomInformation[0];
 
-        if (roms != null) {
+        try {
+            roms = MbtoolSocket.getInstance().getInstalledRoms(context);
+
             for (RomInformation rom : roms) {
                 rom.setThumbnailPath(Environment.getExternalStorageDirectory()
                         + "/MultiBoot/" + rom.getId() + "/thumbnail.webp");
@@ -245,16 +253,19 @@ public class RomUtils {
 
                 loadConfig(rom);
             }
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
         }
 
         return roms;
     }
 
+    @NonNull
     public synchronized static RomInformation[] getBuiltinRoms(Context context) {
         if (mBuiltinRoms == null) {
-            String[] ids = MbtoolSocket.getInstance().getBuiltinRomIds(context);
+            try {
+                String[] ids = MbtoolSocket.getInstance().getBuiltinRomIds(context);
 
-            if (ids != null) {
                 mBuiltinRoms = new RomInformation[ids.length];
                 for (int i = 0; i < ids.length; i++) {
                     RomInformation rom = new RomInformation();
@@ -262,6 +273,8 @@ public class RomUtils {
                     rom.setDefaultName(getDefaultName(context, rom));
                     mBuiltinRoms[i] = rom;
                 }
+            } catch (IOException e) {
+                Log.e(TAG, "mbtool communication error", e);
             }
         }
 

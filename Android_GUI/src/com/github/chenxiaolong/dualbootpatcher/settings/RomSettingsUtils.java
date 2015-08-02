@@ -108,9 +108,15 @@ public class RomSettingsUtils {
 
         // Make sure the kernel was backed up
         if (!bootImageFile.exists()) {
-            SetKernelResult result = MbtoolSocket.getInstance().setKernel(context, romInfo.getId());
-            if (result != SetKernelResult.SUCCEEDED) {
-                Log.e(TAG, "Failed to backup boot image before modification");
+            try {
+                SetKernelResult result =
+                        MbtoolSocket.getInstance().setKernel(context, romInfo.getId());
+                if (result != SetKernelResult.SUCCEEDED) {
+                    Log.e(TAG, "Failed to backup boot image before modification");
+                    return false;
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "mbtool communication error", e);
                 return false;
             }
         }
@@ -176,6 +182,7 @@ public class RomSettingsUtils {
         // Make changes to the boot image if necessary
         if (wasType == Type.LOKI || !hasRomIdFile) {
             bi = new BootImage();
+            cpio = new CpioFile();
 
             try {
                 if (!bi.load(tmpKernel)) {
@@ -195,7 +202,6 @@ public class RomSettingsUtils {
                     if (!socket.copy(context, ABOOT_PARTITION, aboot.getPath()) ||
                             !socket.chmod(context, aboot.getPath(), 0644)) {
                         Log.e(TAG, "Failed to copy aboot partition to temporary file");
-                        bi.destroy();
                         return false;
                     }
 
@@ -205,7 +211,6 @@ public class RomSettingsUtils {
                     aboot.delete();
                 }
                 if (!hasRomIdFile) {
-                    cpio = new CpioFile();
                     if (!cpio.load(bi.getRamdiskImage())) {
                         logLibMbpError(context, cpio.getError());
                         return false;
@@ -217,7 +222,6 @@ public class RomSettingsUtils {
                         return false;
                     }
                     bi.setRamdiskImage(cpio.createData());
-                    cpio.destroy();
                 }
 
                 if (!bi.createFile(tmpKernel)) {
@@ -229,6 +233,7 @@ public class RomSettingsUtils {
                 return false;
             } finally {
                 bi.destroy();
+                cpio.destroy();
             }
         }
 
@@ -241,9 +246,14 @@ public class RomSettingsUtils {
 
         tmpKernelFile.delete();
 
-        SwitchRomResult result = MbtoolSocket.getInstance().chooseRom(context, romInfo.getId());
-        if (result != SwitchRomResult.SUCCEEDED) {
-            Log.e(TAG, "Failed to reflash boot image");
+        try {
+            SwitchRomResult result = MbtoolSocket.getInstance().chooseRom(context, romInfo.getId());
+            if (result != SwitchRomResult.SUCCEEDED) {
+                Log.e(TAG, "Failed to reflash boot image");
+                return false;
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
             return false;
         }
 

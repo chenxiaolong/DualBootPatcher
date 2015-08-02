@@ -24,6 +24,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
@@ -46,6 +47,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.Pend
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.EnumSet;
 
 public class SwitcherService extends IntentService {
@@ -177,7 +179,12 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_SWITCH_ROM);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        SwitchRomResult result = MbtoolSocket.getInstance().chooseRom(this, kernelId);
+        SwitchRomResult result = SwitchRomResult.FAILED;
+        try {
+            result = MbtoolSocket.getInstance().chooseRom(this, kernelId);
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+        }
 
         onSwitchedRom(kernelId, result);
 
@@ -188,7 +195,12 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_SET_KERNEL);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
-        SetKernelResult result = MbtoolSocket.getInstance().setKernel(this, kernelId);
+        SetKernelResult result = SetKernelResult.FAILED;
+        try {
+            result = MbtoolSocket.getInstance().setKernel(this, kernelId);
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+        }
 
         onSetKernel(kernelId, result);
 
@@ -362,12 +374,12 @@ public class SwitcherService extends IntentService {
         String romId = data.getString(PARAM_ROM_ID);
         short[] targets = data.getShortArray(PARAM_WIPE_TARGETS);
 
-        WipeResult result = MbtoolSocket.getInstance().wipeRom(this, romId, targets);
-
-        if (result == null) {
-            onWipedRom(null, null);
-        } else {
+        try {
+            WipeResult result = MbtoolSocket.getInstance().wipeRom(this, romId, targets);
             onWipedRom(result.succeeded, result.failed);
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+            onWipedRom(null, null);
         }
     }
 

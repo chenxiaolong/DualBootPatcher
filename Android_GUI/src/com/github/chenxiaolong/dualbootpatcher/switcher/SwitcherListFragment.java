@@ -739,10 +739,14 @@ public class SwitcherListFragment extends Fragment implements
             MbtoolSocket socket = MbtoolSocket.getInstance();
 
             // Copy boot partition to the temporary file
-            if (!socket.copy(getContext(), bootPartition, tmpImage) ||
-                    !socket.chmod(getContext(), tmpImage, 0644)) {
-                Log.e(TAG, "Failed to copy boot partition to temporary file");
-                return CurrentKernelStatus.UNKNOWN;
+            try {
+                if (!socket.copy(getContext(), bootPartition, tmpImage) ||
+                        !socket.chmod(getContext(), tmpImage, 0644)) {
+                    Log.e(TAG, "Failed to copy boot partition to temporary file");
+                    return CurrentKernelStatus.UNKNOWN;
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "mbtool communication error", e);
             }
 
             BootImage biSaved = new BootImage();
