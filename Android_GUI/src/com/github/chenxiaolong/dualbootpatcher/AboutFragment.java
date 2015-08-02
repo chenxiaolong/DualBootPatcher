@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,32 +43,28 @@ public class AboutFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        TextView name = (TextView) getActivity().findViewById(
-                R.id.about_name);
+        TextView name = (TextView) getActivity().findViewById(R.id.about_name);
         name.setText(BuildConfig.APP_NAME_RESOURCE);
 
-        TextView version = (TextView) getActivity().findViewById(
-                R.id.about_version);
-        version.setText(String.format(getActivity().getString(R.string.version),
-                BuildConfig.VERSION_NAME));
+        TextView version = (TextView) getActivity().findViewById(R.id.about_version);
+        version.setText(String.format(getString(R.string.version), BuildConfig.VERSION_NAME));
 
-        TextView credits = (TextView) getActivity().findViewById(
-                R.id.about_credits);
+        TextView credits = (TextView) getActivity().findViewById(R.id.about_credits);
 
         String linkable = "<a href=\"%s\">%s</a>\n";
         String newline = "<br />";
         String separator = " | ";
 
-        String creditsText = getActivity().getString(R.string.credits);
+        String creditsText = getString(R.string.credits);
         String sourceCode = String.format(linkable,
-                getActivity().getString(R.string.url_source_code),
-                getActivity().getString(R.string.link_source_code));
+                getString(R.string.url_source_code),
+                getString(R.string.link_source_code));
         String xdaThread = String.format(linkable,
-                getActivity().getString(R.string.url_xda_thread),
-                getActivity().getString(R.string.link_xda_thread));
+                getString(R.string.url_xda_thread),
+                getString(R.string.link_xda_thread));
         String licenses = String.format(linkable,
-                getActivity().getString(R.string.url_licenses),
-                getActivity().getString(R.string.link_licenses));
+                getString(R.string.url_licenses),
+                getString(R.string.link_licenses));
 
         credits.setText(Html.fromHtml(creditsText + newline + newline
                 + sourceCode + separator + xdaThread + separator + licenses));
