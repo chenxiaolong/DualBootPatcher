@@ -178,6 +178,10 @@
     <!-- Negative dialog button shown for the above two messages -->
     <string name="set_kernel_later">Set later</string>
 
+    <!-- Dialog message shown when the user tries to set the kernel for the incorrect ROM -->
+    <string name="set_kernel_mismatched_rom">The currently selected ROM is %1$s, but you are trying
+        to set the kernel for %2$s. Please confirm that this is what you want.</string>
+
     <!-- ZIP flash activity title -->
     <string name="zip_flashing_title">Flash ZIP files</string>
     <!-- Title of pending action card for installing a zip file -->

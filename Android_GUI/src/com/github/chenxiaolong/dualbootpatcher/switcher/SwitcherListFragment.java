@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherError;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmMismatchedSetKernelDialog
+        .ConfirmMismatchedSetKernelDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ExperimentalInAppWipeDialog
         .ExperimentalInAppWipeDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardActionListener;
@@ -92,6 +94,7 @@ public class SwitcherListFragment extends Fragment implements
         SetKernelNeededDialogListener,
         WipeTargetsSelectionDialogListener,
         RomNameInputDialogListener,
+        ConfirmMismatchedSetKernelDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
@@ -119,6 +122,7 @@ public class SwitcherListFragment extends Fragment implements
     private ArrayList<RomInformation> mRoms;
     private RomInformation mCurrentRom;
     private RomInformation mSelectedRom;
+    private String mCurrentBootRomId;
 
     private boolean mShowedSetKernelWarning;
 
@@ -325,6 +329,9 @@ public class SwitcherListFragment extends Fragment implements
             case SUCCEEDED:
                 Toast.makeText(getActivity(), R.string.choose_rom_success,
                         Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Prior cached boot partition ROM ID was: " + mCurrentBootRomId);
+                mCurrentBootRomId = event.kernelId;
+                Log.d(TAG, "Changing cached boot partition ROM ID to: " + mCurrentBootRomId);
                 break;
             case FAILED:
                 Toast.makeText(getActivity(), R.string.choose_rom_failure,
@@ -461,8 +468,14 @@ public class SwitcherListFragment extends Fragment implements
         mSelectedRom = info;
 
         // Ask for confirmation
-        SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstance(this, mSelectedRom);
-        d.show(getFragmentManager(), SetKernelConfirmDialog.TAG);
+        if (mCurrentBootRomId != null && !mCurrentBootRomId.equals(mSelectedRom.getId())) {
+            ConfirmMismatchedSetKernelDialog d = ConfirmMismatchedSetKernelDialog.newInstance(
+                    this, mCurrentBootRomId, mSelectedRom.getId());
+            d.show(getFragmentManager(), ConfirmMismatchedSetKernelDialog.TAG);
+        } else {
+            SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstance(this, mSelectedRom);
+            d.show(getFragmentManager(), SetKernelConfirmDialog.TAG);
+        }
     }
 
     private void setKernel(RomInformation info) {
@@ -549,6 +562,7 @@ public class SwitcherListFragment extends Fragment implements
         }
 
         mCurrentRom = result.currentRom;
+        mCurrentBootRomId = result.currentBootRomId;
 
         mRomCardAdapter.notifyDataSetChanged();
         updateCardUI();
@@ -561,7 +575,12 @@ public class SwitcherListFragment extends Fragment implements
         // saved (leading to an IllegalStateException). Instead we'll just use EventCollector to
         // tell SwitcherListFragment that we want to show a dialog. If the fragment is still valid,
         // it will be shown immediately. Otherwise, it'll be shown when the fragment is recreated.
-        mEventCollector.postEvent(new ShowSetKernelNeededEvent(result.kernelStatus));
+        if (mCurrentRom != null && mCurrentBootRomId != null
+                && mCurrentRom.getId().equals(mCurrentBootRomId)) {
+            // Only show if the current boot image ROM ID matches the booted ROM. Otherwise, the
+            // user can switch to another ROM, exit the app, and open it again to trigger the dialog
+            mEventCollector.postEvent(new ShowSetKernelNeededEvent(result.kernelStatus));
+        }
     }
 
     @Override
@@ -607,6 +626,11 @@ public class SwitcherListFragment extends Fragment implements
         }.start();
 
         mRomCardAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onConfirmMismatchedSetKernel() {
+        setKernel(mCurrentRom);
     }
 
     public class ShowSetKernelNeededEvent extends BaseEvent {
@@ -706,15 +730,52 @@ public class SwitcherListFragment extends Fragment implements
             mResult.roms = RomUtils.getRoms(getContext());
             mResult.currentRom = RomUtils.getCurrentRom(getContext());
             long start = System.currentTimeMillis();
-            mResult.kernelStatus = getKernelStatus(mResult.currentRom);
+            obtainBootPartitionInfo(mResult.currentRom);
             long end = System.currentTimeMillis();
-            Log.d(TAG, "It took " + (end - start) + " milliseconds to complete the boot image " +
-                    "status check");
+            Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
+            Log.d(TAG, "Current boot partition ROM ID: " + mResult.currentBootRomId);
             Log.d(TAG, "Kernel status: " + mResult.kernelStatus.name());
             return mResult;
         }
 
-        private CurrentKernelStatus getKernelStatus(RomInformation currentRom) {
+        private void obtainBootPartitionInfo(RomInformation currentRom) {
+            // Create temporary copy of the boot partition
+            String bootPartition = SwitcherUtils.getBootPartition(getContext());
+            if (bootPartition == null) {
+                Log.e(TAG, "Failed to determine boot partition");
+                // Bail out. Both currentBootRomId and kernelStatus require access to the boot image
+                // on the boot partition
+                mResult.currentBootRomId = null;
+                mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
+                return;
+            }
+
+            String tmpImage = getContext().getCacheDir() + File.separator + "boot.img";
+            File tmpImageFile = new File(tmpImage);
+
+            MbtoolSocket socket = MbtoolSocket.getInstance();
+
+            try {
+                // Copy boot partition to the temporary file
+                if (!socket.copy(getContext(), bootPartition, tmpImage) ||
+                        !socket.chmod(getContext(), tmpImage, 0644)) {
+                    Log.e(TAG, "Failed to copy boot partition to temporary file");
+                    mResult.currentBootRomId = null;
+                    mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
+                    return;
+                }
+
+                mResult.currentBootRomId = SwitcherUtils.getBootImageRomId(
+                        getContext(), tmpImageFile.getAbsolutePath());
+                mResult.kernelStatus = getKernelStatus(currentRom, tmpImageFile);
+            } catch (IOException e) {
+                Log.e(TAG, "mbtool communication error", e);
+            } finally {
+                tmpImageFile.delete();
+            }
+        }
+
+        private CurrentKernelStatus getKernelStatus(RomInformation currentRom, File tmpImageFile) {
             if (currentRom == null) {
                 return CurrentKernelStatus.UNKNOWN;
             }
@@ -733,22 +794,6 @@ public class SwitcherListFragment extends Fragment implements
                 return CurrentKernelStatus.UNKNOWN;
             }
 
-            String tmpImage = getContext().getCacheDir() + File.separator + "boot.img";
-            File tmpImageFile = new File(tmpImage);
-
-            MbtoolSocket socket = MbtoolSocket.getInstance();
-
-            // Copy boot partition to the temporary file
-            try {
-                if (!socket.copy(getContext(), bootPartition, tmpImage) ||
-                        !socket.chmod(getContext(), tmpImage, 0644)) {
-                    Log.e(TAG, "Failed to copy boot partition to temporary file");
-                    return CurrentKernelStatus.UNKNOWN;
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "mbtool communication error", e);
-            }
-
             BootImage biSaved = new BootImage();
             BootImage biRunning = new BootImage();
 
@@ -760,7 +805,7 @@ public class SwitcherListFragment extends Fragment implements
                     error.destroy();
                     return CurrentKernelStatus.UNKNOWN;
                 }
-                if (!biRunning.load(tmpImage)) {
+                if (!biRunning.load(tmpImageFile.getAbsolutePath())) {
                     PatcherError error = biRunning.getError();
                     Log.e(TAG, "libmbp error: " +
                             PatcherUtils.getErrorMessage(getContext(), error));
@@ -774,8 +819,6 @@ public class SwitcherListFragment extends Fragment implements
             } finally {
                 biSaved.destroy();
                 biRunning.destroy();
-
-                tmpImageFile.delete();
             }
         }
     }
@@ -788,8 +831,13 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     protected static class LoaderResult {
+        /** List of installed ROMs */
         RomInformation[] roms;
+        /** Currently booted ROM */
         RomInformation currentRom;
+        /** ROM ID of boot image currently on the boot partition */
+        String currentBootRomId;
+        /** Current kernel status (set, unset, unknown) */
         CurrentKernelStatus kernelStatus;
     }
 }
