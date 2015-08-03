@@ -24,6 +24,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,6 +43,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsActivity;
@@ -50,6 +53,7 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
 import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
+import com.squareup.picasso.Picasso;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -124,6 +128,18 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
 
         mDrawerView = (NavigationView) findViewById(R.id.left_drawer);
         mDrawerView.setNavigationItemSelectedListener(this);
+
+        // There's a weird performance issue when the drawer is first opened, no matter if we set
+        // the background on the nav header RelativeLayout, set the image on an ImageView, or use
+        // Picasso to do either asynchronously. By accident, I noticed that using Picasso's resize()
+        // method with any dimensions (even the original) works around the performance issue. Maybe
+        // something doesn't like PNGs exported from GIMP?
+        ImageView navImage = (ImageView) findViewById(R.id.nav_header_image);
+        BitmapFactory.Options dimensions = new BitmapFactory.Options();
+        dimensions.inJustDecodeBounds = true;
+        BitmapFactory.decodeResource(getResources(), R.drawable.material, dimensions);
+        Picasso.with(this).load(R.drawable.material)
+                .resize(dimensions.outWidth, dimensions.outHeight).into(navImage);
 
         // Set nav drawer header text
         TextView appName = (TextView) findViewById(R.id.nav_header_app_name);
