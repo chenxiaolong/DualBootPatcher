@@ -103,18 +103,11 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
             @Override
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
-                updateTitle();
 
                 if (mPending != null) {
                     mHandler.post(mPending);
                     mPending = null;
                 }
-            }
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                super.onDrawerOpened(drawerView);
-                updateTitle();
             }
         };
 
@@ -257,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     private void updateTitle() {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            if (mDrawerLayout.isDrawerOpen(mDrawerView) || mTitle == 0) {
+            if (mTitle == 0) {
                 actionBar.setTitle(BuildConfig.APP_NAME_RESOURCE);
             } else {
                 actionBar.setTitle(mTitle);
