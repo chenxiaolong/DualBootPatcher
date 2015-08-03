@@ -31,6 +31,8 @@ import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.StringRes;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -41,7 +43,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
@@ -318,15 +320,13 @@ public class SwitcherListFragment extends Fragment implements
 
             switch (event.result) {
             case SUCCEEDED:
-                Toast.makeText(getActivity(), R.string.choose_rom_success,
-                        Toast.LENGTH_SHORT).show();
+                createSnackbar(R.string.choose_rom_success, Snackbar.LENGTH_SHORT).show();
                 Log.d(TAG, "Prior cached boot partition ROM ID was: " + mCurrentBootRomId);
                 mCurrentBootRomId = event.kernelId;
                 Log.d(TAG, "Changing cached boot partition ROM ID to: " + mCurrentBootRomId);
                 break;
             case FAILED:
-                Toast.makeText(getActivity(), R.string.choose_rom_failure,
-                        Toast.LENGTH_SHORT).show();
+                createSnackbar(R.string.choose_rom_failure, Snackbar.LENGTH_SHORT).show();
                 break;
             case UNKNOWN_BOOT_PARTITION:
                 showUnknownBootPartitionDialog();
@@ -345,12 +345,10 @@ public class SwitcherListFragment extends Fragment implements
 
             switch (event.result) {
             case SUCCEEDED:
-                Toast.makeText(getActivity(), R.string.set_kernel_success,
-                        Toast.LENGTH_SHORT).show();
+                createSnackbar(R.string.set_kernel_success, Snackbar.LENGTH_SHORT).show();
                 break;
             case FAILED:
-                Toast.makeText(getActivity(), R.string.set_kernel_failure,
-                        Toast.LENGTH_SHORT).show();
+                createSnackbar(R.string.set_kernel_failure, Snackbar.LENGTH_SHORT).show();
                 break;
             case UNKNOWN_BOOT_PARTITION:
                 showUnknownBootPartitionDialog();
@@ -368,8 +366,7 @@ public class SwitcherListFragment extends Fragment implements
             }
 
             if (event.succeeded == null || event.failed == null) {
-                Toast.makeText(getActivity(), R.string.wipe_rom_initiate_fail, Toast.LENGTH_LONG)
-                        .show();
+                createSnackbar(R.string.wipe_rom_initiate_fail, Snackbar.LENGTH_SHORT).show();
             } else {
                 StringBuilder sb = new StringBuilder();
 
@@ -385,7 +382,7 @@ public class SwitcherListFragment extends Fragment implements
                             targetsToString(event.failed)));
                 }
 
-                Toast.makeText(getActivity(), sb.toString(), Toast.LENGTH_LONG).show();
+                createSnackbar(sb.toString(), Snackbar.LENGTH_SHORT).show();
 
                 // We don't want deleted ROMs to still show up
                 reloadFragment();
@@ -407,6 +404,24 @@ public class SwitcherListFragment extends Fragment implements
                 }
             }
         }
+    }
+
+    private Snackbar createSnackbar(String text, int duration) {
+        Snackbar snackbar = Snackbar.make(getView(), text, duration);
+        snackbarSetTextColor(snackbar);
+        return snackbar;
+    }
+
+    private Snackbar createSnackbar(@StringRes int resId, int duration) {
+        Snackbar snackbar = Snackbar.make(getView(), resId, duration);
+        snackbarSetTextColor(snackbar);
+        return snackbar;
+    }
+
+    private void snackbarSetTextColor(Snackbar snackbar) {
+        View view = snackbar.getView();
+        TextView textView = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
+        textView.setTextColor(getResources().getColor(R.color.text_color_primary));
     }
 
     private void showUnknownBootPartitionDialog() {
@@ -516,8 +531,7 @@ public class SwitcherListFragment extends Fragment implements
         mSelectedRom = info;
 
         if (mCurrentRom != null && mCurrentRom.getId().equals(info.getId())) {
-            Toast.makeText(getActivity(), R.string.wipe_rom_no_wipe_current_rom,
-                    Toast.LENGTH_LONG).show();
+            createSnackbar(R.string.wipe_rom_no_wipe_current_rom, Snackbar.LENGTH_LONG).show();
         } else {
             ExperimentalInAppWipeDialog d = ExperimentalInAppWipeDialog.newInstance(this);
             d.show(getFragmentManager(), ExperimentalInAppWipeDialog.TAG);
@@ -597,8 +611,7 @@ public class SwitcherListFragment extends Fragment implements
     @Override
     public void onSelectedWipeTargets(short[] targets) {
         if (targets.length == 0) {
-            Toast.makeText(getActivity(), R.string.wipe_rom_none_selected,
-                    Toast.LENGTH_LONG).show();
+            createSnackbar(R.string.wipe_rom_none_selected, Snackbar.LENGTH_SHORT).show();
             return;
         }
 
