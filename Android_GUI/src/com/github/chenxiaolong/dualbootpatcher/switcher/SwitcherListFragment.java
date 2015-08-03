@@ -407,13 +407,13 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     private Snackbar createSnackbar(String text, int duration) {
-        Snackbar snackbar = Snackbar.make(getView(), text, duration);
+        Snackbar snackbar = Snackbar.make(mFabFlashZip, text, duration);
         snackbarSetTextColor(snackbar);
         return snackbar;
     }
 
     private Snackbar createSnackbar(@StringRes int resId, int duration) {
-        Snackbar snackbar = Snackbar.make(getView(), resId, duration);
+        Snackbar snackbar = Snackbar.make(mFabFlashZip, resId, duration);
         snackbarSetTextColor(snackbar);
         return snackbar;
     }
