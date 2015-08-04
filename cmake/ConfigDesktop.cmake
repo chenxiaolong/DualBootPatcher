@@ -89,6 +89,13 @@ cmake_dependent_option(
     ON
 )
 cmake_dependent_option(
+    MBP_USE_SYSTEM_LZO
+    "Use system-installed lzo"
+    "${MBP_USE_SYSTEM_LIBRARY_LZO}"
+    "NOT MBP_USE_SYSTEM_LIBARCHIVE"
+    ON
+)
+cmake_dependent_option(
     MBP_USE_SYSTEM_LZ4
     "Use system-installed lz4"
     "${MBP_USE_SYSTEM_LIBRARY_LZ4}"
@@ -169,6 +176,34 @@ else()
 endif()
 
 
+# lzo
+if(MBP_USE_SYSTEM_LZO)
+    find_path(MBP_LZO_INCLUDES lzo/lzo1x.h)
+    find_library(MBP_LZO_LIBRARIES NAMES lzo2 liblzo2)
+    include(FindPackageHandleStandardArgs)
+    find_package_handle_standard_args(LZO DEFAULT_MSG MBP_LZO_LIBRARIES MBP_LZO_INCLUDES)
+    if(NOT LZO_FOUND)
+        message(FATAL_ERROR "CMAKE_USE_SYSTEM_LZO is ON but LZO is not found!")
+    endif()
+else()
+    set(ENABLE_STATIC ON CACHE INTERNAL "Build static LZO library.")
+    set(ENABLE_SHARED OFF CACHE INTERNAL "Build shared LZO library.")
+    set(ENABLE_BINARIES OFF CACHE INTERNAL "Build LZO binaries.")
+    set(INSTALL_LIBS OFF CACHE INTERNAL "Install LZO library.")
+    set(INSTALL_DOCS OFF CACHE INTERNAL "Install LZO documentation.")
+    set(INSTALL_HEADERS OFF CACHE INTERNAL "Install LZO headers.")
+    add_subdirectory(external/lzo)
+    set(MBP_LZO_INCLUDES "${CMAKE_SOURCE_DIR}/external/lzo/include")
+    set(MBP_LZO_LIBRARIES lzo_static)
+    # Linking shared library to lzo's static library, need -fPIC
+    set_target_properties(
+        lzo_static
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+    )
+endif()
+
+
 # lz4
 if(MBP_USE_SYSTEM_LZ4)
     find_path(MBP_LZ4_INCLUDES lz4.h)
@@ -224,6 +259,8 @@ else()
     set(ZLIB_LIBRARY ${MBP_ZLIB_LIBRARIES})
     set(LZMA_INCLUDE_DIR ${MBP_LIBLZMA_INCLUDES})
     set(LZMA_LIBRARY ${MBP_LIBLZMA_LIBRARIES})
+    set(LZO2_INCLUDE_DIR ${MBP_LZO_INCLUDES})
+    set(LZO2_LIBRARY ${MBP_LZO_LIBRARIES})
     set(LZ4_INCLUDE_DIR ${MBP_LZ4_INCLUDES})
     set(LZ4_LIBRARY ${MBP_LZ4_LIBRARIES})
     set(MBP_LIBARCHIVE_INCLUDES ${CMAKE_SOURCE_DIR}/external/libarchive/libarchive)
