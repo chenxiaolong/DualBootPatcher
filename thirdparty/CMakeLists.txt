@@ -95,6 +95,33 @@ endif()
 
 
 ################################################################################
+# liblzo2 for Android
+################################################################################
+
+set(LIBLZO2_VER "2.09")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/liblzo2-${LIBLZO2_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/liblzo2-${LIBLZO2_VER}_android.tar.bz2
+    EXPECTED_MD5 45fafd07f61da8589fb4594b5a125d47
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/liblzo2)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/liblzo2
+    )
+
+    message(STATUS "Extracting liblzo2 for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/liblzo2-${LIBLZO2_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/liblzo2
+    )
+endif()
+
+
+################################################################################
 # liblz4 for Android
 ################################################################################
 
