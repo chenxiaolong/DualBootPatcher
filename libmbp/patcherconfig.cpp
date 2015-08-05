@@ -630,7 +630,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p38" });
     device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ qcomRecovery });
-    device->setExtraBlockDevs({ qcomAboot });
+    device->setExtraBlockDevs({ qcomAboot, qcomTz });
     devices.push_back(device);
 
     // LG G3
