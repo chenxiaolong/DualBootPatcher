@@ -410,8 +410,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 4 Mini Duos
     device = new Device();
     device->setId("serranods");
-    device->setCodenames({ "serranods", "serranodsxx" });
-    device->setName("Samsung Galaxy S 4 Mini Duos");
+    device->setCodenames({
+        // Regular variant
+        "serrano3g",
+        // Duos variant
+        "serranods", "serranodsxx"
+    });
+    device->setName("Samsung Galaxy S 4 Mini Reg./Duos");
     device->setBlockDevBaseDirs({ qcomBaseDir });
     device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p21" });
     device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p22" });
