@@ -1084,6 +1084,7 @@ Installer::ProceedState Installer::install_stage_get_install_type()
     display_msg("- /system: " + _rom->system_path);
     display_msg("- /cache: " + _rom->cache_path);
     display_msg("- /data: " + _rom->data_path);
+    LOGV("ROM ID: %s", _rom->id.c_str());
 
     return ProceedState::Continue;
 }
