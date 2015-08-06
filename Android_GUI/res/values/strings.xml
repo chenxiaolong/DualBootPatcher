@@ -394,8 +394,8 @@
     <!-- Title when ramdisk failed to update -->
     <string name="update_ramdisk_failure_title">Failed to update ramdisk</string>
     <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
-    <string name="update_ramdisk_failure_desc">The ramdisk failed to update. Application
-        sharing most likely will not work properly.</string>
+    <string name="update_ramdisk_failure_desc">The ramdisk failed to update. The log was saved to
+        MultiBoot/ramdisk-update.log in the internal storage.</string>
 
     <!-- Toast popup message containing the countdown for forcing a ramdisk update -->
     <plurals name="force_update_ramdisk_countdown">

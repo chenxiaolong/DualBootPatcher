@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -92,173 +93,198 @@ public class RomSettingsUtils {
         error.destroy();
     }
 
-    public synchronized static boolean updateRamdisk(Context context) {
-        // libmbp's MbtoolUpdater needs to grab a copy of the latest mbtool from the data archive
-        PatcherUtils.extractPatcher(context);
+    private static Process startLogcat() throws IOException {
+        final File path = new File(Environment.getExternalStorageDirectory()
+                + File.separator + "MultiBoot" + File.separator + "ramdisk-update.log");
+        path.getParentFile().mkdirs();
+        return Runtime.getRuntime().exec("logcat -v threadtime -f " + path + " *");
+    }
 
-        // We'll need to add the ROM ID to the kernel command line
-        RomInformation romInfo = RomUtils.getCurrentRom(context);
-        if (romInfo == null) {
-            Log.e(TAG, "Could not determine current ROM");
-            return false;
+    public synchronized static boolean updateRamdisk(Context context) {
+        // Start logging to /sdcard/MultiBoot/ramdisk-update.log
+        Process logProcess = null;
+        try {
+            logProcess = startLogcat();
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to start logging to ramdisk-update.log", e);
         }
 
-        String bootImage = RomUtils.getBootImagePath(romInfo.getId());
-        File bootImageFile = new File(bootImage);
+        try {
+            // libmbp's MbtoolUpdater needs to grab a copy of the latest mbtool from the
+            // data archive
 
-        // Make sure the kernel was backed up
-        if (!bootImageFile.exists()) {
+            PatcherUtils.extractPatcher(context);
+
+            // We'll need to add the ROM ID to the kernel command line
+            RomInformation romInfo = RomUtils.getCurrentRom(context);
+            if (romInfo == null) {
+                Log.e(TAG, "Could not determine current ROM");
+                return false;
+            }
+
+            String bootImage = RomUtils.getBootImagePath(romInfo.getId());
+            File bootImageFile = new File(bootImage);
+
+            // Make sure the kernel was backed up
+            if (!bootImageFile.exists()) {
+                try {
+                    SetKernelResult result =
+                            MbtoolSocket.getInstance().setKernel(context, romInfo.getId());
+                    if (result != SetKernelResult.SUCCEEDED) {
+                        Log.e(TAG, "Failed to backup boot image before modification");
+                        return false;
+                    }
+                } catch (IOException e) {
+                    Log.e(TAG, "mbtool communication error", e);
+                    return false;
+                }
+            }
+
+            String bootImageBackup = bootImage + ".before-ramdisk-update.img";
+            File bootImageBackupFile = new File(bootImageBackup);
+
             try {
-                SetKernelResult result =
-                        MbtoolSocket.getInstance().setKernel(context, romInfo.getId());
-                if (result != SetKernelResult.SUCCEEDED) {
-                    Log.e(TAG, "Failed to backup boot image before modification");
+                org.apache.commons.io.FileUtils.copyFile(bootImageFile, bootImageBackupFile);
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to copy " + bootImage + " to " + bootImageBackupFile, e);
+            }
+
+            // Create temporary copy of the boot image
+            String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
+            File tmpKernelFile = new File(tmpKernel);
+            try {
+                org.apache.commons.io.FileUtils.copyFile(bootImageFile, tmpKernelFile);
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to copy boot image to temporary file", e);
+                return false;
+            }
+
+            // Run MbtoolUpdater on the boot image
+            String newFile = updateMbtool(context, tmpKernel);
+            if (newFile == null) {
+                Log.e(TAG, "Failed to patch file!");
+                return false;
+            }
+
+            // Check if original boot image was patched with loki or bump
+            BootImage bi = new BootImage();
+            if (!bi.load(tmpKernel)) {
+                logLibMbpError(context, bi.getError());
+                bi.destroy();
+                return false;
+            }
+            int wasType = bi.wasType();
+            boolean hasRomIdFile;
+
+            CpioFile cpio = new CpioFile();
+            if (!cpio.load(bi.getRamdiskImage())) {
+                logLibMbpError(context, cpio.getError());
+                return false;
+            }
+            hasRomIdFile = cpio.isExists("romid");
+            cpio.destroy();
+
+            bi.destroy();
+
+            Log.d(TAG, "Original boot image type: " + wasType);
+            Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
+
+            // Overwrite old boot image
+            try {
+                tmpKernelFile.delete();
+                org.apache.commons.io.FileUtils.moveFile(new File(newFile), tmpKernelFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+
+            // Make changes to the boot image if necessary
+            if (wasType == Type.LOKI || !hasRomIdFile) {
+                bi = new BootImage();
+                cpio = new CpioFile();
+
+                try {
+                    if (!bi.load(tmpKernel)) {
+                        logLibMbpError(context, bi.getError());
+                        return false;
+                    }
+
+                    if (wasType == Type.LOKI) {
+                        Log.d(TAG, "Will reapply loki to boot image");
+                        bi.setTargetType(Type.LOKI);
+
+                        File aboot = new File(context.getCacheDir() + File.separator + "aboot.img");
+
+                        MbtoolSocket socket = MbtoolSocket.getInstance();
+
+                        // Copy aboot partition to the temporary file
+                        if (!socket.copy(context, ABOOT_PARTITION, aboot.getPath()) ||
+                                !socket.chmod(context, aboot.getPath(), 0644)) {
+                            Log.e(TAG, "Failed to copy aboot partition to temporary file");
+                            return false;
+                        }
+
+                        byte[] abootImage =
+                                org.apache.commons.io.FileUtils.readFileToByteArray(aboot);
+                        bi.setAbootImage(abootImage);
+
+                        aboot.delete();
+                    }
+                    if (!hasRomIdFile) {
+                        if (!cpio.load(bi.getRamdiskImage())) {
+                            logLibMbpError(context, cpio.getError());
+                            return false;
+                        }
+                        cpio.remove("romid");
+                        if (!cpio.addFile(romInfo.getId().getBytes(
+                                Charset.forName("UTF-8")), "romid", 0644)) {
+                            logLibMbpError(context, cpio.getError());
+                            return false;
+                        }
+                        bi.setRamdiskImage(cpio.createData());
+                    }
+
+                    if (!bi.createFile(tmpKernel)) {
+                        logLibMbpError(context, bi.getError());
+                        return false;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                } finally {
+                    bi.destroy();
+                    cpio.destroy();
+                }
+            }
+
+            try {
+                org.apache.commons.io.FileUtils.copyFile(tmpKernelFile, bootImageFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+
+            tmpKernelFile.delete();
+
+            try {
+                SwitchRomResult result =
+                        MbtoolSocket.getInstance().chooseRom(context, romInfo.getId());
+                if (result != SwitchRomResult.SUCCEEDED) {
+                    Log.e(TAG, "Failed to reflash boot image");
                     return false;
                 }
             } catch (IOException e) {
                 Log.e(TAG, "mbtool communication error", e);
                 return false;
             }
-        }
 
-        String bootImageBackup = bootImage + ".before-ramdisk-update.img";
-        File bootImageBackupFile = new File(bootImageBackup);
+            Log.v(TAG, "Successfully updated ramdisk!");
 
-        try {
-            org.apache.commons.io.FileUtils.copyFile(bootImageFile, bootImageBackupFile);
-        } catch (IOException e) {
-            Log.w(TAG, "Failed to copy " + bootImage + " to " + bootImageBackupFile, e);
-        }
-
-        // Create temporary copy of the boot image
-        String tmpKernel = context.getCacheDir() + File.separator + "boot.img";
-        File tmpKernelFile = new File(tmpKernel);
-        try {
-            org.apache.commons.io.FileUtils.copyFile(bootImageFile, tmpKernelFile);
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to copy boot image to temporary file", e);
-            return false;
-        }
-
-        // Run MbtoolUpdater on the boot image
-        String newFile = updateMbtool(context, tmpKernel);
-        if (newFile == null) {
-            Log.e(TAG, "Failed to patch file!");
-            return false;
-        }
-
-        // Check if original boot image was patched with loki or bump
-        BootImage bi = new BootImage();
-        if (!bi.load(tmpKernel)) {
-            logLibMbpError(context, bi.getError());
-            bi.destroy();
-            return false;
-        }
-        int wasType = bi.wasType();
-        boolean hasRomIdFile;
-
-        CpioFile cpio = new CpioFile();
-        if (!cpio.load(bi.getRamdiskImage())) {
-            logLibMbpError(context, cpio.getError());
-            return false;
-        }
-        hasRomIdFile = cpio.isExists("romid");
-        cpio.destroy();
-
-        bi.destroy();
-
-        Log.d(TAG, "Original boot image type: " + wasType);
-        Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
-
-        // Overwrite old boot image
-        try {
-            tmpKernelFile.delete();
-            org.apache.commons.io.FileUtils.moveFile(new File(newFile), tmpKernelFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        // Make changes to the boot image if necessary
-        if (wasType == Type.LOKI || !hasRomIdFile) {
-            bi = new BootImage();
-            cpio = new CpioFile();
-
-            try {
-                if (!bi.load(tmpKernel)) {
-                    logLibMbpError(context, bi.getError());
-                    return false;
-                }
-
-                if (wasType == Type.LOKI) {
-                    Log.d(TAG, "Will reapply loki to boot image");
-                    bi.setTargetType(Type.LOKI);
-
-                    File aboot = new File(context.getCacheDir() + File.separator + "aboot.img");
-
-                    MbtoolSocket socket = MbtoolSocket.getInstance();
-
-                    // Copy aboot partition to the temporary file
-                    if (!socket.copy(context, ABOOT_PARTITION, aboot.getPath()) ||
-                            !socket.chmod(context, aboot.getPath(), 0644)) {
-                        Log.e(TAG, "Failed to copy aboot partition to temporary file");
-                        return false;
-                    }
-
-                    byte[] abootImage = org.apache.commons.io.FileUtils.readFileToByteArray(aboot);
-                    bi.setAbootImage(abootImage);
-
-                    aboot.delete();
-                }
-                if (!hasRomIdFile) {
-                    if (!cpio.load(bi.getRamdiskImage())) {
-                        logLibMbpError(context, cpio.getError());
-                        return false;
-                    }
-                    cpio.remove("romid");
-                    if (!cpio.addFile(romInfo.getId().getBytes(Charset.forName("UTF-8")),
-                            "romid", 0644)) {
-                        logLibMbpError(context, cpio.getError());
-                        return false;
-                    }
-                    bi.setRamdiskImage(cpio.createData());
-                }
-
-                if (!bi.createFile(tmpKernel)) {
-                    logLibMbpError(context, bi.getError());
-                    return false;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            } finally {
-                bi.destroy();
-                cpio.destroy();
+            return true;
+        } finally {
+            if (logProcess != null) {
+                logProcess.destroy();
             }
         }
-
-        try {
-            org.apache.commons.io.FileUtils.copyFile(tmpKernelFile, bootImageFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        tmpKernelFile.delete();
-
-        try {
-            SwitchRomResult result = MbtoolSocket.getInstance().chooseRom(context, romInfo.getId());
-            if (result != SwitchRomResult.SUCCEEDED) {
-                Log.e(TAG, "Failed to reflash boot image");
-                return false;
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
-            return false;
-        }
-
-        Log.v(TAG, "Successfully updated ramdisk!");
-
-        return true;
     }
 }
