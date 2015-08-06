@@ -93,21 +93,21 @@ public class RomSettingsUtils {
         error.destroy();
     }
 
-    private static Process startLogcat() throws IOException {
+    private static void dumpLogcat()  {
         final File path = new File(Environment.getExternalStorageDirectory()
                 + File.separator + "MultiBoot" + File.separator + "ramdisk-update.log");
         path.getParentFile().mkdirs();
-        return Runtime.getRuntime().exec("logcat -v threadtime -f " + path + " *");
+        try {
+            Runtime.getRuntime().exec("logcat -d -v threadtime -f " + path + " *").waitFor();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Failed to wait for logcat to exit", e);
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to run logcat", e);
+        }
     }
 
     public synchronized static boolean updateRamdisk(Context context) {
-        // Start logging to /sdcard/MultiBoot/ramdisk-update.log
-        Process logProcess = null;
-        try {
-            logProcess = startLogcat();
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to start logging to ramdisk-update.log", e);
-        }
+        Log.d(TAG, "Starting to update ramdisk");
 
         try {
             // libmbp's MbtoolUpdater needs to grab a copy of the latest mbtool from the
@@ -194,7 +194,7 @@ public class RomSettingsUtils {
                 tmpKernelFile.delete();
                 org.apache.commons.io.FileUtils.moveFile(new File(newFile), tmpKernelFile);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Failed to move " + newFile + " to " + tmpKernelFile, e);
                 return false;
             }
 
@@ -249,7 +249,7 @@ public class RomSettingsUtils {
                         return false;
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Failed to make changes to boot image", e);
                     return false;
                 } finally {
                     bi.destroy();
@@ -260,7 +260,7 @@ public class RomSettingsUtils {
             try {
                 org.apache.commons.io.FileUtils.copyFile(tmpKernelFile, bootImageFile);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Failed to copy " + tmpKernelFile + " to " + bootImageFile, e);
                 return false;
             }
 
@@ -282,9 +282,8 @@ public class RomSettingsUtils {
 
             return true;
         } finally {
-            if (logProcess != null) {
-                logProcess.destroy();
-            }
+            // Save whatever is in the logcat buffer to /sdcard/MultiBoot/ramdisk-update.log
+            dumpLogcat();
         }
     }
 }
