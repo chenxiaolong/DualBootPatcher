@@ -116,15 +116,21 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += mI10e->hdrSecondSize;
     pos += skipPadding(mI10e->hdrSecondSize, mI10e->pageSize);
     if (pos + mI10e->hdrDtSize > size) {
-        FLOGE("Device tree image exceeds boot image size by %" PRIzu " bytes",
-              pos + mI10e->hdrDtSize - size);
-        return false;
+        std::size_t diff = pos + mI10e->hdrDtSize - size;
+
+        FLOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+        FLOGE("THIS BOOT IMAGE MAY NO LONGER BE BOOTABLE. YOU HAVE BEEN WARNED");
+        FLOGE("Device tree image exceeds boot image size by %" PRIzu
+              " bytes and HAS BEEN TRUNCATED", diff);
+        FLOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+
+        mI10e->dtImage.assign(data + pos, data + pos + mI10e->hdrDtSize - diff);
+    } else {
+        mI10e->dtImage.assign(data + pos, data + pos + mI10e->hdrDtSize);
     }
 
     // The device tree image may not exist as well
-    if (mI10e->hdrDtSize > 0) {
-        mI10e->dtImage.assign(data + pos, data + pos + mI10e->hdrDtSize);
-    } else {
+    if (mI10e->hdrDtSize == 0) {
         mI10e->dtImage.clear();
     }
 
