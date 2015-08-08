@@ -65,6 +65,15 @@
             android:name=".switcher.ZipFlashingOutputActivity"
             android:label="@string/zip_flashing_title"
             android:parentActivityName=".switcher.ZipFlashingActivity" />
+        <activity
+            android:name=".patcher.AutomatedPatcherActivity"
+            android:label="@string/title_patch_zip">
+            <intent-filter>
+                <action android:name="com.github.chenxiaolong.dualbootpatcher.PATCH_FILE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <receiver android:name=".appsharing.AppSharingEventReceiver">
             <intent-filter>

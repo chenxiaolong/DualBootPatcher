@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,7 @@ import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorList
 import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector;
 import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.RequestedFileEvent;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatchInfo;
@@ -54,7 +56,15 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         MainOptsListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
+    public static final String ARG_PATH = "path";
+    public static final String ARG_ROM_ID = "rom_id";
+    public static final String ARG_DEVICE = "device";
+    public static final String ARG_HAS_BOOT_IMAGE = "has_boot_image";
+    public static final String ARG_BOOT_IMAGES = "boot_images";
+
     private static final String EXTRA_CONFIG_STATE = "config_state";
+
+    private boolean mAutomated;
 
     private boolean mShowingProgress;
 
@@ -89,6 +99,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mAutomated = getArguments() != null;
+
         FragmentManager fm = getFragmentManager();
         mEventCollector = (PatcherEventCollector) fm.findFragmentByTag(PatcherEventCollector.TAG);
 
@@ -115,10 +127,17 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        if (mAutomated && (getArguments().getString(ARG_PATH) == null
+                || getArguments().getString(ARG_ROM_ID) == null)) {
+            getActivity().finish();
+            return;
+        }
+
         mSavedInstanceState = savedInstanceState;
 
         mScrollView = (ScrollView) getActivity().findViewById(R.id.card_scrollview);
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_loading_patch_file);
+        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_loading_patcher);
 
         initCards();
 
@@ -130,30 +149,38 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_patch_file, container, false);
+        return inflater.inflate(R.layout.fragment_patcher, container, false);
     }
 
     private void initMainOptsCard() {
         // Card for selecting the device and partition configuration
         mMainOptsCardView = (CardView) getActivity().findViewById(R.id.card_mainopts);
-        mMainOptsCW = new MainOptsCW(getActivity(), mPCS, mMainOptsCardView, this);
-        mUIListeners.add(mMainOptsCW);
+        if (mAutomated) {
+            mMainOptsCardView.setVisibility(View.GONE);
+        } else {
+            mMainOptsCW = new MainOptsCW(getActivity(), mPCS, mMainOptsCardView, this);
+            mUIListeners.add(mMainOptsCW);
+        }
     }
 
     private void initFileChooserCard() {
         // Card for choosing the file to patch, starting the patching
         // process, and resetting the patching process
         mFileChooserCardView = (CardView) getActivity().findViewById(R.id.card_file_chooser);
-        mFileChooserCW = new FileChooserCW(getActivity(), mPCS, mFileChooserCardView);
-        mFileChooserCardView.setClickable(true);
-
-        if (mPCS.mState == PatcherConfigState.STATE_CHOSE_FILE) {
-            setTapActionPatchFile();
+        if (mAutomated) {
+            mFileChooserCardView.setVisibility(View.GONE);
         } else {
-            setTapActionChooseFile();
-        }
+            mFileChooserCW = new FileChooserCW(getActivity(), mPCS, mFileChooserCardView);
+            mFileChooserCardView.setClickable(true);
 
-        mUIListeners.add(mFileChooserCW);
+            if (mPCS.mState == PatcherConfigState.STATE_CHOSE_FILE) {
+                setTapActionPatchFile();
+            } else {
+                setTapActionChooseFile();
+            }
+
+            mUIListeners.add(mFileChooserCW);
+        }
     }
 
     private void initDetailsCard() {
@@ -273,17 +300,63 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         }
     }
 
+    /**
+     * Get device when running in automated mode
+     * @return Value of ARG_DEVICE argument, if provided. Otherwise, autodetects the device. If no
+     *         argument is provided and autodetection failed, then returns null.
+     */
+    @Nullable
+    private Device getDeviceOrAutoDetect() {
+        String deviceId = getArguments().getString(ARG_DEVICE);
+        String deviceCodename = null;
+
+        if (deviceId == null) {
+            deviceCodename = RomUtils.getDeviceCodename(getActivity());
+        }
+
+        Device[] devices = PatcherUtils.sPC.getDevices();
+        for (Device d : devices) {
+            if (d.getId().equals(deviceId)) {
+                return d;
+            }
+
+            for (String codename : d.getCodenames()) {
+                if (codename.equals(deviceCodename)) {
+                    return d;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private void patcherInitialized() {
         mPCS.setupInitial();
 
-        mMainOptsCW.refreshDevices();
-        mMainOptsCW.refreshRomIds();
-        mMainOptsCW.refreshPresets();
+        if (mMainOptsCW != null) {
+            mMainOptsCW.refreshDevices();
+            mMainOptsCW.refreshRomIds();
+            mMainOptsCW.refreshPresets();
+        }
 
         restoreCardStates();
 
         mShowingProgress = false;
         updateMainUI();
+
+        // Start patching on initial load (but not on orientation change)
+        if (mAutomated && mSavedInstanceState == null) {
+            mPCS.mFilename = getArguments().getString(ARG_PATH);
+            mPCS.mRomId = getArguments().getString(ARG_ROM_ID);
+            mPCS.mDevice = getDeviceOrAutoDetect();
+
+            if (mPCS.mDevice == null) {
+                getActivity().finish();
+                return;
+            }
+
+            startPatching();
+        }
     }
 
     private void startPatching() {
@@ -309,14 +382,25 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
                 mPCS.mPatchInfo.addAutoPatcher("StandardPatcher", null);
 
-                mPCS.mPatchInfo.setHasBootImage(mMainOptsCW.isHasBootImageEnabled());
+                boolean hasBootImage;
+                String[] bootImages = null;
 
-                if (mPCS.mPatchInfo.hasBootImage()) {
-                    mPCS.mPatchInfo.setRamdisk(mPCS.mDevice.getId() + "/default");
-
+                if (mAutomated) {
+                    hasBootImage = getArguments().getBoolean(ARG_HAS_BOOT_IMAGE);
+                    bootImages = getArguments().getStringArray(ARG_BOOT_IMAGES);
+                } else {
+                    hasBootImage = mMainOptsCW.isHasBootImageEnabled();
                     String bootImagesText = mMainOptsCW.getBootImage();
                     if (bootImagesText != null) {
-                        String[] bootImages = bootImagesText.split(",");
+                        bootImages = bootImagesText.split(",");
+                    }
+                }
+
+                mPCS.mPatchInfo.setHasBootImage(hasBootImage);
+                if (hasBootImage) {
+                    mPCS.mPatchInfo.setRamdisk(mPCS.mDevice.getId() + "/default");
+
+                    if (bootImages != null) {
                         mPCS.mPatchInfo.setBootImages(bootImages);
                     }
                 }
@@ -343,9 +427,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             return;
         }
 
-        // Show progress on file chooser card
-        mFileChooserCW.setProgressShowing(true);
-
         mPCS.mSupported = false;
 
         // If the patcher doesn't use the patchinfo files, then just assume everything is supported.
@@ -361,8 +442,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         }
 
         setTapActionPatchFile();
-
-        mFileChooserCW.setProgressShowing(false);
 
         for (PatcherUIListener listener : mUIListeners) {
             listener.onChoseFile();
@@ -465,6 +544,10 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
             // Tap to choose the next file
             setTapActionChooseFile();
+
+            if (mAutomated) {
+                getActivity().finish();
+            }
         } else if (event instanceof RequestedFileEvent) {
             mPCS.mState = PatcherConfigState.STATE_CHOSE_FILE;
 

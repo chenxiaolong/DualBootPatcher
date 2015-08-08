@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,24 +20,17 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
-import android.view.View;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class FileChooserCW implements PatcherUIListener {
-    private static final String EXTRA_PROGRESS = "filechooser_progress";
-
     private CardView vCard;
     private TextView vTitle;
     private TextView vMessage;
-    private ProgressBar vProgressBar;
 
     private Context mContext;
     private PatcherConfigState mPCS;
-
-    private boolean mShowProgress;
 
     public FileChooserCW(Context context, PatcherConfigState pcs, CardView card) {
         mContext = context;
@@ -46,22 +39,8 @@ public class FileChooserCW implements PatcherUIListener {
         vCard = card;
         vTitle = (TextView) card.findViewById(R.id.file_chooser_title);
         vMessage = (TextView) card.findViewById(R.id.file_chooser_message);
-        vProgressBar = (ProgressBar) card.findViewById(R.id.file_chooser_progress);
 
-        displayProgress();
         displayMessage();
-    }
-
-    private void displayProgress() {
-        if (mShowProgress) {
-            vTitle.setVisibility(View.GONE);
-            vMessage.setVisibility(View.GONE);
-            vProgressBar.setVisibility(View.VISIBLE);
-        } else {
-            vTitle.setVisibility(View.VISIBLE);
-            vMessage.setVisibility(View.VISIBLE);
-            vProgressBar.setVisibility(View.GONE);
-        }
     }
 
     private void displayMessage() {
@@ -109,11 +88,6 @@ public class FileChooserCW implements PatcherUIListener {
         vCard.setLongClickable(enabled);
     }
 
-    public void setProgressShowing(boolean show) {
-        mShowProgress = show;
-        displayProgress();
-    }
-
     @Override
     public void onCardCreate() {
         switch (mPCS.mState) {
@@ -133,14 +107,10 @@ public class FileChooserCW implements PatcherUIListener {
 
     @Override
     public void onRestoreCardState(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            mShowProgress = savedInstanceState.getBoolean(EXTRA_PROGRESS);
-        }
     }
 
     @Override
     public void onSaveCardState(Bundle outState) {
-        outState.putBoolean(EXTRA_PROGRESS, mShowProgress);
     }
 
     @Override

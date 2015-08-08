@@ -68,7 +68,7 @@
     </ScrollView>
 
     <ProgressBar
-        android:id="@+id/card_loading_patch_file"
+        android:id="@+id/card_loading_patcher"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"

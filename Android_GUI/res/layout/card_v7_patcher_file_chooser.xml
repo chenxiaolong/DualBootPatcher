@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -43,12 +43,5 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/file_chooser_title"
             android:paddingTop="5dp" />
-
-        <ProgressBar
-            android:id="@+id/file_chooser_progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:indeterminate="true" />
     </RelativeLayout>
 </android.support.v7.widget.CardView>
