@@ -312,8 +312,6 @@ void MainWindow::addWidgets()
     d->messageLbl->setMaximumWidth(550);
     d->presetLbl = new QLabel(tr("Preset:"), d->mainContainer);
     d->presetSel = new QComboBox(d->mainContainer);
-    d->deviceCheckLbl = new QLabel(tr("Remove device check"), d->mainContainer);
-    d->deviceCheckCb = new QCheckBox(d->mainContainer);
     d->hasBootImageLbl = new QLabel(tr("Has boot image"), d->mainContainer);
     d->hasBootImageCb = new QCheckBox(d->mainContainer);
     d->bootImageLbl = new QLabel(tr("Boot image"), d->mainContainer);
@@ -344,8 +342,6 @@ void MainWindow::addWidgets()
     layout->addWidget(d->presetLbl,       ++i, 0, 1,  1);
     layout->addWidget(d->presetSel,         i, 2, 1, -1);
     layout->addWidget(horiz3,             ++i, 0, 1, -1);
-    layout->addWidget(d->deviceCheckLbl,  ++i, 0, 1,  1);
-    layout->addWidget(d->deviceCheckCb,     i, 1, 1,  1);
     layout->addWidget(d->hasBootImageLbl, ++i, 0, 1,  1);
     layout->addWidget(d->hasBootImageCb,    i, 1, 1,  1);
     layout->addWidget(d->bootImageLbl,      i, 2, 1,  1);
@@ -368,16 +364,12 @@ void MainWindow::addWidgets()
     d->unsupportedWidgets << horiz3;
     d->unsupportedWidgets << d->presetLbl;
     d->unsupportedWidgets << d->presetSel;
-    d->unsupportedWidgets << d->deviceCheckLbl;
-    d->unsupportedWidgets << d->deviceCheckCb;
     d->unsupportedWidgets << d->hasBootImageLbl;
     d->unsupportedWidgets << d->hasBootImageCb;
     d->unsupportedWidgets << d->bootImageLbl;
     d->unsupportedWidgets << d->bootImageLe;
 
     // List of custom preset widgets
-    d->customPresetWidgets << d->deviceCheckLbl;
-    d->customPresetWidgets << d->deviceCheckCb;
     d->customPresetWidgets << d->hasBootImageLbl;
     d->customPresetWidgets << d->hasBootImageCb;
     d->customPresetWidgets << d->bootImageLbl;
@@ -476,9 +468,6 @@ void MainWindow::populateWidgets()
 void MainWindow::setWidgetDefaults()
 {
     Q_D(MainWindow);
-
-    // Don't remove device checks
-    d->deviceCheckCb->setChecked(false);
 
     // Assume boot image exists
     d->hasBootImageCb->setChecked(true);
@@ -670,8 +659,6 @@ void MainWindow::startPatching()
                     d->patchInfo->setBootImages(std::move(bootImages));
                 }
             }
-
-            d->patchInfo->setDeviceCheck(!d->deviceCheckCb->isChecked());
         } else {
             d->patchInfo = d->patchInfos[d->presetSel->currentIndex() - 1];
         }

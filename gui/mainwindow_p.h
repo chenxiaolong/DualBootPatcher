@@ -126,8 +126,6 @@ public:
     // Unsupported file widgets
     QLabel *presetLbl;
     QComboBox *presetSel;
-    QLabel *deviceCheckLbl;
-    QCheckBox *deviceCheckCb;
     QLabel *hasBootImageLbl;
     QCheckBox *hasBootImageCb;
     QLabel *bootImageLbl;
