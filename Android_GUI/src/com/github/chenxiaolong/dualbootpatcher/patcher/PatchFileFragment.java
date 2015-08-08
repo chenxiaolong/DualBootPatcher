@@ -320,8 +320,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                         mPCS.mPatchInfo.setBootImages(bootImages);
                     }
                 }
-
-                mPCS.mPatchInfo.setDeviceCheck(mMainOptsCW.isDeviceCheckEnabled());
             }
         }
 

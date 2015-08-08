@@ -129,13 +129,6 @@
                     android:text="@string/customopts_title" />
 
                 <CheckBox
-                    android:id="@+id/customopts_devicecheck"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/card_v7_normal_view_margin_top"
-                    android:text="@string/customopts_devicecheck" />
-
-                <CheckBox
                     android:id="@+id/customopts_hasbootimage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

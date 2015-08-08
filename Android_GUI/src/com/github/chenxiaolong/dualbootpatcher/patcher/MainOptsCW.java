@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +72,6 @@ public class MainOptsCW implements PatcherUIListener {
     private Spinner vPresetSpinner;
     private TextView vPresetName;
     private LinearLayout vCustomOptsContainer;
-    private CheckBox vDeviceCheckBox;
     private CheckBox vHasBootImageBox;
     private LinearLayout vBootImageContainer;
     private EditText vBootImageText;
@@ -106,7 +105,6 @@ public class MainOptsCW implements PatcherUIListener {
         vPresetSpinner = (Spinner) card.findViewById(R.id.spinner_preset);
         vPresetName = (TextView) card.findViewById(R.id.preset_name);
         vCustomOptsContainer = (LinearLayout) card.findViewById(R.id.customopts_container);
-        vDeviceCheckBox = (CheckBox) card.findViewById(R.id.customopts_devicecheck);
         vHasBootImageBox = (CheckBox) card.findViewById(R.id.customopts_hasbootimage);
         vBootImageContainer = (LinearLayout) card.findViewById(R.id.customopts_bootimage_container);
         vBootImageText = (EditText) card.findViewById(R.id.customopts_bootimage);
@@ -738,15 +736,6 @@ public class MainOptsCW implements PatcherUIListener {
     }
 
     /**
-     * Check whether device checks should be removed
-     *
-     * @return False (!!) if device checks should be removed
-     */
-    public boolean isDeviceCheckEnabled() {
-        return !vDeviceCheckBox.isChecked();
-    }
-
-    /**
      * Check whether "has boot image" is checked
      *
      * @return Whether the "has boot image" checkbox is checked
@@ -800,7 +789,6 @@ public class MainOptsCW implements PatcherUIListener {
      */
     private void reset() {
         vPresetSpinner.setSelection(0);
-        vDeviceCheckBox.setChecked(false);
         vHasBootImageBox.setChecked(true);
         vBootImageText.setText("");
     }

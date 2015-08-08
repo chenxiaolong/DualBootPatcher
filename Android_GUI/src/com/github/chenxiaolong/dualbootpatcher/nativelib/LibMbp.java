@@ -246,8 +246,6 @@ public class LibMbp {
         static native void mbp_patchinfo_set_boot_images(CPatchInfo info, StringArray bootImages);
         static native Pointer mbp_patchinfo_ramdisk(CPatchInfo info);
         static native void mbp_patchinfo_set_ramdisk(CPatchInfo info, String ramdisk);
-        static native boolean mbp_patchinfo_device_check(CPatchInfo info);
-        static native void mbp_patchinfo_set_device_check(CPatchInfo info, boolean deviceCheck);
         // END: cpatchinfo.h
 
         // BEGIN: cstringmap.h
@@ -2050,18 +2048,6 @@ public class LibMbp {
             ensureNotNull(ramdisk);
 
             CWrapper.mbp_patchinfo_set_ramdisk(mCPatchInfo, ramdisk);
-        }
-
-        public boolean deviceCheck() {
-            validate(mCPatchInfo, PatchInfo.class, "deviceCheck");
-
-            return CWrapper.mbp_patchinfo_device_check(mCPatchInfo);
-        }
-
-        public void setDeviceCheck(boolean deviceCheck) {
-            validate(mCPatchInfo, PatchInfo.class, "setDeviceCheck", deviceCheck);
-
-            CWrapper.mbp_patchinfo_set_device_check(mCPatchInfo, deviceCheck);
         }
     }
 

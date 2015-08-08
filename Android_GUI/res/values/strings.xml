@@ -296,8 +296,6 @@
     <string name="customopts_patchfile">Patch file</string>
     <!-- Name for the button to select a .patch or .diff file -->
     <string name="customopts_choosepatch">Choose patch file</string>
-    <!-- Name for the option to disable checks for the device's model -->
-    <string name="customopts_devicecheck">Remove device check</string>
     <!-- Name for the option telling the patcher that the file has a boot image -->
     <string name="customopts_hasbootimage">Has boot image</string>
     <!-- Name for the boot image text box -->
