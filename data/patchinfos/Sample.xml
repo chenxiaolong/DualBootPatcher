@@ -61,12 +61,4 @@
              also modify. -->
         <autopatcher file="something.patch">PatchFile</autopatcher>
     </autopatchers>
-
-    <!-- If set to false, the patcher will try to remove the device checks/
-         asserts inside the updater-script file. This defaults to true, so it
-         can usually be omitted.
-
-         The assert statements are effectively disabled by prepending
-         '"true" == "true" ||' to the beginning of the boolean expression. -->
-    <device-check>true</device-check>
 </patchinfo>
