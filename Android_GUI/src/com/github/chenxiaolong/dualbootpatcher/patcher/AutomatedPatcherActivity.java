@@ -17,16 +17,24 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment.PatcherListener;
 
-public class AutomatedPatcherActivity extends AppCompatActivity {
+public class AutomatedPatcherActivity extends AppCompatActivity implements PatcherListener {
+    public static final String RESULT_CODE = "code";
+    public static final String RESULT_MESSAGE = "message";
+    public static final String RESULT_NEW_FILE = "new_file";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,5 +62,28 @@ public class AutomatedPatcherActivity extends AppCompatActivity {
         // We never want the user to exit the activity. The activity will be automatically closed
         // once the patching finishes.
         Toast.makeText(this, R.string.wait_until_finished, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onPatcherResult(int code, @Nullable String message, @Nullable String newFile) {
+        Intent intent = new Intent();
+
+        switch (code) {
+        case PatchFileFragment.RESULT_PATCHING_SUCCEEDED:
+            intent.putExtra(RESULT_CODE, "PATCHING_SUCCEEDED");
+            intent.putExtra(RESULT_NEW_FILE, newFile);
+            break;
+        case PatchFileFragment.RESULT_PATCHING_FAILED:
+            intent.putExtra(RESULT_CODE, "PATCHING_FAILED");
+            intent.putExtra(RESULT_MESSAGE, message);
+            break;
+        case PatchFileFragment.RESULT_INVALID_OR_MISSING_ARGUMENTS:
+            intent.putExtra(RESULT_CODE, "INVALID_OR_MISSING_ARGUMENTS");
+            intent.putExtra(RESULT_MESSAGE, message);
+            break;
+        }
+
+        setResult(Activity.RESULT_OK, intent);
+        finish();
     }
 }

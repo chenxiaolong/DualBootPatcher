@@ -56,6 +56,10 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         MainOptsListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
+    public static final int RESULT_PATCHING_SUCCEEDED = 1;
+    public static final int RESULT_PATCHING_FAILED = 2;
+    public static final int RESULT_INVALID_OR_MISSING_ARGUMENTS = 3;
+
     public static final String ARG_PATH = "path";
     public static final String ARG_ROM_ID = "rom_id";
     public static final String ARG_DEVICE = "device";
@@ -63,6 +67,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     public static final String ARG_BOOT_IMAGES = "boot_images";
 
     private static final String EXTRA_CONFIG_STATE = "config_state";
+
+    private PatcherListener mListener;
 
     private boolean mAutomated;
 
@@ -93,6 +99,16 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
+    }
+
+    public interface PatcherListener {
+        void onPatcherResult(int code, @Nullable String message, @Nullable String newFile);
+    }
+
+    private void returnResult(int code, @Nullable String message, @Nullable String newFile) {
+        if (mListener != null) {
+            mListener.onPatcherResult(code, message, newFile);
+        }
     }
 
     @Override
@@ -128,9 +144,14 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        if (getActivity() instanceof PatcherListener) {
+            mListener = (PatcherListener) getActivity();
+        }
+
         if (mAutomated && (getArguments().getString(ARG_PATH) == null
                 || getArguments().getString(ARG_ROM_ID) == null)) {
-            getActivity().finish();
+            returnResult(RESULT_INVALID_OR_MISSING_ARGUMENTS, String.format(
+                    "Params %s and %s are required in automated mode", ARG_PATH, ARG_ROM_ID), null);
             return;
         }
 
@@ -351,7 +372,9 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             mPCS.mDevice = getDeviceOrAutoDetect();
 
             if (mPCS.mDevice == null) {
-                getActivity().finish();
+                returnResult(RESULT_INVALID_OR_MISSING_ARGUMENTS, String.format(
+                        "Missing/invalid %s parameter or autodetected device not supported",
+                        ARG_DEVICE), null);
                 return;
             }
 
@@ -545,9 +568,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             // Tap to choose the next file
             setTapActionChooseFile();
 
-            if (mAutomated) {
-                getActivity().finish();
-            }
+            returnResult(mPCS.mPatcherFailed ? RESULT_PATCHING_FAILED : RESULT_PATCHING_SUCCEEDED,
+                    mPCS.mPatcherError, mPCS.mPatcherNewFile);
         } else if (event instanceof RequestedFileEvent) {
             mPCS.mState = PatcherConfigState.STATE_CHOSE_FILE;
 
