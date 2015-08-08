@@ -392,33 +392,4 @@ void mbp_patchinfo_set_ramdisk(CPatchInfo *info, const char *ramdisk)
     pi->setRamdisk(ramdisk);
 }
 
-/*!
- * \brief Whether device model checks should be kept
- *
- * \param info CPatchInfo object
- *
- * \return Whether device model checks should be kept
- *
- * \sa PatchInfo::deviceCheck()
- */
-bool mbp_patchinfo_device_check(const CPatchInfo *info)
-{
-    CCAST(info);
-    return pi->deviceCheck();
-}
-
-/*!
- * \brief Set whether device model checks should be kept
- *
- * \param info CPatchInfo object
- * \param deviceCheck Keep device model checks
- *
- * \sa PatchInfo::setDeviceCheck()
- */
-void mbp_patchinfo_set_device_check(CPatchInfo *info, bool deviceCheck)
-{
-    CAST(info);
-    pi->setDeviceCheck(deviceCheck);
-}
-
 }

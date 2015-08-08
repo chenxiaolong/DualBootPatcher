@@ -95,7 +95,6 @@ public:
     void parsePatchInfoTagRamdisk(pugi::xml_node node, PatchInfo * const info);
     void parsePatchInfoTagAutopatchers(pugi::xml_node node, PatchInfo * const info);
     void parsePatchInfoTagAutopatcher(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagDeviceCheck(pugi::xml_node node, PatchInfo * const info);
 #endif
 };
 /*! \endcond */
@@ -112,7 +111,6 @@ const char *PatchInfoTagHasBootImage = "has-boot-image";
 const char *PatchInfoTagRamdisk = "ramdisk";
 const char *PatchInfoTagAutopatchers = "autopatchers";
 const char *PatchInfoTagAutopatcher = "autopatcher";
-const char *PatchInfoTagDeviceCheck = "device-check";
 
 const char *PatchInfoAttrId = "id";
 
@@ -975,8 +973,6 @@ void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(pugi::xml_node node,
             parsePatchInfoTagRamdisk(curNode, info);
         } else if (strcmp(curNode.name(), PatchInfoTagAutopatchers) == 0) {
             parsePatchInfoTagAutopatchers(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagDeviceCheck) == 0) {
-            parsePatchInfoTagDeviceCheck(curNode, info);
         } else {
             FLOGW("Unrecognized tag within <patchinfo>: %s", curNode.name());
         }
@@ -1169,32 +1165,6 @@ void PatcherConfig::Impl::parsePatchInfoTagAutopatcher(pugi::xml_node node,
 
     if (!hasText) {
         LOGW("<autopatcher> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagDeviceCheck(pugi::xml_node node,
-                                                       PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagDeviceCheck) == 0);
-
-    bool hasText = false;
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        if (strcmp(curNode.value(), XmlTextTrue) == 0) {
-            info->setDeviceCheck(true);
-        } else if (strcmp(curNode.value(), XmlTextFalse) == 0) {
-            info->setDeviceCheck(false);
-        } else {
-            FLOGW("Unknown value for <device-check>: %s", curNode.value());
-        }
-    }
-
-    if (!hasText) {
-        LOGW("<device-check> tag has no text");
     }
 }
 

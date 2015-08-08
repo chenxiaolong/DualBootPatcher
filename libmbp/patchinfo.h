@@ -79,9 +79,6 @@ public:
     std::string ramdisk() const;
     void setRamdisk(std::string ramdisk);
 
-    bool deviceCheck() const;
-    void setDeviceCheck(bool deviceCheck);
-
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

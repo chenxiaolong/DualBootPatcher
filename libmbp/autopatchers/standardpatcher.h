@@ -51,8 +51,6 @@ public:
     virtual bool patchFiles(const std::string &directory) override;
 
     // These are public so other patchers can use them
-    static void removeDeviceChecks(std::vector<std::string> *lines);
-
     static void replaceMountLines(std::vector<std::string> *lines, Device *device);
     static void replaceUnmountLines(std::vector<std::string> *lines, Device *device);
     static void replaceFormatLines(std::vector<std::string> *lines, Device *device);

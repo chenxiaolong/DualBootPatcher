@@ -59,9 +59,6 @@ public:
 
     // Ramdisk patcher to use
     std::string ramdiskPatcher;
-
-    // Whether or not device checks/asserts should be kept
-    bool deviceCheck;
 };
 /*! \endcond */
 
@@ -73,9 +70,6 @@ PatchInfo::Impl::Impl()
 
     // Default to autodetecting boot images in the zip file
     autoDetectBootImages = true;
-
-    // Don't remove device checks
-    deviceCheck = true;
 }
 
 /*!
@@ -97,7 +91,6 @@ PatchInfo::Impl::Impl()
  * - Whether to autodetect the boot images
  * - List of manually specified boot images
  * - Which ramdisk patcher to use
- * - Whether device model asserts in the updater-script file should be nullified
  * - List of supported/unsupported partition configurations
  */
 
@@ -352,26 +345,6 @@ std::string PatchInfo::ramdisk() const
 void PatchInfo::setRamdisk(std::string ramdisk)
 {
     m_impl->ramdiskPatcher = std::move(ramdisk);
-}
-
-/*!
- * \brief Whether device model checks should be kept
- *
- * \return Whether device model checks should be kept
- */
-bool PatchInfo::deviceCheck() const
-{
-    return m_impl->deviceCheck;
-}
-
-/*!
- * \brief Set whether device model checks should be kept
- *
- * \param deviceCheck Keep device model checks
- */
-void PatchInfo::setDeviceCheck(bool deviceCheck)
-{
-    m_impl->deviceCheck = deviceCheck;
 }
 
 }

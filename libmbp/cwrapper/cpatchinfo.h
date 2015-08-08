@@ -60,9 +60,6 @@ void mbp_patchinfo_set_boot_images(CPatchInfo *info, const char **bootImages);
 char * mbp_patchinfo_ramdisk(const CPatchInfo *info);
 void mbp_patchinfo_set_ramdisk(CPatchInfo *info, const char *ramdisk);
 
-bool mbp_patchinfo_device_check(const CPatchInfo *info);
-void mbp_patchinfo_set_device_check(CPatchInfo *info, bool deviceCheck);
-
 #ifdef __cplusplus
 }
 #endif

@@ -102,33 +102,10 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     fixBlockUpdateLines(&lines, m_impl->info->device());
     fixImageExtractLines(&lines, m_impl->info->device());
 
-    // Remove device check if requested
-    if (!m_impl->info->patchInfo()->deviceCheck()) {
-        removeDeviceChecks(&lines);
-    }
-
     contents = StringUtils::join(lines, '\n');
     FileUtils::writeFromString(directory + "/" + UpdaterScript, contents);
 
     return true;
-}
-
-/*!
-    \brief Disable assertions for device model/name in updater-script
-
-    \param lines Container holding strings of lines in updater-script file
- */
-void StandardPatcher::removeDeviceChecks(std::vector<std::string> *lines)
-{
-    std::regex reLine("assert\\s*\\(.*getprop\\s*\\(.*(ro.product.device|ro.build.product)");
-    std::regex reReplace("^(\\s*assert\\s*\\()");
-
-    for (auto &line : *lines) {
-        if (std::regex_search(line, reLine)) {
-            line = std::regex_replace(line, reReplace,
-                                      "$1\"true\" == \"true\" || ");
-        }
-    }
 }
 
 static bool findItemsInString(const std::string &haystack,
