@@ -33,6 +33,7 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
     private static final String TAG = AutomatedSwitcherActivity.class.getSimpleName();
 
     public static final String EXTRA_ROM_ID = "rom_id";
+    public static final String EXTRA_REBOOT = "reboot";
 
     public static final String RESULT_CODE = "code";
     public static final String RESULT_MESSAGE = "message";
@@ -83,6 +84,13 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
     @Override
     public void onEventReceived(BaseEvent bEvent) {
         if (bEvent instanceof SwitchedRomEvent) {
+            boolean reboot = getIntent().getBooleanExtra(EXTRA_REBOOT, false);
+            if (reboot) {
+                // Don't return if we're rebooting
+                SwitcherUtils.reboot(this);
+                return;
+            }
+
             SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
 
             GenericProgressDialog d = (GenericProgressDialog)
