@@ -68,6 +68,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
         .SetKernelConfirmDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelNeededDialog
         .SetKernelNeededDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CreatedLauncherEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.WipedRomEvent;
@@ -354,6 +355,11 @@ public class SwitcherListFragment extends Fragment implements
                 showUnknownBootPartitionDialog();
                 break;
             }
+        } else if (bEvent instanceof CreatedLauncherEvent) {
+            CreatedLauncherEvent event = (CreatedLauncherEvent) bEvent;
+
+            createSnackbar(String.format(getString(R.string.successfully_created_launcher),
+                    event.rom.getName()), Snackbar.LENGTH_SHORT).show();
         } else if (bEvent instanceof WipedRomEvent) {
             WipedRomEvent event = (WipedRomEvent) bEvent;
             mPerformingAction = false;
@@ -493,6 +499,13 @@ public class SwitcherListFragment extends Fragment implements
         d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
 
         mEventCollector.setKernel(info.getId());
+    }
+
+    @Override
+    public void onSelectedAddToHomeScreen(RomInformation info) {
+        mSelectedRom = info;
+
+        mEventCollector.createLauncher(info);
     }
 
     @Override

@@ -22,6 +22,8 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
@@ -37,6 +39,7 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
@@ -79,6 +82,12 @@ public class SwitcherService extends IntentService {
     public static final String RESULT_SWITCH_ROM = "switch_rom";
     public static final String RESULT_SET_KERNEL = "set_kernel";
 
+    // Create launcher on the home screen
+    public static final String ACTION_CREATE_LAUNCHER = "create_launcher";
+    public static final String PARAM_ROM = "rom";
+    public static final String STATE_CREATED_LAUNCHER = "created_launcher";
+    public static final String RESULT_ROM = "rom";
+
     // Wipe ROM
     public static final String ACTION_WIPE_ROM = "wipe_rom";
     public static final String PARAM_ROM_ID = "rom_id";
@@ -112,6 +121,13 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_SET_KERNEL);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
         i.putExtra(RESULT_SET_KERNEL, result);
+        sendBroadcast(i);
+    }
+
+    private void onCreatedLauncher(RomInformation rom) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_CREATED_LAUNCHER);
+        i.putExtra(RESULT_ROM, rom);
         sendBroadcast(i);
     }
 
@@ -205,6 +221,33 @@ public class SwitcherService extends IntentService {
         onSetKernel(kernelId, result);
 
         removeNotification();
+    }
+
+    private void createLauncher(Bundle data) {
+        RomInformation rom = data.getParcelable(PARAM_ROM);
+
+        Intent shortcutIntent = new Intent(this, MainActivity.class);
+        shortcutIntent.setAction(Intent.ACTION_MAIN);
+
+        Intent addIntent = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
+        //addIntent.putExtra("duplicate", false);
+        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, rom.getName());
+
+        File f = new File(rom.getThumbnailPath());
+        if (f.exists() && f.canRead()) {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            Bitmap bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), options);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+        } else {
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
+                    Intent.ShortcutIconResource.fromContext(this, rom.getImageResId()));
+        }
+
+        sendBroadcast(addIntent);
+
+        onCreatedLauncher(rom);
     }
 
     private void verifyZip(Bundle data) {
@@ -391,6 +434,8 @@ public class SwitcherService extends IntentService {
             switchRom(intent.getExtras());
         } else if (ACTION_SET_KERNEL.equals(action)) {
             setKernel(intent.getExtras());
+        } else if (ACTION_CREATE_LAUNCHER.equals(action)) {
+            createLauncher(intent.getExtras());
         } else if (ACTION_VERIFY_ZIP.equals(action)) {
             verifyZip(intent.getExtras());
         } else if (ACTION_FLASH_ZIPS.equals(action)) {

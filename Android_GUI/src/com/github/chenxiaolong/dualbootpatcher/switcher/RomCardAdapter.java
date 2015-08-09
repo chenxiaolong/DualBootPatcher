@@ -36,6 +36,7 @@ import android.widget.TextView;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardViewHolder;
+import com.squareup.picasso.MemoryPolicy;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
@@ -43,10 +44,11 @@ import java.util.List;
 
 public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
     private static final int MENU_SET_KERNEL = Menu.FIRST;
-    private static final int MENU_EDIT_NAME = Menu.FIRST + 1;
-    private static final int MENU_CHANGE_IMAGE = Menu.FIRST + 2;
-    private static final int MENU_RESET_IMAGE = Menu.FIRST + 3;
-    private static final int MENU_WIPE_ROM = Menu.FIRST + 4;
+    private static final int MENU_ADD_TO_HOME_SCREEN = Menu.FIRST + 1;
+    private static final int MENU_EDIT_NAME = Menu.FIRST + 2;
+    private static final int MENU_CHANGE_IMAGE = Menu.FIRST + 3;
+    private static final int MENU_RESET_IMAGE = Menu.FIRST + 4;
+    private static final int MENU_WIPE_ROM = Menu.FIRST + 5;
 
     private final Context mContext;
     private List<RomInformation> mRoms;
@@ -68,6 +70,9 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
                 switch (item.getItemId()) {
                 case MENU_SET_KERNEL:
                     mListener.onSelectedSetKernel(rom);
+                    break;
+                case MENU_ADD_TO_HOME_SCREEN:
+                    mListener.onSelectedAddToHomeScreen(rom);
                     break;
                 case MENU_EDIT_NAME:
                     mListener.onSelectedEditName(rom);
@@ -102,6 +107,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
 
         Menu menu = vh.mPopup.getMenu();
         menu.add(0, MENU_SET_KERNEL, Menu.NONE, R.string.rom_menu_set_kernel);
+        menu.add(0, MENU_ADD_TO_HOME_SCREEN, Menu.NONE, R.string.rom_menu_add_to_home_screen);
         menu.add(0, MENU_EDIT_NAME, Menu.NONE, R.string.rom_menu_edit_name);
         menu.add(0, MENU_CHANGE_IMAGE, Menu.NONE, R.string.rom_menu_change_image);
         menu.add(0, MENU_RESET_IMAGE, Menu.NONE, R.string.rom_menu_reset_image);
@@ -134,7 +140,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
             // Don't cache the image since we may need to refresh it
             Picasso.with(mContext)
                     .load(f)
-                    .skipMemoryCache()
+                    .memoryPolicy(MemoryPolicy.NO_CACHE)
                     .error(rom.getImageResId())
                     .into(holder.vThumbnail);
         } else {
@@ -206,6 +212,8 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
         void onSelectedRom(RomInformation info);
 
         void onSelectedSetKernel(RomInformation info);
+
+        void onSelectedAddToHomeScreen(RomInformation info);
 
         void onSelectedEditName(RomInformation info);
 

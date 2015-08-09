@@ -110,6 +110,8 @@
 
     <!-- ROM menu item for setting kernel -->
     <string name="rom_menu_set_kernel">Set kernel</string>
+    <!-- ROM menu item for adding an icon to the home screen -->
+    <string name="rom_menu_add_to_home_screen">Add to home screen</string>
     <!-- ROM menu item for changing the name -->
     <string name="rom_menu_edit_name">Edit name</string>
     <!-- ROM menu item for changing the image -->
@@ -118,6 +120,9 @@
     <string name="rom_menu_reset_image">Reset image</string>
     <!-- ROM menu item for wiping the ROM -->
     <string name="rom_menu_wipe_rom">Wipe ROM</string>
+
+    <!-- Snack bar message shown when a launcher is successfully created -->
+    <string name="successfully_created_launcher">Successfully added %s to the home screen.</string>
 
     <!-- Target for wiping ROM's /system -->
     <string name="wipe_target_system">System</string>

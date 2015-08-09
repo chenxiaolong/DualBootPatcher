@@ -25,6 +25,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
@@ -55,6 +56,10 @@ public class SwitcherEventCollector extends EventCollector {
                             SwitcherService.RESULT_SET_KERNEL);
 
                     sendEvent(new SetKernelEvent(kernelId, result));
+                } else if (SwitcherService.STATE_CREATED_LAUNCHER.equals(state)) {
+                    RomInformation rom = bundle.getParcelable(SwitcherService.RESULT_ROM);
+
+                    sendEvent(new CreatedLauncherEvent(rom));
                 } else if (SwitcherService.STATE_VERIFIED_ZIP.equals(state)) {
                     VerificationResult result = (VerificationResult) bundle.getSerializable(
                             SwitcherService.RESULT_VERIFY_ZIP);
@@ -119,6 +124,13 @@ public class SwitcherEventCollector extends EventCollector {
         mContext.startService(intent);
     }
 
+    public void createLauncher(RomInformation rom) {
+        Intent intent = new Intent(mContext, SwitcherService.class);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_CREATE_LAUNCHER);
+        intent.putExtra(SwitcherService.PARAM_ROM, rom);
+        mContext.startService(intent);
+    }
+
     public void verifyZip(String zipFile) {
         Intent intent = new Intent(mContext, SwitcherService.class);
         intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_VERIFY_ZIP);
@@ -160,6 +172,14 @@ public class SwitcherEventCollector extends EventCollector {
         public SetKernelEvent(String kernelId, SetKernelResult result) {
             this.kernelId = kernelId;
             this.result = result;
+        }
+    }
+
+    public class CreatedLauncherEvent extends BaseEvent {
+        RomInformation rom;
+
+        public CreatedLauncherEvent(RomInformation rom) {
+            this.rom = rom;
         }
     }
 
