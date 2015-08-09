@@ -76,6 +76,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".switcher.AutomatedSwitcherActivity"
+            android:excludeFromRecents="true"
+            android:theme="@style/TransparentActivityTheme">
+            <intent-filter>
+                <action android:name="com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <receiver android:name=".appsharing.AppSharingEventReceiver">
             <intent-filter>
