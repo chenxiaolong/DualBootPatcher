@@ -98,6 +98,10 @@
     <!-- Message shown when setting the kernel fails -->
     <string name="set_kernel_failure">Failed to set kernel</string>
 
+    <!-- Message shown when another application tries to switch the ROM via an intent -->
+    <string name="confirm_automated_switch_rom">Another application is trying to switch to %s.
+            Continue?</string>
+
     <!-- Message shown if the boot partition could not be detected because the device codename is
          not recognized -->
     <string name="unknown_boot_partition">Could not determine the boot partition because this
