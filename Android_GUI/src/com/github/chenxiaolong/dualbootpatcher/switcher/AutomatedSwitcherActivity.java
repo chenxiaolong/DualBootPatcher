@@ -40,6 +40,7 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
     private static final String TAG = AutomatedSwitcherActivity.class.getSimpleName();
 
     private static final String PREF_SHOW_CONFIRM_DIALOG = "show_confirm_automated_switcher_dialog";
+    private static final String PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents";
 
     public static final String EXTRA_ROM_ID = "rom_id";
     public static final String EXTRA_REBOOT = "reboot";
@@ -56,6 +57,14 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
         super.onCreate(savedInstanceState);
         setContentView(R.layout.automated_switcher_layout);
 
+        mPrefs = getSharedPreferences("settings", 0);
+
+        if (!mPrefs.getBoolean(PREF_ALLOW_3RD_PARTY_INTENTS, false)) {
+            Toast.makeText(this, R.string.third_party_intents_not_allowed, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         Bundle args = getIntent().getExtras();
         if (args == null || getIntent().getStringExtra(EXTRA_ROM_ID) == null) {
             finish();
@@ -70,7 +79,6 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
             fm.beginTransaction().add(mEventCollector, SwitcherEventCollector.TAG).commit();
         }
 
-        mPrefs = getSharedPreferences("settings", 0);
         if (savedInstanceState == null) {
             boolean shouldShow = mPrefs.getBoolean(PREF_SHOW_CONFIRM_DIALOG, true);
             if (shouldShow) {

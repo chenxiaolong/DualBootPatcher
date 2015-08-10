@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -35,10 +36,20 @@ public class AutomatedPatcherActivity extends AppCompatActivity implements Patch
     public static final String RESULT_MESSAGE = "message";
     public static final String RESULT_NEW_FILE = "new_file";
 
+    private static final String PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.automated_patcher_layout);
+
+        SharedPreferences prefs = getSharedPreferences("settings", 0);
+
+        if (!prefs.getBoolean(PREF_ALLOW_3RD_PARTY_INTENTS, false)) {
+            Toast.makeText(this, R.string.third_party_intents_not_allowed, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

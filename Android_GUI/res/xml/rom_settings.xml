@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,11 @@
             android:persistent="true"
             android:summary="@string/rom_settings_initial_screen_desc"
             android:title="@string/rom_settings_initial_screen_title" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="allow_3rd_party_intents"
+            android:summary="@string/rom_settings_allow_intents_desc"
+            android:title="@string/rom_settings_allow_intents_title" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="show_reboot"

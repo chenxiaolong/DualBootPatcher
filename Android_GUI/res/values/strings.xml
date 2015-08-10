@@ -425,6 +425,11 @@
     <!-- Description for the initial screen preference -->
     <string name="rom_settings_initial_screen_desc">First screen to show when opening the
         app.</string>
+    <!-- Title for the preference to enable receiving intents from third party applications -->
+    <string name="rom_settings_allow_intents_title">Allow receiving intents</string>
+    <!-- Description for the preference to enable receiving intents from third party applications -->
+    <string name="rom_settings_allow_intents_desc">Allow third party applications to send intents
+        to this app for performing actions, such as switching ROMs and patching files.</string>
 
     <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_intro_dialog_title">Individual app sharing</string>
@@ -472,6 +477,10 @@
 
     <!-- Toast popup message shown when a shared app is uninstalled (and thus becomes unshared) -->
     <string name="indiv_app_sharing_app_no_longer_shared">The \'%s\' app is no longer shared.</string>
+
+    <!-- Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled -->
+    <string name="third_party_intents_not_allowed">Denied intent from third party application. To
+        allow other apps to send intents, enable the option in the DualBootPatcher settings.</string>
 
     <!-- Word/phrase for None (used in eg. a list) -->
     <string name="none">None</string>
