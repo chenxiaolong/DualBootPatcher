@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -56,12 +56,6 @@ public:
         FinishedPatching,
     };
 
-    enum SupportedFlag {
-        NotSupported = 0x0,
-        SupportedFile = 0x1
-    };
-    Q_DECLARE_FLAGS(SupportedFlags, SupportedFlag)
-
     MainWindowPrivate();
 
     uint64_t bytes;
@@ -82,10 +76,6 @@ public:
 
     // Selected patcher
     mbp::Patcher *patcher = nullptr;
-    mbp::PatchInfo *patchInfo = nullptr;
-
-    // Level of support of the file
-    SupportedFlags supported;
 
     // Patcher finish status and error message
     QString patcherNewFile;
@@ -102,16 +92,10 @@ public:
     // List of installation locations
     QList<InstallLocation> instLocs;
 
-    // List of available patchinfos
-    std::vector<mbp::PatchInfo *> patchInfos;
-
     QWidget *mainContainer;
     QWidget *progressContainer;
 
     QList<QWidget *> messageWidgets;
-    QList<QWidget *> unsupportedWidgets;
-    QList<QWidget *> customPresetWidgets;
-    QList<QWidget *> bootImageWidgets;
 
     // Main widgets
     QLabel *deviceLbl;
@@ -123,14 +107,6 @@ public:
 
     QLabel *messageLbl;
 
-    // Unsupported file widgets
-    QLabel *presetLbl;
-    QComboBox *presetSel;
-    QLabel *hasBootImageLbl;
-    QCheckBox *hasBootImageCb;
-    QLabel *bootImageLbl;
-    QLineEdit *bootImageLe;
-
     // Progress
     QLabel *detailsLbl;
     QProgressBar *progressBar;
@@ -141,7 +117,5 @@ public:
     QPushButton *chooseAnotherFileBtn;
     QPushButton *startPatchingBtn;
 };
-
-Q_DECLARE_OPERATORS_FOR_FLAGS(MainWindowPrivate::SupportedFlags)
 
 #endif // MAINWINDOW_P_H

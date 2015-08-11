@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -53,10 +53,6 @@ private slots:
     void onInstallationLocationIdChanged(const QString &text);
     void onButtonClicked(QAbstractButton *button);
 
-    // Unsupported files
-    void onPresetSelected(const QString &preset);
-    void onHasBootImageToggled();
-
     // Progress
     void onProgressUpdated(uint64_t bytes, uint64_t maxBytes);
     void onFilesUpdated(uint64_t files, uint64_t maxFiles);
@@ -72,13 +68,10 @@ private:
     void addWidgets();
     void setWidgetActions();
     void populateWidgets();
-    void setWidgetDefaults();
 
     void refreshInstallationLocations();
-    void refreshPresets();
 
     void chooseFile();
-    void checkSupported();
     void startPatching();
 
     void updateWidgetsVisibility();

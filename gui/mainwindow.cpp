@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -22,7 +22,6 @@
 
 #include <cassert>
 
-#include <libmbp/patchinfo.h>
 #include <libmbp/patchererror.h>
 
 #include <QtCore/QStringBuilder>
@@ -67,7 +66,6 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
     addWidgets();
     setWidgetActions();
     populateWidgets();
-    setWidgetDefaults();
     refreshInstallationLocations();
     updateWidgetsVisibility();
 
@@ -113,13 +111,10 @@ void MainWindow::onDeviceSelected(int index)
     Q_D(MainWindow);
     d->device = d->pc->devices()[index];
 
-    refreshPresets();
-
     if (d->state == MainWindowPrivate::FinishedPatching) {
         d->state = MainWindowPrivate::ChoseFile;
     }
 
-    checkSupported();
     updateWidgetsVisibility();
 }
 
@@ -169,38 +164,6 @@ void MainWindow::onButtonClicked(QAbstractButton *button)
         chooseFile();
     } else if (button == d->startPatchingBtn) {
         startPatching();
-    }
-}
-
-void MainWindow::onPresetSelected(const QString &preset)
-{
-    Q_D(MainWindow);
-
-    if (preset == tr("Custom")) {
-        for (QWidget *widget : d->customPresetWidgets) {
-            widget->setEnabled(true);
-        }
-
-        setWidgetDefaults();
-    } else {
-        for (QWidget *widget : d->customPresetWidgets) {
-            widget->setEnabled(false);
-        }
-    }
-}
-
-void MainWindow::onHasBootImageToggled()
-{
-    Q_D(MainWindow);
-
-    if (d->hasBootImageCb->isChecked()) {
-        for (QWidget *widget : d->bootImageWidgets) {
-            widget->setEnabled(true);
-        }
-    } else {
-        for (QWidget *widget : d->bootImageWidgets) {
-            widget->setEnabled(false);
-        }
     }
 }
 
@@ -305,18 +268,10 @@ void MainWindow::addWidgets()
     layout->addWidget(d->instLocLe, ++i, 1, 1, -1);
     layout->addWidget(d->instLocDesc, ++i, 1, 1, -1);
 
-    // Add items for unsupported files
     d->messageLbl = new QLabel(d->mainContainer);
     // Don't allow the window to grow too big
     d->messageLbl->setWordWrap(true);
     d->messageLbl->setMaximumWidth(550);
-    d->presetLbl = new QLabel(tr("Preset:"), d->mainContainer);
-    d->presetSel = new QComboBox(d->mainContainer);
-    d->hasBootImageLbl = new QLabel(tr("Has boot image"), d->mainContainer);
-    d->hasBootImageCb = new QCheckBox(d->mainContainer);
-    d->bootImageLbl = new QLabel(tr("Boot image"), d->mainContainer);
-    d->bootImageLe = new QLineEdit(d->mainContainer);
-    d->bootImageLe->setPlaceholderText(tr("Leave blank to autodetect"));
 
     d->chooseFileBtn = new QPushButton(tr("Choose file"), d->mainContainer);
     d->chooseAnotherFileBtn = new QPushButton(tr("Choose another file"), d->mainContainer);
@@ -328,8 +283,6 @@ void MainWindow::addWidgets()
     d->buttons->addButton(d->startPatchingBtn, QDialogButtonBox::ActionRole);
 
     QWidget *horiz1 = newHorizLine(d->mainContainer);
-    QWidget *horiz2 = newHorizLine(d->mainContainer);
-    QWidget *horiz3 = newHorizLine(d->mainContainer);
 
     layout->setColumnStretch(0, 0);
     layout->setColumnStretch(1, 0);
@@ -338,15 +291,6 @@ void MainWindow::addWidgets()
 
     layout->addWidget(horiz1,             ++i, 0, 1, -1);
     layout->addWidget(d->messageLbl,      ++i, 0, 1, -1);
-    layout->addWidget(horiz2,             ++i, 0, 1, -1);
-    layout->addWidget(d->presetLbl,       ++i, 0, 1,  1);
-    layout->addWidget(d->presetSel,         i, 2, 1, -1);
-    layout->addWidget(horiz3,             ++i, 0, 1, -1);
-    layout->addWidget(d->hasBootImageLbl, ++i, 0, 1,  1);
-    layout->addWidget(d->hasBootImageCb,    i, 1, 1,  1);
-    layout->addWidget(d->bootImageLbl,      i, 2, 1,  1);
-    layout->addWidget(d->bootImageLe,       i, 3, 1, -1);
-
 
     layout->addWidget(newHorizLine(d->mainContainer), ++i, 0, 1, -1);
 
@@ -358,26 +302,6 @@ void MainWindow::addWidgets()
     // List of widgets related to the message label
     d->messageWidgets << horiz1;
     d->messageWidgets << d->messageLbl;
-
-    // List of unsupported widgets
-    d->unsupportedWidgets << horiz2;
-    d->unsupportedWidgets << horiz3;
-    d->unsupportedWidgets << d->presetLbl;
-    d->unsupportedWidgets << d->presetSel;
-    d->unsupportedWidgets << d->hasBootImageLbl;
-    d->unsupportedWidgets << d->hasBootImageCb;
-    d->unsupportedWidgets << d->bootImageLbl;
-    d->unsupportedWidgets << d->bootImageLe;
-
-    // List of custom preset widgets
-    d->customPresetWidgets << d->hasBootImageLbl;
-    d->customPresetWidgets << d->hasBootImageCb;
-    d->customPresetWidgets << d->bootImageLbl;
-    d->customPresetWidgets << d->bootImageLe;
-
-    // List of boot image-related widgets
-    d->bootImageWidgets << d->bootImageLbl;
-    d->bootImageWidgets << d->bootImageLe;
 
     // Buttons
     d->progressContainer = new QWidget(this);
@@ -422,8 +346,6 @@ void MainWindow::setWidgetActions()
 
     void (QComboBox::*indexChangedInt)(int) =
             &QComboBox::currentIndexChanged;
-    void (QComboBox::*indexChangedQString)(const QString &) =
-            &QComboBox::currentIndexChanged;
 
     // Device
     connect(d->deviceSel, indexChangedInt,
@@ -438,19 +360,6 @@ void MainWindow::setWidgetActions()
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
             this, &MainWindow::onButtonClicked);
-
-    // Preset
-    connect(d->presetSel, indexChangedQString,
-            this, &MainWindow::onPresetSelected);
-
-    // Has boot image checkbox
-    connect(d->hasBootImageCb, &QCheckBox::toggled,
-            this, &MainWindow::onHasBootImageToggled);
-}
-
-bool sortByPatchInfoId(mbp::PatchInfo *pi1, mbp::PatchInfo *pi2)
-{
-    return strcasecmp(pi1->id().c_str(), pi2->id().c_str()) <= 0;
 }
 
 void MainWindow::populateWidgets()
@@ -462,30 +371,6 @@ void MainWindow::populateWidgets()
         d->deviceSel->addItem(QStringLiteral("%1 - %2")
                 .arg(QString::fromStdString(device->id()))
                 .arg(QString::fromStdString(device->name())));
-    }
-}
-
-void MainWindow::setWidgetDefaults()
-{
-    Q_D(MainWindow);
-
-    // Assume boot image exists
-    d->hasBootImageCb->setChecked(true);
-    onHasBootImageToggled();
-}
-
-void MainWindow::refreshPresets()
-{
-    Q_D(MainWindow);
-
-    d->presetSel->clear();
-    d->patchInfos.clear();
-
-    d->presetSel->addItem(tr("Custom"));
-    d->patchInfos = d->pc->patchInfos(d->device);
-    std::sort(d->patchInfos.begin(), d->patchInfos.end(), sortByPatchInfoId);
-    for (mbp::PatchInfo *info : d->patchInfos) {
-        d->presetSel->addItem(QString::fromStdString(info->id()));
     }
 }
 
@@ -544,29 +429,7 @@ void MainWindow::chooseFile()
 
     d->fileName = fileName;
 
-    checkSupported();
     updateWidgetsVisibility();
-}
-
-void MainWindow::checkSupported()
-{
-    Q_D(MainWindow);
-
-    d->supported = MainWindowPrivate::NotSupported;
-
-    if (d->state == MainWindowPrivate::ChoseFile) {
-        // If the patcher doesn't use the patchinfo files, then just
-        // assume everything is supported.
-        if (!d->patcher->usesPatchInfo()) {
-            d->supported |= MainWindowPrivate::SupportedFile;
-        }
-
-        // Otherwise, check if it really is supported
-        else if ((d->patchInfo = d->pc->findMatchingPatchInfo(
-                d->device, d->fileName.toUtf8().constData())) != nullptr) {
-            d->supported |= MainWindowPrivate::SupportedFile;
-        }
-    }
 }
 
 void MainWindow::updateWidgetsVisibility()
@@ -577,11 +440,6 @@ void MainWindow::updateWidgetsVisibility()
             d->state != MainWindowPrivate::Patching);
     d->progressContainer->setVisible(
             d->state == MainWindowPrivate::Patching);
-
-    for (QWidget *widget : d->unsupportedWidgets) {
-        widget->setVisible(d->state == MainWindowPrivate::ChoseFile
-                && d->supported == MainWindowPrivate::NotSupported);
-    }
 
     d->chooseFileBtn->setVisible(
             d->state == MainWindowPrivate::FirstRun);
@@ -596,22 +454,7 @@ void MainWindow::updateWidgetsVisibility()
     }
 
     if (d->state == MainWindowPrivate::ChoseFile) {
-        QString message = tr("File: %1").arg(d->fileName);
-        QString newLines(QStringLiteral("\n\n"));
-
-        if ((d->supported & MainWindowPrivate::SupportedFile) == 0) {
-            message.append(newLines);
-            message.append(tr("The file you have selected does not have a preset. You can customize the patcher using the options below."));
-        } else {
-            // If the patcher uses patchinfo files, show the detected message
-            if (d->patcher->usesPatchInfo()) {
-                message.append(newLines);
-                message.append(tr("Detected %1")
-                        .arg(QString::fromStdString(d->patchInfo->name())));
-            }
-        }
-
-        d->messageLbl->setText(message);
+        d->messageLbl->setText(tr("File: %1").arg(d->fileName));
     } else if (d->state == MainWindowPrivate::FinishedPatching) {
         QString message;
 
@@ -640,37 +483,12 @@ void MainWindow::startPatching()
     d->progressBar->setValue(0);
     d->detailsLbl->clear();
 
-    if (!d->supported) {
-        if (d->presetSel->currentIndex() == 0) {
-            d->patchInfo = new mbp::PatchInfo(); // TODO: Memory leak here!
-
-            d->patchInfo->addAutoPatcher("StandardPatcher",
-                                         mbp::PatchInfo::AutoPatcherArgs());
-            d->patchInfo->setHasBootImage(d->hasBootImageCb->isChecked());
-            if (d->patchInfo->hasBootImage()) {
-                d->patchInfo->setRamdisk(d->device->id() + "/default");
-                QString text = d->bootImageLe->text().trimmed();
-                if (!text.isEmpty()) {
-                    QStringList split = text.split(QStringLiteral(","));
-                    std::vector<std::string> bootImages;
-                    for (const QString &bootImage : split) {
-                        bootImages.push_back(bootImage.toUtf8().constData());
-                    }
-                    d->patchInfo->setBootImages(std::move(bootImages));
-                }
-            }
-        } else {
-            d->patchInfo = d->patchInfos[d->presetSel->currentIndex() - 1];
-        }
-    }
-
     d->state = MainWindowPrivate::Patching;
     updateWidgetsVisibility();
 
     FileInfoPtr fileInfo = new mbp::FileInfo();
     fileInfo->setFilename(d->fileName.toUtf8().constData());
     fileInfo->setDevice(d->device);
-    fileInfo->setPatchInfo(d->patchInfo);
     QString romId;
     if (d->instLocSel->currentIndex() >= d->instLocs.size()) {
         romId = QStringLiteral("data-slot-%1").arg(d->instLocLe->text());

@@ -54,12 +54,6 @@ int main(int argc, char *argv[])
     pc.setDataDirectory(DATA_DIR);
 #endif
 
-    if (!pc.loadPatchInfos()) {
-        QMessageBox::warning(nullptr, a.applicationName(),
-                             QObject::tr("Failed to load patchinfo files"));
-        return 1;
-    }
-
     MainWindow w(&pc);
     w.show();
 
