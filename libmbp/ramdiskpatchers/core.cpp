@@ -33,7 +33,7 @@ public:
     const FileInfo *info;
     CpioFile *cpio;
 
-    PatcherError error;
+    ErrorCode error;
 
     std::vector<std::string> fstabs;
 };
@@ -54,7 +54,7 @@ CoreRP::~CoreRP()
 {
 }
 
-PatcherError CoreRP::error() const
+ErrorCode CoreRP::error() const
 {
     return m_impl->error;
 }

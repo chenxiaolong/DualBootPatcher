@@ -31,7 +31,7 @@ extern "C" {
 CCpioFile * mbp_cpiofile_create(void);
 void mbp_cpiofile_destroy(CCpioFile *cpio);
 
-CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio);
+/* enum ErrorCode */ int mbp_cpiofile_error(const CCpioFile *cpio);
 
 bool mbp_cpiofile_load_data(CCpioFile *cpio,
                             const unsigned char *data, size_t size);

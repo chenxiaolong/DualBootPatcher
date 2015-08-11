@@ -33,7 +33,7 @@ typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*DetailsUpdatedCallback) (const char *, void *);
 
-CPatcherError * mbp_patcher_error(const CPatcher *patcher);
+/* enum ErrorCode */ int mbp_patcher_error(const CPatcher *patcher);
 char * mbp_patcher_id(const CPatcher *patcher);
 void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
 char * mbp_patcher_new_file_path(CPatcher *patcher);
@@ -45,14 +45,14 @@ bool mbp_patcher_patch_file(CPatcher *patcher,
 void mbp_patcher_cancel_patching(CPatcher *patcher);
 
 
-CPatcherError * mbp_autopatcher_error(const CAutoPatcher *patcher);
+/* enum ErrorCode */ int mbp_autopatcher_error(const CAutoPatcher *patcher);
 char * mbp_autopatcher_id(const CAutoPatcher *patcher);
 char ** mbp_autopatcher_new_files(const CAutoPatcher *patcher);
 char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher);
 bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
 
-CPatcherError * mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);
+/* enum ErrorCode */ int mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);
 char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher);
 bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
 

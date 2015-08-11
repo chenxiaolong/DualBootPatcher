@@ -55,7 +55,7 @@ public:
     std::vector<Device *> devices;
 
     // Errors
-    PatcherError error;
+    ErrorCode error;
 
 #ifndef LIBMBP_MINI
     // Created patchers
@@ -111,12 +111,12 @@ PatcherConfig::~PatcherConfig()
 /*!
  * \brief Get error information
  *
- * \note The returned PatcherError contains valid information only if an
+ * \note The returned ErrorCode contains valid information only if an
  *       operation has failed.
  *
- * \return PatcherError containing information about the error
+ * \return ErrorCode containing information about the error
  */
-PatcherError PatcherConfig::error() const
+ErrorCode PatcherConfig::error() const
 {
     return m_impl->error;
 }

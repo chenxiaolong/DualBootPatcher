@@ -64,9 +64,9 @@ StandardPatcher::~StandardPatcher()
 {
 }
 
-PatcherError StandardPatcher::error() const
+ErrorCode StandardPatcher::error() const
 {
-    return PatcherError();
+    return ErrorCode();
 }
 
 std::string StandardPatcher::id() const

@@ -25,25 +25,6 @@ namespace mbp
 #endif
 
 #ifdef __cplusplus
-enum class ErrorType : int
-{
-#else
-enum ErrorType
-{
-#endif
-    GenericError = 0,
-    PatcherCreationError,
-    IOError,
-    BootImageError,
-    CpioError,
-    ArchiveError,
-    XmlError,
-    SupportedFileError,
-    CancelledError,
-    PatchingError,
-};
-
-#ifdef __cplusplus
 enum class ErrorCode : int
 {
 #else

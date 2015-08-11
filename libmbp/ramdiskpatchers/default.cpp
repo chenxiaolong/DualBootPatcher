@@ -34,7 +34,7 @@ public:
     const FileInfo *info;
     CpioFile *cpio;
 
-    PatcherError error;
+    ErrorCode error;
 };
 /*! \endcond */
 
@@ -60,7 +60,7 @@ DefaultRP::~DefaultRP()
 {
 }
 
-PatcherError DefaultRP::error() const
+ErrorCode DefaultRP::error() const
 {
     return m_impl->error;
 }

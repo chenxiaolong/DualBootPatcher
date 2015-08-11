@@ -17,7 +17,6 @@ set(MBP_SOURCES
     device.cpp
     fileinfo.cpp
     patcherconfig.cpp
-    patchererror.cpp
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
@@ -34,7 +33,6 @@ set(MBP_SOURCES
     cwrapper/cdevice.cpp
     cwrapper/cfileinfo.cpp
     cwrapper/cpatcherconfig.cpp
-    cwrapper/cpatchererror.cpp
     cwrapper/cpatcherinterface.cpp
     cwrapper/private/util.cpp
     # Autopatchers
@@ -146,7 +144,6 @@ set(MBP_MINI_SOURCES
     cpiofile.cpp
     device.cpp
     patcherconfig.cpp
-    patchererror.cpp
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
@@ -155,7 +152,6 @@ set(MBP_MINI_SOURCES
     cwrapper/ccpiofile.cpp
     cwrapper/cdevice.cpp
     cwrapper/cpatcherconfig.cpp
-    cwrapper/cpatchererror.cpp
     cwrapper/private/util.cpp
     bootimage/androidformat.cpp
     bootimage/bumpformat.cpp

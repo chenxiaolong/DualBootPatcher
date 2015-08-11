@@ -57,14 +57,14 @@ namespace mbp
 
     \return Success or not
  */
-PatcherError FileUtils::readToMemory(const std::string &path,
-                                     std::vector<unsigned char> *contents)
+ErrorCode FileUtils::readToMemory(const std::string &path,
+                                  std::vector<unsigned char> *contents)
 {
     io::File file;
     if (!file.open(path, io::File::OpenRead)) {
         FLOGE("%s: Failed to open for reading: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+        return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
@@ -78,12 +78,12 @@ PatcherError FileUtils::readToMemory(const std::string &path,
     if (!file.read(data.data(), data.size(), &bytesRead) || bytesRead != size) {
         FLOGE("%s: Failed to read file: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileReadError, path);
+        return ErrorCode::FileReadError;
     }
 
     data.swap(*contents);
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
 /*!
@@ -94,14 +94,14 @@ PatcherError FileUtils::readToMemory(const std::string &path,
 
     \return Success or not
  */
-PatcherError FileUtils::readToString(const std::string &path,
-                                     std::string *contents)
+ErrorCode FileUtils::readToString(const std::string &path,
+                                  std::string *contents)
 {
     io::File file;
     if (!file.open(path, io::File::OpenRead)) {
         FLOGE("%s: Failed to open for reading: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+        return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
@@ -116,52 +116,52 @@ PatcherError FileUtils::readToString(const std::string &path,
     if (!file.read(&data[0], size, &bytesRead) || bytesRead != size) {
         FLOGE("%s: Failed to read file: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileReadError, path);
+        return ErrorCode::FileReadError;
     }
 
     data.swap(*contents);
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
-PatcherError FileUtils::writeFromMemory(const std::string &path,
-                                        const std::vector<unsigned char> &contents)
+ErrorCode FileUtils::writeFromMemory(const std::string &path,
+                                     const std::vector<unsigned char> &contents)
 {
     io::File file;
     if (!file.open(path, io::File::OpenWrite)) {
         FLOGE("%s: Failed to open for writing: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+        return ErrorCode::FileOpenError;
     }
 
     uint64_t bytesWritten;
     if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
         FLOGE("%s: Failed to write file: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileWriteError, path);
+        return ErrorCode::FileWriteError;
     }
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
-PatcherError FileUtils::writeFromString(const std::string &path,
-                                        const std::string &contents)
+ErrorCode FileUtils::writeFromString(const std::string &path,
+                                     const std::string &contents)
 {
     io::File file;
     if (!file.open(path, io::File::OpenWrite)) {
         FLOGE("%s: Failed to open for writing: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+        return ErrorCode::FileOpenError;
     }
 
     uint64_t bytesWritten;
     if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
         FLOGE("%s: Failed to write file: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileWriteError, path);
+        return ErrorCode::FileWriteError;
     }
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
 #ifdef _WIN32
@@ -388,9 +388,9 @@ int FileUtils::mzCloseOutputFile(zipFile zf)
     return zipClose(zf, nullptr);
 }
 
-PatcherError FileUtils::mzArchiveStats(const std::string &path,
-                                       FileUtils::ArchiveStats *stats,
-                                       std::vector<std::string> ignore)
+ErrorCode FileUtils::mzArchiveStats(const std::string &path,
+                                    FileUtils::ArchiveStats *stats,
+                                    std::vector<std::string> ignore)
 {
     assert(stats != nullptr);
 
@@ -398,8 +398,7 @@ PatcherError FileUtils::mzArchiveStats(const std::string &path,
 
     if (!uf) {
         FLOGE("minizip: Failed to open for reading: %s", path.c_str());
-        return PatcherError::createArchiveError(
-                ErrorCode::ArchiveReadOpenError, path);
+        return ErrorCode::ArchiveReadOpenError;
     }
 
     uint64_t count = 0;
@@ -411,15 +410,13 @@ PatcherError FileUtils::mzArchiveStats(const std::string &path,
     int ret = unzGoToFirstFile(uf);
     if (ret != UNZ_OK) {
         mzCloseInputFile(uf);
-        return PatcherError::createArchiveError(
-                ErrorCode::ArchiveReadHeaderError, std::string());
+        return ErrorCode::ArchiveReadHeaderError;
     }
 
     do {
         if (!mzGetInfo(uf, &fi, &name)) {
             mzCloseInputFile(uf);
-            return PatcherError::createArchiveError(
-                    ErrorCode::ArchiveReadHeaderError, std::string());
+            return ErrorCode::ArchiveReadHeaderError;
         }
 
         if (std::find(ignore.begin(), ignore.end(), name) == ignore.end()) {
@@ -430,8 +427,7 @@ PatcherError FileUtils::mzArchiveStats(const std::string &path,
 
     if (ret != UNZ_END_OF_LIST_OF_FILE) {
         mzCloseInputFile(uf);
-        return PatcherError::createArchiveError(
-                ErrorCode::ArchiveReadHeaderError, std::string());
+        return ErrorCode::ArchiveReadHeaderError;
     }
 
     mzCloseInputFile(uf);
@@ -439,7 +435,7 @@ PatcherError FileUtils::mzArchiveStats(const std::string &path,
     stats->files = count;
     stats->totalSize = totalSize;
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
 bool FileUtils::mzGetInfo(unzFile uf,
@@ -715,9 +711,9 @@ static bool mzGetFileTime(const std::string &filename,
     return false;
 }
 
-PatcherError FileUtils::mzAddFile(zipFile zf,
-                                  const std::string &name,
-                                  const std::vector<unsigned char> &contents)
+ErrorCode FileUtils::mzAddFile(zipFile zf,
+                               const std::string &name,
+                               const std::vector<unsigned char> &contents)
 {
     // Obviously never true, but we'll keep it here just in case
     bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
@@ -743,8 +739,7 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
     if (ret != ZIP_OK) {
         FLOGW("minizip: Failed to add file (error code: %d): [memory]", ret);
 
-        return PatcherError::createArchiveError(
-                ErrorCode::ArchiveWriteDataError, name);
+        return ErrorCode::ArchiveWriteDataError;
     }
 
     // Write data to file
@@ -753,25 +748,24 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
         FLOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
         zipCloseFileInZip(zf);
 
-        return PatcherError::createArchiveError(
-                ErrorCode::ArchiveWriteDataError, name);
+        return ErrorCode::ArchiveWriteDataError;
     }
 
     zipCloseFileInZip(zf);
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
-PatcherError FileUtils::mzAddFile(zipFile zf,
-                                  const std::string &name,
-                                  const std::string &path)
+ErrorCode FileUtils::mzAddFile(zipFile zf,
+                               const std::string &name,
+                               const std::string &path)
 {
     // Copy file into archive
     io::File file;
     if (!file.open(path, io::File::OpenRead)) {
         FLOGE("%s: Failed to open for reading: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileOpenError, path);
+        return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
@@ -805,8 +799,7 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
         FLOGW("minizip: Failed to add file (error code: %d): %s",
               ret, path.c_str());
 
-        return PatcherError::createArchiveError(
-                ErrorCode::ArchiveWriteDataError, name);
+        return ErrorCode::ArchiveWriteDataError;
     }
 
     // Write data to file
@@ -820,8 +813,7 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
                   ret, path.c_str());
             zipCloseFileInZip(zf);
 
-            return PatcherError::createArchiveError(
-                    ErrorCode::ArchiveWriteDataError, name);
+            return ErrorCode::ArchiveWriteDataError;
         }
     }
     if (file.error() != io::File::ErrorEndOfFile) {
@@ -829,12 +821,12 @@ PatcherError FileUtils::mzAddFile(zipFile zf,
 
         FLOGE("%s: Failed to read file: %s",
               path.c_str(), file.errorString().c_str());
-        return PatcherError::createIOError(ErrorCode::FileReadError, path);
+        return ErrorCode::FileReadError;
     }
 
     zipCloseFileInZip(zf);
 
-    return PatcherError();
+    return ErrorCode::NoError;
 }
 
 }

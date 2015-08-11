@@ -40,7 +40,7 @@ public:
 
     static const std::string UpdaterScript;
 
-    virtual PatcherError error() const override;
+    virtual ErrorCode error() const override;
 
     virtual std::string id() const override;
 

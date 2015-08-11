@@ -38,9 +38,6 @@ typedef struct CFileInfo CFileInfo;
 struct CPatcherConfig;
 typedef struct CPatcherConfig CPatcherConfig;
 
-struct CPatcherError;
-typedef struct CPatcherError CPatcherError;
-
 #ifndef LIBMBP_MINI
 struct CPatcher;
 typedef struct CPatcher CPatcher;

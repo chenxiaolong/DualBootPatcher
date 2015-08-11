@@ -30,8 +30,3 @@
  * \typedef CPatcherConfig
  * \brief C wrapper for PatcherConfig object
  */
-
-/*!
- * \typedef CPatcherError
- * \brief C wrapper for PatcherError object
- */

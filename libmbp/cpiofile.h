@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -22,8 +22,8 @@
 #include <memory>
 #include <vector>
 
+#include "errors.h"
 #include "libmbp_global.h"
-#include "patchererror.h"
 
 
 namespace mbp
@@ -35,7 +35,7 @@ public:
     CpioFile();
     ~CpioFile();
 
-    PatcherError error() const;
+    ErrorCode error() const;
 
     bool load(const unsigned char *data, std::size_t size);
     bool load(const std::vector<unsigned char> &data);

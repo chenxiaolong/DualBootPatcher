@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -25,7 +25,7 @@
 #include "external/minizip/unzip.h"
 #include "external/minizip/zip.h"
 
-#include "patchererror.h"
+#include "errors.h"
 
 
 namespace mbp
@@ -34,15 +34,15 @@ namespace mbp
 class FileUtils
 {
 public:
-    static PatcherError readToMemory(const std::string &path,
-                                     std::vector<unsigned char> *contents);
-    static PatcherError readToString(const std::string &path,
-                                     std::string *contents);
+    static ErrorCode readToMemory(const std::string &path,
+                                  std::vector<unsigned char> *contents);
+    static ErrorCode readToString(const std::string &path,
+                                  std::string *contents);
 
-    static PatcherError writeFromMemory(const std::string &path,
-                                        const std::vector<unsigned char> &contents);
-    static PatcherError writeFromString(const std::string &path,
-                                        const std::string &contents);
+    static ErrorCode writeFromMemory(const std::string &path,
+                                     const std::vector<unsigned char> &contents);
+    static ErrorCode writeFromString(const std::string &path,
+                                     const std::string &contents);
 
     static std::string systemTemporaryDir();
 
@@ -61,9 +61,9 @@ public:
 
     static int mzCloseOutputFile(zipFile zf);
 
-    static PatcherError mzArchiveStats(const std::string &path,
-                                       ArchiveStats *stats,
-                                       std::vector<std::string> ignore);
+    static ErrorCode mzArchiveStats(const std::string &path,
+                                    ArchiveStats *stats,
+                                    std::vector<std::string> ignore);
 
     static bool mzGetInfo(unzFile uf,
                           unz_file_info64 *fi,
@@ -81,13 +81,13 @@ public:
     static bool mzExtractFile(unzFile uf,
                               const std::string &directory);
 
-    static PatcherError mzAddFile(zipFile zf,
-                                  const std::string &name,
-                                  const std::vector<unsigned char> &contents);
+    static ErrorCode mzAddFile(zipFile zf,
+                               const std::string &name,
+                               const std::vector<unsigned char> &contents);
 
-    static PatcherError mzAddFile(zipFile zf,
-                                  const std::string &name,
-                                  const std::string &path);
+    static ErrorCode mzAddFile(zipFile zf,
+                               const std::string &name,
+                               const std::string &path);
 };
 
 }

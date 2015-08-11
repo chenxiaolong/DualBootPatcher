@@ -94,23 +94,22 @@ void detailsCbWrapper(const std::string &text, void *userData)
 /*!
  * \brief Get the error information
  *
- * \note The returned CPatcherError is filled with valid data only if a
+ * \note The returned ErrorCode is filled with valid data only if a
  *       CPatcher operation has failed.
  *
- * \note The returned CPatcherError should be freed with mbp_error_destroy()
+ * \note The returned ErrorCode should be freed with mbp_error_destroy()
  *       when it is no longer needed.
  *
  * \param patcher CPatcher object
  *
- * \return CPatcherError
+ * \return ErrorCode
  *
  * \sa Patcher::error()
  */
-CPatcherError * mbp_patcher_error(const CPatcher *patcher)
+/* enum ErrorCode */ int mbp_patcher_error(const CPatcher *patcher)
 {
     CCASTP(patcher);
-    mbp::PatcherError *pe = new mbp::PatcherError(p->error());
-    return reinterpret_cast<CPatcherError *>(pe);
+    return static_cast<int>(p->error());
 }
 
 /*!
@@ -204,23 +203,22 @@ void mbp_patcher_cancel_patching(CPatcher *patcher)
 /*!
  * \brief Get the error information
  *
- * \note The returned CPatcherError is filled with valid data only if a
+ * \note The returned ErrorCode is filled with valid data only if a
  *       CAutoPatcher operation has failed.
  *
- * \note The returned CPatcherError should be freed with mbp_error_destroy()
+ * \note The returned ErrorCode should be freed with mbp_error_destroy()
  *       when it is no longer needed.
  *
  * \param patcher CAutoPatcher object
  *
- * \return CPatcherError
+ * \return ErrorCode
  *
  * \sa AutoPatcher::error()
  */
-CPatcherError * mbp_autopatcher_error(const CAutoPatcher *patcher)
+/* enum ErrorCode */ int mbp_autopatcher_error(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    mbp::PatcherError *pe = new mbp::PatcherError(ap->error());
-    return reinterpret_cast<CPatcherError *>(pe);
+    return static_cast<int>(ap->error());
 }
 
 /*!
@@ -292,23 +290,22 @@ bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory)
 /*!
  * \brief Get the error information
  *
- * \note The returned CPatcherError is filled with valid data only if a
+ * \note The returned ErrorCode is filled with valid data only if a
  *       CRamdiskPatcher operation has failed.
  *
- * \note The returned CPatcherError should be freed with mbp_error_destroy()
+ * \note The returned ErrorCode should be freed with mbp_error_destroy()
  *       when it is no longer needed.
  *
  * \param patcher CRamdiskPatcher object
  *
- * \return CPatcherError
+ * \return ErrorCode
  *
  * \sa RamdiskPatcher::error()
  */
-CPatcherError * mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher)
+/* enum ErrorCode */ int mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher)
 {
     CCASTRP(patcher);
-    mbp::PatcherError *pe = new mbp::PatcherError(rp->error());
-    return reinterpret_cast<CPatcherError *>(pe);
+    return static_cast<int>(rp->error());
 }
 
 /*!

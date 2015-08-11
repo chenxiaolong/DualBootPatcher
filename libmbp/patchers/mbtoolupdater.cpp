@@ -41,7 +41,7 @@ public:
     PatcherConfig *pc;
     const FileInfo *info;
 
-    PatcherError error;
+    ErrorCode error;
 
     bool patchImage();
     void patchInitRc(CpioFile *cpio);
@@ -65,7 +65,7 @@ MbtoolUpdater::~MbtoolUpdater()
 {
 }
 
-PatcherError MbtoolUpdater::error() const
+ErrorCode MbtoolUpdater::error() const
 {
     return m_impl->error;
 }
@@ -112,8 +112,7 @@ bool MbtoolUpdater::patchFile(ProgressUpdatedCallback progressCb,
     bool isLok = StringUtils::iends_with(m_impl->info->filename(), ".lok");
 
     if (!isImg && !isLok) {
-        m_impl->error = PatcherError::createSupportedFileError(
-                ErrorCode::OnlyBootImageSupported, Id);
+        m_impl->error = ErrorCode::OnlyBootImageSupported;
         return false;
     }
 

@@ -28,7 +28,7 @@
 #ifndef LIBMBP_MINI
 #include "fileinfo.h"
 #endif
-#include "patchererror.h"
+#include "errors.h"
 
 
 namespace mbp
@@ -46,7 +46,7 @@ public:
     PatcherConfig();
     ~PatcherConfig();
 
-    PatcherError error() const;
+    ErrorCode error() const;
 
     std::string dataDirectory() const;
     std::string tempDirectory() const;

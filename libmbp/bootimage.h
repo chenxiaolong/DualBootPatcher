@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "bootimage-common.h"
+#include "errors.h"
 #include "libmbp_global.h"
-#include "patchererror.h"
 
 
 namespace mbp
@@ -69,7 +69,7 @@ public:
     BootImage();
     ~BootImage();
 
-    PatcherError error() const;
+    ErrorCode error() const;
 
     static bool isValid(const unsigned char *data, std::size_t size);
 

@@ -40,7 +40,7 @@ enum BootImageType
 CBootImage * mbp_bootimage_create(void);
 void mbp_bootimage_destroy(CBootImage *bootImage);
 
-CPatcherError * mbp_bootimage_error(const CBootImage *bootImage);
+/* enum ErrorCode */ int mbp_bootimage_error(const CBootImage *bootImage);
 
 bool mbp_bootimage_load_data(CBootImage *bootImage,
                              const unsigned char *data, size_t size);

@@ -48,11 +48,11 @@ public:
     /*!
      * \brief The error
      *
-     * Returns a PatcherError. The value is invalid if nothing has failed.
+     * Returns a ErrorCode. The value is invalid if nothing has failed.
      *
-     * \return PatcherError error
+     * \return ErrorCode error
      */
-    virtual PatcherError error() const = 0;
+    virtual ErrorCode error() const = 0;
 
     /*!
      * \brief The patcher's identifier
@@ -113,11 +113,11 @@ public:
     /*!
      * \brief The error
      *
-     * Returns a PatcherError. The value is invalid if nothing has failed.
+     * Returns a ErrorCode. The value is invalid if nothing has failed.
      *
-     * \return PatcherError error
+     * \return ErrorCode error
      */
-    virtual PatcherError error() const = 0;
+    virtual ErrorCode error() const = 0;
 
     /*!
      * \brief The autopatcher's identifier
@@ -164,11 +164,11 @@ public:
     /*!
      * \brief The error
      *
-     * Returns a PatcherError. The value is invalid if nothing has failed.
+     * Returns a ErrorCode. The value is invalid if nothing has failed.
      *
-     * \return PatcherError error
+     * \return ErrorCode error
      */
-    virtual PatcherError error() const = 0;
+    virtual ErrorCode error() const = 0;
 
     /*!
      * \brief The ramdisk patcher's identifier

@@ -74,23 +74,22 @@ void mbp_config_destroy(CPatcherConfig *pc)
 /*!
  * \brief Get the error information
  *
- * \note The returned CPatcherError is filled with valid data only if a
+ * \note The returned ErrorCode is filled with valid data only if a
  *       CPatcherConfig operation has failed.
  *
- * \note The returned CPatcherError should be freed with mbp_error_destroy()
+ * \note The returned ErrorCode should be freed with mbp_error_destroy()
  *       when it is no longer needed.
  *
  * \param config CPatcherConfig object
  *
- * \return CPatcherError
+ * \return ErrorCode
  *
  * \sa PatcherConfig::error()
  */
-CPatcherError * mbp_config_error(const CPatcherConfig *pc)
+/* enum ErrorCode */ int mbp_config_error(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    mbp::PatcherError *pe = new mbp::PatcherError(config->error());
-    return reinterpret_cast<CPatcherError *>(pe);
+    return static_cast<int>(config->error());
 }
 
 /*!

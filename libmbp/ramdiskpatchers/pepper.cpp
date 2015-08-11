@@ -34,7 +34,7 @@ public:
     const FileInfo *info;
     CpioFile *cpio;
 
-    PatcherError error;
+    ErrorCode error;
 };
 /*! \endcond */
 
@@ -61,7 +61,7 @@ PepperBaseRP::~PepperBaseRP()
 {
 }
 
-PatcherError PepperBaseRP::error() const
+ErrorCode PepperBaseRP::error() const
 {
     return m_impl->error;
 }

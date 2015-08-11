@@ -72,23 +72,22 @@ void mbp_cpiofile_destroy(CCpioFile *cpio)
 /*!
  * \brief Get the error information
  *
- * \note The returned CPatcherError is filled with valid data only if a
+ * \note The returned ErrorCode is filled with valid data only if a
  *       CCpioFile operation has failed.
  *
- * \note The returned CPatcherError should be freed with mbp_error_destroy()
+ * \note The returned ErrorCode should be freed with mbp_error_destroy()
  *       when it is no longer needed.
  *
  * \param cpio CCpioFile object
  *
- * \return CPatcherError
+ * \return ErrorCode
  *
  * \sa CpioFile::error()
  */
-CPatcherError * mbp_cpiofile_error(const CCpioFile *cpio)
+/* enum ErrorCode */ int mbp_cpiofile_error(const CCpioFile *cpio)
 {
     CCAST(cpio);
-    mbp::PatcherError *pe = new mbp::PatcherError(cf->error());
-    return reinterpret_cast<CPatcherError *>(pe);
+    return static_cast<int>(cf->error());
 }
 
 /*!

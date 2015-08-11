@@ -72,23 +72,22 @@ void mbp_bootimage_destroy(CBootImage *bootImage)
 /*!
  * \brief Get the error information
  *
- * \note The returned CPatcherError is filled with valid data only if a
+ * \note The returned ErrorCode is filled with valid data only if a
  *       CBootImage operation has failed.
  *
- * \note The returned CPatcherError should be freed with mbp_error_destroy()
+ * \note The returned ErrorCode should be freed with mbp_error_destroy()
  *       when it is no longer needed.
  *
  * \param bootImage CBootImage object
  *
- * \return CPatcherError
+ * \return ErrorCode
  *
  * \sa BootImage::error()
  */
-CPatcherError * mbp_bootimage_error(const CBootImage *bootImage)
+/* enum ErrorCode */ int mbp_bootimage_error(const CBootImage *bootImage)
 {
     CCAST(bootImage);
-    mbp::PatcherError *pe = new mbp::PatcherError(bi->error());
-    return reinterpret_cast<CPatcherError *>(pe);
+    return static_cast<int>(bi->error());
 }
 
 /*!

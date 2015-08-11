@@ -36,7 +36,7 @@ public:
 
     static const std::string Id;
 
-    virtual PatcherError error() const override;
+    virtual ErrorCode error() const override;
 
     // Patcher info
     virtual std::string id() const override;

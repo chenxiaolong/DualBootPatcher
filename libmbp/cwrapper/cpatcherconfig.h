@@ -30,7 +30,7 @@ extern "C" {
 CPatcherConfig * mbp_config_create(void);
 void mbp_config_destroy(CPatcherConfig *pc);
 
-CPatcherError * mbp_config_error(const CPatcherConfig *pc);
+/* enum ErrorCode */ int mbp_config_error(const CPatcherConfig *pc);
 
 char * mbp_config_data_directory(const CPatcherConfig *pc);
 char * mbp_config_temp_directory(const CPatcherConfig *pc);

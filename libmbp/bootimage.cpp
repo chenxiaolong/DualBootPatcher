@@ -74,7 +74,7 @@ public:
     BootImage::Type type = Type::Android;
     BootImage::Type sourceType;
 
-    PatcherError error;
+    ErrorCode error;
 
 private:
     BootImage *m_parent;
@@ -141,12 +141,12 @@ BootImage::~BootImage()
 /*!
  * \brief Get error information
  *
- * \note The returned PatcherError contains valid information only if an
+ * \note The returned ErrorCode contains valid information only if an
  *       operation has failed.
  *
- * \return PatcherError containing information about the error
+ * \return ErrorCode containing information about the error
  */
-PatcherError BootImage::error() const
+ErrorCode BootImage::error() const
 {
     return m_impl->error;
 }
@@ -190,8 +190,7 @@ bool BootImage::load(const unsigned char *data, std::size_t size)
     }
 
     if (!ret) {
-        m_impl->error = PatcherError::createBootImageError(
-                ErrorCode::BootImageParseError);
+        m_impl->error = ErrorCode::BootImageParseError;
         return false;
     }
 
@@ -234,7 +233,7 @@ bool BootImage::loadFile(const std::string &filename)
 {
     std::vector<unsigned char> data;
     auto ret = FileUtils::readToMemory(filename, &data);
-    if (!ret) {
+    if (ret != ErrorCode::NoError) {
         m_impl->error = ret;
         return false;
     }
@@ -296,8 +295,7 @@ bool BootImage::createFile(const std::string &path)
         FLOGE("%s: Failed to open for writing: %s",
               path.c_str(), file.errorString().c_str());
 
-        m_impl->error = PatcherError::createIOError(
-                ErrorCode::FileOpenError, path);
+        m_impl->error = ErrorCode::FileOpenError;
         return false;
     }
 
@@ -311,8 +309,7 @@ bool BootImage::createFile(const std::string &path)
         FLOGE("%s: Failed to write file: %s",
               path.c_str(), file.errorString().c_str());
 
-        m_impl->error = PatcherError::createIOError(
-                ErrorCode::FileWriteError, path);
+        m_impl->error = ErrorCode::FileWriteError;
         return false;
     }
 
