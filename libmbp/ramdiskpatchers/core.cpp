@@ -19,13 +19,7 @@
 
 #include "ramdiskpatchers/core.h"
 
-#include <regex>
-#include <unordered_map>
-
-#include "libmbpio/path.h"
-
 #include "patcherconfig.h"
-#include "private/stringutils.h"
 
 
 namespace mbp

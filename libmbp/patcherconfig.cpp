@@ -19,13 +19,9 @@
 
 #include "patcherconfig.h"
 
-#include <regex>
+#include <algorithm>
 
 #include <cassert>
-
-#ifndef LIBMBP_MINI
-#include "libmbpio/path.h"
-#endif
 
 #include "device.h"
 #ifndef LIBMBP_MINI
