@@ -677,19 +677,7 @@ std::string MultiBootPatcher::Impl::createTable()
     std::size_t maxLenCodenames = insertAndFindMax(devices, codenames,
             [](Device *d, std::vector<std::string> &list) {
                 auto codenames = d->codenames();
-                std::string out;
-                bool first = true;
-
-                for (auto const codename : codenames) {
-                    if (first) {
-                        first = false;
-                        out += codename;
-                    } else {
-                        out += ", ";
-                        out += codename;
-                    }
-                }
-
+                std::string out = StringUtils::join(codenames, ", ");
                 std::size_t len = out.size();
                 list.push_back(std::move(out));
                 return len;

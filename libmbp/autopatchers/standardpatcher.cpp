@@ -103,7 +103,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     fixBlockUpdateLines(&lines, m_impl->info->device());
     fixImageExtractLines(&lines, m_impl->info->device());
 
-    contents = StringUtils::join(lines, '\n');
+    contents = StringUtils::join(lines, "\n");
     FileUtils::writeFromString(directory + "/" + UpdaterScript, contents);
 
     return true;

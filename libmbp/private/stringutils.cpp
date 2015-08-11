@@ -164,14 +164,15 @@ std::vector<unsigned char> StringUtils::joinData(std::vector<std::string> &list,
     return result;
 }
 
-std::string StringUtils::join(std::vector<std::string> &list, char delim)
+std::string StringUtils::join(std::vector<std::string> &list,
+                              const std::string &delim)
 {
     std::string result;
     bool first = true;
 
     for (const std::string &str : list) {
         if (!first) {
-            result.push_back(delim);
+            result += delim;
         } else {
             first = false;
         }
