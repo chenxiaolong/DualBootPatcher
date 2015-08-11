@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -33,8 +33,6 @@ enum ErrorCode
 #endif
     // Generic
     NoError = 0,
-    //CustomError,
-    UnknownError,
 
     // PatcherCreation
     PatcherCreateError,
@@ -45,7 +43,6 @@ enum ErrorCode
     FileOpenError,
     FileReadError,
     FileWriteError,
-    DirectoryNotExistError,
 
     // Boot image
     BootImageParseError,
@@ -66,23 +63,12 @@ enum ErrorCode
     ArchiveCloseError,
     ArchiveFreeError,
 
-    // XML
-    XmlParseFileError,
-
     // Supported files
     OnlyZipSupported,
     OnlyBootImageSupported,
 
     // Cancelled
     PatchingCancelled,
-
-    // Patching errors
-
-    // Primary upgrade patcher
-    SystemCacheFormatLinesNotFound,
-
-    // Patch File patcher
-    ApplyPatchFileError,
 };
 
 #ifdef __cplusplus
