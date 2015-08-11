@@ -19,9 +19,11 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
@@ -99,14 +101,20 @@ public class PatcherUtils {
 
     public synchronized static Bundle patchFile(Context context, Bundle data,
                                                 ProgressListener listener) {
+        Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
+        Log.d(TAG, "libmbp version: " + PatcherUtils.sPC.getVersion());
+
         // Make sure patcher is extracted first
         extractPatcher(context);
 
         Patcher patcher = data.getParcelable(PARAM_PATCHER);
         FileInfo fileInfo = data.getParcelable(PARAM_FILEINFO);
 
+        Log.d(TAG, "Patching file: " + fileInfo.getFilename());
+
         patcher.setFileInfo(fileInfo);
         boolean ret = patcher.patchFile(listener);
+        LogUtils.dump("patch-file.log");
 
         Bundle bundle = new Bundle();
         bundle.putString(RESULT_PATCH_FILE_NEW_FILE, patcher.newFilePath());

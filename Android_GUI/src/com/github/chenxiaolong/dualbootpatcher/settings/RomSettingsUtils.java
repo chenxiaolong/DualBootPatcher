@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.content.Context;
-import android.os.Environment;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
@@ -89,19 +89,6 @@ public class RomSettingsUtils {
      */
     private static void logLibMbpError(Context context, int error) {
         Log.e(TAG, "libmbp error: " + PatcherUtils.getErrorMessage(context, error));
-    }
-
-    private static void dumpLogcat()  {
-        final File path = new File(Environment.getExternalStorageDirectory()
-                + File.separator + "MultiBoot" + File.separator + "ramdisk-update.log");
-        path.getParentFile().mkdirs();
-        try {
-            Runtime.getRuntime().exec("logcat -d -v threadtime -f " + path + " *").waitFor();
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Failed to wait for logcat to exit", e);
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to run logcat", e);
-        }
     }
 
     public synchronized static boolean updateRamdisk(Context context) {
@@ -281,7 +268,7 @@ public class RomSettingsUtils {
             return true;
         } finally {
             // Save whatever is in the logcat buffer to /sdcard/MultiBoot/ramdisk-update.log
-            dumpLogcat();
+            LogUtils.dump("ramdisk-update.log");
         }
     }
 }
