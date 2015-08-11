@@ -1,4 +1,5 @@
 libarchive/
 liblzma/
+liblzo2/
 liblz4/
 *.bz2
