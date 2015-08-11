@@ -22,7 +22,7 @@
 
 #include <cassert>
 
-#include <libmbp/patchererror.h>
+#include <libmbp/errors.h>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>
@@ -510,33 +510,22 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
 }
 
 
-static QString errorToString(const mbp::PatcherError &error) {
-    switch (error.errorCode()) {
+static QString errorToString(const mbp::ErrorCode &error) {
+    switch (error) {
     case mbp::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
-    case mbp::ErrorCode::UnknownError:
-        return QObject::tr("An unknown error has occurred");
     case mbp::ErrorCode::PatcherCreateError:
-        return QObject::tr("Failed to create patcher: %1")
-                .arg(QString::fromStdString(error.patcherId()));
+        return QObject::tr("Failed to create patcher");
     case mbp::ErrorCode::AutoPatcherCreateError:
-        return QObject::tr("Failed to create autopatcher: %1")
-                .arg(QString::fromStdString(error.patcherId()));
+        return QObject::tr("Failed to create autopatcher");
     case mbp::ErrorCode::RamdiskPatcherCreateError:
-        return QObject::tr("Failed to create ramdisk patcher: %1")
-                .arg(QString::fromStdString(error.patcherId()));
+        return QObject::tr("Failed to create ramdisk patcher");
     case mbp::ErrorCode::FileOpenError:
-        return QObject::tr("Failed to open file: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("Failed to open file");
     case mbp::ErrorCode::FileReadError:
-        return QObject::tr("Failed to read from file: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("Failed to read from file");
     case mbp::ErrorCode::FileWriteError:
-        return QObject::tr("Failed to write to file: %1")
-                .arg(QString::fromStdString(error.filename()));
-    case mbp::ErrorCode::DirectoryNotExistError:
-        return QObject::tr("Directory does not exist: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("Failed to write to file");
     case mbp::ErrorCode::BootImageParseError:
         return QObject::tr("Failed to parse boot image");
     case mbp::ErrorCode::BootImageApplyBumpError:
@@ -544,47 +533,31 @@ static QString errorToString(const mbp::PatcherError &error) {
     case mbp::ErrorCode::BootImageApplyLokiError:
         return QObject::tr("Failed to apply Loki to the boot image");
     case mbp::ErrorCode::CpioFileAlreadyExistsError:
-        return QObject::tr("File already exists in cpio archive: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("File already exists in cpio archive");
     case mbp::ErrorCode::CpioFileNotExistError:
-        return QObject::tr("File does not exist in cpio archive: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("File does not exist in cpio archive");
     case mbp::ErrorCode::ArchiveReadOpenError:
         return QObject::tr("Failed to open archive for reading");
     case mbp::ErrorCode::ArchiveReadDataError:
-        return QObject::tr("Failed to read archive data for file: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("Failed to read archive data for file");
     case mbp::ErrorCode::ArchiveReadHeaderError:
         return QObject::tr("Failed to read archive entry header");
     case mbp::ErrorCode::ArchiveWriteOpenError:
         return QObject::tr("Failed to open archive for writing");
     case mbp::ErrorCode::ArchiveWriteDataError:
-        return QObject::tr("Failed to write archive data for file: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("Failed to write archive data for file");
     case mbp::ErrorCode::ArchiveWriteHeaderError:
-        return QObject::tr("Failed to write archive header for file: %1")
-                .arg(QString::fromStdString(error.filename()));
+        return QObject::tr("Failed to write archive header for file");
     case mbp::ErrorCode::ArchiveCloseError:
         return QObject::tr("Failed to close archive");
     case mbp::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case mbp::ErrorCode::XmlParseFileError:
-        return QObject::tr("Failed to parse XML file: %1")
-                .arg(QString::fromStdString(error.filename()));
     case mbp::ErrorCode::OnlyZipSupported:
-        return QObject::tr("Only ZIP files are supported by %1")
-                .arg(QString::fromStdString(error.patcherId()));
+        return QObject::tr("Only ZIP files are supported");
     case mbp::ErrorCode::OnlyBootImageSupported:
-        return QObject::tr("Only boot images are supported by %1")
-                .arg(QString::fromStdString(error.patcherId()));
+        return QObject::tr("Only boot images are supported");
     case mbp::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
-    case mbp::ErrorCode::SystemCacheFormatLinesNotFound:
-        return QObject::tr("The patcher could not find any /system or /cache"
-                           "formatting lines in the updater-script file.\n\n"
-                           "If the file is a ROM, then something failed. If the"
-                           "file is not a ROM (eg. kernel or mod), it doesn't"
-                           "need to be patched.");
     default:
         assert(false);
     }
