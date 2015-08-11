@@ -264,22 +264,14 @@
 
     <!-- Title for the file chooser card telling the user to tap to choose a file -->
     <string name="filechooser_initial_title">Tap to choose a file to patch</string>
-    <!-- Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown -->
-    <string name="filechooser_initial_desc">If an unsupported file is chosen, additional options
-        will appear that allow the patching process to be customized.</string>
+    <!-- Initial message for the file chooser card -->
+    <string name="filechooser_initial_desc">Most Android flashable zip files are supported.</string>
 
     <!-- Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching -->
     <string name="filechooser_ready_title">Tap to begin patching</string>
     <!-- Message indicating which file has been chosen and that tapping allows another file to be chosen -->
     <string name="filechooser_ready_desc">Selected file: %s\n\nTap and hold to choose a different
         file.</string>
-
-    <!-- Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching -->
-    <string name="filechooser_unsupported_title">Tap to begin patching</string>
-    <!-- Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options -->
-    <string name="filechooser_unsupported_desc">Selected file: %s\n\nThe file you have selected
-        does not have a preset. You can customize the patcher using the options above.\n\nTap and
-        hold to choose a different file.</string>
 
     <!-- Title for the file chooser card indicating that the file was successfully patched -->
     <string name="filechooser_success_title">Successfully patched file</string>

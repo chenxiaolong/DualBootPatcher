@@ -76,8 +76,6 @@ public class PatcherUtils {
             sPC = new PatcherConfig();
             sPC.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
             sPC.setTempDirectory(context.getCacheDir().getAbsolutePath());
-            sPC.loadPatchInfos();
-            // TODO: Throw exception if patchinfo loading fails
         }
     }
 

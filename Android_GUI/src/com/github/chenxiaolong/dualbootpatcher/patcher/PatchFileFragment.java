@@ -43,7 +43,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.patcher.MainOptsCW.MainOptsListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
@@ -63,8 +62,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     public static final String ARG_PATH = "path";
     public static final String ARG_ROM_ID = "rom_id";
     public static final String ARG_DEVICE = "device";
-    public static final String ARG_HAS_BOOT_IMAGE = "has_boot_image";
-    public static final String ARG_BOOT_IMAGES = "boot_images";
 
     private static final String EXTRA_CONFIG_STATE = "config_state";
 
@@ -357,7 +354,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         if (mMainOptsCW != null) {
             mMainOptsCW.refreshDevices();
             mMainOptsCW.refreshRomIds();
-            mMainOptsCW.refreshPresets();
         }
 
         restoreCardStates();
@@ -399,41 +395,9 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             }
         });
 
-        if (!mPCS.mSupported) {
-            if (mPCS.mPatchInfo == null) {
-                mPCS.mPatchInfo = new PatchInfo();
-
-                mPCS.mPatchInfo.addAutoPatcher("StandardPatcher", null);
-
-                boolean hasBootImage;
-                String[] bootImages = null;
-
-                if (mAutomated) {
-                    hasBootImage = getArguments().getBoolean(ARG_HAS_BOOT_IMAGE);
-                    bootImages = getArguments().getStringArray(ARG_BOOT_IMAGES);
-                } else {
-                    hasBootImage = mMainOptsCW.isHasBootImageEnabled();
-                    String bootImagesText = mMainOptsCW.getBootImage();
-                    if (bootImagesText != null) {
-                        bootImages = bootImagesText.split(",");
-                    }
-                }
-
-                mPCS.mPatchInfo.setHasBootImage(hasBootImage);
-                if (hasBootImage) {
-                    mPCS.mPatchInfo.setRamdisk(mPCS.mDevice.getId() + "/default");
-
-                    if (bootImages != null) {
-                        mPCS.mPatchInfo.setBootImages(bootImages);
-                    }
-                }
-            }
-        }
-
         FileInfo fileInfo = new FileInfo();
         fileInfo.setFilename(mPCS.mFilename);
         fileInfo.setDevice(mPCS.mDevice);
-        fileInfo.setPatchInfo(mPCS.mPatchInfo);
         fileInfo.setRomId(mPCS.mRomId);
 
         Context context = getActivity().getApplicationContext();
@@ -448,20 +412,6 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private void checkSupported() {
         if (mPCS.mState != PatcherConfigState.STATE_CHOSE_FILE) {
             return;
-        }
-
-        mPCS.mSupported = false;
-
-        // If the patcher doesn't use the patchinfo files, then just assume everything is supported.
-
-        if (!mPCS.mPatcher.usesPatchInfo()) {
-            mPCS.mSupported = true;
-        }
-
-        // Otherwise, check if it really is supported
-        else if ((mPCS.mPatchInfo = PatcherUtils.sPC.findMatchingPatchInfo(
-                mPCS.mDevice, mPCS.mFilename)) != null) {
-            mPCS.mSupported = true;
         }
 
         setTapActionPatchFile();
@@ -504,22 +454,13 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public void onDeviceSelected(Device device) {
         mPCS.mDevice = device;
-        mPCS.mPatchInfos = PatcherUtils.sPC.getPatchInfos(mPCS.mDevice);
 
         checkSupported();
-
-        // Reload presets specific to the device
-        mMainOptsCW.refreshPresets();
     }
 
     @Override
     public void onRomIdSelected(String id) {
         mPCS.mRomId = id;
-    }
-
-    @Override
-    public void onPresetSelected(PatchInfo info) {
-        mPCS.mPatchInfo = info;
     }
 
     @Override

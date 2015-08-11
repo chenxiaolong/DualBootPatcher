@@ -21,7 +21,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 
 public class PatcherConfigState implements Parcelable {
@@ -35,11 +34,8 @@ public class PatcherConfigState implements Parcelable {
         out.writeInt(mInitialized ? 1 : 0);
         out.writeInt(mState);
         out.writeString(mFilename);
-        out.writeInt(mSupported ? 1 : 0);
         out.writeParcelable(mPatcher, 0);
         out.writeParcelable(mDevice, 0);
-        out.writeParcelableArray(mPatchInfos, 0);
-        out.writeParcelable(mPatchInfo, 0);
         out.writeString(mPatcherNewFile);
         out.writeInt(mPatcherFailed ? 1 : 0);
         out.writeString(mPatcherError);
@@ -49,11 +45,8 @@ public class PatcherConfigState implements Parcelable {
         mInitialized = in.readInt() != 0;
         mState = in.readInt();
         mFilename = in.readString();
-        mSupported = in.readInt() != 0;
         mPatcher = in.readParcelable(Patcher.class.getClassLoader());
         mDevice = in.readParcelable(Device.class.getClassLoader());
-        mPatchInfos = (PatchInfo[]) in.readParcelableArray(PatchInfo.class.getClassLoader());
-        mPatchInfo = in.readParcelable(PatchInfo.class.getClassLoader());
         mPatcherNewFile = in.readString();
         mPatcherFailed = in.readInt() != 0;
         mPatcherError = in.readString();
@@ -79,8 +72,6 @@ public class PatcherConfigState implements Parcelable {
 
             mDevice = PatcherUtils.sPC.getDevices()[0];
 
-            mPatchInfos = PatcherUtils.sPC.getPatchInfos(mDevice);
-
             mInitialized = true;
         }
     }
@@ -100,9 +91,6 @@ public class PatcherConfigState implements Parcelable {
     // Selected file
     public String mFilename;
 
-    // Level of support for the selected file
-    public boolean mSupported;
-
     // Selected patcher
     public Patcher mPatcher;
 
@@ -111,11 +99,6 @@ public class PatcherConfigState implements Parcelable {
 
     // Selected ROM ID
     public String mRomId;
-
-    // List of patchinfos for selected device
-    public PatchInfo[] mPatchInfos;
-    // Selected patchinfo
-    public PatchInfo mPatchInfo;
 
     public String mPatcherNewFile;
     public boolean mPatcherFailed;

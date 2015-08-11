@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,12 +26,10 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CBootIm
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CCpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CDevice;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CFileInfo;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatchInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcherError;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CRamdiskPatcher;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CStringMap;
 import com.sun.jna.Callback;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -65,8 +63,6 @@ public class LibMbp {
         public static class CFileInfo extends PointerType {}
         public static class CPatcherConfig extends PointerType {}
         public static class CPatcherError extends PointerType {}
-        public static class CPatchInfo extends PointerType {}
-        public static class CStringMap extends PointerType {}
 
         public static class CPatcher extends PointerType {}
         public static class CAutoPatcher extends PointerType {}
@@ -182,8 +178,6 @@ public class LibMbp {
         static native void mbp_fileinfo_destroy(CFileInfo info);
         static native Pointer mbp_fileinfo_filename(CFileInfo info);
         static native void mbp_fileinfo_set_filename(CFileInfo info, String path);
-        static native CPatchInfo mbp_fileinfo_patchinfo(CFileInfo info);
-        static native void mbp_fileinfo_set_patchinfo(CFileInfo info, CPatchInfo pInfo);
         static native CDevice mbp_fileinfo_device(CFileInfo info);
         static native void mbp_fileinfo_set_device(CFileInfo info, CDevice device);
         static native Pointer mbp_fileinfo_rom_id(CFileInfo info);
@@ -200,19 +194,15 @@ public class LibMbp {
         static native void mbp_config_set_temp_directory(CPatcherConfig pc, String path);
         static native Pointer mbp_config_version(CPatcherConfig pc);
         static native Pointer mbp_config_devices(CPatcherConfig pc);
-        static native Pointer mbp_config_patchinfos(CPatcherConfig pc);
-        static native Pointer mbp_config_patchinfos_for_device(CPatcherConfig pc, CDevice device);
-        static native CPatchInfo mbp_config_find_matching_patchinfo(CPatcherConfig pc, CDevice device, String filename);
         static native Pointer mbp_config_patchers(CPatcherConfig pc);
         static native Pointer mbp_config_autopatchers(CPatcherConfig pc);
         static native Pointer mbp_config_ramdiskpatchers(CPatcherConfig pc);
         static native CPatcher mbp_config_create_patcher(CPatcherConfig pc, String id);
-        static native CAutoPatcher mbp_config_create_autopatcher(CPatcherConfig pc, String id, CFileInfo info, CStringMap args);
+        static native CAutoPatcher mbp_config_create_autopatcher(CPatcherConfig pc, String id, CFileInfo info);
         static native CRamdiskPatcher mbp_config_create_ramdisk_patcher(CPatcherConfig pc, String id, CFileInfo info, CCpioFile cpio);
         static native void mbp_config_destroy_patcher(CPatcherConfig pc, CPatcher patcher);
         static native void mbp_config_destroy_autopatcher(CPatcherConfig pc, CAutoPatcher patcher);
         static native void mbp_config_destroy_ramdisk_patcher(CPatcherConfig pc, CRamdiskPatcher patcher);
-        static native boolean mbp_config_load_patchinfos(CPatcherConfig pc);
         // END: cpatcherconfig.h
 
         // BEGIN: cpatchererror.h
@@ -222,41 +212,6 @@ public class LibMbp {
         static native Pointer mbp_error_patcher_id(CPatcherError error);
         static native Pointer mbp_error_filename(CPatcherError error);
         // END: cpatchererror.h
-
-        // BEGIN: cpatchinfo.h
-        static native CPatchInfo mbp_patchinfo_create();
-        static native void mbp_patchinfo_destroy(CPatchInfo info);
-        static native Pointer mbp_patchinfo_id(CPatchInfo info);
-        static native void mbp_patchinfo_set_id(CPatchInfo info, String id);
-        static native Pointer mbp_patchinfo_name(CPatchInfo info);
-        static native void mbp_patchinfo_set_name(CPatchInfo info, String name);
-        static native Pointer mbp_patchinfo_regexes(CPatchInfo info);
-        static native void mbp_patchinfo_set_regexes(CPatchInfo info, StringArray regexes);
-        static native Pointer mbp_patchinfo_exclude_regexes(CPatchInfo info);
-        static native void mbp_patchinfo_set_exclude_regexes(CPatchInfo info, StringArray regexes);
-        static native void mbp_patchinfo_add_autopatcher(CPatchInfo info, String apName, CStringMap args);
-        static native void mbp_patchinfo_remove_autopatcher(CPatchInfo info, String apName);
-        static native Pointer mbp_patchinfo_autopatchers(CPatchInfo info);
-        static native CStringMap mbp_patchinfo_autopatcher_args(CPatchInfo info, String apName);
-        static native boolean mbp_patchinfo_has_boot_image(CPatchInfo info);
-        static native void mbp_patchinfo_set_has_boot_image(CPatchInfo info, boolean hasBootImage);
-        static native boolean mbp_patchinfo_autodetect_boot_images(CPatchInfo info);
-        static native void mbp_patchinfo_set_autodetect_boot_images(CPatchInfo info, boolean autoDetect);
-        static native Pointer mbp_patchinfo_boot_images(CPatchInfo info);
-        static native void mbp_patchinfo_set_boot_images(CPatchInfo info, StringArray bootImages);
-        static native Pointer mbp_patchinfo_ramdisk(CPatchInfo info);
-        static native void mbp_patchinfo_set_ramdisk(CPatchInfo info, String ramdisk);
-        // END: cpatchinfo.h
-
-        // BEGIN: cstringmap.h
-        static native CStringMap mbp_stringmap_create();
-        static native void mbp_stringmap_destroy(CStringMap map);
-        static native Pointer mbp_stringmap_keys(CStringMap map);
-        static native Pointer mbp_stringmap_get(CStringMap map, String key);
-        static native void mbp_stringmap_set(CStringMap map, String key, String value);
-        static native void mbp_stringmap_remove(CStringMap map, String key);
-        static native void mbp_stringmap_clear(CStringMap map);
-        // END: cstringmap.h
 
         // BEGIN: cpatcherinterface.h
         interface ProgressUpdatedCallback extends Callback {
@@ -273,7 +228,6 @@ public class LibMbp {
 
         static native CPatcherError mbp_patcher_error(CPatcher patcher);
         static native Pointer mbp_patcher_id(CPatcher patcher);
-        static native boolean mbp_patcher_uses_patchinfo(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
         static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
         static native boolean mbp_patcher_patch_file(CPatcher patcher, ProgressUpdatedCallback progressCb, FilesUpdatedCallback filesCb, DetailsUpdatedCallback detailsCb, Pointer userData);
@@ -1369,19 +1323,6 @@ public class LibMbp {
             CWrapper.mbp_fileinfo_set_filename(mCFileInfo, path);
         }
 
-        public PatchInfo getPatchInfo() {
-            validate(mCFileInfo, FileInfo.class, "getPatchInfo");
-            CPatchInfo cPi = CWrapper.mbp_fileinfo_patchinfo(mCFileInfo);
-            return cPi == null ? null : new PatchInfo(cPi, false);
-        }
-
-        public void setPatchInfo(PatchInfo info) {
-            validate(mCFileInfo, FileInfo.class, "setPatchInfo", info);
-            ensureNotNull(info);
-
-            CWrapper.mbp_fileinfo_set_patchinfo(mCFileInfo, info.getPointer());
-        }
-
         public Device getDevice() {
             validate(mCFileInfo, FileInfo.class, "getDevice");
             CDevice cDevice = CWrapper.mbp_fileinfo_device(mCFileInfo);
@@ -1550,52 +1491,6 @@ public class LibMbp {
             return devices;
         }
 
-        public PatchInfo[] getPatchInfos() {
-            validate(mCPatcherConfig, PatcherConfig.class, "getPatchInfos");
-            Pointer p = CWrapper.mbp_config_patchinfos(mCPatcherConfig);
-            Pointer[] ps = p.getPointerArray(0);
-
-            PatchInfo[] infos = new PatchInfo[ps.length];
-
-            for (int i = 0; i < infos.length; i++) {
-                CPatchInfo cInfo = new CPatchInfo();
-                cInfo.setPointer(ps[i]);
-                infos[i] = new PatchInfo(cInfo, false);
-            }
-
-            return infos;
-        }
-
-        public PatchInfo[] getPatchInfos(Device device) {
-            validate(mCPatcherConfig, PatcherConfig.class, "getPatchInfos", device);
-            ensureNotNull(device);
-
-            Pointer p = CWrapper.mbp_config_patchinfos_for_device(
-                    mCPatcherConfig, device.getPointer());
-            Pointer[] ps = p.getPointerArray(0);
-
-            PatchInfo[] infos = new PatchInfo[ps.length];
-
-            for (int i = 0; i < infos.length; i++) {
-                CPatchInfo cInfo = new CPatchInfo();
-                cInfo.setPointer(ps[i]);
-                infos[i] = new PatchInfo(cInfo, false);
-            }
-
-            return infos;
-        }
-
-        public PatchInfo findMatchingPatchInfo(Device device, String filename) {
-            validate(mCPatcherConfig, PatcherConfig.class, "findMatchingPatchInfo", device,
-                    filename);
-            ensureNotNull(device);
-            ensureNotNull(filename);
-
-            CPatchInfo cPi = CWrapper.mbp_config_find_matching_patchinfo(
-                    mCPatcherConfig, device.getPointer(), filename);
-            return cPi == null ? null : new PatchInfo(cPi, false);
-        }
-
         public String[] getPatchers() {
             validate(mCPatcherConfig, PatcherConfig.class, "getPatchers");
             Pointer p = CWrapper.mbp_config_patchers(mCPatcherConfig);
@@ -1622,14 +1517,13 @@ public class LibMbp {
             return patcher == null ? null : new Patcher(patcher);
         }
 
-        public AutoPatcher createAutoPatcher(String id, FileInfo info, StringMap args) {
-            validate(mCPatcherConfig, PatcherConfig.class, "createAutoPatcher", id, info, args);
+        public AutoPatcher createAutoPatcher(String id, FileInfo info) {
+            validate(mCPatcherConfig, PatcherConfig.class, "createAutoPatcher", id, info);
             ensureNotNull(id);
             ensureNotNull(info);
-            ensureNotNull(args);
 
             CAutoPatcher patcher = CWrapper.mbp_config_create_autopatcher(
-                    mCPatcherConfig, id, info.getPointer(), args.getPointer());
+                    mCPatcherConfig, id, info.getPointer());
             return patcher == null ? null : new AutoPatcher(patcher);
         }
 
@@ -1663,11 +1557,6 @@ public class LibMbp {
             ensureNotNull(patcher);
 
             CWrapper.mbp_config_destroy_ramdisk_patcher(mCPatcherConfig, patcher.getPointer());
-        }
-
-        public boolean loadPatchInfos() {
-            validate(mCPatcherConfig, PatcherConfig.class, "loadPatchInfos");
-            return CWrapper.mbp_config_load_patchinfos(mCPatcherConfig);
         }
     }
 
@@ -1817,349 +1706,6 @@ public class LibMbp {
         }
     }
 
-    public static class PatchInfo implements Parcelable {
-        private static final HashMap<CPatchInfo, Integer> sInstances = new HashMap<>();
-        private CPatchInfo mCPatchInfo;
-        private boolean mDestroyable;
-
-        public PatchInfo() {
-            mCPatchInfo = CWrapper.mbp_patchinfo_create();
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPatchInfo);
-            }
-            mDestroyable = true;
-            validate(mCPatchInfo, PatchInfo.class, "(Constructor)");
-        }
-
-        PatchInfo(CPatchInfo cPatchInfo, boolean destroyable) {
-            ensureNotNull(cPatchInfo);
-
-            mCPatchInfo = cPatchInfo;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPatchInfo);
-            }
-            mDestroyable = destroyable;
-            validate(mCPatchInfo, PatchInfo.class, "(Constructor)");
-        }
-
-        public void destroy() {
-            validate(mCPatchInfo, PatchInfo.class, "destroy");
-            synchronized (sInstances) {
-                if (mCPatchInfo != null && decrementRefCount(sInstances, mCPatchInfo)
-                        && mDestroyable) {
-                    validate(mCPatchInfo, PatchInfo.class, "(Destroyed)");
-                    CWrapper.mbp_patchinfo_destroy(mCPatchInfo);
-                }
-                mCPatchInfo = null;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof PatchInfo && mCPatchInfo.equals(((PatchInfo) o).mCPatchInfo);
-        }
-
-        @Override
-        public int hashCode() {
-            int hashCode = 1;
-            hashCode = 31 * hashCode + mCPatchInfo.hashCode();
-            hashCode = 31 * hashCode + (mDestroyable ? 1 : 0);
-            return hashCode;
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            destroy();
-            super.finalize();
-        }
-
-        CPatchInfo getPointer() {
-            validate(mCPatchInfo, PatchInfo.class, "getPointer");
-            return mCPatchInfo;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            long peer = Pointer.nativeValue(mCPatchInfo.getPointer());
-            out.writeLong(peer);
-            out.writeInt(mDestroyable ? 1 : 0);
-        }
-
-        private PatchInfo(Parcel in) {
-            long peer = in.readLong();
-            mCPatchInfo = new CPatchInfo();
-            mCPatchInfo.setPointer(new Pointer(peer));
-            mDestroyable = in.readInt() != 0;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPatchInfo);
-            }
-            validate(mCPatchInfo, PatchInfo.class, "(Constructor)");
-        }
-
-        public static final Parcelable.Creator<PatchInfo> CREATOR
-                = new Parcelable.Creator<PatchInfo>() {
-            public PatchInfo createFromParcel(Parcel in) {
-                return new PatchInfo(in);
-            }
-
-            public PatchInfo[] newArray(int size) {
-                return new PatchInfo[size];
-            }
-        };
-
-        public String getId() {
-            validate(mCPatchInfo, PatchInfo.class, "getId");
-            Pointer p = CWrapper.mbp_patchinfo_id(mCPatchInfo);
-            return getStringAndFree(p);
-        }
-
-        public void setId(String id) {
-            validate(mCPatchInfo, PatchInfo.class, "setId", id);
-            ensureNotNull(id);
-
-            CWrapper.mbp_patchinfo_set_id(mCPatchInfo, id);
-        }
-
-        public String getName() {
-            validate(mCPatchInfo, PatchInfo.class, "getName");
-            Pointer p = CWrapper.mbp_patchinfo_name(mCPatchInfo);
-            return getStringAndFree(p);
-        }
-
-        public void setName(String name) {
-            validate(mCPatchInfo, PatchInfo.class, "setName", name);
-            ensureNotNull(name);
-
-            CWrapper.mbp_patchinfo_set_name(mCPatchInfo, name);
-        }
-
-        public String[] getRegexes() {
-            validate(mCPatchInfo, PatchInfo.class, "getRegexes");
-            Pointer p = CWrapper.mbp_patchinfo_regexes(mCPatchInfo);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setRegexes(String[] regexes) {
-            validate(mCPatchInfo, PatchInfo.class, "setRegexes", (Object) regexes);
-            ensureNotNull(regexes);
-
-            CWrapper.mbp_patchinfo_set_regexes(mCPatchInfo, new StringArray(regexes));
-        }
-
-        public String[] getExcludeRegexes() {
-            validate(mCPatchInfo, PatchInfo.class, "getExcludeRegexes");
-            Pointer p = CWrapper.mbp_patchinfo_exclude_regexes(mCPatchInfo);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setExcludeRegexes(String[] regexes) {
-            validate(mCPatchInfo, PatchInfo.class, "setExcludeRegexes", (Object) regexes);
-            ensureNotNull(regexes);
-
-            CWrapper.mbp_patchinfo_set_exclude_regexes(mCPatchInfo, new StringArray(regexes));
-        }
-
-        public void addAutoPatcher(String apName, StringMap args) {
-            validate(mCPatchInfo, PatchInfo.class, "addAutoPatcher", apName, args);
-            ensureNotNull(apName);
-
-            if (args == null) {
-                args = new StringMap();
-            }
-
-            CStringMap cArgs = args.getPointer();
-            CWrapper.mbp_patchinfo_add_autopatcher(mCPatchInfo, apName, cArgs);
-        }
-
-        public void removeAutoPatcher(String apName) {
-            validate(mCPatchInfo, PatchInfo.class, "removeAutoPatcher", apName);
-            ensureNotNull(apName);
-
-            CWrapper.mbp_patchinfo_remove_autopatcher(mCPatchInfo, apName);
-        }
-
-        public String[] getAutoPatchers() {
-            validate(mCPatchInfo, PatchInfo.class, "getAutoPatchers");
-
-            Pointer p = CWrapper.mbp_patchinfo_autopatchers(mCPatchInfo);
-            return getStringArrayAndFree(p);
-        }
-
-        public StringMap getAutoPatcherArgs(String apName) {
-            validate(mCPatchInfo, PatchInfo.class, "getAutoPatcherArgs", apName);
-            ensureNotNull(apName);
-
-            CStringMap args = CWrapper.mbp_patchinfo_autopatcher_args(mCPatchInfo, apName);
-            return new StringMap(args);
-        }
-
-        public boolean hasBootImage() {
-            validate(mCPatchInfo, PatchInfo.class, "hasBootImage");
-
-            return CWrapper.mbp_patchinfo_has_boot_image(mCPatchInfo);
-        }
-
-        public void setHasBootImage(boolean hasBootImage) {
-            validate(mCPatchInfo, PatchInfo.class, "setHasBootImage", hasBootImage);
-
-            CWrapper.mbp_patchinfo_set_has_boot_image(mCPatchInfo, hasBootImage);
-        }
-
-        public boolean autoDetectBootImages() {
-            validate(mCPatchInfo, PatchInfo.class, "autodetectBootImages");
-
-            return CWrapper.mbp_patchinfo_autodetect_boot_images(mCPatchInfo);
-        }
-
-        public void setAutoDetectBootImages(boolean autoDetect) {
-            validate(mCPatchInfo, PatchInfo.class, "setAutoDetectBootImages", autoDetect);
-
-            CWrapper.mbp_patchinfo_set_autodetect_boot_images(mCPatchInfo, autoDetect);
-        }
-
-        public String[] getBootImages() {
-            validate(mCPatchInfo, PatchInfo.class, "getBootImages");
-
-            Pointer p = CWrapper.mbp_patchinfo_boot_images(mCPatchInfo);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setBootImages(String[] bootImages) {
-            validate(mCPatchInfo, PatchInfo.class, "setBootImages", bootImages);
-            ensureNotNull(bootImages);
-
-            CWrapper.mbp_patchinfo_set_boot_images(mCPatchInfo, new StringArray(bootImages));
-        }
-
-        public String getRamdisk() {
-            validate(mCPatchInfo, PatchInfo.class, "getRamdisk");
-
-            Pointer p = CWrapper.mbp_patchinfo_ramdisk(mCPatchInfo);
-            return getStringAndFree(p);
-        }
-
-        public void setRamdisk(String ramdisk) {
-            validate(mCPatchInfo, PatchInfo.class, "setRamdisk", ramdisk);
-            ensureNotNull(ramdisk);
-
-            CWrapper.mbp_patchinfo_set_ramdisk(mCPatchInfo, ramdisk);
-        }
-    }
-
-    public static class StringMap implements Parcelable {
-        private static final HashMap<CStringMap, Integer> sInstances = new HashMap<>();
-        private CStringMap mCStringMap;
-
-        public StringMap() {
-            mCStringMap = CWrapper.mbp_stringmap_create();
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCStringMap);
-            }
-            validate(mCStringMap, StringMap.class, "(Constructor)");
-        }
-
-        StringMap(CStringMap cStringMap) {
-            ensureNotNull(cStringMap);
-            mCStringMap = cStringMap;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCStringMap);
-            }
-            validate(mCStringMap, StringMap.class, "(Constructor)");
-        }
-
-        public void destroy() {
-            validate(mCStringMap, StringMap.class, "destroy");
-            synchronized (sInstances) {
-                if (mCStringMap != null && decrementRefCount(sInstances, mCStringMap)) {
-                    validate(mCStringMap, StringMap.class, "(Destroyed)");
-                    CWrapper.mbp_stringmap_destroy(mCStringMap);
-                }
-                mCStringMap = null;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof StringMap && mCStringMap.equals(((StringMap) o).mCStringMap);
-        }
-
-        @Override
-        public int hashCode() {
-            return mCStringMap.hashCode();
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            destroy();
-            super.finalize();
-        }
-
-        CStringMap getPointer() {
-            validate(mCStringMap, StringMap.class, "getPointer");
-            return mCStringMap;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            long peer = Pointer.nativeValue(mCStringMap.getPointer());
-            out.writeLong(peer);
-        }
-
-        private StringMap(Parcel in) {
-            long peer = in.readLong();
-            mCStringMap = new CStringMap();
-            mCStringMap.setPointer(new Pointer(peer));
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCStringMap);
-            }
-            validate(mCStringMap, StringMap.class, "(Constructor)");
-        }
-
-        public static final Parcelable.Creator<StringMap> CREATOR
-                = new Parcelable.Creator<StringMap>() {
-            public StringMap createFromParcel(Parcel in) {
-                return new StringMap(in);
-            }
-
-            public StringMap[] newArray(int size) {
-                return new StringMap[size];
-            }
-        };
-
-        public HashMap<String, String> getHashMap() {
-            validate(mCStringMap, StringMap.class, "getHashMap");
-            HashMap<String, String> map = new HashMap<>();
-            Pointer pKeys = CWrapper.mbp_stringmap_keys(mCStringMap);
-            String[] keys = getStringArrayAndFree(pKeys);
-            for (String key : keys) {
-                Pointer pValue = CWrapper.mbp_stringmap_get(mCStringMap, key);
-                String value = getStringAndFree(pValue);
-                map.put(key, value);
-            }
-            return map;
-        }
-
-        public void setHashMap(HashMap<String, String> map) {
-            validate(mCStringMap, StringMap.class, "setHashMap", map);
-            ensureNotNull(map);
-
-            CWrapper.mbp_stringmap_clear(mCStringMap);
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                CWrapper.mbp_stringmap_set(mCStringMap, entry.getKey(), entry.getValue());
-            }
-        }
-    }
-
     public static class Patcher implements Parcelable {
         private CPatcher mCPatcher;
 
@@ -2223,11 +1769,6 @@ public class LibMbp {
             validate(mCPatcher, Patcher.class, "getId");
             Pointer p = CWrapper.mbp_patcher_id(mCPatcher);
             return getStringAndFree(p);
-        }
-
-        public boolean usesPatchInfo() {
-            validate(mCPatcher, Patcher.class, "usesPatchInfo");
-            return CWrapper.mbp_patcher_uses_patchinfo(mCPatcher);
         }
 
         public void setFileInfo(FileInfo info) {

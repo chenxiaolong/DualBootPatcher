@@ -52,19 +52,8 @@ public class FileChooserCW implements PatcherUIListener {
 
         case PatcherConfigState.STATE_PATCHING:
         case PatcherConfigState.STATE_CHOSE_FILE:
-            int titleId;
-            int descId;
-
-            if (mPCS.mSupported) {
-                titleId = R.string.filechooser_ready_title;
-                descId = R.string.filechooser_ready_desc;
-            } else {
-                titleId = R.string.filechooser_unsupported_title;
-                descId = R.string.filechooser_unsupported_desc;
-            }
-
-            vTitle.setText(titleId);
-            vMessage.setText(String.format(mContext.getString(descId), mPCS.mFilename));
+            vTitle.setText(R.string.filechooser_ready_title);
+            vMessage.setText(mContext.getString(R.string.filechooser_ready_desc, mPCS.mFilename));
             break;
 
         case PatcherConfigState.STATE_FINISHED:
