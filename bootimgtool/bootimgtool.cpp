@@ -32,8 +32,8 @@
 #include <libmbpio/path.h>
 
 #include <libmbp/bootimage.h>
+#include <libmbp/errors.h>
 #include <libmbp/logging.h>
-#include <libmbp/patchererror.h>
 
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
@@ -202,16 +202,14 @@ static const char PackUsage[] =
     "        bootimgtool pack boot.img -i /tmp/android --input-kernel /tmp/newkernel\n";
 
 
-static std::string error_to_string(const mbp::PatcherError &error) {
-    switch (error.errorCode()) {
+static std::string error_to_string(const mbp::ErrorCode &error) {
+    switch (error) {
     case mbp::ErrorCode::FileOpenError:
-        return "Failed to open file: " + error.filename();
+        return "Failed to open file";
     case mbp::ErrorCode::FileReadError:
-        return "Failed to read from file: " + error.filename();
+        return "Failed to read from file";
     case mbp::ErrorCode::FileWriteError:
-        return "Failed to write to file: " + error.filename();
-    case mbp::ErrorCode::DirectoryNotExistError:
-        return "Directory does not exist: " + error.filename();
+        return "Failed to write to file";
     case mbp::ErrorCode::BootImageParseError:
         return "Failed to parse boot image";
     case mbp::ErrorCode::BootImageApplyBumpError:
@@ -219,35 +217,32 @@ static std::string error_to_string(const mbp::PatcherError &error) {
     case mbp::ErrorCode::BootImageApplyLokiError:
         return "Failed to apply Loki to boot image";
     case mbp::ErrorCode::CpioFileAlreadyExistsError:
-        return "File already exists in cpio archive: " + error.filename();
+        return "File already exists in cpio archive";
     case mbp::ErrorCode::CpioFileNotExistError:
-        return "File does not exist in cpio archive: " + error.filename();
+        return "File does not exist in cpio archive";
     case mbp::ErrorCode::ArchiveReadOpenError:
         return "Failed to open archive for reading";
     case mbp::ErrorCode::ArchiveReadDataError:
-        return "Failed to read archive data for file: " + error.filename();
+        return "Failed to read archive data for file";
     case mbp::ErrorCode::ArchiveReadHeaderError:
         return "Failed to read archive entry header";
     case mbp::ErrorCode::ArchiveWriteOpenError:
         return "Failed to open archive for writing";
     case mbp::ErrorCode::ArchiveWriteDataError:
-        return "Failed to write archive data for file: " + error.filename();
+        return "Failed to write archive data for file";
     case mbp::ErrorCode::ArchiveWriteHeaderError:
-        return "Failed to write archive header for file: " + error.filename();
+        return "Failed to write archive header for file";
     case mbp::ErrorCode::ArchiveCloseError:
         return "Failed to close archive";
     case mbp::ErrorCode::ArchiveFreeError:
         return "Failed to free archive header memory";
     case mbp::ErrorCode::NoError:
-    case mbp::ErrorCode::UnknownError:
     case mbp::ErrorCode::PatcherCreateError:
     case mbp::ErrorCode::AutoPatcherCreateError:
     case mbp::ErrorCode::RamdiskPatcherCreateError:
-    case mbp::ErrorCode::XmlParseFileError:
     case mbp::ErrorCode::OnlyZipSupported:
     case mbp::ErrorCode::OnlyBootImageSupported:
     case mbp::ErrorCode::PatchingCancelled:
-    case mbp::ErrorCode::SystemCacheFormatLinesNotFound:
     default:
         assert(false);
     }
