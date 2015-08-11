@@ -35,13 +35,3 @@
  * \typedef CPatcherError
  * \brief C wrapper for PatcherError object
  */
-
-/*!
- * \typedef CPatchInfo
- * \brief C wrapper for PatchInfo object
- */
-
-/*!
- * \typedef CStringMap
- * \brief C wrapper for C++ map
- */

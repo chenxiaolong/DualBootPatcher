@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -40,12 +40,6 @@ typedef struct CPatcherConfig CPatcherConfig;
 
 struct CPatcherError;
 typedef struct CPatcherError CPatcherError;
-
-struct CPatchInfo;
-typedef struct CPatchInfo CPatchInfo;
-
-struct CStringMap;
-typedef struct CStringMap CStringMap;
 
 #ifndef LIBMBP_MINI
 struct CPatcher;

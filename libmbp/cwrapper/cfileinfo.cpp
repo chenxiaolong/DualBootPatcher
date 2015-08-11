@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -99,35 +99,6 @@ void mbp_fileinfo_set_filename(CFileInfo *info, const char *path)
 {
     CAST(info);
     fi->setFilename(path);
-}
-
-/*!
- * \brief PatchInfo used for patching the file
- *
- * \param info CFileInfo object
- *
- * \return PatchInfo object
- *
- * \sa FileInfo::patchInfo()
- */
-CPatchInfo * mbp_fileinfo_patchinfo(const CFileInfo *info)
-{
-    CCAST(info);
-    return reinterpret_cast<CPatchInfo *>(fi->patchInfo());
-}
-
-/*!
- * \brief Set PatchInfo to be used for patching
- *
- * \param info CFileInfo object
- * \param pInfo PatchInfo object
- *
- * \sa FileInfo::setPatchInfo()
- */
-void mbp_fileinfo_set_patchinfo(CFileInfo *info, CPatchInfo *pInfo)
-{
-    CAST(info);
-    fi->setPatchInfo(reinterpret_cast<mbp::PatchInfo *>(pInfo));
 }
 
 /*!

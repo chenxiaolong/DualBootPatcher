@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -24,7 +24,6 @@
 #include "libmbp_global.h"
 
 #include "device.h"
-#include "patchinfo.h"
 
 
 namespace mbp
@@ -38,9 +37,6 @@ public:
 
     std::string filename() const;
     void setFilename(std::string path);
-
-    PatchInfo * patchInfo() const;
-    void setPatchInfo(PatchInfo * const info);
 
     Device * device() const;
     void setDevice(Device * const device);

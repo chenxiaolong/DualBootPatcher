@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -27,7 +27,6 @@ namespace mbp
 class FileInfo::Impl
 {
 public:
-    PatchInfo *patchinfo;
     Device *device;
     std::string filename;
     std::string romId;
@@ -43,7 +42,6 @@ public:
  * a file to be patched:
  *
  * - File path
- * - PatchInfo to use for patching
  * - Target Device
  */
 
@@ -74,26 +72,6 @@ std::string FileInfo::filename() const
 void FileInfo::setFilename(std::string path)
 {
     m_impl->filename = std::move(path);
-}
-
-/*!
- * \brief PatchInfo used for patching the file
- *
- * \return PatchInfo object
- */
-PatchInfo * FileInfo::patchInfo() const
-{
-    return m_impl->patchinfo;
-}
-
-/*!
- * \brief Set PatchInfo to be used for patching
- *
- * \param info PatchInfo object
- */
-void FileInfo::setPatchInfo(PatchInfo * const info)
-{
-    m_impl->patchinfo = info;
 }
 
 /*!

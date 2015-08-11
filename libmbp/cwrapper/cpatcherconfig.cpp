@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -201,81 +201,6 @@ CDevice ** mbp_config_devices(const CPatcherConfig *pc)
 #ifndef LIBMBP_MINI
 
 /*!
- * \brief Get list of PatchInfos
- *
- * \note The returned array should be freed with `free()` when it
- *       is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return NULL-terminated array of PatchInfos
- *
- * \sa PatcherConfig::patchInfos()
- */
-CPatchInfo ** mbp_config_patchinfos(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    auto const infos = config->patchInfos();
-
-    CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
-            sizeof(CPatchInfo *) * (infos.size() + 1));
-    for (unsigned int i = 0; i < infos.size(); ++i) {
-        cInfos[i] = reinterpret_cast<CPatchInfo *>(infos[i]);
-    }
-    cInfos[infos.size()] = nullptr;
-
-    return cInfos;
-}
-
-/*!
- * \brief Get list of PatchInfos for a device
- *
- * \note The returned array should be freed with `free()` when it
- *       is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \param device Supported device
- * \return NULL-terminated array of PatchInfos
- *
- * \sa PatcherConfig::patchInfos(const Device * const) const
- */
-CPatchInfo ** mbp_config_patchinfos_for_device(const CPatcherConfig *pc,
-                                               const CDevice *device)
-{
-    CCAST(pc);
-    const mbp::Device *d = reinterpret_cast<const mbp::Device *>(device);
-    auto const infos = config->patchInfos(d);
-
-    CPatchInfo **cInfos = (CPatchInfo **) std::malloc(
-            sizeof(CPatchInfo *) * (infos.size() + 1));
-    for (unsigned int i = 0; i < infos.size(); ++i) {
-        cInfos[i] = reinterpret_cast<CPatchInfo *>(infos[i]);
-    }
-    cInfos[infos.size()] = nullptr;
-
-    return cInfos;
-}
-
-/*!
- * \brief Find matching PatchInfo for a file
- *
- * \param pc CPatcherConfig object
- * \param device Supported device
- * \param filename Supported file
- * \return CPatchInfo if found, otherwise NULL
- *
- * \sa PatcherConfig::findMatchingPatchInfo()
- */
-CPatchInfo * mbp_config_find_matching_patchinfo(const CPatcherConfig *pc,
-                                                CDevice *device,
-                                                const char *filename)
-{
-    CCAST(pc);
-    mbp::Device *d = reinterpret_cast<mbp::Device *>(device);
-    mbp::PatchInfo *pi = config->findMatchingPatchInfo(d, filename);
-    return reinterpret_cast<CPatchInfo *>(pi);
-}
-
-/*!
  * \brief Get list of Patcher IDs
  *
  * \note The returned array should be freed with `mbp_free_array()` when it
@@ -349,21 +274,17 @@ CPatcher * mbp_config_create_patcher(CPatcherConfig *pc,
  * \param pc CPatcherConfig object
  * \param id AutoPatcher ID
  * \param info FileInfo describing file to be patched
- * \param args AutoPatcher arguments
  * \return New AutoPatcher
  *
  * \sa PatcherConfig::createAutoPatcher()
  */
 CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
                                              const char *id,
-                                             const CFileInfo *info,
-                                             const CStringMap *args)
+                                             const CFileInfo *info)
 {
     CAST(pc);
     const mbp::FileInfo *fi = reinterpret_cast<const mbp::FileInfo *>(info);
-    const mbp::PatchInfo::AutoPatcherArgs *apArgs =
-            reinterpret_cast<const mbp::PatchInfo::AutoPatcherArgs *>(args);
-    mbp::AutoPatcher *ap = config->createAutoPatcher(id, fi, *apArgs);
+    mbp::AutoPatcher *ap = config->createAutoPatcher(id, fi);
     return reinterpret_cast<CAutoPatcher *>(ap);
 }
 
@@ -435,21 +356,6 @@ void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
     CAST(pc);
     mbp::RamdiskPatcher *rp = reinterpret_cast<mbp::RamdiskPatcher *>(patcher);
     config->destroyRamdiskPatcher(rp);
-}
-
-/*!
- * \brief Load all PatchInfo XML files
- *
- * \param pc CPatcherConfig object
- * \return Whther the XML files were successfully read (with the error set
- *         appropriately)
- *
- * \sa PatcherConfig::loadPatchInfos()
- */
-bool mbp_config_load_patchinfos(CPatcherConfig *pc)
-{
-    CAST(pc);
-    return config->loadPatchInfos();
 }
 
 #endif

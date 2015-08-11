@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -40,7 +40,6 @@ public:
 
     // Patcher info
     virtual std::string id() const override;
-    virtual bool usesPatchInfo() const override;
 
     // Patching
     virtual void setFileInfo(const FileInfo * const info) override;

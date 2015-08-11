@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -53,12 +53,9 @@ const std::string StandardPatcher::UpdaterScript
 
 
 StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info,
-                                 const PatchInfo::AutoPatcherArgs &args) :
+                                 const FileInfo * const info) :
     m_impl(new Impl())
 {
-    (void) args;
-
     m_impl->pc = pc;
     m_impl->info = info;
 }
@@ -84,9 +81,7 @@ std::vector<std::string> StandardPatcher::newFiles() const
 
 std::vector<std::string> StandardPatcher::existingFiles() const
 {
-    std::vector<std::string> files;
-    files.push_back(UpdaterScript);
-    return files;
+    return { UpdaterScript };
 }
 
 bool StandardPatcher::patchFiles(const std::string &directory)
@@ -94,6 +89,12 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     std::string contents;
 
     FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
+
+    if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
+        // Ignore any script with a shebang line
+        return true;
+    }
+
     std::vector<std::string> lines = StringUtils::split(contents, '\n');
 
     replaceMountLines(&lines, m_impl->info->device());

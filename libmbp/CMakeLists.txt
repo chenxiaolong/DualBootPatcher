@@ -10,7 +10,6 @@ include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
-include_directories(${CMAKE_SOURCE_DIR}/external/pugixml/src)
 
 set(MBP_SOURCES
     bootimage.cpp
@@ -19,7 +18,6 @@ set(MBP_SOURCES
     fileinfo.cpp
     patcherconfig.cpp
     patchererror.cpp
-    patchinfo.cpp
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
@@ -38,11 +36,8 @@ set(MBP_SOURCES
     cwrapper/cpatcherconfig.cpp
     cwrapper/cpatchererror.cpp
     cwrapper/cpatcherinterface.cpp
-    cwrapper/cpatchinfo.cpp
-    cwrapper/cstringmap.cpp
     cwrapper/private/util.cpp
     # Autopatchers
-    autopatchers/patchfilepatcher.cpp
     autopatchers/standardpatcher.cpp
     # Patchers
     patchers/mbtoolupdater.cpp
@@ -52,7 +47,6 @@ set(MBP_SOURCES
     ramdiskpatchers/default.cpp
     ramdiskpatchers/pepper.cpp
     external/sha.cpp
-    ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
 # If we're building for Android, then compile with ndk-build since it can easily
@@ -153,7 +147,6 @@ set(MBP_MINI_SOURCES
     device.cpp
     patcherconfig.cpp
     patchererror.cpp
-    #patchinfo.cpp
     private/fileutils.cpp
     private/logging.cpp
     private/stringutils.cpp
@@ -163,8 +156,6 @@ set(MBP_MINI_SOURCES
     cwrapper/cdevice.cpp
     cwrapper/cpatcherconfig.cpp
     cwrapper/cpatchererror.cpp
-    #cwrapper/cpatchinfo.cpp
-    cwrapper/cstringmap.cpp
     cwrapper/private/util.cpp
     bootimage/androidformat.cpp
     bootimage/bumpformat.cpp

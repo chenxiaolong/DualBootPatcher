@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -128,20 +128,6 @@ char * mbp_patcher_id(const CPatcher *patcher)
 {
     CCASTP(patcher);
     return string_to_cstring(p->id());
-}
-
-/*!
- * \brief Whether or not the patcher uses patchinfo files
- *
- * \param patcher CPatcher object
- * \return Whether the patcher uses patchinfo files
- *
- * \sa Patcher::usesPatchInfo()
- */
-bool mbp_patcher_uses_patchinfo(const CPatcher *patcher)
-{
-    CCASTP(patcher);
-    return p->usesPatchInfo();
 }
 
 /*!

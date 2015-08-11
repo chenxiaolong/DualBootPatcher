@@ -24,15 +24,12 @@
 #include <cassert>
 
 #ifndef LIBMBP_MINI
-#include <pugixml.hpp>
-
 #include "libmbpio/path.h"
 #endif
 
 #include "device.h"
 #ifndef LIBMBP_MINI
 #include "patcherinterface.h"
-#include "patchinfo.h"
 #endif
 #include "private/fileutils.h"
 #include "private/logging.h"
@@ -41,7 +38,6 @@
 #ifndef LIBMBP_MINI
 #include "patchers/mbtoolupdater.h"
 #include "patchers/multibootpatcher.h"
-#include "autopatchers/patchfilepatcher.h"
 #include "autopatchers/standardpatcher.h"
 #include "ramdiskpatchers/default.h"
 #include "ramdiskpatchers/pepper.h"
@@ -61,14 +57,6 @@ public:
 
     std::string version;
     std::vector<Device *> devices;
-    std::vector<std::string> patchinfoIncludeDirs;
-
-#ifndef LIBMBP_MINI
-    // PatchInfos
-    std::vector<PatchInfo *> patchInfos;
-#endif
-
-    bool loadedConfig;
 
     // Errors
     PatcherError error;
@@ -81,42 +69,8 @@ public:
 #endif
 
     void loadDefaultDevices();
-
-#ifndef LIBMBP_MINI
-    // XML parsing functions for the patchinfo files
-    bool loadPatchInfosXml(const std::string &path);
-    void parsePatchInfoTagPatchinfos(pugi::xml_node node);
-    void parsePatchInfoTagPatchinfo(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagName(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagRegex(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagExcludeRegex(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagRegexes(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagHasBootImage(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagRamdisk(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagAutopatchers(pugi::xml_node node, PatchInfo * const info);
-    void parsePatchInfoTagAutopatcher(pugi::xml_node node, PatchInfo * const info);
-#endif
 };
 /*! \endcond */
-
-
-#ifndef LIBMBP_MINI
-const char *PatchInfoTagPatchinfos = "patchinfos";
-const char *PatchInfoTagPatchinfo = "patchinfo";
-const char *PatchInfoTagName = "name";
-const char *PatchInfoTagRegex = "regex";
-const char *PatchInfoTagExcludeRegex = "exclude-regex";
-const char *PatchInfoTagRegexes = "regexes";
-const char *PatchInfoTagHasBootImage = "has-boot-image";
-const char *PatchInfoTagRamdisk = "ramdisk";
-const char *PatchInfoTagAutopatchers = "autopatchers";
-const char *PatchInfoTagAutopatcher = "autopatcher";
-
-const char *PatchInfoAttrId = "id";
-
-const char *XmlTextTrue = "true";
-const char *XmlTextFalse = "false";
-#endif
 
 /*!
  * \class PatcherConfig
@@ -128,9 +82,6 @@ const char *XmlTextFalse = "false";
 PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
     m_impl->loadDefaultDevices();
-
-    m_impl->patchinfoIncludeDirs.push_back("Google_Apps/");
-    m_impl->patchinfoIncludeDirs.push_back("Other/");
 
     m_impl->version = LIBMBP_VERSION;
 }
@@ -144,12 +95,6 @@ PatcherConfig::~PatcherConfig()
     m_impl->devices.clear();
 
 #ifndef LIBMBP_MINI
-    // Clean up patchinfos
-    for (PatchInfo *info : m_impl->patchInfos) {
-        delete info;
-    }
-    m_impl->patchInfos.clear();
-
     for (Patcher *patcher : m_impl->allocPatchers) {
         destroyPatcher(patcher);
     }
@@ -248,95 +193,6 @@ std::vector<Device *> PatcherConfig::devices() const
 {
     return m_impl->devices;
 }
-
-#ifndef LIBMBP_MINI
-
-/*!
- * \brief Get list of PatchInfos
- *
- * \return List of PatchInfos
- */
-std::vector<PatchInfo *> PatcherConfig::patchInfos() const
-{
-    return m_impl->patchInfos;
-}
-
-/*!
- * \brief Get list of PatchInfos for a device
- *
- * \param device Supported device
- *
- * \return List of PatchInfos
- */
-std::vector<PatchInfo *> PatcherConfig::patchInfos(const Device * const device) const
-{
-    std::vector<PatchInfo *> l;
-
-    for (PatchInfo *info : m_impl->patchInfos) {
-        if (StringUtils::starts_with(info->id(), device->id())) {
-            l.push_back(info);
-            continue;
-        }
-
-        for (auto const &include : m_impl->patchinfoIncludeDirs) {
-            if (StringUtils::starts_with(info->id(), include)) {
-                l.push_back(info);
-                break;
-            }
-        }
-    }
-
-    return l;
-}
-
-/*!
- * \brief Find matching PatchInfo for a file
- *
- * \param device Supported device
- * \param filename Supported file
- *
- * \return PatchInfo if found, otherwise nullptr
- */
-PatchInfo * PatcherConfig::findMatchingPatchInfo(Device *device,
-                                                 const std::string &filename) const
-{
-    if (device == nullptr) {
-        return nullptr;
-    }
-
-    if (filename.empty()) {
-        return nullptr;
-    }
-
-    std::string noPath = io::baseName(filename);
-
-    for (PatchInfo *info : patchInfos(device)) {
-        for (auto const &regex : info->regexes()) {
-            if (std::regex_search(noPath, std::regex(regex))) {
-                bool skipCurInfo = false;
-
-                // If the regex matches, make sure the filename isn't matched
-                // by one of the exclusion regexes
-                for (auto const &excludeRegex : info->excludeRegexes()) {
-                    if (std::regex_search(noPath, std::regex(excludeRegex))) {
-                        skipCurInfo = true;
-                        break;
-                    }
-                }
-
-                if (skipCurInfo) {
-                    break;
-                }
-
-                return info;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
-#endif
 
 void PatcherConfig::Impl::loadDefaultDevices()
 {
@@ -715,7 +571,6 @@ std::vector<std::string> PatcherConfig::patchers() const
 std::vector<std::string> PatcherConfig::autoPatchers() const
 {
     return {
-        PatchFilePatcher::Id,
         StandardPatcher::Id
     };
 }
@@ -762,20 +617,16 @@ Patcher * PatcherConfig::createPatcher(const std::string &id)
  *
  * \param id AutoPatcher ID
  * \param info FileInfo describing file to be patched
- * \param args AutoPatcher arguments
  *
  * \return New AutoPatcher
  */
 AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
-                                               const FileInfo * const info,
-                                               const PatchInfo::AutoPatcherArgs &args)
+                                               const FileInfo * const info)
 {
     AutoPatcher *ap = nullptr;
 
-    if (id == PatchFilePatcher::Id) {
-        ap = new PatchFilePatcher(this, info, args);
-    } else if (id == StandardPatcher::Id) {
-        ap = new StandardPatcher(this, info, args);
+    if (id == StandardPatcher::Id) {
+        ap = new StandardPatcher(this, info);
     }
 
     if (ap != nullptr) {
@@ -862,310 +713,6 @@ void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
 
     m_impl->allocRamdiskPatchers.erase(it);
     delete patcher;
-}
-
-/*!
- * \brief Load all PatchInfo XML files
- *
- * \return Whether or not the XML files were successfully read
- */
-bool PatcherConfig::loadPatchInfos()
-{
-    std::string path(dataDirectory());
-    path += "/patchinfos.gen.xml";
-
-    if (!m_impl->loadPatchInfosXml(path)) {
-        m_impl->error = PatcherError::createXmlError(
-                ErrorCode::XmlParseFileError, path);
-        return false;
-    }
-
-    return true;
-}
-
-bool PatcherConfig::Impl::loadPatchInfosXml(const std::string &path)
-{
-    pugi::xml_document doc;
-
-    auto result = doc.load_file(path.c_str());
-    if (!result) {
-        error = PatcherError::createXmlError(
-                ErrorCode::XmlParseFileError, path);
-        return false;
-    }
-
-    pugi::xml_node root = doc.root();
-
-    for (pugi::xml_node curNode : root.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_element) {
-            continue;
-        }
-
-        if (strcmp(curNode.name(), PatchInfoTagPatchinfos) == 0) {
-            parsePatchInfoTagPatchinfos(curNode);
-        } else {
-            FLOGW("Unknown root tag: %s", curNode.name());
-        }
-    }
-
-    return true;
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagPatchinfos(pugi::xml_node node)
-{
-    assert(strcmp(node.name(), PatchInfoTagPatchinfos) == 0);
-
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_element) {
-            continue;
-        }
-
-        if (strcmp(curNode.name(), PatchInfoTagPatchinfos) == 0) {
-            LOGW("Nested <patchinfos> is not allowed");
-        } else if (strcmp(curNode.name(), PatchInfoTagPatchinfo) == 0) {
-            std::string id;
-            bool hasId = false;
-            for (pugi::xml_attribute attr : curNode.attributes()) {
-                if (strcmp(PatchInfoAttrId, attr.name()) == 0) {
-                    hasId = true;
-                    id = attr.value();
-                    break;
-                }
-            }
-
-            if (!hasId) {
-                LOGW("<patchinfo> does not contain the id attribute");
-                continue;
-            }
-
-            PatchInfo *info = new PatchInfo();
-            parsePatchInfoTagPatchinfo(curNode, info);
-            info->setId(id);
-            patchInfos.push_back(info);
-        } else {
-            FLOGW("Unrecognized tag within <patchinfos>: %s", curNode.name());
-        }
-    }
-}
-
-
-void PatcherConfig::Impl::parsePatchInfoTagPatchinfo(pugi::xml_node node,
-                                                     PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagPatchinfo) == 0);
-
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_element) {
-            continue;
-        }
-
-        if (strcmp(curNode.name(), PatchInfoTagPatchinfo) == 0) {
-            LOGW("Nested <patchinfo> is not allowed");
-        } else if (strcmp(curNode.name(), PatchInfoTagName) == 0) {
-            parsePatchInfoTagName(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagRegex) == 0) {
-            parsePatchInfoTagRegex(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagRegexes) == 0) {
-            parsePatchInfoTagRegexes(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagHasBootImage) == 0) {
-            parsePatchInfoTagHasBootImage(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagRamdisk) == 0) {
-            parsePatchInfoTagRamdisk(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagAutopatchers) == 0) {
-            parsePatchInfoTagAutopatchers(curNode, info);
-        } else {
-            FLOGW("Unrecognized tag within <patchinfo>: %s", curNode.name());
-        }
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagName(pugi::xml_node node,
-                                                PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagName) == 0);
-
-    bool hasText = false;
-    for (auto curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        if (info->name().empty()) {
-            info->setName(curNode.value());
-        } else {
-            LOGW("Ignoring additional <name> elements");
-        }
-    }
-
-    if (!hasText) {
-        LOGW("<name> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagRegex(pugi::xml_node node,
-                                                 PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagRegex) == 0);
-
-    bool hasText = false;
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        auto regexes = info->regexes();
-        regexes.push_back(curNode.value());
-        info->setRegexes(std::move(regexes));
-    }
-
-    if (!hasText) {
-        LOGW("<regex> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagExcludeRegex(pugi::xml_node node,
-                                                        PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagExcludeRegex) == 0);
-
-    bool hasText = false;
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        auto regexes = info->excludeRegexes();
-        regexes.push_back(curNode.value());
-        info->setExcludeRegexes(std::move(regexes));
-    }
-
-    if (!hasText) {
-        LOGW("<exclude-regex> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagRegexes(pugi::xml_node node,
-                                                   PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagRegexes) == 0);
-
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_element) {
-            continue;
-        }
-
-        if (strcmp(curNode.name(), PatchInfoTagRegexes) == 0) {
-            LOGW("Nested <regexes> is not allowed");
-        } else if (strcmp(curNode.name(), PatchInfoTagRegex) == 0) {
-            parsePatchInfoTagRegex(curNode, info);
-        } else if (strcmp(curNode.name(), PatchInfoTagExcludeRegex) == 0) {
-            parsePatchInfoTagExcludeRegex(curNode, info);
-        } else {
-            FLOGW("Unrecognized tag within <regexes>: %s", curNode.name());
-        }
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagHasBootImage(pugi::xml_node node,
-                                                        PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagHasBootImage) == 0);
-
-    bool hasText = false;
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        if (strcmp(curNode.value(), XmlTextTrue) == 0) {
-            info->setHasBootImage(true);
-        } else if (strcmp(curNode.value(), XmlTextFalse) == 0) {
-            info->setHasBootImage(false);
-        } else {
-            FLOGW("Unknown value for <has-boot-image>: %s", curNode.value());
-        }
-    }
-
-    if (!hasText) {
-        LOGW("<has-boot-image> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagRamdisk(pugi::xml_node node,
-                                                   PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagRamdisk) == 0);
-
-    bool hasText = false;
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        if (info->ramdisk().empty()) {
-            info->setRamdisk(curNode.value());
-        } else {
-            LOGW("Ignoring additional <ramdisk> elements");
-        }
-    }
-
-    if (!hasText) {
-        LOGW("<ramdisk> tag has no text");
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagAutopatchers(pugi::xml_node node,
-                                                        PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagAutopatchers) == 0);
-
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_element) {
-            continue;
-        }
-
-        if (strcmp(curNode.name(), PatchInfoTagAutopatchers) == 0) {
-            LOGW("Nested <autopatchers> is not allowed");
-        } else if (strcmp(curNode.name(), PatchInfoTagAutopatcher) == 0) {
-            parsePatchInfoTagAutopatcher(curNode, info);
-        } else {
-            FLOGW("Unrecognized tag within <autopatchers>: %s", curNode.name());
-        }
-    }
-}
-
-void PatcherConfig::Impl::parsePatchInfoTagAutopatcher(pugi::xml_node node,
-                                                       PatchInfo * const info)
-{
-    assert(strcmp(node.name(), PatchInfoTagAutopatcher) == 0);
-
-    PatchInfo::AutoPatcherArgs args;
-
-    for (pugi::xml_attribute attr : node.attributes()) {
-        const pugi::char_t *name = attr.name();
-        const pugi::char_t *value = attr.value();
-
-        args[name] = value;
-    }
-
-    bool hasText = false;
-    for (pugi::xml_node curNode : node.children()) {
-        if (curNode.type() != pugi::xml_node_type::node_pcdata) {
-            continue;
-        }
-
-        hasText = true;
-        info->addAutoPatcher(curNode.value(), std::move(args));
-    }
-
-    if (!hasText) {
-        LOGW("<autopatcher> tag has no text");
-    }
 }
 
 #endif

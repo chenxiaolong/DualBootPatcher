@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -33,8 +33,7 @@ class StandardPatcher : public AutoPatcher
 {
 public:
     explicit StandardPatcher(const PatcherConfig * const pc,
-                             const FileInfo * const info,
-                             const PatchInfo::AutoPatcherArgs &args);
+                             const FileInfo * const info);
     ~StandardPatcher();
 
     static const std::string Id;

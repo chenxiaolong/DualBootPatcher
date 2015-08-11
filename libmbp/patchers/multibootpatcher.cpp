@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -122,11 +122,6 @@ std::string MultiBootPatcher::id() const
     return Id;
 }
 
-bool MultiBootPatcher::usesPatchInfo() const
-{
-    return true;
-}
-
 void MultiBootPatcher::setFileInfo(const FileInfo * const info)
 {
     m_impl->info = info;
@@ -213,18 +208,16 @@ bool MultiBootPatcher::Impl::patchRamdisk(std::vector<unsigned char> *data)
 
     if (cancelled) return false;
 
-    // For backwards compatibility, translate '<device>/default' to 'default' if
-    // a ramdisk patcher named '<device>/default' does not exist
-    std::string rpId = info->patchInfo()->ramdisk();
+    std::string rpId = info->device()->id() + "/default";
     auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    if (!rp && rpId == info->device()->id() + "/default") {
+    if (!rp) {
         rpId = "default";
         rp = pc->createRamdiskPatcher(rpId, info, &cpio);
     }
     if (!rp) {
         error = PatcherError::createPatcherCreationError(
                 ErrorCode::RamdiskPatcherCreateError,
-                info->patchInfo()->ramdisk());
+                rpId);
         return false;
     }
 
@@ -284,30 +277,18 @@ bool MultiBootPatcher::Impl::patchZip()
 {
     std::unordered_set<std::string> excludeFromPass1;
 
-    for (auto const &item : info->patchInfo()->autoPatchers()) {
-        auto args = info->patchInfo()->autoPatcherArgs(item);
+    auto *ap = pc->createAutoPatcher("StandardPatcher", info);
+    if (!ap) {
+        error = PatcherError::createPatcherCreationError(
+                ErrorCode::AutoPatcherCreateError, "StandardPatcher");
+        return false;
+    }
 
-        auto *ap = pc->createAutoPatcher(item, info, args);
-        if (!ap) {
-            error = PatcherError::createPatcherCreationError(
-                    ErrorCode::AutoPatcherCreateError, item);
-            return false;
-        }
+    autoPatchers.push_back(ap);
 
-        // TODO: AutoPatcher::newFiles() is not supported yet
-
-        std::vector<std::string> existingFiles = ap->existingFiles();
-        if (existingFiles.empty()) {
-            pc->destroyAutoPatcher(ap);
-            continue;
-        }
-
-        autoPatchers.push_back(ap);
-
-        // AutoPatcher files should be excluded from the first pass
-        for (auto const &file : existingFiles) {
-            excludeFromPass1.insert(file);
-        }
+    // AutoPatcher files should be excluded from the first pass
+    for (auto const &file : ap->existingFiles()) {
+        excludeFromPass1.insert(file);
     }
 
     // Unlike the old patcher, we'll write directly to the new file
@@ -411,8 +392,7 @@ bool MultiBootPatcher::Impl::patchZip()
  *
  * This performs the following operations:
  *
- * - If the PatchInfo has the `hasBootImage` parameter set to true for the
- *   current file, then patch the boot images and copy them to the output file.
+ * - Patch boot images and copy them to the output zip.
  * - Files needed by an AutoPatcher are extracted to the temporary directory.
  * - Otherwise, the file is copied directly to the output zip.
  */
@@ -420,10 +400,6 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
                                    const std::string &temporaryDir,
                                    const std::unordered_set<std::string> &exclude)
 {
-    // Boot image params
-    bool hasBootImage = info->patchInfo()->hasBootImage();
-    auto piBootImages = info->patchInfo()->bootImages();
-
     int ret = unzGoToFirstFile(zInput);
     if (ret != UNZ_OK) {
         error = PatcherError::createArchiveError(
@@ -456,11 +432,8 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
             continue;
         }
 
-        // Try to patch the patchinfo-defined boot images as well as
-        // files that end in a common boot image extension
+        // Try to patch files that end in a common boot image extension
 
-        bool inList = std::find(piBootImages.begin(), piBootImages.end(),
-                                curFile) != piBootImages.end();
         bool isExtImg = StringUtils::ends_with(curFile, ".img");
         bool isExtLok = StringUtils::ends_with(curFile, ".lok");
         bool isExtGz = StringUtils::ends_with(curFile, ".gz");
@@ -468,7 +441,7 @@ bool MultiBootPatcher::Impl::pass1(zipFile const zOutput,
         // patcher won't try to read a multi-gigabyte system image into RAM
         bool isSizeOK = fi.uncompressed_size <= 30 * 1024 * 1024;
 
-        if (hasBootImage && (inList || isExtImg || isExtLok || isExtGz) && isSizeOK) {
+        if ((isExtImg || isExtLok || isExtGz) && isSizeOK) {
             // Load the file into memory
             std::vector<unsigned char> data;
 

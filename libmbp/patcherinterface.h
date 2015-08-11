@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -23,7 +23,6 @@
 
 #include "cpiofile.h"
 #include "fileinfo.h"
-#include "patchinfo.h"
 
 
 namespace mbp
@@ -59,11 +58,6 @@ public:
      * \brief The patcher's identifier
      */
     virtual std::string id() const = 0;
-
-    /*!
-     * \brief Whether or not the patcher uses patchinfo files
-     */
-    virtual bool usesPatchInfo() const = 0;
 
     /*!
      * \brief Sets the FileInfo object corresponding to the file to patch

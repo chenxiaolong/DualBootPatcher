@@ -77,11 +77,6 @@ std::string MbtoolUpdater::id() const
     return Id;
 }
 
-bool MbtoolUpdater::usesPatchInfo() const
-{
-    return false;
-}
-
 void MbtoolUpdater::setFileInfo(const FileInfo * const info)
 {
     m_impl->info = info;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -30,9 +30,6 @@ void mbp_fileinfo_destroy(CFileInfo *info);
 
 char * mbp_fileinfo_filename(const CFileInfo *info);
 void mbp_fileinfo_set_filename(CFileInfo *info, const char *path);
-
-CPatchInfo * mbp_fileinfo_patchinfo(const CFileInfo *info);
-void mbp_fileinfo_set_patchinfo(CFileInfo *info, CPatchInfo *pInfo);
 
 CDevice * mbp_fileinfo_device(const CFileInfo *info);
 void mbp_fileinfo_set_device(CFileInfo *info, CDevice * device);

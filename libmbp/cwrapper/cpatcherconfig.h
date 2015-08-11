@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -41,14 +41,6 @@ void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path);
 char * mbp_config_version(const CPatcherConfig *pc);
 CDevice ** mbp_config_devices(const CPatcherConfig *pc);
 #ifndef LIBMBP_MINI
-CPatchInfo ** mbp_config_patchinfos(const CPatcherConfig *pc);
-CPatchInfo ** mbp_config_patchinfos_for_device(const CPatcherConfig *pc,
-                                               const CDevice *device);
-
-CPatchInfo * mbp_config_find_matching_patchinfo(const CPatcherConfig *pc,
-                                                CDevice *device,
-                                                const char *filename);
-
 char ** mbp_config_patchers(const CPatcherConfig *pc);
 char ** mbp_config_autopatchers(const CPatcherConfig *pc);
 char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc);
@@ -56,8 +48,7 @@ char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc);
 CPatcher * mbp_config_create_patcher(CPatcherConfig *pc, const char *id);
 CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
                                              const char *id,
-                                             const CFileInfo *info,
-                                             const CStringMap *args);
+                                             const CFileInfo *info);
 CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
                                                     const char *id,
                                                     const CFileInfo *info,
@@ -66,8 +57,6 @@ CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
 void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher);
 void mbp_config_destroy_autopatcher(CPatcherConfig *pc, CAutoPatcher *patcher);
 void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc, CRamdiskPatcher *patcher);
-
-bool mbp_config_load_patchinfos(CPatcherConfig *pc);
 #endif
 
 #ifdef __cplusplus
