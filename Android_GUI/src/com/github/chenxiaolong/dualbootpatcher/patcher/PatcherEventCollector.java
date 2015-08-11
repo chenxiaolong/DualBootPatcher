@@ -58,10 +58,10 @@ public class PatcherEventCollector extends EventCollector {
                     sendEvent(new UpdateDetailsEvent(done));
 
                     boolean failed = bundle.getBoolean(PatcherUtils.RESULT_PATCH_FILE_FAILED);
-                    String message = bundle.getString(PatcherUtils.RESULT_PATCH_FILE_MESSAGE);
+                    int errorCode = bundle.getInt(PatcherUtils.RESULT_PATCH_FILE_ERROR_CODE);
                     String newFile = bundle.getString(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE);
 
-                    sendEvent(new FinishedPatchingEvent(failed, message, newFile));
+                    sendEvent(new FinishedPatchingEvent(failed, errorCode, newFile));
                 }
             }
         }
@@ -116,12 +116,12 @@ public class PatcherEventCollector extends EventCollector {
 
     public static class FinishedPatchingEvent extends BaseEvent {
         boolean failed;
-        String message;
+        int errorCode;
         String newFile;
 
-        public FinishedPatchingEvent(boolean failed, String message, String newFile) {
+        public FinishedPatchingEvent(boolean failed, int errorCode, String newFile) {
             this.failed = failed;
-            this.message = message;
+            this.errorCode = errorCode;
             this.newFile = newFile;
         }
     }

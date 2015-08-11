@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.widget.TextView;
 
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class FileChooserCW implements PatcherUIListener {
@@ -59,8 +60,8 @@ public class FileChooserCW implements PatcherUIListener {
         case PatcherConfigState.STATE_FINISHED:
             if (mPCS.mPatcherFailed) {
                 vTitle.setText(R.string.filechooser_failure_title);
-                vMessage.setText(String.format(mContext.getString(R.string
-                        .filechooser_failure_desc), mPCS.mPatcherError));
+                vMessage.setText(mContext.getString(R.string.filechooser_failure_desc,
+                        LogUtils.getPath("patch-file.log"), mPCS.mPatcherErrorCode));
             } else {
                 vTitle.setText(R.string.filechooser_success_title);
                 vMessage.setText(String.format(mContext.getString(R.string

@@ -282,7 +282,8 @@
     <!-- Title for the file chooser card indicating that the patcher failed to patch the file -->
     <string name="filechooser_failure_title">Failed to patch file</string>
     <!-- Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch -->
-    <string name="filechooser_failure_desc">%s\n\nTap to choose another file to patch.</string>
+    <string name="filechooser_failure_desc">See %1$s for more details (error code: %2$s).\n\nTap to
+        choose another file to patch.</string>
 
     <!-- Title for the preset card -->
     <string name="preset_title">Preset</string>
@@ -497,38 +498,5 @@
         <item>Google_Apps</item>
         <item>Other</item>
     </string-array>
-
-    <!-- Errors -->
-    <string name="no_error">No error has occurred</string>
-    <string name="unknown_error">An unknown error has occurred</string>
-    <string name="patcher_create_error">Failed to create patcher</string>
-    <string name="autopatcher_create_error">Failed to create autopatcher</string>
-    <string name="ramdisk_patcher_create_error">Failed to create ramdisk patcher</string>
-    <string name="file_open_error">Failed to open file</string>
-    <string name="file_read_error">Failed to read from file</string>
-    <string name="file_write_error">Failed to write to file</string>
-    <string name="directory_not_exist_error">Directory does not exist</string>
-    <string name="boot_image_parse_error">Failed to parse boot image</string>
-    <string name="boot_image_apply_bump_error">Failed to apply Bump to boot image</string>
-    <string name="boot_image_apply_loki_error">Failed to apply Loki to boot image</string>
-    <string name="cpio_file_already_exists_error">File already exists in cpio archive</string>
-    <string name="cpio_file_not_exist_error">File does not exist in cpio archive</string>
-    <string name="archive_read_open_error">Failed to open archive for reading</string>
-    <string name="archive_read_data_error">Failed to read archive data for file</string>
-    <string name="archive_read_header_error">Failed to read archive entry header</string>
-    <string name="archive_write_open_error">Failed to open archive for writing</string>
-    <string name="archive_write_data_error">Failed to write archive data for file</string>
-    <string name="archive_write_header_error">Failed to write archive header for file</string>
-    <string name="archive_close_error">Failed to close archive</string>
-    <string name="archive_free_error">Failed to free archive header memory</string>
-    <string name="xml_parse_file_error">Failed to parse XML file</string>
-    <string name="only_zip_supported">Only ZIP files are supported</string>
-    <string name="only_boot_image_supported">Only boot images are supported</string>
-    <string name="patching_cancelled">Patching was cancelled</string>
-    <string name="system_cache_format_lines_not_found">The patcher could not find any /system or
-        /cache formatting lines in the updater-script file.\n\nIf the file is a ROM,
-        then something failed. If the file is not a ROM (eg. kernel or mod), it doesn\'t need to be
-        patched.</string>
-    <string name="apply_patch_file_error">Failed to apply patch file</string>
 
 </resources>

@@ -39,6 +39,7 @@ import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector;
 import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.RequestedFileEvent;
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
@@ -481,7 +482,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             FinishedPatchingEvent e = (FinishedPatchingEvent) event;
 
             mPCS.mPatcherFailed = e.failed;
-            mPCS.mPatcherError = e.message;
+            mPCS.mPatcherErrorCode = e.errorCode;
             mPCS.mPatcherNewFile = e.newFile;
 
             mPCS.mState = PatcherConfigState.STATE_FINISHED;
@@ -510,7 +511,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             setTapActionChooseFile();
 
             returnResult(mPCS.mPatcherFailed ? RESULT_PATCHING_FAILED : RESULT_PATCHING_SUCCEEDED,
-                    mPCS.mPatcherError, mPCS.mPatcherNewFile);
+                    "See " + LogUtils.getPath("patch-file.log") + " for details",
+                    mPCS.mPatcherNewFile);
         } else if (event instanceof RequestedFileEvent) {
             mPCS.mState = PatcherConfigState.STATE_CHOSE_FILE;
 

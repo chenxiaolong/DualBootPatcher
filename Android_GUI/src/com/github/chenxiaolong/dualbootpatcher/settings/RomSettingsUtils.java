@@ -88,7 +88,7 @@ public class RomSettingsUtils {
      * @param error PatcherError
      */
     private static void logLibMbpError(Context context, int error) {
-        Log.e(TAG, "libmbp error: " + PatcherUtils.getErrorMessage(context, error));
+        Log.e(TAG, "libmbp error code: " + error);
     }
 
     public synchronized static boolean updateRamdisk(Context context) {

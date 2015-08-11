@@ -235,37 +235,6 @@ public class LibMbp {
         // END: cpatcherinterface.h
     }
 
-    public interface ErrorCode {
-        int NO_ERROR = 0;
-        int UNKNOWN_ERROR = 1;
-        int PATCHER_CREATE_ERROR = 2;
-        int AUTOPATCHER_CREATE_ERROR = 3;
-        int RAMDISK_PATCHER_CREATE_ERROR = 4;
-        int FILE_OPEN_ERROR = 5;
-        int FILE_READ_ERROR = 6;
-        int FILE_WRITE_ERROR = 7;
-        int DIRECTORY_NOT_EXIST_ERROR = 8;
-        int BOOT_IMAGE_PARSE_ERROR = 9;
-        int BOOT_IMAGE_APPLY_BUMP_ERROR = 10;
-        int BOOT_IMAGE_APPLY_LOKI_ERROR = 11;
-        int CPIO_FILE_ALREADY_EXIST_ERROR = 12;
-        int CPIO_FILE_NOT_EXIST_ERROR = 13;
-        int ARCHIVE_READ_OPEN_ERROR = 14;
-        int ARCHIVE_READ_DATA_ERROR = 15;
-        int ARCHIVE_READ_HEADER_ERROR = 16;
-        int ARCHIVE_WRITE_OPEN_ERROR = 17;
-        int ARCHIVE_WRITE_DATA_ERROR = 18;
-        int ARCHIVE_WRITE_HEADER_ERROR = 19;
-        int ARCHIVE_CLOSE_ERROR = 20;
-        int ARCHIVE_FREE_ERROR = 21;
-        int XML_PARSE_FILE_ERROR = 22;
-        int ONLY_ZIP_SUPPORTED = 23;
-        int ONLY_BOOT_IMAGE_SUPPORTED = 24;
-        int PATCHING_CANCELLED = 25;
-        int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 26;
-        int APPLY_PATCH_FILE_ERROR = 27;
-    }
-
     private static String[] getStringArrayAndFree(Pointer p) {
         String[] array = p.getStringArray(0);
         CWrapper.mbp_free_array(p);

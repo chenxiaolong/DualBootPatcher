@@ -74,11 +74,11 @@ public class PatcherService extends IntentService {
         sendBroadcast(i);
     }
 
-    private void onPatchedFile(boolean failed, String message, String newFile) {
+    private void onPatchedFile(boolean failed, int errorCode, String newFile) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_PATCHED_FILE);
         i.putExtra(PatcherUtils.RESULT_PATCH_FILE_FAILED, failed);
-        i.putExtra(PatcherUtils.RESULT_PATCH_FILE_MESSAGE, message);
+        i.putExtra(PatcherUtils.RESULT_PATCH_FILE_ERROR_CODE, errorCode);
         i.putExtra(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE, newFile);
         sendBroadcast(i);
     }
@@ -126,9 +126,9 @@ public class PatcherService extends IntentService {
 
         if (result != null) {
             String newFile = result.getString(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE);
-            String message = result.getString(PatcherUtils.RESULT_PATCH_FILE_MESSAGE);
+            int errorCode = result.getInt(PatcherUtils.RESULT_PATCH_FILE_ERROR_CODE);
             boolean failed = result.getBoolean(PatcherUtils.RESULT_PATCH_FILE_FAILED);
-            onPatchedFile(failed, message, newFile);
+            onPatchedFile(failed, errorCode, newFile);
         }
 
         nm.cancel(1);

@@ -27,7 +27,6 @@ import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.ErrorCode;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
@@ -46,7 +45,7 @@ public class PatcherUtils {
     public static final String PARAM_FILEINFO = "fileinfo";
 
     public static final String RESULT_PATCH_FILE_NEW_FILE = "new_file";
-    public static final String RESULT_PATCH_FILE_MESSAGE = "message";
+    public static final String RESULT_PATCH_FILE_ERROR_CODE = "error_code";
     public static final String RESULT_PATCH_FILE_FAILED = "failed";
 
     public static PatcherConfig sPC;
@@ -118,72 +117,9 @@ public class PatcherUtils {
 
         Bundle bundle = new Bundle();
         bundle.putString(RESULT_PATCH_FILE_NEW_FILE, patcher.newFilePath());
-        bundle.putString(RESULT_PATCH_FILE_MESSAGE, getErrorMessage(context, patcher.getError()));
+        bundle.putInt(RESULT_PATCH_FILE_ERROR_CODE, patcher.getError());
         bundle.putBoolean(RESULT_PATCH_FILE_FAILED, !ret);
         return bundle;
-    }
-
-    public static String getErrorMessage(Context context, int error) {
-        switch (error) {
-        case ErrorCode.NO_ERROR:
-            return context.getString(R.string.no_error);
-        case ErrorCode.UNKNOWN_ERROR:
-            return context.getString(R.string.unknown_error);
-        case ErrorCode.PATCHER_CREATE_ERROR:
-            return context.getString(R.string.patcher_create_error);
-        case ErrorCode.AUTOPATCHER_CREATE_ERROR:
-            return context.getString(R.string.autopatcher_create_error);
-        case ErrorCode.RAMDISK_PATCHER_CREATE_ERROR:
-            return context.getString(R.string.ramdisk_patcher_create_error);
-        case ErrorCode.FILE_OPEN_ERROR:
-            return context.getString(R.string.file_open_error);
-        case ErrorCode.FILE_READ_ERROR:
-            return context.getString(R.string.file_read_error);
-        case ErrorCode.FILE_WRITE_ERROR:
-            return context.getString(R.string.file_write_error);
-        case ErrorCode.DIRECTORY_NOT_EXIST_ERROR:
-            return context.getString(R.string.directory_not_exist_error);
-        case ErrorCode.BOOT_IMAGE_PARSE_ERROR:
-            return context.getString(R.string.boot_image_parse_error);
-        case ErrorCode.BOOT_IMAGE_APPLY_BUMP_ERROR:
-            return context.getString(R.string.boot_image_apply_bump_error);
-        case ErrorCode.BOOT_IMAGE_APPLY_LOKI_ERROR:
-            return context.getString(R.string.boot_image_apply_loki_error);
-        case ErrorCode.CPIO_FILE_ALREADY_EXIST_ERROR:
-            return context.getString(R.string.cpio_file_already_exists_error);
-        case ErrorCode.CPIO_FILE_NOT_EXIST_ERROR:
-            return context.getString(R.string.cpio_file_not_exist_error);
-        case ErrorCode.ARCHIVE_READ_OPEN_ERROR:
-            return context.getString(R.string.archive_read_open_error);
-        case ErrorCode.ARCHIVE_READ_DATA_ERROR:
-            return context.getString(R.string.archive_read_data_error);
-        case ErrorCode.ARCHIVE_READ_HEADER_ERROR:
-            return context.getString(R.string.archive_read_header_error);
-        case ErrorCode.ARCHIVE_WRITE_OPEN_ERROR:
-            return context.getString(R.string.archive_write_open_error);
-        case ErrorCode.ARCHIVE_WRITE_DATA_ERROR:
-            return context.getString(R.string.archive_write_data_error);
-        case ErrorCode.ARCHIVE_WRITE_HEADER_ERROR:
-            return context.getString(R.string.archive_write_header_error);
-        case ErrorCode.ARCHIVE_CLOSE_ERROR:
-            return context.getString(R.string.archive_close_error);
-        case ErrorCode.ARCHIVE_FREE_ERROR:
-            return context.getString(R.string.archive_free_error);
-        case ErrorCode.XML_PARSE_FILE_ERROR:
-            return context.getString(R.string.xml_parse_file_error);
-        case ErrorCode.ONLY_ZIP_SUPPORTED:
-            return context.getString(R.string.only_zip_supported);
-        case ErrorCode.ONLY_BOOT_IMAGE_SUPPORTED:
-            return context.getString(R.string.only_boot_image_supported);
-        case ErrorCode.PATCHING_CANCELLED:
-            return context.getString(R.string.patching_cancelled);
-        case ErrorCode.SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND:
-            return context.getString(R.string.system_cache_format_lines_not_found);
-        case ErrorCode.APPLY_PATCH_FILE_ERROR:
-            return context.getString(R.string.apply_patch_file_error);
-        default:
-            throw new IllegalStateException("Unknown error code!");
-        }
     }
 
     public synchronized static void extractPatcher(Context context) {

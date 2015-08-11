@@ -26,11 +26,15 @@ import java.io.IOException;
 public final class LogUtils {
     private static final String TAG = LogUtils.class.getSimpleName();
 
-    public static void dump(String logFile) {
+    public static String getPath(String logFile) {
         String fileName = new File(logFile).getName();
 
-        final File path = new File(Environment.getExternalStorageDirectory()
-                + File.separator + "MultiBoot" + File.separator + fileName);
+        return Environment.getExternalStorageDirectory()
+                + File.separator + "MultiBoot" + File.separator + fileName;
+    }
+
+    public static void dump(String logFile) {
+        final File path = new File(getPath(logFile));
         path.getParentFile().mkdirs();
         try {
             Runtime.getRuntime().exec("logcat -d -v threadtime -f " + path + " *").waitFor();

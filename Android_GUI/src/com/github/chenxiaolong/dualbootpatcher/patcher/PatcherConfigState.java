@@ -38,7 +38,7 @@ public class PatcherConfigState implements Parcelable {
         out.writeParcelable(mDevice, 0);
         out.writeString(mPatcherNewFile);
         out.writeInt(mPatcherFailed ? 1 : 0);
-        out.writeString(mPatcherError);
+        out.writeInt(mPatcherErrorCode);
     }
 
     private PatcherConfigState(Parcel in) {
@@ -49,7 +49,7 @@ public class PatcherConfigState implements Parcelable {
         mDevice = in.readParcelable(Device.class.getClassLoader());
         mPatcherNewFile = in.readString();
         mPatcherFailed = in.readInt() != 0;
-        mPatcherError = in.readString();
+        mPatcherErrorCode = in.readInt();
     }
 
     public static final Parcelable.Creator<PatcherConfigState> CREATOR
@@ -102,5 +102,5 @@ public class PatcherConfigState implements Parcelable {
 
     public String mPatcherNewFile;
     public boolean mPatcherFailed;
-    public String mPatcherError;
+    public int mPatcherErrorCode;
 }

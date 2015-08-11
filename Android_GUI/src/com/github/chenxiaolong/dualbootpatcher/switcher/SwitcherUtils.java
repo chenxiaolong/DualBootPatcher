@@ -29,7 +29,6 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
@@ -214,12 +213,12 @@ public class SwitcherUtils {
 
         try {
             if (!bi.load(filename)) {
-                Log.e(TAG, "libmbp error: " + PatcherUtils.getErrorMessage(context, bi.getError()));
+                Log.e(TAG, "libmbp error code: " + bi.getError());
                 return null;
             }
 
             if (!cf.load(bi.getRamdiskImage())) {
-                Log.e(TAG, "libmbp error: " + PatcherUtils.getErrorMessage(context, bi.getError()));
+                Log.e(TAG, "libmbp error code: " + bi.getError());
                 return null;
             }
 
