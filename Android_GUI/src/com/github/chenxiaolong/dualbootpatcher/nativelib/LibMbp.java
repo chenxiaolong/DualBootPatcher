@@ -28,7 +28,6 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CDevice
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CFileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcherConfig;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcherError;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CRamdiskPatcher;
 import com.sun.jna.Callback;
 import com.sun.jna.Memory;
@@ -62,7 +61,6 @@ public class LibMbp {
         public static class CDevice extends PointerType {}
         public static class CFileInfo extends PointerType {}
         public static class CPatcherConfig extends PointerType {}
-        public static class CPatcherError extends PointerType {}
 
         public static class CPatcher extends PointerType {}
         public static class CAutoPatcher extends PointerType {}
@@ -72,7 +70,7 @@ public class LibMbp {
         // BEGIN: cbootimage.h
         static native CBootImage mbp_bootimage_create();
         static native void mbp_bootimage_destroy(CBootImage bi);
-        static native CPatcherError mbp_bootimage_error(CBootImage bi);
+        static native /* ErrorCode */ int mbp_bootimage_error(CBootImage bi);
         static native boolean mbp_bootimage_load_data(CBootImage bi, Pointer data, int size);
         static native boolean mbp_bootimage_load_file(CBootImage bi, String filename);
         static native boolean mbp_bootimage_create_data(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference size);
@@ -133,7 +131,7 @@ public class LibMbp {
         // BEGIN: ccpiofile.h
         static native CCpioFile mbp_cpiofile_create();
         static native void mbp_cpiofile_destroy(CCpioFile cpio);
-        static native CPatcherError mbp_cpiofile_error(CCpioFile cpio);
+        static native /* ErrorCode */ int mbp_cpiofile_error(CCpioFile cpio);
         static native boolean mbp_cpiofile_load_data(CCpioFile cpio, Pointer data, int size);
         static native boolean mbp_cpiofile_create_data(CCpioFile cpio, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native boolean mbp_cpiofile_exists(CCpioFile cpio, String filename);
@@ -187,7 +185,7 @@ public class LibMbp {
         // BEGIN: cpatcherconfig.h
         static native CPatcherConfig mbp_config_create();
         static native void mbp_config_destroy(CPatcherConfig pc);
-        static native CPatcherError mbp_config_error(CPatcherConfig pc);
+        static native /* ErrorCode */ int mbp_config_error(CPatcherConfig pc);
         static native Pointer mbp_config_data_directory(CPatcherConfig pc);
         static native Pointer mbp_config_temp_directory(CPatcherConfig pc);
         static native void mbp_config_set_data_directory(CPatcherConfig pc, String path);
@@ -205,14 +203,6 @@ public class LibMbp {
         static native void mbp_config_destroy_ramdisk_patcher(CPatcherConfig pc, CRamdiskPatcher patcher);
         // END: cpatcherconfig.h
 
-        // BEGIN: cpatchererror.h
-        static native void mbp_error_destroy(CPatcherError error);
-        static native /* ErrorType */ int mbp_error_error_type(CPatcherError error);
-        static native /* ErrorCode */ int mbp_error_error_code(CPatcherError error);
-        static native Pointer mbp_error_patcher_id(CPatcherError error);
-        static native Pointer mbp_error_filename(CPatcherError error);
-        // END: cpatchererror.h
-
         // BEGIN: cpatcherinterface.h
         interface ProgressUpdatedCallback extends Callback {
             void invoke(long bytes, long maxBytes, Pointer userData);
@@ -226,23 +216,54 @@ public class LibMbp {
             void invoke(String text, Pointer userData);
         }
 
-        static native CPatcherError mbp_patcher_error(CPatcher patcher);
+        static native /* ErrorCode */ int mbp_patcher_error(CPatcher patcher);
         static native Pointer mbp_patcher_id(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
         static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
         static native boolean mbp_patcher_patch_file(CPatcher patcher, ProgressUpdatedCallback progressCb, FilesUpdatedCallback filesCb, DetailsUpdatedCallback detailsCb, Pointer userData);
         static native void mbp_patcher_cancel_patching(CPatcher patcher);
 
-        static native CPatcherError mbp_autopatcher_error(CAutoPatcher patcher);
+        static native /* ErrorCode */ int mbp_autopatcher_error(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_id(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_new_files(CAutoPatcher patcher);
         static native Pointer mbp_autopatcher_existing_files(CAutoPatcher patcher);
         static native boolean mbp_autopatcher_patch_files(CAutoPatcher patcher, String directory);
 
-        static native CPatcherError mbp_ramdiskpatcher_error(CRamdiskPatcher patcher);
+        static native /* ErrorCode */ int mbp_ramdiskpatcher_error(CRamdiskPatcher patcher);
         static native Pointer mbp_ramdiskpatcher_id(CRamdiskPatcher patcher);
         static native boolean mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher patcher);
         // END: cpatcherinterface.h
+    }
+
+    public interface ErrorCode {
+        int NO_ERROR = 0;
+        int UNKNOWN_ERROR = 1;
+        int PATCHER_CREATE_ERROR = 2;
+        int AUTOPATCHER_CREATE_ERROR = 3;
+        int RAMDISK_PATCHER_CREATE_ERROR = 4;
+        int FILE_OPEN_ERROR = 5;
+        int FILE_READ_ERROR = 6;
+        int FILE_WRITE_ERROR = 7;
+        int DIRECTORY_NOT_EXIST_ERROR = 8;
+        int BOOT_IMAGE_PARSE_ERROR = 9;
+        int BOOT_IMAGE_APPLY_BUMP_ERROR = 10;
+        int BOOT_IMAGE_APPLY_LOKI_ERROR = 11;
+        int CPIO_FILE_ALREADY_EXIST_ERROR = 12;
+        int CPIO_FILE_NOT_EXIST_ERROR = 13;
+        int ARCHIVE_READ_OPEN_ERROR = 14;
+        int ARCHIVE_READ_DATA_ERROR = 15;
+        int ARCHIVE_READ_HEADER_ERROR = 16;
+        int ARCHIVE_WRITE_OPEN_ERROR = 17;
+        int ARCHIVE_WRITE_DATA_ERROR = 18;
+        int ARCHIVE_WRITE_HEADER_ERROR = 19;
+        int ARCHIVE_CLOSE_ERROR = 20;
+        int ARCHIVE_FREE_ERROR = 21;
+        int XML_PARSE_FILE_ERROR = 22;
+        int ONLY_ZIP_SUPPORTED = 23;
+        int ONLY_BOOT_IMAGE_SUPPORTED = 24;
+        int PATCHING_CANCELLED = 25;
+        int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 26;
+        int APPLY_PATCH_FILE_ERROR = 27;
     }
 
     private static String[] getStringArrayAndFree(Pointer p) {
@@ -439,10 +460,9 @@ public class LibMbp {
             }
         };
 
-        public PatcherError getError() {
+        public /* ErrorCode */ int getError() {
             validate(mCBootImage, BootImage.class, "getError");
-            CPatcherError error = CWrapper.mbp_bootimage_error(mCBootImage);
-            return new PatcherError(error);
+            return CWrapper.mbp_bootimage_error(mCBootImage);
         }
 
         public boolean load(byte[] data) {
@@ -877,10 +897,9 @@ public class LibMbp {
             }
         };
 
-        public PatcherError getError() {
+        public /* ErrorCode */ int getError() {
             validate(mCCpioFile, CpioFile.class, "getError");
-            CPatcherError error = CWrapper.mbp_cpiofile_error(mCCpioFile);
-            return new PatcherError(error);
+            return CWrapper.mbp_cpiofile_error(mCCpioFile);
         }
 
         public boolean load(byte[] data) {
@@ -1437,10 +1456,9 @@ public class LibMbp {
             }
         };
 
-        public PatcherError getError() {
+        public /* ErrorCode */ int getError() {
             validate(mCPatcherConfig, PatcherConfig.class, "getError");
-            CPatcherError error = CWrapper.mbp_config_error(mCPatcherConfig);
-            return new PatcherError(error);
+            return CWrapper.mbp_config_error(mCPatcherConfig);
         }
 
         public String getDataDirectory() {
@@ -1560,152 +1578,6 @@ public class LibMbp {
         }
     }
 
-    public static class PatcherError implements Parcelable {
-        public interface ErrorType {
-            int GENERIC_ERROR = 0;
-            int PATCHER_CREATION_ERROR = 1;
-            int IO_ERROR = 2;
-            int BOOT_IMAGE_ERROR = 3;
-            int CPIO_ERROR = 4;
-            int ARCHIVE_ERROR = 5;
-            int XML_ERROR = 6;
-            int SUPPORTED_FILE_ERROR = 7;
-            int CANCELLED_ERROR = 8;
-            int PATCHING_ERROR = 9;
-        }
-
-        public interface ErrorCode {
-            int NO_ERROR = 0;
-            int UNKNOWN_ERROR = 1;
-            int PATCHER_CREATE_ERROR = 2;
-            int AUTOPATCHER_CREATE_ERROR = 3;
-            int RAMDISK_PATCHER_CREATE_ERROR = 4;
-            int FILE_OPEN_ERROR = 5;
-            int FILE_READ_ERROR = 6;
-            int FILE_WRITE_ERROR = 7;
-            int DIRECTORY_NOT_EXIST_ERROR = 8;
-            int BOOT_IMAGE_PARSE_ERROR = 9;
-            int BOOT_IMAGE_APPLY_BUMP_ERROR = 10;
-            int BOOT_IMAGE_APPLY_LOKI_ERROR = 11;
-            int CPIO_FILE_ALREADY_EXIST_ERROR = 12;
-            int CPIO_FILE_NOT_EXIST_ERROR = 13;
-            int ARCHIVE_READ_OPEN_ERROR = 14;
-            int ARCHIVE_READ_DATA_ERROR = 15;
-            int ARCHIVE_READ_HEADER_ERROR = 16;
-            int ARCHIVE_WRITE_OPEN_ERROR = 17;
-            int ARCHIVE_WRITE_DATA_ERROR = 18;
-            int ARCHIVE_WRITE_HEADER_ERROR = 19;
-            int ARCHIVE_CLOSE_ERROR = 20;
-            int ARCHIVE_FREE_ERROR = 21;
-            int XML_PARSE_FILE_ERROR = 22;
-            int ONLY_ZIP_SUPPORTED = 23;
-            int ONLY_BOOT_IMAGE_SUPPORTED = 24;
-            int PATCHING_CANCELLED = 25;
-            int SYSTEM_CACHE_FORMAT_LINES_NOT_FOUND = 26;
-            int APPLY_PATCH_FILE_ERROR = 27;
-        }
-
-        private static final HashMap<CPatcherError, Integer> sInstances = new HashMap<>();
-        private CPatcherError mCPatcherError;
-
-        PatcherError(CPatcherError cPatcherError) {
-            ensureNotNull(cPatcherError);
-
-            mCPatcherError = cPatcherError;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPatcherError);
-            }
-            validate(mCPatcherError, PatcherError.class, "(Constructor)");
-        }
-
-        public void destroy() {
-            validate(mCPatcherError, PatcherError.class, "destroy");
-            synchronized (sInstances) {
-                if (mCPatcherError != null && decrementRefCount(sInstances, mCPatcherError)) {
-                    validate(mCPatcherError, PatcherError.class, "(Destroyed)");
-                    CWrapper.mbp_error_destroy(mCPatcherError);
-                }
-                mCPatcherError = null;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof PatcherError
-                    && mCPatcherError.equals(((PatcherError) o).mCPatcherError);
-        }
-
-        @Override
-        public int hashCode() {
-            return mCPatcherError.hashCode();
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            destroy();
-            super.finalize();
-        }
-
-        CPatcherError getPointer() {
-            validate(mCPatcherError, PatcherError.class, "getPointer");
-            return mCPatcherError;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            long peer = Pointer.nativeValue(mCPatcherError.getPointer());
-            out.writeLong(peer);
-        }
-
-        private PatcherError(Parcel in) {
-            long peer = in.readLong();
-            mCPatcherError = new CPatcherError();
-            mCPatcherError.setPointer(new Pointer(peer));
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCPatcherError);
-            }
-            validate(mCPatcherError, PatcherError.class, "(Constructor)");
-        }
-
-        public static final Parcelable.Creator<PatcherError> CREATOR
-                = new Parcelable.Creator<PatcherError>() {
-            public PatcherError createFromParcel(Parcel in) {
-                return new PatcherError(in);
-            }
-
-            public PatcherError[] newArray(int size) {
-                return new PatcherError[size];
-            }
-        };
-
-        public /* ErrorType */ int getErrorType() {
-            validate(mCPatcherError, PatcherError.class, "getErrorType");
-            return CWrapper.mbp_error_error_type(mCPatcherError);
-        }
-
-        public /* ErrorCode */ int getErrorCode() {
-            validate(mCPatcherError, PatcherError.class, "getErrorCode");
-            return CWrapper.mbp_error_error_code(mCPatcherError);
-        }
-
-        public String getPatcherId() {
-            validate(mCPatcherError, PatcherError.class, "getPatcherId");
-            Pointer p = CWrapper.mbp_error_patcher_id(mCPatcherError);
-            return getStringAndFree(p);
-        }
-
-        public String getFilename() {
-            validate(mCPatcherError, PatcherError.class, "getFilename");
-            Pointer p = CWrapper.mbp_error_filename(mCPatcherError);
-            return getStringAndFree(p);
-        }
-    }
-
     public static class Patcher implements Parcelable {
         private CPatcher mCPatcher;
 
@@ -1759,10 +1631,9 @@ public class LibMbp {
             }
         };
 
-        public PatcherError getError() {
+        public /* ErrorCode */ int getError() {
             validate(mCPatcher, Patcher.class, "getError");
-            CPatcherError error = CWrapper.mbp_patcher_error(mCPatcher);
-            return new PatcherError(error);
+            return CWrapper.mbp_patcher_error(mCPatcher);
         }
 
         public String getId() {
@@ -1883,10 +1754,9 @@ public class LibMbp {
             }
         };
 
-        public PatcherError getError() {
+        public /* ErrorCode */ int getError() {
             validate(mCAutoPatcher, AutoPatcher.class, "getError");
-            CPatcherError error = CWrapper.mbp_autopatcher_error(mCAutoPatcher);
-            return new PatcherError(error);
+            return CWrapper.mbp_autopatcher_error(mCAutoPatcher);
         }
 
         public String getId() {
@@ -1969,10 +1839,9 @@ public class LibMbp {
             }
         };
 
-        public PatcherError getError() {
+        public /* ErrorCode */ int getError() {
             validate(mCRamdiskPatcher, RamdiskPatcher.class, "getError");
-            CPatcherError error = CWrapper.mbp_ramdiskpatcher_error(mCRamdiskPatcher);
-            return new PatcherError(error);
+            return CWrapper.mbp_ramdiskpatcher_error(mCRamdiskPatcher);
         }
 
         public String getId() {

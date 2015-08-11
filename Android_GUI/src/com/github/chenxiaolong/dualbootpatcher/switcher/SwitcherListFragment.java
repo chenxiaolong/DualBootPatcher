@@ -54,7 +54,6 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherError;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmMismatchedSetKernelDialog
@@ -816,17 +815,13 @@ public class SwitcherListFragment extends Fragment implements
 
             try {
                 if (!biSaved.load(savedImage)) {
-                    PatcherError error = biSaved.getError();
                     Log.e(TAG, "libmbp error: " +
-                            PatcherUtils.getErrorMessage(getContext(), error));
-                    error.destroy();
+                            PatcherUtils.getErrorMessage(getContext(), biSaved.getError()));
                     return CurrentKernelStatus.UNKNOWN;
                 }
                 if (!biRunning.load(tmpImageFile.getAbsolutePath())) {
-                    PatcherError error = biRunning.getError();
                     Log.e(TAG, "libmbp error: " +
-                            PatcherUtils.getErrorMessage(getContext(), error));
-                    error.destroy();
+                            PatcherUtils.getErrorMessage(getContext(), biRunning.getError()));
                     return CurrentKernelStatus.UNKNOWN;
                 }
 

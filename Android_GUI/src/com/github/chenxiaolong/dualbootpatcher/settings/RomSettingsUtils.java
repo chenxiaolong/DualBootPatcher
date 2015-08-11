@@ -29,7 +29,6 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherError;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
@@ -88,9 +87,8 @@ public class RomSettingsUtils {
      * @param context Context
      * @param error PatcherError
      */
-    private static void logLibMbpError(Context context, PatcherError error) {
+    private static void logLibMbpError(Context context, int error) {
         Log.e(TAG, "libmbp error: " + PatcherUtils.getErrorMessage(context, error));
-        error.destroy();
     }
 
     private static void dumpLogcat()  {
