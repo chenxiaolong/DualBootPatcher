@@ -198,51 +198,49 @@ void PatcherConfig::Impl::loadDefaultDevices()
 {
     Device *device;
 
-    const std::string qcomBaseDir("/dev/block/platform/msm_sdcc.1/by-name");
+#define QCOM_BASE_DIR           "/dev/block/platform/msm_sdcc.1/by-name"
+#define QCOM_ABOOT              QCOM_BASE_DIR "/aboot"
+#define QCOM_BOOT               QCOM_BASE_DIR "/boot"
+#define QCOM_CACHE              QCOM_BASE_DIR "/cache"
+#define QCOM_IMGDATA            QCOM_BASE_DIR "/imgdata"
+#define QCOM_MISC               QCOM_BASE_DIR "/misc"
+#define QCOM_MODEM              QCOM_BASE_DIR "/modem"
+#define QCOM_RECOVERY           QCOM_BASE_DIR "/recovery"
+#define QCOM_RPM                QCOM_BASE_DIR "/rpm"
+#define QCOM_SBL1               QCOM_BASE_DIR "/sbl1"
+#define QCOM_SDI                QCOM_BASE_DIR "/sdi"
+#define QCOM_SYSTEM             QCOM_BASE_DIR "/system"
+#define QCOM_TZ                 QCOM_BASE_DIR "/tz"
+#define QCOM_USERDATA           QCOM_BASE_DIR "/userdata"
 
-    std::string qcomSystem(qcomBaseDir); qcomSystem += "/system";
-    std::string qcomCache(qcomBaseDir); qcomCache += "/cache";
-    std::string qcomData(qcomBaseDir); qcomData += "/userdata";
-    std::string qcomBoot(qcomBaseDir); qcomBoot += "/boot";
-    std::string qcomRecovery(qcomBaseDir); qcomRecovery += "/recovery";
+// http://forum.xda-developers.com/showpost.php?p=60050072&postcount=5640
+#define ZERO_BASE_DIR           "/dev/block/platform/15570000.ufs/by-name"
+#define ZERO_BOOT               ZERO_BASE_DIR "/BOOT"
+#define ZERO_CACHE              ZERO_BASE_DIR "/CACHE"
+#define ZERO_RADIO              ZERO_BASE_DIR "/RADIO"
+#define ZERO_RECOVERY           ZERO_BASE_DIR "/RECOVERY"
+#define ZERO_SYSTEM             ZERO_BASE_DIR "/SYSTEM"
+#define ZERO_USERDATA           ZERO_BASE_DIR "/USERDATA"
 
-    std::string qcomAboot(qcomBaseDir); qcomAboot += "/aboot";
-    std::string qcomImgdata(qcomBaseDir); qcomImgdata += "/imgdata";
-    std::string qcomMisc(qcomBaseDir); qcomMisc += "/misc";
-    std::string qcomModem(qcomBaseDir); qcomModem += "/modem";
-    std::string qcomRpm(qcomBaseDir); qcomRpm += "/rpm";
-    std::string qcomSbl1(qcomBaseDir); qcomSbl1 += "/sbl1";
-    std::string qcomSdi(qcomBaseDir); qcomSdi += "/sdi";
-    std::string qcomTz(qcomBaseDir); qcomTz += "/tz";
+// http://forum.xda-developers.com/showpost.php?p=59801273&postcount=5465
+// http://forum.xda-developers.com/showpost.php?p=61876479&postcount=6443
+#define TRELTE_BASE_DIR         "/dev/block/platform/15540000.dwmmc0/by-name"
+#define TRELTE_BOOT             TRELTE_BASE_DIR "/BOOT"
+#define TRELTE_CACHE            TRELTE_BASE_DIR "/CACHE"
+#define TRELTE_CDMA_RADIO       TRELTE_BASE_DIR "/CDMA-RADIO"
+#define TRELTE_RADIO            TRELTE_BASE_DIR "/RADIO"
+#define TRELTE_RECOVERY         TRELTE_BASE_DIR "/RECOVERY"
+#define TRELTE_SYSTEM           TRELTE_BASE_DIR "/SYSTEM"
+#define TRELTE_USERDATA         TRELTE_BASE_DIR "/USERDATA"
 
-    // http://forum.xda-developers.com/showpost.php?p=60050072&postcount=5640
-    std::string s6EdgeBaseDir("/dev/block/platform/15570000.ufs/by-name");
-    std::string s6EdgeSystem(s6EdgeBaseDir); s6EdgeSystem += "/SYSTEM";
-    std::string s6EdgeCache(s6EdgeBaseDir); s6EdgeCache += "/CACHE";
-    std::string s6EdgeData(s6EdgeBaseDir); s6EdgeData += "/USERDATA";
-    std::string s6EdgeBoot(s6EdgeBaseDir); s6EdgeBoot += "/BOOT";
-    std::string s6EdgeRecovery(s6EdgeBaseDir); s6EdgeRecovery += "/RECOVERY";
-    std::string s6EdgeRadio(s6EdgeBaseDir); s6EdgeRadio += "/RADIO";
-
-    // http://forum.xda-developers.com/showpost.php?p=59801273&postcount=5465
-    // http://forum.xda-developers.com/showpost.php?p=61876479&postcount=6443
-    std::string n4ExynosBaseDir("/dev/block/platform/15540000.dwmmc0/by-name");
-    std::string n4ExynosSystem(n4ExynosBaseDir); n4ExynosSystem += "/SYSTEM";
-    std::string n4ExynosCache(n4ExynosBaseDir); n4ExynosCache += "/CACHE";
-    std::string n4ExynosData(n4ExynosBaseDir); n4ExynosData += "/USERDATA";
-    std::string n4ExynosBoot(n4ExynosBaseDir); n4ExynosBoot += "/BOOT";
-    std::string n4ExynosRecovery(n4ExynosBaseDir); n4ExynosRecovery += "/RECOVERY";
-    std::string n4ExynosRadio(n4ExynosBaseDir); n4ExynosRadio += "/RADIO";
-    std::string n4ExynosCdmaRadio(n4ExynosBaseDir); n4ExynosCdmaRadio += "/CDMA-RADIO";
-
-    std::string dwmmcBaseDir("/dev/block/platform/dw_mmc.0/by-name");
-    std::string dwmmcSystem(dwmmcBaseDir); dwmmcSystem += "/SYSTEM";
-    std::string dwmmcCache(dwmmcBaseDir); dwmmcCache += "/CACHE";
-    std::string dwmmcData(dwmmcBaseDir); dwmmcData += "/USERDATA";
-    std::string dwmmcBoot(dwmmcBaseDir); dwmmcBoot += "/BOOT";
-    std::string dwmmcRecovery(dwmmcBaseDir); dwmmcRecovery += "/RECOVERY";
-    std::string dwmmcRadio(dwmmcBaseDir); dwmmcRadio += "/RADIO";
-    std::string dwmmcCdmaRadio(dwmmcBaseDir); dwmmcCdmaRadio += "/CDMA-RADIO";
+#define DWMMC_BASE_DIR          "/dev/block/platform/dw_mmc.0/by-name"
+#define DWMMC_BOOT              DWMMC_BASE_DIR "/BOOT"
+#define DWMMC_CACHE             DWMMC_BASE_DIR "/CACHE"
+#define DWMMC_CDMA_RADIO        DWMMC_BASE_DIR "/CDMA-RADIO"
+#define DWMMC_RADIO             DWMMC_BASE_DIR "/RADIO"
+#define DWMMC_RECOVERY          DWMMC_BASE_DIR "/RECOVERY"
+#define DWMMC_SYSTEM            DWMMC_BASE_DIR "/SYSTEM"
+#define DWMMC_USERDATA          DWMMC_BASE_DIR "/USERDATA"
 
     // Samsung Galaxy S 4
     device = new Device();
@@ -252,13 +250,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
                            "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
                            "jftddxx", "jgedlte" });
     device->setName("Samsung Galaxy S 4");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p16" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p18" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p29" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p20" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
-    device->setExtraBlockDevs({ qcomAboot });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p16" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p18" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p29" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p20" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setExtraBlockDevs({ QCOM_ABOOT });
     devices.push_back(device);
 
     // Samsung Galaxy S 4 Mini Duos
@@ -271,12 +269,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
         "serranods", "serranodsxx"
     });
     device->setName("Samsung Galaxy S 4 Mini Reg./Duos");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p21" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p22" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p24" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p13" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p22" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p24" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Samsung Galaxy S 5
@@ -285,12 +283,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "klte", "kltecan", "kltedv", "kltespr", "kltetmo",
                            "klteusc", "kltevzw", "kltexx" });
     device->setName("Samsung Galaxy S 5");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p15" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p15" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Samsung Galaxy S 6 Reg./Edge
@@ -304,13 +302,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     });
     device->setName("Samsung Galaxy S 6 Reg./Edge");
     device->setArchitecture("arm64-v8a");
-    device->setBlockDevBaseDirs({ s6EdgeBaseDir });
-    device->setSystemBlockDevs({ s6EdgeSystem, "/dev/block/sda15" });
-    device->setCacheBlockDevs({ s6EdgeCache, "/dev/block/sda16" });
-    device->setDataBlockDevs({ s6EdgeData, "/dev/block/sda17" });
-    device->setBootBlockDevs({ s6EdgeBoot, "/dev/block/sda5" });
-    device->setRecoveryBlockDevs({ s6EdgeRecovery, "/dev/block/sda6" });
-    device->setExtraBlockDevs({ s6EdgeRadio });
+    device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
+    device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda15" });
+    device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda16" });
+    device->setDataBlockDevs({ ZERO_USERDATA, "/dev/block/sda17" });
+    device->setBootBlockDevs({ ZERO_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ ZERO_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ ZERO_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy S 6 Reg./Edge (Sprint)
@@ -324,13 +322,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     });
     device->setName("Samsung Galaxy S 6 Reg./Edge (Sprint)");
     device->setArchitecture("arm64-v8a");
-    device->setBlockDevBaseDirs({ s6EdgeBaseDir });
-    device->setSystemBlockDevs({ s6EdgeSystem, "/dev/block/sda18" });
-    device->setCacheBlockDevs({ s6EdgeCache, "/dev/block/sda19" });
-    device->setDataBlockDevs({ s6EdgeData, "/dev/block/sda21" });
-    device->setBootBlockDevs({ s6EdgeBoot, "/dev/block/sda8" });
-    device->setRecoveryBlockDevs({ s6EdgeRecovery, "/dev/block/sda9" });
-    device->setExtraBlockDevs({ s6EdgeRadio });
+    device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
+    device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda18" });
+    device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda19" });
+    device->setDataBlockDevs({ ZERO_USERDATA, "/dev/block/sda21" });
+    device->setBootBlockDevs({ ZERO_BOOT, "/dev/block/sda8" });
+    device->setRecoveryBlockDevs({ ZERO_RECOVERY, "/dev/block/sda9" });
+    device->setExtraBlockDevs({ ZERO_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3 (Snapdragon)
@@ -339,12 +337,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "hlte", "hltecan", "hltespr", "hltetmo", "hlteusc",
                            "hltevzw", "hltexx" });
     device->setName("Samsung Galaxy Note 3 (Snapdragon)");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3 (Exynos)
@@ -352,13 +350,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("ha3g");
     device->setCodenames({ "ha3g" });
     device->setName("Samsung Galaxy Note 3 (Exynos)");
-    device->setBlockDevBaseDirs({ dwmmcBaseDir });
-    device->setSystemBlockDevs({ dwmmcSystem, "/dev/block/mmcblk0p20" });
-    device->setCacheBlockDevs({ dwmmcCache, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ dwmmcData, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ dwmmcBoot, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ dwmmcRecovery, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ dwmmcRadio, dwmmcCdmaRadio });
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3 Neo
@@ -366,13 +364,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("hllte");
     device->setCodenames({ "hllte", "hlltexx" });
     device->setName("Samsung Galaxy Note 3 Neo");
-    device->setBlockDevBaseDirs({ dwmmcBaseDir });
-    device->setSystemBlockDevs({ dwmmcSystem, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ dwmmcCache, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ dwmmcData, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ dwmmcBoot, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ dwmmcRecovery, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ dwmmcRadio, dwmmcCdmaRadio });
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Note 4 (Snapdragon)
@@ -381,14 +379,14 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "trlte", "trltecan", "trltedt", "trltespr",
                            "trltetmo", "trlteusc", "trltevzw", "trltexx" });
     device->setName("Samsung Galaxy Note 4 (Snapdragon)");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p24" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p25" });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p24" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p25" });
     // Shouldn't be an issue as long as ROMs don't touch the "hidden" partition
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26",
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26",
                                "/dev/block/mmcblk0p27" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p17" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p17" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Samsung Galaxy Note 4 (Exynos)
@@ -401,13 +399,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
         "tre3g"
     });
     device->setName("Samsung Galaxy Note 4 (Exynos)");
-    device->setBlockDevBaseDirs({ n4ExynosBaseDir });
-    device->setSystemBlockDevs({ n4ExynosSystem, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ n4ExynosCache, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ n4ExynosData, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ n4ExynosBoot, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ n4ExynosRecovery, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ n4ExynosRadio, n4ExynosCdmaRadio });
+    device->setBlockDevBaseDirs({ TRELTE_BASE_DIR });
+    device->setSystemBlockDevs({ TRELTE_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ TRELTE_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ TRELTE_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ TRELTE_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ TRELTE_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ TRELTE_RADIO, TRELTE_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Tab S 8.4 (Wifi)
@@ -415,13 +413,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("klimtwifi");
     device->setCodenames({ "klimtwifi", "klimtwifikx" });
     device->setName("Samsung Galaxy Tab S 8.4 (Wifi)");
-    device->setBlockDevBaseDirs({ dwmmcBaseDir });
-    device->setSystemBlockDevs({ dwmmcSystem, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ dwmmcCache, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ dwmmcData, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ dwmmcBoot, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ dwmmcRecovery, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ dwmmcRadio, dwmmcCdmaRadio });
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Tab Pro 8.4 (Wifi)
@@ -429,12 +427,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("mondrianwifi");
     device->setCodenames({ "mondrianwifi", "mondrianwifiue", "mondrianwifixx" });
     device->setName("Samsung Galaxy Tab Pro 8.4 (Wifi)");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p23" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p24" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p26" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
-    device->setRecoveryBlockDevs({ qcomRecovery, "/dev/block/mmcblk0p15" });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices.push_back(device);
 
     // Google/LG Nexus 5
@@ -442,14 +440,14 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("hammerhead");
     device->setCodenames({ "hammerhead" });
     device->setName("Google/LG Nexus 5");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p25" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p27" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p19" });
-    device->setExtraBlockDevs({ qcomAboot, qcomImgdata, qcomMisc, qcomModem,
-                                qcomRpm, qcomSbl1, qcomSdi, qcomTz });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p25" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p27" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p19" });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
+                                QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2013)
@@ -457,12 +455,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("flo");
     device->setCodenames({ "flo" });
     device->setName("Google/ASUS Nexus 7 (2013)");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p22" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p23" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p30" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p14" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p30" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // OnePlus One
@@ -470,12 +468,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("bacon");
     device->setCodenames({ "bacon" });
     device->setName("OnePlus One");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p14" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p16" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p28" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // LG G2
@@ -483,13 +481,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("lgg2");
     device->setCodenames({ "g2", "d800", "d802", "ls980", "vs980" });
     device->setName("LG G2");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p34" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p35" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p38" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
-    device->setExtraBlockDevs({ qcomAboot, qcomTz });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p35" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p38" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_TZ });
     devices.push_back(device);
 
     // LG G3
@@ -498,13 +496,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCodenames({ "g3", "d850", "d851", "d852", "d855", "f400",
                            "f400k", "ls990", "vs985" });
     device->setName("LG G3");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p40" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p41" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p43" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p18" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
-    device->setExtraBlockDevs({ qcomAboot, qcomModem });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p40" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p41" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p43" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_MODEM });
     devices.push_back(device);
 
     // Motorola Moto G (2013)
@@ -512,12 +510,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setId("falcon");
     device->setCodenames({ "falcon", "falcon_umts", "falcon_umtsds" });
     device->setName("Motorola Moto G (2013)");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem /*, TODO */ });
-    device->setCacheBlockDevs({ qcomCache /*, TODO */ });
-    device->setDataBlockDevs({ qcomData /*, TODO */ });
-    device->setBootBlockDevs({ qcomBoot /*, TODO */ });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM /*, TODO */ });
+    device->setCacheBlockDevs({ QCOM_CACHE /*, TODO */ });
+    device->setDataBlockDevs({ QCOM_USERDATA /*, TODO */ });
+    device->setBootBlockDevs({ QCOM_BOOT /*, TODO */ });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Motorola Moto X (2013)
@@ -528,12 +526,12 @@ void PatcherConfig::Impl::loadDefaultDevices()
                            "xt1052", "xt1053", "xt1055", "xt1056", "xt1058",
                            "xt1060", });
     device->setName("Motorola Moto X (2013)");
-    device->setBlockDevBaseDirs({ qcomBaseDir });
-    device->setSystemBlockDevs({ qcomSystem, "/dev/block/mmcblk0p38" });
-    device->setCacheBlockDevs({ qcomCache, "/dev/block/mmcblk0p36" });
-    device->setDataBlockDevs({ qcomData, "/dev/block/mmcblk0p40" });
-    device->setBootBlockDevs({ qcomBoot, "/dev/block/mmcblk0p33" });
-    device->setRecoveryBlockDevs({ qcomRecovery });
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p38" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p36" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p40" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p33" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
     // Sony Xperia Sola
