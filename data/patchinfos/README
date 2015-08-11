@@ -1,5 +1,0 @@
-"Google_Apps" and "Other" are hardcoded folders. All files will be read from
-these folders regardless of what device the patch is for.
-
-Device-specific patchinfo files should be named after the device ID, as
-specified in patcherconfig.cpp.
