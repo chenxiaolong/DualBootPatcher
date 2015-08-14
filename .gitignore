@@ -12,3 +12,6 @@
 # Temporary files
 *.swp
 *.bak*
+
+# gcc map files
+*.map
