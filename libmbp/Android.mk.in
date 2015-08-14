@@ -75,7 +75,6 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_C_INCLUDES := \
 	$(LIBARCHIVE_DIR)/include \
 	$(EXTERNAL_DIR) \
-	$(EXTERNAL_DIR)/pugixml/src \
 	$(TOP_DIR)
 
 #LOCAL_CFLAGS := -Wall -Wextra -Werror -pedantic
@@ -92,8 +91,6 @@ LOCAL_CFLAGS += -Wno-error=comment
 LOCAL_CFLAGS += -DLIBMBP_VERSION=\"@MBP_VERSION@\"
 # minizip type safety
 LOCAL_CFLAGS += -DSTRICTZIPUNZIP
-# Disable unneeded pugixml features
-LOCAL_CFLAGS += -DPUGIXML_NO_EXCEPTIONS -DPUGIXML_NO_STL -DPUGIXML_NO_XPATH
 
 ifeq ($(MBP_MINI),true)
 LOCAL_CFLAGS += -DLIBMBP_MINI
