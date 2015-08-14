@@ -168,6 +168,33 @@ endif()
 
 
 ################################################################################
+# openssl for Android
+################################################################################
+
+set(OPENSSL_VER "1.0.2d")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/openssl-${OPENSSL_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/openssl-${OPENSSL_VER}_android.tar.bz2
+    EXPECTED_MD5 fd016c31bb28ba5a322be043a92af503
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/openssl)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/openssl
+    )
+
+    message(STATUS "Extracting openssl for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/openssl-${OPENSSL_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/openssl
+    )
+endif()
+
+
+################################################################################
 # procps-ng for Android
 ################################################################################
 
