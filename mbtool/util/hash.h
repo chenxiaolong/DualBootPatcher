@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,14 +21,14 @@
 
 #include <string>
 
-#include "external/sha.h"
+#include <openssl/sha.h>
 
 namespace mb
 {
 namespace util
 {
 
-bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_SIZE]);
+bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH]);
 
 }
 }

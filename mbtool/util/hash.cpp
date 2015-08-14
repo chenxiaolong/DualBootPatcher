@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -40,7 +40,7 @@ typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
  *
  * \return true on success, false on failure and errno set appropriately
  */
-bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_SIZE])
+bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH])
 {
     file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
     if (!fp) {
@@ -52,10 +52,16 @@ bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_SIZE])
     size_t n;
 
     SHA_CTX ctx;
-    SHA_init(&ctx);
+    if (!SHA1_Init(&ctx)) {
+        LOGE("openssl: SHA1_Init() failed");
+        return false;
+    }
 
     while ((n = fread(buf, 1, sizeof(buf), fp.get())) > 0) {
-        SHA_update(&ctx, buf, n);
+        if (!SHA1_Update(&ctx, buf, n)) {
+            LOGE("openssl: SHA1_Update() failed");
+            return false;
+        }
         if (n < sizeof(buf)) {
             break;
         }
@@ -67,7 +73,10 @@ bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_SIZE])
         return false;
     }
 
-    memcpy(digest, SHA_final(&ctx), SHA_DIGEST_SIZE);
+    if (!SHA1_Final(digest, &ctx)) {
+        LOGE("openssl: SHA1_Final() failed");
+        return false;
+    }
 
     return true;
 }

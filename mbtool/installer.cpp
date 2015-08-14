@@ -1099,7 +1099,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         return ProceedState::Fail;
     }
 
-    std::string digest = util::hex_string(_boot_hash, SHA_DIGEST_SIZE);
+    std::string digest = util::hex_string(_boot_hash, SHA_DIGEST_LENGTH);
     LOGD("Boot partition SHA1sum: %s", digest.c_str());
 
     // Save a copy of the boot image that we'll restore if the installation fails
@@ -1268,19 +1268,19 @@ Installer::ProceedState Installer::install_stage_finish()
     LOGD("[Installer] Finalization stage");
 
     // Calculate SHA1 hash of the boot partition after installation
-    unsigned char new_hash[SHA_DIGEST_SIZE];
+    unsigned char new_hash[SHA_DIGEST_LENGTH];
     if (!util::sha1_hash(_boot_block_dev, new_hash)) {
         display_msg("Failed to compute sha1sum of boot partition");
         return ProceedState::Fail;
     }
 
-    std::string old_digest = util::hex_string(_boot_hash, SHA_DIGEST_SIZE);
-    std::string new_digest = util::hex_string(new_hash, SHA_DIGEST_SIZE);
+    std::string old_digest = util::hex_string(_boot_hash, SHA_DIGEST_LENGTH);
+    std::string new_digest = util::hex_string(new_hash, SHA_DIGEST_LENGTH);
     LOGD("Old boot partition SHA1sum: %s", old_digest.c_str());
     LOGD("New boot partition SHA1sum: %s", new_digest.c_str());
 
     // Set kernel if it was changed
-    if (memcmp(_boot_hash, new_hash, SHA_DIGEST_SIZE) != 0) {
+    if (memcmp(_boot_hash, new_hash, SHA_DIGEST_LENGTH) != 0) {
         display_msg("Boot partition was modified. Setting kernel");
 
         mbp::BootImage bi;

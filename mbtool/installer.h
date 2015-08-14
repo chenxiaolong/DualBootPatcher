@@ -77,7 +77,7 @@ protected:
     std::string _device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
-    unsigned char _boot_hash[SHA_DIGEST_SIZE];
+    unsigned char _boot_hash[SHA_DIGEST_LENGTH];
     std::shared_ptr<Rom> _rom;
 
     std::unordered_map<std::string, std::string> _prop;
