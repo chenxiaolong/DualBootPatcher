@@ -49,13 +49,6 @@ public:
 
     virtual bool patchFiles(const std::string &directory) override;
 
-    // These are public so other patchers can use them
-    static void replaceMountLines(std::vector<std::string> *lines, Device *device);
-    static void replaceUnmountLines(std::vector<std::string> *lines, Device *device);
-    static void replaceFormatLines(std::vector<std::string> *lines, Device *device);
-    static void fixBlockUpdateLines(std::vector<std::string> *lines, Device *device);
-    static void fixImageExtractLines(std::vector<std::string> *lines, Device *device);
-
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;

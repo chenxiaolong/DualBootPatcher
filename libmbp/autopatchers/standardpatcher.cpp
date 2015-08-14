@@ -19,9 +19,11 @@
 
 #include "autopatchers/standardpatcher.h"
 
-#include <regex>
+#include <cstring>
 
+#include "edify/tokenizer.h"
 #include "private/fileutils.h"
+#include "private/logging.h"
 #include "private/stringutils.h"
 
 
@@ -45,11 +47,11 @@ const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
 
 #define MOUNT_FMT \
-        "run_program(\"/update-binary-tool\", \"mount\", \"%s\");"
+        "run_program(\"/update-binary-tool\", \"mount\", \"%s\")"
 #define UNMOUNT_FMT \
-        "run_program(\"/update-binary-tool\", \"unmount\", \"%s\");"
+        "run_program(\"/update-binary-tool\", \"unmount\", \"%s\")"
 #define FORMAT_FMT \
-        "run_program(\"/update-binary-tool\", \"format\", \"%s\");"
+        "run_program(\"/update-binary-tool\", \"format\", \"%s\")"
 
 
 StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
@@ -84,31 +86,6 @@ std::vector<std::string> StandardPatcher::existingFiles() const
     return { UpdaterScript };
 }
 
-bool StandardPatcher::patchFiles(const std::string &directory)
-{
-    std::string contents;
-
-    FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
-
-    if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
-        // Ignore any script with a shebang line
-        return true;
-    }
-
-    std::vector<std::string> lines = StringUtils::split(contents, '\n');
-
-    replaceMountLines(&lines, m_impl->info->device());
-    replaceUnmountLines(&lines, m_impl->info->device());
-    replaceFormatLines(&lines, m_impl->info->device());
-    fixBlockUpdateLines(&lines, m_impl->info->device());
-    fixImageExtractLines(&lines, m_impl->info->device());
-
-    contents = StringUtils::join(lines, "\n");
-    FileUtils::writeFromString(directory + "/" + UpdaterScript, contents);
-
-    return true;
-}
-
 static bool findItemsInString(const std::string &haystack,
                               const std::vector<std::string> &needles)
 {
@@ -121,190 +98,590 @@ static bool findItemsInString(const std::string &haystack,
     return false;
 }
 
-#define RE_FUNC(name, args)     "(^|[^a-z])" name "\\s*\\(\\s*" args "[^\\)]*\\)"
-#define RE_ARG(x)               "\"" x "\""
-#define RE_ARG_ANY              "[^\"]*"
-#define RE_ARG_SEP              "\\s*,\\s*"
-
-/*!
-    \brief Change partition mounting lines to be multiboot-compatible
-
-    \param lines Container holding strings of lines in updater-script file
-    \param device Target device (needed for /dev names)
- */
-void StandardPatcher::replaceMountLines(std::vector<std::string> *lines,
-                                        Device *device)
+static bool findFunction(const std::vector<EdifyToken *>::iterator begin,
+                         const std::vector<EdifyToken *>::iterator end,
+                         std::vector<EdifyToken *>::iterator *outFuncName,
+                         std::vector<EdifyToken *>::iterator *outLeftParen,
+                         std::vector<EdifyToken *>::iterator *outRightParen)
 {
-    auto const systemDevs = device->systemBlockDevs();
-    auto const cacheDevs = device->cacheBlockDevs();
-    auto const dataDevs = device->dataBlockDevs();
+    std::vector<EdifyToken *>::iterator funcName;
+    std::vector<EdifyToken *>::iterator leftParen;
+    std::vector<EdifyToken *>::iterator rightParen;
 
-    static auto const re1 = std::regex(
-            RE_FUNC("mount", ""));
-    static auto const re2 = std::regex(
-            RE_FUNC("run_program",
-                    RE_ARG(RE_ARG_ANY "busybox")
-                    RE_ARG_SEP
-                    RE_ARG("mount")));
-    static auto const re3 = std::regex(
-            RE_FUNC("run_program",
-                    RE_ARG(RE_ARG_ANY "/mount")));
-
-    for (auto it = lines->begin(); it != lines->end(); ++it) {
-        bool isMountLine = std::regex_search(*it, re1)
-                || std::regex_search(*it, re2)
-                || std::regex_search(*it, re3);
-
-        if (isMountLine) {
-            bool isSystem = it->find("/system") != std::string::npos
-                    || findItemsInString(*it, systemDevs);
-            bool isCache = it->find("/cache") != std::string::npos
-                    || findItemsInString(*it, cacheDevs);
-            bool isData = it->find("/data") != std::string::npos
-                    || it->find("/userdata") != std::string::npos
-                    || findItemsInString(*it, dataDevs);
-
-            if (isSystem) {
-                *it = StringUtils::format(MOUNT_FMT, "/system");
-            } else if (isCache) {
-                *it = StringUtils::format(MOUNT_FMT, "/cache");
-            } else if (isData) {
-                *it = StringUtils::format(MOUNT_FMT, "/data");
-            }
-        }
-    }
-}
-
-/*!
-    \brief Change partition unmounting lines to be multiboot-compatible
-
-    \param lines Container holding strings of lines in updater-script file
-    \param device Target device (needed for /dev names)
- */
-void StandardPatcher::replaceUnmountLines(std::vector<std::string> *lines,
-                                          Device *device)
-{
-    auto const systemDevs = device->systemBlockDevs();
-    auto const cacheDevs = device->cacheBlockDevs();
-    auto const dataDevs = device->dataBlockDevs();
-
-    static auto const re1 = std::regex(
-            RE_FUNC("unmount", ""));
-    static auto const re2 = std::regex(
-            RE_FUNC("run_program",
-                    RE_ARG(RE_ARG_ANY "busybox")
-                    RE_ARG_SEP
-                    RE_ARG("umount")));
-
-    for (auto it = lines->begin(); it != lines->end(); ++it) {
-        // Quick hack for CM12
-        if (it->find("ifelse(is_mounted(\"/system\"), unmount(\"/system\"));")
-                != std::string::npos) {
-            it = lines->erase(it);
+    for (auto it = begin; it != end; ++it) {
+        // Find string representing the function name
+        if ((*it)->type() != EdifyTokenType::String) {
             continue;
         }
 
-        bool isUnmountLine = std::regex_search(*it, re1)
-                || std::regex_search(*it, re2);
+        funcName = it;
 
-        if (isUnmountLine) {
-            bool isSystem = it->find("/system") != std::string::npos
-                    || findItemsInString(*it, systemDevs);
-            bool isCache = it->find("/cache") != std::string::npos
-                    || findItemsInString(*it, cacheDevs);
-            bool isData = it->find("/data") != std::string::npos
-                    || it->find("/userdata") != std::string::npos
-                    || findItemsInString(*it, dataDevs);
+        bool foundLeftParen = false;
+        bool foundRightParen = false;
 
-            if (isSystem) {
-                *it = StringUtils::format(UNMOUNT_FMT, "/system");
-            } else if (isCache) {
-                *it = StringUtils::format(UNMOUNT_FMT, "/cache");
-            } else if (isData) {
-                *it = StringUtils::format(UNMOUNT_FMT, "/data");
+        // Barring any whitespace, newlines, or comments, the function name
+        // should be followed by a left parenthesis
+        for (auto it2 = it + 1; it2 != end; ++it2) {
+            if ((*it2)->type() == EdifyTokenType::Whitespace
+                    || (*it2)->type() == EdifyTokenType::Newline
+                    || (*it2)->type() == EdifyTokenType::Comment) {
+                continue;
+            } else if ((*it2)->type() == EdifyTokenType::LeftParen) {
+                foundLeftParen = true;
+                leftParen = it2;
+            }
+            break;
+        }
+
+        // If a left parenthesis was not found, then the string token was not
+        // a function name
+        if (!foundLeftParen) {
+            continue;
+        }
+
+        // Left for matching right parenthesis
+        std::size_t depth = 0;
+
+        for (auto it2 = leftParen; it2 != end; ++it2) {
+            if ((*it2)->type() == EdifyTokenType::LeftParen) {
+                ++depth;
+            } else if ((*it2)->type() == EdifyTokenType::RightParen) {
+                --depth;
+            }
+            if (depth == 0) {
+                foundRightParen = true;
+                rightParen = it2;
+                break;
             }
         }
+
+        // If a right parenthesis was not found, but the function name and left
+        // parenthesis were found, then assume there's a syntax error and bail
+        // out
+        if (!foundRightParen) {
+            return false;
+        }
+
+        *outFuncName = funcName;
+        *outLeftParen = leftParen;
+        *outRightParen = rightParen;
+
+        return true;
     }
+
+    return false;
 }
 
 /*!
-    \brief Change partition formatting lines to be multiboot-compatible
-
-    \param lines Container holding strings of lines in updater-script file
-    \param device Target device (needed for /dev names)
+ * \brief Replace edify function
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token of the replaced function
+ * \param leftParen Left parenthesis token of the replaced function
+ * \param rightParen Right parenthesis token of the replaced function
+ * \param replacement Replacement edify function (in string form)
+ *
+ * \return New iterator pointing to position *after* the right parenthesis of
+ *         the replaced function. Returns tokens->end() if the replacement
+ *         string could not be tokenized.
  */
-void StandardPatcher::replaceFormatLines(std::vector<std::string> *lines,
-                                         Device *device)
+static std::vector<EdifyToken *>::iterator
+replaceFunction(std::vector<EdifyToken *> *tokens,
+                std::vector<EdifyToken *>::iterator funcName,
+                std::vector<EdifyToken *>::iterator leftParen,
+                std::vector<EdifyToken *>::iterator rightParen,
+                const std::string &replacement)
 {
+    // Included for completeness' sake
+    (void) leftParen;
+
+    std::vector<EdifyToken *> replacementTokens;
+    bool result = EdifyTokenizer::tokenize(
+            replacement.data(), replacement.size(), &replacementTokens);
+    if (!result) {
+        FLOGE("Failed to tokenize replacement function string: %s",
+              replacement.c_str());
+        return tokens->end();
+    }
+
+    // Deallocate replaced tokens
+    for (auto it = funcName; it != rightParen; ++it) {
+        delete *it;
+    }
+    delete *rightParen;
+
+    // Remove replaced tokens
+    auto it = tokens->erase(funcName, rightParen);
+    it = tokens->erase(it);
+
+    // Add replacement tokens
+    it = tokens->insert(it, replacementTokens.begin(), replacementTokens.end());
+
+    // Move iterator to the end of the replaced tokens
+    it += replacementTokens.size();
+
+    return it;
+}
+
+/*!
+ * \brief Replace edify mount() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ * \param cacheDevs List of cache partition block devices
+ * \param dataDevs List of data partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyMount(std::vector<EdifyToken *> *tokens,
+                  const std::vector<EdifyToken *>::iterator funcName,
+                  const std::vector<EdifyToken *>::iterator leftParen,
+                  const std::vector<EdifyToken *>::iterator rightParen,
+                  const std::vector<std::string> &systemDevs,
+                  const std::vector<std::string> &cacheDevs,
+                  const std::vector<std::string> &dataDevs)
+{
+    // For the mount() edify function, replace with the corresponding
+    // update-binary-tool command
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        const std::string str = token->string();
+
+        bool isSystem = str.find("/system") != std::string::npos
+                || findItemsInString(str, systemDevs);
+        bool isCache = str.find("/cache") != std::string::npos
+                || findItemsInString(str, cacheDevs);
+        bool isData = str.find("/data") != std::string::npos
+                || str.find("/userdata") != std::string::npos
+                || findItemsInString(str, dataDevs);
+
+        if (isSystem) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(MOUNT_FMT, "/system"));
+        } else if (isCache) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(MOUNT_FMT, "/cache"));
+        } else if (isData) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(MOUNT_FMT, "/data"));
+        }
+    }
+    return rightParen + 1;
+}
+
+/*!
+ * \brief Replace edify unmount() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ * \param cacheDevs List of cache partition block devices
+ * \param dataDevs List of data partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyUnmount(std::vector<EdifyToken *> *tokens,
+                    const std::vector<EdifyToken *>::iterator funcName,
+                    const std::vector<EdifyToken *>::iterator leftParen,
+                    const std::vector<EdifyToken *>::iterator rightParen,
+                    const std::vector<std::string> &systemDevs,
+                    const std::vector<std::string> &cacheDevs,
+                    const std::vector<std::string> &dataDevs)
+{
+    // For the unmount() edify function, replace with the corresponding
+    // update-binary-tool command
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        const std::string str = token->string();
+
+        bool isSystem = str.find("/system") != std::string::npos
+                || findItemsInString(str, systemDevs);
+        bool isCache = str.find("/cache") != std::string::npos
+                || findItemsInString(str, cacheDevs);
+        bool isData = str.find("/data") != std::string::npos
+                || str.find("/userdata") != std::string::npos
+                || findItemsInString(str, dataDevs);
+
+        if (isSystem) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(UNMOUNT_FMT, "/system"));
+        } else if (isCache) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(UNMOUNT_FMT, "/cache"));
+        } else if (isData) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(UNMOUNT_FMT, "/data"));
+        }
+    }
+    return rightParen + 1;
+}
+
+/*!
+ * \brief Replace edify run_program() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ * \param cacheDevs List of cache partition block devices
+ * \param dataDevs List of data partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
+                       const std::vector<EdifyToken *>::iterator funcName,
+                       const std::vector<EdifyToken *>::iterator leftParen,
+                       const std::vector<EdifyToken *>::iterator rightParen,
+                       const std::vector<std::string> &systemDevs,
+                       const std::vector<std::string> &cacheDevs,
+                       const std::vector<std::string> &dataDevs)
+{
+    bool foundMount = false;
+    bool foundUmount = false;
+    bool foundFormatSh = false;
+    bool foundMke2fs = false;
+    bool isSystem = false;
+    bool isCache = false;
+    bool isData = false;
+
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        const std::string str = token->string();
+        const std::string unescaped = token->unescapedString();
+
+        foundMount = StringUtils::ends_with(unescaped, "mount");
+        foundUmount = StringUtils::ends_with(unescaped, "umount");
+        foundFormatSh = StringUtils::ends_with(unescaped, "/format.sh");
+        foundMke2fs = StringUtils::ends_with(unescaped, "/mke2fs");
+
+        isSystem = str.find("/system") != std::string::npos
+                || findItemsInString(str, systemDevs);
+        isCache = str.find("/cache") != std::string::npos
+                || findItemsInString(str, cacheDevs);
+        isData = str.find("/data") != std::string::npos
+                || str.find("/userdata") != std::string::npos
+                || findItemsInString(str, dataDevs);
+    }
+
+    if (foundUmount) {
+        if (isSystem) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(UNMOUNT_FMT, "/system"));
+        } else if (isCache) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(UNMOUNT_FMT, "/cache"));
+        } else if (isData) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(UNMOUNT_FMT, "/data"));
+        }
+    } else if (foundMount) {
+        if (isSystem) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(MOUNT_FMT, "/system"));
+        } else if (isCache) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(MOUNT_FMT, "/cache"));
+        } else if (isData) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(MOUNT_FMT, "/data"));
+        }
+    } else if (foundFormatSh) {
+        return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/data"));
+    } else if (foundMke2fs) {
+        if (isSystem) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/system"));
+        } else if (isCache) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/cache"));
+        } else if (isData) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/data"));
+        }
+    }
+
+    return rightParen + 1;
+}
+
+/*!
+ * \brief Replace edify delete_recursive() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ * \param cacheDevs List of cache partition block devices
+ * \param dataDevs List of data partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyDeleteRecursive(std::vector<EdifyToken *> *tokens,
+                            const std::vector<EdifyToken *>::iterator funcName,
+                            const std::vector<EdifyToken *>::iterator leftParen,
+                            const std::vector<EdifyToken *>::iterator rightParen)
+{
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        const std::string unescaped = token->unescapedString();
+
+        if (unescaped == "/system" || unescaped == "/system/") {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/system"));
+        } else if (unescaped == "/cache" || unescaped == "/cache/") {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/cache"));
+        }
+    }
+    return rightParen + 1;
+}
+
+/*!
+ * \brief Replace edify format() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ * \param cacheDevs List of cache partition block devices
+ * \param dataDevs List of data partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyFormat(std::vector<EdifyToken *> *tokens,
+                   const std::vector<EdifyToken *>::iterator funcName,
+                   const std::vector<EdifyToken *>::iterator leftParen,
+                   const std::vector<EdifyToken *>::iterator rightParen,
+                   const std::vector<std::string> &systemDevs,
+                   const std::vector<std::string> &cacheDevs,
+                   const std::vector<std::string> &dataDevs)
+{
+    // For the format() edify function, replace with the corresponding
+    // update-binary-tool command
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        const std::string str = token->string();
+
+        bool isSystem = str.find("/system") != std::string::npos
+                || findItemsInString(str, systemDevs);
+        bool isCache = str.find("/cache") != std::string::npos
+                || findItemsInString(str, cacheDevs);
+        bool isData = str.find("/data") != std::string::npos
+                || str.find("/userdata") != std::string::npos
+                || findItemsInString(str, dataDevs);
+
+        if (isSystem) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/system"));
+        } else if (isCache) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/cache"));
+        } else if (isData) {
+            return replaceFunction(tokens, funcName, leftParen, rightParen,
+                                   StringUtils::format(FORMAT_FMT, "/data"));
+        }
+    }
+    return rightParen + 1;
+}
+
+/*!
+ * \brief Replace edify block_image_update() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyBlockImageUpdate(std::vector<EdifyToken *> *tokens,
+                             const std::vector<EdifyToken *>::iterator funcName,
+                             const std::vector<EdifyToken *>::iterator leftParen,
+                             const std::vector<EdifyToken *>::iterator rightParen,
+                             const std::vector<std::string> &systemDevs)
+{
+    (void) tokens;
+    (void) funcName;
+
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        std::string unescaped = token->unescapedString();
+
+        // References to the system partition should become /mb/system.img
+        for (auto const &dev : systemDevs) {
+            if (unescaped.find(dev) != std::string::npos) {
+                StringUtils::replace_all(&unescaped, dev, "/mb/system.img");
+                delete *it;
+                *it = new EdifyTokenString(
+                        std::move(unescaped), EdifyTokenString::MakeQuoted);
+                break;
+            }
+        }
+    }
+    return rightParen + 1;
+}
+
+/*!
+ * \brief Replace edify package_extract_file() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyPackageExtractFile(std::vector<EdifyToken *> *tokens,
+                               const std::vector<EdifyToken *>::iterator funcName,
+                               const std::vector<EdifyToken *>::iterator leftParen,
+                               const std::vector<EdifyToken *>::iterator rightParen,
+                               const std::vector<std::string> &systemDevs)
+{
+    (void) tokens;
+    (void) funcName;
+
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        std::string unescaped = token->unescapedString();
+
+        // References to the system partition should become /mb/system.img
+        for (auto const &dev : systemDevs) {
+            if (unescaped.find(dev) != std::string::npos) {
+                StringUtils::replace_all(&unescaped, dev, "/mb/system.img");
+                delete *it;
+                *it = new EdifyTokenString(
+                        std::move(unescaped), EdifyTokenString::MakeQuoted);
+                break;
+            }
+        }
+    }
+    return rightParen + 1;
+}
+
+bool StandardPatcher::patchFiles(const std::string &directory)
+{
+    std::string contents;
+
+    FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
+
+    if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
+        // Ignore any script with a shebang line
+        return true;
+    }
+
+    std::vector<EdifyToken *> tokens;
+    bool result = EdifyTokenizer::tokenize(
+            contents.data(), contents.size(), &tokens);
+    if (!result) {
+        LOGE("Failed to tokenize updater-script");
+        return false;
+    }
+
+    Device *device = m_impl->info->device();
     auto const systemDevs = device->systemBlockDevs();
     auto const cacheDevs = device->cacheBlockDevs();
     auto const dataDevs = device->dataBlockDevs();
 
-    static auto const re1 = std::regex(RE_FUNC("format", ""));
-    static auto const re2 = std::regex(
-            RE_FUNC("delete_recursive", RE_ARG("/system")));
-    static auto const re3 = std::regex(
-            RE_FUNC("delete_recursive", RE_ARG("/cache")));
-    static auto const re4 = std::regex(
-            RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/format.sh")));
-    static auto const re5 = std::regex(
-            RE_FUNC("run_program", RE_ARG(RE_ARG_ANY "/mke2fs")));
+    std::vector<EdifyToken *>::iterator begin = tokens.begin();
+    std::vector<EdifyToken *>::iterator end = tokens.end();
 
-    for (auto it = lines->begin(); it != lines->end(); ++it) {
-        if (std::regex_search(*it, re1) || std::regex_search(*it, re5)) {
-            bool isSystem = it->find("/system") != std::string::npos
-                    || findItemsInString(*it, systemDevs);
-            bool isCache = it->find("/cache") != std::string::npos
-                    || findItemsInString(*it, cacheDevs);
-            bool isData = it->find("/data") != std::string::npos
-                    || it->find("/userdata") != std::string::npos
-                    || findItemsInString(*it, dataDevs);
+    // TODO: Catch errors
+    while (true) {
+        // Need to find:
+        // 1. String containing function name
+        // 2. Left parenthesis for the function
+        // 3. Right parenthesis for the function
+        std::vector<EdifyToken *>::iterator funcName;
+        std::vector<EdifyToken *>::iterator leftParen;
+        std::vector<EdifyToken *>::iterator rightParen;
 
-            if (isSystem) {
-                *it = StringUtils::format(FORMAT_FMT, "/system");
-            } else if (isCache) {
-                *it = StringUtils::format(FORMAT_FMT, "/cache");
-            } else if (isData) {
-                *it = StringUtils::format(FORMAT_FMT, "/data");
-            }
-        } else if (std::regex_search(*it, re2)) {
-            *it = StringUtils::format(FORMAT_FMT, "/system");
-        } else if (std::regex_search(*it, re3)) {
-            *it = StringUtils::format(FORMAT_FMT, "/cache");
-        } else if (std::regex_search(*it, re4)) {
-            *it = StringUtils::format(FORMAT_FMT, "/data");
+        if (!findFunction(begin, end, &funcName, &leftParen, &rightParen)) {
+            break;
+        }
+
+        // Tokens (types are checked by findFunction())
+        EdifyTokenString *tFuncName = (EdifyTokenString *)(*funcName);
+
+        if (tFuncName->unescapedString() == "mount") {
+            begin = replaceEdifyMount(&tokens, funcName, leftParen, rightParen,
+                                      systemDevs, cacheDevs, dataDevs);
+        } else if (tFuncName->unescapedString() == "unmount") {
+            begin = replaceEdifyUnmount(&tokens, funcName, leftParen, rightParen,
+                                        systemDevs, cacheDevs, dataDevs);
+        } else if (tFuncName->unescapedString() == "run_program") {
+            begin = replaceEdifyRunProgram(&tokens, funcName, leftParen, rightParen,
+                                           systemDevs, cacheDevs, dataDevs);
+        } else if (tFuncName->unescapedString() == "delete_recursive") {
+            begin = replaceEdifyDeleteRecursive(&tokens, funcName, leftParen, rightParen);
+        } else if (tFuncName->unescapedString() == "format") {
+            begin = replaceEdifyFormat(&tokens, funcName, leftParen, rightParen,
+                                       systemDevs, cacheDevs, dataDevs);
+        } else if (tFuncName->unescapedString() == "block_image_update") {
+            begin = replaceEdifyBlockImageUpdate(&tokens, funcName, leftParen, rightParen,
+                                                 systemDevs);
+        } else if (tFuncName->unescapedString() == "package_extract_file") {
+            begin = replaceEdifyPackageExtractFile(&tokens, funcName, leftParen, rightParen,
+                                                   systemDevs);
+        } else {
+            begin = rightParen + 1;
         }
     }
-}
 
-void StandardPatcher::fixBlockUpdateLines(std::vector<std::string> *lines,
-                                          Device *device)
-{
-    auto const systemDevs = device->systemBlockDevs();
+    //EdifyTokenizer::dump(tokens);
 
-    for (auto it = lines->begin(); it != lines->end(); ++it) {
-        if (it->find("block_image_update") != std::string::npos) {
-            // References to the system partition should become /mb/system.img
-            for (auto const &dev : systemDevs) {
-                StringUtils::replace_all(&(*it), dev, "/mb/system.img");
-            }
-        }
+    FileUtils::writeFromString(directory + "/" + UpdaterScript,
+                               EdifyTokenizer::untokenize(tokens));
+
+    for (EdifyToken *t : tokens) {
+        delete t;
     }
-}
 
-void StandardPatcher::fixImageExtractLines(std::vector<std::string> *lines,
-                                           Device *device)
-{
-    auto const systemDevs = device->systemBlockDevs();
-
-    for (auto it = lines->begin(); it != lines->end(); ++it) {
-        if (it->find("package_extract_file") != std::string::npos) {
-            // References to the system partition should become /mb/system.img
-            for (auto const &dev : systemDevs) {
-                StringUtils::replace_all(&(*it), dev, "/mb/system.img");
-            }
-        }
-    }
+    return true;
 }
 
 }

@@ -27,6 +27,8 @@ set(MBP_SOURCES
     bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
     bootimage/sonyelfformat.cpp
+    edify/tokenizer.cpp
+    # C wrapper API
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
