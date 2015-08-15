@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class CopyRequest extends Table {
-  public static CopyRequest getRootAsCopyRequest(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new CopyRequest()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static CopyRequest getRootAsCopyRequest(ByteBuffer _bb) { return getRootAsCopyRequest(_bb, new CopyRequest()); }
+  public static CopyRequest getRootAsCopyRequest(ByteBuffer _bb, CopyRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public CopyRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String source() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }

@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class Response extends Table {
-  public static Response getRootAsResponse(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new Response()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static Response getRootAsResponse(ByteBuffer _bb) { return getRootAsResponse(_bb, new Response()); }
+  public static Response getRootAsResponse(ByteBuffer _bb, Response obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public Response __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public short type() { int o = __offset(4); return o != 0 ? bb.getShort(o + bb_pos) : 0; }

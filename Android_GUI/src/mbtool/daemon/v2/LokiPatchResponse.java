@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class LokiPatchResponse extends Table {
-  public static LokiPatchResponse getRootAsLokiPatchResponse(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new LokiPatchResponse()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static LokiPatchResponse getRootAsLokiPatchResponse(ByteBuffer _bb) { return getRootAsLokiPatchResponse(_bb, new LokiPatchResponse()); }
+  public static LokiPatchResponse getRootAsLokiPatchResponse(ByteBuffer _bb, LokiPatchResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public LokiPatchResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
 

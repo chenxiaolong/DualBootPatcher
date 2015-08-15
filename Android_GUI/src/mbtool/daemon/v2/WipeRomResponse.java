@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class WipeRomResponse extends Table {
-  public static WipeRomResponse getRootAsWipeRomResponse(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new WipeRomResponse()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static WipeRomResponse getRootAsWipeRomResponse(ByteBuffer _bb) { return getRootAsWipeRomResponse(_bb, new WipeRomResponse()); }
+  public static WipeRomResponse getRootAsWipeRomResponse(ByteBuffer _bb, WipeRomResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public WipeRomResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public short succeeded(int j) { int o = __offset(4); return o != 0 ? bb.getShort(__vector(o) + j * 2) : 0; }

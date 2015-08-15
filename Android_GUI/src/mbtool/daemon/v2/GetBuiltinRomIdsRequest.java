@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class GetBuiltinRomIdsRequest extends Table {
-  public static GetBuiltinRomIdsRequest getRootAsGetBuiltinRomIdsRequest(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new GetBuiltinRomIdsRequest()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static GetBuiltinRomIdsRequest getRootAsGetBuiltinRomIdsRequest(ByteBuffer _bb) { return getRootAsGetBuiltinRomIdsRequest(_bb, new GetBuiltinRomIdsRequest()); }
+  public static GetBuiltinRomIdsRequest getRootAsGetBuiltinRomIdsRequest(ByteBuffer _bb, GetBuiltinRomIdsRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public GetBuiltinRomIdsRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
 

@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class GetVersionResponse extends Table {
-  public static GetVersionResponse getRootAsGetVersionResponse(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new GetVersionResponse()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static GetVersionResponse getRootAsGetVersionResponse(ByteBuffer _bb) { return getRootAsGetVersionResponse(_bb, new GetVersionResponse()); }
+  public static GetVersionResponse getRootAsGetVersionResponse(ByteBuffer _bb, GetVersionResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public GetVersionResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String version() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }

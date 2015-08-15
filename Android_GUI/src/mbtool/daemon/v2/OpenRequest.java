@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class OpenRequest extends Table {
-  public static OpenRequest getRootAsOpenRequest(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new OpenRequest()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static OpenRequest getRootAsOpenRequest(ByteBuffer _bb) { return getRootAsOpenRequest(_bb, new OpenRequest()); }
+  public static OpenRequest getRootAsOpenRequest(ByteBuffer _bb, OpenRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public OpenRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String path() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }

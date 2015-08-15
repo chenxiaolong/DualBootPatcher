@@ -8,12 +8,12 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class GetBuiltinRomIdsResponse extends Table {
-  public static GetBuiltinRomIdsResponse getRootAsGetBuiltinRomIdsResponse(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new GetBuiltinRomIdsResponse()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static GetBuiltinRomIdsResponse getRootAsGetBuiltinRomIdsResponse(ByteBuffer _bb) { return getRootAsGetBuiltinRomIdsResponse(_bb, new GetBuiltinRomIdsResponse()); }
+  public static GetBuiltinRomIdsResponse getRootAsGetBuiltinRomIdsResponse(ByteBuffer _bb, GetBuiltinRomIdsResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public GetBuiltinRomIdsResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String romIds(int j) { int o = __offset(4); return o != 0 ? __string(__vector(o) + j * 4) : null; }
   public int romIdsLength() { int o = __offset(4); return o != 0 ? __vector_len(o) : 0; }
-  public ByteBuffer romIdsAsByteBuffer() { return __vector_as_bytebuffer(4, 4); }
 
   public static int createGetBuiltinRomIdsResponse(FlatBufferBuilder builder,
       int rom_ids) {

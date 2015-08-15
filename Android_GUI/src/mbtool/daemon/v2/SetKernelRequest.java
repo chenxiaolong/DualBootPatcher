@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class SetKernelRequest extends Table {
-  public static SetKernelRequest getRootAsSetKernelRequest(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new SetKernelRequest()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static SetKernelRequest getRootAsSetKernelRequest(ByteBuffer _bb) { return getRootAsSetKernelRequest(_bb, new SetKernelRequest()); }
+  public static SetKernelRequest getRootAsSetKernelRequest(ByteBuffer _bb, SetKernelRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public SetKernelRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String romId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }

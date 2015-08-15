@@ -457,7 +457,7 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.SWITCH_ROM);
             SwitchRomResponse response = fbresponse.switchRomResponse();
 
-            return response.success() != 0 ? SwitchRomResult.SUCCEEDED : SwitchRomResult.FAILED;
+            return response.success() ? SwitchRomResult.SUCCEEDED : SwitchRomResult.FAILED;
         } catch (IOException e) {
             disconnect();
             throw e;
@@ -514,7 +514,7 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.SET_KERNEL);
             SetKernelResponse response = fbresponse.setKernelResponse();
 
-            return response.success() != 0 ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
+            return response.success() ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
         } catch (IOException e) {
             disconnect();
             throw e;
@@ -551,7 +551,7 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.REBOOT);
             RebootResponse response = fbresponse.rebootResponse();
 
-            return response.success() != 0;
+            return response.success();
         } catch (IOException e) {
             disconnect();
             throw e;
@@ -591,7 +591,7 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.OPEN);
             OpenResponse response = fbresponse.openResponse();
 
-            if (response.success() == 0) {
+            if (!response.success()) {
                 Log.e(TAG, "Failed to open file: " + response.errorMsg());
                 return null;
             }
@@ -649,7 +649,7 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.COPY);
             CopyResponse response = fbresponse.copyResponse();
 
-            if (response.success() == 0) {
+            if (!response.success()) {
                 Log.e(TAG, "Failed to copy from " + source + " to " + target + ": " +
                         response.errorMsg());
                 return false;
@@ -697,7 +697,7 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.CHMOD);
             ChmodResponse response = fbresponse.chmodResponse();
 
-            if (response.success() == 0) {
+            if (!response.success()) {
                 Log.e(TAG, "Failed to chmod " + filename + ": " + response.errorMsg());
                 return false;
             }

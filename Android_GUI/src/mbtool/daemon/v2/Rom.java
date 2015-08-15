@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class Rom extends Table {
-  public static Rom getRootAsRom(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new Rom()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static Rom getRootAsRom(ByteBuffer _bb) { return getRootAsRom(_bb, new Rom()); }
+  public static Rom getRootAsRom(ByteBuffer _bb, Rom obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public Rom __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String id() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }

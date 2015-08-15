@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class GetCurrentRomResponse extends Table {
-  public static GetCurrentRomResponse getRootAsGetCurrentRomResponse(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new GetCurrentRomResponse()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static GetCurrentRomResponse getRootAsGetCurrentRomResponse(ByteBuffer _bb) { return getRootAsGetCurrentRomResponse(_bb, new GetCurrentRomResponse()); }
+  public static GetCurrentRomResponse getRootAsGetCurrentRomResponse(ByteBuffer _bb, GetCurrentRomResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public GetCurrentRomResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String romId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }

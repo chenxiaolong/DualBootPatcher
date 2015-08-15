@@ -8,7 +8,8 @@ import java.util.*;
 import com.google.flatbuffers.*;
 
 public class WipeRomRequest extends Table {
-  public static WipeRomRequest getRootAsWipeRomRequest(ByteBuffer _bb) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (new WipeRomRequest()).__init(_bb.getInt(_bb.position()) + _bb.position(), _bb); }
+  public static WipeRomRequest getRootAsWipeRomRequest(ByteBuffer _bb) { return getRootAsWipeRomRequest(_bb, new WipeRomRequest()); }
+  public static WipeRomRequest getRootAsWipeRomRequest(ByteBuffer _bb, WipeRomRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
   public WipeRomRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public String romId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
