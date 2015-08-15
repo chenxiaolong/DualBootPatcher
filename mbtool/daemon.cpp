@@ -41,6 +41,7 @@
 #include "sepolpatch.h"
 #include "switcher.h"
 #include "validcerts.h"
+#include "version.h"
 #include "util/copy.h"
 #include "util/delete.h"
 #include "util/finally.h"

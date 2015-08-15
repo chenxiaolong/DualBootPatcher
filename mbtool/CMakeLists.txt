@@ -1,6 +1,13 @@
 include(ExternalProject)
 
 configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
+    @ONLY
+)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+
+configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
     ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
     @ONLY

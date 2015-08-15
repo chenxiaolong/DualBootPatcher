@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -36,6 +36,7 @@
 #include "mount_fstab.h"
 #include "sepolpatch.h"
 #endif
+#include "version.h"
 
 #include "util/logging.h"
 

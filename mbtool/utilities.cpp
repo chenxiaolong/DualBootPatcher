@@ -34,6 +34,7 @@
 #include "romconfig.h"
 #include "roms.h"
 #include "switcher.h"
+#include "version.h"
 #include "util/delete.h"
 #include "util/file.h"
 #include "util/finally.h"
