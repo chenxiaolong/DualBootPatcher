@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(DualBootPatcher)
 set(MBP_VERSION_MAJOR 8)
 set(MBP_VERSION_MINOR 99)
-set(MBP_VERSION_PATCH 8)
+set(MBP_VERSION_PATCH 9)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
 # Allow version to be overridden in Jenkins
