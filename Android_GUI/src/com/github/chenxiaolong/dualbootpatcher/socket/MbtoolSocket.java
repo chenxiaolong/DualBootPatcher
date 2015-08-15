@@ -235,7 +235,7 @@ public class MbtoolSocket {
                 && CommandUtils.runRootCommand("mv /mbtool /mbtool.bak || :") == 0
                 && CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
                 && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
-                && CommandUtils.runRootCommand("mount -o remount,ro /") == 0
+                && CommandUtils.runRootCommand("mount -o remount,ro / || :") == 0
                 && CommandUtils.runRootCommand("/mbtool daemon --replace --daemonize") == 0;
     }
 
