@@ -94,7 +94,7 @@ namespace v2 {
 struct LokiPatchRequest;
 struct LokiPatchResponse;
 
-struct LokiPatchRequest : private flatbuffers::Table {
+struct LokiPatchRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
@@ -117,7 +117,7 @@ inline flatbuffers::Offset<LokiPatchRequest> CreateLokiPatchRequest(flatbuffers:
   return builder_.Finish();
 }
 
-struct LokiPatchResponse : private flatbuffers::Table {
+struct LokiPatchResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();

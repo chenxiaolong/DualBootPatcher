@@ -86,7 +86,7 @@ inline const char **EnumNamesOpenFlag() {
 
 inline const char *EnumNameOpenFlag(OpenFlag e) { return EnumNamesOpenFlag()[e]; }
 
-struct OpenRequest : private flatbuffers::Table {
+struct OpenRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *path() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::Vector<int16_t> *flags() const { return GetPointer<const flatbuffers::Vector<int16_t> *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
@@ -121,7 +121,7 @@ inline flatbuffers::Offset<OpenRequest> CreateOpenRequest(flatbuffers::FlatBuffe
   return builder_.Finish();
 }
 
-struct OpenResponse : private flatbuffers::Table {
+struct OpenResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t success() const { return GetField<uint8_t>(4, 0); }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {

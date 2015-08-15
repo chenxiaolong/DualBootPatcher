@@ -78,7 +78,7 @@ namespace v2 {
 struct CopyRequest;
 struct CopyResponse;
 
-struct CopyRequest : private flatbuffers::Table {
+struct CopyRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *source() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::String *target() const { return GetPointer<const flatbuffers::String *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
@@ -113,7 +113,7 @@ inline flatbuffers::Offset<CopyRequest> CreateCopyRequest(flatbuffers::FlatBuffe
   return builder_.Finish();
 }
 
-struct CopyResponse : private flatbuffers::Table {
+struct CopyResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t success() const { return GetField<uint8_t>(4, 0); }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {

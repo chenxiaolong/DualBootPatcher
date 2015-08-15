@@ -140,7 +140,7 @@ inline const char **EnumNamesResponseType() {
 
 inline const char *EnumNameResponseType(ResponseType e) { return EnumNamesResponseType()[e]; }
 
-struct Response : private flatbuffers::Table {
+struct Response FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   ResponseType type() const { return static_cast<ResponseType>(GetField<int16_t>(4, 0)); }
   const mbtool::daemon::v2::GetVersionResponse *get_version_response() const { return GetPointer<const mbtool::daemon::v2::GetVersionResponse *>(6); }
   const mbtool::daemon::v2::GetRomsListResponse *get_roms_list_response() const { return GetPointer<const mbtool::daemon::v2::GetRomsListResponse *>(8); }

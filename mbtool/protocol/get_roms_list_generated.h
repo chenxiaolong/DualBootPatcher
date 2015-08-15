@@ -22,7 +22,7 @@ struct Rom;
 struct GetRomsListRequest;
 struct GetRomsListResponse;
 
-struct Rom : private flatbuffers::Table {
+struct Rom FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *id() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::String *system_path() const { return GetPointer<const flatbuffers::String *>(6); }
   const flatbuffers::String *cache_path() const { return GetPointer<const flatbuffers::String *>(8); }
@@ -81,7 +81,7 @@ inline flatbuffers::Offset<Rom> CreateRom(flatbuffers::FlatBufferBuilder &_fbb,
   return builder_.Finish();
 }
 
-struct GetRomsListRequest : private flatbuffers::Table {
+struct GetRomsListRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
@@ -104,7 +104,7 @@ inline flatbuffers::Offset<GetRomsListRequest> CreateGetRomsListRequest(flatbuff
   return builder_.Finish();
 }
 
-struct GetRomsListResponse : private flatbuffers::Table {
+struct GetRomsListResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<Rom>> *roms() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Rom>> *>(4); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&

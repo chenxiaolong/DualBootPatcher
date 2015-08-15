@@ -117,7 +117,7 @@ inline const char **EnumNamesWipeTarget() {
 
 inline const char *EnumNameWipeTarget(WipeTarget e) { return EnumNamesWipeTarget()[e]; }
 
-struct WipeRomRequest : private flatbuffers::Table {
+struct WipeRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::Vector<int16_t> *targets() const { return GetPointer<const flatbuffers::Vector<int16_t> *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
@@ -152,7 +152,7 @@ inline flatbuffers::Offset<WipeRomRequest> CreateWipeRomRequest(flatbuffers::Fla
   return builder_.Finish();
 }
 
-struct WipeRomResponse : private flatbuffers::Table {
+struct WipeRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<int16_t> *succeeded() const { return GetPointer<const flatbuffers::Vector<int16_t> *>(4); }
   const flatbuffers::Vector<int16_t> *failed() const { return GetPointer<const flatbuffers::Vector<int16_t> *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {

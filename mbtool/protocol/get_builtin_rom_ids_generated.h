@@ -30,7 +30,7 @@ namespace v2 {
 struct GetBuiltinRomIdsRequest;
 struct GetBuiltinRomIdsResponse;
 
-struct GetBuiltinRomIdsRequest : private flatbuffers::Table {
+struct GetBuiltinRomIdsRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
@@ -53,7 +53,7 @@ inline flatbuffers::Offset<GetBuiltinRomIdsRequest> CreateGetBuiltinRomIdsReques
   return builder_.Finish();
 }
 
-struct GetBuiltinRomIdsResponse : private flatbuffers::Table {
+struct GetBuiltinRomIdsResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *rom_ids() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(4); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&

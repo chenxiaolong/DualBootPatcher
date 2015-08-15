@@ -13,7 +13,7 @@ namespace v2 {
 struct GetVersionRequest;
 struct GetVersionResponse;
 
-struct GetVersionRequest : private flatbuffers::Table {
+struct GetVersionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
@@ -36,7 +36,7 @@ inline flatbuffers::Offset<GetVersionRequest> CreateGetVersionRequest(flatbuffer
   return builder_.Finish();
 }
 
-struct GetVersionResponse : private flatbuffers::Table {
+struct GetVersionResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *version() const { return GetPointer<const flatbuffers::String *>(4); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&

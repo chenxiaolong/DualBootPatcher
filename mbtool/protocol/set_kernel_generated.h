@@ -54,7 +54,7 @@ namespace v2 {
 struct SetKernelRequest;
 struct SetKernelResponse;
 
-struct SetKernelRequest : private flatbuffers::Table {
+struct SetKernelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::String *boot_blockdev() const { return GetPointer<const flatbuffers::String *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
@@ -89,7 +89,7 @@ inline flatbuffers::Offset<SetKernelRequest> CreateSetKernelRequest(flatbuffers:
   return builder_.Finish();
 }
 
-struct SetKernelResponse : private flatbuffers::Table {
+struct SetKernelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t success() const { return GetField<uint8_t>(4, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&

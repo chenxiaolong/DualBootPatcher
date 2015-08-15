@@ -62,7 +62,7 @@ namespace v2 {
 struct RebootRequest;
 struct RebootResponse;
 
-struct RebootRequest : private flatbuffers::Table {
+struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *arg() const { return GetPointer<const flatbuffers::String *>(4); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -91,7 +91,7 @@ inline flatbuffers::Offset<RebootRequest> CreateRebootRequest(flatbuffers::FlatB
   return builder_.Finish();
 }
 
-struct RebootResponse : private flatbuffers::Table {
+struct RebootResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t success() const { return GetField<uint8_t>(4, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&

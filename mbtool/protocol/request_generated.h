@@ -131,7 +131,7 @@ inline const char **EnumNamesRequestType() {
 
 inline const char *EnumNameRequestType(RequestType e) { return EnumNamesRequestType()[e]; }
 
-struct Request : private flatbuffers::Table {
+struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   RequestType type() const { return static_cast<RequestType>(GetField<int16_t>(4, 0)); }
   const mbtool::daemon::v2::GetVersionRequest *get_version_request() const { return GetPointer<const mbtool::daemon::v2::GetVersionRequest *>(6); }
   const mbtool::daemon::v2::GetRomsListRequest *get_roms_list_request() const { return GetPointer<const mbtool::daemon::v2::GetRomsListRequest *>(8); }

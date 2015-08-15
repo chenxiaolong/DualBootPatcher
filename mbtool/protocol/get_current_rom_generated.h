@@ -38,7 +38,7 @@ namespace v2 {
 struct GetCurrentRomRequest;
 struct GetCurrentRomResponse;
 
-struct GetCurrentRomRequest : private flatbuffers::Table {
+struct GetCurrentRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
@@ -61,7 +61,7 @@ inline flatbuffers::Offset<GetCurrentRomRequest> CreateGetCurrentRomRequest(flat
   return builder_.Finish();
 }
 
-struct GetCurrentRomResponse : private flatbuffers::Table {
+struct GetCurrentRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&

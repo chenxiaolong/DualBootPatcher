@@ -46,10 +46,25 @@ namespace v2 {
 struct SwitchRomRequest;
 struct SwitchRomResponse;
 
-struct SwitchRomRequest : private flatbuffers::Table {
+enum SwitchRomResult {
+  SwitchRomResult_SUCCEEDED = 0,
+  SwitchRomResult_FAILED = 1,
+  SwitchRomResult_CHECKSUM_NOT_FOUND = 2,
+  SwitchRomResult_CHECKSUM_INVALID = 3
+};
+
+inline const char **EnumNamesSwitchRomResult() {
+  static const char *names[] = { "SUCCEEDED", "FAILED", "CHECKSUM_NOT_FOUND", "CHECKSUM_INVALID", nullptr };
+  return names;
+}
+
+inline const char *EnumNameSwitchRomResult(SwitchRomResult e) { return EnumNamesSwitchRomResult()[e]; }
+
+struct SwitchRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
   const flatbuffers::String *boot_blockdev() const { return GetPointer<const flatbuffers::String *>(6); }
   const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *blockdev_base_dirs() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(8); }
+  uint8_t force_update_checksums() const { return GetField<uint8_t>(10, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* rom_id */) &&
@@ -59,6 +74,7 @@ struct SwitchRomRequest : private flatbuffers::Table {
            VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* blockdev_base_dirs */) &&
            verifier.Verify(blockdev_base_dirs()) &&
            verifier.VerifyVectorOfStrings(blockdev_base_dirs()) &&
+           VerifyField<uint8_t>(verifier, 10 /* force_update_checksums */) &&
            verifier.EndTable();
   }
 };
@@ -69,10 +85,11 @@ struct SwitchRomRequestBuilder {
   void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) { fbb_.AddOffset(4, rom_id); }
   void add_boot_blockdev(flatbuffers::Offset<flatbuffers::String> boot_blockdev) { fbb_.AddOffset(6, boot_blockdev); }
   void add_blockdev_base_dirs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs) { fbb_.AddOffset(8, blockdev_base_dirs); }
+  void add_force_update_checksums(uint8_t force_update_checksums) { fbb_.AddElement<uint8_t>(10, force_update_checksums, 0); }
   SwitchRomRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   SwitchRomRequestBuilder &operator=(const SwitchRomRequestBuilder &);
   flatbuffers::Offset<SwitchRomRequest> Finish() {
-    auto o = flatbuffers::Offset<SwitchRomRequest>(fbb_.EndTable(start_, 3));
+    auto o = flatbuffers::Offset<SwitchRomRequest>(fbb_.EndTable(start_, 4));
     return o;
   }
 };
@@ -80,19 +97,23 @@ struct SwitchRomRequestBuilder {
 inline flatbuffers::Offset<SwitchRomRequest> CreateSwitchRomRequest(flatbuffers::FlatBufferBuilder &_fbb,
    flatbuffers::Offset<flatbuffers::String> rom_id = 0,
    flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0,
-   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs = 0) {
+   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs = 0,
+   uint8_t force_update_checksums = 0) {
   SwitchRomRequestBuilder builder_(_fbb);
   builder_.add_blockdev_base_dirs(blockdev_base_dirs);
   builder_.add_boot_blockdev(boot_blockdev);
   builder_.add_rom_id(rom_id);
+  builder_.add_force_update_checksums(force_update_checksums);
   return builder_.Finish();
 }
 
-struct SwitchRomResponse : private flatbuffers::Table {
+struct SwitchRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint8_t success() const { return GetField<uint8_t>(4, 0); }
+  SwitchRomResult result() const { return static_cast<SwitchRomResult>(GetField<int16_t>(6, 0)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, 4 /* success */) &&
+           VerifyField<int16_t>(verifier, 6 /* result */) &&
            verifier.EndTable();
   }
 };
@@ -101,17 +122,20 @@ struct SwitchRomResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
+  void add_result(SwitchRomResult result) { fbb_.AddElement<int16_t>(6, static_cast<int16_t>(result), 0); }
   SwitchRomResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   SwitchRomResponseBuilder &operator=(const SwitchRomResponseBuilder &);
   flatbuffers::Offset<SwitchRomResponse> Finish() {
-    auto o = flatbuffers::Offset<SwitchRomResponse>(fbb_.EndTable(start_, 1));
+    auto o = flatbuffers::Offset<SwitchRomResponse>(fbb_.EndTable(start_, 2));
     return o;
   }
 };
 
 inline flatbuffers::Offset<SwitchRomResponse> CreateSwitchRomResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0) {
+   uint8_t success = 0,
+   SwitchRomResult result = SwitchRomResult_SUCCEEDED) {
   SwitchRomResponseBuilder builder_(_fbb);
+  builder_.add_result(result);
   builder_.add_success(success);
   return builder_.Finish();
 }
