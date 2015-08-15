@@ -29,6 +29,7 @@
 #endif
 #include "private/fileutils.h"
 #include "private/logging.h"
+#include "version.h"
 
 // Patchers
 #ifndef LIBMBP_MINI

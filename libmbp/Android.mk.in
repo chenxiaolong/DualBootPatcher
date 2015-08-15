@@ -73,6 +73,7 @@ endif
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
+	@CMAKE_CURRENT_BINARY_DIR@/include \
 	$(LIBARCHIVE_DIR)/include \
 	$(EXTERNAL_DIR) \
 	$(TOP_DIR)
@@ -87,8 +88,6 @@ LOCAL_CFLAGS += -fno-exceptions -fno-rtti
 #LOCAL_CFLAGS += -fvisibility=hidden
 # There are some '/*' in doxygen comment blocks
 LOCAL_CFLAGS += -Wno-error=comment
-# Version number
-LOCAL_CFLAGS += -DLIBMBP_VERSION=\"@MBP_VERSION@\"
 # minizip type safety
 LOCAL_CFLAGS += -DSTRICTZIPUNZIP
 
@@ -127,5 +126,6 @@ endif
 ifeq ($(MBP_MINI),true)
 include $(BUILD_STATIC_LIBRARY)
 else
+LOCAL_LDFLAGS += -Wl,-Map,$(LOCAL_MODULE).$(TARGET_ARCH_ABI).map
 include $(BUILD_SHARED_LIBRARY)
 endif

@@ -11,6 +11,13 @@ include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
+    @ONLY
+)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+
 set(MBP_SOURCES
     bootimage.cpp
     cpiofile.cpp
@@ -100,7 +107,6 @@ else()
 
     add_definitions(
         -DLIBMBP_LIBRARY
-        -DLIBMBP_VERSION="${MBP_VERSION}"
         -DSTRICTZIPUNZIP
     )
 
