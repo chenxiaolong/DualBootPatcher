@@ -807,6 +807,8 @@ public class SwitcherListFragment extends Fragment implements
                 mResult.kernelStatus = getKernelStatus(currentRom, tmpImageFile);
             } catch (IOException e) {
                 Log.e(TAG, "mbtool communication error", e);
+                mResult.currentBootRomId = null;
+                mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
             } finally {
                 tmpImageFile.delete();
             }
