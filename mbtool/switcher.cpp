@@ -62,6 +62,8 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
                                  const std::string &image,
                                  std::string *sha512_out)
 {
+    std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
+
     std::string key(rom_id);
     key += "/";
     key += image;
@@ -78,7 +80,7 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
         std::string hash = value.substr(pos + 1);
         if (algo != "sha512") {
             LOGE("%s: Invalid hash algorithm: %s",
-                 CHECKSUMS_PATH, algo.c_str());
+                 checksums_path.c_str(), algo.c_str());
             return ChecksumsGetResult::MALFORMED;
         }
 
@@ -86,7 +88,7 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
         return ChecksumsGetResult::FOUND;
     } else {
         LOGE("%s: Invalid checksum property: %s=%s",
-             CHECKSUMS_PATH, key.c_str(), value.c_str());
+             checksums_path.c_str(), key.c_str(), value.c_str());
         return ChecksumsGetResult::MALFORMED;
     }
 }
@@ -121,8 +123,10 @@ void checksums_update(std::unordered_map<std::string, std::string> *props,
  */
 bool checksums_read(std::unordered_map<std::string, std::string> *props)
 {
-    if (!util::file_get_all_properties(CHECKSUMS_PATH, props)) {
-        LOGE("%s: Failed to load properties", CHECKSUMS_PATH);
+    std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
+
+    if (!util::file_get_all_properties(checksums_path, props)) {
+        LOGE("%s: Failed to load properties", checksums_path.c_str());
         return false;
     }
     return true;
@@ -137,23 +141,28 @@ bool checksums_read(std::unordered_map<std::string, std::string> *props)
  */
 bool checksums_write(const std::unordered_map<std::string, std::string> &props)
 {
-    if (remove(CHECKSUMS_PATH) < 0 && errno != ENOENT) {
-        LOGW("%s: Failed to remove file: %s", CHECKSUMS_PATH, strerror(errno));
+    std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
+
+    if (remove(checksums_path.c_str()) < 0 && errno != ENOENT) {
+        LOGW("%s: Failed to remove file: %s",
+             checksums_path.c_str(), strerror(errno));
     }
 
-    util::mkdir_parent(CHECKSUMS_PATH, 0755);
-    util::create_empty_file(CHECKSUMS_PATH);
+    util::mkdir_parent(checksums_path, 0755);
+    util::create_empty_file(checksums_path);
 
-    if (!util::chown(CHECKSUMS_PATH, 0, 0, 0)) {
-        LOGW("%s: Failed to chown file: %s", CHECKSUMS_PATH, strerror(errno));
+    if (!util::chown(checksums_path, 0, 0, 0)) {
+        LOGW("%s: Failed to chown file: %s",
+             checksums_path.c_str(), strerror(errno));
     }
-    if (chmod(CHECKSUMS_PATH, 0700) < 0) {
-        LOGW("%s: Failed to chmod file: %s", CHECKSUMS_PATH, strerror(errno));
+    if (chmod(checksums_path.c_str(), 0700) < 0) {
+        LOGW("%s: Failed to chmod file: %s",
+             checksums_path.c_str(), strerror(errno));
     }
 
-    if (!util::file_write_properties(CHECKSUMS_PATH, props)) {
+    if (!util::file_write_properties(checksums_path, props)) {
         LOGW("%s: Failed to write new properties: %s",
-             CHECKSUMS_PATH, strerror(errno));
+             checksums_path.c_str(), strerror(errno));
         return false;
     }
 
