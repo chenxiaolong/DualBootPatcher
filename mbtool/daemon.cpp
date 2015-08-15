@@ -34,12 +34,12 @@
 
 #include <proc/readproc.h>
 
-#include "actions.h"
 #include "multiboot.h"
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
+#include "switcher.h"
 #include "validcerts.h"
 #include "util/copy.h"
 #include "util/delete.h"
@@ -246,14 +246,34 @@ static bool v2_switch_rom(int fd, const v2::Request *msg)
         }
     }
 
+    bool force_update_checksums = request->force_update_checksums();
+
     fb::FlatBufferBuilder builder;
 
-    bool success = action_choose_rom(request->rom_id()->c_str(),
+    SwitchRomResult ret = switch_rom(request->rom_id()->c_str(),
                                      request->boot_blockdev()->c_str(),
-                                     block_dev_dirs);
+                                     block_dev_dirs,
+                                     force_update_checksums);
+
+    bool success = ret == SwitchRomResult::SUCCEEDED;
+    v2::SwitchRomResult fb_ret = v2::SwitchRomResult_FAILED;
+    switch (ret) {
+    case SwitchRomResult::SUCCEEDED:
+        fb_ret = v2::SwitchRomResult_SUCCEEDED;
+        break;
+    case SwitchRomResult::FAILED:
+        fb_ret = v2::SwitchRomResult_FAILED;
+        break;
+    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+        fb_ret = v2::SwitchRomResult_CHECKSUM_NOT_FOUND;
+        break;
+    case SwitchRomResult::CHECKSUM_INVALID:
+        fb_ret = v2::SwitchRomResult_CHECKSUM_INVALID;
+        break;
+    }
 
     // Create response
-    auto response = v2::CreateSwitchRomResponse(builder, success);
+    auto response = v2::CreateSwitchRomResponse(builder, success, fb_ret);
 
     // Wrap response
     v2::ResponseBuilder rb(builder);
@@ -273,8 +293,8 @@ static bool v2_set_kernel(int fd, const v2::Request *msg)
 
     fb::FlatBufferBuilder builder;
 
-    bool success = action_set_kernel(request->rom_id()->c_str(),
-                                     request->boot_blockdev()->c_str());
+    bool success = set_kernel(request->rom_id()->c_str(),
+                              request->boot_blockdev()->c_str());
 
     // Create response
     auto response = v2::CreateSetKernelResponse(builder, success);

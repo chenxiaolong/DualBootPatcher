@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -43,6 +43,8 @@ bool file_get_property(const std::string &path,
                        const std::string &default_value);
 bool file_get_all_properties(const std::string &path,
                              std::unordered_map<std::string, std::string> *map);
+bool file_write_properties(const std::string &path,
+                           const std::unordered_map<std::string, std::string> &map);
 
 }
 }

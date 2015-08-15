@@ -191,5 +191,34 @@ bool file_read_all(const std::string &path,
     return true;
 }
 
+bool file_read_all(const std::string &path,
+                   unsigned char **data_out,
+                   std::size_t *size_out)
+{
+    file_ptr fp(fopen(path.c_str(), "rb"), fclose);
+    if (!fp) {
+        return false;
+    }
+
+    fseek(fp.get(), 0, SEEK_END);
+    auto size = ftell(fp.get());
+    rewind(fp.get());
+
+    unsigned char *data = static_cast<unsigned char *>(std::malloc(size));
+    if (!data) {
+        return false;
+    }
+
+    if (fread(data, size, 1, fp.get()) != 1) {
+        free(data);
+        return false;
+    }
+
+    *data_out = data;
+    *size_out = size;
+
+    return true;
+}
+
 }
 }

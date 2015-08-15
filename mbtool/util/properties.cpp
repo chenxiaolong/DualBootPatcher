@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -225,6 +225,26 @@ bool file_get_all_properties(const std::string &path,
     }
 
     map->swap(tempMap);
+    return true;
+}
+
+bool file_write_properties(const std::string &path,
+                           const std::unordered_map<std::string, std::string> &map)
+{
+    file_ptr fp(std::fopen(path.c_str(), "wb"), std::fclose);
+    if (!fp) {
+        return false;
+    }
+
+    for (auto const &pair : map) {
+        if (fputs(pair.first.c_str(), fp.get()) == EOF
+                || fputc('=', fp.get()) == EOF
+                || fputs(pair.second.c_str(), fp.get()) == EOF
+                || fputc('\n', fp.get()) == EOF) {
+            return false;
+        }
+    }
+
     return true;
 }
 

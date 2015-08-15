@@ -30,10 +30,10 @@
 #include "external/minizip/zip.h"
 #include "external/minizip/ioandroid.h"
 
-#include "actions.h"
 #include "multiboot.h"
 #include "romconfig.h"
 #include "roms.h"
+#include "switcher.h"
 #include "util/delete.h"
 #include "util/file.h"
 #include "util/finally.h"
@@ -63,7 +63,7 @@ static bool delete_recursive_print(const std::string &path)
     return ret;
 }
 
-static bool switch_rom(const std::string &rom_id)
+static bool switch_rom(const std::string &rom_id, bool force)
 {
     mbp::PatcherConfig pc;
 
@@ -102,7 +102,24 @@ static bool switch_rom(const std::string &rom_id)
         return false;
     }
 
-    return action_choose_rom(rom_id, block_devs[0], device->blockDevBaseDirs());
+    SwitchRomResult ret = switch_rom(
+            rom_id, block_devs[0], device->blockDevBaseDirs(), force);
+    switch (ret) {
+    case SwitchRomResult::SUCCEEDED:
+        LOGD("SUCCEEDED");
+        break;
+    case SwitchRomResult::FAILED:
+        LOGD("FAILED");
+        break;
+    case SwitchRomResult::CHECKSUM_INVALID:
+        LOGD("CHECKSUM_INVALID");
+        break;
+    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+        LOGD("CHECKSUM_NOT_FOUND");
+        break;
+    }
+
+    return ret == SwitchRomResult::SUCCEEDED;
 }
 
 static bool wipe_system(const std::string &rom_id)
@@ -437,7 +454,7 @@ static void utilities_usage(bool error)
 
     fprintf(stream,
             "Usage: utilities generate [template dir] [output file]\n"
-            "   OR: utilities switch [ROM ID]\n"
+            "   OR: utilities switch [ROM ID] [--force]\n"
             "   OR: utilities wipe-system [ROM ID]\n"
             "   OR: utilities wipe-cache [ROM ID]\n"
             "   OR: utilities wipe-data [ROM ID]\n"
@@ -452,17 +469,24 @@ int utilities_main(int argc, char *argv[])
 
     util::log_set_logger(std::make_shared<util::StdioLogger>(stdout, false));
 
+    bool force = false;
+
     int opt;
 
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
+        {"force", no_argument, 0, 'f'},
         {0, 0, 0, 0}
     };
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hf", long_options, &long_index)) != -1) {
         switch (opt) {
+        case 'f':
+            force = true;
+            break;
+
         case 'h':
             utilities_usage(false);
             return EXIT_SUCCESS;
@@ -485,13 +509,18 @@ int utilities_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (force && action != "switch") {
+        utilities_usage(true);
+        return EXIT_FAILURE;
+    }
+
     bool ret = false;
 
     if (action == "generate") {
         AromaGenerator gen(argv[optind + 1], argv[optind + 2]);
         ret = gen.run();
     } else if (action == "switch") {
-        ret = switch_rom(argv[optind + 1]);
+        ret = switch_rom(argv[optind + 1], force);
     } else if (action == "wipe-system") {
         ret = wipe_system(argv[optind + 1]);
     } else if (action == "wipe-cache") {

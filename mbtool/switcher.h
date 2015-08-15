@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -25,9 +25,17 @@
 namespace mb
 {
 
-bool action_choose_rom(const std::string &id, const std::string &boot_blockdev,
-                       const std::vector<std::string> &blockdev_base_dirs);
-bool action_set_kernel(const std::string &id, const std::string &boot_blockdev);
-bool action_reboot(const std::string &reboot_arg);
+enum class SwitchRomResult
+{
+    SUCCEEDED,
+    FAILED,
+    CHECKSUM_NOT_FOUND,
+    CHECKSUM_INVALID
+};
+
+SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockdev,
+                           const std::vector<std::string> &blockdev_base_dirs,
+                           bool force_update_checksums);
+bool set_kernel(const std::string &id, const std::string &boot_blockdev);
 
 }

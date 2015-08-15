@@ -35,6 +35,9 @@ bool file_write_data(const std::string &path,
 bool file_find_one_of(const std::string &path, std::vector<std::string> items);
 bool file_read_all(const std::string &path,
                    std::vector<unsigned char> *data_out);
+bool file_read_all(const std::string &path,
+                   unsigned char **data_out,
+                   std::size_t *size_out);
 
 }
 }
