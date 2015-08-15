@@ -480,14 +480,8 @@ public class SwitcherListFragment extends Fragment implements
     @Override
     public void onSelectedRom(RomInformation info) {
         mSelectedRom = info;
-        mPerformingAction = true;
-        updateCardUI();
 
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.switching_rom, R.string.please_wait);
-        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
-
-        mEventCollector.chooseRom(info.getId(), false);
+        chooseRom(info.getId(), false);
     }
 
     @Override
@@ -503,6 +497,17 @@ public class SwitcherListFragment extends Fragment implements
             SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstance(this, mSelectedRom);
             d.show(getFragmentManager(), SetKernelConfirmDialog.TAG);
         }
+    }
+
+    private void chooseRom(String romId, boolean forceChecksumsUpdate) {
+        mPerformingAction = true;
+        updateCardUI();
+
+        GenericProgressDialog d = GenericProgressDialog.newInstance(
+                R.string.switching_rom, R.string.please_wait);
+        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
+
+        mEventCollector.chooseRom(romId, forceChecksumsUpdate);
     }
 
     private void setKernel(RomInformation info) {
@@ -667,7 +672,7 @@ public class SwitcherListFragment extends Fragment implements
 
     @Override
     public void onConfirmChecksumIssue(String romId) {
-        mEventCollector.chooseRom(romId, true);
+        chooseRom(romId, true);
     }
 
     public class ShowSetKernelNeededEvent extends BaseEvent {
