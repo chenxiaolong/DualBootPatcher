@@ -7,8 +7,18 @@ table SwitchRomRequest {
     boot_blockdev : string;
     // List of block device search paths
     blockdev_base_dirs : [string];
+    // Force update checksums
+    force_update_checksums : bool;
+}
+
+enum SwitchRomResult : short {
+    SUCCEEDED,
+    FAILED,
+    CHECKSUM_NOT_FOUND,
+    CHECKSUM_INVALID
 }
 
 table SwitchRomResponse {
     success : bool;
+    result : SwitchRomResult;
 }
