@@ -20,10 +20,29 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace mb
 {
+
+enum class ChecksumsGetResult
+{
+    FOUND,
+    NOT_FOUND,
+    MALFORMED
+};
+
+ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
+                                 const std::string &rom_id,
+                                 const std::string &image,
+                                 std::string *sha512_out);
+void checksums_update(std::unordered_map<std::string, std::string> *props,
+                      const std::string &rom_id,
+                      const std::string &image,
+                      const std::string &sha512);
+bool checksums_read(std::unordered_map<std::string, std::string> *props);
+bool checksums_write(const std::unordered_map<std::string, std::string> &props);
 
 enum class SwitchRomResult
 {

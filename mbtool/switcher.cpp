@@ -45,13 +45,6 @@
 namespace mb
 {
 
-enum class ChecksumsGetResult
-{
-    FOUND,
-    NOT_FOUND,
-    MALFORMED
-};
-
 /*!
  * \brief Check a checksum property
  *
@@ -64,10 +57,10 @@ enum class ChecksumsGetResult
  *         ChecksumsGetResult::NOT_FOUND if the hash does not exist in the map,
  *         ChecksumsGetResult::MALFORMED if the property has an invalid format
  */
-static ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
-                                        const std::string &rom_id,
-                                        const std::string &image,
-                                        std::string *sha512_out)
+ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
+                                 const std::string &rom_id,
+                                 const std::string &image,
+                                 std::string *sha512_out)
 {
     std::string key(rom_id);
     key += "/";
@@ -106,10 +99,10 @@ static ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::str
  * \param image Image filename (without directory)
  * \param sha512 SHA512 hex digest
  */
-static void checksums_update(std::unordered_map<std::string, std::string> *props,
-                             const std::string &rom_id,
-                             const std::string &image,
-                             const std::string &sha512)
+void checksums_update(std::unordered_map<std::string, std::string> *props,
+                      const std::string &rom_id,
+                      const std::string &image,
+                      const std::string &sha512)
 {
     std::string key(rom_id);
     key += "/";
@@ -126,7 +119,7 @@ static void checksums_update(std::unordered_map<std::string, std::string> *props
  *
  * \return True if the file was successfully read. Otherwise, false.
  */
-static bool checksums_read(std::unordered_map<std::string, std::string> *props)
+bool checksums_read(std::unordered_map<std::string, std::string> *props)
 {
     if (!util::file_get_all_properties(CHECKSUMS_PATH, props)) {
         LOGE("%s: Failed to load properties", CHECKSUMS_PATH);
@@ -142,7 +135,7 @@ static bool checksums_read(std::unordered_map<std::string, std::string> *props)
  *
  * \return True if successfully written. Otherwise, false.
  */
-static bool checksums_write(const std::unordered_map<std::string, std::string> &props)
+bool checksums_write(const std::unordered_map<std::string, std::string> &props)
 {
     if (remove(CHECKSUMS_PATH) < 0 && errno != ENOENT) {
         LOGW("%s: Failed to remove file: %s", CHECKSUMS_PATH, strerror(errno));

@@ -44,6 +44,7 @@
 // Local
 #include "main.h"
 #include "multiboot.h"
+#include "switcher.h"
 #include "util/archive.h"
 #include "util/chmod.h"
 #include "util/chown.h"
@@ -1415,6 +1416,16 @@ Installer::ProceedState Installer::install_stage_finish()
             // Non-fatal
             LOGE("%s: Failed to chown: %s", path.c_str(), strerror(errno));
         }
+
+        // Update checksums
+        unsigned char digest[SHA512_DIGEST_LENGTH];
+        SHA512(bootimg.data(), bootimg.size(), digest);
+        std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
+
+        std::unordered_map<std::string, std::string> props;
+        checksums_read(&props);
+        checksums_update(&props, _rom->id, "boot.img", hash);
+        checksums_write(props);
     }
 
     if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
