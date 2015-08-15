@@ -76,6 +76,7 @@ public class SwitcherService extends IntentService {
     public static final String ACTION_SWITCH_ROM = "switch_rom";
     public static final String ACTION_SET_KERNEL = "set_kernel";
     public static final String PARAM_KERNEL_ID = "kernel_id";
+    public static final String PARAM_FORCE_CHECKSUMS_UPDATE = "force_checksums_update";
     public static final String STATE_SWITCHED_ROM = "switched_rom";
     public static final String STATE_SET_KERNEL = "set_kernel";
     public static final String RESULT_KERNEL_ID = "kernel_id";
@@ -195,9 +196,10 @@ public class SwitcherService extends IntentService {
         setupNotification(ACTION_SWITCH_ROM);
 
         String kernelId = data.getString(PARAM_KERNEL_ID);
+        boolean forceChecksumsUpdate = data.getBoolean(PARAM_FORCE_CHECKSUMS_UPDATE);
         SwitchRomResult result = SwitchRomResult.FAILED;
         try {
-            result = MbtoolSocket.getInstance().chooseRom(this, kernelId);
+            result = MbtoolSocket.getInstance().chooseRom(this, kernelId, forceChecksumsUpdate);
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }

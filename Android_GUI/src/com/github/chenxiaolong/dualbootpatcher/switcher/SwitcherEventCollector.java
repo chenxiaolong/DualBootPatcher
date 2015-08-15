@@ -110,10 +110,11 @@ public class SwitcherEventCollector extends EventCollector {
 
     // Start tasks
 
-    public void chooseRom(String kernelId) {
+    public void chooseRom(String kernelId, boolean forceChecksumsUpdate) {
         Intent intent = new Intent(mContext, SwitcherService.class);
         intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_SWITCH_ROM);
         intent.putExtra(SwitcherService.PARAM_KERNEL_ID, kernelId);
+        intent.putExtra(SwitcherService.PARAM_FORCE_CHECKSUMS_UPDATE, forceChecksumsUpdate);
         mContext.startService(intent);
     }
 

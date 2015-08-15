@@ -134,6 +134,18 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
                         String.format("Failed to switch to %s", event.kernelId));
                 Toast.makeText(this, R.string.choose_rom_failure, Toast.LENGTH_SHORT).show();
                 break;
+            case CHECKSUM_INVALID:
+                intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
+                intent.putExtra(RESULT_MESSAGE,
+                        String.format("Mismatched checksums for %s's images", event.kernelId));
+                Toast.makeText(this, R.string.choose_rom_checksums_invalid, Toast.LENGTH_SHORT).show();
+                break;
+            case CHECKSUM_NOT_FOUND:
+                intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
+                intent.putExtra(RESULT_MESSAGE,
+                        String.format("Missing checksums for %s's images", event.kernelId));
+                Toast.makeText(this, R.string.choose_rom_checksums_missing, Toast.LENGTH_SHORT).show();
+                break;
             case UNKNOWN_BOOT_PARTITION:
                 intent.putExtra(RESULT_CODE, "UNKNOWN_BOOT_PARTITION");
                 intent.putExtra(RESULT_MESSAGE, "Failed to determine boot partition");
@@ -168,6 +180,6 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
         d.show(getFragmentManager(), "automated_switch_rom_waiting");
 
         mEventCollector.setApplicationContext(getApplicationContext());
-        mEventCollector.chooseRom(getIntent().getStringExtra(EXTRA_ROM_ID));
+        mEventCollector.chooseRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
     }
 }

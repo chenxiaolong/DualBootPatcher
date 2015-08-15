@@ -55,6 +55,8 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog
+        .ConfirmChecksumIssueDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmMismatchedSetKernelDialog
         .ConfirmMismatchedSetKernelDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ExperimentalInAppWipeDialog
@@ -95,6 +97,7 @@ public class SwitcherListFragment extends Fragment implements
         WipeTargetsSelectionDialogListener,
         RomNameInputDialogListener,
         ConfirmMismatchedSetKernelDialogListener,
+        ConfirmChecksumIssueDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
@@ -319,13 +322,21 @@ public class SwitcherListFragment extends Fragment implements
 
             switch (event.result) {
             case SUCCEEDED:
-                createSnackbar(R.string.choose_rom_success, Snackbar.LENGTH_SHORT).show();
+                createSnackbar(R.string.choose_rom_success, Snackbar.LENGTH_LONG).show();
                 Log.d(TAG, "Prior cached boot partition ROM ID was: " + mCurrentBootRomId);
                 mCurrentBootRomId = event.kernelId;
                 Log.d(TAG, "Changing cached boot partition ROM ID to: " + mCurrentBootRomId);
                 break;
             case FAILED:
-                createSnackbar(R.string.choose_rom_failure, Snackbar.LENGTH_SHORT).show();
+                createSnackbar(R.string.choose_rom_failure, Snackbar.LENGTH_LONG).show();
+                break;
+            case CHECKSUM_INVALID:
+                createSnackbar(R.string.choose_rom_checksums_invalid, Snackbar.LENGTH_LONG).show();
+                showChecksumIssueDialog(ConfirmChecksumIssueDialog.CHECKSUM_INVALID, event.kernelId);
+                break;
+            case CHECKSUM_NOT_FOUND:
+                createSnackbar(R.string.choose_rom_checksums_missing, Snackbar.LENGTH_LONG).show();
+                showChecksumIssueDialog(ConfirmChecksumIssueDialog.CHECKSUM_MISSING, event.kernelId);
                 break;
             case UNKNOWN_BOOT_PARTITION:
                 showUnknownBootPartitionDialog();
@@ -344,10 +355,10 @@ public class SwitcherListFragment extends Fragment implements
 
             switch (event.result) {
             case SUCCEEDED:
-                createSnackbar(R.string.set_kernel_success, Snackbar.LENGTH_SHORT).show();
+                createSnackbar(R.string.set_kernel_success, Snackbar.LENGTH_LONG).show();
                 break;
             case FAILED:
-                createSnackbar(R.string.set_kernel_failure, Snackbar.LENGTH_SHORT).show();
+                createSnackbar(R.string.set_kernel_failure, Snackbar.LENGTH_LONG).show();
                 break;
             case UNKNOWN_BOOT_PARTITION:
                 showUnknownBootPartitionDialog();
@@ -357,7 +368,7 @@ public class SwitcherListFragment extends Fragment implements
             CreatedLauncherEvent event = (CreatedLauncherEvent) bEvent;
 
             createSnackbar(String.format(getString(R.string.successfully_created_launcher),
-                    event.rom.getName()), Snackbar.LENGTH_SHORT).show();
+                    event.rom.getName()), Snackbar.LENGTH_LONG).show();
         } else if (bEvent instanceof WipedRomEvent) {
             WipedRomEvent event = (WipedRomEvent) bEvent;
             mPerformingAction = false;
@@ -370,7 +381,7 @@ public class SwitcherListFragment extends Fragment implements
             }
 
             if (event.succeeded == null || event.failed == null) {
-                createSnackbar(R.string.wipe_rom_initiate_fail, Snackbar.LENGTH_SHORT).show();
+                createSnackbar(R.string.wipe_rom_initiate_fail, Snackbar.LENGTH_LONG).show();
             } else {
                 StringBuilder sb = new StringBuilder();
 
@@ -386,7 +397,7 @@ public class SwitcherListFragment extends Fragment implements
                             targetsToString(event.failed)));
                 }
 
-                createSnackbar(sb.toString(), Snackbar.LENGTH_SHORT).show();
+                createSnackbar(sb.toString(), Snackbar.LENGTH_LONG).show();
 
                 // We don't want deleted ROMs to still show up
                 reloadFragment();
@@ -426,6 +437,12 @@ public class SwitcherListFragment extends Fragment implements
         View view = snackbar.getView();
         TextView textView = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
         textView.setTextColor(getResources().getColor(R.color.text_color_primary));
+    }
+
+    private void showChecksumIssueDialog(int issue, String romId) {
+        ConfirmChecksumIssueDialog d =
+                ConfirmChecksumIssueDialog.newInstance(this, issue, romId);
+        d.show(getFragmentManager(), ConfirmChecksumIssueDialog.TAG);
     }
 
     private void showUnknownBootPartitionDialog() {
@@ -470,7 +487,7 @@ public class SwitcherListFragment extends Fragment implements
                 R.string.switching_rom, R.string.please_wait);
         d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
 
-        mEventCollector.chooseRom(info.getId());
+        mEventCollector.chooseRom(info.getId(), false);
     }
 
     @Override
@@ -622,7 +639,7 @@ public class SwitcherListFragment extends Fragment implements
     @Override
     public void onSelectedWipeTargets(short[] targets) {
         if (targets.length == 0) {
-            createSnackbar(R.string.wipe_rom_none_selected, Snackbar.LENGTH_SHORT).show();
+            createSnackbar(R.string.wipe_rom_none_selected, Snackbar.LENGTH_LONG).show();
             return;
         }
 
@@ -646,6 +663,11 @@ public class SwitcherListFragment extends Fragment implements
     @Override
     public void onConfirmMismatchedSetKernel() {
         setKernel(mCurrentRom);
+    }
+
+    @Override
+    public void onConfirmChecksumIssue(String romId) {
+        mEventCollector.chooseRom(romId, true);
     }
 
     public class ShowSetKernelNeededEvent extends BaseEvent {

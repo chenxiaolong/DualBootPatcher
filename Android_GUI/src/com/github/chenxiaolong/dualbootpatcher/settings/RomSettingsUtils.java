@@ -253,7 +253,7 @@ public class RomSettingsUtils {
 
             try {
                 SwitchRomResult result =
-                        MbtoolSocket.getInstance().chooseRom(context, romInfo.getId());
+                        MbtoolSocket.getInstance().chooseRom(context, romInfo.getId(), false);
                 if (result != SwitchRomResult.SUCCEEDED) {
                     Log.e(TAG, "Failed to reflash boot image");
                     return false;

@@ -93,6 +93,10 @@
     <string name="choose_rom_success">Successfully switched ROM</string>
     <!-- Message shown when switching ROMs failed -->
     <string name="choose_rom_failure">Failed to switch ROM</string>
+    <!-- Message shown when switching ROMs and checksums don't match -->
+    <string name="choose_rom_checksums_invalid">Image checksums do not match</string>
+    <!-- Message shown when switching ROMs and checksums are missing -->
+    <string name="choose_rom_checksums_missing">Image checksums are missing</string>
     <!-- Message shown when setting the kernel succeeds -->
     <string name="set_kernel_success">Successfully set the kernel</string>
     <!-- Message shown when setting the kernel fails -->
@@ -106,6 +110,15 @@
          not recognized -->
     <string name="unknown_boot_partition">Could not determine the boot partition because this
         device\'s codename \'%s\' is not recognized.</string>
+
+    <!-- Dialog message shown if the images' checksums don't match with switching ROMs -->
+    <string name="checksums_invalid">The SHA512 checksums for this ROM\'s boot.img or other *.img
+        files in /sdcard/MultiBoot/%s/ do not match the expected checksums. A third party app may
+        have maliciously changed these images. Proceed with switching the ROM?</string>
+    <!-- Dialog message shown if the images' checksums don't exist when switching ROMs -->
+    <string name="checksums_missing">The SHA512 checksums for this ROM\'s boot.img or other *.img
+        files in /sdcard/MultiBoot/%s/ are missing. This is likely caused by upgrading from an older
+        version of this app. Proceed with switching the ROM?</string>
 
     <!-- Version text shown on ROM card if the version could not be detected -->
     <string name="rom_card_unknown_version">Unknown version</string>

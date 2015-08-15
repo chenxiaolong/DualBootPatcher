@@ -395,7 +395,9 @@ public class MbtoolSocket {
     public enum SwitchRomResult {
         UNKNOWN_BOOT_PARTITION,
         SUCCEEDED,
-        FAILED
+        FAILED,
+        CHECKSUM_INVALID,
+        CHECKSUM_NOT_FOUND
     }
 
     /**
@@ -413,7 +415,8 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public SwitchRomResult chooseRom(Context context, String id) throws IOException {
+    public SwitchRomResult chooseRom(Context context, String id,
+                                     boolean forceChecksumsUpdate) throws IOException {
         connect(context);
 
         try {
@@ -445,6 +448,7 @@ public class MbtoolSocket {
             SwitchRomRequest.addRomId(builder, fbRomId);
             SwitchRomRequest.addBootBlockdev(builder, fbBootBlockDev);
             SwitchRomRequest.addBlockdevBaseDirs(builder, fbSearchDirs);
+            SwitchRomRequest.addForceUpdateChecksums(builder, forceChecksumsUpdate);
             int request = SwitchRomRequest.endSwitchRomRequest(builder);
 
             // Wrap request
@@ -457,7 +461,26 @@ public class MbtoolSocket {
             Response fbresponse = sendRequest(builder, ResponseType.SWITCH_ROM);
             SwitchRomResponse response = fbresponse.switchRomResponse();
 
-            return response.success() ? SwitchRomResult.SUCCEEDED : SwitchRomResult.FAILED;
+            // Crappy naming, I know...
+            SwitchRomResult result;
+            switch (response.result()) {
+            case mbtool.daemon.v2.SwitchRomResult.SUCCEEDED:
+                result = SwitchRomResult.SUCCEEDED;
+                break;
+            case mbtool.daemon.v2.SwitchRomResult.FAILED:
+                result = SwitchRomResult.FAILED;
+                break;
+            case mbtool.daemon.v2.SwitchRomResult.CHECKSUM_INVALID:
+                result = SwitchRomResult.CHECKSUM_INVALID;
+                break;
+            case mbtool.daemon.v2.SwitchRomResult.CHECKSUM_NOT_FOUND:
+                result = SwitchRomResult.CHECKSUM_NOT_FOUND;
+                break;
+            default:
+                throw new IOException("Invalid SwitchRomResult: " + response.result());
+            }
+
+            return result;
         } catch (IOException e) {
             disconnect();
             throw e;
