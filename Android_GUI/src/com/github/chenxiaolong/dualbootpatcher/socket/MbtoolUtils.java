@@ -41,7 +41,7 @@ public class MbtoolUtils {
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r1492"));
         } else {
             // Debug/release builds
-            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.8"));
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.9"));
             sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.99.8"));
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.99.6"));
         }
