@@ -42,8 +42,10 @@
 #include "switcher.h"
 #include "validcerts.h"
 #include "version.h"
+#include "util/chown.h"
 #include "util/copy.h"
 #include "util/delete.h"
+#include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
@@ -69,6 +71,8 @@
 #define RESPONSE_DENY "DENY"                    // Credentials denied
 #define RESPONSE_OK "OK"                        // Generic accepted response
 #define RESPONSE_UNSUPPORTED "UNSUPPORTED"      // Generic unsupported response
+
+#define LOG_FILE "/data/media/0/MultiBoot/daemon.log"
 
 
 namespace mb
@@ -941,7 +945,7 @@ int daemon_main(int argc, char *argv[])
     // meh ...
     if (getppid() == 1) {
         if (!util::set_property("ro.multiboot.version", MBP_VERSION)) {
-            LOGE("Failed to set 'ro.multiboot.version' to '%s'", MBP_VERSION);
+            std::printf("Failed to set 'ro.multiboot.version' to '%s'\n", MBP_VERSION);
         }
     }
 
@@ -970,6 +974,28 @@ int daemon_main(int argc, char *argv[])
         // Give processes a chance to exit
         usleep(500000);
     }
+
+    // Set up logging
+    typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
+
+    if (!util::mkdir_parent(LOG_FILE, 0775) && errno != EEXIST) {
+        fprintf(stderr, "Failed to create parent directory of %s: %s\n",
+                LOG_FILE, strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    file_ptr fp(fopen(LOG_FILE, "w"), fclose);
+    if (!fp) {
+        fprintf(stderr, "Failed to open log file %s: %s\n",
+                LOG_FILE, strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    util::chown(LOG_FILE, "media_rw", "media_rw", 0);
+    chmod(LOG_FILE, 0775);
+
+    // mbtool logging
+    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
 
     if (fork_flag) {
         run_daemon_fork();
