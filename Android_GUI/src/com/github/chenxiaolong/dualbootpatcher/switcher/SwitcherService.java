@@ -245,7 +245,7 @@ public class SwitcherService extends IntentService {
         shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_ROM_ID, rom.getId());
 
         Intent addIntent = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
-        //addIntent.putExtra("duplicate", false);
+        addIntent.putExtra("duplicate", false);
         addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
         addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, rom.getName());
 
