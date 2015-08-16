@@ -17,10 +17,12 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.app.ActivityManager;
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -225,11 +227,22 @@ public class SwitcherService extends IntentService {
         removeNotification();
     }
 
+    private static Bitmap createScaledIcon(Context context, Bitmap icon) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final int iconSize = am.getLauncherLargeIconSize();
+        return Bitmap.createScaledBitmap(icon, iconSize, iconSize, true);
+    }
+
     private void createLauncher(Bundle data) {
         RomInformation rom = data.getParcelable(PARAM_ROM);
+        if (rom == null) {
+            // Make Android Studio happy
+            return;
+        }
 
-        Intent shortcutIntent = new Intent(this, MainActivity.class);
-        shortcutIntent.setAction(Intent.ACTION_MAIN);
+        Intent shortcutIntent = new Intent(this, AutomatedSwitcherActivity.class);
+        shortcutIntent.setAction("com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM");
+        shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_ROM_ID, rom.getId());
 
         Intent addIntent = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
         //addIntent.putExtra("duplicate", false);
@@ -241,7 +254,7 @@ public class SwitcherService extends IntentService {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             Bitmap bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), options);
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, createScaledIcon(this, bitmap));
         } else {
             addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
                     Intent.ShortcutIconResource.fromContext(this, rom.getImageResId()));
