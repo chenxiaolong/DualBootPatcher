@@ -31,6 +31,7 @@ import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorList
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmAutomatedSwitchRomDialog
         .ConfirmAutomatedSwitchRomDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
@@ -106,14 +107,14 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
     @Override
     public void onEventReceived(BaseEvent bEvent) {
         if (bEvent instanceof SwitchedRomEvent) {
+            SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
+
             boolean reboot = getIntent().getBooleanExtra(EXTRA_REBOOT, false);
-            if (reboot) {
+            if (event.result == SwitchRomResult.SUCCEEDED && reboot) {
                 // Don't return if we're rebooting
                 SwitcherUtils.reboot(this);
                 return;
             }
-
-            SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
 
             GenericProgressDialog d = (GenericProgressDialog)
                     getFragmentManager().findFragmentByTag("automated_switch_rom_waiting");
