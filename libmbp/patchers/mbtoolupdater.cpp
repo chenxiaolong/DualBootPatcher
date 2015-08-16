@@ -214,7 +214,7 @@ void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
     cpio->setContents("init.rc", std::move(contents));
 
     CoreRP crp(pc, info, cpio);
-    crp.addMbtool();
+    crp.patchRamdisk();
 }
 
 }
