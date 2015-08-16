@@ -127,25 +127,25 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
             switch (event.result) {
             case SUCCEEDED:
                 intent.putExtra(RESULT_CODE, "SWITCHING_SUCCEEDED");
-                Toast.makeText(this, R.string.choose_rom_success, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.choose_rom_success, Toast.LENGTH_LONG).show();
                 break;
             case FAILED:
                 intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
                 intent.putExtra(RESULT_MESSAGE,
                         String.format("Failed to switch to %s", event.kernelId));
-                Toast.makeText(this, R.string.choose_rom_failure, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.choose_rom_failure, Toast.LENGTH_LONG).show();
                 break;
             case CHECKSUM_INVALID:
                 intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
                 intent.putExtra(RESULT_MESSAGE,
                         String.format("Mismatched checksums for %s's images", event.kernelId));
-                Toast.makeText(this, R.string.choose_rom_checksums_invalid, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.choose_rom_checksums_invalid, Toast.LENGTH_LONG).show();
                 break;
             case CHECKSUM_NOT_FOUND:
                 intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
                 intent.putExtra(RESULT_MESSAGE,
                         String.format("Missing checksums for %s's images", event.kernelId));
-                Toast.makeText(this, R.string.choose_rom_checksums_missing, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.choose_rom_checksums_missing, Toast.LENGTH_LONG).show();
                 break;
             case UNKNOWN_BOOT_PARTITION:
                 intent.putExtra(RESULT_CODE, "UNKNOWN_BOOT_PARTITION");
