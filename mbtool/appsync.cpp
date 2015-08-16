@@ -42,6 +42,7 @@
 #include "packages.h"
 #include "romconfig.h"
 #include "roms.h"
+#include "version.h"
 #include "util/chown.h"
 #include "util/command.h"
 #include "util/copy.h"
