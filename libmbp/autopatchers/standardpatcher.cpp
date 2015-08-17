@@ -26,6 +26,8 @@
 #include "private/logging.h"
 #include "private/stringutils.h"
 
+#define DUMP_DEBUG 0
+
 
 namespace mbp
 {
@@ -622,16 +624,22 @@ bool StandardPatcher::patchFiles(const std::string &directory)
         return false;
     }
 
+#if DUMP_DEBUG
+    EdifyTokenizer::dump(tokens);
+#endif
+
     Device *device = m_impl->info->device();
     auto const systemDevs = device->systemBlockDevs();
     auto const cacheDevs = device->cacheBlockDevs();
     auto const dataDevs = device->dataBlockDevs();
 
     std::vector<EdifyToken *>::iterator begin = tokens.begin();
-    std::vector<EdifyToken *>::iterator end = tokens.end();
+    std::vector<EdifyToken *>::iterator end;
 
     // TODO: Catch errors
     while (true) {
+        end = tokens.end();
+
         // Need to find:
         // 1. String containing function name
         // 2. Left parenthesis for the function
@@ -672,7 +680,9 @@ bool StandardPatcher::patchFiles(const std::string &directory)
         }
     }
 
-    //EdifyTokenizer::dump(tokens);
+#if DUMP_DEBUG
+    EdifyTokenizer::dump(tokens);
+#endif
 
     FileUtils::writeFromString(directory + "/" + UpdaterScript,
                                EdifyTokenizer::untokenize(tokens));
