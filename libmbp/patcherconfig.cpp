@@ -463,7 +463,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // OnePlus One
     device = new Device();
     device->setId("bacon");
-    device->setCodenames({ "bacon" });
+    device->setCodenames({ "bacon", "A0001" });
     device->setName("OnePlus One");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
