@@ -130,6 +130,8 @@
   <string name="set_kernel_now">Imposta ora</string>
   <!--Negative dialog button shown for the above two messages-->
   <string name="set_kernel_later">Imposta dopo</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">La ROM attualmente selezionata è %1$s ma, si sta tentando di impostare il kernel per la %2$s. Per favore confermare ciò che si intende fare.</string>
   <!--ZIP flash activity title-->
   <string name="zip_flashing_title">Flasha File ZIP</string>
   <!--Title of pending action card for installing a zip file-->
@@ -160,8 +162,12 @@
   <string name="zip_flashing_change_install_location">Cambia</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
-  <!--Title for the patcher card asking for the device and partition configuration-->
-  <string name="devpartconfig_title">Scegli dispositivo e partizione:</string>
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Dispositivo:</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Configurazione partizione:</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Descrizione:</string>
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">Aggiornamento ROM primaria</string>
   <!--Description for primary ROM upgrade installation location-->
@@ -193,6 +199,7 @@
   <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_unsupported_title">Fai un tap per iniziare il processo di patching.</string>
   <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
+  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file selezionato non ha un preset. È possibile personalizzare il processo di patching con le opzioni sovrastanti.\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">File patchato con successo</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -242,7 +249,9 @@
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the global application sharing section of the ROM Settings-->
+  <string name="a_s_settings_global_app_sharing_section_title">Condivisione globale delle applicazioni</string>
   <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">Condivisione individuale delle applicazioni</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="a_s_settings_share_apps_title">Condividi le applicazioni</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
@@ -284,7 +293,7 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Aggiornamento ramdisk fallito</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
-  <string name="update_ramdisk_failure_desc">Aggiornamento ramdisk fallito. La condivisione delle applicazioni molto probabilmente presenterà malfunzionamenti.</string>
+  <string name="update_ramdisk_failure_desc">Impossibile aggiornare il ramdisk. Il log è stato salvato nella directory MultiBoot/ramdisk-update.log nella memoria interna.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
     <item quantity="one">Ti manca %1$d passaggio per tentare un aggiornamento forzato del ramdisk.</item>

@@ -131,6 +131,7 @@ spécifiées.</string>
   <string name="set_kernel_now">Régler maintenant</string>
   <!--Negative dialog button shown for the above two messages-->
   <string name="set_kernel_later">Régler plus tard</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
   <!--ZIP flash activity title-->
   <string name="zip_flashing_title">Flasher des fichiers ZIP</string>
   <!--Title of pending action card for installing a zip file-->
@@ -161,8 +162,9 @@ spécifiées.</string>
   <string name="zip_flashing_change_install_location">Changer l\'emplacement</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Pour flasher un fichier zip en utilisant le flashage in-app, just ajouter le fichier zip patché en tapant le grand icône plus. \n\nL\'ordre de flashage peut être modifié en appuyant et maintenant le fichier et un fichier peut être éliminé en le glissant sur les côtés. \n\nNOTE: Cette fonction est encore expérimentale. Veuillez sauvegarder avant de continuer!</string>
-  <!--Title for the patcher card asking for the device and partition configuration-->
-  <string name="devpartconfig_title">Appareil et configuration de partition:</string>
+  <!--Title of the device selection box in the patcher-->
+  <!--Title of the partition configuration box in the patcher-->
+  <!--Title of the partition configuration description in the patcher-->
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">MAJ de la ROM primaire</string>
   <!--Description for primary ROM upgrade installation location-->
@@ -288,8 +290,6 @@ Partager des applications payantes depuis la ROM primaire avec la ROM en cours (
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Impossible de mettre à jour le disque virtuel</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
-  <string name="update_ramdisk_failure_desc">Le disque virtuel n\'a pu être mis à jour.
-Le partage ne fonctionnera probablement pas correctement.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Oblige la MAJ du disque virtuel</string>
