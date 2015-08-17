@@ -488,6 +488,8 @@
     <string name="third_party_intents_not_allowed">Denied intent from third party application. To
         allow other apps to send intents, enable the option in the DualBootPatcher settings.</string>
 
+    <!-- Word/phrase for Search (used in action bars) -->
+    <string name="search">Search</string>
     <!-- Word/phrase for None (used in eg. a list) -->
     <string name="none">None</string>
     <!-- Word/phrase for OK (used in dialog boxes) -->

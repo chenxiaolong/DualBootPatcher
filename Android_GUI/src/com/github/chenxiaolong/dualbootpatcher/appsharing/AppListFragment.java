@@ -30,8 +30,13 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
+import android.support.v7.widget.SearchView.OnQueryTextListener;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
@@ -59,8 +64,10 @@ import java.util.Map;
 
 public class AppListFragment extends Fragment implements
         FirstUseDialogListener, AppCardActionListener, AppSharingChangeSharedDialogListener,
-        LoaderCallbacks<LoaderResult> {
+        LoaderCallbacks<LoaderResult>, OnQueryTextListener {
     private static final String TAG = AppListFragment.class.getSimpleName();
+
+    private static final String EXTRA_SEARCH_QUERY = "search_query";
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "indiv_app_sync_first_use_show_dialog";
 
@@ -73,9 +80,13 @@ public class AppListFragment extends Fragment implements
     private ArrayList<AppInformation> mAppInfos;
     private RomConfig mConfig;
 
+    private String mSearchQuery;
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        setHasOptionsMenu(true);
 
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.loading);
 
@@ -102,15 +113,41 @@ public class AppListFragment extends Fragment implements
                         R.string.indiv_app_sharing_intro_dialog_desc);
                 d.show(getFragmentManager(), FirstUseDialog.TAG);
             }
+        } else {
+            mSearchQuery = savedInstanceState.getString(EXTRA_SEARCH_QUERY);
         }
 
         getActivity().getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.actionbar_app_list, menu);
+
+        final MenuItem item = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) item.getActionView();
+        searchView.setOnQueryTextListener(this);
+
+        if (mSearchQuery != null) {
+            searchView.setIconified(false);
+            //item.expandActionView();
+            searchView.setQuery(mSearchQuery, false);
+            searchView.clearFocus();
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_app_list, container, false);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mSearchQuery != null && !mSearchQuery.isEmpty()) {
+            outState.putString(EXTRA_SEARCH_QUERY, mSearchQuery);
+        }
     }
 
     @Override
@@ -136,6 +173,34 @@ public class AppListFragment extends Fragment implements
 
         Toast.makeText(getActivity(), R.string.indiv_app_sharing_reboot_needed_message,
                 Toast.LENGTH_LONG).show();
+    }
+
+    private List<AppInformation> filter(List<AppInformation> infos, String query) {
+        query = query.toLowerCase();
+
+        final List<AppInformation> filteredInfos = new ArrayList<>();
+        for (AppInformation info : infos) {
+            final String text = info.name.toLowerCase();
+            if (text.contains(query)) {
+                filteredInfos.add(info);
+            }
+        }
+        return filteredInfos;
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        mSearchQuery = newText;
+
+        final List<AppInformation> filteredInfoList = filter(mAppInfos, newText);
+        mAdapter.animateTo(filteredInfoList);
+        mAppsList.scrollToPosition(0);
+        return true;
     }
 
     @Override
@@ -170,7 +235,13 @@ public class AppListFragment extends Fragment implements
 
         mConfig = result.config;
 
-        mAdapter.notifyDataSetChanged();
+        // Reapply filter if needed
+        if (mSearchQuery != null) {
+            final List<AppInformation> filteredInfoList = filter(mAppInfos, mSearchQuery);
+            mAdapter.setTo(filteredInfoList);
+        } else {
+            mAdapter.setTo(mAppInfos);
+        }
 
         showAppList(true);
     }
@@ -210,7 +281,7 @@ public class AppListFragment extends Fragment implements
             appInfo.shareData = shareData;
         }
 
-        mAdapter.notifyDataSetChanged();
+        mAdapter.animateTo(mAppInfos);
     }
 
     public static class AppInformation {

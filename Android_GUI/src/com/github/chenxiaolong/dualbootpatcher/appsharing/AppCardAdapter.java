@@ -31,6 +31,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppCardAdapter.AppCardViewHolder;
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppListFragment.AppInformation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AppCardAdapter extends RecyclerView.Adapter<AppCardViewHolder> {
@@ -47,7 +48,7 @@ public class AppCardAdapter extends RecyclerView.Adapter<AppCardViewHolder> {
     };
 
     public AppCardAdapter(List<AppInformation> apps, AppCardActionListener listener) {
-        mApps = apps;
+        mApps = new ArrayList<>(apps);
         mListener = listener;
     }
 
@@ -118,5 +119,62 @@ public class AppCardAdapter extends RecyclerView.Adapter<AppCardViewHolder> {
 
     public interface AppCardActionListener {
         void onSelectedApp(AppInformation info);
+    }
+
+    public void setTo(List<AppInformation> infos) {
+        mApps.clear();
+        mApps.addAll(infos);
+        notifyDataSetChanged();
+    }
+
+    public void animateTo(List<AppInformation> infos) {
+        applyAndAnimateRemovals(infos);
+        applyAndAnimateAdditions(infos);
+        applyAndAnimateMovedItems(infos);
+    }
+
+    private void applyAndAnimateRemovals(List<AppInformation> newInfos) {
+        for (int i = mApps.size() - 1; i >= 0; i--) {
+            final AppInformation info = mApps.get(i);
+            if (!newInfos.contains(info)) {
+                removeItem(i);
+            }
+        }
+    }
+
+    private void applyAndAnimateAdditions(List<AppInformation> newInfos) {
+        for (int i = 0, count = newInfos.size(); i < count; i++) {
+            final AppInformation info = newInfos.get(i);
+            if (!mApps.contains(info)) {
+                addItem(i, info);
+            }
+        }
+    }
+
+    private void applyAndAnimateMovedItems(List<AppInformation> newInfos) {
+        for (int toPosition = newInfos.size() - 1; toPosition >= 0; toPosition--) {
+            final AppInformation info = newInfos.get(toPosition);
+            final int fromPosition = mApps.indexOf(info);
+            if (fromPosition >= 0 && fromPosition != toPosition) {
+                moveItem(fromPosition, toPosition);
+            }
+        }
+    }
+
+    public AppInformation removeItem(int position) {
+        final AppInformation info = mApps.remove(position);
+        notifyItemRemoved(position);
+        return info;
+    }
+
+    public void addItem(int position, AppInformation info) {
+        mApps.add(position, info);
+        notifyItemInserted(position);
+    }
+
+    public void moveItem(int fromPosition, int toPosition) {
+        final AppInformation info = mApps.remove(fromPosition);
+        mApps.add(toPosition, info);
+        notifyItemMoved(fromPosition, toPosition);
     }
 }
