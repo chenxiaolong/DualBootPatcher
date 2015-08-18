@@ -470,7 +470,10 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p16" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setRecoveryBlockDevs({
+        QCOM_RECOVERY, QCOM_TZ,
+        "/dev/block/mmcblk0p8" // tz
+    });
     devices.push_back(device);
 
     // LG G2
