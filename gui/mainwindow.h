@@ -62,7 +62,7 @@ private slots:
                             const QString &errorMessage);
 
 private:
-    void updateDataRomIdDescText(const QString &text);
+    void updateRomIdDescText(const QString &text);
     void updateProgressText();
 
     void addWidgets();
