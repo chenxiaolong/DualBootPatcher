@@ -42,6 +42,7 @@
 #include "switcher.h"
 #include "validcerts.h"
 #include "version.h"
+#include "wipe.h"
 #include "util/chown.h"
 #include "util/copy.h"
 #include "util/delete.h"
@@ -133,14 +134,18 @@ static bool v2_get_roms_list(int fd, const v2::Request *msg)
     std::vector<fb::Offset<v2::Rom>> fb_roms;
 
     for (auto r : roms.roms) {
+        std::string system_path = r->full_system_path();
+        std::string cache_path = r->full_cache_path();
+        std::string data_path = r->full_data_path();
+
         auto fb_id = builder.CreateString(r->id);
-        auto fb_system_path = builder.CreateString(r->system_path);
-        auto fb_cache_path = builder.CreateString(r->cache_path);
-        auto fb_data_path = builder.CreateString(r->data_path);
+        auto fb_system_path = builder.CreateString(system_path);
+        auto fb_cache_path = builder.CreateString(cache_path);
+        auto fb_data_path = builder.CreateString(data_path);
         fb::Offset<fb::String> fb_version;
         fb::Offset<fb::String> fb_build;
 
-        std::string build_prop(r->system_path);
+        std::string build_prop(system_path);
         build_prop += "/build.prop";
 
         std::unordered_map<std::string, std::string> properties;
@@ -187,14 +192,13 @@ static bool v2_get_builtin_rom_ids(int fd, const v2::Request *msg)
 
     fb::FlatBufferBuilder builder;
 
-    Roms roms;
-    roms.add_builtin();
-
     std::vector<fb::Offset<fb::String>> ids;
 
-    for (auto r : roms.roms) {
-        ids.push_back(builder.CreateString(r->id));
-    }
+    ids.push_back(builder.CreateString("primary"));
+    ids.push_back(builder.CreateString("dual"));
+    ids.push_back(builder.CreateString("multi-slot-1"));
+    ids.push_back(builder.CreateString("multi-slot-2"));
+    ids.push_back(builder.CreateString("multi-slot-3"));
 
     // Create response
     auto fb_ids = builder.CreateVector(ids);
@@ -509,35 +513,15 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
             bool success = false;
 
             if (target == v2::WipeTarget_SYSTEM) {
-                success = wipe_directory(rom->system_path, true);
-                // Try removing ROM's /system if it's empty
-                remove(rom->system_path.c_str());
+                success = wipe_system(rom);
             } else if (target == v2::WipeTarget_CACHE) {
-                success = wipe_directory(rom->cache_path, true);
-                // Try removing ROM's /cache if it's empty
-                remove(rom->cache_path.c_str());
+                success = wipe_cache(rom);
             } else if (target == v2::WipeTarget_DATA) {
-                success = wipe_directory(rom->data_path, false);
-                // Try removing ROM's /data/media and /data if they're empty
-                remove((rom->data_path + "/media").c_str());
-                remove(rom->data_path.c_str());
+                success = wipe_data(rom);
             } else if (target == v2::WipeTarget_DALVIK_CACHE) {
-                // Most ROMs use /data/dalvik-cache, but some use
-                // /cache/dalvik-cache, like the jflte CyanogenMod builds
-                std::string data_path(rom->data_path);
-                std::string cache_path(rom->cache_path);
-                data_path += "/dalvik-cache";
-                cache_path += "/dalvik-cache";
-                // util::delete_recursive() returns true if the path does not
-                // exist (ie. returns false only on errors), which is exactly
-                // what we want
-                success = util::delete_recursive(data_path) &&
-                        util::delete_recursive(cache_path);
+                success = wipe_dalvik_cache(rom);
             } else if (target == v2::WipeTarget_MULTIBOOT) {
-                // Delete /data/media/0/MultiBoot/[ROM ID]
-                std::string multiboot_path("/data/media/0/MultiBoot/");
-                multiboot_path += rom->id;
-                success = util::delete_recursive(multiboot_path);
+                success = wipe_multiboot(rom);
             } else {
                 LOGE("Unknown wipe target %d", target);
             }

@@ -79,6 +79,9 @@ protected:
     std::string _recovery_block_dev;
     unsigned char _boot_hash[SHA_DIGEST_LENGTH];
     std::shared_ptr<Rom> _rom;
+    std::string _system_path;
+    std::string _cache_path;
+    std::string _data_path;
 
     std::unordered_map<std::string, std::string> _prop;
 
@@ -101,7 +104,7 @@ private:
 
     bool extract_multiboot_files();
     bool set_up_busybox_wrapper();
-    bool create_temporary_image(const std::string &path);
+    bool create_image(const std::string &path, const std::string &size);
     bool system_image_copy(const std::string &source,
                            const std::string &image, bool reverse);
     bool run_real_updater();

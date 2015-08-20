@@ -108,7 +108,7 @@ static bool load_config_files()
         std::string config_path =
                 util::format(CONFIG_PATH_FMT, rom->id.c_str());
         std::string packages_path =
-                util::format(PACKAGES_XML_PATH_FMT, rom->data_path.c_str());
+                util::format(PACKAGES_XML_PATH_FMT, rom->full_data_path().c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;

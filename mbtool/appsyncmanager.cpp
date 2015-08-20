@@ -277,8 +277,7 @@ bool AppSyncManager::sync_apk_shared_to_user(const std::string &pkgname,
 
         // We need to get the non-bind mounted path since pre-Android 5.0 libc
         // has a bug linking across bind mounts, even if st_dev is the same.
-        std::string user_apk;
-        user_apk += rom->data_path;
+        std::string user_apk(rom->full_data_path());
         user_apk += pkg->code_path.substr(5); // For "/data"
         if (!util::ends_with(pkg->code_path, ".apk")) {
             // Android >= 5.0

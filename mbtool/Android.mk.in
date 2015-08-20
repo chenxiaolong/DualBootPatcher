@@ -164,6 +164,7 @@ mbtool_src_base := \
 	sepolpatch.cpp \
 	switcher.cpp \
 	validcerts.cpp \
+	wipe.cpp \
 	external/android_reboot.c \
 	external/mntent.c \
 	initwrapper/cutils/uevent.cpp \
