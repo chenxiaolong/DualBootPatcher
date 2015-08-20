@@ -210,7 +210,7 @@ static bool fix_file_contexts()
 
     static const char *new_contexts =
             "\n"
-            "/data/media(/.*)?        <<none>>\n"
+            "/data/media/[0-9]+(/.*)? <<none>>\n"
             "/raw(/.*)?               <<none>>\n"
             "/data/multiboot(/.*)?    <<none>>\n"
             "/cache/multiboot(/.*)?   <<none>>\n"
