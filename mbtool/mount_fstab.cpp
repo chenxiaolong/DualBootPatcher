@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -52,7 +52,6 @@
 #include "util/string.h"
 
 
-#define FORCE_SELINUX_PERMISSIVE 0
 
 
 namespace mb
@@ -440,75 +439,13 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     return true;
 }
 
-static void mount_fstab_usage(int error)
-{
-    FILE *stream = error ? stderr : stdout;
-
-    fprintf(stream,
-            "Usage: mount_fstab [fstab file]\n\n"
-            "This takes only one argument, the path to the fstab file. If the\n"
-            "mounting succeeds, the generated \"/.<orig fstab>.gen\" file should\n"
-            "be passed to the Android init's mount_all command.\n");
-}
-
 int mount_fstab_main(int argc, char *argv[])
 {
-    int opt;
+    (void) argc;
+    (void) argv;
 
-    static struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
-    };
-
-    int long_index = 0;
-
-    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
-        switch (opt) {
-        case 'h':
-            mount_fstab_usage(0);
-            return EXIT_SUCCESS;
-
-        default:
-            mount_fstab_usage(1);
-            return EXIT_FAILURE;
-        }
-    }
-
-    // We only expect one argument
-    if (argc - optind != 1) {
-        mount_fstab_usage(1);
-        return EXIT_FAILURE;
-    }
-
-    // Use the kernel log since logcat hasn't run yet
-    util::log_set_logger(std::make_shared<util::KmsgLogger>());
-
-    // Patch SELinux policy
-    if (!patch_loaded_sepolicy()) {
-        LOGE("Failed to patch loaded SELinux policy. Continuing anyway");
-    } else {
-        LOGV("SELinux policy patching completed");
-    }
-
-#if FORCE_SELINUX_PERMISSIVE
-    int fd = open("/sys/fs/selinux/enforce", O_RDWR);
-    if (fd > 0) {
-        write(fd, "0", 1);
-        close(fd);
-    }
-#endif
-
-    // Remount rootfs as read-write so a new fstab file can be written
-    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
-        LOGE("Failed to remount rootfs as rw: %s", strerror(errno));
-    }
-
-    if (!mount_fstab(argv[optind], false)) {
-        LOGE("Failed to mount filesystems. Rebooting into recovery");
-        reboot_directly("recovery");
-        return EXIT_FAILURE;
-    }
-
+    printf("mount_fstab has been deprecated and removed. "
+           "The initwrapper should be used instead\n.");
     return EXIT_SUCCESS;
 }
 
