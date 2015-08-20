@@ -17,9 +17,13 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include <sys/stat.h>
 
 void handle_device_fd();
 void device_init();
 void device_close();
 int get_device_fd();
+
+const std::unordered_map<std::string, std::string> * get_devices_map();

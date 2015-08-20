@@ -70,6 +70,8 @@ static std::vector<perms_> sys_perms;
 static std::vector<perms_> dev_perms;
 static std::vector<platform_node> platform_names;
 
+static std::unordered_map<std::string, std::string> device_map;
+
 void fixup_sys_perms(const char *upath)
 {
     char buf[512];
@@ -266,7 +268,7 @@ static void parse_event(const char *msg, struct uevent *uevent)
     uevent->device_name = nullptr;
 
     // Currently ignoring SEQNUM
-    while(*msg) {
+    while (*msg) {
         if (strncmp(msg, "ACTION=", 7) == 0) {
             msg += 7;
             uevent->action = msg;
@@ -354,6 +356,7 @@ static void handle_device(const char *action, const char *devpath,
                           const std::vector<std::string> &links)
 {
     if (strcmp(action, "add") == 0) {
+        device_map[path] = devpath;
         make_device(devpath, path, block, major, minor, links);
         for (const std::string &link : links) {
             make_link_init(devpath, link.c_str());
@@ -361,6 +364,7 @@ static void handle_device(const char *action, const char *devpath,
     }
 
     if (strcmp(action, "remove") == 0) {
+        device_map.erase(path);
         for (const std::string &link : links) {
             remove_link(devpath, link.c_str());
         }
@@ -394,7 +398,7 @@ static const char * parse_device_name(struct uevent *uevent, unsigned int len)
     ++name;
 
     // Too-long names would overrun our buffer
-    if(strlen(name) > len) {
+    if (strlen(name) > len) {
         LOGE("DEVPATH=%s exceeds %u-character limit on filename; ignoring event",
              name, len);
         return nullptr;
@@ -598,4 +602,9 @@ void device_close()
 int get_device_fd()
 {
     return device_fd;
+}
+
+const std::unordered_map<std::string, std::string> * get_devices_map()
+{
+    return &device_map;
 }
