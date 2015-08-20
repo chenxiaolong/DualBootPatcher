@@ -53,13 +53,13 @@ public class MainOptsCW implements PatcherUIListener {
         void onRomIdSelected(String id);
     }
 
-    private static final String EXTRA_IS_DATA_SLOT = "is_data_slot";
+    private static final String EXTRA_IS_NAMED_SLOT = "is_named_slot";
 
     private CardView vCard;
     private View vDummy;
     private Spinner vDeviceSpinner;
     private Spinner vRomIdSpinner;
-    private EditText vRomIdDataSlotId;
+    private EditText vRomIdNamedSlotId;
     private TextView vRomIdDesc;
 
     private Context mContext;
@@ -71,7 +71,7 @@ public class MainOptsCW implements PatcherUIListener {
     private ArrayAdapter<String> mRomIdAdapter;
     private ArrayList<String> mRomIds = new ArrayList<>();
 
-    private boolean mIsDataSlot;
+    private boolean mIsNamedSlot;
 
     public MainOptsCW(Context context, PatcherConfigState pcs, CardView card,
                       MainOptsListener listener) {
@@ -83,7 +83,7 @@ public class MainOptsCW implements PatcherUIListener {
         vDummy = card.findViewById(R.id.customopts_dummylayout);
         vDeviceSpinner = (Spinner) card.findViewById(R.id.spinner_device);
         vRomIdSpinner = (Spinner) card.findViewById(R.id.spinner_rom_id);
-        vRomIdDataSlotId = (EditText) card.findViewById(R.id.rom_id_data_slot_id);
+        vRomIdNamedSlotId = (EditText) card.findViewById(R.id.rom_id_named_slot_id);
         vRomIdDesc = (TextView) card.findViewById(R.id.rom_id_desc);
 
         initDevices();
@@ -120,7 +120,9 @@ public class MainOptsCW implements PatcherUIListener {
         vRomIdSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                mIsDataSlot = (position >= 0 && position == mRomIds.size() - 1);
+                mIsNamedSlot = (mRomIds.size() >= 2
+                        && (position == mRomIds.size() - 1
+                        || position == mRomIds.size() - 2));
 
                 onRomIdSelected(position);
 
@@ -134,7 +136,7 @@ public class MainOptsCW implements PatcherUIListener {
             }
         });
 
-        vRomIdDataSlotId.addTextChangedListener(new TextWatcher() {
+        vRomIdNamedSlotId.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -145,21 +147,21 @@ public class MainOptsCW implements PatcherUIListener {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (!mIsDataSlot) {
+                if (!mIsNamedSlot) {
                     return;
                 }
 
                 String text = s.toString();
 
                 if (text.isEmpty()) {
-                    vRomIdDataSlotId.setError(mContext.getString(
-                            R.string.install_location_data_slot_id_error_is_empty));
+                    vRomIdNamedSlotId.setError(mContext.getString(
+                            R.string.install_location_named_slot_id_error_is_empty));
                 } else if (!text.matches("[a-z0-9]+")) {
-                    vRomIdDataSlotId.setError(mContext.getString(
-                            R.string.install_location_data_slot_id_error_invalid));
+                    vRomIdNamedSlotId.setError(mContext.getString(
+                            R.string.install_location_named_slot_id_error_invalid));
                 }
 
-                onDataSlotIdChanged(s.toString());
+                onNamedSlotIdChanged(s.toString());
 
                 if (mListener != null) {
                     mListener.onRomIdSelected(getRomId());
@@ -169,7 +171,7 @@ public class MainOptsCW implements PatcherUIListener {
     }
 
     private void initActions() {
-        preventTextViewKeepFocus(vRomIdDataSlotId);
+        preventTextViewKeepFocus(vRomIdNamedSlotId);
     }
 
     /**
@@ -187,7 +189,7 @@ public class MainOptsCW implements PatcherUIListener {
                     tv.clearFocus();
                     InputMethodManager imm = (InputMethodManager)
                             mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(vRomIdDataSlotId.getApplicationWindowToken(), 0);
+                    imm.hideSoftInputFromWindow(vRomIdNamedSlotId.getApplicationWindowToken(), 0);
                     vDummy.requestFocus();
                 }
                 return false;
@@ -222,14 +224,14 @@ public class MainOptsCW implements PatcherUIListener {
     @Override
     public void onRestoreCardState(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            mIsDataSlot = savedInstanceState.getBoolean(EXTRA_IS_DATA_SLOT, false);
+            mIsNamedSlot = savedInstanceState.getBoolean(EXTRA_IS_NAMED_SLOT, false);
         }
 
-        // Show data slot ID text box if data-slot is chosen
-        if (mIsDataSlot) {
-            expandDataSlotId();
+        // Show named slot ID text box if data-slot or extsd-slot is chosen
+        if (mIsNamedSlot) {
+            expandNamedSlotId();
         } else {
-            collapseDataSlotId();
+            collapseNamedSlotId();
         }
 
         // Select our device on initial startup
@@ -250,7 +252,7 @@ public class MainOptsCW implements PatcherUIListener {
 
     @Override
     public void onSaveCardState(Bundle outState) {
-        outState.putBoolean(EXTRA_IS_DATA_SLOT, mIsDataSlot);
+        outState.putBoolean(EXTRA_IS_NAMED_SLOT, mIsNamedSlot);
     }
 
     @Override
@@ -289,25 +291,29 @@ public class MainOptsCW implements PatcherUIListener {
             mRomIds.add(location.name);
         }
         mRomIds.add(mContext.getString(R.string.install_location_data_slot));
+        mRomIds.add(mContext.getString(R.string.install_location_extsd_slot));
         mRomIdAdapter.notifyDataSetChanged();
     }
 
     private void onRomIdSelected(int position) {
-        if (mIsDataSlot) {
-            onDataSlotIdChanged(vRomIdDataSlotId.getText().toString());
-            animateExpandDataSlotId();
+        if (mIsNamedSlot) {
+            onNamedSlotIdChanged(vRomIdNamedSlotId.getText().toString());
+            animateExpandNamedSlotId();
         } else {
             InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
             vRomIdDesc.setText(locations[position].description);
-            animateCollapseDataSlotId();
+            animateCollapseNamedSlotId();
         }
     }
 
-    private void onDataSlotIdChanged(String text) {
+    private void onNamedSlotIdChanged(String text) {
         if (text.isEmpty()) {
-            vRomIdDesc.setText(R.string.install_location_data_slot_id_empty);
-        } else {
+            vRomIdDesc.setText(R.string.install_location_named_slot_id_empty);
+        } else if (vRomIdSpinner.getSelectedItemPosition() == mRomIds.size() - 2) {
             InstallLocation location = PatcherUtils.getDataSlotInstallLocation(mContext, text);
+            vRomIdDesc.setText(location.description);
+        } else if (vRomIdSpinner.getSelectedItemPosition() == mRomIds.size() - 1) {
+            InstallLocation location = PatcherUtils.getExtsdSlotInstallLocation(mContext, text);
             vRomIdDesc.setText(location.description);
         }
     }
@@ -383,29 +389,29 @@ public class MainOptsCW implements PatcherUIListener {
         return animator;
     }
 
-    private void expandDataSlotId() {
-        vRomIdDataSlotId.setVisibility(View.VISIBLE);
+    private void expandNamedSlotId() {
+        vRomIdNamedSlotId.setVisibility(View.VISIBLE);
     }
 
-    private void collapseDataSlotId() {
-        vRomIdDataSlotId.setVisibility(View.GONE);
+    private void collapseNamedSlotId() {
+        vRomIdNamedSlotId.setVisibility(View.GONE);
     }
 
-    private void animateExpandDataSlotId() {
-        if (vRomIdDataSlotId.getVisibility() == View.VISIBLE) {
+    private void animateExpandNamedSlotId() {
+        if (vRomIdNamedSlotId.getVisibility() == View.VISIBLE) {
             return;
         }
 
-        Animator animator = createExpandLayoutAnimator(vRomIdDataSlotId);
+        Animator animator = createExpandLayoutAnimator(vRomIdNamedSlotId);
         animator.start();
     }
 
-    private void animateCollapseDataSlotId() {
-        if (vRomIdDataSlotId.getVisibility() == View.GONE) {
+    private void animateCollapseNamedSlotId() {
+        if (vRomIdNamedSlotId.getVisibility() == View.GONE) {
             return;
         }
 
-        Animator animator = createCollapseLayoutAnimator(vRomIdDataSlotId);
+        Animator animator = createCollapseLayoutAnimator(vRomIdNamedSlotId);
         animator.start();
     }
 
@@ -436,17 +442,20 @@ public class MainOptsCW implements PatcherUIListener {
     }
 
     private String getRomId() {
-        if (mIsDataSlot) {
-            return PatcherUtils.getDataSlotRomId(vRomIdDataSlotId.getText().toString());
+        if (mIsNamedSlot) {
+            if (vRomIdSpinner.getSelectedItemPosition() == mRomIds.size() - 2) {
+                return PatcherUtils.getDataSlotRomId(vRomIdNamedSlotId.getText().toString());
+            } else if (vRomIdSpinner.getSelectedItemPosition() == mRomIds.size() - 1) {
+                return PatcherUtils.getExtsdSlotRomId(vRomIdNamedSlotId.getText().toString());
+            }
         } else {
             int pos = vRomIdSpinner.getSelectedItemPosition();
             if (pos >= 0) {
                 InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
                 return locations[pos].id;
-            } else {
-                return null;
             }
         }
+        return null;
     }
 
     /**

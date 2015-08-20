@@ -65,10 +65,10 @@
             android:orientation="horizontal" />
 
         <EditText
-            android:id="@+id/rom_id_data_slot_id"
+            android:id="@+id/rom_id_named_slot_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/install_location_data_slot_id_hint"
+            android:hint="@string/install_location_named_slot_id_hint"
             android:inputType="textNoSuggestions" />
 
         <TextView

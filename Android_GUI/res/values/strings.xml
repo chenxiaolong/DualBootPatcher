@@ -82,6 +82,8 @@
     <string name="multislot">Multi Slot %s</string>
     <!-- Default name for the data-slot ROMs -->
     <string name="dataslot">%s (Data slot)</string>
+    <!-- Default name for the extsd-slot ROMs -->
+    <string name="extsdslot">%s (Extsd slot)</string>
     <!-- Text shown when a ROM's version could not be detected -->
     <string name="couldnt_determine_version">Couldn\'t determine ROM version</string>
 
@@ -262,17 +264,18 @@
     <!-- Description for all other installation locations -->
     <string name="install_location_desc">Installs ROM to %s</string>
     <!-- Text box hint for specifying the data slot ID -->
-    <string name="install_location_data_slot_id_hint">Enter an ID</string>
+    <string name="install_location_named_slot_id_hint">Enter an ID</string>
     <!-- Description text shown if the data slot ID is empty -->
-    <string name="install_location_data_slot_id_empty">Enter an ID above</string>
+    <string name="install_location_named_slot_id_empty">Enter an ID above</string>
     <!-- Error tooltip shown if the data slot ID is empty -->
-    <string name="install_location_data_slot_id_error_is_empty">The data slot ID cannot be
-        empty.</string>
+    <string name="install_location_named_slot_id_error_is_empty">The slot ID cannot be empty.</string>
     <!-- Error tooltip shown if the data slot ID contains invalid characters -->
-    <string name="install_location_data_slot_id_error_invalid">The data slot ID must contain only
+    <string name="install_location_named_slot_id_error_invalid">The slot ID must contain only
         lowercase English letters and/or numbers.</string>
     <!-- Name for the data-slot installation location -->
     <string name="install_location_data_slot">Data slot</string>
+    <!-- Name for the extsd-slot installation location -->
+    <string name="install_location_extsd_slot">Extsd slot</string>
 
     <!-- Title for the dialog box indicating that no file manager is installed -->
     <string name="filemanager_missing_title">No file manager</string>

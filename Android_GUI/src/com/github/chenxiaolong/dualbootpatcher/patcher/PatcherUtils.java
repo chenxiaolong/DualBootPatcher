@@ -202,12 +202,25 @@ public class PatcherUtils {
         InstallLocation location = new InstallLocation();
         location.id = getDataSlotRomId(dataSlotId);
         location.name = String.format(context.getString(R.string.dataslot), dataSlotId);
-        location.description = String.format(context.getString(R.string.install_location_desc),
+        location.description = context.getString(R.string.install_location_desc,
                 "/data/multiboot/data-slot-" + dataSlotId);
+        return location;
+    }
+
+    public static InstallLocation getExtsdSlotInstallLocation(Context context, String extsdSlotId) {
+        InstallLocation location = new InstallLocation();
+        location.id = getExtsdSlotRomId(extsdSlotId);
+        location.name = String.format(context.getString(R.string.extsdslot), extsdSlotId);
+        location.description = context.getString(R.string.install_location_desc,
+                "[External SD]/multiboot/extsd-slot-" + extsdSlotId);
         return location;
     }
 
     public static String getDataSlotRomId(String dataSlotId) {
         return "data-slot-" + dataSlotId;
+    }
+
+    public static String getExtsdSlotRomId(String extsdSlotId) {
+        return "extsd-slot-" + extsdSlotId;
     }
 }

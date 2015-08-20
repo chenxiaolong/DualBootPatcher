@@ -35,7 +35,8 @@ public class RomIdSelectionDialog extends DialogFragment {
 
     enum RomIdType {
         BUILT_IN_ROM_ID,
-        NAMED_DATA_SLOT
+        NAMED_DATA_SLOT,
+        NAMED_EXTSD_SLOT
     }
 
     private static final String ARG_INFOS = "infos";
@@ -68,13 +69,14 @@ public class RomIdSelectionDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         final ArrayList<RomInformation> infos = getArguments().getParcelableArrayList(ARG_INFOS);
-        final String[] names = new String[infos.size() + 1];
+        final String[] names = new String[infos.size() + 2];
 
         for (int i = 0; i < infos.size(); i++) {
             names[i] = infos.get(i).getDefaultName();
         }
 
         names[infos.size()] = getString(R.string.install_location_data_slot);
+        names[infos.size() + 1] = getString(R.string.install_location_extsd_slot);
 
         Dialog dialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.zip_flashing_dialog_installation_location)
@@ -88,6 +90,8 @@ public class RomIdSelectionDialog extends DialogFragment {
                         if (owner != null) {
                             if (which == infos.size()) {
                                 owner.onSelectedRomId(RomIdType.NAMED_DATA_SLOT, null);
+                            } else if (which == infos.size() + 1) {
+                                owner.onSelectedRomId(RomIdType.NAMED_EXTSD_SLOT, null);
                             } else {
                                 RomInformation info = infos.get(which);
                                 owner.onSelectedRomId(RomIdType.BUILT_IN_ROM_ID, info.getId());

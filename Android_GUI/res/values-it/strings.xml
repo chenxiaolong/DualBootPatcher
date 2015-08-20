@@ -175,13 +175,13 @@
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Installa ROM in %s</string>
   <!--Text box hint for specifying the data slot ID-->
-  <string name="install_location_data_slot_id_hint">Immettere un ID</string>
+  <string name="install_location_named_slot_id_hint">Immettere un ID</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_data_slot_id_empty">Immettere un ID sopra</string>
+  <string name="install_location_named_slot_id_empty">Immettere un ID sopra</string>
   <!--Error tooltip shown if the data slot ID is empty-->
-  <string name="install_location_data_slot_id_error_is_empty">L\'ID dello slot data non può essere vuoto.</string>
+  <string name="install_location_named_slot_id_error_is_empty">L\'ID dello slot data non può essere vuoto.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
-  <string name="install_location_data_slot_id_error_invalid">L\'ID dello slot data deve contenere soltanto lettere minuscole Inglesi e/o numeri.</string>
+  <string name="install_location_named_slot_id_error_invalid">L\'ID dello slot data deve contenere soltanto lettere minuscole Inglesi e/o numeri.</string>
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Slot Data</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -385,7 +385,7 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <string name="only_zip_supported">Solo i file ZIP sono supportati da %s</string>
   <string name="only_boot_image_supported">Solo i kernel sono supportati da %s</string>
   <string name="patching_cancelled">Il processo di patching è stato annullato</string>
-  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system 
+  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system
 o /cache nell\'updater-script.\n\nSe il file è una ROM, allora qualcosa è andato storto.
 Se il file non è una ROM (es. kernel o mod), non ha bisogno di essere patchato.</string>
   <string name="apply_patch_file_error">Impossibile applicare il file patch</string>
