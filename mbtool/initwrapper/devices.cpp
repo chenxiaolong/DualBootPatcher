@@ -426,6 +426,35 @@ static void handle_block_device_event(struct uevent *uevent)
             uevent->major, uevent->minor, links);
 }
 
+static void handle_generic_device_event(struct uevent *uevent)
+{
+    const char *base = "/dev/";
+    const char *name;
+    char devpath[96];
+    std::vector<std::string> links;
+
+    name = parse_device_name(uevent, 64);
+    if (!name) {
+        return;
+    }
+
+    if (strcmp(uevent->subsystem, "misc") == 0) {
+        if (strcmp(name, "loop-control") != 0
+                && strcmp(name, "fuse") != 0) {
+            return;
+        }
+    } else if (strcmp(uevent->subsystem, "mem") == 0) {
+        if (strcmp(name, "null") != 0) {
+            return;
+        }
+    }
+
+    snprintf(devpath, sizeof(devpath), "%s%s", base, name);
+
+    handle_device(uevent->action, devpath, uevent->path, 0,
+            uevent->major, uevent->minor, links);
+}
+
 static void handle_device_event(struct uevent *uevent)
 {
     if (strcmp(uevent->action, "add") == 0
@@ -438,6 +467,8 @@ static void handle_device_event(struct uevent *uevent)
         handle_block_device_event(uevent);
     } else if (strncmp(uevent->subsystem, "platform", 8) == 0) {
         handle_platform_device_event(uevent);
+    } else {
+        handle_generic_device_event(uevent);
     }
 }
 
