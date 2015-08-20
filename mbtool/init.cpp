@@ -36,6 +36,7 @@
 #include "initwrapper/util.h"
 #include "mount_fstab.h"
 #include "reboot.h"
+#include "sepolpatch.h"
 #include "util/chown.h"
 #include "util/finally.h"
 #include "util/logging.h"
@@ -490,6 +491,15 @@ int init_main(int argc, char *argv[])
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();
+
+    struct stat sb;
+    if (stat("/sepolicy", &sb) == 0) {
+        if (!patch_sepolicy("/sepolicy", "/sepolicy")) {
+            LOGW("Failed to patch /sepolicy");
+            reboot_directly("recovery");
+            return EXIT_FAILURE;
+        }
+    }
 
     // Kill uevent thread and close uevent socket
     device_close();
