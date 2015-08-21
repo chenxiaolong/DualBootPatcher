@@ -311,3 +311,38 @@ if(MBP_BUILD_ANDROID)
         )
     endif()
 endif()
+
+
+################################################################################
+# e2fsprogs for Android
+################################################################################
+
+set(E2FSPROGS_VER "android-5.0.2_r1")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/e2fsprogs-${E2FSPROGS_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/e2fsprogs-${E2FSPROGS_VER}_android.tar.bz2
+    EXPECTED_HASH MD5=ae67c29df2f4752b8524fe19e0b6e9ea
+    EXPECTED_HASH SHA512=ede7851bc3aa419687f238d5537d91d1157ac61cf5454888737ae367e428dd74b38c3cbc2643e0ac028f15bcce6c3ab09bbfaf6676b24f224a7e2ea4f2202729
+    TLS_VERIFY ON
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs
+    )
+
+    message(STATUS "Extracting e2fsprogs for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/e2fsprogs-${E2FSPROGS_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs
+    )
+endif()
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/e2fsprogs/
+    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+    COMPONENT Libraries
+)
