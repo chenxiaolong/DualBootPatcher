@@ -69,6 +69,9 @@ bool CoreRP::patchRamdisk()
     if (!addMbtool()) {
         return false;
     }
+    if (!addExfat()) {
+        return false;
+    }
     if (!setUpInitWrapper()) {
         return false;
     }
@@ -88,6 +91,37 @@ bool CoreRP::addMbtool()
     }
 
     if (!m_impl->cpio->addFile(mbtoolPath, mbtool, 0750)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreRP::addExfat()
+{
+    const std::string mount("sbin/mount.exfat");
+    const std::string fsck("sbin/fsck.exfat");
+
+    std::string mountPath(m_impl->pc->dataDirectory());
+    mountPath += "/binaries/android/";
+    mountPath += m_impl->info->device()->architecture();
+    mountPath += "/mount.exfat";
+
+    if (m_impl->cpio->exists(mount)) {
+        m_impl->cpio->remove(mount);
+    }
+
+    if (m_impl->cpio->exists(fsck)) {
+        m_impl->cpio->remove(fsck);
+    }
+
+    if (!m_impl->cpio->addFile(mountPath, mount, 0750)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    if (!m_impl->cpio->addSymlink("mount.exfat", fsck)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
