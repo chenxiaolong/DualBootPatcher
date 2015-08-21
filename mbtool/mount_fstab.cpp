@@ -341,20 +341,20 @@ static bool mount_exfat_fuse(const std::string &source,
     }
 }
 
-// static bool mount_exfat_kernel(const std::string &source,
-//                                const std::string &target)
-// {
-//     int ret = mount(source.c_str(), target.c_str(), "exfat", 0, "");
-//     if (ret < 0) {
-//         LOGE("Failed to mount %s (%s) at %s: %s",
-//              source.c_str(), "exfat", target.c_str(), strerror(errno));
-//         return false;
-//     } else {
-//         LOGE("Successfully mounted %s (%s) at %s",
-//              source.c_str(), "exfat", target.c_str());
-//         return true;
-//     }
-// }
+static bool mount_exfat_kernel(const std::string &source,
+                               const std::string &target)
+{
+    int ret = mount(source.c_str(), target.c_str(), "exfat", 0, "");
+    if (ret < 0) {
+        LOGE("Failed to mount %s (%s) at %s: %s",
+             source.c_str(), "exfat", target.c_str(), strerror(errno));
+        return false;
+    } else {
+        LOGE("Successfully mounted %s (%s) at %s",
+             source.c_str(), "exfat", target.c_str());
+        return true;
+    }
+}
 
 static bool mount_vfat(const std::string &source, const std::string &target)
 {
@@ -390,12 +390,20 @@ static bool try_extsd_mount(const std::string &block_dev)
     // filesystem. We don't link in blkid, so we'll use a trial and error
     // approach.
 
-    if (mount_exfat_fuse(block_dev, EXTSD_MOUNT_POINT)) {
-        return true;
+    // Ugly hack: CM's vold uses fuse-exfat regardless if the exfat kernel
+    // module is available. CM's init binary has the "exfat" and "EXFAT   "
+    // due to the linking of libblkid. We'll use that fact to determine whether
+    // we're on CM or not.
+    if (util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" })) {
+        if (mount_exfat_fuse(block_dev, EXTSD_MOUNT_POINT)) {
+            return true;
+        }
+    } else {
+        if (mount_exfat_kernel(block_dev, EXTSD_MOUNT_POINT)) {
+            return true;
+        }
     }
-    //if (mount_exfat_kernel(block_dev, EXTSD_MOUNT_POINT)) {
-    //    return true;
-    //}
+
     if (mount_vfat(block_dev, EXTSD_MOUNT_POINT)) {
         return true;
     }
