@@ -1362,7 +1362,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         int ret;
 
         // Run file system checks
-        ret = util::run_command({ "e2fsck", "-f", "-y", TEMP_SYSTEM_IMAGE });
+        ret = run_command({ "e2fsck", "-f", "-y", TEMP_SYSTEM_IMAGE });
         if (WEXITSTATUS(ret) == 127) {
             display_msg("Recovery does not have e2fsck");
             display_msg("resize2fs may fail to run");
@@ -1372,7 +1372,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         }
 
         // Shrink image to minimum
-        ret = util::run_command({ "resize2fs", "-M", TEMP_SYSTEM_IMAGE });
+        ret = run_command({ "resize2fs", "-M", TEMP_SYSTEM_IMAGE });
         if (WEXITSTATUS(ret) == 127) {
             display_msg("Recovery does not have resize2fs");
             display_msg(util::format(
