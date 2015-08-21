@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 set -e
 
 url='https://android.googlesource.com/platform/external/e2fsprogs'
-tag='android-5.0.2_r1'
+tag='android-5.1.1_r9'
 
 if [ ! -d e2fsprogs/ ]; then
     git clone "${url}" e2fsprogs
@@ -31,7 +31,7 @@ fi
 
 pushd e2fsprogs
 git checkout "${tag}"
-git am ../0001-Fixes.patch
+git am "../0001-Fixes.${tag}.patch"
 
 arches=(armeabi-v7a arm64-v8a x86 x86_64)
 ndk-build \
