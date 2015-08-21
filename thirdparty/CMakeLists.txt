@@ -317,14 +317,14 @@ endif()
 # e2fsprogs for Android
 ################################################################################
 
-set(E2FSPROGS_VER "android-5.0.2_r1")
+set(E2FSPROGS_VER "android-5.1.1_r9")
 
 file(
     DOWNLOAD
     ${URL_BASE}/e2fsprogs-${E2FSPROGS_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/e2fsprogs-${E2FSPROGS_VER}_android.tar.bz2
-    EXPECTED_HASH MD5=ae67c29df2f4752b8524fe19e0b6e9ea
-    EXPECTED_HASH SHA512=ede7851bc3aa419687f238d5537d91d1157ac61cf5454888737ae367e428dd74b38c3cbc2643e0ac028f15bcce6c3ab09bbfaf6676b24f224a7e2ea4f2202729
+    EXPECTED_HASH MD5=d261cd5ac27c3b2cd16d57bcc1758fd9
+    EXPECTED_HASH SHA512=e02927b89d5a1ffa865c38b924c59485ce91008420119ce8c527fe5c11b88976b357e6f6f2a51da39cb8400427bf17581f2d57a5a208c7fbb69c08e44208e201
     TLS_VERIFY ON
     SHOW_PROGRESS
 )
