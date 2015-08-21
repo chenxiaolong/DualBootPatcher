@@ -1194,16 +1194,65 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     if (_rom->system_is_image) {
         display_msg(util::format("Creating %s %s image", IMAGE_SIZE, "system"));
 
-        if (stat(_system_path.c_str(), &sb) < 0
-                && !create_image(_system_path, IMAGE_SIZE)) {
-            display_msg(util::format("Failed to create image: %s",
-                                     _system_path.c_str()));
+        // To avoid uninit_bg issues (major PITA... http://www.redhat.com/archives/dm-devel/2012-June/msg00029.html)
+        // and e2fsck issues with the RTC (eg. after battery removal), we will
+        // create a fresh image for every flash operation
+
+        display_msg("Copying system to temporary image");
+
+        remove(TEMP_SYSTEM_IMAGE.c_str());
+
+        // Create temporary image in /data
+        if (!create_image(TEMP_SYSTEM_IMAGE, IMAGE_SIZE)) {
+            display_msg(util::format("Failed to create temporary image %s",
+                                     TEMP_SYSTEM_IMAGE.c_str()));
             return ProceedState::Fail;
         }
 
-        // Bind mount image file into chroot
+        struct stat sb;
+        if (stat(_system_path.c_str(), &sb) == 0) {
+            std::string temp_mountpoint(_temp);
+            temp_mountpoint += "/mnt_system_img";
+
+            if (mkdir(temp_mountpoint.c_str(), 0755) < 0 && errno != ENOENT) {
+                LOGE("Failed to create directory %s: %s",
+                     temp_mountpoint.c_str(), strerror(errno));
+                display_msg(util::format("Failed to create directory %s",
+                                         temp_mountpoint.c_str()));
+                return ProceedState::Fail;
+            }
+
+            // Mount image
+            if (!util::mount(_system_path.c_str(), temp_mountpoint.c_str(),
+                             "ext4", MS_RDONLY, "")) {
+                LOGE("Failed to mount %s: %s",
+                     _system_path.c_str(), strerror(errno));
+                display_msg(util::format(
+                        "Failed to mount %s", _system_path.c_str()));
+                return ProceedState::Fail;
+            }
+
+            // Copy current /system files to the image
+            if (!system_image_copy(temp_mountpoint, TEMP_SYSTEM_IMAGE, false)) {
+                display_msg(util::format("Failed to copy %s to %s",
+                                         temp_mountpoint.c_str(),
+                                         TEMP_SYSTEM_IMAGE.c_str()));
+                return ProceedState::Fail;
+            }
+
+            // Unmount image
+            if (!util::umount(temp_mountpoint.c_str())) {
+                LOGE("Failed to unmount %s: %s",
+                     temp_mountpoint.c_str(), strerror(errno));
+                display_msg(util::format("Failed to unmount %s",
+                                         temp_mountpoint.c_str()));
+                return ProceedState::Fail;
+            }
+        }
+
+        // Install to the image
         util::create_empty_file(in_chroot("/mb/system.img"));
-        if (log_mount(_system_path.c_str(),
+        if (log_mount(TEMP_SYSTEM_IMAGE.c_str(),
                       in_chroot("/mb/system.img").c_str(),
                       "", MS_BIND, "") < 0) {
             return ProceedState::Fail;
@@ -1310,7 +1359,45 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     }
 
     if (_rom->system_is_image) {
-        // Don't need to do anything if /system is an image
+        int ret;
+
+        // Run file system checks
+        ret = util::run_command({ "e2fsck", "-f", "-y", TEMP_SYSTEM_IMAGE });
+        if (WEXITSTATUS(ret) == 127) {
+            display_msg("Recovery does not have e2fsck");
+            display_msg("resize2fs may fail to run");
+        } else if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
+            display_msg("Failed to run e2fsck");
+            display_msg("resize2fs may fail to run");
+        }
+
+        // Shrink image to minimum
+        ret = util::run_command({ "resize2fs", "-M", TEMP_SYSTEM_IMAGE });
+        if (WEXITSTATUS(ret) == 127) {
+            display_msg("Recovery does not have resize2fs");
+            display_msg(util::format(
+                    "Image will not be shrunken from %s", IMAGE_SIZE));
+        } else if (ret < 0 || WEXITSTATUS(ret) != 0) {
+            display_msg("Failed to run resize2fs");
+            display_msg(util::format(
+                    "Image will not be shrunken from %s", IMAGE_SIZE));
+        } else if (WEXITSTATUS(ret) == 0) {
+            struct stat sb;
+            if (stat(TEMP_SYSTEM_IMAGE.c_str(), &sb) == 0) {
+                display_msg(util::format("Resized image to %.1f MiB",
+                                         (double) sb.st_size / 1024 / 1024));
+            }
+        }
+
+        display_msg("Copying temporary image to system");
+
+        // Copy back image
+        if (!util::copy_file(TEMP_SYSTEM_IMAGE, _system_path, true)) {
+            display_msg(util::format("Failed to copy %s to %s",
+                                     TEMP_SYSTEM_IMAGE.c_str(),
+                                     _system_path.c_str()));
+            return ProceedState::Fail;
+        }
     } else {
         if (_has_block_image || _rom->id == "primary") {
             display_msg("Copying temporary image to system");
