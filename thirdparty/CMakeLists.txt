@@ -5,6 +5,42 @@
 
 set(URL_BASE "https://dl.dropboxusercontent.com/u/486665/MultiBootPatcher/prebuilts")
 
+
+################################################################################
+# fuse-exfat for Android
+################################################################################
+
+set(EXFAT_VER "1.0.0-1")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/exfat-${EXFAT_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/exfat-${EXFAT_VER}_android.tar.bz2
+    EXPECTED_MD5 285afc88bd425a3fa0880c4c0cafaa4b
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/exfat)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/exfat
+    )
+
+    message(STATUS "Extracting fuse-exfat for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/exfat-${EXFAT_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/exfat
+    )
+endif()
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/exfat/
+    DESTINATION ${DATA_INSTALL_DIR}/binaries/android/
+    COMPONENT Libraries
+    FILES_MATCHING
+    PATTERN mount.exfat
+)
+
+
 ################################################################################
 # libarchive for Android
 ################################################################################
