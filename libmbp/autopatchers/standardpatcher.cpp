@@ -676,7 +676,7 @@ bool StandardPatcher::patchFiles(const std::string &directory)
             begin = replaceEdifyPackageExtractFile(&tokens, funcName, leftParen, rightParen,
                                                    systemDevs);
         } else {
-            begin = rightParen + 1;
+            begin = funcName + 1;
         }
     }
 
