@@ -49,11 +49,11 @@ const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
 
 #define MOUNT_FMT \
-        "run_program(\"/update-binary-tool\", \"mount\", \"%s\")"
+        "(run_program(\"/update-binary-tool\", \"mount\", \"%s\") == 0)"
 #define UNMOUNT_FMT \
-        "run_program(\"/update-binary-tool\", \"unmount\", \"%s\")"
+        "(run_program(\"/update-binary-tool\", \"unmount\", \"%s\") == 0)"
 #define FORMAT_FMT \
-        "run_program(\"/update-binary-tool\", \"format\", \"%s\")"
+        "(run_program(\"/update-binary-tool\", \"format\", \"%s\") == 0)"
 
 
 StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
