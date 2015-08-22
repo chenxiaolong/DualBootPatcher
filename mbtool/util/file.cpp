@@ -26,6 +26,8 @@
 #include <cstring>
 
 #include <fcntl.h>
+#include <linux/fs.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -215,6 +217,27 @@ bool file_read_all(const std::string &path,
     }
 
     *data_out = data;
+    *size_out = size;
+
+    return true;
+}
+
+bool get_blockdev_size(const char *path, uint64_t *size_out)
+{
+    int fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        return false;
+    }
+
+    auto close_fd = finally([&]{
+        close(fd);
+    });
+
+    uint64_t size;
+    if (ioctl(fd, BLKGETSIZE64, &size) < 0) {
+        return false;
+    }
+
     *size_out = size;
 
     return true;

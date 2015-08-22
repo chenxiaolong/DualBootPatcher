@@ -39,5 +39,7 @@ bool file_read_all(const std::string &path,
                    unsigned char **data_out,
                    std::size_t *size_out);
 
+bool get_blockdev_size(const char *path, uint64_t *size_out);
+
 }
 }

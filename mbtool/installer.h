@@ -43,8 +43,6 @@ protected:
     static const std::string UPDATE_BINARY;
     static const std::string MULTIBOOT_BBWRAPPER;
     static const std::string MULTIBOOT_INFO_PROP;
-    static const std::string MULTIBOOT_E2FSCK;
-    static const std::string MULTIBOOT_RESIZE2FS;
     static const std::string TEMP_SYSTEM_IMAGE;
     static const std::string CANCELLED;
 
@@ -79,6 +77,7 @@ protected:
     std::string _device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
+    std::string _system_block_dev;
     unsigned char _boot_hash[SHA_DIGEST_LENGTH];
     std::shared_ptr<Rom> _rom;
     std::string _system_path;
@@ -106,7 +105,7 @@ private:
 
     bool extract_multiboot_files();
     bool set_up_busybox_wrapper();
-    bool create_image(const std::string &path, const std::string &size);
+    bool create_image(const std::string &path, uint64_t size);
     bool system_image_copy(const std::string &source,
                            const std::string &image, bool reverse);
     bool run_real_updater();

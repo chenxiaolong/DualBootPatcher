@@ -77,7 +77,7 @@
 
 #define MULTIBOOT_DIR "/data/media/0/MultiBoot"
 
-#define IMAGE_SIZE "4G"
+#define DEFAULT_IMAGE_SIZE ((uint64_t) 4 * 1024 * 1024 * 1024)
 
 
 namespace mb {
@@ -87,8 +87,6 @@ const std::string Installer::UPDATE_BINARY =
         "META-INF/com/google/android/update-binary";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
-const std::string Installer::MULTIBOOT_E2FSCK = "multiboot/e2fsck";
-const std::string Installer::MULTIBOOT_RESIZE2FS = "multiboot/resize2fs";
 const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
 const std::string Installer::CANCELLED = "cancelled";
 
@@ -386,18 +384,10 @@ bool Installer::extract_multiboot_files()
         { UPDATE_BINARY + ".orig", _temp + "/updater"       },
         { MULTIBOOT_BBWRAPPER,     _temp + "/bb-wrapper.sh" },
         { MULTIBOOT_INFO_PROP,     _temp + "/info.prop"     },
-        { MULTIBOOT_E2FSCK,        _temp + "/e2fsck"        },
-        { MULTIBOOT_RESIZE2FS,     _temp + "/resize2fs"     }
     };
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
-        return false;
-    }
-
-    if (chmod((_temp + "/e2fsck").c_str(), 0755) < 0
-            || chmod((_temp + "/resize2fs").c_str(), 0755) < 0) {
-        LOGE("Failed to chmod e2fsprogs binaries: %s", strerror(errno));
         return false;
     }
 
@@ -435,7 +425,7 @@ bool Installer::set_up_busybox_wrapper()
  *
  * \param path Image file path
  */
-bool Installer::create_image(const std::string &path, const std::string &size)
+bool Installer::create_image(const std::string &path, uint64_t size)
 {
     if (!util::mkdir_parent(path, S_IRWXU)) {
         LOGE("%s: Failed to create parent directory: %s",
@@ -449,10 +439,12 @@ bool Installer::create_image(const std::string &path, const std::string &size)
             LOGE("%s: Failed to stat: %s", path.c_str(), strerror(errno));
             return false;
         } else {
-            LOGD("%s: Creating new %s ext4 image", path.c_str(), size.c_str());
+            std::string size_str = util::format("%" PRIu64, size);
+
+            LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str.c_str());
 
             // Create new image
-            if (run_command({ "make_ext4fs", "-l", size, path }) != 0) {
+            if (run_command({ "make_ext4fs", "-l", size_str, path }) != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return false;
             }
@@ -1013,6 +1005,16 @@ Installer::ProceedState Installer::install_stage_check_device()
         _recovery_block_dev = recovery_devs[0];
         LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
 
+        // System block devices
+        auto system_devs = d->systemBlockDevs();
+        if (system_devs.empty()) {
+            display_msg("Could not determine the system block device");
+            return ProceedState::Fail;
+        }
+
+        _system_block_dev = system_devs[0];
+        LOGD("System block device: %s", _system_block_dev.c_str());
+
         // Copy any other required block devices to the chroot
         auto extra_devs = d->extraBlockDevs();
 
@@ -1148,10 +1150,11 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
     // Mount target filesystems
     if (_rom->cache_is_image) {
-        display_msg(util::format("Creating %s %s image", IMAGE_SIZE, "cache"));
+        display_msg(util::format("Creating %" PRIu64 " %s image",
+                                 DEFAULT_IMAGE_SIZE, "cache"));
 
         if (stat(_cache_path.c_str(), &sb) < 0
-                && !create_image(_cache_path, IMAGE_SIZE)) {
+                && !create_image(_cache_path, DEFAULT_IMAGE_SIZE)) {
             display_msg(util::format("Failed to create image: %s",
                                      _cache_path.c_str()));
             return ProceedState::Fail;
@@ -1175,10 +1178,11 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     }
 
     if (_rom->data_is_image) {
-        display_msg(util::format("Creating %s %s image", IMAGE_SIZE, "data"));
+        display_msg(util::format("Creating %" PRIu64 " %s image",
+                                 DEFAULT_IMAGE_SIZE, "data"));
 
         if (stat(_data_path.c_str(), &sb) < 0
-                && !create_image(_data_path, IMAGE_SIZE)) {
+                && !create_image(_data_path, DEFAULT_IMAGE_SIZE)) {
             display_msg(util::format("Failed to create image: %s",
                                      _data_path.c_str()));
             return ProceedState::Fail;
@@ -1202,65 +1206,35 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     }
 
     if (_rom->system_is_image) {
-        // To avoid uninit_bg issues (major PITA... http://www.redhat.com/archives/dm-devel/2012-June/msg00029.html)
-        // and e2fsck issues with the RTC (eg. after battery removal), we will
-        // create a fresh image for every flash operation
-
-        display_msg("Copying system to temporary image");
-
-        remove(TEMP_SYSTEM_IMAGE.c_str());
-
-        // Create temporary image in /data
-        if (!create_image(TEMP_SYSTEM_IMAGE, IMAGE_SIZE)) {
-            display_msg(util::format("Failed to create temporary image %s",
-                                     TEMP_SYSTEM_IMAGE.c_str()));
-            return ProceedState::Fail;
-        }
-
         struct stat sb;
-        if (stat(_system_path.c_str(), &sb) == 0) {
-            std::string temp_mountpoint(_temp);
-            temp_mountpoint += "/mnt_system_img";
+        if (stat(_system_path.c_str(), &sb) < 0) {
+            uint64_t system_size;
+            if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
+                display_msg("Failed to get size of system partition");
+                display_msg("Image size will be 4 GiB");
+                system_size = DEFAULT_IMAGE_SIZE;
+            }
 
-            if (mkdir(temp_mountpoint.c_str(), 0755) < 0 && errno != ENOENT) {
-                LOGE("Failed to create directory %s: %s",
-                     temp_mountpoint.c_str(), strerror(errno));
-                display_msg(util::format("Failed to create directory %s",
-                                         temp_mountpoint.c_str()));
+            display_msg(util::format("Creating initial extsd image (%.1f MiB)",
+                                     (double) system_size / 1024 / 1024));
+            display_msg("This may take a while");
+
+            if (!util::mkdir_parent(_system_path, 0755)) {
+                display_msg(util::format("Failed to create parent directory of %s",
+                                         _system_path.c_str()));
                 return ProceedState::Fail;
             }
 
-            // Mount image
-            if (!util::mount(_system_path.c_str(), temp_mountpoint.c_str(),
-                             "ext4", MS_RDONLY, "")) {
-                LOGE("Failed to mount %s: %s",
-                     _system_path.c_str(), strerror(errno));
-                display_msg(util::format(
-                        "Failed to mount %s", _system_path.c_str()));
-                return ProceedState::Fail;
-            }
-
-            // Copy current /system files to the image
-            if (!system_image_copy(temp_mountpoint, TEMP_SYSTEM_IMAGE, false)) {
-                display_msg(util::format("Failed to copy %s to %s",
-                                         temp_mountpoint.c_str(),
-                                         TEMP_SYSTEM_IMAGE.c_str()));
-                return ProceedState::Fail;
-            }
-
-            // Unmount image
-            if (!util::umount(temp_mountpoint.c_str())) {
-                LOGE("Failed to unmount %s: %s",
-                     temp_mountpoint.c_str(), strerror(errno));
-                display_msg(util::format("Failed to unmount %s",
-                                         temp_mountpoint.c_str()));
+            if (!create_image(_system_path, system_size)) {
+                display_msg(util::format("Failed to create image %s",
+                                         _system_path.c_str()));
                 return ProceedState::Fail;
             }
         }
 
         // Install to the image
         util::create_empty_file(in_chroot("/mb/system.img"));
-        if (log_mount(TEMP_SYSTEM_IMAGE.c_str(),
+        if (log_mount(_system_path.c_str(),
                       in_chroot("/mb/system.img").c_str(),
                       "", MS_BIND, "") < 0) {
             return ProceedState::Fail;
@@ -1281,7 +1255,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
             remove(TEMP_SYSTEM_IMAGE.c_str());
 
             // Create temporary image in /data
-            if (!create_image(TEMP_SYSTEM_IMAGE, IMAGE_SIZE)) {
+            if (!create_image(TEMP_SYSTEM_IMAGE, DEFAULT_IMAGE_SIZE)) {
                 display_msg(util::format("Failed to create temporary image %s",
                                          TEMP_SYSTEM_IMAGE.c_str()));
                 return ProceedState::Fail;
@@ -1370,34 +1344,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         int ret;
 
         // Run file system checks
-        ret = run_command({ _temp + "/e2fsck", "-f", "-y", TEMP_SYSTEM_IMAGE });
+        ret = run_command({ "e2fsck", "-f", "-y", _system_path });
         if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
-            display_msg("Failed to run e2fsck");
-            display_msg("resize2fs may fail to run");
-        }
-
-        // Shrink image to minimum
-        ret = run_command({ _temp + "/resize2fs", "-M", TEMP_SYSTEM_IMAGE });
-        if (ret < 0 || WEXITSTATUS(ret) != 0) {
-            display_msg("Failed to run resize2fs");
-            display_msg(util::format(
-                    "Image will not be shrunken from %s", IMAGE_SIZE));
-        } else if (WEXITSTATUS(ret) == 0) {
-            struct stat sb;
-            if (stat(TEMP_SYSTEM_IMAGE.c_str(), &sb) == 0) {
-                display_msg(util::format("Resized image to %.1f MiB",
-                                         (double) sb.st_size / 1024 / 1024));
-            }
-        }
-
-        display_msg("Copying temporary image to system");
-
-        // Copy back image
-        if (!util::copy_file(TEMP_SYSTEM_IMAGE, _system_path, true)) {
-            display_msg(util::format("Failed to copy %s to %s",
-                                     TEMP_SYSTEM_IMAGE.c_str(),
-                                     _system_path.c_str()));
-            return ProceedState::Fail;
+            display_msg("Failed to run e2fsck on image");
         }
     } else {
         if (_has_block_image || _rom->id == "primary") {
