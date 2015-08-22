@@ -36,6 +36,7 @@
 #include "patchers/mbtoolupdater.h"
 #include "patchers/multibootpatcher.h"
 #include "autopatchers/standardpatcher.h"
+#include "autopatchers/xposedpatcher.h"
 #include "ramdiskpatchers/default.h"
 #include "ramdiskpatchers/pepper.h"
 #endif
@@ -571,7 +572,8 @@ std::vector<std::string> PatcherConfig::patchers() const
 std::vector<std::string> PatcherConfig::autoPatchers() const
 {
     return {
-        StandardPatcher::Id
+        StandardPatcher::Id,
+        XposedPatcher::Id
     };
 }
 
@@ -627,6 +629,8 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
 
     if (id == StandardPatcher::Id) {
         ap = new StandardPatcher(this, info);
+    } else if (id == XposedPatcher::Id) {
+        ap = new XposedPatcher(this, info);
     }
 
     if (ap != nullptr) {

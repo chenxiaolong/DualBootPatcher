@@ -46,6 +46,7 @@ set(MBP_SOURCES
     cwrapper/private/util.cpp
     # Autopatchers
     autopatchers/standardpatcher.cpp
+    autopatchers/xposedpatcher.cpp
     # Patchers
     patchers/mbtoolupdater.cpp
     patchers/multibootpatcher.cpp

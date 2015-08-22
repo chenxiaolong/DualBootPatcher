@@ -273,17 +273,26 @@ bool MultiBootPatcher::Impl::patchZip()
 {
     std::unordered_set<std::string> excludeFromPass1;
 
-    auto *ap = pc->createAutoPatcher("StandardPatcher", info);
-    if (!ap) {
+    auto *standardAp = pc->createAutoPatcher("StandardPatcher", info);
+    if (!standardAp) {
         error = ErrorCode::AutoPatcherCreateError;
         return false;
     }
 
-    autoPatchers.push_back(ap);
+    auto *xposedAp = pc->createAutoPatcher("XposedPatcher", info);
+    if (!xposedAp) {
+        error = ErrorCode::AutoPatcherCreateError;
+        return false;
+    }
 
-    // AutoPatcher files should be excluded from the first pass
-    for (auto const &file : ap->existingFiles()) {
-        excludeFromPass1.insert(file);
+    autoPatchers.push_back(standardAp);
+    autoPatchers.push_back(xposedAp);
+
+    for (auto *ap : autoPatchers) {
+        // AutoPatcher files should be excluded from the first pass
+        for (auto const &file : ap->existingFiles()) {
+            excludeFromPass1.insert(file);
+        }
     }
 
     // Unlike the old patcher, we'll write directly to the new file
@@ -537,7 +546,9 @@ bool MultiBootPatcher::Impl::pass2(zipFile const zOutput,
                     temporaryDir + "/" + file);
         }
 
-        if (ret != ErrorCode::NoError) {
+        if (ret == ErrorCode::FileOpenError) {
+            FLOGW("File does not exist in temporary directory: %s", file.c_str());
+        } else if (ret != ErrorCode::NoError) {
             error = ret;
             return false;
         }
