@@ -245,6 +245,7 @@ public:
 protected:
     std::string m_str;
     Type m_type;
+    bool m_quoted;
 
     static void escape(const std::string &str, std::string *out);
     static bool unescape(const std::string &str, std::string *out);

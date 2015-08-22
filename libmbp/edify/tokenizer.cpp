@@ -196,13 +196,18 @@ EdifyTokenString::EdifyTokenString(std::string str, Type type)
 {
     switch (type) {
     case AlreadyQuoted:
+        m_quoted = true;
         assert(str.size() >= 2);
         assert(str.front() == '"');
         assert(str.back() == '"');
+        m_str = std::move(str);
+        break;
     case NotQuoted:
+        m_quoted = false;
         m_str = std::move(str);
         break;
     case MakeQuoted:
+        m_quoted = true;
         std::string temp;
         escape(str, &temp);
         temp.insert(temp.begin(), '"');
@@ -222,6 +227,10 @@ std::string EdifyTokenString::unescapedString()
     std::string out;
     // TODO: Check return value
     unescape(m_str, &out);
+    if (m_quoted && out.size() >= 2) {
+        out.pop_back();
+        out.erase(out.begin());
+    }
     return out;
 }
 
