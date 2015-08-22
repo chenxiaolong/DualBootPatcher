@@ -393,7 +393,9 @@ void PatcherConfig::Impl::loadDefaultDevices()
         // N910C
         "trelte", "treltektt", "treltelgt", "trelteskt", "treltexx",
         // N910H
-        "tre3g"
+        "tre3g",
+        // N910U
+        "trhplte"
     });
     device->setName("Samsung Galaxy Note 4 (Exynos)");
     device->setBlockDevBaseDirs({ TRELTE_BASE_DIR });
