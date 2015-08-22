@@ -410,7 +410,7 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
         }
     } else if (foundFormatSh) {
         return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/data"));
+                               StringUtils::format(FORMAT_FMT, "/system"));
     } else if (foundMke2fs) {
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
