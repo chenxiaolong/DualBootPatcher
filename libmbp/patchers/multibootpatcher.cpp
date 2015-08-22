@@ -315,11 +315,9 @@ bool MultiBootPatcher::Impl::patchZip()
     if (cancelled) return false;
 
     // +1 for mbtool_recovery (update-binary)
-    // +1 for e2fsck
-    // +1 for resize2fs
     // +1 for bb-wrapper.sh
     // +1 for info.prop
-    maxFiles = stats.files + 5;
+    maxFiles = stats.files + 3;
     updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
@@ -355,36 +353,6 @@ bool MultiBootPatcher::Impl::patchZip()
             zOutput, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateFiles(++files, maxFiles);
-    updateDetails("multiboot/e2fsck");
-
-    // Add e2fsck
-    result = FileUtils::mzAddFile(
-            zOutput, "multiboot/e2fsck",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/e2fsck");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateFiles(++files, maxFiles);
-    updateDetails("multiboot/resize2fs");
-
-    // Add resize2fs
-    result = FileUtils::mzAddFile(
-            zOutput, "multiboot/resize2fs",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/resize2fs");
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
