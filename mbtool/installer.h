@@ -43,6 +43,8 @@ protected:
     static const std::string UPDATE_BINARY;
     static const std::string MULTIBOOT_BBWRAPPER;
     static const std::string MULTIBOOT_INFO_PROP;
+    static const std::string MULTIBOOT_E2FSCK;
+    static const std::string MULTIBOOT_RESIZE2FS;
     static const std::string TEMP_SYSTEM_IMAGE;
     static const std::string CANCELLED;
 

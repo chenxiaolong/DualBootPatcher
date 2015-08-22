@@ -87,6 +87,8 @@ const std::string Installer::UPDATE_BINARY =
         "META-INF/com/google/android/update-binary";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
+const std::string Installer::MULTIBOOT_E2FSCK = "multiboot/e2fsck";
+const std::string Installer::MULTIBOOT_RESIZE2FS = "multiboot/resize2fs";
 const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
 const std::string Installer::CANCELLED = "cancelled";
 
@@ -383,11 +385,19 @@ bool Installer::extract_multiboot_files()
     std::vector<util::extract_info> files{
         { UPDATE_BINARY + ".orig", _temp + "/updater"       },
         { MULTIBOOT_BBWRAPPER,     _temp + "/bb-wrapper.sh" },
-        { MULTIBOOT_INFO_PROP,     _temp + "/info.prop"     }
+        { MULTIBOOT_INFO_PROP,     _temp + "/info.prop"     },
+        { MULTIBOOT_E2FSCK,        _temp + "/e2fsck"        },
+        { MULTIBOOT_RESIZE2FS,     _temp + "/resize2fs"     }
     };
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
+        return false;
+    }
+
+    if (chmod((_temp + "/e2fsck").c_str(), 0755) < 0
+            || chmod((_temp + "/resize2fs").c_str(), 0755) < 0) {
+        LOGE("Failed to chmod e2fsprogs binaries: %s", strerror(errno));
         return false;
     }
 
@@ -1192,8 +1202,6 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     }
 
     if (_rom->system_is_image) {
-        display_msg(util::format("Creating %s %s image", IMAGE_SIZE, "system"));
-
         // To avoid uninit_bg issues (major PITA... http://www.redhat.com/archives/dm-devel/2012-June/msg00029.html)
         // and e2fsck issues with the RTC (eg. after battery removal), we will
         // create a fresh image for every flash operation
@@ -1362,22 +1370,15 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         int ret;
 
         // Run file system checks
-        ret = run_command({ "e2fsck", "-f", "-y", TEMP_SYSTEM_IMAGE });
-        if (WEXITSTATUS(ret) == 127) {
-            display_msg("Recovery does not have e2fsck");
-            display_msg("resize2fs may fail to run");
-        } else if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
+        ret = run_command({ _temp + "/e2fsck", "-f", "-y", TEMP_SYSTEM_IMAGE });
+        if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
             display_msg("Failed to run e2fsck");
             display_msg("resize2fs may fail to run");
         }
 
         // Shrink image to minimum
-        ret = run_command({ "resize2fs", "-M", TEMP_SYSTEM_IMAGE });
-        if (WEXITSTATUS(ret) == 127) {
-            display_msg("Recovery does not have resize2fs");
-            display_msg(util::format(
-                    "Image will not be shrunken from %s", IMAGE_SIZE));
-        } else if (ret < 0 || WEXITSTATUS(ret) != 0) {
+        ret = run_command({ _temp + "/resize2fs", "-M", TEMP_SYSTEM_IMAGE });
+        if (ret < 0 || WEXITSTATUS(ret) != 0) {
             display_msg("Failed to run resize2fs");
             display_msg(util::format(
                     "Image will not be shrunken from %s", IMAGE_SIZE));
