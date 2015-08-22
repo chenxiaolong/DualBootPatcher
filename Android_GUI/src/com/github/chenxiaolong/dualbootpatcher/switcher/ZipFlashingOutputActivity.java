@@ -77,6 +77,7 @@ public class ZipFlashingOutputActivity extends AppCompatActivity {
         if (mFragment.isRunning()) {
             showWaitUntilFinished();
         } else {
+            mFragment.onCleanup();
             super.onBackPressed();
         }
     }
