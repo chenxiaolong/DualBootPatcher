@@ -141,6 +141,11 @@
     <!-- Snack bar message shown when a launcher is successfully created -->
     <string name="successfully_created_launcher">Successfully added %s to the home screen.</string>
 
+    <!-- Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching -->
+    <string name="auto_reboot_after_switching">Do you want the device to automatically reboot after
+        switching the ROM?</string>
+
     <!-- Target for wiping ROM's /system -->
     <string name="wipe_target_system">System</string>
     <!-- Target for wiping ROM's /cache -->
@@ -498,6 +503,10 @@
     <string name="cancel">Cancel</string>
     <!-- Word/phrase for Continue (used in dialog boxes) -->
     <string name="proceed">Continue</string>
+    <!-- Word/phrase for Yes (used in dialog boxes) -->
+    <string name="yes">Yes</string>
+    <!-- Word/phrase for No (used in dialog boxes) -->
+    <string name="no">No</string>
     <!-- Reboot now (used in dialog boxes) -->
     <string name="reboot_now">Reboot now</string>
     <!-- Reboot later (used in dialog boxes) -->

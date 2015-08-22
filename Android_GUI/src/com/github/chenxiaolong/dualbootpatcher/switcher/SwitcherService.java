@@ -88,6 +88,7 @@ public class SwitcherService extends IntentService {
     // Create launcher on the home screen
     public static final String ACTION_CREATE_LAUNCHER = "create_launcher";
     public static final String PARAM_ROM = "rom";
+    public static final String PARAM_REBOOT = "reboot";
     public static final String STATE_CREATED_LAUNCHER = "created_launcher";
     public static final String RESULT_ROM = "rom";
 
@@ -240,9 +241,12 @@ public class SwitcherService extends IntentService {
             return;
         }
 
+        boolean reboot = data.getBoolean(PARAM_REBOOT);
+
         Intent shortcutIntent = new Intent(this, AutomatedSwitcherActivity.class);
         shortcutIntent.setAction("com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM");
         shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_ROM_ID, rom.getId());
+        shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_REBOOT, reboot);
 
         Intent addIntent = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
         addIntent.putExtra("duplicate", false);

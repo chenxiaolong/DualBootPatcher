@@ -55,6 +55,8 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
+        .AddToHomeScreenOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog
         .ConfirmChecksumIssueDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmMismatchedSetKernelDialog
@@ -98,6 +100,7 @@ public class SwitcherListFragment extends Fragment implements
         RomNameInputDialogListener,
         ConfirmMismatchedSetKernelDialogListener,
         ConfirmChecksumIssueDialogListener,
+        AddToHomeScreenOptionsDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
@@ -525,7 +528,13 @@ public class SwitcherListFragment extends Fragment implements
     public void onSelectedAddToHomeScreen(RomInformation info) {
         mSelectedRom = info;
 
-        mEventCollector.createLauncher(info);
+        AddToHomeScreenOptionsDialog d = AddToHomeScreenOptionsDialog.newInstance(this, info);
+        d.show(getFragmentManager(), AddToHomeScreenOptionsDialog.TAG);
+    }
+
+    @Override
+    public void onConfirmAddToHomeScreenOptions(RomInformation info, boolean reboot) {
+        mEventCollector.createLauncher(info, reboot);
     }
 
     @Override

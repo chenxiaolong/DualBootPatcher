@@ -125,10 +125,11 @@ public class SwitcherEventCollector extends EventCollector {
         mContext.startService(intent);
     }
 
-    public void createLauncher(RomInformation rom) {
+    public void createLauncher(RomInformation rom, boolean reboot) {
         Intent intent = new Intent(mContext, SwitcherService.class);
         intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_CREATE_LAUNCHER);
         intent.putExtra(SwitcherService.PARAM_ROM, rom);
+        intent.putExtra(SwitcherService.PARAM_REBOOT, reboot);
         mContext.startService(intent);
     }
 
