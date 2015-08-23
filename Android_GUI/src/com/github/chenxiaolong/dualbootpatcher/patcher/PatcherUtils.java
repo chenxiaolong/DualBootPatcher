@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -196,6 +197,27 @@ public class PatcherUtils {
         }
 
         return sInstallLocations;
+    }
+
+    public static InstallLocation[] getNamedInstallLocations(Context context) {
+        //ThreadUtils.enforceExecutionOnNonMainThread();
+
+        File dir = new File(Environment.getExternalStorageDirectory()
+                + File.separator + "MultiBoot");
+
+        ArrayList<InstallLocation> locations = new ArrayList<>();
+
+        for (File f : dir.listFiles()) {
+            String name = f.getName();
+
+            if (name.startsWith("data-slot-") && !name.equals("data-slot-")) {
+                locations.add(getDataSlotInstallLocation(context, name.substring(10)));
+            } else if (name.startsWith("extsd-slot-") && !name.equals("extsd-slot-")) {
+                locations.add(getExtsdSlotInstallLocation(context, name.substring(11)));;
+            }
+        }
+
+        return locations.toArray(new InstallLocation[locations.size()]);
     }
 
     public static InstallLocation getDataSlotInstallLocation(Context context, String dataSlotId) {

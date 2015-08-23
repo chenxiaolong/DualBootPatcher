@@ -70,6 +70,7 @@ public class MainOptsCW implements PatcherUIListener {
     private ArrayList<String> mDevices = new ArrayList<>();
     private ArrayAdapter<String> mRomIdAdapter;
     private ArrayList<String> mRomIds = new ArrayList<>();
+    private ArrayList<InstallLocation> mInstallLocations = new ArrayList<>();
 
     private boolean mIsNamedSlot;
 
@@ -286,8 +287,18 @@ public class MainOptsCW implements PatcherUIListener {
      * Refresh the list of available ROM IDs
      */
     public void refreshRomIds() {
-        mRomIds.clear();
+        mInstallLocations.clear();
         for (InstallLocation location : PatcherUtils.getInstallLocations(mContext)) {
+            System.out.println("HERE1: " + location.id);
+            mInstallLocations.add(location);
+        }
+        for (InstallLocation location : PatcherUtils.getNamedInstallLocations(mContext)) {
+            System.out.println("HERE2: " + location.id);
+            mInstallLocations.add(location);
+        }
+
+        mRomIds.clear();
+        for (InstallLocation location : mInstallLocations) {
             mRomIds.add(location.name);
         }
         mRomIds.add(mContext.getString(R.string.install_location_data_slot));
@@ -300,8 +311,7 @@ public class MainOptsCW implements PatcherUIListener {
             onNamedSlotIdChanged(vRomIdNamedSlotId.getText().toString());
             animateExpandNamedSlotId();
         } else {
-            InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
-            vRomIdDesc.setText(locations[position].description);
+            vRomIdDesc.setText(mInstallLocations.get(position).description);
             animateCollapseNamedSlotId();
         }
     }
@@ -451,8 +461,7 @@ public class MainOptsCW implements PatcherUIListener {
         } else {
             int pos = vRomIdSpinner.getSelectedItemPosition();
             if (pos >= 0) {
-                InstallLocation[] locations = PatcherUtils.getInstallLocations(mContext);
-                return locations[pos].id;
+                return mInstallLocations.get(pos).id;
             }
         }
         return null;
