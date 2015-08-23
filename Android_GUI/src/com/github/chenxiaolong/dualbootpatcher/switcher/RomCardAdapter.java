@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.ViewHolder;
@@ -52,6 +53,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
 
     private final Context mContext;
     private List<RomInformation> mRoms;
+    private String mActiveRomId;
     private RomCardActionListener mListener;
 
     private RomCardClickListener onRomCardClickListener = new RomCardClickListener() {
@@ -148,11 +150,26 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
                     .load(rom.getImageResId())
                     .into(holder.vThumbnail);
         }
+
+        if (mActiveRomId != null && mActiveRomId.equals(rom.getId())) {
+            holder.vActive.setVisibility(View.VISIBLE);
+        } else {
+            holder.vActive.setVisibility(View.GONE);
+        }
     }
 
     @Override
     public int getItemCount() {
         return mRoms.size();
+    }
+
+    @Nullable
+    public String getActiveRomId() {
+        return mActiveRomId;
+    }
+
+    public void setActiveRomId(@Nullable String activeRomId) {
+        mActiveRomId = activeRomId;
     }
 
     protected static class RomCardViewHolder extends ViewHolder {
@@ -161,6 +178,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
 
         protected CardView vCard;
         protected ImageView vThumbnail;
+        protected ImageView vActive;
         protected TextView vName;
         protected TextView vVersion;
         protected TextView vBuild;
@@ -170,6 +188,7 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
             super(v);
             vCard = (CardView) v;
             vThumbnail = (ImageView) v.findViewById(R.id.rom_thumbnail);
+            vActive = (ImageView) v.findViewById(R.id.rom_active);
             vName = (TextView) v.findViewById(R.id.rom_name);
             vVersion = (TextView) v.findViewById(R.id.rom_version);
             vBuild = (TextView) v.findViewById(R.id.rom_build);

@@ -106,6 +106,7 @@ public class SwitcherListFragment extends Fragment implements
 
     private static final String EXTRA_PERFORMING_ACTION = "performingAction";
     private static final String EXTRA_SELECTED_ROM = "selectedRom";
+    private static final String EXTRA_ACTIVE_ROM_ID = "activeRomId";
     private static final String EXTRA_SHOWED_SET_KERNEL_WARNING = "showedSetKernelWarning";
 
     private static final int PROGRESS_DIALOG_SWITCH_ROM = 1;
@@ -128,7 +129,7 @@ public class SwitcherListFragment extends Fragment implements
     private ArrayList<RomInformation> mRoms;
     private RomInformation mCurrentRom;
     private RomInformation mSelectedRom;
-    private String mCurrentBootRomId;
+    private String mActiveRomId;
 
     private boolean mShowedSetKernelWarning;
 
@@ -157,6 +158,7 @@ public class SwitcherListFragment extends Fragment implements
             mPerformingAction = savedInstanceState.getBoolean(EXTRA_PERFORMING_ACTION);
 
             mSelectedRom = savedInstanceState.getParcelable(EXTRA_SELECTED_ROM);
+            mActiveRomId = savedInstanceState.getString(EXTRA_ACTIVE_ROM_ID);
 
             mShowedSetKernelWarning = savedInstanceState.getBoolean(
                     EXTRA_SHOWED_SET_KERNEL_WARNING);
@@ -196,6 +198,7 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     private void reloadFragment() {
+        mActiveRomId = null;
         refreshErrorVisibility(false);
         refreshRomListVisibility(false);
         refreshFabVisibility(false);
@@ -231,6 +234,7 @@ public class SwitcherListFragment extends Fragment implements
         if (mSelectedRom != null) {
             outState.putParcelable(EXTRA_SELECTED_ROM, mSelectedRom);
         }
+        outState.putString(EXTRA_ACTIVE_ROM_ID, mActiveRomId);
         outState.putBoolean(EXTRA_SHOWED_SET_KERNEL_WARNING, mShowedSetKernelWarning);
     }
 
@@ -326,9 +330,11 @@ public class SwitcherListFragment extends Fragment implements
             switch (event.result) {
             case SUCCEEDED:
                 createSnackbar(R.string.choose_rom_success, Snackbar.LENGTH_LONG).show();
-                Log.d(TAG, "Prior cached boot partition ROM ID was: " + mCurrentBootRomId);
-                mCurrentBootRomId = event.kernelId;
-                Log.d(TAG, "Changing cached boot partition ROM ID to: " + mCurrentBootRomId);
+                Log.d(TAG, "Prior cached boot partition ROM ID was: " + mActiveRomId);
+                mActiveRomId = event.kernelId;
+                Log.d(TAG, "Changing cached boot partition ROM ID to: " + mActiveRomId);
+                mRomCardAdapter.setActiveRomId(mActiveRomId);
+                mRomCardAdapter.notifyDataSetChanged();
                 break;
             case FAILED:
                 createSnackbar(R.string.choose_rom_failure, Snackbar.LENGTH_LONG).show();
@@ -492,9 +498,9 @@ public class SwitcherListFragment extends Fragment implements
         mSelectedRom = info;
 
         // Ask for confirmation
-        if (mCurrentBootRomId != null && !mCurrentBootRomId.equals(mSelectedRom.getId())) {
+        if (mActiveRomId != null && !mActiveRomId.equals(mSelectedRom.getId())) {
             ConfirmMismatchedSetKernelDialog d = ConfirmMismatchedSetKernelDialog.newInstance(
-                    this, mCurrentBootRomId, mSelectedRom.getId());
+                    this, mActiveRomId, mSelectedRom.getId());
             d.show(getFragmentManager(), ConfirmMismatchedSetKernelDialog.TAG);
         } else {
             SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstance(this, mSelectedRom);
@@ -609,8 +615,14 @@ public class SwitcherListFragment extends Fragment implements
         }
 
         mCurrentRom = result.currentRom;
-        mCurrentBootRomId = result.currentBootRomId;
 
+        // Only set mActiveRomId if it isn't already set (eg. restored from savedInstanceState).
+        // reloadFragment() will set mActiveRomId back to null so it is refreshed.
+        if (mActiveRomId == null) {
+            mActiveRomId = result.activeRomId;
+        }
+
+        mRomCardAdapter.setActiveRomId(mActiveRomId);
         mRomCardAdapter.notifyDataSetChanged();
         updateCardUI();
 
@@ -622,8 +634,8 @@ public class SwitcherListFragment extends Fragment implements
         // saved (leading to an IllegalStateException). Instead we'll just use EventCollector to
         // tell SwitcherListFragment that we want to show a dialog. If the fragment is still valid,
         // it will be shown immediately. Otherwise, it'll be shown when the fragment is recreated.
-        if (mCurrentRom != null && mCurrentBootRomId != null
-                && mCurrentRom.getId().equals(mCurrentBootRomId)) {
+        if (mCurrentRom != null && mActiveRomId != null
+                && mCurrentRom.getId().equals(mActiveRomId)) {
             // Only show if the current boot image ROM ID matches the booted ROM. Otherwise, the
             // user can switch to another ROM, exit the app, and open it again to trigger the dialog
             mEventCollector.postEvent(new ShowSetKernelNeededEvent(result.kernelStatus));
@@ -784,7 +796,7 @@ public class SwitcherListFragment extends Fragment implements
             obtainBootPartitionInfo(mResult.currentRom);
             long end = System.currentTimeMillis();
             Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
-            Log.d(TAG, "Current boot partition ROM ID: " + mResult.currentBootRomId);
+            Log.d(TAG, "Current boot partition ROM ID: " + mResult.activeRomId);
             Log.d(TAG, "Kernel status: " + mResult.kernelStatus.name());
             return mResult;
         }
@@ -794,9 +806,9 @@ public class SwitcherListFragment extends Fragment implements
             String bootPartition = SwitcherUtils.getBootPartition(getContext());
             if (bootPartition == null) {
                 Log.e(TAG, "Failed to determine boot partition");
-                // Bail out. Both currentBootRomId and kernelStatus require access to the boot image
+                // Bail out. Both activeRomId and kernelStatus require access to the boot image
                 // on the boot partition
-                mResult.currentBootRomId = null;
+                mResult.activeRomId = null;
                 mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
                 return;
             }
@@ -811,17 +823,17 @@ public class SwitcherListFragment extends Fragment implements
                 if (!socket.copy(getContext(), bootPartition, tmpImage) ||
                         !socket.chmod(getContext(), tmpImage, 0644)) {
                     Log.e(TAG, "Failed to copy boot partition to temporary file");
-                    mResult.currentBootRomId = null;
+                    mResult.activeRomId = null;
                     mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
                     return;
                 }
 
-                mResult.currentBootRomId = SwitcherUtils.getBootImageRomId(
+                mResult.activeRomId = SwitcherUtils.getBootImageRomId(
                         getContext(), tmpImageFile.getAbsolutePath());
                 mResult.kernelStatus = getKernelStatus(currentRom, tmpImageFile);
             } catch (IOException e) {
                 Log.e(TAG, "mbtool communication error", e);
-                mResult.currentBootRomId = null;
+                mResult.activeRomId = null;
                 mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
             } finally {
                 tmpImageFile.delete();
@@ -883,7 +895,7 @@ public class SwitcherListFragment extends Fragment implements
         /** Currently booted ROM */
         RomInformation currentRom;
         /** ROM ID of boot image currently on the boot partition */
-        String currentBootRomId;
+        String activeRomId;
         /** Current kernel status (set, unset, unknown) */
         CurrentKernelStatus kernelStatus;
     }
