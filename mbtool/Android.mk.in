@@ -192,6 +192,10 @@ mb_common_cflags += \
 mb_common_ldflags := \
 	-Wl,--gc-sections
 
+# Workaround https://code.google.com/p/android/issues/detail?id=177690
+mb_common_ldflags += \
+	-fuse-ld=bfd
+
 mb_common_cflags += -DPUGIXML_NO_EXCEPTIONS \
 					-DPUGIXML_NO_STL -DPUGIXML_NO_XPATH
 
