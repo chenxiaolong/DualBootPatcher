@@ -127,5 +127,7 @@ ifeq ($(MBP_MINI),true)
 include $(BUILD_STATIC_LIBRARY)
 else
 LOCAL_LDFLAGS += -Wl,-Map,$(LOCAL_MODULE).$(TARGET_ARCH_ABI).map
+# Workaround https://code.google.com/p/android/issues/detail?id=177690
+LOCAL_LDFLAGS += -fuse-ld=bfd
 include $(BUILD_SHARED_LIBRARY)
 endif
