@@ -78,6 +78,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment.Loa
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.views.SwipeRefreshLayoutWorkaround;
+import com.squareup.picasso.Picasso;
 
 import org.apache.commons.io.IOUtils;
 
@@ -756,6 +757,8 @@ public class SwitcherListFragment extends Fragment implements
             } finally {
                 IOUtils.closeQuietly(out);
             }
+
+            Picasso.with(mContext).invalidate(f);
 
             return null;
         }
