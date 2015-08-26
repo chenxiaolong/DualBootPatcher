@@ -243,10 +243,19 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 4
     device = new Device();
     device->setId("jflte");
-    device->setCodenames({ "jactivelte", "jflte", "jflteatt", "jfltecan",
-                           "jfltecri", "jfltecsp", "jfltespr", "jfltetmo",
-                           "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
-                           "jftddxx", "jgedlte" });
+    device->setCodenames({
+        // Regular variant
+        "jflte", "jflteatt", "jfltecan", "jfltecri", "jfltecsp", "jfltespr",
+        "jfltetmo", "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
+        // Active variant
+        "jactivelte",
+        // Google Edition variant
+        "jgedlte",
+        // GT-I9507
+        "jftddxx",
+        // GT-I9515
+        "jfvelte", "jfveltexx"
+    });
     device->setName("Samsung Galaxy S 4");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p16" });
