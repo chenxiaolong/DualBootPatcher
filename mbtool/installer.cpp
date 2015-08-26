@@ -1177,6 +1177,15 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         }
     }
 
+    // Because CM 12.1 requires this and silently dies (ie. completes
+    // "successfully") if it doesn't exist
+    if (log_mkdir(in_chroot("/cache/recovery").c_str(), 0755) < 0
+            && errno != EEXIST) {
+        LOGE("Failed to create /cache/recovery: %s", strerror(errno));
+        display_msg(util::format("Failed to create /cache/recovery in chroot"));
+        return ProceedState::Fail;
+    }
+
     if (_rom->data_is_image) {
         display_msg(util::format("Creating %" PRIu64 " %s image",
                                  DEFAULT_IMAGE_SIZE, "data"));
