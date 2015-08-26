@@ -791,7 +791,7 @@ std::string MultiBootPatcher::Impl::createInfoProp()
 "# This field should be set to the desired installation location for the ROM.\n"
 "# It is okay to change this value after the file has already been patched.\n"
 "#\n"
-"# Valid values: primary, dual, multi-slot-1, multi-slot-2, multi-slot-3\n"
+"# Valid values: primary, dual, multi-slot-[1-3], data-slot-<id>, extsd-slot-<id>\n"
 "#\n";
 
     out += "mbtool.installer.install-location=";

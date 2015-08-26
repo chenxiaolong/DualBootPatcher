@@ -151,8 +151,10 @@ public class ZipFlashingOutputFragment extends Fragment implements EventCollecto
     // Should be called by parent activity when it exits
     public void onCleanup() {
         // Destroy session
-        mSession.finish();
-        mSession = null;
+        if (mSession != null) {
+            mSession.finish();
+            mSession = null;
+        }
     }
 
     public boolean isRunning() {

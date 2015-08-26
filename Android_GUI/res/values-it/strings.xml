@@ -53,6 +53,7 @@
   <string name="multislot">ROM Multi Slot %s</string>
   <!--Default name for the data-slot ROMs-->
   <string name="dataslot">%s (Data slot)</string>
+  <!--Default name for the extsd-slot ROMs-->
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Impossibile determinare la versione della ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
@@ -63,19 +64,25 @@
   <string name="choose_rom_success">Switch avvenuto con successo</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Switch fallito</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <!--Message shown when switching ROMs and checksums are missing-->
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Kernel impostato con successo</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Impossibile impostare il kernel</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
   <string name="unknown_boot_partition">Impossibile determinare la partizione del kernel perchè il dispositivo \'%s\' non è riconosciuto.</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Versione sconosciuta</string>
   <!--Build text shown on ROM card if the build could not be detected-->
   <string name="rom_card_unknown_build">Build sconosciuta</string>
   <!--ROM menu item for setting kernel-->
   <string name="rom_menu_set_kernel">Imposta kernel</string>
+  <!--ROM menu item for adding an icon to the home screen-->
   <!--ROM menu item for changing the name-->
   <string name="rom_menu_edit_name">Modifica nome</string>
   <!--ROM menu item for changing the image-->
@@ -84,6 +91,7 @@
   <string name="rom_menu_reset_image">Ripristina icona</string>
   <!--ROM menu item for wiping the ROM-->
   <string name="rom_menu_wipe_rom">Elimina ROM</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
   <!--Target for wiping ROM's /system-->
   <string name="wipe_target_system">System</string>
   <!--Target for wiping ROM's /cache-->
@@ -175,31 +183,28 @@
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Installa ROM in %s</string>
   <!--Text box hint for specifying the data slot ID-->
-  <string name="install_location_data_slot_id_hint">Immettere un ID</string>
+  <string name="install_location_named_slot_id_hint">Immettere un ID</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_data_slot_id_empty">Immettere un ID sopra</string>
+  <string name="install_location_named_slot_id_empty">Immettere un ID sopra</string>
   <!--Error tooltip shown if the data slot ID is empty-->
-  <string name="install_location_data_slot_id_error_is_empty">L\'ID dello slot data non può essere vuoto.</string>
+  <string name="install_location_named_slot_id_error_is_empty">L\'ID dello slot data non può essere vuoto.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
-  <string name="install_location_data_slot_id_error_invalid">L\'ID dello slot data deve contenere soltanto lettere minuscole Inglesi e/o numeri.</string>
+  <string name="install_location_named_slot_id_error_invalid">L\'ID dello slot data deve contenere soltanto lettere minuscole Inglesi e/o numeri.</string>
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Slot Data</string>
+  <!--Name for the extsd-slot installation location-->
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">File manager non trovato</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Non è installato un file manager adatto. Installa un file manager per poter selezionare il file da patchare.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Fai un tap per selezionare un file da patchare.</string>
-  <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <!--Initial message for the file chooser card-->
   <string name="filechooser_initial_desc">Se viene scelto un file non supportato, appariranno delle opzioni aggiuntive che permetteranno di personalizzare il processo di patching.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Fai un tap per iniziare il processo di patching.</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
   <string name="filechooser_ready_desc">File selezionato: %s\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
-  <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_unsupported_title">Fai un tap per iniziare il processo di patching.</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
-  <string name="filechooser_unsupported_desc">File selezionato: %s\n\nIl file selezionato non ha un preset. È possibile personalizzare il processo di patching con le opzioni sovrastanti.\n\nFai un tap e tieni premuto per scegliere un altro file.</string>
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">File patchato con successo</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -220,8 +225,6 @@
   <string name="customopts_patchfile">File patch</string>
   <!--Name for the button to select a .patch or .diff file-->
   <string name="customopts_choosepatch">Scegli la patch</string>
-  <!--Name for the option to disable checks for the device's model-->
-  <string name="customopts_devicecheck">Rimuovi controllo del dispositivo</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
   <string name="customopts_hasbootimage">È presente un kernel</string>
   <!--Name for the boot image text box-->
@@ -311,6 +314,8 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <string name="rom_settings_initial_screen_title">Schermata iniziale</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Schermata da visualizzare all\'avvio dell\'app.</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <!--Description for the preference to enable receiving intents from third party applications-->
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Condivisione individuale delle applicazioni</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -341,6 +346,8 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <string name="indiv_app_sharing_reboot_needed_message">Riavvia per applicare i cambiamenti.</string>
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <string name="indiv_app_sharing_app_no_longer_shared">L\'app \'%s\' non è più condivisa.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <!--Word/phrase for Search (used in action bars)-->
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">No</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
@@ -358,35 +365,4 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Attendere, per favore.</string>
   <!--Presets that should always be visible-->
-  <!--Errors-->
-  <string name="no_error">Nessun errore si è verificato</string>
-  <string name="unknown_error">Si è verificato un errore sconosciuto</string>
-  <string name="patcher_create_error">Creazione patcher fallita: %s</string>
-  <string name="autopatcher_create_error">Creazione autopatcher fallita: %s</string>
-  <string name="ramdisk_patcher_create_error">Creazione patcher ramdisk fallita: %s</string>
-  <string name="file_open_error">Impossibile aprire il file: %s</string>
-  <string name="file_read_error">Impossibile leggere dal file: %s</string>
-  <string name="file_write_error">Impossibile modificare il file: %s</string>
-  <string name="directory_not_exist_error">La directory non esiste: %s</string>
-  <string name="boot_image_parse_error">Impossibile analizzare il kernel</string>
-  <string name="boot_image_apply_bump_error">Impossibile applicare Bump al kernel</string>
-  <string name="boot_image_apply_loki_error">Impossibile applicare Loki al kernel</string>
-  <string name="cpio_file_already_exists_error">Il file già esiste nell\'archivio cpio: %s</string>
-  <string name="cpio_file_not_exist_error">Il file non esiste nell\'archivio cpio: %s</string>
-  <string name="archive_read_open_error">Impossibile aprire l\'archivio per la scansione</string>
-  <string name="archive_read_data_error">Lettura intestazione dell\'archivio fallita per il file: %s</string>
-  <string name="archive_read_header_error">Lettura intestazione dell\'archivio fallita</string>
-  <string name="archive_write_open_error">Impossibile aprire l\'archivio per la modifica</string>
-  <string name="archive_write_data_error">Scrittura nell\'archivio fallita per il file: %s</string>
-  <string name="archive_write_header_error">Scrittura nell\'intestazione dell\'archivio fallita per il file: %s</string>
-  <string name="archive_close_error">Impossibile chiudere l\'archivio</string>
-  <string name="archive_free_error">Svuotamento della memoria per l\'intestazione dell\'archivio fallito</string>
-  <string name="xml_parse_file_error">Impossibile analizzare il file XML: %s</string>
-  <string name="only_zip_supported">Solo i file ZIP sono supportati da %s</string>
-  <string name="only_boot_image_supported">Solo i kernel sono supportati da %s</string>
-  <string name="patching_cancelled">Il processo di patching è stato annullato</string>
-  <string name="system_cache_format_lines_not_found">Il patcher non è riuscito a trovare alcuna linea di formattazione di /system 
-o /cache nell\'updater-script.\n\nSe il file è una ROM, allora qualcosa è andato storto.
-Se il file non è una ROM (es. kernel o mod), non ha bisogno di essere patchato.</string>
-  <string name="apply_patch_file_error">Impossibile applicare il file patch</string>
 </resources>

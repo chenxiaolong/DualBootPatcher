@@ -30,8 +30,9 @@ bool is_mounted(const std::string &mountpoint);
 bool unmount_all(const std::string &dir);
 bool bind_mount(const std::string &source, mode_t source_perms,
                 const std::string &target, mode_t target_perms);
-int64_t mount_get_total_size(const std::string &mountpoint);
-int64_t mount_get_avail_size(const std::string &mountpoint);
+bool mount(const char *source, const char *target, const char *fstype,
+           unsigned long mount_flags, const void *data);
+bool umount(const char *target);
 
 }
 }

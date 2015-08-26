@@ -454,15 +454,11 @@ int rom_installer_main(int argc, char *argv[])
 
 
     // Make sure install type is valid
-    Roms roms;
-    roms.add_builtin();
-
-    if (!roms.find_by_id(rom_id) && !Roms::is_named_rom(rom_id)) {
+    if (!Roms::is_valid(rom_id)) {
         fprintf(stderr, "Invalid ROM ID: %s\n", rom_id.c_str());
         return EXIT_FAILURE;
     }
 
-    // TODO: Don't overwrite current ROM
     auto rom = Roms::get_current_rom();
     if (!rom) {
         fprintf(stderr, "Could not determine current ROM\n");

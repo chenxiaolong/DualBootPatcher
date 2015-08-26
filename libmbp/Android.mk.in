@@ -4,11 +4,6 @@ _LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 # Whether ccache should be used (highly recommended!)
 USE_CCACHE := true
 
-THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
-LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
-LIBLZO2_DIR := $(THIRD_PARTY)/android/liblzo2
-LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
-LIBLZMA_DIR := $(THIRD_PARTY)/android/liblzma
 MBP_IO_DIR := @CMAKE_BINARY_DIR@/libmbpio/mbpio-android-prefix/tmp/local
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
@@ -18,29 +13,7 @@ ifneq ($(MBP_MINI),true)
 include $(EXTERNAL_DIR)/minizip/Android.mk
 endif
 
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libarchive
-LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := liblzo2
-LOCAL_SRC_FILES := $(LIBLZO2_DIR)/lib_$(TARGET_ARCH_ABI)/liblzo2.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := liblz4
-LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := liblzma
-LOCAL_SRC_FILES := $(LIBLZMA_DIR)/lib_$(TARGET_ARCH_ABI)/liblzma.a
-include $(PREBUILT_STATIC_LIBRARY)
+include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
 
 include $(CLEAR_VARS)
@@ -70,7 +43,6 @@ LOCAL_MODULE := libmbp-mini
 else
 LOCAL_MODULE := libmbp
 endif
-LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
 	@CMAKE_CURRENT_BINARY_DIR@/include \

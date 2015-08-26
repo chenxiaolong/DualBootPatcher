@@ -35,6 +35,7 @@
 #include "roms.h"
 #include "switcher.h"
 #include "version.h"
+#include "wipe.h"
 #include "util/delete.h"
 #include "util/file.h"
 #include "util/finally.h"
@@ -47,24 +48,7 @@
 namespace mb
 {
 
-static bool wipe_directory_print(const std::string &mountpoint, bool wipe_media)
-{
-    LOGV("Wiping %s%s", mountpoint.c_str(),
-         wipe_media ? "" : " (excluding media directory)");
-    bool ret = wipe_directory(mountpoint, wipe_media);
-    LOGV("-> %s", ret ? "Succeeded" : "Failed");
-    return ret;
-}
-
-static bool delete_recursive_print(const std::string &path)
-{
-    LOGV("Recursively deleting %s", path.c_str());
-    bool ret = util::delete_recursive(path);
-    LOGV("-> %s", ret ? "Succeeded" : "Failed");
-    return ret;
-}
-
-static bool switch_rom(const std::string &rom_id, bool force)
+static bool utilities_switch_rom(const std::string &rom_id, bool force)
 {
     mbp::PatcherConfig pc;
 
@@ -123,97 +107,66 @@ static bool switch_rom(const std::string &rom_id, bool force)
     return ret == SwitchRomResult::SUCCEEDED;
 }
 
-static bool wipe_system(const std::string &rom_id)
+static std::shared_ptr<Rom> get_installed_rom(const std::string &rom_id)
 {
     Roms roms;
-    roms.add_builtin();
-    roms.add_data_roms();
-
+    roms.add_installed();
     auto rom = roms.find_by_id(rom_id);
     if (!rom) {
-        return false;
+        LOGE("ROM ID %s is not installed", rom_id.c_str());
+        return std::shared_ptr<Rom>();
     }
-
-    bool ret = wipe_directory_print(rom->system_path, true);
-    // Try removing ROM's /system if it's empty
-    remove(rom->system_path.c_str());
-    return ret;
+    return rom;
 }
 
-static bool wipe_cache(const std::string &rom_id)
+static bool utilities_wipe_system(const std::string &rom_id)
 {
-    Roms roms;
-    roms.add_builtin();
-    roms.add_data_roms();
-
-    auto rom = roms.find_by_id(rom_id);
+    auto rom = get_installed_rom(rom_id);
     if (!rom) {
         return false;
     }
 
-    bool ret = wipe_directory_print(rom->cache_path, true);
-    // Try removing ROM's /cache if it's empty
-    remove(rom->cache_path.c_str());
-    return ret;
+    return wipe_system(rom);
 }
 
-static bool wipe_data(const std::string &rom_id)
+static bool utilities_wipe_cache(const std::string &rom_id)
 {
-    Roms roms;
-    roms.add_builtin();
-    roms.add_data_roms();
-
-    auto rom = roms.find_by_id(rom_id);
+    auto rom = get_installed_rom(rom_id);
     if (!rom) {
         return false;
     }
 
-    bool ret = wipe_directory_print(rom->data_path, false);
-    // Try removing ROM's /data/media and /data if they're empty
-    remove((rom->data_path + "/media").c_str());
-    remove(rom->data_path.c_str());
-    return ret;
+    return wipe_cache(rom);
 }
 
-static bool wipe_dalvik_cache(const std::string &rom_id)
+static bool utilities_wipe_data(const std::string &rom_id)
 {
-    Roms roms;
-    roms.add_builtin();
-    roms.add_data_roms();
-
-    auto rom = roms.find_by_id(rom_id);
+    auto rom = get_installed_rom(rom_id);
     if (!rom) {
         return false;
     }
 
-    // Most ROMs use /data/dalvik-cache, but some use
-    // /cache/dalvik-cache, like the jflte CyanogenMod builds
-    std::string data_path(rom->data_path);
-    std::string cache_path(rom->cache_path);
-    data_path += "/dalvik-cache";
-    cache_path += "/dalvik-cache";
-    // util::delete_recursive() returns true if the path does not
-    // exist (ie. returns false only on errors), which is exactly
-    // what we want
-    return delete_recursive_print(data_path)
-            && delete_recursive_print(cache_path);
+    return wipe_data(rom);
 }
 
-static bool wipe_multiboot(const std::string &rom_id)
+static bool utilities_wipe_dalvik_cache(const std::string &rom_id)
 {
-    Roms roms;
-    roms.add_builtin();
-    roms.add_data_roms();
-
-    auto rom = roms.find_by_id(rom_id);
+    auto rom = get_installed_rom(rom_id);
     if (!rom) {
         return false;
     }
 
-    // Delete /data/media/0/MultiBoot/[ROM ID]
-    std::string multiboot_path("/data/media/0/MultiBoot/");
-    multiboot_path += rom->id;
-    return delete_recursive_print(multiboot_path);
+    return wipe_dalvik_cache(rom);
+}
+
+static bool utilities_wipe_multiboot(const std::string &rom_id)
+{
+    auto rom = get_installed_rom(rom_id);
+    if (!rom) {
+        return false;
+    }
+
+    return wipe_multiboot(rom);
 }
 
 static void generate_aroma_config(std::vector<unsigned char> *data)
@@ -260,7 +213,8 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     data->assign(str_data.begin(), str_data.end());
 }
 
-class AromaGenerator : public util::FTSWrapper {
+class AromaGenerator : public util::FTSWrapper
+{
 public:
     AromaGenerator(std::string path, std::string zippath)
         : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
@@ -521,17 +475,17 @@ int utilities_main(int argc, char *argv[])
         AromaGenerator gen(argv[optind + 1], argv[optind + 2]);
         ret = gen.run();
     } else if (action == "switch") {
-        ret = switch_rom(argv[optind + 1], force);
+        ret = utilities_switch_rom(argv[optind + 1], force);
     } else if (action == "wipe-system") {
-        ret = wipe_system(argv[optind + 1]);
+        ret = utilities_wipe_system(argv[optind + 1]);
     } else if (action == "wipe-cache") {
-        ret = wipe_cache(argv[optind + 1]);
+        ret = utilities_wipe_cache(argv[optind + 1]);
     } else if (action == "wipe-data") {
-        ret = wipe_data(argv[optind + 1]);
+        ret = utilities_wipe_data(argv[optind + 1]);
     } else if (action == "wipe-dalvik-cache") {
-        ret = wipe_dalvik_cache(argv[optind + 1]);
+        ret = utilities_wipe_dalvik_cache(argv[optind + 1]);
     } else if (action == "wipe-multiboot") {
-        ret = wipe_multiboot(argv[optind + 1]);
+        ret = utilities_wipe_multiboot(argv[optind + 1]);
     } else {
         LOGE("Unknown action: %s", action.c_str());
     }

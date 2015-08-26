@@ -27,12 +27,12 @@
 #include <cstring>
 #include <sys/mount.h>
 #include <sys/stat.h>
-#include <sys/vfs.h>
 #include <unistd.h>
 
 #include "external/mntent.h"
 #include "util/directory.h"
 #include "util/logging.h"
+#include "util/loopdev.h"
 #include "util/string.h"
 
 #define MAX_UNMOUNT_TRIES 5
@@ -85,7 +85,7 @@ bool unmount_all(const std::string &dir)
             if (starts_with(ent.mnt_dir, dir)) {
                 //LOGD("Attempting to unmount %s", ent.mnt_dir);
 
-                if (umount(ent.mnt_dir) < 0) {
+                if (!util::umount(ent.mnt_dir)) {
                     LOGE("Failed to unmount %s: %s",
                          ent.mnt_dir, strerror(errno));
                     ++failed;
@@ -104,6 +104,22 @@ bool unmount_all(const std::string &dir)
     return false;
 }
 
+/*!
+ * \brief Bind mount a directory
+ *
+ * This function will create or chmod the source and target directories before
+ * performing the bind mount. If the source or target directories don't exist,
+ * they will be created (recursively) with the specified permissions. If the
+ * directories already exist, they will be chmod'ed with the specified mode
+ * (parent directories will not be touched).
+ *
+ * \param source Source path
+ * \param source_perms Permissions for source path
+ * \param target Target path
+ * \param target_perms Permissions for target path
+ *
+ * \return True if bind mount is successful. False, otherwise.
+ */
 bool bind_mount(const std::string &source, mode_t source_perms,
                 const std::string &target, mode_t target_perms)
 {
@@ -131,7 +147,7 @@ bool bind_mount(const std::string &source, mode_t source_perms,
         return false;
     }
 
-    if (mount(source.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
+    if (::mount(source.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
         LOGE("Failed to bind mount %s to %s: %s",
              source.c_str(), target.c_str(), strerror(errno));
         return false;
@@ -140,26 +156,110 @@ bool bind_mount(const std::string &source, mode_t source_perms,
     return true;
 }
 
-int64_t mount_get_total_size(const std::string &mountpoint)
+/*!
+ * \brief Mount filesystem
+ *
+ * This function takes the same arguments as mount(2), but returns true on
+ * success and false on failure.
+ *
+ * If MS_BIND is not specified in \a mount_flags and \a source is not a block
+ * device, then the file will be attached to a loop device and the the loop
+ * device will be mounted at \a target.
+ *
+ * \param source See man mount(2)
+ * \param target See man mount(2)
+ * \param fstype See man mount(2)
+ * \param mount_flags See man mount(2)
+ * \param data See man mount(2)
+ *
+ * \return True if mount(2) is successful. False if mount(2) is unsuccessful
+ *         or loopdev could not be created or associated with the source path.
+ */
+bool mount(const char *source, const char *target, const char *fstype,
+           unsigned long mount_flags, const void *data)
 {
-    struct statfs sfs;
+    bool need_loopdev = false;
+    struct stat sb;
 
-    if (statfs(mountpoint.c_str(), &sfs) < 0) {
-        return 0;
+    if (!(mount_flags & MS_BIND)
+            && stat(source, &sb) == 0 && !S_ISBLK(sb.st_mode)) {
+        // If we're not bind mounting and the source is not a block device, then
+        // we need to set up a loop device
+        need_loopdev = true;
     }
 
-    return sfs.f_bsize * sfs.f_blocks;
+    if (need_loopdev) {
+        std::string loopdev = util::loopdev_find_unused();
+        if (loopdev.empty()) {
+            LOGE("Failed to find unused loop device: %s", strerror(errno));
+            return false;
+        }
+
+        if (!util::loopdev_set_up_device(loopdev, source, 0, 0)) {
+            LOGE("Failed to set up loop device %s: %s",
+                 loopdev.c_str(), strerror(errno));
+            return false;
+        }
+
+        if (::mount(loopdev.c_str(), target, fstype, mount_flags, data) < 0) {
+            util::loopdev_remove_device(loopdev);
+            return false;
+        }
+
+        return true;
+    } else {
+        return ::mount(source, target, fstype, mount_flags, data) == 0;
+    }
 }
 
-int64_t mount_get_avail_size(const std::string &mountpoint)
+/*!
+ * \brief Unmount filesystem
+ *
+ * This function takes the same arguments as umount(2), but returns true on
+ * success and false on failure.
+ *
+ * This function will /proc/mounts for the mountpoint (using an exact string
+ * compare). If the source path of the mountpoint is a block device and the
+ * block device is a loop device, then it will be disassociated from the
+ * previously attached file. Note that the return value of
+ * loopdev_remove_device() is ignored and this function will always return true
+ * if umount(2) is successful.
+ *
+ * \param target See man umount(2)
+ *
+ * \return True if umount(2) is successful. False if umount(2) is unsuccessful.
+ */
+bool umount(const char *target)
 {
-    struct statfs sfs;
+    struct mntent ent;
+    std::string source;
 
-    if (statfs(mountpoint.c_str(), &sfs) < 0) {
-        return 0;
+    file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
+    if (fp) {
+        char buf[1024];
+        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+            if (strcmp(ent.mnt_dir, target) == 0) {
+                source = ent.mnt_fsname;
+            }
+        }
+    } else {
+        LOGW("Failed to read /proc/mounts: %s", strerror(errno));
     }
 
-    return sfs.f_bsize * sfs.f_bavail;
+    int ret = ::umount(target);
+
+    if (!source.empty()) {
+        struct stat sb;
+
+        if (stat(source.c_str(), &sb) == 0
+                && S_ISBLK(sb.st_mode) && major(sb.st_rdev) == 7) {
+            // If the source path is a loop block device, then disassociate it
+            // from the image
+            loopdev_remove_device(source);
+        }
+    }
+
+    return ret == 0;
 }
 
 }

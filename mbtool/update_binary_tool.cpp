@@ -28,7 +28,6 @@
 #include "multiboot.h"
 #include "util/file.h"
 #include "util/logging.h"
-#include "util/loopdev.h"
 #include "util/mount.h"
 
 
@@ -61,29 +60,15 @@ static bool do_mount(const std::string &mountpoint)
             return true;
         }
 
-        std::string loopdev = util::loopdev_find_unused();
-
-        if (loopdev.empty()) {
-            LOGE(TAG "Failed to find unused loop device: %s", strerror(errno));
-            return false;
-        }
-
-        if (!util::loopdev_set_up_device(loopdev, "/mb/system.img", 0, 0)) {
-            LOGE(TAG "Failed to set up loop device %s: %s",
-                 loopdev.c_str(), strerror(errno));
-            return false;
-        }
-
-        if (mount(loopdev.c_str(), SYSTEM, "ext4", 0, "") < 0) {
+        if (!util::mount("/mb/system.img", SYSTEM, "ext4", 0, "")) {
             LOGE(TAG "Failed to mount %s: %s",
-                 loopdev.c_str(), strerror(errno));
-            util::loopdev_remove_device(loopdev);
+                 "/mb/system.img", strerror(errno));
             return false;
         }
 
-        util::file_write_data(STAMP_FILE, loopdev.data(), loopdev.size());
+        util::file_write_data(STAMP_FILE, "", 0);
 
-        LOGD(TAG "Mounted %s at %s", loopdev.c_str(), SYSTEM);
+        LOGD(TAG "Mounted %s at %s", "/mb/system.img", SYSTEM);
     } else {
         LOGV(TAG "Ignoring mount command for %s", mountpoint.c_str());
     }
@@ -105,20 +90,8 @@ static bool do_unmount(const std::string &mountpoint)
             return true;
         }
 
-        std::string loopdev;
-        if (!util::file_first_line(STAMP_FILE, &loopdev)) {
-            LOGE(TAG "Failed to get first line of " STAMP_FILE);
-            return false;
-        }
-
-        if (umount(SYSTEM) < 0) {
+        if (!util::umount(SYSTEM)) {
             LOGE(TAG "Failed to unmount %s: %s", SYSTEM, strerror(errno));
-            return false;
-        }
-
-        if (!util::loopdev_remove_device(loopdev)) {
-            LOGE(TAG "Failed to remove loop device %s: %s",
-                 loopdev.c_str(), strerror(errno));
             return false;
         }
 

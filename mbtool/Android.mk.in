@@ -32,15 +32,6 @@ ALLOW_DEBUG_CERT := false
 -include @CMAKE_CURRENT_SOURCE_DIR@/Android.certs.mk
 
 
-THIRD_PARTY := @CMAKE_BINARY_DIR@/thirdparty
-JANSSON_DIR := $(THIRD_PARTY)/android/jansson
-LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
-LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
-LIBLZO2_DIR := $(THIRD_PARTY)/android/liblzo2
-LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
-LIBLZMA_DIR := $(THIRD_PARTY)/android/liblzma
-OPENSSL_DIR := $(THIRD_PARTY)/android/openssl
-PROCPS_NG_DIR := $(THIRD_PARTY)/android/procps-ng
 MBP_MINI_DIR := @CMAKE_BINARY_DIR@/libmbp/mbp-mini-prefix/tmp/local
 MBP_IO_DIR := @CMAKE_BINARY_DIR@/libmbpio/mbpio-android-prefix/tmp/local
 TOP_DIR := @CMAKE_SOURCE_DIR@
@@ -51,23 +42,7 @@ SKIP_EXAMPLES := true
 include $(EXTERNAL_DIR)/libaxmlparser/Android.mk
 include $(EXTERNAL_DIR)/minizip/Android.mk
 
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libjansson
-LOCAL_SRC_FILES := $(JANSSON_DIR)/lib_$(TARGET_ARCH_ABI)/libjansson.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libsepol
-LOCAL_SRC_FILES := $(LIBSEPOL_DIR)/lib_$(TARGET_ARCH_ABI)/libsepol.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libarchive
-LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
-include $(PREBUILT_STATIC_LIBRARY)
+include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
 
 include $(CLEAR_VARS)
@@ -79,45 +54,6 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libmbpio
 LOCAL_SRC_FILES := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libmbpio.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libcrypto
-LOCAL_SRC_FILES := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libcrypto.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libssl
-LOCAL_SRC_FILES := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libssl.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := procps-ng
-LOCAL_SRC_FILES := $(PROCPS_NG_DIR)/lib_$(TARGET_ARCH_ABI)/libprocps.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-# Only needed for linking libmbp-mini
-include $(CLEAR_VARS)
-LOCAL_MODULE    := liblzo2
-LOCAL_SRC_FILES := $(LIBLZO2_DIR)/lib_$(TARGET_ARCH_ABI)/liblzo2.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-# Only needed for linking libmbp-mini
-include $(CLEAR_VARS)
-LOCAL_MODULE    := liblz4
-LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-# Only needed for linking libmbp-mini
-include $(CLEAR_VARS)
-LOCAL_MODULE    := liblzma
-LOCAL_SRC_FILES := $(LIBLZMA_DIR)/lib_$(TARGET_ARCH_ABI)/liblzma.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
@@ -164,6 +100,7 @@ mbtool_src_base := \
 	sepolpatch.cpp \
 	switcher.cpp \
 	validcerts.cpp \
+	wipe.cpp \
 	external/android_reboot.c \
 	external/mntent.c \
 	initwrapper/cutils/uevent.cpp \
@@ -262,7 +199,7 @@ endif
 
 LOCAL_LDFLAGS += -lz
 
-LOCAL_LDFLAGS += -Wl,-Map,$(LOCAL_MODULE).$(TARGET_ARCH_ABI).map
+#LOCAL_LDFLAGS += -Wl,-Map,$(LOCAL_MODULE).$(TARGET_ARCH_ABI).map
 
 include $(BUILD_EXECUTABLE)
 
@@ -289,6 +226,6 @@ endif
 
 LOCAL_LDFLAGS += -lz
 
-LOCAL_LDFLAGS += -Wl,-Map,$(LOCAL_MODULE).$(TARGET_ARCH_ABI).map
+#LOCAL_LDFLAGS += -Wl,-Map,$(LOCAL_MODULE).$(TARGET_ARCH_ABI).map
 
 include $(BUILD_EXECUTABLE)

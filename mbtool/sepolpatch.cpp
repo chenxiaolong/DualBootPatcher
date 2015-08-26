@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -43,6 +43,7 @@ typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 static const char *permissive_types[] = {
     "init",
     //"init_shell",
+    "kernel",
     //"recovery",
     nullptr
 };

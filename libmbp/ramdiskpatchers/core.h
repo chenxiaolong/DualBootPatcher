@@ -44,6 +44,7 @@ public:
     virtual bool patchRamdisk() override;
 
     bool addMbtool();
+    bool addExfat();
     bool setUpInitWrapper();
 
 private:

@@ -70,6 +70,8 @@ static std::vector<perms_> sys_perms;
 static std::vector<perms_> dev_perms;
 static std::vector<platform_node> platform_names;
 
+static std::unordered_map<std::string, std::string> device_map;
+
 void fixup_sys_perms(const char *upath)
 {
     char buf[512];
@@ -266,7 +268,7 @@ static void parse_event(const char *msg, struct uevent *uevent)
     uevent->device_name = nullptr;
 
     // Currently ignoring SEQNUM
-    while(*msg) {
+    while (*msg) {
         if (strncmp(msg, "ACTION=", 7) == 0) {
             msg += 7;
             uevent->action = msg;
@@ -354,6 +356,7 @@ static void handle_device(const char *action, const char *devpath,
                           const std::vector<std::string> &links)
 {
     if (strcmp(action, "add") == 0) {
+        device_map[path] = devpath;
         make_device(devpath, path, block, major, minor, links);
         for (const std::string &link : links) {
             make_link_init(devpath, link.c_str());
@@ -361,6 +364,7 @@ static void handle_device(const char *action, const char *devpath,
     }
 
     if (strcmp(action, "remove") == 0) {
+        device_map.erase(path);
         for (const std::string &link : links) {
             remove_link(devpath, link.c_str());
         }
@@ -394,7 +398,7 @@ static const char * parse_device_name(struct uevent *uevent, unsigned int len)
     ++name;
 
     // Too-long names would overrun our buffer
-    if(strlen(name) > len) {
+    if (strlen(name) > len) {
         LOGE("DEVPATH=%s exceeds %u-character limit on filename; ignoring event",
              name, len);
         return nullptr;
@@ -426,6 +430,35 @@ static void handle_block_device_event(struct uevent *uevent)
             uevent->major, uevent->minor, links);
 }
 
+static void handle_generic_device_event(struct uevent *uevent)
+{
+    const char *base = "/dev/";
+    const char *name;
+    char devpath[96];
+    std::vector<std::string> links;
+
+    name = parse_device_name(uevent, 64);
+    if (!name) {
+        return;
+    }
+
+    if (strcmp(uevent->subsystem, "misc") == 0) {
+        if (strcmp(name, "loop-control") != 0
+                && strcmp(name, "fuse") != 0) {
+            return;
+        }
+    } else if (strcmp(uevent->subsystem, "mem") == 0) {
+        if (strcmp(name, "null") != 0) {
+            return;
+        }
+    }
+
+    snprintf(devpath, sizeof(devpath), "%s%s", base, name);
+
+    handle_device(uevent->action, devpath, uevent->path, 0,
+            uevent->major, uevent->minor, links);
+}
+
 static void handle_device_event(struct uevent *uevent)
 {
     if (strcmp(uevent->action, "add") == 0
@@ -438,6 +471,8 @@ static void handle_device_event(struct uevent *uevent)
         handle_block_device_event(uevent);
     } else if (strncmp(uevent->subsystem, "platform", 8) == 0) {
         handle_platform_device_event(uevent);
+    } else {
+        handle_generic_device_event(uevent);
     }
 }
 
@@ -567,4 +602,9 @@ void device_close()
 int get_device_fd()
 {
     return device_fd;
+}
+
+const std::unordered_map<std::string, std::string> * get_devices_map()
+{
+    return &device_map;
 }

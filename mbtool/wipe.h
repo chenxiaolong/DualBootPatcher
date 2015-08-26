@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,27 +19,15 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "roms.h"
 
 namespace mb
 {
-namespace util
-{
 
-bool create_empty_file(const std::string &path);
-bool file_first_line(const std::string &path,
-                     std::string *line_out);
-bool file_write_data(const std::string &path,
-                     const char *data, size_t size);
-bool file_find_one_of(const std::string &path, std::vector<std::string> items);
-bool file_read_all(const std::string &path,
-                   std::vector<unsigned char> *data_out);
-bool file_read_all(const std::string &path,
-                   unsigned char **data_out,
-                   std::size_t *size_out);
+bool wipe_system(const std::shared_ptr<Rom> &rom);
+bool wipe_cache(const std::shared_ptr<Rom> &rom);
+bool wipe_data(const std::shared_ptr<Rom> &rom);
+bool wipe_dalvik_cache(const std::shared_ptr<Rom> &rom);
+bool wipe_multiboot(const std::shared_ptr<Rom> &rom);
 
-bool get_blockdev_size(const char *path, uint64_t *size_out);
-
-}
 }

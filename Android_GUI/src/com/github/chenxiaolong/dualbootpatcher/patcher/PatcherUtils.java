@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -198,16 +199,50 @@ public class PatcherUtils {
         return sInstallLocations;
     }
 
+    public static InstallLocation[] getNamedInstallLocations(Context context) {
+        //ThreadUtils.enforceExecutionOnNonMainThread();
+
+        File dir = new File(Environment.getExternalStorageDirectory()
+                + File.separator + "MultiBoot");
+
+        ArrayList<InstallLocation> locations = new ArrayList<>();
+
+        for (File f : dir.listFiles()) {
+            String name = f.getName();
+
+            if (name.startsWith("data-slot-") && !name.equals("data-slot-")) {
+                locations.add(getDataSlotInstallLocation(context, name.substring(10)));
+            } else if (name.startsWith("extsd-slot-") && !name.equals("extsd-slot-")) {
+                locations.add(getExtsdSlotInstallLocation(context, name.substring(11)));;
+            }
+        }
+
+        return locations.toArray(new InstallLocation[locations.size()]);
+    }
+
     public static InstallLocation getDataSlotInstallLocation(Context context, String dataSlotId) {
         InstallLocation location = new InstallLocation();
         location.id = getDataSlotRomId(dataSlotId);
         location.name = String.format(context.getString(R.string.dataslot), dataSlotId);
-        location.description = String.format(context.getString(R.string.install_location_desc),
+        location.description = context.getString(R.string.install_location_desc,
                 "/data/multiboot/data-slot-" + dataSlotId);
+        return location;
+    }
+
+    public static InstallLocation getExtsdSlotInstallLocation(Context context, String extsdSlotId) {
+        InstallLocation location = new InstallLocation();
+        location.id = getExtsdSlotRomId(extsdSlotId);
+        location.name = String.format(context.getString(R.string.extsdslot), extsdSlotId);
+        location.description = context.getString(R.string.install_location_desc,
+                "[External SD]/multiboot/extsd-slot-" + extsdSlotId);
         return location;
     }
 
     public static String getDataSlotRomId(String dataSlotId) {
         return "data-slot-" + dataSlotId;
+    }
+
+    public static String getExtsdSlotRomId(String extsdSlotId) {
+        return "extsd-slot-" + extsdSlotId;
     }
 }

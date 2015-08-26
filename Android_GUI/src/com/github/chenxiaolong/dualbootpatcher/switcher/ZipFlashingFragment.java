@@ -54,8 +54,7 @@ import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.DataSlotIdInputDialog
-        .DataSlotIdInputDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog.NamedSlotIdInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
@@ -72,7 +71,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class ZipFlashingFragment extends Fragment implements EventCollectorListener,
-        FirstUseDialogListener, RomIdSelectionDialogListener, DataSlotIdInputDialogListener,
+        FirstUseDialogListener, RomIdSelectionDialogListener, NamedSlotIdInputDialogListener,
         ChangeInstallLocationDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     private static final String TAG = ZipFlashingFragment.class.getSimpleName();
@@ -336,15 +335,23 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
             mSelectedRomId = romId;
             onHaveRomId();
             break;
-        case NAMED_DATA_SLOT:
-            DataSlotIdInputDialog d = DataSlotIdInputDialog.newInstance(this);
-            d.show(getFragmentManager(), DataSlotIdInputDialog.TAG);
+        case NAMED_DATA_SLOT: {
+            NamedSlotIdInputDialog d = NamedSlotIdInputDialog.newInstance(
+                    this, NamedSlotIdInputDialog.DATA_SLOT);
+            d.show(getFragmentManager(), NamedSlotIdInputDialog.TAG);
             break;
+        }
+        case NAMED_EXTSD_SLOT: {
+            NamedSlotIdInputDialog d = NamedSlotIdInputDialog.newInstance(
+                    this, NamedSlotIdInputDialog.EXTSD_SLOT);
+            d.show(getFragmentManager(), NamedSlotIdInputDialog.TAG);
+            break;
+        }
         }
     }
 
     @Override
-    public void onSelectedDataSlotRomId(String romId) {
+    public void onSelectedNamedSlotRomId(String romId) {
         mSelectedRomId = romId;
         onHaveRomId();
     }

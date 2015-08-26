@@ -128,18 +128,21 @@ void MainWindow::onInstallationLocationSelected(int index)
         d->instLocDesc->setText(d->instLocs[index].description);
         d->instLocLe->setVisible(false);
         d->buttons->setEnabled(true);
-    } else {
-        updateDataRomIdDescText(d->instLocLe->text());
+    } else if (index == d->instLocs.size()) {
+        updateRomIdDescText(d->instLocLe->text());
+        d->instLocLe->setVisible(true);
+    } else if (index == d->instLocs.size() + 1) {
+        updateRomIdDescText(d->instLocLe->text());
         d->instLocLe->setVisible(true);
     }
 }
 
 void MainWindow::onInstallationLocationIdChanged(const QString &text)
 {
-    updateDataRomIdDescText(text);
+    updateRomIdDescText(text);
 }
 
-void MainWindow::updateDataRomIdDescText(const QString &text)
+void MainWindow::updateRomIdDescText(const QString &text)
 {
     Q_D(MainWindow);
 
@@ -148,9 +151,17 @@ void MainWindow::updateDataRomIdDescText(const QString &text)
     if (text.isEmpty()) {
         d->instLocDesc->setText(tr("Enter an ID above"));
     } else {
-        d->instLocDesc->setText(
-                tr("Installs ROM to /data/multiboot/data-slot-%1")
-                .arg(d->instLocLe->text()));
+        QString location;
+
+        if (d->instLocSel->currentIndex() == d->instLocs.size()) {
+            location = QStringLiteral("/data/multiboot/data-slot-%1")
+                .arg(d->instLocLe->text());
+        } else if (d->instLocSel->currentIndex() == d->instLocs.size() + 1) {
+            location = QStringLiteral("[External SD]/multiboot/extsd-slot-%1")
+                .arg(d->instLocLe->text());
+        }
+
+        d->instLocDesc->setText(tr("Installs ROM to %1").arg(location));
     }
 }
 
@@ -409,6 +420,7 @@ void MainWindow::refreshInstallationLocations()
     }
 
     d->instLocSel->addItem(tr("Data-slot"));
+    d->instLocSel->addItem(tr("Extsd-slot"));
 }
 
 void MainWindow::chooseFile()
@@ -490,8 +502,10 @@ void MainWindow::startPatching()
     fileInfo->setFilename(d->fileName.toUtf8().constData());
     fileInfo->setDevice(d->device);
     QString romId;
-    if (d->instLocSel->currentIndex() >= d->instLocs.size()) {
+    if (d->instLocSel->currentIndex() == d->instLocs.size()) {
         romId = QStringLiteral("data-slot-%1").arg(d->instLocLe->text());
+    } else if (d->instLocSel->currentIndex() == d->instLocs.size() + 1) {
+        romId = QStringLiteral("extsd-slot-%1").arg(d->instLocLe->text());
     } else {
         romId = d->instLocs[d->instLocSel->currentIndex()].id;
     }

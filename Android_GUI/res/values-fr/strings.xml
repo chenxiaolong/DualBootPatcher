@@ -172,13 +172,13 @@ spécifiées.</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Installe la ROM dans %s</string>
   <!--Text box hint for specifying the data slot ID-->
-  <string name="install_location_data_slot_id_hint">Entrer un ID</string>
+  <string name="install_location_named_slot_id_hint">Entrer un ID</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_data_slot_id_empty">Entrer un ID au dessus</string>
+  <string name="install_location_named_slot_id_empty">Entrer un ID au dessus</string>
   <!--Error tooltip shown if the data slot ID is empty-->
-  <string name="install_location_data_slot_id_error_is_empty">L\'ID de l\'emplacement Donnée ne peut pas être vide.</string>
+  <string name="install_location_named_slot_id_error_is_empty">L\'ID de l\'emplacement Donnée ne peut pas être vide.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
-  <string name="install_location_data_slot_id_error_invalid">L\'ID de l\'emplacement Donnée doit uniquement contenir des lettres minuscules Anglaises et/ ou des nombres.</string>
+  <string name="install_location_named_slot_id_error_invalid">L\'ID de l\'emplacement Donnée doit uniquement contenir des lettres minuscules Anglaises et/ ou des nombres.</string>
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Emplacement Donnée</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
@@ -205,7 +205,7 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
   <string name="filechooser_failure_title">Impossible de patcher le fichier</string>
   <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_failure_desc">%s 
+  <string name="filechooser_failure_desc">%s
 Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Title for the preset card-->
   <string name="preset_title">Préréglage</string>

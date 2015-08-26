@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ public class RomUtils {
     public static final String SECONDARY_ID = "dual";
     public static final String MULTI_ID_PREFIX = "multi-slot-";
     public static final String DATA_ID_PREFIX = "data-slot-";
+    public static final String EXTSD_ID_PREFIX = "extsd-slot-";
 
     @SuppressWarnings("unused")
     public static class RomInformation implements Parcelable {
@@ -306,10 +307,13 @@ public class RomUtils {
             return context.getString(R.string.secondary);
         } else if (info.getId().startsWith(MULTI_ID_PREFIX)) {
             String num = info.getId().substring(MULTI_ID_PREFIX.length());
-            return String.format(context.getString(R.string.multislot), num);
+            return context.getString(R.string.multislot, num);
         } else if (info.getId().startsWith(DATA_ID_PREFIX)) {
             String id = info.getId().substring(DATA_ID_PREFIX.length());
-            return String.format(context.getString(R.string.dataslot), id);
+            return context.getString(R.string.dataslot, id);
+        } else if (info.getId().startsWith(EXTSD_ID_PREFIX)) {
+            String id = info.getId().substring(EXTSD_ID_PREFIX.length());
+            return context.getString(R.string.extsdslot, id);
         }
 
         return UNKNOWN_ID;
