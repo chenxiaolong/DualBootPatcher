@@ -420,7 +420,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Mega 6.3
     device = new Device();
     device->setId("melius");
-    device->setCodenames({ "melius", "meliusltexx" });
+    device->setCodenames({ "melius", "meliuslte", "meliusltexx" });
     device->setName("Samsung Galaxy Mega 6.3");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p20" });
