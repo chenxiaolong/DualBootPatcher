@@ -207,13 +207,16 @@ public class PatcherUtils {
 
         ArrayList<InstallLocation> locations = new ArrayList<>();
 
-        for (File f : dir.listFiles()) {
-            String name = f.getName();
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                String name = f.getName();
 
-            if (name.startsWith("data-slot-") && !name.equals("data-slot-")) {
-                locations.add(getDataSlotInstallLocation(context, name.substring(10)));
-            } else if (name.startsWith("extsd-slot-") && !name.equals("extsd-slot-")) {
-                locations.add(getExtsdSlotInstallLocation(context, name.substring(11)));;
+                if (name.startsWith("data-slot-") && !name.equals("data-slot-")) {
+                    locations.add(getDataSlotInstallLocation(context, name.substring(10)));
+                } else if (name.startsWith("extsd-slot-") && !name.equals("extsd-slot-")) {
+                    locations.add(getExtsdSlotInstallLocation(context, name.substring(11)));
+                }
             }
         }
 
