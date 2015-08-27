@@ -433,7 +433,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy Ace 3 LTE
     device = new Device();
     device->setId("loganre");
-    device->setCodenames({ "loganrelte", "loganreltexx" });
+    device->setCodenames({ "loganre", "loganrelte", "loganreltexx" });
     device->setName("Samsung Galaxy Ace 3 LTE");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p20" });
