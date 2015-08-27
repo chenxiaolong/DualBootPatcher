@@ -533,7 +533,8 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Motorola Moto G (2013)
     device = new Device();
     device->setId("falcon");
-    device->setCodenames({ "falcon", "falcon_umts", "falcon_umtsds" });
+    device->setCodenames({ "falcon", "falcon_umts", "falcon_umtsds",
+                           "xt1032" });
     device->setName("Motorola Moto G (2013)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM /*, TODO */ });
