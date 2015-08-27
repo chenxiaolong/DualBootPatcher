@@ -430,6 +430,19 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
 
+    // Samsung Galaxy Ace 3 LTE
+    device = new Device();
+    device->setId("loganre");
+    device->setCodenames({ "loganre", "loganrelte", "loganreltexx" });
+    device->setName("Samsung Galaxy Ace 3 LTE");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+    devices.push_back(device);
+
     // Samsung Galaxy Tab S 8.4 (Wifi)
     device = new Device();
     device->setId("klimtwifi");
