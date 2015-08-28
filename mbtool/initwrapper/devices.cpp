@@ -29,10 +29,20 @@
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
-#include "util/logging.h"
+#include "util/directory.h"
 #include "util/string.h"
 
 #define UNUSED __attribute__((__unused__))
+
+#define SYSFS_PREFIX "/sys"
+
+#define DEVPATH_LEN 96
+
+#define UEVENT_LOGGING 1
+
+#if UEVENT_LOGGING
+#include "util/logging.h"
+#endif
 
 static int device_fd = -1;
 static volatile bool run_thread = true;
@@ -98,7 +108,9 @@ void fixup_sys_perms(const char *upath)
         }
 
         sprintf(buf,"/sys%s/%s", upath, dp.attr);
+#if UEVENT_LOGGING
         LOGI("fixup %s %d %d 0%o", buf, dp.uid, dp.gid, dp.perm);
+#endif
         chown(buf, dp.uid, dp.gid);
         chmod(buf, dp.perm);
     }
@@ -174,6 +186,13 @@ static void make_device(const char *path,
     mode_t mode;
     dev_t dev;
 
+#if UEVENT_LOGGING
+    LOGD("Creating device %s", path);
+    for (const std::string &link : links) {
+        LOGD("- Symlink %s", link.c_str());
+    }
+#endif
+
     mode = get_device_perm(path, links, &uid, &gid) | (block ? S_IFBLK : S_IFCHR);
 
     dev = makedev(major, minor);
@@ -211,7 +230,9 @@ static void add_platform_device(const char *path)
         }
     }
 
+#if UEVENT_LOGGING
     LOGI("adding platform device %s (%s)", name, path);
+#endif
 
     platform_names.emplace_back();
     struct platform_node &bus = platform_names.back();
@@ -247,7 +268,9 @@ static void remove_platform_device(const char *path)
         const struct platform_node &bus = *it;
 
         if (strcmp(path, bus.path) == 0) {
+#if UEVENT_LOGGING
             LOGI("Removing platform device %s", bus.name);
+#endif
             free(bus.path);
             platform_names.erase((it + 1).base());
             return;
@@ -302,9 +325,87 @@ static void parse_event(const char *msg, struct uevent *uevent)
         while (*msg++);
     }
 
+#if UEVENT_LOGGING
     LOGD("event { '%s', '%s', '%s', '%s', %d, %d }",
          uevent->action, uevent->path, uevent->subsystem,
          uevent->firmware, uevent->major, uevent->minor);
+#endif
+}
+
+static std::vector<std::string> get_v4l_device_symlinks(struct uevent *uevent)
+{
+    int fd = -1;
+    int nr;
+    char link_name_path[256];
+    char link_name[64];
+
+    if (strncmp(uevent->path, "/devices/virtual/video4linux/video", 34) != 0) {
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> links;
+
+    snprintf(link_name_path, sizeof(link_name_path), "%s%s%s",
+            SYSFS_PREFIX, uevent->path, "/link_name");
+    fd = open(link_name_path, O_RDONLY);
+    if (fd < 0) {
+        return std::vector<std::string>();
+    }
+    nr = read(fd, link_name, sizeof(link_name) - 1);
+    close(fd);
+    if (nr <= 0) {
+        return std::vector<std::string>();
+    }
+    link_name[nr] = '\0';
+    links.push_back(mb::util::format("/dev/video/%s", link_name));
+
+    return links;
+}
+
+static std::vector<std::string> get_character_device_symlinks(struct uevent *uevent)
+{
+    const char *parent;
+    char *slash;
+    int width;
+    struct platform_node *pdev;
+
+    pdev = find_platform_device(uevent->path);
+    if (!pdev) {
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> links;
+
+    // Skip "/devices/platform/<driver>"
+    parent = strchr(uevent->path + pdev->path_len, '/');
+    if (!*parent) {
+        return std::vector<std::string>();
+    }
+
+    if (strncmp(parent, "/usb", 4) == 0) {
+        // Skip root hub name and device. use device interface
+        while (*++parent && *parent != '/');
+        if (*parent) {
+            while (*++parent && *parent != '/');
+        }
+        if (!*parent) {
+            return std::vector<std::string>();
+        }
+        slash = strchr(++parent, '/');
+        if (!slash) {
+            return std::vector<std::string>();
+        }
+        width = slash - parent;
+        if (width <= 0) {
+            return std::vector<std::string>();
+        }
+
+        links.push_back(mb::util::format(
+                "/dev/usb/%s%.*s", uevent->subsystem, width, parent));
+        mkdir("/dev/usb", 0755);
+    }
+
+    return links;
 }
 
 static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
@@ -326,7 +427,9 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 
     std::vector<std::string> links;
 
+#if UEVENT_LOGGING
     LOGD("Found %s device %s", type, device);
+#endif
 
     snprintf(link_path, sizeof(link_path), "/dev/block/%s/%s", type, device);
 
@@ -334,7 +437,9 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
         p = strdup(uevent->partition_name);
         sanitize(p);
         if (strcmp(uevent->partition_name, p) != 0) {
+#if UEVENT_LOGGING
             LOGV("Linking partition '%s' as '%s'", uevent->partition_name, p);
+#endif
         }
         links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
         free(p);
@@ -399,8 +504,10 @@ static const char * parse_device_name(struct uevent *uevent, unsigned int len)
 
     // Too-long names would overrun our buffer
     if (strlen(name) > len) {
+#if UEVENT_LOGGING
         LOGE("DEVPATH=%s exceeds %u-character limit on filename; ignoring event",
              name, len);
+#endif
         return nullptr;
     }
 
@@ -411,7 +518,7 @@ static void handle_block_device_event(struct uevent *uevent)
 {
     const char *base = "/dev/block/";
     const char *name;
-    char devpath[96];
+    char devpath[DEVPATH_LEN];
     std::vector<std::string> links;
 
     name = parse_device_name(uevent, 64);
@@ -430,11 +537,31 @@ static void handle_block_device_event(struct uevent *uevent)
             uevent->major, uevent->minor, links);
 }
 
+static bool assemble_devpath(char *devpath, const char *dirname,
+                             const char *devname)
+{
+    int s = snprintf(devpath, DEVPATH_LEN, "%s/%s", dirname, devname);
+    if (s < 0) {
+#if UEVENT_LOGGING
+        LOGE("Failed to assemble device path (%s); ignoring event",
+             strerror(errno));
+#endif
+        return false;
+    } else if (s >= DEVPATH_LEN) {
+#if UEVENT_LOGGING
+        LOGE("%s/%s exceeds %u-character limit on path; ignoring event",
+             dirname, devname, DEVPATH_LEN);
+#endif
+        return false;
+    }
+    return true;
+}
+
 static void handle_generic_device_event(struct uevent *uevent)
 {
-    const char *base = "/dev/";
+    const char *base = nullptr;
     const char *name;
-    char devpath[96];
+    char devpath[DEVPATH_LEN] = { 0 };
     std::vector<std::string> links;
 
     name = parse_device_name(uevent, 64);
@@ -442,21 +569,95 @@ static void handle_generic_device_event(struct uevent *uevent)
         return;
     }
 
-    if (strcmp(uevent->subsystem, "misc") == 0) {
-        if (strcmp(name, "loop-control") != 0
-                && strcmp(name, "fuse") != 0) {
-            return;
-        }
-    } else if (strcmp(uevent->subsystem, "mem") == 0) {
-        if (strcmp(name, "null") != 0) {
-            return;
-        }
-    }
+    if (strncmp(uevent->subsystem, "usb", 3) == 0) {
+         if (strcmp(uevent->subsystem, "usb") == 0) {
+            if (uevent->device_name) {
+                if (!assemble_devpath(devpath, "/dev", uevent->device_name)) {
+                    return;
+                }
+                mb::util::mkdir_parent(devpath, 0755);
+             } else {
+                 // This imitates the file system that would be created
+                 // if we were using devfs instead.
+                 // Minors are broken up into groups of 128, starting at "001"
+                 int bus_id = uevent->minor / 128 + 1;
+                 int device_id = uevent->minor % 128 + 1;
+                 // Build directories
+                 mkdir("/dev/bus", 0755);
+                 mkdir("/dev/bus/usb", 0755);
+                 snprintf(devpath, sizeof(devpath),
+                          "/dev/bus/usb/%03d", bus_id);
+                 mkdir(devpath, 0755);
+                 snprintf(devpath, sizeof(devpath),
+                          "/dev/bus/usb/%03d/%03d", bus_id, device_id);
+             }
+         } else {
+             // Ignore other USB events
+             return;
+         }
+     } else if (strncmp(uevent->subsystem, "graphics", 8) == 0) {
+         base = "/dev/graphics/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "drm", 3) == 0) {
+         base = "/dev/dri/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "oncrpc", 6) == 0) {
+         base = "/dev/oncrpc/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "adsp", 4) == 0) {
+         base = "/dev/adsp/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "msm_camera", 10) == 0) {
+         base = "/dev/msm_camera/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "input", 5) == 0) {
+         base = "/dev/input/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "mtd", 3) == 0) {
+         base = "/dev/mtd/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "sound", 5) == 0) {
+         base = "/dev/snd/";
+         mkdir(base, 0755);
+     } else if (strncmp(uevent->subsystem, "misc", 4) == 0
+            && strncmp(name, "log_", 4) == 0) {
+         base = "/dev/log/";
+         mkdir(base, 0755);
+         name += 4;
+     } else if (strncmp(uevent->subsystem, "dvb", 3) == 0) {
+         // This imitates the file system that would be created
+         // if we were using devfs instead to preserve backward compatibility
+         // for users of dvb devices
+         int adapter_id;
+         char dev_name[20] = { 0 };
 
-    snprintf(devpath, sizeof(devpath), "%s%s", base, name);
+         sscanf(name, "dvb%d.%s", &adapter_id, dev_name);
 
-    handle_device(uevent->action, devpath, uevent->path, 0,
-            uevent->major, uevent->minor, links);
+         // Build dvb directory
+         base = "/dev/dvb";
+         mkdir(base, 0755);
+
+         // Build adapter directory
+         snprintf(devpath, sizeof(devpath), "/dev/dvb/adapter%d", adapter_id);
+         mkdir(devpath, 0755);
+
+         // Build actual device directory
+         snprintf(devpath, sizeof(devpath), "/dev/dvb/adapter%d/%s",
+                  adapter_id, dev_name);
+     } else {
+         base = "/dev/";
+     }
+     links = get_character_device_symlinks(uevent);
+     if (links.empty()) {
+         links = get_v4l_device_symlinks(uevent);
+     }
+
+     if (!devpath[0]) {
+         snprintf(devpath, sizeof(devpath), "%s%s", base, name);
+     }
+
+     handle_device(uevent->action, devpath, uevent->path, 0,
+             uevent->major, uevent->minor, links);
 }
 
 static void handle_device_event(struct uevent *uevent)
