@@ -545,6 +545,69 @@ static bool mount_rom(const std::shared_ptr<Rom> &rom)
     return true;
 }
 
+static bool disable_fsck(const char *fsck_binary)
+{
+    struct stat sb;
+    if (stat(fsck_binary, &sb) < 0) {
+        LOGE("%s: Failed to stat: %s", fsck_binary, strerror(errno));
+        return errno == ENOENT;
+    }
+
+    std::string filename = util::base_name(fsck_binary);
+    std::string path("/fscks/");
+    path += filename;
+
+    file_ptr fp(fopen(path.c_str(), "wb"), fclose);
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             path.c_str(), strerror(errno));
+        return false;
+    }
+
+    fprintf(
+        fp.get(),
+        "#!/system/bin/sh\n"
+        "echo %s was disabled by mbtool because performing an online fsck while the\n"
+        "echo vfat partition is mounted is not possible. This is done to ensure that vold\n"
+        "echo does not fail the filesystem checks and make the external SD invisible to the OS.\n"
+        "echo If the filesystem checks must be completed, it will need to be done from a\n"
+        "echo computer or from recovery.\n"
+        "exit 0",
+        filename.c_str()
+    );
+    fchmod(fileno(fp.get()), 0755);
+
+    if (mount(path.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
+        LOGE("Failed to bind mount %s to %s: %s",
+             path.c_str(), fsck_binary, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+static bool disable_fscks()
+{
+    // Online fsck is not possible so we'll have to prevent Vold from trying
+    // to run fsck_msdos and failing.
+    if (mkdir("/fscks", 0755) < 0 || chmod("/fscks", 0755) < 0) {
+        return false;
+    }
+
+    if (mount("tmpfs", "/fscks", "tmpfs", MS_NOSUID, "mode=0755") < 0) {
+        LOGE("%s: Failed to mount tmpfs: %s", "/fscks", strerror(errno));
+        return false;
+    }
+
+    bool ret = disable_fsck("/system/bin/fsck_msdos");
+
+    if (mount("", "/fscks", "", MS_REMOUNT | MS_RDONLY, "") < 0) {
+        LOGW("%s: Failed to remount read-only: %s", "/fscks", strerror(errno));
+    }
+
+    return ret;
+}
+
 bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 {
     std::vector<util::fstab_rec> fstab;
@@ -669,6 +732,8 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     if (!mount_rom(rom)) {
         return false;
     }
+
+    disable_fscks();
 
     if (!apply_global_app_sharing(rom)) {
         return false;
