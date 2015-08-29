@@ -294,16 +294,20 @@ static void dump(const std::string &line, void *data)
     LOGD("Command output: %s", line.c_str());
 }
 
+static uid_t get_media_rw_uid()
+{
+    struct passwd *pw = getpwnam("media_rw");
+    if (!pw) {
+        return 1023;
+    } else {
+        return pw->pw_uid;
+    }
+}
+
 static bool mount_exfat_fuse(const std::string &source,
                              const std::string &target)
 {
-    uid_t uid;
-    struct passwd *pw = getpwnam("media_rw");
-    if (!pw) {
-        uid = 1023;
-    } else {
-        uid = pw->pw_uid;
-    }
+    uid_t uid = get_media_rw_uid();
 
     // Run filesystem checks
     util::run_command_cb({
@@ -358,7 +362,19 @@ static bool mount_exfat_kernel(const std::string &source,
 
 static bool mount_vfat(const std::string &source, const std::string &target)
 {
-    int ret = mount(source.c_str(), target.c_str(), "vfat", 0, "");
+    uid_t uid = get_media_rw_uid();
+    std::string args = util::format(
+            "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
+            uid, uid, 0007, 0007);
+    int flags = MS_NODEV
+            | MS_NOSUID
+            | MS_DIRSYNC
+            | MS_NOEXEC
+            // For TouchWiz
+            | MS_NOATIME
+            | MS_NODIRATIME;
+
+    int ret = mount(source.c_str(), target.c_str(), "vfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source.c_str(), "vfat", target.c_str(), strerror(errno));
