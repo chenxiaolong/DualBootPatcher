@@ -417,15 +417,28 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ TRELTE_RADIO, TRELTE_CDMA_RADIO });
     devices.push_back(device);
 
-    // Samsung Galaxy Mega 6.3
+    // Samsung Galaxy Mega 6.3 (Intl)
     device = new Device();
-    device->setId("melius");
+    device->setId("melius_intl");
     device->setCodenames({ "melius", "meliuslte", "meliusltexx" });
-    device->setName("Samsung Galaxy Mega 6.3");
+    device->setName("Samsung Galaxy Mega 6.3 (Intl)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p20" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+    devices.push_back(device);
+
+    // Samsung Galaxy Mega 6.3 (Canada)
+    device = new Device();
+    device->setId("melius_can");
+    device->setCodenames({ "melius", "meliuslte", "meliusltecan" });
+    device->setName("Samsung Galaxy Mega 6.3 (Intl)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p22" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p24" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
