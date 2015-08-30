@@ -27,7 +27,6 @@
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
-#include <getopt.h>
 #include <sys/mount.h>
 #include <sys/poll.h>
 #include <unistd.h>
@@ -421,31 +420,11 @@ static bool strip_manual_mounts()
 
 int init_main(int argc, char *argv[])
 {
-    int opt;
-
-    static struct option long_options[] = {
-        {"help",   no_argument,       0, 'h'},
-        {0, 0, 0, 0}
-    };
-
-    int long_index = 0;
-
-    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
-        switch (opt) {
-        case 'h':
-            init_usage(false);
-            return EXIT_SUCCESS;
-
-        default:
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             init_usage(true);
-            return EXIT_FAILURE;
+            return EXIT_SUCCESS;
         }
-    }
-
-    // There should be no other arguments
-    if (argc - optind != 0) {
-        init_usage(true);
-        return EXIT_FAILURE;
     }
 
     umask(0);
