@@ -443,6 +443,19 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
 
+    // Samsung Galaxy Tab 4 10.1 (Wifi)
+    device = new Device();
+    device->setId("matissewifi");
+    device->setCodenames({ "matissewifi", "SM-T530" });
+    device->setName("Samsung Galaxy Tab 4 10.1 (Wifi)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices.push_back(device);
+
     // Samsung Galaxy Tab S 8.4 (Wifi)
     device = new Device();
     device->setId("klimtwifi");
