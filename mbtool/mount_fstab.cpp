@@ -431,6 +431,34 @@ static bool try_extsd_mount(const std::string &block_dev)
 }
 
 /*!
+ * \brief Split list of globs from a list of glob strings
+ *
+ * Splits \a patterns by commas only if the following character is a slash
+ */
+static std::vector<std::string> split_patterns(const char *patterns)
+{
+    const char *begin = patterns;
+    const char *end;
+    std::vector<std::string> result;
+
+    while ((end = strchr(begin, ','))) {
+        while (end && *(end + 1) != '/') {
+            end = strchr(end + 1, ',');
+        }
+        if (end) {
+            result.emplace_back(begin, end);
+            begin = end + 1;
+        } else {
+            break;
+        }
+    }
+
+    result.push_back(begin);
+
+    return result;
+}
+
+/*!
  * \brief Mount specified external SD fstab entries to /raw/extsd
  *
  * This will *not* do anything if the system wasn't booted using initwrapper.
@@ -451,25 +479,28 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec *> &exts
     auto const *devices_map = get_devices_map();
 
     for (const util::fstab_rec *rec : extsd_recs) {
-        const std::string &pattern = rec->blk_device;
-        bool matched = false;
+        std::vector<std::string> patterns =
+                split_patterns(rec->blk_device.c_str());
+        for (const std::string &pattern : patterns) {
+            bool matched = false;
 
-        for (auto const &pair : *devices_map) {
-            if (path_matches(pair.first.c_str(), pattern.c_str())) {
-                matched = true;
-                const std::string &block_dev = pair.second;
+            for (auto const &pair : *devices_map) {
+                if (path_matches(pair.first.c_str(), pattern.c_str())) {
+                    matched = true;
+                    const std::string &block_dev = pair.second;
 
-                if (try_extsd_mount(block_dev)) {
-                    return true;
+                    if (try_extsd_mount(block_dev)) {
+                        return true;
+                    }
+
+                    // Keep trying ...
                 }
-
-                // Keep trying ...
             }
-        }
 
-        if (!matched) {
-            LOGE("Failed to find block device corresponding to %s",
-                 pattern.c_str());
+            if (!matched) {
+                LOGE("Failed to find block device corresponding to %s",
+                     pattern.c_str());
+            }
         }
     }
 
