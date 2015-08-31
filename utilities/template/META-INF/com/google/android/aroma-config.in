@@ -63,9 +63,8 @@ viewbox(
 
     "<~welcome.text2>\n\n" +
 
-        "  <~welcome.version>\t\t\t: "    + "<b><#selectbg_g>" + ini_get("rom_version") + "</#></b>\n" +
-        "  <~welcome.mbtool_version>\t: " + "<b><#selectbg_g>" + "@MBTOOL_VERSION@"     + "</#></b>\n" +
-        "  <~welcome.updated>\t\t\t: "    + "<b><#selectbg_g>" + ini_get("rom_date")    + "</#></b>\n\n\n" +
+        "  <~welcome.version>\t\t\t: " + "<b><#selectbg_g>" + ini_get("rom_version") + "</#></b>\n" +
+        "  <~welcome.updated>\t\t\t: " + "<b><#selectbg_g>" + ini_get("rom_date")    + "</#></b>\n\n\n" +
 
     getvar("sysinfo"),
 
