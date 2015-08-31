@@ -212,6 +212,8 @@ versions = list()
 for f in os.listdir(filesdir):
     r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', f)
     if not r:
+        r = re.search(r'^DualBootUtilities-(.*)\.zip', f)
+    if not r:
         print('Skipping %s ...' % f)
         continue
     files.append(f)
@@ -289,21 +291,23 @@ for i in range(0, len(versions)):
                 continue
 
             if f.endswith('.apk'):
-                target_os = 'Android'
+                target = 'Android'
             elif f.endswith('win32.zip') or f.endswith('.7z'):
-                target_os = 'Win32'
+                target = 'Win32'
+            elif f.startswith('DualBootUtilities'):
+                target = 'Utilities'
             else:
-                target_os = 'Other'
+                target = 'Other'
 
-            if target_os not in cur_files:
-                cur_files[target_os] = list()
+            if target not in cur_files:
+                cur_files[target] = list()
 
-            cur_files[target_os].append(f)
+            cur_files[target].append(f)
 
     # Write files list
     writer.push('ul', indent=True, newline=True)
-    for target_os in sorted(cur_files):
-        for f in cur_files[target_os]:
+    for target in sorted(cur_files):
+        for f in cur_files[target]:
             fullpath = os.path.join(filesdir, f)
             size = humanize_bytes(os.path.getsize(fullpath))
 
@@ -313,7 +317,7 @@ for i in range(0, len(versions)):
             writer.push('div', attrs={'class': 'visible-xs'})
             # OS
             writer.push('a', attrs={'href': f})
-            writer.write(target_os)
+            writer.write(target)
             writer.pop('a')
             # MD5
             if f in md5sums:
@@ -328,7 +332,7 @@ for i in range(0, len(versions)):
 
             # Large layout
             writer.push('div', attrs={'class': 'hidden-xs'})
-            writer.write(target_os + ': ')
+            writer.write(target + ': ')
             # OS
             writer.push('a', attrs={'href': f})
             writer.write(f)
