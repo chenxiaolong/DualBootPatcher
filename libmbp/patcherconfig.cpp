@@ -240,6 +240,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
 #define DWMMC_SYSTEM            DWMMC_BASE_DIR "/SYSTEM"
 #define DWMMC_USERDATA          DWMMC_BASE_DIR "/USERDATA"
 
+#define MTK_BASE_DIR            "/dev/block/platform/mtk-msdc.0/by-name"
+#define MTK_BOOT                MTK_BASE_DIR "/boot"
+#define MTK_CACHE               MTK_BASE_DIR "/cache"
+#define MTK_RECOVERY            MTK_BASE_DIR "/recovery"
+#define MTK_SYSTEM              MTK_BASE_DIR "/system"
+#define MTK_USERDATA            MTK_BASE_DIR "/userdata"
+
     // Samsung Galaxy S 4
     device = new Device();
     device->setId("jflte");
@@ -567,6 +574,20 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_MODEM });
+    devices.push_back(device);
+
+    // Lenovo K3 Note
+    device = new Device();
+    device->setId("k50");
+    device->setArchitecture("arm64-v8a");
+    device->setCodenames({ "K50a40", "K50t5", "aio_otfp" });
+    device->setName("Lenovo K3 Note");
+    device->setBlockDevBaseDirs({ MTK_BASE_DIR });
+    device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p17" });
+    device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p18" });
+    device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p19" });
+    device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
     devices.push_back(device);
 
     // Motorola Moto G (2013)
