@@ -53,6 +53,8 @@
   <string name="multislot">Emplacements tiers N° %s</string>
   <!--Default name for the data-slot ROMs-->
   <string name="dataslot">%s (Emplacement Donnée)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (Emplacement Extsd)</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Ne peut pas déterminer la version de la ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
@@ -63,19 +65,32 @@
   <string name="choose_rom_success">Basculé de rom avec succès</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Impossible de permuter de ROM</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">Les sommes de contrôle de l\'image ne correspondent pas</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">Les sommes de contrôle de l\'image sont manquantes</string>
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Succès de réglage du kernel</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Impossible de régler le kernel</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">Une autre application essaye de passer à %s.
+Continuer?</string>
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
   <string name="unknown_boot_partition">Impossible de déterminer la partition de démarrage car le nom de code \'%s\'  du dispositif n\'est pas reconnu.</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">Les sommes de contrôle SHA512 pour le boot.img de cette ROM ou d\'autres fichiers *.img in /sdcard/MultiBoot/%s/ ne correspondent pas à des sommes de contrôle prévus Une application tierce peut avoir induit malicieusement modifié ces images. Procédez à la commutation de la ROM?</string>
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">Les sommes de contrôle SHA512 pour le boot.img de cette ROM ou d\'autres fichiers *.img in /sdcard/MultiBoot/%s/ sont manquantes Ceci est probablement causé par la mise à niveau d\'une ancienne version de cette application. Procédez à la commutation de la ROM?</string>
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Version inconnue</string>
   <!--Build text shown on ROM card if the build could not be detected-->
   <string name="rom_card_unknown_build">Travail inconnu</string>
   <!--ROM menu item for setting kernel-->
   <string name="rom_menu_set_kernel">Réglé le kernel</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Ajouter à l\'écran d\'accueil</string>
   <!--ROM menu item for changing the name-->
   <string name="rom_menu_edit_name">Editer le nom</string>
   <!--ROM menu item for changing the image-->
@@ -84,6 +99,8 @@
   <string name="rom_menu_reset_image">Réinitialiser l\'image</string>
   <!--ROM menu item for wiping the ROM-->
   <string name="rom_menu_wipe_rom">Effacer la ROM</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">%s ajouté avec succès à l\'écran d\'accueil.</string>
   <!--Target for wiping ROM's /system-->
   <string name="wipe_target_system">Le système</string>
   <!--Target for wiping ROM's /cache-->
@@ -132,6 +149,8 @@ spécifiées.</string>
   <!--Negative dialog button shown for the above two messages-->
   <string name="set_kernel_later">Régler plus tard</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">La ROM actuellement sélectionné est %1$s, mais vous essayez
+de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</string>
   <!--ZIP flash activity title-->
   <string name="zip_flashing_title">Flasher des fichiers ZIP</string>
   <!--Title of pending action card for installing a zip file-->
@@ -163,8 +182,11 @@ spécifiées.</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Pour flasher un fichier zip en utilisant le flashage in-app, just ajouter le fichier zip patché en tapant le grand icône plus. \n\nL\'ordre de flashage peut être modifié en appuyant et maintenant le fichier et un fichier peut être éliminé en le glissant sur les côtés. \n\nNOTE: Cette fonction est encore expérimentale. Veuillez sauvegarder avant de continuer!</string>
   <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Appareil:</string>
   <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Configuration de la partition:</string>
   <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Description:</string>
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">MAJ de la ROM primaire</string>
   <!--Description for primary ROM upgrade installation location-->
@@ -181,22 +203,21 @@ spécifiées.</string>
   <string name="install_location_named_slot_id_error_invalid">L\'ID de l\'emplacement Donnée doit uniquement contenir des lettres minuscules Anglaises et/ ou des nombres.</string>
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Emplacement Donnée</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">Emplacement Extsd</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Pas de gestionnaire de fichier</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Il n\'y a pas de gestionnaire de fichier approprié installé. S\'il vous plaît, installer un gestionnaire de fichiers pour pouvoir choisir les fichiers à patcher.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Appuyer pour choisir un fichier à patcher</string>
-  <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <!--Initial message for the file chooser card-->
   <string name="filechooser_initial_desc">Si un fichier non pris en charge est choisi, des options supplémentaire apparaîtront afin de permettre au processus de patching d\'être personnalisé.</string>
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Taper pour commencer le patchage</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
   <string name="filechooser_ready_desc">Fichier sélectionné: %s
 Appuyez et maintenez pour choisir un fichier different.</string>
-  <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_unsupported_title">Appuyer pour commencer le patchage</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Fichier patché avec succès</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -219,8 +240,6 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <string name="customopts_patchfile">Patcher un fichier</string>
   <!--Name for the button to select a .patch or .diff file-->
   <string name="customopts_choosepatch">Choisir un fichier à patcher</string>
-  <!--Name for the option to disable checks for the device's model-->
-  <string name="customopts_devicecheck">Retirer contrôle de l\'appareil</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
   <string name="customopts_hasbootimage">A une image boot</string>
   <!--Name for the boot image text box-->
@@ -248,7 +267,9 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
   <!--Title for the global application sharing section of the ROM Settings-->
+  <string name="a_s_settings_global_app_sharing_section_title">Partage d\'application global </string>
   <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">Partage d\'application individuel</string>
   <!--Name of the preference for globally sharing free applications from the primary ROM-->
   <string name="a_s_settings_share_apps_title">Partager des applications</string>
   <!--Description of the preference for globally shareing free applications from the primary ROM-->
@@ -290,7 +311,13 @@ Partager des applications payantes depuis la ROM primaire avec la ROM en cours (
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Impossible de mettre à jour le disque virtuel</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Le disque virtuel n\'a pas réussi à être mis à jour. Le journal a été enregistré
+dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">Vous êtes maintenant à %1$d pas de la mise à jour obligatoire du disque virtuel.</item>
+    <item quantity="other">Vous êtes maintenant à %1$d pas de la mise à jour obligatoire du disque virtuel.</item>
+  </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Oblige la MAJ du disque virtuel</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
@@ -303,6 +330,10 @@ Partager des applications payantes depuis la ROM primaire avec la ROM en cours (
   <string name="rom_settings_initial_screen_title">Ecran initial</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Premier écran à montrer lors de l\'ouverture de l\'application.</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Autoriser intentions de réception </string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Autoriser les applications tierces à envoyer des intentions à cette application pour effectuer des actions, comme la commutation de Rom et  de fichiers patchés.</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -326,12 +357,19 @@ Pour utiliser le partage d\'application individuelle, le partage de  APKs / donn
   <!--App sharing dialog message shown by default-->
   <string name="indiv_app_sharing_dialog_default_message">Choisissez si l\'application doit utiliser un fichier APK partagé et un répertoire de données partagées.</string>
   <!--App sharing dialog message shown if the app is a system app-->
+  <string name="indiv_app_sharing_dialog_system_app_message">Depuis que cette application est une application système (ou une mise à jour d\'une application système), une APK partagée ne peut pas être utilisée. Cependant, l\'application peut toujours utiliser les données partagées.</string>
   <!--Message in the app sharing dialog showing the list of ROMs using the shared APK-->
+  <string name="indiv_app_sharing_other_roms_using_shared_apk">Autres ROMs utilisant les APK partagées: %s</string>
   <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">Autres ROMs utilisant les données partagées: %s</string>
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
   <string name="indiv_app_sharing_reboot_needed_message">Les modifications ne prendront effet qu\'au prochain redémarrage.</string>
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <string name="indiv_app_sharing_app_no_longer_shared">L\'appli \'%s\' n\'est plus partagée.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Refusé l\'intention depuis une application tierce. Pour permettre à d\'autres applications d\'envoyer des intentions, activez l\'option dans les paramètres DualBootPatcher.</string>
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">Chercher</string>
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">Rien</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
@@ -349,34 +387,4 @@ Pour utiliser le partage d\'application individuelle, le partage de  APKs / donn
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Veuillez attendre s\'il vous plait</string>
   <!--Presets that should always be visible-->
-  <!--Errors-->
-  <string name="no_error">Aucune erreur ne s\'est produite</string>
-  <string name="unknown_error">Une erreur inconnue s\'est produite</string>
-  <string name="patcher_create_error">Impossible de créer le patch: %s</string>
-  <string name="autopatcher_create_error">Impossible de créer le patch auto: %s</string>
-  <string name="ramdisk_patcher_create_error">Impossible de créer le patch du disque virtuel: %s</string>
-  <string name="file_open_error">Impossible d\'ouvrir le fichier: %s</string>
-  <string name="file_read_error">Impossible de lire le fichier: %s</string>
-  <string name="file_write_error">Impossible d\'écrire le fichier: %s</string>
-  <string name="directory_not_exist_error">Le répertoire n\'existe pas: %s</string>
-  <string name="boot_image_parse_error">Erreur d\'analyse de l\'image de boot</string>
-  <string name="boot_image_apply_bump_error">Impossible d\'appliquer le Bump pour démarrer l\'image</string>
-  <string name="boot_image_apply_loki_error">Impossible d\'appliquer Loki pour démarrer l\'image</string>
-  <string name="cpio_file_already_exists_error">Fichier déjà existant dans l\'archive cpio: %s</string>
-  <string name="cpio_file_not_exist_error">Le fichier n\' existe pas dans l\'archive cpio: %s</string>
-  <string name="archive_read_open_error">Impossible d\'ouvrir les archives pour la lecture</string>
-  <string name="archive_read_data_error">Impossible de lire les données d\'archive pour le fichier: %s</string>
-  <string name="archive_read_header_error">Impossible de lire les archives du chargeur d\'entrée</string>
-  <string name="archive_write_open_error">Impossible d\'ouvrir les archives pour l\'écriture</string>
-  <string name="archive_write_data_error">Impossible d\'écrire des données d\'archives pour le fichier: %s</string>
-  <string name="archive_write_header_error">Échec de l\'écriture du chargeur d\'archive pour le fichier: %s</string>
-  <string name="archive_close_error">Impossible de fermer les archives</string>
-  <string name="archive_free_error">Echec pour libérer la mémoire du chargeur d\'archive</string>
-  <string name="xml_parse_file_error">Impossible d\'analyser le fichier XML: %s</string>
-  <string name="only_zip_supported">Seuls les fichiers ZIP sont pris en charge par %s</string>
-  <string name="only_boot_image_supported">Seuls les images de démarrage sont supportées par %s</string>
-  <string name="patching_cancelled">Le patchage a été annulé</string>
-  <string name="system_cache_format_lines_not_found">Le patcher n\'a pas pu trouver de lignes /system ou /cache formatting dans le fichier updater-script.
-Si le fichier est une ROM, alors quelque chose a échoué. Si le fichier n\'est pas une ROM (ex. Noyau ou mod), il n\'a pas besoin d\'être patché.</string>
-  <string name="apply_patch_file_error">Impossible d\'appliquer le fichier patch</string>
 </resources>
