@@ -45,4 +45,6 @@ endif()
 # Third party binaries
 add_subdirectory(thirdparty)
 
+add_subdirectory(utilities)
+
 include(CPack)

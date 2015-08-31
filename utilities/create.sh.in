@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e
+
+version='@MBP_VERSION@'
+zip_file="@CMAKE_CURRENT_BINARY_DIR@/DualBootUtilities-${version}.zip"
+aroma='@CMAKE_CURRENT_BINARY_DIR@/aroma-@AROMA_VER@.zip'
+temp_dir="$(mktemp -d "@CMAKE_CURRENT_BINARY_DIR@/tmp.XXXXXXXXXX")"
+
+rm -f "${zip_file}"
+
+cp -vr '@CMAKE_CURRENT_SOURCE_DIR@/META-INF' "${temp_dir}"
+cp -vr '@CMAKE_CURRENT_SOURCE_DIR@/template' "${temp_dir}"
+cp -v '@CMAKE_BINARY_DIR@/mbtool/out/armeabi-v7a/mbtool_recovery' "${temp_dir}/mbtool"
+
+pushd "${temp_dir}/template"
+unzip "${aroma}" META-INF/com/google/android/update-binary
+popd
+
+pushd "${temp_dir}"
+zip -r "${zip_file}" mbtool META-INF template
+popd
+
+rm -rf "${temp_dir}"
+
+echo
+echo "Result in ${zip_file}"

@@ -1,0 +1,48 @@
+﻿### LICENSE:
+#
+# Copyright (C) 2011 Ahmad Amarullah ( http://amarullz.com/ )
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+### LANGUAGE STRING RESOURCE FILE
+#
+#   Language  : 简体中文
+#   By        : amarullz + google translate + 魂客（kinghunki）
+#
+
+#
+#--- COMMON SYSTEM STRING RESOURCE
+#
+text_ok=确定
+text_next=下一步
+text_back=返回
+text_yes=同意
+text_no=放弃
+text_about=关于
+text_calibrating=屏幕校准
+text_quit=退出安装
+text_quit_msg=你确定要退出安装吗？
+
+#
+#-- CUSTOM STRING RESOURCE
+#
+common.for=到您的
+
+welcome.title=欢迎
+welcome.text1=<UNTRANSLATED>
+welcome.text2=<UNTRANSLATED>
+welcome.version=ROM 版本
+welcome.updated=更新日期
+
+changelog.title=更新日志
+changelog.desc=关于更新说明
