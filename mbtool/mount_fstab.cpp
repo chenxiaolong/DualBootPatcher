@@ -471,10 +471,16 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec *> &exts
         return true;
     }
 
+    LOGD("%zu fstab entries for the external SD", extsd_recs.size());
+
     if (!util::mkdir_recursive(EXTSD_MOUNT_POINT, 0755)) {
         LOGE("Failed to create %s: %s", EXTSD_MOUNT_POINT, strerror(errno));
         return false;
     }
+
+    // If an actual SD card was found and the mount operation failed, then set
+    // to false. This way, the function won't fail if no SD card is inserted.
+    bool failed = false;
 
     auto const *devices_map = get_devices_map();
 
@@ -491,6 +497,8 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec *> &exts
 
                     if (try_extsd_mount(block_dev)) {
                         return true;
+                    } else {
+                        failed = true;
                     }
 
                     // Keep trying ...
@@ -504,7 +512,7 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec *> &exts
         }
     }
 
-    return false;
+    return !failed;
 }
 
 static bool mount_image(const std::string &image,
