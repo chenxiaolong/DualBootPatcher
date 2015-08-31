@@ -1427,8 +1427,11 @@ Installer::ProceedState Installer::install_stage_finish()
         // Set ro.patcher.device=<device ID> in /default.prop
         std::vector<unsigned char> default_prop;
         if (cpio.contents("default.prop", &default_prop)) {
-            std::string prop = util::format(
-                    "\nro.patcher.device=%s\n", _device.c_str());
+            std::string prop;
+            util::get_property("ro.product.device", &prop, _device);
+            prop.insert(0, "\nro.patcher.device=");
+            prop.push_back('\n');
+
             default_prop.insert(default_prop.end(), prop.begin(), prop.end());
             if (!cpio.setContents("default.prop", std::move(default_prop))) {
                 LOGE("Failed to modify /default.prop in the ramdisk");
