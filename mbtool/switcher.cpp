@@ -229,6 +229,8 @@ static std::string find_block_dev(const std::vector<std::string> &search_dirs,
  */
 static bool fix_permissions()
 {
+    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
+
     if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
                      util::CHOWN_RECURSIVE)) {
         LOGE("Failed to chown %s", MULTIBOOT_DIR);

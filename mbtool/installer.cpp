@@ -1549,6 +1549,8 @@ Installer::ProceedState Installer::install_stage_finish()
         checksums_write(props);
     }
 
+    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
+
     if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
         // Non-fatal
         LOGE("%s: Failed to chmod: %s", MULTIBOOT_DIR, strerror(errno));
