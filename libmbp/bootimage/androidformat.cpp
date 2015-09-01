@@ -75,6 +75,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     uint32_t pos = 0;
 
     // Save kernel image
+    pos += headerIndex;
     pos += sizeof(BootImageHeader);
     pos += skipPadding(sizeof(BootImageHeader), mI10e->pageSize);
     if (pos + mI10e->hdrKernelSize > size) {
