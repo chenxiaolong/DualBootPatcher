@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -63,31 +63,34 @@ static const char UnpackUsage[] =
     "The following items are extracted from the boot image. These files contain\n"
     "all of the information necessary to recreate an identical boot image.\n"
     "\n"
-    "  cmdline         Kernel command line                           [ABLS]\n"
-    "  board           Board name field in the header                [ABL ]\n"
-    "  base            Base address for offsets                      [ABL ]\n"
-    "  kernel_offset   Address offset of the kernel image            [ABLS]\n"
-    "  ramdisk_offset  Address offset of the ramdisk image           [ABLS]\n"
-    "  second_offset   Address offset of the second bootloader image [ABL ]\n"
-    "  tags_offset     Address offset of the kernel tags image       [ABL ]\n"
-    "  ipl_address     Address of the ipl image                      [   S]\n"
-    "  rpm_address     Address of the rpm image                      [   S]\n"
-    "  appsbl_address  Address of the appsbl image                   [   S]\n"
-    "  entrypoint      Address of the entry point                    [   S]\n"
-    "  page_size       Page size                                     [ABL ]\n"
-    "  kernel`         Kernel image                                  [ABLS]\n"
-    "  ramdisk         Ramdisk image                                 [ABLS]\n"
-    "  second          Second bootloader image                       [ABL ]\n"
-    "  dt              Device tree image                             [ABL ]\n"
-    "  ipl             Ipl image                                     [   S]\n"
-    "  rpm             Rpm image                                     [   S]\n"
-    "  appsbl          Appsbl image                                  [   S]\n"
-    "  sin             Sin image                                     [   S]\n"
-    "  sinhdr          Sin header                                    [   S]\n"
+    "  cmdline         Kernel command line                           [ABLMS]\n"
+    "  board           Board name field in the header                [ABLM ]\n"
+    "  base            Base address for offsets                      [ABLM ]\n"
+    "  kernel_offset   Address offset of the kernel image            [ABLMS]\n"
+    "  ramdisk_offset  Address offset of the ramdisk image           [ABLMS]\n"
+    "  second_offset   Address offset of the second bootloader image [ABLM ]\n"
+    "  tags_offset     Address offset of the kernel tags image       [ABLM ]\n"
+    "  ipl_address     Address of the ipl image                      [    S]\n"
+    "  rpm_address     Address of the rpm image                      [    S]\n"
+    "  appsbl_address  Address of the appsbl image                   [    S]\n"
+    "  entrypoint      Address of the entry point                    [    S]\n"
+    "  page_size       Page size                                     [ABLM ]\n"
+    "  kernel`         Kernel image                                  [ABLMS]\n"
+    "  ramdisk         Ramdisk image                                 [ABLMS]\n"
+    "  second          Second bootloader image                       [ABLM ]\n"
+    "  dt              Device tree image                             [ABLM ]\n"
+    "  kernel_mtkhdr   Kernel MTK header                             [   M ]\n"
+    "  ramdisk_mtkhdr  Ramdisk MTK header                            [   M ]\n"
+    "  ipl             Ipl image                                     [    S]\n"
+    "  rpm             Rpm image                                     [    S]\n"
+    "  appsbl          Appsbl image                                  [    S]\n"
+    "  sin             Sin image                                     [    S]\n"
+    "  sinhdr          Sin header                                    [    S]\n"
     "\n"
     "Legend:\n"
-    "  [A B L S]\n"
-    "   | | | `- Used by Sony ELF boot images\n"
+    "  [A B L M S]\n"
+    "   | | | | `- Used by Sony ELF boot images\n"
+    "   | | | `- Used by MTK Android boot images\n"
     "   | | `- Used by Loki'd Android boot images\n"
     "   | `- Used by bump'd Android boot images\n"
     "   `- Used by plain Android boot images\n"
@@ -130,7 +133,7 @@ static const char PackUsage[] =
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n"
     "  -t, --type [type]\n"
     "                  Output type of the boot image\n"
-    "                  [android, bump, loki, sonyelf]\n"
+    "                  [android, bump, loki, mtk, sonyelf]\n"
     "  --input-[item] [item path]\n"
     "                  Custom path for a particular item\n"
     "  --value-[item] [item value]\n"
@@ -138,32 +141,35 @@ static const char PackUsage[] =
     "\n"
     "The following items are loaded to create a new boot image.\n"
     "\n"
-    "  cmdline *        Kernel command line                           [ABLS]\n"
-    "  board *          Board name field in the header                [ABL ]\n"
-    "  base *           Base address for offsets                      [ABL ]\n"
-    "  kernel_offset *  Address offset of the kernel image            [ABLS]\n"
-    "  ramdisk_offset * Address offset of the ramdisk image           [ABLS]\n"
-    "  second_offset *  Address offset of the second bootloader image [ABL ]\n"
-    "  tags_offset *    Address offset of the kernel tags image       [ABL ]\n"
-    "  ipl_address *    Address of the ipl image                      [   S]\n"
-    "  rpm_address *    Address of the rpm image                      [   S]\n"
-    "  appsbl_address * Address of the appsbl image                   [   S]\n"
-    "  entrypoint *     Address of the entrypoint                     [   S]\n"
-    "  page_size *      Page size                                     [ABL ]\n"
-    "  kernel`          Kernel image                                  [ABLS]\n"
-    "  ramdisk          Ramdisk image                                 [ABLS]\n"
-    "  second           Second bootloader image                       [ABL ]\n"
-    "  dt               Device tree image                             [ABL ]\n"
-    "  aboot            Aboot image                                   [  L ]\n"
-    "  ipl              Ipl image                                     [   S]\n"
-    "  rpm              Rpm image                                     [   S]\n"
-    "  appsbl           Appsbl image                                  [   S]\n"
-    "  sin              Sin image                                     [   S]\n"
-    "  sinhdr           Sin header                                    [   S]\n"
+    "  cmdline *        Kernel command line                           [ABLMS]\n"
+    "  board *          Board name field in the header                [ABLM ]\n"
+    "  base *           Base address for offsets                      [ABLM ]\n"
+    "  kernel_offset *  Address offset of the kernel image            [ABLMS]\n"
+    "  ramdisk_offset * Address offset of the ramdisk image           [ABLMS]\n"
+    "  second_offset *  Address offset of the second bootloader image [ABLM ]\n"
+    "  tags_offset *    Address offset of the kernel tags image       [ABLM ]\n"
+    "  ipl_address *    Address of the ipl image                      [    S]\n"
+    "  rpm_address *    Address of the rpm image                      [    S]\n"
+    "  appsbl_address * Address of the appsbl image                   [    S]\n"
+    "  entrypoint *     Address of the entrypoint                     [    S]\n"
+    "  page_size *      Page size                                     [ABLM ]\n"
+    "  kernel`          Kernel image                                  [ABLMS]\n"
+    "  ramdisk          Ramdisk image                                 [ABLMS]\n"
+    "  second           Second bootloader image                       [ABLM ]\n"
+    "  dt               Device tree image                             [ABLM ]\n"
+    "  kernel_mtkhdr    Kernel MTK header                             [   M ]\n"
+    "  ramdisk_mtkhdr   Ramdisk MTK header                            [   M ]\n"
+    "  aboot            Aboot image                                   [  L  ]\n"
+    "  ipl              Ipl image                                     [    S]\n"
+    "  rpm              Rpm image                                     [    S]\n"
+    "  appsbl           Appsbl image                                  [    S]\n"
+    "  sin              Sin image                                     [    S]\n"
+    "  sinhdr           Sin header                                    [    S]\n"
     "\n"
     "Legend:\n"
-    "  [A B L S]\n"
-    "   | | | `- Used by Sony ELF boot images\n"
+    "  [A B L M S]\n"
+    "   | | | | `- Used by Sony ELF boot images\n"
+    "   | | | `- Used by MTK Android boot images\n"
     "   | | `- Used by Loki'd Android boot images\n"
     "   | `- Used by bump'd Android boot images\n"
     "   `- Used by plain Android boot images\n"
@@ -364,6 +370,8 @@ bool unpack_main(int argc, char *argv[])
     std::string path_ramdisk;
     std::string path_second;
     std::string path_dt;
+    std::string path_kernel_mtkhdr;
+    std::string path_ramdisk_mtkhdr;
     std::string path_ipl;
     std::string path_rpm;
     std::string path_appsbl;
@@ -389,11 +397,13 @@ bool unpack_main(int argc, char *argv[])
         OPT_OUTPUT_RAMDISK        = 10000 + 14,
         OPT_OUTPUT_SECOND         = 10000 + 15,
         OPT_OUTPUT_DT             = 10000 + 16,
-        OPT_OUTPUT_IPL            = 10000 + 17,
-        OPT_OUTPUT_RPM            = 10000 + 18,
-        OPT_OUTPUT_APPSBL         = 10000 + 19,
-        OPT_OUTPUT_SIN            = 10000 + 20,
-        OPT_OUTPUT_SINHDR         = 10000 + 21
+        OPT_OUTPUT_KERNEL_MTKHDR  = 10000 + 17,
+        OPT_OUTPUT_RAMDISK_MTKHDR = 10000 + 18,
+        OPT_OUTPUT_IPL            = 10000 + 19,
+        OPT_OUTPUT_RPM            = 10000 + 20,
+        OPT_OUTPUT_APPSBL         = 10000 + 21,
+        OPT_OUTPUT_SIN            = 10000 + 22,
+        OPT_OUTPUT_SINHDR         = 10000 + 23
     };
 
     static struct option long_options[] = {
@@ -418,6 +428,8 @@ bool unpack_main(int argc, char *argv[])
         {"output-ramdisk",        required_argument, 0, OPT_OUTPUT_RAMDISK},
         {"output-second",         required_argument, 0, OPT_OUTPUT_SECOND},
         {"output-dt",             required_argument, 0, OPT_OUTPUT_DT},
+        {"output-kernel_mtkhdr",  required_argument, 0, OPT_OUTPUT_KERNEL_MTKHDR},
+        {"output-ramdisk_mtkhdr", required_argument, 0, OPT_OUTPUT_RAMDISK_MTKHDR},
         {"output-ipl",            required_argument, 0, OPT_OUTPUT_IPL},
         {"output-rpm",            required_argument, 0, OPT_OUTPUT_RPM},
         {"output-appsbl",         required_argument, 0, OPT_OUTPUT_APPSBL},
@@ -449,6 +461,8 @@ bool unpack_main(int argc, char *argv[])
         case OPT_OUTPUT_RAMDISK:        path_ramdisk = optarg;        break;
         case OPT_OUTPUT_SECOND:         path_second = optarg;         break;
         case OPT_OUTPUT_DT:             path_dt = optarg;             break;
+        case OPT_OUTPUT_KERNEL_MTKHDR:  path_kernel_mtkhdr = optarg;  break;
+        case OPT_OUTPUT_RAMDISK_MTKHDR: path_ramdisk_mtkhdr = optarg; break;
         case OPT_OUTPUT_IPL:            path_ipl = optarg;            break;
         case OPT_OUTPUT_RPM:            path_rpm = optarg;            break;
         case OPT_OUTPUT_APPSBL:         path_appsbl = optarg;         break;
@@ -518,6 +532,10 @@ bool unpack_main(int argc, char *argv[])
         path_second = io::pathJoin({output_dir, prefix + "second"});
     if (path_dt.empty())
         path_dt = io::pathJoin({output_dir, prefix + "dt"});
+    if (path_kernel_mtkhdr.empty())
+        path_kernel_mtkhdr = io::pathJoin({output_dir, prefix + "kernel_mtkhdr"});
+    if (path_ramdisk_mtkhdr.empty())
+        path_ramdisk_mtkhdr = io::pathJoin({output_dir, prefix + "ramdisk_mtkhdr"});
     if (path_ipl.empty())
         path_ipl = io::pathJoin({output_dir, prefix + "ipl"});
     if (path_rpm.empty())
@@ -564,6 +582,8 @@ bool unpack_main(int argc, char *argv[])
     PRINT_IF(SUPPORTS_RAMDISK_IMAGE,   "- ramdisk:        %s\n", path_ramdisk.c_str());
     PRINT_IF(SUPPORTS_SECOND_IMAGE,    "- second:         %s\n", path_second.c_str());
     PRINT_IF(SUPPORTS_DT_IMAGE,        "- dt:             %s\n", path_dt.c_str());
+    PRINT_IF(SUPPORTS_KERNEL_MTKHDR,   "- kernel_mtkhdr:  %s\n", path_kernel_mtkhdr.c_str());
+    PRINT_IF(SUPPORTS_RAMDISK_MTKHDR,  "- ramdisk_mtkhdr: %s\n", path_ramdisk_mtkhdr.c_str());
     PRINT_IF(SUPPORTS_IPL_IMAGE,       "- ipl:            %s\n", path_ipl.c_str());
     PRINT_IF(SUPPORTS_RPM_IMAGE,       "- rpm:            %s\n", path_rpm.c_str());
     PRINT_IF(SUPPORTS_APPSBL_IMAGE,    "- appsbl:         %s\n", path_appsbl.c_str());
@@ -674,6 +694,16 @@ bool unpack_main(int argc, char *argv[])
         WRITE_FILE_DATA(path_dt, bi.deviceTreeImage());
     }
 
+    // Write MTK kernel header
+    if (supportMask & SUPPORTS_KERNEL_MTKHDR) {
+        WRITE_FILE_DATA(path_kernel_mtkhdr, bi.kernelMtkHeader());
+    }
+
+    // Write MTK ramdisk header
+    if (supportMask & SUPPORTS_RAMDISK_MTKHDR) {
+        WRITE_FILE_DATA(path_ramdisk_mtkhdr, bi.ramdiskMtkHeader());
+    }
+
     // Write ipl image
     if (supportMask & SUPPORTS_IPL_IMAGE) {
         WRITE_FILE_DATA(path_ipl, bi.iplImage());
@@ -730,6 +760,8 @@ bool pack_main(int argc, char *argv[])
     std::string path_second;
     std::string path_dt;
     std::string path_aboot;
+    std::string path_kernel_mtkhdr;
+    std::string path_ramdisk_mtkhdr;
     std::string path_ipl;
     std::string path_rpm;
     std::string path_appsbl;
@@ -754,6 +786,8 @@ bool pack_main(int argc, char *argv[])
     std::vector<unsigned char> second_image;
     std::vector<unsigned char> dt_image;
     std::vector<unsigned char> aboot_image;
+    std::vector<unsigned char> kernel_mtkhdr;
+    std::vector<unsigned char> ramdisk_mtkhdr;
     std::vector<unsigned char> ipl_image;
     std::vector<unsigned char> rpm_image;
     std::vector<unsigned char> appsbl_image;
@@ -782,11 +816,13 @@ bool pack_main(int argc, char *argv[])
         OPT_INPUT_SECOND         = 10000 + 15,
         OPT_INPUT_DT             = 10000 + 16,
         OPT_INPUT_ABOOT          = 10000 + 17,
-        OPT_INPUT_IPL            = 10000 + 18,
-        OPT_INPUT_RPM            = 10000 + 19,
-        OPT_INPUT_APPSBL         = 10000 + 20,
-        OPT_INPUT_SIN            = 10000 + 21,
-        OPT_INPUT_SINHDR         = 10000 + 22,
+        OPT_INPUT_KERNEL_MTKHDR  = 10000 + 18,
+        OPT_INPUT_RAMDISK_MTKHDR = 10000 + 19,
+        OPT_INPUT_IPL            = 10000 + 20,
+        OPT_INPUT_RPM            = 10000 + 21,
+        OPT_INPUT_APPSBL         = 10000 + 22,
+        OPT_INPUT_SIN            = 10000 + 23,
+        OPT_INPUT_SINHDR         = 10000 + 24,
         // Values
         OPT_VALUE_CMDLINE        = 20000 + 1,
         OPT_VALUE_BOARD          = 20000 + 2,
@@ -826,6 +862,8 @@ bool pack_main(int argc, char *argv[])
         {"input-second",         required_argument, 0, OPT_INPUT_SECOND},
         {"input-dt",             required_argument, 0, OPT_INPUT_DT},
         {"input-aboot",          required_argument, 0, OPT_INPUT_ABOOT},
+        {"input-kernel_mtkhdr",  required_argument, 0, OPT_INPUT_KERNEL_MTKHDR},
+        {"input-ramdisk_mtkhdr", required_argument, 0, OPT_INPUT_RAMDISK_MTKHDR},
         {"input-ipl",            required_argument, 0, OPT_INPUT_IPL},
         {"input-rpm",            required_argument, 0, OPT_INPUT_RPM},
         {"input-appsbl",         required_argument, 0, OPT_INPUT_APPSBL},
@@ -871,6 +909,8 @@ bool pack_main(int argc, char *argv[])
         case OPT_INPUT_SECOND:         path_second = optarg;         break;
         case OPT_INPUT_DT:             path_dt = optarg;             break;
         case OPT_INPUT_ABOOT:          path_aboot = optarg;          break;
+        case OPT_INPUT_KERNEL_MTKHDR:  path_kernel_mtkhdr = optarg;  break;
+        case OPT_INPUT_RAMDISK_MTKHDR: path_ramdisk_mtkhdr = optarg; break;
         case OPT_INPUT_IPL:            path_ipl = optarg;            break;
         case OPT_INPUT_RPM:            path_rpm = optarg;            break;
         case OPT_INPUT_APPSBL:         path_appsbl = optarg;         break;
@@ -986,6 +1026,8 @@ bool pack_main(int argc, char *argv[])
                 type = mbp::BootImage::Type::Bump;
             } else if (strcmp(optarg, "loki") == 0) {
                 type = mbp::BootImage::Type::Loki;
+            } else if (strcmp(optarg, "mtk") == 0) {
+                type = mbp::BootImage::Type::Mtk;
             } else if (strcmp(optarg, "sonyelf") == 0) {
                 type = mbp::BootImage::Type::SonyElf;
             } else {
@@ -1666,6 +1708,48 @@ bool pack_main(int argc, char *argv[])
     } else {
         if (!path_aboot.empty())
             printf(not_supported, "--input-aboot");
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // MTK kernel header
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_KERNEL_MTKHDR) {
+        if (path_kernel_mtkhdr.empty())
+            path_kernel_mtkhdr = io::pathJoin({input_dir, prefix + "kernel_mtkhdr"});
+
+        printf(fmt_path, "kernel_mtkhdr", path_kernel_mtkhdr.c_str());
+
+        if (!read_file_data(path_kernel_mtkhdr, &kernel_mtkhdr)) {
+            fprintf(stderr, "%s: %s\n", path_kernel_mtkhdr.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setKernelMtkHeader(std::move(kernel_mtkhdr));
+    } else {
+        if (!path_kernel_mtkhdr.empty())
+            printf(not_supported, "--input-kernel_mtkhdr");
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // MTK ramdisk header
+    ////////////////////////////////////////////////////////////////////////////
+
+    if (support_mask & SUPPORTS_RAMDISK_MTKHDR) {
+        if (path_ramdisk_mtkhdr.empty())
+            path_ramdisk_mtkhdr = io::pathJoin({input_dir, prefix + "ramdisk_mtkhdr"});
+
+        printf(fmt_path, "ramdisk_mtkhdr", path_ramdisk_mtkhdr.c_str());
+
+        if (!read_file_data(path_ramdisk_mtkhdr, &ramdisk_mtkhdr)) {
+            fprintf(stderr, "%s: %s\n", path_ramdisk_mtkhdr.c_str(), strerror(errno));
+            return false;
+        }
+
+        bi.setRamdiskMtkHeader(std::move(ramdisk_mtkhdr));
+    } else {
+        if (!path_ramdisk_mtkhdr.empty())
+            printf(not_supported, "--input-ramdisk_mtkhdr");
     }
 
     ////////////////////////////////////////////////////////////////////////////
