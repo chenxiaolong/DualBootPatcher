@@ -110,6 +110,10 @@ public class LibMbp {
         static native void mbp_bootimage_set_device_tree_image(CBootImage bi, Pointer data, int size);
         static native void mbp_bootimage_aboot_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_aboot_image(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_kernel_mtk_header(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_kernel_mtk_header(CBootImage bi, Pointer data, int size);
+        static native void mbp_bootimage_ramdisk_mtk_header(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
+        static native void mbp_bootimage_set_ramdisk_mtk_header(CBootImage bi, Pointer data, int size);
         static native void mbp_bootimage_ipl_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_ipl_image(CBootImage bi, Pointer data, int size);
         static native void mbp_bootimage_rpm_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
@@ -701,6 +705,44 @@ public class LibMbp {
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
             CWrapper.mbp_bootimage_set_aboot_image(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getKernelMtkHeader() {
+            validate(mCBootImage, BootImage.class, "getKernelMtkHeader");
+            PointerByReference pData = new PointerByReference();
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_kernel_mtk_header(mCBootImage, pData, pSize);
+            Pointer data = pData.getValue();
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
+        }
+
+        public void setKernelMtkHeader(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setKernelMtkHeader", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_kernel_mtk_header(mCBootImage, mem, data.length);
+        }
+
+        public byte[] getRamdiskMtkHeader() {
+            validate(mCBootImage, BootImage.class, "getRamdiskMtkHeader");
+            PointerByReference pData = new PointerByReference();
+            IntByReference pSize = new IntByReference();
+            CWrapper.mbp_bootimage_ramdisk_mtk_header(mCBootImage, pData, pSize);
+            Pointer data = pData.getValue();
+            int size = pSize.getValue();
+            return data.getByteArray(0, size);
+        }
+
+        public void setRamdiskMtkHeader(byte[] data) {
+            validate(mCBootImage, BootImage.class, "setRamdiskMtkHeader", data.length);
+            ensureNotNull(data);
+
+            Memory mem = new Memory(data.length);
+            mem.write(0, data, 0, data.length);
+            CWrapper.mbp_bootimage_set_ramdisk_mtk_header(mCBootImage, mem, data.length);
         }
 
         public byte[] getIplImage() {
