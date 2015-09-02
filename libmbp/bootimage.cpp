@@ -28,6 +28,7 @@
 #include "bootimage/androidformat.h"
 #include "bootimage/bumpformat.h"
 #include "bootimage/lokiformat.h"
+#include "bootimage/mtkformat.h"
 #include "bootimage/sonyelfformat.h"
 
 #include "external/sha.h"
@@ -94,6 +95,7 @@ private:
  * | Loki (old-style) | Yes     | No     | (Will be created as new-style)
  * | Loki (new-style) | Yes     | Yes    |
  * | Bump             | Yes     | Yes    |
+ * | Mtk              | Yes     | Yes    |
  *
  * The following parameters in the Android header can be changed:
  *
@@ -155,6 +157,7 @@ bool BootImage::isValid(const unsigned char *data, std::size_t size)
 {
     return LokiFormat::isValid(data, size)
             || BumpFormat::isValid(data, size)
+            || MtkFormat::isValid(data, size)
             || AndroidFormat::isValid(data, size)
             || SonyElfFormat::isValid(data, size);
 }
@@ -175,6 +178,11 @@ bool BootImage::load(const unsigned char *data, std::size_t size)
         m_impl->sourceType = Type::Bump;
         m_impl->type = Type::Bump;
         ret = BumpFormat(&m_impl->i10e).loadImage(data, size);
+    } else if (MtkFormat::isValid(data, size)) {
+        LOGD("Boot image is an mtk boot image");
+        m_impl->sourceType = Type::Mtk;
+        m_impl->type = Type::Mtk;
+        ret = MtkFormat(&m_impl->i10e).loadImage(data, size);
     } else if (AndroidFormat::isValid(data, size)) {
         LOGD("Boot image is a plain boot image");
         m_impl->sourceType = Type::Android;
@@ -266,6 +274,10 @@ bool BootImage::create(std::vector<unsigned char> *data) const
         LOGD("Creating loki'd Android boot image");
         ret = LokiFormat(&m_impl->i10e).createImage(data);
         break;
+    case Type::Mtk:
+        LOGD("Creating mtk Android boot image");
+        ret = MtkFormat(&m_impl->i10e).createImage(data);
+        break;
     case Type::SonyElf:
         LOGD("Creating Sony ELF32 boot image");
         ret = SonyElfFormat(&m_impl->i10e).createImage(data);
@@ -351,6 +363,8 @@ uint64_t BootImage::typeSupportMask(BootImage::Type type)
         return BumpFormat::typeSupportMask();
     case Type::Loki:
         return LokiFormat::typeSupportMask();
+    case Type::Mtk:
+        return MtkFormat::typeSupportMask();
     case Type::SonyElf:
         return SonyElfFormat::typeSupportMask();
     default:
@@ -764,6 +778,62 @@ void BootImage::setAbootImageC(const unsigned char *data, std::size_t size)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Kernel MTK header
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::kernelMtkHeader() const
+{
+    return m_impl->i10e.mtkKernelHdr;
+}
+
+void BootImage::setKernelMtkHeader(std::vector<unsigned char> data)
+{
+    m_impl->i10e.mtkKernelHdr = std::move(data);
+}
+
+void BootImage::kernelMtkHeaderC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.mtkKernelHdr.data();
+    *size = m_impl->i10e.mtkKernelHdr.size();
+}
+
+void BootImage::setKernelMtkHeaderC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.mtkKernelHdr.clear();
+    m_impl->i10e.mtkKernelHdr.shrink_to_fit();
+    m_impl->i10e.mtkKernelHdr.resize(size);
+    std::memcpy(m_impl->i10e.mtkKernelHdr.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Ramdisk MTK header
+////////////////////////////////////////////////////////////////////////////////
+
+const std::vector<unsigned char> & BootImage::ramdiskMtkHeader() const
+{
+    return m_impl->i10e.mtkRamdiskHdr;
+}
+
+void BootImage::setRamdiskMtkHeader(std::vector<unsigned char> data)
+{
+    m_impl->i10e.mtkRamdiskHdr = std::move(data);
+}
+
+void BootImage::ramdiskMtkHeaderC(const unsigned char **data, std::size_t *size) const
+{
+    *data = m_impl->i10e.mtkRamdiskHdr.data();
+    *size = m_impl->i10e.mtkRamdiskHdr.size();
+}
+
+void BootImage::setRamdiskMtkHeaderC(const unsigned char *data, std::size_t size)
+{
+    m_impl->i10e.mtkRamdiskHdr.clear();
+    m_impl->i10e.mtkRamdiskHdr.shrink_to_fit();
+    m_impl->i10e.mtkRamdiskHdr.resize(size);
+    std::memcpy(m_impl->i10e.mtkRamdiskHdr.data(), data, size);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Sony ipl image
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -917,6 +987,9 @@ bool BootImage::operator==(const BootImage &other) const
             && m_impl->i10e.secondImage == other.m_impl->i10e.secondImage
             && m_impl->i10e.dtImage == other.m_impl->i10e.dtImage
             && m_impl->i10e.abootImage == other.m_impl->i10e.abootImage
+            // MTK headers
+            && m_impl->i10e.mtkKernelHdr == other.m_impl->i10e.mtkKernelHdr
+            && m_impl->i10e.mtkRamdiskHdr == other.m_impl->i10e.mtkRamdiskHdr
             // Sony images
             && m_impl->i10e.iplImage == other.m_impl->i10e.iplImage
             && m_impl->i10e.rpmImage == other.m_impl->i10e.rpmImage

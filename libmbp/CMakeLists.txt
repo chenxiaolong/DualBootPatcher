@@ -33,6 +33,7 @@ set(MBP_SOURCES
     bootimage/fileformat.cpp
     bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
+    bootimage/mtkformat.cpp
     bootimage/sonyelfformat.cpp
     edify/tokenizer.cpp
     # C wrapper API
@@ -168,6 +169,7 @@ set(MBP_MINI_SOURCES
     bootimage/fileformat.cpp
     bootimage/lokiformat.cpp
     bootimage/lokipatcher.cpp
+    bootimage/mtkformat.cpp
     bootimage/sonyelfformat.cpp
     external/sha.cpp
 )

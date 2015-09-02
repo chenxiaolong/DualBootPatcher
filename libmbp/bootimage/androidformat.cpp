@@ -141,6 +141,43 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     return true;
 }
 
+static void updateSha1Hash(BootImageHeader *hdr,
+                           const BootImageIntermediate *i10e)
+{
+    SHA_CTX ctx;
+    SHA_init(&ctx);
+
+    SHA_update(&ctx, i10e->kernelImage.data(), i10e->kernelImage.size());
+    SHA_update(&ctx, reinterpret_cast<char *>(&hdr->kernel_size),
+               sizeof(hdr->kernel_size));
+
+    SHA_update(&ctx, i10e->ramdiskImage.data(), i10e->ramdiskImage.size());
+    SHA_update(&ctx, reinterpret_cast<char *>(&hdr->ramdisk_size),
+               sizeof(hdr->ramdisk_size));
+    if (!i10e->secondImage.empty()) {
+        SHA_update(&ctx, i10e->secondImage.data(), i10e->secondImage.size());
+    }
+
+    // Bug in AOSP? AOSP's mkbootimg adds the second bootloader size to the SHA1
+    // hash even if it's 0
+    SHA_update(&ctx, reinterpret_cast<char *>(&hdr->second_size),
+               sizeof(hdr->second_size));
+
+    if (!i10e->dtImage.empty()) {
+        SHA_update(&ctx, i10e->dtImage.data(), i10e->dtImage.size());
+        SHA_update(&ctx, reinterpret_cast<char *>(&hdr->dt_size),
+                   sizeof(hdr->dt_size));
+    }
+
+    std::memset(hdr->id, 0, sizeof(hdr->id));
+    memcpy(hdr->id, SHA_final(&ctx), SHA_DIGEST_SIZE);
+
+    std::string hexDigest = StringUtils::toHex(
+            reinterpret_cast<const unsigned char *>(hdr->id), SHA_DIGEST_SIZE);
+
+    FLOGD("Computed new ID hash: %s", hexDigest.c_str());
+}
+
 bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
 {
     BootImageHeader hdr;
@@ -167,7 +204,7 @@ bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
                 mI10e->cmdline.substr(0, BOOT_ARGS_SIZE - 1).c_str());
 
     // Update SHA1
-    updateSha1Hash(&hdr);
+    updateSha1Hash(&hdr, mI10e);
 
     switch (mI10e->pageSize) {
     case 2048:
@@ -253,42 +290,6 @@ bool AndroidFormat::findHeader(const unsigned char *data, std::size_t size,
     }
 
     return false;
-}
-
-void AndroidFormat::updateSha1Hash(BootImageHeader *hdr)
-{
-    SHA_CTX ctx;
-    SHA_init(&ctx);
-
-    SHA_update(&ctx, mI10e->kernelImage.data(), mI10e->kernelImage.size());
-    SHA_update(&ctx, reinterpret_cast<char *>(&hdr->kernel_size),
-               sizeof(hdr->kernel_size));
-
-    SHA_update(&ctx, mI10e->ramdiskImage.data(), mI10e->ramdiskImage.size());
-    SHA_update(&ctx, reinterpret_cast<char *>(&hdr->ramdisk_size),
-               sizeof(hdr->ramdisk_size));
-    if (!mI10e->secondImage.empty()) {
-        SHA_update(&ctx, mI10e->secondImage.data(), mI10e->secondImage.size());
-    }
-
-    // Bug in AOSP? AOSP's mkbootimg adds the second bootloader size to the SHA1
-    // hash even if it's 0
-    SHA_update(&ctx, reinterpret_cast<char *>(&hdr->second_size),
-               sizeof(hdr->second_size));
-
-    if (!mI10e->dtImage.empty()) {
-        SHA_update(&ctx, mI10e->dtImage.data(), mI10e->dtImage.size());
-        SHA_update(&ctx, reinterpret_cast<char *>(&hdr->dt_size),
-                   sizeof(hdr->dt_size));
-    }
-
-    std::memset(hdr->id, 0, sizeof(hdr->id));
-    memcpy(hdr->id, SHA_final(&ctx), SHA_DIGEST_SIZE);
-
-    std::string hexDigest = StringUtils::toHex(
-            reinterpret_cast<const unsigned char *>(hdr->id), SHA_DIGEST_SIZE);
-
-    FLOGD("Computed new ID hash: %s", hexDigest.c_str());
 }
 
 uint32_t AndroidFormat::skipPadding(const uint32_t itemSize,

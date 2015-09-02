@@ -19,17 +19,16 @@
 
 #pragma once
 
-#include "bootimage/fileformat.h"
-#include "bootimage/header.h"
+#include "bootimage/androidformat.h"
 
 namespace mbp
 {
 
-class AndroidFormat : public BootImageFormat
+class MtkFormat : public AndroidFormat
 {
 public:
-    AndroidFormat(BootImageIntermediate *i10e);
-    virtual ~AndroidFormat();
+    MtkFormat(BootImageIntermediate *i10e);
+    virtual ~MtkFormat();
 
     static uint64_t typeSupportMask();
 
@@ -38,19 +37,6 @@ public:
     virtual bool loadImage(const unsigned char *data, std::size_t size) override;
 
     virtual bool createImage(std::vector<unsigned char> *dataOut) override;
-
-    ///
-
-    static uint32_t skipPadding(const uint32_t itemSize,
-                                const uint32_t pageSize);
-
-    static bool findHeader(const unsigned char *data, std::size_t size,
-                           std::size_t searchRange, std::size_t *headerIndex);
-
-    bool loadHeader(const unsigned char *data, std::size_t size,
-                    const std::size_t headerIndex);
-
-    static void dumpHeader(const BootImageHeader *hdr);
 };
 
 }

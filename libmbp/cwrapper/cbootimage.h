@@ -125,6 +125,16 @@ void mbp_bootimage_aboot_image(const CBootImage *bootImage,
 void mbp_bootimage_set_aboot_image(CBootImage *bootImage,
                                    const unsigned char *data, size_t size);
 
+void mbp_bootimage_kernel_mtk_header(const CBootImage *bootImage,
+                                     const unsigned char **data, size_t *size);
+void mbp_bootimage_set_kernel_mtk_header(CBootImage *bootImage,
+                                         const unsigned char *data, size_t size);
+
+void mbp_bootimage_ramdisk_mtk_header(const CBootImage *bootImage,
+                                      const unsigned char **data, size_t *size);
+void mbp_bootimage_set_ramdisk_mtk_header(CBootImage *bootImage,
+                                          const unsigned char *data, size_t size);
+
 void mbp_bootimage_ipl_image(const CBootImage *bootImage,
                              const unsigned char **data, size_t *size);
 void mbp_bootimage_set_ipl_image(CBootImage *bootImage,

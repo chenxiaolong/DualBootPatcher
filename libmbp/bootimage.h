@@ -63,7 +63,8 @@ public:
         Android = 1,
         Loki = 2,
         Bump = 3,
-        SonyElf = 4
+        Mtk = 4,
+        SonyElf = 5
     };
 
     BootImage();
@@ -162,6 +163,18 @@ public:
     void setAbootImage(std::vector<unsigned char> data);
     void abootImageC(const unsigned char **data, std::size_t *size) const;
     void setAbootImageC(const unsigned char *data, std::size_t size);
+
+    // Kernel MTK header
+    const std::vector<unsigned char> & kernelMtkHeader() const;
+    void setKernelMtkHeader(std::vector<unsigned char> data);
+    void kernelMtkHeaderC(const unsigned char **data, std::size_t *size) const;
+    void setKernelMtkHeaderC(const unsigned char *data, std::size_t size);
+
+    // Ramdisk MTK header
+    const std::vector<unsigned char> & ramdiskMtkHeader() const;
+    void setRamdiskMtkHeader(std::vector<unsigned char> data);
+    void ramdiskMtkHeaderC(const unsigned char **data, std::size_t *size) const;
+    void setRamdiskMtkHeaderC(const unsigned char *data, std::size_t size);
 
     // Sony ipl image
     const std::vector<unsigned char> & iplImage() const;
