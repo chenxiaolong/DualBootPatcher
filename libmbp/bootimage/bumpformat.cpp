@@ -37,9 +37,64 @@ BumpFormat::~BumpFormat()
 
 bool BumpFormat::isValid(const unsigned char *data, std::size_t size)
 {
-    return size >= BUMP_MAGIC_SIZE
-            && std::memcmp(data + size - BUMP_MAGIC_SIZE,
-                           BUMP_MAGIC, BUMP_MAGIC_SIZE) == 0;
+    // We have to parse the boot image to find the end so we can compare the
+    // trailing bytes to the bump magic string
+
+    std::size_t headerIndex;
+    if (!findHeader(data, size, 512, &headerIndex)) {
+        return false;
+    }
+
+    // Check for header size overflow
+    if (size < headerIndex + sizeof(BootImageHeader)) {
+        return false;
+    }
+
+    // Read the Android boot image header
+    auto hdr = reinterpret_cast<const BootImageHeader *>(&data[headerIndex]);
+
+    uint32_t pos = 0;
+
+    // Skip header
+    pos += headerIndex;
+    pos += sizeof(BootImageHeader);
+    pos += skipPadding(sizeof(BootImageHeader), hdr->page_size);
+
+    // Check for kernel size overflow
+    if (pos + hdr->kernel_size > size) {
+        return false;
+    }
+    // Skip kernel image
+    pos += hdr->kernel_size;
+    pos += skipPadding(hdr->kernel_size, hdr->page_size);
+
+    // Check for ramdisk size overflow
+    if (pos + hdr->ramdisk_size > size) {
+        return false;
+    }
+    // Skip ramdisk image
+    pos += hdr->ramdisk_size;
+    pos += skipPadding(hdr->ramdisk_size, hdr->page_size);
+
+    // Check for second bootloader size overflow
+    if (pos + hdr->second_size > size) {
+        return false;
+    }
+    // Skip second bootloader image
+    pos += hdr->second_size;
+    pos += skipPadding(hdr->second_size, hdr->page_size);
+
+    // Check for device tree image size overflow
+    if (pos + hdr->dt_size > size) {
+        return false;
+    }
+    // Skip device tree image
+    pos += hdr->dt_size;
+    pos += skipPadding(hdr->dt_size, hdr->page_size);
+
+    // We are now at the end of the boot image, so check for the bump magic
+    return (size >= pos + BUMP_MAGIC_SIZE)
+            && std::memcmp(data + pos, BUMP_MAGIC, BUMP_MAGIC_SIZE) == 0;
 }
 
 bool BumpFormat::createImage(std::vector<unsigned char> *dataOut)
