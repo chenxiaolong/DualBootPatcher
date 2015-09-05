@@ -145,7 +145,13 @@ static bool v2_get_roms_list(int fd, const v2::Request *msg)
         fb::Offset<fb::String> fb_version;
         fb::Offset<fb::String> fb_build;
 
-        std::string build_prop(system_path);
+        std::string build_prop;
+        if (r->system_is_image) {
+            build_prop += "/raw/images/";
+            build_prop += r->id;
+        } else {
+            build_prop += system_path;
+        }
         build_prop += "/build.prop";
 
         std::unordered_map<std::string, std::string> properties;
