@@ -57,6 +57,7 @@
 
 
 #define EXTSD_MOUNT_POINT "/raw/extsd"
+#define IMAGES_MOUNT_POINT "/raw/images"
 
 
 namespace mb
@@ -584,6 +585,32 @@ static bool mount_rom(const std::shared_ptr<Rom> &rom)
     return true;
 }
 
+/*!
+ * \brief Mount all system image files to /raw/images/[ROM ID]
+ */
+static bool mount_all_system_images()
+{
+    Roms roms;
+    roms.add_installed();
+
+    bool failed = false;
+
+    for (const std::shared_ptr<Rom> &rom : roms.roms) {
+        if (rom->system_is_image) {
+            std::string mount_point(IMAGES_MOUNT_POINT);
+            mount_point += "/";
+            mount_point += rom->id;
+
+            if (!mount_image(rom->full_system_path(), mount_point, 0771)) {
+                LOGW("Failed to mount image for %s", rom->id.c_str());
+                failed = true;
+            }
+        }
+    }
+
+    return !failed;
+}
+
 static bool disable_fsck(const char *fsck_binary)
 {
     struct stat sb;
@@ -772,6 +799,7 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         return false;
     }
 
+    mount_all_system_images();
     disable_fscks();
 
     if (!apply_global_app_sharing(rom)) {
