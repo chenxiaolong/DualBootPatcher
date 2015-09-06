@@ -138,12 +138,12 @@ bool bind_mount(const std::string &source, mode_t source_perms,
     }
 
     if (chmod(source.c_str(), source_perms) < 0) {
-        LOGE("Failed to chmod %s", source.c_str());
+        LOGE("Failed to chmod %s: %s", source.c_str(), strerror(errno));
         return false;
     }
 
     if (chmod(target.c_str(), target_perms) < 0) {
-        LOGE("Failed to chmod %s", target.c_str());
+        LOGE("Failed to chmod %s: %s", target.c_str(), strerror(errno));
         return false;
     }
 
