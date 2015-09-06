@@ -25,6 +25,7 @@
 #include "multiboot.h"
 #include "util/delete.h"
 #include "util/logging.h"
+#include "util/mount.h"
 
 namespace mb
 {
@@ -116,6 +117,11 @@ bool wipe_system(const std::shared_ptr<Rom> &rom)
 
     bool ret;
     if (rom->system_is_image) {
+        // Ensure the image is no longer mounted
+        std::string mount_point("/raw/images/");
+        mount_point += rom->id;
+        util::umount(mount_point.c_str());
+
         ret = log_wipe_file(path);
     } else {
         ret = log_wipe_directory(path, true);
