@@ -193,7 +193,10 @@ bool mount(const char *source, const char *target, const char *fstype,
             return false;
         }
 
-        if (!util::loopdev_set_up_device(loopdev, source, 0, 0)) {
+        LOGD("Assigning %s to loop device %s", source, loopdev.c_str());
+
+        if (!util::loopdev_set_up_device(
+                loopdev, source, 0, mount_flags & MS_RDONLY)) {
             LOGE("Failed to set up loop device %s: %s",
                  loopdev.c_str(), strerror(errno));
             return false;
