@@ -55,7 +55,6 @@
 #include "util/file.h"
 #include "util/finally.h"
 #include "util/logging.h"
-#include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/properties.h"
 #include "util/selinux.h"
@@ -471,13 +470,9 @@ bool Installer::system_image_copy(const std::string &source,
     temp_mnt += "/.system.tmp";
 
     struct stat sb;
-    std::string loopdev;
 
     auto done = util::finally([&] {
-        if (!loopdev.empty()) {
-            umount(temp_mnt.c_str());
-            util::loopdev_remove_device(loopdev);
-        }
+        util::umount(temp_mnt.c_str());
     });
 
     if (stat(source.c_str(), &sb) < 0
@@ -492,20 +487,8 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    loopdev = util::loopdev_find_unused();
-    if (loopdev.empty()) {
-        LOGE("Failed to find unused loop device: %s", strerror(errno));
-        return false;
-    }
-
-    if (!util::loopdev_set_up_device(loopdev, image, 0, 0)) {
-        LOGE("Failed to set up loop device %s: %s",
-             loopdev.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (mount(loopdev.c_str(), temp_mnt.c_str(), "ext4", 0, "") < 0) {
-        LOGE("Failed to mount %s: %s", loopdev.c_str(), strerror(errno));
+    if (!util::mount(image.c_str(), temp_mnt.c_str(), "ext4", 0, "")) {
+        LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }
 
@@ -523,14 +506,8 @@ bool Installer::system_image_copy(const std::string &source,
         }
     }
 
-    if (umount(temp_mnt.c_str()) < 0) {
+    if (!util::umount(temp_mnt.c_str())) {
         LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (!util::loopdev_remove_device(loopdev)) {
-        LOGE("Failed to remove loop device %s: %s",
-             loopdev.c_str(), strerror(errno));
         return false;
     }
 
