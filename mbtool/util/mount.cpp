@@ -181,10 +181,8 @@ bool mount(const char *source, const char *target, const char *fstype,
     bool need_loopdev = false;
     struct stat sb;
 
-    if (!(mount_flags & MS_BIND)
-            && stat(source, &sb) == 0 && !S_ISBLK(sb.st_mode)) {
-        // If we're not bind mounting and the source is not a block device, then
-        // we need to set up a loop device
+    if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))
+            && stat(source, &sb) == 0 && S_ISREG(sb.st_mode)) {
         need_loopdev = true;
     }
 
