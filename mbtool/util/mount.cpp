@@ -27,6 +27,7 @@
 #include <cstring>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 #include <unistd.h>
 
 #include "external/mntent.h"
@@ -261,6 +262,28 @@ bool umount(const char *target)
     }
 
     return ret == 0;
+}
+
+uint64_t mount_get_total_size(const char *path)
+{
+    struct statfs sfs;
+
+    if (statfs(path, &sfs) < 0) {
+        return 0;
+    }
+
+    return sfs.f_bsize * sfs.f_blocks;
+}
+
+uint64_t mount_get_avail_size(const char *path)
+{
+    struct statfs sfs;
+
+    if (statfs(path, &sfs) < 0) {
+        return 0;
+    }
+
+    return sfs.f_bsize * sfs.f_bavail;
 }
 
 }

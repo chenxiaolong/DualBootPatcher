@@ -56,6 +56,7 @@
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/mount.h"
+#include "util/path.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
@@ -429,6 +430,18 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     if (!util::mkdir_parent(path, S_IRWXU)) {
         LOGE("%s: Failed to create parent directory: %s",
              path.c_str(), strerror(errno));
+        return false;
+    }
+
+    // Ensure we have enough space since we're creating a sparse file that may
+    // get bigger
+    uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
+    if (avail < size) {
+        display_msg("");
+        display_msg(util::format("There is not enough space to create %s",
+                                 path.c_str()));
+        display_msg(util::format("- Needed:    %" PRIu64 " bytes", size));
+        display_msg(util::format("- Available: %" PRIu64 " bytes", avail));
         return false;
     }
 

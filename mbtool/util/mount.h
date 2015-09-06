@@ -34,5 +34,8 @@ bool mount(const char *source, const char *target, const char *fstype,
            unsigned long mount_flags, const void *data);
 bool umount(const char *target);
 
+uint64_t mount_get_total_size(const char *path);
+uint64_t mount_get_avail_size(const char *path);
+
 }
 }
