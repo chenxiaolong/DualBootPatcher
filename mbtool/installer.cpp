@@ -1241,7 +1241,12 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
             remove(TEMP_SYSTEM_IMAGE.c_str());
 
             // Create temporary image in /data
-            if (!create_image(TEMP_SYSTEM_IMAGE, DEFAULT_IMAGE_SIZE)) {
+            uint64_t system_size;
+            if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
+                system_size = DEFAULT_IMAGE_SIZE;
+            }
+
+            if (!create_image(TEMP_SYSTEM_IMAGE, system_size)) {
                 display_msg(util::format("Failed to create temporary image %s",
                                          TEMP_SYSTEM_IMAGE.c_str()));
                 return ProceedState::Fail;
