@@ -130,7 +130,7 @@ then
     if prop("romoperations.prop", "selected") == "1" then
         write("/tmp/dbu/cmd.sh",
               "#!/sbin/sh\n" +
-              "/tmp/dbu/mbtool utilities switch " + getvar("romid") + "\n");
+              "/tmp/dbu/mbtool utilities switch --force " + getvar("romid") + "\n");
     else
         checkbox(
             "<~operations.title> (" + getvar("romname") + ")",
