@@ -68,16 +68,11 @@ const uint32_t BootImage::SonyElfDefaultEntrypointAddress = 0u;
 class BootImage::Impl
 {
 public:
-    Impl(BootImage *parent) : m_parent(parent) {}
-
     BootImageIntermediate i10e;
     BootImage::Type type = Type::Android;
     BootImage::Type sourceType;
 
     ErrorCode error;
-
-private:
-    BootImage *m_parent;
 };
 /*! \endcond */
 
@@ -131,7 +126,7 @@ private:
  * the location of the kernel image and ramdisk image.
  */
 
-BootImage::BootImage() : m_impl(new Impl(this))
+BootImage::BootImage() : m_impl(new Impl())
 {
 }
 
