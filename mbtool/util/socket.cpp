@@ -315,7 +315,7 @@ bool socket_send_fds(int fd, const std::vector<int> &fds)
             data[i] = fds[i];
         }
 
-        return sendmsg(fd, &msg, 0) >= 0 ? true : false;
+        return sendmsg(fd, &msg, 0) >= 0;
     }
 
     return false;
