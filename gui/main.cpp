@@ -37,8 +37,6 @@
 #  endif
 #endif
 
-static const QChar Sep = QLatin1Char('/');
-
 
 int main(int argc, char *argv[])
 {
