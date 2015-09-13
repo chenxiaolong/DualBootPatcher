@@ -207,18 +207,94 @@ static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
 }
 
 /*!
+ * \brief Get list of generic /system fstab entries for ROMs that mount the
+ *        partition manually
+ */
+static std::vector<util::fstab_rec> generic_fstab_system_entries()
+{
+    return {
+        {
+            .blk_device = "/dev/block/platform/15570000.ufs/by-name/SYSTEM",
+            .mount_point = "/system",
+            .fs_type = "ext4",
+            .flags = MS_RDONLY | MS_NOATIME | MS_NODIRATIME,
+            .fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        },
+        {
+            .blk_device = "/dev/block/platform/15570000.ufs/by-name/SYSTEM",
+            .mount_point = "/system",
+            .fs_type = "f2fs",
+            .flags = MS_RDONLY | MS_NOATIME | MS_NODIRATIME,
+            .fs_options = "background_gc=off,nodiscard",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        }
+        // Add more as necessary
+    };
+}
+
+/*!
  * \brief Get list of generic /cache fstab entries for ROMs that mount the
  *        partition manually
  */
 static std::vector<util::fstab_rec> generic_fstab_cache_entries()
 {
-    return std::vector<util::fstab_rec>{
+    return {
         {
             .blk_device = "/dev/block/platform/msm_sdcc.1/by-name/cache",
             .mount_point = "/cache",
             .fs_type = "ext4",
             .flags = MS_NOSUID | MS_NODEV,
             .fs_options = "barrier=1",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        },
+        {
+            .blk_device = "/dev/block/platform/15570000.ufs/by-name/CACHE",
+            .mount_point = "/cache",
+            .fs_type = "ext4",
+            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
+            .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        },
+        {
+            .blk_device = "/dev/block/platform/15570000.ufs/by-name/CACHE",
+            .mount_point = "/cache",
+            .fs_type = "f2fs",
+            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
+            .fs_options = "background_gc=on,discard",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        }
+        // Add more as necessary...
+    };
+}
+
+/*!
+ * \brief Get list of generic /data fstab entries for ROMs that mount the
+ *        partition manually
+ */
+static std::vector<util::fstab_rec> generic_fstab_data_entries()
+{
+    return {
+        {
+            .blk_device = "/dev/block/platform/15570000.ufs/by-name/USERDATA",
+            .mount_point = "/data",
+            .fs_type = "ext4",
+            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
+            .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        },
+        {
+            .blk_device = "/dev/block/platform/15570000.ufs/by-name/USERDATA",
+            .mount_point = "/data",
+            .fs_type = "f2fs",
+            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
+            .fs_options = "background_gc=on,discard",
             .vold_args = "wait,check",
             .orig_line = std::string()
         }
@@ -677,7 +753,9 @@ static bool disable_fscks()
 bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 {
     std::vector<util::fstab_rec> fstab;
-    std::vector<util::fstab_rec> fstab_cache;
+    std::vector<util::fstab_rec> generic_system(generic_fstab_system_entries());
+    std::vector<util::fstab_rec> generic_cache(generic_fstab_cache_entries());
+    std::vector<util::fstab_rec> generic_data(generic_fstab_data_entries());
     std::vector<util::fstab_rec *> recs_gen;
     std::vector<util::fstab_rec *> recs_system;
     std::vector<util::fstab_rec *> recs_cache;
@@ -756,12 +834,22 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
         //rename(path_fstab_gen.c_str(), fstab_path.c_str());
     }
 
-    // Some ROMs mount /cache in one of the init.*.rc files. If that's the case
-    // try using a generic fstab entry for it.
+    // Some ROMs mount the partitions in one of the init.*.rc files or some
+    // shell script. If that's the case, we just have to guess for working
+    // fstab entries.
+    if (recs_system.empty()) {
+        for (util::fstab_rec &rec : generic_system) {
+            recs_system.push_back(&rec);
+        }
+    }
     if (recs_cache.empty()) {
-        fstab_cache = generic_fstab_cache_entries();
-        for (util::fstab_rec &rec : fstab_cache) {
+        for (util::fstab_rec &rec : generic_cache) {
             recs_cache.push_back(&rec);
+        }
+    }
+    if (recs_data.empty()) {
+        for (util::fstab_rec &rec : generic_data) {
+            recs_data.push_back(&rec);
         }
     }
 
