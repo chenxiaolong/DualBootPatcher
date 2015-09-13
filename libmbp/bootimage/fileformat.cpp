@@ -19,8 +19,6 @@
 
 #include "bootimage/fileformat.h"
 
-#include "private/logging.h"
-
 namespace mbp
 {
 

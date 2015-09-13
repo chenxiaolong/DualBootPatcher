@@ -24,8 +24,6 @@
 
 #include "bootimage/bumppatcher.h"
 
-#include <string.h>
-
 
 // BootImage creates a properly padded boot image file, so can directly append
 // the magic.

@@ -22,7 +22,6 @@
 #include <cstring>
 
 #include "bootimage/bumppatcher.h"
-#include "private/logging.h"
 
 namespace mbp
 {

@@ -31,7 +31,6 @@
 #include "bootimage/mtkformat.h"
 #include "bootimage/sonyelfformat.h"
 
-#include "external/sha.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
 
