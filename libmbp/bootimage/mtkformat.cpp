@@ -133,10 +133,14 @@ bool MtkFormat::loadImage(const unsigned char *data, std::size_t size)
             std::size_t actual = mI10e->kernelImage.size();
 
             // Check size
-            if (actual != expected) {
+            if (actual < expected) {
                 FLOGE("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
                       expected, actual);
                 return false;
+            } else if (actual != expected) {
+                FLOGW("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
+                      expected, actual);
+                FLOGW("Repacked boot image will not be byte-for-byte identical to original");
             }
 
             // Move header to mI10e->mtkKernelHdr
