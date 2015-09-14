@@ -187,7 +187,7 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
         std::string name = rom->id;
 
         RomConfig config;
-        if (config.load_file(config_path)) {
+        if (config.load_file(config_path) && !config.name.empty()) {
             name = config.name;
         }
 
