@@ -211,6 +211,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
 #define QCOM_TZ                 QCOM_BASE_DIR "/tz"
 #define QCOM_USERDATA           QCOM_BASE_DIR "/userdata"
 
+#define F9824900_BASE_DIR       "/dev/block/platform/f9824900.sdhci/by-name"
+#define F9824900_BOOT           F9824900_BASE_DIR "/boot"
+#define F9824900_CACHE          F9824900_BASE_DIR "/cache"
+#define F9824900_RECOVERY       F9824900_BASE_DIR "/recovery"
+#define F9824900_SYSTEM         F9824900_BASE_DIR "/system"
+#define F9824900_USERDATA       F9824900_BASE_DIR "/userdata"
+
 // http://forum.xda-developers.com/showpost.php?p=60050072&postcount=5640
 #define ZERO_BASE_DIR           "/dev/block/platform/15570000.ufs/by-name"
 #define ZERO_BOOT               ZERO_BASE_DIR "/BOOT"
@@ -574,6 +581,20 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_MODEM });
+    devices.push_back(device);
+
+    // LG G4
+    device = new Device();
+    device->setId("lgg4");
+    device->setArchitecture("arm64-v8a");
+    device->setCodenames({ "p1", "h815" });
+    device->setName("LG G4");
+    device->setBlockDevBaseDirs({ F9824900_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SYSTEM, "/dev/block/mmcblk0p47" });
+    device->setCacheBlockDevs({ F9824900_CACHE, "/dev/block/mmcblk0p49" });
+    device->setDataBlockDevs({ F9824900_USERDATA, "/dev/block/mmcblk0p50" });
+    device->setBootBlockDevs({ F9824900_BOOT, "/dev/block/mmcblk0p38" });
+    device->setRecoveryBlockDevs({ F9824900_RECOVERY, "/dev/block/mmcblk0p39" });
     devices.push_back(device);
 
     // Lenovo K3 Note
