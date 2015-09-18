@@ -87,7 +87,6 @@ const std::string Installer::UPDATE_BINARY =
         "META-INF/com/google/android/update-binary";
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
-const std::string Installer::TEMP_SYSTEM_IMAGE = "/data/.system.img.tmp";
 const std::string Installer::CANCELLED = "cancelled";
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
@@ -1251,31 +1250,51 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         } else {
             display_msg("Copying system to temporary image");
 
-            remove(TEMP_SYSTEM_IMAGE.c_str());
+            // Try /data/.system.img.tmp and if /data doesn't have enough space,
+            // then try [External SD]/.system.img.tmp
 
-            // Create temporary image in /data
             uint64_t system_size;
             if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
                 system_size = DEFAULT_IMAGE_SIZE;
             }
 
-            if (!create_image(TEMP_SYSTEM_IMAGE, system_size)) {
+            _temp_image_path = Roms::get_data_partition();
+            _temp_image_path += "/.system.img.tmp";
+            remove(_temp_image_path.c_str());
+
+            if (!create_image(_temp_image_path, system_size)) {
                 display_msg(util::format("Failed to create temporary image %s",
-                                         TEMP_SYSTEM_IMAGE.c_str()));
-                return ProceedState::Fail;
+                                         _temp_image_path.c_str()));
+
+                // Try external SD
+                std::string mountpoint(Roms::get_extsd_partition());
+                if (!mountpoint.empty()) {
+                    display_msg("Trying to create temporary image on external SD");
+                    display_msg("(This will be slow)");
+
+                    _temp_image_path = std::move(mountpoint);
+                    _temp_image_path += "/.system.img.tmp";
+                    remove(_temp_image_path.c_str());
+
+                    if (!create_image(_temp_image_path, system_size)) {
+                        return ProceedState::Fail;
+                    }
+                } else {
+                    return ProceedState::Fail;
+                }
             }
 
             // Copy current /system files to the image
-            if (!system_image_copy(_system_path, TEMP_SYSTEM_IMAGE, false)) {
+            if (!system_image_copy(_system_path, _temp_image_path, false)) {
                 display_msg(util::format("Failed to copy %s to %s",
                                          _system_path.c_str(),
-                                         TEMP_SYSTEM_IMAGE.c_str()));
+                                         _temp_image_path.c_str()));
                 return ProceedState::Fail;
             }
 
             // Install to the image
             util::create_empty_file(in_chroot("/mb/system.img"));
-            if (log_mount(TEMP_SYSTEM_IMAGE.c_str(),
+            if (log_mount(_temp_image_path.c_str(),
                           in_chroot("/mb/system.img").c_str(),
                           "", MS_BIND, "") < 0) {
                 return ProceedState::Fail;
@@ -1364,9 +1383,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             }
 
             // Copy image back to system directory
-            if (!system_image_copy(_system_path, TEMP_SYSTEM_IMAGE, true)) {
+            if (!system_image_copy(_system_path, _temp_image_path, true)) {
                 display_msg(util::format("Failed to copy %s to %s",
-                                         TEMP_SYSTEM_IMAGE.c_str(),
+                                         _temp_image_path.c_str(),
                                          _system_path.c_str()));
                 return ProceedState::Fail;
             }
@@ -1578,7 +1597,7 @@ void Installer::install_stage_cleanup(Installer::ProceedState ret)
 
     display_msg("Destroying chroot environment");
 
-    remove(TEMP_SYSTEM_IMAGE.c_str());
+    remove(_temp_image_path.c_str());
 
     if (ret == ProceedState::Fail && !_boot_block_dev.empty()
             && !util::copy_contents(_temp + "/boot.orig", _boot_block_dev)) {

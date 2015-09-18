@@ -43,7 +43,6 @@ protected:
     static const std::string UPDATE_BINARY;
     static const std::string MULTIBOOT_BBWRAPPER;
     static const std::string MULTIBOOT_INFO_PROP;
-    static const std::string TEMP_SYSTEM_IMAGE;
     static const std::string CANCELLED;
 
     enum class ProceedState {
@@ -86,6 +85,7 @@ protected:
 
     std::unordered_map<std::string, std::string> _prop;
 
+    std::string _temp_image_path;
     bool _has_block_image;
     bool _is_aroma;
 
