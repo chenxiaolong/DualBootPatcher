@@ -85,6 +85,7 @@ RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
 void RomInstaller::display_msg(const std::string &msg)
 {
     printf("[MultiBoot] %s\n", msg.c_str());
+    LOGV("%s", msg.c_str());
 }
 
 void RomInstaller::updater_print(const std::string &msg)
