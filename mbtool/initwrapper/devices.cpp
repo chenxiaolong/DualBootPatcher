@@ -29,6 +29,7 @@
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
+#include "util/cmdline.h"
 #include "util/directory.h"
 #include "util/string.h"
 
@@ -44,6 +45,7 @@
 #include "util/logging.h"
 #endif
 
+static char bootdevice[32];
 static int device_fd = -1;
 static volatile bool run_thread = true;
 static pthread_t thread;
@@ -414,6 +416,7 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
     struct platform_node *pdev;
     char *slash;
     const char *type;
+    bool is_bootdevice = true;
     char link_path[256];
     char *p;
 
@@ -433,6 +436,13 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 
     snprintf(link_path, sizeof(link_path), "/dev/block/%s/%s", type, device);
 
+    if (bootdevice[0] == '\0') {
+        is_bootdevice = false;
+    } else if (strncmp(device, bootdevice, sizeof(bootdevice)) == 0) {
+        make_link_init(link_path, "/dev/block/bootdevice");
+        is_bootdevice = true;
+    }
+
     if (uevent->partition_name) {
         p = strdup(uevent->partition_name);
         sanitize(p);
@@ -442,12 +452,19 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 #endif
         }
         links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
+        if (is_bootdevice) {
+            links.push_back(mb::util::format("/dev/block/bootdevice/by-name/%s", p));
+        }
         free(p);
     }
 
     if (uevent->partition_num >= 0) {
         links.push_back(mb::util::format(
                 "%s/by-num/p%d", link_path, uevent->partition_num));
+        if (is_bootdevice) {
+            links.push_back(mb::util::format(
+                    "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
+        }
     }
 
     slash = strrchr(uevent->path, '/');
@@ -774,6 +791,12 @@ void * device_thread(void *)
 
 void device_init()
 {
+    bootdevice[0] = '\0';
+    std::string value;
+    if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", &value)) {
+        strlcpy(bootdevice, value.c_str(), sizeof(bootdevice));
+    }
+
     // Is 256K enough? udev uses 16MB!
     device_fd = uevent_open_socket(256 * 1024, true);
     if (device_fd < 0) {
