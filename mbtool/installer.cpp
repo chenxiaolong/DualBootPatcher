@@ -1617,7 +1617,7 @@ void Installer::install_stage_cleanup(Installer::ProceedState ret)
 
 bool Installer::start_installation()
 {
-    ProceedState ret;
+    ProceedState ret = ProceedState::Fail;
 
     auto when_finished = util::finally([&] {
         install_stage_cleanup(ret);
