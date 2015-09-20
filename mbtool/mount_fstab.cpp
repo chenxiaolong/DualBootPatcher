@@ -838,16 +838,19 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
     if (recs_system.empty()) {
+        LOGW("No /system fstab entries found. Adding generic entries");
         for (util::fstab_rec &rec : generic_system) {
             recs_system.push_back(&rec);
         }
     }
     if (recs_cache.empty()) {
+        LOGW("No /cache fstab entries found. Adding generic entries");
         for (util::fstab_rec &rec : generic_cache) {
             recs_cache.push_back(&rec);
         }
     }
     if (recs_data.empty()) {
+        LOGW("No /data fstab entries found. Adding generic entries");
         for (util::fstab_rec &rec : generic_data) {
             recs_data.push_back(&rec);
         }
