@@ -154,7 +154,8 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
         }
     }
 
-    LOGD("Tried all %zu fstab entries for %s, but couldn't mount any", recs.size());
+    LOGD("Tried all %zu fstab entries for %s, but couldn't mount any",
+         recs.size(), mount_point.c_str());
 
     return false;
 }
