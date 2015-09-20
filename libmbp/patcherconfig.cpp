@@ -557,14 +557,28 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // LG G2
     device = new Device();
     device->setId("lgg2");
-    device->setCodenames({ "g2", "d800", "d802", "ls980", "vs980" });
+    device->setCodenames({ "g2", "d800", "ls980", "vs980" });
     device->setName("LG G2");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p35" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p38" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_TZ });
+    devices.push_back(device);
+
+    // LG G2 (d802)
+    device = new Device();
+    device->setId("lgg2_d802");
+    device->setCodenames({ "g2", "d802", "d802t" });
+    device->setName("LG G2 (d802)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p30" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p31" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p35" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_TZ });
     devices.push_back(device);
 
