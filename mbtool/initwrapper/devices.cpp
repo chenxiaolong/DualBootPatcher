@@ -817,10 +817,10 @@ void device_init()
 void device_close()
 {
     run_thread = false;
-    pthread_join(thread, nullptr);
-
     close(device_fd);
     device_fd = -1;
+
+    pthread_join(thread, nullptr);
 }
 
 int get_device_fd()
