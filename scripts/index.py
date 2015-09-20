@@ -109,7 +109,7 @@ def quicksort(l):
 
 
 # From http://code.activestate.com/recipes/577081-humanized-representation-of-a-number-of-bytes/
-def humanize_bytes(bytes, precision=1):
+def humanize_bytes(numbytes, precision=1):
     abbrevs = (
         (1 << 80, 'YiB'),
         (1 << 70, 'ZiB'),
@@ -121,12 +121,12 @@ def humanize_bytes(bytes, precision=1):
         (1 << 10, 'KiB'),
         (1,       'bytes')
     )
-    if bytes == 1:
+    if numbytes == 1:
         return '1 byte'
     for factor, suffix in abbrevs:
-        if bytes >= factor:
+        if numbytes >= factor:
             break
-    return '%.*f %s' % (precision, bytes / factor, suffix)
+    return '%.*f %s' % (precision, numbytes / factor, suffix)
 
 
 if len(sys.argv) != 2:
