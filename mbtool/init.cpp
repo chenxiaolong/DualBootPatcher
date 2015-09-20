@@ -682,6 +682,7 @@ int init_main(int argc, char *argv[])
     unlink("/init");
     rename("/init.orig", "/init");
 
+    LOGD("Launching real init ...");
     execlp("/init", "/init", nullptr);
     LOGE("Failed to exec real init: %s", strerror(errno));
     emergency_reboot();
