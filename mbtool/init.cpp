@@ -27,6 +27,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/klog.h>
 #include <sys/mount.h>
 #include <sys/poll.h>
 #include <unistd.h>
@@ -37,12 +38,25 @@
 #include "reboot.h"
 #include "sepolpatch.h"
 #include "util/chown.h"
+#include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
+#include "util/mount.h"
+#include "util/selinux.h"
 #include "util/string.h"
 
 namespace mb
 {
+
+static const char *data_block_devs[] = {
+    "/dev/block/platform/msm_sdcc.1/by-name/userdata",
+    "/dev/block/platform/f9824900.sdhci/by-name/userdata",
+    "/dev/block/platform/15570000.ufs/by-name/USERDATA",
+    "/dev/block/platform/15540000.dwmmc0/by-name/USERDATA",
+    "/dev/block/platform/dw_mmc.0/by-name/USERDATA",
+    "/dev/block/platform/mtk-msdc.0/by-name/userdata",
+    nullptr
+};
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 typedef std::unique_ptr<DIR, int (*)(DIR *)> dir_ptr;
@@ -465,6 +479,118 @@ static bool fix_arter97()
     return true;
 }
 
+#define KLOG_CLOSE         0
+#define KLOG_OPEN          1
+#define KLOG_READ          2
+#define KLOG_READ_ALL      3
+#define KLOG_READ_CLEAR    4
+#define KLOG_CLEAR         5
+#define KLOG_CONSOLE_OFF   6
+#define KLOG_CONSOLE_ON    7
+#define KLOG_CONSOLE_LEVEL 8
+#define KLOG_SIZE_UNREAD   9
+#define KLOG_SIZE_BUFFER   10
+
+static bool dump_kernel_log(const char *file)
+{
+    int len = klogctl(KLOG_SIZE_BUFFER, nullptr, 0);
+    if (len < 0) {
+        LOGE("Failed to get kernel log buffer size: %s", strerror(errno));
+        return false;
+    }
+
+    char *buf = (char *) malloc(len);
+    if (!buf) {
+        LOGE("Failed to allocate %d bytes: %s", len, strerror(errno));
+        return false;
+    }
+
+    auto free_buf = util::finally([&]{
+        free(buf);
+    });
+
+    len = klogctl(KLOG_READ_ALL, buf, len);
+    if (len < 0) {
+        LOGE("Failed to read kernel log buffer: %s", strerror(errno));
+        return false;
+    }
+
+    file_ptr fp(fopen(file, "wb"), fclose);
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
+        return false;
+    }
+
+    if (len > 0) {
+        if (fwrite(buf, len, 1, fp.get()) != 1) {
+            LOGE("%s: Failed to write data: %s", file, strerror(errno));
+            return false;
+        }
+        if (buf[len - 1] != '\n') {
+            if (fputc('\n', fp.get()) == EOF) {
+                LOGE("%s: Failed to write data: %s", file, strerror(errno));
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+static bool emergency_reboot()
+{
+    static const char *log_file = "/data/media/0/MultiBoot/kernel.log";
+
+    LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
+
+    // Some devices don't have /proc/last_kmsg, so we'll attempt to save the
+    // kernel log to /data/media/0/MultiBoot/kernel.log
+    if (!util::is_mounted("/data")) {
+        LOGW("/data is not mounted. Attempting to mount /data");
+
+        struct stat sb;
+
+        // Try mounting /data in case we couldn't get through the fstab mounting
+        // steps. (This is an ugly brute force method...)
+        for (const char **ptr = data_block_devs; *ptr; ++ptr) {
+            const char *block_dev = *ptr;
+
+            if (stat(block_dev, &sb) < 0) {
+                continue;
+            }
+
+            if (mount(block_dev, "/data", "ext4", 0, "") == 0
+                    || mount(block_dev, "/data", "f2fs", 0, "") == 0) {
+                LOGW("Mounted %s at /data", block_dev);
+                break;
+            }
+        }
+    }
+
+    LOGW("Dumping kernel log to %s", log_file);
+
+    // Remove old log
+    remove(log_file);
+
+    // Write new log
+    util::mkdir_parent(log_file, 0775);
+    dump_kernel_log(log_file);
+
+    // Set file attributes on log file
+    util::chown(log_file, "media_rw", "media_rw", 0);
+    chmod(log_file, 0775);
+
+    std::string context;
+    if (util::selinux_lget_context("/data/media/0", &context)) {
+        util::selinux_lset_context(log_file, context);
+    }
+
+    // Does not return if successful
+    reboot_directly("recovery");
+
+    return false;
+}
+
 int init_main(int argc, char *argv[])
 {
     for (int i = 1; i < argc; ++i) {
@@ -496,7 +622,7 @@ int init_main(int argc, char *argv[])
     std::string fstab = find_fstab();
     if (fstab.empty()) {
         LOGE("Failed to find a suitable fstab file");
-        reboot_directly("recovery");
+        emergency_reboot();
         return EXIT_FAILURE;
     }
 
@@ -511,7 +637,7 @@ int init_main(int argc, char *argv[])
     // Mount fstab and write new redacted version
     if (!mount_fstab(fstab, true)) {
         LOGE("Failed to mount fstab");
-        reboot_directly("recovery");
+        emergency_reboot();
         return EXIT_FAILURE;
     }
 
@@ -525,7 +651,7 @@ int init_main(int argc, char *argv[])
     if (stat("/sepolicy", &sb) == 0) {
         if (!patch_sepolicy("/sepolicy", "/sepolicy")) {
             LOGW("Failed to patch /sepolicy");
-            reboot_directly("recovery");
+            emergency_reboot();
             return EXIT_FAILURE;
         }
     }
@@ -548,7 +674,7 @@ int init_main(int argc, char *argv[])
 
     execlp("/init", "/init", nullptr);
     LOGE("Failed to exec real init: %s", strerror(errno));
-    reboot_directly("recovery");
+    emergency_reboot();
     return EXIT_FAILURE;
 }
 
