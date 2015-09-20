@@ -620,7 +620,8 @@ int init_main(int argc, char *argv[])
     open_devnull_stdio();
     util::log_set_logger(std::make_shared<util::KmsgLogger>());
 
-    LOGV("Booting up with version %s (%s)", MBP_VERSION, GIT_VERSION);
+    LOGV("Booting up with version %s (%s)",
+         get_mbtool_version(), get_git_version());
 
     // Start probing for devices
     device_init();

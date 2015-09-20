@@ -1185,7 +1185,7 @@ int appsync_main(int argc, char *argv[])
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
 
-    LOGI("=== APPSYNC VERSION %s ===", MBP_VERSION);
+    LOGI("=== APPSYNC VERSION %s ===", get_mbtool_version());
 
     LOGI("Creating /data/.layout_version");
     create_layout_version();

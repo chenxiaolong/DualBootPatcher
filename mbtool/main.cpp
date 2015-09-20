@@ -81,15 +81,17 @@ static void mbtool_usage(int error)
     FILE *stream = error ? stderr : stdout;
 
     fprintf(stream,
-            "Version: " MBP_VERSION "\n"
-            "Git version: " GIT_VERSION "\n\n"
+            "Version: %s\n"
+            "Git version: %s\n\n"
             "Usage: mbtool [tool] [tool arguments ...]\n\n"
             "This is a multicall binary. The individual tools can be invoked\n"
             "by passing the tool name as the first argument to mbtool or by\n"
             "creating a symbolic link with from the tool name to mbtool.\n\n"
             "To see the usage and other help text for a tool, pass --help to\n"
             "the tool.\n\n"
-            "Available tools:\n");
+            "Available tools:\n",
+            mb::get_mbtool_version(),
+            mb::get_git_version());
     for (int i = 0; tools[i].name; ++i) {
         if (strcmp(tools[i].name, "mbtool") != 0) {
             fprintf(stream, "  %s\n", tools[i].name);

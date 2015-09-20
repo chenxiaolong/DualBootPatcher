@@ -107,7 +107,7 @@ static bool v2_get_version(int fd, const v2::Request *msg)
     fb::FlatBufferBuilder builder;
 
     // Get version
-    auto version = builder.CreateString(MBP_VERSION);
+    auto version = builder.CreateString(get_mbtool_version());
     auto response = v2::CreateGetVersionResponse(builder, version);
 
     // Wrap response
@@ -934,8 +934,9 @@ int daemon_main(int argc, char *argv[])
     // 2nd child reparent to init, and then calling execve("/mbtool", ...), but
     // meh ...
     if (getppid() == 1) {
-        if (!util::set_property("ro.multiboot.version", MBP_VERSION)) {
-            std::printf("Failed to set 'ro.multiboot.version' to '%s'\n", MBP_VERSION);
+        if (!util::set_property("ro.multiboot.version", get_mbtool_version())) {
+            std::printf("Failed to set 'ro.multiboot.version' to '%s'\n",
+                        get_mbtool_version());
         }
     }
 

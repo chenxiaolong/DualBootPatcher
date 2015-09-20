@@ -203,7 +203,7 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     }
 
     util::replace_all(&str_data, "\t", "\\t");
-    util::replace_all(&str_data, "@MBTOOL_VERSION@", MBP_VERSION);
+    util::replace_all(&str_data, "@MBTOOL_VERSION@", get_mbtool_version());
     util::replace_all(&str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
     util::replace_all(&str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
     util::replace_all(&str_data, "@FIRST_INDEX@", util::format("%d", 2 + 1));

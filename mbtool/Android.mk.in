@@ -104,6 +104,7 @@ mbtool_src_base := \
 	initwrapper/cutils/uevent.cpp \
 	initwrapper/devices.cpp \
 	initwrapper/util.cpp \
+	@CMAKE_CURRENT_BINARY_DIR@/gen/version.cpp \
 	$(EXTERNAL_DIR)/pugixml/src/pugixml.cpp
 
 mbtool_src_recovery := \
@@ -146,7 +147,6 @@ mb_common_cflags += \
 endif
 
 mb_common_includes := \
-	@CMAKE_CURRENT_BINARY_DIR@/include \
 	$(JANSSON_DIR)/include \
 	$(LIBARCHIVE_DIR)/include \
 	$(LIBSEPOL_DIR)/include \
