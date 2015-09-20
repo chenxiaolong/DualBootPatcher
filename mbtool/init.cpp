@@ -619,6 +619,9 @@ int init_main(int argc, char *argv[])
 
     open_devnull_stdio();
     util::log_set_logger(std::make_shared<util::KmsgLogger>());
+    if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 8) < 0) {
+        LOGE("Failed to set loglevel: %s", strerror(errno));
+    }
 
     LOGV("Booting up with version %s (%s)",
          get_mbtool_version(), get_git_version());
