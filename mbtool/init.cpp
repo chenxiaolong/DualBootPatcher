@@ -585,6 +585,9 @@ static bool emergency_reboot()
         util::selinux_lset_context(log_file, context);
     }
 
+    sync();
+    umount("/data");
+
     // Does not return if successful
     reboot_directly("recovery");
 
