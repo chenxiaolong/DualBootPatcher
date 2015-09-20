@@ -201,8 +201,10 @@ def get_builds(filesdir):
         build = dict()
         build['version'] = str(version)
         build['timestamp'] = timestamp
-        build['files'] = dict()
+        build['files'] = list()
         build['commits'] = list()
+
+        utilities = list()
 
         # Write files list
         for target in sorted(cur_files):
@@ -211,13 +213,20 @@ def get_builds(filesdir):
                 size = humanize_bytes(os.path.getsize(fullpath))
 
                 file_info = dict()
+                file_info['target'] = target
                 file_info['build'] = f
                 file_info['size'] = size
 
                 if f in md5sums:
                     file_info['md5sum'] = md5sums[f]
 
-                build['files'][target] = file_info
+                # Make sure utilities appear at the end of the list
+                if target == 'Utilities':
+                    utilities.append(file_info)
+                else:
+                    build['files'].append(file_info)
+
+        build['files'] += utilities
 
         if i < len(versions) - 1:
             new_commit = version.commit

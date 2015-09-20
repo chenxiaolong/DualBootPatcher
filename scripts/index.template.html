@@ -33,14 +33,14 @@
                 position: relative;
                 top: 1px;
             }
-            
+
             /* Small Devices */
             @media (max-width: 1200px) {
                 body {
                     padding-top: 70px;
                 }
             }
-            
+
             /* Extra-Small Devices */
             @media (max-width: 767px) {
                 .table {
@@ -125,23 +125,23 @@
                         <h4><span class="mdi mdi-file-folder"></span> Files:</h4>
                         <ul>
                             <!-- List of downloads for the build -->
-                            {% for target, urls in build.files.items() %}
+                            {% for file_info in build.files %}
                                 <li>
                                     <!-- For extra-small devices -->
                                     <div class="visible-xs">
-                                        <a href="{{ urls.build }}">{{ target }}</a>
-                                        {% if 'md5sum' in urls %}
-                                            | <a href="{{ urls.md5sum }}">MD5</a>
+                                        <a href="{{ file_info.build }}">{{ file_info.target }}</a>
+                                        {% if 'md5sum' in file_info %}
+                                            | <a href="{{ file_info.md5sum }}">MD5</a>
                                         {% endif %}
-                                        ({{ urls.size }})
+                                        ({{ file_info.size }})
                                     </div>
                                     <!-- For non-extra-small devices -->
                                     <div class="hidden-xs">
-                                        {{ target }}: <a href="{{ urls.build }}">{{ urls.build }}</a>
-                                        {% if 'md5sum' in urls %}
-                                            | <a href="{{ urls.md5sum }}">MD5</a>
+                                        {{ file_info.target }}: <a href="{{ file_info.build }}">{{ file_info.build }}</a>
+                                        {% if 'md5sum' in file_info %}
+                                            | <a href="{{ file_info.md5sum }}">MD5</a>
                                         {% endif %}
-                                        ({{ urls.size }})
+                                        ({{ file_info.size }})
                                     </div>
                                 </li>
                             {% endfor %}
@@ -190,7 +190,7 @@
             $.material.init();
             $('[data-toggle="tooltip"]').tooltip();
         </script>
-            
+
         <!-- Google Analytics -->
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
