@@ -129,150 +129,154 @@ def humanize_bytes(numbytes, precision=1):
     return '%.*f %s' % (precision, numbytes / factor, suffix)
 
 
-if len(sys.argv) != 2:
-    print('Usage: %s [files directory]' % sys.argv[0])
-    sys.exit(1)
+def get_builds(filesdir):
+    # List of patcher files and versions
+    files = list()
+    versions = list()
 
+    for f in os.listdir(filesdir):
+        r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', f)
+        if not r:
+            r = re.search(r'^DualBootUtilities-(.*)\.zip', f)
+        if not r:
+            print('Skipping %s ...' % f)
+            continue
+        files.append(f)
+        versions.append(Version(r.group(1)))
 
-# Files directory
-filesdir = sys.argv[1]
-if not os.path.exists(filesdir):
-    os.makedirs(filesdir)
+    versions = quicksort(list(set(versions)))
 
+    # Remove old builds
+    if len(versions) >= maxbuilds:
+        for i in range(maxbuilds, len(versions)):
+            for f in files:
+                if versions[i].ver in f:
+                    print('Removing old build %s ...' % f)
+                    os.remove(os.path.join(filesdir, f))
+        del versions[maxbuilds:]
 
-# List of patcher files and versions
-files = list()
-versions = list()
+    # List of builds
+    builds = list()
 
-for f in os.listdir(filesdir):
-    r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', f)
-    if not r:
-        r = re.search(r'^DualBootUtilities-(.*)\.zip', f)
-    if not r:
-        print('Skipping %s ...' % f)
-        continue
-    files.append(f)
-    versions.append(Version(r.group(1)))
-
-versions = quicksort(list(set(versions)))
-
-
-# Remove old builds
-if len(versions) >= maxbuilds:
-    for i in range(maxbuilds, len(versions)):
-        for f in files:
-            if versions[i].ver in f:
-                print('Removing old build %s ...' % f)
-                os.remove(os.path.join(filesdir, f))
-    del versions[maxbuilds:]
-
-
-# List of builds
-builds = list()
-
-
-# Get file list and changelog
-for i in range(0, len(versions)):
-    version = versions[i]
-
-    # Get commit log
-    process = subprocess.Popen(
-        ['git', 'show', '-s', '--format="%cD"', version.commit],
-        stdout=subprocess.PIPE,
-        universal_newlines=True
-    )
-    timestamp = process.communicate()[0].split('\n')[0]
-    timestamp = timestamp.replace('"', '')
-
-    if not timestamp:
-        print('Failed to determine timestamp for commit: %s'
-              % version.commit)
-        sys.exit(1)
-
-    # Get list of files
-    cur_files = dict()
-    md5sums = dict()
-    for f in files:
-        if version.ver in f:
-            if f.endswith('.md5sum'):
-                md5sums[f[:-7]] = f
-                continue
-
-            if f.endswith('.apk'):
-                target = 'Android'
-            elif f.endswith('win32.zip') or f.endswith('.7z'):
-                target = 'Win32'
-            elif f.startswith('DualBootUtilities'):
-                target = 'Utilities'
-            else:
-                target = 'Other'
-
-            if target not in cur_files:
-                cur_files[target] = list()
-
-            cur_files[target].append(f)
-
-    build = dict()
-    build['version'] = str(version)
-    build['timestamp'] = timestamp
-    build['files'] = dict()
-    build['commits'] = list()
-
-    # Write files list
-    for target in sorted(cur_files):
-        for f in cur_files[target]:
-            fullpath = os.path.join(filesdir, f)
-            size = humanize_bytes(os.path.getsize(fullpath))
-
-            file_info = dict()
-            file_info['build'] = f
-            file_info['size'] = size
-
-            if f in md5sums:
-                file_info['md5sum'] = md5sums[f]
-
-            build['files'][target] = file_info
-
-    if i < len(versions) - 1:
-        new_commit = version.commit
-        old_commit = versions[i + 1].commit
+    # Get file list and changelog
+    for i in range(0, len(versions)):
+        version = versions[i]
 
         # Get commit log
         process = subprocess.Popen(
-            ['git', 'log', '--pretty=format:%H\n%s',
-                '%s..%s' % (old_commit, new_commit)],
+            ['git', 'show', '-s', '--format="%cD"', version.commit],
             stdout=subprocess.PIPE,
             universal_newlines=True
         )
-        log = process.communicate()[0].split('\n')
+        timestamp = process.communicate()[0].split('\n')[0]
+        timestamp = timestamp.replace('"', '')
 
-        if len(log) <= 1:
-            print('Failed to generate changelog')
-            sys.exit(1)
+        if not timestamp:
+            raise Exception('Failed to determine timestamp for commit: %s'
+                            % version.commit)
 
-        for j in range(0, len(log) - 1, 2):
-            commit = log[j]
-            subject = log[j + 1]
+        # Get list of files
+        cur_files = dict()
+        md5sums = dict()
+        for f in files:
+            if version.ver in f:
+                if f.endswith('.md5sum'):
+                    md5sums[f[:-7]] = f
+                    continue
 
-            build['commits'].append({
-                'id': commit,
-                'short_id': commit[0:7],
-                'message': subject
-            })
+                if f.endswith('.apk'):
+                    target = 'Android'
+                elif f.endswith('win32.zip') or f.endswith('.7z'):
+                    target = 'Win32'
+                elif f.startswith('DualBootUtilities'):
+                    target = 'Utilities'
+                else:
+                    target = 'Other'
 
-    builds.append(build)
+                if target not in cur_files:
+                    cur_files[target] = list()
+
+                cur_files[target].append(f)
+
+        build = dict()
+        build['version'] = str(version)
+        build['timestamp'] = timestamp
+        build['files'] = dict()
+        build['commits'] = list()
+
+        # Write files list
+        for target in sorted(cur_files):
+            for f in cur_files[target]:
+                fullpath = os.path.join(filesdir, f)
+                size = humanize_bytes(os.path.getsize(fullpath))
+
+                file_info = dict()
+                file_info['build'] = f
+                file_info['size'] = size
+
+                if f in md5sums:
+                    file_info['md5sum'] = md5sums[f]
+
+                build['files'][target] = file_info
+
+        if i < len(versions) - 1:
+            new_commit = version.commit
+            old_commit = versions[i + 1].commit
+
+            # Get commit log
+            process = subprocess.Popen(
+                ['git', 'log', '--pretty=format:%H\n%s',
+                    '%s..%s' % (old_commit, new_commit)],
+                stdout=subprocess.PIPE,
+                universal_newlines=True
+            )
+            log = process.communicate()[0].split('\n')
+
+            if len(log) <= 1:
+                raise Exception('Failed to generate changelog from %s to %s'
+                                % (old_commit, new_commit))
+
+            for j in range(0, len(log) - 1, 2):
+                commit = log[j]
+                subject = log[j + 1]
+
+                build['commits'].append({
+                    'id': commit,
+                    'short_id': commit[0:7],
+                    'message': subject
+                })
+
+        builds.append(build)
+
+    return builds
 
 
-sourcedir = os.path.dirname(os.path.realpath(__file__))
-resdir = os.path.join(sourcedir, 'res')
-outfile = os.path.join(filesdir, 'index.html')
+def main():
+    if len(sys.argv) != 2:
+        print('Usage: %s [files directory]' % sys.argv[0])
+        sys.exit(1)
 
-env = jinja2.Environment(loader=jinja2.FileSystemLoader(sourcedir),
-                         undefined=jinja2.StrictUndefined)
-template = env.get_template('index.template.html')
-html = template.render(builds=builds)
+    # Files directory
+    filesdir = sys.argv[1]
+    if not os.path.exists(filesdir):
+        os.makedirs(filesdir)
 
-with open(outfile, 'wb') as f:
-    f.write(html.encode('utf-8'))
+    sourcedir = os.path.dirname(os.path.realpath(__file__))
+    resdir = os.path.join(sourcedir, 'res')
+    outfile = os.path.join(filesdir, 'index.html')
 
-distutils.dir_util.copy_tree(resdir, filesdir)
+    builds = get_builds(filesdir)
+
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(sourcedir),
+                             undefined=jinja2.StrictUndefined)
+    template = env.get_template('index.template.html')
+    html = template.render(builds=builds)
+
+    with open(outfile, 'wb') as f:
+        f.write(html.encode('utf-8'))
+
+    distutils.dir_util.copy_tree(resdir, filesdir)
+
+
+if __name__ == '__main__':
+    main()
