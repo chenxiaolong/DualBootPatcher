@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
 # Generate changelogs and create HTML output
 
 import distutils.core
-import html
+import jinja2
 import os
 import re
 import subprocess
 import sys
 
-name = 'Dual Boot Patcher'
-github = 'https://github.com/chenxiaolong/DualBootPatcher'
 maxbuilds = 999999
 
 
@@ -100,64 +98,6 @@ class Version():
         return hash(self.ver)
 
 
-class HTMLWriter():
-    def __init__(self, initial_indent=0):
-        self._file = None
-        self._stack = list()
-        self._initial_indent = initial_indent
-
-    def open(self, filename):
-        self._file = open(filename, 'w')
-
-    def close(self):
-        self._file.close()
-        self._file = None
-        if self._stack:
-            raise Exception('Tag stack not empty when closing HTML file: %s'
-                            % self._stack)
-
-    def push(self, tag, attrs=None, newline=False, indent=False):
-        if indent:
-            self._file.write('    ' * (len(self._stack) +
-                                       self._initial_indent))
-
-        self._stack.append(tag)
-        if attrs:
-            attrs_str = ' '.join('%s="%s"' % (i, attrs[i]) for i in attrs)
-            self._file.write('<%s %s>' % (tag, attrs_str))
-        else:
-            self._file.write('<%s>' % tag)
-
-        if newline:
-            self._file.write('\n')
-
-    def pop(self, tag, newline=False, indent=False):
-        if indent:
-            self._file.write('    ' * (len(self._stack) +
-                                       self._initial_indent - 1))
-
-        top_tag = self._stack.pop()
-        if top_tag != tag:
-            raise ValueError('Tag <%s> does not match tag at top of'
-                             'stack: <%s>' % (tag, top_tag))
-        self._file.write('</%s>' % tag)
-
-        if newline:
-            self._file.write('\n')
-
-    def write_tag(self, tag):
-        self._file.write('<%s />' % tag)
-
-    def write(self, string, escape=True):
-        if escape:
-            self._file.write(html.escape(string))
-        else:
-            self._file.write(string)
-
-    def newline(self):
-        self._file.write('\n')
-
-
 def quicksort(l):
     if l == []:
         return []
@@ -200,11 +140,6 @@ if not os.path.exists(filesdir):
     os.makedirs(filesdir)
 
 
-# HTML output
-writer = HTMLWriter(initial_indent=3)
-writer.open(os.path.join(filesdir, '.index.gen.html'))
-
-
 # List of patcher files and versions
 files = list()
 versions = list()
@@ -232,7 +167,11 @@ if len(versions) >= maxbuilds:
     del versions[maxbuilds:]
 
 
-# Write file list and changelog
+# List of builds
+builds = list()
+
+
+# Get file list and changelog
 for i in range(0, len(versions)):
     version = versions[i]
 
@@ -246,40 +185,9 @@ for i in range(0, len(versions)):
     timestamp = timestamp.replace('"', '')
 
     if not timestamp:
-        writer.write('Failed to determine timestamp for commit: %s'
-                     % version.commit)
-
-    # Write block
-    writer.push('div', attrs={'class': 'panel panel-success'},
-                newline=True, indent=True)
-
-    # Write timestamp
-    writer.push('div', attrs={'class': 'panel-heading'},
-                newline=True, indent=True)
-    writer.push('h2', attrs={'class': 'panel-title',
-                             'style': 'font-size:20px;'}, indent=True)
-    writer.write(str(version))
-
-    # New line on small devices
-    writer.push('p', attrs={'class': 'visible-xs'})
-    writer.pop('p')
-
-    writer.write(' ')
-    writer.push('small')
-    writer.write(timestamp)
-    writer.pop('small')
-    writer.pop('h2', newline=True)
-    writer.pop('div', indent=True, newline=True)
-
-    writer.push('div', attrs={'class': 'panel-body'},
-                newline=True, indent=True)
-
-    # "Files" title
-    writer.push('h4', indent=True)
-    writer.push('span', attrs={'class': 'mdi mdi-file-folder'})
-    writer.pop('span')
-    writer.write(' Files:')
-    writer.pop('h4', newline=True)
+        print('Failed to determine timestamp for commit: %s'
+              % version.commit)
+        sys.exit(1)
 
     # Get list of files
     cur_files = dict()
@@ -304,148 +212,67 @@ for i in range(0, len(versions)):
 
             cur_files[target].append(f)
 
+    build = dict()
+    build['version'] = str(version)
+    build['timestamp'] = timestamp
+    build['files'] = dict()
+    build['commits'] = list()
+
     # Write files list
-    writer.push('ul', indent=True, newline=True)
     for target in sorted(cur_files):
         for f in cur_files[target]:
             fullpath = os.path.join(filesdir, f)
             size = humanize_bytes(os.path.getsize(fullpath))
 
-            writer.push('li', indent=True)
+            file_info = dict()
+            file_info['build'] = f
+            file_info['size'] = size
 
-            # Small layout
-            writer.push('div', attrs={'class': 'visible-xs'})
-            # OS
-            writer.push('a', attrs={'href': f})
-            writer.write(target)
-            writer.pop('a')
-            # MD5
             if f in md5sums:
-                writer.write(' | ')
-                writer.push('a', attrs={'href': md5sums[f]})
-                writer.write('MD5')
-                writer.pop('a')
-            # Size
-            writer.write(' (%s)' % size)
-            # End small layout
-            writer.pop('div')
+                file_info['md5sum'] = md5sums[f]
 
-            # Large layout
-            writer.push('div', attrs={'class': 'hidden-xs'})
-            writer.write(target + ': ')
-            # OS
-            writer.push('a', attrs={'href': f})
-            writer.write(f)
-            writer.pop('a')
-            # MD5
-            if f in md5sums:
-                writer.write(' | ')
-                writer.push('a', attrs={'href': md5sums[f]})
-                writer.write('MD5')
-                writer.pop('a')
-            # Size
-            writer.write(' (%s)' % size)
-            # End large layout
-            writer.pop('div')
+            build['files'][target] = file_info
 
-            writer.pop('li', newline=True)
+    if i < len(versions) - 1:
+        new_commit = version.commit
+        old_commit = versions[i + 1].commit
 
-    writer.pop('ul', indent=True, newline=True)
+        # Get commit log
+        process = subprocess.Popen(
+            ['git', 'log', '--pretty=format:%H\n%s',
+                '%s..%s' % (old_commit, new_commit)],
+            stdout=subprocess.PIPE,
+            universal_newlines=True
+        )
+        log = process.communicate()[0].split('\n')
 
-    if i == len(versions) - 1:
-        writer.push('p', indent=True)
-        writer.write('An earlier build is needed to generate a changelog')
-        writer.pop('p', newline=True)
+        if len(log) <= 1:
+            print('Failed to generate changelog')
+            sys.exit(1)
 
-        writer.pop('div', indent=True, newline=True)
-        writer.pop('div', indent=True, newline=True)
-        continue
+        for j in range(0, len(log) - 1, 2):
+            commit = log[j]
+            subject = log[j + 1]
 
-    new_commit = version.commit
-    old_commit = versions[i + 1].commit
+            build['commits'].append({
+                'id': commit,
+                'short_id': commit[0:7],
+                'message': subject
+            })
 
-    # Get commit log
-    process = subprocess.Popen(
-        ['git', 'log', '--pretty=format:%H\n%s',
-            '%s..%s' % (old_commit, new_commit)],
-        stdout=subprocess.PIPE,
-        universal_newlines=True
-    )
-    log = process.communicate()[0].split('\n')
-
-    if len(log) <= 1:
-        writer.push('p', indent=True)
-        writer.write('WTF?? Failed to generate changelog')
-        writer.pop('p', newline=True)
-
-        writer.pop('div', indent=True, newline=True)
-        writer.pop('div', indent=True, newline=True)
-        continue
-
-    # "Changelog" title
-    writer.push('h4', indent=True)
-    writer.push('span', attrs={'class': 'mdi mdi-action-schedule'})
-    writer.pop('span')
-    writer.write(' Changelog:')
-    writer.pop('h4', newline=True)
-
-    writer.push('table', attrs={'class': 'table table-striped table-hover'},
-                indent=True, newline=True)
-    writer.push('thead', indent=True, newline=True)
-    writer.push('tr', indent=True, newline=True)
-    writer.push('th', indent=True)
-    writer.write('Commit')
-    writer.pop('th', newline=True)
-    writer.push('th', indent=True)
-    writer.write('Description')
-    writer.pop('th', newline=True)
-    writer.pop('tr', indent=True, newline=True)
-    writer.pop('thead', indent=True, newline=True)
-    writer.push('tbody', indent=True, newline=True)
-
-    # Write commit list
-    for j in range(0, len(log) - 1, 2):
-        commit = log[j]
-        subject = log[j + 1]
-        writer.push('tr', indent=True, newline=True)
-        writer.push('td', indent=True)
-        writer.push('a', attrs={'href': '%s/commit/%s' % (github, commit)})
-        writer.write(commit[0:7])
-        writer.pop('a')
-        writer.pop('td', newline=True)
-        writer.push('td', indent=True)
-        writer.write(subject)
-        writer.pop('td', newline=True)
-        writer.pop('tr', indent=True, newline=True)
-
-    writer.pop('tbody', indent=True, newline=True)
-    writer.pop('table', indent=True, newline=True)
-
-    writer.pop('div', indent=True, newline=True)
-    writer.pop('div', indent=True, newline=True)
-
-
-writer.close()
+    builds.append(build)
 
 
 sourcedir = os.path.dirname(os.path.realpath(__file__))
 resdir = os.path.join(sourcedir, 'res')
-templatefile = os.path.join(sourcedir, 'index.template.html')
 outfile = os.path.join(filesdir, 'index.html')
-genfile = os.path.join(filesdir, '.index.gen.html')
-MAGIC = b'{{CHANGELOG}}\n'
 
-f_out = open(outfile, 'wb')
+env = jinja2.Environment(loader=jinja2.FileSystemLoader(sourcedir),
+                         undefined=jinja2.StrictUndefined)
+template = env.get_template('index.template.html')
+html = template.render(builds=builds)
 
-with open(templatefile, 'rb') as f_in:
-    for line in f_in:
-        if line == MAGIC:
-            with open(genfile, 'rb') as f_gen:
-                for gen_line in f_gen:
-                    f_out.write(gen_line)
-        else:
-            f_out.write(line)
-
-os.remove(genfile)
+with open(outfile, 'wb') as f:
+    f.write(html.encode('utf-8'))
 
 distutils.dir_util.copy_tree(resdir, filesdir)

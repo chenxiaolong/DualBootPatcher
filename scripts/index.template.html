@@ -115,7 +115,61 @@
         </div> <!-- ./container -->
 
         <div class="container">
-{{CHANGELOG}}
+            {% for build in builds %}
+                <div class="panel panel-success">
+                    <!-- Version and timestamp of build -->
+                    <div class="panel-heading">
+                        <h2 class="panel-title" style="font-size:20px;">{{ build.version }}<p class="visible-xs"></p> <small>{{ build.timestamp }}</small></h2>
+                    </div>
+                    <div class="panel-body">
+                        <h4><span class="mdi mdi-file-folder"></span> Files:</h4>
+                        <ul>
+                            <!-- List of downloads for the build -->
+                            {% for target, urls in build.files.items() %}
+                                <li>
+                                    <!-- For extra-small devices -->
+                                    <div class="visible-xs">
+                                        <a href="{{ urls.build }}">{{ target }}</a>
+                                        {% if 'md5sum' in urls %}
+                                            | <a href="{{ urls.md5sum }}">MD5</a>
+                                        {% endif %}
+                                        ({{ urls.size }})
+                                    </div>
+                                    <!-- For non-extra-small devices -->
+                                    <div class="hidden-xs">
+                                        {{ target }}: <a href="{{ urls.build }}">{{ urls.build }}</a>
+                                        {% if 'md5sum' in urls %}
+                                            | <a href="{{ urls.md5sum }}">MD5</a>
+                                        {% endif %}
+                                        ({{ urls.size }})
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <h4><span class="mdi mdi-action-schedule"></span> Changelog:</h4>
+                        {% if build.commits %}
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Commit</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for commit in build.commits %}
+                                        <tr>
+                                            <td><a href="https://github.com/chenxiaolong/DualBootPatcher/commit/{{ commit.id }}">{{ commit.short_id }}</a></td>
+                                            <td>{{ commit.message }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p>An earlier build is needed to generate a changelog</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
         </div> <!-- ./container -->
 
         <!-- jQuery 2.x JS -->
