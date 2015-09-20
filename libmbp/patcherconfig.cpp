@@ -254,6 +254,22 @@ void PatcherConfig::Impl::loadDefaultDevices()
 #define MTK_SYSTEM              MTK_BASE_DIR "/system"
 #define MTK_USERDATA            MTK_BASE_DIR "/userdata"
 
+    // Samsung Galaxy S 3
+    device = new Device();
+    device->setId("d2");
+    device->setCodenames({ "d2", "d2att", "d2can", "d2cri", "d2ltetmo",
+                           "d2mtr", "d2spi", "d2spr", "d2tfnspr", "d2tfnvzw",
+                           "d2tmo", "d2usc", "d2vmu", "d2vzw", "d2xar" });
+    device->setName("Samsung Galaxy S 3");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p17" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p15" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p18" });
+    device->setExtraBlockDevs({ QCOM_ABOOT });
+    devices.push_back(device);
+
     // Samsung Galaxy S 4
     device = new Device();
     device->setId("jflte");
