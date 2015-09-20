@@ -254,6 +254,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
 #define MTK_SYSTEM              MTK_BASE_DIR "/system"
 #define MTK_USERDATA            MTK_BASE_DIR "/userdata"
 
+#define TEGRA3_BASE_DIR         "/dev/block/platform/sdhci-tegra.3/by-name"
+#define TEGRA3_BOOT             TEGRA3_BASE_DIR "/LNX"
+#define TEGRA3_CACHE            TEGRA3_BASE_DIR "/CAC"
+#define TEGRA3_RECOVERY         TEGRA3_BASE_DIR "/SOS"
+#define TEGRA3_SYSTEM           TEGRA3_BASE_DIR "/APP"
+#define TEGRA3_USERDATA         TEGRA3_BASE_DIR "/UDA"
+
     // Samsung Galaxy S 3
     device = new Device();
     device->setId("d2");
@@ -539,6 +546,19 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
                                 QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    devices.push_back(device);
+
+    // Google/ASUS Nexus 7 (2012 Wifi)
+    device = new Device();
+    device->setId("grouper");
+    device->setCodenames({ "grouper" });
+    device->setName("Google/ASUS Nexus 7 (2012 Wifi)");
+    device->setBlockDevBaseDirs({ TEGRA3_BASE_DIR });
+    device->setSystemBlockDevs({ TEGRA3_SYSTEM, "/dev/block/mmcblk0p3" });
+    device->setCacheBlockDevs({ TEGRA3_CACHE, "/dev/block/mmcblk0p4" });
+    device->setDataBlockDevs({ TEGRA3_USERDATA, "/dev/block/mmcblk0p9" });
+    device->setBootBlockDevs({ TEGRA3_BOOT, "/dev/block/mmcblk0p2" });
+    device->setRecoveryBlockDevs({ TEGRA3_RECOVERY, "/dev/block/mmcblk0p1" });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2013)
