@@ -671,6 +671,19 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
+    // Motorola Nexus 6
+    device = new Device();
+    device->setId("shamu");
+    device->setCodenames({ "shamu" });
+    device->setName("Motorola Nexus 6");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p41" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p38" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p42" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p37" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p35" });
+    devices.push_back(device);
+
     // Sony Xperia Sola
     device = new Device();
     device->setId("pepper");
