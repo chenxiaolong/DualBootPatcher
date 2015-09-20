@@ -37,6 +37,7 @@
 #include "mount_fstab.h"
 #include "reboot.h"
 #include "sepolpatch.h"
+#include "version.h"
 #include "util/chown.h"
 #include "util/directory.h"
 #include "util/finally.h"
@@ -618,6 +619,8 @@ int init_main(int argc, char *argv[])
 
     open_devnull_stdio();
     util::log_set_logger(std::make_shared<util::KmsgLogger>());
+
+    LOGV("Booting up with version %s (%s)", MBP_VERSION, GIT_VERSION);
 
     // Start probing for devices
     device_init();
