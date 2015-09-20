@@ -54,6 +54,7 @@
   <!--Default name for the data-slot ROMs-->
   <string name="dataslot">%s (Data slot)</string>
   <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (ExtSD slot)</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Impossibile determinare la versione della ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
@@ -65,17 +66,23 @@
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Switch fallito</string>
   <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">L\'MD5 non corrisponde</string>
   <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">L\'MD5 è assente</string>
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Kernel impostato con successo</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Impossibile impostare il kernel</string>
   <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">Un\'altra applicazione sta tentanto di effettare lo switch a %s.
+Continuare</string>
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
   <string name="unknown_boot_partition">Impossibile determinare la partizione del kernel perchè il dispositivo \'%s\' non è riconosciuto.</string>
   <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">La SHA512 del boot.img di questa ROM o di altri file *.img presenti in /sdcard/MultiBoot/%s/ non corrisponde come previsto. Un\'app esterna potrebbe aver maliziosamente cambiato questi file. Vuoi procedere con lo switch?</string>
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">La SHA512 del boot.img di questa ROM o di altri file *.img presenti in /sdcard/MultiBoot/%s/ è assente. Questo può essere causato da un aggiornamento di una vecchia versione di quest\'app. Vuoi procedere con lo switch?</string>
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Versione sconosciuta</string>
   <!--Build text shown on ROM card if the build could not be detected-->
@@ -83,6 +90,7 @@
   <!--ROM menu item for setting kernel-->
   <string name="rom_menu_set_kernel">Imposta kernel</string>
   <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Aggiungi alla schermata Home</string>
   <!--ROM menu item for changing the name-->
   <string name="rom_menu_edit_name">Modifica nome</string>
   <!--ROM menu item for changing the image-->
@@ -92,6 +100,7 @@
   <!--ROM menu item for wiping the ROM-->
   <string name="rom_menu_wipe_rom">Elimina ROM</string>
   <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">%s è stato aggiunto con successo alla schermata Home.</string>
   <!--Target for wiping ROM's /system-->
   <string name="wipe_target_system">System</string>
   <!--Target for wiping ROM's /cache-->
@@ -193,6 +202,7 @@
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Slot Data</string>
   <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">ExtSD slot</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">File manager non trovato</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
@@ -348,6 +358,7 @@ Condivione delle applicazioni a pagamento della ROM primaria con le altre ROM (r
   <string name="indiv_app_sharing_app_no_longer_shared">L\'app \'%s\' non è più condivisa.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">Cerca</string>
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">No</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
