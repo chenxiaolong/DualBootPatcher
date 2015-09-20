@@ -59,8 +59,6 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 LOCAL_PATH := $(_LOCAL_PATH)
 
-git_version := $(shell git describe --dirty --always --tags)
-
 mbutil_src := \
 	util/archive.cpp \
 	util/chmod.cpp \
@@ -190,7 +188,6 @@ LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol procps-ng libutils libax
 LOCAL_C_INCLUDES := $(mb_common_includes)
 
 LOCAL_CFLAGS := $(mb_common_cflags)
-LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
 LOCAL_LDFLAGS := $(mb_common_ldflags)
 ifneq ($(DEBUGGING),true)
@@ -214,7 +211,6 @@ LOCAL_C_INCLUDES := $(mb_common_includes)
 
 LOCAL_CFLAGS := $(mb_common_cflags)
 LOCAL_CFLAGS += -DRECOVERY
-LOCAL_CFLAGS += -DGIT_VERSION=\"$(git_version)\"
 
 LOCAL_LDFLAGS := $(mb_common_ldflags)
 ifeq ($(DEBUGGING),true)

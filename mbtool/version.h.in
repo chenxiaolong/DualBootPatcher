@@ -1,1 +1,2 @@
 #define MBP_VERSION "@MBP_VERSION@"
+#define GIT_VERSION "@GIT_VERSION@"

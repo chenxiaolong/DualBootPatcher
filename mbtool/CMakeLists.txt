@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
+git_describe(GIT_VERSION --dirty --always --tags)
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
