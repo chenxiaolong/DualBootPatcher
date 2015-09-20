@@ -154,6 +154,8 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
         }
     }
 
+    LOGD("Tried all %zu fstab entries for %s, but couldn't mount any", recs.size());
+
     return false;
 }
 
@@ -807,14 +809,19 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 
     // Generate new fstab without /system, /cache, or /data entries
     for (util::fstab_rec &rec : fstab) {
+        LOGD("fstab: %s", rec.orig_line.c_str());
         if (rec.mount_point == "/system") {
+            LOGD("-> /system entry");
             recs_system.push_back(&rec);
         } else if (rec.mount_point == "/cache") {
+            LOGD("-> /cache entry");
             recs_cache.push_back(&rec);
         } else if (rec.mount_point == "/data") {
+            LOGD("-> /data entry");
             recs_data.push_back(&rec);
         } else if (rec.vold_args.find("voldmanaged=sdcard1") != std::string::npos
                 || rec.vold_args.find("voldmanaged=extSdCard") != std::string::npos) {
+            LOGD("-> External SD entry");
             recs_extsd.push_back(&rec);
             recs_gen.push_back(&rec);
         } else {
