@@ -50,6 +50,7 @@ namespace mb
 {
 
 static const char *data_block_devs[] = {
+    "/dev/block/bootdevice/by-name/userdata",
     "/dev/block/platform/msm_sdcc.1/by-name/userdata",
     "/dev/block/platform/f9824900.sdhci/by-name/userdata",
     "/dev/block/platform/15570000.ufs/by-name/USERDATA",
