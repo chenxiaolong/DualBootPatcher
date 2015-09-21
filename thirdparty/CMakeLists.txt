@@ -3,7 +3,7 @@
 # the tarballs to thirdparty/ and changing the md5sums here (CMake will not
 # download anything if the files exist and the md5sums match)
 
-set(URL_BASE "https://dl.dropboxusercontent.com/u/486665/MultiBootPatcher/prebuilts")
+set(URL_BASE "https://snapshots.noobdev.io/misc/prebuilts")
 
 
 configure_file(
