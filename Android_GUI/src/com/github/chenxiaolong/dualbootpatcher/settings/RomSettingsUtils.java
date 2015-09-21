@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 import android.content.Context;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -92,7 +93,7 @@ public class RomSettingsUtils {
     }
 
     public synchronized static boolean updateRamdisk(Context context) {
-        Log.d(TAG, "Starting to update ramdisk");
+        Log.d(TAG, "Starting to update ramdisk to " + BuildConfig.VERSION_NAME);
 
         try {
             // libmbp's MbtoolUpdater needs to grab a copy of the latest mbtool from the
