@@ -196,6 +196,13 @@ void PatcherConfig::Impl::loadDefaultDevices()
 {
     Device *device;
 
+#define BOOTDEVICE_BASE_DIR     "/dev/block/bootdevice/by-name"
+#define BOOTDEVICE_BOOT         BOOTDEVICE_BASE_DIR "/boot"
+#define BOOTDEVICE_CACHE        BOOTDEVICE_BASE_DIR "/cache"
+#define BOOTDEVICE_RECOVERY     BOOTDEVICE_BASE_DIR "/recovery"
+#define BOOTDEVICE_SYSTEM       BOOTDEVICE_BASE_DIR "/system"
+#define BOOTDEVICE_USERDATA     BOOTDEVICE_BASE_DIR "/userdata"
+
 #define QCOM_BASE_DIR           "/dev/block/platform/msm_sdcc.1/by-name"
 #define QCOM_ABOOT              QCOM_BASE_DIR "/aboot"
 #define QCOM_BOOT               QCOM_BASE_DIR "/boot"
@@ -639,12 +646,17 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setArchitecture("arm64-v8a");
     device->setCodenames({ "p1", "h815" });
     device->setName("LG G4");
-    device->setBlockDevBaseDirs({ F9824900_BASE_DIR });
-    device->setSystemBlockDevs({ F9824900_SYSTEM, "/dev/block/mmcblk0p47" });
-    device->setCacheBlockDevs({ F9824900_CACHE, "/dev/block/mmcblk0p49" });
-    device->setDataBlockDevs({ F9824900_USERDATA, "/dev/block/mmcblk0p50" });
-    device->setBootBlockDevs({ F9824900_BOOT, "/dev/block/mmcblk0p38" });
-    device->setRecoveryBlockDevs({ F9824900_RECOVERY, "/dev/block/mmcblk0p39" });
+    device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SYSTEM, BOOTDEVICE_SYSTEM,
+                                 "/dev/block/mmcblk0p47" });
+    device->setCacheBlockDevs({ F9824900_CACHE, BOOTDEVICE_CACHE,
+                                "/dev/block/mmcblk0p49" });
+    device->setDataBlockDevs({ F9824900_USERDATA, BOOTDEVICE_USERDATA,
+                               "/dev/block/mmcblk0p50" });
+    device->setBootBlockDevs({ F9824900_BOOT, BOOTDEVICE_BOOT,
+                               "/dev/block/mmcblk0p38" });
+    device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
+                                   "/dev/block/mmcblk0p39" });
     devices.push_back(device);
 
     // Lenovo K3 Note
