@@ -133,7 +133,7 @@ static std::string find_fstab()
                 }
             }
 
-            if (strstr(ptr, "goldfish")) {
+            if (strstr(ptr, "goldfish") || strstr(ptr, "fota")) {
                 LOGV("Skipping goldfish fstab file: %s", ptr);
                 continue;
             }
