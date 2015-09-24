@@ -38,6 +38,7 @@
 #include "reboot.h"
 #include "sepolpatch.h"
 #include "version.h"
+#include "util/cmdline.h"
 #include "util/chown.h"
 #include "util/directory.h"
 #include "util/finally.h"
@@ -146,16 +147,26 @@ static std::string find_fstab()
                 ptr[strlen(ptr) - 4] = '\0';
             }
 
-            LOGD("Trying fstab: %s", ptr);
+            std::string fstab(ptr);
+
+            // Replace ${ro.hardware}
+            if (fstab.find("${ro.hardware}") != std::string::npos) {
+                std::string hardware;
+                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
+                util::replace_all(&fstab, "${ro.hardware}", hardware);
+            }
+
+            LOGD("Trying fstab: %s", fstab.c_str());
 
             // Check if fstab exists
             struct stat sb;
-            if (stat(ptr, &sb) < 0) {
-                LOGE("Failed to stat fstab %s: %s", ptr, strerror(errno));
+            if (stat(fstab.c_str(), &sb) < 0) {
+                LOGE("Failed to stat fstab %s: %s",
+                     fstab.c_str(), strerror(errno));
                 continue;
             }
 
-            return ptr;
+            return fstab;
         }
     }
 
