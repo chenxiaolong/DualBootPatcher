@@ -136,6 +136,9 @@ dependencies {
     compile('com.afollestad.material-dialogs:core:0.8.0.1@aar') {
         transitive = true
     }
+    compile('com.afollestad.material-dialogs:commons:0.8.0.1@aar') {
+        transitive = true
+    }
     compile 'com.getbase:floatingactionbutton:1.9.1'
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'commons-io:commons-io:2.4'
