@@ -74,6 +74,7 @@ protected:
     bool _passthrough;
 
     std::string _device;
+    std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
     std::string _system_block_dev;

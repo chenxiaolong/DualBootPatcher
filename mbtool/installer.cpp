@@ -932,6 +932,17 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
     LOGD("Target device = %s", _device.c_str());
 
+    if (!prop_patcher_device.empty()) {
+        _detected_device = prop_patcher_device;
+    } else if (!prop_product_device.empty()) {
+        _detected_device = prop_product_device;
+    } else if (!prop_build_product.empty()) {
+        _detected_device = prop_build_product;
+    } else {
+        display_msg("Failed to determine device's codename");
+        return ProceedState::Fail;
+    }
+
     // Check if we should skip the codename check
     bool skip_codename_check = false;
     if (_prop.find("mbtool.installer.ignore-codename") != _prop.end()
@@ -961,12 +972,7 @@ Installer::ProceedState Installer::install_stage_check_device()
             auto codenames = d->codenames();
             auto it = std::find_if(codenames.begin(), codenames.end(),
                                    [&](const std::string &codename) {
-                if (!prop_patcher_device.empty()) {
-                    return prop_patcher_device == codename;
-                } else {
-                    return prop_product_device == codename
-                            || prop_build_product == codename;
-                }
+                return _detected_device == codename;
             });
 
             if (it == codenames.end()) {
@@ -975,7 +981,7 @@ Installer::ProceedState Installer::install_stage_check_device()
                     display_msg(util::format("- %s", codename.c_str()));
                 }
                 display_msg(util::format(
-                        "This device is '%s'", prop_product_device.c_str()));
+                        "This device is '%s'", _detected_device.c_str()));
 
                 return ProceedState::Fail;
             }
@@ -1448,9 +1454,8 @@ Installer::ProceedState Installer::install_stage_finish()
         // Set ro.patcher.device=<device ID> in /default.prop
         std::vector<unsigned char> default_prop;
         if (cpio.contents("default.prop", &default_prop)) {
-            std::string prop;
-            util::get_property("ro.product.device", &prop, _device);
-            prop.insert(0, "\nro.patcher.device=");
+            std::string prop("\nro.patcher.device=");
+            prop += _detected_device;
             prop.push_back('\n');
 
             default_prop.insert(default_prop.end(), prop.begin(), prop.end());
