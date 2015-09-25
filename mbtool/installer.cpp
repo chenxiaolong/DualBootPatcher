@@ -913,6 +913,7 @@ Installer::ProceedState Installer::install_stage_check_device()
 
     std::string prop_product_device;
     std::string prop_build_product;
+    std::string prop_patcher_device;
 
     // Verify device
     if (_prop.find("mbtool.installer.device") == _prop.end()) {
@@ -924,9 +925,11 @@ Installer::ProceedState Installer::install_stage_check_device()
 
     util::get_property("ro.product.device", &prop_product_device, "");
     util::get_property("ro.build.product", &prop_build_product, "");
+    util::get_property("ro.patcher.device", &prop_patcher_device, "");
 
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
+    LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
     LOGD("Target device = %s", _device.c_str());
 
     // Check if we should skip the codename check
@@ -958,8 +961,12 @@ Installer::ProceedState Installer::install_stage_check_device()
             auto codenames = d->codenames();
             auto it = std::find_if(codenames.begin(), codenames.end(),
                                    [&](const std::string &codename) {
-                return prop_product_device == codename
-                        || prop_build_product == codename;
+                if (!prop_patcher_device.empty()) {
+                    return prop_patcher_device == codename;
+                } else {
+                    return prop_product_device == codename
+                            || prop_build_product == codename;
+                }
             });
 
             if (it == codenames.end()) {
