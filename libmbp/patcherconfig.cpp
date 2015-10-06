@@ -271,7 +271,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     // Samsung Galaxy S 3
     device = new Device();
     device->setId("d2");
-    device->setCodenames({ "d2", "d2att", "d2can", "d2cri", "d2ltetmo",
+    device->setCodenames({ "d2", "d2lte", "d2att", "d2can", "d2cri", "d2ltetmo",
                            "d2mtr", "d2spi", "d2spr", "d2tfnspr", "d2tfnvzw",
                            "d2tmo", "d2usc", "d2vmu", "d2vzw", "d2xar" });
     device->setName("Samsung Galaxy S 3");
