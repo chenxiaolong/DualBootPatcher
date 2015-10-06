@@ -686,9 +686,11 @@ int init_main(int argc, char *argv[])
     umount("/dev");
     umount("/proc");
     umount("/sys");
-    rmdir("/dev");
-    rmdir("/proc");
-    rmdir("/sys");
+    // Do not remove these as Android 6.0 init's stage 1 no longer creates these
+    // (platform/system/core commit a1f6a4b13921f61799be14a2544bdbf95958eae7)
+    //rmdir("/dev");
+    //rmdir("/proc");
+    //rmdir("/sys");
 
     // Start real init
     unlink("/init");
