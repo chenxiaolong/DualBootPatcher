@@ -249,6 +249,11 @@
         tapping and holding the file and a file can be removed by swiping it away.\n\nNOTE:
         This feature is still experimental. Please backup before continuing!</string>
 
+    <!-- Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
+    <string name="patcher_storage_permission_required">The patcher will not be able to read and
+        write to the internal storage because the storage permissions were denied. Please allow the
+        permissions if you are unable to patch files.</string>
+
     <!-- Title of the device selection box in the patcher -->
     <string name="patcher_device_title">Device:</string>
     <!-- Title of the partition configuration box in the patcher -->

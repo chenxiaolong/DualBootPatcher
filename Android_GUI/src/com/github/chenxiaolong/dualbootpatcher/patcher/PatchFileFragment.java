@@ -17,15 +17,21 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
+import android.Manifest;
+import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v13.app.FragmentCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -42,6 +48,7 @@ import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.Request
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.patcher.MainOptsCW.MainOptsListener;
@@ -65,6 +72,9 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     public static final String ARG_DEVICE = "device";
 
     private static final String EXTRA_CONFIG_STATE = "config_state";
+    private static final String EXTRA_REQUESTED_PERMISSIONS = "requested_permissions";
+
+    private static final int REQUEST_PERMISSIONS_STORAGE = 1;
 
     private PatcherListener mListener;
 
@@ -76,6 +86,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     private FileChooserEventCollector mFileChooserEC;
 
     private Bundle mSavedInstanceState;
+
+    private boolean mRequestedPermissions;
 
     private ScrollView mScrollView;
     private ProgressBar mProgressBar;
@@ -154,6 +166,10 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         }
 
         mSavedInstanceState = savedInstanceState;
+
+        if (savedInstanceState != null) {
+            mRequestedPermissions = savedInstanceState.getBoolean(EXTRA_REQUESTED_PERMISSIONS);
+        }
 
         mScrollView = (ScrollView) getActivity().findViewById(R.id.card_scrollview);
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_loading_patcher);
@@ -235,7 +251,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
             new PatcherInitializationTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         } else {
             // Ensures that everything is needed right away (needed for, eg. orientation change)
-            patcherInitialized();
+            checkPermissions();
         }
     }
 
@@ -265,7 +281,7 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
                 return;
             }
 
-            patcherInitialized();
+            checkPermissions();
         }
     }
 
@@ -286,6 +302,8 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+
+        outState.putBoolean(EXTRA_REQUESTED_PERMISSIONS, mRequestedPermissions);
 
         outState.putParcelable(EXTRA_CONFIG_STATE, mPCS);
 
@@ -347,6 +365,64 @@ public class PatchFileFragment extends Fragment implements EventCollectorListene
         }
 
         return null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        switch (requestCode) {
+        case REQUEST_PERMISSIONS_STORAGE: {
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    Log.e(TAG, "Storage permissions were denied");
+                    DialogFragment d = GenericConfirmDialog.newInstance(
+                            0, R.string.patcher_storage_permission_required);
+                    d.show(getFragmentManager(), "storage_permissions_denied");
+                    //return;
+                    break;
+                }
+            }
+
+            // Restart initialization
+            patcherInitialized();
+            break;
+        }
+        }
+    }
+
+    private static final String STORAGE_PERMISSIONS[] = new String[]{
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+
+    private boolean hasStoragePermissions() {
+        for (String permission : STORAGE_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(getActivity(), permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void checkPermissions() {
+        if (!hasStoragePermissions()) {
+            Log.d(TAG, "Does not have storage permissions");
+
+            if (!mRequestedPermissions) {
+                Log.d(TAG, "Requesting storage permissions");
+                FragmentCompat.requestPermissions(
+                        this, STORAGE_PERMISSIONS, REQUEST_PERMISSIONS_STORAGE);
+                mRequestedPermissions = true;
+            } else {
+                Log.d(TAG, "Already requested storage permissions");
+            }
+
+            return;
+        }
+
+        patcherInitialized();
     }
 
     private void patcherInitialized() {
