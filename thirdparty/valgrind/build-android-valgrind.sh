@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-gcc_ver=4.9
-
-ver="3.10.1"
+ver="3.11.0"
 name="valgrind-${ver}"
 tar="${name}.tar.bz2"
 url="http://valgrind.org/downloads/${tar}"
@@ -44,15 +42,15 @@ build_valgrind() {
     local toolchain_ver="${3}"
     local android_api="${4}"
 
-    if [ -f valgrind-${ver}_${arch}.tar.7z ]; then
+    if [ -f "valgrind-${ver}_${arch}.tar.7z" ]; then
         return
     fi
 
-    rm -rf build_${arch}/
-    mkdir build_${arch}/
-    pushd build_${arch}/
+    rm -rf "build_${arch}/"
+    mkdir "build_${arch}/"
+    pushd "build_${arch}/"
 
-    local sysroot="--sysroot=$(get_ndk_sysroot ${android_api} ${arch})"
+    local sysroot="--sysroot=$(get_ndk_sysroot "${android_api}" "${arch}")"
     local cflags="${sysroot}"
     local cxxflags="${sysroot}"
     local cppflags="${sysroot}"
@@ -62,7 +60,7 @@ build_valgrind() {
                          '--target=armv7-unknown-linux')
     elif [ "${arch}" = "arm64-v8a" ]; then
         local conf_args=('--host=aarch64-unknown-linux'
-                         '--enable-only64bit')
+                         '--target=aarch64-unknown-linux')
     elif [ "${arch}" = "x86" ]; then
         local conf_args=('--host=i686-android-linux'
                          '--target=i686-android-linux')
@@ -76,7 +74,7 @@ build_valgrind() {
     CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
     ../${name}/configure \
         --prefix=/data/local/Inst \
-        ${conf_args[@]} \
+        "${conf_args[@]}" \
         --with-tmpdir=/sdcard
 
     CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
@@ -90,7 +88,7 @@ build_valgrind() {
     find -mindepth 1 -maxdepth 1 -print0 \
             | tar cv --null -T - \
             | 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on -si \
-                    ../../../valgrind-${ver}_${arch}.tar.7z
+                    "../../../valgrind-${ver}_${arch}.tar.7z"
     popd
 
     popd
@@ -99,8 +97,7 @@ build_valgrind() {
 # Does not compile with the android-21 platform
 build_valgrind armeabi-v7a arm-linux-androideabi 4.9 android-18
 
-# Valgrind 3.10.1 supports aarch64, but not when combined with the NDK compiler
-#build_valgrind arm64-v8a aarch64-linux-android 4.9 android-21
+build_valgrind arm64-v8a aarch64-linux-android 4.9 android-21
 
 # Does not compile with the android-21 platform
 build_valgrind x86 i686-linux-android 4.9 android-18
