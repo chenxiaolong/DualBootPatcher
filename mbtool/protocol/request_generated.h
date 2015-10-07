@@ -102,6 +102,22 @@ struct WipeRomResponse;
 }  // namespace v2
 }  // namespace daemon
 }  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v2 {
+struct SELinuxGetLabelRequest;
+struct SELinuxGetLabelResponse;
+}  // namespace v2
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v2 {
+struct SELinuxSetLabelRequest;
+struct SELinuxSetLabelResponse;
+}  // namespace v2
+}  // namespace daemon
+}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -121,11 +137,13 @@ enum RequestType {
   RequestType_COPY = 8,
   RequestType_CHMOD = 9,
   RequestType_LOKI_PATCH = 10,
-  RequestType_WIPE_ROM = 11
+  RequestType_WIPE_ROM = 11,
+  RequestType_SELINUX_GET_LABEL = 12,
+  RequestType_SELINUX_SET_LABEL = 13
 };
 
 inline const char **EnumNamesRequestType() {
-  static const char *names[] = { "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", nullptr };
+  static const char *names[] = { "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", "SELINUX_GET_LABEL", "SELINUX_SET_LABEL", nullptr };
   return names;
 }
 
@@ -144,6 +162,8 @@ struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const mbtool::daemon::v2::CopyRequest *copy_request() const { return GetPointer<const mbtool::daemon::v2::CopyRequest *>(22); }
   const mbtool::daemon::v2::ChmodRequest *chmod_request() const { return GetPointer<const mbtool::daemon::v2::ChmodRequest *>(24); }
   const mbtool::daemon::v2::WipeRomRequest *wipe_rom_request() const { return GetPointer<const mbtool::daemon::v2::WipeRomRequest *>(28); }
+  const mbtool::daemon::v2::SELinuxGetLabelRequest *selinux_get_label_request() const { return GetPointer<const mbtool::daemon::v2::SELinuxGetLabelRequest *>(30); }
+  const mbtool::daemon::v2::SELinuxSetLabelRequest *selinux_set_label_request() const { return GetPointer<const mbtool::daemon::v2::SELinuxSetLabelRequest *>(32); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int16_t>(verifier, 4 /* type */) &&
@@ -169,6 +189,10 @@ struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyTable(chmod_request()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 28 /* wipe_rom_request */) &&
            verifier.VerifyTable(wipe_rom_request()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 30 /* selinux_get_label_request */) &&
+           verifier.VerifyTable(selinux_get_label_request()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 32 /* selinux_set_label_request */) &&
+           verifier.VerifyTable(selinux_set_label_request()) &&
            verifier.EndTable();
   }
 };
@@ -188,10 +212,12 @@ struct RequestBuilder {
   void add_copy_request(flatbuffers::Offset<mbtool::daemon::v2::CopyRequest> copy_request) { fbb_.AddOffset(22, copy_request); }
   void add_chmod_request(flatbuffers::Offset<mbtool::daemon::v2::ChmodRequest> chmod_request) { fbb_.AddOffset(24, chmod_request); }
   void add_wipe_rom_request(flatbuffers::Offset<mbtool::daemon::v2::WipeRomRequest> wipe_rom_request) { fbb_.AddOffset(28, wipe_rom_request); }
+  void add_selinux_get_label_request(flatbuffers::Offset<mbtool::daemon::v2::SELinuxGetLabelRequest> selinux_get_label_request) { fbb_.AddOffset(30, selinux_get_label_request); }
+  void add_selinux_set_label_request(flatbuffers::Offset<mbtool::daemon::v2::SELinuxSetLabelRequest> selinux_set_label_request) { fbb_.AddOffset(32, selinux_set_label_request); }
   RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RequestBuilder &operator=(const RequestBuilder &);
   flatbuffers::Offset<Request> Finish() {
-    auto o = flatbuffers::Offset<Request>(fbb_.EndTable(start_, 13));
+    auto o = flatbuffers::Offset<Request>(fbb_.EndTable(start_, 15));
     return o;
   }
 };
@@ -208,8 +234,12 @@ inline flatbuffers::Offset<Request> CreateRequest(flatbuffers::FlatBufferBuilder
    flatbuffers::Offset<mbtool::daemon::v2::OpenRequest> open_request = 0,
    flatbuffers::Offset<mbtool::daemon::v2::CopyRequest> copy_request = 0,
    flatbuffers::Offset<mbtool::daemon::v2::ChmodRequest> chmod_request = 0,
-   flatbuffers::Offset<mbtool::daemon::v2::WipeRomRequest> wipe_rom_request = 0) {
+   flatbuffers::Offset<mbtool::daemon::v2::WipeRomRequest> wipe_rom_request = 0,
+   flatbuffers::Offset<mbtool::daemon::v2::SELinuxGetLabelRequest> selinux_get_label_request = 0,
+   flatbuffers::Offset<mbtool::daemon::v2::SELinuxSetLabelRequest> selinux_set_label_request = 0) {
   RequestBuilder builder_(_fbb);
+  builder_.add_selinux_set_label_request(selinux_set_label_request);
+  builder_.add_selinux_get_label_request(selinux_get_label_request);
   builder_.add_wipe_rom_request(wipe_rom_request);
   builder_.add_chmod_request(chmod_request);
   builder_.add_copy_request(copy_request);
