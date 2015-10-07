@@ -831,6 +831,14 @@ public class SwitcherListFragment extends Fragment implements
                     return;
                 }
 
+                // Ensure SELinux label doesn't prevent reading from the file
+                String label = socket.selinuxGetLabel(
+                        getContext(), getContext().getCacheDir().getAbsolutePath(), false);
+                if (label != null) {
+                    // Ignore errors and hope for the best
+                    socket.selinuxSetLabel(getContext(), tmpImage, label, false);
+                }
+
                 mResult.activeRomId = SwitcherUtils.getBootImageRomId(
                         getContext(), tmpImageFile.getAbsolutePath());
                 mResult.kernelStatus = getKernelStatus(currentRom, tmpImageFile);
