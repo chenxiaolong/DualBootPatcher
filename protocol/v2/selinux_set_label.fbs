@@ -1,0 +1,17 @@
+namespace mbtool.daemon.v2;
+
+table SELinuxSetLabelRequest {
+    // Path to set label for
+    path : string;
+    // SELinux label
+    label : string;
+    // Whether to follow symlinks
+    follow_symlinks : bool;
+}
+
+table SELinuxSetLabelResponse {
+    // Whether the SELinux label was successfully set
+    success : bool;
+    // Most likely the output of strerror(errno) if the file could not be opened
+    error_msg : string;
+}

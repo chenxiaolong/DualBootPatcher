@@ -10,6 +10,8 @@ include "v2/copy.fbs";
 include "v2/chmod.fbs";
 include "v2/loki_patch.fbs";
 include "v2/wipe_rom.fbs";
+include "v2/selinux_get_label.fbs";
+include "v2/selinux_set_label.fbs";
 
 namespace mbtool.daemon.v2;
 
@@ -25,7 +27,9 @@ enum RequestType : short {
     COPY,
     CHMOD,
     LOKI_PATCH,
-    WIPE_ROM
+    WIPE_ROM,
+    SELINUX_GET_LABEL,
+    SELINUX_SET_LABEL
 }
 
 table Request {
@@ -43,6 +47,8 @@ table Request {
     chmod_request : ChmodRequest;
     loki_patch_request : LokiPatchRequest (deprecated);
     wipe_rom_request : WipeRomRequest;
+    selinux_get_label_request : SELinuxGetLabelRequest;
+    selinux_set_label_request : SELinuxSetLabelRequest;
 }
 
 root_type Request;

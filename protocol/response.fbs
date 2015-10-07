@@ -10,6 +10,8 @@ include "v2/copy.fbs";
 include "v2/chmod.fbs";
 include "v2/loki_patch.fbs";
 include "v2/wipe_rom.fbs";
+include "v2/selinux_get_label.fbs";
+include "v2/selinux_set_label.fbs";
 
 namespace mbtool.daemon.v2;
 
@@ -28,7 +30,9 @@ enum ResponseType : short {
     COPY,
     CHMOD,
     LOKI_PATCH,
-    WIPE_ROM
+    WIPE_ROM,
+    SELINUX_GET_LABEL,
+    SELINUX_SET_LABEL
 }
 
 table Response {
@@ -46,6 +50,8 @@ table Response {
     chmod_response : ChmodResponse;
     loki_patch_response : LokiPatchResponse (deprecated);
     wipe_rom_response : WipeRomResponse;
+    selinux_get_label_response : SELinuxGetLabelResponse;
+    selinux_set_label_response : SELinuxSetLabelResponse;
 }
 
 root_type Response;

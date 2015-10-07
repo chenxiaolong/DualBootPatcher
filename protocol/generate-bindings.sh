@@ -15,6 +15,8 @@ files=(
     v2/chmod.fbs
     v2/loki_patch.fbs
     v2/wipe_rom.fbs
+    v2/selinux_get_label.fbs
+    v2/selinux_set_label.fbs
     request.fbs
     response.fbs
 )
