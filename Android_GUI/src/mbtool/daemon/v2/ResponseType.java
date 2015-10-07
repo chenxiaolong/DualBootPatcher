@@ -17,8 +17,10 @@ public class ResponseType {
   public static final short CHMOD = 11;
   public static final short LOKI_PATCH = 12;
   public static final short WIPE_ROM = 13;
+  public static final short SELINUX_GET_LABEL = 14;
+  public static final short SELINUX_SET_LABEL = 15;
 
-  private static final String[] names = { "UNSUPPORTED", "INVALID", "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", };
+  private static final String[] names = { "UNSUPPORTED", "INVALID", "GET_VERSION", "GET_ROMS_LIST", "GET_BUILTIN_ROM_IDS", "GET_CURRENT_ROM", "SWITCH_ROM", "SET_KERNEL", "REBOOT", "OPEN", "COPY", "CHMOD", "LOKI_PATCH", "WIPE_ROM", "SELINUX_GET_LABEL", "SELINUX_SET_LABEL", };
 
   public static String name(int e) { return names[e]; }
 };

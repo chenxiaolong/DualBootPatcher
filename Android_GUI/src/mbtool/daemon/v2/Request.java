@@ -35,6 +35,10 @@ public class Request extends Table {
   public ChmodRequest chmodRequest(ChmodRequest obj) { int o = __offset(24); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
   public WipeRomRequest wipeRomRequest() { return wipeRomRequest(new WipeRomRequest()); }
   public WipeRomRequest wipeRomRequest(WipeRomRequest obj) { int o = __offset(28); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public SELinuxGetLabelRequest selinuxGetLabelRequest() { return selinuxGetLabelRequest(new SELinuxGetLabelRequest()); }
+  public SELinuxGetLabelRequest selinuxGetLabelRequest(SELinuxGetLabelRequest obj) { int o = __offset(30); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public SELinuxSetLabelRequest selinuxSetLabelRequest() { return selinuxSetLabelRequest(new SELinuxSetLabelRequest()); }
+  public SELinuxSetLabelRequest selinuxSetLabelRequest(SELinuxSetLabelRequest obj) { int o = __offset(32); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createRequest(FlatBufferBuilder builder,
       short type,
@@ -48,8 +52,12 @@ public class Request extends Table {
       int open_request,
       int copy_request,
       int chmod_request,
-      int wipe_rom_request) {
-    builder.startObject(13);
+      int wipe_rom_request,
+      int selinux_get_label_request,
+      int selinux_set_label_request) {
+    builder.startObject(15);
+    Request.addSelinuxSetLabelRequest(builder, selinux_set_label_request);
+    Request.addSelinuxGetLabelRequest(builder, selinux_get_label_request);
     Request.addWipeRomRequest(builder, wipe_rom_request);
     Request.addChmodRequest(builder, chmod_request);
     Request.addCopyRequest(builder, copy_request);
@@ -65,7 +73,7 @@ public class Request extends Table {
     return Request.endRequest(builder);
   }
 
-  public static void startRequest(FlatBufferBuilder builder) { builder.startObject(13); }
+  public static void startRequest(FlatBufferBuilder builder) { builder.startObject(15); }
   public static void addType(FlatBufferBuilder builder, short type) { builder.addShort(0, type, 0); }
   public static void addGetVersionRequest(FlatBufferBuilder builder, int getVersionRequestOffset) { builder.addOffset(1, getVersionRequestOffset, 0); }
   public static void addGetRomsListRequest(FlatBufferBuilder builder, int getRomsListRequestOffset) { builder.addOffset(2, getRomsListRequestOffset, 0); }
@@ -78,6 +86,8 @@ public class Request extends Table {
   public static void addCopyRequest(FlatBufferBuilder builder, int copyRequestOffset) { builder.addOffset(9, copyRequestOffset, 0); }
   public static void addChmodRequest(FlatBufferBuilder builder, int chmodRequestOffset) { builder.addOffset(10, chmodRequestOffset, 0); }
   public static void addWipeRomRequest(FlatBufferBuilder builder, int wipeRomRequestOffset) { builder.addOffset(12, wipeRomRequestOffset, 0); }
+  public static void addSelinuxGetLabelRequest(FlatBufferBuilder builder, int selinuxGetLabelRequestOffset) { builder.addOffset(13, selinuxGetLabelRequestOffset, 0); }
+  public static void addSelinuxSetLabelRequest(FlatBufferBuilder builder, int selinuxSetLabelRequestOffset) { builder.addOffset(14, selinuxSetLabelRequestOffset, 0); }
   public static int endRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;
