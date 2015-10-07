@@ -202,6 +202,8 @@ public class PatcherUtils {
     public static InstallLocation[] getNamedInstallLocations(Context context) {
         //ThreadUtils.enforceExecutionOnNonMainThread();
 
+        Log.d(TAG, "Looking for named ROMs");
+
         File dir = new File(Environment.getExternalStorageDirectory()
                 + File.separator + "MultiBoot");
 
@@ -213,11 +215,15 @@ public class PatcherUtils {
                 String name = f.getName();
 
                 if (name.startsWith("data-slot-") && !name.equals("data-slot-")) {
+                    Log.d(TAG, "- Found data-slot: " + name.substring(10));
                     locations.add(getDataSlotInstallLocation(context, name.substring(10)));
                 } else if (name.startsWith("extsd-slot-") && !name.equals("extsd-slot-")) {
+                    Log.d(TAG, "- Found extsd-slot: " + name.substring(11));
                     locations.add(getExtsdSlotInstallLocation(context, name.substring(11)));
                 }
             }
+        } else {
+            Log.e(TAG, "Failed to list files in: " + dir);
         }
 
         return locations.toArray(new InstallLocation[locations.size()]);
