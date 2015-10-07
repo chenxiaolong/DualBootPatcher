@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -68,6 +68,49 @@ public:
         FLAG_MULTIARCH                 = 1ULL << 31
     };
 
+    enum PublicFlags : uint64_t {
+        PUBLIC_FLAG_SYSTEM                    = 1ULL << 0,
+        PUBLIC_FLAG_DEBUGGABLE                = 1ULL << 1,
+        PUBLIC_FLAG_HAS_CODE                  = 1ULL << 2,
+        PUBLIC_FLAG_PERSISTENT                = 1ULL << 3,
+        PUBLIC_FLAG_FACTORY_TEST              = 1ULL << 4,
+        PUBLIC_FLAG_ALLOW_TASK_REPARENTING    = 1ULL << 5,
+        PUBLIC_FLAG_ALLOW_CLEAR_USER_DATA     = 1ULL << 6,
+        PUBLIC_FLAG_UPDATED_SYSTEM_APP        = 1ULL << 7,
+        PUBLIC_FLAG_TEST_ONLY                 = 1ULL << 8,
+        PUBLIC_FLAG_SUPPORTS_SMALL_SCREENS    = 1ULL << 9,
+        PUBLIC_FLAG_SUPPORTS_NORMAL_SCREENS   = 1ULL << 10,
+        PUBLIC_FLAG_SUPPORTS_LARGE_SCREENS    = 1ULL << 11,
+        PUBLIC_FLAG_RESIZEABLE_FOR_SCREENS    = 1ULL << 12,
+        PUBLIC_FLAG_SUPPORTS_SCREEN_DENSITIES = 1ULL << 13,
+        PUBLIC_FLAG_VM_SAFE_MODE              = 1ULL << 14,
+        PUBLIC_FLAG_ALLOW_BACKUP              = 1ULL << 15,
+        PUBLIC_FLAG_KILL_AFTER_RESTORE        = 1ULL << 16,
+        PUBLIC_FLAG_RESTORE_ANY_VERSION       = 1ULL << 17,
+        PUBLIC_FLAG_EXTERNAL_STORAGE          = 1ULL << 18,
+        PUBLIC_FLAG_SUPPORTS_XLARGE_SCREENS   = 1ULL << 19,
+        PUBLIC_FLAG_LARGE_HEAP                = 1ULL << 20,
+        PUBLIC_FLAG_STOPPED                   = 1ULL << 21,
+        PUBLIC_FLAG_SUPPORTS_RTL              = 1ULL << 22,
+        PUBLIC_FLAG_INSTALLED                 = 1ULL << 23,
+        PUBLIC_FLAG_IS_DATA_ONLY              = 1ULL << 24,
+        PUBLIC_FLAG_IS_GAME                   = 1ULL << 25,
+        PUBLIC_FLAG_FULL_BACKUP_ONLY          = 1ULL << 26,
+        PUBLIC_FLAG_USES_CLEARTEXT_TRAFFIC    = 1ULL << 27,
+        PUBLIC_FLAG_EXTRACT_NATIVE_LIBS       = 1ULL << 28,
+        PUBLIC_FLAG_HARDWARE_ACCELERATED      = 1ULL << 29,
+        // No 1ULL << 30
+        PUBLIC_FLAG_MULTIARCH                 = 1ULL << 31
+    };
+
+    enum PrivateFlags : uint64_t {
+        PRIVATE_FLAG_HIDDEN          = 1ULL << 0,
+        PRIVATE_FLAG_CANT_SAVE_STATE = 1ULL << 1,
+        PRIVATE_FLAG_FORWARD_LOCK    = 1ULL << 2,
+        PRIVATE_FLAG_PRIVILEGED      = 1ULL << 3,
+        PRIVATE_FLAG_HAS_DOMAIN_URLS = 1ULL << 4
+    };
+
     std::string name;                   // PackageSetting.name
     std::string real_name;              // PackageSetting.realName
     std::string code_path;              // PackageSetting.codePathString
@@ -76,7 +119,11 @@ public:
     std::string primary_cpu_abi;        // PackageSetting.primaryCpuAbiString
     std::string secondary_cpu_abi;      // PackageSetting.secondaryCpuAbiString
     std::string cpu_abi_override;       // PackageSetting.cpuAbiOverride
+    // Android <6.0
     Flags pkg_flags;                    // PackageSetting.pkgFlags
+    // Android >=6.0
+    PublicFlags pkg_public_flags;       // PackageSetting.pkgFlags
+    PrivateFlags pkg_private_flags;     // PackageSetting.pkgPrivateFlags
     // Timestamps are in milliseconds epoch/unix time
     uint64_t timestamp;                 // PackageSetting.timeStamp
     uint64_t first_install_time;        // PackageSetting.firstInstallTime

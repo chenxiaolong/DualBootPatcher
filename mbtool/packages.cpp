@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -37,6 +37,7 @@ namespace mb
 static const char *TAG_CERT                  = "cert";
 static const char *TAG_DATABASE_VERSION      = "database-version";
 static const char *TAG_DEFINED_KEYSET        = "defined-keyset";
+static const char *TAG_DOMAIN_VERIFICATION   = "domain-verification";
 static const char *TAG_KEYSET_SETTINGS       = "keyset-settings";
 static const char *TAG_LAST_PLATFORM_VERSION = "last-platform-version";
 static const char *TAG_PACKAGE               = "package";
@@ -51,6 +52,7 @@ static const char *TAG_SIGNING_KEYSET        = "signing-keyset";
 static const char *TAG_SIGS                  = "sigs";
 static const char *TAG_UPDATED_PACKAGE       = "updated-package";
 static const char *TAG_UPGRADE_KEYSET        = "upgrade-keyset";
+static const char *TAG_VERSION               = "version";
 
 static const char *ATTR_CODE_PATH            = "codePath";
 static const char *ATTR_CPU_ABI_OVERRIDE     = "cpuAbiOverride";
@@ -64,6 +66,8 @@ static const char *ATTR_KEY                  = "key";
 static const char *ATTR_NAME                 = "name";
 static const char *ATTR_NATIVE_LIBRARY_PATH  = "nativeLibraryPath";
 static const char *ATTR_PRIMARY_CPU_ABI      = "primaryCpuAbi";
+static const char *ATTR_PRIVATE_FLAGS        = "privateFlags";
+static const char *ATTR_PUBLIC_FLAGS         = "publicFlags";
 static const char *ATTR_REAL_NAME            = "realName";
 static const char *ATTR_RESOURCE_PATH        = "resourcePath";
 static const char *ATTR_SECONDARY_CPU_ABI    = "secondaryCpuAbi";
@@ -101,6 +105,8 @@ Package::Package() :
         secondary_cpu_abi(),
         cpu_abi_override(),
         pkg_flags(static_cast<Flags>(0)),
+        pkg_public_flags(static_cast<PublicFlags>(0)),
+        pkg_private_flags(static_cast<PrivateFlags>(0)),
         timestamp(0),
         first_install_time(0),
         last_update_time(0),
@@ -222,6 +228,82 @@ void Package::dump()
         DUMP_FLAG(FLAG_PRIVILEGED);
     if (pkg_flags & Package::FLAG_MULTIARCH)
         DUMP_FLAG(FLAG_MULTIARCH);
+
+    LOGD(fmt_hex, "Public flags:", static_cast<uint64_t>(pkg_public_flags));
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM)
+        DUMP_FLAG(PUBLIC_FLAG_SYSTEM);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_DEBUGGABLE)
+        DUMP_FLAG(PUBLIC_FLAG_DEBUGGABLE);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_HAS_CODE)
+        DUMP_FLAG(PUBLIC_FLAG_HAS_CODE);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_PERSISTENT)
+        DUMP_FLAG(PUBLIC_FLAG_PERSISTENT);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_FACTORY_TEST)
+        DUMP_FLAG(PUBLIC_FLAG_FACTORY_TEST);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_ALLOW_TASK_REPARENTING)
+        DUMP_FLAG(PUBLIC_FLAG_ALLOW_TASK_REPARENTING);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_ALLOW_CLEAR_USER_DATA)
+        DUMP_FLAG(PUBLIC_FLAG_ALLOW_CLEAR_USER_DATA);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_UPDATED_SYSTEM_APP)
+        DUMP_FLAG(PUBLIC_FLAG_UPDATED_SYSTEM_APP);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_TEST_ONLY)
+        DUMP_FLAG(PUBLIC_FLAG_TEST_ONLY);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_SMALL_SCREENS)
+        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_SMALL_SCREENS);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_NORMAL_SCREENS)
+        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_NORMAL_SCREENS);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_LARGE_SCREENS)
+        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_LARGE_SCREENS);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_RESIZEABLE_FOR_SCREENS)
+        DUMP_FLAG(PUBLIC_FLAG_RESIZEABLE_FOR_SCREENS);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_SCREEN_DENSITIES)
+        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_SCREEN_DENSITIES);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_VM_SAFE_MODE)
+        DUMP_FLAG(PUBLIC_FLAG_VM_SAFE_MODE);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_ALLOW_BACKUP)
+        DUMP_FLAG(PUBLIC_FLAG_ALLOW_BACKUP);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_KILL_AFTER_RESTORE)
+        DUMP_FLAG(PUBLIC_FLAG_KILL_AFTER_RESTORE);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_RESTORE_ANY_VERSION)
+        DUMP_FLAG(PUBLIC_FLAG_RESTORE_ANY_VERSION);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_EXTERNAL_STORAGE)
+        DUMP_FLAG(PUBLIC_FLAG_EXTERNAL_STORAGE);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_XLARGE_SCREENS)
+        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_XLARGE_SCREENS);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_LARGE_HEAP)
+        DUMP_FLAG(PUBLIC_FLAG_LARGE_HEAP);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_STOPPED)
+        DUMP_FLAG(PUBLIC_FLAG_STOPPED);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_RTL)
+        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_RTL);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_INSTALLED)
+        DUMP_FLAG(PUBLIC_FLAG_INSTALLED);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_IS_DATA_ONLY)
+        DUMP_FLAG(PUBLIC_FLAG_IS_DATA_ONLY);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_IS_GAME)
+        DUMP_FLAG(PUBLIC_FLAG_IS_GAME);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_FULL_BACKUP_ONLY)
+        DUMP_FLAG(PUBLIC_FLAG_FULL_BACKUP_ONLY);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_USES_CLEARTEXT_TRAFFIC)
+        DUMP_FLAG(PUBLIC_FLAG_USES_CLEARTEXT_TRAFFIC);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_EXTRACT_NATIVE_LIBS)
+        DUMP_FLAG(PUBLIC_FLAG_EXTRACT_NATIVE_LIBS);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_HARDWARE_ACCELERATED)
+        DUMP_FLAG(PUBLIC_FLAG_HARDWARE_ACCELERATED);
+    if (pkg_public_flags & Package::PUBLIC_FLAG_MULTIARCH)
+        DUMP_FLAG(PUBLIC_FLAG_MULTIARCH);
+
+    LOGD(fmt_hex, "Private flags:", static_cast<uint64_t>(pkg_private_flags));
+    if (pkg_private_flags & Package::PRIVATE_FLAG_HIDDEN)
+        DUMP_FLAG(PRIVATE_FLAG_HIDDEN);
+    if (pkg_private_flags & Package::PRIVATE_FLAG_CANT_SAVE_STATE)
+        DUMP_FLAG(PRIVATE_FLAG_CANT_SAVE_STATE);
+    if (pkg_private_flags & Package::PRIVATE_FLAG_FORWARD_LOCK)
+        DUMP_FLAG(PRIVATE_FLAG_FORWARD_LOCK);
+    if (pkg_private_flags & Package::PRIVATE_FLAG_PRIVILEGED)
+        DUMP_FLAG(PRIVATE_FLAG_PRIVILEGED);
+    if (pkg_private_flags & Package::PRIVATE_FLAG_HAS_DOMAIN_URLS)
+        DUMP_FLAG(PRIVATE_FLAG_HAS_DOMAIN_URLS);
 
     if (timestamp > 0)
         LOGD(fmt_string, "Timestamp:", time_to_string(timestamp));
@@ -363,6 +445,12 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         } else if (strcmp(name, ATTR_FLAGS) == 0) {
             pkg->pkg_flags = static_cast<Package::Flags>(
                     strtoll(value, nullptr, 10));
+        } else if (strcmp(name, ATTR_PUBLIC_FLAGS) == 0) {
+            pkg->pkg_public_flags = static_cast<Package::PublicFlags>(
+                    strtoll(value, nullptr, 10));
+        } else if (strcmp(name, ATTR_PRIVATE_FLAGS) == 0) {
+            pkg->pkg_private_flags = static_cast<Package::PrivateFlags>(
+                    strtoll(value, nullptr, 10));
         } else if (strcmp(name, ATTR_FT) == 0) {
             pkg->timestamp = strtoull(value, nullptr, 16);
         } else if (strcmp(name, ATTR_INSTALL_STATUS) == 0) {
@@ -414,6 +502,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         if (strcmp(cur_node.name(), TAG_PACKAGE) == 0) {
             LOGW("Nested <%s> is not allowed", TAG_PACKAGE);
         } else if (strcmp(cur_node.name(), TAG_DEFINED_KEYSET) == 0
+                || strcmp(cur_node.name(), TAG_DOMAIN_VERIFICATION) == 0
                 || strcmp(cur_node.name(), TAG_PERMS) == 0
                 || strcmp(cur_node.name(), TAG_PROPER_SIGNING_KEYSET) == 0
                 || strcmp(cur_node.name(), TAG_SIGNING_KEYSET) == 0
@@ -455,7 +544,8 @@ static bool parse_tag_packages(pugi::xml_node node, Packages *pkgs)
                 || strcmp(cur_node.name(), TAG_PERMISSIONS) == 0
                 || strcmp(cur_node.name(), TAG_RENAMED_PACKAGE) == 0
                 || strcmp(cur_node.name(), TAG_SHARED_USER) == 0
-                || strcmp(cur_node.name(), TAG_UPDATED_PACKAGE) == 0) {
+                || strcmp(cur_node.name(), TAG_UPDATED_PACKAGE) == 0
+                || strcmp(cur_node.name(), TAG_VERSION) == 0) {
             // Ignore
         } else {
             LOGW("Unrecognized <%s> within <%s>", cur_node.name(), TAG_PACKAGES);
