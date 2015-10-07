@@ -66,6 +66,13 @@ public:
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
 #endif
 
+    void addSamsungDevices();
+    void addLenovoDevices();
+    void addLgDevices();
+    void addMotorolaDevices();
+    void addNexusDevices();
+    void addOnePlusDevices();
+    void addSonyDevices();
     void loadDefaultDevices();
 };
 /*! \endcond */
@@ -192,10 +199,6 @@ std::vector<Device *> PatcherConfig::devices() const
     return m_impl->devices;
 }
 
-void PatcherConfig::Impl::loadDefaultDevices()
-{
-    Device *device;
-
 #define BOOTDEVICE_BASE_DIR     "/dev/block/bootdevice/by-name"
 #define BOOTDEVICE_BOOT         BOOTDEVICE_BASE_DIR "/boot"
 #define BOOTDEVICE_CACHE        BOOTDEVICE_BASE_DIR "/cache"
@@ -267,6 +270,10 @@ void PatcherConfig::Impl::loadDefaultDevices()
 #define TEGRA3_RECOVERY         TEGRA3_BASE_DIR "/SOS"
 #define TEGRA3_SYSTEM           TEGRA3_BASE_DIR "/APP"
 #define TEGRA3_USERDATA         TEGRA3_BASE_DIR "/UDA"
+
+void PatcherConfig::Impl::addSamsungDevices()
+{
+    Device *device;
 
     // Samsung Galaxy S 3
     device = new Device();
@@ -355,7 +362,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
 
-    // Samsung Galaxy S 6 Reg./Edge
+    // Samsung Galaxy S 6 Flat/Edge
     device = new Device();
     device->setId("zerolte");
     device->setCodenames({
@@ -364,7 +371,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
         // Edge variant
         "zerolte", "zeroltebmc", "zeroltetmo", "zeroltexx"
     });
-    device->setName("Samsung Galaxy S 6 Reg./Edge");
+    device->setName("Samsung Galaxy S 6 Flat/Edge");
     device->setArchitecture("arm64-v8a");
     device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
     device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda15" });
@@ -375,7 +382,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setExtraBlockDevs({ ZERO_RADIO });
     devices.push_back(device);
 
-    // Samsung Galaxy S 6 Reg./Edge (Sprint)
+    // Samsung Galaxy S 6 Flat/Edge (Sprint)
     device = new Device();
     device->setId("zeroltespr");
     device->setCodenames({
@@ -384,7 +391,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
         // Edge variant
         "zeroltespr"
     });
-    device->setName("Samsung Galaxy S 6 Reg./Edge (Sprint)");
+    device->setName("Samsung Galaxy S 6 Flat/Edge (Sprint)");
     device->setArchitecture("arm64-v8a");
     device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
     device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda18" });
@@ -552,63 +559,30 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices.push_back(device);
+}
 
-    // Google/LG Nexus 5
-    device = new Device();
-    device->setId("hammerhead");
-    device->setCodenames({ "hammerhead" });
-    device->setName("Google/LG Nexus 5");
-    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p25" });
-    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p27" });
-    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
-    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p19" });
-    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
-                                QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
-    devices.push_back(device);
+void PatcherConfig::Impl::addLenovoDevices()
+{
+    Device *device;
 
-    // Google/ASUS Nexus 7 (2012 Wifi)
+    // Lenovo K3 Note
     device = new Device();
-    device->setId("grouper");
-    device->setCodenames({ "grouper" });
-    device->setName("Google/ASUS Nexus 7 (2012 Wifi)");
-    device->setBlockDevBaseDirs({ TEGRA3_BASE_DIR });
-    device->setSystemBlockDevs({ TEGRA3_SYSTEM, "/dev/block/mmcblk0p3" });
-    device->setCacheBlockDevs({ TEGRA3_CACHE, "/dev/block/mmcblk0p4" });
-    device->setDataBlockDevs({ TEGRA3_USERDATA, "/dev/block/mmcblk0p9" });
-    device->setBootBlockDevs({ TEGRA3_BOOT, "/dev/block/mmcblk0p2" });
-    device->setRecoveryBlockDevs({ TEGRA3_RECOVERY, "/dev/block/mmcblk0p1" });
+    device->setId("k50");
+    device->setArchitecture("arm64-v8a");
+    device->setCodenames({ "K50a40", "K50t5", "aio_otfp" });
+    device->setName("Lenovo K3 Note");
+    device->setBlockDevBaseDirs({ MTK_BASE_DIR });
+    device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p17" });
+    device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p18" });
+    device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p19" });
+    device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
     devices.push_back(device);
+}
 
-    // Google/ASUS Nexus 7 (2013)
-    device = new Device();
-    device->setId("flo");
-    device->setCodenames({ "flo" });
-    device->setName("Google/ASUS Nexus 7 (2013)");
-    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
-    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p23" });
-    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p30" });
-    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
-    devices.push_back(device);
-
-    // OnePlus One
-    device = new Device();
-    device->setId("bacon");
-    device->setCodenames({ "bacon", "A0001" });
-    device->setName("OnePlus One");
-    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
-    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p16" });
-    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
-    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({
-        QCOM_RECOVERY, QCOM_TZ,
-        "/dev/block/mmcblk0p8" // tz
-    });
-    devices.push_back(device);
+void PatcherConfig::Impl::addLgDevices()
+{
+    Device *device;
 
     // LG G2
     device = new Device();
@@ -671,20 +645,11 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
                                    "/dev/block/mmcblk0p39" });
     devices.push_back(device);
+}
 
-    // Lenovo K3 Note
-    device = new Device();
-    device->setId("k50");
-    device->setArchitecture("arm64-v8a");
-    device->setCodenames({ "K50a40", "K50t5", "aio_otfp" });
-    device->setName("Lenovo K3 Note");
-    device->setBlockDevBaseDirs({ MTK_BASE_DIR });
-    device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p17" });
-    device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p18" });
-    device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p19" });
-    device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
-    devices.push_back(device);
+void PatcherConfig::Impl::addMotorolaDevices()
+{
+    Device *device;
 
     // Motorola Moto G (2013)
     device = new Device();
@@ -728,6 +693,78 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p37" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p35" });
     devices.push_back(device);
+}
+
+void PatcherConfig::Impl::addNexusDevices()
+{
+    Device *device;
+
+    // Google/LG Nexus 5
+    device = new Device();
+    device->setId("hammerhead");
+    device->setCodenames({ "hammerhead" });
+    device->setName("Google/LG Nexus 5");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p25" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p27" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p19" });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
+                                QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    devices.push_back(device);
+
+    // Google/ASUS Nexus 7 (2012 Wifi)
+    device = new Device();
+    device->setId("grouper");
+    device->setCodenames({ "grouper" });
+    device->setName("Google/ASUS Nexus 7 (2012 Wifi)");
+    device->setBlockDevBaseDirs({ TEGRA3_BASE_DIR });
+    device->setSystemBlockDevs({ TEGRA3_SYSTEM, "/dev/block/mmcblk0p3" });
+    device->setCacheBlockDevs({ TEGRA3_CACHE, "/dev/block/mmcblk0p4" });
+    device->setDataBlockDevs({ TEGRA3_USERDATA, "/dev/block/mmcblk0p9" });
+    device->setBootBlockDevs({ TEGRA3_BOOT, "/dev/block/mmcblk0p2" });
+    device->setRecoveryBlockDevs({ TEGRA3_RECOVERY, "/dev/block/mmcblk0p1" });
+    devices.push_back(device);
+
+    // Google/ASUS Nexus 7 (2013 Wifi)
+    device = new Device();
+    device->setId("flo");
+    device->setCodenames({ "flo" });
+    device->setName("Google/ASUS Nexus 7 (2013 Wifi)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p30" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    devices.push_back(device);
+}
+
+void PatcherConfig::Impl::addOnePlusDevices()
+{
+    Device *device;
+
+    // OnePlus One
+    device = new Device();
+    device->setId("bacon");
+    device->setCodenames({ "bacon", "A0001" });
+    device->setName("OnePlus One");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({
+        QCOM_RECOVERY, QCOM_TZ,
+        "/dev/block/mmcblk0p8" // tz
+    });
+    devices.push_back(device);
+}
+
+void PatcherConfig::Impl::addSonyDevices()
+{
+    Device *device;
 
     // Sony Xperia Sola
     device = new Device();
@@ -739,6 +776,17 @@ void PatcherConfig::Impl::loadDefaultDevices()
     device->setDataBlockDevs({ "/dev/block/mmcblk0p11" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
     devices.push_back(device);
+}
+
+void PatcherConfig::Impl::loadDefaultDevices()
+{
+    addSamsungDevices();
+    addLenovoDevices();
+    addLgDevices();
+    addMotorolaDevices();
+    addNexusDevices();
+    addOnePlusDevices();
+    addSonyDevices();
 }
 
 #ifndef LIBMBP_MINI
