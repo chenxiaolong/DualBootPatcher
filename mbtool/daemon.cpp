@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -65,6 +65,8 @@
 #include "protocol/copy_generated.h"
 #include "protocol/chmod_generated.h"
 #include "protocol/wipe_rom_generated.h"
+#include "protocol/selinux_get_label_generated.h"
+#include "protocol/selinux_set_label_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
 
@@ -556,6 +558,80 @@ static bool v2_wipe_rom(int fd, const v2::Request *msg)
     return v2_send_response(fd, builder);
 }
 
+static bool v2_selinux_get_label(int fd, const v2::Request *msg)
+{
+    auto request = msg->selinux_get_label_request();
+    if (!request || !request->path()) {
+        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
+    }
+
+    std::string label;
+    bool ret;
+    if (request->follow_symlinks()) {
+        ret = util::selinux_get_context(request->path()->c_str(), &label);
+    } else {
+        ret = util::selinux_lget_context(request->path()->c_str(), &label);
+    }
+
+    fb::FlatBufferBuilder builder;
+
+    fb::Offset<v2::SELinuxGetLabelResponse> response;
+
+    if (!ret) {
+        auto error = builder.CreateString(strerror(errno));
+        response = v2::CreateSELinuxGetLabelResponse(
+                builder, false, 0, error);
+    } else {
+        auto fb_label = builder.CreateString(label);
+        response = v2::CreateSELinuxGetLabelResponse(
+                builder, true, fb_label, 0);
+    }
+
+    // Wrap response
+    v2::ResponseBuilder rb(builder);
+    rb.add_type(v2::ResponseType_SELINUX_GET_LABEL);
+    rb.add_selinux_get_label_response(response);
+    builder.Finish(rb.Finish());
+
+    return v2_send_response(fd, builder);
+}
+
+static bool v2_selinux_set_label(int fd, const v2::Request *msg)
+{
+    auto request = msg->selinux_set_label_request();
+    if (!request || !request->path()) {
+        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
+    }
+
+    bool ret;
+    if (request->follow_symlinks()) {
+        ret = util::selinux_set_context(request->path()->c_str(),
+                                        request->label()->c_str());
+    } else {
+        ret = util::selinux_lset_context(request->path()->c_str(),
+                                         request->label()->c_str());
+    }
+
+    fb::FlatBufferBuilder builder;
+
+    fb::Offset<v2::SELinuxSetLabelResponse> response;
+
+    if (!ret) {
+        auto error = builder.CreateString(strerror(errno));
+        response = v2::CreateSELinuxSetLabelResponse(builder, false, error);
+    } else {
+        response = v2::CreateSELinuxSetLabelResponse(builder, true);
+    }
+
+    // Wrap response
+    v2::ResponseBuilder rb(builder);
+    rb.add_type(v2::ResponseType_SELINUX_SET_LABEL);
+    rb.add_selinux_set_label_response(response);
+    builder.Finish(rb.Finish());
+
+    return v2_send_response(fd, builder);
+}
+
 static bool connection_version_2(int fd)
 {
     std::string command;
@@ -600,6 +676,10 @@ static bool connection_version_2(int fd)
             ret = v2_chmod(fd, request);
         } else if (request->type() == v2::RequestType_WIPE_ROM) {
             ret = v2_wipe_rom(fd, request);
+        } else if (request->type() == v2::RequestType_SELINUX_GET_LABEL) {
+            ret = v2_selinux_get_label(fd, request);
+        } else if (request->type() == v2::RequestType_SELINUX_SET_LABEL) {
+            ret = v2_selinux_set_label(fd, request);
         } else {
             // Invalid command; allow further commands
             ret = v2_send_generic_response(fd, v2::ResponseType_UNSUPPORTED);
