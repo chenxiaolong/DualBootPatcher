@@ -64,6 +64,10 @@ import mbtool.daemon.v2.RequestType;
 import mbtool.daemon.v2.Response;
 import mbtool.daemon.v2.ResponseType;
 import mbtool.daemon.v2.Rom;
+import mbtool.daemon.v2.SELinuxGetLabelRequest;
+import mbtool.daemon.v2.SELinuxGetLabelResponse;
+import mbtool.daemon.v2.SELinuxSetLabelRequest;
+import mbtool.daemon.v2.SELinuxSetLabelResponse;
 import mbtool.daemon.v2.SetKernelRequest;
 import mbtool.daemon.v2.SetKernelResponse;
 import mbtool.daemon.v2.SwitchRomRequest;
@@ -789,6 +793,105 @@ public class MbtoolSocket {
         }
     }
 
+    /**
+     * Get the SELinux label of a path.
+     *
+     * NOTE: If false is returned, there is no way of determining the cause of failure
+     *       programmatically. However, mbtool will likely print debugging information (errno, etc.)
+     *       to the logcat for manual reviewing.
+     *
+     * @param context Application context
+     * @param path Absolute path
+     * @param followSymlinks Whether to follow symlinks
+     * @return SELinux label if it was successfully retrieved. False, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    public String selinuxGetLabel(Context context, String path,
+                                  boolean followSymlinks) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbPath = builder.createString(path);
+            SELinuxGetLabelRequest.startSELinuxGetLabelRequest(builder);
+            SELinuxGetLabelRequest.addPath(builder, fbPath);
+            SELinuxGetLabelRequest.addFollowSymlinks(builder, followSymlinks);
+            int request = SELinuxGetLabelRequest.endSELinuxGetLabelRequest(builder);
+
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.SELINUX_GET_LABEL);
+            Request.addSelinuxGetLabelRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.SELINUX_GET_LABEL);
+            SELinuxGetLabelResponse response = fbresponse.selinuxGetLabelResponse();
+
+            if (!response.success()) {
+                Log.e(TAG, "Failed to get SELinux label for " + path + ": " + response.errorMsg());
+                return null;
+            }
+
+            return response.label();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    /**
+     * Set the SELinux label for a path.
+     *
+     * NOTE: If false is returned, there is no way of determining the cause of failure
+     *       programmatically. However, mbtool will likely print debugging information (errno, etc.)
+     *       to the logcat for manual reviewing.
+     *
+     * @param context Application context
+     * @param path Absolute path
+     * @param label SELinux label
+     * @param followSymlinks Whether to follow symlinks
+     * @return True if the SELinux label was successfully set. False, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    public boolean selinuxSetLabel(Context context, String path, String label,
+                                   boolean followSymlinks) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbPath = builder.createString(path);
+            int fbLabel = builder.createString(label);
+            SELinuxSetLabelRequest.startSELinuxSetLabelRequest(builder);
+            SELinuxSetLabelRequest.addPath(builder, fbPath);
+            SELinuxSetLabelRequest.addLabel(builder, fbLabel);
+            SELinuxSetLabelRequest.addFollowSymlinks(builder, followSymlinks);
+            int request = SELinuxSetLabelRequest.endSELinuxSetLabelRequest(builder);
+
+            // Wrap request
+            Request.startRequest(builder);
+            Request.addType(builder, RequestType.SELINUX_SET_LABEL);
+            Request.addSelinuxSetLabelRequest(builder, request);
+            builder.finish(Request.endRequest(builder));
+
+            // Send request
+            Response fbresponse = sendRequest(builder, ResponseType.SELINUX_SET_LABEL);
+            SELinuxSetLabelResponse response = fbresponse.selinuxSetLabelResponse();
+
+            if (!response.success()) {
+                Log.e(TAG, "Failed to set SELinux label for " + path + ": " + response.errorMsg());
+                return false;
+            }
+
+            return true;
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
     // Private helper functions
 
     private Response sendRequest(FlatBufferBuilder builder, short expected) throws IOException {
@@ -842,6 +945,12 @@ public class MbtoolSocket {
         } else if (response.type() == ResponseType.WIPE_ROM
                 && response.wipeRomResponse() == null) {
             throw new IOException("null WIPE_ROM response");
+        } else if (response.type() == ResponseType.SELINUX_GET_LABEL
+                && response.selinuxGetLabelResponse() == null) {
+            throw new IOException("null SELINUX_GET_LABEL response");
+        } else if (response.type() == ResponseType.SELINUX_SET_LABEL
+                && response.selinuxSetLabelResponse() == null) {
+            throw new IOException("null SELINUX_SET_LABEL response");
         }
 
         return response;
