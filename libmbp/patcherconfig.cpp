@@ -495,6 +495,20 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ TRELTE_RADIO, TRELTE_CDMA_RADIO });
     devices.push_back(device);
 
+    // Samsung Galaxy Note 10.1 (2014 Edition)
+    device = new Device();
+    device->setId("lt03wifi");
+    device->setCodenames({ "lt03wifi", "lt03wifiue" });
+    device->setName("Samsung Galaxy Note 10.1 (2014 Edition)");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
+    devices.push_back(device);
+
     // Samsung Galaxy Mega 6.3 (Intl)
     device = new Device();
     device->setId("melius_intl");
