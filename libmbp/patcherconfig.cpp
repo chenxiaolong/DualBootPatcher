@@ -713,6 +713,19 @@ void PatcherConfig::Impl::addNexusDevices()
 {
     Device *device;
 
+    // Google/LG Nexus 4
+    device = new Device();
+    device->setId("mako");
+    device->setCodenames({ "mako" });
+    device->setName("Google/LG Nexus 4");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p22" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p6" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p7" });
+    devices.push_back(device);
+
     // Google/LG Nexus 5
     device = new Device();
     device->setId("hammerhead");
