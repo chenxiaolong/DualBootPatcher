@@ -769,10 +769,27 @@ void PatcherConfig::Impl::addOnePlusDevices()
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p16" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
-    device->setRecoveryBlockDevs({
-        QCOM_RECOVERY, QCOM_TZ,
-        "/dev/block/mmcblk0p8" // tz
-    });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setExtraBlockDevs({ QCOM_TZ, "/dev/block/mmcblk0p8" });
+    devices.push_back(device);
+
+    // OnePlus Two
+    device = new Device();
+    device->setId("OnePlus2");
+    device->setArchitecture("arm64-v8a");
+    device->setCodenames({ "OnePlus2" });
+    device->setName("OnePlus Two");
+    device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SYSTEM, BOOTDEVICE_SYSTEM,
+                                 "/dev/block/mmcblk0p42" });
+    device->setCacheBlockDevs({ F9824900_CACHE, BOOTDEVICE_CACHE,
+                                "/dev/block/mmcblk0p41" });
+    device->setDataBlockDevs({ F9824900_USERDATA, BOOTDEVICE_USERDATA,
+                               "/dev/block/mmcblk0p43" });
+    device->setBootBlockDevs({ F9824900_BOOT, BOOTDEVICE_BOOT,
+                               "/dev/block/mmcblk0p35" });
+    device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
+                                   "/dev/block/mmcblk0p36" });
     devices.push_back(device);
 }
 
