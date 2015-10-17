@@ -496,6 +496,24 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ TRELTE_RADIO, TRELTE_CDMA_RADIO });
     devices.push_back(device);
 
+    // Samsung Galaxy Note 5 (Sprint)
+    device = new Device();
+    // TODO: May be merged with noblelte once I get the list of partitions from
+    //       someone with the device
+    device->setId("nobleltespr");
+    device->setCodenames({ "noblelte", "nobleltespr" });
+    device->setName("Samsung Galaxy Note 5 (Sprint)");
+    device->setArchitecture("arm64-v8a");
+    // Same named partitions as the S6 variants
+    device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
+    device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda16" });
+    device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda17" });
+    device->setDataBlockDevs({ ZERO_USERDATA, "/dev/block/sda19" });
+    device->setBootBlockDevs({ ZERO_BOOT, "/dev/block/sda7" });
+    device->setRecoveryBlockDevs({ ZERO_RECOVERY, "/dev/block/sda8" });
+    device->setExtraBlockDevs({ ZERO_RADIO });
+    devices.push_back(device);
+
     // Samsung Galaxy Note 10.1 (2014 Edition)
     device = new Device();
     device->setId("lt03wifi");
