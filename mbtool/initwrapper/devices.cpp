@@ -25,6 +25,7 @@
 #include <fnmatch.h>
 #include <poll.h>
 #include <pthread.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "initwrapper/cutils/uevent.h"
@@ -47,6 +48,7 @@
 
 static char bootdevice[32];
 static int device_fd = -1;
+static int pipe_fd[2];
 static volatile bool run_thread = true;
 static pthread_t thread;
 
@@ -772,16 +774,24 @@ static void coldboot(const char *path)
 
 void * device_thread(void *)
 {
-    struct pollfd ufd;
-    ufd.events = POLLIN;
-    ufd.fd = get_device_fd();
+    struct pollfd fds[2];
+    fds[0].fd = pipe_fd[0];
+    fds[0].events = POLLIN;
+    fds[1].fd = get_device_fd();
+    fds[1].events = POLLIN;
 
     while (run_thread) {
-        ufd.revents = 0;
-        if (poll(&ufd, 1, -1) <= 0) {
+        fds[0].revents = 0;
+        fds[1].revents = 0;
+
+        if (poll(fds, 2, -1) <= 0) {
             continue;
         }
-        if (ufd.revents & POLLIN) {
+        if (fds[0].revents & POLLIN) {
+            LOGV("Received notification to stop uevent thread");
+            break;
+        }
+        if (fds[1].revents & POLLIN) {
             handle_device_fd();
         }
     }
@@ -811,16 +821,21 @@ void device_init()
     coldboot("/sys/devices");
 
     run_thread = true;
+    pipe(pipe_fd);
     pthread_create(&thread, nullptr, &device_thread, nullptr);
 }
 
 void device_close()
 {
     run_thread = false;
-    close(device_fd);
-    device_fd = -1;
+    write(pipe_fd[1], "", 1);
 
     pthread_join(thread, nullptr);
+
+    close(device_fd);
+    device_fd = -1;
+    close(pipe_fd[0]);
+    close(pipe_fd[1]);
 }
 
 int get_device_fd()
