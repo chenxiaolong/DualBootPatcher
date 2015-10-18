@@ -116,69 +116,78 @@ Installer::~Installer()
 
 int log_mkdir(const char *pathname, mode_t mode)
 {
-    if (mkdir(pathname, mode) < 0) {
+    int ret = mkdir(pathname, mode);
+    if (ret < 0) {
         LOGE("Failed to create %s: %s", pathname, strerror(errno));
-        return false;
     }
-    return true;
+    return ret;
 }
 
 int log_mount(const char *source, const char *target, const char *fstype,
               long unsigned int mountflags, const void *data)
 {
-    if (mount(source, target, fstype, mountflags, data) < 0) {
+    int ret = mount(source, target, fstype, mountflags, data);
+    if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, fstype, target, strerror(errno));
-        return false;
     }
-    return true;
+    return ret;
+}
+
+int log_umount(const char *target)
+{
+    int ret = umount(target);
+    if (ret < 0) {
+        LOGE("Failed to unmount %s: %s", target, strerror(errno));
+    }
+    return ret;
 }
 
 int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 {
-    if (mknod(pathname, mode, dev) < 0) {
+    int ret = mknod(pathname, mode, dev);
+    if (ret < 0) {
         LOGE("Failed to create special file %s: %s", pathname, strerror(errno));
-        return false;
     }
-    return true;
+    return ret;
 }
 
 bool log_is_mounted(const std::string &mountpoint)
 {
-    if (!util::is_mounted(mountpoint)) {
+    bool ret = util::is_mounted(mountpoint);
+    if (!ret) {
         LOGE("%s is not mounted", mountpoint.c_str());
-        return false;
     }
-    return true;
+    return ret;
 }
 
 bool log_unmount_all(const std::string &dir)
 {
-    if (!util::unmount_all(dir)) {
+    bool ret = util::unmount_all(dir);
+    if (!ret) {
         LOGE("Failed to unmount all mountpoints within %s", dir.c_str());
-        return false;
     }
-    return true;
+    return ret;
 }
 
 bool log_delete_recursive(const std::string &path)
 {
-    if (!util::delete_recursive(path)) {
+    bool ret = util::delete_recursive(path);
+    if (!ret) {
         LOGE("Failed to recursively remove %s", path.c_str());
-        return false;
     }
-    return true;
+    return ret;
 }
 
 bool log_copy_dir(const std::string &source,
                   const std::string &target, int flags)
 {
-    if (!util::copy_dir(source, target, flags)) {
+    bool ret = util::copy_dir(source, target, flags);
+    if (!ret) {
         LOGE("Failed to copy contents of %s/ to %s/",
              source.c_str(), target.c_str());
-        return false;
     }
-    return true;
+    return ret;
 }
 
 
@@ -349,19 +358,19 @@ bool Installer::create_chroot()
 
 bool Installer::destroy_chroot() const
 {
-    umount(in_chroot("/system").c_str());
-    umount(in_chroot("/cache").c_str());
-    umount(in_chroot("/data").c_str());
+    log_umount(in_chroot("/system").c_str());
+    log_umount(in_chroot("/cache").c_str());
+    log_umount(in_chroot("/data").c_str());
 
-    umount(in_chroot("/mb/system.img").c_str());
+    log_umount(in_chroot("/mb/system.img").c_str());
 
-    umount(in_chroot("/dev/pts").c_str());
-    umount(in_chroot("/dev").c_str());
-    umount(in_chroot("/proc").c_str());
-    umount(in_chroot("/sys/fs/selinux").c_str());
-    umount(in_chroot("/sys").c_str());
-    umount(in_chroot("/tmp").c_str());
-    umount(in_chroot("/sbin").c_str());
+    log_umount(in_chroot("/dev/pts").c_str());
+    log_umount(in_chroot("/dev").c_str());
+    log_umount(in_chroot("/proc").c_str());
+    log_umount(in_chroot("/sys/fs/selinux").c_str());
+    log_umount(in_chroot("/sys").c_str());
+    log_umount(in_chroot("/tmp").c_str());
+    log_umount(in_chroot("/sbin").c_str());
 
     // Unmount everything previously mounted in the chroot
     if (!util::unmount_all(_chroot)) {
