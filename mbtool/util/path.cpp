@@ -185,5 +185,50 @@ std::string path_join(const std::vector<std::string> &components)
     return path;
 }
 
+/*!
+ * \brief Normalize path to remove '..' pieces
+ *
+ * This function will remove a '..' piece if any of the following conditions are
+ * met:
+ * - If the previous piece is the root directory '/', only the '..' piece is
+ *   removed as '..' is meaning less for the root directory (ie. '/' == '/..')
+ * - If the previous piece is not '..', then remove both the previous
+ *   piece and the '..' (eg. 'a/b/..' -> 'a')
+ *
+ * \note This function will not treat '.' pieces specially as they should have
+ *       been stripped out by \link util::path_split. If the path pieces are
+ *       manually created, take care to not add '.'. Otherwise, the result will
+ *       be incorrect. For example, '/usr/bin/./..' will become '/usr/bin'.
+ *
+ * \param components Pointer to list of path pieces
+ */
+void normalize_path(std::vector<std::string> *components)
+{
+    std::vector<std::string>::iterator prev_it;
+
+    for (auto it = components->begin(); it != components->end();) {
+        if (it != components->begin()) {
+            prev_it = it - 1;
+
+            // After the removal, it will point to the piece after '..'
+            if (*it == ".." && *prev_it != "..") {
+                // If previous directory is the root directory, then '..' is a
+                // noop, so just remove the '..'. Otherwise, remove the previous
+                // piece and the '..' piece.
+                if (prev_it->empty()) {
+                    it = components->erase(it);
+                } else {
+                    it = components->erase(prev_it);
+                    it = components->erase(it);
+                }
+            } else {
+                ++it;
+            }
+        } else {
+            ++it;
+        }
+    }
+}
+
 }
 }

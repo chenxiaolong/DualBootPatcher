@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -35,6 +35,7 @@ bool read_link(const std::string &path, std::string *out);
 bool inodes_equal(const std::string &path1, const std::string &path2);
 std::vector<std::string> path_split(const std::string &path);
 std::string path_join(const std::vector<std::string> &components);
+void normalize_path(std::vector<std::string> *components);
 
 }
 }
