@@ -2,6 +2,7 @@ THIRD_PARTY := @CMAKE_CURRENT_BINARY_DIR@
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
 LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
 LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
+LIBICONV_DIR := $(THIRD_PARTY)/android/libiconv/@LIBICONV_VER@
 LIBLZO2_DIR := $(THIRD_PARTY)/android/liblzo2
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 LIBLZMA_DIR := $(THIRD_PARTY)/android/liblzma
@@ -24,6 +25,12 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libarchive
 LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libiconv
+LOCAL_SRC_FILES := $(LIBICONV_DIR)/lib_$(TARGET_ARCH_ABI)/libiconv.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 
