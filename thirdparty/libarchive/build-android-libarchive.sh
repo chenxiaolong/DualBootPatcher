@@ -17,14 +17,15 @@
 
 set -e
 
-rel=r1
+rel=2
 
 xz_ver='5.2.1'
 lzo_ver='2.09'
 lz4_ver='r128'
+libiconv_ver='1.14-1'
 
 url='https://github.com/libarchive/libarchive.git'
-commit='0fae2fe8091d7c905fbae63e77e9c5a3dc63f11f'
+commit='567b37436642c344ecae1208f9d20885864986d1'
 
 if [ ! -f ../liblzma/liblzma-${xz_ver}_android.tar.bz2 ]; then
     echo "Please run thirdparty/liblzma/build-android-liblzma.sh first"
@@ -41,6 +42,11 @@ if [ ! -f ../lz4/liblz4-${lz4_ver}_android.tar.bz2 ]; then
     exit 1
 fi
 
+if [ ! -f ../libiconv/libiconv-${libiconv_ver}_android.tar.bz2 ]; then
+    echo "Please run thirdparty/libiconv/build-android-libiconv first"
+    exit 1
+fi
+
 mkdir -p liblzma/
 tar xvf ../liblzma/liblzma-${xz_ver}_android.tar.bz2 -C liblzma/
 
@@ -49,6 +55,9 @@ tar xvf ../lzo/liblzo2-${lzo_ver}_android.tar.bz2 -C liblzo2/
 
 mkdir -p liblz4/
 tar xvf ../lz4/liblz4-${lz4_ver}_android.tar.bz2 -C liblz4/
+
+mkdir -p libiconv/
+tar xvf ../libiconv/libiconv-${libiconv_ver}_android.tar.bz2 -C libiconv/
 
 mkdir -p libarchive/
 cd libarchive/
@@ -64,25 +73,28 @@ fi
 
 pushd libarchive
 git checkout ${commit}
-git am ../../0001-Android-build-fix.patch
-git am ../../0001-Change-statfs.f_flag-statfs.f_flags.patch
 ver=$(git describe --long | sed -E "s/^v//g;s/([^-]*-g)/r\1/;s/-/./g")
+git am ../../0001-Android-build-fix.patch
+git am ../../0002-Change-statfs.f_flag-statfs.f_flags.patch
+git am ../../0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
 popd
 
 if [ ! -f android.toolchain.cmake.orig ]; then
     wget 'https://github.com/taka-no-me/android-cmake/raw/master/android.toolchain.cmake' \
         -O android.toolchain.cmake.orig
-    # Hack to allow us to specify liblzma and lz4's path
-    sed '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}" "${LIBLZO2_PREFIX_PATH}" "${LIBLZ4_PREFIX_PATH}")/g' \
-        < android.toolchain.cmake.orig \
-        > android.toolchain.cmake
 fi
+
+# Hack to allow us to specify liblzma and lz4's path
+sed '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}" "${LIBLZO2_PREFIX_PATH}" "${LIBLZ4_PREFIX_PATH}" "${LIBICONV_PREFIX_PATH}")/g' \
+    < android.toolchain.cmake.orig \
+    > android.toolchain.cmake
 
 build() {
     local abi="${1}"
     local api="${2}"
     local toolchain="${3}"
 
+    rm -rf "build_${abi}"
     mkdir -p "build_${abi}"
     pushd "build_${abi}"
 
@@ -101,14 +113,21 @@ build() {
     ln -s "$(pwd)/../../liblz4/include" liblz4/include
     ln -s "$(pwd)/../../liblz4/lib_${abi}" liblz4/lib
 
+    rm -rf libiconv
+    mkdir libiconv
+    ln -s "$(pwd)/../../libiconv/include" libiconv/include
+    ln -s "$(pwd)/../../libiconv/lib_${abi}" libiconv/lib
+
     cmake ../libarchive \
         -DENABLE_TAR=OFF \
         -DENABLE_CPIO=OFF \
         -DENABLE_CAT=OFF \
         -DENABLE_TEST=OFF \
+        -DENABLE_ICONV=OFF `# At least until we need it` \
         -DLIBLZMA_PREFIX_PATH="$(pwd)/liblzma" \
         -DLIBLZO2_PREFIX_PATH="$(pwd)/liblzo2" \
         -DLIBLZ4_PREFIX_PATH="$(pwd)/liblz4" \
+        -DLIBICONV_PREFIX_PATH="$(pwd)/libiconv" \
         -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake \
         -DANDROID_ABI="${abi}" \
         -DANDROID_NATIVE_API_LEVEL="${api}" \
@@ -120,9 +139,9 @@ build() {
     popd
 }
 
-build armeabi-v7a android-17 arm-linux-androideabi-4.9
+build armeabi-v7a android-21 arm-linux-androideabi-4.9
 build arm64-v8a android-21 aarch64-linux-android-4.9
-build x86 android-17 x86-4.9
+build x86 android-21 x86-4.9
 build x86_64 android-21 x86_64-4.9
 
 
@@ -138,7 +157,7 @@ done
 
 curdir="$(pwd)"
 pushd "${outdir}"
-tar jcvf "${curdir}"/../libarchive-${ver}_${rel}_android.tar.bz2 \
+tar jcvf "${curdir}/../libarchive-${ver}-${rel}_android.tar.bz2" \
     lib_*/libarchive.a include/
 popd
 

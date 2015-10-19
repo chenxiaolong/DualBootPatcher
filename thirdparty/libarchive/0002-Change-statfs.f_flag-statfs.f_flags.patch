@@ -1,17 +1,17 @@
-From 00760cd7db62abc2335fe1c074300f4bb4a82e35 Mon Sep 17 00:00:00 2001
+From 657324f017dfdad4bf0db39f975f8fc2800b1bf8 Mon Sep 17 00:00:00 2001
 From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Sat, 15 Nov 2014 14:39:40 -0500
-Subject: [PATCH] Change statfs.f_flag -> statfs.f_flags
+Subject: [PATCH 2/3] Change statfs.f_flag -> statfs.f_flags
 
 ---
  libarchive/archive_read_disk_posix.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/libarchive/archive_read_disk_posix.c b/libarchive/archive_read_disk_posix.c
-index 059219b..cb52272 100644
+index 847852a..e53cd70 100644
 --- a/libarchive/archive_read_disk_posix.c
 +++ b/libarchive/archive_read_disk_posix.c
-@@ -1628,13 +1628,13 @@ setup_current_filesystem(struct archive_read_disk *a)
+@@ -1649,13 +1649,13 @@ setup_current_filesystem(struct archive_read_disk *a)
  		t->current_filesystem->incr_xfer_size = sfs.f_bsize;
  #endif
  	}
@@ -27,7 +27,7 @@ index 059219b..cb52272 100644
  		t->current_filesystem->noatime = 1;
  	else
  #endif
-@@ -1750,7 +1750,7 @@ setup_current_filesystem(struct archive_read_disk *a)
+@@ -1771,7 +1771,7 @@ setup_current_filesystem(struct archive_read_disk *a)
  	}
  
  #if defined(ST_NOATIME)
@@ -36,7 +36,7 @@ index 059219b..cb52272 100644
  		t->current_filesystem->noatime = 1;
  	else
  #endif
-@@ -1834,7 +1834,7 @@ setup_current_filesystem(struct archive_read_disk *a)
+@@ -1855,7 +1855,7 @@ setup_current_filesystem(struct archive_read_disk *a)
  	}
  
  #if defined(ST_NOATIME)
@@ -46,5 +46,5 @@ index 059219b..cb52272 100644
  	else
  #endif
 -- 
-2.1.3
+2.6.1
 
