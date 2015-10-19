@@ -116,6 +116,20 @@ bool inodes_equal(const std::string &path1, const std::string &path2)
     return sb1.st_dev == sb2.st_dev && sb1.st_ino == sb2.st_ino;
 }
 
+/*!
+ * \brief Split a path into pieces
+ *
+ * This function splits the path into pieces with the directory separator '/'
+ * being the delimiter. If the path is absolute (ie. begins with '/'), then the
+ * first piece will be empty. If a piece is equal to the current directory '.',
+ * then it is simply removed. If multiple directory separator characters are
+ * located next to one another (ie. 'a/////b'), they are treated as one
+ * directory separator (ie. becomes 'a/b').
+ *
+ * \param path Path to split
+ *
+ * \return Split pieces of the path
+ */
 std::vector<std::string> path_split(const std::string &path)
 {
     char *p;
@@ -132,13 +146,29 @@ std::vector<std::string> path_split(const std::string &path)
 
     p = strtok_r(copy.data(), "/", &save_ptr);
     while (p != nullptr) {
-        split.push_back(p);
+        // Ignore useless references to '.' in the path
+        if (strcmp(p, ".") != 0) {
+            split.push_back(p);
+        }
         p = strtok_r(nullptr, "/", &save_ptr);
     }
 
     return split;
 }
 
+/*!
+ * \brief Join path pieces into a path
+ *
+ * This function simply joins each piece with the directory separator character.
+ * If the first piece is empty, then the path is treated as an absolute path and
+ * a directory separator character will be placed at the beginning of the
+ * resulting path. If the pieces contain only a single empty piece, then the
+ * root directory '/' is returned.
+ *
+ * \param components Path pieces to join
+ *
+ * \return Joined path
+ */
 std::string path_join(const std::vector<std::string> &components)
 {
     std::string path;
