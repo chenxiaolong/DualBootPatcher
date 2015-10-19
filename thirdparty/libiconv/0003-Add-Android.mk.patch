@@ -1,0 +1,39 @@
+From 45b4eac05ecfdbd290bc382713f3f523f7b66284 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Mon, 19 Oct 2015 01:24:17 -0400
+Subject: [PATCH 3/3] Add Android.mk
+
+---
+ Android.mk | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+ create mode 100644 Android.mk
+
+diff --git a/Android.mk b/Android.mk
+new file mode 100644
+index 0000000..91ab22d
+--- /dev/null
++++ b/Android.mk
+@@ -0,0 +1,20 @@
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE := iconv
++LOCAL_CFLAGS := \
++	-DLIBDIR=\"/dummy\" \
++	-DBUILDING_LIBICONV \
++	-DIN_LIBRARY
++	#-Wno-multichar
++LOCAL_SRC_FILES := \
++	libcharset/lib/localcharset.c \
++	lib/iconv.c \
++	lib/relocatable.c
++LOCAL_C_INCLUDES += \
++	include \
++	libcharset \
++	lib \
++	libcharset/include \
++	srclib
++include $(BUILD_STATIC_LIBRARY)
+-- 
+2.6.1
+
