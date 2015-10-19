@@ -80,6 +80,35 @@ endif()
 
 
 ################################################################################
+# libiconv for Android
+################################################################################
+
+set(LIBICONV_VER "1.14-1")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/libiconv-${LIBICONV_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/libiconv-${LIBICONV_VER}_android.tar.bz2
+    EXPECTED_HASH MD5=3d582375226c15e689efe27d3120f750
+    EXPECTED_HASH SHA512=ea8482acb18983e655f7f42e3a8fd7e65ed44573a568ef3d272cf8a45cc2e482cbc2272136ae3996972f386656eb05c0ba6ac580639e718efa676f1b22e21660
+    TLS_VERIFY ON
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libiconv/${LIBICONV_VER})
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libiconv/${LIBICONV_VER}
+    )
+
+    message(STATUS "Extracting libiconv ${LIBICONV_VER} for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libiconv-${LIBICONV_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libiconv/${LIBICONV_VER}
+    )
+endif()
+
+
+################################################################################
 # liblzma for Android
 ################################################################################
 
@@ -349,3 +378,13 @@ endif()
 #     PATTERN e2fsck
 #     PATTERN resize2fs
 # )
+
+
+
+################################################################################
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+    @ONLY
+)
