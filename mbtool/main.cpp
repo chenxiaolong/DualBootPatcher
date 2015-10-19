@@ -19,6 +19,7 @@
 
 #include "main.h"
 
+#include <clocale>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -163,6 +164,10 @@ int main(int argc, char *argv[])
     main_argv0 = argv[0];
 
     umask(0);
+
+    if (!setlocale(LC_ALL, "C")) {
+        fprintf(stderr, "Failed to set default locale\n");
+    }
 
     char *no_multicall = getenv("MBTOOL_NO_MULTICALL");
     if (no_multicall && strcmp(no_multicall, "true") == 0) {
