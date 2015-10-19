@@ -230,5 +230,52 @@ void normalize_path(std::vector<std::string> *components)
     }
 }
 
+/*!
+ * \brief Get the relative path from a starting directory
+ *
+ * This function will get the relative path of \a path starting from \a start.
+ * Both \a path and \a start will be normalized before calculating the relative
+ * path. That way, paths containing '..' will be handled correctly. For example,
+ * calling relative_path("a/b/c/d", "a/b/../../..") will return "../a/b/c/d" as
+ * expected.
+ *
+ * \note This function does not traverse the filesystem at all. It works purely
+ *       on the given path strings.
+ *
+ * \warning The behavior is undefined if \a path is a relative path and \a start
+ *          is an absolute path or vice versa. When calling this function, both
+ *          \a path and \a start should be relative paths or both should be
+ *          absolute paths.
+ */
+std::string relative_path(const std::string &path,
+                          const std::string &start)
+{
+    std::vector<std::string> path_pieces(path_split(path));
+    std::vector<std::string> start_pieces(path_split(start));
+    std::vector<std::string> result_pieces;
+
+    normalize_path(&path_pieces);
+    normalize_path(&start_pieces);
+
+    // Find the number of common path segments
+    size_t common;
+    for (common = 0;
+            common < path_pieces.size() && common < start_pieces.size()
+            && path_pieces[common] == start_pieces[common];
+            ++common);
+
+    // Add '..' for the remaining path segments in 'start'
+    for (size_t i = common; i < start_pieces.size(); ++i) {
+        result_pieces.push_back("..");
+    }
+
+    // Add remaining path segments in 'path'
+    for (size_t i = common; i < path_pieces.size(); ++i) {
+        result_pieces.push_back(path_pieces[i]);
+    }
+
+    return path_join(result_pieces);
+}
+
 }
 }
