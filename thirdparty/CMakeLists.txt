@@ -54,27 +54,27 @@ install(
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.1.2.r538.ge3ad411_r1")
+set(LIBARCHIVE_VER "3.1.2.r599.g567b374-2")
 
 file(
     DOWNLOAD
     ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-    EXPECTED_HASH MD5=04d34e1326212134be46275be8306e81
-    EXPECTED_HASH SHA512=b94e72d45edffe7e482f2c5466638fc5bdef43cff28ccbd22fe534d786ad925e9b5cc61eb1cf01cc73d8259637f718b9badf31f99146111c3c56b941dba917ec
+    EXPECTED_HASH MD5=8920dd2188eecd8962926f205242be8f
+    EXPECTED_HASH SHA512=8160b96b40356bc0922abe84ff25fdd10a355313a3716c6b1ffacac466384fb9885b9017c7f7330d8c6a5a3e75f117f7ece92884e267115d6160e02cfe0a0f8d
     TLS_VERIFY ON
     SHOW_PROGRESS
 )
 
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive)
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive/${LIBARCHIVE_VER})
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive/${LIBARCHIVE_VER}
     )
 
-    message(STATUS "Extracting libarchive for Android ...")
+    message(STATUS "Extracting libarchive ${LIBARCHIVE_VER} for Android ...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive/${LIBARCHIVE_VER}
     )
 endif()
 
