@@ -1,7 +1,7 @@
 THIRD_PARTY := @CMAKE_CURRENT_BINARY_DIR@
 JANSSON_DIR := $(THIRD_PARTY)/android/jansson
 LIBSEPOL_DIR := $(THIRD_PARTY)/android/libsepol
-LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive
+LIBARCHIVE_DIR := $(THIRD_PARTY)/android/libarchive/@LIBARCHIVE_VER@
 LIBICONV_DIR := $(THIRD_PARTY)/android/libiconv/@LIBICONV_VER@
 LIBLZO2_DIR := $(THIRD_PARTY)/android/liblzo2
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
