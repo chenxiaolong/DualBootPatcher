@@ -5,14 +5,6 @@
 
 set(URL_BASE "https://snapshots.noobdev.io/misc/prebuilts")
 
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-    @ONLY
-)
-
-
 ################################################################################
 # fuse-exfat for Android
 ################################################################################
