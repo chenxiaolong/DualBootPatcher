@@ -136,7 +136,7 @@ mb_common_cflags += -DPUGIXML_NO_EXCEPTIONS \
 					-DPUGIXML_NO_STL -DPUGIXML_NO_XPATH
 
 ifeq ($(DEBUGGING),true)
-mb_common_cflags += -DMB_LIBC_DEBUG
+mb_common_cflags += -DDYNAMICALLY_LINKED
 endif
 
 ifeq ($(ALLOW_DEBUG_CERT),true)

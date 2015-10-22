@@ -32,6 +32,16 @@ namespace mb
 namespace util
 {
 
+// Wrappers around the libc functions that automatically dlopen libc.so
+int libc_system_property_get(const char *name, char *value);
+int libc_system_property_set(const char *key, const char *value);
+const prop_info *libc_system_property_find(const char *name);
+int libc_system_property_read(const prop_info *pi, char *name, char *value);
+const prop_info *libc_system_property_find_nth(unsigned n);
+int libc_system_property_foreach(
+        void (*propfn)(const prop_info *pi, void *cookie),
+        void *cookie);
+
 void get_property(const std::string &name,
                   std::string *value_out,
                   const std::string &default_value);

@@ -38,6 +38,8 @@
 
 #include "legacy_property_service.h"
 
+#include "util/properties.h"
+
 
 // NDK platform 21 no longer has <sys/atomics.h>
 extern "C" int
@@ -70,14 +72,14 @@ static void property_list_callback(const prop_info *pi, void *cookie)
     char value[PROP_VALUE_MAX];
     property_list_callback_data *data = (property_list_callback_data *) cookie;
 
-    __system_property_read(pi, name, value);
+    mb::util::libc_system_property_read(pi, name, value);
     data->fn(name, value, data->cookie);
 }
 
 static int property_list(propfn fn, void *cookie)
 {
     property_list_callback_data data = { fn, cookie };
-    return __system_property_foreach(property_list_callback, &data);
+    return mb::util::libc_system_property_foreach(property_list_callback, &data);
 }
 
 

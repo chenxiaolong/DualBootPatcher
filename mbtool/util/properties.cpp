@@ -24,6 +24,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include <sys/stat.h>
+
 #if __ANDROID_API__ >= 21
 #include <dlfcn.h>
 #endif
@@ -39,12 +41,19 @@ namespace util
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE*)> file_ptr;
 
-#ifdef MB_LIBC_DEBUG
-static const char *LIBC = nullptr;
+#if DYNAMICALLY_LINKED
+static const char *libc_path = nullptr;
+static void *libc_handle = nullptr;
+static void *SYMBOL__system_property_get = nullptr;
+static void *SYMBOL__system_property_set = nullptr;
+static void *SYMBOL__system_property_find = nullptr;
+static void *SYMBOL__system_property_read = nullptr;
+static void *SYMBOL__system_property_find_nth = nullptr;
+static void *SYMBOL__system_property_foreach = nullptr;
 
 static void detect_libc(void)
 {
-    if (LIBC) {
+    if (libc_path) {
         return;
     }
 
@@ -52,47 +61,178 @@ static void detect_libc(void)
     if (stat("/sbin/recovery", &sb) == 0) {
         if (stat("/sbin/libc.so", &sb) == 0) {
             // TWRP
-            LIBC = "/sbin/libc.so";
+            libc_path = "/sbin/libc.so";
         } else {
             // Custom libc.so if recovery is statically linked
-            LIBC = "/tmp/libc.so";
+            libc_path = "/tmp/libc.so";
         }
     } else {
-        LIBC = "/system/lib/libc.so";
+        libc_path = "/system/lib/libc.so";
+    }
+}
+
+static void *get_libc_handle(void)
+{
+    detect_libc();
+
+    void *handle = dlopen(libc_path, RTLD_LOCAL);
+    if (!handle) {
+        LOGE("%s: Failed to dlopen: %s", libc_path, dlerror());
+    }
+
+    return handle;
+}
+
+static void *get_libc_symbol(const char *name)
+{
+    if (!libc_handle) {
+        return nullptr;
+    }
+
+    void *symbol = dlsym(libc_handle, name);
+    if (!symbol) {
+        LOGE("Failed to dlsym %s: %s", name, dlerror());
+    }
+
+    return symbol;
+}
+
+static void dlopen_libc(void)
+{
+    if (libc_handle) {
+        return;
+    }
+
+    libc_handle = get_libc_handle();
+    if (!libc_handle) {
+        return;
+    }
+
+    SYMBOL__system_property_get = get_libc_symbol("__system_property_get");
+    SYMBOL__system_property_set = get_libc_symbol("__system_property_set");
+    SYMBOL__system_property_find = get_libc_symbol("__system_property_find");
+    SYMBOL__system_property_read = get_libc_symbol("__system_property_read");
+    SYMBOL__system_property_find_nth = get_libc_symbol("__system_property_find_nth");
+    SYMBOL__system_property_foreach = get_libc_symbol("__system_property_foreach");
+}
+
+__attribute__((unused))
+static void dlclose_libc(void)
+{
+    if (libc_handle) {
+        dlclose(libc_handle);
+        libc_handle = nullptr;
     }
 }
 #endif
+
+int libc_system_property_get(const char *name, char *value)
+{
+#if DYNAMICALLY_LINKED
+    dlopen_libc();
+    if (!SYMBOL__system_property_get) {
+        value[0] = '\0';
+        return 0;
+    }
+
+    auto __system_property_get =
+            reinterpret_cast<int (*)(const char *, char *)>(
+                    SYMBOL__system_property_get);
+#endif
+
+    return __system_property_get(name, value);
+}
+
+int libc_system_property_set(const char *key, const char *value)
+{
+#if DYNAMICALLY_LINKED
+    dlopen_libc();
+    if (!SYMBOL__system_property_set) {
+        return -1;
+    }
+
+    auto __system_property_set =
+            reinterpret_cast<int (*)(const char *, const char *)>(
+                    SYMBOL__system_property_set);
+#endif
+
+    return __system_property_set(key, value);
+}
+
+const prop_info *libc_system_property_find(const char *name)
+{
+#if DYNAMICALLY_LINKED
+    dlopen_libc();
+    if (!SYMBOL__system_property_find) {
+        return nullptr;
+    }
+
+    auto __system_property_find =
+            reinterpret_cast<const prop_info * (*)(const char *)>(
+                    SYMBOL__system_property_find);
+#endif
+
+    return __system_property_find(name);
+}
+
+int libc_system_property_read(const prop_info *pi, char *name, char *value)
+{
+#if DYNAMICALLY_LINKED
+    dlopen_libc();
+    if (!SYMBOL__system_property_read) {
+        name[0] = '\0';
+        value[0] = '\0';
+        return 0;
+    }
+
+    auto __system_property_read =
+            reinterpret_cast<int (*)(const prop_info *, char *, char *)>(
+                    SYMBOL__system_property_read);
+#endif
+
+    return __system_property_read(pi, name, value);
+}
+
+const prop_info *libc_system_property_find_nth(unsigned n)
+{
+#if DYNAMICALLY_LINKED
+    dlopen_libc();
+    if (!SYMBOL__system_property_find_nth) {
+        return nullptr;
+    }
+
+    auto __system_property_find_nth =
+            reinterpret_cast<const prop_info * (*)(unsigned)>(
+                    SYMBOL__system_property_find_nth);
+#endif
+
+    return __system_property_find_nth(n);
+}
+
+int libc_system_property_foreach(
+        void (*propfn)(const prop_info *pi, void *cookie),
+        void *cookie)
+{
+#if DYNAMICALLY_LINKED
+    dlopen_libc();
+    if (!SYMBOL__system_property_foreach) {
+        return -1;
+    }
+
+    auto __system_property_foreach =
+            reinterpret_cast<int (*)(void (*)(const prop_info *, void *), void*)>(
+                    SYMBOL__system_property_foreach);
+#endif
+
+    return __system_property_foreach(propfn, cookie);
+}
 
 void get_property(const std::string &name,
                   std::string *value_out,
                   const std::string &default_value)
 {
-#ifdef MB_LIBC_DEBUG
-    // __system_property_get is hidden on Android 5.0 for arm64-v8a and x86_64
-    // I can't seem to find anything explaining the reason... oh well.
-
-    // NOTE: This is disabled for now since we always link libc statically
-
-    detect_libc();
-
-    void *handle = dlopen(LIBC, RTLD_LOCAL);
-    if (!handle) {
-        LOGE("Failed to dlopen() %s: %s", LIBC, dlerror());
-        return;
-    }
-
-    auto __system_property_get =
-            reinterpret_cast<int (*)(const char *, char *)>(
-                    dlsym(handle, "__system_property_get"));
-#endif
-
     std::vector<char> value(MB_PROP_VALUE_MAX);
-    int len = __system_property_get(name.c_str(), value.data());
-
-#ifdef MB_LIBC_DEBUG
-    dlclose(handle);
-#endif
-
+    int len = libc_system_property_get(name.c_str(), value.data());
     if (len == 0) {
         *value_out = default_value;
     } else {
@@ -103,20 +243,6 @@ void get_property(const std::string &name,
 bool set_property(const std::string &name,
                   const std::string &value)
 {
-#ifdef MB_LIBC_DEBUG
-    detect_libc();
-
-    void *handle = dlopen(LIBC, RTLD_LOCAL);
-    if (!handle) {
-        LOGE("Failed to dlopen() %s: %s", LIBC, dlerror());
-        return false;
-    }
-
-    auto __system_property_set =
-            reinterpret_cast<int (*)(const char *, const char *)>(
-                    dlsym(handle, "__system_property_set"));
-#endif
-
     if (name.size() >= MB_PROP_NAME_MAX - 1) {
         return false;
     }
@@ -124,12 +250,7 @@ bool set_property(const std::string &name,
         return false;
     }
 
-    int ret = __system_property_set(name.c_str(), value.c_str());
-
-#ifdef MB_LIBC_DEBUG
-    dlclose(handle);
-#endif
-
+    int ret = libc_system_property_set(name.c_str(), value.c_str());
     return ret == 0;
 }
 
