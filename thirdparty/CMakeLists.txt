@@ -5,14 +5,6 @@
 
 set(URL_BASE "https://snapshots.noobdev.io/misc/prebuilts")
 
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-    @ONLY
-)
-
-
 ################################################################################
 # fuse-exfat for Android
 ################################################################################
@@ -54,27 +46,56 @@ install(
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.1.2.r538.ge3ad411_r1")
+set(LIBARCHIVE_VER "3.1.2.r599.g567b374-2")
 
 file(
     DOWNLOAD
     ${URL_BASE}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
     ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-    EXPECTED_HASH MD5=04d34e1326212134be46275be8306e81
-    EXPECTED_HASH SHA512=b94e72d45edffe7e482f2c5466638fc5bdef43cff28ccbd22fe534d786ad925e9b5cc61eb1cf01cc73d8259637f718b9badf31f99146111c3c56b941dba917ec
+    EXPECTED_HASH MD5=8920dd2188eecd8962926f205242be8f
+    EXPECTED_HASH SHA512=8160b96b40356bc0922abe84ff25fdd10a355313a3716c6b1ffacac466384fb9885b9017c7f7330d8c6a5a3e75f117f7ece92884e267115d6160e02cfe0a0f8d
     TLS_VERIFY ON
     SHOW_PROGRESS
 )
 
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive)
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive/${LIBARCHIVE_VER})
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive/${LIBARCHIVE_VER}
     )
 
-    message(STATUS "Extracting libarchive for Android ...")
+    message(STATUS "Extracting libarchive ${LIBARCHIVE_VER} for Android ...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libarchive-${LIBARCHIVE_VER}_android.tar.bz2
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libarchive/${LIBARCHIVE_VER}
+    )
+endif()
+
+
+################################################################################
+# libiconv for Android
+################################################################################
+
+set(LIBICONV_VER "1.14-1")
+
+file(
+    DOWNLOAD
+    ${URL_BASE}/libiconv-${LIBICONV_VER}_android.tar.bz2
+    ${CMAKE_CURRENT_SOURCE_DIR}/libiconv-${LIBICONV_VER}_android.tar.bz2
+    EXPECTED_HASH MD5=3d582375226c15e689efe27d3120f750
+    EXPECTED_HASH SHA512=ea8482acb18983e655f7f42e3a8fd7e65ed44573a568ef3d272cf8a45cc2e482cbc2272136ae3996972f386656eb05c0ba6ac580639e718efa676f1b22e21660
+    TLS_VERIFY ON
+    SHOW_PROGRESS
+)
+
+if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/android/libiconv/${LIBICONV_VER})
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/android/libiconv/${LIBICONV_VER}
+    )
+
+    message(STATUS "Extracting libiconv ${LIBICONV_VER} for Android ...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_CURRENT_SOURCE_DIR}/libiconv-${LIBICONV_VER}_android.tar.bz2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/android/libiconv/${LIBICONV_VER}
     )
 endif()
 
@@ -349,3 +370,13 @@ endif()
 #     PATTERN e2fsck
 #     PATTERN resize2fs
 # )
+
+
+
+################################################################################
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+    @ONLY
+)

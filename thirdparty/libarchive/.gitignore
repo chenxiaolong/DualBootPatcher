@@ -2,4 +2,5 @@ libarchive/
 liblzma/
 liblzo2/
 liblz4/
+libiconv/
 *.bz2
