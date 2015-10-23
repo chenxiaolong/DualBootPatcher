@@ -73,6 +73,7 @@ public:
     void addNexusDevices();
     void addOnePlusDevices();
     void addSonyDevices();
+    void addHuaweiDevices();
     void loadDefaultDevices();
 };
 /*! \endcond */
@@ -854,6 +855,24 @@ void PatcherConfig::Impl::addSonyDevices()
     devices.push_back(device);
 }
 
+void PatcherConfig::Impl::addHuaweiDevices()
+{
+    Device *device;
+
+    // Huawei Ascend Mate 2
+    device = new Device();
+    device->setId("mt2l03");
+    device->setCodenames({ "mt2", "MT2", "mt2l03", "MT2L03", "mt2-l03", "MT2-L03" });
+    device->setName("Huawei Ascend Mate 2");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p24" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p19" });
+    devices.push_back(device);
+}
+
 void PatcherConfig::Impl::loadDefaultDevices()
 {
     addSamsungDevices();
@@ -863,6 +882,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     addNexusDevices();
     addOnePlusDevices();
     addSonyDevices();
+    addHuaweiDevices();
 }
 
 #ifndef LIBMBP_MINI
