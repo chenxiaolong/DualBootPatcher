@@ -7,7 +7,6 @@ LIBLZO2_DIR := $(THIRD_PARTY)/android/liblzo2
 LIBLZ4_DIR := $(THIRD_PARTY)/android/liblz4
 LIBLZMA_DIR := $(THIRD_PARTY)/android/liblzma
 OPENSSL_DIR := $(THIRD_PARTY)/android/openssl
-PROCPS_NG_DIR := $(THIRD_PARTY)/android/procps-ng
 
 
 include $(CLEAR_VARS)
@@ -49,13 +48,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE            := libssl
 LOCAL_SRC_FILES         := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libssl.a
 LOCAL_EXPORT_C_INCLUDES := $(OPENSSL_DIR)/include
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE            := procps-ng
-LOCAL_SRC_FILES         := $(PROCPS_NG_DIR)/lib_$(TARGET_ARCH_ABI)/libprocps.a
-LOCAL_EXPORT_C_INCLUDES := $(PROCPS_NG_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
