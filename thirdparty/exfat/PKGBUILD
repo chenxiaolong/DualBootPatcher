@@ -22,7 +22,7 @@ pkgrel=1
 pkgdesc="FUSE-based exfat driver"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/relan/exfat"
-license=(GPL LGPL MIT)
+license=(GPL)
 source=("fuse::git+https://github.com/CyanogenMod/android_external_fuse.git#commit=${_commit_fuse}"
         "exfat::git+https://github.com/CyanogenMod/android_external_exfat.git#commit=${_commit_exfat}"
         Android.mk)
