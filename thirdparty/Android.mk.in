@@ -11,60 +11,70 @@ PROCPS_NG_DIR := $(THIRD_PARTY)/android/procps-ng
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libjansson
-LOCAL_SRC_FILES := $(JANSSON_DIR)/lib_$(TARGET_ARCH_ABI)/libjansson.a
+LOCAL_MODULE            := libjansson
+LOCAL_SRC_FILES         := $(JANSSON_DIR)/lib_$(TARGET_ARCH_ABI)/libjansson.a
+LOCAL_EXPORT_C_INCLUDES := $(JANSSON_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libsepol
-LOCAL_SRC_FILES := $(LIBSEPOL_DIR)/lib_$(TARGET_ARCH_ABI)/libsepol.a
+LOCAL_MODULE            := libsepol
+LOCAL_SRC_FILES         := $(LIBSEPOL_DIR)/lib_$(TARGET_ARCH_ABI)/libsepol.a
+LOCAL_EXPORT_C_INCLUDES := $(LIBSEPOL_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libarchive
-LOCAL_SRC_FILES := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
+LOCAL_MODULE            := libarchive
+LOCAL_SRC_FILES         := $(LIBARCHIVE_DIR)/lib_$(TARGET_ARCH_ABI)/libarchive.a
+LOCAL_EXPORT_C_INCLUDES := $(LIBARCHIVE_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libiconv
-LOCAL_SRC_FILES := $(LIBICONV_DIR)/lib_$(TARGET_ARCH_ABI)/libiconv.a
+LOCAL_MODULE            := libiconv
+LOCAL_SRC_FILES         := $(LIBICONV_DIR)/lib_$(TARGET_ARCH_ABI)/libiconv.a
+LOCAL_EXPORT_C_INCLUDES := $(LIBICONV_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libcrypto
-LOCAL_SRC_FILES := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libcrypto.a
+LOCAL_MODULE            := libcrypto
+LOCAL_SRC_FILES         := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libcrypto.a
+LOCAL_EXPORT_C_INCLUDES := $(OPENSSL_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libssl
-LOCAL_SRC_FILES := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libssl.a
+LOCAL_MODULE            := libssl
+LOCAL_SRC_FILES         := $(OPENSSL_DIR)/lib_$(TARGET_ARCH_ABI)/libssl.a
+LOCAL_EXPORT_C_INCLUDES := $(OPENSSL_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := procps-ng
-LOCAL_SRC_FILES := $(PROCPS_NG_DIR)/lib_$(TARGET_ARCH_ABI)/libprocps.a
+LOCAL_MODULE            := procps-ng
+LOCAL_SRC_FILES         := $(PROCPS_NG_DIR)/lib_$(TARGET_ARCH_ABI)/libprocps.a
+LOCAL_EXPORT_C_INCLUDES := $(PROCPS_NG_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := liblzo2
-LOCAL_SRC_FILES := $(LIBLZO2_DIR)/lib_$(TARGET_ARCH_ABI)/liblzo2.a
+LOCAL_MODULE            := liblzo2
+LOCAL_SRC_FILES         := $(LIBLZO2_DIR)/lib_$(TARGET_ARCH_ABI)/liblzo2.a
+LOCAL_EXPORT_C_INCLUDES := $(LIBLZO2_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := liblz4
-LOCAL_SRC_FILES := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
+LOCAL_MODULE            := liblz4
+LOCAL_SRC_FILES         := $(LIBLZ4_DIR)/lib_$(TARGET_ARCH_ABI)/liblz4.a
+LOCAL_EXPORT_C_INCLUDES := $(LIBLZ4_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE    := liblzma
-LOCAL_SRC_FILES := $(LIBLZMA_DIR)/lib_$(TARGET_ARCH_ABI)/liblzma.a
+LOCAL_MODULE            := liblzma
+LOCAL_SRC_FILES         := $(LIBLZMA_DIR)/lib_$(TARGET_ARCH_ABI)/liblzma.a
+LOCAL_EXPORT_C_INCLUDES := $(LIBLZMA_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
