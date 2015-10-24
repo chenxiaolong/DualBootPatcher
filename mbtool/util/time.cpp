@@ -33,5 +33,37 @@ uint64_t current_time_ms()
     return 1000u * res.tv_sec + res.tv_nsec / 1e6;
 }
 
+/*!
+ * \brief Format date and time
+ *
+ * \note: Because strftime does not differentiate between a buffer size error
+ *        and an empty string result, if \a format results in an empty string,
+ *        then this function will return false and \a out will not be modified.
+ *
+ * \param format Date and time format string
+ * \param out Output string
+ *
+ * \return Whether the date and time was successfully formatted
+ */
+bool format_time(const std::string &format, std::string *out)
+{
+    struct timespec res;
+    struct tm tm;
+    if (clock_gettime(CLOCK_REALTIME, &res) < 0) {
+        return false;
+    }
+    if (!localtime_r(&res.tv_sec, &tm)) {
+        return false;
+    }
+
+    char buf[100];
+    if (strftime(buf, sizeof(buf), format.c_str(), &tm) == 0) {
+        return false;
+    }
+
+    *out = buf;
+    return true;
+}
+
 }
 }

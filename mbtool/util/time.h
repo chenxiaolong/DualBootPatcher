@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <inttypes.h>
 
 namespace mb
@@ -27,6 +29,7 @@ namespace util
 {
 
 uint64_t current_time_ms();
+bool format_time(const std::string &format, std::string *out);
 
 }
 }
