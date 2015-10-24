@@ -1,0 +1,60 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+_commit_fuse=81b1cc26b41b25afd2d8e09dce1bad4969016066
+_commit_exfat=82c66279aea954faa06d224e66bce5f30331b4c0
+
+pkgname=exfat
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="FUSE-based exfat driver"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://github.com/relan/exfat"
+license=(GPL LGPL MIT)
+source=("fuse::git+https://github.com/CyanogenMod/android_external_fuse.git#commit=${_commit_fuse}"
+        "exfat::git+https://github.com/CyanogenMod/android_external_exfat.git#commit=${_commit_exfat}"
+        Android.mk)
+sha512sums=('SKIP'
+            'SKIP'
+            'e5741ae88dc8c3f58e6fcfe6791c801e462648296be61020be787b968942cb02232998829ea5583688ce13126d5355163c036aa1bbd568d9a800d43b44581406')
+
+pkgver() {
+    local major minor patch
+    major=$(sed -nr 's/^.*EXFAT_VERSION_MAJOR\s+(.*)$/\1/p' exfat/libexfat/version.h)
+    minor=$(sed -nr 's/^.*EXFAT_VERSION_MINOR\s+(.*)$/\1/p' exfat/libexfat/version.h)
+    patch=$(sed -nr 's/^.*EXFAT_VERSION_PATCH\s+(.*)$/\1/p' exfat/libexfat/version.h)
+    echo "${major}.${minor}.${patch}"
+}
+
+build() {
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/bin/
+    install -m755 "libs/${abi}/mount.exfat_static" "${pkgdir}"/bin/mount.exfat
+}
