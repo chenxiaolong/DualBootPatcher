@@ -19,7 +19,7 @@ pkgrel=1
 pkgdesc="C library for encoding, decoding, and manipulating JSON data"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://github.com/akheron/jansson"
-license=(GPL LGPL MIT)
+license=(MIT)
 source=("git+https://github.com/akheron/jansson#tag=v${pkgver}"
         0001-jansson-Build-static-library-on-Android.patch)
 sha512sums=('SKIP'
