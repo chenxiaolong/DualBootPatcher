@@ -1,17 +1,17 @@
-From fbb1af610b60a06bede927add11fe16de2e9c5d7 Mon Sep 17 00:00:00 2001
+From 740df6b721659c89cda789fe52cac0ff04b144c2 Mon Sep 17 00:00:00 2001
 From: Andrew Gunnerson <andrewgunnerson@gmail.com>
 Date: Fri, 12 Dec 2014 20:36:27 -0500
 Subject: [PATCH] Exclude libjnidispatch for non-Android OS's
 
 ---
- build.xml | 111 --------------------------------------------------------------
- 1 file changed, 111 deletions(-)
+ build.xml | 130 --------------------------------------------------------------
+ 1 file changed, 130 deletions(-)
 
 diff --git a/build.xml b/build.xml
-index e856452..92f85d0 100644
+index 07bf219..94a64bb 100644
 --- a/build.xml
 +++ b/build.xml
-@@ -363,121 +363,10 @@
+@@ -376,140 +376,10 @@
          <attribute name="Bundle-Vendor" value="${vendor}"/>
          <attribute name="Bundle-ActivationPolicy" value="lazy"/>
          <attribute name="Export-Package" value="com.sun.jna,com.sun.jna.ptr,com.sun.jna.win32"/>
@@ -24,6 +24,10 @@ index e856452..92f85d0 100644
 -processor=x86;osname=win32,
 -com/sun/jna/win32-x86-64/jnidispatch.dll;
 -processor=x86-64;osname=win32,
+-com/sun/jna/win32-x86/jnidispatch.dll;
+-processor=x86;osname=win,
+-com/sun/jna/win32-x86-64/jnidispatch.dll;
+-processor=x86-64;osname=win,
 -com/sun/jna/w32ce-arm/jnidispatch.dll;
 -processor=arm;osname=wince,
 -
@@ -45,14 +49,20 @@ index e856452..92f85d0 100644
 -processor=ppc;osname=linux,
 -com/sun/jna/linux-ppc64/libjnidispatch.so;
 -processor=ppc64;osname=linux,
+-com/sun/jna/linux-ppc64le/libjnidispatch.so;
+-processor=ppc64le;osname=linux,
 -com/sun/jna/linux-x86/libjnidispatch.so;
 -processor=x86;osname=linux,
 -com/sun/jna/linux-x86-64/libjnidispatch.so;
 -processor=x86-64;osname=linux,
 -com/sun/jna/linux-arm/libjnidispatch.so;
 -processor=arm;osname=linux,
+-com/sun/jna/linux-aarch64/libjnidispatch.so;
+-processor=aarch64;osname=linux,
 -com/sun/jna/linux-ia64/libjnidispatch.so;
 -processor=ia64;osname=linux,
+-com/sun/jna/linux-sparcv9/libjnidispatch.so;
+-processor=sparcv9;osname=linux,
 -
 -com/sun/jna/freebsd-x86/libjnidispatch.so;
 -processor=x86;osname=freebsd,
@@ -91,6 +101,9 @@ index e856452..92f85d0 100644
 -      <zipfileset src="${lib.native}/linux-arm.jar"
 -                  includes="*jnidispatch*"
 -                  prefix="com/sun/jna/linux-arm"/>
+-      <zipfileset src="${lib.native}/linux-aarch64.jar"
+-                  includes="*jnidispatch*"
+-                  prefix="com/sun/jna/linux-aarch64"/>
 -      <zipfileset src="${lib.native}/linux-ia64.jar"
 -                  includes="*jnidispatch*"
 -                  prefix="com/sun/jna/linux-ia64"/>
@@ -100,6 +113,12 @@ index e856452..92f85d0 100644
 -      <zipfileset src="${lib.native}/linux-ppc64.jar"
 -                  includes="*jnidispatch*"
 -                  prefix="com/sun/jna/linux-ppc64"/>
+-      <zipfileset src="${lib.native}/linux-ppc64le.jar"
+-                  includes="*jnidispatch*"
+-                  prefix="com/sun/jna/linux-ppc64le"/>
+-      <zipfileset src="${lib.native}/linux-sparcv9.jar"
+-                  includes="*jnidispatch*"
+-                  prefix="com/sun/jna/linux-sparcv9"/>
 -      <zipfileset src="${lib.native}/sunos-x86.jar"
 -                  includes="*jnidispatch*"
 -                  prefix="com/sun/jna/sunos-x86"/>
@@ -134,5 +153,5 @@ index e856452..92f85d0 100644
      <zip zipfile="${build}/${minjar}">
        <zipfileset src="${build}/${jar}" excludes="**/*jnidispatch*"/>
 -- 
-2.1.3
+2.6.2
 
