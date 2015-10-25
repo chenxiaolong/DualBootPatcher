@@ -1,0 +1,93 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=valgrind
+pkgver=3.11.0
+pkgrel=1
+pkgdesc="A tool to help find memory-management problems in programs"
+arch=(armv7 aarch64 x86) # x86_64 not supported on Android
+url="http://valgrind.org/"
+license=(GPL)
+source=("http://valgrind.org/downloads/valgrind-${pkgver}.tar.bz2")
+sha512sums=('a25f97fa80aef4ad1e86b303886cd7a97aac248820a4c24e3d3dc26567dd7d2d86db237866468fd43885a9fb8534cb0a8e301a3c752fffbc231a2842272999da')
+
+build() {
+    cd "${pkgname}-${pkgver}"
+
+    local abi api toolchain toolchain_ver sysroot_dir
+    abi=$(android_get_abi_name)
+    toolchain=$(android_get_toolchain_name "${abi}")
+    toolchain_ver=4.9
+
+    mkdir -p "build_${abi}"
+    cd "build_${abi}"
+
+    local cflags=""
+    local cxxflags=""
+    local cppflags=""
+
+    args=()
+
+    case "${abi}" in
+    armeabi-v7a)
+        api=android-18
+        args+=(--host=armv7-unknown-linux --target=armv7-unknown-linux)
+        ;;
+    arm64-v8a)
+        api=android-21
+        args+=(--host=aarch64-unknown-linux --target=aarch64-unknown-linux)
+        ;;
+    x86)
+        api=android-18
+        args+=(--host=i686-android-linux --target=i686-android-linux)
+        cflags+=" -fno-pic"
+        ;;
+    esac
+
+    sysroot_dir=$(android_get_ndk_sysroot "${api}" "${abi}")
+    cflags+=" --sysroot=${sysroot_dir}"
+    cxxflags+=" --sysroot=${sysroot_dir}"
+    cppflags+=" --sysroot=${sysroot_dir}"
+
+    android_enter_toolchain_env "${toolchain}" "${toolchain_ver}"
+
+    CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
+    ../configure \
+        --prefix=/data/local/Inst \
+        --with-tmpdir=/sdcard \
+        "${args[@]}"
+
+    CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
+    make
+
+    android_leave_toolchain_env
+}
+
+package() {
+    cd "${pkgname}-${pkgver}"
+
+    local abi toolchain toolchain_ver
+    abi=$(android_get_abi_name)
+    toolchain=$(android_get_toolchain_name "${abi}")
+    toolchain_ver=4.9
+
+    cd "build_${abi}"
+
+    android_enter_toolchain_env "${toolchain}" "${toolchain_ver}"
+
+    make install DESTDIR="${pkgdir}"
+
+    android_leave_toolchain_env
+}

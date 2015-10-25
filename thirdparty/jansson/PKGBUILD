@@ -1,0 +1,59 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=jansson
+pkgver=2.7
+pkgrel=1
+pkgdesc="C library for encoding, decoding, and manipulating JSON data"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://github.com/akheron/jansson"
+license=(MIT)
+source=("git+https://github.com/akheron/jansson#tag=v${pkgver}"
+        0001-jansson-Build-static-library-on-Android.patch)
+sha512sums=('SKIP'
+            '2784210f5b209b6a88dd697b715006b6e898cf1a284be6bb5821b6e191004ddc6be7a630b3b77727eccbe1cf5e8895ae0a9aca8b5c36a2f0115041f3828648da')
+
+prepare() {
+    cd jansson
+
+    git am ../0001-jansson-Build-static-library-on-Android.patch
+}
+
+build() {
+    cd jansson
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd jansson
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    install -m644 src/jansson.h "${pkgdir}"/include/
+    install -m644 android/jansson_config.h "${pkgdir}"/include/
+    install -m644 "obj/local/${abi}/libjansson.a" "${pkgdir}"/lib/
+}

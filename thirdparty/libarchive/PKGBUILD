@@ -1,0 +1,201 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+_commit=567b37436642c344ecae1208f9d20885864986d1
+_prebuilts='https://snapshots.noobdev.io/repo/prebuilts'
+_ver_libiconv=1.14-1
+_ver_liblzma=5.2.2-1
+_ver_lz4=131-1
+_ver_lzo=2.09-1
+
+pkgbase=libarchive
+pkgname=(libarchive libarchive-lowapi)
+pkgver=3.1.2.r599.g567b374
+pkgrel=1
+pkgdesc="Multi-format archive and compression library"
+arch=(armv7 aarch64 x86 x86_64)
+url="http://www.libarchive.org/"
+license=(BSD)
+source=("git+https://github.com/libarchive/libarchive.git#commit=${_commit}"
+        'https://raw.githubusercontent.com/taka-no-me/android-cmake/556cc14296c226f753a3778d99d8b60778b7df4f/android.toolchain.cmake'
+        0001-Android-build-fix.patch
+        0002-Change-statfs.f_flag-statfs.f_flags.patch
+        0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch)
+_source_template=("${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz"
+                  "${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz.sig"
+                  "${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz"
+                  "${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz.sig"
+                  "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz"
+                  "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz.sig"
+                  "${_prebuilts}/lzo-${_ver_lzo}-@ARCH@.pkg.tar.xz"
+                  "${_prebuilts}/lzo-${_ver_lzo}-@ARCH@.pkg.tar.xz.sig")
+source_armv7=("${_source_template[@]/@ARCH@/armv7}")
+source_aarch64=("${_source_template[@]/@ARCH@/aarch64}")
+source_x86=("${_source_template[@]/@ARCH@/x86}")
+source_x86_64=("${_source_template[@]/@ARCH@/x86_64}")
+noextract=("libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz"
+           "liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz"
+           "lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz"
+           "lzo-${_ver_lzo}-${CARCH}.pkg.tar.xz")
+validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
+
+pkgver() {
+    cd "${pkgbase}"
+    git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+    cd "${pkgbase}"
+    git am ../0001-Android-build-fix.patch
+    git am ../0002-Change-statfs.f_flag-statfs.f_flags.patch
+    git am ../0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    mkdir -p "common_${abi}"
+    cd "common_${abi}"
+
+    mkdir -p libiconv liblzma lz4 lzo
+
+    bsdtar -xf "${srcdir}/libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz" -C libiconv
+    bsdtar -xf "${srcdir}/liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz" -C liblzma
+    bsdtar -xf "${srcdir}/lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz" -C lz4
+    bsdtar -xf "${srcdir}/lzo-${_ver_lzo}-${CARCH}.pkg.tar.xz" -C lzo
+
+    # Hack toolchain file to allow us to provide paths to headers and libraries
+    sed '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}" "${LIBLZO2_PREFIX_PATH}" "${LIBLZ4_PREFIX_PATH}" "${LIBICONV_PREFIX_PATH}")/g' \
+        < "${srcdir}"/android.toolchain.cmake \
+        > android.toolchain.cmake
+}
+
+build() {
+    cd "${pkgbase}"
+
+    local abi api lowapi toolchain toolchain_ver
+    abi=$(android_get_abi_name)
+    api=android-21
+    toolchain=$(android_get_toolchain_name "${abi}")
+    toolchain_ver=4.9
+
+    local common_dir build_dir build_lowapi_dir
+    common_dir="$(pwd)/common_${abi}"
+    build_dir="$(pwd)/build_${abi}"
+    build_lowapi_dir="$(pwd)/build_lowapi_${abi}"
+
+    case "${abi}" in
+    armeabi-v7a)
+        lowapi=android-17
+        ;;
+    arm64-v8a)
+        lowapi=android-21
+        ;;
+    x86)
+        lowapi=android-17
+        ;;
+    x86_64)
+        lowapi=android-21
+        ;;
+    esac
+
+    args=(
+        -DENABLE_TAR=OFF
+        -DENABLE_CPIO=OFF
+        -DENABLE_CAT=OFF
+        -DENABLE_TEST=OFF
+        -DENABLE_ICONV=OFF `# At least until we need it`
+        -DLIBICONV_PREFIX_PATH="${common_dir}/libiconv"
+        -DLIBLZMA_PREFIX_PATH="${common_dir}/liblzma"
+        -DLIBLZ4_PREFIX_PATH="${common_dir}/lz4"
+        -DLIBLZO2_PREFIX_PATH="${common_dir}/lzo"
+        -DCMAKE_TOOLCHAIN_FILE="${common_dir}/android.toolchain.cmake"
+        -DANDROID_ABI="${abi}"
+        -DANDROID_TOOLCHAIN_NAME="${toolchain}-${toolchain_ver}"
+        -DLIBRARY_OUTPUT_PATH_ROOT=.
+    )
+
+    mkdir -p "${build_dir}"
+    mkdir -p "${build_lowapi_dir}"
+
+    pushd "${build_dir}"
+    cmake .. "${args[@]}" -DANDROID_NATIVE_API_LEVEL="${api}"
+    make
+    popd
+
+    pushd "${build_lowapi_dir}"
+    cmake .. "${args[@]}" -DANDROID_NATIVE_API_LEVEL="${lowapi}"
+    make
+    popd
+}
+
+package_libarchive() {
+    cd "${pkgbase}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
+    install -m644 "build_${abi}/libs/${abi}/libarchive.a" "${pkgdir}"/lib/
+}
+
+package_libarchive-lowapi() {
+    cd "${pkgbase}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
+    install -m644 "build_lowapi_${abi}/libs/${abi}/libarchive.a" "${pkgdir}"/lib/
+}
+
+sha512sums=('SKIP'
+            '4a70ef1c914ba31d1944652d1de592d01a1e1a68da85e9262bc15e2e73c572da8644c9ed8b4547c456ca4100f7737d34c5cfaaf9ee816a652a74a97f020b57a7'
+            'cd6bee1b417acedde99c50c6e7fb33937c22af8da2c5697609c8829cf61665ee20e0d091f43519eb66277b6ed902198c0c8f46100fc67e1082a7d74c612ac75a'
+            '5c143045e53d0172fe2f7d31e144eb07b810722797e279f79ae4b4b9284310f8abe0db1bc5d5658b48e794f5a704240f604fc5663315778b5fcb01bdd0f21d91'
+            'e07ccce80fd23f28a13ad7cd20d61d9e5886b91f4dfad6502067cb16bb62dce2ab94861807eeb608ad29202b618f5d0c3af0e0956a93e51d51653f10966748de')
+sha512sums_armv7=('d4bc7e39a7205ff166a1aa07b93ceb4fd7b6f7f2be26dc8917dd5753034470a78e9a18139613461a4e3b565b43eeb479c735566f058966f71dae19cf16d5a208'
+                  'SKIP'
+                  '0bec5f8bc3e1484b830e2c57b041e916687ea4035769074e5576f6682a531d285538fbf7a5a85c88c654209d8e9e8b14ad80e78a3d9c29aa5d304eecf247edc8'
+                  'SKIP'
+                  'e3806e50e89527de9b4061a35ac6ef4be372ec4321a53a19a343ad5c5a29059582d0cdc48baffbd2dfd39332f116b1ea8d32d4662174ad0fdacebaac133edb58'
+                  'SKIP'
+                  'baa6537ca4ba80c508f39bb64e3404c5ccb71c31c67b28501bbc4a24272b558a0f59fbb79573c6a261bffebfb1aeff174f383b75626752393c5093959b0c8415'
+                  'SKIP')
+sha512sums_aarch64=('b2a03adda6bfcb18bd14422b1e950f383bf030b77680e06114220666034bfb074d26a0d9c2067df3bc8b1b64cdbb9fa5b6c4cc83d0cfa11e66121352809d6756'
+                    'SKIP'
+                    '6b66601dba6c419f7462a331df7dc71cc13356168a0c6a9c0cb9eb38d46af5aae6f7128838c3db80167b8b318200c6f6ec5b37b0f1ef23a668ba1512a1325417'
+                    'SKIP'
+                    '262925a98d27ca0afd5dc579b7eca522ae6d15bed80294f34a6ed9b58ce51e321f755260a5f4723af26addf4856e52a8fb490db82b7a1e309dca50e6656bc5fb'
+                    'SKIP'
+                    '83a44742fbe960d94f46b03ed3eb3786985db34608e151a9a00310c4a884e9ede553322175ad22806bf364f3ec8665565a38a6bfe83cb01a67eb0e777eb7c09f'
+                    'SKIP')
+sha512sums_x86=('827d284e74787091f1403f8bb9a61ee2e0ab4930eb1da24a0ad564caadf413ac7e2d3501489b2c35cca2a0978fa347e0cbf7bf76b42a31098d31fffba80a9ca9'
+                'SKIP'
+                '2a4008a8f89a0bce25a7c5c293733cafdee54effda563c6a92f75cb607d65abc47e9c7e900ed2f026991af80a2120faeebf44ad8993521993f24cf9f44bd839b'
+                'SKIP'
+                '4047ddb609ff1b228c8075c70347fab91119e3d5324cfe03eb616ebb6238f3ac9b77b6fdfad79eedb3f0faf81fb1ddd0a7dfd1e0d9012059fa2bed025ac8e5a1'
+                'SKIP'
+                '2bef29b8413410c6426a9d4ad103f0040e6e1d6b018b8ea7aedf730e79624e12d2da8ab68486c1eb1de23db0b96d8388213128c240a53e4fda4a1fec20650c70'
+                'SKIP')
+sha512sums_x86_64=('004b629ce9ffa43cd88c23d87b927c6d80dcf4de8b750cd40532e00100e1e13387c0982f2af3c3a3593ed32b83aba66b7a7849bc08d1f210e556a192c2948615'
+                   'SKIP'
+                   'c2f5607f913dd4b76abeef6536e108f15dc5daec779f85f3d22588d76950cf7c188e7cda465d0007e5720050667d37a1a4e08e5f0766ee81db26785b9035f52f'
+                   'SKIP'
+                   '51129cf86be6c5f0b50262be15f3113fc08123df00e12d3474d5fb38c95ea5d0b6ddf5c83ca752d076ddc56920901174bbf2e9a29a3b8072eac3d60259f51334'
+                   'SKIP'
+                   'd04a86dd68f190115f220019c0e2f315f78b7c098246052137a2b3fe94759c0015010ba4242f19002fc919ee3687946ae15e77d83e9d516feb110b0dbc6cfb60'
+                   'SKIP')

@@ -1,0 +1,64 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=libiconv
+pkgver=1.14
+pkgrel=1
+pkgdesc="GNU iconv() implementation"
+arch=(armv7 aarch64 x86 x86_64)
+url="http://www.gnu.org/software/libiconv/"
+license=(LGPL)
+source=("http://ftp.gnu.org/gnu/libiconv/libiconv-${pkgver}.tar.gz"
+        0001-Android-doesn-t-have-langinfo.h.patch
+        0002-Add-generated-headers-for-Android.patch
+        0003-Add-Android.mk.patch)
+sha512sums=('b96774fefc4fa1d07948fcc667027701373c34ebf9c4101000428e048addd85a5bb5e05e59f80eb783a3054a3a8a3c0da909450053275bbbf3ffde511eb3f387'
+            'd9f95d6fcad06002ffa8e052e38b9b3b50357334761a6d0b0179d1c6e8f70effaa8d4206be89beb0fd495c547a08d04800fa516b557ebd058b8fd070386af4bb'
+            '9c8b09d5ecd832da096ccaeda5e0f15aa0916ab1dcb8f373751752e753fe0dd29764e7620894c77972c3d34c26451789889f786d34e4b9a3e8a51c9feaab134c'
+            'fe758ede31403a89de4f469475697ff4801face3230a9dc8b5ba6b8ef93db6510ba81b5495b30234df2448d167e8a39497d29150015ab39878e62a0248286fd5')
+
+prepare() {
+    cd "libiconv-${pkgver}"
+    patch -p1 -i ../0001-Android-doesn-t-have-langinfo.h.patch
+    patch -p1 -i ../0002-Add-generated-headers-for-Android.patch
+    patch -p1 -i ../0003-Add-Android.mk.patch
+}
+
+build() {
+    cd "libiconv-${pkgver}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd "libiconv-${pkgver}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    install -m644 include/iconv.h.inst "${pkgdir}"/include/
+    install -m644 libcharset/include/localcharset.h.inst "${pkgdir}"/include/
+    install -m644 "obj/local/${abi}/libiconv.a" "${pkgdir}"/lib/
+}

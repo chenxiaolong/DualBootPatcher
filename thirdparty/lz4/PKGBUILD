@@ -1,0 +1,57 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=lz4
+pkgver=131
+pkgrel=1
+pkgdesc="Very fast lossless compression algorithm"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://github.com/Cyan4973/lz4"
+license=(BSD)
+source=("git+https://github.com/Cyan4973/lz4.git#tag=r${pkgver}"
+        0001-Add-Android.mk.patch)
+sha512sums=('SKIP'
+            '76f3db87f888da8628eccc379f6abcc81b20c572e1a395481fd2cdd306c08789d1f8b6ebae070560df4659d3eadea3bf1f3e3e287a638701ad07277d01a8a8d0')
+
+prepare() {
+    cd lz4
+    git am ../0001-Add-Android.mk.patch
+}
+
+build() {
+    cd lz4
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd lz4
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    install -m644 lib/{lz4,lz4hc,lz4frame}.h "${pkgdir}"/include/
+    install -m644 "obj/local/${abi}/liblz4.a" "${pkgdir}"/lib/
+}

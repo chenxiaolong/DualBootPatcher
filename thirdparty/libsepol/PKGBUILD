@@ -1,0 +1,66 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+_commit=674256be882fc379f0737de74550e8e7121898a0
+
+pkgname=libsepol
+pkgver=2.4.r1240.674256b
+pkgrel=1
+pkgdesc="SELinux binary policy manipulation library"
+arch=(armv7 aarch64 x86 x86_64)
+url="http://userspace.selinuxproject.org"
+license=(LGPL)
+source=("git+https://github.com/SELinuxProject/selinux.git#commit=${_commit}"
+        0001-Build-for-Android-targets.patch)
+sha512sums=('SKIP'
+            'd70b556eaf0bbe4668bd5c7cf0f2dc32a3582d06d0b1913c4caae648a053b39928b90c8ba2611ea300eda27fd6f8bdd2c43d6dac58d565f71ee80f4724585e5d')
+
+pkgver() {
+    cd selinux
+    local sepol_ver
+    sepol_ver=$(<libsepol/VERSION)
+    printf "%s.r%s.%s" "${sepol_ver}" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    cd selinux
+    git am ../0001-Build-for-Android-targets.patch
+}
+
+build() {
+    cd selinux/libsepol
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd selinux/libsepol
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    cp -a include/sepol "${pkgdir}"/include/
+    install -m644 "obj/local/${abi}/libsepol.a" "${pkgdir}"/lib/
+}

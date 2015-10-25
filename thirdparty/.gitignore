@@ -1,2 +1,9 @@
+makepkg.local.conf
+
 *.tar*
 *.base64
+
+*/src/
+*/pkg/
+*/*.pkg.tar.xz
+*/*.src.tar.gz

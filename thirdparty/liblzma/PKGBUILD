@@ -1,0 +1,57 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=liblzma
+pkgver=5.2.2
+pkgrel=1
+pkgdesc="Library for XZ and LZMA compressed files"
+arch=(armv7 aarch64 x86 x86_64)
+url="http://tukaani.org/xz/"
+license=(LGPL)
+source=("http://tukaani.org/xz/xz-${pkgver}.tar.xz"
+        0001-Android-build-system.patch)
+sha512sums=('949ef90669a31b9855c5328d7f9d7e2e537c8072b700b1d2f5d69c307eb7f7635a2a4b1b5bb1bb300fba9429355a6d8935b803c505be5c0104bda9e81d0cf477'
+            'e9d0dfb64605e2bbcbf4bd9a96201ce7041d774ad563aeaa0eb23b9ff89891d6cacfd77b912e4389710db42ead67cd7363ab6bf5a9de7d9b107fc3ad347f03fe')
+
+prepare() {
+    cd "xz-${pkgver}"
+    patch -p1 -i ../0001-Android-build-system.patch
+}
+
+build() {
+    cd "xz-${pkgver}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-17 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd "xz-${pkgver}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/{lib,include}/
+    cp -a src/liblzma/api/{lzma.h,lzma} "${pkgdir}"/include/
+    install -m644 "obj/local/${abi}/liblzma.a" "${pkgdir}"/lib/
+}
