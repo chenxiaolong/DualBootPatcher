@@ -224,7 +224,9 @@ endif()
 # jna for Android
 ################################################################################
 
+# PARENT_SCOPE because we need this in Android_GUI/build.gradle.in
 set(JNA_VER "4.2.1-1")
+set(JNA_VER "4.2.1-1" PARENT_SCOPE)
 
 get_prebuilt(jna ${JNA_VER} all SHA512=28fb507df36870da6592513a64437c80ba5c582d563e95f108f3033973622e0f326fd4a146fa20934b60ecc82130ae99da4777f1555b5c9d8ddd48f32033e911)
 
