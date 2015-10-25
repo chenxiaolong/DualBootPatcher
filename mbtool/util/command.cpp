@@ -27,23 +27,12 @@
 
 #include "autoclose/file.h"
 #include "util/logging.h"
+#include "util/string.h"
 
 namespace mb
 {
 namespace util
 {
-
-static std::string list2string(const std::vector<std::string> &list)
-{
-    std::string output;
-    for (std::size_t i = 0; i < list.size(); ++i) {
-        output += list[i];
-        if (i != list.size() - 1) {
-            output += ", ";
-        }
-    }
-    return output;
-}
 
 int run_shell_command(const std::string &command)
 {
@@ -104,7 +93,7 @@ int run_command2(const std::vector<std::string> &argv,
         return -1;
     }
 
-    LOGD("Running command: [ %s ]", list2string(argv).c_str());
+    LOGD("Running command: [ %s ]", util::join(argv, ", ").c_str());
 
     std::vector<const char *> argv_c;
     for (const std::string &arg : argv) {
