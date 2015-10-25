@@ -78,8 +78,6 @@
 
 #define ABOOT_PARTITION "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
-#define DEFAULT_IMAGE_SIZE ((uint64_t) 4 * 1024 * 1024 * 1024)
-
 
 namespace mb {
 
