@@ -60,6 +60,7 @@
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
+#include "wipe.h"
 
 
 // Set to 1 to spawn a shell after installation

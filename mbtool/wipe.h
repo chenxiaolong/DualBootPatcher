@@ -24,6 +24,7 @@
 namespace mb
 {
 
+bool wipe_directory(const std::string &mountpoint, bool wipe_media);
 bool wipe_system(const std::shared_ptr<Rom> &rom);
 bool wipe_cache(const std::shared_ptr<Rom> &rom);
 bool wipe_data(const std::shared_ptr<Rom> &rom);

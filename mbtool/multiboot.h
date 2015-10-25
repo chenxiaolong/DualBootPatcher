@@ -24,7 +24,6 @@
 namespace mb
 {
 
-bool wipe_directory(const std::string &mountpoint, bool wipe_media);
 bool copy_system(const std::string &source, const std::string &target);
 
 }

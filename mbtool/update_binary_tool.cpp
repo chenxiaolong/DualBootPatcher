@@ -25,10 +25,10 @@
 #include <sys/mount.h>
 #include <unistd.h>
 
-#include "multiboot.h"
 #include "util/file.h"
 #include "util/logging.h"
 #include "util/mount.h"
+#include "wipe.h"
 
 
 #define ACTION_MOUNT "mount"

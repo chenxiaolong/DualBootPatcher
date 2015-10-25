@@ -22,13 +22,89 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "multiboot.h"
 #include "util/delete.h"
+#include "util/fts.h"
 #include "util/logging.h"
 #include "util/mount.h"
+#include "util/string.h"
 
 namespace mb
 {
+
+class WipeDirectory : public util::FTSWrapper {
+public:
+    WipeDirectory(std::string path, bool wipe_media)
+        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        _wipe_media(wipe_media)
+    {
+    }
+
+    virtual int on_changed_path()
+    {
+        // Don't wipe 'multiboot' and 'media' directories on the first level
+        if (_curr->fts_level == 1) {
+            if (strcmp(_curr->fts_name, "multiboot") == 0
+                    || (!_wipe_media && strcmp(_curr->fts_name, "media") == 0)) {
+                return Action::FTS_Skip;
+            }
+        }
+
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_directory_pre() override
+    {
+        // Do nothing. Need depth-first search, so directories are deleted
+        // in FTS_DP
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_directory_post() override
+    {
+        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_file() override
+    {
+        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_symlink() override
+    {
+        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+    virtual int on_reached_special_file() override
+    {
+        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+    }
+
+private:
+    bool _wipe_media;
+
+    bool delete_path()
+    {
+        if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
+            _error_msg = util::format("%s: Failed to remove: %s",
+                                      _curr->fts_path, strerror(errno));
+            LOGW("%s", _error_msg.c_str());
+            return false;
+        }
+        return true;
+    }
+};
+
+bool wipe_directory(const std::string &mountpoint, bool wipe_media)
+{
+    struct stat sb;
+    if (stat(mountpoint.c_str(), &sb) < 0 && errno == ENOENT) {
+        // Don't fail if directory does not exist
+        return true;
+    }
+
+    WipeDirectory wd(mountpoint, wipe_media);
+    return wd.run();
+}
 
 /*!
  * \brief Log deletion of file
