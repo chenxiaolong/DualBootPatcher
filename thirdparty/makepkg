@@ -2714,6 +2714,14 @@ else
 	exit 1 # $E_CONFIG_ERROR
 fi
 
+# Source user-specific makepkg.conf overrides, but only if no override config
+# file was specified
+if [[ "$MAKEPKG_CONF" = "$confdir/makepkg.conf" ]]; then
+	if [[ -r "$confdir/makepkg.local.conf" ]]; then
+		source_safe "$confdir/makepkg.local.conf"
+	fi
+fi
+
 # check if messages are to be printed using color
 unset ALL_OFF BOLD BLUE GREEN RED YELLOW
 if [[ -t 2 && $USE_COLOR != "n" ]] && check_buildenv "color" "y"; then

@@ -1,3 +1,5 @@
+makepkg.local.conf
+
 *.tar*
 *.base64
 
