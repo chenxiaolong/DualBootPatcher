@@ -30,6 +30,7 @@
 #include <libmbp/bootimage.h>
 #include <libmbp/logging.h>
 
+#include "autoclose/archive.h"
 #include "autoclose/file.h"
 #include "installer.h"
 #include "multiboot.h"
@@ -111,8 +112,6 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // installed though, so we'll open the recovery partition with libmbp and
     // extract its /sbin with libarchive into the chroot's /sbin.
 
-    typedef std::unique_ptr<archive, int (*)(archive *)> archive_ptr;
-
     mbp::BootImage bi;
     if (!bi.loadFile(_recovery_block_dev)) {
         display_msg("Failed to load recovery partition image");
@@ -123,8 +122,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
     std::size_t ramdisk_size;
     bi.ramdiskImageC(&ramdisk_data, &ramdisk_size);
 
-    archive_ptr in(archive_read_new(), archive_read_free);
-    archive_ptr out(archive_write_disk_new(), archive_write_free);
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
     if (!in | !out) {
         LOGE("Out of memory");

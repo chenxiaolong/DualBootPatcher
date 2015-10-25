@@ -24,6 +24,7 @@
 #include <cerrno>
 #include <cstring>
 
+#include "autoclose/archive.h"
 #include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
@@ -33,8 +34,6 @@ namespace mb
 {
 namespace util
 {
-
-typedef std::unique_ptr<archive, int (*)(archive *)> archive_ptr;
 
 int archive_copy_data(archive *in, archive *out)
 {
@@ -110,8 +109,8 @@ static void set_up_output(archive *out)
 
 bool extract_archive(const std::string &filename, const std::string &target)
 {
-    archive_ptr in(archive_read_new(), archive_read_free);
-    archive_ptr out(archive_write_disk_new(), archive_write_free);
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -170,8 +169,8 @@ bool extract_files(const std::string &filename, const std::string &target,
         return false;
     }
 
-    archive_ptr in(archive_read_new(), archive_read_free);
-    archive_ptr out(archive_write_disk_new(), archive_write_free);
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -241,8 +240,8 @@ bool extract_files2(const std::string &filename,
         return false;
     }
 
-    archive_ptr in(archive_read_new(), archive_read_free);
-    archive_ptr out(archive_write_disk_new(), archive_write_free);
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -296,7 +295,7 @@ bool archive_exists(const std::string &filename,
         return false;
     }
 
-    archive_ptr in(archive_read_new(), archive_read_free);
+    autoclose::archive in(archive_read_new(), archive_read_free);
 
     if (!in) {
         LOGE("Out of memory");
