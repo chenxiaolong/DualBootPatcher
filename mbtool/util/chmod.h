@@ -27,7 +27,12 @@ namespace mb
 namespace util
 {
 
-bool chmod_recursive(const std::string &path, mode_t perms);
+enum ChmodFlags : int
+{
+    CHMOD_RECURSIVE       = 0x1
+};
+
+bool chmod(const std::string &path, mode_t perms, int flags);
 
 }
 }

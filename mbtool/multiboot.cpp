@@ -177,7 +177,7 @@ bool fix_multiboot_permissions(void)
         return false;
     }
 
-    if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
+    if (!util::chmod(MULTIBOOT_DIR, 0775, util::CHMOD_RECURSIVE)) {
         LOGE("Failed to chmod %s", MULTIBOOT_DIR);
         return false;
     }

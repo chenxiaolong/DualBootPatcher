@@ -75,7 +75,7 @@ private:
 
     bool chmod_path()
     {
-        if (chmod(_curr->fts_accpath, _perms) < 0) {
+        if (::chmod(_curr->fts_accpath, _perms) < 0) {
             _error_msg = format("%s: Failed to chmod: %s",
                                 _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
@@ -86,10 +86,14 @@ private:
 };
 
 
-bool chmod_recursive(const std::string &path, mode_t perms)
+bool chmod(const std::string &path, mode_t perms, int flags)
 {
-    RecursiveChmod fts(path, perms);
-    return fts.run();
+    if (flags & CHMOD_RECURSIVE) {
+        RecursiveChmod fts(path, perms);
+        return fts.run();
+    } else {
+        return ::chmod(path.c_str(), perms) == 0;
+    }
 }
 
 }
