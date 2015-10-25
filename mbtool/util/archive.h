@@ -45,6 +45,10 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
                                           archive_entry *entry);
 int libarchive_copy_header_and_data(archive *in, archive *out,
                                     archive_entry *entry);
+bool libarchive_tar_extract(const std::string &filename,
+                            const std::string &target,
+                            const std::vector<std::string> &patterns);
+
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,
                    const std::vector<std::string> &files);

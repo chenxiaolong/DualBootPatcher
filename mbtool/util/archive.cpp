@@ -30,6 +30,18 @@
 #include "util/logging.h"
 #include "util/path.h"
 
+#define LIBARCHIVE_DISK_WRITER_FLAGS \
+    ARCHIVE_EXTRACT_TIME \
+    | ARCHIVE_EXTRACT_SECURE_SYMLINKS \
+    | ARCHIVE_EXTRACT_SECURE_NODOTDOT \
+    | ARCHIVE_EXTRACT_OWNER \
+    | ARCHIVE_EXTRACT_PERM \
+    | ARCHIVE_EXTRACT_ACL \
+    | ARCHIVE_EXTRACT_XATTR \
+    | ARCHIVE_EXTRACT_FFLAGS \
+    | ARCHIVE_EXTRACT_MAC_METADATA \
+    | ARCHIVE_EXTRACT_SPARSE
+
 namespace mb
 {
 namespace util
@@ -146,6 +158,132 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
     }
 
     return ret;
+}
+
+/*
+ * The following libarchive functions are based on code from bsdtar. The main
+ * difference is that they will not try to extract/add as many files as possible
+ * from/to the archive. They'll immediately fail after the first error or
+ * warning because an incomplete archive is useless for backup and restoring.
+ */
+
+bool libarchive_tar_extract(const std::string &filename,
+                            const std::string &target,
+                            const std::vector<std::string> &patterns)
+{
+    if (target.empty()) {
+        LOGE("%s: Invalid target path for extraction", target.c_str());
+        return false;
+    }
+
+    autoclose::archive matcher(archive_match_new(), archive_match_free);
+    if (!matcher) {
+        LOGE("%s: Out of memory when creating matcher", __FUNCTION__);
+        return false;
+    }
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    if (!in) {
+        LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
+        return false;
+    }
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    if (!out) {
+        LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
+        return false;
+    }
+
+    // Set up matcher parameters
+    for (const std::string &pattern : patterns) {
+        if (archive_match_include_pattern(
+                matcher.get(), pattern.c_str()) != ARCHIVE_OK) {
+            LOGE("Invalid pattern: %s", pattern.c_str());
+            return false;
+        }
+    }
+
+    // Set up archive reader parameters
+    //archive_read_support_format_gnutar(in.get());
+    archive_read_support_format_tar(in.get());
+    //archive_read_support_filter_bzip2(in.get());
+    //archive_read_support_filter_gzip(in.get());
+    //archive_read_support_filter_xz(in.get());
+
+    // Set up disk writer parameters
+    archive_write_disk_set_standard_lookup(out.get());
+    archive_write_disk_set_options(out.get(), LIBARCHIVE_DISK_WRITER_FLAGS);
+
+    if (archive_read_open_filename(
+            in.get(), filename.c_str(), 10240) != ARCHIVE_OK) {
+        LOGE("%s: Failed to open file: %s",
+             filename.c_str(), archive_error_string(in.get()));
+        return false;
+    }
+
+    archive_entry *entry;
+    int ret;
+    std::string target_path;
+
+    while (true) {
+        ret = archive_read_next_header(in.get(), &entry);
+        if (ret == ARCHIVE_EOF) {
+            break;
+        } else if (ret == ARCHIVE_RETRY) {
+            LOGW("%s: Retrying header read", filename.c_str());
+            continue;
+        } else if (ret != ARCHIVE_OK) {
+            LOGE("%s: Failed to read header: %s",
+                 filename.c_str(), archive_error_string(in.get()));
+            return false;
+        }
+
+        const char *path = archive_entry_pathname(entry);
+        if (!path || !*path) {
+            LOGE("%s: Header has null or empty filename", filename.c_str());
+            return false;
+        }
+
+        LOGV("%s", path);
+
+        // Build path
+        target_path = target;
+        if (target_path.back() != '/' && *path != '/') {
+            target_path += '/';
+        }
+        target_path += path;
+
+        archive_entry_set_pathname(entry, target_path.c_str());
+
+        // Check pattern matches
+        if (archive_match_excluded(matcher.get(), entry)) {
+            continue;
+        }
+
+        // Extract file
+        ret = archive_read_extract2(in.get(), entry, out.get());
+        if (ret != ARCHIVE_OK) {
+            LOGE("%s: %s", archive_entry_pathname(entry),
+                 archive_error_string(in.get()));
+            return false;
+        }
+    }
+
+    if (archive_read_close(in.get()) != ARCHIVE_OK) {
+        LOGE("%s: %s", filename.c_str(), archive_error_string(in.get()));
+        return false;
+    }
+
+    // Check that all patterns were matched
+    const char *pattern;
+    while ((ret = archive_match_path_unmatched_inclusions_next(
+            matcher.get(), &pattern)) == ARCHIVE_OK) {
+        LOGE("%s: Pattern not matched: %s", filename.c_str(), pattern);
+    }
+    if (ret != ARCHIVE_EOF) {
+        LOGE("%s: %s", filename.c_str(), archive_error_string(matcher.get()));
+        return false;
+    }
+
+    return archive_match_path_unmatched_inclusions(matcher.get()) == 0;
 }
 
 static bool set_up_input(archive *in, const std::string &filename)
