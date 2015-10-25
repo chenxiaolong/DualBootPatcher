@@ -42,6 +42,9 @@
     | ARCHIVE_EXTRACT_MAC_METADATA \
     | ARCHIVE_EXTRACT_SPARSE
 
+#define LIBARCHIVE_DISK_READER_FLAGS \
+    ARCHIVE_READDISK_MAC_COPYFILE
+
 namespace mb
 {
 namespace util
@@ -284,6 +287,247 @@ bool libarchive_tar_extract(const std::string &filename,
     }
 
     return archive_match_path_unmatched_inclusions(matcher.get()) == 0;
+}
+
+static bool write_file(archive *in, archive *out, archive_entry *entry)
+{
+    int ret;
+
+    ret = archive_write_header(out, entry);
+    if (ret != ARCHIVE_OK) {
+        LOGE("%s: %s", archive_entry_pathname(entry), archive_error_string(out));
+        return false;
+    }
+
+    if (archive_entry_size(entry) > 0) {
+        return util::libarchive_copy_data_disk_to_archive(in, out, entry);
+    }
+
+    return true;
+}
+
+static int metadata_filter(archive *a, void *data, archive_entry *entry)
+{
+    (void) data;
+    (void) entry;
+
+    if (archive_read_disk_can_descend(a)) {
+        archive_read_disk_descend(a);
+    }
+    return 1;
+}
+
+/*!
+ * \brief Create pax archive with all metadata
+ *
+ * \param filename Target archive path
+ * \param base_dir Base directory for \a paths
+ * \param paths List of paths to add to the archive
+ *
+ * \return Whether the archive creation was successful
+ */
+bool libarchive_tar_create(const std::string &filename,
+                           const std::string &base_dir,
+                           const std::vector<std::string> &paths)
+{
+    if (base_dir.empty() && paths.empty()) {
+        LOGE("%s: No base directory or paths specified", filename.c_str());
+        return false;
+    }
+
+    autoclose::archive in(archive_read_disk_new(), archive_read_free);
+    if (!in) {
+        LOGE("%s: Out of memory when creating disk reader", __FUNCTION__);
+        return false;
+    }
+    autoclose::archive out(archive_write_new(), archive_write_free);
+    if (!out) {
+        LOGE("%s: Out of memory when creating archive writer", __FUNCTION__);
+        return false;
+    }
+    autoclose::archive_entry_linkresolver resolver(archive_entry_linkresolver_new(),
+                                                   archive_entry_linkresolver_free);
+    if (!resolver) {
+        LOGE("%s: Out of memory when creating link resolver", __FUNCTION__);
+        return false;
+    }
+
+    // Set up disk reader parameters
+    archive_read_disk_set_symlink_physical(in.get());
+    archive_read_disk_set_metadata_filter_callback(
+            in.get(), metadata_filter, nullptr);
+    archive_read_disk_set_behavior(in.get(), LIBARCHIVE_DISK_READER_FLAGS);
+    // We don't want to look up usernames and group names on Android
+    //archive_read_disk_set_standard_lookup(in.get());
+
+    // Set up archive writer parameters
+    // NOTE: We are creating POSIX pax archives instead of GNU tar archives
+    //       because libarchive's GNU tar writer is very limited. In particular,
+    //       it does not support storing sparse file information, xattrs, or
+    //       ACLs. Since this information is stored as extended attributes in
+    //       the pax archive, the GNU tar tool will not be able to extract any
+    //       of this additional metadata. In other words, extracting and
+    //       repacking a backup on a Linux machine with GNU tar will render the
+    //       backup useless.
+    //archive_write_set_format_gnutar(out.get());
+    archive_write_set_format_pax_restricted(out.get());
+    //archive_write_set_compression_bzip2(out.get());
+    //archive_write_set_compression_gzip(out.get());
+    //archive_write_set_compression_xz(out.get());
+    archive_write_set_bytes_per_block(out.get(), 10240);
+
+    // Set up link resolver parameters
+    archive_entry_linkresolver_set_strategy(resolver.get(),
+                                            archive_format(out.get()));
+
+    // Open output file
+    if (archive_write_open_filename(out.get(), filename.c_str()) != ARCHIVE_OK) {
+        LOGE("%s: Failed to open file: %s",
+             filename.c_str(), archive_error_string(out.get()));
+        return false;
+    }
+
+    archive_entry *entry = nullptr;
+    archive_entry *sparse_entry = nullptr;
+    int ret;
+    std::string full_path;
+
+    // Add hierarchies
+    for (const std::string &path : paths) {
+        if (path.empty()) {
+            LOGE("%s: Cannot add empty path to the archive", filename.c_str());
+            return false;
+        }
+
+        // If the path is absolute, don't append it to the base directory
+        if (path[0] == '/') {
+            full_path = path;
+        } else {
+            full_path = base_dir;
+            if (!full_path.empty() && full_path.back() != '/' && path[0] != '/') {
+                full_path += '/';
+            }
+            full_path += path;
+        }
+
+        ret = archive_read_disk_open(in.get(), full_path.c_str());
+        if (ret != ARCHIVE_OK) {
+            LOGE("%s: %s", full_path.c_str(), archive_error_string(in.get()));
+            return false;
+        }
+
+        while (true) {
+            archive_entry_free(entry);
+            entry = archive_entry_new();
+
+            ret = archive_read_next_header2(in.get(), entry);
+            if (ret == ARCHIVE_EOF) {
+                break;
+            } else if (ret != ARCHIVE_OK) {
+                LOGE("%s: Failed to read next header: %s", full_path.c_str(),
+                     archive_error_string(in.get()));
+                archive_entry_free(entry);
+                return false;
+            }
+
+            if (archive_entry_filetype(entry) != AE_IFREG) {
+                archive_entry_set_size(entry, 0);
+            }
+
+            // If our current directory tree path is not an absolute path, set
+            // the archive path to the relative path starting at base_dir
+            const char *curpath = archive_entry_pathname(entry);
+            if (curpath && path[0] != '/' && !base_dir.empty()) {
+                std::string relpath = util::relative_path(curpath, base_dir);
+                if (relpath.empty()) {
+                    // If the relative path is empty, then the current path is
+                    // the root of the directory tree. We don't need that, so
+                    // skip it.
+                    continue;
+                }
+                archive_entry_set_pathname(entry, relpath.c_str());
+            }
+
+            switch (archive_entry_filetype(entry)) {
+            case AE_IFSOCK:
+                LOGW("%s: Skipping socket", archive_entry_pathname(entry));
+                continue;
+            default:
+                LOGV("%s", archive_entry_pathname(entry));
+                break;
+            }
+
+            archive_entry_linkify(resolver.get(), &entry, &sparse_entry);
+
+            if (entry) {
+                if (!write_file(in.get(), out.get(), entry)) {
+                    archive_entry_free(entry);
+                    return false;
+                }
+                archive_entry_free(entry);
+                entry = nullptr;
+            }
+            if (sparse_entry) {
+                if (!write_file(in.get(), out.get(), sparse_entry)) {
+                    archive_entry_free(sparse_entry);
+                    return false;
+                }
+                archive_entry_free(sparse_entry);
+                sparse_entry = nullptr;
+            }
+        }
+
+        archive_entry_free(entry);
+        entry = nullptr;
+        archive_read_close(in.get());
+    }
+
+    archive_read_disk_set_metadata_filter_callback(in.get(), nullptr, nullptr);
+
+    entry = nullptr;
+    archive_entry_linkify(resolver.get(), &entry, &sparse_entry);
+
+    while (entry) {
+        // This tricky code here is to correctly read the contents of the entry
+        // because the disk reader 'in' is pointing at does not have any
+        // information about the entry by this time and using
+        // archive_read_data_block() with the disk reader consequently must
+        // fail. And we hae to re-open the entry to read the contents.
+        ret = archive_read_disk_open(in.get(), archive_entry_sourcepath(entry));
+        if (ret != ARCHIVE_OK) {
+            LOGE("%s: %s", archive_entry_sourcepath(entry),
+                 archive_error_string(in.get()));
+            return false;
+        }
+
+        // Invoke archive_read_next_header2() to work archive_read_data_block(),
+        // which is called via write_file() without failure.
+        archive_entry *entry2 = archive_entry_new();
+        ret = archive_read_next_header2(in.get(), entry2);
+        archive_entry_free(entry2);
+        if (ret != ARCHIVE_OK) {
+            LOGE("%s: %s", archive_entry_sourcepath(entry),
+                 archive_error_string(in.get()));
+            archive_entry_free(entry);
+            return false;
+        }
+
+        if (!write_file(in.get(), out.get(), entry)) {
+            archive_entry_free(entry);
+            return false;
+        }
+        archive_entry_free(entry);
+        archive_read_close(in.get());
+        entry = nullptr;
+        archive_entry_linkify(resolver.get(), &entry, &sparse_entry);
+    }
+
+    if (archive_write_close(out.get()) != ARCHIVE_OK) {
+        LOGE("%s: %s", filename.c_str(), archive_error_string(out.get()));
+        return false;
+    }
+
+    return true;
 }
 
 static bool set_up_input(archive *in, const std::string &filename)

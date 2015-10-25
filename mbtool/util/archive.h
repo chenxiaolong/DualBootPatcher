@@ -48,6 +48,9 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
                             const std::vector<std::string> &patterns);
+bool libarchive_tar_create(const std::string &filename,
+                           const std::string &base_dir,
+                           const std::vector<std::string> &paths);
 
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,
