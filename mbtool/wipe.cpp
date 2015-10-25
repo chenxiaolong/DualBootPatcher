@@ -19,6 +19,8 @@
 
 #include "wipe.h"
 
+#include <algorithm>
+
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -34,18 +36,18 @@ namespace mb
 
 class WipeDirectory : public util::FTSWrapper {
 public:
-    WipeDirectory(std::string path, bool wipe_media)
+    WipeDirectory(std::string path, std::vector<std::string> exclusions)
         : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _wipe_media(wipe_media)
+        _exclusions(std::move(exclusions))
     {
     }
 
     virtual int on_changed_path()
     {
-        // Don't wipe 'multiboot' and 'media' directories on the first level
+        // Exclude first-level directories
         if (_curr->fts_level == 1) {
-            if (strcmp(_curr->fts_name, "multiboot") == 0
-                    || (!_wipe_media && strcmp(_curr->fts_name, "media") == 0)) {
+            if (std::find(_exclusions.begin(), _exclusions.end(), _curr->fts_name)
+                    != _exclusions.end()) {
                 return Action::FTS_Skip;
             }
         }
@@ -81,7 +83,7 @@ public:
     }
 
 private:
-    bool _wipe_media;
+    std::vector<std::string> _exclusions;
 
     bool delete_path()
     {
@@ -95,15 +97,20 @@ private:
     }
 };
 
-bool wipe_directory(const std::string &mountpoint, bool wipe_media)
+bool wipe_directory(const std::string &directory,
+                    const std::vector<std::string> &exclusions)
 {
     struct stat sb;
-    if (stat(mountpoint.c_str(), &sb) < 0 && errno == ENOENT) {
+    if (stat(directory.c_str(), &sb) < 0 && errno == ENOENT) {
         // Don't fail if directory does not exist
         return true;
     }
 
-    WipeDirectory wd(mountpoint, wipe_media);
+    std::vector<std::string> new_exclusions{ "multiboot" };
+    new_exclusions.insert(new_exclusions.end(),
+                          exclusions.begin(), exclusions.end());
+
+    WipeDirectory wd(directory, std::move(new_exclusions));
     return wd.run();
 }
 
@@ -151,10 +158,15 @@ static bool log_wipe_file(const std::string &path)
  *
  * \return True if the path was wiped or doesn't exist. False, otherwise
  */
-static bool log_wipe_directory(const std::string &mountpoint, bool wipe_media)
+static bool log_wipe_directory(const std::string &mountpoint,
+                               const std::vector<std::string> &exclusions)
 {
-    LOGV("Wiping directory %s%s", mountpoint.c_str(),
-         wipe_media ? "" : " (excluding media directory)");
+    if (exclusions.empty()) {
+        LOGV("Wiping directory %s", mountpoint.c_str());
+    } else {
+        LOGV("Wiping directory %s (excluding %s)", mountpoint.c_str(),
+             util::join(exclusions, ", ").c_str());
+    }
 
     struct stat sb;
     if (stat(mountpoint.c_str(), &sb) < 0) {
@@ -171,7 +183,7 @@ static bool log_wipe_directory(const std::string &mountpoint, bool wipe_media)
         return false;
     }
 
-    bool ret = wipe_directory(mountpoint, wipe_media);
+    bool ret = wipe_directory(mountpoint, exclusions);
     LOGV("-> %s", ret ? "Succeeded" : "Failed");
     return ret;
 }
@@ -201,7 +213,7 @@ bool wipe_system(const std::shared_ptr<Rom> &rom)
 
         ret = log_wipe_file(path);
     } else {
-        ret = log_wipe_directory(path, true);
+        ret = log_wipe_directory(path, {});
         // Try removing ROM's /system if it's empty
         remove(path.c_str());
     }
@@ -220,7 +232,7 @@ bool wipe_cache(const std::shared_ptr<Rom> &rom)
     if (rom->cache_is_image) {
         ret = log_wipe_file(path);
     } else {
-        ret = log_wipe_directory(path, true);
+        ret = log_wipe_directory(path, {});
         // Try removing ROM's /cache if it's empty
         remove(path.c_str());
     }
@@ -239,7 +251,7 @@ bool wipe_data(const std::shared_ptr<Rom> &rom)
     if (rom->data_is_image) {
         ret = log_wipe_file(path);
     } else {
-        ret = log_wipe_directory(path, false);
+        ret = log_wipe_directory(path, { "media" });
         // Try removing ROM's /data/media and /data if they're empty
         remove((path + "/media").c_str());
         remove(path.c_str());

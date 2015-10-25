@@ -119,7 +119,7 @@ static bool do_format(const std::string &mountpoint)
             return false;
         }
 
-        if (!wipe_directory(mountpoint, true)) {
+        if (!wipe_directory(mountpoint, {})) {
             LOGE(TAG "Failed to wipe %s", mountpoint.c_str());
             return false;
         }
@@ -129,7 +129,7 @@ static bool do_format(const std::string &mountpoint)
             return false;
         }
     } else if (mountpoint == DATA) {
-        if (!wipe_directory(mountpoint, false)) {
+        if (!wipe_directory(mountpoint, { "media" })) {
             LOGE(TAG "Failed to wipe %s", mountpoint.c_str());
             return false;
         }

@@ -1375,7 +1375,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Copying temporary image to system");
 
             // Format system directory
-            if (!wipe_directory(_system_path, true)) {
+            if (!wipe_directory(_system_path, {})) {
                 display_msg(util::format("Failed to wipe %s",
                                          _system_path.c_str()));
                 return ProceedState::Fail;
