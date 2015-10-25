@@ -90,6 +90,7 @@ bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
     });
 
     memset(&loopinfo, 0, sizeof(struct loop_info64));
+    strlcpy((char *) loopinfo.lo_file_name, file.c_str(), LO_NAME_SIZE);
     loopinfo.lo_offset = offset;
 
     if (ioctl(lfd, LOOP_SET_FD, ffd) < 0) {
