@@ -32,6 +32,12 @@
 namespace mb
 {
 
+static void output_cb(const std::string &msg, void *data)
+{
+    std::vector<std::string> *args = (std::vector<std::string> *) data;
+    LOGV("%s: %s", (*args)[0].c_str(), msg.c_str());
+}
+
 CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 {
     // Ensure we have enough space since we're creating a sparse file that may
@@ -55,7 +61,9 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
             LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str.c_str());
 
             // Create new image
-            if (util::run_command({ "make_ext4fs", "-l", size_str, path }) != 0) {
+            std::vector<std::string> args{ "make_ext4fs", "-l", size_str, path };
+            int exit_code = util::run_command_cb(args, output_cb, nullptr);
+            if (exit_code != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return CreateImageResult::FAILED;
             }
