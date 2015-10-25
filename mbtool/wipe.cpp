@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "multiboot.h"
 #include "util/delete.h"
 #include "util/fts.h"
 #include "util/logging.h"
@@ -280,7 +281,8 @@ bool wipe_dalvik_cache(const std::shared_ptr<Rom> &rom)
 bool wipe_multiboot(const std::shared_ptr<Rom> &rom)
 {
     // Delete /data/media/0/MultiBoot/[ROM ID]
-    std::string multiboot_path("/data/media/0/MultiBoot/");
+    std::string multiboot_path(MULTIBOOT_DIR);
+    multiboot_path += '/';
     multiboot_path += rom->id;
     return log_delete_recursive(multiboot_path);
 }

@@ -28,6 +28,7 @@
 #include <libmbp/logging.h>
 
 #include "installer.h"
+#include "multiboot.h"
 #include "util/archive.h"
 #include "util/chown.h"
 #include "util/command.h"
@@ -185,30 +186,12 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 
 void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
 {
-    static const char *log_file = "/data/media/0/MultiBoot.log";
-
     if (ret == ProceedState::Fail) {
-        if (!util::copy_file("/tmp/recovery.log", log_file, 0)) {
+        if (!util::copy_file("/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0)) {
             LOGE("Failed to copy log file: %s", strerror(errno));
         }
 
-        if (chmod(log_file, 0664) < 0) {
-            LOGE("%s: Failed to chmod: %s", log_file, strerror(errno));
-        }
-
-        if (!util::chown(log_file, "media_rw", "media_rw", 0)) {
-            LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
-            if (chown(log_file, 1023, 1023) < 0) {
-                LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
-            }
-        }
-
-        std::string context;
-        if (util::selinux_lget_context("/data/media/0", &context)
-                && !util::selinux_lset_context(log_file, context)) {
-            LOGE("%s: Failed to set context to %s: %s",
-                 log_file, context.c_str(), strerror(errno));
-        }
+        fix_multiboot_permissions();
 
         display_msg("The log file was saved as MultiBoot.log on the "
                     "internal storage.");

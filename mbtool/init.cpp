@@ -35,6 +35,7 @@
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "mount_fstab.h"
+#include "multiboot.h"
 #include "reboot.h"
 #include "sepolpatch.h"
 #include "version.h"
@@ -552,8 +553,6 @@ static bool dump_kernel_log(const char *file)
 
 static bool emergency_reboot()
 {
-    static const char *log_file = "/data/media/0/MultiBoot/kernel.log";
-
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 
     // Some devices don't have /proc/last_kmsg, so we'll attempt to save the
@@ -580,23 +579,17 @@ static bool emergency_reboot()
         }
     }
 
-    LOGW("Dumping kernel log to %s", log_file);
+    LOGW("Dumping kernel log to %s", MULTIBOOT_LOG_KERNEL);
 
     // Remove old log
-    remove(log_file);
+    remove(MULTIBOOT_LOG_KERNEL);
 
     // Write new log
-    util::mkdir_parent(log_file, 0775);
-    dump_kernel_log(log_file);
+    util::mkdir_parent(MULTIBOOT_LOG_KERNEL, 0775);
+    dump_kernel_log(MULTIBOOT_LOG_KERNEL);
 
     // Set file attributes on log file
-    util::chown(log_file, "media_rw", "media_rw", 0);
-    chmod(log_file, 0775);
-
-    std::string context;
-    if (util::selinux_lget_context("/data/media/0", &context)) {
-        util::selinux_lset_context(log_file, context);
-    }
+    fix_multiboot_permissions();
 
     sync();
     umount("/data");

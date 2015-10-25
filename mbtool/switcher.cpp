@@ -26,6 +26,7 @@
 
 #include <openssl/sha.h>
 
+#include "multiboot.h"
 #include "roms.h"
 #include "util/chmod.h"
 #include "util/chown.h"
@@ -39,7 +40,6 @@
 #include "util/selinux.h"
 #include "util/string.h"
 
-#define MULTIBOOT_DIR "/data/media/0/MultiBoot"
 #define CHECKSUMS_PATH "/data/multiboot/checksums.prop"
 
 namespace mb
@@ -215,42 +215,6 @@ static std::string find_block_dev(const std::vector<std::string> &search_dirs,
     }
 
     return std::string();
-}
-
-/*!
- * \brief Fix permissions and label on /data/media/0/MultiBoot/
- *
- * This function will do the following on /data/media/0/MultiBoot/:
- * 1. Recursively change ownership to media_rw:media_rw
- * 2. Recursively change mode to 0775
- * 3. Recursively change the SELinux label to the same label as /data/media/0/
- *
- * \return True if all operations succeeded. False, if any failed.
- */
-static bool fix_permissions()
-{
-    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
-
-    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::CHOWN_RECURSIVE)) {
-        LOGE("Failed to chown %s", MULTIBOOT_DIR);
-        return false;
-    }
-
-    if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
-        LOGE("Failed to chmod %s", MULTIBOOT_DIR);
-        return false;
-    }
-
-    std::string context;
-    if (util::selinux_lget_context("/data/media/0", &context)
-            && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
-        LOGE("%s: Failed to set context to %s: %s",
-             MULTIBOOT_DIR, context.c_str(), strerror(errno));
-        return false;
-    }
-
-    return true;
 }
 
 static bool add_extra_images(const std::string &multiboot_dir,
@@ -443,7 +407,7 @@ SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockd
         checksums_write(props);
     }
 
-    if (!fix_permissions()) {
+    if (!fix_multiboot_permissions()) {
         return SwitchRomResult::FAILED;
     }
 
@@ -526,7 +490,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     LOGD("Updating checksums file");
     checksums_write(props);
 
-    if (!fix_permissions()) {
+    if (!fix_multiboot_permissions()) {
         return false;
     }
 

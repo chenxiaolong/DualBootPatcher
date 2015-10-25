@@ -76,8 +76,6 @@
 
 #define ABOOT_PARTITION "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
-#define MULTIBOOT_DIR "/data/media/0/MultiBoot"
-
 #define DEFAULT_IMAGE_SIZE ((uint64_t) 4 * 1024 * 1024 * 1024)
 
 
@@ -1564,16 +1562,6 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        if (fchmod(fd_backup, 0775) < 0) {
-            // Non-fatal
-            LOGE("%s: Failed to chmod: %s", path.c_str(), strerror(errno));
-        }
-
-        if (!util::chown(path, "media_rw", "media_rw", 0)) {
-            // Non-fatal
-            LOGE("%s: Failed to chown: %s", path.c_str(), strerror(errno));
-        }
-
         // Update checksums
         unsigned char digest[SHA512_DIGEST_LENGTH];
         SHA512(bootimg.data(), bootimg.size(), digest);
@@ -1585,26 +1573,7 @@ Installer::ProceedState Installer::install_stage_finish()
         checksums_write(props);
     }
 
-    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
-
-    if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
-        // Non-fatal
-        LOGE("%s: Failed to chmod: %s", MULTIBOOT_DIR, strerror(errno));
-    }
-
-    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
-                     util::CHOWN_RECURSIVE)) {
-        // Non-fatal
-        LOGE("%s: Failed to chown: %s", MULTIBOOT_DIR, strerror(errno));
-    }
-
-    std::string context;
-    if (util::selinux_lget_context("/data/media/0", &context)
-            && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
-        // Non-fatal
-        LOGE("%s: Failed to set SELinux context to %s: %s",
-             MULTIBOOT_DIR, context.c_str(), strerror(errno));
-    }
+    fix_multiboot_permissions();
 
     return on_finished();
 }

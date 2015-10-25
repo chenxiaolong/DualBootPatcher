@@ -75,8 +75,6 @@
 #define RESPONSE_OK "OK"                        // Generic accepted response
 #define RESPONSE_UNSUPPORTED "UNSUPPORTED"      // Generic unsupported response
 
-#define LOG_FILE "/data/media/0/MultiBoot/daemon.log"
-
 
 namespace mb
 {
@@ -1049,21 +1047,20 @@ int daemon_main(int argc, char *argv[])
     // Set up logging
     typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
-    if (!util::mkdir_parent(LOG_FILE, 0775) && errno != EEXIST) {
+    if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
         fprintf(stderr, "Failed to create parent directory of %s: %s\n",
-                LOG_FILE, strerror(errno));
+                MULTIBOOT_LOG_DAEMON, strerror(errno));
         return EXIT_FAILURE;
     }
 
-    file_ptr fp(fopen(LOG_FILE, "w"), fclose);
+    file_ptr fp(fopen(MULTIBOOT_LOG_DAEMON, "w"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
-                LOG_FILE, strerror(errno));
+                MULTIBOOT_LOG_DAEMON, strerror(errno));
         return EXIT_FAILURE;
     }
 
-    util::chown(LOG_FILE, "media_rw", "media_rw", 0);
-    chmod(LOG_FILE, 0775);
+    fix_multiboot_permissions();
 
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));

@@ -174,9 +174,7 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
  */
 static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
 {
-    std::string config_path("/data/media/0/MultiBoot/");
-    config_path += rom->id;
-    config_path += "/config.json";
+    std::string config_path(rom->config_path());
 
     RomConfig config;
     if (config.load_file(config_path)) {

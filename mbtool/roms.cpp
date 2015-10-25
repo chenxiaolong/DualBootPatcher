@@ -24,6 +24,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "multiboot.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
@@ -71,17 +72,17 @@ std::string Rom::full_data_path()
 
 std::string Rom::boot_image_path()
 {
-    return util::format("/sdcard/MultiBoot/%s/boot.img", id.c_str());
+    return util::format(MULTIBOOT_DIR "/%s/boot.img", id.c_str());
 }
 
 std::string Rom::config_path()
 {
-    return util::format("/sdcard/MultiBoot/%s/config.json", id.c_str());
+    return util::format(MULTIBOOT_DIR "/%s/config.json", id.c_str());
 }
 
 std::string Rom::thumbnail_path()
 {
-    return util::format("/sdcard/MultiBoot/%s/thumbnail.webp", id.c_str());
+    return util::format(MULTIBOOT_DIR "/%s/thumbnail.webp", id.c_str());
 }
 
 std::shared_ptr<Rom> Roms::create_rom_primary()

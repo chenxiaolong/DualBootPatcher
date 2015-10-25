@@ -31,6 +31,7 @@
 #include <libmbp/logging.h>
 
 #include "installer.h"
+#include "multiboot.h"
 #include "util/archive.h"
 #include "util/chown.h"
 #include "util/command.h"
@@ -41,8 +42,6 @@
 #include "util/selinux.h"
 #include "util/string.h"
 
-
-static const char *log_file = "/data/media/0/MultiBoot.log";
 
 static const char *sepolicy_bak_path = "/sepolicy.rom-installer";
 
@@ -239,26 +238,6 @@ Installer::ProceedState RomInstaller::on_unmounted_filesystems()
 void RomInstaller::on_cleanup(Installer::ProceedState ret)
 {
     (void) ret;
-
-    // Fix permissions on log file
-
-    if (chmod(log_file, 0664) < 0) {
-        LOGE("%s: Failed to chmod: %s", log_file, strerror(errno));
-    }
-
-    if (!util::chown(log_file, "media_rw", "media_rw", 0)) {
-        LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
-        if (chown(log_file, 1023, 1023) < 0) {
-            LOGE("%s: Failed to chown: %s", log_file, strerror(errno));
-        }
-    }
-
-    std::string context;
-    if (util::selinux_lget_context("/data/media/0", &context)
-            && !util::selinux_lset_context(log_file, context)) {
-        LOGE("%s: Failed to set context to %s: %s",
-             log_file, context.c_str(), strerror(errno));
-    }
 
     display_msg("The log file was saved as MultiBoot.log on the "
                 "internal storage.");
@@ -513,11 +492,14 @@ int rom_installer_main(int argc, char *argv[])
     });
 
 
-    file_ptr fp(fopen(log_file, "wb"), fclose);
+    file_ptr fp(fopen(MULTIBOOT_LOG_INSTALLER, "wb"), fclose);
     if (!fp) {
-        fprintf(stderr, "Failed to open %s: %s\n", log_file, strerror(errno));
+        fprintf(stderr, "Failed to open %s: %s\n",
+                MULTIBOOT_LOG_INSTALLER, strerror(errno));
         return EXIT_FAILURE;
     }
+
+    fix_multiboot_permissions();
 
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), false));

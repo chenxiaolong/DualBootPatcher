@@ -21,9 +21,19 @@
 
 #include <string>
 
+#define INTERNAL_STORAGE                "/data/media/0"
+#define MULTIBOOT_DIR                   INTERNAL_STORAGE "/MultiBoot"
+#define MULTIBOOT_BACKUP_DIR            MULTIBOOT_DIR "/backups"
+#define MULTIBOOT_LOG_INSTALLER         INTERNAL_STORAGE "/MultiBoot.log"
+#define MULTIBOOT_LOG_APPSYNC           MULTIBOOT_DIR "/appsync.log"
+#define MULTIBOOT_LOG_DAEMON            MULTIBOOT_DIR "/daemon.log"
+#define MULTIBOOT_LOG_KERNEL            MULTIBOOT_DIR "/kernel.log"
+
 namespace mb
 {
 
 bool copy_system(const std::string &source, const std::string &target);
+
+bool fix_multiboot_permissions(void);
 
 }

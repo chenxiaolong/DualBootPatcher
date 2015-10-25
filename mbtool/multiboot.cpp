@@ -23,11 +23,14 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#include "util/chmod.h"
+#include "util/chown.h"
 #include "util/copy.h"
+#include "util/file.h"
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/selinux.h"
 #include "util/string.h"
-
 
 
 namespace mb
@@ -152,6 +155,42 @@ bool copy_system(const std::string &source, const std::string &target)
 {
     CopySystem fts(source, target);
     return fts.run();
+}
+
+/*!
+ * \brief Fix permissions and label on /data/media/0/MultiBoot/
+ *
+ * This function will do the following on /data/media/0/MultiBoot/:
+ * 1. Recursively change ownership to media_rw:media_rw
+ * 2. Recursively change mode to 0775
+ * 3. Recursively change the SELinux label to the same label as /data/media/0/
+ *
+ * \return True if all operations succeeded. False, if any failed.
+ */
+bool fix_multiboot_permissions(void)
+{
+    util::create_empty_file(MULTIBOOT_DIR "/.nomedia");
+
+    if (!util::chown(MULTIBOOT_DIR, "media_rw", "media_rw",
+                     util::CHOWN_RECURSIVE)) {
+        LOGE("Failed to chown %s", MULTIBOOT_DIR);
+        return false;
+    }
+
+    if (!util::chmod_recursive(MULTIBOOT_DIR, 0775)) {
+        LOGE("Failed to chmod %s", MULTIBOOT_DIR);
+        return false;
+    }
+
+    std::string context;
+    if (util::selinux_lget_context(INTERNAL_STORAGE, &context)
+            && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
+        LOGE("%s: Failed to set context to %s: %s",
+             MULTIBOOT_DIR, context.c_str(), strerror(errno));
+        return false;
+    }
+
+    return true;
 }
 
 }

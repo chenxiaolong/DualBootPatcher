@@ -182,8 +182,7 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     for (std::size_t i = 0; i < roms.roms.size(); ++i) {
         const std::shared_ptr<Rom> &rom = roms.roms[i];
 
-        std::string config_path = util::format(
-                "/data/media/0/MultiBoot/%s/config.json", rom->id.c_str());
+        std::string config_path = rom->config_path();
         std::string name = rom->id;
 
         RomConfig config;
