@@ -110,6 +110,7 @@ mbtool_src_base := \
 	$(EXTERNAL_DIR)/pugixml/src/pugixml.cpp
 
 mbtool_src_recovery := \
+	image.cpp \
 	installer.cpp \
 	rom_installer.cpp \
 	update_binary.cpp \

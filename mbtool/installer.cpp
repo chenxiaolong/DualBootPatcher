@@ -43,6 +43,7 @@
 
 // Local
 #include "autoclose/file.h"
+#include "image.h"
 #include "main.h"
 #include "multiboot.h"
 #include "switcher.h"
@@ -439,39 +440,17 @@ bool Installer::create_image(const std::string &path, uint64_t size)
         return false;
     }
 
-    // Ensure we have enough space since we're creating a sparse file that may
-    // get bigger
-    uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
-    if (avail < size) {
+    auto result = create_ext4_image(path, size);
+    if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
+        uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
         display_msg("");
         display_msg(util::format("There is not enough space to create %s",
                                  path.c_str()));
         display_msg(util::format("- Needed:    %" PRIu64 " bytes", size));
         display_msg(util::format("- Available: %" PRIu64 " bytes", avail));
-        return false;
     }
 
-    struct stat sb;
-    if (stat(path.c_str(), &sb) < 0) {
-        if (errno != ENOENT) {
-            LOGE("%s: Failed to stat: %s", path.c_str(), strerror(errno));
-            return false;
-        } else {
-            std::string size_str = util::format("%" PRIu64, size);
-
-            LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str.c_str());
-
-            // Create new image
-            if (run_command({ "make_ext4fs", "-l", size_str, path }) != 0) {
-                LOGE("%s: Failed to create image", path.c_str());
-                return false;
-            }
-            return true;
-        }
-    }
-
-    LOGE("%s: File already exists", path.c_str());
-    return false;
+    return result == CreateImageResult::SUCCEEDED;
 }
 
 /*!
