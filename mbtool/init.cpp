@@ -32,6 +32,7 @@
 #include <sys/poll.h>
 #include <unistd.h>
 
+#include "autoclose/dir.h"
 #include "autoclose/file.h"
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
@@ -63,8 +64,6 @@ static const char *data_block_devs[] = {
     nullptr
 };
 
-typedef std::unique_ptr<DIR, int (*)(DIR *)> dir_ptr;
-
 static void init_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -86,7 +85,7 @@ static void init_usage(bool error)
 
 static std::string find_fstab()
 {
-    dir_ptr dir(opendir("/"), closedir);
+    autoclose::dir dir(autoclose::opendir("/"));
     if (!dir) {
         return std::string();
     }
@@ -360,7 +359,7 @@ static bool add_mbtool_services()
 
 static bool strip_manual_mounts()
 {
-    dir_ptr dir(opendir("/"), closedir);
+    autoclose::dir dir(autoclose::opendir("/"));
     if (!dir) {
         return true;
     }
