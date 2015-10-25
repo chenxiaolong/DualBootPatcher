@@ -28,6 +28,9 @@ endif()
 include(cmake/AndroidNDK.cmake)
 include(cmake/LogicalCoreCount.cmake)
 
+# Third party binaries
+add_subdirectory(thirdparty)
+
 # Main patcher
 add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
@@ -41,9 +44,6 @@ else()
     add_subdirectory(gui)
     add_subdirectory(bootimgtool)
 endif()
-
-# Third party binaries
-add_subdirectory(thirdparty)
 
 add_subdirectory(utilities)
 
