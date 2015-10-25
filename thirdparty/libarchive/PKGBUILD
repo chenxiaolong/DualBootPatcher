@@ -22,7 +22,7 @@ _ver_lzo=2.09-1
 
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
-pkgver=v3.1.2.r599.g567b374
+pkgver=3.1.2.r599.g567b374
 pkgrel=1
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
@@ -53,7 +53,7 @@ validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 
 pkgver() {
     cd "${pkgbase}"
-    git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+    git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 }
 
 prepare() {
