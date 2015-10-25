@@ -37,6 +37,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "autoclose/file.h"
 #include "reboot.h"
 #include "romconfig.h"
 #include "roms.h"
@@ -62,8 +63,6 @@
 
 namespace mb
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 static std::shared_ptr<Rom> determine_rom()
 {
@@ -310,7 +309,7 @@ static bool write_generated_fstab(const std::vector<util::fstab_rec *> &recs,
                                   const std::string &path, mode_t mode)
 {
     // Generate new fstab without /system, /cache, or /data entries
-    file_ptr out(std::fopen(path.c_str(), "wb"), std::fclose);
+    autoclose::file out(autoclose::fopen(path.c_str(), "wb"));
     if (!out) {
         LOGE("Failed to open %s for writing: %s",
              path.c_str(), strerror(errno));
@@ -700,7 +699,7 @@ static bool disable_fsck(const char *fsck_binary)
     std::string path("/fscks/");
     path += filename;
 
-    file_ptr fp(fopen(path.c_str(), "wb"), fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
@@ -907,7 +906,7 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom->id)) {
         LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom->id.c_str());
-        file_ptr fp(fopen("/default.prop", "a"), fclose);
+        autoclose::file fp(autoclose::fopen("/default.prop", "a"));
         if (fp) {
             fprintf(fp.get(), "\nro.multiboot.romid=%s\n", rom->id.c_str());
         }

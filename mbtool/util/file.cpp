@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -32,14 +32,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "autoclose/file.h"
 #include "util/finally.h"
 
 namespace mb
 {
 namespace util
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 /*!
  * \brief Create empty file with 0666 permissions
@@ -78,7 +77,7 @@ bool create_empty_file(const std::string &path)
 bool file_first_line(const std::string &path,
                      std::string *line_out)
 {
-    file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
         return false;
     }
@@ -117,7 +116,7 @@ bool file_first_line(const std::string &path,
 bool file_write_data(const std::string &path,
                      const char *data, size_t size)
 {
-    file_ptr fp(std::fopen(path.c_str(), "wb"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
     if (!fp) {
         return false;
     }
@@ -174,7 +173,7 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items) {
 bool file_read_all(const std::string &path,
                    std::vector<unsigned char> *data_out)
 {
-    file_ptr fp(fopen(path.c_str(), "rb"), fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
         return false;
     }
@@ -197,7 +196,7 @@ bool file_read_all(const std::string &path,
                    unsigned char **data_out,
                    std::size_t *size_out)
 {
-    file_ptr fp(fopen(path.c_str(), "rb"), fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
         return false;
     }

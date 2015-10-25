@@ -60,6 +60,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 LOCAL_PATH := $(_LOCAL_PATH)
 
 mbutil_src := \
+	autoclose/file.cpp \
 	util/archive.cpp \
 	util/chmod.cpp \
 	util/chown.cpp \

@@ -32,6 +32,7 @@
 #include <sys/poll.h>
 #include <unistd.h>
 
+#include "autoclose/file.h"
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "mount_fstab.h"
@@ -62,7 +63,6 @@ static const char *data_block_devs[] = {
     nullptr
 };
 
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 typedef std::unique_ptr<DIR, int (*)(DIR *)> dir_ptr;
 
 static void init_usage(bool error)
@@ -102,7 +102,7 @@ static std::string find_fstab()
         std::string path("/");
         path += ent->d_name;
 
-        file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
         if (!fp) {
             continue;
         }
@@ -199,7 +199,7 @@ static bool replace_file(const char *replace, const char *with)
 
 static bool fix_file_contexts()
 {
-    file_ptr fp_old(std::fopen("/file_contexts", "rb"), std::fclose);
+    autoclose::file fp_old(autoclose::fopen("/file_contexts", "rb"));
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -209,7 +209,7 @@ static bool fix_file_contexts()
         }
     }
 
-    file_ptr fp_new(std::fopen("/file_contexts.new", "wb"), std::fclose);
+    autoclose::file fp_new(autoclose::fopen("/file_contexts.new", "wb"));
     if (!fp_new) {
         LOGE("Failed to open /file_contexts.new for writing: %s",
              strerror(errno));
@@ -262,7 +262,7 @@ static bool is_completely_whitespace(const char *str)
 
 static bool add_mbtool_services()
 {
-    file_ptr fp_old(std::fopen("/init.rc", "rb"), std::fclose);
+    autoclose::file fp_old(autoclose::fopen("/init.rc", "rb"));
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -272,7 +272,7 @@ static bool add_mbtool_services()
         }
     }
 
-    file_ptr fp_new(std::fopen("/init.rc.new", "wb"), std::fclose);
+    autoclose::file fp_new(autoclose::fopen("/init.rc.new", "wb"));
     if (!fp_new) {
         LOGE("Failed to open /init.rc.new for writing: %s",
              strerror(errno));
@@ -334,7 +334,7 @@ static bool add_mbtool_services()
     }
 
     // Create /init.multiboot.rc
-    file_ptr fp_multiboot(std::fopen("/init.multiboot.rc", "wb"), std::fclose);
+    autoclose::file fp_multiboot(autoclose::fopen("/init.multiboot.rc", "wb"));
     if (!fp_multiboot) {
         LOGE("Failed to open /init.multiboot.rc for writing: %s",
              strerror(errno));
@@ -376,7 +376,7 @@ static bool strip_manual_mounts()
         std::string path("/");
         path += ent->d_name;
 
-        file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
         if (!fp) {
             LOGE("Failed to open %s for reading: %s",
                  path.c_str(), strerror(errno));
@@ -423,7 +423,7 @@ static bool strip_manual_mounts()
         std::string new_path(path);
         new_path += ".new";
 
-        file_ptr fp_new(std::fopen(new_path.c_str(), "w"), std::fclose);
+        autoclose::file fp_new(autoclose::fopen(new_path.c_str(), "w"));
         if (!fp_new) {
             LOGE("Failed to open %s for writing: %s",
                  new_path.c_str(), strerror(errno));
@@ -457,13 +457,13 @@ static bool fix_arter97()
         return true;
     }
 
-    file_ptr fp(std::fopen(path, "r"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path, "r"));
     if (!fp) {
         LOGE("Failed to open %s for reading: %s", path, strerror(errno));
         return false;
     }
 
-    file_ptr fp_new(std::fopen(path_new, "w"), std::fclose);
+    autoclose::file fp_new(autoclose::fopen(path_new, "w"));
     if (!fp_new) {
         LOGE("Failed to open %s for writing: %s", path_new, strerror(errno));
         return false;
@@ -529,7 +529,7 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    file_ptr fp(fopen(file, "wb"), fclose);
+    autoclose::file fp(autoclose::fopen(file, "wb"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
         return false;

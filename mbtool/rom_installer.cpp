@@ -30,6 +30,7 @@
 #include <libmbp/bootimage.h>
 #include <libmbp/logging.h>
 
+#include "autoclose/file.h"
 #include "installer.h"
 #include "multiboot.h"
 #include "util/archive.h"
@@ -47,8 +48,6 @@ static const char *sepolicy_bak_path = "/sepolicy.rom-installer";
 
 namespace mb
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 class RomInstaller : public Installer
 {
@@ -492,7 +491,7 @@ int rom_installer_main(int argc, char *argv[])
     });
 
 
-    file_ptr fp(fopen(MULTIBOOT_LOG_INSTALLER, "wb"), fclose);
+    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_INSTALLER, "wb"));
     if (!fp) {
         fprintf(stderr, "Failed to open %s: %s\n",
                 MULTIBOOT_LOG_INSTALLER, strerror(errno));

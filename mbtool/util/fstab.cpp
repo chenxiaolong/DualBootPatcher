@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <sys/mount.h>
 
+#include "autoclose/file.h"
 #include "util/finally.h"
 #include "util/logging.h"
 
@@ -34,8 +35,6 @@ namespace mb
 {
 namespace util
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 struct mount_flag
 {
@@ -81,7 +80,7 @@ static int options_to_flags(char *args, char *new_args, int size);
 // Much simplified version of fs_mgr's fstab parsing code
 std::vector<fstab_rec> read_fstab(const std::string &path)
 {
-    file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
         LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
         return std::vector<fstab_rec>();

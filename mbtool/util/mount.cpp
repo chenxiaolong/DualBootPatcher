@@ -30,6 +30,7 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
+#include "autoclose/file.h"
 #include "external/mntent.h"
 #include "util/directory.h"
 #include "util/logging.h"
@@ -43,11 +44,9 @@ namespace mb
 namespace util
 {
 
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
-
 bool is_mounted(const std::string &mountpoint)
 {
-    file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
+    autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
     if (!fp) {
         LOGE("Failed to read /proc/mounts: %s", strerror(errno));
         return false;
@@ -76,7 +75,7 @@ bool unmount_all(const std::string &dir)
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
 
-        file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
+        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
         if (!fp) {
             LOGE("Failed to read /proc/mounts: %s", strerror(errno));
             return false;
@@ -236,7 +235,7 @@ bool umount(const char *target)
     struct mntent ent;
     std::string source;
 
-    file_ptr fp(setmntent("/proc/mounts", "r"), endmntent);
+    autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
     if (fp) {
         char buf[1024];
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {

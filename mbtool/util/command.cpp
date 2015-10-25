@@ -25,14 +25,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "autoclose/file.h"
 #include "util/logging.h"
 
 namespace mb
 {
 namespace util
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 static std::string list2string(const std::vector<std::string> &list)
 {
@@ -161,7 +160,7 @@ int run_command2(const std::vector<std::string> &argv,
                     // Read program output in child process (stdout, stderr)
                     char buf[1024];
 
-                    file_ptr fp(fdopen(stdio_fds[0], "rb"), fclose);
+                    autoclose::file fp(fdopen(stdio_fds[0], "rb"), fclose);
 
                     while (fgets(buf, sizeof(buf), fp.get())) {
                         cb(buf, data);

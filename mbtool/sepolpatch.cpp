@@ -30,14 +30,13 @@
 #include <sepol/policydb/policydb.h>
 #include <sepol/sepol.h>
 
+#include "autoclose/file.h"
 #include "util/logging.h"
 #include "util/selinux.h"
 
 
 namespace mb
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 // Types to make permissive
 static const char *permissive_types[] = {
@@ -91,7 +90,7 @@ bool patch_loaded_sepolicy()
 {
     int is_enforcing = 0;
 
-    file_ptr fp(std::fopen(SELINUX_ENFORCE_FILE, "rb"), std::fclose);
+    autoclose::file fp(autoclose::fopen(SELINUX_ENFORCE_FILE, "rb"));
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't

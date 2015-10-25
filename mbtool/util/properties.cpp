@@ -30,6 +30,7 @@
 #include <dlfcn.h>
 #endif
 
+#include "autoclose/file.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/string.h"
@@ -38,8 +39,6 @@ namespace mb
 {
 namespace util
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE*)> file_ptr;
 
 #if DYNAMICALLY_LINKED
 static const char *libc_path = nullptr;
@@ -259,7 +258,7 @@ bool file_get_property(const std::string &path,
                        std::string *out,
                        const std::string &default_value)
 {
-    file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
     if (!fp) {
         return false;
     }
@@ -308,7 +307,7 @@ bool file_get_property(const std::string &path,
 bool file_get_all_properties(const std::string &path,
                              std::unordered_map<std::string, std::string> *map)
 {
-    file_ptr fp(std::fopen(path.c_str(), "r"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
     if (!fp) {
         return false;
     }
@@ -352,7 +351,7 @@ bool file_get_all_properties(const std::string &path,
 bool file_write_properties(const std::string &path,
                            const std::unordered_map<std::string, std::string> &map)
 {
-    file_ptr fp(std::fopen(path.c_str(), "wb"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
     if (!fp) {
         return false;
     }

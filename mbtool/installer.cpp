@@ -42,6 +42,7 @@
 #include <libmbp/patcherconfig.h>
 
 // Local
+#include "autoclose/file.h"
 #include "main.h"
 #include "multiboot.h"
 #include "switcher.h"
@@ -87,8 +88,6 @@ const std::string Installer::UPDATE_BINARY =
 const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
 const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::CANCELLED = "cancelled";
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
@@ -669,7 +668,7 @@ bool Installer::run_real_updater()
                     // Read program output in child process (stdout, stderr)
                     char buf[1024];
 
-                    file_ptr fp(fdopen(stdio_fds[0], "rb"), fclose);
+                    autoclose::file fp(fdopen(stdio_fds[0], "rb"), fclose);
 
                     while (fgets(buf, sizeof(buf), fp.get())) {
                         command_output(buf);
@@ -683,7 +682,7 @@ bool Installer::run_real_updater()
                     char *save_ptr;
 
                     // Similar parsing to AOSP recovery
-                    file_ptr fp(fdopen(pipe_fds[0], "rb"), fclose);
+                    autoclose::file fp(fdopen(pipe_fds[0], "rb"), fclose);
 
                     while (fgets(buf, sizeof(buf), fp.get())) {
                         char *cmd = strtok_r(buf, " \n", &save_ptr);

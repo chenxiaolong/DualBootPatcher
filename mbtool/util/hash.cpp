@@ -22,14 +22,13 @@
 #include <memory>
 #include <cstdio>
 
+#include "autoclose/file.h"
 #include "util/logging.h"
 
 namespace mb
 {
 namespace util
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 /*!
  * \brief Compute SHA1 hash of a file
@@ -42,7 +41,7 @@ typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
  */
 bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH])
 {
-    file_ptr fp(std::fopen(path.c_str(), "rb"), std::fclose);
+    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
         LOGE("%s: Failed to open: %s", path.c_str(), strerror(errno));
         return false;

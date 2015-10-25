@@ -34,6 +34,7 @@
 
 #include <proc/readproc.h>
 
+#include "autoclose/file.h"
 #include "multiboot.h"
 #include "packages.h"
 #include "reboot.h"
@@ -1045,15 +1046,13 @@ int daemon_main(int argc, char *argv[])
     }
 
     // Set up logging
-    typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
-
     if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
         fprintf(stderr, "Failed to create parent directory of %s: %s\n",
                 MULTIBOOT_LOG_DAEMON, strerror(errno));
         return EXIT_FAILURE;
     }
 
-    file_ptr fp(fopen(MULTIBOOT_LOG_DAEMON, "w"), fclose);
+    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_DAEMON, "w"));
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
                 MULTIBOOT_LOG_DAEMON, strerror(errno));
