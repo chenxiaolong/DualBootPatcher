@@ -169,7 +169,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
 
         archive_entry_set_pathname(entry, (_chroot + "/" + path).c_str());
 
-        if (util::archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+        if (util::libarchive_copy_header_and_data(
+                in.get(), out.get(), entry) != ARCHIVE_OK) {
             return ProceedState::Fail;
         }
 

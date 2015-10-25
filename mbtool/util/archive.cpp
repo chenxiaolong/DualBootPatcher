@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -35,7 +35,7 @@ namespace mb
 namespace util
 {
 
-int archive_copy_data(archive *in, archive *out)
+int libarchive_copy_data(archive *in, archive *out, archive_entry *entry)
 {
     const void *buff;
     size_t size;
@@ -45,22 +45,94 @@ int archive_copy_data(archive *in, archive *out)
     while ((ret = archive_read_data_block(
             in, &buff, &size, &offset)) == ARCHIVE_OK) {
         if (archive_write_data_block(out, buff, size, offset) != ARCHIVE_OK) {
-            LOGE("Failed to write data: %s", archive_error_string(out));
+            LOGE("%s: Failed to write data: %s", archive_entry_pathname(entry),
+                 archive_error_string(out));
             return ARCHIVE_FAILED;
         }
     }
 
     if (ret != ARCHIVE_EOF) {
-        LOGE("Data copy ended without reaching EOF: %s",
-             archive_error_string(in));
+        LOGE("%s: Data copy ended without reaching EOF: %s",
+             archive_entry_pathname(entry), archive_error_string(in));
         return ARCHIVE_FAILED;
     }
 
     return ARCHIVE_OK;
 }
 
-int archive_copy_header_and_data(archive *in, archive *out,
-                                 archive_entry *entry)
+/*!
+ * \brief Copy sparse file on disk to an archive
+ *
+ * \see tar/write.c from libarchive's source code
+ */
+bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
+                                          archive_entry *entry)
+{
+    size_t bytes_read;
+    ssize_t bytes_written;
+    int64_t offset;
+    int64_t progress = 0;
+    char null_buf[64 * 1024];
+    const void *buf;
+    int ret;
+
+    memset(null_buf, 0, sizeof(null_buf));
+
+    while ((ret = archive_read_data_block(
+            in, &buf, &bytes_read, &offset)) == ARCHIVE_OK) {
+        if (offset > progress) {
+            int64_t sparse = offset - progress;
+            size_t ns;
+
+            while (sparse > 0) {
+                if (sparse > (int64_t) sizeof(null_buf)) {
+                    ns = sizeof(null_buf);
+                } else {
+                    ns = (size_t) sparse;
+                }
+
+                bytes_written = archive_write_data(out, null_buf, ns);
+                if (bytes_written < 0) {
+                    LOGE("%s: %s", archive_entry_pathname(entry),
+                         archive_error_string(out));
+                    return false;
+                }
+
+                if ((size_t) bytes_written < ns) {
+                    LOGE("%s: Truncated write", archive_entry_pathname(entry));
+                    return false;
+                }
+
+                progress += bytes_written;
+                sparse -= bytes_written;
+            }
+        }
+
+        bytes_written = archive_write_data(out, buf, bytes_read);
+        if (bytes_written < 0) {
+            LOGE("%s: %s", archive_entry_pathname(entry),
+                 archive_error_string(out));
+            return false;
+        }
+
+        if ((size_t) bytes_written < bytes_read) {
+            LOGE("%s: Truncated write", archive_entry_pathname(entry));
+            return false;
+        }
+
+        progress += bytes_written;
+    }
+
+    if (ret != ARCHIVE_EOF) {
+        LOGE("%s: %s", archive_entry_pathname(entry), archive_error_string(in));
+        return false;
+    }
+
+    return true;
+}
+
+int libarchive_copy_header_and_data(archive *in, archive *out,
+                                    archive_entry *entry)
 {
     int ret = ARCHIVE_OK;
 
@@ -69,7 +141,7 @@ int archive_copy_header_and_data(archive *in, archive *out,
         return ret;
     }
 
-    if ((ret = archive_copy_data(in, out)) != ARCHIVE_OK) {
+    if ((ret = libarchive_copy_data(in, out, entry)) != ARCHIVE_OK) {
         return ret;
     }
 
@@ -148,7 +220,7 @@ bool extract_archive(const std::string &filename, const std::string &target)
     });
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        if (archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+        if (libarchive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
             return false;
         }
     }
@@ -213,7 +285,7 @@ bool extract_files(const std::string &filename, const std::string &target,
                 archive_entry_pathname(entry)) != files.end()) {
             ++count;
 
-            if (archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+            if (libarchive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
                 return false;
             }
         }
@@ -265,7 +337,7 @@ bool extract_files2(const std::string &filename,
 
                 archive_entry_set_pathname(entry, info.to.c_str());
 
-                if (archive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
+                if (libarchive_copy_header_and_data(in.get(), out.get(), entry) != ARCHIVE_OK) {
                     return false;
                 }
 

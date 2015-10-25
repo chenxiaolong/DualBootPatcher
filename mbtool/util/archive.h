@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -40,9 +40,11 @@ struct exists_info {
     bool exists;
 };
 
-int archive_copy_data(archive *in, archive *out);
-int archive_copy_header_and_data(archive *in, archive *out,
-                                 archive_entry *entry);
+int libarchive_copy_data(archive *in, archive *out, archive_entry *entry);
+bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
+                                          archive_entry *entry);
+int libarchive_copy_header_and_data(archive *in, archive *out,
+                                    archive_entry *entry);
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,
                    const std::vector<std::string> &files);
