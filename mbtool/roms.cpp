@@ -69,6 +69,21 @@ std::string Rom::full_data_path()
     return path;
 }
 
+std::string Rom::boot_image_path()
+{
+    return util::format("/sdcard/MultiBoot/%s/boot.img", id.c_str());
+}
+
+std::string Rom::config_path()
+{
+    return util::format("/sdcard/MultiBoot/%s/config.json", id.c_str());
+}
+
+std::string Rom::thumbnail_path()
+{
+    return util::format("/sdcard/MultiBoot/%s/thumbnail.webp", id.c_str());
+}
+
 std::shared_ptr<Rom> Roms::create_rom_primary()
 {
     std::shared_ptr<Rom> rom(new Rom());

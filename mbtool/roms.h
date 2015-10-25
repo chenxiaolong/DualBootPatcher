@@ -55,6 +55,10 @@ public:
     std::string full_system_path();
     std::string full_cache_path();
     std::string full_data_path();
+
+    std::string boot_image_path();
+    std::string config_path();
+    std::string thumbnail_path();
 };
 
 class Roms
