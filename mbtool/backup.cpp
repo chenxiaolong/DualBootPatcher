@@ -832,7 +832,13 @@ int backup_main(int argc, char *argv[])
     }
 
     bool ret = backup_rom(rom, output_dir, targets);
-    return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+    if (ret) {
+        LOGI("=== Finished ===");
+        return EXIT_SUCCESS;
+    } else {
+        LOGI("=== Failed ===");
+        return EXIT_FAILURE;
+    }
 }
 
 int restore_main(int argc, char *argv[])
@@ -928,7 +934,13 @@ int restore_main(int argc, char *argv[])
     }
 
     bool ret = restore_rom(rom, input_dir, targets);
-    return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+    if (ret) {
+        LOGI("=== Finished ===");
+        return EXIT_SUCCESS;
+    } else {
+        LOGI("=== Failed ===");
+        return EXIT_FAILURE;
+    }
 }
 
 }
