@@ -29,6 +29,8 @@
 #define MULTIBOOT_LOG_DAEMON            MULTIBOOT_DIR "/daemon.log"
 #define MULTIBOOT_LOG_KERNEL            MULTIBOOT_DIR "/kernel.log"
 
+#define ABOOT_PARTITION                 "/dev/block/platform/msm_sdcc.1/by-name/aboot"
+
 namespace mb
 {
 

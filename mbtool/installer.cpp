@@ -76,8 +76,6 @@
 #define DEBUG_USE_ALTERNATE_UPDATER 0
 #define DEBUG_ALTERNATE_UPDATER_PATH "/tmp/updater.orig"
 
-#define ABOOT_PARTITION "/dev/block/platform/msm_sdcc.1/by-name/aboot"
-
 
 namespace mb {
 
