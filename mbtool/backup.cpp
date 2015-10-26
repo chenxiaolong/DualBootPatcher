@@ -162,6 +162,8 @@ static bool backup_image(const std::string &output_file,
         return false;
     }
 
+    fsck_ext4_image(image);
+
     if (!util::mount(image.c_str(), BACKUP_MNT_DIR, "ext4", MS_RDONLY, "")) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
              strerror(errno));
@@ -208,6 +210,8 @@ static bool restore_image(const std::string &input_file,
         LOGE("%s: %s", BACKUP_MNT_DIR, strerror(errno));
         return false;
     }
+
+    fsck_ext4_image(image);
 
     if (!util::mount(image.c_str(), BACKUP_MNT_DIR, "ext4", 0, "")) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
