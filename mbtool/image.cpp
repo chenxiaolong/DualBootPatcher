@@ -21,6 +21,7 @@
 
 #include <inttypes.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "util/command.h"
 #include "util/directory.h"
@@ -62,8 +63,8 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 
             // Create new image
             std::vector<std::string> args{ "make_ext4fs", "-l", size_str, path };
-            int exit_code = util::run_command_cb(args, output_cb, nullptr);
-            if (exit_code < 0 || WEXITSTATUS(ret) != 0) {
+            int ret = util::run_command_cb(args, output_cb, nullptr);
+            if (ret < 0 || WEXITSTATUS(ret) != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return CreateImageResult::FAILED;
             }
@@ -73,6 +74,17 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 
     LOGE("%s: File already exists", path.c_str());
     return CreateImageResult::IMAGE_EXISTS;
+}
+
+bool fsck_ext4_image(const std::string &image)
+{
+    std::vector<std::string> args{ "e2fsck", "-f", "-y", image };
+    int ret = util::run_command_cb(args, output_cb, &args);
+    if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
+        LOGE("%s: Failed to e2fsck", image.c_str());
+        return false;
+    }
+    return true;
 }
 
 }

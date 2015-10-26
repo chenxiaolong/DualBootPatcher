@@ -35,5 +35,6 @@ enum class CreateImageResult
 };
 
 CreateImageResult create_ext4_image(const std::string &path, uint64_t size);
+bool fsck_ext4_image(const std::string &image);
 
 }

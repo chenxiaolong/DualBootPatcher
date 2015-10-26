@@ -1359,11 +1359,8 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     }
 
     if (_rom->system_is_image) {
-        int ret;
-
         // Run file system checks
-        ret = run_command({ "e2fsck", "-f", "-y", _system_path });
-        if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
+        if (!fsck_ext4_image(_system_path)) {
             display_msg("Failed to run e2fsck on image");
         }
     } else {
