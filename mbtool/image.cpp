@@ -63,7 +63,7 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
             // Create new image
             std::vector<std::string> args{ "make_ext4fs", "-l", size_str, path };
             int exit_code = util::run_command_cb(args, output_cb, nullptr);
-            if (exit_code != 0) {
+            if (exit_code < 0 || WEXITSTATUS(ret) != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return CreateImageResult::FAILED;
             }
