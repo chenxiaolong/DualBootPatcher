@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 
 #ifdef RECOVERY
+#include "backup.h"
 #include "rom_installer.h"
 #include "update_binary.h"
 #include "update_binary_tool.h"
@@ -61,6 +62,8 @@ struct tool tools[] = {
     { "mbtool", mbtool_main },
     // Tools
 #ifdef RECOVERY
+    { "backup", mb::backup_main },
+    { "restore", mb::restore_main },
     { "rom-installer", mb::rom_installer_main },
     { "updater", mb::update_binary_main }, // TWRP
     { "update_binary", mb::update_binary_main }, // CWM, Philz
