@@ -41,6 +41,7 @@
 #include "util/archive.h"
 #include "util/copy.h"
 #include "util/directory.h"
+#include "util/file.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/mount.h"
@@ -282,15 +283,59 @@ static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
     boot_image_backup += BACKUP_NAME_BOOT_IMAGE;
 
     struct stat sb;
-    if (stat(boot_image_backup.c_str(), &sb) == 0) {
-        LOGI("=== Restoring to %s ===", boot_image_path.c_str());
-        if (!util::copy_file(boot_image_backup, boot_image_path, 0)) {
-            return Result::FAILED;
-        }
-    } else {
+    if (stat(boot_image_backup.c_str(), &sb) < 0) {
         LOGW("=== %s does not exist ===", boot_image_backup.c_str());
         return Result::FILES_MISSING;
     }
+
+    LOGI("=== Restoring to %s ===", boot_image_path.c_str());
+
+    // Set the ROM ID in the ramdisk
+    mbp::BootImage bi;
+    if (!bi.loadFile(boot_image_backup)) {
+        LOGE("Failed to load boot image");
+        return Result::FAILED;
+    }
+    mbp::CpioFile cpio;
+    if (!cpio.load(bi.ramdiskImage())) {
+        LOGE("Failed to load ramdisk image");
+        return Result::FAILED;
+    }
+
+    // Set ROM ID
+    std::vector<unsigned char> data(rom->id.begin(), rom->id.end());
+    cpio.remove("romid");
+    cpio.addFile(std::move(data), "romid", 0664);
+
+    // Recreate ramdisk
+    std::vector<unsigned char> new_ramdisk;
+    if (!cpio.createData(&new_ramdisk)) {
+        LOGE("Failed to create new ramdisk");
+        return Result::FAILED;
+    }
+    bi.setRamdiskImage(std::move(new_ramdisk));
+
+    // Re-loki if needed
+    if (bi.wasType() == mbp::BootImage::Type::Loki) {
+        std::vector<unsigned char> aboot_image;
+        if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
+            LOGE("Failed to read aboot partition: %s", strerror(errno));
+            return Result::FAILED;
+        }
+
+        bi.setAbootImage(std::move(aboot_image));
+        bi.setTargetType(mbp::BootImage::Type::Loki);
+    }
+
+    // Recreate boot image
+    std::vector<unsigned char> new_boot_image;
+    if (!bi.create(&new_boot_image)) {
+        LOGE("Failed to create new boot image");
+        return Result::FAILED;
+    }
+
+    // We explicitly don't update the checksums here. The user needs to know the
+    // risk of restoring a backup that can be modified by any app.
 
     return Result::SUCCEEDED;
 }
