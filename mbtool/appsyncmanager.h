@@ -40,20 +40,11 @@ class AppSyncManager
 public:
     static void detect_directories();
 
-    static std::string get_shared_apk_path(const std::string &pkg);
     static std::string get_shared_data_path(const std::string &pkg);
-
-    static bool copy_apk_user_to_shared(const std::string &pkg);
-    static bool sync_apk_shared_to_user(const std::string &pkg,
-                                        const std::vector<RomConfigAndPackages> &cfg_pkgs_list);
-
-    static bool wipe_shared_libraries(const std::shared_ptr<Package> &pkg);
 
     static bool initialize_directories();
     static bool create_shared_data_directory(const std::string &pkg, uid_t uid);
-    static bool fix_shared_apk_permissions();
     static bool fix_shared_data_permissions();
-    static bool fix_user_apk_context();
 
     static bool mount_shared_directory(const std::string &pkg, uid_t uid);
     static bool unmount_shared_directory(const std::string &pkg);

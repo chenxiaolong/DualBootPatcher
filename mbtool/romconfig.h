@@ -28,7 +28,6 @@ namespace mb
 struct SharedPackage
 {
     std::string pkg_id;
-    bool share_apk;
     bool share_data;
 };
 

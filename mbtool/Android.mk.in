@@ -39,7 +39,6 @@ EXTERNAL_DIR := $(TOP_DIR)/external
 
 
 SKIP_EXAMPLES := true
-include $(EXTERNAL_DIR)/libaxmlparser/Android.mk
 include $(EXTERNAL_DIR)/minizip/Android.mk
 
 include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
@@ -85,7 +84,6 @@ mbutil_src := \
 	util/time.cpp
 
 mbtool_src_base := \
-	apk.cpp \
 	appsync.cpp \
 	appsyncmanager.cpp \
 	daemon.cpp \
@@ -177,7 +175,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol procps-ng libutils libaxmlparser minizip libcrypto
+LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol procps-ng libutils minizip libcrypto
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 

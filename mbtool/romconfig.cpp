@@ -32,7 +32,6 @@
 #define CONFIG_KEY_INDIVIDUAL_APP_SHARING  "individual"
 #define CONFIG_KEY_PACKAGES                "packages"
 #define CONFIG_KEY_PACKAGE_ID              "pkg_id"
-#define CONFIG_KEY_SHARE_APK               "share_apk"
 #define CONFIG_KEY_SHARE_DATA              "share_data"
 
 namespace mb {
@@ -50,11 +49,9 @@ namespace mb {
  *         "packages": [
  *             {
  *                 "pkg_id": "com.android.chrome",
- *                 "share_apk": true,
  *                 "share_data": true
  *             },{
  *                 "pkg_id": "com.android.vending",
- *                 "share_apk":false,
  *                 "share_data":true
  *             }
  *         ]
@@ -172,17 +169,6 @@ bool RomConfig::load_file(const std::string &path)
                     } else {
                         // Skip empty package names
                         continue;
-                    }
-
-                    // Shared APK
-                    json_t *j_share_apk = json_object_get(
-                            j_data, CONFIG_KEY_SHARE_APK);
-                    if (j_share_apk) {
-                        if (!json_is_boolean(j_share_apk)) {
-                            LOGE("[root]->app_sharing->packages[%zu]->share_apk: Not a boolean", i);
-                            return false;
-                        }
-                        shared_pkg.share_apk = json_is_true(j_share_apk);
                     }
 
                     // Shared data

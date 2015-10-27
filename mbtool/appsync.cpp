@@ -37,8 +37,9 @@
 
 #include <jansson.h>
 
-#include "apk.h"
 #include "appsyncmanager.h"
+#include "autoclose/file.h"
+#include "multiboot.h"
 #include "packages.h"
 #include "romconfig.h"
 #include "roms.h"
@@ -58,8 +59,6 @@
 #include "util/string.h"
 #include "util/time.h"
 
-#define LOG_FILE                        "/data/media/0/MultiBoot/appsync.log"
-
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
 
@@ -76,14 +75,10 @@
 
 #define COMMAND_BUF_SIZE                1024
 
-#define CONFIG_PATH_FMT                 "/data/media/0/MultiBoot/%s/config.json"
-
 #define PACKAGES_XML_PATH_FMT           "%s/system/packages.xml"
 
 namespace mb
 {
-
-typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
 
 static RomConfig config;
 static Packages packages;
@@ -105,8 +100,7 @@ static bool load_config_files()
     roms.add_installed();
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
-        std::string config_path =
-                util::format(CONFIG_PATH_FMT, rom->id.c_str());
+        std::string config_path = rom->config_path();
         std::string packages_path =
                 util::format(PACKAGES_XML_PATH_FMT, rom->full_data_path().c_str());
 
@@ -143,8 +137,6 @@ static bool load_config_files()
     for (const SharedPackage &pkg : config.shared_pkgs) {
         LOGD("[Config] Shared package:");
         LOGD("[Config] - Package:                 %s", pkg.pkg_id.c_str());
-        LOGD("[Config] - Share apk:               %s",
-             pkg.share_apk ? "true" : "false");
         LOGD("[Config] - Share data:              %s",
              pkg.share_data ? "true" : "false");
     }
@@ -223,7 +215,7 @@ static bool copy_avtab_rules(policydb_t *pdb,
 static bool fix_data_media_rules(policydb_t *pdb)
 {
     static const char *expected_type = "media_rw_data_file";
-    const char *path = "/data/media/0";
+    const char *path = INTERNAL_STORAGE;
 
     if (!hashtab_search(pdb->p_types.table, (hashtab_key_t) expected_type)) {
         LOGW("Type %s doesn't exist. Won't touch /data/media related rules",
@@ -337,7 +329,7 @@ static void create_layout_version()
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    file_ptr fp(std::fopen("/data/.layout_version", "wb"), std::fclose);
+    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wb"));
     if (fp) {
         const char *layout_version;
         if (get_api_version() >= 21) {
@@ -361,12 +353,6 @@ static void create_layout_version()
 
 static bool prepare_appsync()
 {
-    // On boot we want to:
-    // - For each shared package:
-    //     - Copy the user apk to shared directory if it's newer
-    //     - Remove the user apk and hard link the shared apk (if not already)
-    //     - Remove shared libraries and let Android re-extract them
-
     // Detect directory locations
     AppSyncManager::detect_directories();
 
@@ -389,32 +375,6 @@ static bool prepare_appsync()
             continue;
         }
 
-        // Ensure that the package is not a system package if we're sharing the
-        // apk file
-        bool isSystemPkg = (pkg->pkg_flags & Package::FLAG_SYSTEM)
-                || (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
-                || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM)
-                || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_UPDATED_SYSTEM_APP);
-        if (shared_pkg.share_apk && isSystemPkg) {
-            LOGW("Package %s is a system app or an update to a system app. "
-                 "Its apk will not be shared", shared_pkg.pkg_id.c_str());
-            shared_pkg.share_apk = false;
-        }
-
-        // Ensure that code_path is set to something sane
-        if (shared_pkg.share_apk
-                && !util::starts_with(pkg->code_path, "/data/")) {
-            LOGW("The code_path for package %s is not in /data. "
-                 "Its apk will not be shared", shared_pkg.pkg_id.c_str());
-            shared_pkg.share_apk = false;
-        }
-
-        // Ensure that the apk exists in the shared directory
-        if (shared_pkg.share_apk
-                && !AppSyncManager::copy_apk_user_to_shared(shared_pkg.pkg_id)) {
-            shared_pkg.share_apk = false;
-        }
-
         // Ensure that the data directory exists if data sharing is enabled
         if (shared_pkg.share_data
                 && !AppSyncManager::create_shared_data_directory(
@@ -425,14 +385,6 @@ static bool prepare_appsync()
         }
 
         ++it;
-    }
-
-    // Ensure that the shared apk permissions are correct
-    bool disable_apk_sharing = false;
-    if (!AppSyncManager::fix_shared_apk_permissions()) {
-        LOGW("Failed to fix permissions on shared apk directory");
-        LOGW("Apk sharing will be disabled for all packages");
-        disable_apk_sharing = true;
     }
 
     // Ensure that the shared data is under the u:object_r:app_data_file:s0
@@ -449,34 +401,12 @@ static bool prepare_appsync()
 
     start = util::current_time_ms();
 
-    // Actually share the apk and data
+    // Actually share the data
     for (SharedPackage &shared_pkg : config.shared_pkgs) {
         auto pkg = packages.find_by_pkg(shared_pkg.pkg_id);
 
-        if (disable_apk_sharing) {
-            shared_pkg.share_apk = false;
-        }
         if (disable_data_sharing) {
             shared_pkg.share_data = false;
-        }
-
-        if (shared_pkg.share_apk
-                && !AppSyncManager::wipe_shared_libraries(pkg)) {
-            LOGW("Failed to remove shared libraries for package %s",
-                 pkg->name.c_str());
-            LOGW("To prevent issues with starting the app, "
-                 "apk will not be shared");
-            shared_pkg.share_apk = false;
-        }
-
-        if (shared_pkg.share_apk && !AppSyncManager::sync_apk_shared_to_user(
-                pkg->name, cfg_pkgs_list)) {
-            LOGW("Failed to link shared apk to user app directory for all ROMs");
-            if (shared_pkg.share_data) {
-                LOGW("To prevent issues due to the error, "
-                     "data will not be shared");
-                shared_pkg.share_data = false;
-            }
         }
 
         if (shared_pkg.share_data && !AppSyncManager::mount_shared_directory(
@@ -485,9 +415,6 @@ static bool prepare_appsync()
             shared_pkg.share_data = false;
         }
     }
-
-    // Fix SELinux context in /data/app
-    AppSyncManager::fix_user_apk_context();
 
     stop = util::current_time_ms();
     LOGD("Initialization stage 2 took %" PRIu64 "ms", stop - start);
@@ -746,47 +673,6 @@ static std::string args_to_string(const std::vector<std::string> &args)
     return output;
 }
 
-static bool do_linklib(const std::vector<std::string> &args)
-{
-#define TAG "[linklib] "
-    const std::string &pkgname = args[0];
-    const std::string &aseclibdir = args[1];
-    __attribute__((unused))
-    const int userid = strtol(args[2].c_str(), nullptr, 10);
-
-    auto it = std::find_if(config.shared_pkgs.begin(), config.shared_pkgs.end(),
-                           [&](const SharedPackage &shared_pkg) {
-            return shared_pkg.pkg_id == pkgname;
-        }
-    );
-
-    if (it == config.shared_pkgs.end()) {
-        LOGD(TAG "Package is not shared");
-        return true;
-    }
-
-    const SharedPackage &sp = *it;
-
-    if (!sp.share_apk) {
-        LOGD(TAG "apk sharing not enabled for this package");
-        return true;
-    }
-
-    // Update apk in the shared directory
-    if (!AppSyncManager::copy_apk_user_to_shared(pkgname)) {
-        LOGW(TAG "Failed to copy user apk to shared directory");
-        return false;
-    }
-
-    if (!AppSyncManager::sync_apk_shared_to_user(pkgname, cfg_pkgs_list)) {
-        LOGW("Failed to link shared apk to user app directory for all ROMs");
-        return false;
-    }
-
-    return true;
-#undef TAG
-}
-
 static bool do_remove(const std::vector<std::string> &args)
 {
 #define TAG "[remove] "
@@ -833,7 +719,6 @@ struct CommandInfo {
 };
 
 static struct CommandInfo cmds[] = {
-    { "linklib", 3, do_linklib },
     { "remove",  2, do_remove }
 };
 
@@ -1113,28 +998,28 @@ static void appsync_usage(bool error)
             "Usage: appsync [OPTION]...\n\n"
             "Options:\n"
             "  -h, --help    Display this help message\n"
-           "\n"
-           "This tool implements app (apk and data) sharing by hijacking the connection\n"
-           "between the Android Java framework and the installd daemon. It captures the\n"
-           "incoming messages and performs the needed operations. Messages between the\n"
-           "framework and the installd daemon are not altered in any way, though this may\n"
-           "change in the future.\n"
-           "\n"
-           "To use this tool, the installd definition in /init.rc should be modified to\n"
-           "point to mbtool. For example, the following original definition:\n"
-           "\n"
-           "    service installd /system/bin/installd\n"
-           "        class main\n"
-           "        socket installd stream 600 system system\n"
-           "\n"
-           "would be changed to the following:\n"
-           "\n"
-           "    service installd /appsync\n"
-           "        class main\n"
-           "        socket installd stream 600 system system\n"
-           "\n"
-           "It is not necessary to keep the installd definition because appsync will run\n"
-           "/system/bin/installd automatically.\n");
+            "\n"
+            "This tool implements app data sharing by hijacking the connection\n"
+            "between the Android Java framework and the installd daemon. It captures the\n"
+            "incoming messages and performs the needed operations. Messages between the\n"
+            "framework and the installd daemon are not altered in any way, though this may\n"
+            "change in the future.\n"
+            "\n"
+            "To use this tool, the installd definition in /init.rc should be modified to\n"
+            "point to mbtool. For example, the following original definition:\n"
+            "\n"
+            "    service installd /system/bin/installd\n"
+            "        class main\n"
+            "        socket installd stream 600 system system\n"
+            "\n"
+            "would be changed to the following:\n"
+            "\n"
+            "    service installd /appsync\n"
+            "        class main\n"
+            "        socket installd stream 600 system system\n"
+            "\n"
+            "It is not necessary to keep the installd definition because appsync will run\n"
+            "/system/bin/installd automatically.\n");
 }
 
 int appsync_main(int argc, char *argv[])
@@ -1167,23 +1052,20 @@ int appsync_main(int argc, char *argv[])
     }
 
 
-    typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
-
-    if (!util::mkdir_parent(LOG_FILE, 0775) && errno != EEXIST) {
+    if (!util::mkdir_parent(MULTIBOOT_LOG_APPSYNC, 0775) && errno != EEXIST) {
         fprintf(stderr, "Failed to create parent directory of %s: %s\n",
-                LOG_FILE, strerror(errno));
+                MULTIBOOT_LOG_APPSYNC, strerror(errno));
         return EXIT_FAILURE;
     }
 
-    file_ptr fp(fopen(LOG_FILE, "w"), fclose);
+    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "w"));
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
-                LOG_FILE, strerror(errno));
+                MULTIBOOT_LOG_APPSYNC, strerror(errno));
         return EXIT_FAILURE;
     }
 
-    util::chown(LOG_FILE, "media_rw", "media_rw", 0);
-    chmod(LOG_FILE, 0775);
+    fix_multiboot_permissions();
 
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
