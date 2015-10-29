@@ -839,7 +839,7 @@ void PatcherConfig::Impl::addOnePlusDevices()
     devices.push_back(device);
 }
 
-void PatcherConfig::Impl::addSonyDevices()
+void PatcherConfig::Impl::addHuaweiDevices()
 {
     Device *device;
     
