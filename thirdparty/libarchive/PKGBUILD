@@ -23,15 +23,14 @@ _ver_lzo=2.09-1
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
 pkgver=3.1.2.r599.g567b374
-pkgrel=1
+pkgrel=2
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.libarchive.org/"
 license=(BSD)
 source=("git+https://github.com/libarchive/libarchive.git#commit=${_commit}"
         'https://raw.githubusercontent.com/taka-no-me/android-cmake/556cc14296c226f753a3778d99d8b60778b7df4f/android.toolchain.cmake'
-        0001-Android-build-fix.patch
-        0002-Change-statfs.f_flag-statfs.f_flags.patch
+        0001-Avoid-statvfs-fstatvfs-calls-on-systems-where-it-is-.patch
         0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch)
 _source_template=("${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz.sig"
@@ -58,8 +57,7 @@ pkgver() {
 
 prepare() {
     cd "${pkgbase}"
-    git am ../0001-Android-build-fix.patch
-    git am ../0002-Change-statfs.f_flag-statfs.f_flags.patch
+    git am ../0001-Avoid-statvfs-fstatvfs-calls-on-systems-where-it-is-.patch
     git am ../0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
 
     local abi
@@ -164,8 +162,7 @@ package_libarchive-lowapi() {
 
 sha512sums=('SKIP'
             '4a70ef1c914ba31d1944652d1de592d01a1e1a68da85e9262bc15e2e73c572da8644c9ed8b4547c456ca4100f7737d34c5cfaaf9ee816a652a74a97f020b57a7'
-            'cd6bee1b417acedde99c50c6e7fb33937c22af8da2c5697609c8829cf61665ee20e0d091f43519eb66277b6ed902198c0c8f46100fc67e1082a7d74c612ac75a'
-            '5c143045e53d0172fe2f7d31e144eb07b810722797e279f79ae4b4b9284310f8abe0db1bc5d5658b48e794f5a704240f604fc5663315778b5fcb01bdd0f21d91'
+            '9511fa8e8d0604f761b2ab9f330c75bcc44026dc7a0f35954773f1641e5c64b179c5fcdbe28299b51361d39879666f99251b923f2786ff4c2241423e05153b05'
             'e07ccce80fd23f28a13ad7cd20d61d9e5886b91f4dfad6502067cb16bb62dce2ab94861807eeb608ad29202b618f5d0c3af0e0956a93e51d51653f10966748de')
 sha512sums_armv7=('d4bc7e39a7205ff166a1aa07b93ceb4fd7b6f7f2be26dc8917dd5753034470a78e9a18139613461a4e3b565b43eeb479c735566f058966f71dae19cf16d5a208'
                   'SKIP'
