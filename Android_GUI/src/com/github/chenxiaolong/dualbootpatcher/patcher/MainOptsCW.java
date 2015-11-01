@@ -289,12 +289,8 @@ public class MainOptsCW implements PatcherUIListener {
      */
     public void refreshRomIds() {
         mInstallLocations.clear();
-        for (InstallLocation location : PatcherUtils.getInstallLocations(mContext)) {
-            mInstallLocations.add(location);
-        }
-        for (InstallLocation location : PatcherUtils.getNamedInstallLocations(mContext)) {
-            mInstallLocations.add(location);
-        }
+        Collections.addAll(mInstallLocations, PatcherUtils.getInstallLocations(mContext));
+        Collections.addAll(mInstallLocations, PatcherUtils.getNamedInstallLocations(mContext));
 
         mRomIds.clear();
         for (InstallLocation location : mInstallLocations) {
