@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 
 public class RomSettingsService extends IntentService {
     private static final String TAG = RomSettingsService.class.getSimpleName();
@@ -43,7 +44,7 @@ public class RomSettingsService extends IntentService {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_UPDATED_RAMDISK);
         i.putExtra(RESULT_SUCCESS, success);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     @Override

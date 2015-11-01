@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -96,15 +97,15 @@ public class SwitcherEventCollector extends EventCollector {
     public void onDestroy() {
         super.onDestroy();
         if (mContext != null) {
-            mContext.unregisterReceiver(mReceiver);
+            LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
         }
     }
 
     public void setApplicationContext(Context context) {
         if (mContext == null) {
             mContext = context.getApplicationContext();
-            mContext.registerReceiver(mReceiver, new IntentFilter(
-                    SwitcherService.BROADCAST_INTENT));
+            LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver,
+                    new IntentFilter(SwitcherService.BROADCAST_INTENT));
         }
     }
 

@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
 
@@ -62,8 +63,8 @@ public class RomSettingsEventCollector extends EventCollector {
         super.onAttach(activity);
         if (mContext == null) {
             mContext = getActivity().getApplicationContext();
-            mContext.registerReceiver(mReceiver, new IntentFilter(
-                    RomSettingsService.BROADCAST_INTENT));
+            LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver,
+                    new IntentFilter(RomSettingsService.BROADCAST_INTENT));
         }
     }
 
@@ -71,7 +72,7 @@ public class RomSettingsEventCollector extends EventCollector {
     public void onDestroy() {
         super.onDestroy();
         if (mContext != null) {
-            mContext.unregisterReceiver(mReceiver);
+            LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
         }
     }
 

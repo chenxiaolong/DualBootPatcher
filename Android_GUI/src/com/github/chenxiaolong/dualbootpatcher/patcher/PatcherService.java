@@ -23,6 +23,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -55,7 +56,7 @@ public class PatcherService extends IntentService {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_UPDATE_DETAILS);
         i.putExtra(RESULT_DETAILS, details);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void updateProgress(long bytes, long maxBytes) {
@@ -63,7 +64,7 @@ public class PatcherService extends IntentService {
         i.putExtra(STATE, STATE_UPDATE_PROGRESS);
         i.putExtra(RESULT_BYTES, bytes);
         i.putExtra(RESULT_MAX_BYTES, maxBytes);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     public void updateFiles(long files, long maxFiles) {
@@ -71,7 +72,7 @@ public class PatcherService extends IntentService {
         i.putExtra(STATE, STATE_UPDATE_FILES);
         i.putExtra(RESULT_FILES, files);
         i.putExtra(RESULT_MAX_FILES, maxFiles);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onPatchedFile(boolean failed, int errorCode, String newFile) {
@@ -80,7 +81,7 @@ public class PatcherService extends IntentService {
         i.putExtra(PatcherUtils.RESULT_PATCH_FILE_FAILED, failed);
         i.putExtra(PatcherUtils.RESULT_PATCH_FILE_ERROR_CODE, errorCode);
         i.putExtra(PatcherUtils.RESULT_PATCH_FILE_NEW_FILE, newFile);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void patchFile(Bundle data) {

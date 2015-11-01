@@ -28,6 +28,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
@@ -117,7 +118,7 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_SWITCHED_ROM);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
         i.putExtra(RESULT_SWITCH_ROM, result);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onSetKernel(String kernelId, SetKernelResult result) {
@@ -125,14 +126,14 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_SET_KERNEL);
         i.putExtra(RESULT_KERNEL_ID, kernelId);
         i.putExtra(RESULT_SET_KERNEL, result);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onCreatedLauncher(RomInformation rom) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_CREATED_LAUNCHER);
         i.putExtra(RESULT_ROM, rom);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onVerifiedZip(VerificationResult result, String romId) {
@@ -140,7 +141,7 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_VERIFIED_ZIP);
         i.putExtra(RESULT_VERIFY_ZIP, result);
         i.putExtra(RESULT_ROM_ID, romId);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onFlashedZips(int totalActions, int failedActions) {
@@ -148,14 +149,14 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_FLASHED_ZIPS);
         i.putExtra(RESULT_TOTAL_ACTIONS, totalActions);
         i.putExtra(RESULT_FAILED_ACTIONS, failedActions);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onNewOutputData(String line) {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_COMMAND_OUTPUT_DATA);
         i.putExtra(RESULT_OUTPUT_DATA, line);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void onWipedRom(short[] succeeded, short[] failed) {
@@ -163,7 +164,7 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_WIPED_ROM);
         i.putExtra(RESULT_TARGETS_SUCCEEDED, succeeded);
         i.putExtra(RESULT_TARGETS_FAILED, failed);
-        sendBroadcast(i);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
     private void setupNotification(String action) {
