@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:text="@string/patcher_device_title" />
 
-        <Spinner
+        <android.support.v7.widget.AppCompatSpinner
             android:id="@+id/spinner_device"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -48,7 +48,7 @@
             android:layout_marginTop="@dimen/card_v7_title_view_margin_top"
             android:text="@string/patcher_partconfig_title" />
 
-        <Spinner
+        <android.support.v7.widget.AppCompatSpinner
             android:id="@+id/spinner_rom_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -64,7 +64,7 @@
             android:focusableInTouchMode="true"
             android:orientation="horizontal" />
 
-        <EditText
+        <android.support.v7.widget.AppCompatEditText
             android:id="@+id/rom_id_named_slot_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

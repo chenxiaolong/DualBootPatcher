@@ -23,6 +23,8 @@ import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v7.widget.AppCompatEditText;
+import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.CardView;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -35,8 +37,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -45,6 +45,7 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class MainOptsCW implements PatcherUIListener {
     protected interface MainOptsListener {
@@ -57,9 +58,9 @@ public class MainOptsCW implements PatcherUIListener {
 
     private CardView vCard;
     private View vDummy;
-    private Spinner vDeviceSpinner;
-    private Spinner vRomIdSpinner;
-    private EditText vRomIdNamedSlotId;
+    private AppCompatSpinner vDeviceSpinner;
+    private AppCompatSpinner vRomIdSpinner;
+    private AppCompatEditText vRomIdNamedSlotId;
     private TextView vRomIdDesc;
 
     private Context mContext;
@@ -82,9 +83,9 @@ public class MainOptsCW implements PatcherUIListener {
 
         vCard = card;
         vDummy = card.findViewById(R.id.customopts_dummylayout);
-        vDeviceSpinner = (Spinner) card.findViewById(R.id.spinner_device);
-        vRomIdSpinner = (Spinner) card.findViewById(R.id.spinner_rom_id);
-        vRomIdNamedSlotId = (EditText) card.findViewById(R.id.rom_id_named_slot_id);
+        vDeviceSpinner = (AppCompatSpinner) card.findViewById(R.id.spinner_device);
+        vRomIdSpinner = (AppCompatSpinner) card.findViewById(R.id.spinner_rom_id);
+        vRomIdNamedSlotId = (AppCompatEditText) card.findViewById(R.id.rom_id_named_slot_id);
         vRomIdDesc = (TextView) card.findViewById(R.id.rom_id_desc);
 
         initDevices();
