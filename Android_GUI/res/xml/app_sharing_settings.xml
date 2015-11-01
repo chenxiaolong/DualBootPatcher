@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -18,19 +18,6 @@
 -->
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <PreferenceCategory
-        android:title="@string/a_s_settings_global_app_sharing_section_title">
-
-        <CheckBoxPreference
-            android:key="share_apps"
-            android:persistent="false"
-            android:title="@string/a_s_settings_share_apps_title" />
-        <CheckBoxPreference
-            android:key="share_paid_apps"
-            android:persistent="false"
-            android:title="@string/a_s_settings_share_paid_apps_title" />
-    </PreferenceCategory>
 
     <PreferenceCategory
         android:title="@string/a_s_settings_indiv_app_sharing_section_title">

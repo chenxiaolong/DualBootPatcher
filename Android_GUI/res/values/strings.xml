@@ -359,28 +359,8 @@
     <!-- Format string for bytes -->
     <string name="format_bytes" translatable="false">%s B</string>
 
-    <!-- Title for the global application sharing section of the ROM Settings -->
-    <string name="a_s_settings_global_app_sharing_section_title">Global application sharing</string>
     <!-- Title for the individual application sharing section of the ROM settings -->
     <string name="a_s_settings_indiv_app_sharing_section_title">Individual application sharing</string>
-    <!-- Name of the preference for globally sharing free applications from the primary ROM -->
-    <string name="a_s_settings_share_apps_title">Share applications</string>
-    <!-- Description of the preference for globally shareing free applications from the primary ROM -->
-    <string name="a_s_settings_share_apps_desc">Share applications from the primary ROM with the
-        current ROM (requires reboot).</string>
-    <!-- Name of the preference for globally sharing paid applications from the primary ROM -->
-    <string name="a_s_settings_share_paid_apps_title">Share paid applications</string>
-    <!-- Description of the preference for globally sharing paid applications from the primary ROM -->
-    <string name="a_s_settings_share_paid_apps_desc">
-        <![CDATA[
-            Share paid applications from the primary ROM with the current ROM (requires reboot).
-            <strong>May not work due to DRM.</strong>
-        ]]>
-    </string>
-
-    <!-- Description of the global app sharing preferences when booted in the primary ROM -->
-    <string name="a_s_settings_global_incompat_primary">Global app sharing cannot be used in the
-        primary ROM.</string>
 
     <!-- Title for the preference to share individual applications -->
     <string name="a_s_settings_indiv_app_sharing_title">Share individual applications</string>

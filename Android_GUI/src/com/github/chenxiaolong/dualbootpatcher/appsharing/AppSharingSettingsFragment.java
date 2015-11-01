@@ -29,7 +29,6 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
 import android.support.annotation.NonNull;
-import android.text.Html;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 
@@ -56,18 +55,13 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     private static final String EXTRA_SHOWED_VERSION_TOO_OLD_DIALOG =
             "showed_version_too_old_dialog";
 
-    private static final String KEY_SHARE_APPS = "share_apps";
-    private static final String KEY_SHARE_PAID_APPS = "share_paid_apps";
     private static final String KEY_SHARE_INDIV_APPS = "share_indiv_apps";
     private static final String KEY_MANAGE_INDIV_APPS = "manage_indiv_apps";
 
     private AppSharingEventCollector mEventCollector;
 
-    private RomInformation mCurrentRom;
     private RomConfig mConfig;
 
-    private CheckBoxPreference mShareApps;
-    private CheckBoxPreference mSharePaidApps;
     private CheckBoxPreference mShareIndivApps;
     private Preference mManageIndivApps;
 
@@ -83,11 +77,7 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
 
         addPreferencesFromResource(R.xml.app_sharing_settings);
 
-        mShareApps = (CheckBoxPreference) findPreference(KEY_SHARE_APPS);
-        mSharePaidApps = (CheckBoxPreference) findPreference(KEY_SHARE_PAID_APPS);
         mShareIndivApps = (CheckBoxPreference) findPreference(KEY_SHARE_INDIV_APPS);
-        mShareApps.setOnPreferenceChangeListener(this);
-        mSharePaidApps.setOnPreferenceChangeListener(this);
         mShareIndivApps.setOnPreferenceChangeListener(this);
 
         mManageIndivApps = findPreference(KEY_MANAGE_INDIV_APPS);
@@ -172,13 +162,7 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     public boolean onPreferenceChange(Preference preference, Object objValue) {
         final String key = preference.getKey();
 
-        if (KEY_SHARE_APPS.equals(key)) {
-            mConfig.setGlobalAppSharingEnabled((Boolean) objValue);
-            refreshEnabledPrefs();
-        } else if (KEY_SHARE_PAID_APPS.equals(key)) {
-            mConfig.setGlobalPaidAppSharingEnabled((Boolean) objValue);
-            refreshEnabledPrefs();
-        } else if (KEY_SHARE_INDIV_APPS.equals(key)) {
+        if (KEY_SHARE_INDIV_APPS.equals(key)) {
             mConfig.setIndivAppSharingEnabled((Boolean) objValue);
             refreshEnabledPrefs();
         }
@@ -197,47 +181,14 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         return true;
     }
 
-    private void ensureSaneValues() {
-        if (mConfig.isIndivAppSharingEnabled()) {
-            mConfig.setGlobalAppSharingEnabled(false);
-            mConfig.setGlobalPaidAppSharingEnabled(false);
-        }
-
-        // Global app sharing cannot be used in the primary ROM
-        if (mCurrentRom.getId().equals(RomUtils.PRIMARY_ID)) {
-            mConfig.setGlobalAppSharingEnabled(false);
-            mConfig.setGlobalPaidAppSharingEnabled(false);
-        }
-    }
-
     private void showAppSharingPrefs() {
-        mShareApps.setChecked(mConfig.isGlobalAppSharingEnabled());
-        mSharePaidApps.setChecked(mConfig.isGlobalPaidAppSharingEnabled());
         mShareIndivApps.setChecked(mConfig.isIndivAppSharingEnabled());
-
-        if (mCurrentRom.getId().equals(RomUtils.PRIMARY_ID)) {
-            mShareApps.setSummary(R.string.a_s_settings_global_incompat_primary);
-            mSharePaidApps.setSummary(R.string.a_s_settings_global_incompat_primary);
-            mShareApps.setEnabled(false);
-            mSharePaidApps.setEnabled(false);
-        } else {
-            mShareApps.setSummary(R.string.a_s_settings_share_apps_desc);
-            mSharePaidApps.setSummary(Html.fromHtml(getString(
-                    R.string.a_s_settings_share_paid_apps_desc)));
-        }
     }
 
     private void refreshEnabledPrefs() {
         boolean indivEnabled = mConfig.isIndivAppSharingEnabled();
-        boolean globalEnabled = mConfig.isGlobalAppSharingEnabled() ||
-                mConfig.isGlobalPaidAppSharingEnabled();
 
-        if (!mCurrentRom.getId().equals(RomUtils.PRIMARY_ID)) {
-            mShareApps.setEnabled(!indivEnabled);
-            mSharePaidApps.setEnabled(!indivEnabled);
-        }
-        mShareIndivApps.setEnabled(!globalEnabled);
-        mManageIndivApps.setEnabled(!globalEnabled && indivEnabled);
+        mManageIndivApps.setEnabled(indivEnabled);
     }
 
     @Override
@@ -252,20 +203,13 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
             return;
         }
 
-        if (result.currentRom == null) {
-            getActivity().finish();
-            return;
-        }
-
         if (!result.haveRequiredVersion) {
             mEventCollector.postEvent(new ShowVersionTooOldDialogEvent());
             return;
         }
 
-        mCurrentRom = result.currentRom;
         mConfig = result.config;
 
-        ensureSaneValues();
         showAppSharingPrefs();
         refreshEnabledPrefs();
 
@@ -293,7 +237,6 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     }
 
     protected static class NeededInfo {
-        RomInformation currentRom;
         RomConfig config;
         Version mbtoolVersion;
         boolean haveRequiredVersion;
@@ -324,7 +267,6 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
             }
 
             mResult = new NeededInfo();
-            mResult.currentRom = currentRom;
             mResult.config = RomConfig.getConfig(currentRom.getConfigPath());
             mResult.mbtoolVersion = MbtoolUtils.getSystemMbtoolVersion(getContext());
             mResult.haveRequiredVersion = mResult.mbtoolVersion.compareTo(

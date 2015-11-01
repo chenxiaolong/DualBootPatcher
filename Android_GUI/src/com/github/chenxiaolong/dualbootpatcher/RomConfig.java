@@ -47,8 +47,6 @@ public class RomConfig {
 
     private String mId;
     private String mName;
-    private boolean mGlobalAppSharing;
-    private boolean mGlobalPaidAppSharing;
     private boolean mIndivAppSharing;
     private HashMap<String, SharedItems> mSharedPkgs = new HashMap<>();
 
@@ -121,22 +119,6 @@ public class RomConfig {
         mName = name;
     }
 
-    public boolean isGlobalAppSharingEnabled() {
-        return mGlobalAppSharing;
-    }
-
-    public void setGlobalAppSharingEnabled(boolean enabled) {
-        mGlobalAppSharing = enabled;
-    }
-
-    public boolean isGlobalPaidAppSharingEnabled() {
-        return mGlobalPaidAppSharing;
-    }
-
-    public void setGlobalPaidAppSharingEnabled(boolean enabled) {
-        mGlobalPaidAppSharing = enabled;
-    }
-
     public boolean isIndivAppSharingEnabled() {
         return mIndivAppSharing;
     }
@@ -168,8 +150,6 @@ public class RomConfig {
         root.name = mName;
 
         root.appSharing = new RawAppSharing();
-        root.appSharing.global = mGlobalAppSharing;
-        root.appSharing.globalPaid = mGlobalPaidAppSharing;
         root.appSharing.individual = mIndivAppSharing;
 
         if (!mSharedPkgs.isEmpty()) {
@@ -197,8 +177,6 @@ public class RomConfig {
         mName = root.name;
 
         if (root.appSharing != null) {
-            mGlobalAppSharing = root.appSharing.global;
-            mGlobalPaidAppSharing = root.appSharing.globalPaid;
             mIndivAppSharing = root.appSharing.individual;
 
             if (root.appSharing.packages != null) {
@@ -223,10 +201,6 @@ public class RomConfig {
     }
 
     private static class RawAppSharing {
-        @SerializedName("global")
-        boolean global;
-        @SerializedName("global_paid")
-        boolean globalPaid;
         @SerializedName("individual")
         boolean individual;
         @SerializedName("packages")
