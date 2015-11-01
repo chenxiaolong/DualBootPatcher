@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -453,39 +453,24 @@
     <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_intro_dialog_title">Individual app sharing</string>
     <!-- Description for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_intro_dialog_desc">Individual app sharing allows apps and their
-        data to be stored in a shared location accessible by every ROM. Using a shared APK saves
-        space by keeping only one copy of the app for each ROM. Using shared data synchronizes the
-        app\'s data across the ROMs (eg. Chrome tabs).\n\nNOTE: A reboot is required for the changes
-        to take effect.\n\nTo use individual app sharing, the APK/data sharing has to be enabled in
-        each ROM. For example: From the primary ROM, enable data sharing for Chrome. Chrome will
-        start using the shared data directory. Then boot into another ROM and also enable data
-        sharing for Chrome. It will now use the same shared directory. The same applies for
-        shared APK.</string>
+    <string name="indiv_app_sharing_intro_dialog_desc">Individual app sharing allows application
+        data to be stored in a shared location accessible by every ROM. Using shared data
+        synchronizes the app\'s data across the ROMs (eg. Chrome tabs).\n\nNOTE: A reboot is
+        required for the changes to take effect.\n\nTo use individual app sharing, the data sharing
+        has to be enabled in each ROM. For example: From the primary ROM, enable data sharing for
+        Chrome. Chrome will start using the shared data directory. Then boot into another ROM and
+        also enable data sharing for Chrome. It will now use the same shared directory.</string>
 
-    <!-- App label in the individual app sharing screen shown if the app uses shared apk -->
-    <string name="indiv_app_sharing_shared_apk">Shared APK</string>
     <!-- App label in the individual app sharing screen shown if the app uses shared data -->
     <string name="indiv_app_sharing_shared_data">Shared data</string>
-    <!-- App label in the individual app sharing screen shown if the app uses shared apk and data -->
-    <string name="indiv_app_sharing_shared_apk_and_data">Shared APK and data</string>
     <!-- App label in the individual app sharing screen shown if the app is not shared -->
     <string name="indiv_app_sharing_not_shared">Not shared</string>
 
-    <!-- App sharing dialog checkbox text for using shared apk -->
-    <string name="indiv_app_sharing_dialog_share_apk">Use shared APK</string>
     <!-- App sharing dialog checkbox text for using shared app data -->
     <string name="indiv_app_sharing_dialog_share_data">Use shared data</string>
     <!-- App sharing dialog message shown by default -->
     <string name="indiv_app_sharing_dialog_default_message">Choose whether the app should use a
-        shared APK file and a shared data directory.</string>
-    <!-- App sharing dialog message shown if the app is a system app -->
-    <string name="indiv_app_sharing_dialog_system_app_message">Since this app is a system app
-        (or an update to a system app), a shared APK cannot be used. However, the app can still
-        use shared data.</string>
-    <!-- Message in the app sharing dialog showing the list of ROMs using the shared APK -->
-    <string name="indiv_app_sharing_other_roms_using_shared_apk">Other ROMs using the shared APK:
-        %s</string>
+        shared data directory.</string>
     <!-- Message in the app sharing dialog showing the list of ROMs using the shared data -->
     <string name="indiv_app_sharing_other_roms_using_shared_data">Other ROMs using the shared data:
         %s</string>

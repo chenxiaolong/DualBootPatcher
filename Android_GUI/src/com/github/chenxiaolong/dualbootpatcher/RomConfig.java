@@ -53,16 +53,13 @@ public class RomConfig {
     private HashMap<String, SharedItems> mSharedPkgs = new HashMap<>();
 
     public static class SharedItems {
-        public boolean sharedApk;
         public boolean sharedData;
 
-        public SharedItems(boolean sharedApk, boolean sharedData) {
-            this.sharedApk = sharedApk;
+        public SharedItems(boolean sharedData) {
             this.sharedData = sharedData;
         }
 
         public SharedItems(SharedItems si) {
-            this.sharedApk = si.sharedApk;
             this.sharedData = si.sharedData;
         }
     }
@@ -181,7 +178,6 @@ public class RomConfig {
             for (Map.Entry<String, SharedItems> item : mSharedPkgs.entrySet()) {
                 RawPackage rp = new RawPackage();
                 rp.pkgId = item.getKey();
-                rp.shareApk = item.getValue().sharedApk;
                 rp.shareData = item.getValue().sharedData;
                 packages.add(rp);
             }
@@ -211,7 +207,7 @@ public class RomConfig {
                         continue;
                     }
 
-                    mSharedPkgs.put(rp.pkgId, new SharedItems(rp.shareApk, rp.shareData));
+                    mSharedPkgs.put(rp.pkgId, new SharedItems(rp.shareData));
                 }
             }
         }
@@ -240,8 +236,6 @@ public class RomConfig {
     private static class RawPackage {
         @SerializedName("pkg_id")
         String pkgId;
-        @SerializedName("share_apk")
-        boolean shareApk;
         @SerializedName("share_data")
         boolean shareData;
     }

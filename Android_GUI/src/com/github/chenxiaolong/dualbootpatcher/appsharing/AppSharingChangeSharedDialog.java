@@ -33,20 +33,17 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
 
     private static final String ARG_PKG = "pkg";
     private static final String ARG_NAME = "name";
-    private static final String ARG_SHARE_APK = "share_apk";
     private static final String ARG_SHARE_DATA = "share_data";
     private static final String ARG_IS_SYSTEM_APP = "is_system_app";
-    private static final String ARG_ROMS_USING_SHARED_APK = "roms_using_shared_apk";
     private static final String ARG_ROMS_USING_SHARED_DATA = "roms_using_shared_data";
 
     public interface AppSharingChangeSharedDialogListener {
-        void onChangedShared(String pkg, boolean shareApk, boolean shareData);
+        void onChangedShared(String pkg, boolean shareData);
     }
 
     public static AppSharingChangeSharedDialog newInstance(Fragment parent, String pkg, String name,
-                                                           boolean shareApk, boolean shareData,
+                                                           boolean shareData,
                                                            boolean isSystemApp,
-                                                           ArrayList<String> romsUsingSharedApk,
                                                            ArrayList<String> romsUsingSharedData) {
         if (parent != null) {
             if (!(parent instanceof AppSharingChangeSharedDialogListener)) {
@@ -60,10 +57,8 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         Bundle args = new Bundle();
         args.putString(ARG_PKG, pkg);
         args.putString(ARG_NAME, name);
-        args.putBoolean(ARG_SHARE_APK, shareApk);
         args.putBoolean(ARG_SHARE_DATA, shareData);
         args.putBoolean(ARG_IS_SYSTEM_APP, isSystemApp);
-        args.putStringArrayList(ARG_ROMS_USING_SHARED_APK, romsUsingSharedApk);
         args.putStringArrayList(ARG_ROMS_USING_SHARED_DATA, romsUsingSharedData);
         frag.setArguments(args);
         return frag;
@@ -78,28 +73,16 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         Bundle args = getArguments();
         final String pkg = args.getString(ARG_PKG);
         final String name = args.getString(ARG_NAME);
-        final boolean shareApk = args.getBoolean(ARG_SHARE_APK);
         final boolean shareData = args.getBoolean(ARG_SHARE_DATA);
         final boolean isSystemApp = args.getBoolean(ARG_IS_SYSTEM_APP);
-        final ArrayList<String> romsUsingSharedApk =
-                args.getStringArrayList(ARG_ROMS_USING_SHARED_APK);
         final ArrayList<String> romsUsingSharedData =
                 args.getStringArrayList(ARG_ROMS_USING_SHARED_DATA);
 
-        final String shareApkItem = getString(R.string.indiv_app_sharing_dialog_share_apk);
         final String shareDataItem = getString(R.string.indiv_app_sharing_dialog_share_data);
 
-        final int shareApkIndex;
-        final int shareDataIndex;
-        final String[] items;
+        final String[] items = new String[] { shareDataItem };
         final StringBuilder message = new StringBuilder();
 
-        if (!romsUsingSharedApk.isEmpty()) {
-            String fmt = getString(R.string.indiv_app_sharing_other_roms_using_shared_apk);
-            String roms = arrayListToString(romsUsingSharedApk);
-            message.append(String.format(fmt, roms));
-            message.append("\n\n");
-        }
         if (!romsUsingSharedData.isEmpty()) {
             String fmt = getString(R.string.indiv_app_sharing_other_roms_using_shared_data);
             String roms = arrayListToString(romsUsingSharedData);
@@ -108,28 +91,10 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
         }
 
         ArrayList<Integer> selected = new ArrayList<>();
-
-        if (isSystemApp) {
-            // Cannot share apk
-            shareApkIndex = -1;
-            shareDataIndex = 0;
-            items = new String[] { shareDataItem };
-            if (shareData) {
-                selected.add(shareDataIndex);
-            }
-            message.append(getString(R.string.indiv_app_sharing_dialog_system_app_message));
-        } else {
-            shareApkIndex = 0;
-            shareDataIndex = 1;
-            items = new String[] { shareApkItem, shareDataItem };
-            if (shareApk) {
-                selected.add(shareApkIndex);
-            }
-            if (shareData) {
-                selected.add(shareDataIndex);
-            }
-            message.append(getString(R.string.indiv_app_sharing_dialog_default_message));
+        if (shareData) {
+            selected.add(0);
         }
+        message.append(getString(R.string.indiv_app_sharing_dialog_default_message));
 
         Integer[] selectedIndices = selected.toArray(new Integer[selected.size()]);
 
@@ -143,20 +108,17 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
                     @Override
                     public boolean onSelection(MaterialDialog dialog, Integer[] which,
                                                CharSequence[] text) {
-                        boolean shouldShareApk = false;
                         boolean shouldShareData = false;
 
                         for (int index : which) {
-                            if (index == shareApkIndex) {
-                                shouldShareApk = true;
-                            } else if (index == shareDataIndex) {
+                            if (index == 0) {
                                 shouldShareData = true;
                             }
                         }
 
                         AppSharingChangeSharedDialogListener owner = getOwner();
                         if (owner != null) {
-                            owner.onChangedShared(pkg, shouldShareApk, shouldShareData);
+                            owner.onChangedShared(pkg, shouldShareData);
                         }
 
                         return true;

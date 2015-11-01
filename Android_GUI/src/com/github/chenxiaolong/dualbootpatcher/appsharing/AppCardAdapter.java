@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,11 +67,7 @@ public class AppCardAdapter extends RecyclerView.Adapter<AppCardViewHolder> {
         holder.vPkg.setText(app.pkg);
         holder.vSystem.setVisibility(app.isSystem ? View.VISIBLE : View.GONE);
 
-        if (app.shareApk && app.shareData) {
-            holder.vShared.setText(R.string.indiv_app_sharing_shared_apk_and_data);
-        } else if (app.shareApk) {
-            holder.vShared.setText(R.string.indiv_app_sharing_shared_apk);
-        } else if (app.shareData) {
+        if (app.shareData) {
             holder.vShared.setText(R.string.indiv_app_sharing_shared_data);
         } else {
             holder.vShared.setText(R.string.indiv_app_sharing_not_shared);

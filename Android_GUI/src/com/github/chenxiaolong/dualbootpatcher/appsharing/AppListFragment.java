@@ -163,8 +163,8 @@ public class AppListFragment extends Fragment implements
 
         for (AppInformation info : mAppInfos) {
             // Don't spam the config with useless entries
-            if (info.shareApk || info.shareData) {
-                sharedPkgs.put(info.pkg, new SharedItems(info.shareApk, info.shareData));
+            if (info.shareData) {
+                sharedPkgs.put(info.pkg, new SharedItems(info.shareData));
             }
         }
 
@@ -253,13 +253,13 @@ public class AppListFragment extends Fragment implements
     @Override
     public void onSelectedApp(AppInformation info) {
         AppSharingChangeSharedDialog d = AppSharingChangeSharedDialog.newInstance(
-                this, info.pkg, info.name, info.shareApk, info.shareData, info.isSystem,
-                info.romsThatShareApk, info.romsThatShareData);
+                this, info.pkg, info.name, info.shareData, info.isSystem,
+                info.romsThatShareData);
         d.show(getFragmentManager(), AppSharingChangeSharedDialog.TAG);
     }
 
     @Override
-    public void onChangedShared(String pkg, boolean shareApk, boolean shareData) {
+    public void onChangedShared(String pkg, boolean shareData) {
         AppInformation appInfo = null;
         for (AppInformation ai : mAppInfos) {
             if (ai.pkg.equals(pkg)) {
@@ -272,10 +272,6 @@ public class AppListFragment extends Fragment implements
                     "which is not in the apps list");
         }
 
-        if (appInfo.shareApk != shareApk) {
-            Log.d(TAG, "APK sharing set to " + shareApk + " for package " + pkg);
-            appInfo.shareApk = shareApk;
-        }
         if (appInfo.shareData != shareData) {
             Log.d(TAG, "Data sharing set to " + shareData + " for package " + pkg);
             appInfo.shareData = shareData;
@@ -289,9 +285,7 @@ public class AppListFragment extends Fragment implements
         public String name;
         public Drawable icon;
         public boolean isSystem;
-        public boolean shareApk;
         public boolean shareData;
-        public ArrayList<String> romsThatShareApk = new ArrayList<>();
         public ArrayList<String> romsThatShareData = new ArrayList<>();
     }
 
@@ -444,7 +438,6 @@ public class AppListFragment extends Fragment implements
 
                 SharedItems sharedItems = mSharedPkgs.get(appInfo.pkg);
                 if (sharedItems != null) {
-                    appInfo.shareApk = sharedItems.sharedApk;
                     appInfo.shareData = sharedItems.sharedData;
                 }
 
@@ -453,19 +446,10 @@ public class AppListFragment extends Fragment implements
                         mSharedPkgsMap.entrySet()) {
                     sharedItems = entry.getValue().get(appInfo.pkg);
                     if (sharedItems != null) {
-                        if (sharedItems.sharedApk) {
-                            appInfo.romsThatShareApk.add(entry.getKey());
-                        }
                         if (sharedItems.sharedData) {
                             appInfo.romsThatShareData.add(entry.getKey());
                         }
                     }
-                }
-
-                // Make sure we're not sharing the apk if it's a system app or an update to a system
-                // app. Of course, mbtool will skip it anyway, but we don't want to confuse the user
-                if (appInfo.isSystem) {
-                    appInfo.shareApk = false;
                 }
 
                 synchronized (mAppInfos) {
