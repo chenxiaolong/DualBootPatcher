@@ -27,8 +27,6 @@
 #define CONFIG_KEY_ID                      "id"
 #define CONFIG_KEY_NAME                    "name"
 #define CONFIG_KEY_APP_SHARING             "app_sharing"
-#define CONFIG_KEY_GLOBAL_APP_SHARING      "global"
-#define CONFIG_KEY_GLOBAL_APP_SHARING_PAID "global_paid"
 #define CONFIG_KEY_INDIVIDUAL_APP_SHARING  "individual"
 #define CONFIG_KEY_PACKAGES                "packages"
 #define CONFIG_KEY_PACKAGE_ID              "pkg_id"
@@ -43,8 +41,6 @@ namespace mb {
  *     "id": "primary",
  *     "name": "TouchWiz 5.0",
  *     "app_sharing": {
- *         "global": false,
- *         "global_paid": false,
  *         "individual": true
  *         "packages": [
  *             {
@@ -104,28 +100,6 @@ bool RomConfig::load_file(const std::string &path)
         if (!json_is_object(j_app_sharing)) {
             LOGE("[root]->app_sharing: Not an object");
             return false;
-        }
-
-        // Global app sharing
-        json_t *j_global = json_object_get(
-                j_app_sharing, CONFIG_KEY_GLOBAL_APP_SHARING);
-        if (j_global) {
-            if (!json_is_boolean(j_global)) {
-                LOGE("[root]->app_sharing->global: Not a boolean");
-                return false;
-            }
-            global_app_sharing = json_is_true(j_global);
-        }
-
-        // Global paid app sharing
-        json_t *j_global_paid = json_object_get(
-                j_app_sharing, CONFIG_KEY_GLOBAL_APP_SHARING_PAID);
-        if (j_global_paid) {
-            if (!json_is_boolean(j_global_paid)) {
-                LOGE("[root]->app_sharing->global_paid: Not a boolean");
-                return false;
-            }
-            global_paid_app_sharing = json_is_true(j_global_paid);
         }
 
         // Individual app sharing

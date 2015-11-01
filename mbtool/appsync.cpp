@@ -127,10 +127,6 @@ static bool load_config_files()
 
     LOGD("[Config] ROM ID:                    %s", config.id.c_str());
     LOGD("[Config] ROM Name:                  %s", config.name.c_str());
-    LOGD("[Config] Global app sharing:        %s",
-         config.global_app_sharing ? "true" : "false");
-    LOGD("[Config] Global app sharing (paid): %s",
-         config.global_paid_app_sharing ? "true" : "false");
     LOGD("[Config] Individual app sharing:    %s",
          config.indiv_app_sharing ? "true" : "false");
 

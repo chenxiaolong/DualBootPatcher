@@ -35,8 +35,6 @@ struct RomConfig
 {
     std::string id;
     std::string name;
-    bool global_app_sharing;
-    bool global_paid_app_sharing;
     bool indiv_app_sharing;
     std::vector<SharedPackage> shared_pkgs;
 

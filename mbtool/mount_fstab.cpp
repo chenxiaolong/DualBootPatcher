@@ -39,7 +39,6 @@
 
 #include "autoclose/file.h"
 #include "reboot.h"
-#include "romconfig.h"
 #include "roms.h"
 #include "sepolpatch.h"
 #include "initwrapper/devices.h"
@@ -157,53 +156,6 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
          recs.size(), mount_point.c_str());
 
     return false;
-}
-
-/*!
- * \note This really is a horrible app sharing method and should be removed at
- * some point.
- *
- * If global app sharing is enabled:
- *   1. Bind mount /raw/data/app-lib  -> /data/app-lib
- *   2. Bind mount /raw/data/app      -> /data/app
- *   3. Bind mount /raw/data/app-asec -> /data/app-asec
- *
- * If individual app sharing is enabled, it takes precedence over global app
- * sharing.
- */
-static bool apply_global_app_sharing(const std::shared_ptr<Rom> &rom)
-{
-    std::string config_path(rom->config_path());
-
-    RomConfig config;
-    if (config.load_file(config_path)) {
-        if (config.indiv_app_sharing && (config.global_app_sharing
-                || config.global_paid_app_sharing)) {
-            LOGW("Both individual and global sharing are enabled");
-            LOGW("Global sharing settings will be ignored");
-        } else {
-            if (config.global_app_sharing || config.global_paid_app_sharing) {
-                if (!util::bind_mount("/raw/data/app-lib", 0771,
-                                      "/data/app-lib", 0771)) {
-                    return false;
-                }
-            }
-            if (config.global_app_sharing) {
-                if (!util::bind_mount("/raw/data/app", 0771,
-                                      "/data/app", 0771)) {
-                    return false;
-                }
-            }
-            if (config.global_paid_app_sharing) {
-                if (!util::bind_mount("/raw/data/app-asec", 0771,
-                                      "/data/app-asec", 0771)) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    return true;
 }
 
 /*!
@@ -898,10 +850,6 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
 
     mount_all_system_images();
     disable_fscks();
-
-    if (!apply_global_app_sharing(rom)) {
-        return false;
-    }
 
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom->id)) {
