@@ -649,6 +649,20 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices.push_back(device);
+
+    // Samsung Galaxy Tab Pro 10.1 (Wifi)
+    device = new Device();
+    device->setId("picassowifi");
+    device->setCodenames({ "picassowifi", "picassowifixx" });
+    device->setName("Samsung Galaxy Tab Pro 10.1 (Wifi)");
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addLenovoDevices()
