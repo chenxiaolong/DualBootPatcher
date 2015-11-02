@@ -1,0 +1,12 @@
+_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+
+include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
+
+LOCAL_PATH := $(_LOCAL_PATH)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := libmiscstuff.c mntent.c
+LOCAL_MODULE := libmiscstuff
+LOCAL_STATIC_LIBRARIES := libarchive-lowapi liblzma
+LOCAL_LDLIBS := -llog -lz
+include $(BUILD_SHARED_LIBRARY)
