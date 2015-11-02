@@ -272,6 +272,13 @@ std::vector<Device *> PatcherConfig::devices() const
 #define TEGRA3_SYSTEM           TEGRA3_BASE_DIR "/APP"
 #define TEGRA3_USERDATA         TEGRA3_BASE_DIR "/UDA"
 
+#define HISILICON_BASE_DIR      "/dev/block/platform/hi_mci.0/by-name"
+#define HISILICON_BOOT          HISILICON_BASE_DIR "/boot"
+#define HISILICON_CACHE         HISILICON_BASE_DIR "/cache"
+#define HISILICON_RECOVERY      HISILICON_BASE_DIR "/recovery"
+#define HISILICON_SYSTEM        HISILICON_BASE_DIR "/system"
+#define HISILICON_USERDATA      HISILICON_BASE_DIR "/userdata"
+
 void PatcherConfig::Impl::addSamsungDevices()
 {
     Device *device;
@@ -842,12 +849,12 @@ void PatcherConfig::Impl::addOnePlusDevices()
 void PatcherConfig::Impl::addHuaweiDevices()
 {
     Device *device;
-    
+
     // Huawei Mate 2
     device = new Device();
-    device->setArchitecture("armeabi-v7a");
     device->setId("mt2l03");
-    device->setCodenames({ "hwMT2L03", "hwMT2LO3", "mt2", "MT2", "mt2l03", "MT2L03", "mt2-l03", "MT2-L03" });
+    device->setCodenames({ "hwMT2L03", "hwMT2LO3", "mt2", "MT2", "mt2l03",
+                           "MT2L03", "mt2-l03", "MT2-L03" });
     device->setName("Huawei Ascend Mate 2");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
@@ -856,7 +863,19 @@ void PatcherConfig::Impl::addHuaweiDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p19" });
     devices.push_back(device);
-    
+
+    // Huawei Ascend P7
+    device = new Device();
+    device->setId("hwp7");
+    device->setCodenames({ "hwp7" });
+    device->setName("Huawei Ascend P7");
+    device->setBlockDevBaseDirs({ HISILICON_BASE_DIR });
+    device->setSystemBlockDevs({ HISILICON_SYSTEM, "/dev/block/mmcblk0p28" });
+    device->setCacheBlockDevs({ HISILICON_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ HISILICON_USERDATA, "/dev/block/mmcblk0p30" });
+    device->setBootBlockDevs({ HISILICON_BOOT, "/dev/block/mmcblk0p17" });
+    device->setRecoveryBlockDevs({ HISILICON_RECOVERY, "/dev/block/mmcblk0p18" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addSonyDevices()
