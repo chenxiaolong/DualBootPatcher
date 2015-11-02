@@ -249,14 +249,22 @@ std::vector<Device *> PatcherConfig::devices() const
 #define TRELTE_SYSTEM           TRELTE_BASE_DIR "/SYSTEM"
 #define TRELTE_USERDATA         TRELTE_BASE_DIR "/USERDATA"
 
-#define DWMMC_BASE_DIR          "/dev/block/platform/dw_mmc.0/by-name"
+#define DWMMC_BASE_DIR          "/dev/block/platform/dw_mmc/by-name"
 #define DWMMC_BOOT              DWMMC_BASE_DIR "/BOOT"
 #define DWMMC_CACHE             DWMMC_BASE_DIR "/CACHE"
-#define DWMMC_CDMA_RADIO        DWMMC_BASE_DIR "/CDMA-RADIO"
 #define DWMMC_RADIO             DWMMC_BASE_DIR "/RADIO"
 #define DWMMC_RECOVERY          DWMMC_BASE_DIR "/RECOVERY"
 #define DWMMC_SYSTEM            DWMMC_BASE_DIR "/SYSTEM"
 #define DWMMC_USERDATA          DWMMC_BASE_DIR "/USERDATA"
+
+#define DWMMC0_BASE_DIR          "/dev/block/platform/dw_mmc.0/by-name"
+#define DWMMC0_BOOT              DWMMC0_BASE_DIR "/BOOT"
+#define DWMMC0_CACHE             DWMMC0_BASE_DIR "/CACHE"
+#define DWMMC0_CDMA_RADIO        DWMMC0_BASE_DIR "/CDMA-RADIO"
+#define DWMMC0_RADIO             DWMMC0_BASE_DIR "/RADIO"
+#define DWMMC0_RECOVERY          DWMMC0_BASE_DIR "/RECOVERY"
+#define DWMMC0_SYSTEM            DWMMC0_BASE_DIR "/SYSTEM"
+#define DWMMC0_USERDATA          DWMMC0_BASE_DIR "/USERDATA"
 
 #define MTK_BASE_DIR            "/dev/block/platform/mtk-msdc.0/by-name"
 #define MTK_BOOT                MTK_BASE_DIR "/boot"
@@ -283,13 +291,13 @@ void PatcherConfig::Impl::addSamsungDevices()
 {
     Device *device;
 
-    // Samsung Galaxy S 3
+    // Samsung Galaxy S 3 (Qcom)
     device = new Device();
     device->setId("d2");
     device->setCodenames({ "d2", "d2lte", "d2att", "d2can", "d2cri", "d2ltetmo",
                            "d2mtr", "d2spi", "d2spr", "d2tfnspr", "d2tfnvzw",
                            "d2tmo", "d2usc", "d2vmu", "d2vzw", "d2xar" });
-    device->setName("Samsung Galaxy S 3");
+    device->setName("Samsung Galaxy S 3 (Qcom)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p17" });
@@ -297,6 +305,20 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p18" });
     device->setExtraBlockDevs({ QCOM_ABOOT });
+    devices.push_back(device);
+
+    // Samsung Galaxy S 3 (i9305)
+    device = new Device();
+    device->setId("m3");
+    device->setCodenames({ "m3" });
+    device->setName("Samsung Galaxy S 3 (i9305)");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p13" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p12" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p16" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p8" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p9" });
+    device->setExtraBlockDevs({ DWMMC_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy S 4
@@ -443,13 +465,13 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("ha3g");
     device->setCodenames({ "ha3g" });
     device->setName("Samsung Galaxy Note 3 (Exynos)");
-    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
-    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
-    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Note 3 Neo
@@ -457,13 +479,13 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("hllte");
     device->setCodenames({ "hllte", "hlltexx" });
     device->setName("Samsung Galaxy Note 3 Neo");
-    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
-    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Note 4 (Snapdragon)
@@ -526,13 +548,13 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("lt03wifi");
     device->setCodenames({ "lt03wifi", "lt03wifiue" });
     device->setName("Samsung Galaxy Note 10.1 (2014 Edition)");
-    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
-    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
-    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Mega 6.3 (Intl)
@@ -592,13 +614,13 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("klimtwifi");
     device->setCodenames({ "klimtwifi", "klimtwifikx" });
     device->setName("Samsung Galaxy Tab S 8.4 (Wifi)");
-    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
-    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ DWMMC_RADIO, DWMMC_CDMA_RADIO });
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Tab Pro 8.4 (Wifi)
