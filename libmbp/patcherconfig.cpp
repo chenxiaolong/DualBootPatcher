@@ -335,7 +335,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("serranods");
     device->setCodenames({
         // Regular variant
-        "serrano3g",
+        "serrano3g", "serrano3gxx",
         // Duos variant
         "serranods", "serranodsxx"
     });
@@ -359,7 +359,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p15" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices.push_back(device);
 
     // Samsung Galaxy S 5 Broadband LTE-A
