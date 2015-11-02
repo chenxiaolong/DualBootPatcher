@@ -307,6 +307,20 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ QCOM_ABOOT });
     devices.push_back(device);
 
+    // Samsung Galaxy S 3 (i9300)
+    device = new Device();
+    device->setId("m0");
+    device->setCodenames({ "m0", "i9300", "GT-I9300" });
+    device->setName("Samsung Galaxy S 3 Intl");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p9" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p8" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p12" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p6" });
+    device->setExtraBlockDevs({ DWMMC_RADIO, "/dev/block/mmcblk0p7" });
+    devices.push_back(device);
+
     // Samsung Galaxy S 3 (i9305)
     device = new Device();
     device->setId("m3");
