@@ -72,6 +72,7 @@ public:
     void addMotorolaDevices();
     void addNexusDevices();
     void addOnePlusDevices();
+    void addHuaweiDevices();
     void addSonyDevices();
     void loadDefaultDevices();
 };
@@ -838,6 +839,26 @@ void PatcherConfig::Impl::addOnePlusDevices()
     devices.push_back(device);
 }
 
+void PatcherConfig::Impl::addHuaweiDevices()
+{
+    Device *device;
+    
+    // Huawei Mate 2
+    device = new Device();
+    device->setArchitecture("armeabi-v7a");
+    device->setId("mt2l03");
+    device->setCodenames({ "hwMT2L03", "hwMT2LO3", "mt2", "MT2", "mt2l03", "MT2L03", "mt2-l03", "MT2-L03" });
+    device->setName("Huawei Ascend Mate 2");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p24" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p19" });
+    devices.push_back(device);
+    
+}
+
 void PatcherConfig::Impl::addSonyDevices()
 {
     Device *device;
@@ -862,6 +883,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     addMotorolaDevices();
     addNexusDevices();
     addOnePlusDevices();
+    addHuaweiDevices();
     addSonyDevices();
 }
 
