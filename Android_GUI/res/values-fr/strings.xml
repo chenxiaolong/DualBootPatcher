@@ -101,6 +101,8 @@ Continuer?</string>
   <string name="rom_menu_wipe_rom">Effacer la ROM</string>
   <!--Snack bar message shown when a launcher is successfully created-->
   <string name="successfully_created_launcher">%s ajouté avec succès à l\'écran d\'accueil.</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
   <!--Target for wiping ROM's /system-->
   <string name="wipe_target_system">Le système</string>
   <!--Target for wiping ROM's /cache-->
@@ -181,6 +183,7 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <string name="zip_flashing_change_install_location">Changer l\'emplacement</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Pour flasher un fichier zip en utilisant le flashage in-app, just ajouter le fichier zip patché en tapant le grand icône plus. \n\nL\'ordre de flashage peut être modifié en appuyant et maintenant le fichier et un fichier peut être éliminé en le glissant sur les côtés. \n\nNOTE: Cette fonction est encore expérimentale. Veuillez sauvegarder avant de continuer!</string>
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <!--Title of the device selection box in the patcher-->
   <string name="patcher_device_title">Appareil:</string>
   <!--Title of the partition configuration box in the patcher-->
@@ -266,24 +269,8 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the global application sharing section of the ROM Settings-->
-  <string name="a_s_settings_global_app_sharing_section_title">Partage d\'application global </string>
   <!--Title for the individual application sharing section of the ROM settings-->
   <string name="a_s_settings_indiv_app_sharing_section_title">Partage d\'application individuel</string>
-  <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_title">Partager des applications</string>
-  <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_desc">Partager applications depuis la ROM primaire avec la ROM en cours (nécessite un redémarrage).</string>
-  <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_title">Partager des applications payantes</string>
-  <!--Description of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_desc">
-<![CDATA[
-Partager des applications payantes depuis la ROM primaire avec la ROM en cours (nécessite un redémarrage).
-<strong>Peut ne pas fonctionner due au DRM.</strong>
-]]></string>
-  <!--Description of the global app sharing preferences when booted in the primary ROM-->
-  <string name="a_s_settings_global_incompat_primary">Le partage d\'application global ne peut pas être utilisé dans la ROM primaire.</string>
   <!--Title for the preference to share individual applications-->
   <string name="a_s_settings_indiv_app_sharing_title">Partager des applications individuellement</string>
   <!--Description for the preference to share individual applications-->
@@ -337,29 +324,13 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_intro_dialog_desc">Le partage d\'application individuelle permet aux applications et leurs données d\'être stockées dans un emplacement partagé accessible par toutes les ROMs. L\'utilisation d\'une APK partagée économise de l\'espace en gardant une seule copie de l\'application pour chaque ROM. L\'utilisation de données partagées synchronise les données de l\'app dans toutes les ROM (onglets de Chrome par exemple.).
-
-NOTE: Un redémarrage est nécessaire pour que les modifications prennent effet.
-
-Pour utiliser le partage d\'application individuelle, le partage de  APKs / données doit être activé dans chaque ROM. Par exemple: Depuis la ROM primaire, permettre le partage des données pour Chrome. Chrome va commencer à utiliser le répertoire de données partagées. Puis démarrer dans une autre ROM et permettre également le partage de données pour Chrome. Il va maintenant utiliser le même répertoire partagé. Il en va de même pour les APKs partagées.</string>
-  <!--App label in the individual app sharing screen shown if the app uses shared apk-->
-  <string name="indiv_app_sharing_shared_apk">APKs partagées</string>
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
   <string name="indiv_app_sharing_shared_data">Données partagées</string>
-  <!--App label in the individual app sharing screen shown if the app uses shared apk and data-->
-  <string name="indiv_app_sharing_shared_apk_and_data">APKs et données partagées</string>
   <!--App label in the individual app sharing screen shown if the app is not shared-->
   <string name="indiv_app_sharing_not_shared">Non partagée</string>
-  <!--App sharing dialog checkbox text for using shared apk-->
-  <string name="indiv_app_sharing_dialog_share_apk">Utilisation d\'APKs partagées</string>
   <!--App sharing dialog checkbox text for using shared app data-->
   <string name="indiv_app_sharing_dialog_share_data">Utilisation de données partagées</string>
   <!--App sharing dialog message shown by default-->
-  <string name="indiv_app_sharing_dialog_default_message">Choisissez si l\'application doit utiliser un fichier APK partagé et un répertoire de données partagées.</string>
-  <!--App sharing dialog message shown if the app is a system app-->
-  <string name="indiv_app_sharing_dialog_system_app_message">Depuis que cette application est une application système (ou une mise à jour d\'une application système), une APK partagée ne peut pas être utilisée. Cependant, l\'application peut toujours utiliser les données partagées.</string>
-  <!--Message in the app sharing dialog showing the list of ROMs using the shared APK-->
-  <string name="indiv_app_sharing_other_roms_using_shared_apk">Autres ROMs utilisant les APK partagées: %s</string>
   <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
   <string name="indiv_app_sharing_other_roms_using_shared_data">Autres ROMs utilisant les données partagées: %s</string>
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
@@ -378,6 +349,8 @@ Pour utiliser le partage d\'application individuelle, le partage de  APKs / donn
   <string name="cancel">Annuler</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->
   <string name="proceed">Continuer</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <!--Word/phrase for No (used in dialog boxes)-->
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Redémarrer maintenant</string>
   <!--Reboot later (used in dialog boxes)-->

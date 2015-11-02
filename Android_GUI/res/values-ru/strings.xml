@@ -78,6 +78,8 @@
   <!--ROM menu item for resetting back to the default image-->
   <!--ROM menu item for wiping the ROM-->
   <!--Snack bar message shown when a launcher is successfully created-->
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
   <!--Target for wiping ROM's /system-->
   <!--Target for wiping ROM's /cache-->
   <!--Target for wiping ROM's /data-->
@@ -123,6 +125,7 @@
   <!--Dialog button for keeping the current installation location-->
   <!--Dialog button for changing the installation location-->
   <!--Message shown in the first-use dialog for zip flashing-->
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <!--Title of the device selection box in the patcher-->
   <!--Title of the partition configuration box in the patcher-->
   <!--Title of the partition configuration description in the patcher-->
@@ -193,20 +196,7 @@
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the global application sharing section of the ROM Settings-->
   <!--Title for the individual application sharing section of the ROM settings-->
-  <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_title">Совместно владеть приложениями</string>
-  <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <string name="a_s_settings_share_apps_desc">Владеть приложениями совместно из главного ROMа\nс текущим (перезагрузка обязательна).</string>
-  <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_title">Совместно владеть платными приложениями</string>
-  <!--Description of the preference for globally sharing paid applications from the primary ROM-->
-  <string name="a_s_settings_share_paid_apps_desc">\n<![CDATA[
-Совместно владеть приложениями из главного ROM-а с текущим (перезагрузка обязательна).
-<strong>Успех не гарантирован из-за DRM.</strong>
-]]>\n</string>
-  <!--Description of the global app sharing preferences when booted in the primary ROM-->
   <!--Title for the preference to share individual applications-->
   <string name="a_s_settings_indiv_app_sharing_title">Совместно владеть приложениями</string>
   <!--Description for the preference to share individual applications-->
@@ -242,15 +232,10 @@
   <!--Description for the preference to enable receiving intents from third party applications-->
   <!--Title for the dialog box explaining individual application sharing-->
   <!--Description for the dialog box explaining individual application sharing-->
-  <!--App label in the individual app sharing screen shown if the app uses shared apk-->
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
-  <!--App label in the individual app sharing screen shown if the app uses shared apk and data-->
   <!--App label in the individual app sharing screen shown if the app is not shared-->
-  <!--App sharing dialog checkbox text for using shared apk-->
   <!--App sharing dialog checkbox text for using shared app data-->
   <!--App sharing dialog message shown by default-->
-  <!--App sharing dialog message shown if the app is a system app-->
-  <!--Message in the app sharing dialog showing the list of ROMs using the shared APK-->
   <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
@@ -264,6 +249,8 @@
   <string name="cancel">Отменить</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->
   <string name="proceed">Продолжить</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <!--Word/phrase for No (used in dialog boxes)-->
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Перегрузить сейчас</string>
   <!--Reboot later (used in dialog boxes)-->

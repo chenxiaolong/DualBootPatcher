@@ -48,6 +48,7 @@
   <!--Default name for the multi-slot ROMs-->
   <string name="multislot">MultiROM %s</string>
   <!--Default name for the data-slot ROMs-->
+  <!--Default name for the extsd-slot ROMs-->
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Não foi possível determinar a versão da ROM</string>
   <!--Title of progress dialog shown when switching ROMs-->
@@ -55,19 +56,28 @@
   <!--Message shown when switching ROMs succeeds-->
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Falha ao alternar a ROM</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <!--Message shown when switching ROMs and checksums are missing-->
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Configuração do kernel com sucesso</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Falha ao configurar o kernel</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
   <!--Version text shown on ROM card if the version could not be detected-->
   <!--Build text shown on ROM card if the build could not be detected-->
   <!--ROM menu item for setting kernel-->
+  <!--ROM menu item for adding an icon to the home screen-->
   <!--ROM menu item for changing the name-->
   <!--ROM menu item for changing the image-->
   <!--ROM menu item for resetting back to the default image-->
   <!--ROM menu item for wiping the ROM-->
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
   <!--Target for wiping ROM's /system-->
   <!--Target for wiping ROM's /cache-->
   <!--Target for wiping ROM's /data-->
@@ -112,6 +122,7 @@
   <!--Dialog button for keeping the current installation location-->
   <!--Dialog button for changing the installation location-->
   <!--Message shown in the first-use dialog for zip flashing-->
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <!--Title of the device selection box in the patcher-->
   <!--Title of the partition configuration box in the patcher-->
   <!--Title of the partition configuration description in the patcher-->
@@ -123,6 +134,7 @@
   <!--Error tooltip shown if the data slot ID is empty-->
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
   <!--Name for the data-slot installation location-->
+  <!--Name for the extsd-slot installation location-->
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Sem gerenciador de arquivos</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
@@ -131,15 +143,12 @@ instale um gerenciador de arquivo para poder escolher os
 arquivos a serem adaptados.</string>
   <!--Title for the file chooser card telling the user to tap to choose a file-->
   <string name="filechooser_initial_title">Toque para escolher um arquivo a ser adaptado</string>
-  <!--Message telling the user that zip files and boot images are supported by the patcher. If an unsupported file is chosen, the custom patcher options will be shown-->
+  <!--Initial message for the file chooser card-->
   <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
   <string name="filechooser_ready_title">Toque para começar a adaptação</string>
   <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
   <string name="filechooser_ready_desc">Seleccione o ficheiro: %s\n\n
 Clique e mantenha pressionado para escolher outro ficheiro.</string>
-  <!--Title for the file chooser card that is shown after an unsupported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_unsupported_title">Toque para começar a adaptação</string>
-  <!--Message for the file chooser card showing the selected file and indicating that the file does not have a preset. The file can be patched by changing the custom patcher options-->
   <!--Title for the file chooser card indicating that the file was successfully patched-->
   <string name="filechooser_success_title">Arquivo adaptado com sucesso</string>
   <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
@@ -161,8 +170,6 @@ Clique para escolher outro ficheiro a adaptar.</string>
   <string name="customopts_patchfile">Arquivo a ser adaptado</string>
   <!--Name for the button to select a .patch or .diff file-->
   <string name="customopts_choosepatch">Escolha o arquivo a ser adaptado</string>
-  <!--Name for the option to disable checks for the device's model-->
-  <string name="customopts_devicecheck">Remover a verificação do aparelho</string>
   <!--Name for the option telling the patcher that the file has a boot image-->
   <string name="customopts_hasbootimage">Possui imagem de boot</string>
   <!--Name for the boot image text box-->
@@ -189,13 +196,7 @@ Clique para escolher outro ficheiro a adaptar.</string>
   <!--Format string for megabytes-->
   <!--Format string for kilobytes-->
   <!--Format string for bytes-->
-  <!--Title for the global application sharing section of the ROM Settings-->
   <!--Title for the individual application sharing section of the ROM settings-->
-  <!--Name of the preference for globally sharing free applications from the primary ROM-->
-  <!--Description of the preference for globally shareing free applications from the primary ROM-->
-  <!--Name of the preference for globally sharing paid applications from the primary ROM-->
-  <!--Description of the preference for globally sharing paid applications from the primary ROM-->
-  <!--Description of the global app sharing preferences when booted in the primary ROM-->
   <!--Title for the preference to share individual applications-->
   <!--Description for the preference to share individual applications-->
   <!--Title for the preference to manage shared apps for individual app sharing-->
@@ -225,20 +226,19 @@ Deseja reiniciar agora?</string>
   <string name="rom_settings_show_reboot_title">Mostrar botão Reiniciar</string>
   <!--Title for the preference to choose the initial screen to show when opening the app-->
   <!--Description for the initial screen preference-->
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <!--Description for the preference to enable receiving intents from third party applications-->
   <!--Title for the dialog box explaining individual application sharing-->
   <!--Description for the dialog box explaining individual application sharing-->
-  <!--App label in the individual app sharing screen shown if the app uses shared apk-->
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
-  <!--App label in the individual app sharing screen shown if the app uses shared apk and data-->
   <!--App label in the individual app sharing screen shown if the app is not shared-->
-  <!--App sharing dialog checkbox text for using shared apk-->
   <!--App sharing dialog checkbox text for using shared app data-->
   <!--App sharing dialog message shown by default-->
-  <!--App sharing dialog message shown if the app is a system app-->
-  <!--Message in the app sharing dialog showing the list of ROMs using the shared APK-->
   <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <!--Word/phrase for Search (used in action bars)-->
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">Nenhum(a)</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
@@ -247,6 +247,8 @@ Deseja reiniciar agora?</string>
   <string name="cancel">Cancelar</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->
   <string name="proceed">Continuar</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <!--Word/phrase for No (used in dialog boxes)-->
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Reiniciar agora</string>
   <!--Reboot later (used in dialog boxes)-->
@@ -256,33 +258,4 @@ Deseja reiniciar agora?</string>
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Por favor, aguarde</string>
   <!--Presets that should always be visible-->
-  <!--Errors-->
-  <string name="no_error">Nenhum erro</string>
-  <string name="unknown_error">Erro desconhecido</string>
-  <string name="patcher_create_error">Falha na criação do adaptador: %s</string>
-  <string name="autopatcher_create_error">Falha na criação do adaptador automatico: %s</string>
-  <string name="ramdisk_patcher_create_error">Falha na criação do adaptador de ramdisk: %s</string>
-  <string name="file_open_error">Falha a abrir o ficheiro: %s</string>
-  <string name="file_read_error">Falha ao ler do ficheiro: %s</string>
-  <string name="file_write_error">Falha ao escrever no ficheiro: %s</string>
-  <string name="directory_not_exist_error">A pasta %s não existe</string>
-  <string name="cpio_file_already_exists_error">Ficheiro já existente no arquivo cpio: %s</string>
-  <string name="cpio_file_not_exist_error">Ficheiro não existe no arquivo cpio: %s</string>
-  <string name="archive_read_open_error">Falha ao abrir arquivo para leitura</string>
-  <string name="archive_read_data_error">Falha na leitura do arquivo: %s</string>
-  <string name="archive_read_header_error">Falha na leitura do cabeçalho do arquivo</string>
-  <string name="archive_write_open_error">Falha ao abrir arquivo para escrita</string>
-  <string name="archive_write_data_error">Falha na escrita do arquivo: %s</string>
-  <string name="archive_write_header_error">Falha na escrita do cabeçalho do arquivo: %s</string>
-  <string name="archive_close_error">Falha ao fechar arquivo</string>
-  <string name="archive_free_error">Falha a libertar a memória do cabeçalho do arquivo</string>
-  <string name="xml_parse_file_error">Falha a interpretar o ficheiro XML: %s</string>
-  <string name="only_zip_supported">Apenas são suportados ficheiros ZIP: %s</string>
-  <string name="only_boot_image_supported">Apenas são suportadas imagens de boot: %s</string>
-  <string name="patching_cancelled">Adaptação cancelada</string>
-  <string name="system_cache_format_lines_not_found">O adaptador não conseguir encontrar linhas com
-/system ou /cache no ficheiro updater-script.\n\nSe o ficheiro for uma ROM,
-algo falhou. Se o ficheiro não for uma ROM (ex: kernel ou mod),
-então não necessita de adaptação.</string>
-  <string name="apply_patch_file_error">Falha a adaptar ficheiro</string>
 </resources>
