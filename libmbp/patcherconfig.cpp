@@ -460,6 +460,21 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ ZERO_RADIO });
     devices.push_back(device);
 
+    // Samsung Galaxy S 6 Edge+
+    device = new Device();
+    device->setId("zenlte");
+    device->setCodenames({ "zenlte", "zenltexx" });
+    device->setName("Samsung Galaxy S 6 Edge+");
+    device->setArchitecture("arm64-v8a");
+    device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
+    device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda14" });
+    device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda15" });
+    device->setDataBlockDevs({ ZERO_USERDATA, "/dev/block/sda17" });
+    device->setBootBlockDevs({ ZERO_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ ZERO_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ ZERO_RADIO });
+    devices.push_back(device);
+
     // Samsung Galaxy Note 3 (Snapdragon)
     device = new Device();
     device->setId("hlte");
