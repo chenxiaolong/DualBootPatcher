@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <linux/loop.h>
@@ -62,7 +63,16 @@ std::string loopdev_find_unused(void)
         return std::string();
     }
 
-    return format(LOOP_FMT, n);
+    std::string loopdev = format(LOOP_FMT, n);
+
+    struct stat sb;
+    if (stat(loopdev.c_str(), &sb) < 0 && errno == ENOENT) {
+        if (mknod(loopdev.c_str(), S_IFBLK | 0644, makedev(7, n)) < 0) {
+            return std::string();
+        }
+    }
+
+    return loopdev;
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
