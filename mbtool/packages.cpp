@@ -86,6 +86,8 @@ static const char *ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_DIR
                                              = "nativeLibraryRootDir";
 static const char *ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_REQUIRES_ISA
                                              = "nativeLibraryRootRequiresIsa";
+static const char *ATTR_SAMSUNG_SECONDARY_NATIVE_LIBRARY_DIR
+                                             = "secondaryNativeLibraryDir";
 
 static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
                            std::shared_ptr<Package> pkg);
@@ -487,7 +489,8 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
                 || strcmp(name, ATTR_SAMSUNG_DT) == 0
                 || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_DIR) == 0
                 || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_DIR) == 0
-                || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_REQUIRES_ISA) == 0) {
+                || strcmp(name, ATTR_SAMSUNG_NATIVE_LIBRARY_ROOT_REQUIRES_ISA) == 0
+                || strcmp(name, ATTR_SAMSUNG_SECONDARY_NATIVE_LIBRARY_DIR) == 0) {
             // Ignore Samsung-specific attributes
         } else {
             LOGW("Unrecognized attribute '%s' in <%s>", name, TAG_PACKAGE);
