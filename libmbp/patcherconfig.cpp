@@ -374,16 +374,18 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices.push_back(device);
 
-    // Samsung Galaxy S 4 Mini Duos
+    // Samsung Galaxy S 4 Mini Reg./Duos/LTE
     device = new Device();
-    device->setId("serranods");
+    device->setId("serrano");
     device->setCodenames({
         // Regular variant
         "serrano3g", "serrano3gxx",
         // Duos variant
-        "serranods", "serranodsxx"
+        "serranods", "serranodsxx",
+        // LTE variant
+        "serranolte", "serranoltexx"
     });
-    device->setName("Samsung Galaxy S 4 Mini Reg./Duos");
+    device->setName("Samsung Galaxy S 4 Mini Reg./Duos/LTE");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p21" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p22" });
