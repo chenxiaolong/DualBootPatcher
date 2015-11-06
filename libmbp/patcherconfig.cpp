@@ -287,6 +287,14 @@ std::vector<Device *> PatcherConfig::devices() const
 #define HISILICON_SYSTEM        HISILICON_BASE_DIR "/system"
 #define HISILICON_USERDATA      HISILICON_BASE_DIR "/userdata"
 
+#define INTEL_PCI_BASE_DIR      "/dev/block/pci/pci0000:00/0000:00:01.0/by-name"
+#define INTEL_PCI_BOOT          INTEL_PCI_BASE_DIR "/BOOT"
+#define INTEL_PCI_CACHE         INTEL_PCI_BASE_DIR "/CACHE"
+#define INTEL_PCI_RADIO         INTEL_PCI_BASE_DIR "/RADIO"
+#define INTEL_PCI_RECOVERY      INTEL_PCI_BASE_DIR "/RECOVERY"
+#define INTEL_PCI_SYSTEM        INTEL_PCI_BASE_DIR "/SYSTEM"
+#define INTEL_PCI_USERDATA      INTEL_PCI_BASE_DIR "/USERDATA"
+
 void PatcherConfig::Impl::addSamsungDevices()
 {
     Device *device;
@@ -625,6 +633,29 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p23" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+    devices.push_back(device);
+
+    // Samsung Galaxy Tab 3 10.1
+    device = new Device();
+    device->setId("santos");
+    device->setCodenames({
+        // 3G variant
+        "santos103g", "santos103gxx",
+        // LTE variant
+        "santos10lte", "santos10ltexx",
+        // Wifi variant
+        "santos10wifi", "santos10wifixx"
+    });
+    device->setName("Samsung Galaxy Tab 3 10.1");
+    device->setArchitecture("x86");
+    device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR });
+    device->setSystemBlockDevs({ INTEL_PCI_SYSTEM, "/dev/block/mmcblk0p8" });
+    device->setCacheBlockDevs({ INTEL_PCI_CACHE, "/dev/block/mmcblk0p6" });
+    device->setDataBlockDevs({ INTEL_PCI_USERDATA, "/dev/block/mmcblk0p9" });
+    device->setBootBlockDevs({ INTEL_PCI_BOOT, "/dev/block/mmcblk0p10" });
+    device->setRecoveryBlockDevs({ INTEL_PCI_RECOVERY,
+                                   "/dev/block/mmcblk0p11" });
+    device->setExtraBlockDevs({ INTEL_PCI_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Tab 4 10.1 (Wifi)
