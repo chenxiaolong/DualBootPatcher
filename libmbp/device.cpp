@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -53,8 +53,7 @@ public:
 
 Device::Device() : m_impl(new Impl())
 {
-    // Other architectures currently aren't supported
-    m_impl->architecture = "armeabi-v7a";
+    m_impl->architecture = ARCH_ARMEABI_V7A;
 }
 
 Device::~Device()

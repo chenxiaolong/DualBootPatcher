@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -24,6 +24,10 @@
 
 #include "libmbp_global.h"
 
+#define ARCH_ARMEABI_V7A        "armeabi-v7a"
+#define ARCH_ARM64_V8A          "arm64-v8a"
+#define ARCH_X86                "x86"
+#define ARCH_X86_64             "x86_64"
 
 namespace mbp
 {

@@ -440,7 +440,7 @@ void PatcherConfig::Impl::addSamsungDevices()
         "zerolte", "zeroltebmc", "zeroltetmo", "zeroltexx"
     });
     device->setName("Samsung Galaxy S 6 Flat/Edge");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
     device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda15" });
     device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda16" });
@@ -460,7 +460,7 @@ void PatcherConfig::Impl::addSamsungDevices()
         "zeroltespr"
     });
     device->setName("Samsung Galaxy S 6 Flat/Edge (Sprint)");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
     device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda18" });
     device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda19" });
@@ -475,7 +475,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("zenlte");
     device->setCodenames({ "zenlte", "zenltexx" });
     device->setName("Samsung Galaxy S 6 Edge+");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
     device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda14" });
     device->setCacheBlockDevs({ ZERO_CACHE, "/dev/block/sda15" });
@@ -571,7 +571,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("nobleltespr");
     device->setCodenames({ "noblelte", "nobleltespr" });
     device->setName("Samsung Galaxy Note 5 (Sprint)");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     // Same named partitions as the S6 variants
     device->setBlockDevBaseDirs({ ZERO_BASE_DIR });
     device->setSystemBlockDevs({ ZERO_SYSTEM, "/dev/block/sda16" });
@@ -647,7 +647,7 @@ void PatcherConfig::Impl::addSamsungDevices()
         "santos10wifi", "santos10wifixx"
     });
     device->setName("Samsung Galaxy Tab 3 10.1");
-    device->setArchitecture("x86");
+    device->setArchitecture(ARCH_X86);
     device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR });
     device->setSystemBlockDevs({ INTEL_PCI_SYSTEM, "/dev/block/mmcblk0p8" });
     device->setCacheBlockDevs({ INTEL_PCI_CACHE, "/dev/block/mmcblk0p6" });
@@ -720,7 +720,7 @@ void PatcherConfig::Impl::addLenovoDevices()
     // Lenovo K3 Note
     device = new Device();
     device->setId("k50");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     device->setCodenames({ "K50", "K50a40", "K50t5", "aio_otfp" });
     device->setName("Lenovo K3 Note");
     device->setBlockDevBaseDirs({ MTK_BASE_DIR });
@@ -782,7 +782,7 @@ void PatcherConfig::Impl::addLgDevices()
     // LG G4
     device = new Device();
     device->setId("lgg4");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     device->setCodenames({ "p1", "h815" });
     device->setName("LG G4");
     device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
@@ -927,7 +927,7 @@ void PatcherConfig::Impl::addOnePlusDevices()
     // OnePlus Two
     device = new Device();
     device->setId("OnePlus2");
-    device->setArchitecture("arm64-v8a");
+    device->setArchitecture(ARCH_ARM64_V8A);
     device->setCodenames({ "OnePlus2" });
     device->setName("OnePlus Two");
     device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
