@@ -64,117 +64,22 @@ struct uevent {
     int minor;
 };
 
-struct perms_ {
-    char *name;
-    char *attr;
-    mode_t perm;
-    unsigned int uid;
-    unsigned int gid;
-    unsigned short prefix;
-    unsigned short wildcard;
-};
-
 struct platform_node {
     char *name;
     char *path;
     int path_len;
 };
 
-static std::vector<perms_> sys_perms;
-static std::vector<perms_> dev_perms;
 static std::vector<platform_node> platform_names;
 
 static std::unordered_map<std::string, std::string> device_map;
-
-void fixup_sys_perms(const char *upath)
-{
-    char buf[512];
-
-    // upaths omit the "/sys" that paths in this list
-    // contain, so we add 4 when comparing...
-    for (const perms_ &dp : sys_perms) {
-        if (dp.prefix) {
-            if (strncmp(upath, dp.name + 4, strlen(dp.name + 4)) != 0) {
-                continue;
-            }
-        } else if (dp.wildcard) {
-            if (fnmatch(dp.name + 4, upath, FNM_PATHNAME) != 0) {
-                continue;
-            }
-        } else {
-            if (strcmp(upath, dp.name + 4) != 0) {
-                continue;
-            }
-        }
-
-        if ((strlen(upath) + strlen(dp.attr) + 6) > sizeof(buf)) {
-            break;
-        }
-
-        sprintf(buf,"/sys%s/%s", upath, dp.attr);
-#if UEVENT_LOGGING
-        LOGI("fixup %s %d %d 0%o", buf, dp.uid, dp.gid, dp.perm);
-#endif
-        chown(buf, dp.uid, dp.gid);
-        chmod(buf, dp.perm);
-    }
-
-    // Now fixup SELinux file labels
-    int len = snprintf(buf, sizeof(buf), "/sys%s", upath);
-    if ((len < 0) || ((size_t) len >= sizeof(buf))) {
-        // Overflow
-        return;
-    }
-}
-
-static bool perm_path_matches(const char *path, const struct perms_ *dp)
-{
-    if (dp->prefix) {
-        if (strncmp(path, dp->name, strlen(dp->name)) == 0) {
-            return true;
-        }
-    } else if (dp->wildcard) {
-        if (fnmatch(dp->name, path, FNM_PATHNAME) == 0) {
-            return true;
-        }
-    } else {
-        if (strcmp(path, dp->name) == 0) {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 static mode_t get_device_perm(const char *path,
                               const std::vector<std::string> &links,
                               unsigned *uid, unsigned *gid)
 {
-    // Search the perms list in reverse so that ueventd.$hardware can
-    // override ueventd.rc
-    for (auto it = dev_perms.rbegin(); it != dev_perms.rend(); ++it) {
-        bool match = false;
-
-        const struct perms_ &dp = *it;
-
-        if (perm_path_matches(path, &dp)) {
-            match = true;
-        } else {
-            for (const std::string &link : links) {
-                if (perm_path_matches(link.c_str(), &dp)) {
-                    match = true;
-                    break;
-                }
-            }
-        }
-
-        if (match) {
-            *uid = dp.uid;
-            *gid = dp.gid;
-            return dp.perm;
-        }
-    }
-    // Default if nothing found.
+    (void) path;
+    (void) links;
     *uid = 0;
     *gid = 0;
     return 0600;
@@ -702,12 +607,6 @@ static void handle_generic_device_event(struct uevent *uevent)
 
 static void handle_device_event(struct uevent *uevent)
 {
-    if (strcmp(uevent->action, "add") == 0
-            || strcmp(uevent->action, "change") == 0
-            || strcmp(uevent->action, "online") == 0) {
-        fixup_sys_perms(uevent->path);
-    }
-
     if (strncmp(uevent->subsystem, "block", 5) == 0) {
         handle_block_device_event(uevent);
     } else if (strncmp(uevent->subsystem, "platform", 8) == 0) {
