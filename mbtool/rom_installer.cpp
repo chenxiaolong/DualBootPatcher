@@ -137,7 +137,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     archive_read_support_filter_lzop(in.get());
     archive_read_support_filter_lz4(in.get());
     archive_read_support_filter_lzma(in.get());
-    archive_read_support_filter_xz(a);
+    archive_read_support_filter_xz(in.get());
     archive_read_support_format_cpio(in.get());
 
     int ret = archive_read_open_memory(in.get(),
