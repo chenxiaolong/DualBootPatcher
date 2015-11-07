@@ -143,6 +143,7 @@ bool CpioFile::load(const unsigned char *data, std::size_t size)
     archive_read_support_filter_lzop(a);
     archive_read_support_filter_lz4(a);
     archive_read_support_filter_lzma(a);
+    archive_read_support_filter_xz(a);
     archive_read_support_format_cpio(a);
 
     int ret = archive_read_open_memory(a,
