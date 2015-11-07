@@ -508,71 +508,71 @@ static void handle_generic_device_event(struct uevent *uevent)
     }
 
     if (strncmp(uevent->subsystem, "usb", 3) == 0) {
-         if (strcmp(uevent->subsystem, "usb") == 0) {
+        if (strcmp(uevent->subsystem, "usb") == 0) {
             if (uevent->device_name) {
                 if (!assemble_devpath(devpath, "/dev", uevent->device_name)) {
                     return;
                 }
                 mb::util::mkdir_parent(devpath, 0755);
-             } else {
-                 // This imitates the file system that would be created
-                 // if we were using devfs instead.
-                 // Minors are broken up into groups of 128, starting at "001"
-                 int bus_id = uevent->minor / 128 + 1;
-                 int device_id = uevent->minor % 128 + 1;
-                 // Build directories
-                 mkdir("/dev/bus", 0755);
-                 mkdir("/dev/bus/usb", 0755);
-                 snprintf(devpath, sizeof(devpath),
-                          "/dev/bus/usb/%03d", bus_id);
-                 mkdir(devpath, 0755);
-                 snprintf(devpath, sizeof(devpath),
-                          "/dev/bus/usb/%03d/%03d", bus_id, device_id);
-             }
-         } else {
-             // Ignore other USB events
-             return;
-         }
-     } else if (strncmp(uevent->subsystem, "graphics", 8) == 0) {
-         base = "/dev/graphics/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "drm", 3) == 0) {
-         base = "/dev/dri/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "oncrpc", 6) == 0) {
-         base = "/dev/oncrpc/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "adsp", 4) == 0) {
-         base = "/dev/adsp/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "msm_camera", 10) == 0) {
-         base = "/dev/msm_camera/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "input", 5) == 0) {
-         base = "/dev/input/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "mtd", 3) == 0) {
-         base = "/dev/mtd/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "sound", 5) == 0) {
-         base = "/dev/snd/";
-         mkdir(base, 0755);
-     } else if (strncmp(uevent->subsystem, "misc", 4) == 0
+            } else {
+                // This imitates the file system that would be created
+                // if we were using devfs instead.
+                // Minors are broken up into groups of 128, starting at "001"
+                int bus_id = uevent->minor / 128 + 1;
+                int device_id = uevent->minor % 128 + 1;
+                // Build directories
+                mkdir("/dev/bus", 0755);
+                mkdir("/dev/bus/usb", 0755);
+                snprintf(devpath, sizeof(devpath),
+                         "/dev/bus/usb/%03d", bus_id);
+                mkdir(devpath, 0755);
+                snprintf(devpath, sizeof(devpath),
+                         "/dev/bus/usb/%03d/%03d", bus_id, device_id);
+            }
+        } else {
+            // Ignore other USB events
+            return;
+        }
+    } else if (strncmp(uevent->subsystem, "graphics", 8) == 0) {
+        base = "/dev/graphics/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "drm", 3) == 0) {
+        base = "/dev/dri/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "oncrpc", 6) == 0) {
+        base = "/dev/oncrpc/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "adsp", 4) == 0) {
+        base = "/dev/adsp/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "msm_camera", 10) == 0) {
+        base = "/dev/msm_camera/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "input", 5) == 0) {
+        base = "/dev/input/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "mtd", 3) == 0) {
+        base = "/dev/mtd/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "sound", 5) == 0) {
+        base = "/dev/snd/";
+        mkdir(base, 0755);
+    } else if (strncmp(uevent->subsystem, "misc", 4) == 0
             && strncmp(name, "log_", 4) == 0) {
-         base = "/dev/log/";
-         mkdir(base, 0755);
-         name += 4;
-     } else {
-         base = "/dev/";
-     }
-     links = get_character_device_symlinks(uevent);
+        base = "/dev/log/";
+        mkdir(base, 0755);
+        name += 4;
+    } else {
+        base = "/dev/";
+    }
+    links = get_character_device_symlinks(uevent);
 
-     if (!devpath[0]) {
-         snprintf(devpath, sizeof(devpath), "%s%s", base, name);
-     }
+    if (!devpath[0]) {
+        snprintf(devpath, sizeof(devpath), "%s%s", base, name);
+    }
 
-     handle_device(uevent->action, devpath, uevent->path, 0,
-             uevent->major, uevent->minor, links);
+    handle_device(uevent->action, devpath, uevent->path, 0,
+            uevent->major, uevent->minor, links);
 }
 
 static void handle_device_event(struct uevent *uevent)
