@@ -559,6 +559,9 @@ static void handle_generic_device_event(struct uevent *uevent)
         mkdir(base, 0755);
     } else if (strncmp(uevent->subsystem, "misc", 4) == 0
             && strncmp(name, "log_", 4) == 0) {
+#if UEVENT_LOGGING
+        LOGI("kernel logger is deprecated");
+#endif
         base = "/dev/log/";
         mkdir(base, 0755);
         name += 4;
