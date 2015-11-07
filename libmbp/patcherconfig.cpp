@@ -319,7 +319,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device = new Device();
     device->setId("m0");
     device->setCodenames({ "m0", "i9300", "GT-I9300" });
-    device->setName("Samsung Galaxy S 3 Intl");
+    device->setName("Samsung Galaxy S 3 (i9300)");
     device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p9" });
     device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p8" });
