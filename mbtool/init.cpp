@@ -59,8 +59,12 @@ static const char *data_block_devs[] = {
     "/dev/block/platform/f9824900.sdhci/by-name/userdata",
     "/dev/block/platform/15570000.ufs/by-name/USERDATA",
     "/dev/block/platform/15540000.dwmmc0/by-name/USERDATA",
+    "/dev/block/platform/dw_mmc/by-name/USERDATA",
     "/dev/block/platform/dw_mmc.0/by-name/USERDATA",
     "/dev/block/platform/mtk-msdc.0/by-name/userdata",
+    "/dev/block/platform/sdhci-tegra.3/by-name/UDA",
+    "/dev/block/platform/hi_mci.0/by-name/userdata",
+    "/dev/block/pci/pci0000:00/0000:00:01.0/by-name/USERDATA",
     nullptr
 };
 
