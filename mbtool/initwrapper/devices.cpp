@@ -260,7 +260,7 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
 
     pdev = find_platform_device(uevent->path);
     if (!pdev) {
-        return std::vector<std::string>();
+        return {};
     }
 
     std::vector<std::string> links;
@@ -268,7 +268,7 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
     // Skip "/devices/platform/<driver>"
     parent = strchr(uevent->path + pdev->path_len, '/');
     if (!parent) {
-        return std::vector<std::string>();
+        return {};
     }
 
     if (strncmp(parent, "/usb", 4) == 0) {
@@ -278,15 +278,15 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
             while (*++parent && *parent != '/');
         }
         if (!*parent) {
-            return std::vector<std::string>();
+            return {};
         }
         slash = strchr(++parent, '/');
         if (!slash) {
-            return std::vector<std::string>();
+            return {};
         }
         width = slash - parent;
         if (width <= 0) {
-            return std::vector<std::string>();
+            return {};
         }
 
         links.push_back(mb::util::format(
@@ -303,7 +303,6 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
     struct platform_node *pdev;
     char *slash;
     const char *type;
-    bool is_bootdevice = true;
     char link_path[256];
     char *p;
 
@@ -312,7 +311,7 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
         device = pdev->name;
         type = "platform";
     } else {
-        return std::vector<std::string>();
+        return {};
     }
 
     std::vector<std::string> links;
@@ -323,13 +322,6 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 
     snprintf(link_path, sizeof(link_path), "/dev/block/%s/%s", type, device);
 
-    if (bootdevice[0] == '\0') {
-        is_bootdevice = false;
-    } else if (strncmp(device, bootdevice, sizeof(bootdevice)) == 0) {
-        make_link_init(link_path, "/dev/block/bootdevice");
-        is_bootdevice = true;
-    }
-
     if (uevent->partition_name) {
         p = strdup(uevent->partition_name);
         sanitize(p);
@@ -339,23 +331,24 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 #endif
         }
         links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
-        if (is_bootdevice) {
-            links.push_back(mb::util::format("/dev/block/bootdevice/by-name/%s", p));
-        }
+        links.push_back(mb::util::format("/dev/block/bootdevice/by-name/%s", p));
         free(p);
     }
 
     if (uevent->partition_num >= 0) {
         links.push_back(mb::util::format(
                 "%s/by-num/p%d", link_path, uevent->partition_num));
-        if (is_bootdevice) {
-            links.push_back(mb::util::format(
-                    "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
-        }
+        links.push_back(mb::util::format(
+                "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
     }
 
     slash = strrchr(uevent->path, '/');
     links.push_back(mb::util::format("%s/%s", link_path, slash + 1));
+
+    if (pdev && bootdevice[0] != '\0' && strstr(device, bootdevice)) {
+        // Create bootdevice symlink for platform boot stroage device
+        make_link_init(link_path, "/dev/block/bootdevice");
+    }
 
     return links;
 }
