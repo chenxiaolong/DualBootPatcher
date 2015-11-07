@@ -251,36 +251,6 @@ static void parse_event(const char *msg, struct uevent *uevent)
 #endif
 }
 
-static std::vector<std::string> get_v4l_device_symlinks(struct uevent *uevent)
-{
-    int fd = -1;
-    int nr;
-    char link_name_path[256];
-    char link_name[64];
-
-    if (strncmp(uevent->path, "/devices/virtual/video4linux/video", 34) != 0) {
-        return std::vector<std::string>();
-    }
-
-    std::vector<std::string> links;
-
-    snprintf(link_name_path, sizeof(link_name_path), "%s%s%s",
-            SYSFS_PREFIX, uevent->path, "/link_name");
-    fd = open(link_name_path, O_RDONLY);
-    if (fd < 0) {
-        return std::vector<std::string>();
-    }
-    nr = read(fd, link_name, sizeof(link_name) - 1);
-    close(fd);
-    if (nr <= 0) {
-        return std::vector<std::string>();
-    }
-    link_name[nr] = '\0';
-    links.push_back(mb::util::format("/dev/video/%s", link_name));
-
-    return links;
-}
-
 static std::vector<std::string> get_character_device_symlinks(struct uevent *uevent)
 {
     const char *parent;
@@ -582,9 +552,6 @@ static void handle_generic_device_event(struct uevent *uevent)
          base = "/dev/";
      }
      links = get_character_device_symlinks(uevent);
-     if (links.empty()) {
-         links = get_v4l_device_symlinks(uevent);
-     }
 
      if (!devpath[0]) {
          snprintf(devpath, sizeof(devpath), "%s%s", base, name);
