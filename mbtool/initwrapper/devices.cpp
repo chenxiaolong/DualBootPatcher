@@ -706,7 +706,6 @@ void device_init()
         return;
     }
 
-    fcntl(device_fd, F_SETFD, FD_CLOEXEC);
     fcntl(device_fd, F_SETFL, O_NONBLOCK);
 
     coldboot("/sys/class");
