@@ -282,6 +282,23 @@ static void remove_platform_device(const char *path)
     }
 }
 
+#if UEVENT_LOGGING
+static void dump_uevent(struct uevent *uevent)
+{
+    LOGD("event { action='%s', path='%s', subsystem='%s', firmware='%s',"
+         " name='%s', partname='%s', partnum=%d, major=%d, minor=%d }",
+         uevent->action ? uevent->action : "(null)",
+         uevent->path ? uevent->path : "(null)",
+         uevent->subsystem ? uevent->subsystem : "(null)",
+         uevent->firmware ? uevent->firmware : "(null)",
+         uevent->device_name ? uevent->device_name : "(null)",
+         uevent->partition_name ? uevent->partition_name : "(null)",
+         uevent->partition_num,
+         uevent->major,
+         uevent->minor);
+}
+#endif
+
 static void parse_event(const char *msg, struct uevent *uevent)
 {
     uevent->action = "";
@@ -323,6 +340,12 @@ static void parse_event(const char *msg, struct uevent *uevent)
         } else if (strncmp(msg, "DEVNAME=", 8) == 0) {
             msg += 8;
             uevent->device_name = msg;
+        } else {
+#if UEVENT_LOGGING
+            if (strcmp(uevent->subsystem, "block") == 0) {
+                LOGW("Unknown message: '%s'", msg);
+            }
+#endif
         }
 
         // Advance to after the next \0
@@ -330,9 +353,7 @@ static void parse_event(const char *msg, struct uevent *uevent)
     }
 
 #if UEVENT_LOGGING
-    LOGD("event { '%s', '%s', '%s', '%s', %d, %d }",
-         uevent->action, uevent->path, uevent->subsystem,
-         uevent->firmware, uevent->major, uevent->minor);
+    dump_uevent(uevent);
 #endif
 }
 
