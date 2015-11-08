@@ -209,6 +209,11 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     util::replace_all(&str_data, "@LAST_INDEX@",
                       util::format("%zu", 2 + roms.roms.size()));
 
+    util::replace_all(&str_data, "@SYSTEM_MOUNT_POINT@", Roms::get_system_partition());
+    util::replace_all(&str_data, "@CACHE_MOUNT_POINT@", Roms::get_cache_partition());
+    util::replace_all(&str_data, "@DATA_MOUNT_POINT@", Roms::get_data_partition());
+    util::replace_all(&str_data, "@EXTSD_MOUNT_POINT@", Roms::get_extsd_partition());
+
     data->assign(str_data.begin(), str_data.end());
 }
 
