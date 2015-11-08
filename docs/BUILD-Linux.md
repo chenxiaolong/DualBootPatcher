@@ -4,15 +4,17 @@ Building for Linux
 The following packages are needed for compiling:
 
 - cmake
-- gcc-multilib
-- libarchive
-- lz4
-- xz
-- zip
+- libarchive (optional)
+- lz4 (optional)
+- lzo2 (optional)
+- xz (optional)
 - qt5
+- zlib (optional)
 
 System build (installation to /usr/local)
 -----------------------------------------
+
+If an optional dependency is not installed, a bundled version can be used by omitting the corresponding `-DMBP_USE_SYSTEM_<package>=ON` option below. It is strongly recommended to use the bundled version of libarchive as most distros use ship libarchive-3.1.2, which is missing features that are used by DualBootPatcher.
 
 ```sh
 cd /path/to/DualBootPatcher
@@ -21,11 +23,11 @@ cd build
 cmake .. \
     -DMBP_USE_SYSTEM_ZLIB=ON \
     -DMBP_USE_SYSTEM_LIBLZMA=ON \
-    -DMBP_USE_SYSTEM_LZ4=ON
+    -DMBP_USE_SYSTEM_LZ4=ON \
+    -DMBP_USE_SYSTEM_LZO2=ON
 make
 make install
 ```
-
 
 Portable build
 --------------
