@@ -212,7 +212,7 @@ EdifyTokenString::EdifyTokenString(std::string str, Type type)
         escape(str, &temp);
         temp.insert(temp.begin(), '"');
         temp.push_back('"');
-        m_str = std::move(str);
+        m_str = std::move(temp);
         break;
     }
 }
