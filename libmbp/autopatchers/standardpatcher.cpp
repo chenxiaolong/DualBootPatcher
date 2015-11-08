@@ -605,6 +605,49 @@ replaceEdifyPackageExtractFile(std::vector<EdifyToken *> *tokens,
     return rightParen + 1;
 }
 
+/*!
+ * \brief Replace edify range_sha1() command
+ *
+ * \param tokens List of edify tokens
+ * \param funcName Function name token
+ * \param leftParen Left parenthesis token
+ * \param rightParen Right parenthesis token
+ * \param systemDevs List of system partition block devices
+ *
+ * \return Iterator pointing to position immediately after the right parenthesis
+ */
+static std::vector<EdifyToken *>::iterator
+replaceEdifyRangeSha1(std::vector<EdifyToken *> *tokens,
+                      const std::vector<EdifyToken *>::iterator funcName,
+                      const std::vector<EdifyToken *>::iterator leftParen,
+                      const std::vector<EdifyToken *>::iterator rightParen,
+                      const std::vector<std::string> &systemDevs)
+{
+    (void) tokens;
+    (void) funcName;
+
+    for (auto it = leftParen + 1; it != rightParen; ++it) {
+        if ((*it)->type() != EdifyTokenType::String) {
+            continue;
+        }
+
+        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        std::string unescaped = token->unescapedString();
+
+        // References to the system partition should become /mb/system.img
+        for (auto const &dev : systemDevs) {
+            if (unescaped.find(dev) != std::string::npos) {
+                StringUtils::replace_all(&unescaped, dev, "/mb/system.img");
+                delete *it;
+                *it = new EdifyTokenString(
+                        std::move(unescaped), EdifyTokenString::MakeQuoted);
+                break;
+            }
+        }
+    }
+    return rightParen + 1;
+}
+
 bool StandardPatcher::patchFiles(const std::string &directory)
 {
     std::string contents;
@@ -675,6 +718,9 @@ bool StandardPatcher::patchFiles(const std::string &directory)
         } else if (tFuncName->unescapedString() == "package_extract_file") {
             begin = replaceEdifyPackageExtractFile(&tokens, funcName, leftParen, rightParen,
                                                    systemDevs);
+        } else if (tFuncName->unescapedString() == "range_sha1") {
+            begin = replaceEdifyRangeSha1(&tokens, funcName, leftParen, rightParen,
+                                          systemDevs);
         } else {
             begin = funcName + 1;
         }
