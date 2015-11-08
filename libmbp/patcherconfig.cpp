@@ -810,11 +810,11 @@ void PatcherConfig::Impl::addMotorolaDevices()
                            "xt1032" });
     device->setName("Motorola Moto G (2013)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM /*, TODO */ });
-    device->setCacheBlockDevs({ QCOM_CACHE /*, TODO */ });
-    device->setDataBlockDevs({ QCOM_USERDATA /*, TODO */ });
-    device->setBootBlockDevs({ QCOM_BOOT /*, TODO */ });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p33" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p36" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p31" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices.push_back(device);
 
     // Motorola Moto X (2013)
