@@ -42,16 +42,16 @@ setvar(
     "Board Name\t\t: "     + "<b><#selectbg_g>" + sysprop("ro.product.board")        + "</#></b>\n"   +
     "Manufacturer\t\t: "   + "<b><#selectbg_g>" + sysprop("ro.product.manufacturer") + "</#></b>\n\n" +
 
-    "/system Size\t\t: "   + "<b><#selectbg_g>" + getdisksize("/system", "m") + " MB" + "</#></b>\n"   +
-      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/system", "m") + " MB" + "</#></b>\n\n" +
-    "/data Size\t\t: "     + "<b><#selectbg_g>" + getdisksize("/data", "m")   + " MB" + "</#></b>\n"   +
-      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/data", "m")   + " MB" + "</#></b>\n\n" +
-    "/cache Size\t\t: "    + "<b><#selectbg_g>" + getdisksize("/cache", "m")  + " MB" + "</#></b>\n"   +
-      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/cache", "m")  + " MB" + "</#></b>\n\n" +
-    "Internal SD Size\t: " + "<b><#selectbg_g>" + getdisksize("/sdcard", "m") + " MB" + "</#></b>\n"   +
-      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/sdcard", "m") + " MB" + "</#></b>\n\n" +
-    "External SD Size\t: " + "<b><#selectbg_g>" + getdisksize("/external_sd", "m") + " MB" + "</#></b>\n" +
-      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/external_sd", "m") + " MB" + "</#></b>\n\n" +
+    "/system Size\t\t: "   + "<b><#selectbg_g>" + getdisksize("@SYSTEM_MOUNT_POINT@", "m") + " MB" + "</#></b>\n"   +
+      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@SYSTEM_MOUNT_POINT@", "m") + " MB" + "</#></b>\n\n" +
+    "/data Size\t\t: "     + "<b><#selectbg_g>" + getdisksize("@DATA_MOUNT_POINT@", "m")   + " MB" + "</#></b>\n"   +
+      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@DATA_MOUNT_POINT@", "m")   + " MB" + "</#></b>\n\n" +
+    "/cache Size\t\t: "    + "<b><#selectbg_g>" + getdisksize("@CACHE_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n"   +
+      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@CACHE_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n\n" +
+    "Internal SD Size\t: " + "<b><#selectbg_g>" + getdisksize("/sdcard", "m")              + " MB" + "</#></b>\n"   +
+      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/sdcard", "m")              + " MB" + "</#></b>\n\n" +
+    "External SD Size\t: " + "<b><#selectbg_g>" + getdisksize("@EXTSD_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n" +
+      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@EXTSD_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n\n" +
 
     ""
 );
