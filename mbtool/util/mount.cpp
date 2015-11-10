@@ -256,7 +256,10 @@ bool umount(const char *target)
                 && S_ISBLK(sb.st_mode) && major(sb.st_rdev) == 7) {
             // If the source path is a loop block device, then disassociate it
             // from the image
-            loopdev_remove_device(source);
+            LOGD("Clearing loop device %s", source.c_str());
+            if (!loopdev_remove_device(source)) {
+                LOGW("Failed to clear loop device: %s", strerror(errno));
+            }
         }
     }
 
