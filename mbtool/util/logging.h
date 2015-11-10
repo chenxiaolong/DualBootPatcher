@@ -97,6 +97,7 @@ public:
 void log_set_logger(std::shared_ptr<BaseLogger> logger);
 __attribute__((format(printf, 2, 3)))
 void log(LogLevel prio, const char *fmt, ...);
+void logv(LogLevel prio, const char *fmt, va_list ap);
 
 }
 }

@@ -207,18 +207,23 @@ void log_set_logger(std::shared_ptr<BaseLogger> logger_local)
 
 void log(LogLevel prio, const char *fmt, ...)
 {
+    va_list ap;
+    va_start(ap, fmt);
+
+    logv(prio, fmt, ap);
+
+    va_end(ap);
+}
+
+void logv(LogLevel prio, const char *fmt, va_list ap)
+{
     int saved_errno = errno;
 
     if (!logger) {
         logger = std::make_shared<StdioLogger>(stdout, false);
     }
 
-    va_list ap;
-    va_start(ap, fmt);
-
     logger->log(prio, fmt, ap);
-
-    va_end(ap);
 
     errno = saved_errno;
 }
