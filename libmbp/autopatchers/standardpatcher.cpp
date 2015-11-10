@@ -548,14 +548,24 @@ replaceEdifyBlockImageUpdate(std::vector<EdifyToken *> *tokens,
         EdifyTokenString *token = (EdifyTokenString *)(*it);
         std::string unescaped = token->unescapedString();
 
-        // References to the system partition should become /mb/system.img
-        for (auto const &dev : systemDevs) {
-            if (unescaped.find(dev) != std::string::npos) {
-                StringUtils::replace_all(&unescaped, dev, "/mb/system.img");
-                delete *it;
-                *it = new EdifyTokenString(
-                        std::move(unescaped), EdifyTokenString::MakeQuoted);
-                break;
+        // Some ROMs for MediaTek devices specify that partition name for the
+        // first parameter. The update-binary then queries /proc/dumchar_info
+        // to get the partition.
+        if (unescaped == "system") {
+            StringUtils::replace_all(&unescaped, "system", "/mb/system.img");
+            delete *it;
+            *it = new EdifyTokenString(
+                    std::move(unescaped), EdifyTokenString::MakeQuoted);
+        } else {
+            // References to the system partition should become /mb/system.img
+            for (auto const &dev : systemDevs) {
+                if (unescaped.find(dev) != std::string::npos) {
+                    StringUtils::replace_all(&unescaped, dev, "/mb/system.img");
+                    delete *it;
+                    *it = new EdifyTokenString(
+                            std::move(unescaped), EdifyTokenString::MakeQuoted);
+                    break;
+                }
             }
         }
     }
