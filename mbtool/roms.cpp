@@ -27,6 +27,7 @@
 #include "multiboot.h"
 #include "util/finally.h"
 #include "util/logging.h"
+#include "util/mount.h"
 #include "util/properties.h"
 #include "util/string.h"
 
@@ -417,13 +418,26 @@ std::string Roms::get_data_partition()
 
 std::string Roms::get_extsd_partition()
 {
+    // Loop through the list of paths. If the path is a mount point, then select
+    // that path. Otherwise, choose the first path that exists.
+    std::vector<std::string> maybe;
+
     struct stat sb;
     for (const std::string &mount_point : extsd_mount_points) {
         if (stat(mount_point.c_str(), &sb) == 0) {
-            return mount_point;
+            if (util::is_mounted(mount_point)) {
+                return mount_point;
+            } else {
+                maybe.push_back(mount_point);
+            }
         }
     }
-    return std::string();
+
+    if (maybe.empty()) {
+        return std::string();
+    } else {
+        return maybe[0];
+    }
 }
 
 std::string Roms::get_mountpoint(Rom::Source source)
