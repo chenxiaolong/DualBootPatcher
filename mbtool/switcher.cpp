@@ -408,7 +408,7 @@ SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockd
     }
 
     if (!fix_multiboot_permissions()) {
-        return SwitchRomResult::FAILED;
+        //return SwitchRomResult::FAILED;
     }
 
     return SwitchRomResult::SUCCEEDED;
@@ -491,7 +491,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     checksums_write(props);
 
     if (!fix_multiboot_permissions()) {
-        return false;
+        //return false;
     }
 
     return true;
