@@ -40,39 +40,120 @@
 #define LOOP_CONTROL    "/dev/loop-control"
 #define LOOP_FMT        "/dev/block/loop%d"
 
+#define MAX_LOOPDEVS    1024
+
 
 namespace mb
 {
 namespace util
 {
 
-std::string loopdev_find_unused(void)
+/*!
+ * \brief Find empty loopdev by using the new ioctl for /dev/block/loop-control
+ *
+ * \return Loopdev number or -1 if loop-control does not exist or the ioctl
+ *         failed
+ */
+static int find_loopdev_by_loop_control(void)
 {
     int fd = -1;
-    int n;
 
     if ((fd = open(LOOP_CONTROL, O_RDWR)) < 0) {
-        return std::string();
+        return -1;
     }
 
     auto close_fd = finally([&] {
         close(fd);
     });
 
-    if ((n = ioctl(fd, LOOP_CTL_GET_FREE)) < 0) {
-        return std::string();
+    int n = ioctl(fd, LOOP_CTL_GET_FREE);
+    if (n < 0) {
+        return -1;
     }
 
-    std::string loopdev = format(LOOP_FMT, n);
+    char loopdev[64];
+    sprintf(loopdev, LOOP_FMT, n);
 
-    struct stat sb;
-    if (stat(loopdev.c_str(), &sb) < 0 && errno == ENOENT) {
-        if (mknod(loopdev.c_str(), S_IFBLK | 0644, makedev(7, n)) < 0) {
-            return std::string();
+    if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0 && errno != EEXIST) {
+        return -1;
+    }
+
+    return n;
+}
+
+/*!
+ * \brief Find empty loopdev by dumb scan through /dev/block/loop*
+ *
+ * \return Loopdev number or -1 if:
+ *         - /dev/block/loop# failed to stat where errno != ENOENT
+ *         - /dev/block/loop# is not a loop device
+ *         - /dev/block/loop# could not be opened
+ *         - LOOP_GET_STATUS64 ioctl failed where errno != ENXIO
+ */
+static int find_loopdev_by_scanning(void)
+{
+    int fd;
+    char loopdev[64];
+
+    for (int n = 0; n < MAX_LOOPDEVS; ++n) {
+        struct loop_info64 loopinfo;
+        struct stat sb;
+
+        sprintf(loopdev, LOOP_FMT, n);
+
+        if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0) {
+            if (errno != EEXIST) {
+                continue;
+            }
+        }
+
+        if ((fd = open(loopdev, O_RDWR | O_CLOEXEC)) < 0) {
+            // Loopdev does not exist. Great! loopdev_find_unused() will
+            // create it
+            if (errno == ENOENT) {
+                return n;
+            } else {
+                continue;
+            }
+        }
+
+        auto close_fd = finally([&] {
+            close(fd);
+        });
+
+        if (fstat(fd, &sb) < 0) {
+            // Uhhhhh...
+            continue;
+        }
+
+        if (!S_ISBLK(sb.st_mode) || major(sb.st_rdev) != 7) {
+            // Device isn't a loop device
+            continue;
+        }
+
+        if (ioctl(fd, LOOP_GET_STATUS64, &loopinfo) < 0) {
+            if (errno == ENXIO) {
+                return n;
+            } else {
+                continue;
+            }
         }
     }
 
-    return loopdev;
+    return -1;
+}
+
+std::string loopdev_find_unused(void)
+{
+    int n = find_loopdev_by_loop_control();
+    if (n < 0) {
+        n = find_loopdev_by_scanning();
+    }
+    if (n < 0) {
+        return std::string();
+    }
+
+    return format(LOOP_FMT, n);
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
