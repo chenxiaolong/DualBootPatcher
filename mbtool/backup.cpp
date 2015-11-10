@@ -328,8 +328,7 @@ static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
     }
 
     // Recreate boot image
-    std::vector<unsigned char> new_boot_image;
-    if (!bi.create(&new_boot_image)) {
+    if (!bi.createFile(boot_image_path)) {
         LOGE("Failed to create new boot image");
         return Result::FAILED;
     }
