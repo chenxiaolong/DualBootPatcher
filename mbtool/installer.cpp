@@ -308,21 +308,6 @@ bool Installer::create_chroot()
         return false;
     }
 
-    // Create a few loopback devices in case we need to use them
-    if (log_mkdir(in_chroot("/dev/block").c_str(), 0755) < 0
-            || log_mknod(in_chroot("/dev/block/loop0").c_str(), S_IFBLK | 0644, makedev(7, 0)) < 0
-            || log_mknod(in_chroot("/dev/block/loop1").c_str(), S_IFBLK | 0644, makedev(7, 1)) < 0
-            || log_mknod(in_chroot("/dev/block/loop2").c_str(), S_IFBLK | 0644, makedev(7, 2)) < 0
-            || log_mknod(in_chroot("/dev/block/loop3").c_str(), S_IFBLK | 0644, makedev(7, 3)) < 0
-            || log_mknod(in_chroot("/dev/block/loop4").c_str(), S_IFBLK | 0644, makedev(7, 4)) < 0
-            || log_mknod(in_chroot("/dev/block/loop5").c_str(), S_IFBLK | 0644, makedev(7, 5)) < 0
-            || log_mknod(in_chroot("/dev/block/loop6").c_str(), S_IFBLK | 0644, makedev(7, 6)) < 0
-            || log_mknod(in_chroot("/dev/block/loop7").c_str(), S_IFBLK | 0644, makedev(7, 7)) < 0
-            || log_mknod(in_chroot("/dev/block/loop8").c_str(), S_IFBLK | 0644, makedev(7, 8)) < 0
-            || log_mknod(in_chroot("/dev/block/loop9").c_str(), S_IFBLK | 0644, makedev(7, 9)) < 0) {
-        return false;
-    }
-
     // We need /dev/input/* and /dev/graphics/* for AROMA
 #if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
