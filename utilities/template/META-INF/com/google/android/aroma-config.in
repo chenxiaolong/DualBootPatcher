@@ -48,8 +48,8 @@ setvar(
       "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@DATA_MOUNT_POINT@", "m")   + " MB" + "</#></b>\n\n" +
     "/cache Size\t\t: "    + "<b><#selectbg_g>" + getdisksize("@CACHE_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n"   +
       "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@CACHE_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n\n" +
-    "Internal SD Size\t: " + "<b><#selectbg_g>" + getdisksize("/sdcard", "m")              + " MB" + "</#></b>\n"   +
-      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("/sdcard", "m")              + " MB" + "</#></b>\n\n" +
+    "Internal SD Size\t: " + "<b><#selectbg_g>" + getdisksize("@DATA_MOUNT_POINT@", "m")   + " MB" + "</#></b>\n"   +
+      "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@DATA_MOUNT_POINT@", "m")   + " MB" + "</#></b>\n\n" +
     "External SD Size\t: " + "<b><#selectbg_g>" + getdisksize("@EXTSD_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n" +
       "\tFree\t\t\t: "     + "<b><#selectbg_g>" + getdiskfree("@EXTSD_MOUNT_POINT@", "m")  + " MB" + "</#></b>\n\n" +
 
