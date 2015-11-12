@@ -78,6 +78,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/rom_version"
+                android:layout_marginEnd="@dimen/card_v7_overflow_button_margins"
                 android:ellipsize="end"
                 android:singleLine="true" />
         </RelativeLayout>
@@ -86,7 +87,7 @@
             android:id="@+id/rom_menu"
             style="@style/card_v7_overflow_button"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:layout_margin="@dimen/card_v7_overflow_button_margins" />
+            android:layout_centerVertical="true"
+            android:padding="@dimen/card_v7_overflow_button_margins" />
     </RelativeLayout>
 </android.support.v7.widget.CardView>

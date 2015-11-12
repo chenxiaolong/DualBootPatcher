@@ -40,7 +40,7 @@
     <dimen name="card_v7_main_content_padding">10dp</dimen>
     <dimen name="card_v7_primary_text_size">20sp</dimen>
     <dimen name="card_v7_secondary_text_size">12sp</dimen>
-    <dimen name="card_v7_overflow_button_margins">4dp</dimen>
+    <dimen name="card_v7_overflow_button_margins">8dp</dimen>
     <dimen name="card_v7_normal_view_margin_top">4dp</dimen>
     <dimen name="card_v7_title_view_margin_top">14dp</dimen>
     <dimen name="card_v7_outside_side_padding">8dp</dimen>
