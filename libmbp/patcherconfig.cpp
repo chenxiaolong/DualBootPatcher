@@ -721,7 +721,7 @@ void PatcherConfig::Impl::addLenovoDevices()
     device = new Device();
     device->setId("k50");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setCodenames({ "K50", "K50a40", "K50t5", "aio_otfp" });
+    device->setCodenames({ "K50", "K50a40", "K50t5", "K50-T5", "aio_otfp" });
     device->setName("Lenovo K3 Note");
     device->setBlockDevBaseDirs({ MTK_BASE_DIR });
     device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p17" });
