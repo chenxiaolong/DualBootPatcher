@@ -24,7 +24,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.Bundle;
@@ -58,6 +57,13 @@ import com.squareup.picasso.Picasso;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class MainActivity extends AppCompatActivity implements OnNavigationItemSelectedListener {
+    private static final String EXTRA_SELECTED_ITEM = "selected_item";
+    private static final String EXTRA_TITLE = "title";
+    private static final String EXTRA_FRAGMENT = "fragment";
+
+    private static final String PREF_SHOW_REBOOT = "show_reboot";
+    private static final String PREF_SHOW_EXIT = "show_exit";
+
     private SharedPreferences mPrefs;
 
     private DrawerLayout mDrawerLayout;
@@ -91,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         mPrefs = getSharedPreferences("settings", 0);
 
         if (savedInstanceState != null) {
-            mTitle = savedInstanceState.getInt("title");
+            mTitle = savedInstanceState.getInt(EXTRA_TITLE);
         }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -127,7 +133,8 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         // Picasso to do either asynchronously. By accident, I noticed that using Picasso's resize()
         // method with any dimensions (even the original) works around the performance issue. Maybe
         // something doesn't like PNGs exported from GIMP?
-        ImageView navImage = (ImageView) findViewById(R.id.nav_header_image);
+        View header = mDrawerView.inflateHeaderView(R.layout.nav_header);
+        ImageView navImage = (ImageView) header.findViewById(R.id.nav_header_image);
         BitmapFactory.Options dimensions = new BitmapFactory.Options();
         dimensions.inJustDecodeBounds = true;
         BitmapFactory.decodeResource(getResources(), R.drawable.material, dimensions);
@@ -135,9 +142,9 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
                 .resize(dimensions.outWidth, dimensions.outHeight).into(navImage);
 
         // Set nav drawer header text
-        TextView appName = (TextView) findViewById(R.id.nav_header_app_name);
+        TextView appName = (TextView) header.findViewById(R.id.nav_header_app_name);
         appName.setText(BuildConfig.APP_NAME_RESOURCE);
-        TextView appVersion = (TextView) findViewById(R.id.nav_header_app_version);
+        TextView appVersion = (TextView) header.findViewById(R.id.nav_header_app_version);
         appVersion.setText(String.format(getString(R.string.version), BuildConfig.VERSION_NAME));
 
         // Nav drawer width according to material design guidelines
@@ -154,11 +161,11 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         mDrawerView.setLayoutParams(params);
 
         if (savedInstanceState != null) {
-            mFragment = savedInstanceState.getInt("fragment");
+            mFragment = savedInstanceState.getInt(EXTRA_FRAGMENT);
 
             showFragment();
 
-            mDrawerItemSelected = savedInstanceState.getInt("selectedItem");
+            mDrawerItemSelected = savedInstanceState.getInt(EXTRA_SELECTED_ITEM);
         } else {
             String[] initialScreens = getResources().getStringArray(
                     R.array.initial_screen_entry_values);
@@ -217,9 +224,9 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState.putInt("fragment", mFragment);
-        savedInstanceState.putInt("title", mTitle);
-        savedInstanceState.putInt("selectedItem", mDrawerItemSelected);
+        savedInstanceState.putInt(EXTRA_FRAGMENT, mFragment);
+        savedInstanceState.putInt(EXTRA_TITLE, mTitle);
+        savedInstanceState.putInt(EXTRA_SELECTED_ITEM, mDrawerItemSelected);
     }
 
     @Override
@@ -477,8 +484,8 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     }
 
     public void refreshOptionalItems() {
-        boolean reboot = mPrefs.getBoolean("show_reboot", true);
-        boolean exit = mPrefs.getBoolean("show_exit", false);
+        boolean reboot = mPrefs.getBoolean(PREF_SHOW_REBOOT, true);
+        boolean exit = mPrefs.getBoolean(PREF_SHOW_EXIT, false);
         showReboot(reboot);
         showExit(exit);
     }
