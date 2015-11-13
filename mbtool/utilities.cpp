@@ -107,21 +107,9 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
     return ret == SwitchRomResult::SUCCEEDED;
 }
 
-static std::shared_ptr<Rom> get_installed_rom(const std::string &rom_id)
-{
-    Roms roms;
-    roms.add_installed();
-    auto rom = roms.find_by_id(rom_id);
-    if (!rom) {
-        LOGE("ROM ID %s is not installed", rom_id.c_str());
-        return std::shared_ptr<Rom>();
-    }
-    return rom;
-}
-
 static bool utilities_wipe_system(const std::string &rom_id)
 {
-    auto rom = get_installed_rom(rom_id);
+    auto rom = Roms::create_rom(rom_id);
     if (!rom) {
         return false;
     }
@@ -131,7 +119,7 @@ static bool utilities_wipe_system(const std::string &rom_id)
 
 static bool utilities_wipe_cache(const std::string &rom_id)
 {
-    auto rom = get_installed_rom(rom_id);
+    auto rom = Roms::create_rom(rom_id);
     if (!rom) {
         return false;
     }
@@ -141,7 +129,7 @@ static bool utilities_wipe_cache(const std::string &rom_id)
 
 static bool utilities_wipe_data(const std::string &rom_id)
 {
-    auto rom = get_installed_rom(rom_id);
+    auto rom = Roms::create_rom(rom_id);
     if (!rom) {
         return false;
     }
@@ -151,7 +139,7 @@ static bool utilities_wipe_data(const std::string &rom_id)
 
 static bool utilities_wipe_dalvik_cache(const std::string &rom_id)
 {
-    auto rom = get_installed_rom(rom_id);
+    auto rom = Roms::create_rom(rom_id);
     if (!rom) {
         return false;
     }
@@ -161,7 +149,7 @@ static bool utilities_wipe_dalvik_cache(const std::string &rom_id)
 
 static bool utilities_wipe_multiboot(const std::string &rom_id)
 {
-    auto rom = get_installed_rom(rom_id);
+    auto rom = Roms::create_rom(rom_id);
     if (!rom) {
         return false;
     }
