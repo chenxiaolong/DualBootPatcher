@@ -40,7 +40,7 @@ public class RomNameInputDialog extends DialogFragment {
         void onRomNameChanged(String newName);
     }
 
-    public static RomNameInputDialog newInstance(Fragment parent, RomInformation info) {
+    public static RomNameInputDialog newInstanceFromFragment(Fragment parent, RomInformation info) {
         if (parent != null) {
             if (!(parent instanceof RomNameInputDialogListener)) {
                 throw new IllegalStateException(
@@ -56,8 +56,25 @@ public class RomNameInputDialog extends DialogFragment {
         return frag;
     }
 
+    public static RomNameInputDialog newInstanceFromActivity(RomInformation info) {
+        RomNameInputDialog frag = new RomNameInputDialog();
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_ROM, info);
+        frag.setArguments(args);
+        return frag;
+    }
+
     RomNameInputDialogListener getOwner() {
-        return (RomNameInputDialogListener) getTargetFragment();
+        Fragment f = getTargetFragment();
+        if (f == null) {
+            if (!(getActivity() instanceof RomNameInputDialogListener)) {
+                throw new IllegalStateException(
+                        "Activity must implement RomNameInputDialogListener");
+            }
+            return (RomNameInputDialogListener) getActivity();
+        } else {
+            return (RomNameInputDialogListener) getTargetFragment();
+        }
     }
 
     @Override

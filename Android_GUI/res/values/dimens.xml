@@ -58,4 +58,20 @@
     <dimen name="fab_margin_bottom">8dp</dimen>
     <dimen name="fab_margin_end">8dp</dimen>
 
+    <!-- ROM detail activity -->
+    <dimen name="rom_detail_app_bar_height">256dp</dimen>
+    <dimen name="rom_detail_fab_margin_end">16dp</dimen>
+    <dimen name="rom_detail_content_padding_start">8dp</dimen>
+    <dimen name="rom_detail_content_padding_end">8dp</dimen>
+    <dimen name="rom_detail_item_padding_top">10dp</dimen>
+    <dimen name="rom_detail_item_padding_bottom">10dp</dimen>
+    <dimen name="rom_detail_item_padding_start">10dp</dimen>
+    <dimen name="rom_detail_action_item_padding_start">6dp</dimen>
+    <dimen name="rom_detail_item_padding_end">10dp</dimen>
+    <dimen name="rom_detail_info_item_primary_text_size">18sp</dimen>
+    <dimen name="rom_detail_info_item_secondary_text_size">12sp</dimen>
+    <dimen name="rom_detail_card_thumbnail_width">@dimen/card_v7_thumbnail_width</dimen>
+    <dimen name="rom_detail_card_thumbnail_height">@dimen/card_v7_thumbnail_height</dimen>
+    <dimen name="rom_detail_card_thumbnail_margin_end">6dp</dimen>
+
 </resources>

@@ -39,7 +39,7 @@ public class ConfirmChecksumIssueDialog extends DialogFragment {
         void onConfirmChecksumIssue(String romId);
     }
 
-    public static ConfirmChecksumIssueDialog newInstance(Fragment parent, int issue, String romId) {
+    public static ConfirmChecksumIssueDialog newInstanceFromFragment(Fragment parent, int issue, String romId) {
         if (parent != null) {
             if (!(parent instanceof ConfirmChecksumIssueDialogListener)) {
                 throw new IllegalStateException(
@@ -64,8 +64,34 @@ public class ConfirmChecksumIssueDialog extends DialogFragment {
         return frag;
     }
 
+    public static ConfirmChecksumIssueDialog newInstanceFromActivity(int issue, String romId) {
+        switch (issue) {
+        case CHECKSUM_INVALID:
+        case CHECKSUM_MISSING:
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid value for issue param: " + issue);
+        }
+
+        ConfirmChecksumIssueDialog frag = new ConfirmChecksumIssueDialog();
+        Bundle args = new Bundle();
+        args.putInt(ARG_ISSUE, issue);
+        args.putString(ARG_ROM_ID, romId);
+        frag.setArguments(args);
+        return frag;
+    }
+
     ConfirmChecksumIssueDialogListener getOwner() {
-        return (ConfirmChecksumIssueDialogListener) getTargetFragment();
+        Fragment f = getTargetFragment();
+        if (f == null) {
+            if (!(getActivity() instanceof ConfirmChecksumIssueDialogListener)) {
+                throw new IllegalStateException(
+                        "Parent activity must implement ConfirmChecksumIssueDialogListener");
+            }
+            return (ConfirmChecksumIssueDialogListener) getActivity();
+        } else {
+            return (ConfirmChecksumIssueDialogListener) getTargetFragment();
+        }
     }
 
     @Override

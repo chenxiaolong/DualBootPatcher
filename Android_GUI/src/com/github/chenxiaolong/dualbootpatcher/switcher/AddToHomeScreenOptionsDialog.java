@@ -36,7 +36,7 @@ public class AddToHomeScreenOptionsDialog extends DialogFragment {
         void onConfirmAddToHomeScreenOptions(RomInformation info, boolean reboot);
     }
 
-    public static AddToHomeScreenOptionsDialog newInstance(Fragment parent, RomInformation info) {
+    public static AddToHomeScreenOptionsDialog newInstanceFromFragment(Fragment parent, RomInformation info) {
         if (parent != null) {
             if (!(parent instanceof AddToHomeScreenOptionsDialogListener)) {
                 throw new IllegalStateException(
@@ -52,8 +52,25 @@ public class AddToHomeScreenOptionsDialog extends DialogFragment {
         return frag;
     }
 
+    public static AddToHomeScreenOptionsDialog newInstanceFromActivity(RomInformation info) {
+        AddToHomeScreenOptionsDialog frag = new AddToHomeScreenOptionsDialog();
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_ROM_INFO, info);
+        frag.setArguments(args);
+        return frag;
+    }
+
     AddToHomeScreenOptionsDialogListener getOwner() {
-        return (AddToHomeScreenOptionsDialogListener) getTargetFragment();
+        Fragment f = getTargetFragment();
+        if (f == null) {
+            if (!(getActivity() instanceof AddToHomeScreenOptionsDialogListener)) {
+                throw new IllegalStateException(
+                        "Parent activity must implement AddToHomeScreenOptionsDialogListener");
+            }
+            return (AddToHomeScreenOptionsDialogListener) getActivity();
+        } else {
+            return (AddToHomeScreenOptionsDialogListener) getTargetFragment();
+        }
     }
 
     @Override

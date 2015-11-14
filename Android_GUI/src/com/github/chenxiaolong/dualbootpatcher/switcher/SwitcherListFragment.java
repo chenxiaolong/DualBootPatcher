@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.LoaderManager;
@@ -25,11 +24,6 @@ import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.ThumbnailUtils;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
@@ -55,53 +49,25 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
-        .AddToHomeScreenOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog
         .ConfirmChecksumIssueDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmMismatchedSetKernelDialog
-        .ConfirmMismatchedSetKernelDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ExperimentalInAppWipeDialog
-        .ExperimentalInAppWipeDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardActionListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
-        .RomNameInputDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
-        .SetKernelConfirmDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelNeededDialog
         .SetKernelNeededDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CreatedLauncherEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.WipedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment.LoaderResult;
-import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
-        .WipeTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.views.SwipeRefreshLayoutWorkaround;
-import com.squareup.picasso.Picasso;
-
-import org.apache.commons.io.IOUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import mbtool.daemon.v2.WipeTarget;
-
 public class SwitcherListFragment extends Fragment implements
         EventCollectorListener, RomCardActionListener,
-        ExperimentalInAppWipeDialogListener,
-        SetKernelConfirmDialogListener,
         SetKernelNeededDialogListener,
-        WipeTargetsSelectionDialogListener,
-        RomNameInputDialogListener,
-        ConfirmMismatchedSetKernelDialogListener,
         ConfirmChecksumIssueDialogListener,
-        AddToHomeScreenOptionsDialogListener,
         LoaderManager.LoaderCallbacks<LoaderResult> {
     public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
@@ -112,9 +78,7 @@ public class SwitcherListFragment extends Fragment implements
 
     private static final int PROGRESS_DIALOG_SWITCH_ROM = 1;
     private static final int PROGRESS_DIALOG_SET_KERNEL = 2;
-    private static final int PROGRESS_DIALOG_WIPE_ROM = 3;
 
-    private static final int REQUEST_IMAGE = 1234;
     private static final int REQUEST_FLASH_ZIP = 2345;
 
     private boolean mPerformingAction;
@@ -301,12 +265,6 @@ public class SwitcherListFragment extends Fragment implements
     @Override
     public void onActivityResult(int request, int result, Intent data) {
         switch (request) {
-        case REQUEST_IMAGE:
-            if (data != null && result == Activity.RESULT_OK) {
-                new ResizeAndCacheImageTask(getActivity().getApplicationContext(),
-                        data.getData()).execute();
-            }
-            break;
         case REQUEST_FLASH_ZIP:
             reloadFragment();
             break;
@@ -374,44 +332,6 @@ public class SwitcherListFragment extends Fragment implements
                 showUnknownBootPartitionDialog();
                 break;
             }
-        } else if (bEvent instanceof CreatedLauncherEvent) {
-            CreatedLauncherEvent event = (CreatedLauncherEvent) bEvent;
-
-            createSnackbar(String.format(getString(R.string.successfully_created_launcher),
-                    event.rom.getName()), Snackbar.LENGTH_LONG).show();
-        } else if (bEvent instanceof WipedRomEvent) {
-            WipedRomEvent event = (WipedRomEvent) bEvent;
-            mPerformingAction = false;
-            updateCardUI();
-
-            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
-            if (d != null) {
-                d.dismiss();
-            }
-
-            if (event.succeeded == null || event.failed == null) {
-                createSnackbar(R.string.wipe_rom_initiate_fail, Snackbar.LENGTH_LONG).show();
-            } else {
-                StringBuilder sb = new StringBuilder();
-
-                if (event.succeeded.length > 0) {
-                    sb.append(String.format(getString(R.string.wipe_rom_successfully_wiped),
-                            targetsToString(event.succeeded)));
-                    if (event.failed.length > 0) {
-                        sb.append("\n");
-                    }
-                }
-                if (event.failed.length > 0) {
-                    sb.append(String.format(getString(R.string.wipe_rom_failed_to_wipe),
-                            targetsToString(event.failed)));
-                }
-
-                createSnackbar(sb.toString(), Snackbar.LENGTH_LONG).show();
-
-                // We don't want deleted ROMs to still show up
-                reloadFragment();
-            }
         } else if (bEvent instanceof ShowSetKernelNeededEvent) {
             ShowSetKernelNeededEvent event = (ShowSetKernelNeededEvent) bEvent;
 
@@ -451,7 +371,7 @@ public class SwitcherListFragment extends Fragment implements
 
     private void showChecksumIssueDialog(int issue, String romId) {
         ConfirmChecksumIssueDialog d =
-                ConfirmChecksumIssueDialog.newInstance(this, issue, romId);
+                ConfirmChecksumIssueDialog.newInstanceFromFragment(this, issue, romId);
         d.show(getFragmentManager(), ConfirmChecksumIssueDialog.TAG);
     }
 
@@ -463,30 +383,6 @@ public class SwitcherListFragment extends Fragment implements
         gcd.show(getFragmentManager(), GenericConfirmDialog.TAG);
     }
 
-    private String targetsToString(short[] targets) {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < targets.length; i++) {
-            if (i != 0) {
-                sb.append(", ");
-            }
-
-            if (targets[i] == WipeTarget.SYSTEM) {
-                sb.append(getString(R.string.wipe_target_system));
-            } else if (targets[i] == WipeTarget.CACHE) {
-                sb.append(getString(R.string.wipe_target_cache));
-            } else if (targets[i] == WipeTarget.DATA) {
-                sb.append(getString(R.string.wipe_target_data));
-            } else if (targets[i] == WipeTarget.DALVIK_CACHE) {
-                sb.append(getString(R.string.wipe_target_dalvik_cache));
-            } else if (targets[i] == WipeTarget.MULTIBOOT) {
-                sb.append(getString(R.string.wipe_target_multiboot_files));
-            }
-        }
-
-        return sb.toString();
-    }
-
     @Override
     public void onSelectedRom(RomInformation info) {
         mSelectedRom = info;
@@ -495,18 +391,14 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     @Override
-    public void onSelectedSetKernel(RomInformation info) {
+    public void onSelectedRomMenu(RomInformation info) {
         mSelectedRom = info;
 
-        // Ask for confirmation
-        if (mActiveRomId != null && !mActiveRomId.equals(mSelectedRom.getId())) {
-            ConfirmMismatchedSetKernelDialog d = ConfirmMismatchedSetKernelDialog.newInstance(
-                    this, mActiveRomId, mSelectedRom.getId());
-            d.show(getFragmentManager(), ConfirmMismatchedSetKernelDialog.TAG);
-        } else {
-            SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstance(this, mSelectedRom);
-            d.show(getFragmentManager(), SetKernelConfirmDialog.TAG);
-        }
+        Intent intent = new Intent(getActivity(), RomDetailActivity.class);
+        intent.putExtra(RomDetailActivity.EXTRA_ROM_INFO, mSelectedRom);
+        intent.putExtra(RomDetailActivity.EXTRA_BOOTED_ROM_INFO, mCurrentRom);
+        intent.putExtra(RomDetailActivity.EXTRA_ACTIVE_ROM_ID, mActiveRomId);
+        startActivity(intent);
     }
 
     private void chooseRom(String romId, boolean forceChecksumsUpdate) {
@@ -529,73 +421,6 @@ public class SwitcherListFragment extends Fragment implements
         d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
 
         mEventCollector.setKernel(info.getId());
-    }
-
-    @Override
-    public void onSelectedAddToHomeScreen(RomInformation info) {
-        mSelectedRom = info;
-
-        AddToHomeScreenOptionsDialog d = AddToHomeScreenOptionsDialog.newInstance(this, info);
-        d.show(getFragmentManager(), AddToHomeScreenOptionsDialog.TAG);
-    }
-
-    @Override
-    public void onConfirmAddToHomeScreenOptions(RomInformation info, boolean reboot) {
-        mEventCollector.createLauncher(info, reboot);
-    }
-
-    @Override
-    public void onSelectedEditName(RomInformation info) {
-        mSelectedRom = info;
-
-        RomNameInputDialog d = RomNameInputDialog.newInstance(this, mSelectedRom);
-        d.show(getFragmentManager(), RomNameInputDialog.TAG);
-    }
-
-    @Override
-    public void onSelectedChangeImage(RomInformation info) {
-        mSelectedRom = info;
-
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(intent, REQUEST_IMAGE);
-    }
-
-    @Override
-    public void onSelectedResetImage(RomInformation info) {
-        mSelectedRom = info;
-
-        File f = new File(info.getThumbnailPath());
-        if (f.isFile()) {
-            f.delete();
-        }
-
-        mRomCardAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void onSelectedWipeRom(RomInformation info) {
-        mSelectedRom = info;
-
-        if (mCurrentRom != null && mCurrentRom.getId().equals(info.getId())) {
-            createSnackbar(R.string.wipe_rom_no_wipe_current_rom, Snackbar.LENGTH_LONG).show();
-        } else {
-            ExperimentalInAppWipeDialog d = ExperimentalInAppWipeDialog.newInstance(this);
-            d.show(getFragmentManager(), ExperimentalInAppWipeDialog.TAG);
-        }
-    }
-
-    private void wipeRom(RomInformation info, short[] targets) {
-        mPerformingAction = true;
-        updateCardUI();
-
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.wiping_targets, R.string.please_wait);
-        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
-
-        mEventCollector.wipeRom(info.getId(), targets);
     }
 
     @Override
@@ -648,47 +473,7 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     @Override
-    public void onConfirmInAppRomWipeWarning() {
-        WipeTargetsSelectionDialog d = WipeTargetsSelectionDialog.newInstance(this);
-        d.show(getFragmentManager(), WipeTargetsSelectionDialog.TAG);
-    }
-
-    @Override
-    public void onConfirmSetKernel() {
-        setKernel(mSelectedRom);
-    }
-
-    @Override
     public void onConfirmSetKernelNeeded() {
-        setKernel(mCurrentRom);
-    }
-
-    @Override
-    public void onSelectedWipeTargets(short[] targets) {
-        if (targets.length == 0) {
-            createSnackbar(R.string.wipe_rom_none_selected, Snackbar.LENGTH_LONG).show();
-            return;
-        }
-
-        wipeRom(mSelectedRom, targets);
-    }
-
-    @Override
-    public void onRomNameChanged(String newName) {
-        mSelectedRom.setName(newName);
-
-        new Thread() {
-            @Override
-            public void run() {
-                RomUtils.saveConfig(mSelectedRom);
-            }
-        }.start();
-
-        mRomCardAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void onConfirmMismatchedSetKernel() {
         setKernel(mCurrentRom);
     }
 
@@ -702,74 +487,6 @@ public class SwitcherListFragment extends Fragment implements
 
         public ShowSetKernelNeededEvent(CurrentKernelStatus kernelStatus) {
             this.kernelStatus = kernelStatus;
-        }
-    }
-
-    protected class ResizeAndCacheImageTask extends AsyncTask<Void, Void, Void> {
-        private final Context mContext;
-        private final Uri mUri;
-
-        public ResizeAndCacheImageTask(Context context, Uri uri) {
-            mContext = context;
-            mUri = uri;
-        }
-
-        private Bitmap getThumbnail(Uri uri) {
-            try {
-                InputStream input = mContext.getContentResolver().openInputStream(uri);
-                Bitmap bitmap = BitmapFactory.decodeStream(input);
-                input.close();
-
-                if (bitmap == null) {
-                    return null;
-                }
-
-                return ThumbnailUtils.extractThumbnail(bitmap, 500, 500);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            Bitmap thumbnail = getThumbnail(mUri);
-
-            if (thumbnail == null) {
-                return null;
-            }
-
-            // Write the image to a temporary file. If the user selects it,
-            // the move it to the appropriate location.
-            File f = new File(mSelectedRom.getThumbnailPath());
-            f.getParentFile().mkdirs();
-
-            FileOutputStream out = null;
-
-            try {
-                out = new FileOutputStream(f);
-                thumbnail.compress(Bitmap.CompressFormat.WEBP, 100, out);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } finally {
-                IOUtils.closeQuietly(out);
-            }
-
-            Picasso.with(mContext).invalidate(f);
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            if (getActivity() == null) {
-                return;
-            }
-
-            mRomCardAdapter.notifyDataSetChanged();
         }
     }
 

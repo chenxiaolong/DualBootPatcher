@@ -36,8 +36,9 @@ public class ConfirmMismatchedSetKernelDialog extends DialogFragment {
         void onConfirmMismatchedSetKernel();
     }
 
-    public static ConfirmMismatchedSetKernelDialog newInstance(Fragment parent, String currentRom,
-                                                               String targetRom) {
+    public static ConfirmMismatchedSetKernelDialog newInstanceFromFragment(Fragment parent,
+                                                                           String currentRom,
+                                                                           String targetRom) {
         if (parent != null) {
             if (!(parent instanceof ConfirmMismatchedSetKernelDialogListener)) {
                 throw new IllegalStateException(
@@ -54,8 +55,27 @@ public class ConfirmMismatchedSetKernelDialog extends DialogFragment {
         return frag;
     }
 
+    public static ConfirmMismatchedSetKernelDialog newInstanceFromActivity(String currentRom,
+                                                                           String targetRom) {
+        ConfirmMismatchedSetKernelDialog frag = new ConfirmMismatchedSetKernelDialog();
+        Bundle args = new Bundle();
+        args.putString(ARG_CURRENT_ROM, currentRom);
+        args.putString(ARG_TARGET_ROM, targetRom);
+        frag.setArguments(args);
+        return frag;
+    }
+
     ConfirmMismatchedSetKernelDialogListener getOwner() {
-        return (ConfirmMismatchedSetKernelDialogListener) getTargetFragment();
+        Fragment f = getTargetFragment();
+        if (f == null) {
+            if (!(getActivity() instanceof ConfirmMismatchedSetKernelDialogListener)) {
+                throw new IllegalStateException(
+                        "Parent activity must implement ConfirmMismatchedSetKernelDialogListener");
+            }
+            return (ConfirmMismatchedSetKernelDialogListener) getActivity();
+        } else {
+            return (ConfirmMismatchedSetKernelDialogListener) getTargetFragment();
+        }
     }
 
     @Override

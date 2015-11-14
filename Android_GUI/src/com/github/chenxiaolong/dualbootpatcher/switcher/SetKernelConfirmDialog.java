@@ -36,7 +36,7 @@ public class SetKernelConfirmDialog extends DialogFragment {
         void onConfirmSetKernel();
     }
 
-    public static SetKernelConfirmDialog newInstance(Fragment parent, RomInformation info) {
+    public static SetKernelConfirmDialog newInstanceFromFragment(Fragment parent, RomInformation info) {
         if (parent != null) {
             if (!(parent instanceof SetKernelConfirmDialogListener)) {
                 throw new IllegalStateException(
@@ -52,8 +52,25 @@ public class SetKernelConfirmDialog extends DialogFragment {
         return frag;
     }
 
+    public static SetKernelConfirmDialog newInstanceFromActivity(RomInformation info) {
+        SetKernelConfirmDialog frag = new SetKernelConfirmDialog();
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_ROM, info);
+        frag.setArguments(args);
+        return frag;
+    }
+
     SetKernelConfirmDialogListener getOwner() {
-        return (SetKernelConfirmDialogListener) getTargetFragment();
+        Fragment f = getTargetFragment();
+        if (f == null) {
+            if (!(getActivity() instanceof SetKernelConfirmDialogListener)) {
+                throw new IllegalStateException(
+                        "Parent activity must implement SetKernelConfirmDialogListener");
+            }
+            return (SetKernelConfirmDialogListener) getActivity();
+        } else {
+            return (SetKernelConfirmDialogListener) getTargetFragment();
+        }
     }
 
     @Override

@@ -35,7 +35,7 @@ public class WipeTargetsSelectionDialog extends DialogFragment {
         void onSelectedWipeTargets(short[] targets);
     }
 
-    public static WipeTargetsSelectionDialog newInstance(Fragment parent) {
+    public static WipeTargetsSelectionDialog newInstanceFromFragment(Fragment parent) {
         if (parent != null) {
             if (!(parent instanceof WipeTargetsSelectionDialogListener)) {
                 throw new IllegalStateException(
@@ -48,8 +48,21 @@ public class WipeTargetsSelectionDialog extends DialogFragment {
         return frag;
     }
 
+    public static WipeTargetsSelectionDialog newInstanceFromActivity() {
+        return new WipeTargetsSelectionDialog();
+    }
+
     WipeTargetsSelectionDialogListener getOwner() {
-        return (WipeTargetsSelectionDialogListener) getTargetFragment();
+        Fragment f = getTargetFragment();
+        if (f == null) {
+            if (!(getActivity() instanceof WipeTargetsSelectionDialogListener)) {
+                throw new IllegalStateException(
+                        "Parent activity must implement WipeTargetsSelectionDialogListener");
+            }
+            return (WipeTargetsSelectionDialogListener) getActivity();
+        } else {
+            return (WipeTargetsSelectionDialogListener) getTargetFragment();
+        }
     }
 
     @Override

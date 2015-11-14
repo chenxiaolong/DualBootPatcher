@@ -139,4 +139,28 @@
         <item name="android:layout_marginBottom">@dimen/patcher_card_label_margin</item>
     </style>
 
+    <!-- ROM detail activity -->
+    <style name="rom_detail_item">
+        <item name="android:paddingTop">@dimen/rom_detail_item_padding_top</item>
+        <item name="android:paddingBottom">@dimen/rom_detail_item_padding_bottom</item>
+        <item name="android:paddingStart">@dimen/rom_detail_item_padding_start</item>
+        <item name="android:paddingEnd">@dimen/rom_detail_item_padding_end</item>
+    </style>
+
+    <style name="rom_detail_action_item">
+        <item name="android:paddingTop">@dimen/rom_detail_item_padding_top</item>
+        <item name="android:paddingBottom">@dimen/rom_detail_item_padding_bottom</item>
+        <item name="android:paddingStart">@dimen/rom_detail_action_item_padding_start</item>
+        <item name="android:paddingEnd">@dimen/rom_detail_item_padding_end</item>
+    </style>
+
+    <style name="rom_detail_info_item_primary_text">
+        <item name="android:textSize">@dimen/rom_detail_info_item_primary_text_size</item>
+    </style>
+
+    <style name="rom_detail_info_item_secondary_text">
+        <item name="android:textColor">@android:color/secondary_text_light</item>
+        <item name="android:textSize">@dimen/rom_detail_info_item_secondary_text_size</item>
+    </style>
+
 </resources>

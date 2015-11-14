@@ -46,6 +46,10 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".switcher.RomDetailActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/DrawerActivityTheme" />
+        <activity
             android:name=".settings.RomSettingsActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/title_rom_settings"

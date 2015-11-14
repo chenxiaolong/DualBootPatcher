@@ -129,6 +129,8 @@
 
     <!-- ROM menu item for setting kernel -->
     <string name="rom_menu_set_kernel">Set kernel</string>
+    <!-- ROM menu item for backing up the ROM -->
+    <string name="rom_menu_backup_rom">Backup ROM</string>
     <!-- ROM menu item for adding an icon to the home screen -->
     <string name="rom_menu_add_to_home_screen">Add to home screen</string>
     <!-- ROM menu item for changing the name -->
