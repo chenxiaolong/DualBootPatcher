@@ -75,7 +75,7 @@ import com.squareup.picasso.Picasso;
 import java.io.File;
 import java.util.ArrayList;
 
-import mbtool.daemon.v2.WipeTarget;
+import mbtool.daemon.v3.MbWipeTarget;
 
 public class RomDetailActivity extends AppCompatActivity implements
         RomNameInputDialogListener,
@@ -575,15 +575,15 @@ public class RomDetailActivity extends AppCompatActivity implements
                 sb.append(", ");
             }
 
-            if (targets[i] == WipeTarget.SYSTEM) {
+            if (targets[i] == MbWipeTarget.SYSTEM) {
                 sb.append(getString(R.string.wipe_target_system));
-            } else if (targets[i] == WipeTarget.CACHE) {
+            } else if (targets[i] == MbWipeTarget.CACHE) {
                 sb.append(getString(R.string.wipe_target_cache));
-            } else if (targets[i] == WipeTarget.DATA) {
+            } else if (targets[i] == MbWipeTarget.DATA) {
                 sb.append(getString(R.string.wipe_target_data));
-            } else if (targets[i] == WipeTarget.DALVIK_CACHE) {
+            } else if (targets[i] == MbWipeTarget.DALVIK_CACHE) {
                 sb.append(getString(R.string.wipe_target_dalvik_cache));
-            } else if (targets[i] == WipeTarget.MULTIBOOT) {
+            } else if (targets[i] == MbWipeTarget.MULTIBOOT) {
                 sb.append(getString(R.string.wipe_target_multiboot_files));
             }
         }

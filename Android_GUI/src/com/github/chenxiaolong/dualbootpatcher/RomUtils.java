@@ -222,7 +222,7 @@ public class RomUtils {
     @Nullable
     public static RomInformation getCurrentRom(Context context) {
         try {
-            String id = MbtoolSocket.getInstance().getCurrentRom(context);
+            String id = MbtoolSocket.getInstance().getBootedRomId(context);
             Log.d(TAG, "mbtool says current ROM ID is: " + id);
 
             for (RomInformation rom : getRoms(context)) {
@@ -264,18 +264,15 @@ public class RomUtils {
     @NonNull
     public synchronized static RomInformation[] getBuiltinRoms(Context context) {
         if (mBuiltinRoms == null) {
-            try {
-                String[] ids = MbtoolSocket.getInstance().getBuiltinRomIds(context);
+            String[] ids = new String[]{"primary", "dual", "multi-slot-1", "multi-slot-2",
+                    "multi-slot-3"};
 
-                mBuiltinRoms = new RomInformation[ids.length];
-                for (int i = 0; i < ids.length; i++) {
-                    RomInformation rom = new RomInformation();
-                    rom.setId(ids[i]);
-                    rom.setDefaultName(getDefaultName(context, rom));
-                    mBuiltinRoms[i] = rom;
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "mbtool communication error", e);
+            mBuiltinRoms = new RomInformation[ids.length];
+            for (int i = 0; i < ids.length; i++) {
+                RomInformation rom = new RomInformation();
+                rom.setId(ids[i]);
+                rom.setDefaultName(getDefaultName(context, rom));
+                mBuiltinRoms[i] = rom;
             }
         }
 

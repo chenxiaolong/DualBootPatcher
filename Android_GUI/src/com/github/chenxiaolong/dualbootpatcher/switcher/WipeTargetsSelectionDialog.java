@@ -26,7 +26,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ListCallbackMultiChoice;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-import mbtool.daemon.v2.WipeTarget;
+import mbtool.daemon.v3.MbWipeTarget;
 
 public class WipeTargetsSelectionDialog extends DialogFragment {
     public static final String TAG = WipeTargetsSelectionDialog.class.getSimpleName();
@@ -90,15 +90,15 @@ public class WipeTargetsSelectionDialog extends DialogFragment {
                             int arrIndex = which[i];
 
                             if (arrIndex == 0) {
-                                targets[i] = WipeTarget.SYSTEM;
+                                targets[i] = MbWipeTarget.SYSTEM;
                             } else if (arrIndex == 1) {
-                                targets[i] = WipeTarget.CACHE;
+                                targets[i] = MbWipeTarget.CACHE;
                             } else if (arrIndex == 2) {
-                                targets[i] = WipeTarget.DATA;
+                                targets[i] = MbWipeTarget.DATA;
                             } else if (arrIndex == 3) {
-                                targets[i] = WipeTarget.DALVIK_CACHE;
+                                targets[i] = MbWipeTarget.DALVIK_CACHE;
                             } else if (arrIndex == 4) {
-                                targets[i] = WipeTarget.MULTIBOOT;
+                                targets[i] = MbWipeTarget.MULTIBOOT;
                             }
                         }
 

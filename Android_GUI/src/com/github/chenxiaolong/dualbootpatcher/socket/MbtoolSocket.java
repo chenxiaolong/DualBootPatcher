@@ -23,7 +23,6 @@ import android.net.LocalSocketAddress;
 import android.net.LocalSocketAddress.Namespace;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -35,45 +34,52 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.google.flatbuffers.FlatBufferBuilder;
+import com.google.flatbuffers.Table;
 
 import org.apache.commons.io.IOUtils;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-import mbtool.daemon.v2.ChmodRequest;
-import mbtool.daemon.v2.ChmodResponse;
-import mbtool.daemon.v2.CopyRequest;
-import mbtool.daemon.v2.CopyResponse;
-import mbtool.daemon.v2.GetBuiltinRomIdsRequest;
-import mbtool.daemon.v2.GetBuiltinRomIdsResponse;
-import mbtool.daemon.v2.GetCurrentRomRequest;
-import mbtool.daemon.v2.GetCurrentRomResponse;
-import mbtool.daemon.v2.GetRomsListRequest;
-import mbtool.daemon.v2.GetRomsListResponse;
-import mbtool.daemon.v2.GetVersionRequest;
-import mbtool.daemon.v2.OpenRequest;
-import mbtool.daemon.v2.OpenResponse;
-import mbtool.daemon.v2.RebootRequest;
-import mbtool.daemon.v2.RebootResponse;
-import mbtool.daemon.v2.Request;
-import mbtool.daemon.v2.RequestType;
-import mbtool.daemon.v2.Response;
-import mbtool.daemon.v2.ResponseType;
-import mbtool.daemon.v2.Rom;
-import mbtool.daemon.v2.SELinuxGetLabelRequest;
-import mbtool.daemon.v2.SELinuxGetLabelResponse;
-import mbtool.daemon.v2.SELinuxSetLabelRequest;
-import mbtool.daemon.v2.SELinuxSetLabelResponse;
-import mbtool.daemon.v2.SetKernelRequest;
-import mbtool.daemon.v2.SetKernelResponse;
-import mbtool.daemon.v2.SwitchRomRequest;
-import mbtool.daemon.v2.SwitchRomResponse;
-import mbtool.daemon.v2.WipeRomRequest;
-import mbtool.daemon.v2.WipeRomResponse;
+import mbtool.daemon.v3.FileChmodResponse;
+import mbtool.daemon.v3.FileCloseResponse;
+import mbtool.daemon.v3.FileOpenResponse;
+import mbtool.daemon.v3.FileReadResponse;
+import mbtool.daemon.v3.FileSELinuxGetLabelResponse;
+import mbtool.daemon.v3.FileSELinuxSetLabelResponse;
+import mbtool.daemon.v3.FileSeekResponse;
+import mbtool.daemon.v3.FileStatResponse;
+import mbtool.daemon.v3.FileWriteResponse;
+import mbtool.daemon.v3.MbGetBootedRomIdRequest;
+import mbtool.daemon.v3.MbGetBootedRomIdResponse;
+import mbtool.daemon.v3.MbGetInstalledRomsRequest;
+import mbtool.daemon.v3.MbGetInstalledRomsResponse;
+import mbtool.daemon.v3.MbGetVersionRequest;
+import mbtool.daemon.v3.MbGetVersionResponse;
+import mbtool.daemon.v3.MbRom;
+import mbtool.daemon.v3.MbSetKernelRequest;
+import mbtool.daemon.v3.MbSetKernelResponse;
+import mbtool.daemon.v3.MbSwitchRomRequest;
+import mbtool.daemon.v3.MbSwitchRomResponse;
+import mbtool.daemon.v3.MbSwitchRomResult;
+import mbtool.daemon.v3.MbWipeRomRequest;
+import mbtool.daemon.v3.MbWipeRomResponse;
+import mbtool.daemon.v3.PathChmodRequest;
+import mbtool.daemon.v3.PathChmodResponse;
+import mbtool.daemon.v3.PathCopyRequest;
+import mbtool.daemon.v3.PathCopyResponse;
+import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
+import mbtool.daemon.v3.PathSELinuxGetLabelResponse;
+import mbtool.daemon.v3.PathSELinuxSetLabelRequest;
+import mbtool.daemon.v3.PathSELinuxSetLabelResponse;
+import mbtool.daemon.v3.RebootRequest;
+import mbtool.daemon.v3.RebootResponse;
+import mbtool.daemon.v3.Request;
+import mbtool.daemon.v3.RequestType;
+import mbtool.daemon.v3.Response;
+import mbtool.daemon.v3.ResponseType;
 
 public class MbtoolSocket {
     private static final String TAG = MbtoolSocket.class.getSimpleName();
@@ -98,7 +104,7 @@ public class MbtoolSocket {
 
     // Keep this as a singleton class for now
     private MbtoolSocket() {
-        mInterfaceVersion = 2;
+        mInterfaceVersion = 3;
     }
 
     public static MbtoolSocket getInstance() {
@@ -109,20 +115,11 @@ public class MbtoolSocket {
     }
 
     /**
-     * Initializes the mbtool connection.
+     * Check if mbtool rejected the connection due to the signature check failing
      *
-     * 1. Setup input and output streams
-     * 2. Check to make sure mbtool authorized our connection
-     * 3. Request interface version and check if the daemon supports it
-     * 4. Get mbtool version from daemon
-     *
-     * @throws IOException
+     * @throws IOException Signature check failed or unexpected response
      */
-    private void initializeConnection() throws IOException {
-        mSocketIS = mSocket.getInputStream();
-        mSocketOS = mSocket.getOutputStream();
-
-        // Verify credentials
+    private void verifyCredentials() throws IOException {
         String response = SocketUtils.readString(mSocketIS);
         if (RESPONSE_DENY.equals(response)) {
             throw new IOException("mbtool explicitly denied access to the daemon. " +
@@ -130,26 +127,41 @@ public class MbtoolSocket {
         } else if (!RESPONSE_ALLOW.equals(response)) {
             throw new IOException("Unexpected reply: " + response);
         }
+    }
 
-        // Request an interface version
+    /**
+     * Request protocol version from mbtool
+     *
+     * @throws IOException Protocol version not supported or unexpected reply
+     */
+    private void requestInterfaceVersion() throws IOException {
         SocketUtils.writeInt32(mSocketOS, mInterfaceVersion);
-        response = SocketUtils.readString(mSocketIS);
+        String response = SocketUtils.readString(mSocketIS);
         if (RESPONSE_UNSUPPORTED.equals(response)) {
             throw new IOException("Daemon does not support interface " + mInterfaceVersion);
         } else if (!RESPONSE_OK.equals(response)) {
             throw new IOException("Unexpected reply: " + response);
         }
+    }
 
+    /**
+     * Check that the minimum mbtool version is satisfied
+     *
+     * @throws IOException Could not determine mbtool version, invalid mbtool version, or mbtool
+     *                     version is too old
+     */
+    private void verifyMbtoolVersion() throws IOException {
         // Get mbtool version
         FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
-        GetVersionRequest.startGetVersionRequest(builder);
-        int request = GetVersionRequest.endGetVersionRequest(builder);
+        MbGetVersionRequest.startMbGetVersionRequest(builder);
+        int fbRrequest = MbGetVersionRequest.endMbGetVersionRequest(builder);
         Request.startRequest(builder);
-        Request.addType(builder, RequestType.GET_VERSION);
-        Request.addGetVersionRequest(builder, request);
+        Request.addRequestType(builder, RequestType.MbGetVersionRequest);
+        Request.addRequest(builder, fbRrequest);
         builder.finish(Request.endRequest(builder));
-        Response fbresponse = sendRequest(builder, ResponseType.GET_VERSION);
-        mMbtoolVersion = fbresponse.getVersionResponse().version();
+        MbGetVersionResponse response = (MbGetVersionResponse)
+                sendRequest(builder, ResponseType.MbGetVersionResponse);
+        mMbtoolVersion = response.version();
         if (mMbtoolVersion == null) {
             throw new IOException("Could not determine mbtool version");
         }
@@ -171,6 +183,25 @@ public class MbtoolSocket {
             throw new IOException("mbtool version is: " + v1 + ", " +
                     "minimum needed is: " + v2);
         }
+    }
+
+    /**
+     * Initializes the mbtool connection.
+     *
+     * 1. Setup input and output streams
+     * 2. Check to make sure mbtool authorized our connection
+     * 3. Request interface version and check if the daemon supports it
+     * 4. Get mbtool version from daemon
+     *
+     * @throws IOException
+     */
+    private void initializeConnection() throws IOException {
+        mSocketIS = mSocket.getInputStream();
+        mSocketOS = mSocket.getOutputStream();
+
+        verifyCredentials();
+        requestInterfaceVersion();
+        verifyMbtoolVersion();
     }
 
     /**
@@ -286,25 +317,25 @@ public class MbtoolSocket {
         try {
             // Create request
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
-            GetRomsListRequest.startGetRomsListRequest(builder);
+            MbGetInstalledRomsRequest.startMbGetInstalledRomsRequest(builder);
             // No parameters
-            int request = GetRomsListRequest.endGetRomsListRequest(builder);
+            int fbRequest = MbGetInstalledRomsRequest.endMbGetInstalledRomsRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.GET_ROMS_LIST);
-            Request.addGetRomsListRequest(builder, request);
+            Request.addRequestType(builder, RequestType.MbGetInstalledRomsRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.GET_ROMS_LIST);
-            GetRomsListResponse response = fbresponse.getRomsListResponse();
+            MbGetInstalledRomsResponse response = (MbGetInstalledRomsResponse)
+                    sendRequest(builder, ResponseType.MbGetInstalledRomsResponse);
 
             RomInformation[] roms = new RomInformation[response.romsLength()];
 
             for (int i = 0; i < response.romsLength(); i++) {
                 RomInformation rom = roms[i] = new RomInformation();
-                Rom fbrom = response.roms(i);
+                MbRom fbrom = response.roms(i);
 
                 rom.setId(fbrom.id());
                 rom.setSystemPath(fbrom.systemPath());
@@ -322,46 +353,6 @@ public class MbtoolSocket {
     }
 
     /**
-     * Get list of supported non-data-slot ROM IDs.
-     *
-     * @param context Application context
-     * @return List of strings containing the ROM IDs
-     * @throws IOException When any socket communication error occurs
-     */
-    @NonNull
-    public String[] getBuiltinRomIds(Context context) throws IOException {
-        connect(context);
-
-        try {
-            // Create request
-            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
-            GetBuiltinRomIdsRequest.startGetBuiltinRomIdsRequest(builder);
-            // No parameters
-            int request = GetBuiltinRomIdsRequest.endGetBuiltinRomIdsRequest(builder);
-
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addType(builder, RequestType.GET_BUILTIN_ROM_IDS);
-            Request.addGetBuiltinRomIdsRequest(builder, request);
-            builder.finish(Request.endRequest(builder));
-
-            // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.GET_BUILTIN_ROM_IDS);
-            GetBuiltinRomIdsResponse response = fbresponse.getBuiltinRomIdsResponse();
-
-            String[] romIds = new String[response.romIdsLength()];
-            for (int i = 0; i < response.romIdsLength(); i++) {
-                romIds[i] = response.romIds(i);
-            }
-
-            return romIds;
-        } catch (IOException e) {
-            disconnect();
-            throw e;
-        }
-    }
-
-    /**
      * Get the current ROM ID.
      *
      * @param context Application context
@@ -369,25 +360,25 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public String getCurrentRom(Context context) throws IOException {
+    public String getBootedRomId(Context context) throws IOException {
         connect(context);
 
         try {
             // Create request
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
-            GetCurrentRomRequest.startGetCurrentRomRequest(builder);
+            MbGetBootedRomIdRequest.startMbGetBootedRomIdRequest(builder);
             // No parameters
-            int request = GetCurrentRomRequest.endGetCurrentRomRequest(builder);
+            int fbRequest = MbGetBootedRomIdRequest.endMbGetBootedRomIdRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.GET_CURRENT_ROM);
-            Request.addGetCurrentRomRequest(builder, request);
+            Request.addRequestType(builder, RequestType.MbGetBootedRomIdRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.GET_CURRENT_ROM);
-            GetCurrentRomResponse response = fbresponse.getCurrentRomResponse();
+            MbGetBootedRomIdResponse response = (MbGetBootedRomIdResponse)
+                    sendRequest(builder, ResponseType.MbGetBootedRomIdResponse);
 
             return response.romId();
         } catch (IOException e) {
@@ -419,7 +410,7 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public SwitchRomResult chooseRom(Context context, String id,
+    public SwitchRomResult switchRom(Context context, String id,
                                      boolean forceChecksumsUpdate) throws IOException {
         connect(context);
 
@@ -444,40 +435,39 @@ public class MbtoolSocket {
                     searchDirsOffsets[i] = builder.createString(searchDirs[i]);
                 }
 
-                fbSearchDirs = SwitchRomRequest.createBlockdevBaseDirsVector(builder,
-                        searchDirsOffsets);
+                fbSearchDirs = MbSwitchRomRequest.createBlockdevBaseDirsVector(
+                        builder, searchDirsOffsets);
             }
 
-            SwitchRomRequest.startSwitchRomRequest(builder);
-            SwitchRomRequest.addRomId(builder, fbRomId);
-            SwitchRomRequest.addBootBlockdev(builder, fbBootBlockDev);
-            SwitchRomRequest.addBlockdevBaseDirs(builder, fbSearchDirs);
-            SwitchRomRequest.addForceUpdateChecksums(builder, forceChecksumsUpdate);
-            int request = SwitchRomRequest.endSwitchRomRequest(builder);
+            MbSwitchRomRequest.startMbSwitchRomRequest(builder);
+            MbSwitchRomRequest.addRomId(builder, fbRomId);
+            MbSwitchRomRequest.addBootBlockdev(builder, fbBootBlockDev);
+            MbSwitchRomRequest.addBlockdevBaseDirs(builder, fbSearchDirs);
+            MbSwitchRomRequest.addForceUpdateChecksums(builder, forceChecksumsUpdate);
+            int fbRequest = MbSwitchRomRequest.endMbSwitchRomRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.SWITCH_ROM);
-            Request.addSwitchRomRequest(builder, request);
+            Request.addRequestType(builder, RequestType.MbSwitchRomRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.SWITCH_ROM);
-            SwitchRomResponse response = fbresponse.switchRomResponse();
+            MbSwitchRomResponse response = (MbSwitchRomResponse)
+                    sendRequest(builder, ResponseType.MbSwitchRomResponse);
 
-            // Crappy naming, I know...
             SwitchRomResult result;
             switch (response.result()) {
-            case mbtool.daemon.v2.SwitchRomResult.SUCCEEDED:
+            case MbSwitchRomResult.SUCCEEDED:
                 result = SwitchRomResult.SUCCEEDED;
                 break;
-            case mbtool.daemon.v2.SwitchRomResult.FAILED:
+            case MbSwitchRomResult.FAILED:
                 result = SwitchRomResult.FAILED;
                 break;
-            case mbtool.daemon.v2.SwitchRomResult.CHECKSUM_INVALID:
+            case MbSwitchRomResult.CHECKSUM_INVALID:
                 result = SwitchRomResult.CHECKSUM_INVALID;
                 break;
-            case mbtool.daemon.v2.SwitchRomResult.CHECKSUM_NOT_FOUND:
+            case MbSwitchRomResult.CHECKSUM_NOT_FOUND:
                 result = SwitchRomResult.CHECKSUM_NOT_FOUND;
                 break;
             default:
@@ -526,20 +516,20 @@ public class MbtoolSocket {
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbRomId = builder.createString(id);
             int fbBootBlockDev = builder.createString(bootBlockDev);
-            SetKernelRequest.startSetKernelRequest(builder);
-            SetKernelRequest.addRomId(builder, fbRomId);
-            SetKernelRequest.addBootBlockdev(builder, fbBootBlockDev);
-            int request = SetKernelRequest.endSetKernelRequest(builder);
+            MbSetKernelRequest.startMbSetKernelRequest(builder);
+            MbSetKernelRequest.addRomId(builder, fbRomId);
+            MbSetKernelRequest.addBootBlockdev(builder, fbBootBlockDev);
+            int fbRequest = MbSetKernelRequest.endMbSetKernelRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.SET_KERNEL);
-            Request.addSetKernelRequest(builder, request);
+            Request.addRequestType(builder, RequestType.MbSetKernelRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.SET_KERNEL);
-            SetKernelResponse response = fbresponse.setKernelResponse();
+            MbSetKernelResponse response = (MbSetKernelResponse)
+                    sendRequest(builder, ResponseType.MbSetKernelResponse);
 
             return response.success() ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
         } catch (IOException e) {
@@ -566,74 +556,19 @@ public class MbtoolSocket {
             int fbArg = builder.createString(arg != null ? arg : "");
             RebootRequest.startRebootRequest(builder);
             RebootRequest.addArg(builder, fbArg);
-            int request = RebootRequest.endRebootRequest(builder);
+            int fbRequest = RebootRequest.endRebootRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.REBOOT);
-            Request.addRebootRequest(builder, request);
+            Request.addRequestType(builder, RequestType.RebootRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.REBOOT);
-            RebootResponse response = fbresponse.rebootResponse();
+            RebootResponse response = (RebootResponse)
+                    sendRequest(builder, ResponseType.RebootResponse);
 
             return response.success();
-        } catch (IOException e) {
-            disconnect();
-            throw e;
-        }
-    }
-
-    /**
-     * Opens a file with mbtool and pass the file descriptor to the app.
-     *
-     * @param context Application context
-     * @param filename Absolute path to the file
-     * @param flags List of {@link mbtool.daemon.v2.OpenFlag}s
-     * @return {@link FileDescriptor} if file was successfully opened. null, otherwise.
-     * @throws IOException When any socket communication error occurs
-     */
-    @Nullable
-    public FileDescriptor open(Context context, String filename, short[] flags) throws IOException {
-        connect(context);
-
-        try {
-            // Create request
-            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
-            int fbFilename = builder.createString(filename);
-            int fbFlags = OpenRequest.createFlagsVector(builder, flags);
-            OpenRequest.startOpenRequest(builder);
-            OpenRequest.addPath(builder, fbFilename);
-            OpenRequest.addFlags(builder, fbFlags);
-            int request = OpenRequest.endOpenRequest(builder);
-
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addType(builder, RequestType.OPEN);
-            Request.addOpenRequest(builder, request);
-            builder.finish(Request.endRequest(builder));
-
-            // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.OPEN);
-            OpenResponse response = fbresponse.openResponse();
-
-            if (!response.success()) {
-                Log.e(TAG, "Failed to open file: " + response.errorMsg());
-                return null;
-            }
-
-            // Read file descriptors
-            //int dummy = mSocketIS.read();
-            byte[] buf = new byte[1];
-            SocketUtils.readFully(mSocketIS, buf, 0, 1);
-            FileDescriptor[] fds = mSocket.getAncillaryFileDescriptors();
-
-            if (fds == null || fds.length == 0) {
-                throw new IOException("mbtool sent no file descriptor");
-            }
-
-            return fds[0];
         } catch (IOException e) {
             disconnect();
             throw e;
@@ -653,7 +588,7 @@ public class MbtoolSocket {
      * @return True if the operation was successful. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean copy(Context context, String source, String target) throws IOException {
+    public boolean pathCopy(Context context, String source, String target) throws IOException {
         connect(context);
 
         try {
@@ -661,20 +596,20 @@ public class MbtoolSocket {
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbSource = builder.createString(source);
             int fbTarget = builder.createString(target);
-            CopyRequest.startCopyRequest(builder);
-            CopyRequest.addSource(builder, fbSource);
-            CopyRequest.addTarget(builder, fbTarget);
-            int request = CopyRequest.endCopyRequest(builder);
+            PathCopyRequest.startPathCopyRequest(builder);
+            PathCopyRequest.addSource(builder, fbSource);
+            PathCopyRequest.addTarget(builder, fbTarget);
+            int fbRequest = PathCopyRequest.endPathCopyRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.COPY);
-            Request.addCopyRequest(builder, request);
+            Request.addRequestType(builder, RequestType.PathCopyRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.COPY);
-            CopyResponse response = fbresponse.copyResponse();
+            PathCopyResponse response = (PathCopyResponse)
+                    sendRequest(builder, ResponseType.PathCopyResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to copy from " + source + " to " + target + ": " +
@@ -702,27 +637,27 @@ public class MbtoolSocket {
      * @return True if the operation was successful. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean chmod(Context context, String filename, int mode) throws IOException {
+    public boolean pathChmod(Context context, String filename, int mode) throws IOException {
         connect(context);
 
         try {
             // Create request
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbFilename = builder.createString(filename);
-            ChmodRequest.startChmodRequest(builder);
-            ChmodRequest.addPath(builder, fbFilename);
-            ChmodRequest.addMode(builder, mode);
-            int request = ChmodRequest.endChmodRequest(builder);
+            PathChmodRequest.startPathChmodRequest(builder);
+            PathChmodRequest.addPath(builder, fbFilename);
+            PathChmodRequest.addMode(builder, mode);
+            int fbRequest = PathChmodRequest.endPathChmodRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.CHMOD);
-            Request.addChmodRequest(builder, request);
+            Request.addRequestType(builder, RequestType.PathChmodRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.CHMOD);
-            ChmodResponse response = fbresponse.chmodResponse();
+            PathChmodResponse response = (PathChmodResponse)
+                    sendRequest(builder, ResponseType.PathChmodResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to chmod " + filename + ": " + response.errorMsg());
@@ -747,7 +682,7 @@ public class MbtoolSocket {
      *
      * @param context Application context
      * @param romId ROM ID to wipe
-     * @param targets List of {@link mbtool.daemon.v2.WipeTarget}s indicating the wipe targets
+     * @param targets List of {@link mbtool.daemon.v3.MbWipeTarget}s indicating the wipe targets
      * @return {@link WipeResult} containing the list of succeeded and failed wipe targets
      * @throws IOException When any socket communication error occurs
      */
@@ -759,21 +694,21 @@ public class MbtoolSocket {
             // Create request
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbRomId = builder.createString(romId);
-            int fbTargets = WipeRomRequest.createTargetsVector(builder, targets);
-            WipeRomRequest.startWipeRomRequest(builder);
-            WipeRomRequest.addRomId(builder, fbRomId);
-            WipeRomRequest.addTargets(builder, fbTargets);
-            int request = WipeRomRequest.endWipeRomRequest(builder);
+            int fbTargets = MbWipeRomRequest.createTargetsVector(builder, targets);
+            MbWipeRomRequest.startMbWipeRomRequest(builder);
+            MbWipeRomRequest.addRomId(builder, fbRomId);
+            MbWipeRomRequest.addTargets(builder, fbTargets);
+            int fbRequest = MbWipeRomRequest.endMbWipeRomRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.WIPE_ROM);
-            Request.addWipeRomRequest(builder, request);
+            Request.addRequestType(builder, RequestType.MbWipeRomRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.WIPE_ROM);
-            WipeRomResponse response = fbresponse.wipeRomResponse();
+            MbWipeRomResponse response = (MbWipeRomResponse)
+                    sendRequest(builder, ResponseType.MbWipeRomResponse);
 
             WipeResult result = new WipeResult();
             result.succeeded = new short[response.succeededLength()];
@@ -806,28 +741,28 @@ public class MbtoolSocket {
      * @return SELinux label if it was successfully retrieved. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public String selinuxGetLabel(Context context, String path,
-                                  boolean followSymlinks) throws IOException {
+    public String pathSelinuxGetLabel(Context context, String path,
+                                      boolean followSymlinks) throws IOException {
         connect(context);
 
         try {
             // Create request
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbPath = builder.createString(path);
-            SELinuxGetLabelRequest.startSELinuxGetLabelRequest(builder);
-            SELinuxGetLabelRequest.addPath(builder, fbPath);
-            SELinuxGetLabelRequest.addFollowSymlinks(builder, followSymlinks);
-            int request = SELinuxGetLabelRequest.endSELinuxGetLabelRequest(builder);
+            PathSELinuxGetLabelRequest.startPathSELinuxGetLabelRequest(builder);
+            PathSELinuxGetLabelRequest.addPath(builder, fbPath);
+            PathSELinuxGetLabelRequest.addFollowSymlinks(builder, followSymlinks);
+            int fbRequest = PathSELinuxGetLabelRequest.endPathSELinuxGetLabelRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.SELINUX_GET_LABEL);
-            Request.addSelinuxGetLabelRequest(builder, request);
+            Request.addRequestType(builder, RequestType.PathSELinuxGetLabelRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.SELINUX_GET_LABEL);
-            SELinuxGetLabelResponse response = fbresponse.selinuxGetLabelResponse();
+            PathSELinuxGetLabelResponse response = (PathSELinuxGetLabelResponse)
+                    sendRequest(builder, ResponseType.PathSELinuxGetLabelResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to get SELinux label for " + path + ": " + response.errorMsg());
@@ -855,8 +790,8 @@ public class MbtoolSocket {
      * @return True if the SELinux label was successfully set. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean selinuxSetLabel(Context context, String path, String label,
-                                   boolean followSymlinks) throws IOException {
+    public boolean pathSelinuxSetLabel(Context context, String path, String label,
+                                       boolean followSymlinks) throws IOException {
         connect(context);
 
         try {
@@ -864,21 +799,21 @@ public class MbtoolSocket {
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbPath = builder.createString(path);
             int fbLabel = builder.createString(label);
-            SELinuxSetLabelRequest.startSELinuxSetLabelRequest(builder);
-            SELinuxSetLabelRequest.addPath(builder, fbPath);
-            SELinuxSetLabelRequest.addLabel(builder, fbLabel);
-            SELinuxSetLabelRequest.addFollowSymlinks(builder, followSymlinks);
-            int request = SELinuxSetLabelRequest.endSELinuxSetLabelRequest(builder);
+            PathSELinuxSetLabelRequest.startPathSELinuxSetLabelRequest(builder);
+            PathSELinuxSetLabelRequest.addPath(builder, fbPath);
+            PathSELinuxSetLabelRequest.addLabel(builder, fbLabel);
+            PathSELinuxSetLabelRequest.addFollowSymlinks(builder, followSymlinks);
+            int fbRequest = PathSELinuxSetLabelRequest.endPathSELinuxSetLabelRequest(builder);
 
             // Wrap request
             Request.startRequest(builder);
-            Request.addType(builder, RequestType.SELINUX_SET_LABEL);
-            Request.addSelinuxSetLabelRequest(builder, request);
+            Request.addRequestType(builder, RequestType.PathSELinuxSetLabelRequest);
+            Request.addRequest(builder, fbRequest);
             builder.finish(Request.endRequest(builder));
 
             // Send request
-            Response fbresponse = sendRequest(builder, ResponseType.SELINUX_SET_LABEL);
-            SELinuxSetLabelResponse response = fbresponse.selinuxSetLabelResponse();
+            PathSELinuxSetLabelResponse response = (PathSELinuxSetLabelResponse)
+                    sendRequest(builder, ResponseType.PathSELinuxSetLabelResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to set SELinux label for " + path + ": " + response.errorMsg());
@@ -894,7 +829,8 @@ public class MbtoolSocket {
 
     // Private helper functions
 
-    private Response sendRequest(FlatBufferBuilder builder, short expected) throws IOException {
+    @NonNull
+    private Table sendRequest(FlatBufferBuilder builder, byte expected) throws IOException {
         ThreadUtils.enforceExecutionOnNonMainThread();
 
         SocketUtils.writeBytes(mSocketOS, builder.sizedByteArray());
@@ -903,56 +839,87 @@ public class MbtoolSocket {
         ByteBuffer bb = ByteBuffer.wrap(responseBytes);
         Response response = Response.getRootAsResponse(bb);
 
-        if (response.type() == ResponseType.UNSUPPORTED) {
+        if (response.responseType() == ResponseType.Unsupported) {
             throw new IOException("Unsupported command");
-        } else if (response.type() == ResponseType.INVALID) {
+        } else if (response.responseType() == ResponseType.Invalid) {
             throw new IOException("Invalid command request");
-        } else if (response.type() != expected) {
+        } else if (response.responseType() != expected) {
             throw new IOException("Unexpected response type");
         }
 
-        // We're not expecting any null responses in the methods above, so just handle them here
-        if (response.type() == ResponseType.GET_VERSION
-                && response.getVersionResponse() == null) {
-            throw new IOException("null GET_VERSION response");
-        } else if (response.type() == ResponseType.GET_ROMS_LIST
-                && response.getRomsListResponse() == null) {
-            throw new IOException("null GET_ROMS_LIST response");
-        } else if (response.type() == ResponseType.GET_BUILTIN_ROM_IDS
-                && response.getBuiltinRomIdsResponse() == null) {
-            throw new IOException("null GET_BUILTIN_ROM_IDS response");
-        } else if (response.type() == ResponseType.GET_CURRENT_ROM
-                && response.getCurrentRomResponse() == null) {
-            throw new IOException("null GET_CURRENT_ROM response");
-        } else if (response.type() == ResponseType.SWITCH_ROM
-                && response.switchRomResponse() == null) {
-            throw new IOException("null SWITCH_ROM response");
-        } else if (response.type() == ResponseType.SET_KERNEL
-                && response.setKernelResponse() == null) {
-            throw new IOException("null SET_KERNEL response");
-        } else if (response.type() == ResponseType.REBOOT
-                && response.rebootResponse() == null) {
-            throw new IOException("null REBOOT response");
-        } else if (response.type() == ResponseType.OPEN
-                && response.openResponse() == null) {
-            throw new IOException("null OPEN response");
-        } else if (response.type() == ResponseType.COPY
-                && response.copyResponse() == null) {
-            throw new IOException("null COPY response");
-        } else if (response.type() == ResponseType.CHMOD
-                && response.chmodResponse() == null) {
-            throw new IOException("null CHMOD response");
-        } else if (response.type() == ResponseType.WIPE_ROM
-                && response.wipeRomResponse() == null) {
-            throw new IOException("null WIPE_ROM response");
-        } else if (response.type() == ResponseType.SELINUX_GET_LABEL
-                && response.selinuxGetLabelResponse() == null) {
-            throw new IOException("null SELINUX_GET_LABEL response");
-        } else if (response.type() == ResponseType.SELINUX_SET_LABEL
-                && response.selinuxSetLabelResponse() == null) {
-            throw new IOException("null SELINUX_SET_LABEL response");
+        Table table;
+
+        switch (response.responseType()) {
+        case ResponseType.FileChmodResponse:
+            table = new FileChmodResponse();
+            break;
+        case ResponseType.FileCloseResponse:
+            table = new FileCloseResponse();
+            break;
+        case ResponseType.FileOpenResponse:
+            table = new FileOpenResponse();
+            break;
+        case ResponseType.FileReadResponse:
+            table = new FileReadResponse();
+            break;
+        case ResponseType.FileSeekResponse:
+            table = new FileSeekResponse();
+            break;
+        case ResponseType.FileStatResponse:
+            table = new FileStatResponse();
+            break;
+        case ResponseType.FileWriteResponse:
+            table = new FileWriteResponse();
+            break;
+        case ResponseType.FileSELinuxGetLabelResponse:
+            table = new FileSELinuxGetLabelResponse();
+            break;
+        case ResponseType.FileSELinuxSetLabelResponse:
+            table = new FileSELinuxSetLabelResponse();
+            break;
+        case ResponseType.PathChmodResponse:
+            table = new PathChmodResponse();
+            break;
+        case ResponseType.PathCopyResponse:
+            table = new PathCopyResponse();
+            break;
+        case ResponseType.PathSELinuxGetLabelResponse:
+            table = new PathSELinuxGetLabelResponse();
+            break;
+        case ResponseType.PathSELinuxSetLabelResponse:
+            table = new PathSELinuxSetLabelResponse();
+            break;
+        case ResponseType.MbGetVersionResponse:
+            table = new MbGetVersionResponse();
+            break;
+        case ResponseType.MbGetInstalledRomsResponse:
+            table = new MbGetInstalledRomsResponse();
+            break;
+        case ResponseType.MbGetBootedRomIdResponse:
+            table = new MbGetBootedRomIdResponse();
+            break;
+        case ResponseType.MbSwitchRomResponse:
+            table = new MbSwitchRomResponse();
+            break;
+        case ResponseType.MbSetKernelResponse:
+            table = new MbSetKernelResponse();
+            break;
+        case ResponseType.MbWipeRomResponse:
+            table = new MbWipeRomResponse();
+            break;
+        case ResponseType.RebootResponse:
+            table = new RebootResponse();
+            break;
+        default:
+            throw new IOException("Invalid response type");
         }
 
-        return response;
+        Table ret = response.response(table);
+
+        if (ret == null) {
+            throw new IOException("Invalid union data");
+        }
+
+        return ret;
     }
 }

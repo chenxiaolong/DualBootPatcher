@@ -204,8 +204,8 @@ public class RomSettingsUtils {
                         MbtoolSocket socket = MbtoolSocket.getInstance();
 
                         // Copy aboot partition to the temporary file
-                        if (!socket.copy(context, ABOOT_PARTITION, aboot.getPath()) ||
-                                !socket.chmod(context, aboot.getPath(), 0644)) {
+                        if (!socket.pathCopy(context, ABOOT_PARTITION, aboot.getPath()) ||
+                                !socket.pathChmod(context, aboot.getPath(), 0644)) {
                             Log.e(TAG, "Failed to copy aboot partition to temporary file");
                             return false;
                         }
@@ -254,7 +254,7 @@ public class RomSettingsUtils {
 
             try {
                 SwitchRomResult result =
-                        MbtoolSocket.getInstance().chooseRom(context, romInfo.getId(), true);
+                        MbtoolSocket.getInstance().switchRom(context, romInfo.getId(), true);
                 if (result != SwitchRomResult.SUCCEEDED) {
                     Log.e(TAG, "Failed to reflash boot image");
                     return false;

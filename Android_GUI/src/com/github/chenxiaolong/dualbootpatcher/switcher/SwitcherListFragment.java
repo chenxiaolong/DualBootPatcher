@@ -540,8 +540,8 @@ public class SwitcherListFragment extends Fragment implements
 
             try {
                 // Copy boot partition to the temporary file
-                if (!socket.copy(getContext(), bootPartition, tmpImage) ||
-                        !socket.chmod(getContext(), tmpImage, 0644)) {
+                if (!socket.pathCopy(getContext(), bootPartition, tmpImage) ||
+                        !socket.pathChmod(getContext(), tmpImage, 0644)) {
                     Log.e(TAG, "Failed to copy boot partition to temporary file");
                     mResult.activeRomId = null;
                     mResult.kernelStatus = CurrentKernelStatus.UNKNOWN;
@@ -549,11 +549,11 @@ public class SwitcherListFragment extends Fragment implements
                 }
 
                 // Ensure SELinux label doesn't prevent reading from the file
-                String label = socket.selinuxGetLabel(
+                String label = socket.pathSelinuxGetLabel(
                         getContext(), getContext().getCacheDir().getAbsolutePath(), false);
                 if (label != null) {
                     // Ignore errors and hope for the best
-                    socket.selinuxSetLabel(getContext(), tmpImage, label, false);
+                    socket.pathSelinuxSetLabel(getContext(), tmpImage, label, false);
                 }
 
                 mResult.activeRomId = SwitcherUtils.getBootImageRomId(

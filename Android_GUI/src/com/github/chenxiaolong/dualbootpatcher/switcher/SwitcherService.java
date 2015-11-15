@@ -203,7 +203,7 @@ public class SwitcherService extends IntentService {
         boolean forceChecksumsUpdate = data.getBoolean(PARAM_FORCE_CHECKSUMS_UPDATE);
         SwitchRomResult result = SwitchRomResult.FAILED;
         try {
-            result = MbtoolSocket.getInstance().chooseRom(this, kernelId, forceChecksumsUpdate);
+            result = MbtoolSocket.getInstance().switchRom(this, kernelId, forceChecksumsUpdate);
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }
