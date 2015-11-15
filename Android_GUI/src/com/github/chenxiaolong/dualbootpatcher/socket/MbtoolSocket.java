@@ -23,6 +23,7 @@ import android.net.LocalSocketAddress;
 import android.net.LocalSocketAddress.Namespace;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
@@ -43,14 +44,23 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
+import mbtool.daemon.v3.FileChmodRequest;
 import mbtool.daemon.v3.FileChmodResponse;
+import mbtool.daemon.v3.FileCloseRequest;
 import mbtool.daemon.v3.FileCloseResponse;
+import mbtool.daemon.v3.FileOpenRequest;
 import mbtool.daemon.v3.FileOpenResponse;
+import mbtool.daemon.v3.FileReadRequest;
 import mbtool.daemon.v3.FileReadResponse;
+import mbtool.daemon.v3.FileSELinuxGetLabelRequest;
 import mbtool.daemon.v3.FileSELinuxGetLabelResponse;
+import mbtool.daemon.v3.FileSELinuxSetLabelRequest;
 import mbtool.daemon.v3.FileSELinuxSetLabelResponse;
+import mbtool.daemon.v3.FileSeekRequest;
 import mbtool.daemon.v3.FileSeekResponse;
+import mbtool.daemon.v3.FileStatRequest;
 import mbtool.daemon.v3.FileStatResponse;
+import mbtool.daemon.v3.FileWriteRequest;
 import mbtool.daemon.v3.FileWriteResponse;
 import mbtool.daemon.v3.MbGetBootedRomIdRequest;
 import mbtool.daemon.v3.MbGetBootedRomIdResponse;
@@ -80,6 +90,7 @@ import mbtool.daemon.v3.Request;
 import mbtool.daemon.v3.RequestType;
 import mbtool.daemon.v3.Response;
 import mbtool.daemon.v3.ResponseType;
+import mbtool.daemon.v3.StructStat;
 
 public class MbtoolSocket {
     private static final String TAG = MbtoolSocket.class.getSimpleName();
@@ -154,13 +165,10 @@ public class MbtoolSocket {
         // Get mbtool version
         FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
         MbGetVersionRequest.startMbGetVersionRequest(builder);
-        int fbRrequest = MbGetVersionRequest.endMbGetVersionRequest(builder);
-        Request.startRequest(builder);
-        Request.addRequestType(builder, RequestType.MbGetVersionRequest);
-        Request.addRequest(builder, fbRrequest);
-        builder.finish(Request.endRequest(builder));
+        int fbRequest = MbGetVersionRequest.endMbGetVersionRequest(builder);
         MbGetVersionResponse response = (MbGetVersionResponse)
-                sendRequest(builder, ResponseType.MbGetVersionResponse);
+                sendRequest(builder, fbRequest, RequestType.MbGetVersionRequest,
+                        ResponseType.MbGetVersionResponse);
         mMbtoolVersion = response.version();
         if (mMbtoolVersion == null) {
             throw new IOException("Could not determine mbtool version");
@@ -286,6 +294,289 @@ public class MbtoolSocket {
         mMbtoolVersion = null;
     }
 
+    // RPC calls
+
+    public boolean fileChmod(Context context, int id, int mode) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileChmodRequest.startFileChmodRequest(builder);
+            FileChmodRequest.addId(builder, id);
+            FileChmodRequest.addMode(builder, mode);
+            int fbRequest = FileChmodRequest.endFileChmodRequest(builder);
+
+            // Send request
+            FileChmodResponse response = (FileChmodResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileChmodRequest,
+                            ResponseType.FileChmodResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: chmod failed: " + response.errorMsg());
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    public boolean fileClose(Context context, int id) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileCloseRequest.startFileCloseRequest(builder);
+            FileCloseRequest.addId(builder, id);
+            int fbRequest = FileCloseRequest.endFileCloseRequest(builder);
+
+            // Send request
+            FileCloseResponse response = (FileCloseResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileCloseRequest,
+                            ResponseType.FileCloseResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: close failed: " + response.errorMsg());
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    public int fileOpen(Context context, String path, short[] flags, int perms) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+
+            int fbPath = builder.createString(path);
+            int fbFlags = FileOpenRequest.createFlagsVector(builder, flags);
+
+            FileOpenRequest.startFileOpenRequest(builder);
+            FileOpenRequest.addPath(builder, fbPath);
+            FileOpenRequest.addFlags(builder, fbFlags);
+            FileOpenRequest.addPerms(builder, perms);
+            int fbRequest = FileOpenRequest.endFileOpenRequest(builder);
+
+            // Send request
+            FileOpenResponse response = (FileOpenResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileOpenRequest,
+                            ResponseType.FileOpenResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + path + "]: open failed: " + response.errorMsg());
+                return -1;
+            }
+            return response.id();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    @Nullable
+    public ByteBuffer fileRead(Context context, int id, long size) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileReadRequest.startFileReadRequest(builder);
+            FileReadRequest.addId(builder, id);
+            FileReadRequest.addCount(builder, size);
+            int fbRequest = FileReadRequest.endFileReadRequest(builder);
+
+            // Send request
+            FileReadResponse response = (FileReadResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileReadRequest,
+                            ResponseType.FileReadResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: read failed: " + response.errorMsg());
+                return null;
+            }
+            return response.dataAsByteBuffer();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    public long fileSeek(Context context, int id, long offset, short whence) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileSeekRequest.startFileSeekRequest(builder);
+            FileSeekRequest.addId(builder, id);
+            FileSeekRequest.addOffset(builder, offset);
+            FileSeekRequest.addWhence(builder, whence);
+            int fbRequest = FileSeekRequest.endFileSeekRequest(builder);
+
+            // Send request
+            FileSeekResponse response = (FileSeekResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileSeekRequest,
+                            ResponseType.FileSeekResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: seek failed: " + response.errorMsg());
+                return -1;
+            }
+            return response.offset();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    static class StatBuf {
+        public long st_dev;
+        public long st_ino;
+        public int st_mode;
+        public long st_nlink;
+        public int st_uid;
+        public int st_gid;
+        public long st_rdev;
+        public long st_size;
+        public long st_blksize;
+        public long st_blocks;
+        public long st_atime;
+        public long st_mtime;
+        public long st_ctime;
+    }
+
+    @Nullable
+    public StatBuf fileStat(Context context, int id) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileStatRequest.startFileStatRequest(builder);
+            FileStatRequest.addId(builder, id);
+            int fbRequest = FileStatRequest.endFileStatRequest(builder);
+
+            // Send request
+            FileStatResponse response = (FileStatResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileStatRequest,
+                            ResponseType.FileStatResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: stat failed: " + response.errorMsg());
+                return null;
+            }
+
+            StructStat ss = response.stat();
+            StatBuf sb = new StatBuf();
+            sb.st_dev = ss.stDev();
+            sb.st_ino = ss.stIno();
+            sb.st_mode = (int) ss.stMode();
+            sb.st_nlink = ss.stNlink();
+            sb.st_uid = (int) ss.stUid();
+            sb.st_gid = (int) ss.stGid();
+            sb.st_rdev = ss.stRdev();
+            sb.st_size = ss.stSize();
+            sb.st_blksize = ss.stBlksize();
+            sb.st_blocks = ss.stBlocks();
+            sb.st_atime = ss.stAtime();
+            sb.st_mtime = ss.stMtime();
+            sb.st_ctime = ss.stCtime();
+            return sb;
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    public long fileWrite(Context context, int id, byte[] data) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbData = FileWriteRequest.createDataVector(builder, data);
+            FileWriteRequest.startFileWriteRequest(builder);
+            FileWriteRequest.addId(builder, id);
+            FileWriteRequest.addData(builder, fbData);
+            int fbRequest = FileWriteRequest.endFileWriteRequest(builder);
+
+            // Send request
+            FileWriteResponse response = (FileWriteResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileWriteRequest,
+                            ResponseType.FileWriteResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: write failed: " + response.errorMsg());
+                return -1;
+            }
+            return response.bytesWritten();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    @Nullable
+    public String fileSelinuxGetLabel(Context context, int id) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileSELinuxGetLabelRequest.startFileSELinuxGetLabelRequest(builder);
+            FileSELinuxGetLabelRequest.addId(builder, id);
+            int fbRequest = FileSELinuxGetLabelRequest.endFileSELinuxGetLabelRequest(builder);
+
+            // Send request
+            FileSELinuxGetLabelResponse response = (FileSELinuxGetLabelResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileSELinuxGetLabelRequest,
+                            ResponseType.FileSELinuxGetLabelResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: SELinux get label failed: " + response.errorMsg());
+                return null;
+            }
+            return response.label();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    public boolean fileSelinuxSetLabel(Context context, int id, String label) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            FileSELinuxSetLabelRequest.startFileSELinuxSetLabelRequest(builder);
+            FileSELinuxSetLabelRequest.addId(builder, id);
+            int fbRequest = FileSELinuxSetLabelRequest.endFileSELinuxSetLabelRequest(builder);
+
+            // Send request
+            FileSELinuxSetLabelResponse response = (FileSELinuxSetLabelResponse)
+                    sendRequest(builder, fbRequest, RequestType.FileSELinuxSetLabelRequest,
+                            ResponseType.FileSELinuxSetLabelResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "[" + id + "]: SELinux set label failed: " + response.errorMsg());
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
     /**
      * Get version of the mbtool daemon.
      *
@@ -321,15 +612,10 @@ public class MbtoolSocket {
             // No parameters
             int fbRequest = MbGetInstalledRomsRequest.endMbGetInstalledRomsRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.MbGetInstalledRomsRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             MbGetInstalledRomsResponse response = (MbGetInstalledRomsResponse)
-                    sendRequest(builder, ResponseType.MbGetInstalledRomsResponse);
+                    sendRequest(builder, fbRequest, RequestType.MbGetInstalledRomsRequest,
+                            ResponseType.MbGetInstalledRomsResponse);
 
             RomInformation[] roms = new RomInformation[response.romsLength()];
 
@@ -370,15 +656,10 @@ public class MbtoolSocket {
             // No parameters
             int fbRequest = MbGetBootedRomIdRequest.endMbGetBootedRomIdRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.MbGetBootedRomIdRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             MbGetBootedRomIdResponse response = (MbGetBootedRomIdResponse)
-                    sendRequest(builder, ResponseType.MbGetBootedRomIdResponse);
+                    sendRequest(builder, fbRequest, RequestType.MbGetBootedRomIdRequest,
+                            ResponseType.MbGetBootedRomIdResponse);
 
             return response.romId();
         } catch (IOException e) {
@@ -446,15 +727,10 @@ public class MbtoolSocket {
             MbSwitchRomRequest.addForceUpdateChecksums(builder, forceChecksumsUpdate);
             int fbRequest = MbSwitchRomRequest.endMbSwitchRomRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.MbSwitchRomRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             MbSwitchRomResponse response = (MbSwitchRomResponse)
-                    sendRequest(builder, ResponseType.MbSwitchRomResponse);
+                    sendRequest(builder, fbRequest, RequestType.MbSwitchRomRequest,
+                            ResponseType.MbSwitchRomResponse);
 
             SwitchRomResult result;
             switch (response.result()) {
@@ -521,15 +797,10 @@ public class MbtoolSocket {
             MbSetKernelRequest.addBootBlockdev(builder, fbBootBlockDev);
             int fbRequest = MbSetKernelRequest.endMbSetKernelRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.MbSetKernelRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             MbSetKernelResponse response = (MbSetKernelResponse)
-                    sendRequest(builder, ResponseType.MbSetKernelResponse);
+                    sendRequest(builder, fbRequest, RequestType.MbSetKernelRequest,
+                            ResponseType.MbSetKernelResponse);
 
             return response.success() ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
         } catch (IOException e) {
@@ -558,15 +829,10 @@ public class MbtoolSocket {
             RebootRequest.addArg(builder, fbArg);
             int fbRequest = RebootRequest.endRebootRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.RebootRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             RebootResponse response = (RebootResponse)
-                    sendRequest(builder, ResponseType.RebootResponse);
+                    sendRequest(builder, fbRequest, RequestType.RebootRequest,
+                            ResponseType.RebootResponse);
 
             return response.success();
         } catch (IOException e) {
@@ -601,15 +867,10 @@ public class MbtoolSocket {
             PathCopyRequest.addTarget(builder, fbTarget);
             int fbRequest = PathCopyRequest.endPathCopyRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.PathCopyRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             PathCopyResponse response = (PathCopyResponse)
-                    sendRequest(builder, ResponseType.PathCopyResponse);
+                    sendRequest(builder, fbRequest, RequestType.PathCopyRequest,
+                            ResponseType.PathCopyResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to copy from " + source + " to " + target + ": " +
@@ -649,15 +910,10 @@ public class MbtoolSocket {
             PathChmodRequest.addMode(builder, mode);
             int fbRequest = PathChmodRequest.endPathChmodRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.PathChmodRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             PathChmodResponse response = (PathChmodResponse)
-                    sendRequest(builder, ResponseType.PathChmodResponse);
+                    sendRequest(builder, fbRequest, RequestType.PathChmodRequest,
+                            ResponseType.PathChmodResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to chmod " + filename + ": " + response.errorMsg());
@@ -700,15 +956,10 @@ public class MbtoolSocket {
             MbWipeRomRequest.addTargets(builder, fbTargets);
             int fbRequest = MbWipeRomRequest.endMbWipeRomRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.MbWipeRomRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             MbWipeRomResponse response = (MbWipeRomResponse)
-                    sendRequest(builder, ResponseType.MbWipeRomResponse);
+                    sendRequest(builder, fbRequest, RequestType.MbWipeRomRequest,
+                            ResponseType.MbWipeRomResponse);
 
             WipeResult result = new WipeResult();
             result.succeeded = new short[response.succeededLength()];
@@ -754,15 +1005,10 @@ public class MbtoolSocket {
             PathSELinuxGetLabelRequest.addFollowSymlinks(builder, followSymlinks);
             int fbRequest = PathSELinuxGetLabelRequest.endPathSELinuxGetLabelRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.PathSELinuxGetLabelRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             PathSELinuxGetLabelResponse response = (PathSELinuxGetLabelResponse)
-                    sendRequest(builder, ResponseType.PathSELinuxGetLabelResponse);
+                    sendRequest(builder, fbRequest, RequestType.PathSELinuxGetLabelRequest,
+                            ResponseType.PathSELinuxGetLabelResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to get SELinux label for " + path + ": " + response.errorMsg());
@@ -805,15 +1051,10 @@ public class MbtoolSocket {
             PathSELinuxSetLabelRequest.addFollowSymlinks(builder, followSymlinks);
             int fbRequest = PathSELinuxSetLabelRequest.endPathSELinuxSetLabelRequest(builder);
 
-            // Wrap request
-            Request.startRequest(builder);
-            Request.addRequestType(builder, RequestType.PathSELinuxSetLabelRequest);
-            Request.addRequest(builder, fbRequest);
-            builder.finish(Request.endRequest(builder));
-
             // Send request
             PathSELinuxSetLabelResponse response = (PathSELinuxSetLabelResponse)
-                    sendRequest(builder, ResponseType.PathSELinuxSetLabelResponse);
+                    sendRequest(builder, fbRequest, RequestType.PathSELinuxSetLabelRequest,
+                            ResponseType.PathSELinuxSetLabelResponse);
 
             if (!response.success()) {
                 Log.e(TAG, "Failed to set SELinux label for " + path + ": " + response.errorMsg());
@@ -830,8 +1071,14 @@ public class MbtoolSocket {
     // Private helper functions
 
     @NonNull
-    private Table sendRequest(FlatBufferBuilder builder, byte expected) throws IOException {
+    private Table sendRequest(FlatBufferBuilder builder, int fbRequest, byte fbRequestType,
+                              byte expected) throws IOException {
         ThreadUtils.enforceExecutionOnNonMainThread();
+
+        Request.startRequest(builder);
+        Request.addRequestType(builder, fbRequestType);
+        Request.addRequest(builder, fbRequest);
+        builder.finish(Request.endRequest(builder));
 
         SocketUtils.writeBytes(mSocketOS, builder.sizedByteArray());
 
