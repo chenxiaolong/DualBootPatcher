@@ -19,57 +19,30 @@
 
 #include "daemon.h"
 
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <algorithm>
+
 #include <fcntl.h>
 #include <getopt.h>
-#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 #include <proc/readproc.h>
 
 #include "autoclose/file.h"
+#include "daemon_v3.h"
 #include "multiboot.h"
 #include "packages.h"
-#include "reboot.h"
-#include "roms.h"
 #include "sepolpatch.h"
-#include "switcher.h"
 #include "validcerts.h"
 #include "version.h"
-#include "wipe.h"
-#include "util/chown.h"
-#include "util/copy.h"
-#include "util/delete.h"
 #include "util/directory.h"
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/socket.h"
-
-// flatbuffers
-#include "protocol/get_version_generated.h"
-#include "protocol/get_roms_list_generated.h"
-#include "protocol/get_builtin_rom_ids_generated.h"
-#include "protocol/get_current_rom_generated.h"
-#include "protocol/switch_rom_generated.h"
-#include "protocol/set_kernel_generated.h"
-#include "protocol/reboot_generated.h"
-#include "protocol/open_generated.h"
-#include "protocol/copy_generated.h"
-#include "protocol/chmod_generated.h"
-#include "protocol/wipe_rom_generated.h"
-#include "protocol/selinux_get_label_generated.h"
-#include "protocol/selinux_set_label_generated.h"
-#include "protocol/request_generated.h"
-#include "protocol/response_generated.h"
 
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied
@@ -80,618 +53,6 @@
 namespace mb
 {
 
-namespace v2 = mbtool::daemon::v2;
-namespace fb = flatbuffers;
-
-static bool v2_send_response(int fd, const fb::FlatBufferBuilder &builder)
-{
-    return util::socket_write_bytes(
-            fd, builder.GetBufferPointer(), builder.GetSize());
-}
-
-static bool v2_send_generic_response(int fd, v2::ResponseType type)
-{
-    fb::FlatBufferBuilder builder;
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(type);
-    builder.Finish(rb.Finish());
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_get_version(int fd, const v2::Request *msg)
-{
-    auto request = msg->get_version_request();
-    if (!request) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    // Get version
-    auto version = builder.CreateString(get_mbtool_version());
-    auto response = v2::CreateGetVersionResponse(builder, version);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_GET_VERSION);
-    rb.add_get_version_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_get_roms_list(int fd, const v2::Request *msg)
-{
-    auto request = msg->get_roms_list_request();
-    if (!request) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    Roms roms;
-    roms.add_installed();
-
-    std::vector<fb::Offset<v2::Rom>> fb_roms;
-
-    for (auto r : roms.roms) {
-        std::string system_path = r->full_system_path();
-        std::string cache_path = r->full_cache_path();
-        std::string data_path = r->full_data_path();
-
-        auto fb_id = builder.CreateString(r->id);
-        auto fb_system_path = builder.CreateString(system_path);
-        auto fb_cache_path = builder.CreateString(cache_path);
-        auto fb_data_path = builder.CreateString(data_path);
-        fb::Offset<fb::String> fb_version;
-        fb::Offset<fb::String> fb_build;
-
-        std::string build_prop;
-        if (r->system_is_image) {
-            build_prop += "/raw/images/";
-            build_prop += r->id;
-        } else {
-            build_prop += system_path;
-        }
-        build_prop += "/build.prop";
-
-        std::unordered_map<std::string, std::string> properties;
-        util::file_get_all_properties(build_prop, &properties);
-
-        if (properties.find("ro.build.version.release") != properties.end()) {
-            const std::string &version = properties["ro.build.version.release"];
-            fb_version = builder.CreateString(version);
-        }
-        if (properties.find("ro.build.display.id") != properties.end()) {
-            const std::string &build = properties["ro.build.display.id"];
-            fb_build = builder.CreateString(build);
-        }
-
-        auto fb_rom = v2::CreateRom(builder, fb_id,
-                                    fb_system_path,
-                                    fb_cache_path,
-                                    fb_data_path,
-                                    fb_version,
-                                    fb_build);
-
-        fb_roms.push_back(fb_rom);
-    }
-
-    // Create response
-    auto fb_roms_vec = builder.CreateVector(fb_roms);
-    auto response = v2::CreateGetRomsListResponse(builder, fb_roms_vec);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_GET_ROMS_LIST);
-    rb.add_get_roms_list_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_get_builtin_rom_ids(int fd, const v2::Request *msg)
-{
-    auto request = msg->get_builtin_rom_ids_request();
-    if (!request) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    std::vector<fb::Offset<fb::String>> ids;
-
-    ids.push_back(builder.CreateString("primary"));
-    ids.push_back(builder.CreateString("dual"));
-    ids.push_back(builder.CreateString("multi-slot-1"));
-    ids.push_back(builder.CreateString("multi-slot-2"));
-    ids.push_back(builder.CreateString("multi-slot-3"));
-
-    // Create response
-    auto fb_ids = builder.CreateVector(ids);
-    auto response = v2::CreateGetBuiltinRomIdsResponse(builder, fb_ids);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_GET_BUILTIN_ROM_IDS);
-    rb.add_get_builtin_rom_ids_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_get_current_rom(int fd, const v2::Request *msg)
-{
-    auto request = msg->get_current_rom_request();
-    if (!request) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    fb::Offset<fb::String> id;
-    auto rom = Roms::get_current_rom();
-    if (rom) {
-        id = builder.CreateString(rom->id);
-    }
-
-    // Create response
-    auto response = v2::CreateGetCurrentRomResponse(builder, id);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_GET_CURRENT_ROM);
-    rb.add_get_current_rom_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_switch_rom(int fd, const v2::Request *msg)
-{
-    auto request = msg->switch_rom_request();
-    if (!request || !request->rom_id() || !request->boot_blockdev()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    std::vector<std::string> block_dev_dirs;
-
-    if (request->blockdev_base_dirs()) {
-        for (auto const &base_dir : *request->blockdev_base_dirs()) {
-            block_dev_dirs.push_back(base_dir->c_str());
-        }
-    }
-
-    bool force_update_checksums = request->force_update_checksums();
-
-    fb::FlatBufferBuilder builder;
-
-    SwitchRomResult ret = switch_rom(request->rom_id()->c_str(),
-                                     request->boot_blockdev()->c_str(),
-                                     block_dev_dirs,
-                                     force_update_checksums);
-
-    bool success = ret == SwitchRomResult::SUCCEEDED;
-    v2::SwitchRomResult fb_ret = v2::SwitchRomResult_FAILED;
-    switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
-        fb_ret = v2::SwitchRomResult_SUCCEEDED;
-        break;
-    case SwitchRomResult::FAILED:
-        fb_ret = v2::SwitchRomResult_FAILED;
-        break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
-        fb_ret = v2::SwitchRomResult_CHECKSUM_NOT_FOUND;
-        break;
-    case SwitchRomResult::CHECKSUM_INVALID:
-        fb_ret = v2::SwitchRomResult_CHECKSUM_INVALID;
-        break;
-    }
-
-    // Create response
-    auto response = v2::CreateSwitchRomResponse(builder, success, fb_ret);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_SWITCH_ROM);
-    rb.add_switch_rom_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_set_kernel(int fd, const v2::Request *msg)
-{
-    auto request = msg->set_kernel_request();
-    if (!request || !request->rom_id() || !request->boot_blockdev()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    bool success = set_kernel(request->rom_id()->c_str(),
-                              request->boot_blockdev()->c_str());
-
-    // Create response
-    auto response = v2::CreateSetKernelResponse(builder, success);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_SET_KERNEL);
-    rb.add_set_kernel_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_reboot(int fd, const v2::Request *msg)
-{
-    auto request = msg->reboot_request();
-    if (!request) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    std::string reboot_arg;
-    if (request->arg()) {
-        reboot_arg = request->arg()->c_str();
-    }
-
-    // The client probably won't get the chance to see the success message, but
-    // we'll still send it for the sake of symmetry
-    bool success = reboot_via_init(reboot_arg);
-
-    // Create response
-    auto response = v2::CreateRebootResponse(builder, success);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_REBOOT);
-    rb.add_reboot_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_open(int fd, const v2::Request *msg)
-{
-    auto request = msg->open_request();
-    if (!request || !request->path()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    int flags = 0;
-
-    if (request->flags()) {
-        for (short openflag : *request->flags()) {
-            if (openflag == v2::OpenFlag_APPEND) {
-                flags |= O_APPEND;
-            } else if (openflag == v2::OpenFlag_CREAT) {
-                flags |= O_CREAT;
-            } else if (openflag == v2::OpenFlag_EXCL) {
-                flags |= O_EXCL;
-            } else if (openflag == v2::OpenFlag_RDWR) {
-                flags |= O_RDWR;
-            } else if (openflag == v2::OpenFlag_TRUNC) {
-                flags |= O_TRUNC;
-            } else if (openflag == v2::OpenFlag_WRONLY) {
-                flags |= O_WRONLY;
-            }
-        }
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    int ffd = open(request->path()->c_str(), flags, 0666);
-    if (ffd < 0) {
-        // Create response
-        auto error = builder.CreateString(strerror(errno));
-        auto response = v2::CreateOpenResponse(builder, false, error);
-
-        // Wrap response
-        v2::ResponseBuilder rb(builder);
-        rb.add_type(v2::ResponseType_OPEN);
-        rb.add_open_response(response);
-        builder.Finish(rb.Finish());
-
-        return v2_send_response(fd, builder);
-    }
-
-    auto close_ffd = util::finally([&]{
-        close(ffd);
-    });
-
-    // Send SUCCESS, so the client knows to receive an fd
-    auto response = v2::CreateOpenResponse(builder, true);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_OPEN);
-    rb.add_open_response(response);
-    builder.Finish(rb.Finish());
-
-    if (!v2_send_response(fd, builder)) {
-        return false;
-    }
-
-    return util::socket_send_fds(fd, { ffd });
-}
-
-static bool v2_copy(int fd, const v2::Request *msg)
-{
-    auto request = msg->copy_request();
-    if (!request || !request->source() || !request->target()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    fb::Offset<v2::CopyResponse> response;
-
-    if (util::copy_contents(request->source()->c_str(),
-                            request->target()->c_str())) {
-        response = v2::CreateCopyResponse(builder, true);
-    } else {
-        auto error = builder.CreateString(strerror(errno));
-        response = v2::CreateCopyResponse(builder, false, error);
-    }
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_COPY);
-    rb.add_copy_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_chmod(int fd, const v2::Request *msg)
-{
-    auto request = msg->chmod_request();
-    if (!request || !request->path()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    // Don't allow setting setuid or setgid permissions
-    uint32_t mode = request->mode();
-    uint32_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
-    if (masked != mode) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    fb::Offset<v2::ChmodResponse> response;
-
-    if (chmod(request->path()->c_str(), mode) < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v2::CreateChmodResponse(builder, false, error);
-    } else {
-        response = v2::CreateChmodResponse(builder, true);
-    }
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_CHMOD);
-    rb.add_chmod_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_wipe_rom(int fd, const v2::Request *msg)
-{
-    auto request = msg->wipe_rom_request();
-    if (!request || !request->rom_id()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    // Find and verify ROM is installed
-    Roms roms;
-    roms.add_installed();
-
-    auto rom = roms.find_by_id(request->rom_id()->c_str());
-    if (!rom) {
-        LOGE("Tried to wipe non-installed or invalid ROM ID: %s",
-             request->rom_id()->c_str());
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    // The GUI should check this, but we'll enforce it here
-    auto current_rom = Roms::get_current_rom();
-    if (current_rom && current_rom->id == rom->id) {
-        LOGE("Cannot wipe currently booted ROM: %s", rom->id.c_str());
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    // Wipe the selected targets
-    std::vector<int16_t> succeeded;
-    std::vector<int16_t> failed;
-
-    if (request->targets()) {
-        std::string raw_system = get_raw_path("/system");
-        if (mount("", raw_system.c_str(), "", MS_REMOUNT, "") < 0) {
-            LOGW("Failed to mount %s as writable: %s",
-                 raw_system.c_str(), strerror(errno));
-        }
-
-        for (short target : *request->targets()) {
-            bool success = false;
-
-            if (target == v2::WipeTarget_SYSTEM) {
-                success = wipe_system(rom);
-            } else if (target == v2::WipeTarget_CACHE) {
-                success = wipe_cache(rom);
-            } else if (target == v2::WipeTarget_DATA) {
-                success = wipe_data(rom);
-            } else if (target == v2::WipeTarget_DALVIK_CACHE) {
-                success = wipe_dalvik_cache(rom);
-            } else if (target == v2::WipeTarget_MULTIBOOT) {
-                success = wipe_multiboot(rom);
-            } else {
-                LOGE("Unknown wipe target %d", target);
-            }
-
-            if (success) {
-                succeeded.push_back(target);
-            } else {
-                failed.push_back(target);
-            }
-        }
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    // Create response
-    auto fb_succeeded = builder.CreateVector(succeeded);
-    auto fb_failed = builder.CreateVector(failed);
-    auto response = v2::CreateWipeRomResponse(builder, fb_succeeded, fb_failed);
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_WIPE_ROM);
-    rb.add_wipe_rom_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_selinux_get_label(int fd, const v2::Request *msg)
-{
-    auto request = msg->selinux_get_label_request();
-    if (!request || !request->path()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    std::string label;
-    bool ret;
-    if (request->follow_symlinks()) {
-        ret = util::selinux_get_context(request->path()->c_str(), &label);
-    } else {
-        ret = util::selinux_lget_context(request->path()->c_str(), &label);
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    fb::Offset<v2::SELinuxGetLabelResponse> response;
-
-    if (!ret) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v2::CreateSELinuxGetLabelResponse(
-                builder, false, 0, error);
-    } else {
-        auto fb_label = builder.CreateString(label);
-        response = v2::CreateSELinuxGetLabelResponse(
-                builder, true, fb_label, 0);
-    }
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_SELINUX_GET_LABEL);
-    rb.add_selinux_get_label_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool v2_selinux_set_label(int fd, const v2::Request *msg)
-{
-    auto request = msg->selinux_set_label_request();
-    if (!request || !request->path()) {
-        return v2_send_generic_response(fd, v2::ResponseType_INVALID);
-    }
-
-    bool ret;
-    if (request->follow_symlinks()) {
-        ret = util::selinux_set_context(request->path()->c_str(),
-                                        request->label()->c_str());
-    } else {
-        ret = util::selinux_lset_context(request->path()->c_str(),
-                                         request->label()->c_str());
-    }
-
-    fb::FlatBufferBuilder builder;
-
-    fb::Offset<v2::SELinuxSetLabelResponse> response;
-
-    if (!ret) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v2::CreateSELinuxSetLabelResponse(builder, false, error);
-    } else {
-        response = v2::CreateSELinuxSetLabelResponse(builder, true);
-    }
-
-    // Wrap response
-    v2::ResponseBuilder rb(builder);
-    rb.add_type(v2::ResponseType_SELINUX_SET_LABEL);
-    rb.add_selinux_set_label_response(response);
-    builder.Finish(rb.Finish());
-
-    return v2_send_response(fd, builder);
-}
-
-static bool connection_version_2(int fd)
-{
-    std::string command;
-
-    while (1) {
-        std::vector<uint8_t> data;
-        if (!util::socket_read_bytes(fd, &data)) {
-            return false;
-        }
-
-        auto verifier = fb::Verifier(data.data(), data.size());
-        if (!v2::VerifyRequestBuffer(verifier)) {
-            LOGE("Received invalid buffer");
-            return false;
-        }
-
-        const v2::Request *request = v2::GetRequest(data.data());
-
-        // NOTE: A false return value indicates a connection error, not a
-        //       command failure!
-        bool ret = true;
-
-        if (request->type() == v2::RequestType_GET_VERSION) {
-            ret = v2_get_version(fd, request);
-        } else if (request->type() == v2::RequestType_GET_ROMS_LIST) {
-            ret = v2_get_roms_list(fd, request);
-        } else if (request->type() == v2::RequestType_GET_BUILTIN_ROM_IDS) {
-            ret = v2_get_builtin_rom_ids(fd, request);
-        } else if (request->type() == v2::RequestType_GET_CURRENT_ROM) {
-            ret = v2_get_current_rom(fd, request);
-        } else if (request->type() == v2::RequestType_SWITCH_ROM) {
-            ret = v2_switch_rom(fd, request);
-        } else if (request->type() == v2::RequestType_SET_KERNEL) {
-            ret = v2_set_kernel(fd, request);
-        } else if (request->type() == v2::RequestType_REBOOT) {
-            ret = v2_reboot(fd, request);
-        } else if (request->type() == v2::RequestType_OPEN) {
-            ret = v2_open(fd, request);
-        } else if (request->type() == v2::RequestType_COPY) {
-            ret = v2_copy(fd, request);
-        } else if (request->type() == v2::RequestType_CHMOD) {
-            ret = v2_chmod(fd, request);
-        } else if (request->type() == v2::RequestType_WIPE_ROM) {
-            ret = v2_wipe_rom(fd, request);
-        } else if (request->type() == v2::RequestType_SELINUX_GET_LABEL) {
-            ret = v2_selinux_get_label(fd, request);
-        } else if (request->type() == v2::RequestType_SELINUX_SET_LABEL) {
-            ret = v2_selinux_set_label(fd, request);
-        } else {
-            // Invalid command; allow further commands
-            ret = v2_send_generic_response(fd, v2::ResponseType_UNSUPPORTED);
-        }
-
-        if (!ret) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 static bool verify_credentials(uid_t uid)
 {
     // Rely on the OS for signature checking and simply compare strings in
@@ -701,8 +62,8 @@ static bool verify_credentials(uid_t uid)
     // which case, there's not much we can do to prevent damage.
 
     Packages pkgs;
-    if (!pkgs.load_xml("/data/system/packages.xml")) {
-        LOGE("Failed to load /data/system/packages.xml");
+    if (!pkgs.load_xml(PACKAGES_XML)) {
+        LOGE("Failed to load " PACKAGES_XML);
         return false;
     }
 
@@ -775,12 +136,16 @@ static bool client_connection(int fd)
     }
 
     if (version == 2) {
+        LOGE("Protocol version 2 is no longer supported");
+        util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
+        return ret = false;
+    } else if (version == 3) {
         if (!util::socket_write_string(fd, RESPONSE_OK)) {
             return false;
         }
 
-        if (!connection_version_2(fd)) {
-            LOGE("[Version 2] Communication error");
+        if (!connection_version_3(fd)) {
+            LOGE("[Version 3] Communication error");
         }
         return true;
     } else {
@@ -949,7 +314,7 @@ static bool patch_sepolicy_daemon()
     return true;
 }
 
-static void daemon_usage(int error)
+static void daemon_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
 

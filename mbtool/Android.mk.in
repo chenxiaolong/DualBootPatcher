@@ -87,6 +87,7 @@ mbtool_src_base := \
 	appsync.cpp \
 	appsyncmanager.cpp \
 	daemon.cpp \
+	daemon_v3.cpp \
 	init.cpp \
 	main.cpp \
 	mount_fstab.cpp \

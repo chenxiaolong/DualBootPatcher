@@ -348,6 +348,29 @@ bool selinux_lget_context(const std::string &path, std::string *context)
     return true;
 }
 
+bool selinux_fget_context(int fd, std::string *context)
+{
+    ssize_t size;
+    std::vector<char> value;
+
+    size = fgetxattr(fd, "security.selinux", nullptr, 0);
+    if (size < 0) {
+        return false;
+    }
+
+    value.resize(size);
+
+    size = fgetxattr(fd, "security.selinux", value.data(), size);
+    if (size < 0) {
+        return false;
+    }
+
+    value.push_back('\0');
+    *context = value.data();
+
+    return true;
+}
+
 bool selinux_set_context(const std::string &path, const std::string &context)
 {
     return setxattr(path.c_str(), "security.selinux",
@@ -357,6 +380,12 @@ bool selinux_set_context(const std::string &path, const std::string &context)
 bool selinux_lset_context(const std::string &path, const std::string &context)
 {
     return lsetxattr(path.c_str(), "security.selinux",
+                     context.c_str(), context.size() + 1, 0) == 0;
+}
+
+bool selinux_fset_context(int fd, const std::string &context)
+{
+    return fsetxattr(fd, "security.selinux",
                      context.c_str(), context.size() + 1, 0) == 0;
 }
 
