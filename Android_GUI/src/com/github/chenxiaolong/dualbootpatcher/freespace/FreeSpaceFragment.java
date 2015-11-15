@@ -31,13 +31,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff.mntent;
 import com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar;
 import com.sun.jna.Pointer;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -177,11 +177,6 @@ public class FreeSpaceFragment extends Fragment {
         private List<MountInfo> mMounts;
         private int[] mColors;
         private int mStartingColorIndex;
-        private DecimalFormat mSizeFormat = new DecimalFormat("#.##");
-        private String mFormatBytes;
-        private String mFormatKiloBytes;
-        private String mFormatMegaBytes;
-        private String mFormatGigaBytes;
 
         public MountInfoAdapter(Context context, List<MountInfo> mounts, int[] colors) {
             mContext = context;
@@ -190,11 +185,6 @@ public class FreeSpaceFragment extends Fragment {
 
             // Choose random color to start from (and go down the list)
             mStartingColorIndex = new Random().nextInt(mColors.length);
-
-            mFormatBytes = mContext.getString(R.string.format_bytes);
-            mFormatKiloBytes = mContext.getString(R.string.format_kilobytes);
-            mFormatMegaBytes = mContext.getString(R.string.format_megabytes);
-            mFormatGigaBytes = mContext.getString(R.string.format_gigabytes);
         }
 
         @Override
@@ -209,28 +199,8 @@ public class FreeSpaceFragment extends Fragment {
         public void onBindViewHolder(MountInfoViewHolder holder, int position) {
             MountInfo info = mMounts.get(position);
 
-            String strTotal;
-            String strAvail;
-
-            if (info.totalSpace < 1e3) {
-                strTotal = String.format(mFormatBytes, info.totalSpace);
-                strAvail = String.format(mFormatBytes, info.availSpace);
-            } else if (info.totalSpace < 1e6) {
-                strTotal = String.format(mFormatKiloBytes,
-                        mSizeFormat.format((double) info.totalSpace / 1e3));
-                strAvail = String.format(mFormatKiloBytes,
-                        mSizeFormat.format((double) info.availSpace / 1e3));
-            } else if (info.totalSpace < 1e9) {
-                strTotal = String.format(mFormatMegaBytes,
-                        mSizeFormat.format((double) info.totalSpace / 1e6));
-                strAvail = String.format(mFormatMegaBytes,
-                        mSizeFormat.format((double) info.availSpace / 1e6));
-            } else {
-                strTotal = String.format(mFormatGigaBytes,
-                        mSizeFormat.format((double) info.totalSpace / 1e9));
-                strAvail = String.format(mFormatGigaBytes,
-                        mSizeFormat.format((double) info.availSpace / 1e9));
-            }
+            String strTotal = FileUtils.toHumanReadableSize(mContext, info.totalSpace, 2);
+            String strAvail = FileUtils.toHumanReadableSize(mContext, info.availSpace, 2);
 
             holder.vMountPoint.setText(info.mountpoint);
             holder.vTotalSize.setText(strTotal);

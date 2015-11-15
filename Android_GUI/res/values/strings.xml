@@ -352,12 +352,18 @@
     <string name="free_space_occupied_size">Occupied:</string>
     <!-- Title for free space on partition -->
     <string name="free_space_free_size">Free:</string>
-    <!-- Format string for gigabytes -->
-    <string name="format_gigabytes" translatable="false">%s GB</string>
-    <!-- Format string for megabytes -->
-    <string name="format_megabytes" translatable="false">%s MB</string>
-    <!-- Format string for kilobytes -->
-    <string name="format_kilobytes" translatable="false">%s kB</string>
+    <!-- Format string for exbibytes -->
+    <string name="format_exbibytes" translatable="false">%s EiB</string>
+    <!-- Format string for pebibytes -->
+    <string name="format_pebibytes" translatable="false">%s PiB</string>
+    <!-- Format string for tebibytes -->
+    <string name="format_tebibytes" translatable="false">%s TiB</string>
+    <!-- Format string for gibibytes -->
+    <string name="format_gibibytes" translatable="false">%s GiB</string>
+    <!-- Format string for mebibytes -->
+    <string name="format_mebibytes" translatable="false">%s MiB</string>
+    <!-- Format string for kibibytes -->
+    <string name="format_kibibytes" translatable="false">%s KiB</string>
     <!-- Format string for bytes -->
     <string name="format_bytes" translatable="false">%s B</string>
 
