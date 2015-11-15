@@ -437,7 +437,7 @@ public class MbtoolSocket {
         }
     }
 
-    static class StatBuf {
+    public static class StatBuf {
         public long st_dev;
         public long st_ino;
         public int st_mode;

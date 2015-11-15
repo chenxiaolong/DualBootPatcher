@@ -42,6 +42,8 @@ import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MainActivity;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
@@ -107,6 +109,12 @@ public class SwitcherService extends IntentService {
     public static final String RESULT_VERIFY_ZIP = "verify_zip";
     public static final String RESULT_ROM_ID = "rom_id";
 
+    // Cache wallpaper for ROM details activity
+    public static final String ACTION_CACHE_WALLPAPER = "cache_wallpaper";
+    public static final String STATE_CACHED_WALLPAPER = "ached_wallpaper";
+    public static final String CACHE_WALLPAPER_PARAM_ROM = "rom";
+    public static final String CACHE_WALLPAPER_RESULT_RESULT = "succeess";
+
     private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
 
     public SwitcherService() {
@@ -164,6 +172,13 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_WIPED_ROM);
         i.putExtra(RESULT_TARGETS_SUCCEEDED, succeeded);
         i.putExtra(RESULT_TARGETS_FAILED, failed);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+    }
+
+    private void onCachedWallpaper(CacheWallpaperResult result) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_CACHED_WALLPAPER);
+        i.putExtra(CACHE_WALLPAPER_RESULT_RESULT, result);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
@@ -446,6 +461,12 @@ public class SwitcherService extends IntentService {
         }
     }
 
+    private void cacheWallpaper(Bundle data) {
+        RomInformation romInfo = data.getParcelable(CACHE_WALLPAPER_PARAM_ROM);
+        CacheWallpaperResult result = RomUtils.cacheWallpaper(this, romInfo);
+        onCachedWallpaper(result);
+    }
+
     @Override
     protected void onHandleIntent(Intent intent) {
         String action = intent.getStringExtra(ACTION);
@@ -462,6 +483,8 @@ public class SwitcherService extends IntentService {
             flashZips(intent.getExtras());
         } else if (ACTION_WIPE_ROM.equals(action)) {
             wipeRom(intent.getExtras());
+        } else if (ACTION_CACHE_WALLPAPER.equals(action)) {
+            cacheWallpaper(intent.getExtras());
         }
     }
 }

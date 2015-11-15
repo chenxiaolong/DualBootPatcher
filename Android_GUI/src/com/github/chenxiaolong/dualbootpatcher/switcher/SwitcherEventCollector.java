@@ -26,6 +26,7 @@ import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
@@ -82,6 +83,11 @@ public class SwitcherEventCollector extends EventCollector {
                     short[] failed = bundle.getShortArray(SwitcherService.RESULT_TARGETS_FAILED);
 
                     sendEvent(new WipedRomEvent(succeeded, failed));
+                } else if (SwitcherService.STATE_CACHED_WALLPAPER.equals(state)) {
+                    CacheWallpaperResult result = (CacheWallpaperResult) bundle.getSerializable(
+                            SwitcherService.CACHE_WALLPAPER_RESULT_RESULT);
+
+                    sendEvent(new CachedWallpaperEvent(result));
                 }
             }
         }
@@ -156,6 +162,13 @@ public class SwitcherEventCollector extends EventCollector {
         mContext.startService(intent);
     }
 
+    public void cacheWallpaper(RomInformation info) {
+        Intent intent = new Intent(mContext, SwitcherService.class);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_CACHE_WALLPAPER);
+        intent.putExtra(SwitcherService.CACHE_WALLPAPER_PARAM_ROM, info);
+        mContext.startService(intent);
+    }
+
     // Events
 
     public class SwitchedRomEvent extends BaseEvent {
@@ -221,6 +234,14 @@ public class SwitcherEventCollector extends EventCollector {
         public WipedRomEvent(short[] succeeded, short[] failed) {
             this.succeeded = succeeded;
             this.failed = failed;
+        }
+    }
+
+    public class CachedWallpaperEvent extends BaseEvent {
+        CacheWallpaperResult result;
+
+        public CachedWallpaperEvent(CacheWallpaperResult result) {
+            this.result = result;
         }
     }
 }

@@ -20,14 +20,18 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.graphics.Palette;
+import android.support.v7.graphics.Palette.Swatch;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -38,14 +42,18 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorCallback;
+import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorTransformation;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
@@ -64,6 +72,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
         .RomNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
         .SetKernelConfirmDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CachedWallpaperEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CreatedLauncherEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
@@ -71,6 +80,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.W
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.RequestCreator;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -117,6 +127,10 @@ public class RomDetailActivity extends AppCompatActivity implements
     public static final String EXTRA_ACTIVE_ROM_ID = "active_rom_id";
 
     private CoordinatorLayout mCoordinator;
+    private CollapsingToolbarLayout mCollapsing;
+    private ImageView mWallpaper;
+    private FloatingActionButton mFab;
+    private RecyclerView mRV;
 
     private RomInformation mRomInfo;
     private RomInformation mBootedRomInfo;
@@ -150,9 +164,12 @@ public class RomDetailActivity extends AppCompatActivity implements
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mCoordinator = (CoordinatorLayout) findViewById(R.id.coordinator);
+        mCollapsing = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
+        mWallpaper = (ImageView) findViewById(R.id.wallpaper);
+        mFab = (FloatingActionButton) findViewById(R.id.fab);
+        mRV = (RecyclerView) findViewById(R.id.main_rv);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new OnClickListener() {
+        mFab.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 switchRom(false);
@@ -160,12 +177,14 @@ public class RomDetailActivity extends AppCompatActivity implements
         });
 
         updateTitle();
-        loadBackdrop();
 
         initializeRecyclerView();
         populateRomCardItem();
         populateInfoItems();
         populateActionItems();
+
+        mEventCollector.setApplicationContext(this);
+        mEventCollector.cacheWallpaper(mRomInfo);
     }
 
     @Override
@@ -180,48 +199,65 @@ public class RomDetailActivity extends AppCompatActivity implements
         mEventCollector.detachListener(TAG);
     }
 
-    private void loadBackdrop() {
-        // TODO: Need to implement mbtool backend for grabbing wallpaper
-        final ImageView imageView = (ImageView) findViewById(R.id.backdrop);
-        Picasso.with(this).load(R.drawable.material).into(imageView);
+    private void loadWallpaper(CacheWallpaperResult result) {
+        File wallpaperFile = new File(mRomInfo.getWallpaperPath());
+        RequestCreator creator;
+
+        if (result == CacheWallpaperResult.USES_LIVE_WALLPAPER) {
+            Toast.makeText(this, "Cannot preview live wallpaper", Toast.LENGTH_SHORT).show();
+        }
+
+        if (result == CacheWallpaperResult.UP_TO_DATE || result == CacheWallpaperResult.UPDATED) {
+            creator = Picasso.with(this).load(wallpaperFile).error(R.drawable.material);
+        } else {
+            creator = Picasso.with(this).load(R.drawable.material);
+        }
+
+        creator
+                .transform(PaletteGeneratorTransformation.getInstance())
+                .into(mWallpaper, new PaletteGeneratorCallback(mWallpaper) {
+                    @Override
+                    public void onObtainedPalette(Palette palette) {
+                        if (palette == null) {
+                            return;
+                        }
+
+                        Swatch swatch = palette.getMutedSwatch();
+                        if (swatch == null) {
+                            swatch = palette.getDarkVibrantSwatch();
+                        }
+                        if (swatch != null) {
+                            // Status bar should be slightly darker
+                            float[] hsl = swatch.getHsl();
+                            hsl[2] -= 0.05;
+                            if (hsl[2] < 0) {
+                                hsl[2] = 0;
+                            }
+
+                            mCollapsing.setContentScrimColor(swatch.getRgb());
+                            mCollapsing.setStatusBarScrimColor(ColorUtils.HSLToColor(hsl));
+                            mFab.setBackgroundTintList(ColorStateList.valueOf(swatch.getRgb()));
+                        }
+                        //Swatch lightVibrant = palette.getLightVibrantSwatch();
+                        //if (lightVibrant != null) {
+                        //    collapsingToolbar.setCollapsedTitleTextColor(lightVibrant.getRgb());
+                        //    collapsingToolbar.setExpandedTitleColor(lightVibrant.getRgb());
+                        //}
+                    }
+                });
     }
 
     private void updateTitle() {
-        final CollapsingToolbarLayout collapsingToolbar =
-                (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
-        collapsingToolbar.setTitle(mRomInfo.getId());
-        //collapsingToolbar.setTitle(mRomInfo.getName());
-
-        // Hack to prevent the expanded title from showing
-        AppBarLayout appBarLayout = (AppBarLayout) findViewById(R.id.appbar);
-        appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
-            boolean isShown = false;
-            int scrollRange = -1;
-
-            @Override
-            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
-                if (scrollRange == -1) {
-                    scrollRange = appBarLayout.getTotalScrollRange();
-                }
-                if (scrollRange + verticalOffset == 0) {
-                    //collapsingToolbar.setTitle(mRomInfo.getName());
-                    isShown = true;
-                } else if (isShown) {
-                    //collapsingToolbar.setTitle("");
-                    isShown = false;
-                }
-            }
-        });
+        mCollapsing.setTitle(mRomInfo.getId());
     }
 
     private void initializeRecyclerView() {
         mAdapter = new RomDetailAdapter(mItems, this);
 
-        RecyclerView rv = (RecyclerView) findViewById(R.id.main_rv);
-        rv.setHasFixedSize(true);
-        rv.setAdapter(mAdapter);
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        rv.addItemDecoration(new DividerItemDecoration(this));
+        mRV.setHasFixedSize(true);
+        mRV.setAdapter(mAdapter);
+        mRV.setLayoutManager(new LinearLayoutManager(this));
+        mRV.addItemDecoration(new DividerItemDecoration(this));
     }
 
     private void populateRomCardItem() {
@@ -508,6 +544,9 @@ public class RomDetailActivity extends AppCompatActivity implements
 
                 createSnackbar(sb.toString(), Snackbar.LENGTH_LONG).show();
             }
+        } else if (bEvent instanceof CachedWallpaperEvent) {
+            CachedWallpaperEvent event = (CachedWallpaperEvent) bEvent;
+            loadWallpaper(event.result);
         }
     }
 
@@ -564,7 +603,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private void snackbarSetTextColor(Snackbar snackbar) {
         View view = snackbar.getView();
         TextView textView = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-        textView.setTextColor(getResources().getColor(R.color.text_color_primary));
+        textView.setTextColor(ContextCompat.getColor(this, R.color.text_color_primary));
     }
 
     private String targetsToString(short[] targets) {
