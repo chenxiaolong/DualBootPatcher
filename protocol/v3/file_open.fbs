@@ -4,6 +4,7 @@ enum FileOpenFlag : short {
     APPEND,
     CREAT,
     EXCL,
+    RDONLY,
     RDWR,
     TRUNC,
     WRONLY
