@@ -36,13 +36,14 @@ enum FileOpenFlag {
   FileOpenFlag_APPEND = 0,
   FileOpenFlag_CREAT = 1,
   FileOpenFlag_EXCL = 2,
-  FileOpenFlag_RDWR = 3,
-  FileOpenFlag_TRUNC = 4,
-  FileOpenFlag_WRONLY = 5
+  FileOpenFlag_RDONLY = 3,
+  FileOpenFlag_RDWR = 4,
+  FileOpenFlag_TRUNC = 5,
+  FileOpenFlag_WRONLY = 6
 };
 
 inline const char **EnumNamesFileOpenFlag() {
-  static const char *names[] = { "APPEND", "CREAT", "EXCL", "RDWR", "TRUNC", "WRONLY", nullptr };
+  static const char *names[] = { "APPEND", "CREAT", "EXCL", "RDONLY", "RDWR", "TRUNC", "WRONLY", nullptr };
   return names;
 }
 
