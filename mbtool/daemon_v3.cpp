@@ -229,7 +229,7 @@ static bool v3_file_read(int fd, const v3::Request *msg)
         auto error = builder.CreateString(strerror(errno));
         response = v3::CreateFileReadResponse(builder, false, error);
     } else {
-        auto data = builder.CreateVector(buf);
+        auto data = builder.CreateVector(buf.data(), ret);
         response = v3::CreateFileReadResponse(builder, true, 0, ret, data);
     }
 
