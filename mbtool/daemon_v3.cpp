@@ -177,6 +177,8 @@ static bool v3_file_open(int fd, const v3::Request *msg)
                 flags |= O_CREAT;
             } else if (openflag == v3::FileOpenFlag_EXCL) {
                 flags |= O_EXCL;
+            } else if (openflag == v3::FileOpenFlag_RDONLY) {
+                flags |= O_RDONLY;
             } else if (openflag == v3::FileOpenFlag_RDWR) {
                 flags |= O_RDWR;
             } else if (openflag == v3::FileOpenFlag_TRUNC) {
