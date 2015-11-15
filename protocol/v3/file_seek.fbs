@@ -1,0 +1,22 @@
+namespace mbtool.daemon.v3;
+
+enum FileSeekWhence : short {
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END
+}
+
+table FileSeekRequest {
+    // Opened file ID
+    id : int;
+    // Offset
+    offset : long;
+    // Whence
+    whence : FileSeekWhence;
+}
+
+table FileSeekResponse {
+    success : bool;
+    error_msg : string;
+    offset : long;
+}

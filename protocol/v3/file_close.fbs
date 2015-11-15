@@ -1,0 +1,10 @@
+namespace mbtool.daemon.v3;
+
+table FileCloseRequest {
+    id : int;
+}
+
+table FileCloseResponse {
+    success : bool;
+    error_msg : string;
+}

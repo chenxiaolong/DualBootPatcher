@@ -1,0 +1,9 @@
+namespace mbtool.daemon.v3;
+
+table MbGetVersionRequest {
+    // No parameters
+}
+
+table MbGetVersionResponse {
+    version : string;
+}

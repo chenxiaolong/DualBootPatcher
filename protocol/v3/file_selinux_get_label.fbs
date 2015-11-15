@@ -1,0 +1,15 @@
+namespace mbtool.daemon.v3;
+
+table FileSELinuxGetLabelRequest {
+    // Opened file ID
+    id : int;
+}
+
+table FileSELinuxGetLabelResponse {
+    // Whether the SELinux label was successfully queried
+    success : bool;
+    // Most likely the output of strerror(errno) if the file could not be opened
+    error_msg : string;
+    // SELinux label
+    label : string;
+}

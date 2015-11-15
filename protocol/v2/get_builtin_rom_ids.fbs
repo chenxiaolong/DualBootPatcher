@@ -1,9 +1,0 @@
-namespace mbtool.daemon.v2;
-
-table GetBuiltinRomIdsRequest {
-    // No parameters
-}
-
-table GetBuiltinRomIdsResponse {
-    rom_ids : [string];
-}

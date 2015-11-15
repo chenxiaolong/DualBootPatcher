@@ -1,12 +1,12 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
-table SetKernelRequest {
+table MbSetKernelRequest {
     // ROM ID to set the kernel for
     rom_id : string;
     // Path to the boot partition's block device
     boot_blockdev : string;
 }
 
-table SetKernelResponse {
+table MbSetKernelResponse {
     success : bool;
 }

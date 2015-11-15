@@ -1,4 +1,4 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
 table RebootRequest {
     // Argument for reboot

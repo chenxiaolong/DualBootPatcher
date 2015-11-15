@@ -1,0 +1,25 @@
+namespace mbtool.daemon.v3;
+
+enum FileOpenFlag : short {
+    APPEND,
+    CREAT,
+    EXCL,
+    RDWR,
+    TRUNC,
+    WRONLY
+}
+
+table FileOpenRequest {
+    // Path to open
+    path : string;
+    // Open flags
+    flags : [FileOpenFlag];
+    // Permissions (if the CREAT flag is specified)
+    perms : uint;
+}
+
+table FileOpenResponse {
+    success : bool;
+    error_msg : string;
+    id : int;
+}

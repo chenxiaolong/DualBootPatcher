@@ -3,20 +3,26 @@
 cd "$(dirname "${0}")"
 
 files=(
-    v2/get_version.fbs
-    v2/get_roms_list.fbs
-    v2/get_builtin_rom_ids.fbs
-    v2/get_current_rom.fbs
-    v2/switch_rom.fbs
-    v2/set_kernel.fbs
-    v2/reboot.fbs
-    v2/open.fbs
-    v2/copy.fbs
-    v2/chmod.fbs
-    v2/loki_patch.fbs
-    v2/wipe_rom.fbs
-    v2/selinux_get_label.fbs
-    v2/selinux_set_label.fbs
+    v3/file_chmod.fbs
+    v3/file_close.fbs
+    v3/file_open.fbs
+    v3/file_read.fbs
+    v3/file_seek.fbs
+    v3/file_stat.fbs
+    v3/file_write.fbs
+    v3/file_selinux_get_label.fbs
+    v3/file_selinux_set_label.fbs
+    v3/path_chmod.fbs
+    v3/path_copy.fbs
+    v3/path_selinux_get_label.fbs
+    v3/path_selinux_set_label.fbs
+    v3/mb_get_version.fbs
+    v3/mb_get_installed_roms.fbs
+    v3/mb_get_booted_rom_id.fbs
+    v3/mb_switch_rom.fbs
+    v3/mb_set_kernel.fbs
+    v3/mb_wipe_rom.fbs
+    v3/reboot.fbs
     request.fbs
     response.fbs
 )

@@ -1,6 +1,6 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
-table SELinuxSetLabelRequest {
+table PathSELinuxSetLabelRequest {
     // Path to set label for
     path : string;
     // SELinux label
@@ -9,7 +9,7 @@ table SELinuxSetLabelRequest {
     follow_symlinks : bool;
 }
 
-table SELinuxSetLabelResponse {
+table PathSELinuxSetLabelResponse {
     // Whether the SELinux label was successfully set
     success : bool;
     // Most likely the output of strerror(errno) if the file could not be opened

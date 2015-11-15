@@ -1,0 +1,41 @@
+namespace mbtool.daemon.v3;
+
+table StructStat {
+    // ID of device containing file
+    st_dev : ulong;
+    // Inode number
+    st_ino : ulong;
+    // Mode (permissions & file type)
+    st_mode : uint;
+    // Number of hard links
+    st_nlink : ulong;
+    // User ID of owner
+    st_uid : uint;
+    // Group ID of owner
+    st_gid : uint;
+    // Device ID (if special file)
+    st_rdev : ulong;
+    // Total size, in bytes
+    st_size : ulong;
+    // Block size for filesystem I/O
+    st_blksize : ulong;
+    // Number of blocks allocated
+    st_blocks : ulong;
+    // Time of last access
+    st_atime : ulong;
+    // Time of last modification
+    st_mtime : ulong;
+    // Time of last status change
+    st_ctime : ulong;
+}
+
+table FileStatRequest {
+    // Opened file ID
+    id : int;
+}
+
+table FileStatResponse {
+    success : bool;
+    error_msg : string;
+    stat : StructStat;
+}

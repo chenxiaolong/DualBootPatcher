@@ -1,6 +1,6 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
-table Rom {
+table MbRom {
     id : string;
     system_path : string;
     cache_path : string;
@@ -9,10 +9,10 @@ table Rom {
     build : string;
 }
 
-table GetRomsListRequest {
+table MbGetInstalledRomsRequest {
     // No parameters
 }
 
-table GetRomsListResponse {
-    roms : [Rom];
+table MbGetInstalledRomsResponse {
+    roms : [MbRom];
 }

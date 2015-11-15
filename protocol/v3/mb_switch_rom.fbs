@@ -1,6 +1,6 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
-table SwitchRomRequest {
+table MbSwitchRomRequest {
     // ROM ID to switch to
     rom_id : string;
     // Path to the boot partition's block device
@@ -11,14 +11,14 @@ table SwitchRomRequest {
     force_update_checksums : bool;
 }
 
-enum SwitchRomResult : short {
+enum MbSwitchRomResult : short {
     SUCCEEDED,
     FAILED,
     CHECKSUM_NOT_FOUND,
     CHECKSUM_INVALID
 }
 
-table SwitchRomResponse {
+table MbSwitchRomResponse {
     success : bool;
-    result : SwitchRomResult;
+    result : MbSwitchRomResult;
 }

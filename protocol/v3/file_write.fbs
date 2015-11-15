@@ -1,0 +1,14 @@
+namespace mbtool.daemon.v3;
+
+table FileWriteRequest {
+    // Opened file ID
+    id : int;
+    // Bytes to write
+    data : [ubyte];
+}
+
+table FileWriteResponse {
+    success : bool;
+    error_msg : string;
+    bytes_written : ulong;
+}

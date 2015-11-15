@@ -1,13 +1,13 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
-table CopyRequest {
+table PathCopyRequest {
     // Path to source file
     source : string;
     // Path to destination file
     target : string;
 }
 
-table CopyResponse {
+table PathCopyResponse {
     success : bool;
     error_msg : string;
 }

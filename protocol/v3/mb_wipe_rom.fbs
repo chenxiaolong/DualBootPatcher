@@ -1,6 +1,6 @@
-namespace mbtool.daemon.v2;
+namespace mbtool.daemon.v3;
 
-enum WipeTarget : short {
+enum MbWipeTarget : short {
     // Wipe ROM's /system directory
     SYSTEM,
     // Wipe ROM's /cache directory
@@ -13,16 +13,16 @@ enum WipeTarget : short {
     MULTIBOOT
 }
 
-table WipeRomRequest {
+table MbWipeRomRequest {
     // ROM to wipe
     rom_id : string;
     // List of WipeFlags
-    targets : [WipeTarget];
+    targets : [MbWipeTarget];
 }
 
-table WipeRomResponse {
+table MbWipeRomResponse {
     // WipeTargets that were successfully wiped
-    succeeded : [WipeTarget];
+    succeeded : [MbWipeTarget];
     // WipeTargets that failed to wipe
-    failed : [WipeTarget];
+    failed : [MbWipeTarget];
 }

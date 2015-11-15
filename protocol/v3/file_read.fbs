@@ -1,0 +1,15 @@
+namespace mbtool.daemon.v3;
+
+table FileReadRequest {
+    // Opened file ID
+    id : int;
+    // Bytes to read
+    count : ulong;
+}
+
+table FileReadResponse {
+    success : bool;
+    error_msg : string;
+    bytes_read : ulong;
+    data : [ubyte];
+}

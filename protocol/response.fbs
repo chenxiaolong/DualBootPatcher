@@ -1,57 +1,61 @@
-include "v2/get_version.fbs";
-include "v2/get_roms_list.fbs";
-include "v2/get_builtin_rom_ids.fbs";
-include "v2/get_current_rom.fbs";
-include "v2/switch_rom.fbs";
-include "v2/set_kernel.fbs";
-include "v2/reboot.fbs";
-include "v2/open.fbs";
-include "v2/copy.fbs";
-include "v2/chmod.fbs";
-include "v2/loki_patch.fbs";
-include "v2/wipe_rom.fbs";
-include "v2/selinux_get_label.fbs";
-include "v2/selinux_set_label.fbs";
+include "v3/file_chmod.fbs";
+include "v3/file_close.fbs";
+include "v3/file_open.fbs";
+include "v3/file_read.fbs";
+include "v3/file_seek.fbs";
+include "v3/file_stat.fbs";
+include "v3/file_write.fbs";
+include "v3/file_selinux_get_label.fbs";
+include "v3/file_selinux_set_label.fbs";
+include "v3/path_chmod.fbs";
+include "v3/path_copy.fbs";
+include "v3/path_selinux_get_label.fbs";
+include "v3/path_selinux_set_label.fbs";
+include "v3/mb_get_version.fbs";
+include "v3/mb_get_installed_roms.fbs";
+include "v3/mb_get_booted_rom_id.fbs";
+include "v3/mb_switch_rom.fbs";
+include "v3/mb_set_kernel.fbs";
+include "v3/mb_wipe_rom.fbs";
 
-namespace mbtool.daemon.v2;
+include "v3/reboot.fbs";
 
-enum ResponseType : short {
-    UNSUPPORTED,
-    INVALID,
+namespace mbtool.daemon.v3;
 
-    GET_VERSION,
-    GET_ROMS_LIST,
-    GET_BUILTIN_ROM_IDS,
-    GET_CURRENT_ROM,
-    SWITCH_ROM,
-    SET_KERNEL,
-    REBOOT,
-    OPEN,
-    COPY,
-    CHMOD,
-    LOKI_PATCH,
-    WIPE_ROM,
-    SELINUX_GET_LABEL,
-    SELINUX_SET_LABEL
+table Invalid {
+}
+
+table Unsupported {
+}
+
+union ResponseType {
+    Invalid,
+    Unsupported,
+
+    FileChmodResponse,
+    FileCloseResponse,
+    FileOpenResponse,
+    FileReadResponse,
+    FileSeekResponse,
+    FileStatResponse,
+    FileWriteResponse,
+    FileSELinuxGetLabelResponse,
+    FileSELinuxSetLabelResponse,
+    PathChmodResponse,
+    PathCopyResponse,
+    PathSELinuxGetLabelResponse,
+    PathSELinuxSetLabelResponse,
+    MbGetVersionResponse,
+    MbGetInstalledRomsResponse,
+    MbGetBootedRomIdResponse,
+    MbSwitchRomResponse,
+    MbSetKernelResponse,
+    MbWipeRomResponse,
+    RebootResponse
 }
 
 table Response {
-    type : ResponseType;
-
-    get_version_response : GetVersionResponse;
-    get_roms_list_response : GetRomsListResponse;
-    get_builtin_rom_ids_response : GetBuiltinRomIdsResponse;
-    get_current_rom_response : GetCurrentRomResponse;
-    switch_rom_response : SwitchRomResponse;
-    set_kernel_response : SetKernelResponse;
-    reboot_response : RebootResponse;
-    open_response : OpenResponse;
-    copy_response : CopyResponse;
-    chmod_response : ChmodResponse;
-    loki_patch_response : LokiPatchResponse (deprecated);
-    wipe_rom_response : WipeRomResponse;
-    selinux_get_label_response : SELinuxGetLabelResponse;
-    selinux_set_label_response : SELinuxSetLabelResponse;
+    response : ResponseType;
 }
 
 root_type Response;

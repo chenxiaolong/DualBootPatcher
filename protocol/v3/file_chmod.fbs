@@ -1,0 +1,12 @@
+namespace mbtool.daemon.v3;
+
+table FileChmodRequest {
+    // Opened file ID
+    id : int;
+    mode : uint;
+}
+
+table FileChmodResponse {
+    success : bool;
+    error_msg : string;
+}
