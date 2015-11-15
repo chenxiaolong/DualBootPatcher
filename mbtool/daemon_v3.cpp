@@ -167,7 +167,7 @@ static bool v3_file_open(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    int flags = 0;
+    int flags = O_CLOEXEC;
 
     if (request->flags()) {
         for (short openflag : *request->flags()) {
