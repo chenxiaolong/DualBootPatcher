@@ -23,6 +23,7 @@ files=(
     v3/mb_switch_rom.fbs
     v3/mb_set_kernel.fbs
     v3/mb_wipe_rom.fbs
+    v3/mb_get_packages_count.fbs
     v3/reboot.fbs
     request.fbs
     response.fbs

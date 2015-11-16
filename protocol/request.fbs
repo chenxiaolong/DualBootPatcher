@@ -18,6 +18,7 @@ include "v3/mb_get_booted_rom_id.fbs";
 include "v3/mb_switch_rom.fbs";
 include "v3/mb_set_kernel.fbs";
 include "v3/mb_wipe_rom.fbs";
+include "v3/mb_get_packages_count.fbs";
 include "v3/reboot.fbs";
 
 namespace mbtool.daemon.v3;
@@ -43,6 +44,7 @@ union RequestType {
     MbSwitchRomRequest,
     MbSetKernelRequest,
     MbWipeRomRequest,
+    MbGetPackagesCountRequest,
     RebootRequest
 }
 

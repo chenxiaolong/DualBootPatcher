@@ -1,0 +1,13 @@
+namespace mbtool.daemon.v3;
+
+table MbGetPackagesCountRequest {
+    // ROM ID
+    rom_id : string;
+}
+
+table MbGetPackagesCountResponse {
+    success : bool;
+    system_packages : uint;
+    system_update_packages : uint;
+    non_system_packages : uint;
+}
