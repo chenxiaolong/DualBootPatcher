@@ -20,6 +20,7 @@
 #include "daemon_v3.h"
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include <fcntl.h>
 #include <sys/mount.h>
@@ -31,6 +32,7 @@
 #include "switcher.h"
 #include "util/copy.h"
 #include "util/finally.h"
+#include "util/fts.h"
 #include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
@@ -52,6 +54,7 @@
 #include "protocol/path_copy_generated.h"
 #include "protocol/path_selinux_get_label_generated.h"
 #include "protocol/path_selinux_set_label_generated.h"
+#include "protocol/path_get_directory_size_generated.h"
 #include "protocol/mb_get_booted_rom_id_generated.h"
 #include "protocol/mb_get_installed_roms_generated.h"
 #include "protocol/mb_get_version_generated.h"
@@ -555,6 +558,93 @@ static bool v3_path_selinux_set_label(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
+class DirectorySizeGetter : public util::FTSWrapper {
+public:
+    DirectorySizeGetter(std::string path, std::vector<std::string> exclusions)
+        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        _exclusions(std::move(exclusions)),
+        _total(0)
+    {
+    }
+
+    virtual int on_changed_path() override
+    {
+        // Exclude first-level directories
+        if (_curr->fts_level == 1) {
+            if (std::find(_exclusions.begin(), _exclusions.end(), _curr->fts_name)
+                    != _exclusions.end()) {
+                return Action::FTS_Skip;
+            }
+        }
+
+        return Action::FTS_OK;
+    }
+
+    virtual int on_reached_file() override
+    {
+        dev_t dev = _curr->fts_statp->st_dev;
+        ino_t ino = _curr->fts_statp->st_ino;
+
+        // If this file has been visited before (hard link), then skip it
+        if (_links.find(dev) != _links.end()
+                && _links[dev].find(ino) != _links[dev].end()) {
+            return Action::FTS_OK;
+        }
+
+        _total += _curr->fts_statp->st_size;
+        _links[dev].emplace(dev);
+
+        return Action::FTS_OK;
+    }
+
+    uint64_t total() const {
+        return _total;
+    }
+
+private:
+    std::vector<std::string> _exclusions;
+    std::unordered_map<dev_t, std::unordered_set<ino_t>> _links;
+    uint64_t _total;
+};
+
+static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
+{
+    auto request = (v3::PathGetDirectorySizeRequest *) msg->request();
+    if (!request->path()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    std::vector<std::string> exclusions;
+    if (request->exclusions()) {
+        for (auto const &exclusion : *request->exclusions()) {
+            exclusions.push_back(exclusion->c_str());
+        }
+    }
+
+    DirectorySizeGetter dsg(request->path()->c_str(), std::move(exclusions));
+    bool ret = dsg.run();
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::PathGetDirectorySizeResponse> response;
+
+    if (!ret) {
+        auto error = builder.CreateString(strerror(errno));
+        response = v3::CreatePathGetDirectorySizeResponse(
+                builder, false, error);
+    } else {
+        response = v3::CreatePathGetDirectorySizeResponse(
+                builder, true, 0, dsg.total());
+    }
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_PathGetDirectorySizeResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
 static bool v3_mb_get_booted_rom_id(int fd, const v3::Request *msg)
 {
     (void) msg;
@@ -905,6 +995,8 @@ bool connection_version_3(int fd)
             ret = v3_path_selinux_get_label(fd, request);
         } else if (type == v3::RequestType_PathSELinuxSetLabelRequest) {
             ret = v3_path_selinux_set_label(fd, request);
+        } else if (type == v3::RequestType_PathGetDirectorySizeRequest) {
+            ret = v3_path_get_directory_size(fd, request);
         } else if (type == v3::RequestType_MbGetBootedRomIdRequest) {
             ret = v3_mb_get_booted_rom_id(fd, request);
         } else if (type == v3::RequestType_MbGetInstalledRomsRequest) {
