@@ -20,15 +20,16 @@ public final class ResponseType {
   public static final byte PathCopyResponse = 13;
   public static final byte PathSELinuxGetLabelResponse = 14;
   public static final byte PathSELinuxSetLabelResponse = 15;
-  public static final byte MbGetVersionResponse = 16;
-  public static final byte MbGetInstalledRomsResponse = 17;
-  public static final byte MbGetBootedRomIdResponse = 18;
-  public static final byte MbSwitchRomResponse = 19;
-  public static final byte MbSetKernelResponse = 20;
-  public static final byte MbWipeRomResponse = 21;
-  public static final byte RebootResponse = 22;
+  public static final byte PathGetDirectorySizeResponse = 16;
+  public static final byte MbGetVersionResponse = 17;
+  public static final byte MbGetInstalledRomsResponse = 18;
+  public static final byte MbGetBootedRomIdResponse = 19;
+  public static final byte MbSwitchRomResponse = 20;
+  public static final byte MbSetKernelResponse = 21;
+  public static final byte MbWipeRomResponse = 22;
+  public static final byte RebootResponse = 23;
 
-  private static final String[] names = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "RebootResponse", };
+  private static final String[] names = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "RebootResponse", };
 
   public static String name(int e) { return names[e]; }
 };

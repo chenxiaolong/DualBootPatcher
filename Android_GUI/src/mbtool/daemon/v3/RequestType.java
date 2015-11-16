@@ -18,15 +18,16 @@ public final class RequestType {
   public static final byte PathCopyRequest = 11;
   public static final byte PathSELinuxGetLabelRequest = 12;
   public static final byte PathSELinuxSetLabelRequest = 13;
-  public static final byte MbGetVersionRequest = 14;
-  public static final byte MbGetInstalledRomsRequest = 15;
-  public static final byte MbGetBootedRomIdRequest = 16;
-  public static final byte MbSwitchRomRequest = 17;
-  public static final byte MbSetKernelRequest = 18;
-  public static final byte MbWipeRomRequest = 19;
-  public static final byte RebootRequest = 20;
+  public static final byte PathGetDirectorySizeRequest = 14;
+  public static final byte MbGetVersionRequest = 15;
+  public static final byte MbGetInstalledRomsRequest = 16;
+  public static final byte MbGetBootedRomIdRequest = 17;
+  public static final byte MbSwitchRomRequest = 18;
+  public static final byte MbSetKernelRequest = 19;
+  public static final byte MbWipeRomRequest = 20;
+  public static final byte RebootRequest = 21;
 
-  private static final String[] names = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "RebootRequest", };
+  private static final String[] names = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "RebootRequest", };
 
   public static String name(int e) { return names[e]; }
 };
