@@ -66,6 +66,8 @@ import mbtool.daemon.v3.MbGetBootedRomIdRequest;
 import mbtool.daemon.v3.MbGetBootedRomIdResponse;
 import mbtool.daemon.v3.MbGetInstalledRomsRequest;
 import mbtool.daemon.v3.MbGetInstalledRomsResponse;
+import mbtool.daemon.v3.MbGetPackagesCountRequest;
+import mbtool.daemon.v3.MbGetPackagesCountResponse;
 import mbtool.daemon.v3.MbGetVersionRequest;
 import mbtool.daemon.v3.MbGetVersionResponse;
 import mbtool.daemon.v3.MbRom;
@@ -981,6 +983,44 @@ public class MbtoolSocket {
         }
     }
 
+    public static class PackageCounts {
+        public int systemPackages;
+        public int systemUpdatePackages;
+        public int nonSystemPackages;
+    }
+
+    @Nullable
+    public PackageCounts getPackagesCounts(Context context, String romId) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbRomId = builder.createString(romId);
+            MbGetPackagesCountRequest.startMbGetPackagesCountRequest(builder);
+            MbGetPackagesCountRequest.addRomId(builder, fbRomId);
+            int fbRequest = MbGetPackagesCountRequest.endMbGetPackagesCountRequest(builder);
+
+            // Send request
+            MbGetPackagesCountResponse response = (MbGetPackagesCountResponse)
+                    sendRequest(builder, fbRequest, RequestType.MbGetPackagesCountRequest,
+                            ResponseType.MbGetPackagesCountResponse);
+
+            if (!response.success()) {
+                return null;
+            }
+
+            PackageCounts pc = new PackageCounts();
+            pc.systemPackages = (int) response.systemPackages();
+            pc.systemUpdatePackages = (int) response.systemUpdatePackages();
+            pc.nonSystemPackages = (int) response.nonSystemPackages();
+            return pc;
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
     /**
      * Get the SELinux label of a path.
      *
@@ -1198,6 +1238,9 @@ public class MbtoolSocket {
             break;
         case ResponseType.MbWipeRomResponse:
             table = new MbWipeRomResponse();
+            break;
+        case ResponseType.MbGetPackagesCountResponse:
+            table = new MbGetPackagesCountResponse();
             break;
         case ResponseType.RebootResponse:
             table = new RebootResponse();

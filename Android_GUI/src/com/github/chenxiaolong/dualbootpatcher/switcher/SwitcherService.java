@@ -46,6 +46,7 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.PackageCounts;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.WipeResult;
@@ -120,10 +121,14 @@ public class SwitcherService extends IntentService {
     public static final String STATE_ROM_DETAILS_GOT_SYSTEM_SIZE = "got_system_size";
     public static final String STATE_ROM_DETAILS_GOT_CACHE_SIZE = "got_cache_size";
     public static final String STATE_ROM_DETAILS_GOT_DATA_SIZE = "got_data_size";
+    public static final String STATE_ROM_DETAILS_GOT_PKGS_COUNTS = "got_pkgs_count";
     public static final String STATE_ROM_DETAILS_FINISHED = "finished";
     public static final String GET_ROM_DETAILS_PARAM_ROM = "rom";
     public static final String GET_ROM_DETAILS_RESULT_SIZE = "size";
     public static final String GET_ROM_DETAILS_RESULT_SUCCESS = "success";
+    public static final String GET_ROM_DETAILS_RESULT_PKGS_COUNT_SYSTEM = "pkgs_system";
+    public static final String GET_ROM_DETAILS_RESULT_PKGS_COUNT_UPDATED = "pkgs_updated";
+    public static final String GET_ROM_DETAILS_RESULT_PKGS_COUNT_USER = "pkgs_user";
 
     private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
 
@@ -213,6 +218,17 @@ public class SwitcherService extends IntentService {
         i.putExtra(STATE, STATE_ROM_DETAILS_GOT_DATA_SIZE);
         i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
         i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+    }
+
+    private void onGotPackageCounts(boolean success, int systemPackages, int updatePackages,
+                                    int userPackages) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_PKGS_COUNTS);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
+        i.putExtra(GET_ROM_DETAILS_RESULT_PKGS_COUNT_SYSTEM, systemPackages);
+        i.putExtra(GET_ROM_DETAILS_RESULT_PKGS_COUNT_UPDATED, updatePackages);
+        i.putExtra(GET_ROM_DETAILS_RESULT_PKGS_COUNT_USER, userPackages);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
@@ -513,9 +529,21 @@ public class SwitcherService extends IntentService {
         MbtoolSocket socket = MbtoolSocket.getInstance();
 
         try {
+            PackageCounts pc = socket.getPackagesCounts(this, romInfo.getId());
+            if (pc == null) {
+                onGotPackageCounts(false, 0, 0, 0);
+            } else {
+                onGotPackageCounts(true, pc.systemPackages, pc.systemUpdatePackages,
+                        pc.nonSystemPackages);
+            }
+        } catch (IOException e) {
+            onGotPackageCounts(false, 0, 0, 0);
+        }
+
+        try {
             long systemSize = socket.pathGetDirectorySize(
                     this, romInfo.getSystemPath(), new String[]{ "multiboot" });
-            onGotSystemSize(true, systemSize);
+            onGotSystemSize(systemSize >= 0, systemSize);
         } catch (IOException e) {
             onGotSystemSize(false, -1);
         }
@@ -523,7 +551,7 @@ public class SwitcherService extends IntentService {
         try {
             long cacheSize = socket.pathGetDirectorySize(
                     this, romInfo.getCachePath(), new String[]{ "multiboot" });
-            onGotCacheSize(true, cacheSize);
+            onGotCacheSize(cacheSize >= 0, cacheSize);
         } catch (IOException e) {
             onGotCacheSize(false, -1);
         }
@@ -531,7 +559,7 @@ public class SwitcherService extends IntentService {
         try {
             long dataSize = socket.pathGetDirectorySize(
                     this, romInfo.getDataPath(), new String[]{ "multiboot", "media" });
-            onGotDataSize(true, dataSize);
+            onGotDataSize(dataSize >= 0, dataSize);
         } catch (IOException e) {
             onGotDataSize(false, -1);
         }

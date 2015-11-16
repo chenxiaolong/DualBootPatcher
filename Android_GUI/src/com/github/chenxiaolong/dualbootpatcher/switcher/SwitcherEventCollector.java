@@ -109,6 +109,18 @@ public class SwitcherEventCollector extends EventCollector {
                             SwitcherService.GET_ROM_DETAILS_RESULT_SIZE);
 
                     sendEvent(new GotDataSizeEvent(success, size));
+                } else if (SwitcherService.STATE_ROM_DETAILS_GOT_PKGS_COUNTS.equals(state)) {
+                    boolean success = bundle.getBoolean(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SUCCESS);
+                    int systemPackages = bundle.getInt(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_PKGS_COUNT_SYSTEM);
+                    int updatedPackages = bundle.getInt(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_PKGS_COUNT_UPDATED);
+                    int userPackages = bundle.getInt(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_PKGS_COUNT_USER);
+
+                    sendEvent(new GotPackageCountsEvent(
+                            success, systemPackages, updatedPackages, userPackages));
                 } else if (SwitcherService.STATE_ROM_DETAILS_FINISHED.equals(state)) {
                     sendEvent(new GetRomDetailsFinishedEvent());
                 }
@@ -302,6 +314,21 @@ public class SwitcherEventCollector extends EventCollector {
         public GotDataSizeEvent(boolean success, long size) {
             this.success = success;
             this.size = size;
+        }
+    }
+
+    public class GotPackageCountsEvent extends BaseEvent {
+        boolean success;
+        int systemPackages;
+        int updatedPackages;
+        int userPackages;
+
+        public GotPackageCountsEvent(boolean success, int systemPackages, int updatedPackages,
+                                     int userPackages) {
+            this.success = success;
+            this.systemPackages = systemPackages;
+            this.updatedPackages = updatedPackages;
+            this.userPackages = userPackages;
         }
     }
 

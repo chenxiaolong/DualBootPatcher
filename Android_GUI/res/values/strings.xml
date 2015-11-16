@@ -259,6 +259,11 @@
     <string name="rom_details_info_build">Build</string>
     <!-- ROM details item showing the mbtool version used to boot the ROM -->
     <string name="rom_details_info_mbtool_version">mbtool version</string>
+    <!-- ROM details item showing the number of system apps, updated apps, and user apps -->
+    <string name="rom_details_info_apps_counts">Apps</string>
+    <!-- ROM details value showing the number of system apps, updated apps, and user apps -->
+    <string name="rom_details_info_apps_counts_value">%1$s system apps, %2$s updated apps,
+        %3$s user apps</string>
     <!-- ROM details item showing the path to the system directory or image -->
     <string name="rom_details_info_system_path">System path</string>
     <!-- ROM details item showing the path to the cache directory or image -->

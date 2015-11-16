@@ -79,6 +79,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector
         .GetRomDetailsFinishedEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotCacheSizeEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotDataSizeEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotPackageCountsEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotSystemSizeEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
@@ -113,12 +114,13 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final int INFO_VERSION = 2;
     private static final int INFO_BUILD = 3;
     private static final int INFO_MBTOOL_VERSION = 4;
-    private static final int INFO_SYSTEM_PATH = 5;
-    private static final int INFO_CACHE_PATH = 6;
-    private static final int INFO_DATA_PATH = 7;
-    private static final int INFO_SYSTEM_SIZE = 8;
-    private static final int INFO_CACHE_SIZE = 9;
-    private static final int INFO_DATA_SIZE = 10;
+    private static final int INFO_APPS_COUNTS = 5;
+    private static final int INFO_SYSTEM_PATH = 6;
+    private static final int INFO_CACHE_PATH = 7;
+    private static final int INFO_DATA_PATH = 8;
+    private static final int INFO_SYSTEM_SIZE = 9;
+    private static final int INFO_CACHE_SIZE = 10;
+    private static final int INFO_DATA_SIZE = 11;
 
     private static final int ACTION_SET_KERNEL = 1;
     private static final int ACTION_BACKUP = 2;
@@ -288,6 +290,9 @@ public class RomDetailActivity extends AppCompatActivity implements
         //mItems.add(new InfoItem(INFO_MBTOOL_VERSION,
         //        getString(R.string.rom_details_info_mbtool_version),
         //        "8.0.0.r1928.g2cb23c5"));
+        mItems.add(new InfoItem(INFO_APPS_COUNTS,
+                getString(R.string.rom_details_info_apps_counts),
+                getString(R.string.rom_details_info_calculating)));
         mItems.add(new InfoItem(INFO_SYSTEM_PATH,
                 getString(R.string.rom_details_info_system_path),
                 mRomInfo.getSystemPath()));
@@ -613,6 +618,14 @@ public class RomDetailActivity extends AppCompatActivity implements
                 setInfoItem(INFO_DATA_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
             } else {
                 setInfoItem(INFO_DATA_SIZE, getString(R.string.unknown));
+            }
+        } else if (bEvent instanceof GotPackageCountsEvent) {
+            GotPackageCountsEvent event = (GotPackageCountsEvent) bEvent;
+            if (event.success) {
+                setInfoItem(INFO_APPS_COUNTS, getString(R.string.rom_details_info_apps_counts_value,
+                        event.systemPackages, event.updatedPackages, event.userPackages));
+            } else {
+                setInfoItem(INFO_APPS_COUNTS, getString(R.string.unknown));
             }
         } else if (bEvent instanceof GetRomDetailsFinishedEvent) {
             // Unused
