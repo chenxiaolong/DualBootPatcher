@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "packages.h"
 #include "reboot.h"
 #include "roms.h"
 #include "switcher.h"
@@ -61,6 +62,7 @@
 #include "protocol/mb_set_kernel_generated.h"
 #include "protocol/mb_switch_rom_generated.h"
 #include "protocol/mb_wipe_rom_generated.h"
+#include "protocol/mb_get_packages_count_generated.h"
 #include "protocol/reboot_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
@@ -911,6 +913,68 @@ static bool v3_mb_wipe_rom(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
+static bool v3_mb_get_packages_count(int fd, const v3::Request *msg)
+{
+    auto request = (v3::MbGetPackagesCountRequest *) msg->request();
+    if (!request->rom_id()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    // Find and verify ROM is installed
+    Roms roms;
+    roms.add_installed();
+
+    auto rom = roms.find_by_id(request->rom_id()->c_str());
+    if (!rom) {
+        return v3_send_response_invalid(fd);
+    }
+
+    std::string packages_xml(rom->full_data_path());
+    packages_xml += "/system/packages.xml";
+
+    fb::FlatBufferBuilder builder;
+    v3::MbGetPackagesCountResponseBuilder response_builder(builder);
+
+    Packages pkgs;
+    if (pkgs.load_xml(packages_xml)) {
+        unsigned int system_pkgs = 0;
+        unsigned int update_pkgs = 0;
+        unsigned int other_pkgs = 0;
+
+        for (std::shared_ptr<Package> pkg : pkgs.pkgs) {
+            bool is_system = (pkg->pkg_flags & Package::FLAG_SYSTEM)
+                    || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM);
+            bool is_update = (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
+                    || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_UPDATED_SYSTEM_APP);
+
+            if (is_update) {
+                ++update_pkgs;
+            } else if (is_system) {
+                ++system_pkgs;
+            } else {
+                ++other_pkgs;
+            }
+        }
+
+        response_builder.add_success(true);
+        response_builder.add_system_packages(system_pkgs);
+        response_builder.add_system_update_packages(update_pkgs);
+        response_builder.add_non_system_packages(other_pkgs);
+    } else {
+        response_builder.add_success(false);
+    }
+
+    auto response = response_builder.Finish();
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_MbGetPackagesCountResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
 static bool v3_reboot(int fd, const v3::Request *msg)
 {
     auto request = (v3::RebootRequest *) msg->request();
@@ -1009,6 +1073,8 @@ bool connection_version_3(int fd)
             ret = v3_mb_switch_rom(fd, request);
         } else if (type == v3::RequestType_MbWipeRomRequest) {
             ret = v3_mb_wipe_rom(fd, request);
+        } else if (type == v3::RequestType_MbGetPackagesCountRequest) {
+            ret = v3_mb_get_packages_count(fd, request);
         } else if (type == v3::RequestType_RebootRequest) {
             ret = v3_reboot(fd, request);
         } else {
