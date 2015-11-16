@@ -22,6 +22,7 @@
 #include "mb_wipe_rom_generated.h"
 #include "path_chmod_generated.h"
 #include "path_copy_generated.h"
+#include "path_get_directory_size_generated.h"
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
 #include "reboot_generated.h"
@@ -134,6 +135,14 @@ struct PathSELinuxSetLabelResponse;
 namespace mbtool {
 namespace daemon {
 namespace v3 {
+struct PathGetDirectorySizeRequest;
+struct PathGetDirectorySizeResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
 struct MbGetVersionRequest;
 struct MbGetVersionResponse;
 }  // namespace v3
@@ -210,17 +219,18 @@ enum RequestType {
   RequestType_PathCopyRequest = 11,
   RequestType_PathSELinuxGetLabelRequest = 12,
   RequestType_PathSELinuxSetLabelRequest = 13,
-  RequestType_MbGetVersionRequest = 14,
-  RequestType_MbGetInstalledRomsRequest = 15,
-  RequestType_MbGetBootedRomIdRequest = 16,
-  RequestType_MbSwitchRomRequest = 17,
-  RequestType_MbSetKernelRequest = 18,
-  RequestType_MbWipeRomRequest = 19,
-  RequestType_RebootRequest = 20
+  RequestType_PathGetDirectorySizeRequest = 14,
+  RequestType_MbGetVersionRequest = 15,
+  RequestType_MbGetInstalledRomsRequest = 16,
+  RequestType_MbGetBootedRomIdRequest = 17,
+  RequestType_MbSwitchRomRequest = 18,
+  RequestType_MbSetKernelRequest = 19,
+  RequestType_MbWipeRomRequest = 20,
+  RequestType_RebootRequest = 21
 };
 
 inline const char **EnumNamesRequestType() {
-  static const char *names[] = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "RebootRequest", nullptr };
+  static const char *names[] = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "RebootRequest", nullptr };
   return names;
 }
 
@@ -278,6 +288,7 @@ inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *union
     case RequestType_PathCopyRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathCopyRequest *>(union_obj));
     case RequestType_PathSELinuxGetLabelRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathSELinuxGetLabelRequest *>(union_obj));
     case RequestType_PathSELinuxSetLabelRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathSELinuxSetLabelRequest *>(union_obj));
+    case RequestType_PathGetDirectorySizeRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathGetDirectorySizeRequest *>(union_obj));
     case RequestType_MbGetVersionRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbGetVersionRequest *>(union_obj));
     case RequestType_MbGetInstalledRomsRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbGetInstalledRomsRequest *>(union_obj));
     case RequestType_MbGetBootedRomIdRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbGetBootedRomIdRequest *>(union_obj));

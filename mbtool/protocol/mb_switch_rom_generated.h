@@ -19,6 +19,7 @@
 #include "mb_get_version_generated.h"
 #include "path_chmod_generated.h"
 #include "path_copy_generated.h"
+#include "path_get_directory_size_generated.h"
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
 
@@ -124,6 +125,14 @@ namespace daemon {
 namespace v3 {
 struct PathSELinuxSetLabelRequest;
 struct PathSELinuxSetLabelResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
+struct PathGetDirectorySizeRequest;
+struct PathGetDirectorySizeResponse;
 }  // namespace v3
 }  // namespace daemon
 }  // namespace mbtool
