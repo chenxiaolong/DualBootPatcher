@@ -1,0 +1,12 @@
+namespace mbtool.daemon.v3;
+
+table PathGetDirectorySizeRequest {
+    path : string;
+    exclusions : [string];
+}
+
+table PathGetDirectorySizeResponse {
+    success : bool;
+    error_msg : string;
+    size : ulong;
+}
