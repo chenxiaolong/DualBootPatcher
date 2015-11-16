@@ -251,6 +251,29 @@
         tapping and holding the file and a file can be removed by swiping it away.\n\nNOTE:
         This feature is still experimental. Please backup before continuing!</string>
 
+    <!-- ROM details item showing which slot the ROM is installed to -->
+    <string name="rom_details_info_slot">Slot</string>
+    <!-- ROM details item showing the version of the ROM -->
+    <string name="rom_details_info_version">Version</string>
+    <!-- ROM details item showing the build name of the ROM -->
+    <string name="rom_details_info_build">Build</string>
+    <!-- ROM details item showing the mbtool version used to boot the ROM -->
+    <string name="rom_details_info_mbtool_version">mbtool version</string>
+    <!-- ROM details item showing the path to the system directory or image -->
+    <string name="rom_details_info_system_path">System path</string>
+    <!-- ROM details item showing the path to the cache directory or image -->
+    <string name="rom_details_info_cache_path">Cache path</string>
+    <!-- ROM details item showing the path to the data directory or image -->
+    <string name="rom_details_info_data_path">Data path</string>
+    <!-- ROM details item showing the size of the system directory or image -->
+    <string name="rom_details_info_system_size">System size</string>
+    <!-- ROM details item showing the size of the cache directory or image -->
+    <string name="rom_details_info_cache_size">Cache size</string>
+    <!-- ROM details item showing the size of the data directory or image -->
+    <string name="rom_details_info_data_size">Data size</string>
+    <!-- ROM details item value shown when calculating the directory or image sizes -->
+    <string name="rom_details_info_calculating">Calculating…</string>
+
     <!-- Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
     <string name="patcher_storage_permission_required">The patcher will not be able to read and
         write to the internal storage because the storage permissions were denied. Please allow the
@@ -492,6 +515,8 @@
     <string name="reboot_now">Reboot now</string>
     <!-- Reboot later (used in dialog boxes) -->
     <string name="reboot_later">Reboot later</string>
+    <!-- Unknown (used when a value cannot be determined) -->
+    <string name="unknown">Unknown</string>
 
     <!-- Text for checkbox in dialogs indicating that the dialog should not be shown again -->
     <string name="do_not_show_again">Do not show again</string>

@@ -115,6 +115,16 @@ public class SwitcherService extends IntentService {
     public static final String CACHE_WALLPAPER_PARAM_ROM = "rom";
     public static final String CACHE_WALLPAPER_RESULT_RESULT = "succeess";
 
+    // Get ROM details
+    public static final String ACTION_GET_ROM_DETAILS = "get_rom_details";
+    public static final String STATE_ROM_DETAILS_GOT_SYSTEM_SIZE = "got_system_size";
+    public static final String STATE_ROM_DETAILS_GOT_CACHE_SIZE = "got_cache_size";
+    public static final String STATE_ROM_DETAILS_GOT_DATA_SIZE = "got_data_size";
+    public static final String STATE_ROM_DETAILS_FINISHED = "finished";
+    public static final String GET_ROM_DETAILS_PARAM_ROM = "rom";
+    public static final String GET_ROM_DETAILS_RESULT_SIZE = "size";
+    public static final String GET_ROM_DETAILS_RESULT_SUCCESS = "success";
+
     private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
 
     public SwitcherService() {
@@ -179,6 +189,36 @@ public class SwitcherService extends IntentService {
         Intent i = new Intent(BROADCAST_INTENT);
         i.putExtra(STATE, STATE_CACHED_WALLPAPER);
         i.putExtra(CACHE_WALLPAPER_RESULT_RESULT, result);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+    }
+
+    private void onGotSystemSize(boolean success, long size) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_SYSTEM_SIZE);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+    }
+
+    private void onGotCacheSize(boolean success, long size) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_CACHE_SIZE);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+    }
+
+    private void onGotDataSize(boolean success, long size) {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_DATA_SIZE);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
+        i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+    }
+
+    private void onGetRomDetailsFinished() {
+        Intent i = new Intent(BROADCAST_INTENT);
+        i.putExtra(STATE, STATE_ROM_DETAILS_FINISHED);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
     }
 
@@ -467,6 +507,38 @@ public class SwitcherService extends IntentService {
         onCachedWallpaper(result);
     }
 
+    private void getRomDetails(Bundle data) {
+        RomInformation romInfo = data.getParcelable(GET_ROM_DETAILS_PARAM_ROM);
+
+        MbtoolSocket socket = MbtoolSocket.getInstance();
+
+        try {
+            long systemSize = socket.pathGetDirectorySize(
+                    this, romInfo.getSystemPath(), new String[]{ "multiboot" });
+            onGotSystemSize(true, systemSize);
+        } catch (IOException e) {
+            onGotSystemSize(false, -1);
+        }
+
+        try {
+            long cacheSize = socket.pathGetDirectorySize(
+                    this, romInfo.getCachePath(), new String[]{ "multiboot" });
+            onGotCacheSize(true, cacheSize);
+        } catch (IOException e) {
+            onGotCacheSize(false, -1);
+        }
+
+        try {
+            long dataSize = socket.pathGetDirectorySize(
+                    this, romInfo.getDataPath(), new String[]{ "multiboot", "media" });
+            onGotDataSize(true, dataSize);
+        } catch (IOException e) {
+            onGotDataSize(false, -1);
+        }
+
+        onGetRomDetailsFinished();
+    }
+
     @Override
     protected void onHandleIntent(Intent intent) {
         String action = intent.getStringExtra(ACTION);
@@ -485,6 +557,8 @@ public class SwitcherService extends IntentService {
             wipeRom(intent.getExtras());
         } else if (ACTION_CACHE_WALLPAPER.equals(action)) {
             cacheWallpaper(intent.getExtras());
+        } else if (ACTION_GET_ROM_DETAILS.equals(action)) {
+            getRomDetails(intent.getExtras());
         }
     }
 }

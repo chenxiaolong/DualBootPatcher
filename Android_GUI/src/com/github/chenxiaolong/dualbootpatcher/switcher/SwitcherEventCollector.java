@@ -88,6 +88,29 @@ public class SwitcherEventCollector extends EventCollector {
                             SwitcherService.CACHE_WALLPAPER_RESULT_RESULT);
 
                     sendEvent(new CachedWallpaperEvent(result));
+                } else if (SwitcherService.STATE_ROM_DETAILS_GOT_SYSTEM_SIZE.equals(state)) {
+                    boolean success = bundle.getBoolean(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SUCCESS);
+                    long size = bundle.getLong(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SIZE);
+
+                    sendEvent(new GotSystemSizeEvent(success, size));
+                } else if (SwitcherService.STATE_ROM_DETAILS_GOT_CACHE_SIZE.equals(state)) {
+                    boolean success = bundle.getBoolean(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SUCCESS);
+                    long size = bundle.getLong(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SIZE);
+
+                    sendEvent(new GotCacheSizeEvent(success, size));
+                } else if (SwitcherService.STATE_ROM_DETAILS_GOT_DATA_SIZE.equals(state)) {
+                    boolean success = bundle.getBoolean(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SUCCESS);
+                    long size = bundle.getLong(
+                            SwitcherService.GET_ROM_DETAILS_RESULT_SIZE);
+
+                    sendEvent(new GotDataSizeEvent(success, size));
+                } else if (SwitcherService.STATE_ROM_DETAILS_FINISHED.equals(state)) {
+                    sendEvent(new GetRomDetailsFinishedEvent());
                 }
             }
         }
@@ -169,6 +192,13 @@ public class SwitcherEventCollector extends EventCollector {
         mContext.startService(intent);
     }
 
+    public void getRomDetails(RomInformation info) {
+        Intent intent = new Intent(mContext, SwitcherService.class);
+        intent.putExtra(SwitcherService.ACTION, SwitcherService.ACTION_GET_ROM_DETAILS);
+        intent.putExtra(SwitcherService.GET_ROM_DETAILS_PARAM_ROM, info);
+        mContext.startService(intent);
+    }
+
     // Events
 
     public class SwitchedRomEvent extends BaseEvent {
@@ -243,5 +273,38 @@ public class SwitcherEventCollector extends EventCollector {
         public CachedWallpaperEvent(CacheWallpaperResult result) {
             this.result = result;
         }
+    }
+
+    public class GotSystemSizeEvent extends BaseEvent {
+        boolean success;
+        long size;
+
+        public GotSystemSizeEvent(boolean success, long size) {
+            this.success = success;
+            this.size = size;
+        }
+    }
+
+    public class GotCacheSizeEvent extends BaseEvent {
+        boolean success;
+        long size;
+
+        public GotCacheSizeEvent(boolean success, long size) {
+            this.success = success;
+            this.size = size;
+        }
+    }
+
+    public class GotDataSizeEvent extends BaseEvent {
+        boolean success;
+        long size;
+
+        public GotDataSizeEvent(boolean success, long size) {
+            this.success = success;
+            this.size = size;
+        }
+    }
+
+    public class GetRomDetailsFinishedEvent extends BaseEvent {
     }
 }

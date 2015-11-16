@@ -80,6 +80,8 @@ import mbtool.daemon.v3.PathChmodRequest;
 import mbtool.daemon.v3.PathChmodResponse;
 import mbtool.daemon.v3.PathCopyRequest;
 import mbtool.daemon.v3.PathCopyResponse;
+import mbtool.daemon.v3.PathGetDirectorySizeRequest;
+import mbtool.daemon.v3.PathGetDirectorySizeResponse;
 import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
 import mbtool.daemon.v3.PathSELinuxGetLabelResponse;
 import mbtool.daemon.v3.PathSELinuxSetLabelRequest;
@@ -1068,6 +1070,46 @@ public class MbtoolSocket {
         }
     }
 
+    public long pathGetDirectorySize(Context context, String path,
+                                     String[] exclusions) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbPath = builder.createString(path);
+            int fbExclusions = 0;
+            if (exclusions != null) {
+                int[] exclusionOffsets = new int[exclusions.length];
+                for (int i = 0; i < exclusions.length; i++) {
+                    exclusionOffsets[i] = builder.createString(exclusions[i]);
+                }
+
+                fbExclusions = PathGetDirectorySizeRequest.createExclusionsVector(
+                        builder, exclusionOffsets);
+            }
+            PathGetDirectorySizeRequest.startPathGetDirectorySizeRequest(builder);
+            PathGetDirectorySizeRequest.addPath(builder, fbPath);
+            PathGetDirectorySizeRequest.addExclusions(builder, fbExclusions);
+            int fbRequest = PathGetDirectorySizeRequest.endPathGetDirectorySizeRequest(builder);
+
+            // Send request
+            PathGetDirectorySizeResponse response = (PathGetDirectorySizeResponse)
+                    sendRequest(builder, fbRequest, RequestType.PathGetDirectorySizeRequest,
+                            ResponseType.PathGetDirectorySizeResponse);
+
+            if (!response.success()) {
+                Log.e(TAG, "Failed to set directory size for " + path + ": " + response.errorMsg());
+                return -1;
+            }
+
+            return response.size();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
     // Private helper functions
 
     @NonNull
@@ -1135,6 +1177,9 @@ public class MbtoolSocket {
             break;
         case ResponseType.PathSELinuxSetLabelResponse:
             table = new PathSELinuxSetLabelResponse();
+            break;
+        case ResponseType.PathGetDirectorySizeResponse:
+            table = new PathGetDirectorySizeResponse();
             break;
         case ResponseType.MbGetVersionResponse:
             table = new MbGetVersionResponse();

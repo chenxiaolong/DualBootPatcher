@@ -46,6 +46,7 @@ import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
@@ -74,6 +75,11 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
         .SetKernelConfirmDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CachedWallpaperEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CreatedLauncherEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector
+        .GetRomDetailsFinishedEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotCacheSizeEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotDataSizeEvent;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotSystemSizeEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.WipedRomEvent;
@@ -107,9 +113,12 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final int INFO_VERSION = 2;
     private static final int INFO_BUILD = 3;
     private static final int INFO_MBTOOL_VERSION = 4;
-    private static final int INFO_SYSTEM_SIZE = 5;
-    private static final int INFO_CACHE_SIZE = 6;
-    private static final int INFO_DATA_SIZE = 7;
+    private static final int INFO_SYSTEM_PATH = 5;
+    private static final int INFO_CACHE_PATH = 6;
+    private static final int INFO_DATA_PATH = 7;
+    private static final int INFO_SYSTEM_SIZE = 8;
+    private static final int INFO_CACHE_SIZE = 9;
+    private static final int INFO_DATA_SIZE = 10;
 
     private static final int ACTION_SET_KERNEL = 1;
     private static final int ACTION_BACKUP = 2;
@@ -185,6 +194,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
         mEventCollector.setApplicationContext(this);
         mEventCollector.cacheWallpaper(mRomInfo);
+        mEventCollector.getRomDetails(mRomInfo);
     }
 
     @Override
@@ -266,13 +276,36 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private void populateInfoItems() {
-        mItems.add(new InfoItem(INFO_SLOT, "Slot", "Primary"));
-        mItems.add(new InfoItem(INFO_VERSION, "Version", "5.0.2"));
-        mItems.add(new InfoItem(INFO_BUILD, "Build", "LMY47X.N910T3UVU1DOG1"));
-        mItems.add(new InfoItem(INFO_MBTOOL_VERSION, "mbtool version", "8.0.0.r1928.g2cb23c5"));
-        mItems.add(new InfoItem(INFO_SYSTEM_SIZE, "System size", "2.7GB"));
-        mItems.add(new InfoItem(INFO_CACHE_SIZE, "Cache size", "1.4GB"));
-        mItems.add(new InfoItem(INFO_DATA_SIZE, "Data size", "1.2GB"));
+        mItems.add(new InfoItem(INFO_SLOT,
+                getString(R.string.rom_details_info_slot),
+                mRomInfo.getId()));
+        mItems.add(new InfoItem(INFO_VERSION,
+                getString(R.string.rom_details_info_version),
+                mRomInfo.getVersion()));
+        mItems.add(new InfoItem(INFO_BUILD,
+                getString(R.string.rom_details_info_build),
+                mRomInfo.getBuild()));
+        //mItems.add(new InfoItem(INFO_MBTOOL_VERSION,
+        //        getString(R.string.rom_details_info_mbtool_version),
+        //        "8.0.0.r1928.g2cb23c5"));
+        mItems.add(new InfoItem(INFO_SYSTEM_PATH,
+                getString(R.string.rom_details_info_system_path),
+                mRomInfo.getSystemPath()));
+        mItems.add(new InfoItem(INFO_CACHE_PATH,
+                getString(R.string.rom_details_info_cache_path),
+                mRomInfo.getCachePath()));
+        mItems.add(new InfoItem(INFO_DATA_PATH,
+                getString(R.string.rom_details_info_data_path),
+                mRomInfo.getDataPath()));
+        mItems.add(new InfoItem(INFO_SYSTEM_SIZE,
+                getString(R.string.rom_details_info_system_size),
+                getString(R.string.rom_details_info_calculating)));
+        mItems.add(new InfoItem(INFO_CACHE_SIZE,
+                getString(R.string.rom_details_info_cache_size),
+                getString(R.string.rom_details_info_calculating)));
+        mItems.add(new InfoItem(INFO_DATA_SIZE,
+                getString(R.string.rom_details_info_data_size),
+                getString(R.string.rom_details_info_calculating)));
     }
 
     private void populateActionItems() {
@@ -288,6 +321,19 @@ public class RomDetailActivity extends AppCompatActivity implements
         mItems.add(new ActionItem(ACTION_WIPE_ROM,
                 R.drawable.rom_details_action_wipe,
                 getString(R.string.rom_menu_wipe_rom)));
+    }
+
+    private void setInfoItem(int id, String newValue) {
+        for (int i = 0; i < mItems.size(); i++) {
+            Item item = mItems.get(i);
+            if (item instanceof InfoItem) {
+                InfoItem infoItem = (InfoItem) item;
+                if (infoItem.id == id) {
+                    infoItem.value = newValue;
+                }
+                mAdapter.notifyItemChanged(i);
+            }
+        }
     }
 
     private void reloadThumbnail() {
@@ -547,6 +593,29 @@ public class RomDetailActivity extends AppCompatActivity implements
         } else if (bEvent instanceof CachedWallpaperEvent) {
             CachedWallpaperEvent event = (CachedWallpaperEvent) bEvent;
             loadWallpaper(event.result);
+        } else if (bEvent instanceof GotSystemSizeEvent) {
+            GotSystemSizeEvent event = (GotSystemSizeEvent) bEvent;
+            if (event.success) {
+                setInfoItem(INFO_SYSTEM_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
+            } else {
+                setInfoItem(INFO_SYSTEM_SIZE, getString(R.string.unknown));
+            }
+        } else if (bEvent instanceof GotCacheSizeEvent) {
+            GotCacheSizeEvent event = (GotCacheSizeEvent) bEvent;
+            if (event.success) {
+                setInfoItem(INFO_CACHE_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
+            } else {
+                setInfoItem(INFO_CACHE_SIZE, getString(R.string.unknown));
+            }
+        } else if (bEvent instanceof GotDataSizeEvent) {
+            GotDataSizeEvent event = (GotDataSizeEvent) bEvent;
+            if (event.success) {
+                setInfoItem(INFO_DATA_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
+            } else {
+                setInfoItem(INFO_DATA_SIZE, getString(R.string.unknown));
+            }
+        } else if (bEvent instanceof GetRomDetailsFinishedEvent) {
+            // Unused
         }
     }
 
