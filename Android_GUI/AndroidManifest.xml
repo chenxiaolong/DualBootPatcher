@@ -99,10 +99,18 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".patcher.PatcherService" />
-        <service android:name=".settings.RomSettingsService" />
-        <service android:name=".switcher.SwitcherService" />
-        <service android:name=".appsharing.AppSharingService" />
+        <service
+            android:name=".patcher.PatcherService"
+            android:exported="false" />
+        <service
+            android:name=".settings.RomSettingsService"
+            android:exported="false" />
+        <service
+            android:name=".switcher.SwitcherService"
+            android:exported="false" />
+        <service
+            android:name=".appsharing.AppSharingService"
+            android:exported="false" />
     </application>
 
 </manifest>
