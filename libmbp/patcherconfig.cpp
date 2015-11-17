@@ -582,6 +582,20 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ ZERO_RADIO });
     devices.push_back(device);
 
+    // Samsung Galaxy Note 8.0 (Wifi)
+    device = new Device();
+    device->setId("konawifi");
+    device->setCodenames({ "konawifi", "konawifixx" });
+    device->setName("Samsung Galaxy Note 8.0 (Wifi)");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p9" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p8" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p12" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p6" });
+    device->setExtraBlockDevs({ DWMMC_RADIO });
+    devices.push_back(device);
+
     // Samsung Galaxy Note 10.1 (2014 Edition)
     device = new Device();
     device->setId("lt03wifi");
