@@ -365,7 +365,7 @@ bool Packages::load_xml(const std::string &path)
 static bool parse_tag_cert(pugi::xml_node node, Packages *pkgs,
                            std::shared_ptr<Package> pkg)
 {
-    assert(strcmp(node->name, TAG_CERT) == 0);
+    assert(strcmp(node.name(), TAG_CERT) == 0);
 
     std::string index;
     std::string key;
