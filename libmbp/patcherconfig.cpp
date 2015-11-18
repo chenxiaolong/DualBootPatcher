@@ -994,7 +994,7 @@ void PatcherConfig::Impl::addSonyDevices()
     // Sony Xperia Z1
     device = new Device();
     device->setId("honami");
-    device->setCodenames({ "honami" });
+    device->setCodenames({ "honami", "C6903", "C6902", "C6906", "C6943" });
     device->setName("Sony Xperia Z1");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
