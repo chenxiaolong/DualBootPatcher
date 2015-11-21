@@ -343,7 +343,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ DWMMC_RADIO });
     devices.push_back(device);
 
-    // Samsung Galaxy S 4
+    // Samsung Galaxy S 4 (Qcom)
     device = new Device();
     device->setId("jflte");
     device->setCodenames({
@@ -359,7 +359,7 @@ void PatcherConfig::Impl::addSamsungDevices()
         // GT-I9515
         "jfvelte", "jfveltexx"
     });
-    device->setName("Samsung Galaxy S 4");
+    device->setName("Samsung Galaxy S 4 (Qcom)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p16" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p18" });
@@ -367,6 +367,20 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p20" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     device->setExtraBlockDevs({ QCOM_ABOOT });
+    devices.push_back(device);
+
+    // Samsung Galaxy S 4 (i9500)
+    device = new Device();
+    device->setId("i9500");
+    device->setCodenames({ "ja3g" });
+    device->setName("Samsung Galaxy S 4 (i9500)");
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy S 4 LTE-A
