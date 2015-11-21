@@ -753,6 +753,19 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices.push_back(device);
+
+    // Samsung Galaxy Tab Pro 10.1 (LTE)
+    device = new Device();
+    device->setId("picassolte");
+    device->setCodenames({ "picassolte", "picassoltexx" });
+    device->setName("Samsung Galaxy Tab Pro 10.1 (LTE)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addLenovoDevices()
