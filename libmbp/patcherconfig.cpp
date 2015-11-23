@@ -1029,6 +1029,20 @@ void PatcherConfig::Impl::addHuaweiDevices()
     device->setBootBlockDevs({ HISILICON_BOOT, "/dev/block/mmcblk0p17" });
     device->setRecoveryBlockDevs({ HISILICON_RECOVERY, "/dev/block/mmcblk0p18" });
     devices.push_back(device);
+
+    // Huawei Nexus 6P
+    device = new Device();
+    device->setId("angler");
+    device->setCodenames({ "angler" });
+    device->setName("Huawei Nexus 6P");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ F9824900_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SYSTEM, "/dev/block/mmcblk0p43" });
+    device->setCacheBlockDevs({ F9824900_CACHE, "/dev/block/mmcblk0p38" });
+    device->setDataBlockDevs({ F9824900_USERDATA, "/dev/block/mmcblk0p44" });
+    device->setBootBlockDevs({ F9824900_BOOT, "/dev/block/mmcblk0p34" });
+    device->setRecoveryBlockDevs({ F9824900_RECOVERY, "/dev/block/mmcblk0p35" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addSonyDevices()
