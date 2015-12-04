@@ -18,8 +18,14 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -27,6 +33,8 @@ import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.support.annotation.NonNull;
 import android.util.Log;
+
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 
 import org.apache.commons.io.IOUtils;
 
@@ -37,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -120,6 +129,44 @@ public class FileUtils {
             return getPathFromDownloadsUri(context, uri);
         } else {
             return uri.getPath();
+        }
+    }
+
+    private static boolean canHandleIntent(PackageManager pm, Intent intent) {
+        List<ResolveInfo> list = pm.queryIntentActivities(intent, 0);
+        return list.size() > 0;
+    }
+
+    public static Intent getFileChooserIntent(Context context) {
+        PackageManager pm = context.getPackageManager();
+
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+
+        if (Build.VERSION.SDK_INT >= 19) {
+            // Prefer ACTION_GET_CONTENT because Samsung's DocumentsUI isn't implemented correctly:
+            // https://code.google.com/p/android/issues/detail?id=70697
+            if (!canHandleIntent(pm, intent)) {
+                intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
+            }
+        }
+
+        if (canHandleIntent(pm, intent)) {
+            return intent;
+        } else {
+            return null;
+        }
+    }
+
+    public static void showMissingFileChooserDialog(Context context, FragmentManager fm) {
+        Fragment prev = fm.findFragmentByTag("no_file_chooser");
+
+        if (prev == null) {
+            GenericConfirmDialog dialog = GenericConfirmDialog.newInstance(
+                    context.getString(R.string.filemanager_missing_title),
+                    context.getString(R.string.filemanager_missing_desc));
+            dialog.show(fm, "no_file_chooser");
         }
     }
 

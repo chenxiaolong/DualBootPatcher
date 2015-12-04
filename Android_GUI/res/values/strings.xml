@@ -284,12 +284,32 @@
         write to the internal storage because the storage permissions were denied. Please allow the
         permissions if you are unable to patch files.</string>
 
+    <!-- Snackbar message shown if the user tries to patch the same file for the same slot more than once -->
+    <string name="patcher_cannot_add_same_item">The selected file (for %s) is already in the
+        queue.</string>
+
     <!-- Title of the device selection box in the patcher -->
     <string name="patcher_device_title">Device:</string>
     <!-- Title of the partition configuration box in the patcher -->
     <string name="patcher_partconfig_title">Partition configuration:</string>
     <!-- Title of the partition configuration description in the patcher -->
     <string name="patcher_partconfig_desc_title">Description:</string>
+
+    <!-- Subtitle shown in patch file card indicating the target device and ROM ID -->
+    <string name="patcher_card_subtitle_target" translatable="false">%1$s / %2$s</string>
+    <!-- Subtitle shown in patch file card when patching succeeded -->
+    <string name="patcher_card_subtitle_succeeded">Succeeded</string>
+    <!-- Subtitle shown in patch file card when patching failed -->
+    <string name="patcher_card_subtitle_failed">Failed (error code %s)</string>
+    <!-- Subtitle shown in patch file card when file is waiting to be patched -->
+    <string name="patcher_card_subtitle_pending">Pending</string>
+    <!-- Subtitle shown in patch file card when patching has not yet started (queued) -->
+    <string name="patcher_card_subtitle_queued">Queued</string>
+    <!-- Subtitle shown in patch file card when patching has been cancelled -->
+    <string name="patcher_card_subtitle_cancelled">Cancelled</string>
+
+    <!-- Patcher options dialog title -->
+    <string name="patcher_options_dialog_title">Patcher options</string>
 
     <!-- Name for primary ROM upgrade installation location -->
     <string name="install_location_primary_upgrade">Primary ROM Upgrade</string>

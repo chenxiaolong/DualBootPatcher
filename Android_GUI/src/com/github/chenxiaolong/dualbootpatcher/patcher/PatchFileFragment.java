@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,584 +17,616 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.Manifest;
+import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.Fragment;
-import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v13.app.FragmentCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.CardView;
+import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
-import android.widget.ScrollView;
+import android.widget.TextView;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
-import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector;
-import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.RequestedFileEvent;
-import com.github.chenxiaolong.dualbootpatcher.LogUtils;
+import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
+import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.dualbootpatcher.patcher.MainOptsCW.MainOptsListener;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.FinishedPatchingEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateDetailsEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateFilesEvent;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherEventCollector.UpdateProgressEvent;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
+        .PatcherOptionsDialogListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 
-public class PatchFileFragment extends Fragment implements EventCollectorListener,
-        MainOptsListener {
+public class PatchFileFragment extends Fragment implements
+        ServiceConnection, PatcherOptionsDialogListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
-    public static final int RESULT_PATCHING_SUCCEEDED = 1;
-    public static final int RESULT_PATCHING_FAILED = 2;
-    public static final int RESULT_INVALID_OR_MISSING_ARGUMENTS = 3;
+    private static final String EXTRA_FILES_TO_PATCH = "files_to_patch";
 
-    public static final String ARG_PATH = "path";
-    public static final String ARG_ROM_ID = "rom_id";
-    public static final String ARG_DEVICE = "device";
+    /** Intent filter for messages we care about from the service */
+    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
-    private static final String EXTRA_CONFIG_STATE = "config_state";
-    private static final String EXTRA_REQUESTED_PERMISSIONS = "requested_permissions";
+    /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
+    private static final int ACTIVITY_REQUEST_FILE = 1000;
+    /**
+     * Request code for storage permissions request
+     * (used in {@link #onRequestPermissionsResult(int, String[], int[])})
+     */
+    private static final int PERMISSIONS_REQUEST_STORAGE = 1;
 
-    private static final int REQUEST_PERMISSIONS_STORAGE = 1;
+    /** Whether we should show the progress bar (true by default for obvious reasons) */
+    private boolean mShowingProgress = true;
 
-    private PatcherListener mListener;
-
-    private boolean mAutomated;
-
-    private boolean mShowingProgress;
-
-    private PatcherEventCollector mEventCollector;
-    private FileChooserEventCollector mFileChooserEC;
-
-    private Bundle mSavedInstanceState;
-
-    private boolean mRequestedPermissions;
-
-    private ScrollView mScrollView;
+    /** Main files list */
+    private RecyclerView mRecycler;
+    /** FAB */
+    private FloatingActionButton mFAB;
+    /** Loading progress spinner */
     private ProgressBar mProgressBar;
+    /** Add zip message */
+    private TextView mAddZipMessage;
 
-    // CardView wrappers
-    private MainOptsCW mMainOptsCW;
-    private FileChooserCW mFileChooserCW;
-    private DetailsCW mDetailsCW;
-    private ProgressCW mProgressCW;
+    /** Check icon in the toolbar */
+    private MenuItem mCheckItem;
+    /** Cancel icon in the toolbar */
+    private MenuItem mCancelItem;
 
-    private CardView mMainOptsCardView;
-    private CardView mFileChooserCardView;
-    private CardView mDetailsCardView;
-    private CardView mProgressCardView;
+    /** Adapter for the list of files to patch */
+    private PatchFileItemAdapter mAdapter;
 
-    private PatcherConfigState mPCS;
+    /** Our patcher service */
+    private PatcherService mService;
+    /** Broadcast receiver for events from the service */
+    private PatcherEventReceiver mReceiver = new PatcherEventReceiver();
 
-    private ArrayList<PatcherUIListener> mUIListeners = new ArrayList<>();
+    /** {@link Runnable}s to process once the service has been connected */
+    private ArrayList<Runnable> mExecOnConnect = new ArrayList<>();
+
+    /** Whether we're initialized */
+    private boolean mInitialized;
+
+    /** List of patcher items (pending, in progress, or complete) */
+    private ArrayList<PatchFileItem> mItems;
+    /** Map task IDs to item indexes */
+    private HashMap<Integer, Integer> mItemsMap = new HashMap<>();
+
+    static {
+        // We only care about file patching events
+        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_INITIALIZED);
+        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_DETAILS_CHANGED);
+        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_PROGRESS_CHANGED);
+        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_FILES_PROGRESS_CHANGED);
+        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_STARTED);
+        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_FINISHED);
+    }
+
+
+
+
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
     }
 
-    public interface PatcherListener {
-        void onPatcherResult(int code, @Nullable String message, @Nullable String newFile);
-    }
-
-    private void returnResult(int code, @Nullable String message, @Nullable String newFile) {
-        if (mListener != null) {
-            mListener.onPatcherResult(code, message, newFile);
-        }
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mAutomated = getArguments() != null;
-
-        FragmentManager fm = getFragmentManager();
-        mEventCollector = (PatcherEventCollector) fm.findFragmentByTag(PatcherEventCollector.TAG);
-
-        if (mEventCollector == null) {
-            mEventCollector = new PatcherEventCollector();
-            fm.beginTransaction().add(mEventCollector, PatcherEventCollector.TAG).commit();
-        }
-
-        mFileChooserEC = (FileChooserEventCollector) fm.findFragmentByTag
-                (FileChooserEventCollector.TAG);
-
-        if (mFileChooserEC == null) {
-            mFileChooserEC = new FileChooserEventCollector();
-            fm.beginTransaction().add(mFileChooserEC, FileChooserEventCollector.TAG).commit();
-        }
-
-        if (savedInstanceState != null) {
-            mPCS = savedInstanceState.getParcelable(EXTRA_CONFIG_STATE);
-        } else {
-            mPCS = new PatcherConfigState();
-        }
+        setHasOptionsMenu(true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        if (getActivity() instanceof PatcherListener) {
-            mListener = (PatcherListener) getActivity();
-        }
+        // Load list of files to patch
+        //if (savedInstanceState != null) {
+        //    mItems = savedInstanceState.getParcelableArrayList(EXTRA_FILES_TO_PATCH);
+        //} else {
+            mItems = new ArrayList<>();
+        //}
 
-        if (mAutomated && (getArguments().getString(ARG_PATH) == null
-                || getArguments().getString(ARG_ROM_ID) == null)) {
-            returnResult(RESULT_INVALID_OR_MISSING_ARGUMENTS, String.format(
-                    "Params %s and %s are required in automated mode", ARG_PATH, ARG_ROM_ID), null);
-            return;
-        }
+        // Initialize UI elements
+        mRecycler = (RecyclerView) getActivity().findViewById(R.id.files_list);
+        mFAB = (FloatingActionButton) getActivity().findViewById(R.id.fab);
+        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.loading);
+        mAddZipMessage = (TextView) getActivity().findViewById(R.id.add_zip_message);
 
-        mSavedInstanceState = savedInstanceState;
-
-        if (savedInstanceState != null) {
-            mRequestedPermissions = savedInstanceState.getBoolean(EXTRA_REQUESTED_PERMISSIONS);
-        }
-
-        mScrollView = (ScrollView) getActivity().findViewById(R.id.card_scrollview);
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_loading_patcher);
-
-        initCards();
-
-        for (PatcherUIListener listener : mUIListeners) {
-            listener.onCardCreate();
-        }
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_patcher, container, false);
-    }
-
-    private void initMainOptsCard() {
-        // Card for selecting the device and partition configuration
-        mMainOptsCardView = (CardView) getActivity().findViewById(R.id.card_mainopts);
-        if (mAutomated) {
-            mMainOptsCardView.setVisibility(View.GONE);
-        } else {
-            mMainOptsCW = new MainOptsCW(getActivity(), mPCS, mMainOptsCardView, this);
-            mUIListeners.add(mMainOptsCW);
-        }
-    }
-
-    private void initFileChooserCard() {
-        // Card for choosing the file to patch, starting the patching
-        // process, and resetting the patching process
-        mFileChooserCardView = (CardView) getActivity().findViewById(R.id.card_file_chooser);
-        if (mAutomated) {
-            mFileChooserCardView.setVisibility(View.GONE);
-        } else {
-            mFileChooserCW = new FileChooserCW(getActivity(), mPCS, mFileChooserCardView);
-            mFileChooserCardView.setClickable(true);
-
-            if (mPCS.mState == PatcherConfigState.STATE_CHOSE_FILE) {
-                setTapActionPatchFile();
-            } else {
-                setTapActionChooseFile();
+        // Set up listener for the FAB
+        mFAB.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Show file chooser
+                Intent intent = FileUtils.getFileChooserIntent(getActivity());
+                if (intent == null) {
+                    FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
+                } else {
+                    startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+                }
             }
+        });
 
-            mUIListeners.add(mFileChooserCW);
-        }
-    }
+        // Set up adapter for the files list
+        mAdapter = new PatchFileItemAdapter(getActivity(), mItems);
+        mRecycler.setHasFixedSize(true);
+        mRecycler.setAdapter(mAdapter);
 
-    private void initDetailsCard() {
-        // Card to show patching details
-        mDetailsCardView = (CardView) getActivity().findViewById(R.id.card_details);
-        mDetailsCW = new DetailsCW(mPCS, mDetailsCardView);
-        mUIListeners.add(mDetailsCW);
-    }
+        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        mRecycler.setLayoutManager(llm);
 
-    private void initProgressCard() {
-        // Card to show a progress bar for the patching process (really only
-        // the compression part though, since that takes the longest)
-        mProgressCardView = (CardView) getActivity().findViewById(R.id.card_progress);
-        mProgressCW = new ProgressCW(getActivity(), mPCS, mProgressCardView);
-        mUIListeners.add(mProgressCW);
-    }
+        // Show loading progress bar
+        updateLoadingStatus();
 
-    private void initCards() {
-        mShowingProgress = true;
-        updateMainUI();
-
-        initMainOptsCard();
-        initFileChooserCard();
-        initDetailsCard();
-        initProgressCard();
-
-        // Update UI based on patch state
-        updateCardUI();
-
-        // Initialize patcher
-        if (PatcherUtils.sPC == null) {
-            Context context = getActivity().getApplicationContext();
-            new PatcherInitializationTask(context).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        } else {
-            // Ensures that everything is needed right away (needed for, eg. orientation change)
-            checkPermissions();
-        }
-    }
-
-    private void restoreCardStates() {
-        for (PatcherUIListener listener : mUIListeners) {
-            listener.onRestoreCardState(mSavedInstanceState);
-        }
-    }
-
-    private class PatcherInitializationTask extends AsyncTask<Void, Void, Void> {
-        private final Context mContext;
-
-        public PatcherInitializationTask(Context context) {
-            mContext = context;
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            PatcherUtils.initializePatcher(mContext);
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            // Don't die on a configuration change
-            if (getActivity() == null) {
-                return;
+        // Initialize the patcher once the service is connected
+        executeNeedsService(new Runnable() {
+            @Override
+            public void run() {
+                mService.initializePatcher();
             }
+        });
 
-            checkPermissions();
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mEventCollector.attachListener(TAG, this);
-        mFileChooserEC.attachListener(TAG, this);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mEventCollector.detachListener(TAG);
-        mFileChooserEC.detachListener(TAG);
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putBoolean(EXTRA_REQUESTED_PERMISSIONS, mRequestedPermissions);
-
-        outState.putParcelable(EXTRA_CONFIG_STATE, mPCS);
-
-        for (PatcherUIListener listener : mUIListeners) {
-            listener.onSaveCardState(outState);
-        }
-    }
-
-    private void updateMainUI() {
-        if (mShowingProgress) {
-            mScrollView.setVisibility(View.GONE);
-            mProgressBar.setVisibility(View.VISIBLE);
-        } else {
-            mScrollView.setVisibility(View.VISIBLE);
-            mProgressBar.setVisibility(View.GONE);
-        }
-    }
-
-    private void updateCardUI() {
-        switch (mPCS.mState) {
-        case PatcherConfigState.STATE_PATCHING:
-            // Keep screen on
-            getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            break;
-
-        case PatcherConfigState.STATE_INITIAL:
-        case PatcherConfigState.STATE_FINISHED:
-            // Don't keep screen on
-            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            break;
-        }
+        // NOTE: No further loading should be done here. All initialization should be done in
+        // onPatcherLoaded(), which is called once the patcher's data files have been extracted and
+        // loaded.
     }
 
     /**
-     * Get device when running in automated mode
-     * @return Value of ARG_DEVICE argument, if provided. Otherwise, autodetects the device. If no
-     *         argument is provided and autodetection failed, then returns null.
+     * {@inheritDoc}
      */
-    @Nullable
-    private Device getDeviceOrAutoDetect() {
-        String deviceId = getArguments().getString(ARG_DEVICE);
-        String deviceCodename = null;
-
-        if (deviceId == null) {
-            deviceCodename = RomUtils.getDeviceCodename(getActivity());
-        }
-
-        Device[] devices = PatcherUtils.sPC.getDevices();
-        for (Device d : devices) {
-            if (d.getId().equals(deviceId)) {
-                return d;
-            }
-
-            for (String codename : d.getCodenames()) {
-                if (codename.equals(deviceCodename)) {
-                    return d;
-                }
-            }
-        }
-
-        return null;
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(EXTRA_FILES_TO_PATCH, mItems);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                           int[] grantResults) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_patcher, container, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.actionbar_check_cancel, menu);
+
+        //int primary = ContextCompat.getColor(getActivity(), R.color.text_color_primary);
+
+        mCheckItem = menu.findItem(R.id.check_item);
+        mCancelItem = menu.findItem(R.id.cancel_item);
+        //Drawable checkIcon = mCheckItem.getIcon();
+        //checkIcon.mutate();
+        //checkIcon.setColorFilter(primary, PorterDuff.Mode.SRC_ATOP);
+        //checkIcon.setAlpha(Color.alpha(primary));
+
+        updateToolbarIcons();
+
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.check_item:
+            executeNeedsService(new Runnable() {
+                @Override
+                public void run() {
+                    for (PatchFileItem item : mItems) {
+                        if (item.state == PatchFileState.QUEUED) {
+                            mService.startPatching(item.taskId);
+                        }
+                    }
+                }
+            });
+            return true;
+        case R.id.cancel_item:
+            executeNeedsService(new Runnable() {
+                @Override
+                public void run() {
+                    for (PatchFileItem item : mItems) {
+                        if (item.state == PatchFileState.IN_PROGRESS) {
+                            mService.cancelPatching(item.taskId);
+                        }
+                    }
+                }
+            });
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Bind to our service. We start the service so it doesn't get killed when all the clients
+        // unbind from the service. The service will automatically stop once all clients have
+        // unbinded and all tasks have completed.
+        Intent intent = new Intent(getActivity(), PatcherService.class);
+        getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
+        getActivity().startService(intent);
+
+        // Register our broadcast receiver for our service
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
+                mReceiver, SERVICE_INTENT_FILTER);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // Unbind from our service
+        getActivity().unbindService(this);
+
+        // Unregister the broadcast receiver
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        // Save a reference to the service so we can interact with it
+        ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
+        mService = (PatcherService) binder.getService();
+
+        for (Runnable runnable : mExecOnConnect) {
+            runnable.run();
+        }
+        mExecOnConnect.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onServiceDisconnected(ComponentName componentName) {
+        mService = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-        case REQUEST_PERMISSIONS_STORAGE: {
+        case ACTIVITY_REQUEST_FILE:
+            if (data != null && resultCode == Activity.RESULT_OK) {
+                final String file = FileUtils.getPathFromUri(getActivity(), data.getData());
+                onSelectedFile(file);
+            }
+            break;
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+        case PERMISSIONS_REQUEST_STORAGE: {
             for (int grantResult : grantResults) {
                 if (grantResult != PackageManager.PERMISSION_GRANTED) {
                     Log.e(TAG, "Storage permissions were denied");
                     DialogFragment d = GenericConfirmDialog.newInstance(
                             0, R.string.patcher_storage_permission_required);
                     d.show(getFragmentManager(), "storage_permissions_denied");
-                    //return;
-                    break;
+
+                    // TODO: Re-request permissions
+                    //PermissionUtils.clearRequestedCache();
+                    return;
                 }
             }
 
-            // Restart initialization
-            patcherInitialized();
+            onReady();
             break;
         }
         }
     }
 
-    private static final String STORAGE_PERMISSIONS[] = new String[]{
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
-
-    private boolean hasStoragePermissions() {
-        for (String permission : STORAGE_PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(getActivity(), permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
+    /**
+     * Toggle main UI and progress bar visibility depending on {@link #mShowingProgress}
+     */
+    private void updateLoadingStatus() {
+        if (mShowingProgress) {
+            mRecycler.setVisibility(View.GONE);
+            mFAB.setVisibility(View.GONE);
+            mAddZipMessage.setVisibility(View.GONE);
+            mProgressBar.setVisibility(View.VISIBLE);
+        } else {
+            mRecycler.setVisibility(View.VISIBLE);
+            mFAB.setVisibility(View.VISIBLE);
+            mAddZipMessage.setVisibility(View.VISIBLE);
+            mProgressBar.setVisibility(View.GONE);
         }
-
-        return true;
     }
 
-    private void checkPermissions() {
-        if (!hasStoragePermissions()) {
-            Log.d(TAG, "Does not have storage permissions");
+    /**
+     * Called when the patcher data and libmbp have been initialized
+     *
+     * This method is guaranteed to be called only once during between onStart() and onStop()
+     */
+    private void onPatcherInitialized() {
+        Log.d(TAG, "Patcher has been initialized");
 
-            if (!mRequestedPermissions) {
-                Log.d(TAG, "Requesting storage permissions");
-                FragmentCompat.requestPermissions(
-                        this, STORAGE_PERMISSIONS, REQUEST_PERMISSIONS_STORAGE);
-                mRequestedPermissions = true;
-            } else {
-                Log.d(TAG, "Already requested storage permissions");
-            }
-
-            return;
+        // Check if we have storage permissions
+        if (PermissionUtils.hasPermissions(getActivity(), PermissionUtils.STORAGE_PERMISSIONS)) {
+            // If we have permissions, then all initialization is complete
+            onReady();
+        } else {
+            // Otherwise, request the permissions. onReady() will be called by
+            // onRequestPermissionsResult() if permissions are granted
+            PermissionUtils.requestPermissions(getActivity(), this,
+                    PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
         }
-
-        patcherInitialized();
     }
 
-    private void patcherInitialized() {
-        mPCS.setupInitial();
+    /**
+     * Called when everything has been initialized and we have the necessary permissions
+     */
+    private void onReady() {
+        // Load patch file items from the service
+        int[] taskIds = mService.getPatchFileTaskIds();
+        Arrays.sort(taskIds);
+        for (int taskId : taskIds) {
+            PatchFileItem item = new PatchFileItem();
+            item.taskId = taskId;
+            item.patcherId = mService.getPatcherId(taskId);
+            item.path = mService.getPath(taskId);
+            item.device = mService.getDevice(taskId);
+            item.romId = mService.getRomId(taskId);
+            item.state = mService.getState(taskId);
+            item.details = mService.getDetails(taskId);
+            item.bytes = mService.getCurrentBytes(taskId);
+            item.maxBytes = mService.getMaximumBytes(taskId);
+            item.files = mService.getCurrentFiles(taskId);
+            item.maxFiles = mService.getMaximumFiles(taskId);
+            item.successful = mService.isSuccessful(taskId);
+            item.errorCode = mService.getErrorCode(taskId);
+            item.newPath = mService.getNewPath(taskId);
 
-        if (mMainOptsCW != null) {
-            mMainOptsCW.refreshDevices();
-            mMainOptsCW.refreshRomIds();
+            mItems.add(item);
+            mItemsMap.put(taskId, mItems.size() - 1);
         }
+        mAdapter.notifyDataSetChanged();
 
-        restoreCardStates();
-
+        // We are now fully initialized. Hide the loading spinner
         mShowingProgress = false;
-        updateMainUI();
+        updateLoadingStatus();
 
-        // Start patching on initial load (but not on orientation change)
-        if (mAutomated && mSavedInstanceState == null) {
-            mPCS.mFilename = getArguments().getString(ARG_PATH);
-            mPCS.mRomId = getArguments().getString(ARG_ROM_ID);
-            mPCS.mDevice = getDeviceOrAutoDetect();
+        // Hide add zip message if we've already added a zip
+        updateAddZipMessage();
 
-            if (mPCS.mDevice == null) {
-                returnResult(RESULT_INVALID_OR_MISSING_ARGUMENTS, String.format(
-                        "Missing/invalid %s parameter or autodetected device not supported",
-                        ARG_DEVICE), null);
+        updateToolbarIcons();
+    }
+
+    private void updateAddZipMessage() {
+        mAddZipMessage.setVisibility(mItems.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    private void updateToolbarIcons() {
+        if (mCheckItem != null && mCancelItem != null) {
+            boolean checkVisible = false;
+            boolean cancelVisible = false;
+            for (PatchFileItem item : mItems) {
+                if (item.state == PatchFileState.QUEUED) {
+                    checkVisible = true;
+                } else if (item.state == PatchFileState.IN_PROGRESS) {
+                    checkVisible = false;
+                    cancelVisible = true;
+                    break;
+                }
+            }
+            mCheckItem.setVisible(checkVisible);
+            mCancelItem.setVisible(cancelVisible);
+        }
+    }
+
+    /**
+     * Called after the user tapped the FAB and selected a file
+     */
+    private void onSelectedFile(String file) {
+        // Ask for patcher options
+        PatcherOptionsDialog dialog = PatcherOptionsDialog.newInstanceFromFragment(this, file);
+        dialog.show(getFragmentManager(), PatcherOptionsDialog.TAG);
+    }
+
+    @Override
+    public void onConfirmedOptions(final String path, final Device device, final String romId) {
+        // Do not allow two patching operations with the same target filename (i.e. same file and
+        // ROM ID)
+        for (PatchFileItem item : mItems) {
+            if (item.path.equals(path) && item.romId.equals(romId)) {
+                SnackbarUtils.createSnackbar(getActivity(), mFAB,
+                        getString(R.string.patcher_cannot_add_same_item, romId),
+                        Snackbar.LENGTH_LONG).show();
+                return;
+            }
+        }
+
+        executeNeedsService(new Runnable() {
+            @Override
+            public void run() {
+                final PatchFileItem pf = new PatchFileItem();
+                pf.patcherId = "MultiBootPatcher";
+                pf.device = device;
+                pf.path = path;
+                pf.romId = romId;
+                pf.state = PatchFileState.QUEUED;
+
+                int taskId = mService.addPatchFileTask(pf.patcherId, pf.path, pf.device, pf.romId);
+                pf.taskId = taskId;
+
+                mItems.add(pf);
+                mItemsMap.put(taskId, mItems.size() - 1);
+                mAdapter.notifyItemInserted(mItems.size() - 1);
+                updateAddZipMessage();
+                updateToolbarIcons();
+            }
+        });
+    }
+
+    /**
+     * Execute a {@link Runnable} that requires the service to be connected
+     *
+     * NOTE: If the service is disconnect before this method is called and does not reconnect before
+     * this fragment is destroyed, then the runnable will NOT be executed.
+     *
+     * @param runnable Runnable that requires access to the service
+     */
+    public void executeNeedsService(final Runnable runnable) {
+        if (mService != null) {
+            runnable.run();
+        } else {
+            mExecOnConnect.add(runnable);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    private void updateCardUI() {
+        // Keep screen on
+        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        // Don't keep screen on
+        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    private class PatcherEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (PatcherService.ACTION_PATCHER_INITIALIZED.equals(action)) {
+                // Make sure we don't initialize more than once. This event could be sent more than
+                // once if, eg., mService.initializePatcher() is called and the device is rotated
+                // before this event is received. Then mService.initializePatcher() will be called
+                // again leading to a duplicate event.
+                if (!mInitialized) {
+                    mInitialized = true;
+                    onPatcherInitialized();
+                }
                 return;
             }
 
-            startPatching();
-        }
-    }
-
-    private void startPatching() {
-        mPCS.mState = PatcherConfigState.STATE_PATCHING;
-
-        for (PatcherUIListener listener : mUIListeners) {
-            listener.onStartedPatching();
-        }
-
-        updateCardUI();
-
-        // Scroll to the bottom
-        mScrollView.post(new Runnable() {
-            @Override
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
-
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename(mPCS.mFilename);
-        fileInfo.setDevice(mPCS.mDevice);
-        fileInfo.setRomId(mPCS.mRomId);
-
-        Context context = getActivity().getApplicationContext();
-        Intent intent = new Intent(context, PatcherService.class);
-        intent.putExtra(PatcherService.ACTION, PatcherService.ACTION_PATCH_FILE);
-        intent.putExtra(PatcherUtils.PARAM_PATCHER, mPCS.mPatcher);
-        intent.putExtra(PatcherUtils.PARAM_FILEINFO, fileInfo);
-
-        context.startService(intent);
-    }
-
-    private void checkSupported() {
-        if (mPCS.mState != PatcherConfigState.STATE_CHOSE_FILE) {
-            return;
-        }
-
-        setTapActionPatchFile();
-
-        for (PatcherUIListener listener : mUIListeners) {
-            listener.onChoseFile();
-        }
-
-        updateCardUI();
-    }
-
-    private void setTapActionChooseFile() {
-        mFileChooserCardView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mFileChooserEC.startFileChooser();
-            }
-        });
-
-        mFileChooserCardView.setOnLongClickListener(null);
-    }
-
-    private void setTapActionPatchFile() {
-        mFileChooserCardView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startPatching();
-            }
-        });
-
-        mFileChooserCardView.setOnLongClickListener(new OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                mFileChooserEC.startFileChooser();
-                return true;
-            }
-        });
-    }
-
-    @Override
-    public void onDeviceSelected(Device device) {
-        mPCS.mDevice = device;
-
-        checkSupported();
-    }
-
-    @Override
-    public void onRomIdSelected(String id) {
-        mPCS.mRomId = id;
-    }
-
-    @Override
-    public void onEventReceived(BaseEvent event) {
-        if (event instanceof UpdateDetailsEvent) {
-            UpdateDetailsEvent e = (UpdateDetailsEvent) event;
-
-            mDetailsCW.setDetails(e.text);
-        } else if (event instanceof UpdateProgressEvent) {
-            UpdateProgressEvent e = (UpdateProgressEvent) event;
-
-            mProgressCW.setProgress(e.bytes, e.maxBytes);
-        } else if (event instanceof UpdateFilesEvent) {
-            UpdateFilesEvent e = (UpdateFilesEvent) event;
-
-            mProgressCW.setFiles(e.files, e.maxFiles);
-        } else if (event instanceof FinishedPatchingEvent) {
-            FinishedPatchingEvent e = (FinishedPatchingEvent) event;
-
-            mPCS.mPatcherFailed = e.failed;
-            mPCS.mPatcherErrorCode = e.errorCode;
-            mPCS.mPatcherNewFile = e.newFile;
-
-            mPCS.mState = PatcherConfigState.STATE_FINISHED;
-
-            for (PatcherUIListener listener : mUIListeners) {
-                listener.onFinishedPatching();
+            // Status updates always send a task ID. If it does, get the corresponding item
+            PatchFileItem item;
+            int itemIndex;
+            int taskId = intent.getIntExtra(PatcherService.RESULT_PATCHER_TASK_ID, -1);
+            if (taskId != -1 && mItemsMap.containsKey(taskId)) {
+                itemIndex = mItemsMap.get(taskId);
+                item = mItems.get(itemIndex);
+            } else {
+                // Something went horribly wrong with the service
+                return;
             }
 
-            updateCardUI();
-
-            // Update MTP cache
-            if (!e.failed) {
-                MediaScannerConnection.scanFile(getActivity(),
-                        new String[] { e.newFile }, null, null);
-            }
-
-            // Scroll back to the top
-            mScrollView.post(new Runnable() {
-                @Override
-                public void run() {
-                    mScrollView.fullScroll(View.FOCUS_UP);
+            if (PatcherService.ACTION_PATCHER_DETAILS_CHANGED.equals(action)) {
+                item.details = intent.getStringExtra(PatcherService.RESULT_PATCHER_DETAILS);
+                mAdapter.notifyItemChanged(itemIndex);
+            } else if (PatcherService.ACTION_PATCHER_PROGRESS_CHANGED.equals(action)) {
+                item.bytes = intent.getLongExtra(PatcherService.RESULT_PATCHER_CURRENT_BYTES, 0);
+                item.maxBytes = intent.getLongExtra(PatcherService.RESULT_PATCHER_MAX_BYTES, 0);
+                mAdapter.notifyItemChanged(itemIndex);
+            } else if (PatcherService.ACTION_PATCHER_FILES_PROGRESS_CHANGED.equals(action)) {
+                item.files = intent.getLongExtra(PatcherService.RESULT_PATCHER_CURRENT_FILES, 0);
+                item.maxFiles = intent.getLongExtra(PatcherService.RESULT_PATCHER_MAX_FILES, 0);
+                mAdapter.notifyItemChanged(itemIndex);
+            } else if (PatcherService.ACTION_PATCHER_STARTED.equals(action)) {
+                item.state = PatchFileState.IN_PROGRESS;
+                updateToolbarIcons();
+                mAdapter.notifyItemChanged(itemIndex);
+            } else if (PatcherService.ACTION_PATCHER_FINISHED.equals(action)) {
+                boolean cancelled = intent.getBooleanExtra(
+                        PatcherService.RESULT_PATCHER_CANCELLED, false);
+                if (cancelled) {
+                    item.state = PatchFileState.CANCELLED;
+                } else {
+                    item.state = PatchFileState.COMPLETED;
                 }
-            });
+                item.details = getString(R.string.details_done);
+                item.successful = intent.getBooleanExtra(PatcherService.RESULT_PATCHER_SUCCESS,
+                        false);
+                item.errorCode = intent.getIntExtra(PatcherService.RESULT_PATCHER_ERROR_CODE, 0);
+                item.newPath = intent.getStringExtra(PatcherService.RESULT_PATCHER_NEW_FILE);
 
-            // Tap to choose the next file
-            setTapActionChooseFile();
+                updateCardUI();
+                updateToolbarIcons();
 
-            returnResult(mPCS.mPatcherFailed ? RESULT_PATCHING_FAILED : RESULT_PATCHING_SUCCEEDED,
-                    "See " + LogUtils.getPath("patch-file.log") + " for details",
-                    mPCS.mPatcherNewFile);
-        } else if (event instanceof RequestedFileEvent) {
-            mPCS.mState = PatcherConfigState.STATE_CHOSE_FILE;
+                mAdapter.notifyItemChanged(itemIndex);
 
-            RequestedFileEvent e = (RequestedFileEvent) event;
-            mPCS.mFilename = e.file;
-            checkSupported();
+                // Update MTP cache
+                if (item.successful) {
+                    // TODO: Android has a bug that causes the context to leak!
+                    // TODO: See https://github.com/square/leakcanary/issues/26
+                    MediaScannerConnection.scanFile(getActivity().getApplicationContext(),
+                            new String[] { item.newPath }, null, null);
+                }
+
+                //returnResult(ret ? RESULT_PATCHING_SUCCEEDED : RESULT_PATCHING_FAILED,
+                //        "See " + LogUtils.getPath("patch-file.log") + " for details", newPath);
+            } else {
+                throw new IllegalStateException("Invalid action: " + action);
+            }
         }
     }
 }

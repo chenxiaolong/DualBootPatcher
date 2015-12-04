@@ -17,21 +17,17 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment.PatcherListener;
 
-public class AutomatedPatcherActivity extends AppCompatActivity implements PatcherListener {
+public class AutomatedPatcherActivity extends AppCompatActivity /* implements PatcherListener */ {
     public static final String RESULT_CODE = "code";
     public static final String RESULT_MESSAGE = "message";
     public static final String RESULT_NEW_FILE = "new_file";
@@ -75,6 +71,7 @@ public class AutomatedPatcherActivity extends AppCompatActivity implements Patch
         Toast.makeText(this, R.string.wait_until_finished, Toast.LENGTH_SHORT).show();
     }
 
+    /*
     @Override
     public void onPatcherResult(int code, @Nullable String message, @Nullable String newFile) {
         Intent intent = new Intent();
@@ -97,4 +94,5 @@ public class AutomatedPatcherActivity extends AppCompatActivity implements Patch
         setResult(Activity.RESULT_OK, intent);
         finish();
     }
+    */
 }

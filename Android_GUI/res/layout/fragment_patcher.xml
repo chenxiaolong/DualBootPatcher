@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -18,60 +18,51 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ScrollView
-        android:id="@+id/card_scrollview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <include
-                android:id="@+id/card_mainopts"
-                layout="@layout/card_v7_patcher_mainopts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
-                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
-
-            <include
-                android:id="@+id/card_file_chooser"
-                layout="@layout/card_v7_patcher_file_chooser"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
-                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
-
-            <!-- Cards to show patching progress -->
-
-            <include
-                android:id="@+id/card_details"
-                layout="@layout/card_v7_patcher_details"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
-                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
-
-            <include
-                android:id="@+id/card_progress"
-                layout="@layout/card_v7_patcher_progress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="@dimen/card_v7_outside_side_padding"
-                android:layout_marginRight="@dimen/card_v7_outside_side_padding" />
-        </LinearLayout>
-    </ScrollView>
-
+    <!-- Progress bar shown until the patcher is fully loaded -->
     <ProgressBar
-        android:id="@+id/card_loading_patcher"
+        android:id="@+id/loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:indeterminate="true" />
 
+    <TextView
+        android:id="@+id/add_zip_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:text="Tap the FAB to add files to patch." />
+
+    <!-- List of files to patch -->
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/files_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="@dimen/card_v7_outside_side_padding"
+        android:paddingRight="@dimen/card_v7_outside_side_padding" />
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- FAB to add more files to patch -->
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_marginBottom="@dimen/fab_margin_bottom"
+            android:layout_marginEnd="@dimen/fab_margin_end"
+            app:layout_behavior="com.github.chenxiaolong.dualbootpatcher.views.FloatingActionButtonBehavior"
+            fab:fab_colorNormal="@color/fab_pink"
+            fab:fab_colorPressed="@color/fab_pink_pressed"
+            fab:fab_icon="@drawable/ic_content_add_white_48dp"
+            fab:fab_plusIconColor="@color/fab_pink_plus" />
+    </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>

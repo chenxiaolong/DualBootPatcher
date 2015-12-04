@@ -18,19 +18,14 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
 
@@ -41,13 +36,6 @@ public class PatcherUtils {
     public static final String TAG = PatcherUtils.class.getSimpleName();
     private static final String FILENAME = "data-%s.tar.xz";
     private static final String DIRNAME = "data-%s";
-
-    public static final String PARAM_PATCHER = "patcher";
-    public static final String PARAM_FILEINFO = "fileinfo";
-
-    public static final String RESULT_PATCH_FILE_NEW_FILE = "new_file";
-    public static final String RESULT_PATCH_FILE_ERROR_CODE = "error_code";
-    public static final String RESULT_PATCH_FILE_FAILED = "failed";
 
     public static PatcherConfig sPC;
 
@@ -71,9 +59,9 @@ public class PatcherUtils {
     }
 
     public synchronized static void initializePatcher(Context context) {
-        extractPatcher(context);
-
         if (sPC == null) {
+            extractPatcher(context);
+
             sPC = new PatcherConfig();
             sPC.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
             sPC.setTempDirectory(context.getCacheDir().getAbsolutePath());
@@ -97,30 +85,6 @@ public class PatcherUtils {
         }
 
         return device;
-    }
-
-    public synchronized static Bundle patchFile(Context context, Bundle data,
-                                                ProgressListener listener) {
-        Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
-        Log.d(TAG, "libmbp version: " + PatcherUtils.sPC.getVersion());
-
-        // Make sure patcher is extracted first
-        extractPatcher(context);
-
-        Patcher patcher = data.getParcelable(PARAM_PATCHER);
-        FileInfo fileInfo = data.getParcelable(PARAM_FILEINFO);
-
-        Log.d(TAG, "Patching file: " + fileInfo.getFilename());
-
-        patcher.setFileInfo(fileInfo);
-        boolean ret = patcher.patchFile(listener);
-        LogUtils.dump("patch-file.log");
-
-        Bundle bundle = new Bundle();
-        bundle.putString(RESULT_PATCH_FILE_NEW_FILE, patcher.newFilePath());
-        bundle.putInt(RESULT_PATCH_FILE_ERROR_CODE, patcher.getError());
-        bundle.putBoolean(RESULT_PATCH_FILE_FAILED, !ret);
-        return bundle;
     }
 
     public synchronized static void extractPatcher(Context context) {

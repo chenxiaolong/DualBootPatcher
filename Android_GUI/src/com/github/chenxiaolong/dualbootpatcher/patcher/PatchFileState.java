@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,10 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.os.Bundle;
-
-public interface PatcherUIListener {
-    void onCardCreate();
-
-    void onRestoreCardState(Bundle savedInstanceState);
-
-    void onSaveCardState(Bundle outState);
-
-    void onChoseFile();
-
-    void onStartedPatching();
-
-    void onFinishedPatching();
+public enum PatchFileState {
+    QUEUED,
+    PENDING,
+    IN_PROGRESS,
+    COMPLETED,
+    CANCELLED
 }
