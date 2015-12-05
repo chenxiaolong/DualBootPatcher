@@ -60,6 +60,8 @@ import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemAdapter
+        .PatchFileItemClickListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
         .PatcherOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
@@ -72,8 +74,13 @@ import java.util.Collections;
 import java.util.HashMap;
 
 public class PatchFileFragment extends Fragment implements
-        ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener {
+        ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener, PatchFileItemClickListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
+
+    private static final String DIALOG_PATCHER_OPTIONS =
+            PatchFileFragment.class.getCanonicalName() + ".patcher_options";
+
+    private static final String EXTRA_SELECTED_FILE = "selected_file";
 
     /** Intent filter for messages we care about from the service */
     private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
@@ -125,6 +132,9 @@ public class PatchFileFragment extends Fragment implements
     /** Item touch callback for dragging and swiping */
     DragSwipeItemTouchCallback mItemTouchCallback;
 
+    /** Selected file */
+    private String mSelectedFile;
+
     static {
         // We only care about file patching events
         SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_INITIALIZED);
@@ -134,10 +144,6 @@ public class PatchFileFragment extends Fragment implements
         SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_STARTED);
         SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_FINISHED);
     }
-
-
-
-
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
@@ -159,6 +165,10 @@ public class PatchFileFragment extends Fragment implements
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
+        }
 
         // Initialize UI elements
         mRecycler = (RecyclerView) getActivity().findViewById(R.id.files_list);
@@ -192,7 +202,7 @@ public class PatchFileFragment extends Fragment implements
         });
 
         // Set up adapter for the files list
-        mAdapter = new PatchFileItemAdapter(getActivity(), mItems);
+        mAdapter = new PatchFileItemAdapter(getActivity(), mItems, this);
         mRecycler.setHasFixedSize(true);
         mRecycler.setAdapter(mAdapter);
 
@@ -214,6 +224,16 @@ public class PatchFileFragment extends Fragment implements
         // NOTE: No further loading should be done here. All initialization should be done in
         // onPatcherLoaded(), which is called once the patcher's data files have been extracted and
         // loaded.
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
     }
 
     /**
@@ -415,6 +435,14 @@ public class PatchFileFragment extends Fragment implements
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onPatchFileItemClicked(PatchFileItem item) {
+        showPatcherOptionsDialog(item.taskId);
+    }
+
+    /**
      * Toggle main UI and progress bar visibility depending on {@link #mShowingProgress}
      */
     private void updateLoadingStatus() {
@@ -541,21 +569,56 @@ public class PatchFileFragment extends Fragment implements
         }
     }
 
+    private void showPatcherOptionsDialog(int taskId) {
+        String preselectedDeviceId = null;
+        String preselectedRomId = null;
+
+        if (taskId >= 0) {
+            PatchFileItem item = mItems.get(mItemsMap.get(taskId));
+            preselectedDeviceId = item.device.getId();
+            preselectedRomId = item.romId;
+        }
+
+        PatcherOptionsDialog dialog = PatcherOptionsDialog.newInstanceFromFragment(
+                this, taskId, preselectedDeviceId, preselectedRomId);
+        dialog.show(getFragmentManager(), DIALOG_PATCHER_OPTIONS);
+    }
+
     /**
      * Called after the user tapped the FAB and selected a file
      */
     private void onSelectedFile(String file) {
+        mSelectedFile = file;
+
         // Ask for patcher options
-        PatcherOptionsDialog dialog = PatcherOptionsDialog.newInstanceFromFragment(this, file);
-        dialog.show(getFragmentManager(), PatcherOptionsDialog.TAG);
+        showPatcherOptionsDialog(-1);
     }
 
     @Override
-    public void onConfirmedOptions(final String path, final Device device, final String romId) {
+    public void onConfirmedOptions(final int id, final Device device, final String romId) {
+        if (id >= 0) {
+            // Edit existing task
+            executeNeedsService(new Runnable() {
+                @Override
+                public void run() {
+                    int index = mItemsMap.get(id);
+                    PatchFileItem item = mItems.get(index);
+                    item.device = device;
+                    item.romId = romId;
+                    mAdapter.notifyItemChanged(index);
+
+                    mService.setDevice(id, device);
+                    mService.setRomId(id, romId);
+
+                }
+            });
+            return;
+        }
+
         // Do not allow two patching operations with the same target filename (i.e. same file and
         // ROM ID)
         for (PatchFileItem item : mItems) {
-            if (item.path.equals(path) && item.romId.equals(romId)) {
+            if (item.path.equals(mSelectedFile) && item.romId.equals(romId)) {
                 SnackbarUtils.createSnackbar(getActivity(), mFAB,
                         getString(R.string.patcher_cannot_add_same_item, romId),
                         Snackbar.LENGTH_LONG).show();
@@ -569,7 +632,7 @@ public class PatchFileFragment extends Fragment implements
                 final PatchFileItem pf = new PatchFileItem();
                 pf.patcherId = "MultiBootPatcher";
                 pf.device = device;
-                pf.path = path;
+                pf.path = mSelectedFile;
                 pf.romId = romId;
                 pf.state = PatchFileState.QUEUED;
 

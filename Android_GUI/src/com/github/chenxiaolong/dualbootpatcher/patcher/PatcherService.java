@@ -227,9 +227,29 @@ public class PatcherService extends ThreadPoolService {
         task.cancel();
     }
 
+    private void enforceQueuedState(PatchFileTask task) {
+        PatchFileState state = task.mState.get();
+        if (state != PatchFileState.QUEUED) {
+            throw new IllegalStateException(
+                    "Cannot change task properties in " + state.name() + " state");
+        }
+    }
+
+    public void setPatcherId(int taskId, String patcherId) {
+        PatchFileTask task = getTask(taskId);
+        enforceQueuedState(task);
+        task.mPatcherId = patcherId;
+    }
+
     public String getPatcherId(int taskId) {
         PatchFileTask task = getTask(taskId);
         return task.mPatcherId;
+    }
+
+    public void setPath(int taskId, String path) {
+        PatchFileTask task = getTask(taskId);
+        enforceQueuedState(task);
+        task.mPath = path;
     }
 
     public String getPath(int taskId) {
@@ -237,9 +257,21 @@ public class PatcherService extends ThreadPoolService {
         return task.mPath;
     }
 
+    public void setDevice(int taskId, Device device) {
+        PatchFileTask task = getTask(taskId);
+        enforceQueuedState(task);
+        task.mDevice = device;
+    }
+
     public Device getDevice(int taskId) {
         PatchFileTask task = getTask(taskId);
         return task.mDevice;
+    }
+
+    public void setRomId(int taskId, String romId) {
+        PatchFileTask task = getTask(taskId);
+        enforceQueuedState(task);
+        task.mRomId = romId;
     }
 
     public String getRomId(int taskId) {

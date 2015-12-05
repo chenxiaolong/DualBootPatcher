@@ -38,7 +38,6 @@ import android.widget.TextView;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
 
@@ -48,7 +47,9 @@ import java.util.Collections;
 public class PatcherOptionsDialog extends DialogFragment {
     public static final String TAG = PatcherOptionsDialog.class.getSimpleName();
 
-    private static final String ARG_FILE = "file";
+    private static final String ARG_ID = "id";
+    private static final String ARG_PRESELECTED_DEVICE_ID = "preselected_device_id";
+    private static final String ARG_PRESELECTED_ROM_ID = "rom_id";
 
     private AppCompatSpinner mDeviceSpinner;
     private AppCompatSpinner mRomIdSpinner;
@@ -65,10 +66,12 @@ public class PatcherOptionsDialog extends DialogFragment {
     private boolean mIsNamedSlot;
 
     public interface PatcherOptionsDialogListener {
-        void onConfirmedOptions(String file, Device device, String romId);
+        void onConfirmedOptions(int id, Device device, String romId);
     }
 
-    public static PatcherOptionsDialog newInstanceFromFragment(Fragment parent, String file) {
+    public static PatcherOptionsDialog newInstanceFromFragment(Fragment parent, int id,
+                                                               String preselectedDeviceId,
+                                                               String preselectedRomId) {
         if (parent != null) {
             if (!(parent instanceof PatcherOptionsDialogListener)) {
                 throw new IllegalStateException(
@@ -79,15 +82,21 @@ public class PatcherOptionsDialog extends DialogFragment {
         PatcherOptionsDialog frag = new PatcherOptionsDialog();
         frag.setTargetFragment(parent, 0);
         Bundle args = new Bundle();
-        args.putString(ARG_FILE, file);
+        args.putInt(ARG_ID, id);
+        args.putString(ARG_PRESELECTED_DEVICE_ID, preselectedDeviceId);
+        args.putString(ARG_PRESELECTED_ROM_ID, preselectedRomId);
         frag.setArguments(args);
         return frag;
     }
 
-    public static PatcherOptionsDialog newInstanceFromActivity(String file) {
+    public static PatcherOptionsDialog newInstanceFromActivity(int id,
+                                                               String preselectedDeviceId,
+                                                               String preselectedRomId) {
         PatcherOptionsDialog frag = new PatcherOptionsDialog();
         Bundle args = new Bundle();
-        args.putString(ARG_FILE, file);
+        args.putInt(ARG_ID, id);
+        args.putString(ARG_PRESELECTED_DEVICE_ID, preselectedDeviceId);
+        args.putString(ARG_PRESELECTED_ROM_ID, preselectedRomId);
         frag.setArguments(args);
         return frag;
     }
@@ -107,7 +116,9 @@ public class PatcherOptionsDialog extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        final String file = getArguments().getString(ARG_FILE);
+        final int id = getArguments().getInt(ARG_ID);
+        String preselectedDeviceId = getArguments().getString(ARG_PRESELECTED_DEVICE_ID);
+        String preselectedRomId = getArguments().getString(ARG_PRESELECTED_ROM_ID);
 
         MaterialDialog dialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.patcher_options_dialog_title)
@@ -121,7 +132,7 @@ public class PatcherOptionsDialog extends DialogFragment {
                         if (owner != null) {
                             int position = mDeviceSpinner.getSelectedItemPosition();
                             Device device = PatcherUtils.sPC.getDevices()[position];
-                            owner.onConfirmedOptions(file, device, getRomId());
+                            owner.onConfirmedOptions(id, device, getRomId());
                         }
                     }
                 })
@@ -148,16 +159,19 @@ public class PatcherOptionsDialog extends DialogFragment {
 
         // Select our device on initial startup
         if (savedInstanceState == null) {
-            String realCodename = RomUtils.getDeviceCodename(getActivity());
-            Device[] devices = PatcherUtils.sPC.getDevices();
-            outer:
-            for (int i = 0; i < devices.length; i++) {
-                for (String codename : devices[i].getCodenames()) {
-                    if (realCodename.equals(codename)) {
-                        mDeviceSpinner.setSelection(i);
-                        break outer;
-                    }
+            if (preselectedDeviceId == null) {
+                Device device = PatcherUtils.getCurrentDevice(getActivity(), PatcherUtils.sPC);
+                if (device != null) {
+                    preselectedDeviceId = device.getId();
                 }
+            }
+            if (preselectedDeviceId != null) {
+                selectDeviceId(preselectedDeviceId);
+            }
+
+            // Select initial ROM ID
+            if (preselectedRomId != null) {
+                selectRomId(preselectedRomId);
             }
         }
 
@@ -278,6 +292,38 @@ public class PatcherOptionsDialog extends DialogFragment {
         mRomIds.add(getString(R.string.install_location_data_slot));
         mRomIds.add(getString(R.string.install_location_extsd_slot));
         mRomIdAdapter.notifyDataSetChanged();
+    }
+
+    private void selectDeviceId(String deviceId) {
+        Device[] devices = PatcherUtils.sPC.getDevices();
+        for (int i = 0; i < devices.length; i++) {
+            Device device = devices[i];
+            if (device.getId().equals(deviceId)) {
+                mDeviceSpinner.setSelection(i);
+                return;
+            }
+        }
+    }
+
+    private void selectRomId(String romId) {
+        for (int i = 0; i < mInstallLocations.size(); i++) {
+            InstallLocation location = mInstallLocations.get(i);
+            if (location.id.equals(romId)) {
+                mRomIdSpinner.setSelection(i);
+                return;
+            }
+        }
+        if (PatcherUtils.isDataSlotRomId(romId)) {
+            mRomIdSpinner.setSelection(mRomIds.size() - 2);
+            String namedId = PatcherUtils.getDataSlotIdFromRomId(romId);
+            mRomIdNamedSlotId.setText(namedId);
+            onNamedSlotIdChanged(namedId);
+        } else if (PatcherUtils.isExtsdSlotRomId(romId)) {
+            mRomIdSpinner.setSelection(mRomIds.size() - 1);
+            String namedId = PatcherUtils.getExtsdSlotIdFromRomId(romId);
+            mRomIdNamedSlotId.setText(namedId);
+            onNamedSlotIdChanged(namedId);
+        }
     }
 
     private void onRomIdSelected(int position) {

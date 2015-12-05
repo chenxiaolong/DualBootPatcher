@@ -24,17 +24,26 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemViewHolder
+        .PatchFileItemViewClickListener;
 
 import java.io.File;
 import java.util.List;
 
-public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemViewHolder> {
+public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemViewHolder> implements PatchFileItemViewClickListener {
     private Context mContext;
     private List<PatchFileItem> mItems;
+    private PatchFileItemClickListener mListener;
 
-    public PatchFileItemAdapter(Context context, List<PatchFileItem> items) {
+    public interface PatchFileItemClickListener {
+        void onPatchFileItemClicked(PatchFileItem item);
+    }
+
+    public PatchFileItemAdapter(Context context, List<PatchFileItem> items,
+                                PatchFileItemClickListener listener) {
         mContext = context;
         mItems = items;
+        mListener = listener;
     }
 
     @Override
@@ -42,7 +51,7 @@ public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemView
         View view = LayoutInflater
                 .from(parent.getContext())
                 .inflate(R.layout.card_v7_patch_file_item, parent, false);
-        return new PatchFileItemViewHolder(view);
+        return new PatchFileItemViewHolder(view, this);
     }
 
     @Override
@@ -54,6 +63,9 @@ public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemView
         holder.vTitle.setText(filename);
         holder.vSubtitle1.setText(mContext.getString(
                 R.string.patcher_card_subtitle_target, item.device.getId(), item.romId));
+
+        // Clickability
+        holder.vCard.setClickable(item.state == PatchFileState.QUEUED);
 
         switch (item.state) {
         case QUEUED:
@@ -116,5 +128,12 @@ public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemView
     @Override
     public int getItemCount() {
         return mItems.size();
+    }
+
+    @Override
+    public void onPatchFileItemClicked(int position) {
+        if (mListener != null) {
+            mListener.onPatchFileItemClicked(mItems.get(position));
+        }
     }
 }

@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView.ViewHolder;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -34,7 +35,7 @@ public class PatchFileItemViewHolder extends ViewHolder {
     TextView vProgressPercentage;
     TextView vProgressFiles;
 
-    public PatchFileItemViewHolder(View v) {
+    public PatchFileItemViewHolder(View v, final PatchFileItemViewClickListener listener) {
         super(v);
         vCard = (CardView) v;
         vTitle = (TextView) v.findViewById(R.id.action_title);
@@ -43,5 +44,17 @@ public class PatchFileItemViewHolder extends ViewHolder {
         vProgress = (ProgressBar) v.findViewById(R.id.progress_bar);
         vProgressPercentage = (TextView) v.findViewById(R.id.progress_percentage);
         vProgressFiles = (TextView) v.findViewById(R.id.progress_files);
+
+        vCard.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                listener.onPatchFileItemClicked(getAdapterPosition());
+            }
+        });
+
+    }
+
+    public interface PatchFileItemViewClickListener {
+        void onPatchFileItemClicked(int position);
     }
 }

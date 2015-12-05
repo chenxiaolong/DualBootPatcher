@@ -37,6 +37,9 @@ public class PatcherUtils {
     private static final String FILENAME = "data-%s.tar.xz";
     private static final String DIRNAME = "data-%s";
 
+    private static final String PREFIX_DATA_SLOT = "data-slot-";
+    private static final String PREFIX_EXTSD_SLOT = "extsd-slot-";
+
     public static PatcherConfig sPC;
 
     private static String sTargetFile;
@@ -212,10 +215,34 @@ public class PatcherUtils {
     }
 
     public static String getDataSlotRomId(String dataSlotId) {
-        return "data-slot-" + dataSlotId;
+        return PREFIX_DATA_SLOT + dataSlotId;
     }
 
     public static String getExtsdSlotRomId(String extsdSlotId) {
-        return "extsd-slot-" + extsdSlotId;
+        return PREFIX_EXTSD_SLOT + extsdSlotId;
+    }
+
+    public static boolean isDataSlotRomId(String romId) {
+        return romId.startsWith(PREFIX_DATA_SLOT);
+    }
+
+    public static boolean isExtsdSlotRomId(String romId) {
+        return romId.startsWith(PREFIX_EXTSD_SLOT);
+    }
+
+    public static String getDataSlotIdFromRomId(String romId) {
+        if (isDataSlotRomId(romId)) {
+            return romId.substring(PREFIX_DATA_SLOT.length());
+        } else {
+            return null;
+        }
+    }
+
+    public static String getExtsdSlotIdFromRomId(String romId) {
+        if (isExtsdSlotRomId(romId)) {
+            return romId.substring(PREFIX_EXTSD_SLOT.length());
+        } else {
+            return null;
+        }
     }
 }
