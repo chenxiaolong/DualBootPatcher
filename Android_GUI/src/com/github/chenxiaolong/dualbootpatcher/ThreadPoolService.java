@@ -27,7 +27,8 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
-import java.util.concurrent.BlockingQueue;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -52,10 +53,8 @@ public class ThreadPoolService extends Service {
     /** Units of {@link #KEEP_ALIVE_TIME} */
     private static final TimeUnit KEEP_ALIVE_TIME_UNITS = TimeUnit.SECONDS;
 
-    /** Queue of operations to be processed by {@link #mThreadPool} */
-    private final BlockingQueue<Runnable> mWorkQueue = new LinkedBlockingQueue<>();
     /** Thread pool for executing operations */
-    private ThreadPoolExecutor mThreadPool;
+    private HashMap<String, ThreadPoolExecutor> mThreadPools = new HashMap<>();
 
     /** Number of currently running or pending operations */
     private int mOperations = 0;
@@ -88,10 +87,6 @@ public class ThreadPoolService extends Service {
         super.onCreate();
         log("onCreate()");
 
-        // Initialize thread pool
-        mThreadPool = new ThreadPoolExecutor(NUMBER_OF_CORES, NUMBER_OF_CORES, KEEP_ALIVE_TIME,
-                KEEP_ALIVE_TIME_UNITS, mWorkQueue);
-
         mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent exitIntent = new Intent(this, getClass());
         exitIntent.setAction(ACTION_EXIT);
@@ -106,14 +101,18 @@ public class ThreadPoolService extends Service {
         super.onDestroy();
         log("onDestroy()");
 
-        // Attempt to stop thread pool. This shouldn't be an issue as there should be no tasks
-        // running at this point. The service stops when all clients have unbinded from it and there
+        // Attempt to stop thread pools. This shouldn't be an issue as there should be no tasks
+        // running at this point. The service stops when all clients have unbound from it and there
         // are no pending tasks.
-        mThreadPool.shutdownNow();
-        try {
-            mThreadPool.awaitTermination(60, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Failed to wait 60 seconds for thread pool termination", e);
+        for (Map.Entry<String, ThreadPoolExecutor> entry : mThreadPools.entrySet()) {
+            String id = entry.getKey();
+            ThreadPoolExecutor executor = entry.getValue();
+            executor.shutdownNow();
+            try {
+                executor.awaitTermination(60, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Failed to wait 60 seconds for thread pool termination: " + id, e);
+            }
         }
     }
 
@@ -153,16 +152,50 @@ public class ThreadPoolService extends Service {
     }
 
     /**
+     * Add a new thread pool with the maximum number of threads equal to the number of CPU threads
+     *
+     * @param id ID for the thread pool
+     * @throws IllegalArgumentException if maxThreads <= 0 or if the ID already exists
+     */
+    protected void addThreadPool(String id) {
+        addThreadPool(id, NUMBER_OF_CORES);
+    }
+
+    /**
+     * Add a new thread pool
+     *
+     * @param id ID for the thread pool
+     * @param maxThreads Maximum threads in the thread pool
+     * @throws IllegalArgumentException if maxThreads <= 0 or if the ID already exists
+     */
+    protected void addThreadPool(String id, int maxThreads) {
+        if (mThreadPools.containsKey(id)) {
+            throw new IllegalStateException("Thread pool already exists: " + id);
+        }
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(maxThreads, maxThreads,
+                KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_UNITS, new LinkedBlockingQueue<Runnable>());
+        mThreadPools.put(id, executor);
+    }
+
+    /**
      * Enqueue operation
      *
+     * @param id Thread pool ID
      * @param runnable Task to run in thread pool
+     * @throws IllegalArgumentException if the thread pool ID doesn't exist
      */
-    protected void enqueueOperation(final Runnable runnable) {
+    protected void enqueueOperation(String id, final Runnable runnable) {
+        ThreadPoolExecutor executor = mThreadPools.get(id);
+        if (executor == null) {
+            throw new IllegalArgumentException("Thread pool does not exist: " + id);
+        }
+
         cancelDelayedExit();
 
         synchronized (mLock) {
             mOperations++;
-            mThreadPool.execute(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -181,10 +214,17 @@ public class ThreadPoolService extends Service {
     /**
      * Cancel operation
      *
+     * @param id Thread pool ID
      * @param runnable Task to cancel
+     * @throws IllegalArgumentException if the thread pool ID doesn't exist
      */
-    protected boolean cancelOperation(Runnable runnable) {
-        boolean ret = mThreadPool.remove(runnable);
+    protected boolean cancelOperation(String id, Runnable runnable) {
+        ThreadPoolExecutor executor = mThreadPools.get(id);
+        if (executor == null) {
+            throw new IllegalArgumentException("Thread pool does not exist: " + id);
+        }
+
+        boolean ret = executor.remove(runnable);
         synchronized (mLock) {
             if (ret) {
                 mOperations--;
