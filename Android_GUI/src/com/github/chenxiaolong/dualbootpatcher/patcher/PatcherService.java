@@ -151,6 +151,7 @@ public class PatcherService extends ThreadPoolService {
      * @return Whether the task was removed
      */
     public boolean removePatchFileTask(int taskId) {
+        cancelPatching(taskId);
         PatchFileTask task = removeTask(taskId);
         return task != null;
     }
