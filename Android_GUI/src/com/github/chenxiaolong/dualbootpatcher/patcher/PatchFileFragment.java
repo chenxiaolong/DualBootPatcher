@@ -395,6 +395,7 @@ public class PatchFileFragment extends Fragment implements
         mAdapter.notifyItemRemoved(position);
 
         updateAddZipMessage();
+        updateToolbarIcons();
 
         executeNeedsService(new Runnable() {
             @Override
