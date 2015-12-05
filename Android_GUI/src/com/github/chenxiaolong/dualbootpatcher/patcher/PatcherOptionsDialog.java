@@ -35,6 +35,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -51,6 +52,7 @@ public class PatcherOptionsDialog extends DialogFragment {
     private static final String ARG_PRESELECTED_DEVICE_ID = "preselected_device_id";
     private static final String ARG_PRESELECTED_ROM_ID = "rom_id";
 
+    private MaterialDialog mDialog;
     private AppCompatSpinner mDeviceSpinner;
     private AppCompatSpinner mRomIdSpinner;
     private AppCompatEditText mRomIdNamedSlotId;
@@ -120,7 +122,7 @@ public class PatcherOptionsDialog extends DialogFragment {
         String preselectedDeviceId = getArguments().getString(ARG_PRESELECTED_DEVICE_ID);
         String preselectedRomId = getArguments().getString(ARG_PRESELECTED_ROM_ID);
 
-        MaterialDialog dialog = new MaterialDialog.Builder(getActivity())
+        mDialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.patcher_options_dialog_title)
                 .customView(R.layout.dialog_patcher_opts, true)
                 .positiveText(R.string.proceed)
@@ -138,7 +140,7 @@ public class PatcherOptionsDialog extends DialogFragment {
                 })
                 .build();
 
-        View view = dialog.getCustomView();
+        View view = mDialog.getCustomView();
         mDeviceSpinner = (AppCompatSpinner) view.findViewById(R.id.spinner_device);
         mRomIdSpinner = (AppCompatSpinner) view.findViewById(R.id.spinner_rom_id);
         mRomIdNamedSlotId = (AppCompatEditText) view.findViewById(R.id.rom_id_named_slot_id);
@@ -176,9 +178,9 @@ public class PatcherOptionsDialog extends DialogFragment {
         }
 
         setCancelable(false);
-        dialog.setCanceledOnTouchOutside(false);
+        mDialog.setCanceledOnTouchOutside(false);
 
-        return dialog;
+        return mDialog;
     }
 
     private void initDevices() {
@@ -197,11 +199,16 @@ public class PatcherOptionsDialog extends DialogFragment {
         mRomIdSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mDialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
+
                 mIsNamedSlot = (mRomIds.size() >= 2
                         && (position == mRomIds.size() - 1
                         || position == mRomIds.size() - 2));
 
                 onRomIdSelected(position);
+                if (mIsNamedSlot) {
+                    onNamedSlotIdTextChanged(mRomIdNamedSlotId.getText().toString());
+                }
             }
 
             @Override
@@ -220,21 +227,7 @@ public class PatcherOptionsDialog extends DialogFragment {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (!mIsNamedSlot) {
-                    return;
-                }
-
-                String text = s.toString();
-
-                if (text.isEmpty()) {
-                    mRomIdNamedSlotId.setError(getString(
-                            R.string.install_location_named_slot_id_error_is_empty));
-                } else if (!text.matches("[a-z0-9]+")) {
-                    mRomIdNamedSlotId.setError(getString(
-                            R.string.install_location_named_slot_id_error_invalid));
-                }
-
-                onNamedSlotIdChanged(s.toString());
+                onNamedSlotIdTextChanged(s.toString());
             }
         });
     }
@@ -334,6 +327,26 @@ public class PatcherOptionsDialog extends DialogFragment {
             mRomIdDesc.setText(mInstallLocations.get(position).description);
             mRomIdNamedSlotId.setVisibility(View.GONE);
         }
+    }
+
+    private void onNamedSlotIdTextChanged(String text) {
+        if (!mIsNamedSlot) {
+            return;
+        }
+
+        if (text.isEmpty()) {
+            mRomIdNamedSlotId.setError(getString(
+                    R.string.install_location_named_slot_id_error_is_empty));
+            mDialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+        } else if (!text.matches("[a-z0-9]+")) {
+            mRomIdNamedSlotId.setError(getString(
+                    R.string.install_location_named_slot_id_error_invalid));
+            mDialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+        } else {
+            mDialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
+        }
+
+        onNamedSlotIdChanged(text);
     }
 
     private void onNamedSlotIdChanged(String text) {
