@@ -36,6 +36,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.ItemAnimator;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -167,6 +169,13 @@ public class PatchFileFragment extends Fragment implements
         mItemTouchCallback = new DragSwipeItemTouchCallback(this);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(mItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(mRecycler);
+
+        // Disable change animation since we frequently update the progress, which makes the
+        // animation very ugly
+        ItemAnimator animator = mRecycler.getItemAnimator();
+        if (animator instanceof SimpleItemAnimator) {
+            ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+        }
 
         // Set up listener for the FAB
         mFAB.setOnClickListener(new OnClickListener() {
