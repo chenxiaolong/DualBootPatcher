@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.LoaderManager;
@@ -41,8 +42,7 @@ import android.widget.TextView;
 import com.getbase.floatingactionbutton.AddFloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
 import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
-import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector;
-import com.github.chenxiaolong.dualbootpatcher.FileChooserEventCollector.RequestedFileEvent;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -54,7 +54,8 @@ import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog.NamedSlotIdInputDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog
+        .NamedSlotIdInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
@@ -90,7 +91,6 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     private SharedPreferences mPrefs;
 
     private SwitcherEventCollector mSwitcherEC;
-    private FileChooserEventCollector mFileChooserEC;
     private String mSelectedFile;
     private String mSelectedRomId;
     private String mCurrentRomId;
@@ -104,6 +104,9 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     private ArrayList<RomInformation> mBuiltinRoms = new ArrayList<>();
     private String[] mBuiltinRomNames;
 
+    /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
+    private static final int ACTIVITY_REQUEST_FILE = 1000;
+
     public interface OnReadyStateChangedListener {
         void onReady(boolean ready);
 
@@ -116,17 +119,10 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
         FragmentManager fm = getFragmentManager();
         mSwitcherEC = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
-        mFileChooserEC = (FileChooserEventCollector) fm.findFragmentByTag
-                (FileChooserEventCollector.TAG);
 
         if (mSwitcherEC == null) {
             mSwitcherEC = new SwitcherEventCollector();
             fm.beginTransaction().add(mSwitcherEC, SwitcherEventCollector.TAG).commit();
-        }
-
-        if (mFileChooserEC == null) {
-            mFileChooserEC = new FileChooserEventCollector();
-            fm.beginTransaction().add(mFileChooserEC, FileChooserEventCollector.TAG).commit();
         }
     }
 
@@ -160,7 +156,13 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         mFabFlashZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                mFileChooserEC.startFileChooser();
+                // Show file chooser
+                Intent intent = FileUtils.getFileChooserIntent(getActivity());
+                if (intent == null) {
+                    FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
+                } else {
+                    startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+                }
             }
         });
 
@@ -209,14 +211,12 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     public void onResume() {
         super.onResume();
         mSwitcherEC.attachListener(TAG, this);
-        mFileChooserEC.attachListener(TAG, this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mSwitcherEC.detachListener(TAG);
-        mFileChooserEC.detachListener(TAG);
     }
 
     @Override
@@ -250,16 +250,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
     @Override
     public void onEventReceived(BaseEvent event) {
-        if (event instanceof RequestedFileEvent) {
-            RequestedFileEvent e = (RequestedFileEvent) event;
-            mSelectedFile = e.file;
-
-            GenericProgressDialog d = GenericProgressDialog.newInstance(
-                    R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
-            d.show(getFragmentManager(), GenericProgressDialog.TAG);
-
-            mSwitcherEC.verifyZip(mSelectedFile);
-        } else if (event instanceof VerifiedZipEvent) {
+        if (event instanceof VerifiedZipEvent) {
             GenericProgressDialog dialog = (GenericProgressDialog) getFragmentManager()
                     .findFragmentByTag(GenericProgressDialog.TAG);
             if (dialog != null) {
@@ -315,6 +306,17 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         switch (requestCode) {
         case PERFORM_ACTIONS:
             mCallback.onFinished();
+            break;
+        case ACTIVITY_REQUEST_FILE:
+            if (data != null && resultCode == Activity.RESULT_OK) {
+                mSelectedFile = FileUtils.getPathFromUri(getActivity(), data.getData());
+
+                GenericProgressDialog d = GenericProgressDialog.newInstance(
+                        R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
+                d.show(getFragmentManager(), GenericProgressDialog.TAG);
+
+                mSwitcherEC.verifyZip(mSelectedFile);
+            }
             break;
         }
 
