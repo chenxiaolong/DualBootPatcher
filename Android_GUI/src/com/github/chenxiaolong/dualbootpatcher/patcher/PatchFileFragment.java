@@ -71,8 +71,6 @@ public class PatchFileFragment extends Fragment implements
         ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
-    private static final String EXTRA_FILES_TO_PATCH = "files_to_patch";
-
     /** Intent filter for messages we care about from the service */
     private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
@@ -116,7 +114,7 @@ public class PatchFileFragment extends Fragment implements
     private boolean mInitialized;
 
     /** List of patcher items (pending, in progress, or complete) */
-    private ArrayList<PatchFileItem> mItems;
+    private ArrayList<PatchFileItem> mItems = new ArrayList<>();
     /** Map task IDs to item indexes */
     private HashMap<Integer, Integer> mItemsMap = new HashMap<>();
 
@@ -157,13 +155,6 @@ public class PatchFileFragment extends Fragment implements
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        // Load list of files to patch
-        //if (savedInstanceState != null) {
-        //    mItems = savedInstanceState.getParcelableArrayList(EXTRA_FILES_TO_PATCH);
-        //} else {
-            mItems = new ArrayList<>();
-        //}
 
         // Initialize UI elements
         mRecycler = (RecyclerView) getActivity().findViewById(R.id.files_list);
@@ -212,15 +203,6 @@ public class PatchFileFragment extends Fragment implements
         // NOTE: No further loading should be done here. All initialization should be done in
         // onPatcherLoaded(), which is called once the patcher's data files have been extracted and
         // loaded.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList(EXTRA_FILES_TO_PATCH, mItems);
     }
 
     /**
