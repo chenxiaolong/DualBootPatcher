@@ -32,6 +32,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -50,6 +51,7 @@ import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
@@ -221,14 +223,11 @@ public class PatchFileFragment extends Fragment implements
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.actionbar_check_cancel, menu);
 
-        //int primary = ContextCompat.getColor(getActivity(), R.color.text_color_primary);
+        int primary = ContextCompat.getColor(getActivity(), R.color.text_color_primary);
+        MenuUtils.tintAllMenuIcons(menu, primary);
 
         mCheckItem = menu.findItem(R.id.check_item);
         mCancelItem = menu.findItem(R.id.cancel_item);
-        //Drawable checkIcon = mCheckItem.getIcon();
-        //checkIcon.mutate();
-        //checkIcon.setColorFilter(primary, PorterDuff.Mode.SRC_ATOP);
-        //checkIcon.setAlpha(Color.alpha(primary));
 
         updateToolbarIcons();
 
