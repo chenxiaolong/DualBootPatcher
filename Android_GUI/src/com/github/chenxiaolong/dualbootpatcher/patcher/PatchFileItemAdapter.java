@@ -55,24 +55,19 @@ public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemView
         holder.vSubtitle1.setText(mContext.getString(
                 R.string.patcher_card_subtitle_target, item.device.getId(), item.romId));
 
-        PatchFileState state = item.state;
-        if (state == null) {
-            state = PatchFileState.PENDING;
-        }
-
-        switch (state) {
+        switch (item.state) {
         case QUEUED:
         case PENDING:
         case CANCELLED:
         case COMPLETED:
             holder.vSubtitle2.setVisibility(View.VISIBLE);
-            if (state == PatchFileState.QUEUED) {
+            if (item.state == PatchFileState.QUEUED) {
                 holder.vSubtitle2.setText(R.string.patcher_card_subtitle_queued);
-            } else if (state == PatchFileState.PENDING) {
+            } else if (item.state == PatchFileState.PENDING) {
                 holder.vSubtitle2.setText(R.string.patcher_card_subtitle_pending);
-            } else if (state == PatchFileState.CANCELLED) {
+            } else if (item.state == PatchFileState.CANCELLED) {
                 holder.vSubtitle2.setText(R.string.patcher_card_subtitle_cancelled);
-            } else if (state == PatchFileState.COMPLETED) {
+            } else if (item.state == PatchFileState.COMPLETED) {
                 if (item.successful) {
                     holder.vSubtitle2.setText(R.string.patcher_card_subtitle_succeeded);
                 } else {
