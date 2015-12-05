@@ -163,12 +163,6 @@
 
     <!-- Title of dialog box asking for which targets to wipe -->
     <string name="wipe_rom_dialog_title">Wipe targets</string>
-    <!-- Message shown in the dialog box for ROM wiping indicating that the feature is still very
-         experimental and could unintentionally delete backups or other files on the internal
-         storage. -->
-    <string name="wipe_rom_dialog_warning_message">In-app ROM wiping is currently an experimental
-        feature, possibly having bugs that could, though unlikely, unintentionally wipe backups,
-        the internal storage, and other important data.</string>
     <!-- Title of progress dialog shown when wiping targets -->
     <string name="wiping_targets">Wiping targets</string>
     <!-- Toast message indicating successfully wiped targets -->
@@ -338,59 +332,9 @@
     <string name="filemanager_missing_desc">There is no suitable file manager installed. Please
         install a file manager to be able to choose files to patch.</string>
 
-    <!-- Title for the file chooser card telling the user to tap to choose a file -->
-    <string name="filechooser_initial_title">Tap to choose a file to patch</string>
-    <!-- Initial message for the file chooser card -->
-    <string name="filechooser_initial_desc">Most Android flashable zip files are supported.</string>
-
-    <!-- Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching -->
-    <string name="filechooser_ready_title">Tap to begin patching</string>
-    <!-- Message indicating which file has been chosen and that tapping allows another file to be chosen -->
-    <string name="filechooser_ready_desc">Selected file: %s\n\nTap and hold to choose a different
-        file.</string>
-
-    <!-- Title for the file chooser card indicating that the file was successfully patched -->
-    <string name="filechooser_success_title">Successfully patched file</string>
-    <!-- Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch -->
-    <string name="filechooser_success_desc">New file: %s\n\nTap to choose another file to
-        patch.</string>
-
-    <!-- Title for the file chooser card indicating that the patcher failed to patch the file -->
-    <string name="filechooser_failure_title">Failed to patch file</string>
-    <!-- Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch -->
-    <string name="filechooser_failure_desc">See %1$s for more details (error code: %2$s).\n\nTap to
-        choose another file to patch.</string>
-
-    <!-- Title for the preset card -->
-    <string name="preset_title">Preset</string>
-    <!-- Name for the custom preset item -->
-    <string name="preset_custom">Custom</string>
-    <!-- Description for the custom preset item indicating that further options can be modified -->
-    <string name="preset_custom_desc">Customize the patcher using the options below</string>
-
-    <!-- Title for the custom options card -->
-    <string name="customopts_title">Custom options</string>
-    <!-- Name for the patch file radio button -->
-    <string name="customopts_patchfile">Patch file</string>
-    <!-- Name for the button to select a .patch or .diff file -->
-    <string name="customopts_choosepatch">Choose patch file</string>
-    <!-- Name for the option telling the patcher that the file has a boot image -->
-    <string name="customopts_hasbootimage">Has boot image</string>
-    <!-- Name for the boot image text box -->
-    <string name="customopts_bootimage">Boot image</string>
-    <!-- Default text for the boot image text box indicating that leaving the box blank will enable autodetection -->
-    <string name="customopts_bootimage_hint">Leave blank to autodetect</string>
-
-    <!-- Accessibility text for the checkbox in the progress box -->
-    <string name="task_checkbox_image">Task completion checkbox</string>
-
-    <!-- Title for the details card -->
-    <string name="details_title">Details:</string>
     <!-- Text for the details card indicating that the patching is done -->
     <string name="details_done">Done</string>
 
-    <!-- Title for the progress card -->
-    <string name="overall_progress">Overall progress:</string>
     <!-- Text for the progress card showing how many files have been added to the new zip -->
     <string name="overall_progress_files">%1$s/%2$s files</string>
 
@@ -547,11 +491,4 @@
     <string name="do_not_show_again">Do not show again</string>
     <!-- Text shown in a progress dialog asking the user to wait -->
     <string name="please_wait">Please wait</string>
-
-    <!-- Presets that should always be visible -->
-    <string-array name="preset_dirs" translatable="false">
-        <item>Google_Apps</item>
-        <item>Other</item>
-    </string-array>
-
 </resources>
