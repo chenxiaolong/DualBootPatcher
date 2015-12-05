@@ -35,6 +35,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -57,13 +58,17 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
         .PatcherOptionsDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
+import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
+        .OnItemMovedOrDismissedListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class PatchFileFragment extends Fragment implements
-        ServiceConnection, PatcherOptionsDialogListener {
+        ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final String EXTRA_FILES_TO_PATCH = "files_to_patch";
@@ -115,6 +120,9 @@ public class PatchFileFragment extends Fragment implements
     /** Map task IDs to item indexes */
     private HashMap<Integer, Integer> mItemsMap = new HashMap<>();
 
+    /** Item touch callback for dragging and swiping */
+    DragSwipeItemTouchCallback mItemTouchCallback;
+
     static {
         // We only care about file patching events
         SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_INITIALIZED);
@@ -162,6 +170,10 @@ public class PatchFileFragment extends Fragment implements
         mFAB = (FloatingActionButton) getActivity().findViewById(R.id.fab);
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.loading);
         mAddZipMessage = (TextView) getActivity().findViewById(R.id.add_zip_message);
+
+        mItemTouchCallback = new DragSwipeItemTouchCallback(this);
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(mItemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(mRecycler);
 
         // Set up listener for the FAB
         mFAB.setOnClickListener(new OnClickListener() {
@@ -376,6 +388,40 @@ public class PatchFileFragment extends Fragment implements
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onItemMoved(int fromPosition, int toPosition) {
+        // Update index map
+        PatchFileItem fromItem = mItems.get(fromPosition);
+        PatchFileItem toItem = mItems.get(toPosition);
+        mItemsMap.put(fromItem.taskId, toPosition);
+        mItemsMap.put(toItem.taskId, fromPosition);
+
+        Collections.swap(mItems, fromPosition, toPosition);
+        mAdapter.notifyItemMoved(fromPosition, toPosition);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onItemDismissed(int position) {
+        final PatchFileItem item = mItems.get(position);
+        mItemsMap.remove(item.taskId);
+
+        mItems.remove(position);
+        mAdapter.notifyItemRemoved(position);
+
+        executeNeedsService(new Runnable() {
+            @Override
+            public void run() {
+                mService.removePatchFileTask(item.taskId);
+            }
+        });
+    }
+
+    /**
      * Toggle main UI and progress bar visibility depending on {@link #mShowingProgress}
      */
     private void updateLoadingStatus() {
@@ -449,6 +495,7 @@ public class PatchFileFragment extends Fragment implements
         updateAddZipMessage();
 
         updateToolbarIcons();
+        updateModifiability();
     }
 
     private void updateAddZipMessage() {
@@ -471,6 +518,18 @@ public class PatchFileFragment extends Fragment implements
             mCheckItem.setVisible(checkVisible);
             mCancelItem.setVisible(cancelVisible);
         }
+    }
+
+    private void updateModifiability() {
+        boolean canModify = true;
+        for (PatchFileItem item : mItems) {
+            if (item.state == PatchFileState.PENDING || item.state == PatchFileState.IN_PROGRESS) {
+                canModify = false;
+                break;
+            }
+        }
+        mItemTouchCallback.setLongPressDragEnabled(canModify);
+        mItemTouchCallback.setItemViewSwipeEnabled(canModify);
     }
 
     /**
@@ -594,6 +653,7 @@ public class PatchFileFragment extends Fragment implements
             } else if (PatcherService.ACTION_PATCHER_STARTED.equals(action)) {
                 item.state = PatchFileState.IN_PROGRESS;
                 updateToolbarIcons();
+                updateModifiability();
                 mAdapter.notifyItemChanged(itemIndex);
             } else if (PatcherService.ACTION_PATCHER_FINISHED.equals(action)) {
                 boolean cancelled = intent.getBooleanExtra(
@@ -611,6 +671,7 @@ public class PatchFileFragment extends Fragment implements
 
                 updateCardUI();
                 updateToolbarIcons();
+                updateModifiability();
 
                 mAdapter.notifyItemChanged(itemIndex);
 
