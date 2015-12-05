@@ -40,6 +40,22 @@ public class PatcherService extends ThreadPoolService {
     private static final String TAG = PatcherService.class.getSimpleName();
     private static final String ACTION_BASE = PatcherService.class.getCanonicalName();
 
+    private static final String THREAD_POOL_DEFAULT = "default";
+    private static final String THREAD_POOL_PATCHING = "patching";
+    private static final int THREAD_POOL_DEFAULT_THREADS = 2;
+    private static final int THREAD_POOL_PATCHING_THREADS = 2;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        addThreadPool(THREAD_POOL_DEFAULT, THREAD_POOL_DEFAULT_THREADS);
+        addThreadPool(THREAD_POOL_PATCHING, THREAD_POOL_PATCHING_THREADS);
+    }
+
     // Patcher intents
 
     public static final String ACTION_PATCHER_INITIALIZED =
@@ -101,7 +117,7 @@ public class PatcherService extends ThreadPoolService {
      */
     public void initializePatcher() {
         InitializePatcherTask task = new InitializePatcherTask();
-        enqueueOperation(task);
+        enqueueOperation(THREAD_POOL_DEFAULT, task);
     }
 
     /**
@@ -191,7 +207,7 @@ public class PatcherService extends ThreadPoolService {
      */
     public void startPatching(int taskId) {
         PatchFileTask task = getTask(taskId);
-        enqueueOperation(task);
+        enqueueOperation(THREAD_POOL_PATCHING, task);
     }
 
     /**
@@ -207,7 +223,7 @@ public class PatcherService extends ThreadPoolService {
      */
     public void cancelPatching(int taskId) {
         PatchFileTask task = getTask(taskId);
-        cancelOperation(task);
+        cancelOperation(THREAD_POOL_PATCHING, task);
         task.cancel();
     }
 
