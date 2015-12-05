@@ -496,6 +496,7 @@ public class PatchFileFragment extends Fragment implements
 
         updateToolbarIcons();
         updateModifiability();
+        updateScreenOnState();
     }
 
     private void updateAddZipMessage() {
@@ -530,6 +531,21 @@ public class PatchFileFragment extends Fragment implements
         }
         mItemTouchCallback.setLongPressDragEnabled(canModify);
         mItemTouchCallback.setItemViewSwipeEnabled(canModify);
+    }
+
+    private void updateScreenOnState() {
+        boolean keepScreenOn = false;
+        for (PatchFileItem item : mItems) {
+            if (item.state == PatchFileState.PENDING || item.state == PatchFileState.IN_PROGRESS) {
+                keepScreenOn = true;
+                break;
+            }
+        }
+        if (keepScreenOn) {
+            getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        } else {
+            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
     }
 
     /**
@@ -592,24 +608,6 @@ public class PatchFileFragment extends Fragment implements
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-    private void updateCardUI() {
-        // Keep screen on
-        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        // Don't keep screen on
-        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    }
-
     private class PatcherEventReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -654,6 +652,7 @@ public class PatchFileFragment extends Fragment implements
                 item.state = PatchFileState.IN_PROGRESS;
                 updateToolbarIcons();
                 updateModifiability();
+                updateScreenOnState();
                 mAdapter.notifyItemChanged(itemIndex);
             } else if (PatcherService.ACTION_PATCHER_FINISHED.equals(action)) {
                 boolean cancelled = intent.getBooleanExtra(
@@ -669,9 +668,9 @@ public class PatchFileFragment extends Fragment implements
                 item.errorCode = intent.getIntExtra(PatcherService.RESULT_PATCHER_ERROR_CODE, 0);
                 item.newPath = intent.getStringExtra(PatcherService.RESULT_PATCHER_NEW_FILE);
 
-                updateCardUI();
                 updateToolbarIcons();
                 updateModifiability();
+                updateScreenOnState();
 
                 mAdapter.notifyItemChanged(itemIndex);
 
