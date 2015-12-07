@@ -22,6 +22,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
@@ -36,6 +37,7 @@ import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Enumeration;
@@ -203,16 +205,16 @@ public class SwitcherUtils {
      * and thus "primary" will be returned.
      *
      * @param context Context
-     * @param filename Absolute path to boot image file
+     * @param file Boot image file
      * @return String containing the ROM ID or null if an error occurs within libmbp.
      */
     @Nullable
-    public static String getBootImageRomId(Context context, String filename) {
+    public static String getBootImageRomId(Context context, File file) {
         BootImage bi = new BootImage();
         CpioFile cf = new CpioFile();
 
         try {
-            if (!bi.load(filename)) {
+            if (!bi.load(file.getAbsolutePath())) {
                 Log.e(TAG, "libmbp error code: " + bi.getError());
                 return null;
             }
@@ -269,5 +271,80 @@ public class SwitcherUtils {
                 }
             }
         }.start();
+    }
+
+    public enum KernelStatus {
+        UNSET,
+        DIFFERENT,
+        SET,
+        UNKNOWN
+    }
+
+    public static KernelStatus compareRomBootImage(RomInformation rom, File bootImageFile) {
+        if (rom == null) {
+            return KernelStatus.UNKNOWN;
+        }
+
+        File savedImageFile = new File(RomUtils.getBootImagePath(rom.getId()));
+        if (!savedImageFile.isFile()) {
+            return KernelStatus.UNSET;
+        }
+
+        BootImage biSaved = new BootImage();
+        BootImage biOther = new BootImage();
+
+        try {
+            if (!biSaved.load(savedImageFile.getAbsolutePath())) {
+                Log.e(TAG, "libmbp error code: " + biSaved.getError());
+                return KernelStatus.UNKNOWN;
+            }
+            if (!biOther.load(bootImageFile.getAbsolutePath())) {
+                Log.e(TAG, "libmbp error code: " + biOther.getError());
+                return KernelStatus.UNKNOWN;
+            }
+
+            return biSaved.equals(biOther)
+                    ? KernelStatus.SET
+                    : KernelStatus.DIFFERENT;
+        } finally {
+            biSaved.destroy();
+            biOther.destroy();
+        }
+    }
+
+    public static boolean copyBootPartition(Context context, File targetFile) {
+        String bootPartition = getBootPartition(context);
+        if (bootPartition == null) {
+            Log.e(TAG, "Failed to determine boot partition");
+            return false;
+        }
+
+        MbtoolSocket socket = MbtoolSocket.getInstance();
+
+        try {
+            if (!socket.pathCopy(context, bootPartition, targetFile.getAbsolutePath())) {
+                Log.e(TAG, "Failed to copy boot partition to " + targetFile);
+                return false;
+            }
+            if (!socket.pathChmod(context, targetFile.getAbsolutePath(), 0644)) {
+                Log.e(TAG, "Failed to chmod " + targetFile);
+                return false;
+            }
+
+            // Ensure SELinux label doesn't prevent reading from the file
+            String label = socket.pathSelinuxGetLabel(
+                    context, targetFile.getParentFile().getAbsolutePath(), false);
+            if (label != null) {
+                // Ignore errors and hope for the best
+                socket.pathSelinuxSetLabel(context, targetFile.getAbsolutePath(), label, false);
+            } else {
+                Log.w(TAG, "Failed to get SELinux label of " + targetFile);
+            }
+
+            return true;
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+            return false;
+        }
     }
 }

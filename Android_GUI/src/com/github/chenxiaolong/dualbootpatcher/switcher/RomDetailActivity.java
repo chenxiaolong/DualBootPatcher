@@ -18,16 +18,22 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
-import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.StringRes;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -44,17 +50,18 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorCallback;
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorTransformation;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
@@ -73,19 +80,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
         .RomNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
         .SetKernelConfirmDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CachedWallpaperEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.CreatedLauncherEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector
-        .GetRomDetailsFinishedEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotCacheSizeEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotDataSizeEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotPackageCountsEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.GotSystemSizeEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SetKernelEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.WipedRomEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
 
@@ -102,8 +99,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         ConfirmMismatchedSetKernelDialogListener,
         SetKernelConfirmDialogListener,
         WipeTargetsSelectionDialogListener,
-        ConfirmChecksumIssueDialogListener,
-        EventCollectorListener {
+        ConfirmChecksumIssueDialogListener, ServiceConnection {
     private static final String TAG = RomDetailActivity.class.getSimpleName();
 
     private static final int MENU_EDIT_NAME = Menu.FIRST;
@@ -133,9 +129,21 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     private static final int REQUEST_IMAGE = 1234;
 
+    // Argument extras
     public static final String EXTRA_ROM_INFO = "rom_info";
     public static final String EXTRA_BOOTED_ROM_INFO = "booted_rom_info";
     public static final String EXTRA_ACTIVE_ROM_ID = "active_rom_id";
+    // Saved state extras
+    private static final String EXTRA_STATE_TASK_ID_CACHE_WALLPAPER = "state.cache_wallpaper";
+    private static final String EXTRA_STATE_TASK_ID_SWITCH_ROM = "state.switch_rom";
+    private static final String EXTRA_STATE_TASK_ID_SET_KERNEL = "state.set_kernel";
+    private static final String EXTRA_STATE_TASK_ID_WIPE_ROM = "state.wipe_rom";
+    private static final String EXTRA_STATE_TASK_ID_CREATE_LAUNCHER = "state.create_launcher";
+    private static final String EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details";
+    private static final String EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_reomve";
+
+    /** Intent filter for messages we care about from the service */
+    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
     private CoordinatorLayout mCoordinator;
     private CollapsingToolbarLayout mCollapsing;
@@ -150,25 +158,53 @@ public class RomDetailActivity extends AppCompatActivity implements
     private ArrayList<Item> mItems = new ArrayList<>();
     private RomDetailAdapter mAdapter;
 
-    private SwitcherEventCollector mEventCollector;
+    private int mTaskIdCacheWallpaper = -1;
+    private int mTaskIdSwitchRom = -1;
+    private int mTaskIdSetKernel = -1;
+    private int mTaskIdWipeRom = -1;
+    private int mTaskIdCreateLauncher = -1;
+    private int mTaskIdGetRomDetails = -1;
+
+    /** Task IDs to remove */
+    private ArrayList<Integer> mTaskIdsToRemove = new ArrayList<>();
+
+    /** Switcher service */
+    private SwitcherService mService;
+    /** Broadcast receiver for events from the service */
+    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+
+    static {
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_CACHED_WALLPAPER);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SWITCHED_ROM);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SET_KERNEL);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_WIPED_ROM);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_CREATED_LAUNCHER);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_SYSTEM_SIZE);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_CACHE_SIZE);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_DATA_SIZE);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_PACKAGES_COUNTS);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_FINISHED);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rom_detail);
 
-        FragmentManager fm = getFragmentManager();
-        mEventCollector = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
-
-        if (mEventCollector == null) {
-            mEventCollector = new SwitcherEventCollector();
-            fm.beginTransaction().add(mEventCollector, SwitcherEventCollector.TAG).commit();
-        }
-
         Intent intent = getIntent();
         mRomInfo = intent.getParcelableExtra(EXTRA_ROM_INFO);
         mBootedRomInfo = intent.getParcelableExtra(EXTRA_BOOTED_ROM_INFO);
         mActiveRomId = intent.getStringExtra(EXTRA_ACTIVE_ROM_ID);
+
+        if (savedInstanceState != null) {
+            mTaskIdCacheWallpaper = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_CACHE_WALLPAPER);
+            mTaskIdSwitchRom = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_SWITCH_ROM);
+            mTaskIdSetKernel = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_SET_KERNEL);
+            mTaskIdWipeRom = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_WIPE_ROM);
+            mTaskIdCreateLauncher = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_CREATE_LAUNCHER);
+            mTaskIdGetRomDetails = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS);
+            mTaskIdsToRemove = savedInstanceState.getIntegerArrayList(EXTRA_STATE_TASK_IDS_TO_REMOVE);
+        }
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -193,70 +229,138 @@ public class RomDetailActivity extends AppCompatActivity implements
         populateRomCardItem();
         populateInfoItems();
         populateActionItems();
-
-        mEventCollector.setApplicationContext(this);
-        mEventCollector.cacheWallpaper(mRomInfo);
-        mEventCollector.getRomDetails(mRomInfo);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        mEventCollector.attachListener(TAG, this);
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(EXTRA_STATE_TASK_ID_CACHE_WALLPAPER, mTaskIdCacheWallpaper);
+        outState.putInt(EXTRA_STATE_TASK_ID_SWITCH_ROM, mTaskIdSwitchRom);
+        outState.putInt(EXTRA_STATE_TASK_ID_SET_KERNEL, mTaskIdSetKernel);
+        outState.putInt(EXTRA_STATE_TASK_ID_WIPE_ROM, mTaskIdWipeRom);
+        outState.putInt(EXTRA_STATE_TASK_ID_CREATE_LAUNCHER, mTaskIdCreateLauncher);
+        outState.putInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS, mTaskIdGetRomDetails);
+        outState.putIntegerArrayList(EXTRA_STATE_TASK_IDS_TO_REMOVE, mTaskIdsToRemove);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        mEventCollector.detachListener(TAG);
+    protected void onStart() {
+        super.onStart();
+
+        // Start and bind to the service
+        Intent intent = new Intent(this, SwitcherService.class);
+        bindService(intent, this, BIND_AUTO_CREATE);
+        startService(intent);
+
+        // Register our broadcast receiver for our service
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mReceiver, SERVICE_INTENT_FILTER);
     }
 
-    private void loadWallpaper(CacheWallpaperResult result) {
-        File wallpaperFile = new File(mRomInfo.getWallpaperPath());
-        RequestCreator creator;
+    @Override
+    protected void onStop() {
+        super.onStop();
 
-        if (result == CacheWallpaperResult.USES_LIVE_WALLPAPER) {
-            Toast.makeText(this, "Cannot preview live wallpaper", Toast.LENGTH_SHORT).show();
+        if (isFinishing()) {
+            if (mTaskIdCacheWallpaper >= 0) {
+                removeCachedTaskId(mTaskIdCacheWallpaper);
+            }
+            if (mTaskIdGetRomDetails >= 0) {
+                removeCachedTaskId(mTaskIdGetRomDetails);
+            }
         }
 
-        if (result == CacheWallpaperResult.UP_TO_DATE || result == CacheWallpaperResult.UPDATED) {
-            creator = Picasso.with(this).load(wallpaperFile).error(R.drawable.material);
+        // Unbind from our service
+        unbindService(this);
+        mService = null;
+
+        // Unregister the broadcast receiver
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        // Save a reference to the service so we can interact with it
+        ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
+        mService = (SwitcherService) binder.getService();
+
+        // Remove old task IDs
+        for (int taskId : mTaskIdsToRemove) {
+            mService.removeCachedTask(taskId);
+        }
+        mTaskIdsToRemove.clear();
+
+        if (mTaskIdCacheWallpaper < 0) {
+            mTaskIdCacheWallpaper = mService.cacheWallpaper(mRomInfo);
+        } else if (mService.getCachedTaskState(mTaskIdCacheWallpaper) == TaskState.FINISHED) {
+            CacheWallpaperResult result =
+                    mService.getResultCachedWallpaperResult(mTaskIdCacheWallpaper);
+            onCachedWallpaper(result);
+        }
+
+        if (mTaskIdGetRomDetails < 0) {
+            mTaskIdGetRomDetails = mService.getRomDetails(mRomInfo);
         } else {
-            creator = Picasso.with(this).load(R.drawable.material);
+            if (mService.hasResultRomDetailsSystemSize(mTaskIdGetRomDetails)) {
+                boolean success = mService.getResultRomDetailsSystemSizeSuccess(mTaskIdGetRomDetails);
+                long size = mService.getResultRomDetailsSystemSize(mTaskIdGetRomDetails);
+                onHaveSystemSize(success, size);
+            }
+            if (mService.hasResultRomDetailsCacheSize(mTaskIdGetRomDetails)) {
+                boolean success = mService.getResultRomDetailsCacheSizeSuccess(mTaskIdGetRomDetails);
+                long size = mService.getResultRomDetailsCacheSize(mTaskIdGetRomDetails);
+                onHaveCacheSize(success, size);
+            }
+            if (mService.hasResultRomDetailsDataSize(mTaskIdGetRomDetails)) {
+                boolean success = mService.getResultRomDetailsDataSizeSuccess(mTaskIdGetRomDetails);
+                long size = mService.getResultRomDetailsDataSize(mTaskIdGetRomDetails);
+                onHaveDataSize(success, size);
+            }
+            if (mService.hasResultRomDetailsPackagesCounts(mTaskIdGetRomDetails)) {
+                boolean success = mService.getResultRomDetailsPackagesCountsSuccess(mTaskIdGetRomDetails);
+                int systemPackages = mService.getResultRomDetailsSystemPackages(mTaskIdGetRomDetails);
+                int updatedPackages = mService.getResultRomDetailsUpdatedPackages(mTaskIdGetRomDetails);
+                int userPackages = mService.getResultRomDetailsUserPackages(mTaskIdGetRomDetails);
+                onHavePackagesCounts(success, systemPackages, updatedPackages, userPackages);
+            }
         }
 
-        creator
-                .transform(PaletteGeneratorTransformation.getInstance())
-                .into(mWallpaper, new PaletteGeneratorCallback(mWallpaper) {
-                    @Override
-                    public void onObtainedPalette(Palette palette) {
-                        if (palette == null) {
-                            return;
-                        }
+        if (mTaskIdCreateLauncher >= 0 &&
+                mService.getCachedTaskState(mTaskIdCreateLauncher) == TaskState.FINISHED) {
+            onCreatedLauncher();
+        }
 
-                        Swatch swatch = palette.getMutedSwatch();
-                        if (swatch == null) {
-                            swatch = palette.getDarkVibrantSwatch();
-                        }
-                        if (swatch != null) {
-                            // Status bar should be slightly darker
-                            float[] hsl = swatch.getHsl();
-                            hsl[2] -= 0.05;
-                            if (hsl[2] < 0) {
-                                hsl[2] = 0;
-                            }
+        if (mTaskIdSwitchRom >= 0 &&
+                mService.getCachedTaskState(mTaskIdSwitchRom) == TaskState.FINISHED) {
+            SwitchRomResult result = mService.getResultSwitchedRomResult(mTaskIdSwitchRom);
+            onSwitchedRom(result);
+        }
 
-                            mCollapsing.setContentScrimColor(swatch.getRgb());
-                            mCollapsing.setStatusBarScrimColor(ColorUtils.HSLToColor(hsl));
-                            mFab.setBackgroundTintList(ColorStateList.valueOf(swatch.getRgb()));
-                        }
-                        //Swatch lightVibrant = palette.getLightVibrantSwatch();
-                        //if (lightVibrant != null) {
-                        //    collapsingToolbar.setCollapsedTitleTextColor(lightVibrant.getRgb());
-                        //    collapsingToolbar.setExpandedTitleColor(lightVibrant.getRgb());
-                        //}
-                    }
-                });
+        if (mTaskIdSetKernel >= 0 &&
+                mService.getCachedTaskState(mTaskIdSetKernel) == TaskState.FINISHED) {
+            SetKernelResult result = mService.getResultSetKernelResult(mTaskIdSetKernel);
+            onSetKernel(result);
+        }
+
+        if (mTaskIdWipeRom >= 0 &&
+                mService.getCachedTaskState(mTaskIdWipeRom) == TaskState.FINISHED) {
+            short[] succeeded = mService.getResultWipedRomTargetsSucceeded(mTaskIdWipeRom);
+            short[] failed = mService.getResultWipedRomTargetsFailed(mTaskIdWipeRom);
+            onWipedRom(succeeded, failed);
+        }
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        mService = null;
+    }
+
+    private void removeCachedTaskId(int taskId) {
+        if (mService != null) {
+            mService.removeCachedTask(taskId);
+        } else {
+            mTaskIdsToRemove.add(taskId);
+        }
     }
 
     private void updateTitle() {
@@ -456,7 +560,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     @Override
     public void onConfirmAddToHomeScreenOptions(RomInformation info, boolean reboot) {
-        mEventCollector.createLauncher(info, reboot);
+        mTaskIdCreateLauncher = mService.createLauncher(info, reboot);
     }
 
     @Override
@@ -509,126 +613,185 @@ public class RomDetailActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    public void onEventReceived(BaseEvent bEvent) {
-        if (bEvent instanceof CreatedLauncherEvent) {
-            CreatedLauncherEvent event = (CreatedLauncherEvent) bEvent;
+    private void onCachedWallpaper(CacheWallpaperResult result) {
+        File wallpaperFile = new File(mRomInfo.getWallpaperPath());
+        RequestCreator creator;
 
-            createSnackbar(String.format(getString(R.string.successfully_created_launcher),
-                    event.rom.getName()), Snackbar.LENGTH_LONG).show();
-        } else if (bEvent instanceof SwitchedRomEvent) {
-            SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
+        if (result == CacheWallpaperResult.USES_LIVE_WALLPAPER) {
+            Toast.makeText(this, "Cannot preview live wallpaper", Toast.LENGTH_SHORT).show();
+        }
 
-            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
-            if (d != null) {
-                d.dismiss();
-            }
+        if (result == CacheWallpaperResult.UP_TO_DATE || result == CacheWallpaperResult.UPDATED) {
+            creator = Picasso.with(this).load(wallpaperFile).error(R.drawable.material);
+        } else {
+            creator = Picasso.with(this).load(R.drawable.material);
+        }
 
-            switch (event.result) {
-            case SUCCEEDED:
-                createSnackbar(R.string.choose_rom_success, Snackbar.LENGTH_LONG).show();
-                Log.d(TAG, "Prior cached boot partition ROM ID was: " + mActiveRomId);
-                mActiveRomId = event.kernelId;
-                Log.d(TAG, "Changing cached boot partition ROM ID to: " + mActiveRomId);
-                break;
-            case FAILED:
-                createSnackbar(R.string.choose_rom_failure, Snackbar.LENGTH_LONG).show();
-                break;
-            case CHECKSUM_INVALID:
-                createSnackbar(R.string.choose_rom_checksums_invalid, Snackbar.LENGTH_LONG).show();
-                showChecksumIssueDialog(ConfirmChecksumIssueDialog.CHECKSUM_INVALID, event.kernelId);
-                break;
-            case CHECKSUM_NOT_FOUND:
-                createSnackbar(R.string.choose_rom_checksums_missing, Snackbar.LENGTH_LONG).show();
-                showChecksumIssueDialog(ConfirmChecksumIssueDialog.CHECKSUM_MISSING, event.kernelId);
-                break;
-            case UNKNOWN_BOOT_PARTITION:
-                showUnknownBootPartitionDialog();
-                break;
-            }
-        } else if (bEvent instanceof SetKernelEvent) {
-            SetKernelEvent event = (SetKernelEvent) bEvent;
+        creator
+                .transform(PaletteGeneratorTransformation.getInstance())
+                .into(mWallpaper, new PaletteGeneratorCallback(mWallpaper) {
+                    @Override
+                    public void onObtainedPalette(Palette palette) {
+                        if (palette == null) {
+                            return;
+                        }
 
-            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
-            if (d != null) {
-                d.dismiss();
-            }
+                        Swatch swatch = palette.getMutedSwatch();
+                        if (swatch == null) {
+                            swatch = palette.getDarkVibrantSwatch();
+                        }
+                        if (swatch != null) {
+                            // Status bar should be slightly darker
+                            float[] hsl = swatch.getHsl();
+                            hsl[2] -= 0.05;
+                            if (hsl[2] < 0) {
+                                hsl[2] = 0;
+                            }
 
-            switch (event.result) {
-            case SUCCEEDED:
-                createSnackbar(R.string.set_kernel_success, Snackbar.LENGTH_LONG).show();
-                break;
-            case FAILED:
-                createSnackbar(R.string.set_kernel_failure, Snackbar.LENGTH_LONG).show();
-                break;
-            case UNKNOWN_BOOT_PARTITION:
-                showUnknownBootPartitionDialog();
-                break;
-            }
-        } else if (bEvent instanceof WipedRomEvent) {
-            WipedRomEvent event = (WipedRomEvent) bEvent;
-
-            GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                    .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
-            if (d != null) {
-                d.dismiss();
-            }
-
-            if (event.succeeded == null || event.failed == null) {
-                createSnackbar(R.string.wipe_rom_initiate_fail, Snackbar.LENGTH_LONG).show();
-            } else {
-                StringBuilder sb = new StringBuilder();
-
-                if (event.succeeded.length > 0) {
-                    sb.append(String.format(getString(R.string.wipe_rom_successfully_wiped),
-                            targetsToString(event.succeeded)));
-                    if (event.failed.length > 0) {
-                        sb.append("\n");
+                            mCollapsing.setContentScrimColor(swatch.getRgb());
+                            mCollapsing.setStatusBarScrimColor(ColorUtils.HSLToColor(hsl));
+                            mFab.setBackgroundTintList(ColorStateList.valueOf(swatch.getRgb()));
+                        }
+                        //Swatch lightVibrant = palette.getLightVibrantSwatch();
+                        //if (lightVibrant != null) {
+                        //    collapsingToolbar.setCollapsedTitleTextColor(lightVibrant.getRgb());
+                        //    collapsingToolbar.setExpandedTitleColor(lightVibrant.getRgb());
+                        //}
                     }
-                }
-                if (event.failed.length > 0) {
-                    sb.append(String.format(getString(R.string.wipe_rom_failed_to_wipe),
-                            targetsToString(event.failed)));
-                }
+                });
+    }
 
-                createSnackbar(sb.toString(), Snackbar.LENGTH_LONG).show();
+    private void onSwitchedRom(SwitchRomResult result) {
+        // Remove cached task from service
+        removeCachedTaskId(mTaskIdSwitchRom);
+        mTaskIdSwitchRom = -1;
+
+        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
+        if (d != null) {
+            d.dismiss();
+        }
+
+        switch (result) {
+        case SUCCEEDED:
+            createSnackbar(R.string.choose_rom_success, Snackbar.LENGTH_LONG).show();
+            Log.d(TAG, "Prior cached boot partition ROM ID was: " + mActiveRomId);
+            mActiveRomId = mRomInfo.getId();
+            Log.d(TAG, "Changing cached boot partition ROM ID to: " + mActiveRomId);
+            break;
+        case FAILED:
+            createSnackbar(R.string.choose_rom_failure, Snackbar.LENGTH_LONG).show();
+            break;
+        case CHECKSUM_INVALID:
+            createSnackbar(R.string.choose_rom_checksums_invalid, Snackbar.LENGTH_LONG).show();
+            showChecksumIssueDialog(ConfirmChecksumIssueDialog.CHECKSUM_INVALID, mRomInfo.getId());
+            break;
+        case CHECKSUM_NOT_FOUND:
+            createSnackbar(R.string.choose_rom_checksums_missing, Snackbar.LENGTH_LONG).show();
+            showChecksumIssueDialog(ConfirmChecksumIssueDialog.CHECKSUM_MISSING, mRomInfo.getId());
+            break;
+        case UNKNOWN_BOOT_PARTITION:
+            showUnknownBootPartitionDialog();
+            break;
+        }
+    }
+
+    private void onSetKernel(SetKernelResult result) {
+        // Remove cached task from service
+        removeCachedTaskId(mTaskIdSetKernel);
+        mTaskIdSetKernel = -1;
+
+        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
+        if (d != null) {
+            d.dismiss();
+        }
+
+        switch (result) {
+        case SUCCEEDED:
+            createSnackbar(R.string.set_kernel_success, Snackbar.LENGTH_LONG).show();
+            break;
+        case FAILED:
+            createSnackbar(R.string.set_kernel_failure, Snackbar.LENGTH_LONG).show();
+            break;
+        case UNKNOWN_BOOT_PARTITION:
+            showUnknownBootPartitionDialog();
+            break;
+        }
+    }
+
+    private void onWipedRom(short[] succeeded, short[] failed) {
+        // Remove cached task from service
+        removeCachedTaskId(mTaskIdWipeRom);
+        mTaskIdWipeRom = -1;
+
+        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
+        if (d != null) {
+            d.dismiss();
+        }
+
+        if (succeeded == null || failed == null) {
+            createSnackbar(R.string.wipe_rom_initiate_fail, Snackbar.LENGTH_LONG).show();
+        } else {
+            StringBuilder sb = new StringBuilder();
+
+            if (succeeded.length > 0) {
+                sb.append(String.format(getString(R.string.wipe_rom_successfully_wiped),
+                        targetsToString(succeeded)));
+                if (failed.length > 0) {
+                    sb.append("\n");
+                }
             }
-        } else if (bEvent instanceof CachedWallpaperEvent) {
-            CachedWallpaperEvent event = (CachedWallpaperEvent) bEvent;
-            loadWallpaper(event.result);
-        } else if (bEvent instanceof GotSystemSizeEvent) {
-            GotSystemSizeEvent event = (GotSystemSizeEvent) bEvent;
-            if (event.success) {
-                setInfoItem(INFO_SYSTEM_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
-            } else {
-                setInfoItem(INFO_SYSTEM_SIZE, getString(R.string.unknown));
+            if (failed.length > 0) {
+                sb.append(String.format(getString(R.string.wipe_rom_failed_to_wipe),
+                        targetsToString(failed)));
             }
-        } else if (bEvent instanceof GotCacheSizeEvent) {
-            GotCacheSizeEvent event = (GotCacheSizeEvent) bEvent;
-            if (event.success) {
-                setInfoItem(INFO_CACHE_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
-            } else {
-                setInfoItem(INFO_CACHE_SIZE, getString(R.string.unknown));
-            }
-        } else if (bEvent instanceof GotDataSizeEvent) {
-            GotDataSizeEvent event = (GotDataSizeEvent) bEvent;
-            if (event.success) {
-                setInfoItem(INFO_DATA_SIZE, FileUtils.toHumanReadableSize(this, event.size, 2));
-            } else {
-                setInfoItem(INFO_DATA_SIZE, getString(R.string.unknown));
-            }
-        } else if (bEvent instanceof GotPackageCountsEvent) {
-            GotPackageCountsEvent event = (GotPackageCountsEvent) bEvent;
-            if (event.success) {
-                setInfoItem(INFO_APPS_COUNTS, getString(R.string.rom_details_info_apps_counts_value,
-                        event.systemPackages, event.updatedPackages, event.userPackages));
-            } else {
-                setInfoItem(INFO_APPS_COUNTS, getString(R.string.unknown));
-            }
-        } else if (bEvent instanceof GetRomDetailsFinishedEvent) {
-            // Unused
+
+            createSnackbar(sb.toString(), Snackbar.LENGTH_LONG).show();
+        }
+    }
+
+    private void onCreatedLauncher() {
+        // Remove cached task from service
+        removeCachedTaskId(mTaskIdCreateLauncher);
+        mTaskIdCreateLauncher = -1;
+
+        createSnackbar(String.format(getString(R.string.successfully_created_launcher),
+                mRomInfo.getName()), Snackbar.LENGTH_LONG).show();
+    }
+
+    private void onHaveSystemSize(boolean success, long size) {
+        if (success) {
+            setInfoItem(INFO_SYSTEM_SIZE, FileUtils.toHumanReadableSize(this, size, 2));
+        } else {
+            setInfoItem(INFO_SYSTEM_SIZE, getString(R.string.unknown));
+        }
+    }
+
+    private void onHaveCacheSize(boolean success, long size) {
+        if (success) {
+            setInfoItem(INFO_CACHE_SIZE, FileUtils.toHumanReadableSize(this, size, 2));
+        } else {
+            setInfoItem(INFO_CACHE_SIZE, getString(R.string.unknown));
+        }
+    }
+
+    private void onHaveDataSize(boolean success, long size) {
+        if (success) {
+            setInfoItem(INFO_DATA_SIZE, FileUtils.toHumanReadableSize(this, size, 2));
+        } else {
+            setInfoItem(INFO_DATA_SIZE, getString(R.string.unknown));
+        }
+    }
+
+    private void onHavePackagesCounts(boolean success, int systemPackages, int updatedPackages,
+                                      int userPackages) {
+        if (success) {
+            setInfoItem(INFO_APPS_COUNTS, getString(R.string.rom_details_info_apps_counts_value,
+                    systemPackages, updatedPackages, userPackages));
+        } else {
+            setInfoItem(INFO_APPS_COUNTS, getString(R.string.unknown));
         }
     }
 
@@ -637,7 +800,7 @@ public class RomDetailActivity extends AppCompatActivity implements
                 R.string.switching_rom, R.string.please_wait);
         d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
 
-        mEventCollector.chooseRom(mRomInfo.getId(), forceChecksumsUpdate);
+        mTaskIdSwitchRom = mService.switchRom(mRomInfo.getId(), forceChecksumsUpdate);
     }
 
     private void setKernel() {
@@ -645,7 +808,7 @@ public class RomDetailActivity extends AppCompatActivity implements
                 R.string.setting_kernel, R.string.please_wait);
         d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
 
-        mEventCollector.setKernel(mRomInfo.getId());
+        mTaskIdSetKernel = mService.setKernel(mRomInfo.getId());
     }
 
     private void wipeRom(short[] targets) {
@@ -653,7 +816,7 @@ public class RomDetailActivity extends AppCompatActivity implements
                 R.string.wiping_targets, R.string.please_wait);
         d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
 
-        mEventCollector.wipeRom(mRomInfo.getId(), targets);
+        mTaskIdWipeRom = mService.wipeRom(mRomInfo.getId(), targets);
     }
 
     private void showChecksumIssueDialog(int issue, String romId) {
@@ -710,5 +873,86 @@ public class RomDetailActivity extends AppCompatActivity implements
         }
 
         return sb.toString();
+    }
+
+    private class SwitcherEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            // If we're not yet connected to the service, don't do anything. The state will be
+            // restored upon connection.
+            if (mService == null) {
+                return;
+            }
+
+            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
+                return;
+            }
+
+            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
+
+            if (SwitcherService.ACTION_CACHED_WALLPAPER.equals(action)
+                    && taskId == mTaskIdCacheWallpaper) {
+                CacheWallpaperResult result = (CacheWallpaperResult) intent.getSerializableExtra(
+                        SwitcherService.RESULT_CACHED_WALLPAPER_RESULT);
+                onCachedWallpaper(result);
+            } else if (SwitcherService.ACTION_SWITCHED_ROM.equals(action)
+                    && taskId == mTaskIdSwitchRom) {
+                SwitchRomResult result = (SwitchRomResult) intent.getSerializableExtra(
+                        SwitcherService.RESULT_SWITCHED_ROM_RESULT);
+                onSwitchedRom(result);
+            } else if (SwitcherService.ACTION_SET_KERNEL.equals(action)
+                    && taskId == mTaskIdSetKernel) {
+                SetKernelResult result = (SetKernelResult) intent.getSerializableExtra(
+                        SwitcherService.RESULT_SET_KERNEL_RESULT);
+                onSetKernel(result);
+            } else if (SwitcherService.ACTION_WIPED_ROM.equals(action)
+                    && taskId == mTaskIdWipeRom) {
+                short[] succeeded = intent.getShortArrayExtra(
+                        SwitcherService.RESULT_WIPED_ROM_SUCCEEDED);
+                short[] failed = intent.getShortArrayExtra(
+                        SwitcherService.RESULT_WIPED_ROM_FAILED);
+                onWipedRom(succeeded, failed);
+            } else if (SwitcherService.ACTION_CREATED_LAUNCHER.equals(action)
+                    && taskId == mTaskIdCreateLauncher) {
+                onCreatedLauncher();
+            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_SYSTEM_SIZE.equals(action)
+                    && taskId == mTaskIdGetRomDetails) {
+                boolean success = intent.getBooleanExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
+                long size = intent.getLongExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SIZE, -1);
+                onHaveSystemSize(success, size);
+            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_CACHE_SIZE.equals(action)
+                    && taskId == mTaskIdGetRomDetails) {
+                boolean success = intent.getBooleanExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
+                long size = intent.getLongExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SIZE, -1);
+                onHaveCacheSize(success, size);
+            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_DATA_SIZE.equals(action)
+                    && taskId == mTaskIdGetRomDetails) {
+                boolean success = intent.getBooleanExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
+                long size = intent.getLongExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SIZE, -1);
+                onHaveDataSize(success, size);
+            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_PACKAGES_COUNTS.equals(action)
+                    && taskId == mTaskIdGetRomDetails) {
+                boolean success = intent.getBooleanExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
+                int systemPackages = intent.getIntExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_PACKAGES_COUNT_SYSTEM, -1);
+                int updatedPackages = intent.getIntExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_PACKAGES_COUNT_UPDATED, -1);
+                int userPackages = intent.getIntExtra(
+                        SwitcherService.RESULT_ROM_DETAILS_PACKAGES_COUNT_USER, -1);
+                onHavePackagesCounts(success, systemPackages, updatedPackages, userPackages);
+            } else if (SwitcherService.ACTION_ROM_DETAILS_FINISHED.equals(action)
+                    && taskId == mTaskIdGetRomDetails) {
+                // Ignore
+            }
+        }
     }
 }

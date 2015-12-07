@@ -17,16 +17,15 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment
         .OnReadyStateChangedListener;
@@ -49,14 +48,10 @@ public class ZipFlashingActivity extends AppCompatActivity implements OnReadySta
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.actionbar_check, menu);
 
-        int primary = getResources().getColor(R.color.text_color_primary);
+        int primary = ContextCompat.getColor(this, R.color.text_color_primary);
+        MenuUtils.tintAllMenuIcons(menu, primary);
 
         MenuItem checkItem = menu.findItem(R.id.check_item);
-        Drawable checkIcon = checkItem.getIcon();
-        checkIcon.mutate();
-        checkIcon.setColorFilter(primary, PorterDuff.Mode.SRC_ATOP);
-        checkIcon.setAlpha(Color.alpha(primary));
-
         if (!mShowCheckIcon) {
             checkItem.setVisible(false);
         }

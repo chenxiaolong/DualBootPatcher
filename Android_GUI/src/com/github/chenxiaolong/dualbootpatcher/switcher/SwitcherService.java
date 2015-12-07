@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,576 +17,633 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.app.ActivityManager;
-import android.app.IntentService;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
-import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
-import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandListener;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
-import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.MainActivity;
-import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.PackageCounts;
+import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.WipeResult;
+import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.KernelStatus;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
+        .CacheWallpaperTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
+        .CreateLauncherTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask.FlashZipsTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask
+        .GetRomDetailsTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask
+        .GetRomsStateTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.VerifyZipTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask.WipeRomTaskListener;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.EnumSet;
+public class SwitcherService extends ThreadPoolService {
+    private static final String ACTION_BASE = SwitcherService.class.getCanonicalName();
 
-public class SwitcherService extends IntentService {
-    private static final String TAG = SwitcherService.class.getSimpleName();
-    public static final String BROADCAST_INTENT =
-            "com.chenxiaolong.github.dualbootpatcher.BROADCAST_SWITCHER_STATE";
+    private static final String THREAD_POOL_DEFAULT = "default";
+    private static final int THREAD_POOL_DEFAULT_THREADS = 2;
 
-    public static final String ACTION = "action";
-    public static final String ACTION_FLASH_ZIPS = "flash_zips";
+    /** Task ID. Sent as part of every broadcast */
+    public static final String RESULT_TASK_ID = "task_id";
 
-    public static final String PARAM_ZIP_FILE = "zip_file";
-    public static final String PARAM_PENDING_ACTIONS = "pending_actions";
+    private static final AtomicInteger sNewTaskId = new AtomicInteger(0);
+    private static final HashMap<Integer, BaseServiceTask> sTaskCache = new HashMap<>();
 
-    public static final String STATE = "state";
-    public static final String STATE_FLASHED_ZIPS = "flashed_zips";
-    public static final String STATE_COMMAND_OUTPUT_DATA = "command_output_line";
+    private void addTask(int taskId, BaseServiceTask task) {
+        synchronized (sTaskCache) {
+            sTaskCache.put(taskId, task);
+        }
+    }
 
-    public static final String RESULT_TOTAL_ACTIONS = "total_actions";
-    public static final String RESULT_FAILED_ACTIONS = "failed_actions";
-    public static final String RESULT_OUTPUT_DATA = "output_line";
+    private BaseServiceTask getTask(int taskId) {
+        synchronized (sTaskCache) {
+            return sTaskCache.get(taskId);
+        }
+    }
 
-    // Switch ROM and set kernel
-    public static final String ACTION_SWITCH_ROM = "switch_rom";
-    public static final String ACTION_SET_KERNEL = "set_kernel";
-    public static final String PARAM_KERNEL_ID = "kernel_id";
-    public static final String PARAM_FORCE_CHECKSUMS_UPDATE = "force_checksums_update";
-    public static final String STATE_SWITCHED_ROM = "switched_rom";
-    public static final String STATE_SET_KERNEL = "set_kernel";
-    public static final String RESULT_KERNEL_ID = "kernel_id";
-    public static final String RESULT_SWITCH_ROM = "switch_rom";
-    public static final String RESULT_SET_KERNEL = "set_kernel";
+    private BaseServiceTask removeTask(int taskId) {
+        synchronized (sTaskCache) {
+            return sTaskCache.remove(taskId);
+        }
+    }
 
-    // Create launcher on the home screen
-    public static final String ACTION_CREATE_LAUNCHER = "create_launcher";
-    public static final String PARAM_ROM = "rom";
-    public static final String PARAM_REBOOT = "reboot";
-    public static final String STATE_CREATED_LAUNCHER = "created_launcher";
-    public static final String RESULT_ROM = "rom";
+    private void enqueueTask(BaseServiceTask task) {
+        addTask(task.getTaskId(), task);
+        enqueueOperation(THREAD_POOL_DEFAULT, task);
+    }
+
+    public TaskState getCachedTaskState(int taskId) {
+        BaseServiceTask task = getTask(taskId);
+        return task.getState();
+    }
+
+    public boolean removeCachedTask(int taskId) {
+        BaseServiceTask task = removeTask(taskId);
+        return task != null;
+    }
+
+    public void enforceFinishedState(BaseServiceTask task) {
+        if (task.getState() != TaskState.FINISHED) {
+            throw new IllegalStateException("Tried to get result for task " + task.getTaskId() +
+                    " in state " + task.getState().name());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        addThreadPool(THREAD_POOL_DEFAULT, THREAD_POOL_DEFAULT_THREADS);
+    }
+
+    // Get ROMs state
+
+    public static final String ACTION_GOT_ROMS_STATE = ACTION_BASE + ".got_roms_list";
+    public static final String RESULT_GOT_ROMS_STATE_ROMS_LIST = "roms_list";
+    public static final String RESULT_GOT_ROMS_STATE_CURRENT_ROM = "current_rom";
+    public static final String RESULT_GOT_ROMS_STATE_ACTIVE_ROM_ID = "active_rom_id";
+    public static final String RESULT_GOT_ROMS_STATE_KERNEL_STATUS = "kernel_status";
+
+    public int getRomsState() {
+        int taskId = sNewTaskId.getAndIncrement();
+        GetRomsStateTask task = new GetRomsStateTask(taskId, this, mGetRomsStateTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final GetRomsStateTaskListener mGetRomsStateTaskListener =
+            new GetRomsStateTaskListener() {
+        @Override
+        public void onGotRomsState(int taskId, RomInformation[] roms, RomInformation currentRom,
+                                   String activeRomId, KernelStatus kernelStatus) {
+            Intent intent = new Intent(ACTION_GOT_ROMS_STATE);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_GOT_ROMS_STATE_ROMS_LIST, roms);
+            intent.putExtra(RESULT_GOT_ROMS_STATE_CURRENT_ROM, currentRom);
+            intent.putExtra(RESULT_GOT_ROMS_STATE_ACTIVE_ROM_ID, activeRomId);
+            intent.putExtra(RESULT_GOT_ROMS_STATE_KERNEL_STATUS, kernelStatus);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public RomInformation[] getResultRomsStateRomsList(int taskId) {
+        GetRomsStateTask task = (GetRomsStateTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRoms;
+    }
+
+    public RomInformation getResultRomsStateCurrentRom(int taskId) {
+        GetRomsStateTask task = (GetRomsStateTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mCurrentRom;
+    }
+
+    public String getResultRomsStateActiveRomId(int taskId) {
+        GetRomsStateTask task = (GetRomsStateTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mActiveRomId;
+    }
+
+    public KernelStatus getResultRomsStateKernelStatus(int taskId) {
+        GetRomsStateTask task = (GetRomsStateTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mKernelStatus;
+    }
+
+    // Switch ROM
+
+    public static final String ACTION_SWITCHED_ROM = ACTION_BASE + ".switched_rom";
+    public static final String RESULT_SWITCHED_ROM_ROM_ID = "rom_id";
+    public static final String RESULT_SWITCHED_ROM_RESULT = "result";
+
+    public int switchRom(String romId, boolean forceChecksumsUpdate) {
+        int taskId = sNewTaskId.getAndIncrement();
+        SwitchRomTask task = new SwitchRomTask(
+                taskId, this, romId, forceChecksumsUpdate, mSwitchRomTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final SwitchRomTaskListener mSwitchRomTaskListener = new SwitchRomTaskListener() {
+        @Override
+        public void onSwitchedRom(int taskid, String romId, SwitchRomResult result) {
+            Intent intent = new Intent(ACTION_SWITCHED_ROM);
+            intent.putExtra(RESULT_TASK_ID, taskid);
+            intent.putExtra(RESULT_SWITCHED_ROM_ROM_ID, romId);
+            intent.putExtra(RESULT_SWITCHED_ROM_RESULT, result);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public String getResultSwitchedRomRomId(int taskId) {
+        SwitchRomTask task = (SwitchRomTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomId;
+    }
+
+    public SwitchRomResult getResultSwitchedRomResult(int taskId) {
+        SwitchRomTask task = (SwitchRomTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mResult;
+    }
+
+    // Set kernel
+
+    public static final String ACTION_SET_KERNEL = ACTION_BASE + ".set_kernel";
+    public static final String RESULT_SET_KERNEL_ROM_ID = "rom_id";
+    public static final String RESULT_SET_KERNEL_RESULT = "result";
+
+    public int setKernel(String romId) {
+        int taskId = sNewTaskId.getAndIncrement();
+        SetKernelTask task = new SetKernelTask(taskId, this, romId, mSetKernelTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final SetKernelTaskListener mSetKernelTaskListener = new SetKernelTaskListener() {
+        @Override
+        public void onSetKernel(int taskId, String romId, SetKernelResult result) {
+            Intent intent = new Intent(ACTION_SET_KERNEL);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_SET_KERNEL_ROM_ID, romId);
+            intent.putExtra(RESULT_SET_KERNEL_RESULT, result);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public String getResultSetKernelRomId(int taskId) {
+        SetKernelTask task = (SetKernelTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomId;
+    }
+
+    public SetKernelResult getResultSetKernelResult(int taskId) {
+        SetKernelTask task = (SetKernelTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mResult;
+    }
+
+    // Create launcher
+
+    public static final String ACTION_CREATED_LAUNCHER = ACTION_BASE + ".created_launcher";
+    public static final String RESULT_CREATED_LAUNCHER_ROM = "rom";
+
+    public int createLauncher(RomInformation romInfo, boolean reboot) {
+        int taskId = sNewTaskId.getAndIncrement();
+        CreateLauncherTask task = new CreateLauncherTask(
+                taskId, this, romInfo, reboot, mCreateLauncherTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final CreateLauncherTaskListener mCreateLauncherTaskListener =
+            new CreateLauncherTaskListener() {
+        @Override
+        public void onCreatedLauncher(int taskId, RomInformation romInfo) {
+            Intent intent = new Intent(ACTION_CREATED_LAUNCHER);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_CREATED_LAUNCHER_ROM, romInfo);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    // Verify zip
+
+    public static final String ACTION_VERIFIED_ZIP = ACTION_BASE + ".verified_zip";
+    public static final String RESULT_VERIFIED_ZIP_RESULT = "result";
+    public static final String RESULT_VERIFIED_ZIP_ROM_ID = "rom_id";
+
+    public int verifyZip(String path) {
+        int taskId = sNewTaskId.getAndIncrement();
+        VerifyZipTask task = new VerifyZipTask(taskId, this, path, mVerifyZipTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final VerifyZipTaskListener mVerifyZipTaskListener = new VerifyZipTaskListener() {
+        @Override
+        public void onVerifiedZip(int taskId, String path, VerificationResult result,
+                                  String romId) {
+            Intent intent = new Intent(ACTION_VERIFIED_ZIP);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_VERIFIED_ZIP_RESULT, result);
+            intent.putExtra(RESULT_VERIFIED_ZIP_ROM_ID, romId);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public String getResultVerifiedZipPath(int taskId) {
+        VerifyZipTask task = (VerifyZipTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mPath;
+    }
+
+    public VerificationResult getResultVerifiedZipResult(int taskId) {
+        VerifyZipTask task = (VerifyZipTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mResult;
+    }
+
+    public String getResultVerifiedZipRomId(int taskId) {
+        VerifyZipTask task = (VerifyZipTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomId;
+    }
+
+    // In-app flashing
+
+    public static final String ACTION_FLASHED_ZIPS = ACTION_BASE + ".flashed_zips";
+    public static final String ACTION_NEW_OUTPUT_LINE = ACTION_BASE + ".new_output_line";
+    public static final String RESULT_FLASHED_ZIPS_TOTAL_ACTIONS = "total_actions";
+    public static final String RESULT_FLASHED_ZIPS_FAILED_ACTIONS = "failed_actions";
+    public static final String RESULT_FLASHED_ZIPS_OUTPUT_LINE = "output_line";
+
+    public int flashZips(PendingAction[] actions) {
+        int taskId = sNewTaskId.getAndIncrement();
+        FlashZipsTask task = new FlashZipsTask(taskId, this, actions, mFlashZipsTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final FlashZipsTaskListener mFlashZipsTaskListener = new FlashZipsTaskListener() {
+        @Override
+        public void onFlashedZips(int taskId, int totalActions, int failedActions) {
+            Intent intent = new Intent(ACTION_FLASHED_ZIPS);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_FLASHED_ZIPS_TOTAL_ACTIONS, totalActions);
+            intent.putExtra(RESULT_FLASHED_ZIPS_FAILED_ACTIONS, failedActions);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+
+        @Override
+        public void onCommandOutput(int taskId, String line) {
+            Intent intent = new Intent(ACTION_NEW_OUTPUT_LINE);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_FLASHED_ZIPS_OUTPUT_LINE, line);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public int getResultFlashedZipsTotalActions(int taskId) {
+        FlashZipsTask task = (FlashZipsTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mTotal;
+    }
+
+    public int getResultFlashedZipsFailedActions(int taskId) {
+        FlashZipsTask task = (FlashZipsTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mFailed;
+    }
+
+    public String[] getResultFlashedZipsOutputLines(int taskId) {
+        FlashZipsTask task = (FlashZipsTask) getTask(taskId);
+        return task.getLines();
+    }
 
     // Wipe ROM
-    public static final String ACTION_WIPE_ROM = "wipe_rom";
-    public static final String PARAM_ROM_ID = "rom_id";
-    public static final String PARAM_WIPE_TARGETS = "wipe_targets";
-    public static final String STATE_WIPED_ROM = "wiped_rom";
-    public static final String RESULT_TARGETS_SUCCEEDED = "targets_succeeded";
-    public static final String RESULT_TARGETS_FAILED = "targets_failed";
 
-    // Verify ZIP for in-app flashing
-    public static final String ACTION_VERIFY_ZIP = "verify_zip";
-    public static final String STATE_VERIFIED_ZIP = "verified_zip";
-    public static final String RESULT_VERIFY_ZIP = "verify_zip";
-    public static final String RESULT_ROM_ID = "rom_id";
+    public static final String ACTION_WIPED_ROM = ACTION_BASE + ".wiped_rom";
+    public static final String RESULT_WIPED_ROM_ROM_ID = "rom_id";
+    public static final String RESULT_WIPED_ROM_SUCCEEDED = "succeeded";
+    public static final String RESULT_WIPED_ROM_FAILED = "failed";
 
-    // Cache wallpaper for ROM details activity
-    public static final String ACTION_CACHE_WALLPAPER = "cache_wallpaper";
-    public static final String STATE_CACHED_WALLPAPER = "ached_wallpaper";
-    public static final String CACHE_WALLPAPER_PARAM_ROM = "rom";
-    public static final String CACHE_WALLPAPER_RESULT_RESULT = "succeess";
+    public int wipeRom(String romId, short[] targets) {
+        int taskId = sNewTaskId.getAndIncrement();
+        WipeRomTask task = new WipeRomTask(taskId, this, romId, targets, mWipeRomTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final WipeRomTaskListener mWipeRomTaskListener = new WipeRomTaskListener() {
+        @Override
+        public void onWipedRom(int taskId, String romId, short[] succeeded, short[] failed) {
+            Intent intent = new Intent(ACTION_WIPED_ROM);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_WIPED_ROM_ROM_ID, romId);
+            intent.putExtra(RESULT_WIPED_ROM_SUCCEEDED, succeeded);
+            intent.putExtra(RESULT_WIPED_ROM_FAILED, failed);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public String getResultWipedRomRom(int taskId) {
+        WipeRomTask task = (WipeRomTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomId;
+    }
+
+    public short[] getResultWipedRomTargetsSucceeded(int taskId) {
+        WipeRomTask task = (WipeRomTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mTargetsSucceeded;
+    }
+
+    public short[] getResultWipedRomTargetsFailed(int taskId) {
+        WipeRomTask task = (WipeRomTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mTargetsFailed;
+    }
+
+    // Cache wallpaper
+
+    public static final String ACTION_CACHED_WALLPAPER = ACTION_BASE + ".cached_wallpaper";
+    public static final String RESULT_CACHED_WALLPAPER_ROM = "rom";
+    public static final String RESULT_CACHED_WALLPAPER_RESULT = "result";
+
+    public int cacheWallpaper(RomInformation info) {
+        int taskId = sNewTaskId.getAndIncrement();
+        CacheWallpaperTask task = new CacheWallpaperTask(
+                taskId, this, info, mCacheWallpaperTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final CacheWallpaperTaskListener mCacheWallpaperTaskListener =
+            new CacheWallpaperTaskListener() {
+        @Override
+        public void onCachedWallpaper(int taskId, RomInformation romInfo,
+                                      CacheWallpaperResult result) {
+            Intent intent = new Intent(ACTION_CACHED_WALLPAPER);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_CACHED_WALLPAPER_ROM, romInfo);
+            intent.putExtra(RESULT_CACHED_WALLPAPER_RESULT, result);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
+        }
+    };
+
+    public RomInformation getResultCachedWallpaperRom(int taskId) {
+        CacheWallpaperTask task = (CacheWallpaperTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomInfo;
+    }
+
+    public CacheWallpaperResult getResultCachedWallpaperResult(int taskId) {
+        CacheWallpaperTask task = (CacheWallpaperTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mResult;
+    }
 
     // Get ROM details
-    public static final String ACTION_GET_ROM_DETAILS = "get_rom_details";
-    public static final String STATE_ROM_DETAILS_GOT_SYSTEM_SIZE = "got_system_size";
-    public static final String STATE_ROM_DETAILS_GOT_CACHE_SIZE = "got_cache_size";
-    public static final String STATE_ROM_DETAILS_GOT_DATA_SIZE = "got_data_size";
-    public static final String STATE_ROM_DETAILS_GOT_PKGS_COUNTS = "got_pkgs_count";
-    public static final String STATE_ROM_DETAILS_FINISHED = "finished";
-    public static final String GET_ROM_DETAILS_PARAM_ROM = "rom";
-    public static final String GET_ROM_DETAILS_RESULT_SIZE = "size";
-    public static final String GET_ROM_DETAILS_RESULT_SUCCESS = "success";
-    public static final String GET_ROM_DETAILS_RESULT_PKGS_COUNT_SYSTEM = "pkgs_system";
-    public static final String GET_ROM_DETAILS_RESULT_PKGS_COUNT_UPDATED = "pkgs_updated";
-    public static final String GET_ROM_DETAILS_RESULT_PKGS_COUNT_USER = "pkgs_user";
 
-    private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
+    public static final String ACTION_ROM_DETAILS_FINISHED =
+            ACTION_BASE + ".rom_details.finished";
+    public static final String ACTION_ROM_DETAILS_GOT_SYSTEM_SIZE =
+            ACTION_BASE + ".rom_details.got_system_size";
+    public static final String ACTION_ROM_DETAILS_GOT_CACHE_SIZE =
+            ACTION_BASE + ".rom_details.got_cache_size";
+    public static final String ACTION_ROM_DETAILS_GOT_DATA_SIZE =
+            ACTION_BASE + ".rom_details.got_data_size";
+    public static final String ACTION_ROM_DETAILS_GOT_PACKAGES_COUNTS =
+            ACTION_BASE + ".rom_details.got_packages_counts";
+    public static final String RESULT_ROM_DETAILS_ROM = "rom";
+    public static final String RESULT_ROM_DETAILS_SIZE = "size";
+    public static final String RESULT_ROM_DETAILS_SUCCESS = "success";
+    public static final String RESULT_ROM_DETAILS_PACKAGES_COUNT_SYSTEM = "packages_system";
+    public static final String RESULT_ROM_DETAILS_PACKAGES_COUNT_UPDATED = "packages_updated";
+    public static final String RESULT_ROM_DETAILS_PACKAGES_COUNT_USER = "packages_user";
 
-    public SwitcherService() {
-        super(TAG);
+    public int getRomDetails(RomInformation romInfo) {
+        int taskId = sNewTaskId.getAndIncrement();
+        GetRomDetailsTask task = new GetRomDetailsTask(
+                taskId, this, romInfo, mGetRomDetailsTaskListener);
+        enqueueTask(task);
+        return taskId;
     }
 
-    private void onSwitchedRom(String kernelId, SwitchRomResult result) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_SWITCHED_ROM);
-        i.putExtra(RESULT_KERNEL_ID, kernelId);
-        i.putExtra(RESULT_SWITCH_ROM, result);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onSetKernel(String kernelId, SetKernelResult result) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_SET_KERNEL);
-        i.putExtra(RESULT_KERNEL_ID, kernelId);
-        i.putExtra(RESULT_SET_KERNEL, result);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onCreatedLauncher(RomInformation rom) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_CREATED_LAUNCHER);
-        i.putExtra(RESULT_ROM, rom);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onVerifiedZip(VerificationResult result, String romId) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_VERIFIED_ZIP);
-        i.putExtra(RESULT_VERIFY_ZIP, result);
-        i.putExtra(RESULT_ROM_ID, romId);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onFlashedZips(int totalActions, int failedActions) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_FLASHED_ZIPS);
-        i.putExtra(RESULT_TOTAL_ACTIONS, totalActions);
-        i.putExtra(RESULT_FAILED_ACTIONS, failedActions);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onNewOutputData(String line) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_COMMAND_OUTPUT_DATA);
-        i.putExtra(RESULT_OUTPUT_DATA, line);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onWipedRom(short[] succeeded, short[] failed) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_WIPED_ROM);
-        i.putExtra(RESULT_TARGETS_SUCCEEDED, succeeded);
-        i.putExtra(RESULT_TARGETS_FAILED, failed);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onCachedWallpaper(CacheWallpaperResult result) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_CACHED_WALLPAPER);
-        i.putExtra(CACHE_WALLPAPER_RESULT_RESULT, result);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onGotSystemSize(boolean success, long size) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_SYSTEM_SIZE);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onGotCacheSize(boolean success, long size) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_CACHE_SIZE);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onGotDataSize(boolean success, long size) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_DATA_SIZE);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SIZE, size);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onGotPackageCounts(boolean success, int systemPackages, int updatePackages,
-                                    int userPackages) {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_ROM_DETAILS_GOT_PKGS_COUNTS);
-        i.putExtra(GET_ROM_DETAILS_RESULT_SUCCESS, success);
-        i.putExtra(GET_ROM_DETAILS_RESULT_PKGS_COUNT_SYSTEM, systemPackages);
-        i.putExtra(GET_ROM_DETAILS_RESULT_PKGS_COUNT_UPDATED, updatePackages);
-        i.putExtra(GET_ROM_DETAILS_RESULT_PKGS_COUNT_USER, userPackages);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void onGetRomDetailsFinished() {
-        Intent i = new Intent(BROADCAST_INTENT);
-        i.putExtra(STATE, STATE_ROM_DETAILS_FINISHED);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-    }
-
-    private void setupNotification(String action) {
-        Intent resultIntent = new Intent(this, MainActivity.class);
-        resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        resultIntent.setAction(Intent.ACTION_MAIN);
-
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
-
-        Notification.Builder builder = new Notification.Builder(this);
-        builder.setSmallIcon(R.drawable.ic_launcher);
-        builder.setOngoing(true);
-
-        if (ACTION_SWITCH_ROM.equals(action)) {
-            builder.setContentTitle(getString(R.string.switching_rom));
-        } else if (ACTION_SET_KERNEL.equals(action)) {
-            builder.setContentTitle(getString(R.string.setting_kernel));
+    private final GetRomDetailsTaskListener mGetRomDetailsTaskListener =
+            new GetRomDetailsTaskListener() {
+        @Override
+        public void onRomDetailsGotSystemSize(int taskId, RomInformation romInfo,
+                                              boolean success, long size) {
+            Intent intent = new Intent(ACTION_ROM_DETAILS_GOT_SYSTEM_SIZE);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_ROM_DETAILS_ROM, romInfo);
+            intent.putExtra(RESULT_ROM_DETAILS_SUCCESS, success);
+            intent.putExtra(RESULT_ROM_DETAILS_SIZE, size);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
         }
 
-        builder.setContentIntent(pendingIntent);
-        builder.setProgress(0, 0, true);
-
-        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        nm.notify(1, builder.build());
-    }
-
-    private void removeNotification() {
-        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        nm.cancel(1);
-    }
-
-    private void switchRom(Bundle data) {
-        setupNotification(ACTION_SWITCH_ROM);
-
-        String kernelId = data.getString(PARAM_KERNEL_ID);
-        boolean forceChecksumsUpdate = data.getBoolean(PARAM_FORCE_CHECKSUMS_UPDATE);
-        SwitchRomResult result = SwitchRomResult.FAILED;
-        try {
-            result = MbtoolSocket.getInstance().switchRom(this, kernelId, forceChecksumsUpdate);
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
+        @Override
+        public void onRomDetailsGotCacheSize(int taskId, RomInformation romInfo,
+                                             boolean success, long size) {
+            Intent intent = new Intent(ACTION_ROM_DETAILS_GOT_CACHE_SIZE);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_ROM_DETAILS_ROM, romInfo);
+            intent.putExtra(RESULT_ROM_DETAILS_SUCCESS, success);
+            intent.putExtra(RESULT_ROM_DETAILS_SIZE, size);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
         }
 
-        onSwitchedRom(kernelId, result);
-
-        removeNotification();
-    }
-
-    private void setKernel(Bundle data) {
-        setupNotification(ACTION_SET_KERNEL);
-
-        String kernelId = data.getString(PARAM_KERNEL_ID);
-        SetKernelResult result = SetKernelResult.FAILED;
-        try {
-            result = MbtoolSocket.getInstance().setKernel(this, kernelId);
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
+        @Override
+        public void onRomDetailsGotDataSize(int taskId, RomInformation romInfo,
+                                            boolean success, long size) {
+            Intent intent = new Intent(ACTION_ROM_DETAILS_GOT_DATA_SIZE);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_ROM_DETAILS_ROM, romInfo);
+            intent.putExtra(RESULT_ROM_DETAILS_SUCCESS, success);
+            intent.putExtra(RESULT_ROM_DETAILS_SIZE, size);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
         }
 
-        onSetKernel(kernelId, result);
-
-        removeNotification();
-    }
-
-    private static Bitmap createScaledIcon(Context context, Bitmap icon) {
-        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        final int iconSize = am.getLauncherLargeIconSize();
-        return Bitmap.createScaledBitmap(icon, iconSize, iconSize, true);
-    }
-
-    private void createLauncher(Bundle data) {
-        RomInformation rom = data.getParcelable(PARAM_ROM);
-        if (rom == null) {
-            // Make Android Studio happy
-            return;
+        @Override
+        public void onRomDetailsGotPackagesCounts(int taskId, RomInformation romInfo,
+                                                  boolean success, int systemPackages,
+                                                  int updatedPackages, int userPackages) {
+            Intent intent = new Intent(ACTION_ROM_DETAILS_GOT_PACKAGES_COUNTS);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_ROM_DETAILS_ROM, romInfo);
+            intent.putExtra(RESULT_ROM_DETAILS_SUCCESS, success);
+            intent.putExtra(RESULT_ROM_DETAILS_PACKAGES_COUNT_SYSTEM, systemPackages);
+            intent.putExtra(RESULT_ROM_DETAILS_PACKAGES_COUNT_UPDATED, updatedPackages);
+            intent.putExtra(RESULT_ROM_DETAILS_PACKAGES_COUNT_USER, userPackages);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
         }
 
-        boolean reboot = data.getBoolean(PARAM_REBOOT);
-
-        Intent shortcutIntent = new Intent(this, AutomatedSwitcherActivity.class);
-        shortcutIntent.setAction("com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM");
-        shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_ROM_ID, rom.getId());
-        shortcutIntent.putExtra(AutomatedSwitcherActivity.EXTRA_REBOOT, reboot);
-
-        Intent addIntent = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
-        addIntent.putExtra("duplicate", false);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, rom.getName());
-
-        File f = new File(rom.getThumbnailPath());
-        if (f.exists() && f.canRead()) {
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            Bitmap bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), options);
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, createScaledIcon(this, bitmap));
-        } else {
-            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
-                    Intent.ShortcutIconResource.fromContext(this, rom.getImageResId()));
+        @Override
+        public void onRomDetailsFinished(int taskId, RomInformation romInfo) {
+            Intent intent = new Intent(ACTION_ROM_DETAILS_FINISHED);
+            intent.putExtra(RESULT_TASK_ID, taskId);
+            intent.putExtra(RESULT_ROM_DETAILS_ROM, romInfo);
+            LocalBroadcastManager.getInstance(SwitcherService.this).sendBroadcast(intent);
         }
+    };
 
-        sendBroadcast(addIntent);
-
-        onCreatedLauncher(rom);
+    public RomInformation getResultRomDetailsRom(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomInfo;
     }
 
-    private void verifyZip(Bundle data) {
-        String zipFile = data.getString(PARAM_ZIP_FILE);
-        VerificationResult result = SwitcherUtils.verifyZipMbtoolVersion(zipFile);
-        String romId = SwitcherUtils.getTargetInstallLocation(zipFile);
-        onVerifiedZip(result, romId);
+    public boolean hasResultRomDetailsSystemSize(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        return task.mHaveSystemSize.get();
     }
 
-    private int runRootCommand(String command) {
-        printBoldText(Color.YELLOW, "Running command: " + command + "\n");
+    public boolean hasResultRomDetailsCacheSize(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        return task.mHaveCacheSize.get();
+    }
 
-        RootCommandParams params = new RootCommandParams();
-        params.command = command;
-        params.listener = new RootCommandListener() {
-            @Override
-            public void onNewOutputLine(String line) {
-                SwitcherService.this.onNewOutputData(line + "\n");
-            }
+    public boolean hasResultRomDetailsDataSize(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        return task.mHaveDataSize.get();
+    }
 
-            @Override
-            public void onCommandCompletion(CommandResult result) {
-            }
-        };
+    public boolean hasResultRomDetailsPackagesCounts(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        return task.mHavePackagesCounts.get();
+    }
 
-        RootCommandRunner cmd = new RootCommandRunner(params);
-        cmd.start();
-        CommandUtils.waitForRootCommand(cmd);
-        CommandResult result = cmd.getResult();
-
-        if (result == null) {
-            return -1;
-        } else {
-            return result.exitCode;
+    public boolean getResultRomDetailsSystemSizeSuccess(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHaveSystemSize.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting system size");
         }
+        return task.mSystemSizeSuccess;
     }
 
-    private boolean remountFs(String mountpoint, boolean rw) {
-        printBoldText(Color.YELLOW, "Mounting " + mountpoint + " as " +
-                (rw ? "writable" : "read-only") + "\n");
-
-        if (rw) {
-            return runRootCommand("mount -o remount,rw " + mountpoint) == 0;
-        } else {
-            return runRootCommand("mount -o remount,ro " + mountpoint) == 0;
+    public long getResultRomDetailsSystemSize(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHaveSystemSize.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting system size");
         }
+        return task.mSystemSize;
     }
 
-    private void printSeparator() {
-        printBoldText(Color.WHITE, StringUtils.repeat('-', 16) + "\n");
-    }
-
-    private void printBoldText(Color color, String text) {
-        onNewOutputData(AnsiStuff.format(text,
-                EnumSet.of(color), null, EnumSet.of(Attribute.BOLD)));
-    }
-
-    private static String quoteArg(String arg) {
-        return "'" + arg.replace("'", "'\"'\"'") + "'";
-    }
-
-    private void flashZips(Bundle data) {
-        Parcelable[] parcelables = data.getParcelableArray(PARAM_PENDING_ACTIONS);
-        PendingAction[] actions = new PendingAction[parcelables.length];
-        System.arraycopy(parcelables, 0, actions, 0, parcelables.length);
-
-        boolean remountedRoot = false;
-        boolean remountedSystem = false;
-
-        int succeeded = 0;
-
-        try {
-            if (!CommandUtils.requestRootAccess()) {
-                printBoldText(Color.RED, "Failed to obtain root privileges\n");
-                return;
-            }
-
-            if (!remountFs("/", true)) {
-                printBoldText(Color.RED, "Failed to remount / as rw\n");
-                return;
-            }
-            remountedRoot = true;
-
-            if (!remountFs("/system", true)) {
-                printBoldText(Color.RED, "Failed to remount /system as rw\n");
-                return;
-            }
-            remountedSystem = true;
-
-            for (PendingAction pa : actions) {
-                if (pa.type != PendingAction.Type.INSTALL_ZIP) {
-                    throw new IllegalStateException("Only INSTALL_ZIP is supported right now");
-                }
-
-                printSeparator();
-
-                printBoldText(Color.MAGENTA, "Processing action: Flash zip\n");
-                printBoldText(Color.MAGENTA, "- ZIP file: " + pa.zipFile + "\n");
-                printBoldText(Color.MAGENTA, "- Destination: " + pa.romId + "\n");
-
-                // Extract mbtool from the zip file
-                File zipInstaller = new File(getCacheDir() + File.separator + "rom-installer");
-                zipInstaller.delete();
-
-                printBoldText(Color.YELLOW, "Extracting mbtool ROM installer from the zip file\n");
-                if (!FileUtils.zipExtractFile(pa.zipFile, UPDATE_BINARY, zipInstaller.getPath())) {
-                    printBoldText(Color.RED, "Failed to extract update-binary\n");
-                    return;
-                }
-
-                // Copy to /
-                if (runRootCommand("rm -f /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to remove old /rom-installer\n");
-                    return;
-                }
-                if (runRootCommand("cp " + zipInstaller.getPath() + " /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to copy new /rom-installer\n");
-                    return;
-                }
-                if (runRootCommand("chmod 755 /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to chmod /rom-installer\n");
-                    return;
-                }
-
-                int ret = runRootCommand("/rom-installer --romid " + quoteArg(pa.romId) + " " +
-                        quoteArg(pa.zipFile));
-
-                zipInstaller.delete();
-
-                if (ret < 0) {
-                    printBoldText(Color.RED, "\nFailed to run command\n");
-                    return;
-                } else {
-                    printBoldText(ret == 0 ? Color.GREEN : Color.RED,
-                            "\nCommand returned: " + ret + "\n");
-
-                    if (ret == 0) {
-                        succeeded++;
-                    } else {
-                        return;
-                    }
-                }
-            }
-        } finally {
-            if (remountedRoot || remountedSystem) {
-                printSeparator();
-            }
-
-            if (remountedRoot && !remountFs("/", false)) {
-                printBoldText(Color.RED, "Failed to remount / as ro\n");
-            }
-            if (remountedSystem && !remountFs("/system", false)) {
-                printBoldText(Color.RED, "Failed to remount /system as ro\n");
-            }
-
-            printSeparator();
-
-            String frac = succeeded + "/" + actions.length;
-
-            printBoldText(Color.CYAN, "Successfully completed " + frac + " actions\n");
-
-            onFlashedZips(actions.length, actions.length - succeeded);
+    public boolean getResultRomDetailsCacheSizeSuccess(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHaveCacheSize.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting cache size");
         }
+        return task.mCacheSizeSuccess;
     }
 
-    private void wipeRom(Bundle data) {
-        String romId = data.getString(PARAM_ROM_ID);
-        short[] targets = data.getShortArray(PARAM_WIPE_TARGETS);
-
-        try {
-            WipeResult result = MbtoolSocket.getInstance().wipeRom(this, romId, targets);
-            onWipedRom(result.succeeded, result.failed);
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
-            onWipedRom(null, null);
+    public long getResultRomDetailsCacheSize(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHaveCacheSize.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting cache size");
         }
+        return task.mCacheSize;
     }
 
-    private void cacheWallpaper(Bundle data) {
-        RomInformation romInfo = data.getParcelable(CACHE_WALLPAPER_PARAM_ROM);
-        CacheWallpaperResult result = RomUtils.cacheWallpaper(this, romInfo);
-        onCachedWallpaper(result);
+    public boolean getResultRomDetailsDataSizeSuccess(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHaveDataSize.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting data size");
+        }
+        return task.mDataSizeSuccess;
     }
 
-    private void getRomDetails(Bundle data) {
-        RomInformation romInfo = data.getParcelable(GET_ROM_DETAILS_PARAM_ROM);
-
-        MbtoolSocket socket = MbtoolSocket.getInstance();
-
-        try {
-            PackageCounts pc = socket.getPackagesCounts(this, romInfo.getId());
-            if (pc == null) {
-                onGotPackageCounts(false, 0, 0, 0);
-            } else {
-                onGotPackageCounts(true, pc.systemPackages, pc.systemUpdatePackages,
-                        pc.nonSystemPackages);
-            }
-        } catch (IOException e) {
-            onGotPackageCounts(false, 0, 0, 0);
+    public long getResultRomDetailsDataSize(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHaveDataSize.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting data size");
         }
-
-        try {
-            long systemSize = socket.pathGetDirectorySize(
-                    this, romInfo.getSystemPath(), new String[]{ "multiboot" });
-            onGotSystemSize(systemSize >= 0, systemSize);
-        } catch (IOException e) {
-            onGotSystemSize(false, -1);
-        }
-
-        try {
-            long cacheSize = socket.pathGetDirectorySize(
-                    this, romInfo.getCachePath(), new String[]{ "multiboot" });
-            onGotCacheSize(cacheSize >= 0, cacheSize);
-        } catch (IOException e) {
-            onGotCacheSize(false, -1);
-        }
-
-        try {
-            long dataSize = socket.pathGetDirectorySize(
-                    this, romInfo.getDataPath(), new String[]{ "multiboot", "media" });
-            onGotDataSize(dataSize >= 0, dataSize);
-        } catch (IOException e) {
-            onGotDataSize(false, -1);
-        }
-
-        onGetRomDetailsFinished();
+        return task.mDataSize;
     }
 
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        String action = intent.getStringExtra(ACTION);
-
-        if (ACTION_SWITCH_ROM.equals(action)) {
-            switchRom(intent.getExtras());
-        } else if (ACTION_SET_KERNEL.equals(action)) {
-            setKernel(intent.getExtras());
-        } else if (ACTION_CREATE_LAUNCHER.equals(action)) {
-            createLauncher(intent.getExtras());
-        } else if (ACTION_VERIFY_ZIP.equals(action)) {
-            verifyZip(intent.getExtras());
-        } else if (ACTION_FLASH_ZIPS.equals(action)) {
-            flashZips(intent.getExtras());
-        } else if (ACTION_WIPE_ROM.equals(action)) {
-            wipeRom(intent.getExtras());
-        } else if (ACTION_CACHE_WALLPAPER.equals(action)) {
-            cacheWallpaper(intent.getExtras());
-        } else if (ACTION_GET_ROM_DETAILS.equals(action)) {
-            getRomDetails(intent.getExtras());
+    public boolean getResultRomDetailsPackagesCountsSuccess(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHavePackagesCounts.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting packages counts");
         }
+        return task.mPackagesCountsSuccess;
+    }
+
+    public int getResultRomDetailsSystemPackages(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHavePackagesCounts.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting packages counts");
+        }
+        return task.mSystemPackages;
+    }
+
+    public int getResultRomDetailsUpdatedPackages(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHavePackagesCounts.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting packages counts");
+        }
+        return task.mSystemPackages;
+    }
+
+    public int getResultRomDetailsUserPackages(int taskId) {
+        GetRomDetailsTask task = (GetRomDetailsTask) getTask(taskId);
+        if (!task.mHavePackagesCounts.get()) {
+            throw new IllegalStateException(
+                    "Task " + taskId + " has not finished getting packages counts");
+        }
+        return task.mSystemPackages;
     }
 }

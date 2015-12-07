@@ -320,6 +320,10 @@ public final class CommandUtils {
         return -1;
     }
 
+    public static String quoteArg(String arg) {
+        return "'" + arg.replace("'", "'\"'\"'") + "'";
+    }
+
     public static class FullRootOutputListener implements RootCommandListener {
         private final StringBuilder mOutput = new StringBuilder();
 

@@ -19,18 +19,23 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.app.LoaderManager;
 import android.content.AsyncTaskLoader;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.Loader;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -40,12 +45,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.getbase.floatingactionbutton.AddFloatingActionButton;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
@@ -59,10 +63,10 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.VerifiedZipEvent;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction.Type;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.nhaarman.listviewanimations.ArrayAdapter;
 import com.nhaarman.listviewanimations.itemmanipulation.DynamicListView;
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.OnDismissCallback;
@@ -71,26 +75,30 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class ZipFlashingFragment extends Fragment implements EventCollectorListener,
-        FirstUseDialogListener, RomIdSelectionDialogListener, NamedSlotIdInputDialogListener,
-        ChangeInstallLocationDialogListener,
-        LoaderManager.LoaderCallbacks<LoaderResult> {
-    private static final String TAG = ZipFlashingFragment.class.getSimpleName();
-
+public class ZipFlashingFragment extends Fragment implements FirstUseDialogListener,
+        RomIdSelectionDialogListener, NamedSlotIdInputDialogListener,
+        ChangeInstallLocationDialogListener, LoaderManager.LoaderCallbacks<LoaderResult>,
+        ServiceConnection {
     private static final int PERFORM_ACTIONS = 1234;
 
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
     private static final String EXTRA_SELECTED_FILE = "selected_file";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
     private static final String EXTRA_ZIP_ROM_ID = "zip_rom_id";
+    private static final String EXTRA_TASK_ID_VERIFY_ZIP = "task_id_verify_zip";
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog";
+
+    /** Intent filter for messages we care about from the service */
+    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
+
+    /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
+    private static final int ACTIVITY_REQUEST_FILE = 1000;
 
     private OnReadyStateChangedListener mCallback;
 
     private SharedPreferences mPrefs;
 
-    private SwitcherEventCollector mSwitcherEC;
     private String mSelectedFile;
     private String mSelectedRomId;
     private String mCurrentRomId;
@@ -104,8 +112,17 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     private ArrayList<RomInformation> mBuiltinRoms = new ArrayList<>();
     private String[] mBuiltinRomNames;
 
-    /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
-    private static final int ACTIVITY_REQUEST_FILE = 1000;
+    private boolean mVerifyZipOnServiceConnected;
+
+    private int mTaskIdVerifyZip = -1;
+
+    /** Task IDs to remove */
+    private ArrayList<Integer> mTaskIdsToRemove = new ArrayList<>();
+
+    /** Switcher service */
+    private SwitcherService mService;
+    /** Broadcast receiver for events from the service */
+    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
 
     public interface OnReadyStateChangedListener {
         void onReady(boolean ready);
@@ -113,17 +130,8 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         void onFinished();
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        FragmentManager fm = getFragmentManager();
-        mSwitcherEC = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
-
-        if (mSwitcherEC == null) {
-            mSwitcherEC = new SwitcherEventCollector();
-            fm.beginTransaction().add(mSwitcherEC, SwitcherEventCollector.TAG).commit();
-        }
+    static {
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_VERIFIED_ZIP);
     }
 
     @Override
@@ -170,6 +178,7 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
             mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
             mZipRomId = savedInstanceState.getString(EXTRA_ZIP_ROM_ID);
+            mTaskIdVerifyZip = savedInstanceState.getInt(EXTRA_TASK_ID_VERIFY_ZIP);
         }
 
         try {
@@ -205,18 +214,71 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
         outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
         outState.putString(EXTRA_ZIP_ROM_ID, mZipRomId);
+        outState.putInt(EXTRA_TASK_ID_VERIFY_ZIP, mTaskIdVerifyZip);
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        mSwitcherEC.attachListener(TAG, this);
+    public void onStart() {
+        super.onStart();
+
+        // Start and bind to the service
+        Intent intent = new Intent(getActivity(), SwitcherService.class);
+        getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
+        getActivity().startService(intent);
+
+        // Register our broadcast receiver for our service
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
+                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        mSwitcherEC.detachListener(TAG);
+    public void onStop() {
+        super.onStop();
+
+        // Unbind from our service
+        getActivity().unbindService(this);
+        mService = null;
+
+        // Unregister the broadcast receiver
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        // Save a reference to the service so we can interact with it
+        ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
+        mService = (SwitcherService) binder.getService();
+
+        // Remove old task IDs
+        for (int taskId : mTaskIdsToRemove) {
+            mService.removeCachedTask(taskId);
+        }
+        mTaskIdsToRemove.clear();
+
+        if (mTaskIdVerifyZip >= 0 &&
+                mService.getCachedTaskState(mTaskIdVerifyZip) == TaskState.FINISHED) {
+            VerificationResult result = mService.getResultVerifiedZipResult(mTaskIdVerifyZip);
+            String romId = mService.getResultVerifiedZipRomId(mTaskIdVerifyZip);
+            onVerifiedZip(romId, result);
+        }
+
+        if (mVerifyZipOnServiceConnected) {
+            mVerifyZipOnServiceConnected = false;
+            verifyZip();
+        }
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        mService = null;
+    }
+
+    private void removeCachedTaskId(int taskId) {
+        if (mService != null) {
+            mService.removeCachedTask(taskId);
+        } else {
+            mTaskIdsToRemove.add(taskId);
+        }
     }
 
     @Override
@@ -248,56 +310,54 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
     public void onLoaderReset(Loader<LoaderResult> loader) {
     }
 
-    @Override
-    public void onEventReceived(BaseEvent event) {
-        if (event instanceof VerifiedZipEvent) {
-            GenericProgressDialog dialog = (GenericProgressDialog) getFragmentManager()
-                    .findFragmentByTag(GenericProgressDialog.TAG);
-            if (dialog != null) {
-                dialog.dismiss();
-            }
+    private void onVerifiedZip(String romId, VerificationResult result) {
+        removeCachedTaskId(mTaskIdVerifyZip);
+        mTaskIdVerifyZip = -1;
 
-            VerifiedZipEvent e = (VerifiedZipEvent) event;
+        GenericProgressDialog dialog = (GenericProgressDialog) getFragmentManager()
+                .findFragmentByTag(GenericProgressDialog.TAG);
+        if (dialog != null) {
+            dialog.dismiss();
+        }
 
-            mZipRomId = e.romId;
+        mZipRomId = romId;
 
-            if (e.result == VerificationResult.NO_ERROR) {
-                if (e.romId != null) {
-                    ChangeInstallLocationDialog cild =
-                            ChangeInstallLocationDialog.newInstance(this, e.romId);
-                    cild.show(getFragmentManager(), ChangeInstallLocationDialog.TAG);
-                } else {
-                    showRomIdSelectionDialog();
-                }
+        if (result == VerificationResult.NO_ERROR) {
+            if (romId != null) {
+                ChangeInstallLocationDialog cild =
+                        ChangeInstallLocationDialog.newInstance(this, romId);
+                cild.show(getFragmentManager(), ChangeInstallLocationDialog.TAG);
             } else {
-                String error;
-
-                switch (e.result) {
-                case ERROR_ZIP_NOT_FOUND:
-                    error = getString(R.string.zip_flashing_error_zip_not_found);
-                    break;
-
-                case ERROR_ZIP_READ_FAIL:
-                    error = getString(R.string.zip_flashing_error_zip_read_fail);
-                    break;
-
-                case ERROR_NOT_MULTIBOOT:
-                    error = getString(R.string.zip_flashing_error_not_multiboot);
-                    break;
-
-                case ERROR_VERSION_TOO_OLD:
-                    error = String.format(
-                            getString(R.string.zip_flashing_error_version_too_old),
-                            MbtoolUtils.getMinimumRequiredVersion(Feature.IN_APP_INSTALLATION));
-                    break;
-
-                default:
-                    throw new IllegalStateException("Invalid verification result ID");
-                }
-
-                GenericConfirmDialog d = GenericConfirmDialog.newInstance(null, error);
-                d.show(getFragmentManager(), GenericConfirmDialog.TAG);
+                showRomIdSelectionDialog();
             }
+        } else {
+            String error;
+
+            switch (result) {
+            case ERROR_ZIP_NOT_FOUND:
+                error = getString(R.string.zip_flashing_error_zip_not_found);
+                break;
+
+            case ERROR_ZIP_READ_FAIL:
+                error = getString(R.string.zip_flashing_error_zip_read_fail);
+                break;
+
+            case ERROR_NOT_MULTIBOOT:
+                error = getString(R.string.zip_flashing_error_not_multiboot);
+                break;
+
+            case ERROR_VERSION_TOO_OLD:
+                error = String.format(
+                        getString(R.string.zip_flashing_error_version_too_old),
+                        MbtoolUtils.getMinimumRequiredVersion(Feature.IN_APP_INSTALLATION));
+                break;
+
+            default:
+                throw new IllegalStateException("Invalid verification result ID");
+            }
+
+            GenericConfirmDialog d = GenericConfirmDialog.newInstance(null, error);
+            d.show(getFragmentManager(), GenericConfirmDialog.TAG);
         }
     }
 
@@ -315,12 +375,20 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
                         R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
                 d.show(getFragmentManager(), GenericProgressDialog.TAG);
 
-                mSwitcherEC.verifyZip(mSelectedFile);
+                if (mService != null) {
+                    verifyZip();
+                } else {
+                    mVerifyZipOnServiceConnected = true;
+                }
             }
             break;
         }
 
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void verifyZip() {
+        mTaskIdVerifyZip = mService.verifyZip(mSelectedFile);
     }
 
     @Override
@@ -438,9 +506,9 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
             INSTALL_ZIP
         }
 
-        Type type;
-        String zipFile;
-        String romId;
+        public Type type;
+        public String zipFile;
+        public String romId;
 
         public PendingAction() {
         }
@@ -574,6 +642,34 @@ public class ZipFlashingFragment extends Fragment implements EventCollectorListe
 
             if (mAdapter.isEmpty()) {
                 mCallback.onReady(false);
+            }
+        }
+    }
+
+    private class SwitcherEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            // If we're not yet connected to the service, don't do anything. The state will be
+            // restored upon connection.
+            if (mService == null) {
+                return;
+            }
+
+            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
+                return;
+            }
+
+            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
+
+            if (SwitcherService.ACTION_VERIFIED_ZIP.equals(action)
+                    && taskId == mTaskIdVerifyZip) {
+                VerificationResult result = (VerificationResult) intent.getSerializableExtra(
+                        SwitcherService.RESULT_VERIFIED_ZIP_RESULT);
+                String romId = intent.getStringExtra(
+                        SwitcherService.RESULT_VERIFIED_ZIP_ROM_ID);
+                onVerifiedZip(romId, result);
             }
         }
     }

@@ -18,20 +18,25 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Fragment;
-import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcelable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.FlashedZipsEvent;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.NewOutputEvent;
+import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 
 import org.apache.commons.io.output.NullOutputStream;
 
@@ -39,50 +44,49 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 
 import jackpal.androidterm.emulatorview.EmulatorView;
 import jackpal.androidterm.emulatorview.TermSession;
 
-public class ZipFlashingOutputFragment extends Fragment implements EventCollectorListener {
+public class ZipFlashingOutputFragment extends Fragment implements ServiceConnection {
     public static final String TAG = ZipFlashingOutputFragment.class.getSimpleName();
 
     private static final String EXTRA_IS_RUNNING = "is_running";
+    private static final String EXTRA_TASK_ID_FLASH_ZIPS = "task_id_flash_zips";
 
     public static final String PARAM_PENDING_ACTIONS = "pending_actions";
 
-    // Just keep this static for ease of use since we're never going to have two terminals
-    private static TermSession mSession;
-    private static PipedOutputStream mOS;
+    /** Intent filter for messages we care about from the service */
+    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
-    private SwitcherEventCollector mSwitcherEC;
+    private EmulatorView mEmulatorView;
+    private TermSession mSession;
+    private PipedOutputStream mOS;
 
     public boolean mIsRunning = true;
+
+    private int mTaskIdFlashZips = -1;
+
+    /** Task IDs to remove */
+    private ArrayList<Integer> mTaskIdsToRemove = new ArrayList<>();
+
+    /** Switcher service */
+    private SwitcherService mService;
+    /** Broadcast receiver for events from the service */
+    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+
+    static {
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_FLASHED_ZIPS);
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_NEW_OUTPUT_LINE);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        FragmentManager fm = getFragmentManager();
-        mSwitcherEC = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
-
-        if (mSwitcherEC == null) {
-            mSwitcherEC = new SwitcherEventCollector();
-            fm.beginTransaction().add(mSwitcherEC, SwitcherEventCollector.TAG).commit();
-        }
-
-        // Create terminal
-        if (mSession == null) {
-            mSession = new TermSession();
-            // We don't care about any input because this is kind of a "dumb" terminal output, not
-            // a proper interactive one
-            mSession.setTermOut(new NullOutputStream());
-
-            mOS = new PipedOutputStream();
-            try {
-                mSession.setTermIn(new PipedInputStream(mOS));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (savedInstanceState != null) {
+            mTaskIdFlashZips = savedInstanceState.getInt(EXTRA_TASK_ID_FLASH_ZIPS);
         }
     }
 
@@ -96,21 +100,12 @@ public class ZipFlashingOutputFragment extends Fragment implements EventCollecto
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        EmulatorView emulatorView = (EmulatorView) getActivity().findViewById(R.id.terminal);
-        emulatorView.attachSession(mSession);
+        mEmulatorView = (EmulatorView) getActivity().findViewById(R.id.terminal);
         DisplayMetrics metrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        emulatorView.setDensity(metrics);
+        mEmulatorView.setDensity(metrics);
 
-        if (savedInstanceState == null) {
-            Parcelable[] parcelables = getArguments().getParcelableArray(PARAM_PENDING_ACTIONS);
-            PendingAction[] actions = new PendingAction[parcelables.length];
-            System.arraycopy(parcelables, 0, actions, 0, parcelables.length);
-
-            // Set mSwitcherEC's Context since it grabs it in onAttach(), which may not have run yet
-            mSwitcherEC.setApplicationContext(getActivity());
-            mSwitcherEC.flashZips(actions);
-        } else {
+        if (savedInstanceState != null) {
             mIsRunning = savedInstanceState.getBoolean(EXTRA_IS_RUNNING);
         }
     }
@@ -119,45 +114,144 @@ public class ZipFlashingOutputFragment extends Fragment implements EventCollecto
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(EXTRA_IS_RUNNING, mIsRunning);
+        outState.putInt(EXTRA_TASK_ID_FLASH_ZIPS, mTaskIdFlashZips);
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        mSwitcherEC.attachListener(TAG, this);
-    }
+    public void onStart() {
+        super.onStart();
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        mSwitcherEC.detachListener(TAG);
-    }
+        // Create terminal
+        mSession = new TermSession();
+        // We don't care about any input because this is kind of a "dumb" terminal output, not
+        // a proper interactive one
+        mSession.setTermOut(new NullOutputStream());
 
-    @Override
-    public void onEventReceived(BaseEvent event) {
-        if (event instanceof NewOutputEvent) {
-            NewOutputEvent nole = (NewOutputEvent) event;
-            try {
-                String crlf  = nole.data.replace("\n", "\r\n");
-                mOS.write(crlf.getBytes(Charset.forName("UTF-8")));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else if (event instanceof FlashedZipsEvent) {
-            mIsRunning = false;
+        mOS = new PipedOutputStream();
+        try {
+            mSession.setTermIn(new PipedInputStream(mOS));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        mEmulatorView.attachSession(mSession);
+
+        // Start and bind to the service
+        Intent intent = new Intent(getActivity(), SwitcherService.class);
+        getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
+        getActivity().startService(intent);
+
+        // Register our broadcast receiver for our service
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
+                mReceiver, SERVICE_INTENT_FILTER);
     }
 
-    // Should be called by parent activity when it exits
-    public void onCleanup() {
+    @Override
+    public void onStop() {
+        super.onStop();
+
         // Destroy session
-        if (mSession != null) {
-            mSession.finish();
-            mSession = null;
+        mSession.finish();
+        mSession = null;
+
+        if (getActivity().isFinishing()) {
+            if (mTaskIdFlashZips >= 0) {
+                removeCachedTaskId(mTaskIdFlashZips);
+            }
         }
+
+        // Unbind from our service
+        getActivity().unbindService(this);
+        mService = null;
+
+        // Unregister the broadcast receiver
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        // Save a reference to the service so we can interact with it
+        ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
+        mService = (SwitcherService) binder.getService();
+
+        // Remove old task IDs
+        for (int taskId : mTaskIdsToRemove) {
+            mService.removeCachedTask(taskId);
+        }
+        mTaskIdsToRemove.clear();
+
+        if (mTaskIdFlashZips < 0) {
+            Parcelable[] parcelables = getArguments().getParcelableArray(PARAM_PENDING_ACTIONS);
+            PendingAction[] actions = new PendingAction[parcelables.length];
+            System.arraycopy(parcelables, 0, actions, 0, parcelables.length);
+            mTaskIdFlashZips = mService.flashZips(actions);
+        } else {
+            String[] lines = mService.getResultFlashedZipsOutputLines(mTaskIdFlashZips);
+            for (String line : lines) {
+                onNewOutputLine(line);
+            }
+            if (mService.getCachedTaskState(mTaskIdFlashZips) == TaskState.FINISHED) {
+                onFinishedFlashing();
+            }
+        }
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        mService = null;
+    }
+
+    private void removeCachedTaskId(int taskId) {
+        if (mService != null) {
+            mService.removeCachedTask(taskId);
+        } else {
+            mTaskIdsToRemove.add(taskId);
+        }
+    }
+
+    private void onNewOutputLine(String line) {
+        try {
+            String crlf  = line.replace("\n", "\r\n");
+            mOS.write(crlf.getBytes(Charset.forName("UTF-8")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void onFinishedFlashing() {
+        mIsRunning = false;
     }
 
     public boolean isRunning() {
         return mIsRunning;
+    }
+
+    private class SwitcherEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            // If we're not yet connected to the service, don't do anything. The state will be
+            // restored upon connection.
+            if (mService == null) {
+                return;
+            }
+
+            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
+                return;
+            }
+
+            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
+
+            if (SwitcherService.ACTION_FLASHED_ZIPS.equals(action)
+                    && taskId == mTaskIdFlashZips) {
+                onFinishedFlashing();
+            } else if (SwitcherService.ACTION_NEW_OUTPUT_LINE.equals(action)
+                    && taskId == mTaskIdFlashZips) {
+                String line = intent.getStringExtra(
+                        SwitcherService.RESULT_FLASHED_ZIPS_OUTPUT_LINE);
+                onNewOutputLine(line);
+            }
+        }
     }
 }

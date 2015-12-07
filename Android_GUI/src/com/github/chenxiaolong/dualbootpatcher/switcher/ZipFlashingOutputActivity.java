@@ -67,17 +67,10 @@ public class ZipFlashingOutputActivity extends AppCompatActivity {
     }
 
     @Override
-    public void finish() {
-        mFragment.onCleanup();
-        super.finish();
-    }
-
-    @Override
     public void onBackPressed() {
         if (mFragment.isRunning()) {
             showWaitUntilFinished();
         } else {
-            mFragment.onCleanup();
             super.onBackPressed();
         }
     }

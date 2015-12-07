@@ -17,31 +17,39 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.app.Activity;
-import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmAutomatedSwitchRomDialog
         .ConfirmAutomatedSwitchRomDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherEventCollector.SwitchedRomEvent;
 
-public class AutomatedSwitcherActivity extends AppCompatActivity implements EventCollectorListener,
-        ConfirmAutomatedSwitchRomDialogListener {
-    private static final String TAG = AutomatedSwitcherActivity.class.getSimpleName();
+import java.util.ArrayList;
 
+public class AutomatedSwitcherActivity extends AppCompatActivity implements
+        ConfirmAutomatedSwitchRomDialogListener, ServiceConnection {
     private static final String PREF_SHOW_CONFIRM_DIALOG = "show_confirm_automated_switcher_dialog";
     private static final String PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents";
+
+    private static final String EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom";
+
+    /** Intent filter for messages we care about from the service */
+    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
     public static final String EXTRA_ROM_ID = "rom_id";
     public static final String EXTRA_REBOOT = "reboot";
@@ -49,9 +57,23 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
     public static final String RESULT_CODE = "code";
     public static final String RESULT_MESSAGE = "message";
 
-    private SwitcherEventCollector mEventCollector;
-
     private SharedPreferences mPrefs;
+
+    private boolean mInitialRun = false;
+
+    private int mTaskIdSwitchRom = -1;
+
+    /** Task IDs to remove */
+    private ArrayList<Integer> mTaskIdsToRemove = new ArrayList<>();
+
+    /** Switcher service */
+    private SwitcherService mService;
+    /** Broadcast receiver for events from the service */
+    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+
+    static {
+        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SWITCHED_ROM);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -72,15 +94,58 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
             return;
         }
 
-        FragmentManager fm = getFragmentManager();
-        mEventCollector = (SwitcherEventCollector) fm.findFragmentByTag(SwitcherEventCollector.TAG);
-
-        if (mEventCollector == null) {
-            mEventCollector = new SwitcherEventCollector();
-            fm.beginTransaction().add(mEventCollector, SwitcherEventCollector.TAG).commit();
-        }
-
         if (savedInstanceState == null) {
+            mInitialRun = true;
+        } else {
+            mTaskIdSwitchRom = savedInstanceState.getInt(EXTRA_TASK_ID_SWITCH_ROM);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(EXTRA_TASK_ID_SWITCH_ROM, mTaskIdSwitchRom);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Start and bind to the service
+        Intent intent = new Intent(this, SwitcherService.class);
+        bindService(intent, this, BIND_AUTO_CREATE);
+        startService(intent);
+
+        // Register our broadcast receiver for our service
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mReceiver, SERVICE_INTENT_FILTER);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // Unbind from our service
+        unbindService(this);
+        mService = null;
+
+        // Unregister the broadcast receiver
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        // Save a reference to the service so we can interact with it
+        ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
+        mService = (SwitcherService) binder.getService();
+
+        // Remove old task IDs
+        for (int taskId : mTaskIdsToRemove) {
+            mService.removeCachedTask(taskId);
+        }
+        mTaskIdsToRemove.clear();
+
+        if (mInitialRun) {
             boolean shouldShow = mPrefs.getBoolean(PREF_SHOW_CONFIRM_DIALOG, true);
             if (shouldShow) {
                 ConfirmAutomatedSwitchRomDialog d = ConfirmAutomatedSwitchRomDialog.newInstance(
@@ -93,72 +158,71 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        mEventCollector.attachListener(TAG, this);
+    public void onServiceDisconnected(ComponentName name) {
+        mService = null;
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        mEventCollector.detachListener(TAG);
-    }
-
-    @Override
-    public void onEventReceived(BaseEvent bEvent) {
-        if (bEvent instanceof SwitchedRomEvent) {
-            SwitchedRomEvent event = (SwitchedRomEvent) bEvent;
-
-            boolean reboot = getIntent().getBooleanExtra(EXTRA_REBOOT, false);
-            if (event.result == SwitchRomResult.SUCCEEDED && reboot) {
-                // Don't return if we're rebooting
-                SwitcherUtils.reboot(this);
-                return;
-            }
-
-            GenericProgressDialog d = (GenericProgressDialog)
-                    getFragmentManager().findFragmentByTag("automated_switch_rom_waiting");
-            if (d != null) {
-                d.dismiss();
-            }
-
-            Intent intent = new Intent();
-
-            switch (event.result) {
-            case SUCCEEDED:
-                intent.putExtra(RESULT_CODE, "SWITCHING_SUCCEEDED");
-                Toast.makeText(this, R.string.choose_rom_success, Toast.LENGTH_LONG).show();
-                break;
-            case FAILED:
-                intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
-                intent.putExtra(RESULT_MESSAGE,
-                        String.format("Failed to switch to %s", event.kernelId));
-                Toast.makeText(this, R.string.choose_rom_failure, Toast.LENGTH_LONG).show();
-                break;
-            case CHECKSUM_INVALID:
-                intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
-                intent.putExtra(RESULT_MESSAGE,
-                        String.format("Mismatched checksums for %s's images", event.kernelId));
-                Toast.makeText(this, R.string.choose_rom_checksums_invalid, Toast.LENGTH_LONG).show();
-                break;
-            case CHECKSUM_NOT_FOUND:
-                intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
-                intent.putExtra(RESULT_MESSAGE,
-                        String.format("Missing checksums for %s's images", event.kernelId));
-                Toast.makeText(this, R.string.choose_rom_checksums_missing, Toast.LENGTH_LONG).show();
-                break;
-            case UNKNOWN_BOOT_PARTITION:
-                intent.putExtra(RESULT_CODE, "UNKNOWN_BOOT_PARTITION");
-                intent.putExtra(RESULT_MESSAGE, "Failed to determine boot partition");
-                String codename = RomUtils.getDeviceCodename(this);
-                Toast.makeText(this, getString(R.string.unknown_boot_partition, codename),
-                        Toast.LENGTH_SHORT).show();
-                break;
-            }
-
-            setResult(Activity.RESULT_OK, intent);
-            finish();
+    private void removeCachedTaskId(int taskId) {
+        if (mService != null) {
+            mService.removeCachedTask(taskId);
+        } else {
+            mTaskIdsToRemove.add(taskId);
         }
+    }
+
+    private void onSwitchedRom(String romId, SwitchRomResult result) {
+        removeCachedTaskId(mTaskIdSwitchRom);
+        mTaskIdSwitchRom = -1;
+
+        boolean reboot = getIntent().getBooleanExtra(EXTRA_REBOOT, false);
+        if (result == SwitchRomResult.SUCCEEDED && reboot) {
+            // Don't return if we're rebooting
+            SwitcherUtils.reboot(this);
+            return;
+        }
+
+        GenericProgressDialog d = (GenericProgressDialog)
+                getFragmentManager().findFragmentByTag("automated_switch_rom_waiting");
+        if (d != null) {
+            d.dismiss();
+        }
+
+        Intent intent = new Intent();
+
+        switch (result) {
+        case SUCCEEDED:
+            intent.putExtra(RESULT_CODE, "SWITCHING_SUCCEEDED");
+            Toast.makeText(this, R.string.choose_rom_success, Toast.LENGTH_LONG).show();
+            break;
+        case FAILED:
+            intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
+            intent.putExtra(RESULT_MESSAGE,
+                    String.format("Failed to switch to %s", romId));
+            Toast.makeText(this, R.string.choose_rom_failure, Toast.LENGTH_LONG).show();
+            break;
+        case CHECKSUM_INVALID:
+            intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
+            intent.putExtra(RESULT_MESSAGE,
+                    String.format("Mismatched checksums for %s's images", romId));
+            Toast.makeText(this, R.string.choose_rom_checksums_invalid, Toast.LENGTH_LONG).show();
+            break;
+        case CHECKSUM_NOT_FOUND:
+            intent.putExtra(RESULT_CODE, "SWITCHING_FAILED");
+            intent.putExtra(RESULT_MESSAGE,
+                    String.format("Missing checksums for %s's images", romId));
+            Toast.makeText(this, R.string.choose_rom_checksums_missing, Toast.LENGTH_LONG).show();
+            break;
+        case UNKNOWN_BOOT_PARTITION:
+            intent.putExtra(RESULT_CODE, "UNKNOWN_BOOT_PARTITION");
+            intent.putExtra(RESULT_MESSAGE, "Failed to determine boot partition");
+            String codename = RomUtils.getDeviceCodename(this);
+            Toast.makeText(this, getString(R.string.unknown_boot_partition, codename),
+                    Toast.LENGTH_SHORT).show();
+            break;
+        }
+
+        setResult(RESULT_OK, intent);
+        finish();
     }
 
     @Override
@@ -180,7 +244,34 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements Even
                 R.string.switching_rom, R.string.please_wait);
         d.show(getFragmentManager(), "automated_switch_rom_waiting");
 
-        mEventCollector.setApplicationContext(getApplicationContext());
-        mEventCollector.chooseRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
+        mTaskIdSwitchRom = mService.switchRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
+    }
+
+    private class SwitcherEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            // If we're not yet connected to the service, don't do anything. The state will be
+            // restored upon connection.
+            if (mService == null) {
+                return;
+            }
+
+            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
+                return;
+            }
+
+            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
+
+            if (SwitcherService.ACTION_SWITCHED_ROM.equals(action)
+                    && taskId == mTaskIdSwitchRom) {
+                String romId = intent.getStringExtra(
+                        SwitcherService.RESULT_SWITCHED_ROM_ROM_ID);
+                SwitchRomResult result = (SwitchRomResult) intent.getSerializableExtra(
+                        SwitcherService.RESULT_SWITCHED_ROM_RESULT);
+                onSwitchedRom(romId, result);
+            }
+        }
     }
 }
