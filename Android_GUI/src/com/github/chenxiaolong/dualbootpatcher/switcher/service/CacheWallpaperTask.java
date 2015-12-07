@@ -43,11 +43,6 @@ public final class CacheWallpaperTask extends BaseServiceTask {
     @Override
     public void execute() {
         mResult = RomUtils.cacheWallpaper(getContext(), mRomInfo);
-    }
-
-    @Override
-    protected void onPostExecute() {
-        super.onPostExecute();
         mListener.onCachedWallpaper(getTaskId(), mRomInfo, mResult);
     }
 }

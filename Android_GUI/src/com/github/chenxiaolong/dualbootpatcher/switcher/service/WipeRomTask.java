@@ -57,11 +57,7 @@ public final class WipeRomTask extends BaseServiceTask {
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }
-    }
 
-    @Override
-    protected void onPostExecute() {
-        super.onPostExecute();
         mListener.onWipedRom(getTaskId(), mRomId, mTargetsSucceeded, mTargetsFailed);
     }
 }

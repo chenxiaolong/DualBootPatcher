@@ -53,11 +53,7 @@ public final class SetKernelTask extends BaseServiceTask {
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }
-    }
 
-    @Override
-    protected void onPostExecute() {
-        super.onPostExecute();
         mListener.onSetKernel(getTaskId(), mRomId, mResult);
     }
 }

@@ -59,11 +59,7 @@ public final class GetRomsStateTask extends BaseServiceTask {
         Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
         Log.d(TAG, "Current boot partition ROM ID: " + mActiveRomId);
         Log.d(TAG, "Kernel status: " + mKernelStatus.name());
-    }
 
-    @Override
-    protected void onPostExecute() {
-        super.onPostExecute();
         mListener.onGotRomsState(getTaskId(), mRoms, mCurrentRom, mActiveRomId, mKernelStatus);
     }
 

@@ -57,11 +57,7 @@ public final class SwitchRomTask extends BaseServiceTask {
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }
-    }
 
-    @Override
-    protected void onPostExecute() {
-        super.onPostExecute();
         mListener.onSwitchedRom(getTaskId(), mRomId, mResult);
     }
 }

@@ -58,19 +58,9 @@ public abstract class BaseServiceTask implements Runnable {
             throw new IllegalStateException("Task " + mTaskId + " has already been executed!");
         }
 
-        onPreExecute();
         execute();
-        onPostExecute();
         mState.set(TaskState.FINISHED);
     }
 
     protected abstract void execute();
-
-    protected void onPreExecute() {
-        // Do nothing by default
-    }
-
-    protected void onPostExecute() {
-        // Do nothing by default
-    }
 }
