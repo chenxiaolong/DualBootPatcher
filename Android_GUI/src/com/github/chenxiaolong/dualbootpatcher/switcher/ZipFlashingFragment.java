@@ -257,8 +257,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
         if (mTaskIdVerifyZip >= 0 &&
                 mService.getCachedTaskState(mTaskIdVerifyZip) == TaskState.FINISHED) {
-            VerificationResult result = mService.getResultVerifiedZipResult(mTaskIdVerifyZip);
-            String romId = mService.getResultVerifiedZipRomId(mTaskIdVerifyZip);
+            VerificationResult result = mService.getResultVerifyZipResult(mTaskIdVerifyZip);
+            String romId = mService.getResultVerifyZipRomId(mTaskIdVerifyZip);
             onVerifiedZip(romId, result);
         }
 

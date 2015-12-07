@@ -249,8 +249,8 @@ public class SwitcherListFragment extends Fragment implements
 
         if (mTaskIdSwitchRom >= 0 &&
                 mService.getCachedTaskState(mTaskIdSwitchRom) == TaskState.FINISHED) {
-            String romId = mService.getResultSwitchedRomRomId(mTaskIdSwitchRom);
-            SwitchRomResult result = mService.getResultSwitchedRomResult(mTaskIdSwitchRom);
+            String romId = mService.getResultSwitchRomRomId(mTaskIdSwitchRom);
+            SwitchRomResult result = mService.getResultSwitchRomResult(mTaskIdSwitchRom);
 
             onSwitchedRom(romId, result);
         }

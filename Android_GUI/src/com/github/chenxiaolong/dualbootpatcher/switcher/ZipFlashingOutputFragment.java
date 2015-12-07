@@ -186,7 +186,7 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
             System.arraycopy(parcelables, 0, actions, 0, parcelables.length);
             mTaskIdFlashZips = mService.flashZips(actions);
         } else {
-            String[] lines = mService.getResultFlashedZipsOutputLines(mTaskIdFlashZips);
+            String[] lines = mService.getResultFlashZipsOutputLines(mTaskIdFlashZips);
             for (String line : lines) {
                 onNewOutputLine(line);
             }

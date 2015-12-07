@@ -294,7 +294,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             mTaskIdCacheWallpaper = mService.cacheWallpaper(mRomInfo);
         } else if (mService.getCachedTaskState(mTaskIdCacheWallpaper) == TaskState.FINISHED) {
             CacheWallpaperResult result =
-                    mService.getResultCachedWallpaperResult(mTaskIdCacheWallpaper);
+                    mService.getResultCacheWallpaperResult(mTaskIdCacheWallpaper);
             onCachedWallpaper(result);
         }
 
@@ -332,7 +332,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
         if (mTaskIdSwitchRom >= 0 &&
                 mService.getCachedTaskState(mTaskIdSwitchRom) == TaskState.FINISHED) {
-            SwitchRomResult result = mService.getResultSwitchedRomResult(mTaskIdSwitchRom);
+            SwitchRomResult result = mService.getResultSwitchRomResult(mTaskIdSwitchRom);
             onSwitchedRom(result);
         }
 
@@ -344,8 +344,8 @@ public class RomDetailActivity extends AppCompatActivity implements
 
         if (mTaskIdWipeRom >= 0 &&
                 mService.getCachedTaskState(mTaskIdWipeRom) == TaskState.FINISHED) {
-            short[] succeeded = mService.getResultWipedRomTargetsSucceeded(mTaskIdWipeRom);
-            short[] failed = mService.getResultWipedRomTargetsFailed(mTaskIdWipeRom);
+            short[] succeeded = mService.getResultWipeRomTargetsSucceeded(mTaskIdWipeRom);
+            short[] failed = mService.getResultWipeRomTargetsFailed(mTaskIdWipeRom);
             onWipedRom(succeeded, failed);
         }
     }

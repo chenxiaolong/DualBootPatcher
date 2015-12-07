@@ -197,13 +197,13 @@ public class SwitcherService extends ThreadPoolService {
         }
     };
 
-    public String getResultSwitchedRomRomId(int taskId) {
+    public String getResultSwitchRomRomId(int taskId) {
         SwitchRomTask task = (SwitchRomTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mRomId;
     }
 
-    public SwitchRomResult getResultSwitchedRomResult(int taskId) {
+    public SwitchRomResult getResultSwitchRomResult(int taskId) {
         SwitchRomTask task = (SwitchRomTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mResult;
@@ -294,19 +294,19 @@ public class SwitcherService extends ThreadPoolService {
         }
     };
 
-    public String getResultVerifiedZipPath(int taskId) {
+    public String getResultVerifyZipPath(int taskId) {
         VerifyZipTask task = (VerifyZipTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mPath;
     }
 
-    public VerificationResult getResultVerifiedZipResult(int taskId) {
+    public VerificationResult getResultVerifyZipResult(int taskId) {
         VerifyZipTask task = (VerifyZipTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mResult;
     }
 
-    public String getResultVerifiedZipRomId(int taskId) {
+    public String getResultVerifyZipRomId(int taskId) {
         VerifyZipTask task = (VerifyZipTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mRomId;
@@ -346,19 +346,19 @@ public class SwitcherService extends ThreadPoolService {
         }
     };
 
-    public int getResultFlashedZipsTotalActions(int taskId) {
+    public int getResultFlashZipsTotalActions(int taskId) {
         FlashZipsTask task = (FlashZipsTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mTotal;
     }
 
-    public int getResultFlashedZipsFailedActions(int taskId) {
+    public int getResultFlashZipsFailedActions(int taskId) {
         FlashZipsTask task = (FlashZipsTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mFailed;
     }
 
-    public String[] getResultFlashedZipsOutputLines(int taskId) {
+    public String[] getResultFlashZipsOutputLines(int taskId) {
         FlashZipsTask task = (FlashZipsTask) getTask(taskId);
         return task.getLines();
     }
@@ -389,19 +389,19 @@ public class SwitcherService extends ThreadPoolService {
         }
     };
 
-    public String getResultWipedRomRom(int taskId) {
+    public String getResultWipeRomRom(int taskId) {
         WipeRomTask task = (WipeRomTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mRomId;
     }
 
-    public short[] getResultWipedRomTargetsSucceeded(int taskId) {
+    public short[] getResultWipeRomTargetsSucceeded(int taskId) {
         WipeRomTask task = (WipeRomTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mTargetsSucceeded;
     }
 
-    public short[] getResultWipedRomTargetsFailed(int taskId) {
+    public short[] getResultWipeRomTargetsFailed(int taskId) {
         WipeRomTask task = (WipeRomTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mTargetsFailed;
@@ -434,13 +434,13 @@ public class SwitcherService extends ThreadPoolService {
         }
     };
 
-    public RomInformation getResultCachedWallpaperRom(int taskId) {
+    public RomInformation getResultCacheWallpaperRom(int taskId) {
         CacheWallpaperTask task = (CacheWallpaperTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mRomInfo;
     }
 
-    public CacheWallpaperResult getResultCachedWallpaperResult(int taskId) {
+    public CacheWallpaperResult getResultCacheWallpaperResult(int taskId) {
         CacheWallpaperTask task = (CacheWallpaperTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mResult;
