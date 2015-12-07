@@ -252,6 +252,10 @@ public class PatchFileFragment extends Fragment implements
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.actionbar_check_cancel, menu);
 
+        // NOTE: May crash on some versions of Android due to a bug where getActivity() returns null
+        // after onAttach() has been called, but before onDetach() has been called. It's similar to
+        // this bug report, except it happens with android.app.Fragment:
+        // https://code.google.com/p/android/issues/detail?id=67519
         int primary = ContextCompat.getColor(getActivity(), R.color.text_color_primary);
         MenuUtils.tintAllMenuIcons(menu, primary);
 
@@ -325,6 +329,7 @@ public class PatchFileFragment extends Fragment implements
 
         // Unbind from our service
         getActivity().unbindService(this);
+        mService = null;
 
         // Unregister the broadcast receiver
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
