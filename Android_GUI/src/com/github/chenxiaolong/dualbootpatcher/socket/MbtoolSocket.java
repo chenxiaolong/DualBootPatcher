@@ -122,7 +122,7 @@ public class MbtoolSocket {
         mInterfaceVersion = 3;
     }
 
-    public static MbtoolSocket getInstance() {
+    public synchronized static MbtoolSocket getInstance() {
         if (sInstance == null) {
             sInstance = new MbtoolSocket();
         }
@@ -134,7 +134,7 @@ public class MbtoolSocket {
      *
      * @throws IOException Signature check failed or unexpected response
      */
-    private void verifyCredentials() throws IOException {
+    private synchronized void verifyCredentials() throws IOException {
         String response = SocketUtils.readString(mSocketIS);
         if (RESPONSE_DENY.equals(response)) {
             throw new IOException("mbtool explicitly denied access to the daemon. " +
@@ -149,7 +149,7 @@ public class MbtoolSocket {
      *
      * @throws IOException Protocol version not supported or unexpected reply
      */
-    private void requestInterfaceVersion() throws IOException {
+    private synchronized void requestInterfaceVersion() throws IOException {
         SocketUtils.writeInt32(mSocketOS, mInterfaceVersion);
         String response = SocketUtils.readString(mSocketIS);
         if (RESPONSE_UNSUPPORTED.equals(response)) {
@@ -165,7 +165,7 @@ public class MbtoolSocket {
      * @throws IOException Could not determine mbtool version, invalid mbtool version, or mbtool
      *                     version is too old
      */
-    private void verifyMbtoolVersion() throws IOException {
+    private synchronized void verifyMbtoolVersion() throws IOException {
         // Get mbtool version
         FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
         MbGetVersionRequest.startMbGetVersionRequest(builder);
@@ -207,7 +207,7 @@ public class MbtoolSocket {
      *
      * @throws IOException
      */
-    private void initializeConnection() throws IOException {
+    private synchronized void initializeConnection() throws IOException {
         mSocketIS = mSocket.getInputStream();
         mSocketOS = mSocket.getOutputStream();
 
@@ -225,7 +225,7 @@ public class MbtoolSocket {
      *
      * @param context Application context
      */
-    public void connect(Context context) throws IOException {
+    public synchronized void connect(Context context) throws IOException {
         // If we're already connected, then we're good
         if (mSocket != null) {
             return;
@@ -266,7 +266,7 @@ public class MbtoolSocket {
     }
 
     @SuppressWarnings("deprecation")
-    private boolean executeMbtool(Context context) {
+    private synchronized boolean executeMbtool(Context context) {
         PatcherUtils.extractPatcher(context);
         String abi;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -286,7 +286,7 @@ public class MbtoolSocket {
                 && CommandUtils.runRootCommand("/mbtool daemon --replace --daemonize") == 0;
     }
 
-    public void disconnect() {
+    public synchronized void disconnect() {
         Log.i(TAG, "Disconnecting from mbtool");
         IOUtils.closeQuietly(mSocket);
         IOUtils.closeQuietly(mSocketIS);
@@ -300,7 +300,7 @@ public class MbtoolSocket {
 
     // RPC calls
 
-    public boolean fileChmod(Context context, int id, int mode) throws IOException {
+    public synchronized boolean fileChmod(Context context, int id, int mode) throws IOException {
         connect(context);
 
         try {
@@ -327,7 +327,7 @@ public class MbtoolSocket {
         }
     }
 
-    public boolean fileClose(Context context, int id) throws IOException {
+    public synchronized boolean fileClose(Context context, int id) throws IOException {
         connect(context);
 
         try {
@@ -353,7 +353,8 @@ public class MbtoolSocket {
         }
     }
 
-    public int fileOpen(Context context, String path, short[] flags, int perms) throws IOException {
+    public synchronized int fileOpen(Context context, String path, short[] flags,
+                                     int perms) throws IOException {
         connect(context);
 
         try {
@@ -386,7 +387,7 @@ public class MbtoolSocket {
     }
 
     @Nullable
-    public ByteBuffer fileRead(Context context, int id, long size) throws IOException {
+    public synchronized ByteBuffer fileRead(Context context, int id, long size) throws IOException {
         connect(context);
 
         try {
@@ -413,7 +414,8 @@ public class MbtoolSocket {
         }
     }
 
-    public long fileSeek(Context context, int id, long offset, short whence) throws IOException {
+    public synchronized long fileSeek(Context context, int id, long offset,
+                                      short whence) throws IOException {
         connect(context);
 
         try {
@@ -458,7 +460,7 @@ public class MbtoolSocket {
     }
 
     @Nullable
-    public StatBuf fileStat(Context context, int id) throws IOException {
+    public synchronized StatBuf fileStat(Context context, int id) throws IOException {
         connect(context);
 
         try {
@@ -500,7 +502,7 @@ public class MbtoolSocket {
         }
     }
 
-    public long fileWrite(Context context, int id, byte[] data) throws IOException {
+    public synchronized long fileWrite(Context context, int id, byte[] data) throws IOException {
         connect(context);
 
         try {
@@ -529,7 +531,7 @@ public class MbtoolSocket {
     }
 
     @Nullable
-    public String fileSelinuxGetLabel(Context context, int id) throws IOException {
+    public synchronized String fileSelinuxGetLabel(Context context, int id) throws IOException {
         connect(context);
 
         try {
@@ -555,7 +557,8 @@ public class MbtoolSocket {
         }
     }
 
-    public boolean fileSelinuxSetLabel(Context context, int id, String label) throws IOException {
+    public synchronized boolean fileSelinuxSetLabel(Context context, int id,
+                                                    String label) throws IOException {
         connect(context);
 
         try {
@@ -589,7 +592,7 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public String version(Context context) throws IOException {
+    public synchronized String version(Context context) throws IOException {
         connect(context);
 
         return mMbtoolVersion;
@@ -606,7 +609,7 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public RomInformation[] getInstalledRoms(Context context) throws IOException {
+    public synchronized RomInformation[] getInstalledRoms(Context context) throws IOException {
         connect(context);
 
         try {
@@ -650,7 +653,7 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public String getBootedRomId(Context context) throws IOException {
+    public synchronized String getBootedRomId(Context context) throws IOException {
         connect(context);
 
         try {
@@ -695,8 +698,8 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public SwitchRomResult switchRom(Context context, String id,
-                                     boolean forceChecksumsUpdate) throws IOException {
+    public synchronized SwitchRomResult switchRom(Context context, String id,
+                                                  boolean forceChecksumsUpdate) throws IOException {
         connect(context);
 
         try {
@@ -782,7 +785,7 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public SetKernelResult setKernel(Context context, String id) throws IOException {
+    public synchronized SetKernelResult setKernel(Context context, String id) throws IOException {
         connect(context);
 
         try {
@@ -822,7 +825,7 @@ public class MbtoolSocket {
      * @return True if the call to init succeeded and a reboot is pending. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean restart(Context context, String arg) throws IOException {
+    public synchronized boolean restart(Context context, String arg) throws IOException {
         connect(context);
 
         try {
@@ -858,7 +861,8 @@ public class MbtoolSocket {
      * @return True if the operation was successful. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean pathCopy(Context context, String source, String target) throws IOException {
+    public synchronized boolean pathCopy(Context context, String source,
+                                         String target) throws IOException {
         connect(context);
 
         try {
@@ -902,7 +906,8 @@ public class MbtoolSocket {
      * @return True if the operation was successful. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean pathChmod(Context context, String filename, int mode) throws IOException {
+    public synchronized boolean pathChmod(Context context, String filename,
+                                          int mode) throws IOException {
         connect(context);
 
         try {
@@ -947,7 +952,8 @@ public class MbtoolSocket {
      * @throws IOException When any socket communication error occurs
      */
     @NonNull
-    public WipeResult wipeRom(Context context, String romId, short[] targets) throws IOException {
+    public synchronized WipeResult wipeRom(Context context, String romId,
+                                           short[] targets) throws IOException {
         connect(context);
 
         try {
@@ -990,7 +996,8 @@ public class MbtoolSocket {
     }
 
     @Nullable
-    public PackageCounts getPackagesCounts(Context context, String romId) throws IOException {
+    public synchronized PackageCounts getPackagesCounts(Context context,
+                                                        String romId) throws IOException {
         connect(context);
 
         try {
@@ -1034,8 +1041,8 @@ public class MbtoolSocket {
      * @return SELinux label if it was successfully retrieved. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public String pathSelinuxGetLabel(Context context, String path,
-                                      boolean followSymlinks) throws IOException {
+    public synchronized String pathSelinuxGetLabel(Context context, String path,
+                                                   boolean followSymlinks) throws IOException {
         connect(context);
 
         try {
@@ -1078,8 +1085,8 @@ public class MbtoolSocket {
      * @return True if the SELinux label was successfully set. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public boolean pathSelinuxSetLabel(Context context, String path, String label,
-                                       boolean followSymlinks) throws IOException {
+    public synchronized boolean pathSelinuxSetLabel(Context context, String path, String label,
+                                                    boolean followSymlinks) throws IOException {
         connect(context);
 
         try {
@@ -1110,8 +1117,8 @@ public class MbtoolSocket {
         }
     }
 
-    public long pathGetDirectorySize(Context context, String path,
-                                     String[] exclusions) throws IOException {
+    public synchronized long pathGetDirectorySize(Context context, String path,
+                                                  String[] exclusions) throws IOException {
         connect(context);
 
         try {
@@ -1153,8 +1160,8 @@ public class MbtoolSocket {
     // Private helper functions
 
     @NonNull
-    private Table sendRequest(FlatBufferBuilder builder, int fbRequest, byte fbRequestType,
-                              byte expected) throws IOException {
+    private synchronized Table sendRequest(FlatBufferBuilder builder, int fbRequest,
+                                           byte fbRequestType, byte expected) throws IOException {
         ThreadUtils.enforceExecutionOnNonMainThread();
 
         Request.startRequest(builder);
@@ -1173,7 +1180,8 @@ public class MbtoolSocket {
         } else if (response.responseType() == ResponseType.Invalid) {
             throw new IOException("Invalid command request");
         } else if (response.responseType() != expected) {
-            throw new IOException("Unexpected response type");
+            throw new IOException("Unexpected response type (response=" + response.responseType() +
+                    ", expected=" + expected + ")");
         }
 
         Table table;
