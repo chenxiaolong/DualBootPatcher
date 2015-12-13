@@ -54,12 +54,15 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
+import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorCallback;
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorTransformation;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
@@ -78,6 +81,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog
         .RomNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
         .SetKernelConfirmDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.UpdateRamdiskResultDialog
+        .UpdateRamdiskResultDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
@@ -89,6 +94,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTas
         .GetRomDetailsTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateRamdiskTask
+        .UpdateRamdiskTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask.WipeRomTaskListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
@@ -105,6 +112,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         RomDetailAdapterListener,
         ConfirmMismatchedSetKernelDialogListener,
         SetKernelConfirmDialogListener,
+        UpdateRamdiskResultDialogListener,
         WipeTargetsSelectionDialogListener,
         ConfirmChecksumIssueDialogListener, ServiceConnection {
     private static final String TAG = RomDetailActivity.class.getSimpleName();
@@ -116,7 +124,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final int INFO_SLOT = 1;
     private static final int INFO_VERSION = 2;
     private static final int INFO_BUILD = 3;
-    private static final int INFO_MBTOOL_VERSION = 4;
+    private static final int INFO_MBTOOL_STATUS = 4;
     private static final int INFO_APPS_COUNTS = 5;
     private static final int INFO_SYSTEM_PATH = 6;
     private static final int INFO_CACHE_PATH = 7;
@@ -125,14 +133,24 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final int INFO_CACHE_SIZE = 10;
     private static final int INFO_DATA_SIZE = 11;
 
-    private static final int ACTION_SET_KERNEL = 1;
-    private static final int ACTION_BACKUP = 2;
-    private static final int ACTION_ADD_TO_HOME_SCREEN = 3;
-    private static final int ACTION_WIPE_ROM = 4;
+    private static final int ACTION_UPDATE_RAMDISK = 1;
+    private static final int ACTION_SET_KERNEL = 2;
+    private static final int ACTION_BACKUP = 3;
+    private static final int ACTION_ADD_TO_HOME_SCREEN = 4;
+    private static final int ACTION_WIPE_ROM = 5;
 
-    private static final int PROGRESS_DIALOG_SWITCH_ROM = 1;
-    private static final int PROGRESS_DIALOG_SET_KERNEL = 2;
-    private static final int PROGRESS_DIALOG_WIPE_ROM = 3;
+    private static final String PROGRESS_DIALOG_SWITCH_ROM =
+            RomDetailActivity.class.getCanonicalName() + ".progress.switch_rom";
+    private static final String PROGRESS_DIALOG_SET_KERNEL =
+            RomDetailActivity.class.getCanonicalName() + ".progress.set_kernel";
+    private static final String PROGRESS_DIALOG_UPDATE_RAMDISK =
+            RomDetailActivity.class.getCanonicalName() + ".progress.update_ramdisk";
+    private static final String PROGRESS_DIALOG_WIPE_ROM =
+            RomDetailActivity.class.getCanonicalName() + ".progress.wipe_rom";
+    private static final String PROGRESS_DIALOG_REBOOT =
+            RomDetailActivity.class.getCanonicalName() + ".progress.reboot";
+    private static final String CONFIRM_DIALOG_UPDATED_RAMDISK =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.updated_ramdisk";
 
     private static final int REQUEST_IMAGE = 1234;
 
@@ -144,6 +162,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final String EXTRA_STATE_TASK_ID_CACHE_WALLPAPER = "state.cache_wallpaper";
     private static final String EXTRA_STATE_TASK_ID_SWITCH_ROM = "state.switch_rom";
     private static final String EXTRA_STATE_TASK_ID_SET_KERNEL = "state.set_kernel";
+    private static final String EXTRA_STATE_TASK_ID_UPDATE_RAMDISK = "state.update_ramdisk";
     private static final String EXTRA_STATE_TASK_ID_WIPE_ROM = "state.wipe_rom";
     private static final String EXTRA_STATE_TASK_ID_CREATE_LAUNCHER = "state.create_launcher";
     private static final String EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details";
@@ -162,9 +181,15 @@ public class RomDetailActivity extends AppCompatActivity implements
     private ArrayList<Item> mItems = new ArrayList<>();
     private RomDetailAdapter mAdapter;
 
+    private static final int FORCE_RAMDISK_UPDATE_TAPS = 7;
+    private int mUpdateRamdiskCountdown;
+    private Toast mUpdateRamdiskToast;
+    private int mUpdateRamdiskResId;
+
     private int mTaskIdCacheWallpaper = -1;
     private int mTaskIdSwitchRom = -1;
     private int mTaskIdSetKernel = -1;
+    private int mTaskIdUpdateRamdisk = -1;
     private int mTaskIdWipeRom = -1;
     private int mTaskIdCreateLauncher = -1;
     private int mTaskIdGetRomDetails = -1;
@@ -194,6 +219,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             mTaskIdCacheWallpaper = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_CACHE_WALLPAPER);
             mTaskIdSwitchRom = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_SWITCH_ROM);
             mTaskIdSetKernel = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_SET_KERNEL);
+            mTaskIdUpdateRamdisk = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_UPDATE_RAMDISK);
             mTaskIdWipeRom = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_WIPE_ROM);
             mTaskIdCreateLauncher = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_CREATE_LAUNCHER);
             mTaskIdGetRomDetails = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS);
@@ -218,6 +244,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         });
 
         updateTitle();
+        updateMbtoolStatus();
 
         initializeRecyclerView();
         populateRomCardItem();
@@ -231,6 +258,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         outState.putInt(EXTRA_STATE_TASK_ID_CACHE_WALLPAPER, mTaskIdCacheWallpaper);
         outState.putInt(EXTRA_STATE_TASK_ID_SWITCH_ROM, mTaskIdSwitchRom);
         outState.putInt(EXTRA_STATE_TASK_ID_SET_KERNEL, mTaskIdSetKernel);
+        outState.putInt(EXTRA_STATE_TASK_ID_UPDATE_RAMDISK, mTaskIdUpdateRamdisk);
         outState.putInt(EXTRA_STATE_TASK_ID_WIPE_ROM, mTaskIdWipeRom);
         outState.putInt(EXTRA_STATE_TASK_ID_CREATE_LAUNCHER, mTaskIdCreateLauncher);
         outState.putInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS, mTaskIdGetRomDetails);
@@ -341,6 +369,12 @@ public class RomDetailActivity extends AppCompatActivity implements
             onSetKernel(result);
         }
 
+        if (mTaskIdUpdateRamdisk >= 0 &&
+                mService.getCachedTaskState(mTaskIdUpdateRamdisk) == TaskState.FINISHED) {
+            boolean success = mService.getResultUpdateRamdiskSuccess(mTaskIdUpdateRamdisk);
+            onUpdatedRamdisk(success);
+        }
+
         if (mTaskIdWipeRom >= 0 &&
                 mService.getCachedTaskState(mTaskIdWipeRom) == TaskState.FINISHED) {
             short[] succeeded = mService.getResultWipeRomTargetsSucceeded(mTaskIdWipeRom);
@@ -364,6 +398,30 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     private void updateTitle() {
         mCollapsing.setTitle(mRomInfo.getId());
+    }
+
+    private void updateMbtoolStatus() {
+        // There is currently no way to determine the mbtool version of other ROMs
+        if (mBootedRomInfo != null && mBootedRomInfo.getId().equals(mRomInfo.getId())) {
+            Version minAppSharing = MbtoolUtils.getMinimumRequiredVersion(Feature.APP_SHARING);
+            Version minDaemon = MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON);
+            Version version = MbtoolUtils.getSystemMbtoolVersion(this);
+
+            if (version.compareTo(minAppSharing) >= 0 && version.compareTo(minDaemon) >= 0) {
+                mUpdateRamdiskCountdown = FORCE_RAMDISK_UPDATE_TAPS;
+                mUpdateRamdiskResId = R.string.update_ramdisk_up_to_date_desc;
+            } else {
+                mUpdateRamdiskCountdown = -1;
+                if (version.equals(Version.from("0.0.0"))) {
+                    mUpdateRamdiskResId = R.string.update_ramdisk_missing_desc;
+                } else {
+                    mUpdateRamdiskResId = R.string.update_ramdisk_outdated_desc;
+                }
+            }
+        } else {
+            mUpdateRamdiskCountdown = -1;
+            mUpdateRamdiskResId = R.string.unknown;
+        }
     }
 
     private void initializeRecyclerView() {
@@ -390,9 +448,9 @@ public class RomDetailActivity extends AppCompatActivity implements
         mItems.add(new InfoItem(INFO_BUILD,
                 getString(R.string.rom_details_info_build),
                 mRomInfo.getBuild()));
-        //mItems.add(new InfoItem(INFO_MBTOOL_VERSION,
-        //        getString(R.string.rom_details_info_mbtool_version),
-        //        "8.0.0.r1928.g2cb23c5"));
+        mItems.add(new InfoItem(INFO_MBTOOL_STATUS,
+                getString(R.string.rom_details_info_mbtool_status),
+                getString(mUpdateRamdiskResId)));
         mItems.add(new InfoItem(INFO_APPS_COUNTS,
                 getString(R.string.rom_details_info_apps_counts),
                 getString(R.string.rom_details_info_calculating)));
@@ -417,6 +475,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private void populateActionItems() {
+        mItems.add(new ActionItem(ACTION_UPDATE_RAMDISK,
+                R.drawable.rom_details_action_update_ramdisk,
+                getString(R.string.rom_menu_update_ramdisk)));
         mItems.add(new ActionItem(ACTION_SET_KERNEL,
                 R.drawable.rom_details_action_set_kernel,
                 getString(R.string.rom_menu_set_kernel)));
@@ -521,6 +582,46 @@ public class RomDetailActivity extends AppCompatActivity implements
         d.show(getFragmentManager(), AddToHomeScreenOptionsDialog.TAG);
     }
 
+    public void onSelectedUpdateRamdisk() {
+        // Act like the Android settings app :)
+        if (mUpdateRamdiskCountdown > 0) {
+            if (mUpdateRamdiskCountdown == FORCE_RAMDISK_UPDATE_TAPS) {
+                createSnackbar(mUpdateRamdiskResId, Snackbar.LENGTH_LONG).show();
+            }
+
+            mUpdateRamdiskCountdown--;
+            if (mUpdateRamdiskCountdown == 0) {
+                if (mUpdateRamdiskToast != null) {
+                    mUpdateRamdiskToast.cancel();
+                }
+                mUpdateRamdiskToast = Toast.makeText(this, R.string.force_updating_ramdisk,
+                        Toast.LENGTH_LONG);
+                mUpdateRamdiskToast.show();
+
+                updateRamdisk();
+
+                mUpdateRamdiskCountdown = FORCE_RAMDISK_UPDATE_TAPS;
+            } else if (mUpdateRamdiskCountdown > 0
+                    && mUpdateRamdiskCountdown < (FORCE_RAMDISK_UPDATE_TAPS - 2)) {
+                if (mUpdateRamdiskToast != null) {
+                    mUpdateRamdiskToast.cancel();
+                }
+                mUpdateRamdiskToast = Toast.makeText(this, getResources().getQuantityString(
+                        R.plurals.force_update_ramdisk_countdown,
+                        mUpdateRamdiskCountdown, mUpdateRamdiskCountdown),
+                        Toast.LENGTH_SHORT);
+                mUpdateRamdiskToast.show();
+            }
+        } else if (mUpdateRamdiskCountdown < 0) {
+            // Already enabled
+            if (mUpdateRamdiskToast != null) {
+                mUpdateRamdiskToast.cancel();
+            }
+
+            updateRamdisk();
+        }
+    }
+
     public void onSelectedSetKernel() {
         // Ask for confirmation
         if (mActiveRomId != null && !mActiveRomId.equals(mRomInfo.getId())) {
@@ -578,6 +679,22 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void onConfirmUpdatedRamdisk(boolean reboot) {
+        if (reboot) {
+            GenericProgressDialog progressDialog = GenericProgressDialog.newInstance(
+                    0, R.string.please_wait);
+            progressDialog.show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
+
+            new Thread() {
+                @Override
+                public void run() {
+                    SwitcherUtils.reboot(getApplicationContext());
+                }
+            }.start();
+        }
+    }
+
+    @Override
     public void onSelectedWipeTargets(short[] targets) {
         if (targets.length == 0) {
             createSnackbar(R.string.wipe_rom_none_selected, Snackbar.LENGTH_LONG).show();
@@ -595,6 +712,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     @Override
     public void onActionItemSelected(ActionItem item) {
         switch (item.id) {
+        case ACTION_UPDATE_RAMDISK:
+            onSelectedUpdateRamdisk();
+            break;
         case ACTION_SET_KERNEL:
             onSelectedSetKernel();
             break;
@@ -666,7 +786,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         mTaskIdSwitchRom = -1;
 
         GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
+                .findFragmentByTag(PROGRESS_DIALOG_SWITCH_ROM);
         if (d != null) {
             d.dismiss();
         }
@@ -701,7 +821,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         mTaskIdSetKernel = -1;
 
         GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
+                .findFragmentByTag(PROGRESS_DIALOG_SET_KERNEL);
         if (d != null) {
             d.dismiss();
         }
@@ -719,13 +839,31 @@ public class RomDetailActivity extends AppCompatActivity implements
         }
     }
 
+    private void onUpdatedRamdisk(boolean success) {
+        // Remove cached task from service
+        removeCachedTaskId(mTaskIdUpdateRamdisk);
+        mTaskIdUpdateRamdisk = -1;
+
+        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                .findFragmentByTag(PROGRESS_DIALOG_UPDATE_RAMDISK);
+        if (d != null) {
+            d.dismiss();
+        }
+
+        boolean isCurrentRom = mBootedRomInfo != null &&
+                mBootedRomInfo.getId().equals(mRomInfo.getId());
+        UpdateRamdiskResultDialog dialog =
+                UpdateRamdiskResultDialog.newInstanceFromActivity(success, isCurrentRom);
+        dialog.show(getFragmentManager(), CONFIRM_DIALOG_UPDATED_RAMDISK);
+    }
+
     private void onWipedRom(short[] succeeded, short[] failed) {
         // Remove cached task from service
         removeCachedTaskId(mTaskIdWipeRom);
         mTaskIdWipeRom = -1;
 
         GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                .findFragmentByTag(GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
+                .findFragmentByTag(PROGRESS_DIALOG_WIPE_ROM);
         if (d != null) {
             d.dismiss();
         }
@@ -797,7 +935,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private void switchRom(boolean forceChecksumsUpdate) {
         GenericProgressDialog d = GenericProgressDialog.newInstance(
                 R.string.switching_rom, R.string.please_wait);
-        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SWITCH_ROM);
+        d.show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
 
         mTaskIdSwitchRom = mService.switchRom(mRomInfo.getId(), forceChecksumsUpdate);
     }
@@ -805,15 +943,23 @@ public class RomDetailActivity extends AppCompatActivity implements
     private void setKernel() {
         GenericProgressDialog d = GenericProgressDialog.newInstance(
                 R.string.setting_kernel, R.string.please_wait);
-        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_SET_KERNEL);
+        d.show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
 
         mTaskIdSetKernel = mService.setKernel(mRomInfo.getId());
+    }
+
+    private void updateRamdisk() {
+        GenericProgressDialog d = GenericProgressDialog.newInstance(
+                0, R.string.please_wait);
+        d.show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
+
+        mTaskIdUpdateRamdisk = mService.updateRamdisk(mRomInfo);
     }
 
     private void wipeRom(short[] targets) {
         GenericProgressDialog d = GenericProgressDialog.newInstance(
                 R.string.wiping_targets, R.string.please_wait);
-        d.show(getFragmentManager(), GenericProgressDialog.TAG + PROGRESS_DIALOG_WIPE_ROM);
+        d.show(getFragmentManager(), PROGRESS_DIALOG_WIPE_ROM);
 
         mTaskIdWipeRom = mService.wipeRom(mRomInfo.getId(), targets);
     }
@@ -875,8 +1021,8 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private class SwitcherEventCallback implements CacheWallpaperTaskListener,
-            SwitchRomTaskListener, SetKernelTaskListener, WipeRomTaskListener,
-            CreateLauncherTaskListener, GetRomDetailsTaskListener {
+            SwitchRomTaskListener, SetKernelTaskListener, UpdateRamdiskTaskListener,
+            WipeRomTaskListener, CreateLauncherTaskListener, GetRomDetailsTaskListener {
         @Override
         public void onCachedWallpaper(int taskId, RomInformation romInfo,
                                       final CacheWallpaperResult result) {
@@ -909,6 +1055,18 @@ public class RomDetailActivity extends AppCompatActivity implements
                     @Override
                     public void run() {
                         RomDetailActivity.this.onSetKernel(result);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onUpdatedRamdisk(int taskId, RomInformation romInfo, final boolean success) {
+            if (taskId == mTaskIdUpdateRamdisk) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        RomDetailActivity.this.onUpdatedRamdisk(success);
                     }
                 });
             }

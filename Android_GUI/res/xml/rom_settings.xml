@@ -19,12 +19,6 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory android:title="@string/rom_settings_booting_title">
-        <Preference
-            android:key="update_ramdisk"
-            android:persistent="false"
-            android:title="@string/update_ramdisk_title" />
-    </PreferenceCategory>
     <PreferenceCategory android:title="@string/rom_settings_patcher_title">
         <com.afollestad.materialdialogs.prefs.MaterialListPreference
             android:entries="@array/initial_screen_values"

@@ -49,6 +49,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateRamdiskTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateRamdiskTask
+        .UpdateRamdiskTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.VerifyZipTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask;
@@ -300,6 +303,45 @@ public class SwitcherService extends ThreadPoolService {
         SetKernelTask task = (SetKernelTask) getTask(taskId);
         enforceFinishedState(task);
         return task.mResult;
+    }
+
+    // Update ramdisk
+
+    public int updateRamdisk(RomInformation romInfo) {
+        int taskId = sNewTaskId.getAndIncrement();
+        UpdateRamdiskTask task = new UpdateRamdiskTask(
+                taskId, this, romInfo, mUpdateRamdiskTaskListener);
+        enqueueTask(task);
+        return taskId;
+    }
+
+    private final UpdateRamdiskTaskListener mUpdateRamdiskTaskListener =
+            new UpdateRamdiskTaskListener() {
+        @Override
+        public void onUpdatedRamdisk(final int taskId, final RomInformation romInfo,
+                                     final boolean success) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof UpdateRamdiskTaskListener) {
+                        ((UpdateRamdiskTaskListener) callback).onUpdatedRamdisk(
+                                taskId, romInfo, success);
+                    }
+                }
+            });
+        }
+    };
+
+    public RomInformation getResultUpdateRamdiskRom(int taskId) {
+        UpdateRamdiskTask task = (UpdateRamdiskTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mRomInfo;
+    }
+
+    public boolean getResultUpdateRamdiskSuccess(int taskId) {
+        UpdateRamdiskTask task = (UpdateRamdiskTask) getTask(taskId);
+        enforceFinishedState(task);
+        return task.mSuccess;
     }
 
     // Create launcher

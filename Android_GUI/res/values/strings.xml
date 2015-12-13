@@ -127,6 +127,8 @@
     <!-- Build text shown on ROM card if the build could not be detected -->
     <string name="rom_card_unknown_build">Unknown build</string>
 
+    <!-- ROM menu item for updating the ramdisk -->
+    <string name="rom_menu_update_ramdisk">Update ramdisk</string>
     <!-- ROM menu item for setting kernel -->
     <string name="rom_menu_set_kernel">Set kernel</string>
     <!-- ROM menu item for backing up the ROM -->
@@ -252,7 +254,7 @@
     <!-- ROM details item showing the build name of the ROM -->
     <string name="rom_details_info_build">Build</string>
     <!-- ROM details item showing the mbtool version used to boot the ROM -->
-    <string name="rom_details_info_mbtool_version">mbtool version</string>
+    <string name="rom_details_info_mbtool_status">mbtool status</string>
     <!-- ROM details item showing the number of system apps, updated apps, and user apps -->
     <string name="rom_details_info_apps_counts">Apps</string>
     <!-- ROM details value showing the number of system apps, updated apps, and user apps -->

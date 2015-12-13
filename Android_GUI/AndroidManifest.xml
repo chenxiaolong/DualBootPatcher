@@ -103,9 +103,6 @@
             android:name=".patcher.PatcherService"
             android:exported="false" />
         <service
-            android:name=".settings.RomSettingsService"
-            android:exported="false" />
-        <service
             android:name=".switcher.SwitcherService"
             android:exported="false" />
         <service
