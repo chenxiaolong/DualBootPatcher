@@ -28,50 +28,35 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
-import android.support.annotation.NonNull;
-import android.view.View;
-import android.view.animation.AlphaAnimation;
+import android.widget.Toast;
 
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.BaseEvent;
-import com.github.chenxiaolong.dualbootpatcher.EventCollector.EventCollectorListener;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomConfig;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsFragment.NeededInfo;
-import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingVersionTooOldDialog
-        .AppSharingVersionTooOldDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.dialogs.IndeterminateProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 
 public class AppSharingSettingsFragment extends PreferenceFragment implements
-        OnPreferenceChangeListener, OnPreferenceClickListener, EventCollectorListener,
-        AppSharingVersionTooOldDialogListener,
+        OnPreferenceChangeListener, OnPreferenceClickListener,
         LoaderManager.LoaderCallbacks<NeededInfo> {
     public static final String TAG = AppSharingSettingsFragment.class.getSimpleName();
 
-    private static final String EXTRA_SHOWED_VERSION_TOO_OLD_DIALOG =
-            "showed_version_too_old_dialog";
-
     private static final String KEY_SHARE_INDIV_APPS = "share_indiv_apps";
     private static final String KEY_MANAGE_INDIV_APPS = "manage_indiv_apps";
-
-    private AppSharingEventCollector mEventCollector;
 
     private RomConfig mConfig;
 
     private CheckBoxPreference mShareIndivApps;
     private Preference mManageIndivApps;
 
-    private boolean mShowedVersionTooOldDialog;
+    private boolean mLoading = true;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        mEventCollector = AppSharingEventCollector.getInstance(getFragmentManager());
 
         getPreferenceManager().setSharedPreferencesName("settings");
 
@@ -85,46 +70,11 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putBoolean(EXTRA_SHOWED_VERSION_TOO_OLD_DIALOG, mShowedVersionTooOldDialog);
-    }
-
-    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        if (getView() != null) {
-            getView().setVisibility(View.GONE);
-        }
-
-        // Only show progress dialog on initial load
-        if (savedInstanceState == null) {
-            IndeterminateProgressDialog d = IndeterminateProgressDialog.newInstance();
-            d.show(getFragmentManager(), IndeterminateProgressDialog.TAG);
-        }
-
-        if (savedInstanceState != null) {
-            mShowedVersionTooOldDialog =
-                    savedInstanceState.getBoolean(EXTRA_SHOWED_VERSION_TOO_OLD_DIALOG);
-        }
-
-        getActivity().getLoaderManager().initLoader(0, null, this);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        mEventCollector.attachListener(TAG, this);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        mEventCollector.detachListener(TAG);
+        updateState();
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -140,22 +90,34 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         mConfig.apply();
     }
 
-    @Override
-    public void onEventReceived(BaseEvent event) {
-        if (event instanceof DismissProgressDialogEvent) {
-            IndeterminateProgressDialog d = (IndeterminateProgressDialog) getFragmentManager()
-                    .findFragmentByTag(IndeterminateProgressDialog.TAG);
-            if (d != null) {
-                d.dismiss();
-            }
-        } else if (event instanceof ShowVersionTooOldDialogEvent) {
-            if (!mShowedVersionTooOldDialog) {
-                mShowedVersionTooOldDialog = true;
+    private void updateState() {
+        int shareResId;
+        int manageResId;
 
-                AppSharingVersionTooOldDialog d = AppSharingVersionTooOldDialog.newInstance(this);
-                d.show(getFragmentManager(), AppSharingVersionTooOldDialog.TAG);
-            }
+        if (mLoading) {
+            shareResId = R.string.please_wait;
+            manageResId = R.string.please_wait;
+        } else {
+            shareResId = R.string.a_s_settings_indiv_app_sharing_desc;
+            manageResId = R.string.a_s_settings_manage_shared_apps_desc;
         }
+
+        mShareIndivApps.setSummary(shareResId);
+        mManageIndivApps.setSummary(manageResId);
+
+        boolean enableShareIndiv = !mLoading;
+        boolean enableManageIndiv = !mLoading;
+        if (enableManageIndiv && mConfig != null) {
+            enableManageIndiv = mConfig.isIndivAppSharingEnabled();
+        }
+        boolean checkShareIndiv = false;
+        if (mConfig != null) {
+            checkShareIndiv = mConfig.isIndivAppSharingEnabled();
+        }
+
+        mShareIndivApps.setEnabled(enableShareIndiv);
+        mManageIndivApps.setEnabled(enableManageIndiv);
+        mShareIndivApps.setChecked(checkShareIndiv);
     }
 
     @Override
@@ -164,7 +126,7 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
 
         if (KEY_SHARE_INDIV_APPS.equals(key)) {
             mConfig.setIndivAppSharingEnabled((Boolean) objValue);
-            refreshEnabledPrefs();
+            updateState();
         }
 
         return true;
@@ -181,16 +143,6 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         return true;
     }
 
-    private void showAppSharingPrefs() {
-        mShareIndivApps.setChecked(mConfig.isIndivAppSharingEnabled());
-    }
-
-    private void refreshEnabledPrefs() {
-        boolean indivEnabled = mConfig.isIndivAppSharingEnabled();
-
-        mManageIndivApps.setEnabled(indivEnabled);
-    }
-
     @Override
     public Loader<NeededInfo> onCreateLoader(int id, Bundle args) {
         return new GetInfo(getActivity());
@@ -204,36 +156,19 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         }
 
         if (!result.haveRequiredVersion) {
-            mEventCollector.postEvent(new ShowVersionTooOldDialogEvent());
+            Toast.makeText(getActivity(), R.string.a_s_settings_version_too_old, Toast.LENGTH_LONG).show();
+            getActivity().finish();
             return;
         }
 
         mConfig = result.config;
 
-        showAppSharingPrefs();
-        refreshEnabledPrefs();
-
-        AlphaAnimation fadeAnimation = new AlphaAnimation(0, 1);
-        fadeAnimation.setDuration(100);
-        fadeAnimation.setFillAfter(true);
-
-        if (getView() != null) {
-            getView().startAnimation(fadeAnimation);
-            getView().setVisibility(View.VISIBLE);
-        }
-
-        // Can't call dismiss() on the DialogFragment from here because the state may have already
-        // been saved. Instead, it'll be closed when we come back.
-        mEventCollector.postEvent(new DismissProgressDialogEvent());
+        mLoading = false;
+        updateState();
     }
 
     @Override
     public void onLoaderReset(Loader<NeededInfo> loader) {
-    }
-
-    @Override
-    public void onConfirmVersionTooOld() {
-        getActivity().finish();
     }
 
     protected static class NeededInfo {
@@ -273,11 +208,5 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
                     MbtoolUtils.getMinimumRequiredVersion(Feature.APP_SHARING)) >= 0;
             return mResult;
         }
-    }
-
-    public class DismissProgressDialogEvent extends BaseEvent {
-    }
-
-    public class ShowVersionTooOldDialogEvent extends BaseEvent {
     }
 }
