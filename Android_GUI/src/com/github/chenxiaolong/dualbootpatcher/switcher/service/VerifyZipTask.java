@@ -32,7 +32,7 @@ public final class VerifyZipTask extends BaseServiceTask {
     public VerificationResult mResult;
     public String mRomId;
 
-    public interface VerifyZipTaskListener {
+    public interface VerifyZipTaskListener extends BaseServiceTaskListener {
         void onVerifiedZip(int taskId, String path, VerificationResult result, String romId);
     }
 

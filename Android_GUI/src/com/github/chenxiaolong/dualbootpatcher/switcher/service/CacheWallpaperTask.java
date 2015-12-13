@@ -29,7 +29,7 @@ public final class CacheWallpaperTask extends BaseServiceTask {
 
     public CacheWallpaperResult mResult;
 
-    public interface CacheWallpaperTaskListener {
+    public interface CacheWallpaperTaskListener extends BaseServiceTaskListener {
         void onCachedWallpaper(int taskId, RomInformation romInfo, CacheWallpaperResult result);
     }
 

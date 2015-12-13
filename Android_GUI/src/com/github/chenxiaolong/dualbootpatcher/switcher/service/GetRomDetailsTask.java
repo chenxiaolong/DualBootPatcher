@@ -49,7 +49,7 @@ public final class GetRomDetailsTask extends BaseServiceTask {
     public int mUpdatedPackages;
     public int mUserPackages;
 
-    public interface GetRomDetailsTaskListener {
+    public interface GetRomDetailsTaskListener extends BaseServiceTaskListener {
         void onRomDetailsGotSystemSize(int taskId, RomInformation romInfo,
                                        boolean success, long size);
 

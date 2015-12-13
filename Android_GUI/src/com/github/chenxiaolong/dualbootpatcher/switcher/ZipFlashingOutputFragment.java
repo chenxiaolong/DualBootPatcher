@@ -18,16 +18,15 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Fragment;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Parcelable;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +36,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask.FlashZipsTaskListener;
 
 import org.apache.commons.io.output.NullOutputStream;
 
@@ -57,9 +57,6 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
 
     public static final String PARAM_PENDING_ACTIONS = "pending_actions";
 
-    /** Intent filter for messages we care about from the service */
-    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
-
     private EmulatorView mEmulatorView;
     private TermSession mSession;
     private PipedOutputStream mOS;
@@ -73,13 +70,11 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
 
     /** Switcher service */
     private SwitcherService mService;
-    /** Broadcast receiver for events from the service */
-    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+    /** Callback for events from the service */
+    private final SwitcherEventCallback mCallback = new SwitcherEventCallback();
 
-    static {
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_FLASHED_ZIPS);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_NEW_OUTPUT_LINE);
-    }
+    /** Handler for processing events from the service on the UI thread */
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -140,10 +135,6 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         Intent intent = new Intent(getActivity(), SwitcherService.class);
         getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
         getActivity().startService(intent);
-
-        // Register our broadcast receiver for our service
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     @Override
@@ -160,12 +151,18 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
             }
         }
 
+        // If we connected to the service and registered the callback, now we unregister it
+        if (mService != null) {
+            mService.unregisterCallback(mCallback);
+        }
+
         // Unbind from our service
         getActivity().unbindService(this);
         mService = null;
 
-        // Unregister the broadcast receiver
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+        // At this point, the mCallback will not get called anymore by the service. Now we just need
+        // to remove all pending Runnables that were posted to mHandler.
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -173,6 +170,9 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
+
+        // Register callback
+        mService.registerCallback(mCallback);
 
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
@@ -226,31 +226,28 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         return mIsRunning;
     }
 
-    private class SwitcherEventReceiver extends BroadcastReceiver {
+    private class SwitcherEventCallback implements FlashZipsTaskListener {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            // If we're not yet connected to the service, don't do anything. The state will be
-            // restored upon connection.
-            if (mService == null) {
-                return;
+        public void onFlashedZips(int taskId, int totalActions, int failedActions) {
+            if (taskId == mTaskIdFlashZips) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onFinishedFlashing();
+                    }
+                });
             }
+        }
 
-            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
-                return;
-            }
-
-            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
-
-            if (SwitcherService.ACTION_FLASHED_ZIPS.equals(action)
-                    && taskId == mTaskIdFlashZips) {
-                onFinishedFlashing();
-            } else if (SwitcherService.ACTION_NEW_OUTPUT_LINE.equals(action)
-                    && taskId == mTaskIdFlashZips) {
-                String line = intent.getStringExtra(
-                        SwitcherService.RESULT_FLASHED_ZIPS_OUTPUT_LINE);
-                onNewOutputLine(line);
+        @Override
+        public void onCommandOutput(int taskId, final String line) {
+            if (taskId == mTaskIdFlashZips) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onNewOutputLine(line);
+                    }
+                });
             }
         }
     }

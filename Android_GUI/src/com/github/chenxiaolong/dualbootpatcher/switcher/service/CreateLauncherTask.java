@@ -36,7 +36,7 @@ public final class CreateLauncherTask extends BaseServiceTask {
     private final boolean mReboot;
     private final CreateLauncherTaskListener mListener;
 
-    public interface CreateLauncherTaskListener {
+    public interface CreateLauncherTaskListener extends BaseServiceTaskListener {
         void onCreatedLauncher(int taskId, RomInformation romInfo);
     }
 

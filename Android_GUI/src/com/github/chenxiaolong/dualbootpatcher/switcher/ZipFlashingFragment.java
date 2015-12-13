@@ -21,21 +21,20 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.AsyncTaskLoader;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.Loader;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -67,6 +66,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.Verificati
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction.Type;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.VerifyZipTaskListener;
 import com.nhaarman.listviewanimations.ArrayAdapter;
 import com.nhaarman.listviewanimations.itemmanipulation.DynamicListView;
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.OnDismissCallback;
@@ -89,13 +89,10 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog";
 
-    /** Intent filter for messages we care about from the service */
-    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
-
     /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
     private static final int ACTIVITY_REQUEST_FILE = 1000;
 
-    private OnReadyStateChangedListener mCallback;
+    private OnReadyStateChangedListener mActivityCallback;
 
     private SharedPreferences mPrefs;
 
@@ -121,17 +118,16 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
     /** Switcher service */
     private SwitcherService mService;
-    /** Broadcast receiver for events from the service */
-    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+    /** Callback for events from the service */
+    private final SwitcherEventCallback mCallback = new SwitcherEventCallback();
+
+    /** Handler for processing events from the service on the UI thread */
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     public interface OnReadyStateChangedListener {
         void onReady(boolean ready);
 
         void onFinished();
-    }
-
-    static {
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_VERIFIED_ZIP);
     }
 
     @Override
@@ -182,13 +178,13 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         }
 
         try {
-            mCallback = (OnReadyStateChangedListener) getActivity();
+            mActivityCallback = (OnReadyStateChangedListener) getActivity();
         } catch (ClassCastException e) {
             throw new ClassCastException(getActivity().toString()
                     + " must implement OnReadyStateChangedListener");
         }
 
-        mCallback.onReady(!mAdapter.isEmpty());
+        mActivityCallback.onReady(!mAdapter.isEmpty());
 
         mPrefs = getActivity().getSharedPreferences("settings", 0);
 
@@ -225,22 +221,24 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         Intent intent = new Intent(getActivity(), SwitcherService.class);
         getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
         getActivity().startService(intent);
-
-        // Register our broadcast receiver for our service
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
+        // If we connected to the service and registered the callback, now we unregister it
+        if (mService != null) {
+            mService.unregisterCallback(mCallback);
+        }
+
         // Unbind from our service
         getActivity().unbindService(this);
         mService = null;
 
-        // Unregister the broadcast receiver
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+        // At this point, the mCallback will not get called anymore by the service. Now we just need
+        // to remove all pending Runnables that were posted to mHandler.
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -248,6 +246,9 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
+
+        // Register callback
+        mService.registerCallback(mCallback);
 
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
@@ -365,7 +366,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
         case PERFORM_ACTIONS:
-            mCallback.onFinished();
+            mActivityCallback.onFinished();
             break;
         case ACTIVITY_REQUEST_FILE:
             if (data != null && resultCode == Activity.RESULT_OK) {
@@ -442,7 +443,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
                     0, R.string.zip_flashing_error_no_overwrite_rom);
             d.show(getFragmentManager(), GenericConfirmDialog.TAG);
         } else {
-            mCallback.onReady(true);
+            mActivityCallback.onReady(true);
 
             PendingAction pa = new PendingAction();
             pa.type = Type.INSTALL_ZIP;
@@ -641,35 +642,22 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             }
 
             if (mAdapter.isEmpty()) {
-                mCallback.onReady(false);
+                mActivityCallback.onReady(false);
             }
         }
     }
 
-    private class SwitcherEventReceiver extends BroadcastReceiver {
+    private class SwitcherEventCallback implements VerifyZipTaskListener {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            // If we're not yet connected to the service, don't do anything. The state will be
-            // restored upon connection.
-            if (mService == null) {
-                return;
-            }
-
-            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
-                return;
-            }
-
-            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
-
-            if (SwitcherService.ACTION_VERIFIED_ZIP.equals(action)
-                    && taskId == mTaskIdVerifyZip) {
-                VerificationResult result = (VerificationResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_VERIFIED_ZIP_RESULT);
-                String romId = intent.getStringExtra(
-                        SwitcherService.RESULT_VERIFIED_ZIP_ROM_ID);
-                onVerifiedZip(romId, result);
+        public void onVerifiedZip(int taskId, String path, final VerificationResult result,
+                                  final String romId) {
+            if (taskId == mTaskIdVerifyZip) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ZipFlashingFragment.this.onVerifiedZip(romId, result);
+                    }
+                });
             }
         }
     }

@@ -27,6 +27,9 @@ public abstract class BaseServiceTask implements Runnable {
     private final WeakReference<Context> mContext;
     private AtomicReference<TaskState> mState = new AtomicReference<>(TaskState.NOT_STARTED);
 
+    public interface BaseServiceTaskListener {
+    }
+
     public enum TaskState {
         NOT_STARTED,
         RUNNING,

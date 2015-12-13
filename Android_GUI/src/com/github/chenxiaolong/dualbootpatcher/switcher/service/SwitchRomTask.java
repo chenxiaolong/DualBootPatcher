@@ -34,7 +34,7 @@ public final class SwitchRomTask extends BaseServiceTask {
 
     public SwitchRomResult mResult;
 
-    public interface SwitchRomTaskListener {
+    public interface SwitchRomTaskListener extends BaseServiceTaskListener {
         void onSwitchedRom(int taskId, String romId, SwitchRomResult result);
     }
 

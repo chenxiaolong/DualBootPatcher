@@ -33,7 +33,7 @@ public final class SetKernelTask extends BaseServiceTask {
 
     public SetKernelResult mResult;
 
-    public interface SetKernelTaskListener {
+    public interface SetKernelTaskListener extends BaseServiceTaskListener {
         void onSetKernel(int taskId, String romId, SetKernelResult result);
     }
 

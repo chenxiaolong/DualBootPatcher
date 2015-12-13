@@ -47,7 +47,7 @@ public final class FlashZipsTask extends BaseServiceTask {
     public int mTotal = -1;
     public int mFailed = -1;
 
-    public interface FlashZipsTaskListener {
+    public interface FlashZipsTaskListener extends BaseServiceTaskListener {
         void onFlashedZips(int taskId, int totalActions, int failedActions);
 
         void onCommandOutput(int taskId, String line);

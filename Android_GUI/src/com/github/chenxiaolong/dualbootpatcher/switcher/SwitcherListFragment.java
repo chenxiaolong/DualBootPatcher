@@ -18,18 +18,16 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Fragment;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.os.Parcelable;
+import android.os.Looper;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -58,6 +56,10 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelNeededDialog
         .SetKernelNeededDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.KernelStatus;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask
+        .GetRomsStateTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.views.SwipeRefreshLayoutWorkaround;
 
 import java.util.ArrayList;
@@ -77,9 +79,6 @@ public class SwitcherListFragment extends Fragment implements
     private static final String EXTRA_SELECTED_ROM = "selected_rom";
     private static final String EXTRA_ACTIVE_ROM_ID = "active_rom_id";
     private static final String EXTRA_SHOWED_SET_KERNEL_WARNING = "showed_set_kernel_warning";
-
-    /** Intent filter for messages we care about from the service */
-    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
     /** Fragment tag for progress dialog for switching ROMS */
     private static final String PROGRESS_DIALOG_SWITCH_ROM =
@@ -103,8 +102,11 @@ public class SwitcherListFragment extends Fragment implements
 
     /** Switcher service */
     private SwitcherService mService;
-    /** Broadcast receiver for events from the service */
-    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+    /** Callback for events from the service */
+    private final SwitcherEventCallback mCallback = new SwitcherEventCallback();
+
+    /** Handler for processing events from the service on the UI thread */
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     private static final int REQUEST_FLASH_ZIP = 2345;
 
@@ -122,12 +124,6 @@ public class SwitcherListFragment extends Fragment implements
     private String mActiveRomId;
 
     private boolean mShowedSetKernelWarning;
-
-    static {
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_GOT_ROMS_STATE);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SWITCHED_ROM);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SET_KERNEL);
-    }
 
     public static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
@@ -194,10 +190,6 @@ public class SwitcherListFragment extends Fragment implements
         Intent intent = new Intent(getActivity(), SwitcherService.class);
         getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
         getActivity().startService(intent);
-
-        // Register our broadcast receiver for our service
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     /**
@@ -207,12 +199,18 @@ public class SwitcherListFragment extends Fragment implements
     public void onStop() {
         super.onStop();
 
+        // If we connected to the service and registered the callback, now we unregister it
+        if (mService != null) {
+            mService.unregisterCallback(mCallback);
+        }
+
         // Unbind from our service
         getActivity().unbindService(this);
         mService = null;
 
-        // Unregister the broadcast receiver
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+        // At this point, the mCallback will not get called anymore by the service. Now we just need
+        // to remove all pending Runnables that were posted to mHandler.
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     /**
@@ -223,6 +221,9 @@ public class SwitcherListFragment extends Fragment implements
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
+
+        // Register callback
+        mService.registerCallback(mCallback);
 
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
@@ -628,54 +629,44 @@ public class SwitcherListFragment extends Fragment implements
         switchRom(romId, true);
     }
 
-    private class SwitcherEventReceiver extends BroadcastReceiver {
+    private class SwitcherEventCallback implements GetRomsStateTaskListener, SwitchRomTaskListener,
+            SetKernelTaskListener {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            // If we're not yet connected to the service, don't do anything. The state will be
-            // restored upon connection.
-            if (mService == null) {
-                return;
+        public void onGotRomsState(int taskId, final RomInformation[] roms,
+                                   final RomInformation currentRom, final String activeRomId,
+                                   final KernelStatus kernelStatus) {
+            if (taskId == mTaskIdGetRomsState) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        SwitcherListFragment.this.onGotRomsState(
+                                roms, currentRom, activeRomId, kernelStatus);
+                    }
+                });
             }
+        }
 
-            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
-                return;
+        @Override
+        public void onSwitchedRom(int taskId, final String romId, final SwitchRomResult result) {
+            if (taskId == mTaskIdSwitchRom) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        SwitcherListFragment.this.onSwitchedRom(romId, result);
+                    }
+                });
             }
+        }
 
-            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
-
-            if (SwitcherService.ACTION_GOT_ROMS_STATE.equals(action)
-                    && taskId == mTaskIdGetRomsState) {
-                Parcelable[] parcelables = intent.getParcelableArrayExtra(
-                        SwitcherService. RESULT_GOT_ROMS_STATE_ROMS_LIST);
-                RomInformation currentRom = intent.getParcelableExtra(
-                        SwitcherService.RESULT_GOT_ROMS_STATE_CURRENT_ROM);
-                String activeRomId = intent.getStringExtra(
-                        SwitcherService.RESULT_GOT_ROMS_STATE_ACTIVE_ROM_ID);
-                KernelStatus kernelStatus = (KernelStatus) intent.getSerializableExtra(
-                        SwitcherService.RESULT_GOT_ROMS_STATE_KERNEL_STATUS);
-
-                RomInformation[] romsList = new RomInformation[parcelables.length];
-                System.arraycopy(parcelables, 0, romsList, 0, parcelables.length);
-
-                onGotRomsState(romsList, currentRom, activeRomId, kernelStatus);
-            } else if (SwitcherService.ACTION_SWITCHED_ROM.equals(action)
-                    && taskId == mTaskIdSwitchRom) {
-                String romId = intent.getStringExtra(
-                        SwitcherService.RESULT_SWITCHED_ROM_ROM_ID);
-                SwitchRomResult result = (SwitchRomResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_SWITCHED_ROM_RESULT);
-
-                onSwitchedRom(romId, result);
-            } else if (SwitcherService.ACTION_SET_KERNEL.equals(action)
-                    && taskId == mTaskIdSetKernel) {
-                String romId = intent.getStringExtra(
-                        SwitcherService.RESULT_SET_KERNEL_ROM_ID);
-                SetKernelResult result = (SetKernelResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_SET_KERNEL_RESULT);
-
-                onSetKernel(romId, result);
+        @Override
+        public void onSetKernel(int taskId, final String romId, final SetKernelResult result) {
+            if (taskId == mTaskIdSetKernel) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        SwitcherListFragment.this.onSetKernel(romId, result);
+                    }
+                });
             }
         }
     }

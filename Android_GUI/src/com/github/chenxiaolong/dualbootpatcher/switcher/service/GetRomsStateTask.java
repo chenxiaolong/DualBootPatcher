@@ -37,7 +37,7 @@ public final class GetRomsStateTask extends BaseServiceTask {
     public String mActiveRomId;
     public KernelStatus mKernelStatus;
 
-    public interface GetRomsStateTaskListener {
+    public interface GetRomsStateTaskListener extends BaseServiceTaskListener {
         void onGotRomsState(int taskId, RomInformation[] roms, RomInformation currentRom,
                             String activeRomId, KernelStatus kernelStatus);
     }

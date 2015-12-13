@@ -17,17 +17,15 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.support.v4.content.LocalBroadcastManager;
+import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
@@ -38,6 +36,7 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmAutomatedSwitchRomDialog
         .ConfirmAutomatedSwitchRomDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
 
 import java.util.ArrayList;
 
@@ -47,9 +46,6 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
     private static final String PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents";
 
     private static final String EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom";
-
-    /** Intent filter for messages we care about from the service */
-    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
     public static final String EXTRA_ROM_ID = "rom_id";
     public static final String EXTRA_REBOOT = "reboot";
@@ -68,12 +64,11 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
 
     /** Switcher service */
     private SwitcherService mService;
-    /** Broadcast receiver for events from the service */
-    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+    /** Callback for events from the service */
+    private final SwitcherEventCallback mCallback = new SwitcherEventCallback();
 
-    static {
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SWITCHED_ROM);
-    }
+    /** Handler for processing events from the service on the UI thread */
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -115,22 +110,24 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         Intent intent = new Intent(this, SwitcherService.class);
         bindService(intent, this, BIND_AUTO_CREATE);
         startService(intent);
-
-        // Register our broadcast receiver for our service
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
+        // If we connected to the service and registered the callback, now we unregister it
+        if (mService != null) {
+            mService.unregisterCallback(mCallback);
+        }
+
         // Unbind from our service
         unbindService(this);
         mService = null;
 
-        // Unregister the broadcast receiver
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
+        // At this point, the mCallback will not get called anymore by the service. Now we just need
+        // to remove all pending Runnables that were posted to mHandler.
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -138,6 +135,9 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
+
+        // Register callback
+        mService.registerCallback(mCallback);
 
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
@@ -247,30 +247,16 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         mTaskIdSwitchRom = mService.switchRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
     }
 
-    private class SwitcherEventReceiver extends BroadcastReceiver {
+    private class SwitcherEventCallback implements SwitchRomTaskListener {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            // If we're not yet connected to the service, don't do anything. The state will be
-            // restored upon connection.
-            if (mService == null) {
-                return;
-            }
-
-            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
-                return;
-            }
-
-            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
-
-            if (SwitcherService.ACTION_SWITCHED_ROM.equals(action)
-                    && taskId == mTaskIdSwitchRom) {
-                String romId = intent.getStringExtra(
-                        SwitcherService.RESULT_SWITCHED_ROM_ROM_ID);
-                SwitchRomResult result = (SwitchRomResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_SWITCHED_ROM_RESULT);
-                onSwitchedRom(romId, result);
+        public void onSwitchedRom(int taskId, final String romId, final SwitchRomResult result) {
+            if (taskId == mTaskIdSwitchRom) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        AutomatedSwitcherActivity.this.onSwitchedRom(romId, result);
+                    }
+                });
             }
         }
     }

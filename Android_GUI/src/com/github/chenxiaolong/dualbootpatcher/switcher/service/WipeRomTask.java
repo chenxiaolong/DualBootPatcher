@@ -35,7 +35,7 @@ public final class WipeRomTask extends BaseServiceTask {
     public short[] mTargetsSucceeded;
     public short[] mTargetsFailed;
 
-    public interface WipeRomTaskListener {
+    public interface WipeRomTaskListener extends BaseServiceTaskListener {
         void onWipedRom(int taskId, String romId, short[] succeeded, short[] failed);
     }
 

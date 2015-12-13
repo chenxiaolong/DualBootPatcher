@@ -18,22 +18,20 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.annotation.StringRes;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -83,6 +81,15 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
+        .CacheWallpaperTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
+        .CreateLauncherTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask
+        .GetRomDetailsTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask.WipeRomTaskListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
 
@@ -142,9 +149,6 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final String EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details";
     private static final String EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_reomve";
 
-    /** Intent filter for messages we care about from the service */
-    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
-
     private CoordinatorLayout mCoordinator;
     private CollapsingToolbarLayout mCollapsing;
     private ImageView mWallpaper;
@@ -170,21 +174,11 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     /** Switcher service */
     private SwitcherService mService;
-    /** Broadcast receiver for events from the service */
-    private SwitcherEventReceiver mReceiver = new SwitcherEventReceiver();
+    /** Callback for events from the service */
+    private final SwitcherEventCallback mCallback = new SwitcherEventCallback();
 
-    static {
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_CACHED_WALLPAPER);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SWITCHED_ROM);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_SET_KERNEL);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_WIPED_ROM);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_CREATED_LAUNCHER);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_SYSTEM_SIZE);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_CACHE_SIZE);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_DATA_SIZE);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_GOT_PACKAGES_COUNTS);
-        SERVICE_INTENT_FILTER.addAction(SwitcherService.ACTION_ROM_DETAILS_FINISHED);
-    }
+    /** Handler for processing events from the service on the UI thread */
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -251,10 +245,6 @@ public class RomDetailActivity extends AppCompatActivity implements
         Intent intent = new Intent(this, SwitcherService.class);
         bindService(intent, this, BIND_AUTO_CREATE);
         startService(intent);
-
-        // Register our broadcast receiver for our service
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     @Override
@@ -270,12 +260,18 @@ public class RomDetailActivity extends AppCompatActivity implements
             }
         }
 
+        // If we connected to the service and registered the callback, now we unregister it
+        if (mService != null) {
+            mService.unregisterCallback(mCallback);
+        }
+
         // Unbind from our service
         unbindService(this);
         mService = null;
 
-        // Unregister the broadcast receiver
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
+        // At this point, the mCallback will not get called anymore by the service. Now we just need
+        // to remove all pending Runnables that were posted to mHandler.
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -283,6 +279,9 @@ public class RomDetailActivity extends AppCompatActivity implements
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
+
+        // Register callback
+        mService.registerCallback(mCallback);
 
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
@@ -875,84 +874,128 @@ public class RomDetailActivity extends AppCompatActivity implements
         return sb.toString();
     }
 
-    private class SwitcherEventReceiver extends BroadcastReceiver {
+    private class SwitcherEventCallback implements CacheWallpaperTaskListener,
+            SwitchRomTaskListener, SetKernelTaskListener, WipeRomTaskListener,
+            CreateLauncherTaskListener, GetRomDetailsTaskListener {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            // If we're not yet connected to the service, don't do anything. The state will be
-            // restored upon connection.
-            if (mService == null) {
-                return;
+        public void onCachedWallpaper(int taskId, RomInformation romInfo,
+                                      final CacheWallpaperResult result) {
+            if (taskId == mTaskIdCacheWallpaper) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        RomDetailActivity.this.onCachedWallpaper(result);
+                    }
+                });
             }
+        }
 
-            if (!SERVICE_INTENT_FILTER.hasAction(action)) {
-                return;
+        @Override
+        public void onSwitchedRom(int taskId, String romId, final SwitchRomResult result) {
+            if (taskId == mTaskIdSwitchRom) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        RomDetailActivity.this.onSwitchedRom(result);
+                    }
+                });
             }
+        }
 
-            int taskId = intent.getIntExtra(SwitcherService.RESULT_TASK_ID, -1);
-
-            if (SwitcherService.ACTION_CACHED_WALLPAPER.equals(action)
-                    && taskId == mTaskIdCacheWallpaper) {
-                CacheWallpaperResult result = (CacheWallpaperResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_CACHED_WALLPAPER_RESULT);
-                onCachedWallpaper(result);
-            } else if (SwitcherService.ACTION_SWITCHED_ROM.equals(action)
-                    && taskId == mTaskIdSwitchRom) {
-                SwitchRomResult result = (SwitchRomResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_SWITCHED_ROM_RESULT);
-                onSwitchedRom(result);
-            } else if (SwitcherService.ACTION_SET_KERNEL.equals(action)
-                    && taskId == mTaskIdSetKernel) {
-                SetKernelResult result = (SetKernelResult) intent.getSerializableExtra(
-                        SwitcherService.RESULT_SET_KERNEL_RESULT);
-                onSetKernel(result);
-            } else if (SwitcherService.ACTION_WIPED_ROM.equals(action)
-                    && taskId == mTaskIdWipeRom) {
-                short[] succeeded = intent.getShortArrayExtra(
-                        SwitcherService.RESULT_WIPED_ROM_SUCCEEDED);
-                short[] failed = intent.getShortArrayExtra(
-                        SwitcherService.RESULT_WIPED_ROM_FAILED);
-                onWipedRom(succeeded, failed);
-            } else if (SwitcherService.ACTION_CREATED_LAUNCHER.equals(action)
-                    && taskId == mTaskIdCreateLauncher) {
-                onCreatedLauncher();
-            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_SYSTEM_SIZE.equals(action)
-                    && taskId == mTaskIdGetRomDetails) {
-                boolean success = intent.getBooleanExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
-                long size = intent.getLongExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SIZE, -1);
-                onHaveSystemSize(success, size);
-            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_CACHE_SIZE.equals(action)
-                    && taskId == mTaskIdGetRomDetails) {
-                boolean success = intent.getBooleanExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
-                long size = intent.getLongExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SIZE, -1);
-                onHaveCacheSize(success, size);
-            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_DATA_SIZE.equals(action)
-                    && taskId == mTaskIdGetRomDetails) {
-                boolean success = intent.getBooleanExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
-                long size = intent.getLongExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SIZE, -1);
-                onHaveDataSize(success, size);
-            } else if (SwitcherService.ACTION_ROM_DETAILS_GOT_PACKAGES_COUNTS.equals(action)
-                    && taskId == mTaskIdGetRomDetails) {
-                boolean success = intent.getBooleanExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_SUCCESS, false);
-                int systemPackages = intent.getIntExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_PACKAGES_COUNT_SYSTEM, -1);
-                int updatedPackages = intent.getIntExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_PACKAGES_COUNT_UPDATED, -1);
-                int userPackages = intent.getIntExtra(
-                        SwitcherService.RESULT_ROM_DETAILS_PACKAGES_COUNT_USER, -1);
-                onHavePackagesCounts(success, systemPackages, updatedPackages, userPackages);
-            } else if (SwitcherService.ACTION_ROM_DETAILS_FINISHED.equals(action)
-                    && taskId == mTaskIdGetRomDetails) {
-                // Ignore
+        @Override
+        public void onSetKernel(int taskId, String romId, final SetKernelResult result) {
+            if (taskId == mTaskIdSetKernel) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        RomDetailActivity.this.onSetKernel(result);
+                    }
+                });
             }
+        }
+
+        @Override
+        public void onWipedRom(int taskId, String romId, final short[] succeeded, final short[] failed) {
+            if (taskId == mTaskIdWipeRom) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        RomDetailActivity.this.onWipedRom(succeeded, failed);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onCreatedLauncher(int taskId, RomInformation romInfo) {
+            if (taskId == mTaskIdCreateLauncher) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        RomDetailActivity.this.onCreatedLauncher();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onRomDetailsGotSystemSize(int taskId, RomInformation romInfo,
+                                              final boolean success, final long size) {
+            if (taskId == mTaskIdGetRomDetails) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onHaveSystemSize(success, size);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onRomDetailsGotCacheSize(int taskId, RomInformation romInfo,
+                                             final boolean success, final long size) {
+            if (taskId == mTaskIdGetRomDetails) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onHaveCacheSize(success, size);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onRomDetailsGotDataSize(int taskId, RomInformation romInfo,
+                                            final boolean success, final long size) {
+            if (taskId == mTaskIdGetRomDetails) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onHaveDataSize(success, size);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onRomDetailsGotPackagesCounts(int taskId, RomInformation romInfo,
+                                                  final boolean success, final int systemPackages,
+                                                  final int updatedPackages,
+                                                  final int userPackages) {
+            if (taskId == mTaskIdGetRomDetails) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onHavePackagesCounts(
+                                success, systemPackages, updatedPackages, userPackages);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onRomDetailsFinished(int taskId, RomInformation romInfo) {
+            // Ignore
         }
     }
 }
