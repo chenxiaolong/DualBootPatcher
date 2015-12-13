@@ -38,6 +38,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.Pend
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask.FlashZipsTaskListener;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.IOException;
@@ -140,6 +141,8 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
     @Override
     public void onStop() {
         super.onStop();
+
+        IOUtils.closeQuietly(mOS);
 
         // Destroy session
         mSession.finish();
