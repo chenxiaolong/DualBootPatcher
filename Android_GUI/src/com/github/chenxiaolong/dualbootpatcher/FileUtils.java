@@ -144,12 +144,13 @@ public class FileUtils {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/zip");
 
-        if (Build.VERSION.SDK_INT >= 19) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             // Prefer ACTION_GET_CONTENT because Samsung's DocumentsUI isn't implemented correctly:
             // https://code.google.com/p/android/issues/detail?id=70697
             if (!canHandleIntent(pm, intent)) {
                 intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
             }
+            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         }
 
         if (canHandleIntent(pm, intent)) {
