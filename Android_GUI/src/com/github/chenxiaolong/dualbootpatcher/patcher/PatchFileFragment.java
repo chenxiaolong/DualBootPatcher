@@ -20,20 +20,19 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.Fragment;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.ItemAnimator;
@@ -64,6 +63,7 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemAdapter
         .PatchFileItemClickListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
         .PatcherOptionsDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService.PatcherEventListener;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
@@ -81,9 +81,6 @@ public class PatchFileFragment extends Fragment implements
             PatchFileFragment.class.getCanonicalName() + ".patcher_options";
 
     private static final String EXTRA_SELECTED_FILE = "selected_file";
-
-    /** Intent filter for messages we care about from the service */
-    private static final IntentFilter SERVICE_INTENT_FILTER = new IntentFilter();
 
     /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
     private static final int ACTIVITY_REQUEST_FILE = 1000;
@@ -115,8 +112,11 @@ public class PatchFileFragment extends Fragment implements
 
     /** Our patcher service */
     private PatcherService mService;
-    /** Broadcast receiver for events from the service */
-    private PatcherEventReceiver mReceiver = new PatcherEventReceiver();
+    /** Callback for events from the service */
+    private PatcherEventCallback mCallback = new PatcherEventCallback();
+
+    /** Handler for processing events from the service on the UI thread */
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     /** {@link Runnable}s to process once the service has been connected */
     private ArrayList<Runnable> mExecOnConnect = new ArrayList<>();
@@ -134,16 +134,6 @@ public class PatchFileFragment extends Fragment implements
 
     /** Selected file */
     private String mSelectedFile;
-
-    static {
-        // We only care about file patching events
-        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_INITIALIZED);
-        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_DETAILS_CHANGED);
-        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_PROGRESS_CHANGED);
-        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_FILES_PROGRESS_CHANGED);
-        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_STARTED);
-        SERVICE_INTENT_FILTER.addAction(PatcherService.ACTION_PATCHER_FINISHED);
-    }
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
@@ -314,10 +304,6 @@ public class PatchFileFragment extends Fragment implements
         Intent intent = new Intent(getActivity(), PatcherService.class);
         getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
         getActivity().startService(intent);
-
-        // Register our broadcast receiver for our service
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-                mReceiver, SERVICE_INTENT_FILTER);
     }
 
     /**
@@ -327,12 +313,18 @@ public class PatchFileFragment extends Fragment implements
     public void onStop() {
         super.onStop();
 
+        // If we connected to the service and registered the callback, now we unregister it
+        if (mService != null) {
+            mService.unregisterCallback(mCallback);
+        }
+
         // Unbind from our service
         getActivity().unbindService(this);
         mService = null;
 
-        // Unregister the broadcast receiver
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mReceiver);
+        // At this point, the mCallback will not get called anymore by the service. Now we just need
+        // to remove all pending Runnables that were posted to mHandler.
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     /**
@@ -343,6 +335,9 @@ public class PatchFileFragment extends Fragment implements
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (PatcherService) binder.getService();
+
+        // Register callback
+        mService.registerCallback(mCallback);
 
         for (Runnable runnable : mExecOnConnect) {
             runnable.run();
@@ -669,85 +664,130 @@ public class PatchFileFragment extends Fragment implements
         }
     }
 
-    private class PatcherEventReceiver extends BroadcastReceiver {
+    private class PatcherEventCallback implements PatcherEventListener {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            if (PatcherService.ACTION_PATCHER_INITIALIZED.equals(action)) {
-                // Make sure we don't initialize more than once. This event could be sent more than
-                // once if, eg., mService.initializePatcher() is called and the device is rotated
-                // before this event is received. Then mService.initializePatcher() will be called
-                // again leading to a duplicate event.
-                if (!mInitialized) {
-                    mInitialized = true;
-                    onPatcherInitialized();
-                }
-                return;
+        public void onPatcherInitialized() {
+            // Make sure we don't initialize more than once. This event could be sent more than
+            // once if, eg., mService.initializePatcher() is called and the device is rotated
+            // before this event is received. Then mService.initializePatcher() will be called
+            // again leading to a duplicate event.
+            if (!mInitialized) {
+                mInitialized = true;
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        PatchFileFragment.this.onPatcherInitialized();
+                    }
+                });
             }
+        }
 
-            // Status updates always send a task ID. If it does, get the corresponding item
-            PatchFileItem item;
-            int itemIndex;
-            int taskId = intent.getIntExtra(PatcherService.RESULT_PATCHER_TASK_ID, -1);
-            if (taskId != -1 && mItemsMap.containsKey(taskId)) {
-                itemIndex = mItemsMap.get(taskId);
-                item = mItems.get(itemIndex);
-            } else {
-                // Something went horribly wrong with the service
-                return;
-            }
-
-            if (PatcherService.ACTION_PATCHER_DETAILS_CHANGED.equals(action)) {
-                item.details = intent.getStringExtra(PatcherService.RESULT_PATCHER_DETAILS);
-                mAdapter.notifyItemChanged(itemIndex);
-            } else if (PatcherService.ACTION_PATCHER_PROGRESS_CHANGED.equals(action)) {
-                item.bytes = intent.getLongExtra(PatcherService.RESULT_PATCHER_CURRENT_BYTES, 0);
-                item.maxBytes = intent.getLongExtra(PatcherService.RESULT_PATCHER_MAX_BYTES, 0);
-                mAdapter.notifyItemChanged(itemIndex);
-            } else if (PatcherService.ACTION_PATCHER_FILES_PROGRESS_CHANGED.equals(action)) {
-                item.files = intent.getLongExtra(PatcherService.RESULT_PATCHER_CURRENT_FILES, 0);
-                item.maxFiles = intent.getLongExtra(PatcherService.RESULT_PATCHER_MAX_FILES, 0);
-                mAdapter.notifyItemChanged(itemIndex);
-            } else if (PatcherService.ACTION_PATCHER_STARTED.equals(action)) {
-                item.state = PatchFileState.IN_PROGRESS;
-                updateToolbarIcons();
-                updateModifiability();
-                updateScreenOnState();
-                mAdapter.notifyItemChanged(itemIndex);
-            } else if (PatcherService.ACTION_PATCHER_FINISHED.equals(action)) {
-                boolean cancelled = intent.getBooleanExtra(
-                        PatcherService.RESULT_PATCHER_CANCELLED, false);
-                if (cancelled) {
-                    item.state = PatchFileState.CANCELLED;
-                } else {
-                    item.state = PatchFileState.COMPLETED;
+        @Override
+        public void onPatcherUpdateDetails(final int taskId, final String details) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mItemsMap.containsKey(taskId)) {
+                        int itemIndex = mItemsMap.get(taskId);
+                        PatchFileItem item = mItems.get(itemIndex);
+                        item.details = details;
+                        mAdapter.notifyItemChanged(itemIndex);
+                    }
                 }
-                item.details = getString(R.string.details_done);
-                item.successful = intent.getBooleanExtra(PatcherService.RESULT_PATCHER_SUCCESS,
-                        false);
-                item.errorCode = intent.getIntExtra(PatcherService.RESULT_PATCHER_ERROR_CODE, 0);
-                item.newPath = intent.getStringExtra(PatcherService.RESULT_PATCHER_NEW_FILE);
+            });
+        }
 
-                updateToolbarIcons();
-                updateModifiability();
-                updateScreenOnState();
-
-                mAdapter.notifyItemChanged(itemIndex);
-
-                // Update MTP cache
-                if (item.successful) {
-                    // TODO: Android has a bug that causes the context to leak!
-                    // TODO: See https://github.com/square/leakcanary/issues/26
-                    MediaScannerConnection.scanFile(getActivity().getApplicationContext(),
-                            new String[] { item.newPath }, null, null);
+        @Override
+        public void onPatcherUpdateProgress(final int taskId, final long bytes,
+                                            final long maxBytes) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mItemsMap.containsKey(taskId)) {
+                        int itemIndex = mItemsMap.get(taskId);
+                        PatchFileItem item = mItems.get(itemIndex);
+                        item.bytes = bytes;
+                        item.maxBytes = maxBytes;
+                        mAdapter.notifyItemChanged(itemIndex);
+                    }
                 }
+            });
+        }
 
-                //returnResult(ret ? RESULT_PATCHING_SUCCEEDED : RESULT_PATCHING_FAILED,
-                //        "See " + LogUtils.getPath("patch-file.log") + " for details", newPath);
-            } else {
-                throw new IllegalStateException("Invalid action: " + action);
-            }
+        @Override
+        public void onPatcherUpdateFilesProgress(final int taskId, final long files,
+                                                 final long maxFiles) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mItemsMap.containsKey(taskId)) {
+                        int itemIndex = mItemsMap.get(taskId);
+                        PatchFileItem item = mItems.get(itemIndex);
+                        item.files = files;
+                        item.maxFiles = maxFiles;
+                        mAdapter.notifyItemChanged(itemIndex);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onPatcherStarted(final int taskId) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mItemsMap.containsKey(taskId)) {
+                        int itemIndex = mItemsMap.get(taskId);
+                        PatchFileItem item = mItems.get(itemIndex);
+                        item.state = PatchFileState.IN_PROGRESS;
+                        updateToolbarIcons();
+                        updateModifiability();
+                        updateScreenOnState();
+                        mAdapter.notifyItemChanged(itemIndex);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onPatcherFinished(final int taskId, final boolean cancelled, final boolean ret,
+                                      final int errorCode, final String newPath) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mItemsMap.containsKey(taskId)) {
+                        int itemIndex = mItemsMap.get(taskId);
+                        PatchFileItem item = mItems.get(itemIndex);
+
+                        if (cancelled) {
+                            item.state = PatchFileState.CANCELLED;
+                        } else {
+                            item.state = PatchFileState.COMPLETED;
+                        }
+                        item.details = getString(R.string.details_done);
+                        item.successful = ret;
+                        item.errorCode = errorCode;
+                        item.newPath = newPath;
+
+                        updateToolbarIcons();
+                        updateModifiability();
+                        updateScreenOnState();
+
+                        mAdapter.notifyItemChanged(itemIndex);
+
+                        // Update MTP cache
+                        if (item.successful) {
+                            // TODO: Android has a bug that causes the context to leak!
+                            // TODO: See https://github.com/square/leakcanary/issues/26
+                            MediaScannerConnection.scanFile(getActivity().getApplicationContext(),
+                                    new String[] { item.newPath }, null, null);
+                        }
+
+                        //returnResult(ret ? RESULT_PATCHING_SUCCEEDED : RESULT_PATCHING_FAILED,
+                        //        "See " + LogUtils.getPath("patch-file.log") + " for details", newPath);
+                    }
+                }
+            });
         }
     }
 }

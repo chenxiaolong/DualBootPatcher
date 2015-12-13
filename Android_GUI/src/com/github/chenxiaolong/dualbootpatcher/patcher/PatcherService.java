@@ -17,8 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -30,15 +28,18 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PatcherService extends ThreadPoolService {
     private static final String TAG = PatcherService.class.getSimpleName();
-    private static final String ACTION_BASE = PatcherService.class.getCanonicalName();
 
     private static final String THREAD_POOL_DEFAULT = "default";
     private static final String THREAD_POOL_PATCHING = "patching";
@@ -52,56 +53,102 @@ public class PatcherService extends ThreadPoolService {
     public void onCreate() {
         super.onCreate();
 
+        // Update WeakReferences in all of our tasks. This is extremely ugly, but we need to
+        // preserve our tasks throughout the service lifecycle.
+        try {
+            mCallbacksLock.writeLock().lock();
+            for (Map.Entry<Integer, PatchFileTask> entry : sPatcherTasks.entrySet()) {
+                entry.getValue().setService(this);
+            }
+        } finally {
+            mCallbacksLock.writeLock().unlock();
+        }
+
         addThreadPool(THREAD_POOL_DEFAULT, THREAD_POOL_DEFAULT_THREADS);
         addThreadPool(THREAD_POOL_PATCHING, THREAD_POOL_PATCHING_THREADS);
     }
 
-    // Patcher intents
+    /** List of callbacks for receiving events */
+    private final ArrayList<PatcherEventListener> mCallbacks = new ArrayList<>();
+    /** Read/write lock for callbacks. */
+    private final ReentrantReadWriteLock mCallbacksLock = new ReentrantReadWriteLock();
 
-    public static final String ACTION_PATCHER_INITIALIZED =
-            ACTION_BASE + ".patcher.initialized";
-    public static final String ACTION_PATCHER_DETAILS_CHANGED =
-            ACTION_BASE + ".patcher.details_changed";
-    public static final String ACTION_PATCHER_PROGRESS_CHANGED =
-            ACTION_BASE + ".patcher.progress_changed";
-    public static final String ACTION_PATCHER_FILES_PROGRESS_CHANGED =
-            ACTION_BASE + ".patcher.files_progress_changed";
-    public static final String ACTION_PATCHER_STARTED =
-            ACTION_BASE + ".patcher.started";
-    public static final String ACTION_PATCHER_FINISHED =
-            ACTION_BASE + ".patcher.finished";
-    public static final String RESULT_PATCHER_TASK_ID = "task_id";
-    public static final String RESULT_PATCHER_DETAILS = "details";
-    public static final String RESULT_PATCHER_CURRENT_BYTES = "current_bytes";
-    public static final String RESULT_PATCHER_MAX_BYTES = "max_bytes";
-    public static final String RESULT_PATCHER_CURRENT_FILES = "current_files";
-    public static final String RESULT_PATCHER_MAX_FILES = "max_files";
-    public static final String RESULT_PATCHER_CANCELLED = "cancelled";
-    public static final String RESULT_PATCHER_SUCCESS = "success";
-    public static final String RESULT_PATCHER_ERROR_CODE = "error_code";
-    public static final String RESULT_PATCHER_NEW_FILE = "new_file";
+    public void registerCallback(PatcherEventListener callback) {
+        if (callback == null) {
+            Log.w(TAG, "Tried to register null callback!");
+            return;
+        }
+
+        try {
+            mCallbacksLock.writeLock().lock();
+            mCallbacks.add(callback);
+        } finally {
+            mCallbacksLock.writeLock().unlock();
+        }
+    }
+
+    public void unregisterCallback(PatcherEventListener callback) {
+        if (callback == null) {
+            Log.w(TAG, "Tried to unregister null callback!");
+            return;
+        }
+
+        try {
+            mCallbacksLock.writeLock().lock();
+            if (!mCallbacks.remove(callback)) {
+                Log.w(TAG, "Callback was never registered: " + callback);
+            }
+        } finally {
+            mCallbacksLock.writeLock().unlock();
+        }
+    }
+
+    private void executeAllCallbacks(CallbackRunnable runnable) {
+        try {
+            mCallbacksLock.readLock().lock();
+            for (PatcherEventListener cb : mCallbacks) {
+                runnable.call(cb);
+            }
+        } finally {
+            mCallbacksLock.readLock().unlock();
+        }
+    }
+
+    private interface CallbackRunnable {
+        void call(PatcherEventListener callback);
+    }
 
     // TODO: Won't survive out-of-memory app restart
+    private static final ReentrantReadWriteLock sPatcherTasksLock = new ReentrantReadWriteLock();
     private static final HashMap<Integer, PatchFileTask> sPatcherTasks = new HashMap<>();
     private static final AtomicInteger sPatcherNewTaskId = new AtomicInteger(0);
 
     // Patcher helper methods
 
     private void addTask(int taskId, PatchFileTask task) {
-        synchronized (sPatcherTasks) {
+        try {
+            sPatcherTasksLock.writeLock().lock();
             sPatcherTasks.put(taskId, task);
+        } finally {
+            sPatcherTasksLock.writeLock().unlock();
         }
     }
 
     private PatchFileTask getTask(int taskId) {
-        synchronized (sPatcherTasks) {
+        try {
+            sPatcherTasksLock.readLock().lock();
             return sPatcherTasks.get(taskId);
+        } finally {
+            sPatcherTasksLock.readLock().unlock();
         }
     }
 
     private PatchFileTask removeTask(int taskId) {
-        synchronized (sPatcherTasks) {
+        try {
+            sPatcherTasksLock.writeLock().lock();
             return sPatcherTasks.remove(taskId);
+        } finally {
+            sPatcherTasksLock.writeLock().unlock();
         }
     }
 
@@ -113,10 +160,11 @@ public class PatcherService extends ThreadPoolService {
      * - Clean up old data directories
      * - Create an singleton instance of {@link PatcherConfig} in {@link PatcherUtils#sPC}
      *
-     * After the task finishes, {@link #ACTION_PATCHER_INITIALIZED} will be broadcast.
+     * After the task finishes, {@link PatcherEventListener#onPatcherInitialized()} will be called
+     * on all registered callbacks.
      */
     public void initializePatcher() {
-        InitializePatcherTask task = new InitializePatcherTask();
+        InitializePatcherTask task = new InitializePatcherTask(this);
         enqueueOperation(THREAD_POOL_DEFAULT, task);
     }
 
@@ -128,13 +176,16 @@ public class PatcherService extends ThreadPoolService {
      * @return Array of file patching task IDs.
      */
     public int[] getPatchFileTaskIds() {
-        synchronized (sPatcherTasks) {
+        try {
+            sPatcherTasksLock.readLock().lock();
             int[] taskIds = new int[sPatcherTasks.size()];
             int index = 0;
             for (int taskId : sPatcherTasks.keySet()) {
                 taskIds[index++] = taskId;
             }
             return taskIds;
+        } finally {
+            sPatcherTasksLock.readLock().unlock();
         }
     }
 
@@ -151,7 +202,7 @@ public class PatcherService extends ThreadPoolService {
      */
     public int addPatchFileTask(String patcherId, String path, Device device, String romId) {
         int taskId = sPatcherNewTaskId.getAndIncrement();
-        PatchFileTask task = new PatchFileTask(taskId);
+        PatchFileTask task = new PatchFileTask(this, taskId);
         task.mPatcherId = patcherId;
         task.mPath = path;
         task.mDevice = device;
@@ -175,33 +226,23 @@ public class PatcherService extends ThreadPoolService {
     /**
      * Asynchronously start patching a file
      *
-     * During patching, the following broadcasts may be sent:
-     * - {@link #ACTION_PATCHER_DETAILS_CHANGED} : Sent when libmbp reports a single-line status
-     *   text item (usually the file inside the archive being processed). The data will include:
-     *   - {@link #RESULT_PATCHER_TASK_ID} : int : The task ID
-     *   - {@link #RESULT_PATCHER_DETAILS} : string : Status details text
-     * - {@link #ACTION_PATCHER_PROGRESS_CHANGED} : Sent when libmbp reports the current progress
-     *   value and the maximum progress value. Make no assumptions about the current and maximum
-     *   progress values. It is not guaranteed that current <= maximum or that they are positive.
-     *   The data will include:
-     *   - {@link #RESULT_PATCHER_TASK_ID} : int : The task ID
-     *   - {@link #RESULT_PATCHER_CURRENT_BYTES} : long : Current progress
-     *   - {@link #RESULT_PATCHER_MAX_BYTES} : long : Maximum progress
-     * - {@link #ACTION_PATCHER_FILES_PROGRESS_CHANGED} : Sent when libmbp reports the current
-     *   progress and maximum progress in terms of the number of files within the archive that have
-     *   been processed. Make no assumptions about the current and maximum progress values. It is
-     *   not guaranteed that current <= maximum or that they are positive. The data will include:
-     *   - {@link #RESULT_PATCHER_TASK_ID} : int : The task ID
-     *   - {@link #RESULT_PATCHER_CURRENT_FILES} : long : Current files progress
-     *   - {@link #RESULT_PATCHER_MAX_FILES} : long : Maximum files progress
+     * During patching, the following callback methods may be called:
+     * - {@link PatcherEventListener#onPatcherUpdateDetails(int, String)} : Called when libmbp
+     *   reports a single-line status text item (usually the file inside the archive being
+     *   processed)
+     * - {@link PatcherEventListener#onPatcherUpdateProgress(int, long, long)} : Called when libmbp
+     *   reports the current progress value and the maximum progress value. Make no assumptions
+     *   about the current and maximum progress values. It is not guaranteed that current <= maximum
+     *   or that they are positive.
+     * - {@link PatcherEventListener#onPatcherUpdateFilesProgress(int, long, long)} : Called when
+     *   libmbp reports the current progress and maximum progress in terms of the number of files
+     *   within the archive that have been processed. Make no assumptions about the current and
+     *   maximum progress values. It is not guaranteed that current <= maximum or that they are
+     *   positive.
      *
-     * When the patching is finished, {@link #ACTION_PATCHER_FINISHED} will be broadcast and the
-     * data will include:
-     * - {@link #RESULT_PATCHER_TASK_ID} : int : The task ID
-     * - {@link #RESULT_PATCHER_CANCELLED} : boolean : Whether the patching was cancelled
-     * - {@link #RESULT_PATCHER_SUCCESS} : boolean : Whether the patching succeeded
-     * - {@link #RESULT_PATCHER_ERROR_CODE} : int : libmbp error code (if patching failed)
-     * - {@link #RESULT_PATCHER_NEW_FILE} : string : Path to newly patched file (if patching succeeded)
+     * When the patching is finished,
+     * {@link PatcherEventListener#onPatcherFinished(int, boolean, boolean, int, String)} will be
+     * called.
      *
      * @param taskId Task ID
      */
@@ -215,9 +256,10 @@ public class PatcherService extends ThreadPoolService {
      *
      * This method will attempt to cancel a patching operation in progress. The task will only be
      * cancelled if the corresponding libmbp patcher respects the cancelled flag and stops when it
-     * is set. If a task has been cancelled, {@link #ACTION_PATCHER_FINISHED} will be broadcast in
-     * the same manner as described in {@link #startPatching(int)}. The returned error code may or
-     * may not specify that the task is cancelled.
+     * is set. If a task has been cancelled,
+     * {@link PatcherEventListener#onPatcherFinished(int, boolean, boolean, int, String)} will be
+     * called in the same manner as described in {@link #startPatching(int)}. The returned error
+     * code may or may not specify that the task has been cancelled.
      *
      * @param taskId Task ID
      */
@@ -326,54 +368,100 @@ public class PatcherService extends ThreadPoolService {
 
     // Patcher event dispatch methods
 
+    public interface PatcherEventListener {
+        void onPatcherInitialized();
+
+        void onPatcherUpdateDetails(int taskId, String details);
+
+        void onPatcherUpdateProgress(int taskId, long bytes, long maxBytes);
+
+        void onPatcherUpdateFilesProgress(int taskId, long files, long maxFiles);
+
+        void onPatcherStarted(int taskId);
+
+        void onPatcherFinished(int taskId, boolean cancelled, boolean ret, int errorCode,
+                               String newPath);
+    }
+
     private void onPatcherInitialized() {
-        Intent intent = new Intent(ACTION_PATCHER_INITIALIZED);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        executeAllCallbacks(new CallbackRunnable() {
+            @Override
+            public void call(PatcherEventListener callback) {
+                callback.onPatcherInitialized();
+            }
+        });
     }
 
-    private void onPatcherUpdateDetails(int taskId, String details) {
-        Intent intent = new Intent(ACTION_PATCHER_DETAILS_CHANGED);
-        intent.putExtra(RESULT_PATCHER_TASK_ID, taskId);
-        intent.putExtra(RESULT_PATCHER_DETAILS, details);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void onPatcherUpdateDetails(final int taskId, final String details) {
+        executeAllCallbacks(new CallbackRunnable() {
+            @Override
+            public void call(PatcherEventListener callback) {
+                callback.onPatcherUpdateDetails(taskId, details);
+            }
+        });
     }
 
-    private void onPatcherUpdateProgress(int taskId, long bytes, long maxBytes) {
-        Intent intent = new Intent(ACTION_PATCHER_PROGRESS_CHANGED);
-        intent.putExtra(RESULT_PATCHER_TASK_ID, taskId);
-        intent.putExtra(RESULT_PATCHER_CURRENT_BYTES, bytes);
-        intent.putExtra(RESULT_PATCHER_MAX_BYTES, maxBytes);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void onPatcherUpdateProgress(final int taskId, final long bytes, final long maxBytes) {
+        executeAllCallbacks(new CallbackRunnable() {
+            @Override
+            public void call(PatcherEventListener callback) {
+                callback.onPatcherUpdateProgress(taskId, bytes, maxBytes);
+            }
+        });
     }
 
-    private void onPatcherUpdateFilesProgress(int taskId, long files, long maxFiles) {
-        Intent intent = new Intent(ACTION_PATCHER_FILES_PROGRESS_CHANGED);
-        intent.putExtra(RESULT_PATCHER_TASK_ID, taskId);
-        intent.putExtra(RESULT_PATCHER_CURRENT_FILES, files);
-        intent.putExtra(RESULT_PATCHER_MAX_FILES, maxFiles);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void onPatcherUpdateFilesProgress(final int taskId, final long files,
+                                              final long maxFiles) {
+        executeAllCallbacks(new CallbackRunnable() {
+            @Override
+            public void call(PatcherEventListener callback) {
+                callback.onPatcherUpdateFilesProgress(taskId, files, maxFiles);
+            }
+        });
     }
 
-    private void onPatcherStarted(int taskId) {
-        Intent intent = new Intent(ACTION_PATCHER_STARTED);
-        intent.putExtra(RESULT_PATCHER_TASK_ID, taskId);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void onPatcherStarted(final int taskId) {
+        executeAllCallbacks(new CallbackRunnable() {
+            @Override
+            public void call(PatcherEventListener callback) {
+                callback.onPatcherStarted(taskId);
+            }
+        });
     }
 
-    private void onPatcherFinished(int taskId, boolean cancelled, boolean ret, int errorCode,
-                                   String newPath) {
-        Intent intent = new Intent(ACTION_PATCHER_FINISHED);
-        intent.putExtra(RESULT_PATCHER_TASK_ID, taskId);
-        intent.putExtra(RESULT_PATCHER_CANCELLED, cancelled);
-        intent.putExtra(RESULT_PATCHER_SUCCESS, ret);
-        intent.putExtra(RESULT_PATCHER_ERROR_CODE, errorCode);
-        intent.putExtra(RESULT_PATCHER_NEW_FILE, newPath);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void onPatcherFinished(final int taskId, final boolean cancelled, final boolean ret,
+                                   final int errorCode, final String newPath) {
+        executeAllCallbacks(new CallbackRunnable() {
+            @Override
+            public void call(PatcherEventListener callback) {
+                callback.onPatcherFinished(taskId, cancelled, ret, errorCode, newPath);
+            }
+        });
     }
 
     // Patcher task
 
-    private final class PatchFileTask implements Runnable, ProgressListener {
+    private static abstract class BaseTask implements Runnable {
+        /**
+         * This is set in {@link #onCreate()}. The service should never go away while the task is
+         * running.
+         */
+        private WeakReference<PatcherService> mService;
+
+        public BaseTask(PatcherService service) {
+            mService = new WeakReference<>(service);
+        }
+
+        public PatcherService getService() {
+            return mService.get();
+        }
+
+        public void setService(PatcherService service) {
+            mService = new WeakReference<>(service);
+        }
+    }
+
+    private static final class PatchFileTask extends BaseTask implements ProgressListener {
         /** Task ID */
         private final int mTaskId;
         /** libmbp {@link Patcher} object */
@@ -418,7 +506,8 @@ public class PatcherService extends ThreadPoolService {
         /** Path to the newly patched file */
         AtomicReference<String> mNewPath = new AtomicReference<>();
 
-        public PatchFileTask(int taskId) {
+        public PatchFileTask(PatcherService service, int taskId) {
+            super(service);
             mTaskId = taskId;
         }
 
@@ -445,7 +534,7 @@ public class PatcherService extends ThreadPoolService {
             }
 
             mState.set(PatchFileState.IN_PROGRESS);
-            onPatcherStarted(mTaskId);
+            getService().onPatcherStarted(mTaskId);
 
             Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
             Log.d(TAG, "libmbp version: " + PatcherUtils.sPC.getVersion());
@@ -456,7 +545,7 @@ public class PatcherService extends ThreadPoolService {
             Log.d(TAG, "- ROM ID:     " + mRomId);
 
             // Make sure patcher is extracted first
-            PatcherUtils.initializePatcher(PatcherService.this);
+            PatcherUtils.initializePatcher(getService());
 
             // Create patcher instance
             synchronized (this) {
@@ -477,7 +566,7 @@ public class PatcherService extends ThreadPoolService {
 
                 boolean cancelled = mCancelled.get();
 
-                onPatcherFinished(mTaskId, cancelled, ret, mPatcher.getError(),
+                getService().onPatcherFinished(mTaskId, cancelled, ret, mPatcher.getError(),
                         mPatcher.newFilePath());
 
                 // Set to complete if the task wasn't cancelled
@@ -503,28 +592,32 @@ public class PatcherService extends ThreadPoolService {
         public void onProgressUpdated(long bytes, long maxBytes) {
             mBytes.set(bytes);
             mMaxBytes.set(maxBytes);
-            onPatcherUpdateProgress(mTaskId, bytes, maxBytes);
+            getService().onPatcherUpdateProgress(mTaskId, bytes, maxBytes);
         }
 
         @Override
         public void onFilesUpdated(long files, long maxFiles) {
             mFiles.set(files);
             mMaxFiles.set(maxFiles);
-            onPatcherUpdateFilesProgress(mTaskId, files, maxFiles);
+            getService().onPatcherUpdateFilesProgress(mTaskId, files, maxFiles);
         }
 
         @Override
         public void onDetailsUpdated(String text) {
             mDetails.set(text);
-            onPatcherUpdateDetails(mTaskId, text);
+            getService().onPatcherUpdateDetails(mTaskId, text);
         }
     }
 
-    private final class InitializePatcherTask implements Runnable {
+    private static final class InitializePatcherTask extends BaseTask {
+        public InitializePatcherTask(PatcherService service) {
+            super(service);
+        }
+
         @Override
         public void run() {
-            PatcherUtils.initializePatcher(PatcherService.this);
-            onPatcherInitialized();
+            PatcherUtils.initializePatcher(getService());
+            getService().onPatcherInitialized();
         }
     }
 }
