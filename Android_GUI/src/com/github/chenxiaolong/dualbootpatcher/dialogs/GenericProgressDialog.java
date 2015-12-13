@@ -24,8 +24,6 @@ import android.os.Bundle;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 public class GenericProgressDialog extends DialogFragment {
-    public static final String TAG = GenericProgressDialog.class.getSimpleName();
-
     private static final String ARG_TITLE_RES_ID = "rom";
     private static final String ARG_MESSAGE_RES_ID = "message";
 

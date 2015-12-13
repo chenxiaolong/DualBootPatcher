@@ -87,8 +87,12 @@ public class SwitcherListFragment extends Fragment implements
     private static final String PROGRESS_DIALOG_SET_KERNEL =
             SwitcherListFragment.class.getCanonicalName() + ".progress.set_kernel";
     /** Fragment tag for confirmation dialog saying that setting the kernel is needed */
-    private static final String DIALOG_SET_KERNEL_NEEDED =
-            SwitcherListFragment.class.getCanonicalName() + ".set_kernel_needed";
+    private static final String CONFIRM_DIALOG_SET_KERNEL_NEEDED =
+            SwitcherListFragment.class.getCanonicalName() + ".confirm.set_kernel_needed";
+    private static final String CONFIRM_DIALOG_CHECKSUM_ISSUE =
+            SwitcherListFragment.class.getCanonicalName() + ".confirm.checksum_issue";
+    private static final String CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION =
+            SwitcherListFragment.class.getCanonicalName() + ".confirm.unknown_boot_partition";
 
     /** Service task ID to get the state of installed ROMs */
     private int mTaskIdGetRomsState = -1;
@@ -476,11 +480,11 @@ public class SwitcherListFragment extends Fragment implements
                 if (kernelStatus == KernelStatus.DIFFERENT) {
                     SetKernelNeededDialog dialog = SetKernelNeededDialog.newInstance(
                             this, R.string.kernel_different_from_saved_desc);
-                    dialog.show(getFragmentManager(), DIALOG_SET_KERNEL_NEEDED);
+                    dialog.show(getFragmentManager(), CONFIRM_DIALOG_SET_KERNEL_NEEDED);
                 } else if (kernelStatus == KernelStatus.UNSET) {
                     SetKernelNeededDialog dialog = SetKernelNeededDialog.newInstance(
                             this, R.string.kernel_not_set_desc);
-                    dialog.show(getFragmentManager(), DIALOG_SET_KERNEL_NEEDED);
+                    dialog.show(getFragmentManager(), CONFIRM_DIALOG_SET_KERNEL_NEEDED);
                 }
             }
         }
@@ -568,7 +572,7 @@ public class SwitcherListFragment extends Fragment implements
     private void showChecksumIssueDialog(int issue, String romId) {
         ConfirmChecksumIssueDialog d =
                 ConfirmChecksumIssueDialog.newInstanceFromFragment(this, issue, romId);
-        d.show(getFragmentManager(), ConfirmChecksumIssueDialog.TAG);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_CHECKSUM_ISSUE);
     }
 
     private void showUnknownBootPartitionDialog() {
@@ -576,7 +580,7 @@ public class SwitcherListFragment extends Fragment implements
         String message = String.format(getString(R.string.unknown_boot_partition), codename);
 
         GenericConfirmDialog gcd = GenericConfirmDialog.newInstance(null, message);
-        gcd.show(getFragmentManager(), GenericConfirmDialog.TAG);
+        gcd.show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
     }
 
     @Override

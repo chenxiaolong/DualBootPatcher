@@ -46,8 +46,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class PatcherOptionsDialog extends DialogFragment {
-    public static final String TAG = PatcherOptionsDialog.class.getSimpleName();
-
     private static final String ARG_ID = "id";
     private static final String ARG_PRESELECTED_DEVICE_ID = "preselected_device_id";
     private static final String ARG_PRESELECTED_ROM_ID = "rom_id";

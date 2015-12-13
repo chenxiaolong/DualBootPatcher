@@ -28,8 +28,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class SetKernelConfirmDialog extends DialogFragment {
-    public static final String TAG = SetKernelConfirmDialog.class.getSimpleName();
-
     private static final String ARG_ROM = "rom";
 
     public interface SetKernelConfirmDialogListener {

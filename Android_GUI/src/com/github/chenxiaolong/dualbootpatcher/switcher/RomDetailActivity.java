@@ -151,6 +151,20 @@ public class RomDetailActivity extends AppCompatActivity implements
             RomDetailActivity.class.getCanonicalName() + ".progress.reboot";
     private static final String CONFIRM_DIALOG_UPDATED_RAMDISK =
             RomDetailActivity.class.getCanonicalName() + ".confirm.updated_ramdisk";
+    private static final String CONFIRM_DIALOG_ADD_TO_HOME_SCREEN =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.add_to_home_screen";
+    private static final String CONFIRM_DIALOG_ROM_NAME =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.rom_name";
+    private static final String CONFIRM_DIALOG_SET_KERNEL =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.set_kernel";
+    private static final String CONFIRM_DIALOG_MISMATCHED_KERNEL =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.mismatched_kernel";
+    private static final String CONFIRM_DIALOG_WIPE_TARGETS =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.wipe_targets";
+    private static final String CONFIRM_DIALOG_CHECKSUM_ISSUE =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.checksum_issue";
+    private static final String CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.unknown_boot_partition";
 
     private static final int REQUEST_IMAGE = 1234;
 
@@ -556,7 +570,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     private void onSelectedEditName() {
         RomNameInputDialog d = RomNameInputDialog.newInstanceFromActivity(mRomInfo);
-        d.show(getFragmentManager(), RomNameInputDialog.TAG);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_ROM_NAME);
     }
 
     private void onSelectedChangeImage() {
@@ -579,7 +593,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     public void onSelectedAddToHomeScreen() {
         AddToHomeScreenOptionsDialog d =
                 AddToHomeScreenOptionsDialog.newInstanceFromActivity(mRomInfo);
-        d.show(getFragmentManager(), AddToHomeScreenOptionsDialog.TAG);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_ADD_TO_HOME_SCREEN);
     }
 
     public void onSelectedUpdateRamdisk() {
@@ -628,10 +642,10 @@ public class RomDetailActivity extends AppCompatActivity implements
             ConfirmMismatchedSetKernelDialog d =
                     ConfirmMismatchedSetKernelDialog.newInstanceFromActivity(
                             mActiveRomId, mRomInfo.getId());
-            d.show(getFragmentManager(), ConfirmMismatchedSetKernelDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_MISMATCHED_KERNEL);
         } else {
             SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstanceFromActivity(mRomInfo);
-            d.show(getFragmentManager(), SetKernelConfirmDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_SET_KERNEL);
         }
     }
 
@@ -640,7 +654,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             createSnackbar(R.string.wipe_rom_no_wipe_current_rom, Snackbar.LENGTH_LONG).show();
         } else {
             WipeTargetsSelectionDialog d = WipeTargetsSelectionDialog.newInstanceFromActivity();
-            d.show(getFragmentManager(), WipeTargetsSelectionDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_WIPE_TARGETS);
         }
     }
 
@@ -967,7 +981,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private void showChecksumIssueDialog(int issue, String romId) {
         ConfirmChecksumIssueDialog d =
                 ConfirmChecksumIssueDialog.newInstanceFromActivity(issue, romId);
-        d.show(getFragmentManager(), ConfirmChecksumIssueDialog.TAG);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_CHECKSUM_ISSUE);
     }
 
     private void showUnknownBootPartitionDialog() {
@@ -975,7 +989,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         String message = String.format(getString(R.string.unknown_boot_partition), codename);
 
         GenericConfirmDialog gcd = GenericConfirmDialog.newInstance(null, message);
-        gcd.show(getFragmentManager(), GenericConfirmDialog.TAG);
+        gcd.show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
     }
 
     private Snackbar createSnackbar(String text, int duration) {

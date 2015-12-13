@@ -29,8 +29,6 @@ import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class FirstUseDialog extends DialogFragment {
-    public static final String TAG = FirstUseDialog.class.getSimpleName();
-
     private static final String ARG_TITLE_RES_ID = "titleResid";
     private static final String ARG_MESSAGE_RES_ID = "messageResId";
 

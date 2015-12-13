@@ -71,6 +71,11 @@ public class AppListFragment extends Fragment implements
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "indiv_app_sync_first_use_show_dialog";
 
+    private static final String CONFIRM_DIALOG_FIRST_USE =
+            AppListFragment.class.getCanonicalName() + ".confirm.first_use";
+    private static final String CONFIRM_DIALOG_A_S_SETTINGS =
+            AppListFragment.class.getCanonicalName() + ".confirm.a_s_settings";
+
     private SharedPreferences mPrefs;
 
     private AppCardAdapter mAdapter;
@@ -111,7 +116,7 @@ public class AppListFragment extends Fragment implements
                 FirstUseDialog d = FirstUseDialog.newInstance(
                         this, /*R.string.indiv_app_sharing_intro_dialog_title*/0,
                         R.string.indiv_app_sharing_intro_dialog_desc);
-                d.show(getFragmentManager(), FirstUseDialog.TAG);
+                d.show(getFragmentManager(), CONFIRM_DIALOG_FIRST_USE);
             }
         } else {
             mSearchQuery = savedInstanceState.getString(EXTRA_SEARCH_QUERY);
@@ -255,7 +260,7 @@ public class AppListFragment extends Fragment implements
         AppSharingChangeSharedDialog d = AppSharingChangeSharedDialog.newInstance(
                 this, info.pkg, info.name, info.shareData, info.isSystem,
                 info.romsThatShareData);
-        d.show(getFragmentManager(), AppSharingChangeSharedDialog.TAG);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_A_S_SETTINGS);
     }
 
     @Override

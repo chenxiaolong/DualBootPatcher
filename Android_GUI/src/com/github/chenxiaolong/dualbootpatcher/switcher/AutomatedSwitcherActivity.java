@@ -47,6 +47,9 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
 
     private static final String EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom";
 
+    private static final String CONFIRM_DIALOG_AUTOMATED =
+            AutomatedSwitcherActivity.class.getCanonicalName() + ".confirm.automated";
+
     public static final String EXTRA_ROM_ID = "rom_id";
     public static final String EXTRA_REBOOT = "reboot";
 
@@ -150,7 +153,7 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
             if (shouldShow) {
                 ConfirmAutomatedSwitchRomDialog d = ConfirmAutomatedSwitchRomDialog.newInstance(
                         getIntent().getStringExtra(EXTRA_ROM_ID));
-                d.show(getFragmentManager(), ConfirmAutomatedSwitchRomDialog.TAG);
+                d.show(getFragmentManager(), CONFIRM_DIALOG_AUTOMATED);
             } else {
                 switchRom();
             }

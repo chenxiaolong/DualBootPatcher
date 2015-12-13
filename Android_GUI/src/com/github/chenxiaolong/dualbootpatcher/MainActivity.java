@@ -64,6 +64,9 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     private static final String PREF_SHOW_REBOOT = "show_reboot";
     private static final String PREF_SHOW_EXIT = "show_exit";
 
+    private static final String PROGRESS_DIALOG_REBOOT =
+            MainActivity.class.getCanonicalName() + ".progress.reboot";
+
     private SharedPreferences mPrefs;
 
     private DrawerLayout mDrawerLayout;
@@ -341,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
 
         case R.id.nav_reboot:
             GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), GenericProgressDialog.TAG);
+            d.show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
 
             SwitcherUtils.reboot(this);
             break;

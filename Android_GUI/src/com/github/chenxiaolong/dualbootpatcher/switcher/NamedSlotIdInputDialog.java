@@ -34,8 +34,6 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
 
 public class NamedSlotIdInputDialog extends DialogFragment {
-    public static final String TAG = NamedSlotIdInputDialog.class.getSimpleName();
-
     private static final String ARG_TYPE = "type";
 
     public static final int DATA_SLOT = 1;

@@ -27,8 +27,6 @@ import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ConfirmChecksumIssueDialog extends DialogFragment {
-    public static final String TAG = ConfirmChecksumIssueDialog.class.getSimpleName();
-
     public static final int CHECKSUM_INVALID = 1;
     public static final int CHECKSUM_MISSING = 2;
 

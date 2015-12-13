@@ -27,8 +27,6 @@ import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ConfirmMismatchedSetKernelDialog extends DialogFragment {
-    public static final String TAG = ConfirmMismatchedSetKernelDialog.class.getSimpleName();
-
     private static final String ARG_CURRENT_ROM = "current_rom";
     private static final String ARG_TARGET_ROM = "target_rom";
 

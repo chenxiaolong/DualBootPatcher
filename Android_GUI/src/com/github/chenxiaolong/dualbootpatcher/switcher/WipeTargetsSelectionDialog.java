@@ -29,8 +29,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import mbtool.daemon.v3.MbWipeTarget;
 
 public class WipeTargetsSelectionDialog extends DialogFragment {
-    public static final String TAG = WipeTargetsSelectionDialog.class.getSimpleName();
-
     public interface WipeTargetsSelectionDialogListener {
         void onSelectedWipeTargets(short[] targets);
     }

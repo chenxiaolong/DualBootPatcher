@@ -32,8 +32,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class RomNameInputDialog extends DialogFragment {
-    public static final String TAG = RomNameInputDialog.class.getSimpleName();
-
     private static final String ARG_ROM = "rom";
 
     public interface RomNameInputDialogListener {

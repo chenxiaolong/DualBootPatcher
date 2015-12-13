@@ -28,8 +28,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public class AddToHomeScreenOptionsDialog extends DialogFragment {
-    public static final String TAG = AddToHomeScreenOptionsDialog.class.getSimpleName();
-
     private static final String ARG_ROM_INFO = "rom_info";
 
     public interface AddToHomeScreenOptionsDialogListener {

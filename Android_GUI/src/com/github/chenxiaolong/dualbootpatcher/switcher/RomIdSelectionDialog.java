@@ -31,8 +31,6 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import java.util.ArrayList;
 
 public class RomIdSelectionDialog extends DialogFragment {
-    public static final String TAG = RomIdSelectionDialog.class.getSimpleName();
-
     enum RomIdType {
         BUILT_IN_ROM_ID,
         NAMED_DATA_SLOT,

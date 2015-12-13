@@ -29,8 +29,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import java.util.ArrayList;
 
 public class AppSharingChangeSharedDialog extends DialogFragment {
-    public static final String TAG = AppSharingChangeSharedDialog.class.getSimpleName();
-
     private static final String ARG_PKG = "pkg";
     private static final String ARG_NAME = "name";
     private static final String ARG_SHARE_DATA = "share_data";

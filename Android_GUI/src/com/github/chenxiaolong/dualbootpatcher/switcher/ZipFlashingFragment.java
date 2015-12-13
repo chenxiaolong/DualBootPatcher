@@ -92,6 +92,19 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
     private static final int ACTIVITY_REQUEST_FILE = 1000;
 
+    private static final String PROGRESS_DIALOG_VERIFY_ZIP =
+            ZipFlashingFragment.class.getCanonicalName() + ".progress.verify_zip";
+    private static final String CONFIRM_DIALOG_FIRST_USE =
+            ZipFlashingFragment.class.getCanonicalName() + ".confirm.first_use";
+    private static final String CONFIRM_DIALOG_INSTALL_LOCATION =
+            ZipFlashingFragment.class.getCanonicalName() + ".confirm.install_location";
+    private static final String CONFIRM_DIALOG_NAMED_SLOT_ID =
+            ZipFlashingFragment.class.getCanonicalName() + ".confirm.named_slot_id";
+    private static final String CONFIRM_DIALOG_ROM_ID =
+            ZipFlashingFragment.class.getCanonicalName() + ".confirm.rom_id";
+    private static final String CONFIRM_DIALOG_ERROR =
+            ZipFlashingFragment.class.getCanonicalName() + ".confirm.error";
+
     private OnReadyStateChangedListener mActivityCallback;
 
     private SharedPreferences mPrefs;
@@ -193,7 +206,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             if (shouldShow) {
                 FirstUseDialog d = FirstUseDialog.newInstance(
                         this, R.string.zip_flashing_title, R.string.zip_flashing_dialog_first_use);
-                d.show(getFragmentManager(), FirstUseDialog.TAG);
+                d.show(getFragmentManager(), CONFIRM_DIALOG_FIRST_USE);
             }
         }
 
@@ -316,7 +329,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         mTaskIdVerifyZip = -1;
 
         GenericProgressDialog dialog = (GenericProgressDialog) getFragmentManager()
-                .findFragmentByTag(GenericProgressDialog.TAG);
+                .findFragmentByTag(PROGRESS_DIALOG_VERIFY_ZIP);
         if (dialog != null) {
             dialog.dismiss();
         }
@@ -327,7 +340,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             if (romId != null) {
                 ChangeInstallLocationDialog cild =
                         ChangeInstallLocationDialog.newInstance(this, romId);
-                cild.show(getFragmentManager(), ChangeInstallLocationDialog.TAG);
+                cild.show(getFragmentManager(), CONFIRM_DIALOG_INSTALL_LOCATION);
             } else {
                 showRomIdSelectionDialog();
             }
@@ -358,7 +371,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             }
 
             GenericConfirmDialog d = GenericConfirmDialog.newInstance(null, error);
-            d.show(getFragmentManager(), GenericConfirmDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         }
     }
 
@@ -374,7 +387,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
                 GenericProgressDialog d = GenericProgressDialog.newInstance(
                         R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
-                d.show(getFragmentManager(), GenericProgressDialog.TAG);
+                d.show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
 
                 if (mService != null) {
                     verifyZip();
@@ -409,13 +422,13 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         case NAMED_DATA_SLOT: {
             NamedSlotIdInputDialog d = NamedSlotIdInputDialog.newInstance(
                     this, NamedSlotIdInputDialog.DATA_SLOT);
-            d.show(getFragmentManager(), NamedSlotIdInputDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_NAMED_SLOT_ID);
             break;
         }
         case NAMED_EXTSD_SLOT: {
             NamedSlotIdInputDialog d = NamedSlotIdInputDialog.newInstance(
                     this, NamedSlotIdInputDialog.EXTSD_SLOT);
-            d.show(getFragmentManager(), NamedSlotIdInputDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_NAMED_SLOT_ID);
             break;
         }
         }
@@ -441,7 +454,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         if (mSelectedRomId.equals(mCurrentRomId)) {
             GenericConfirmDialog d = GenericConfirmDialog.newInstance(
                     0, R.string.zip_flashing_error_no_overwrite_rom);
-            d.show(getFragmentManager(), GenericConfirmDialog.TAG);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         } else {
             mActivityCallback.onReady(true);
 
@@ -456,7 +469,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
     private void showRomIdSelectionDialog() {
         RomIdSelectionDialog dialog = RomIdSelectionDialog.newInstance(this, mBuiltinRoms);
-        dialog.show(getFragmentManager(), RomIdSelectionDialog.TAG);
+        dialog.show(getFragmentManager(), CONFIRM_DIALOG_ROM_ID);
     }
 
     public void onActionBarCheckItemClicked() {

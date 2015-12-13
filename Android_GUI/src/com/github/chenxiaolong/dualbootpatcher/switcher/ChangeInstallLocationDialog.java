@@ -27,8 +27,6 @@ import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ChangeInstallLocationDialog extends DialogFragment {
-    public static final String TAG = ChangeInstallLocationDialog.class.getSimpleName();
-
     private static final String ARG_ZIP_ROM_ID = "zip_rom_id";
 
     public interface ChangeInstallLocationDialogListener {

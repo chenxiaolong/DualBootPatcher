@@ -28,8 +28,6 @@ import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ConfirmAutomatedSwitchRomDialog extends DialogFragment {
-    public static final String TAG = ConfirmAutomatedSwitchRomDialog.class.getSimpleName();
-
     private static final String ARG_ROM_ID = "rom_id";
 
     private ConfirmAutomatedSwitchRomDialogListener mListener;

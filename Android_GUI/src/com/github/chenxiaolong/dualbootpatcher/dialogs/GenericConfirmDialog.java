@@ -25,8 +25,6 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class GenericConfirmDialog extends DialogFragment {
-    public static final String TAG = GenericConfirmDialog.class.getSimpleName();
-
     private static final String ARG_TITLE = "title";
     private static final String ARG_MESSAGE = "message";
     private static final String ARG_TITLE_RES_ID = "titleResId";

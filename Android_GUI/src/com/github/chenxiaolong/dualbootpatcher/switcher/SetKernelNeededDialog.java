@@ -27,8 +27,6 @@ import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class SetKernelNeededDialog extends DialogFragment {
-    public static final String TAG = SetKernelNeededDialog.class.getSimpleName();
-
     private static final String ARG_MESSAGE_RES_ID = "message_res_id";
 
     public interface SetKernelNeededDialogListener {
