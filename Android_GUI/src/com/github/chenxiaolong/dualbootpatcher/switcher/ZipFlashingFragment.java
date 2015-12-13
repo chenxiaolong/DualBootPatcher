@@ -19,7 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.LoaderManager;
+import android.app.LoaderManager.LoaderCallbacks;
 import android.content.AsyncTaskLoader;
 import android.content.ComponentName;
 import android.content.Context;
@@ -34,12 +34,15 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
+import android.support.v7.widget.CardView;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.ViewHolder;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -67,18 +70,19 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.Load
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction.Type;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.VerifyZipTaskListener;
-import com.nhaarman.listviewanimations.ArrayAdapter;
-import com.nhaarman.listviewanimations.itemmanipulation.DynamicListView;
-import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.OnDismissCallback;
+import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
+import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
+        .OnItemMovedOrDismissedListener;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class ZipFlashingFragment extends Fragment implements FirstUseDialogListener,
         RomIdSelectionDialogListener, NamedSlotIdInputDialogListener,
-        ChangeInstallLocationDialogListener, LoaderManager.LoaderCallbacks<LoaderResult>,
-        ServiceConnection {
+        ChangeInstallLocationDialogListener, LoaderCallbacks<LoaderResult>,
+        ServiceConnection, OnItemMovedOrDismissedListener {
     private static final int PERFORM_ACTIONS = 1234;
 
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
@@ -114,13 +118,12 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     private String mCurrentRomId;
     private String mZipRomId;
 
-    private DynamicListView mCardListView;
     private ProgressBar mProgressBar;
+
+    private ArrayList<PendingAction> mPendingActions = new ArrayList<>();
     private PendingActionCardAdapter mAdapter;
-    private AddFloatingActionButton mFabFlashZip;
 
     private ArrayList<RomInformation> mBuiltinRoms = new ArrayList<>();
-    private String[] mBuiltinRomNames;
 
     private boolean mVerifyZipOnServiceConnected;
 
@@ -153,24 +156,30 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
-
-        mAdapter = new PendingActionCardAdapter(getActivity());
-
         if (savedInstanceState != null) {
             ArrayList<PendingAction> savedActions =
                     savedInstanceState.getParcelableArrayList(EXTRA_PENDING_ACTIONS);
-            mAdapter.addAll(savedActions);
+            mPendingActions.addAll(savedActions);
         }
 
-        mCardListView = (DynamicListView) getActivity().findViewById(R.id.card_list);
-        mCardListView.setAdapter(mAdapter);
-        mCardListView.enableDragAndDrop();
-        mCardListView.setOnItemLongClickListener(new MyOnItemLongClickListener(mCardListView));
-        mCardListView.enableSwipeToDismiss(new MyOnDismissCallback(mAdapter));
+        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
+        RecyclerView cardListView = (RecyclerView) getActivity().findViewById(R.id.card_list);
 
-        mFabFlashZip = (AddFloatingActionButton) getActivity().findViewById(R.id.fab_add_zip);
-        mFabFlashZip.setOnClickListener(new OnClickListener() {
+        mAdapter = new PendingActionCardAdapter(getActivity(), mPendingActions);
+        cardListView.setHasFixedSize(true);
+        cardListView.setAdapter(mAdapter);
+
+        DragSwipeItemTouchCallback itemTouchCallback = new DragSwipeItemTouchCallback(this);
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(itemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(cardListView);
+
+        LinearLayoutManager llm = new LinearLayoutManager(getActivity());
+        llm.setOrientation(LinearLayoutManager.VERTICAL);
+        cardListView.setLayoutManager(llm);
+
+        AddFloatingActionButton fabFlashZip = (AddFloatingActionButton) getActivity()
+                .findViewById(R.id.fab_add_zip);
+        fabFlashZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Show file chooser
@@ -197,7 +206,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
                     + " must implement OnReadyStateChangedListener");
         }
 
-        mActivityCallback.onReady(!mAdapter.isEmpty());
+        mActivityCallback.onReady(!mPendingActions.isEmpty());
 
         mPrefs = getActivity().getSharedPreferences("settings", 0);
 
@@ -217,8 +226,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        ArrayList<PendingAction> pendingActionsArray = new ArrayList<>(mAdapter.getItems());
-        outState.putParcelableArrayList(EXTRA_PENDING_ACTIONS, pendingActionsArray);
+        outState.putParcelableArrayList(EXTRA_PENDING_ACTIONS, mPendingActions);
 
         outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
@@ -306,11 +314,6 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
         if (result.builtinRoms != null) {
             Collections.addAll(mBuiltinRoms, result.builtinRoms);
-
-            mBuiltinRomNames = new String[mBuiltinRoms.size()];
-            for (int i = 0; i < mBuiltinRoms.size(); i++) {
-                mBuiltinRomNames[i] = mBuiltinRoms.get(i).getDefaultName();
-            }
         }
 
         if (result.currentRom != null) {
@@ -450,6 +453,22 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         }
     }
 
+    @Override
+    public void onItemMoved(int fromPosition, int toPosition) {
+        Collections.swap(mPendingActions, fromPosition, toPosition);
+        mAdapter.notifyItemMoved(fromPosition, toPosition);
+    }
+
+    @Override
+    public void onItemDismissed(int position) {
+        mPendingActions.remove(position);
+        mAdapter.notifyItemRemoved(position);
+
+        if (mPendingActions.isEmpty()) {
+            mActivityCallback.onReady(false);
+        }
+    }
+
     private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
             GenericConfirmDialog d = GenericConfirmDialog.newInstance(
@@ -462,8 +481,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             pa.type = Type.INSTALL_ZIP;
             pa.zipFile = mSelectedFile;
             pa.romId = mSelectedRomId;
-            mAdapter.add(pa);
-            mAdapter.notifyDataSetChanged();
+            mPendingActions.add(pa);
+            mAdapter.notifyItemInserted(mPendingActions.size() - 1);
         }
     }
 
@@ -479,9 +498,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     }
 
     private PendingAction[] getPendingActions() {
-        PendingAction[] pa = new PendingAction[mAdapter.getCount()];
-        mAdapter.getItems().toArray(pa);
-        return pa;
+        return mPendingActions.toArray(new PendingAction[mPendingActions.size()]);
     }
 
     private static class BuiltinRomsLoader extends AsyncTaskLoader<LoaderResult> {
@@ -571,92 +588,58 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         };
     }
 
-    private static class PendingActionCardAdapter extends ArrayAdapter<PendingAction> {
-        private final Context mContext;
+    private static class PendingActionViewHolder extends ViewHolder {
+        CardView vCard;
+        TextView vTitle;
+        TextView vSubtitle1;
+        TextView vSubtitle2;
 
-        public PendingActionCardAdapter(final Context context) {
+        public PendingActionViewHolder(View itemView) {
+            super(itemView);
+            vCard = (CardView) itemView;
+            vTitle = (TextView) itemView.findViewById(R.id.action_title);
+            vSubtitle1 = (TextView) itemView.findViewById(R.id.action_subtitle1);
+            vSubtitle2 = (TextView) itemView.findViewById(R.id.action_subtitle2);
+        }
+    }
+
+    private static class PendingActionCardAdapter extends
+            RecyclerView.Adapter<PendingActionViewHolder> {
+        private Context mContext;
+        private List<PendingAction> mItems;
+
+        public PendingActionCardAdapter(Context context, List<PendingAction> items) {
             mContext = context;
+            mItems = items;
         }
 
         @Override
-        public long getItemId(final int position) {
-            return getItem(position).hashCode();
+        public PendingActionViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater
+                    .from(parent.getContext())
+                    .inflate(R.layout.card_v7_pending_action, parent, false);
+            return new PendingActionViewHolder(view);
         }
 
         @Override
-        public boolean hasStableIds() {
-            return true;
-        }
-
-        @Override
-        public View getView(final int position, final View convertView, final ViewGroup parent) {
-            View view = convertView;
-            if (view == null) {
-                view = LayoutInflater.from(mContext).inflate(
-                        R.layout.card_v7_pending_action, parent, false);
-            }
-
-            TextView vTitle = (TextView) view.findViewById(R.id.action_title);
-            TextView vSubtitle1 = (TextView) view.findViewById(R.id.action_subtitle1);
-            TextView vSubtitle2 = (TextView) view.findViewById(R.id.action_subtitle2);
+        public void onBindViewHolder(PendingActionViewHolder holder, int position) {
+            PendingAction pa = mItems.get(position);
 
             String zipFile = mContext.getString(R.string.zip_flashing_zip_file);
             String location = mContext.getString(R.string.zip_flashing_location);
 
-            PendingAction pa = getItem(position);
-
             switch (pa.type) {
             case INSTALL_ZIP:
-                vTitle.setText(R.string.zip_flashing_install_zip);
+                holder.vTitle.setText(R.string.zip_flashing_install_zip);
             }
 
-            vSubtitle1.setText(String.format(zipFile, new File(pa.zipFile).getName()));
-            vSubtitle2.setText(String.format(location, pa.romId));
-
-            return view;
-        }
-    }
-
-    private static class MyOnItemLongClickListener implements AdapterView.OnItemLongClickListener {
-        private final DynamicListView mListView;
-
-        MyOnItemLongClickListener(final DynamicListView listView) {
-            mListView = listView;
+            holder.vSubtitle1.setText(String.format(zipFile, new File(pa.zipFile).getName()));
+            holder.vSubtitle2.setText(String.format(location, pa.romId));
         }
 
         @Override
-        public boolean onItemLongClick(final AdapterView<?> parent, final View view,
-                                       final int position, final long id) {
-            if (mListView != null) {
-                try {
-                    mListView.startDragging(position - mListView.getHeaderViewsCount());
-                } catch (IllegalStateException e) {
-                    // Not sure why the following happens sometimes
-                    // java.lang.IllegalStateException: User must be touching the DynamicListView!
-                    // See https://github.com/nhaarman/ListViewAnimations/issues/325
-                }
-            }
-            return true;
-        }
-    }
-
-    private class MyOnDismissCallback implements OnDismissCallback {
-        private final ArrayAdapter<PendingAction> mAdapter;
-
-        MyOnDismissCallback(final ArrayAdapter<PendingAction> adapter) {
-            mAdapter = adapter;
-        }
-
-        @Override
-        public void onDismiss(@NonNull final ViewGroup listView,
-                              @NonNull final int[] reverseSortedPositions) {
-            for (int position : reverseSortedPositions) {
-                mAdapter.remove(position);
-            }
-
-            if (mAdapter.isEmpty()) {
-                mActivityCallback.onReady(false);
-            }
+        public int getItemCount() {
+            return mItems.size();
         }
     }
 

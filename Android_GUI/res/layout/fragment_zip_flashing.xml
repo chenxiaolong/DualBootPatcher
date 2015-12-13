@@ -22,12 +22,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.nhaarman.listviewanimations.itemmanipulation.DynamicListView
+    <android.support.v7.widget.RecyclerView
         android:id="@+id/card_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:divider="@null"
-        android:dividerHeight="0dp"
         android:paddingLeft="@dimen/card_v7_outside_side_padding"
         android:paddingRight="@dimen/card_v7_outside_side_padding" />
 
