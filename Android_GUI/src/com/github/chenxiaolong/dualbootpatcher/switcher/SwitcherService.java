@@ -736,7 +736,7 @@ public class SwitcherService extends ThreadPoolService {
             throw new IllegalStateException(
                     "Task " + taskId + " has not finished getting packages counts");
         }
-        return task.mSystemPackages;
+        return task.mUpdatedPackages;
     }
 
     public int getResultRomDetailsUserPackages(int taskId) {
@@ -745,6 +745,6 @@ public class SwitcherService extends ThreadPoolService {
             throw new IllegalStateException(
                     "Task " + taskId + " has not finished getting packages counts");
         }
-        return task.mSystemPackages;
+        return task.mUserPackages;
     }
 }
