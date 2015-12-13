@@ -57,6 +57,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask.Wipe
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SwitcherService extends ThreadPoolService {
     private static final String TAG = SwitcherService.class.getSimpleName();
@@ -66,6 +67,8 @@ public class SwitcherService extends ThreadPoolService {
 
     /** List of callbacks for receiving events */
     private final ArrayList<BaseServiceTaskListener> mCallbacks = new ArrayList<>();
+    /** Read/write lock for callbacks. */
+    private final ReentrantReadWriteLock mCallbacksLock = new ReentrantReadWriteLock();
 
     public void registerCallback(BaseServiceTaskListener callback) {
         if (callback == null) {
@@ -73,8 +76,11 @@ public class SwitcherService extends ThreadPoolService {
             return;
         }
 
-        synchronized (mCallbacks) {
+        try {
+            mCallbacksLock.writeLock().lock();
             mCallbacks.add(callback);
+        } finally {
+            mCallbacksLock.writeLock().unlock();
         }
     }
 
@@ -84,31 +90,59 @@ public class SwitcherService extends ThreadPoolService {
             return;
         }
 
-        synchronized (mCallbacks) {
+        try {
+            mCallbacksLock.writeLock().lock();
             if (!mCallbacks.remove(callback)) {
                 Log.w(TAG, "Callback was never registered: " + callback);
             }
+        } finally {
+            mCallbacksLock.writeLock().unlock();
         }
+    }
+
+    private void executeAllCallbacks(CallbackRunnable runnable) {
+        try {
+            mCallbacksLock.readLock().lock();
+            for (BaseServiceTaskListener cb : mCallbacks) {
+                runnable.call(cb);
+            }
+        } finally {
+            mCallbacksLock.readLock().unlock();
+        }
+    }
+
+    private interface CallbackRunnable {
+        void call(BaseServiceTaskListener callback);
     }
 
     private static final AtomicInteger sNewTaskId = new AtomicInteger(0);
     private static final HashMap<Integer, BaseServiceTask> sTaskCache = new HashMap<>();
+    private static final ReentrantReadWriteLock sTaskCacheLock = new ReentrantReadWriteLock();
 
     private void addTask(int taskId, BaseServiceTask task) {
-        synchronized (sTaskCache) {
+        try {
+            sTaskCacheLock.writeLock().lock();
             sTaskCache.put(taskId, task);
+        } finally {
+            sTaskCacheLock.writeLock().unlock();
         }
     }
 
     private BaseServiceTask getTask(int taskId) {
-        synchronized (sTaskCache) {
+        try {
+            sTaskCacheLock.readLock().lock();
             return sTaskCache.get(taskId);
+        } finally {
+            sTaskCacheLock.readLock().unlock();
         }
     }
 
     private BaseServiceTask removeTask(int taskId) {
-        synchronized (sTaskCache) {
+        try {
+            sTaskCacheLock.writeLock().lock();
             return sTaskCache.remove(taskId);
+        } finally {
+            sTaskCacheLock.writeLock().unlock();
         }
     }
 
@@ -156,14 +190,18 @@ public class SwitcherService extends ThreadPoolService {
     private final GetRomsStateTaskListener mGetRomsStateTaskListener =
             new GetRomsStateTaskListener() {
         @Override
-        public void onGotRomsState(int taskId, RomInformation[] roms, RomInformation currentRom,
-                                   String activeRomId, KernelStatus kernelStatus) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof GetRomsStateTaskListener) {
-                    ((GetRomsStateTaskListener) cb).onGotRomsState(
-                            taskId, roms, currentRom, activeRomId, kernelStatus);
+        public void onGotRomsState(final int taskId, final RomInformation[] roms,
+                                   final RomInformation currentRom, final String activeRomId,
+                                   final KernelStatus kernelStatus) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof GetRomsStateTaskListener) {
+                        ((GetRomsStateTaskListener) callback).onGotRomsState(
+                                taskId, roms, currentRom, activeRomId, kernelStatus);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -203,12 +241,16 @@ public class SwitcherService extends ThreadPoolService {
 
     private final SwitchRomTaskListener mSwitchRomTaskListener = new SwitchRomTaskListener() {
         @Override
-        public void onSwitchedRom(int taskId, String romId, SwitchRomResult result) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof SwitchRomTaskListener) {
-                    ((SwitchRomTaskListener) cb).onSwitchedRom(taskId, romId, result);
+        public void onSwitchedRom(final int taskId, final String romId,
+                                  final SwitchRomResult result) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof SwitchRomTaskListener) {
+                        ((SwitchRomTaskListener) callback).onSwitchedRom(taskId, romId, result);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -235,12 +277,16 @@ public class SwitcherService extends ThreadPoolService {
 
     private final SetKernelTaskListener mSetKernelTaskListener = new SetKernelTaskListener() {
         @Override
-        public void onSetKernel(int taskId, String romId, SetKernelResult result) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof SetKernelTaskListener) {
-                    ((SetKernelTaskListener) cb).onSetKernel(taskId, romId, result);
+        public void onSetKernel(final int taskId, final String romId,
+                                final SetKernelResult result) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof SetKernelTaskListener) {
+                        ((SetKernelTaskListener) callback).onSetKernel(taskId, romId, result);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -269,12 +315,15 @@ public class SwitcherService extends ThreadPoolService {
     private final CreateLauncherTaskListener mCreateLauncherTaskListener =
             new CreateLauncherTaskListener() {
         @Override
-        public void onCreatedLauncher(int taskId, RomInformation romInfo) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof CreateLauncherTaskListener) {
-                    ((CreateLauncherTaskListener) cb).onCreatedLauncher(taskId, romInfo);
+        public void onCreatedLauncher(final int taskId, final RomInformation romInfo) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof CreateLauncherTaskListener) {
+                        ((CreateLauncherTaskListener) callback).onCreatedLauncher(taskId, romInfo);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -289,13 +338,17 @@ public class SwitcherService extends ThreadPoolService {
 
     private final VerifyZipTaskListener mVerifyZipTaskListener = new VerifyZipTaskListener() {
         @Override
-        public void onVerifiedZip(int taskId, String path, VerificationResult result,
-                                  String romId) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof VerifyZipTaskListener) {
-                    ((VerifyZipTaskListener) cb).onVerifiedZip(taskId, path, result, romId);
+        public void onVerifiedZip(final int taskId, final String path,
+                                  final VerificationResult result, final String romId) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof VerifyZipTaskListener) {
+                        ((VerifyZipTaskListener) callback).onVerifiedZip(
+                                taskId, path, result, romId);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -328,21 +381,29 @@ public class SwitcherService extends ThreadPoolService {
 
     private final FlashZipsTaskListener mFlashZipsTaskListener = new FlashZipsTaskListener() {
         @Override
-        public void onFlashedZips(int taskId, int totalActions, int failedActions) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof FlashZipsTaskListener) {
-                    ((FlashZipsTaskListener) cb).onFlashedZips(taskId, totalActions, failedActions);
+        public void onFlashedZips(final int taskId, final int totalActions,
+                                  final int failedActions) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof FlashZipsTaskListener) {
+                        ((FlashZipsTaskListener) callback).onFlashedZips(
+                                taskId, totalActions, failedActions);
+                    }
                 }
-            }
+            });
         }
 
         @Override
-        public void onCommandOutput(int taskId, String line) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof FlashZipsTaskListener) {
-                    ((FlashZipsTaskListener) cb).onCommandOutput(taskId, line);
+        public void onCommandOutput(final int taskId, final String line) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof FlashZipsTaskListener) {
+                        ((FlashZipsTaskListener) callback).onCommandOutput(taskId, line);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -374,12 +435,17 @@ public class SwitcherService extends ThreadPoolService {
 
     private final WipeRomTaskListener mWipeRomTaskListener = new WipeRomTaskListener() {
         @Override
-        public void onWipedRom(int taskId, String romId, short[] succeeded, short[] failed) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof WipeRomTaskListener) {
-                    ((WipeRomTaskListener) cb).onWipedRom(taskId, romId, succeeded, failed);
+        public void onWipedRom(final int taskId, final String romId, final short[] succeeded,
+                               final short[] failed) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof WipeRomTaskListener) {
+                        ((WipeRomTaskListener) callback).onWipedRom(
+                                taskId, romId, succeeded, failed);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -414,13 +480,17 @@ public class SwitcherService extends ThreadPoolService {
     private final CacheWallpaperTaskListener mCacheWallpaperTaskListener =
             new CacheWallpaperTaskListener() {
         @Override
-        public void onCachedWallpaper(int taskId, RomInformation romInfo,
-                                      CacheWallpaperResult result) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof CacheWallpaperTaskListener) {
-                    ((CacheWallpaperTaskListener) cb).onCachedWallpaper(taskId, romInfo, result);
+        public void onCachedWallpaper(final int taskId, final RomInformation romInfo,
+                                      final CacheWallpaperResult result) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof CacheWallpaperTaskListener) {
+                        ((CacheWallpaperTaskListener) callback).onCachedWallpaper(
+                                taskId, romInfo, result);
+                    }
                 }
-            }
+            });
         }
     };
 
@@ -449,57 +519,74 @@ public class SwitcherService extends ThreadPoolService {
     private final GetRomDetailsTaskListener mGetRomDetailsTaskListener =
             new GetRomDetailsTaskListener() {
         @Override
-        public void onRomDetailsGotSystemSize(int taskId, RomInformation romInfo,
-                                              boolean success, long size) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof GetRomDetailsTaskListener) {
-                    ((GetRomDetailsTaskListener) cb).onRomDetailsGotSystemSize(
-                            taskId, romInfo, success, size);
+        public void onRomDetailsGotSystemSize(final int taskId, final RomInformation romInfo,
+                                              final boolean success, final long size) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof GetRomDetailsTaskListener) {
+                        ((GetRomDetailsTaskListener) callback).onRomDetailsGotSystemSize(
+                                taskId, romInfo, success, size);
+                    }
                 }
-            }
+            });
         }
 
         @Override
-        public void onRomDetailsGotCacheSize(int taskId, RomInformation romInfo,
-                                             boolean success, long size) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof GetRomDetailsTaskListener) {
-                    ((GetRomDetailsTaskListener) cb).onRomDetailsGotCacheSize(
-                            taskId, romInfo, success, size);
+        public void onRomDetailsGotCacheSize(final int taskId, final RomInformation romInfo,
+                                             final boolean success, final long size) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof GetRomDetailsTaskListener) {
+                        ((GetRomDetailsTaskListener) callback).onRomDetailsGotCacheSize(
+                                taskId, romInfo, success, size);
+                    }
                 }
-            }
+            });
         }
 
         @Override
-        public void onRomDetailsGotDataSize(int taskId, RomInformation romInfo,
-                                            boolean success, long size) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof GetRomDetailsTaskListener) {
-                    ((GetRomDetailsTaskListener) cb).onRomDetailsGotDataSize(
-                            taskId, romInfo, success, size);
+        public void onRomDetailsGotDataSize(final int taskId, final RomInformation romInfo,
+                                            final boolean success, final long size) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof GetRomDetailsTaskListener) {
+                        ((GetRomDetailsTaskListener) callback).onRomDetailsGotDataSize(
+                                taskId, romInfo, success, size);
+                    }
                 }
-            }
+            });
         }
 
         @Override
-        public void onRomDetailsGotPackagesCounts(int taskId, RomInformation romInfo,
-                                                  boolean success, int systemPackages,
-                                                  int updatedPackages, int userPackages) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof GetRomDetailsTaskListener) {
-                    ((GetRomDetailsTaskListener) cb).onRomDetailsGotPackagesCounts(taskId, romInfo,
-                            success, systemPackages, updatedPackages, userPackages);
+        public void onRomDetailsGotPackagesCounts(final int taskId, final RomInformation romInfo,
+                                                  final boolean success, final int systemPackages,
+                                                  final int updatedPackages,
+                                                  final int userPackages) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof GetRomDetailsTaskListener) {
+                        ((GetRomDetailsTaskListener) callback).onRomDetailsGotPackagesCounts(taskId,
+                                romInfo, success, systemPackages, updatedPackages, userPackages);
+                    }
                 }
-            }
+            });
         }
 
         @Override
-        public void onRomDetailsFinished(int taskId, RomInformation romInfo) {
-            for (BaseServiceTaskListener cb : mCallbacks) {
-                if (cb instanceof GetRomDetailsTaskListener) {
-                    ((GetRomDetailsTaskListener) cb).onRomDetailsFinished(taskId, romInfo);
+        public void onRomDetailsFinished(final int taskId, final RomInformation romInfo) {
+            executeAllCallbacks(new CallbackRunnable() {
+                @Override
+                public void call(BaseServiceTaskListener callback) {
+                    if (callback instanceof GetRomDetailsTaskListener) {
+                        ((GetRomDetailsTaskListener) callback).onRomDetailsFinished(
+                                taskId, romInfo);
+                    }
                 }
-            }
+            });
         }
     };
 
