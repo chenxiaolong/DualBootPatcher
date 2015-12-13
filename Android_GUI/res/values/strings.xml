@@ -59,7 +59,7 @@
     <!-- Navigation drawer item for checking free space -->
     <string name="title_free_space">Free Space</string>
     <!-- Navigation drawer item for changing the ROM settings -->
-    <string name="title_rom_settings">ROM Settings</string>
+    <string name="title_rom_settings">Settings</string>
     <!-- Navigation drawer item for changing the app sharing settings -->
     <string name="title_app_sharing">App Sharing</string>
     <!-- Nagivation drawer item for rebooting the device -->
@@ -399,6 +399,8 @@
     <!-- Message asking user to reboot when the ramdisk updating succeeds -->
     <string name="update_ramdisk_reboot_desc">The ramdisk was successfully updated. Would you like
         to reboot now?</string>
+    <!-- Message telling user that the ramdisk updating succeeded -->
+    <string name="update_ramdisk_no_reboot_desc">The ramdisk was successfully updated.</string>
     <!-- Title when ramdisk failed to update -->
     <string name="update_ramdisk_failure_title">Failed to update ramdisk</string>
     <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
