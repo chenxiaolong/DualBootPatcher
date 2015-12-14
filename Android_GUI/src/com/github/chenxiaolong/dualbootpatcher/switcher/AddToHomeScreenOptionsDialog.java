@@ -21,9 +21,11 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
@@ -79,17 +81,20 @@ public class AddToHomeScreenOptionsDialog extends DialogFragment {
                 .content(R.string.auto_reboot_after_switching)
                 .negativeText(R.string.no)
                 .positiveText(R.string.yes)
-                .callback(new ButtonCallback() {
+                .onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         AddToHomeScreenOptionsDialogListener owner = getOwner();
                         if (owner != null) {
                             owner.onConfirmAddToHomeScreenOptions(info, true);
                         }
                     }
-
+                })
+                .onNegative(new SingleButtonCallback() {
                     @Override
-                    public void onNegative(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         AddToHomeScreenOptionsDialogListener owner = getOwner();
                         if (owner != null) {
                             owner.onConfirmAddToHomeScreenOptions(info, false);

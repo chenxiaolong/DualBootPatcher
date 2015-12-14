@@ -21,9 +21,11 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 
 public class GenericYesNoDialog extends DialogFragment {
     private static final String ARG_ID = "id";
@@ -107,17 +109,18 @@ public class GenericYesNoDialog extends DialogFragment {
             builder.negativeText(negative);
         }
 
-        builder.callback(new ButtonCallback() {
+        builder.onPositive(new SingleButtonCallback() {
             @Override
-            public void onPositive(MaterialDialog dialog) {
+            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                 GenericYesNoDialogListener owner = getOwner();
                 if (owner != null) {
                     owner.onConfirmYesNo(id, true);
                 }
             }
-
+        });
+        builder.onNegative(new SingleButtonCallback() {
             @Override
-            public void onNegative(MaterialDialog dialog) {
+            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                 GenericYesNoDialogListener owner = getOwner();
                 if (owner != null) {
                     owner.onConfirmYesNo(id, false);

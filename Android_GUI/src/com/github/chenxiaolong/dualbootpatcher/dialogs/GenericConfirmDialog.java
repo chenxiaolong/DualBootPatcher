@@ -21,9 +21,11 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class GenericConfirmDialog extends DialogFragment {
@@ -94,9 +96,9 @@ public class GenericConfirmDialog extends DialogFragment {
             builder.positiveText(R.string.ok);
         }
 
-        builder.callback(new ButtonCallback() {
+        builder.onPositive(new SingleButtonCallback() {
             @Override
-            public void onPositive(MaterialDialog dialog) {
+            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                 GenericConfirmDialogListener owner = getOwner();
                 if (owner != null) {
                     owner.onConfirmOk(id);

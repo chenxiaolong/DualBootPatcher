@@ -21,9 +21,11 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ChangeInstallLocationDialog extends DialogFragment {
@@ -63,17 +65,20 @@ public class ChangeInstallLocationDialog extends DialogFragment {
                 .content(message)
                 .positiveText(R.string.zip_flashing_change_install_location)
                 .negativeText(R.string.zip_flashing_keep_current_location)
-                .callback(new ButtonCallback() {
+                .onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         ChangeInstallLocationDialogListener owner = getOwner();
                         if (owner != null) {
                             owner.onChangeInstallLocationClicked(true);
                         }
                     }
-
+                })
+                .onNegative(new SingleButtonCallback() {
                     @Override
-                    public void onNegative(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         ChangeInstallLocationDialogListener owner = getOwner();
                         if (owner != null) {
                             owner.onChangeInstallLocationClicked(false);

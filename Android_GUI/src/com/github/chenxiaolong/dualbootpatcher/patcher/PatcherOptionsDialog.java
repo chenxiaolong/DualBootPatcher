@@ -22,6 +22,7 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.AppCompatEditText;
 import android.support.v7.widget.AppCompatSpinner;
 import android.text.Editable;
@@ -37,7 +38,7 @@ import android.widget.TextView;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
@@ -125,9 +126,10 @@ public class PatcherOptionsDialog extends DialogFragment {
                 .customView(R.layout.dialog_patcher_opts, true)
                 .positiveText(R.string.proceed)
                 .negativeText(R.string.cancel)
-                .callback(new ButtonCallback() {
+                .onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         PatcherOptionsDialogListener owner = getOwner();
                         if (owner != null) {
                             int position = mDeviceSpinner.getSelectedItemPosition();

@@ -20,11 +20,13 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class ConfirmAutomatedSwitchRomDialog extends DialogFragment {
@@ -62,18 +64,20 @@ public class ConfirmAutomatedSwitchRomDialog extends DialogFragment {
                 .title(R.string.switching_rom)
                 .positiveText(R.string.proceed)
                 .negativeText(R.string.cancel)
-                .callback(new ButtonCallback() {
+                .onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         CheckBox cb = (CheckBox) dialog.findViewById(R.id.checkbox);
-
                         if (mListener != null) {
                             mListener.onConfirmSwitchRom(cb.isChecked());
                         }
                     }
-
+                })
+                .onNegative(new SingleButtonCallback() {
                     @Override
-                    public void onNegative(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         if (mListener != null) {
                             mListener.onCancelSwitchRom();
                         }

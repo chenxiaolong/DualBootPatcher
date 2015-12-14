@@ -131,10 +131,10 @@ dependencies {
     compile 'com.android.support:support-v13:23.1.1'
     compile 'com.google.code.gson:gson:2.3.1'
     compile 'com.squareup.picasso:picasso:2.5.2'
-    compile('com.afollestad.material-dialogs:core:0.8.0.1@aar') {
+    compile('com.afollestad.material-dialogs:core:0.8.5.2@aar') {
         transitive = true
     }
-    compile('com.afollestad.material-dialogs:commons:0.8.0.1@aar') {
+    compile('com.afollestad.material-dialogs:commons:0.8.5.2@aar') {
         transitive = true
     }
     compile 'com.getbase:floatingactionbutton:1.10.0'

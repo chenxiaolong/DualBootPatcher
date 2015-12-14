@@ -21,9 +21,11 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
 public class UpdateRamdiskResultDialog extends DialogFragment {
@@ -96,14 +98,17 @@ public class UpdateRamdiskResultDialog extends DialogFragment {
                 builder.negativeText(R.string.reboot_later);
                 builder.positiveText(R.string.reboot_now);
 
-                builder.callback(new ButtonCallback() {
+                builder.onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         confirm(true);
                     }
-
+                });
+                builder.onNegative(new SingleButtonCallback() {
                     @Override
-                    public void onNegative(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         confirm(false);
                     }
                 });
@@ -111,9 +116,10 @@ public class UpdateRamdiskResultDialog extends DialogFragment {
                 builder.content(R.string.update_ramdisk_no_reboot_desc);
                 builder.positiveText(R.string.ok);
 
-                builder.callback(new ButtonCallback() {
+                builder.onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         confirm(false);
                     }
                 });

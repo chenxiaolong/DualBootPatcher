@@ -21,9 +21,11 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.ButtonCallback;
+import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
@@ -83,9 +85,10 @@ public class SetKernelConfirmDialog extends DialogFragment {
                 .content(message)
                 .positiveText(R.string.proceed)
                 .negativeText(R.string.cancel)
-                .callback(new ButtonCallback() {
+                .onPositive(new SingleButtonCallback() {
                     @Override
-                    public void onPositive(MaterialDialog dialog) {
+                    public void onClick(@NonNull MaterialDialog dialog,
+                                        @NonNull DialogAction which) {
                         SetKernelConfirmDialogListener owner = getOwner();
                         if (owner != null) {
                             owner.onConfirmSetKernel();
