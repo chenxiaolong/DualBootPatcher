@@ -720,11 +720,16 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices.push_back(device);
 
-    // Samsung Galaxy Tab S 8.4 (Wifi)
+    // Samsung Galaxy Tab S 8.4/10.5 (Wifi)
     device = new Device();
-    device->setId("klimtwifi");
-    device->setCodenames({ "klimtwifi", "klimtwifikx" });
-    device->setName("Samsung Galaxy Tab S 8.4 (Wifi)");
+    device->setId("tab_s_wifi");
+    device->setCodenames({
+        // 8.4" variant
+        "klimtwifi", "klimtwifikx",
+        // 10.5" variant
+        "chagallwifi", "chagallwifixx"
+    });
+    device->setName("Samsung Galaxy Tab S 8.4/10.5 (Wifi)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p18" });
     device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
