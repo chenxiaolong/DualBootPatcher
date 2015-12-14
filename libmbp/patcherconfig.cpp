@@ -240,14 +240,14 @@ std::vector<Device *> PatcherConfig::devices() const
 
 // http://forum.xda-developers.com/showpost.php?p=59801273&postcount=5465
 // http://forum.xda-developers.com/showpost.php?p=61876479&postcount=6443
-#define TRELTE_BASE_DIR         "/dev/block/platform/15540000.dwmmc0/by-name"
-#define TRELTE_BOOT             TRELTE_BASE_DIR "/BOOT"
-#define TRELTE_CACHE            TRELTE_BASE_DIR "/CACHE"
-#define TRELTE_CDMA_RADIO       TRELTE_BASE_DIR "/CDMA-RADIO"
-#define TRELTE_RADIO            TRELTE_BASE_DIR "/RADIO"
-#define TRELTE_RECOVERY         TRELTE_BASE_DIR "/RECOVERY"
-#define TRELTE_SYSTEM           TRELTE_BASE_DIR "/SYSTEM"
-#define TRELTE_USERDATA         TRELTE_BASE_DIR "/USERDATA"
+#define DWMMC0_15540000_BASE_DIR    "/dev/block/platform/15540000.dwmmc0/by-name"
+#define DWMMC0_15540000_BOOT        DWMMC0_15540000_BASE_DIR "/BOOT"
+#define DWMMC0_15540000_CACHE       DWMMC0_15540000_BASE_DIR "/CACHE"
+#define DWMMC0_15540000_CDMA_RADIO  DWMMC0_15540000_BASE_DIR "/CDMA-RADIO"
+#define DWMMC0_15540000_RADIO       DWMMC0_15540000_BASE_DIR "/RADIO"
+#define DWMMC0_15540000_RECOVERY    DWMMC0_15540000_BASE_DIR "/RECOVERY"
+#define DWMMC0_15540000_SYSTEM      DWMMC0_15540000_BASE_DIR "/SYSTEM"
+#define DWMMC0_15540000_USERDATA    DWMMC0_15540000_BASE_DIR "/USERDATA"
 
 #define DWMMC_BASE_DIR          "/dev/block/platform/dw_mmc/by-name"
 #define DWMMC_BOOT              DWMMC_BASE_DIR "/BOOT"
@@ -570,13 +570,19 @@ void PatcherConfig::Impl::addSamsungDevices()
         "trhplte"
     });
     device->setName("Samsung Galaxy Note 4 (Exynos)");
-    device->setBlockDevBaseDirs({ TRELTE_BASE_DIR });
-    device->setSystemBlockDevs({ TRELTE_SYSTEM, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ TRELTE_CACHE, "/dev/block/mmcblk0p19" });
-    device->setDataBlockDevs({ TRELTE_USERDATA, "/dev/block/mmcblk0p21" });
-    device->setBootBlockDevs({ TRELTE_BOOT, "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ TRELTE_RECOVERY, "/dev/block/mmcblk0p10" });
-    device->setExtraBlockDevs({ TRELTE_RADIO, TRELTE_CDMA_RADIO });
+    device->setBlockDevBaseDirs({ DWMMC0_15540000_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_15540000_SYSTEM,
+                                 "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_15540000_CACHE,
+                                "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_15540000_USERDATA,
+                               "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_15540000_BOOT,
+                               "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_15540000_RECOVERY,
+                                   "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_15540000_RADIO,
+                                DWMMC0_15540000_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Note 5 (Sprint)
@@ -726,6 +732,31 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
     device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
+    devices.push_back(device);
+
+    // Samsung Galaxy Tab S2 8.0/9.7 (Wifi)
+    device = new Device();
+    device->setId("tab_s2_wifi");
+    device->setCodenames({
+        // 8.0" variant
+        "gts28wifi", "gts28wifixx",
+        // 9.7" variant
+        "gts210wifi", "gts210wifixx"
+    });
+    device->setName("Samsung Galaxy Tab S2 8.0/9.7 (Wifi)");
+    device->setBlockDevBaseDirs({ DWMMC0_15540000_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_15540000_SYSTEM,
+                                 "/dev/block/mmcblk0p19" });
+    device->setCacheBlockDevs({ DWMMC0_15540000_CACHE,
+                                "/dev/block/mmcblk0p20" });
+    device->setDataBlockDevs({ DWMMC0_15540000_USERDATA,
+                               "/dev/block/mmcblk0p22" });
+    device->setBootBlockDevs({ DWMMC0_15540000_BOOT,
+                               "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_15540000_RECOVERY,
+                                   "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_15540000_RADIO,
+                                DWMMC0_15540000_CDMA_RADIO });
     devices.push_back(device);
 
     // Samsung Galaxy Tab Pro 8.4 (Wifi)
