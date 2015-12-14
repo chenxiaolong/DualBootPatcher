@@ -394,6 +394,9 @@ public class PatchFileFragment extends Fragment implements
                 }
             }
             break;
+        default:
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            break;
         }
     }
 
