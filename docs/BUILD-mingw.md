@@ -94,9 +94,14 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     pushd DualBootPatcher-<version>-win32
 
     dlls=(
+        libfreetype-6.dll
         libgcc_s_sjlj-1.dll
         libGLESv2.dll
+        libglib-2.0-0.dll
+        libharfbuzz-0.dll
         libiconv-2.dll
+        libintl-8.dll
+        libpcre-1.dll
         libpcre16-0.dll
         libpng16-16.dll
         libstdc++-6.dll
