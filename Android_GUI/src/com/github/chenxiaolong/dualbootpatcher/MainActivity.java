@@ -291,12 +291,12 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
             mDrawerItemSelected = item;
             // Animate if user clicked
             hideFragments(userClicked);
-        }
 
-        Menu menu = mDrawerView.getMenu();
-        for (int i = 0; i < menu.size(); i++) {
-            MenuItem menuItem = menu.getItem(i);
-            menuItem.setChecked(menuItem.getItemId() == item);
+            Menu menu = mDrawerView.getMenu();
+            for (int i = 0; i < menu.size(); i++) {
+                MenuItem menuItem = menu.getItem(i);
+                menuItem.setChecked(menuItem.getItemId() == item);
+            }
         }
 
         if (mDrawerLayout.isDrawerOpen(mDrawerView)) {
