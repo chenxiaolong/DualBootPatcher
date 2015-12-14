@@ -606,6 +606,11 @@ void handle_device_fd()
         struct uevent uevent;
         parse_event(msg, &uevent);
 
+        if (uevent.path && strstr(uevent.path, "sec-battery")) {
+            // sec-battery causes boot delays on the Galaxy S4
+            continue;
+        }
+
         handle_device_event(&uevent);
     }
 }
