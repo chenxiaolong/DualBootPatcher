@@ -370,11 +370,11 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ QCOM_ABOOT });
     devices.push_back(device);
 
-    // Samsung Galaxy S 4 (i9500)
+    // Samsung Galaxy S 4 (Exynos)
     device = new Device();
     device->setId("i9500");
-    device->setCodenames({ "ja3g" });
-    device->setName("Samsung Galaxy S 4 (i9500)");
+    device->setCodenames({ "ja3g", "jalte", "jaltektt" });
+    device->setName("Samsung Galaxy S 4 (Exynos)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
     device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
