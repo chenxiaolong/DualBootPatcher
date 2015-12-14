@@ -220,7 +220,25 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
             .fs_options = "background_gc=on,discard",
             .vold_args = "wait,check",
             .orig_line = std::string()
-        }
+        },
+        {
+            .blk_device = "/dev/block/bootdevice/by-name/cache",
+            .mount_point = "/cache",
+            .fs_type = "ext4",
+            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
+            .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        },
+        {
+            .blk_device = "/dev/block/bootdevice/by-name/cache",
+            .mount_point = "/cache",
+            .fs_type = "f2fs",
+            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
+            .fs_options = "background_gc=on,discard",
+            .vold_args = "wait,check",
+            .orig_line = std::string()
+        },
         // Add more as necessary...
     };
 }
