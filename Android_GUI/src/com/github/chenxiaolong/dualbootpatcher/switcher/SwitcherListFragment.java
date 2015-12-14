@@ -26,8 +26,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
+import android.support.v13.app.FragmentCompat;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -40,13 +42,19 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
+        .GenericConfirmDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
+        .GenericYesNoDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog
@@ -67,7 +75,7 @@ import java.util.Collections;
 
 public class SwitcherListFragment extends Fragment implements
         RomCardActionListener, SetKernelNeededDialogListener, ConfirmChecksumIssueDialogListener,
-        ServiceConnection {
+        GenericYesNoDialogListener, GenericConfirmDialogListener, ServiceConnection {
     public static final String TAG = SwitcherListFragment.class.getSimpleName();
 
     private static final String EXTRA_TASK_ID_GET_ROMS_STATE = "task_id_get_roms_state";
@@ -79,6 +87,7 @@ public class SwitcherListFragment extends Fragment implements
     private static final String EXTRA_SELECTED_ROM = "selected_rom";
     private static final String EXTRA_ACTIVE_ROM_ID = "active_rom_id";
     private static final String EXTRA_SHOWED_SET_KERNEL_WARNING = "showed_set_kernel_warning";
+    private static final String EXTRA_HAVE_PERMISSIONS_RESULT = "have_permissions_result";
 
     /** Fragment tag for progress dialog for switching ROMS */
     private static final String PROGRESS_DIALOG_SWITCH_ROM =
@@ -93,6 +102,18 @@ public class SwitcherListFragment extends Fragment implements
             SwitcherListFragment.class.getCanonicalName() + ".confirm.checksum_issue";
     private static final String CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION =
             SwitcherListFragment.class.getCanonicalName() + ".confirm.unknown_boot_partition";
+    private static final String CONFIRM_DIALOG_PERMISSIONS =
+            SwitcherListFragment.class.getCanonicalName() + ".confirm.permissions";
+    private static final String YES_NO_DIALOG_PERMISSIONS =
+            SwitcherListFragment.class.getCanonicalName() + ".yes_no.permissions";
+
+    /**
+     * Request code for storage permissions request
+     * (used in {@link #onRequestPermissionsResult(int, String[], int[])})
+     */
+    private static final int PERMISSIONS_REQUEST_STORAGE = 1;
+
+    private boolean mHavePermissionsResult = false;
 
     /** Service task ID to get the state of installed ROMs */
     private int mTaskIdGetRomsState = -1;
@@ -111,6 +132,9 @@ public class SwitcherListFragment extends Fragment implements
 
     /** Handler for processing events from the service on the UI thread */
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+
+    /** {@link Runnable}s to process once the service has been connected */
+    private ArrayList<Runnable> mExecOnConnect = new ArrayList<>();
 
     private static final int REQUEST_FLASH_ZIP = 2345;
 
@@ -153,6 +177,8 @@ public class SwitcherListFragment extends Fragment implements
 
             mShowedSetKernelWarning = savedInstanceState.getBoolean(
                     EXTRA_SHOWED_SET_KERNEL_WARNING);
+            mHavePermissionsResult = savedInstanceState.getBoolean(
+                    EXTRA_HAVE_PERMISSIONS_RESULT);
         }
 
         mFabFlashZip = (FloatingActionButton) getActivity()
@@ -181,6 +207,22 @@ public class SwitcherListFragment extends Fragment implements
         initErrorCard();
         initCardList();
         setErrorVisibility(false);
+
+        // Permissions
+        if (PermissionUtils.supportsRuntimePermissions()) {
+            if (savedInstanceState == null) {
+                requestPermissions();
+            } else if (mHavePermissionsResult) {
+                if (PermissionUtils.hasPermissions(
+                        getActivity(), PermissionUtils.STORAGE_PERMISSIONS)) {
+                    onPermissionsGranted();
+                } else {
+                    onPermissionsDenied();
+                }
+            }
+        } else {
+            startWhenServiceConnected();
+        }
     }
 
     /**
@@ -229,6 +271,108 @@ public class SwitcherListFragment extends Fragment implements
         // Register callback
         mService.registerCallback(mCallback);
 
+        for (Runnable runnable : mExecOnConnect) {
+            runnable.run();
+        }
+        mExecOnConnect.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        mService = null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+        case PERMISSIONS_REQUEST_STORAGE:
+            if (PermissionUtils.verifyPermissions(grantResults)) {
+                onPermissionsGranted();
+            } else {
+                if (PermissionUtils.shouldShowRationales(this, permissions)) {
+                    showPermissionsRationaleDialogYesNo();
+                } else {
+                    showPermissionsRationaleDialogConfirm();
+                }
+            }
+            break;
+        default:
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            break;
+        }
+    }
+
+    private void requestPermissions() {
+        FragmentCompat.requestPermissions(
+                this, PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
+    }
+
+    private void onPermissionsGranted() {
+        mHavePermissionsResult = true;
+        startWhenServiceConnected();
+    }
+
+    private void onPermissionsDenied() {
+        mHavePermissionsResult = true;
+        startWhenServiceConnected();
+    }
+
+    private void startWhenServiceConnected() {
+        executeNeedsService(new Runnable() {
+            @Override
+            public void run() {
+                onReady();
+            }
+        });
+    }
+
+    private void showPermissionsRationaleDialogYesNo() {
+        GenericYesNoDialog dialog = (GenericYesNoDialog)
+                getFragmentManager().findFragmentByTag(YES_NO_DIALOG_PERMISSIONS);
+        if (dialog == null) {
+            dialog = GenericYesNoDialog.newInstanceFromFragment(this,
+                    PERMISSIONS_REQUEST_STORAGE, null,
+                    getString(R.string.switcher_storage_permission_required),
+                    getString(R.string.try_again),
+                    getString(R.string.cancel));
+            dialog.show(getFragmentManager(), YES_NO_DIALOG_PERMISSIONS);
+        }
+    }
+
+    private void showPermissionsRationaleDialogConfirm() {
+        GenericConfirmDialog dialog = (GenericConfirmDialog)
+                getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
+        if (dialog == null) {
+            dialog = GenericConfirmDialog.newInstanceFromFragment(this,
+                    PERMISSIONS_REQUEST_STORAGE, null,
+                    getString(R.string.switcher_storage_permission_required), null);
+            dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
+        }
+    }
+
+    @Override
+    public void onConfirmYesNo(int id, boolean choice) {
+        if (id == PERMISSIONS_REQUEST_STORAGE) {
+            if (choice) {
+                requestPermissions();
+            } else {
+                onPermissionsDenied();
+            }
+        }
+    }
+
+    @Override
+    public void onConfirmOk(int id) {
+        if (id == PERMISSIONS_REQUEST_STORAGE) {
+            onPermissionsDenied();
+        }
+    }
+
+    private void onReady() {
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
             mService.removeCachedTask(taskId);
@@ -270,11 +414,19 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     /**
-     * {@inheritDoc}
+     * Execute a {@link Runnable} that requires the service to be connected
+     *
+     * NOTE: If the service is disconnect before this method is called and does not reconnect before
+     * this fragment is destroyed, then the runnable will NOT be executed.
+     *
+     * @param runnable Runnable that requires access to the service
      */
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-        mService = null;
+    public void executeNeedsService(final Runnable runnable) {
+        if (mService != null) {
+            runnable.run();
+        } else {
+            mExecOnConnect.add(runnable);
+        }
     }
 
     /**
@@ -331,6 +483,7 @@ public class SwitcherListFragment extends Fragment implements
         }
         outState.putString(EXTRA_ACTIVE_ROM_ID, mActiveRomId);
         outState.putBoolean(EXTRA_SHOWED_SET_KERNEL_WARNING, mShowedSetKernelWarning);
+        outState.putBoolean(EXTRA_HAVE_PERMISSIONS_RESULT, mHavePermissionsResult);
     }
 
     /**
