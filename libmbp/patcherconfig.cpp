@@ -348,8 +348,9 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setId("jflte");
     device->setCodenames({
         // Regular variant
-        "jflte", "jflteatt", "jfltecan", "jfltecri", "jfltecsp", "jfltespr",
-        "jfltetmo", "jflteusc", "jfltevzw", "jfltexx", "jfltezm",
+        "jflte", "jflteatt", "jfltecan", "jfltecri", "jfltecsp",
+        "jflterefreshspr", "jfltespr", "jfltetmo", "jflteusc", "jfltevzw",
+        "jfltexx", "jfltezm",
         // Active variant
         "jactivelte",
         // Google Edition variant
@@ -365,7 +366,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p18" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p29" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p20" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p21" });
     device->setExtraBlockDevs({ QCOM_ABOOT });
     devices.push_back(device);
 
