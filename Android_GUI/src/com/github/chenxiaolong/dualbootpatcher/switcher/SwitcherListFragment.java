@@ -579,7 +579,8 @@ public class SwitcherListFragment extends Fragment implements
         String codename = RomUtils.getDeviceCodename(getActivity());
         String message = String.format(getString(R.string.unknown_boot_partition), codename);
 
-        GenericConfirmDialog gcd = GenericConfirmDialog.newInstance(null, message);
+        GenericConfirmDialog gcd = GenericConfirmDialog.newInstanceFromFragment(
+                null, -1, null, message, null);
         gcd.show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
     }
 

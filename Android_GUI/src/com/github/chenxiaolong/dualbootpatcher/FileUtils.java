@@ -18,7 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.ContentUris;
@@ -164,9 +163,9 @@ public class FileUtils {
         Fragment prev = fm.findFragmentByTag("no_file_chooser");
 
         if (prev == null) {
-            GenericConfirmDialog dialog = GenericConfirmDialog.newInstance(
+            GenericConfirmDialog dialog = GenericConfirmDialog.newInstanceFromActivity(-1,
                     context.getString(R.string.filemanager_missing_title),
-                    context.getString(R.string.filemanager_missing_desc));
+                    context.getString(R.string.filemanager_missing_desc), null);
             dialog.show(fm, "no_file_chooser");
         }
     }

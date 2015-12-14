@@ -596,8 +596,8 @@ public class PatchFileFragment extends Fragment implements
         GenericConfirmDialog dialog = (GenericConfirmDialog)
                 getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericConfirmDialog.newInstance(
-                    0, R.string.patcher_storage_permission_required);
+            dialog = GenericConfirmDialog.newInstanceFromFragment(null, -1, null,
+                    getString(R.string.patcher_storage_permission_required), null);
             dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
         }
     }

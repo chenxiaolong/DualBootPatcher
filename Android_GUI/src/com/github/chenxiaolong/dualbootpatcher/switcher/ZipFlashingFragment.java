@@ -373,7 +373,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
                 throw new IllegalStateException("Invalid verification result ID");
             }
 
-            GenericConfirmDialog d = GenericConfirmDialog.newInstance(null, error);
+            GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
+                    null, -1, null, error, null);
             d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         }
     }
@@ -471,8 +472,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
     private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
-            GenericConfirmDialog d = GenericConfirmDialog.newInstance(
-                    0, R.string.zip_flashing_error_no_overwrite_rom);
+            GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
+                    null, -1, null, getString(R.string.zip_flashing_error_no_overwrite_rom), null);
             d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         } else {
             mActivityCallback.onReady(true);
