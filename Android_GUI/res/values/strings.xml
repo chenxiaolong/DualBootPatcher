@@ -375,6 +375,11 @@
     <string name="a_s_settings_manage_shared_apps_desc">Choose which applications should be shared
         for individual app sharing.</string>
 
+    <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage. -->
+    <string name="a_s_settings_storage_permission_required">The app sharing settings cannot be saved
+        because the storage permissions were denied. Please grant the storage permissions to change
+        the app sharing settings.</string>
+
     <!-- Dialog message shown the the mbtool version is too old and needs to be updated -->
     <string name="a_s_settings_version_too_old">mbtool must be updated to take advantage of the
         app sharing features. Please update the ramdisk.</string>

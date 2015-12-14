@@ -28,24 +28,46 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
+import android.support.annotation.NonNull;
+import android.support.v13.app.FragmentCompat;
 import android.widget.Toast;
 
+import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomConfig;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsFragment.NeededInfo;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
+        .GenericConfirmDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
+        .GenericYesNoDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 
 public class AppSharingSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener,
-        LoaderManager.LoaderCallbacks<NeededInfo> {
+        LoaderManager.LoaderCallbacks<NeededInfo>,
+        FragmentCompat.OnRequestPermissionsResultCallback,
+        GenericYesNoDialogListener, GenericConfirmDialogListener {
     public static final String TAG = AppSharingSettingsFragment.class.getSimpleName();
 
     private static final String KEY_SHARE_INDIV_APPS = "share_indiv_apps";
     private static final String KEY_MANAGE_INDIV_APPS = "manage_indiv_apps";
+
+    private static final String YES_NO_DIALOG_PERMISSIONS =
+            AppSharingSettingsFragment.class.getCanonicalName() + ".yes_no.permissions";
+    private static final String CONFIRM_DIALOG_PERMISSIONS =
+            AppSharingSettingsFragment.class.getCanonicalName() + ".confirm.permissions";
+
+    /**
+     * Request code for storage permissions request
+     * (used in {@link #onRequestPermissionsResult(int, String[], int[])})
+     */
+    private static final int PERMISSIONS_REQUEST_STORAGE = 1;
 
     private RomConfig mConfig;
 
@@ -74,12 +96,22 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         super.onActivityCreated(savedInstanceState);
 
         updateState();
-        getLoaderManager().initLoader(0, null, this);
+
+        if (PermissionUtils.supportsRuntimePermissions()) {
+            if (savedInstanceState == null) {
+                requestPermissions();
+            } else if (PermissionUtils.hasPermissions(
+                    getActivity(), PermissionUtils.STORAGE_PERMISSIONS)) {
+                onPermissionsGranted();
+            }
+        } else {
+            startLoading();
+        }
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onStop() {
+        super.onStop();
 
         if (mConfig == null) {
             // Destroyed before onLoadFinished ran
@@ -120,6 +152,84 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         mShareIndivApps.setChecked(checkShareIndiv);
     }
 
+    private void startLoading() {
+        getLoaderManager().initLoader(0, null, this);
+    }
+
+    private void requestPermissions() {
+        FragmentCompat.requestPermissions(
+                this, PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
+    }
+
+    private void showPermissionsRationaleDialogYesNo() {
+        GenericYesNoDialog dialog = (GenericYesNoDialog)
+                getFragmentManager().findFragmentByTag(YES_NO_DIALOG_PERMISSIONS);
+        if (dialog == null) {
+            dialog = GenericYesNoDialog.newInstanceFromFragment(this,
+                    PERMISSIONS_REQUEST_STORAGE, null,
+                    getString(R.string.a_s_settings_storage_permission_required),
+                    getString(R.string.try_again),
+                    getString(R.string.cancel));
+            dialog.show(getFragmentManager(), YES_NO_DIALOG_PERMISSIONS);
+        }
+    }
+
+    private void showPermissionsRationaleDialogConfirm() {
+        GenericConfirmDialog dialog = (GenericConfirmDialog)
+                getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
+        if (dialog == null) {
+            dialog = GenericConfirmDialog.newInstanceFromFragment(this,
+                    PERMISSIONS_REQUEST_STORAGE, null,
+                    getString(R.string.a_s_settings_storage_permission_required), null);
+            dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
+        }
+    }
+
+    private void onPermissionsGranted() {
+        startLoading();
+    }
+
+    private void onPermissionsDenied() {
+        getActivity().finish();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_STORAGE) {
+            if (PermissionUtils.verifyPermissions(grantResults)) {
+                onPermissionsGranted();
+            } else {
+                if (PermissionUtils.shouldShowRationales(this, permissions)) {
+                    showPermissionsRationaleDialogYesNo();
+                } else {
+                    showPermissionsRationaleDialogConfirm();
+                }
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+
+    @Override
+    public void onConfirmYesNo(int id, boolean choice) {
+        if (id == PERMISSIONS_REQUEST_STORAGE) {
+            if (choice) {
+                requestPermissions();
+            } else {
+                onPermissionsDenied();
+            }
+        }
+    }
+
+    @Override
+    public void onConfirmOk(int id) {
+        if (id == PERMISSIONS_REQUEST_STORAGE) {
+            onPermissionsDenied();
+        }
+    }
+
     @Override
     public boolean onPreferenceChange(Preference preference, Object objValue) {
         final String key = preference.getKey();
@@ -156,7 +266,8 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         }
 
         if (!result.haveRequiredVersion) {
-            Toast.makeText(getActivity(), R.string.a_s_settings_version_too_old, Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), R.string.a_s_settings_version_too_old,
+                    Toast.LENGTH_LONG).show();
             getActivity().finish();
             return;
         }
