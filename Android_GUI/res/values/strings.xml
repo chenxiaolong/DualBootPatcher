@@ -275,10 +275,10 @@
     <!-- ROM details item value shown when calculating the directory or image sizes -->
     <string name="rom_details_info_calculating">Calculating…</string>
 
-    <!-- Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
-    <string name="patcher_storage_permission_required">The patcher will not be able to read and
-        write to the internal storage because the storage permissions were denied. Please allow the
-        permissions if you are unable to patch files.</string>
+    <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
+    <string name="patcher_storage_permission_required">The patcher cannot patch files without read
+        and write access to the internal storage. Please grant storage permissions to be able to
+        patch files.</string>
 
     <!-- Snackbar message shown if the user tries to patch the same file for the same slot more than once -->
     <string name="patcher_cannot_add_same_item">The selected file (for %s) is already in the
@@ -484,6 +484,8 @@
     <string name="yes">Yes</string>
     <!-- Word/phrase for No (used in dialog boxes) -->
     <string name="no">No</string>
+    <!-- Word/phrase for try again (used in dialog boxes) -->
+    <string name="try_again">Try again</string>
     <!-- Reboot now (used in dialog boxes) -->
     <string name="reboot_now">Reboot now</string>
     <!-- Reboot later (used in dialog boxes) -->

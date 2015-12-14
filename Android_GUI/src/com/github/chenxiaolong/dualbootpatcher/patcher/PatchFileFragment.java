@@ -18,13 +18,11 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.app.Activity;
-import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,6 +30,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v13.app.FragmentCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -58,6 +57,9 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
+        .GenericYesNoDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemAdapter
         .PatchFileItemClickListener;
@@ -74,11 +76,17 @@ import java.util.Collections;
 import java.util.HashMap;
 
 public class PatchFileFragment extends Fragment implements
-        ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener, PatchFileItemClickListener {
+        ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener,
+        PatchFileItemClickListener, FragmentCompat.OnRequestPermissionsResultCallback,
+        GenericYesNoDialogListener {
     public static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final String DIALOG_PATCHER_OPTIONS =
             PatchFileFragment.class.getCanonicalName() + ".patcher_options";
+    private static final String YES_NO_DIALOG_PERMISSIONS =
+            PatchFileFragment.class.getCanonicalName() + ".yes_no.permissions";
+    private static final String CONFIRM_DIALOG_PERMISSIONS =
+            PatchFileFragment.class.getCanonicalName() + ".confirm.permissions";
 
     private static final String EXTRA_SELECTED_FILE = "selected_file";
 
@@ -181,12 +189,10 @@ public class PatchFileFragment extends Fragment implements
         mFAB.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Show file chooser
-                Intent intent = FileUtils.getFileChooserIntent(getActivity());
-                if (intent == null) {
-                    FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
+                if (PermissionUtils.supportsRuntimePermissions()) {
+                    requestPermissions();
                 } else {
-                    startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+                    selectFile();
                 }
             }
         });
@@ -377,23 +383,17 @@ public class PatchFileFragment extends Fragment implements
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         switch (requestCode) {
-        case PERMISSIONS_REQUEST_STORAGE: {
-            for (int grantResult : grantResults) {
-                if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                    Log.e(TAG, "Storage permissions were denied");
-                    DialogFragment d = GenericConfirmDialog.newInstance(
-                            0, R.string.patcher_storage_permission_required);
-                    d.show(getFragmentManager(), "storage_permissions_denied");
-
-                    // TODO: Re-request permissions
-                    //PermissionUtils.clearRequestedCache();
-                    return;
+        case PERMISSIONS_REQUEST_STORAGE:
+            if (PermissionUtils.verifyPermissions(grantResults)) {
+                selectFile();
+            } else {
+                if (PermissionUtils.shouldShowRationales(this, permissions)) {
+                    showPermissionsRationaleDialogYesNo();
+                } else {
+                    showPermissionsRationaleDialogConfirm();
                 }
             }
-
-            onReady();
             break;
-        }
         }
     }
 
@@ -466,17 +466,7 @@ public class PatchFileFragment extends Fragment implements
      */
     private void onPatcherInitialized() {
         Log.d(TAG, "Patcher has been initialized");
-
-        // Check if we have storage permissions
-        if (PermissionUtils.hasPermissions(getActivity(), PermissionUtils.STORAGE_PERMISSIONS)) {
-            // If we have permissions, then all initialization is complete
-            onReady();
-        } else {
-            // Otherwise, request the permissions. onReady() will be called by
-            // onRequestPermissionsResult() if permissions are granted
-            PermissionUtils.requestPermissions(getActivity(), this,
-                    PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
-        }
+        onReady();
     }
 
     /**
@@ -584,6 +574,44 @@ public class PatchFileFragment extends Fragment implements
         dialog.show(getFragmentManager(), DIALOG_PATCHER_OPTIONS);
     }
 
+    private void requestPermissions() {
+        FragmentCompat.requestPermissions(PatchFileFragment.this,
+                PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
+    }
+
+    private void showPermissionsRationaleDialogYesNo() {
+        GenericYesNoDialog dialog = (GenericYesNoDialog)
+                getFragmentManager().findFragmentByTag(YES_NO_DIALOG_PERMISSIONS);
+        if (dialog == null) {
+            dialog = GenericYesNoDialog.newInstanceFromFragment(this,
+                    PERMISSIONS_REQUEST_STORAGE, null,
+                    getString(R.string.patcher_storage_permission_required),
+                    getString(R.string.try_again),
+                    getString(R.string.cancel));
+            dialog.show(getFragmentManager(), YES_NO_DIALOG_PERMISSIONS);
+        }
+    }
+
+    private void showPermissionsRationaleDialogConfirm() {
+        GenericConfirmDialog dialog = (GenericConfirmDialog)
+                getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
+        if (dialog == null) {
+            dialog = GenericConfirmDialog.newInstance(
+                    0, R.string.patcher_storage_permission_required);
+            dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
+        }
+    }
+
+    private void selectFile() {
+        // Show file chooser
+        Intent intent = FileUtils.getFileChooserIntent(getActivity());
+        if (intent == null) {
+            FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
+        } else {
+            startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+        }
+    }
+
     /**
      * Called after the user tapped the FAB and selected a file
      */
@@ -646,6 +674,15 @@ public class PatchFileFragment extends Fragment implements
                 updateToolbarIcons();
             }
         });
+    }
+
+    @Override
+    public void onConfirmYesNo(int id, boolean choice) {
+        if (id == PERMISSIONS_REQUEST_STORAGE) {
+            if (choice) {
+                requestPermissions();
+            }
+        }
     }
 
     /**

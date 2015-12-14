@@ -21,21 +21,12 @@ import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
-
-import java.util.Collections;
-import java.util.HashSet;
 
 public class PermissionUtils {
-    private static final boolean DEBUG = true;
-    private static final String TAG = PermissionUtils.class.getSimpleName();
-
-    /** Permissions we have already attempted requesting */
-    private static final HashSet<String> sRequested = new HashSet<>();
-
     /**
      * Storage permissions for reading and writing to the internal storage
      */
@@ -44,12 +35,16 @@ public class PermissionUtils {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
+    public static boolean supportsRuntimePermissions() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+    }
+
     /**
      * Check if the user has allowed a list of permissions (for Android 6.0+)
      *
      * @param context Context
      * @param permissions Permissions to check
-     * @return
+     * @return Whether the specified permissions are granted
      */
     public static boolean hasPermissions(@NonNull Context context, @NonNull String[] permissions) {
         for (String permission : permissions) {
@@ -61,66 +56,22 @@ public class PermissionUtils {
         return true;
     }
 
-    /**
-     * Request permissions (for Android 6.0+)
-     *
-     * The permissions dialog will be shown if all the following are true:
-     * - Permissions have not been requested before (so the permissions dialog will only be shown
-     *   once)
-     * - Permissions are not already granted
-     *
-     * @param context Context (needed to check if permissions have already been granted)
-     * @param fragment Parent fragment
-     * @param permissions List of permissions to request
-     * @param requestCode Request code for use in
-     *                    {@link Fragment#onRequestPermissionsResult(int, String[], int[])}
-     */
-    public static void requestPermissions(@NonNull Context context, @NonNull Fragment fragment,
-                                          @NonNull String[] permissions, int requestCode) {
-        if (DEBUG) {
-            Log.d(TAG, "Requesting permissions:");
-            for (String permission : permissions) {
-                Log.d(TAG, "- " + permission);
-            }
-        }
-
-        // Check if we've already requested these permissions before
-        if (hasBeenRequestedBefore(permissions)) {
-            if (DEBUG) Log.d(TAG, "Permissions have been requested before. Skipping request");
-            return;
-        }
-
-        if (!hasPermissions(context, permissions)) {
-            if (DEBUG) Log.d(TAG, "Permissions have not been granted. Requesting permissions");
-
-            FragmentCompat.requestPermissions(fragment, permissions, requestCode);
-
-            Collections.addAll(sRequested, permissions);
-        }
-    }
-
-    /**
-     * Clear list of permissions that have been requested
-     *
-     * Allows the permission dialog to be shown again if the user has rejected the permission
-     * before.
-     */
-    public static void clearRequestedCache() {
-        sRequested.clear();
-    }
-
-    /**
-     * Check if a list of permissions have been requested before
-     *
-     * @param permissions List of permissions
-     * @return Whether the permissions have been requested before
-     */
-    private static boolean hasBeenRequestedBefore(String[] permissions) {
-        for (String permission : permissions) {
-            if (!sRequested.contains(permission)) {
+    public static boolean verifyPermissions(@NonNull int[] grantResults) {
+        for (int result : grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
         }
         return true;
+    }
+
+    public static boolean shouldShowRationales(@NonNull Fragment fragment,
+                                               @NonNull String[] permissions) {
+        for (String permission : permissions) {
+            if (FragmentCompat.shouldShowRequestPermissionRationale(fragment, permission)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
