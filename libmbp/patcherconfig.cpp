@@ -373,7 +373,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     // Samsung Galaxy S 4 (Exynos)
     device = new Device();
     device->setId("i9500");
-    device->setCodenames({ "ja3g", "jalte", "jaltektt" });
+    device->setCodenames({ "ja3g", "jalte", "jaltektt", "jalteskt" });
     device->setName("Samsung Galaxy S 4 (Exynos)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
@@ -387,7 +387,7 @@ void PatcherConfig::Impl::addSamsungDevices()
     // Samsung Galaxy S 4 LTE-A
     device = new Device();
     device->setId("ks01lte");
-    device->setCodenames({ "ks01lte" });
+    device->setCodenames({ "ks01lte", "ks01ltektt" , "ks01lteskt" });
     device->setName("Samsung Galaxy S 4 LTE-A");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
