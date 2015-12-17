@@ -104,7 +104,10 @@ bool FileAndroid::close()
         return false;
     }
 
-    if (::close(m_impl->fd) < 0) {
+    int fd = m_impl->fd;
+    m_impl->fd = -1;
+
+    if (::close(fd) < 0) {
         m_impl->error = ErrorPlatformError;
         m_impl->errnoCode = errno;
         m_impl->errnoString = strerror(errno);

@@ -94,7 +94,10 @@ bool FilePosix::close()
         return false;
     }
 
-    if (fclose(m_impl->fp) == EOF) {
+    FILE *fp = m_impl->fp;
+    m_impl->fp = nullptr;
+
+    if (fclose(fp) == EOF) {
         m_impl->error = ErrorPlatformError;
         m_impl->errnoCode = errno;
         m_impl->errnoString = strerror(errno);

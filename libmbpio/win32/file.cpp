@@ -120,7 +120,10 @@ bool FileWin32::close()
         return false;
     }
 
-    if (!CloseHandle(m_impl->handle)) {
+    HANDLE handle = m_impl->handle;
+    m_impl->handle = nullptr;
+
+    if (!CloseHandle(handle)) {
         m_impl->error = ErrorPlatformError;
         m_impl->win32Error = GetLastError();
         m_impl->win32ErrorString = errorToWString(m_impl->win32Error);
