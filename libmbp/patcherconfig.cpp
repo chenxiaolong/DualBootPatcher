@@ -229,6 +229,13 @@ std::vector<Device *> PatcherConfig::devices() const
 #define F9824900_SYSTEM         F9824900_BASE_DIR "/system"
 #define F9824900_USERDATA       F9824900_BASE_DIR "/userdata"
 
+#define F9824900_SOC0_BASE_DIR  "/dev/block/platform/soc.0/f9824900.sdhci/by-name"
+#define F9824900_SOC0_BOOT      F9824900_SOC0_BASE_DIR "/boot"
+#define F9824900_SOC0_CACHE     F9824900_SOC0_BASE_DIR "/cache"
+#define F9824900_SOC0_RECOVERY  F9824900_SOC0_BASE_DIR "/recovery"
+#define F9824900_SOC0_SYSTEM    F9824900_SOC0_BASE_DIR "/system"
+#define F9824900_SOC0_USERDATA  F9824900_SOC0_BASE_DIR "/userdata"
+
 // http://forum.xda-developers.com/showpost.php?p=60050072&postcount=5640
 #define ZERO_BASE_DIR           "/dev/block/platform/15570000.ufs/by-name"
 #define ZERO_BOOT               ZERO_BASE_DIR "/BOOT"
@@ -1102,12 +1109,12 @@ void PatcherConfig::Impl::addHuaweiDevices()
     device->setCodenames({ "angler" });
     device->setName("Huawei Nexus 6P");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ F9824900_BASE_DIR });
-    device->setSystemBlockDevs({ F9824900_SYSTEM, "/dev/block/mmcblk0p43" });
-    device->setCacheBlockDevs({ F9824900_CACHE, "/dev/block/mmcblk0p38" });
-    device->setDataBlockDevs({ F9824900_USERDATA, "/dev/block/mmcblk0p44" });
-    device->setBootBlockDevs({ F9824900_BOOT, "/dev/block/mmcblk0p34" });
-    device->setRecoveryBlockDevs({ F9824900_RECOVERY, "/dev/block/mmcblk0p35" });
+    device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SOC0_SYSTEM, "/dev/block/mmcblk0p43" });
+    device->setCacheBlockDevs({ F9824900_SOC0_CACHE, "/dev/block/mmcblk0p38" });
+    device->setDataBlockDevs({ F9824900_SOC0_USERDATA, "/dev/block/mmcblk0p44" });
+    device->setBootBlockDevs({ F9824900_SOC0_BOOT, "/dev/block/mmcblk0p34" });
+    device->setRecoveryBlockDevs({ F9824900_SOC0_RECOVERY, "/dev/block/mmcblk0p35" });
     devices.push_back(device);
 }
 
