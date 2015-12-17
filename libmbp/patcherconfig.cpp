@@ -838,6 +838,19 @@ void PatcherConfig::Impl::addLenovoDevices()
     device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
     devices.push_back(device);
+
+    // Lenovo ZUK Z1
+    device = new Device();
+    device->setId("Z1");
+    device->setCodenames({ "Z1" });
+    device->setName("Lenovo ZUK Z1");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p10" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addLgDevices()
