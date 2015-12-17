@@ -42,6 +42,7 @@ public:
     virtual bool write(const void *buf, uint64_t size, uint64_t *bytesWritten) override;
     virtual bool tell(uint64_t *pos) override;
     virtual bool seek(int64_t offset, int origin) override;
+    virtual bool truncate(uint64_t size) override;
     virtual int error() override;
 
 protected:

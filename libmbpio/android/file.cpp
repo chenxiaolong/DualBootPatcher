@@ -200,6 +200,18 @@ bool FileAndroid::seek(int64_t offset, int origin)
     return true;
 }
 
+bool FileAndroid::truncate(uint64_t size)
+{
+    if (ftruncate64(m_impl->fd, size) < 0) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->errnoCode = errno;
+        m_impl->errnoString = strerror(errno);
+        return false;
+    }
+
+    return true;
+}
+
 int FileAndroid::error()
 {
     return m_impl->error;

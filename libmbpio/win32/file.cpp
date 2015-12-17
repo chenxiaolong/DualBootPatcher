@@ -260,6 +260,33 @@ bool FileWin32::seek(int64_t offset, int origin)
     return true;
 }
 
+bool FileWin32::truncate(uint64_t size)
+{
+    // Save current position, move to new position, truncate, then move back to
+    // the old position.
+    uint64_t currentPos;
+    if (!tell(&currentPos)) {
+        return false;
+    }
+
+    if (!seek(size, SeekBegin)) {
+        return false;
+    }
+
+    if (!SetEndOfFile(m_impl->handle)) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->win32Error = GetLastError();
+        m_impl->win32ErrorString = errorToWString(m_impl->win32Error);
+        return false;
+    }
+
+    if (!seek(currentPos, SeekBegin)) {
+        return false;
+    }
+
+    return true;
+}
+
 int FileWin32::error()
 {
     return m_impl->error;

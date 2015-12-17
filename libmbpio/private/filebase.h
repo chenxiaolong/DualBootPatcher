@@ -157,6 +157,16 @@ public:
     virtual bool seek(int64_t offset, int origin) = 0;
 
     /*!
+     * \brief Truncate file to specified size
+     *
+     * \param size Size of truncate at (from the beginning of the file)
+     *
+     * \return True if successful. Otherwise, false if an error occurs with the
+     *         error set appropriately.
+     */
+    virtual bool truncate(uint64_t size) = 0;
+
+    /*!
      * \brief Get the error code
      *
      * \note: This value is valid only if the return value of another function

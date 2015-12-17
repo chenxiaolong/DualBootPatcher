@@ -23,6 +23,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include <unistd.h>
+
 namespace io
 {
 namespace posix
@@ -184,6 +186,18 @@ bool FilePosix::seek(int64_t offset, int origin)
 
     int ret = fseeko64(m_impl->fp, offset, whence);
     if (ret < 0) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->errnoCode = errno;
+        m_impl->errnoString = strerror(errno);
+        return false;
+    }
+
+    return true;
+}
+
+bool FilePosix::truncate(uint64_t size)
+{
+    if (ftruncate64(fileno(m_impl->fp), size) < 0) {
         m_impl->error = ErrorPlatformError;
         m_impl->errnoCode = errno;
         m_impl->errnoString = strerror(errno);
