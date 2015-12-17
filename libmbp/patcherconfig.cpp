@@ -500,6 +500,22 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setExtraBlockDevs({ ZERO_RADIO });
     devices.push_back(device);
 
+    // Samsung Galaxy Note 2
+    device = new Device();
+    device->setId("t0lte");
+    device->setCodenames({ "t0lte", "t0lteatt", "t0ltecan", "t0ltelgt",
+                           /* "t0ltespr", */ "t0ltetmo", /* t0lteusc, */
+                           "t0ltevzw" });
+    device->setName("Samsung Galaxy Note 3");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p13" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p12" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p16" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p8" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p9" });
+    device->setExtraBlockDevs({ DWMMC_RADIO });
+    devices.push_back(device);
+
     // Samsung Galaxy Note 3 (Snapdragon)
     device = new Device();
     device->setId("hlte");
