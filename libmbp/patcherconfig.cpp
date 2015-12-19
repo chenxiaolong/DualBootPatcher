@@ -201,6 +201,13 @@ std::vector<Device *> PatcherConfig::devices() const
     return m_impl->devices;
 }
 
+#define BLOCK_BASE_DIR          "/dev/block/by-name"
+#define BLOCK_BOOT              BLOCK_BASE_DIR "/boot"
+#define BLOCK_CACHE             BLOCK_BASE_DIR "/cache"
+#define BLOCK_DATA              BLOCK_BASE_DIR "/data"
+#define BLOCK_RECOVERY          BLOCK_BASE_DIR "/recovery"
+#define BLOCK_SYSTEM            BLOCK_BASE_DIR "/system"
+
 #define BOOTDEVICE_BASE_DIR     "/dev/block/bootdevice/by-name"
 #define BOOTDEVICE_BOOT         BOOTDEVICE_BASE_DIR "/boot"
 #define BOOTDEVICE_CACHE        BOOTDEVICE_BASE_DIR "/cache"
@@ -844,12 +851,16 @@ void PatcherConfig::Impl::addAsusDevices()
     device->setCodenames({ "Z00A" });
     device->setName("ASUS ZenFone 2");
     device->setArchitecture(ARCH_X86);
-    device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR });
-    device->setSystemBlockDevs({ INTEL_PCI_SYSTEM_2, "/dev/block/mmcblk0p18" });
-    device->setCacheBlockDevs({ INTEL_PCI_CACHE_2, "/dev/block/mmcblk0p15" });
-    device->setDataBlockDevs({ INTEL_PCI_DATA_2, "/dev/block/mmcblk0p19" });
-    device->setBootBlockDevs({ INTEL_PCI_BOOT_2, "/dev/block/mmcblk0p1" });
-    device->setRecoveryBlockDevs({ INTEL_PCI_RECOVERY_2,
+    device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR, BLOCK_BASE_DIR });
+    device->setSystemBlockDevs({ INTEL_PCI_SYSTEM_2, BLOCK_SYSTEM,
+                                 "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ INTEL_PCI_CACHE_2, BLOCK_CACHE,
+                                "/dev/block/mmcblk0p15" });
+    device->setDataBlockDevs({ INTEL_PCI_DATA_2, BLOCK_DATA,
+                               "/dev/block/mmcblk0p19" });
+    device->setBootBlockDevs({ INTEL_PCI_BOOT_2, BLOCK_BOOT,
+                               "/dev/block/mmcblk0p1" });
+    device->setRecoveryBlockDevs({ INTEL_PCI_RECOVERY_2, BLOCK_RECOVERY,
                                    "/dev/block/mmcblk0p2" });
     devices.push_back(device);
 }
