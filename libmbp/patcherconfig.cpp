@@ -1187,6 +1187,20 @@ void PatcherConfig::Impl::addSonyDevices()
     device->setDataBlockDevs({ "/dev/block/mmcblk0p11" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
     devices.push_back(device);
+    
+    // Sony Xperia Z1
+    device = new Device();
+    device->setId("honami");
+    device->setCodenames({ "honami", "C6903", "C6902", "C6906", "C6943" });
+    device->setName("Sony Xperia Z1");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_RPM, QCOM_SBL1, QCOM_TZ });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p16" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::loadDefaultDevices()
