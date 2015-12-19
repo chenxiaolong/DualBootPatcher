@@ -29,6 +29,11 @@ do_umount() {
     exit 0
 }
 
+do_reboot() {
+    echo "reboot command disabled in chroot environment" >&2
+    exit 0
+}
+
 argv0="${0##*/}"
 tool=""
 
@@ -42,6 +47,7 @@ fi
 case "${tool}" in
     mount) do_mount "${@}" ;;
     umount) do_umount "${@}" ;;
+    reboot) do_reboot "${@}" ;;
 esac
 
 exec /sbin/busybox_orig "${tool}" "${@}"
