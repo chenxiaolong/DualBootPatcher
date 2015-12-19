@@ -967,6 +967,18 @@ void PatcherConfig::Impl::addLgDevices()
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
                                    "/dev/block/mmcblk0p39" });
     devices.push_back(device);
+
+    // LG L3 II
+    device = new Device();
+    device->setId("vee3");
+    device->setCodenames({ "vee3", "vee3e", "vee3ds", "E425", "E430", "E431", "E435" });
+    device->setName("LG L3 II");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addMotorolaDevices()
