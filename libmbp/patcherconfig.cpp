@@ -67,6 +67,7 @@ public:
 #endif
 
     void addSamsungDevices();
+    void addAsusDevices();
     void addLenovoDevices();
     void addLgDevices();
     void addMotorolaDevices();
@@ -296,10 +297,15 @@ std::vector<Device *> PatcherConfig::devices() const
 
 #define INTEL_PCI_BASE_DIR      "/dev/block/pci/pci0000:00/0000:00:01.0/by-name"
 #define INTEL_PCI_BOOT          INTEL_PCI_BASE_DIR "/BOOT"
+#define INTEL_PCI_BOOT_2        INTEL_PCI_BASE_DIR "/boot"
 #define INTEL_PCI_CACHE         INTEL_PCI_BASE_DIR "/CACHE"
+#define INTEL_PCI_CACHE_2       INTEL_PCI_BASE_DIR "/cache"
+#define INTEL_PCI_DATA_2        INTEL_PCI_BASE_DIR "/data"
 #define INTEL_PCI_RADIO         INTEL_PCI_BASE_DIR "/RADIO"
 #define INTEL_PCI_RECOVERY      INTEL_PCI_BASE_DIR "/RECOVERY"
+#define INTEL_PCI_RECOVERY_2    INTEL_PCI_BASE_DIR "/recovery"
 #define INTEL_PCI_SYSTEM        INTEL_PCI_BASE_DIR "/SYSTEM"
+#define INTEL_PCI_SYSTEM_2      INTEL_PCI_BASE_DIR "/system"
 #define INTEL_PCI_USERDATA      INTEL_PCI_BASE_DIR "/USERDATA"
 
 void PatcherConfig::Impl::addSamsungDevices()
@@ -825,6 +831,26 @@ void PatcherConfig::Impl::addSamsungDevices()
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices.push_back(device);
+}
+
+void PatcherConfig::Impl::addAsusDevices()
+{
+    Device *device;
+
+    // ASUS ZenFone 2
+    device = new Device();
+    device->setId("Z00A");
+    device->setCodenames({ "Z00A" });
+    device->setName("ASUS ZenFone 2");
+    device->setArchitecture(ARCH_X86);
+    device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR });
+    device->setSystemBlockDevs({ INTEL_PCI_SYSTEM_2, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ INTEL_PCI_CACHE_2, "/dev/block/mmcblk0p15" });
+    device->setDataBlockDevs({ INTEL_PCI_DATA_2, "/dev/block/mmcblk0p19" });
+    device->setBootBlockDevs({ INTEL_PCI_BOOT_2, "/dev/block/mmcblk0p1" });
+    device->setRecoveryBlockDevs({ INTEL_PCI_RECOVERY_2,
+                                   "/dev/block/mmcblk0p2" });
     devices.push_back(device);
 }
 
