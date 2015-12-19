@@ -331,14 +331,6 @@ bool Installer::create_chroot()
     }
 #endif
 
-    // Screw Mediatek
-    struct stat sb;
-    if (stat("/proc/dumchar_info", &sb) == 0) {
-        std::string dumchar_info(in_chroot("/proc/dumchar_info"));
-        util::mkdir_parent(dumchar_info, 0644);
-        log_mount("/proc/dumchar_info", dumchar_info.c_str(), "", MS_BIND, "");
-    }
-
     util::create_empty_file(in_chroot("/.chroot"));
 
     return true;
