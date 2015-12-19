@@ -295,6 +295,9 @@ bool Installer::create_chroot()
         return false;
     }
 
+    // Remove reboot binary
+    remove(in_chroot("/sbin/reboot").c_str());
+
     // Don't create unnecessary special files in /dev to avoid install scripts
     // from overwriting partitions
     if (log_mknod(in_chroot("/dev/console").c_str(), S_IFCHR | 0644, makedev(5, 1)) < 0
