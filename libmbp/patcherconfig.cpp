@@ -987,6 +987,19 @@ void PatcherConfig::Impl::addMotorolaDevices()
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices.push_back(device);
 
+    // Motorola Moto E (1st gen)
+    device = new Device();
+    device->setId("condor");
+    device->setCodenames({ "condor", "condor_umts", "condor_umtsds", "xt1022", "xt1021", "xt1023" });
+    device->setName("Motorola Moto E (1st gen)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p33" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p36" });    
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p31" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
+    devices.push_back(device);
+
     // Motorola Moto X (2013)
     device = new Device();
     device->setId("ghost");
