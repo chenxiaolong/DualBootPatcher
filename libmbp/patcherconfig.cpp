@@ -1163,6 +1163,7 @@ void PatcherConfig::Impl::addSonyDevices()
 void PatcherConfig::Impl::loadDefaultDevices()
 {
     addSamsungDevices();
+    addAsusDevices();
     addLenovoDevices();
     addLgDevices();
     addMotorolaDevices();
