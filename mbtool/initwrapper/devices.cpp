@@ -144,8 +144,9 @@ static void add_platform_device(const char *path)
  * platform device prefix.  If it doesn't start with a platform device, return
  * 0.
  */
-static struct platform_node * find_platform_device(const char *path)
+static std::vector<struct platform_node *> find_platform_devices(const char *path)
 {
+    std::vector<struct platform_node *> nodes;
     int path_len = strlen(path);
 
     for (auto it = platform_names.rbegin(); it != platform_names.rend(); ++it) {
@@ -153,11 +154,12 @@ static struct platform_node * find_platform_device(const char *path)
 
         if ((bus.path_len < path_len) &&
                 (path[bus.path_len] == '/') &&
-                strncmp(path, bus.path, bus.path_len) == 0)
-            return &bus;
+                strncmp(path, bus.path, bus.path_len) == 0) {
+            nodes.push_back(&bus);
+        }
     }
 
-    return nullptr;
+    return nodes;
 }
 
 static void remove_platform_device(const char *path)
@@ -293,42 +295,44 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
     const char *parent;
     char *slash;
     int width;
-    struct platform_node *pdev;
+    std::vector<struct platform_node *> pdevs;
 
-    pdev = find_platform_device(uevent->path);
-    if (!pdev) {
+    pdevs = find_platform_devices(uevent->path);
+    if (pdevs.empty()) {
         return {};
     }
 
     std::vector<std::string> links;
 
-    // Skip "/devices/platform/<driver>"
-    parent = strchr(uevent->path + pdev->path_len, '/');
-    if (!parent) {
-        return {};
-    }
+    for (struct platform_node *pdev : pdevs) {
+        // Skip "/devices/platform/<driver>"
+        parent = strchr(uevent->path + pdev->path_len, '/');
+        if (!parent) {
+            continue;
+        }
 
-    if (strncmp(parent, "/usb", 4) == 0) {
-        // Skip root hub name and device. use device interface
-        while (*++parent && *parent != '/');
-        if (*parent) {
+        if (strncmp(parent, "/usb", 4) == 0) {
+            // Skip root hub name and device. use device interface
             while (*++parent && *parent != '/');
-        }
-        if (!*parent) {
-            return {};
-        }
-        slash = strchr(++parent, '/');
-        if (!slash) {
-            return {};
-        }
-        width = slash - parent;
-        if (width <= 0) {
-            return {};
-        }
+            if (*parent) {
+                while (*++parent && *parent != '/');
+            }
+            if (!*parent) {
+                continue;
+            }
+            slash = strchr(++parent, '/');
+            if (!slash) {
+                continue;
+            }
+            width = slash - parent;
+            if (width <= 0) {
+                continue;
+            }
 
-        links.push_back(mb::util::format(
-                "/dev/usb/%s%.*s", uevent->subsystem, width, parent));
-        mkdir("/dev/usb", 0755);
+            links.push_back(mb::util::format(
+                    "/dev/usb/%s%.*s", uevent->subsystem, width, parent));
+            mkdir("/dev/usb", 0755);
+        }
     }
 
     return links;
@@ -337,58 +341,65 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
 static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 {
     const char *device;
-    struct platform_node *pdev;
+    std::vector<struct platform_node *> pdevs;
     char *slash;
     const char *type;
     char buf[256];
     char link_path[256];
     char *p;
 
-    pdev = find_platform_device(uevent->path);
-    if (pdev) {
-        device = pdev->name;
-        type = "platform";
-    } else if (find_pci_device_prefix(uevent->path, buf, sizeof(buf)) == 0) {
-        device = buf;
-        type = "pci";
-    } else {
-        return {};
-    }
+    pdevs = find_platform_devices(uevent->path);
 
     std::vector<std::string> links;
 
-#if UEVENT_LOGGING
-    LOGD("Found %s device %s", type, device);
-#endif
-
-    snprintf(link_path, sizeof(link_path), "/dev/block/%s/%s", type, device);
-
-    if (uevent->partition_name) {
-        p = strdup(uevent->partition_name);
-        sanitize(p);
-        if (strcmp(uevent->partition_name, p) != 0) {
-#if UEVENT_LOGGING
-            LOGV("Linking partition '%s' as '%s'", uevent->partition_name, p);
-#endif
+    for (struct platform_node *pdev : pdevs) {
+        if (pdev) {
+            device = pdev->name;
+            type = "platform";
+        } else if (find_pci_device_prefix(
+                uevent->path, buf, sizeof(buf)) == 0) {
+            device = buf;
+            type = "pci";
+        } else {
+            continue;
         }
-        links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
-        links.push_back(mb::util::format("/dev/block/bootdevice/by-name/%s", p));
-        free(p);
-    }
 
-    if (uevent->partition_num >= 0) {
-        links.push_back(mb::util::format(
-                "%s/by-num/p%d", link_path, uevent->partition_num));
-        links.push_back(mb::util::format(
-                "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
-    }
+#if UEVENT_LOGGING
+        LOGD("Found %s device %s", type, device);
+#endif
 
-    slash = strrchr(uevent->path, '/');
-    links.push_back(mb::util::format("%s/%s", link_path, slash + 1));
+        snprintf(link_path, sizeof(link_path),
+                 "/dev/block/%s/%s", type, device);
 
-    if (pdev && bootdevice[0] != '\0' && strstr(device, bootdevice)) {
-        // Create bootdevice symlink for platform boot stroage device
-        make_link_init(link_path, "/dev/block/bootdevice");
+        if (uevent->partition_name) {
+            p = strdup(uevent->partition_name);
+            sanitize(p);
+            if (strcmp(uevent->partition_name, p) != 0) {
+#if UEVENT_LOGGING
+                LOGV("Linking partition '%s' as '%s'",
+                     uevent->partition_name, p);
+#endif
+            }
+            links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
+            links.push_back(mb::util::format(
+                    "/dev/block/bootdevice/by-name/%s", p));
+            free(p);
+        }
+
+        if (uevent->partition_num >= 0) {
+            links.push_back(mb::util::format(
+                    "%s/by-num/p%d", link_path, uevent->partition_num));
+            links.push_back(mb::util::format(
+                    "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
+        }
+
+        slash = strrchr(uevent->path, '/');
+        links.push_back(mb::util::format("%s/%s", link_path, slash + 1));
+
+        if (pdev && bootdevice[0] != '\0' && strstr(device, bootdevice)) {
+            // Create bootdevice symlink for platform boot stroage device
+            make_link_init(link_path, "/dev/block/bootdevice");
+        }
     }
 
     return links;
