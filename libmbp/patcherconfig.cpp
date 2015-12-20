@@ -967,6 +967,30 @@ void PatcherConfig::Impl::addLgDevices()
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
                                    "/dev/block/mmcblk0p39" });
     devices.push_back(device);
+
+    // LG L3 II
+    device = new Device();
+    device->setId("vee3");
+    device->setCodenames({ "vee3", "vee3ds", "E425", "E430", "E431", "E435" });
+    device->setName("LG L3 II");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17" });
+    devices.push_back(device);
+
+    // LG L5
+    device = new Device();
+    device->setId("m4");
+    device->setCodenames({ "m4", "E610", "E612", "E617" });
+    device->setName("LG L5");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addMotorolaDevices()
@@ -1015,19 +1039,6 @@ void PatcherConfig::Impl::addMotorolaDevices()
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p33" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices.push_back(device);
-
-    // Motorola Nexus 6
-    device = new Device();
-    device->setId("shamu");
-    device->setCodenames({ "shamu" });
-    device->setName("Motorola Nexus 6");
-    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p41" });
-    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p38" });
-    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p42" });
-    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p37" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p35" });
-    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addNexusDevices()
@@ -1060,6 +1071,19 @@ void PatcherConfig::Impl::addNexusDevices()
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
                                 QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    devices.push_back(device);
+
+    // Google/Motorola Nexus 6
+    device = new Device();
+    device->setId("shamu");
+    device->setCodenames({ "shamu" });
+    device->setName("Google/Motorola Nexus 6");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p41" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p38" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p42" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p37" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p35" });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2012 Wifi)
