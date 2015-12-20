@@ -979,6 +979,18 @@ void PatcherConfig::Impl::addLgDevices()
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17" });
     devices.push_back(device);
+
+    // LG L5
+    device = new Device();
+    device->setId("m4");
+    device->setCodenames({ "m4", "E610", "E612", "E617" });
+    device->setName("LG L5");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17" });
+    devices.push_back(device);
 }
 
 void PatcherConfig::Impl::addMotorolaDevices()
