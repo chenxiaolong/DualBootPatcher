@@ -995,7 +995,7 @@ void PatcherConfig::Impl::addMotorolaDevices()
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p33" });
-    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p36" });    
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p36" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p31" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices.push_back(device);
@@ -1060,6 +1060,26 @@ void PatcherConfig::Impl::addNexusDevices()
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
                                 QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    devices.push_back(device);
+
+    // Google/LG Nexus 5X
+    device = new Device();
+    device->setId("bullhead");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setCodenames({ "bullhead" });
+    device->setName("Google/LG Nexus 5X");
+    device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR,
+                                  BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SOC0_SYSTEM, BOOTDEVICE_SYSTEM,
+                                 "/dev/block/mmcblk0p41" });
+    device->setCacheBlockDevs({ F9824900_SOC0_CACHE, BOOTDEVICE_CACHE,
+                                "/dev/block/mmcblk0p40" });
+    device->setDataBlockDevs({ F9824900_SOC0_USERDATA, BOOTDEVICE_USERDATA,
+                               "/dev/block/mmcblk0p45" });
+    device->setBootBlockDevs({ F9824900_SOC0_BOOT, BOOTDEVICE_BOOT,
+                               "/dev/block/mmcblk0p37" });
+    device->setRecoveryBlockDevs({ F9824900_SOC0_RECOVERY, BOOTDEVICE_RECOVERY,
+                                   "/dev/block/mmcblk0p38" });
     devices.push_back(device);
 
     // Google/ASUS Nexus 7 (2012 Wifi)
