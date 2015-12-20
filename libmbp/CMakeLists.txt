@@ -18,11 +18,10 @@ configure_file(
 )
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
-set(MBP_SOURCES
+set(MBP_CORE_SOURCES
     bootimage.cpp
     cpiofile.cpp
     device.cpp
-    fileinfo.cpp
     patcherconfig.cpp
     private/fileutils.cpp
     private/logging.cpp
@@ -35,16 +34,33 @@ set(MBP_SOURCES
     bootimage/lokipatcher.cpp
     bootimage/mtkformat.cpp
     bootimage/sonyelfformat.cpp
-    edify/tokenizer.cpp
-    # C wrapper API
     cwrapper/cbootimage.cpp
     cwrapper/ccommon.cpp
     cwrapper/ccpiofile.cpp
     cwrapper/cdevice.cpp
-    cwrapper/cfileinfo.cpp
     cwrapper/cpatcherconfig.cpp
-    cwrapper/cpatcherinterface.cpp
     cwrapper/private/util.cpp
+    external/sha.cpp
+)
+
+set(MBP_DEVICE_SOURCES
+    devices/asus.cpp
+    devices/huawei.cpp
+    devices/lenovo.cpp
+    devices/lg.cpp
+    devices/motorola.cpp
+    devices/nexus.cpp
+    devices/oneplus.cpp
+    devices/samsung.cpp
+    devices/sony.cpp
+)
+
+set(MBP_PATCHER_SOURCES
+    fileinfo.cpp
+    edify/tokenizer.cpp
+    # C wrapper API
+    cwrapper/cfileinfo.cpp
+    cwrapper/cpatcherinterface.cpp
     # Autopatchers
     autopatchers/standardpatcher.cpp
     autopatchers/xposedpatcher.cpp
@@ -55,7 +71,12 @@ set(MBP_SOURCES
     ramdiskpatchers/core.cpp
     ramdiskpatchers/default.cpp
     ramdiskpatchers/pepper.cpp
-    external/sha.cpp
+)
+
+set(MBP_SOURCES
+    ${MBP_CORE_SOURCES}
+    ${MBP_DEVICE_SOURCES}
+    ${MBP_PATCHER_SOURCES}
 )
 
 # If we're building for Android, then compile with ndk-build since it can easily
@@ -150,28 +171,8 @@ endif()
 ################################################################################
 
 set(MBP_MINI_SOURCES
-    bootimage.cpp
-    cpiofile.cpp
-    device.cpp
-    patcherconfig.cpp
-    private/fileutils.cpp
-    private/logging.cpp
-    private/stringutils.cpp
-    cwrapper/cbootimage.cpp
-    cwrapper/ccommon.cpp
-    cwrapper/ccpiofile.cpp
-    cwrapper/cdevice.cpp
-    cwrapper/cpatcherconfig.cpp
-    cwrapper/private/util.cpp
-    bootimage/androidformat.cpp
-    bootimage/bumpformat.cpp
-    bootimage/bumppatcher.cpp
-    bootimage/fileformat.cpp
-    bootimage/lokiformat.cpp
-    bootimage/lokipatcher.cpp
-    bootimage/mtkformat.cpp
-    bootimage/sonyelfformat.cpp
-    external/sha.cpp
+    ${MBP_CORE_SOURCES}
+    ${MBP_DEVICE_SOURCES}
 )
 
 # Wordaround semicolon separated list issue
