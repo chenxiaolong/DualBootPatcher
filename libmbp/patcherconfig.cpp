@@ -971,7 +971,7 @@ void PatcherConfig::Impl::addLgDevices()
     // LG L3 II
     device = new Device();
     device->setId("vee3");
-    device->setCodenames({ "vee3", "vee3e", "vee3ds", "E425", "E430", "E431", "E435" });
+    device->setCodenames({ "vee3", "vee3ds", "E425", "E430", "E431", "E435" });
     device->setName("LG L3 II");
     device->setSystemBlockDevs({ "/dev/block/mmcblk0p14" });
     device->setCacheBlockDevs({ "/dev/block/mmcblk0p16" });
