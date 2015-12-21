@@ -114,6 +114,18 @@ void addLgDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
     devices->push_back(device);
+
+    // LG L7
+    device = new Device();
+    device->setId("u0");
+    device->setCodenames({ "u0", "p700", "p705", "p708", "P700", "P705", "P708" });
+    device->setName("LG L7");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    devices->push_back(device);
 }
 
 }
