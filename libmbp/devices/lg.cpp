@@ -89,6 +89,31 @@ void addLgDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
                                    "/dev/block/mmcblk0p39" });
     devices->push_back(device);
+
+    // LG L3 II
+    device = new Device();
+    device->setId("vee3");
+    device->setCodenames({ "vee3", "vee3ds", "e425", "e430", "e431", "e435",
+                           "E425", "E430", "E431", "E435" });
+    device->setName("LG L3 II");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    devices->push_back(device);
+
+    // LG L5
+    device = new Device();
+    device->setId("m4");
+    device->setCodenames({ "m4", "e610", "e612", "e617", "E610", "E612", "E617" });
+    device->setName("LG L5");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    devices->push_back(device);
 }
 
 }
