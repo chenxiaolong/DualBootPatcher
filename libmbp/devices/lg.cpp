@@ -24,7 +24,7 @@
 namespace mbp
 {
 
-void addLgDevices(std::vector<Device *> *devices)
+void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
@@ -89,6 +89,11 @@ void addLgDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
                                    "/dev/block/mmcblk0p39" });
     devices->push_back(device);
+}
+
+void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
+{
+    Device *device;
 
     // LG L3 II
     device = new Device();
@@ -139,6 +144,12 @@ void addLgDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
     devices->push_back(device);
+}
+
+void addLgDevices(std::vector<Device *> *devices)
+{
+    addLgOptimusGSeriesPhones(devices);
+    addLgOptimusLSeriesPhones(devices);
 }
 
 }
