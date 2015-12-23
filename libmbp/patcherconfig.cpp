@@ -41,6 +41,7 @@
 #include "devices/oneplus.h"
 #include "devices/samsung.h"
 #include "devices/sony.h"
+#include "devices/xiaomi.h"
 
 // Patchers
 #ifndef LIBMBP_MINI
@@ -214,6 +215,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     addNexusDevices(&devices);
     addOnePlusDevices(&devices);
     addSonyDevices(&devices);
+    addXiaomiDevices(&devices);
 }
 
 #ifndef LIBMBP_MINI
