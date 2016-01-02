@@ -28,7 +28,8 @@ class FileInfo::Impl
 {
 public:
     Device *device;
-    std::string filename;
+    std::string inputPath;
+    std::string outputPath;
     std::string romId;
 };
 /*! \endcond */
@@ -59,9 +60,9 @@ FileInfo::~FileInfo()
  *
  * \return File path
  */
-std::string FileInfo::filename() const
+std::string FileInfo::inputPath() const
 {
-    return m_impl->filename;
+    return m_impl->inputPath;
 }
 
 /*!
@@ -69,9 +70,19 @@ std::string FileInfo::filename() const
  *
  * \param path File path
  */
-void FileInfo::setFilename(std::string path)
+void FileInfo::setInputPath(std::string path)
 {
-    m_impl->filename = std::move(path);
+    m_impl->inputPath = std::move(path);
+}
+
+std::string FileInfo::outputPath() const
+{
+    return m_impl->outputPath;
+}
+
+void FileInfo::setOutputPath(std::string path)
+{
+    m_impl->outputPath = std::move(path);
 }
 
 /*!

@@ -35,8 +35,11 @@ public:
     explicit FileInfo();
     ~FileInfo();
 
-    std::string filename() const;
-    void setFilename(std::string path);
+    std::string inputPath() const;
+    void setInputPath(std::string path);
+
+    std::string outputPath() const;
+    void setOutputPath(std::string path);
 
     Device * device() const;
     void setDevice(Device * const device);

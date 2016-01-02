@@ -79,12 +79,12 @@ void mbp_fileinfo_destroy(CFileInfo *info)
  *
  * \return File path
  *
- * \sa FileInfo::filename()
+ * \sa FileInfo::inputPath()
  */
-char * mbp_fileinfo_filename(const CFileInfo *info)
+char * mbp_fileinfo_input_path(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->filename());
+    return string_to_cstring(fi->inputPath());
 }
 
 /*!
@@ -93,12 +93,24 @@ char * mbp_fileinfo_filename(const CFileInfo *info)
  * \param info CFileInfo object
  * \param path File path
  *
- * \sa FileInfo::setFilename()
+ * \sa FileInfo::setInputPath()
  */
-void mbp_fileinfo_set_filename(CFileInfo *info, const char *path)
+void mbp_fileinfo_set_input_path(CFileInfo *info, const char *path)
 {
     CAST(info);
-    fi->setFilename(path);
+    fi->setInputPath(path);
+}
+
+char * mbp_fileinfo_output_path(const CFileInfo *info)
+{
+    CCAST(info);
+    return string_to_cstring(fi->outputPath());
+}
+
+void mbp_fileinfo_set_output_path(CFileInfo *info, const char *path)
+{
+    CAST(info);
+    fi->setOutputPath(path);
 }
 
 /*!

@@ -44,8 +44,6 @@ public:
     // Patching
     virtual void setFileInfo(const FileInfo * const info) override;
 
-    virtual std::string newFilePath() override;
-
     virtual bool patchFile(ProgressUpdatedCallback progressCb,
                            FilesUpdatedCallback filesCb,
                            DetailsUpdatedCallback detailsCb,

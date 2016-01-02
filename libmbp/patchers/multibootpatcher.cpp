@@ -127,18 +127,6 @@ void MultiBootPatcher::setFileInfo(const FileInfo * const info)
     m_impl->info = info;
 }
 
-std::string MultiBootPatcher::newFilePath()
-{
-    assert(m_impl->info != nullptr);
-
-    // Insert ROM ID before ".zip"
-    std::string path(m_impl->info->filename());
-    path.insert(path.size() - 4, "_");
-    path.insert(path.size() - 4, m_impl->info->romId());
-
-    return path;
-}
-
 void MultiBootPatcher::cancelPatching()
 {
     m_impl->cancelled = true;
@@ -152,11 +140,6 @@ bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
     m_impl->cancelled = false;
 
     assert(m_impl->info != nullptr);
-
-    if (!StringUtils::iends_with(m_impl->info->filename(), ".zip")) {
-        m_impl->error = ErrorCode::OnlyZipSupported;
-        return false;
-    }
 
     m_impl->progressCb = progressCb;
     m_impl->filesCb = filesCb;
@@ -303,7 +286,7 @@ bool MultiBootPatcher::Impl::patchZip()
     if (cancelled) return false;
 
     FileUtils::ArchiveStats stats;
-    auto result = FileUtils::mzArchiveStats(info->filename(), &stats,
+    auto result = FileUtils::mzArchiveStats(info->inputPath(), &stats,
                                             std::vector<std::string>());
     if (result != ErrorCode::NoError) {
         error = result;
@@ -563,11 +546,11 @@ bool MultiBootPatcher::Impl::openInputArchive()
 {
     assert(zInput == nullptr);
 
-    zInput = FileUtils::mzOpenInputFile(info->filename());
+    zInput = FileUtils::mzOpenInputFile(info->inputPath());
 
     if (!zInput) {
         FLOGE("minizip: Failed to open for reading: %s",
-              info->filename().c_str());
+              info->inputPath().c_str());
         error = ErrorCode::ArchiveReadOpenError;
         return false;
     }
@@ -591,12 +574,11 @@ bool MultiBootPatcher::Impl::openOutputArchive()
 {
     assert(zOutput == nullptr);
 
-    const std::string newPath = m_parent->newFilePath();
-
-    zOutput = FileUtils::mzOpenOutputFile(newPath);
+    zOutput = FileUtils::mzOpenOutputFile(info->outputPath());
 
     if (!zOutput) {
-        FLOGE("minizip: Failed to open for writing: %s", newPath.c_str());
+        FLOGE("minizip: Failed to open for writing: %s",
+              info->outputPath().c_str());
         error = ErrorCode::ArchiveWriteOpenError;
         return false;
     }

@@ -36,8 +36,6 @@ namespace mbp
 class MbtoolUpdater::Impl
 {
 public:
-    Impl(MbtoolUpdater *parent) : m_parent(parent) {}
-
     PatcherConfig *pc;
     const FileInfo *info;
 
@@ -45,9 +43,6 @@ public:
 
     bool patchImage();
     void patchInitRc(CpioFile *cpio);
-
-private:
-    MbtoolUpdater *m_parent;
 };
 /*! \endcond */
 
@@ -56,7 +51,7 @@ const std::string MbtoolUpdater::Id("MbtoolUpdater");
 
 
 MbtoolUpdater::MbtoolUpdater(PatcherConfig * const pc)
-    : m_impl(new Impl(this))
+    : m_impl(new Impl())
 {
     m_impl->pc = pc;
 }
@@ -80,17 +75,6 @@ void MbtoolUpdater::setFileInfo(const FileInfo * const info)
     m_impl->info = info;
 }
 
-std::string MbtoolUpdater::newFilePath()
-{
-    assert(m_impl->info != nullptr);
-
-    // Insert "_patched" before ".img"/".lok"
-    std::string path(m_impl->info->filename());
-    path.insert(path.size() - 4, "_patched");
-
-    return path;
-}
-
 void MbtoolUpdater::cancelPatching()
 {
     // Ignore. This runs fast enough that canceling is not needed
@@ -108,21 +92,13 @@ bool MbtoolUpdater::patchFile(ProgressUpdatedCallback progressCb,
 
     assert(m_impl->info != nullptr);
 
-    bool isImg = StringUtils::iends_with(m_impl->info->filename(), ".img");
-    bool isLok = StringUtils::iends_with(m_impl->info->filename(), ".lok");
-
-    if (!isImg && !isLok) {
-        m_impl->error = ErrorCode::OnlyBootImageSupported;
-        return false;
-    }
-
     return m_impl->patchImage();
 }
 
 bool MbtoolUpdater::Impl::patchImage()
 {
     BootImage bi;
-    if (!bi.loadFile(info->filename())) {
+    if (!bi.loadFile(info->inputPath())) {
         error = bi.error();
         return false;
     }
@@ -172,7 +148,7 @@ bool MbtoolUpdater::Impl::patchImage()
     }
     bi.setRamdiskImage(std::move(newRamdisk));
 
-    if (!bi.createFile(m_parent->newFilePath())) {
+    if (!bi.createFile(info->outputPath())) {
         error = bi.error();
         return false;
     }

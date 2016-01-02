@@ -144,20 +144,6 @@ void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info)
 }
 
 /*!
- * \brief The path of the newly patched file
- *
- * \param patcher CPatcher object
- * \return Path to new file
- *
- * \sa Patcher::newFilePath()
- */
-char * mbp_patcher_new_file_path(CPatcher *patcher)
-{
-    CASTP(patcher);
-    return string_to_cstring(p->newFilePath());
-}
-
-/*!
  * \brief Start patching the file
  *
  * \param patcher CPatcher object
