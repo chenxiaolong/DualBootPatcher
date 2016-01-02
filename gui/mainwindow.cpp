@@ -499,7 +499,14 @@ void MainWindow::startPatching()
     updateWidgetsVisibility();
 
     FileInfoPtr fileInfo = new mbp::FileInfo();
-    fileInfo->setFilename(d->fileName.toUtf8().constData());
+    QFileInfo qfileInfo(d->fileName);
+    QString inputPath(qfileInfo.filePath());
+    QString outputPath(qfileInfo.completeBaseName()
+            % QStringLiteral("_")
+            % QString::fromStdString(d->device->id())
+            % qfileInfo.suffix());
+    fileInfo->setInputPath(inputPath.toUtf8().constData());
+    fileInfo->setOutputPath(outputPath.toUtf8().constData());
     fileInfo->setDevice(d->device);
     QString romId;
     if (d->instLocSel->currentIndex() == d->instLocs.size()) {
@@ -566,10 +573,6 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to close archive");
     case mbp::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case mbp::ErrorCode::OnlyZipSupported:
-        return QObject::tr("Only ZIP files are supported");
-    case mbp::ErrorCode::OnlyBootImageSupported:
-        return QObject::tr("Only boot images are supported");
     case mbp::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
     default:
@@ -614,7 +617,7 @@ void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
                                   &detailsUpdatedCbWrapper,
                                   this);
 
-    QString newFile(QString::fromStdString(patcher->newFilePath()));
+    QString newFile(QString::fromStdString(info->outputPath()));
 
     patcher->setFileInfo(nullptr);
     delete info;
