@@ -40,7 +40,6 @@ import com.sun.jna.ptr.PointerByReference;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 
 // NOTE: Almost no checking of parameters is performed on both the Java and C side of this native
 //       wrapper. As a rule of thumb, don't pass null to any function.
@@ -178,8 +177,10 @@ public class LibMbp {
         // BEGIN: cfileinfo.h
         static native CFileInfo mbp_fileinfo_create();
         static native void mbp_fileinfo_destroy(CFileInfo info);
-        static native Pointer mbp_fileinfo_filename(CFileInfo info);
-        static native void mbp_fileinfo_set_filename(CFileInfo info, String path);
+        static native Pointer mbp_fileinfo_input_path(CFileInfo info);
+        static native void mbp_fileinfo_set_input_path(CFileInfo info, String path);
+        static native Pointer mbp_fileinfo_output_path(CFileInfo info);
+        static native void mbp_fileinfo_set_output_path(CFileInfo info, String path);
         static native CDevice mbp_fileinfo_device(CFileInfo info);
         static native void mbp_fileinfo_set_device(CFileInfo info, CDevice device);
         static native Pointer mbp_fileinfo_rom_id(CFileInfo info);
@@ -223,7 +224,6 @@ public class LibMbp {
         static native /* ErrorCode */ int mbp_patcher_error(CPatcher patcher);
         static native Pointer mbp_patcher_id(CPatcher patcher);
         static native void mbp_patcher_set_fileinfo(CPatcher patcher, CFileInfo info);
-        static native Pointer mbp_patcher_new_file_path(CPatcher patcher);
         static native boolean mbp_patcher_patch_file(CPatcher patcher, ProgressUpdatedCallback progressCb, FilesUpdatedCallback filesCb, DetailsUpdatedCallback detailsCb, Pointer userData);
         static native void mbp_patcher_cancel_patching(CPatcher patcher);
 
@@ -1340,17 +1340,30 @@ public class LibMbp {
             }
         };
 
-        public String getFilename() {
-            validate(mCFileInfo, FileInfo.class, "getFilename");
-            Pointer p = CWrapper.mbp_fileinfo_filename(mCFileInfo);
+        public String getInputPath() {
+            validate(mCFileInfo, FileInfo.class, "getInputPath");
+            Pointer p = CWrapper.mbp_fileinfo_input_path(mCFileInfo);
             return getStringAndFree(p);
         }
 
-        public void setFilename(String path) {
-            validate(mCFileInfo, FileInfo.class, "setFilename", path);
+        public void setInputPath(String path) {
+            validate(mCFileInfo, FileInfo.class, "setInputPath", path);
             ensureNotNull(path);
 
-            CWrapper.mbp_fileinfo_set_filename(mCFileInfo, path);
+            CWrapper.mbp_fileinfo_set_input_path(mCFileInfo, path);
+        }
+
+        public String getOutputPath() {
+            validate(mCFileInfo, FileInfo.class, "getOutputPath");
+            Pointer p = CWrapper.mbp_fileinfo_output_path(mCFileInfo);
+            return getStringAndFree(p);
+        }
+
+        public void setOutputPath(String path) {
+            validate(mCFileInfo, FileInfo.class, "setOutputPath", path);
+            ensureNotNull(path);
+
+            CWrapper.mbp_fileinfo_set_output_path(mCFileInfo, path);
         }
 
         public Device getDevice() {
@@ -1656,12 +1669,6 @@ public class LibMbp {
         public void setFileInfo(FileInfo info) {
             validate(mCPatcher, Patcher.class, "setFileInfo", info);
             CWrapper.mbp_patcher_set_fileinfo(mCPatcher, info.getPointer());
-        }
-
-        public String newFilePath() {
-            validate(mCPatcher, Patcher.class, "newFilePath");
-            Pointer p = CWrapper.mbp_patcher_new_file_path(mCPatcher);
-            return getStringAndFree(p);
         }
 
         public boolean patchFile(final ProgressListener listener) {

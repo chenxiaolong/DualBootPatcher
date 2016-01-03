@@ -20,14 +20,18 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.media.MediaScannerConnection;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.FragmentCompat;
@@ -57,6 +61,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
         .GenericYesNoDialogListener;
@@ -69,6 +74,9 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService.PatcherEve
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,11 +95,22 @@ public class PatchFileFragment extends Fragment implements
             PatchFileFragment.class.getCanonicalName() + ".yes_no.permissions";
     private static final String CONFIRM_DIALOG_PERMISSIONS =
             PatchFileFragment.class.getCanonicalName() + ".confirm.permissions";
+    private static final String PROGRESS_DIALOG_QUERYING_METADATA =
+            PatchFileFragment.class.getCanonicalName() + ".progress.querying_metadata";
 
-    private static final String EXTRA_SELECTED_FILE = "selected_file";
+    private static final String EXTRA_SELECTED_INPUT_URI = "selected_input_file";
+    private static final String EXTRA_SELECTED_OUTPUT_URI = "selected_output_file";
+    private static final String EXTRA_SELECTED_INPUT_FILE_NAME = "selected_input_file_name";
+    private static final String EXTRA_SELECTED_INPUT_FILE_SIZE = "selected_input_file_size";
+    private static final String EXTRA_SELECTED_TASK_ID = "selected_task_id";
+    private static final String EXTRA_SELECTED_DEVICE = "selected_device";
+    private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
+    private static final String EXTRA_QUERYING_METADATA = "querying_metadata";
 
-    /** Request code for file picker (used in {@link #onActivityResult(int, int, Intent)}) */
-    private static final int ACTIVITY_REQUEST_FILE = 1000;
+    /** Request code for choosing input file */
+    private static final int ACTIVITY_REQUEST_INPUT_FILE = 1000;
+    /** Request code for choosing output file */
+    private static final int ACTIVITY_REQUEST_OUTPUT_FILE = 1001;
     /**
      * Request code for storage permissions request
      * (used in {@link #onRequestPermissionsResult(int, String[], int[])})
@@ -140,8 +159,24 @@ public class PatchFileFragment extends Fragment implements
     /** Item touch callback for dragging and swiping */
     DragSwipeItemTouchCallback mItemTouchCallback;
 
-    /** Selected file */
-    private String mSelectedFile;
+    /** Selected input file */
+    private Uri mSelectedInputUri;
+    /** Selected output file */
+    private Uri mSelectedOutputUri;
+    /** Selected input file's name */
+    private String mSelectedInputFileName;
+    /** Selected input file's size */
+    private long mSelectedInputFileSize;
+    /** Task ID of selected patcher item */
+    private int mSelectedTaskId;
+    /** Target device */
+    private Device mSelectedDevice;
+    /** Target ROM ID */
+    private String mSelectedRomId;
+    /** Whether we're querying the URI metadata */
+    private boolean mQueryingMetadata;
+    /** Task for querying the metadata of URIs */
+    private GetUriMetadataTask mQueryMetadataTask;
 
     public static PatchFileFragment newInstance() {
         return new PatchFileFragment();
@@ -165,7 +200,14 @@ public class PatchFileFragment extends Fragment implements
         super.onActivityCreated(savedInstanceState);
 
         if (savedInstanceState != null) {
-            mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
+            mSelectedInputUri = savedInstanceState.getParcelable(EXTRA_SELECTED_INPUT_URI);
+            mSelectedOutputUri = savedInstanceState.getParcelable(EXTRA_SELECTED_OUTPUT_URI);
+            mSelectedInputFileName = savedInstanceState.getString(EXTRA_SELECTED_INPUT_FILE_NAME);
+            mSelectedInputFileSize = savedInstanceState.getLong(EXTRA_SELECTED_INPUT_FILE_SIZE);
+            mSelectedTaskId = savedInstanceState.getInt(EXTRA_SELECTED_TASK_ID);
+            mSelectedDevice = savedInstanceState.getParcelable(EXTRA_SELECTED_DEVICE);
+            mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
+            mQueryingMetadata = savedInstanceState.getBoolean(EXTRA_QUERYING_METADATA);
         }
 
         // Initialize UI elements
@@ -192,7 +234,7 @@ public class PatchFileFragment extends Fragment implements
                 if (PermissionUtils.supportsRuntimePermissions()) {
                     requestPermissions();
                 } else {
-                    selectFile();
+                    selectInputUri();
                 }
             }
         });
@@ -229,7 +271,14 @@ public class PatchFileFragment extends Fragment implements
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
+        outState.putParcelable(EXTRA_SELECTED_INPUT_URI, mSelectedInputUri);
+        outState.putParcelable(EXTRA_SELECTED_OUTPUT_URI, mSelectedOutputUri);
+        outState.putString(EXTRA_SELECTED_INPUT_FILE_NAME, mSelectedInputFileName);
+        outState.putLong(EXTRA_SELECTED_INPUT_FILE_SIZE, mSelectedInputFileSize);
+        outState.putInt(EXTRA_SELECTED_TASK_ID, mSelectedTaskId);
+        outState.putParcelable(EXTRA_SELECTED_DEVICE, mSelectedDevice);
+        outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
+        outState.putBoolean(EXTRA_QUERYING_METADATA, mQueryingMetadata);
     }
 
     /**
@@ -319,6 +368,9 @@ public class PatchFileFragment extends Fragment implements
     public void onStop() {
         super.onStop();
 
+        // Cancel metadata query task
+        cancelQueryUriMetadata();
+
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
             mService.unregisterCallback(mCallback);
@@ -365,15 +417,20 @@ public class PatchFileFragment extends Fragment implements
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-        case ACTIVITY_REQUEST_FILE:
+        case ACTIVITY_REQUEST_INPUT_FILE:
             if (data != null && resultCode == Activity.RESULT_OK) {
-                final String file = FileUtils.getPathFromUri(getActivity(), data.getData());
-                onSelectedFile(file);
+                onSelectedInputUri(data.getData());
             }
             break;
+        case ACTIVITY_REQUEST_OUTPUT_FILE:
+            if (data != null && resultCode == Activity.RESULT_OK) {
+                onSelectedOutputUri(data.getData());
+            }
+            break;
+        default:
+            super.onActivityResult(requestCode, resultCode, data);
+            break;
         }
-
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     /**
@@ -385,7 +442,7 @@ public class PatchFileFragment extends Fragment implements
         switch (requestCode) {
         case PERMISSIONS_REQUEST_STORAGE:
             if (PermissionUtils.verifyPermissions(grantResults)) {
-                selectFile();
+                selectInputUri();
             } else {
                 if (PermissionUtils.shouldShowRationales(this, permissions)) {
                     showPermissionsRationaleDialogYesNo();
@@ -483,7 +540,9 @@ public class PatchFileFragment extends Fragment implements
             PatchFileItem item = new PatchFileItem();
             item.taskId = taskId;
             item.patcherId = mService.getPatcherId(taskId);
-            item.path = mService.getPath(taskId);
+            item.inputUri = mService.getInputUri(taskId);
+            item.outputUri = mService.getOutputUri(taskId);
+            item.displayName = mService.getDisplayName(taskId);
             item.device = mService.getDevice(taskId);
             item.romId = mService.getRomId(taskId);
             item.state = mService.getState(taskId);
@@ -494,7 +553,6 @@ public class PatchFileFragment extends Fragment implements
             item.maxFiles = mService.getMaximumFiles(taskId);
             item.successful = mService.isSuccessful(taskId);
             item.errorCode = mService.getErrorCode(taskId);
-            item.newPath = mService.getNewPath(taskId);
 
             mItems.add(item);
             mItemsMap.put(taskId, mItems.size() - 1);
@@ -511,6 +569,11 @@ public class PatchFileFragment extends Fragment implements
         updateToolbarIcons();
         updateModifiability();
         updateScreenOnState();
+
+        // Resume URI metadata query if it was interrupted
+        if (mQueryingMetadata) {
+            queryUriMetadata();
+        }
     }
 
     private void updateAddZipMessage() {
@@ -605,53 +668,200 @@ public class PatchFileFragment extends Fragment implements
         }
     }
 
-    private void selectFile() {
-        // Show file chooser
-        Intent intent = FileUtils.getFileChooserIntent(getActivity());
-        if (intent == null) {
-            FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
-        } else {
-            startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+    /**
+     * Show activity for selecting an input file
+     *
+     * After the user selects a file, {@link #onSelectedInputUri(Uri)} will be called. If the user
+     * cancels the selection, nothing will happen.
+     *
+     * @see {@link #onSelectedInputUri(Uri)}
+     */
+    private void selectInputUri() {
+        Intent intent = FileUtils.getFileOpenIntent(getActivity());
+        startActivityForResult(intent, ACTIVITY_REQUEST_INPUT_FILE);
+    }
+
+    /**
+     * Show activity for selecting an output file
+     *
+     * After the user confirms the patcher options, this function will be called. Once the user
+     * selects the output filename, {@link #onSelectedOutputUri(Uri)} will be called. If the user
+     * leaves the activity without selecting a file, nothing will happen.
+     *
+     * The specified ROM ID is added to the suggested filename before the file extension. For
+     * example, if the original input filename was "SuperDuperROM-1.0.zip" and the ROM ID is "dual",
+     * then the suggested filename is "SuperDuperROM-1.0_dual.zip".
+     *
+     * @see {@link #onSelectedOutputUri(Uri)}
+     */
+    private void selectOutputFile() {
+        String baseName = FilenameUtils.getBaseName(mSelectedInputFileName);
+        String extension = FilenameUtils.getExtension(mSelectedInputFileName);
+        StringBuilder sb = new StringBuilder();
+        if (baseName != null) {
+            sb.append(baseName);
+            sb.append('_');
+        }
+        sb.append(mSelectedRomId);
+        if (extension != null) {
+            sb.append('.');
+            sb.append(extension);
+        }
+        String desiredName = sb.toString();
+        Intent intent = FileUtils.getFileSaveIntent(desiredName);
+        startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE);
+    }
+
+    /**
+     * Query the metadata for the input file
+     *
+     * After the user selects an input file, this function is called to start the task of retrieving
+     * the file's name and size. Once the information has been retrieved,
+     * {@link #onQueriedMetadata(UriMetadata)} is called.
+     *
+     * @see {@link #onQueriedMetadata(UriMetadata)}
+     */
+    private void queryUriMetadata() {
+        if (mQueryMetadataTask != null) {
+            throw new IllegalStateException("Already querying metadata!");
+        }
+        mQueryMetadataTask = new GetUriMetadataTask();
+        mQueryMetadataTask.execute(mSelectedInputUri);
+
+        // Show progress dialog. Dialog may already exist if a configuration change occurred during
+        // the query (and thus, this function is called again in onReady()).
+        GenericProgressDialog dialog = (GenericProgressDialog)
+                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
+        if (dialog == null) {
+            dialog = GenericProgressDialog.newInstance(0, R.string.please_wait);
+            dialog.show(getFragmentManager(), PROGRESS_DIALOG_QUERYING_METADATA);
+        }
+    }
+
+    /**
+     * Cancel task for querying the input URI metadata
+     *
+     * This function is a no-op if there is no such task.
+     *
+     * @see {@link #onStop()}
+     */
+    private void cancelQueryUriMetadata() {
+        if (mQueryMetadataTask != null) {
+            mQueryMetadataTask.cancel(true);
+            mQueryMetadataTask = null;
         }
     }
 
     /**
      * Called after the user tapped the FAB and selected a file
+     *
+     * This function will call {@link #queryUriMetadata()} to start querying various metadata of the
+     * input URI.
+     *
+     * @see {@link #queryUriMetadata()}
+     *
+     * @param uri Input file's URI
      */
-    private void onSelectedFile(String file) {
-        mSelectedFile = file;
+    private void onSelectedInputUri(@NonNull Uri uri) {
+        mSelectedInputUri = uri;
 
-        // Ask for patcher options
+        queryUriMetadata();
+    }
+
+    /**
+     * Called after the user selects the output file
+     *
+     * This function will call {@link #addOrEditItem()} to either add the new patcher item or edit
+     * the selected item.
+     *
+     * @see {@link #addOrEditItem()}
+     *
+     * @param uri Output file's URI
+     */
+    private void onSelectedOutputUri(@NonNull Uri uri) {
+        mSelectedOutputUri = uri;
+
+        addOrEditItem();
+    }
+
+    /**
+     * Called after the input URI's metadata has been retrieved
+     *
+     * This function will open the patcher options dialog.
+     *
+     * @param metadata URI metadata
+     *
+     * @see {@link #queryUriMetadata()}
+     * @see {@link #showPatcherOptionsDialog(int)}
+     */
+    private void onQueriedMetadata(@NonNull UriMetadata metadata) {
+        GenericProgressDialog dialog = (GenericProgressDialog)
+                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
+        if (dialog != null) {
+            dialog.dismiss();
+        }
+
+        mSelectedInputFileName = metadata.displayName;
+        mSelectedInputFileSize = metadata.size;
+
+        // Open patcher options
         showPatcherOptionsDialog(-1);
     }
 
+    /**
+     * Called after the user confirms the patcher options
+     *
+     * This function will call {@link #selectOutputFile()} for choosing an output file
+     *
+     * @see {@link #selectOutputFile()}
+     *
+     * @param id Task ID (-1 if new item)
+     * @param device Target device
+     * @param romId Target ROM ID
+     */
     @Override
     public void onConfirmedOptions(final int id, final Device device, final String romId) {
-        if (id >= 0) {
+        mSelectedTaskId = id;
+        mSelectedDevice = device;
+        mSelectedRomId = romId;
+
+        selectOutputFile();
+    }
+
+    @Override
+    public void onConfirmYesNo(int id, boolean choice) {
+        if (id == PERMISSIONS_REQUEST_STORAGE) {
+            if (choice) {
+                requestPermissions();
+            }
+        }
+    }
+
+    private void addOrEditItem() {
+        if (mSelectedTaskId >= 0) {
             // Edit existing task
             executeNeedsService(new Runnable() {
                 @Override
                 public void run() {
-                    int index = mItemsMap.get(id);
+                    int index = mItemsMap.get(mSelectedTaskId);
                     PatchFileItem item = mItems.get(index);
-                    item.device = device;
-                    item.romId = romId;
+                    item.device = mSelectedDevice;
+                    item.romId = mSelectedRomId;
                     mAdapter.notifyItemChanged(index);
 
-                    mService.setDevice(id, device);
-                    mService.setRomId(id, romId);
-
+                    mService.setDevice(mSelectedTaskId, mSelectedDevice);
+                    mService.setRomId(mSelectedTaskId, mSelectedRomId);
                 }
             });
             return;
         }
 
-        // Do not allow two patching operations with the same target filename (i.e. same file and
-        // ROM ID)
+        // Do not allow two patching operations with the same output file. This is not completely
+        // foolproof since two URIs can refer to the same target path, but it's the best we can do.
         for (PatchFileItem item : mItems) {
-            if (item.path.equals(mSelectedFile) && item.romId.equals(romId)) {
+            if (item.outputUri.equals(mSelectedOutputUri)) {
                 SnackbarUtils.createSnackbar(getActivity(), mFAB,
-                        getString(R.string.patcher_cannot_add_same_item, romId),
+                        R.string.patcher_cannot_add_same_item,
                         Snackbar.LENGTH_LONG).show();
                 return;
             }
@@ -662,12 +872,15 @@ public class PatchFileFragment extends Fragment implements
             public void run() {
                 final PatchFileItem pf = new PatchFileItem();
                 pf.patcherId = "MultiBootPatcher";
-                pf.device = device;
-                pf.path = mSelectedFile;
-                pf.romId = romId;
+                pf.device = mSelectedDevice;
+                pf.inputUri = mSelectedInputUri;
+                pf.outputUri = mSelectedOutputUri;
+                pf.displayName = mSelectedInputFileName;
+                pf.romId = mSelectedRomId;
                 pf.state = PatchFileState.QUEUED;
 
-                int taskId = mService.addPatchFileTask(pf.patcherId, pf.path, pf.device, pf.romId);
+                int taskId = mService.addPatchFileTask(pf.patcherId, pf.inputUri, pf.outputUri,
+                        pf.displayName, pf.device, pf.romId);
                 pf.taskId = taskId;
 
                 mItems.add(pf);
@@ -677,15 +890,6 @@ public class PatchFileFragment extends Fragment implements
                 updateToolbarIcons();
             }
         });
-    }
-
-    @Override
-    public void onConfirmYesNo(int id, boolean choice) {
-        if (id == PERMISSIONS_REQUEST_STORAGE) {
-            if (choice) {
-                requestPermissions();
-            }
-        }
     }
 
     /**
@@ -791,7 +995,7 @@ public class PatchFileFragment extends Fragment implements
 
         @Override
         public void onPatcherFinished(final int taskId, final boolean cancelled, final boolean ret,
-                                      final int errorCode, final String newPath) {
+                                      final int errorCode) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -807,7 +1011,6 @@ public class PatchFileFragment extends Fragment implements
                         item.details = getString(R.string.details_done);
                         item.successful = ret;
                         item.errorCode = errorCode;
-                        item.newPath = newPath;
 
                         updateToolbarIcons();
                         updateModifiability();
@@ -815,19 +1018,71 @@ public class PatchFileFragment extends Fragment implements
 
                         mAdapter.notifyItemChanged(itemIndex);
 
-                        // Update MTP cache
-                        if (item.successful) {
-                            // TODO: Android has a bug that causes the context to leak!
-                            // TODO: See https://github.com/square/leakcanary/issues/26
-                            MediaScannerConnection.scanFile(getActivity().getApplicationContext(),
-                                    new String[] { item.newPath }, null, null);
-                        }
-
                         //returnResult(ret ? RESULT_PATCHING_SUCCEEDED : RESULT_PATCHING_FAILED,
                         //        "See " + LogUtils.getPath("patch-file.log") + " for details", newPath);
                     }
                 }
             });
+        }
+    }
+
+    private static class UriMetadata {
+        Uri uri;
+        String displayName;
+        long size;
+        String mimeType;
+    }
+
+    /**
+     * Task to query the display name, size, and MIME type of a list of openable URIs.
+     */
+    private class GetUriMetadataTask extends AsyncTask<Uri, Void, UriMetadata[]> {
+        private ContentResolver mCR;
+
+        @Override
+        protected void onPreExecute() {
+            mCR = getActivity().getContentResolver();
+            mQueryingMetadata = true;
+        }
+
+        @Override
+        protected UriMetadata[] doInBackground(Uri... params) {
+            UriMetadata[] metadatas = new UriMetadata[params.length];
+            for (int i = 0; i < metadatas.length; i++) {
+                UriMetadata metadata = new UriMetadata();
+                metadatas[i] = metadata;
+                metadata.uri = params[i];
+                metadata.mimeType = mCR.getType(metadata.uri);
+
+                Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
+                try {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+
+                        metadata.displayName = cursor.getString(nameIndex);
+                        if (cursor.isNull(sizeIndex)) {
+                            metadata.size = -1;
+                        } else {
+                            metadata.size = cursor.getLong(sizeIndex);
+                        }
+                    }
+                } finally {
+                    IOUtils.closeQuietly(cursor);
+                }
+            }
+
+            return metadatas;
+        }
+
+        @Override
+        protected void onPostExecute(UriMetadata[] metadatas) {
+            mCR = null;
+
+            if (isAdded()) {
+                mQueryingMetadata = false;
+                onQueriedMetadata(metadatas[0]);
+            }
         }
     }
 }

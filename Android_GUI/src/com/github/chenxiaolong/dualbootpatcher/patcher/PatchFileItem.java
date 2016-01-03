@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -26,7 +27,9 @@ public class PatchFileItem implements Parcelable {
     int taskId;
     // Patching information
     String patcherId;
-    String path;
+    Uri inputUri;
+    Uri outputUri;
+    String displayName;
     Device device;
     String romId;
     // Progress information
@@ -39,14 +42,15 @@ public class PatchFileItem implements Parcelable {
     // Completion information
     boolean successful;
     int errorCode;
-    String newPath;
 
     public PatchFileItem() {
     }
 
     protected PatchFileItem(Parcel in) {
         patcherId = in.readString();
-        path = in.readString();
+        inputUri = in.readParcelable(Uri.class.getClassLoader());
+        outputUri = in.readParcelable(Uri.class.getClassLoader());
+        displayName = in.readString();
         device = in.readParcelable(Device.class.getClassLoader());
         romId = in.readString();
         details = in.readString();
@@ -56,7 +60,6 @@ public class PatchFileItem implements Parcelable {
         maxFiles = in.readLong();
         successful = in.readInt() != 0;
         errorCode = in.readInt();
-        newPath = in.readString();
     }
 
     @Override
@@ -67,7 +70,9 @@ public class PatchFileItem implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(patcherId);
-        dest.writeString(path);
+        dest.writeParcelable(inputUri, 0);
+        dest.writeParcelable(outputUri, 0);
+        dest.writeString(displayName);
         dest.writeParcelable(device, 0);
         dest.writeString(romId);
         dest.writeString(details);
@@ -77,7 +82,6 @@ public class PatchFileItem implements Parcelable {
         dest.writeLong(maxFiles);
         dest.writeInt(successful ? 1 : 0);
         dest.writeInt(errorCode);
-        dest.writeString(newPath);
     }
 
     @SuppressWarnings("unused")

@@ -77,24 +77,27 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
     /**
      * Update mbtool using libmbp and return the path to the new boot image
      *
-     * @return New file path on success or null on error
+     * @return Whether the ramdisk was successfully updated
      */
-    private String updateMbtool(String path) {
+    private boolean updateMbtool(File path) {
         Patcher patcher = PatcherUtils.sPC.createPatcher(LIBMBP_MBTOOL_UPDATER);
         if (patcher == null) {
             Log.e(TAG, "Bundled libmbp does not support " + LIBMBP_MBTOOL_UPDATER);
-            return null;
+            return false;
         }
+
+        File outPath = new File(path + ".new");
 
         FileInfo fi = new FileInfo();
         try {
-            fi.setFilename(path);
+            fi.setInputPath(path.getAbsolutePath());
+            fi.setOutputPath(outPath.getAbsolutePath());
 
             Device device = PatcherUtils.getCurrentDevice(getContext(), PatcherUtils.sPC);
             String codename = RomUtils.getDeviceCodename(getContext());
             if (device == null) {
                 Log.e(TAG, "Current device " + codename + " does not appear to be supported");
-                return null;
+                return false;
             }
             fi.setDevice(device);
 
@@ -102,13 +105,21 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
 
             if (!patcher.patchFile(null)) {
                 logLibMbpError(patcher.getError());
-                return null;
+                return false;
             }
 
-            return patcher.newFilePath();
+            // Overwrite old boot image
+            path.delete();
+            org.apache.commons.io.FileUtils.moveFile(outPath, path);
+
+            return true;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to update ramdisk", e);
+            return false;
         } finally {
             fi.destroy();
             PatcherUtils.sPC.destroyPatcher(patcher);
+            outPath.delete();
         }
     }
 
@@ -260,8 +271,7 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                 }
 
                 // Run libmbp's MbtoolUpdater on the boot image
-                String newFile = updateMbtool(tmpKernelFile.getAbsolutePath());
-                if (newFile == null) {
+                if (!updateMbtool(tmpKernelFile)) {
                     Log.e(TAG, "Failed to patch file!");
                     return false;
                 }
@@ -293,15 +303,6 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
 
                 Log.d(TAG, "Original boot image type: " + wasType);
                 Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
-
-                // Overwrite old boot image
-                try {
-                    tmpKernelFile.delete();
-                    org.apache.commons.io.FileUtils.moveFile(new File(newFile), tmpKernelFile);
-                } catch (IOException e) {
-                    Log.e(TAG, "Failed to move " + newFile + " to " + tmpKernelFile, e);
-                    return false;
-                }
 
                 // Make changes to the boot image if necessary
                 if (!repatchBootImage(tmpKernelFile, wasType, hasRomIdFile)) {

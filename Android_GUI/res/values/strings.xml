@@ -284,8 +284,8 @@
         and write access to the internal storage. Please grant storage permissions to be able to
         patch files.</string>
 
-    <!-- Snackbar message shown if the user tries to patch the same file for the same slot more than once -->
-    <string name="patcher_cannot_add_same_item">The selected file (for %s) is already in the
+    <!-- Snackbar message shown if the user tries to patch the same file more than once -->
+    <string name="patcher_cannot_add_same_item">The selected output file is already in the
         queue.</string>
 
     <!-- Title of the device selection box in the patcher -->
