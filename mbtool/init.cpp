@@ -627,6 +627,7 @@ int init_main(int argc, char *argv[])
     mount("devpts", "/dev/pts", "devpts", 0, nullptr);
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
+    util::selinux_mount();
 
     open_devnull_stdio();
     util::log_set_logger(std::make_shared<util::KmsgLogger>());
@@ -681,6 +682,7 @@ int init_main(int argc, char *argv[])
     device_close();
 
     // Unmount partitions
+    util::selinux_unmount();
     umount("/dev/pts");
     umount("/dev");
     umount("/proc");

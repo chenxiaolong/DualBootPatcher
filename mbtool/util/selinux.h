@@ -40,6 +40,8 @@ struct SelinuxRule
     std::string perm;
 };
 
+bool selinux_mount();
+bool selinux_unmount();
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
 bool selinux_write_policy(const std::string &path, policydb_t *pdb);
 void selinux_make_all_permissive(policydb_t *pdb);

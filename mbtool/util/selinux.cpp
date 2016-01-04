@@ -32,6 +32,14 @@
 #include "util/finally.h"
 #include "util/fts.h"
 #include "util/logging.h"
+#include "util/mount.h"
+
+#define SELINUX_MOUNT_POINT     "/sys/fs/selinux"
+#define SELINUX_FS_TYPE         "selinuxfs"
+
+#define SELINUX_XATTR           "security.selinux"
+
+#define DEFAULT_SEPOLICY_FILE   "/sepolicy"
 
 
 namespace mb
@@ -82,6 +90,69 @@ private:
         }
     }
 };
+
+bool selinux_mount()
+{
+    // Try /sys/fs/selinux
+    if (!util::mount(SELINUX_FS_TYPE, SELINUX_MOUNT_POINT,
+                     SELINUX_FS_TYPE, 0, nullptr)) {
+        LOGW("Failed to mount %s at %s: %s",
+             SELINUX_FS_TYPE, SELINUX_MOUNT_POINT, strerror(errno));
+        if (errno == ENODEV || errno == ENOENT) {
+            LOGI("Kernel does not support SELinux");
+        }
+        return false;
+    }
+
+    // Load default policy
+    struct stat sb;
+    if (stat(DEFAULT_SEPOLICY_FILE, &sb) == 0) {
+        if (!selinux_set_enforcing(0)) {
+            LOGW("Failed to set SELinux to permissive mode");
+        }
+
+        policydb_t pdb;
+
+        if (policydb_init(&pdb) < 0) {
+            LOGE("Failed to initialize policydb");
+            return false;
+        }
+
+        if (!selinux_read_policy(DEFAULT_SEPOLICY_FILE, &pdb)) {
+            LOGE("Failed to read SELinux policy file: %s",
+                 DEFAULT_SEPOLICY_FILE);
+            policydb_destroy(&pdb);
+            return false;
+        }
+        if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
+            LOGE("Failed to write SELinux policy file: %s",
+                 SELINUX_LOAD_FILE);
+            policydb_destroy(&pdb);
+            return false;
+        }
+
+        policydb_destroy(&pdb);
+
+        return true;
+    }
+
+    return true;
+}
+
+bool selinux_unmount()
+{
+    if (!util::is_mounted(SELINUX_MOUNT_POINT)) {
+        LOGI("No SELinux filesystem to unmount");
+        return false;
+    }
+
+    if (!util::umount(SELINUX_MOUNT_POINT)) {
+        LOGE("Failed to unmount %s: %s", SELINUX_MOUNT_POINT, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 {
@@ -307,14 +378,14 @@ bool selinux_get_context(const std::string &path, std::string *context)
     ssize_t size;
     std::vector<char> value;
 
-    size = getxattr(path.c_str(), "security.selinux", nullptr, 0);
+    size = getxattr(path.c_str(), SELINUX_XATTR, nullptr, 0);
     if (size < 0) {
         return false;
     }
 
     value.resize(size);
 
-    size = getxattr(path.c_str(), "security.selinux", value.data(), size);
+    size = getxattr(path.c_str(), SELINUX_XATTR, value.data(), size);
     if (size < 0) {
         return false;
     }
@@ -330,14 +401,14 @@ bool selinux_lget_context(const std::string &path, std::string *context)
     ssize_t size;
     std::vector<char> value;
 
-    size = lgetxattr(path.c_str(), "security.selinux", nullptr, 0);
+    size = lgetxattr(path.c_str(), SELINUX_XATTR, nullptr, 0);
     if (size < 0) {
         return false;
     }
 
     value.resize(size);
 
-    size = lgetxattr(path.c_str(), "security.selinux", value.data(), size);
+    size = lgetxattr(path.c_str(), SELINUX_XATTR, value.data(), size);
     if (size < 0) {
         return false;
     }
@@ -353,14 +424,14 @@ bool selinux_fget_context(int fd, std::string *context)
     ssize_t size;
     std::vector<char> value;
 
-    size = fgetxattr(fd, "security.selinux", nullptr, 0);
+    size = fgetxattr(fd, SELINUX_XATTR, nullptr, 0);
     if (size < 0) {
         return false;
     }
 
     value.resize(size);
 
-    size = fgetxattr(fd, "security.selinux", value.data(), size);
+    size = fgetxattr(fd, SELINUX_XATTR, value.data(), size);
     if (size < 0) {
         return false;
     }
@@ -373,19 +444,19 @@ bool selinux_fget_context(int fd, std::string *context)
 
 bool selinux_set_context(const std::string &path, const std::string &context)
 {
-    return setxattr(path.c_str(), "security.selinux",
+    return setxattr(path.c_str(), SELINUX_XATTR,
                     context.c_str(), context.size() + 1, 0) == 0;
 }
 
 bool selinux_lset_context(const std::string &path, const std::string &context)
 {
-    return lsetxattr(path.c_str(), "security.selinux",
+    return lsetxattr(path.c_str(), SELINUX_XATTR,
                      context.c_str(), context.size() + 1, 0) == 0;
 }
 
 bool selinux_fset_context(int fd, const std::string &context)
 {
-    return fsetxattr(fd, "security.selinux",
+    return fsetxattr(fd, SELINUX_XATTR,
                      context.c_str(), context.size() + 1, 0) == 0;
 }
 
