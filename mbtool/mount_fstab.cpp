@@ -361,10 +361,10 @@ static bool mount_exfat_fuse(const std::string &source,
     uid_t uid = get_media_rw_uid();
 
     // Run filesystem checks
-    //util::run_command_cb({
-    //    "/sbin/fsck.exfat",
-    //    source
-    //}, &dump, nullptr);
+    util::run_command_cb({
+        "/sbin/fsck.exfat",
+        source
+    }, &dump, nullptr);
 
     // Mount exfat, matching vold options as much as possible
     int ret = util::run_command_cb({
