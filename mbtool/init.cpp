@@ -608,10 +608,12 @@ static bool emergency_reboot()
 
 int init_main(int argc, char *argv[])
 {
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            init_usage(true);
-            return EXIT_SUCCESS;
+    if (getppid() != 0) {
+        for (int i = 1; i < argc; ++i) {
+            if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+                init_usage(true);
+                return EXIT_SUCCESS;
+            }
         }
     }
 
