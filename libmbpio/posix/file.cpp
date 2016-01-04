@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace io
@@ -73,14 +74,32 @@ bool FilePosix::open(const char *filename, int mode)
         return false;
     }
 
-    m_impl->fp = fopen64(filename, fopenMode);
-    if (!m_impl->fp) {
+    FILE *fp = fopen64(filename, fopenMode);
+    if (!fp) {
         m_impl->error = ErrorPlatformError;
         m_impl->errnoCode = errno;
         m_impl->errnoString = strerror(errno);
         return false;
     }
 
+    struct stat sb;
+    if (fstat(fileno(fp), &sb) < 0) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->errnoCode = errno;
+        m_impl->errnoString = strerror(errno);
+        fclose(fp);
+        return false;
+    }
+
+    if (S_ISDIR(sb.st_mode)) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->errnoCode = EISDIR;
+        m_impl->errnoString = strerror(EISDIR);
+        fclose(fp);
+        return false;
+    }
+
+    m_impl->fp = fp;
     return true;
 }
 
