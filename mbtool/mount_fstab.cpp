@@ -338,7 +338,11 @@ static bool path_matches(const char *path, const char *pattern)
 static void dump(const std::string &line, void *data)
 {
     (void) data;
-    LOGD("Command output: %s", line.c_str());
+    std::string copy;
+    if (!line.empty() && line.back() == '\n') {
+        copy.assign(line.begin(), line.end() - 1);
+    }
+    LOGD("Command output: %s", copy.c_str());
 }
 
 static uid_t get_media_rw_uid()
