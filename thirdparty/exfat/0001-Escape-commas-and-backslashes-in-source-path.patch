@@ -1,0 +1,109 @@
+From a300153ab8cf9486c181d5dd999b5c2a32c1e4c6 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Mon, 4 Jan 2016 15:59:43 -0500
+Subject: [PATCH] Escape commas and backslashes in source path
+
+This fixes mounting issues in Android 6.0 where the source path is in
+the form "/dev/block/vold/public:<RDEV_MAJOR>,<RDEV_MINOR>", where
+RDEV_MAJOR and RDEV_MINOR are their respective values.
+---
+ fuse/main.c | 37 ++++++++++++++++++++++++++++++-------
+ 1 file changed, 30 insertions(+), 7 deletions(-)
+
+diff --git a/fuse/main.c b/fuse/main.c
+index 81d6ee8..4b7b152 100644
+--- a/fuse/main.c
++++ b/fuse/main.c
+@@ -400,7 +400,19 @@ static struct fuse_operations fuse_exfat_ops =
+ 	.destroy	= fuse_exfat_destroy,
+ };
+ 
+-static char* add_option(char* options, const char* name, const char* value)
++static size_t count_chars(const char* str, const char* chars)
++{
++	size_t count = 0;
++	while (*str) {
++		if (strchr(chars, *str)) {
++			++count;
++		}
++		++str;
++	}
++	return count;
++}
++
++static char* add_option(char* options, const char* name, const char* value, int escape)
+ {
+ 	size_t size;
+ 	char* optionsf = options;
+@@ -410,6 +422,10 @@ static char* add_option(char* options, const char* name, const char* value)
+ 	else
+ 		size = strlen(options) + strlen(name) + 2;
+ 
++	if (value && escape) {
++		size += count_chars(value, ",\\");
++	}
++
+ 	options = realloc(options, size);
+ 	if (options == NULL)
+ 	{
+@@ -422,7 +438,14 @@ static char* add_option(char* options, const char* name, const char* value)
+ 	if (value)
+ 	{
+ 		strcat(options, "=");
+-		strcat(options, value);
++		char *ptr = options + strlen(options);
++		for (; *value; ++value)
++		{
++			if (escape && (*value == ',' || *value == '\\'))
++				*ptr++ = '\\';
++			*ptr++ = *value;
++		}
++		*ptr = '\0';
+ 	}
+ 	return options;
+ }
+@@ -441,7 +464,7 @@ static char* add_user_option(char* options)
+ 		exfat_error("failed to determine username");
+ 		return NULL;
+ 	}
+-	return add_option(options, "user", pw->pw_name);
++	return add_option(options, "user", pw->pw_name, 0);
+ }
+ 
+ static char* add_blksize_option(char* options, long cluster_size)
+@@ -453,12 +476,12 @@ static char* add_blksize_option(char* options, long cluster_size)
+ 		page_size = 0x1000;
+ 
+ 	snprintf(blksize, sizeof(blksize), "%ld", MIN(page_size, cluster_size));
+-	return add_option(options, "blksize", blksize);
++	return add_option(options, "blksize", blksize, 0);
+ }
+ 
+ static char* add_fuse_options(char* options, const char* spec)
+ {
+-	options = add_option(options, "fsname", spec);
++	options = add_option(options, "fsname", spec, 1);
+ 	if (options == NULL)
+ 		return NULL;
+ 	options = add_user_option(options);
+@@ -502,7 +525,7 @@ int mount_main(int argc, char* argv[])
+ 		case 'n':
+ 			break;
+ 		case 'o':
+-			mount_options = add_option(mount_options, optarg, NULL);
++			mount_options = add_option(mount_options, optarg, NULL, 0);
+ 			if (mount_options == NULL)
+ 				return 1;
+ 			break;
+@@ -534,7 +557,7 @@ int mount_main(int argc, char* argv[])
+ 
+ 	if (ef.ro == -1) /* read-only fallback was used */
+ 	{
+-		mount_options = add_option(mount_options, "ro", NULL);
++		mount_options = add_option(mount_options, "ro", NULL, 0);
+ 		if (mount_options == NULL)
+ 		{
+ 			exfat_unmount(&ef);
+-- 
+2.6.4
+
