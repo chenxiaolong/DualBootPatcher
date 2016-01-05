@@ -600,6 +600,8 @@ public class PatcherService extends ThreadPoolService {
                     getService().onPatcherFinished(mTaskId, false, false, -1);
                     return;
                 }
+                Log.d(TAG, "Input file descriptor is: " + pfdIn.getFd());
+                Log.d(TAG, "Output file descriptor is: " + pfdOut.getFd());
 
                 fileInfo.setDevice(mDevice);
                 fileInfo.setInputPath("/proc/self/fd/" + pfdIn.getFd());
