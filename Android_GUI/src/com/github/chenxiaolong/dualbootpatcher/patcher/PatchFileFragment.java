@@ -708,7 +708,7 @@ public class PatchFileFragment extends Fragment implements
             sb.append(extension);
         }
         String desiredName = sb.toString();
-        Intent intent = FileUtils.getFileSaveIntent(desiredName);
+        Intent intent = FileUtils.getFileSaveIntent(getActivity(), desiredName);
         startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE);
     }
 

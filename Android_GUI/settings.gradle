@@ -1,3 +1,5 @@
 include ":emulatorview"
+include ":neuteredsaf"
 
 project(":emulatorview").projectDir = file("../external/Android-Terminal-Emulator/emulatorview")
+project(":neuteredsaf").projectDir = file("../external/neuteredsaf/lib")

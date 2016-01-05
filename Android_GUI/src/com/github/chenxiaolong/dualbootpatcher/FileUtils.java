@@ -48,7 +48,12 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import io.noobdev.neuteredsaf.DocumentsActivity;
+import io.noobdev.neuteredsaf.providers.ProviderConstants;
+
 public class FileUtils {
+    private static final boolean FORCE_NEUTERED_SAF = false;
+
     @SuppressLint("NewApi")
     private static String getPathFromDocumentsUri(Context context, Uri uri) {
         // Based on
@@ -136,25 +141,45 @@ public class FileUtils {
         return list.size() > 0;
     }
 
+    public static boolean useNativeSaf() {
+        return !FORCE_NEUTERED_SAF && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+    }
+
     @NonNull
     public static Intent getFileOpenIntent(Context context) {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        Intent intent;
+
+        if (useNativeSaf()) {
+            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
+        } else {
+            intent = new Intent(context, DocumentsActivity.class);
+            intent.setAction(ProviderConstants.ACTION_OPEN_DOCUMENT);
+        }
+
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/zip");
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
 
         return intent;
     }
 
     @NonNull
-    public static Intent getFileSaveIntent(String defaultName) {
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+    public static Intent getFileSaveIntent(Context context, String defaultName) {
+        Intent intent;
+
+        if (useNativeSaf()) {
+            intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
+        } else {
+            intent = new Intent(context, DocumentsActivity.class);
+            intent.setAction(ProviderConstants.ACTION_CREATE_DOCUMENT);
+        }
+
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/zip");
         intent.putExtra(Intent.EXTRA_TITLE, defaultName);
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
 
         return intent;
     }

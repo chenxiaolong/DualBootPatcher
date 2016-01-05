@@ -23,6 +23,8 @@ import android.content.Context;
 import com.squareup.leakcanary.LeakCanary;
 import com.squareup.leakcanary.RefWatcher;
 
+import io.noobdev.neuteredsaf.DocumentsApplication;
+
 public class MainApplication extends Application {
     private RefWatcher mRefWatcher;
 
@@ -35,5 +37,16 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mRefWatcher = LeakCanary.install(this);
+        if (!FileUtils.useNativeSaf()) {
+            DocumentsApplication.install(this);
+        }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (!FileUtils.useNativeSaf()) {
+            DocumentsApplication.onTrimMemory(level);
+        }
     }
 }
