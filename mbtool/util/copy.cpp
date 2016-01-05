@@ -106,7 +106,8 @@ bool copy_xattrs(const std::string &source, const std::string &target)
     size = llistxattr(source.c_str(), nullptr, 0);
     if (size < 0) {
         if (errno == ENOTSUP) {
-            LOGV("%s: xattrs not supported on filesystem", source.c_str());
+            LOGV("%s: xattrs not supported on source filesystem",
+                 source.c_str());
             return true;
         } else {
             LOGE("%s: Failed to list xattrs: %s",
@@ -150,7 +151,8 @@ bool copy_xattrs(const std::string &source, const std::string &target)
 
         if (lsetxattr(target.c_str(), name, value.data(), size, 0) < 0) {
             if (errno == ENOTSUP) {
-                LOGV("%s: xattrs not supported on filesystem", target.c_str());
+                LOGV("%s: xattrs not supported on target filesystem",
+                     target.c_str());
                 break;
             } else {
                 LOGE("%s: Failed to set xattrs: %s",

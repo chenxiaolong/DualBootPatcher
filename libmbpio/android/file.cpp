@@ -23,6 +23,7 @@
 #include <cstring>
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #if __ANDROID_API__ >= 21
@@ -81,14 +82,32 @@ bool FileAndroid::open(const char *filename, int mode)
         return false;
     }
 
-    m_impl->fd = ::OPEN_FUNC(filename, openMode, 0666);
-    if (m_impl->fd < 0) {
+    int fd = ::OPEN_FUNC(filename, openMode, 0666);
+    if (fd < 0) {
         m_impl->error = ErrorPlatformError;
         m_impl->errnoCode = errno;
         m_impl->errnoString = strerror(errno);
         return false;
     }
 
+    struct stat sb;
+    if (fstat(fd, &sb) < 0) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->errnoCode = errno;
+        m_impl->errnoString = strerror(errno);
+        ::close(fd);
+        return false;
+    }
+
+    if (S_ISDIR(sb.st_mode)) {
+        m_impl->error = ErrorPlatformError;
+        m_impl->errnoCode = EISDIR;
+        m_impl->errnoString = strerror(EISDIR);
+        ::close(fd);
+        return false;
+    }
+
+    m_impl->fd = fd;
     return true;
 }
 

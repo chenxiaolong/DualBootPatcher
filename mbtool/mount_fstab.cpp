@@ -53,11 +53,16 @@
 #include "util/mount.h"
 #include "util/path.h"
 #include "util/properties.h"
+#include "util/selinux.h"
 #include "util/string.h"
 
 
 #define EXTSD_MOUNT_POINT "/raw/extsd"
 #define IMAGES_MOUNT_POINT "/raw/images"
+
+#define EXT4_TEMP_IMAGE "/temp.ext4"
+
+#define WRAPPED_BINARIES_DIR "/wrapped"
 
 
 namespace mb
@@ -338,7 +343,11 @@ static bool path_matches(const char *path, const char *pattern)
 static void dump(const std::string &line, void *data)
 {
     (void) data;
-    LOGD("Command output: %s", line.c_str());
+    std::string copy;
+    if (!line.empty() && line.back() == '\n') {
+        copy.assign(line.begin(), line.end() - 1);
+    }
+    LOGD("Command output: %s", copy.c_str());
 }
 
 static uid_t get_media_rw_uid()
@@ -357,10 +366,10 @@ static bool mount_exfat_fuse(const std::string &source,
     uid_t uid = get_media_rw_uid();
 
     // Run filesystem checks
-    //util::run_command_cb({
-    //    "/sbin/fsck.exfat",
-    //    source
-    //}, &dump, nullptr);
+    util::run_command_cb({
+        "/sbin/fsck.exfat",
+        source
+    }, &dump, nullptr);
 
     // Mount exfat, matching vold options as much as possible
     int ret = util::run_command_cb({
@@ -657,6 +666,50 @@ static bool mount_all_system_images()
     return !failed;
 }
 
+static bool create_ext4_temp_fs(const char *mount_point)
+{
+    struct stat sb;
+    if (stat(EXT4_TEMP_IMAGE, &sb) < 0) {
+        if (errno == ENOENT) {
+            int ret = util::run_command_cb({
+                "/system/bin/make_ext4fs",
+                "-l",
+                "20M",
+                EXT4_TEMP_IMAGE
+            }, &dump, nullptr);
+            if (ret < 0) {
+                LOGE("Failed to run make_ext4fs");
+                return false;
+            } else if (WEXITSTATUS(ret) != 0) {
+                LOGE("make_ext4fs returned non-zero exit status: %d",
+                     WEXITSTATUS(ret));
+                return false;
+            }
+        } else {
+            LOGE("%s: Failed to stat: %s", EXT4_TEMP_IMAGE, strerror(errno));
+        }
+    }
+
+    return util::mount(EXT4_TEMP_IMAGE, mount_point, "ext4", MS_NOSUID, "");
+}
+
+static bool create_tmpfs_temp_fs(const char *mount_point)
+{
+    return util::mount("tmpfs", mount_point, "tmpfs", MS_NOSUID, "mode=0755");
+}
+
+static bool create_temporary_fs(const char *mount_point)
+{
+    if (!create_ext4_temp_fs(mount_point)) {
+        LOGW("Failed to create ext4-backed temporary filesystem");
+        if (!create_tmpfs_temp_fs(mount_point)) {
+            LOGW("Failed to create tmpfs-backed temporary filesystem");
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool disable_fsck(const char *fsck_binary)
 {
     struct stat sb;
@@ -666,7 +719,8 @@ static bool disable_fsck(const char *fsck_binary)
     }
 
     std::string filename = util::base_name(fsck_binary);
-    std::string path("/fscks/");
+    std::string path(WRAPPED_BINARIES_DIR);
+    path += "/";
     path += filename;
 
     autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
@@ -687,7 +741,23 @@ static bool disable_fsck(const char *fsck_binary)
         "exit 0",
         filename.c_str()
     );
-    fchmod(fileno(fp.get()), 0755);
+
+    // Copy permissions
+    fchown(fileno(fp.get()), sb.st_uid, sb.st_gid);
+    fchmod(fileno(fp.get()), sb.st_mode);
+
+    // Copy SELinux label
+    std::string context;
+    if (util::selinux_get_context(fsck_binary, &context)) {
+        LOGD("%s: SELinux label is: %s", fsck_binary, context.c_str());
+        if (!util::selinux_fset_context(fileno(fp.get()), context)) {
+            LOGW("%s: Failed to set SELinux label: %s",
+                 path.c_str(), strerror(errno));
+        }
+    } else {
+        LOGW("%s: Failed to get SELinux label: %s",
+             fsck_binary, strerror(errno));
+    }
 
     if (mount(path.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
         LOGE("Failed to bind mount %s to %s: %s",
@@ -698,23 +768,78 @@ static bool disable_fsck(const char *fsck_binary)
     return true;
 }
 
-static bool disable_fscks()
+static bool copy_mount_exfat()
 {
+    const char *system_mount_exfat = "/system/bin/mount.exfat";
+    const char *our_mount_exfat = "/sbin/mount.exfat";
+    const char *target = WRAPPED_BINARIES_DIR "/mount.exfat";
+
+    struct stat sb;
+    if (stat(system_mount_exfat, &sb) < 0) {
+        LOGE("%s: Failed to stat: %s", system_mount_exfat, strerror(errno));
+        return errno == ENOENT;
+    }
+
+    if (!util::copy_file(our_mount_exfat, target, 0)) {
+        return false;
+    }
+
+    // Copy permissions
+    chown(target, sb.st_uid, sb.st_gid);
+    chmod(target, sb.st_mode);
+
+    // Copy SELinux label
+    std::string context;
+    if (util::selinux_get_context(system_mount_exfat, &context)) {
+        LOGD("%s: SELinux label is: %s", system_mount_exfat, context.c_str());
+        if (!util::selinux_set_context(target, context)) {
+            LOGW("%s: Failed to set SELinux label: %s",
+                 target, strerror(errno));
+        }
+    } else {
+        LOGW("%s: Failed to get SELinux label: %s",
+             system_mount_exfat, strerror(errno));
+    }
+
+
+    if (mount(target, system_mount_exfat, "", MS_BIND | MS_RDONLY, "") < 0) {
+        LOGE("Failed to bind mount %s to %s: %s",
+             target, system_mount_exfat, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+static bool wrap_binaries()
+{
+    if (mkdir(WRAPPED_BINARIES_DIR, 0755) < 0 && errno != EEXIST) {
+        return false;
+    }
+    if (!create_temporary_fs(WRAPPED_BINARIES_DIR)) {
+        return false;
+    }
+
+    bool ret;
+
     // Online fsck is not possible so we'll have to prevent Vold from trying
     // to run fsck_msdos and failing.
-    if (mkdir("/fscks", 0755) < 0 || chmod("/fscks", 0755) < 0) {
-        return false;
+    if (!disable_fsck("/system/bin/fsck_msdos")) {
+        ret = false;
+    }
+    if (!disable_fsck("/system/bin/fsck.exfat")) {
+        ret = false;
     }
 
-    if (mount("tmpfs", "/fscks", "tmpfs", MS_NOSUID, "mode=0755") < 0) {
-        LOGE("%s: Failed to mount tmpfs: %s", "/fscks", strerror(errno));
-        return false;
+    // Ensure our copy of mount.exfat is used
+    if (!copy_mount_exfat()) {
+        ret = false;
     }
 
-    bool ret = disable_fsck("/system/bin/fsck_msdos");
-
-    if (mount("", "/fscks", "", MS_REMOUNT | MS_RDONLY, "") < 0) {
-        LOGW("%s: Failed to remount read-only: %s", "/fscks", strerror(errno));
+    // Remount read-only to avoid further modifications to the temporary dir
+    if (mount("", WRAPPED_BINARIES_DIR, "", MS_REMOUNT | MS_RDONLY, "") < 0) {
+        LOGW("%s: Failed to remount read-only: %s", WRAPPED_BINARIES_DIR,
+             strerror(errno));
     }
 
     return ret;
@@ -867,7 +992,7 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     }
 
     mount_all_system_images();
-    disable_fscks();
+    wrap_binaries();
 
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom->id)) {

@@ -246,8 +246,6 @@ static std::string error_to_string(const mbp::ErrorCode &error) {
     case mbp::ErrorCode::PatcherCreateError:
     case mbp::ErrorCode::AutoPatcherCreateError:
     case mbp::ErrorCode::RamdiskPatcherCreateError:
-    case mbp::ErrorCode::OnlyZipSupported:
-    case mbp::ErrorCode::OnlyBootImageSupported:
     case mbp::ErrorCode::PatchingCancelled:
     default:
         assert(false);

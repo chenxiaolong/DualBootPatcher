@@ -65,11 +65,6 @@ public:
     virtual void setFileInfo(const FileInfo * const info) = 0;
 
     /*!
-     * \brief The path of the newly patched file
-     */
-    virtual std::string newFilePath() = 0;
-
-    /*!
      * \brief Start patching the file
      *
      * This method starts the patching operations for the current file. The

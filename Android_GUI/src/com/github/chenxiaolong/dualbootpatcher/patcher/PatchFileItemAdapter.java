@@ -27,7 +27,6 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemViewHolder
         .PatchFileItemViewClickListener;
 
-import java.io.File;
 import java.util.List;
 
 public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemViewHolder> implements PatchFileItemViewClickListener {
@@ -58,9 +57,7 @@ public class PatchFileItemAdapter extends RecyclerView.Adapter<PatchFileItemView
     public void onBindViewHolder(PatchFileItemViewHolder holder, int position) {
         PatchFileItem item = mItems.get(position);
 
-        String filename = new File(item.path).getName();
-
-        holder.vTitle.setText(filename);
+        holder.vTitle.setText(item.displayName);
         holder.vSubtitle1.setText(mContext.getString(
                 R.string.patcher_card_subtitle_target, item.device.getId(), item.romId));
 

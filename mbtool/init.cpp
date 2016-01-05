@@ -50,6 +50,8 @@
 #include "util/selinux.h"
 #include "util/string.h"
 
+#define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
+
 namespace mb
 {
 
@@ -557,8 +559,39 @@ static bool dump_kernel_log(const char *file)
     return true;
 }
 
+bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms)
+{
+    int fd = open(VIBRATOR_PATH, O_WRONLY);
+    if (fd < 0) {
+        return false;
+    }
+    auto close_fd = util::finally([&]{
+        close(fd);
+    });
+
+    if (timeout_ms > 2000) {
+        timeout_ms = 2000;
+    }
+
+    char buf[20];
+    int size = snprintf(buf, sizeof(buf), "%u", timeout_ms);
+    if (write(fd, buf, size) < 0) {
+        return false;
+    }
+
+    usleep(1000 * (timeout_ms + additional_wait_ms));
+
+    return true;
+}
+
 static bool emergency_reboot()
 {
+    vibrate(100, 150);
+    vibrate(100, 150);
+    vibrate(100, 150);
+    vibrate(100, 150);
+    vibrate(100, 150);
+
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 
     // Some devices don't have /proc/last_kmsg, so we'll attempt to save the
@@ -608,10 +641,12 @@ static bool emergency_reboot()
 
 int init_main(int argc, char *argv[])
 {
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            init_usage(true);
-            return EXIT_SUCCESS;
+    if (getppid() != 0) {
+        for (int i = 1; i < argc; ++i) {
+            if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+                init_usage(true);
+                return EXIT_SUCCESS;
+            }
         }
     }
 
@@ -627,6 +662,7 @@ int init_main(int argc, char *argv[])
     mount("devpts", "/dev/pts", "devpts", 0, nullptr);
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
+    util::selinux_mount();
 
     open_devnull_stdio();
     util::log_set_logger(std::make_shared<util::KmsgLogger>());
@@ -681,6 +717,7 @@ int init_main(int argc, char *argv[])
     device_close();
 
     // Unmount partitions
+    util::selinux_unmount();
     umount("/dev/pts");
     umount("/dev");
     umount("/proc");

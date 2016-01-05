@@ -82,12 +82,12 @@ execute_process(
 # fuse-exfat for Android
 ################################################################################
 
-set(EXFAT_VER "1.0.0-1")
+set(EXFAT_VER "1.2.3-1")
 
-get_prebuilt(exfat ${EXFAT_VER} armeabi-v7a SHA512=fafa1127112b420037164807babb5e0cf55b17e6ec4f9f7cd2acdc0ab287ec87fd4ec59364fc11b0d4b1a71ae73ada063ffa558a7f96f6e20a544ecfaed79d36)
-get_prebuilt(exfat ${EXFAT_VER} arm64-v8a   SHA512=9017d583a8e9657a6c53bbc85d32fc8450b09aa9fd4e99af51667373bec1879f3136eee7d3a88853060a2d6c76183c7983ecc207db1d6ebc96afc1e48013b3e9)
-get_prebuilt(exfat ${EXFAT_VER} x86         SHA512=7a758c46ae55c55d59994c1b96362450a0a616825f4405be236a8f9be223d1249c9567ce1709e23404c587a0dad6b6b936b757ef4bff14ecdb7d32287e278c89)
-get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=4822fff7bc6c69e6eb0bd8b2d5b0bcd7231ef47771fe85e089c9ccc94ae213550ebe740ac7de60d45ee02bbdc58923a42da7e514784a46d38e9560138c6fb549)
+get_prebuilt(exfat ${EXFAT_VER} armeabi-v7a SHA512=f93a25c86945b99285a43f7f72beec6536cb6f6ea2455c42047ccc7dc316cc425f966fc34aff4a651ad72a77206a32619e8401d00c16663f86b583f2dc2537a6)
+get_prebuilt(exfat ${EXFAT_VER} arm64-v8a   SHA512=3aec0e16559c3e051425b7df3d369eb4bd7ead4c881f513fc60df7680ced2b5a9d545fe46de57bab262471e4c27a55192d7b2180235e8a7b934478ac6f668fed)
+get_prebuilt(exfat ${EXFAT_VER} x86         SHA512=ce84db9db11b1ae94339e39ca76566814e5a8d05ed2b72fe56c4b894cbff04b47c699f5296d6f2f8ad95b66fff262cd5418aab297457ac47f6bf1672b2956a61)
+get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=326024f9b7040af0162fca952db5fb497c858d35b652634ac109e103104cb0ee2d0e21c5a455c0b7554a3b75232533260879df005bfa50f12c80d7f9a109fd42)
 
 foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
     install(

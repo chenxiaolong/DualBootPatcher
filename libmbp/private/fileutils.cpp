@@ -32,6 +32,7 @@
 
 #include "private/logging.h"
 
+#include "external/minizip/ioapi_buf.h"
 #if defined(_WIN32)
 #  define MINIZIP_WIN32
 #  include "external/minizip/iowin32.h"
@@ -344,48 +345,104 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
 #endif
 }
 
-unzFile FileUtils::mzOpenInputFile(const std::string &path)
+struct FileUtils::MzUnzCtx
 {
+    unzFile uf;
+    zlib_filefunc64_def zFunc;
+    ourbuffer_t buf;
+};
+
+struct FileUtils::MzZipCtx
+{
+    zipFile zf;
+    zlib_filefunc64_def zFunc;
+    ourbuffer_t buf;
+};
+
+unzFile FileUtils::mzCtxGetUnzFile(MzUnzCtx *ctx)
+{
+    return ctx->uf;
+}
+
+zipFile FileUtils::mzCtxGetZipFile(MzZipCtx *ctx)
+{
+    return ctx->zf;
+}
+
+FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(const std::string &path)
+{
+    MzUnzCtx *ctx = (MzUnzCtx *) malloc(sizeof(MzUnzCtx));
+    if (!ctx) {
+        return nullptr;
+    }
+    memset(ctx, 0, sizeof(MzUnzCtx));
+
+    const void *filename;
+
 #if defined(MINIZIP_WIN32)
-    zlib_filefunc64_def zFunc;
-    memset(&zFunc, 0, sizeof(zFunc));
-    fill_win32_filefunc64W(&zFunc);
-    return unzOpen2_64(utf8::utf8ToUtf16(path).c_str(), &zFunc);
+    fill_win32_filefunc64W(&ctx->buf.filefunc64);
+    filename = utf8::utf8ToUtf16(path).c_str();
 #elif defined(MINIZIP_ANDROID)
-    zlib_filefunc64_def zFunc;
-    memset(&zFunc, 0, sizeof(zFunc));
-    fill_android_filefunc64(&zFunc);
-    return unzOpen2_64(path.c_str(), &zFunc);
+    fill_android_filefunc64(&ctx->buf.filefunc64);
+    filename = path.c_str();
 #else
-    return unzOpen64(path.c_str());
+    fill_fopen64_filefunc(&ctx->buf.filefunc64);
+    filename = path.c_str();
 #endif
+
+    fill_buffer_filefunc64(&ctx->zFunc, &ctx->buf);
+    ctx->uf = unzOpen2_64(filename, &ctx->zFunc);
+    if (!ctx->uf) {
+        free(ctx);
+        return nullptr;
+    }
+
+    return ctx;
 }
 
-zipFile FileUtils::mzOpenOutputFile(const std::string &path)
+FileUtils::MzZipCtx * FileUtils::mzOpenOutputFile(const std::string &path)
 {
+    MzZipCtx *ctx = (MzZipCtx *) malloc(sizeof(MzZipCtx));
+    if (!ctx) {
+        return nullptr;
+    }
+    memset(ctx, 0, sizeof(MzZipCtx));
+
+    const void *filename;
+
 #if defined(MINIZIP_WIN32)
-    zlib_filefunc64_def zFunc;
-    memset(&zFunc, 0, sizeof(zFunc));
-    fill_win32_filefunc64W(&zFunc);
-    return zipOpen2_64(utf8::utf8ToUtf16(path).c_str(), 0, nullptr, &zFunc);
+    fill_win32_filefunc64W(&ctx->buf.filefunc64);
+    filename = utf8::utf8ToUtf16(path).c_str();
 #elif defined(MINIZIP_ANDROID)
-    zlib_filefunc64_def zFunc;
-    memset(&zFunc, 0, sizeof(zFunc));
-    fill_android_filefunc64(&zFunc);
-    return zipOpen2_64(path.c_str(), 0, nullptr, &zFunc);
+    fill_android_filefunc64(&ctx->buf.filefunc64);
+    filename = path.c_str();
 #else
-    return zipOpen64(path.c_str(), 0);
+    fill_fopen64_filefunc(&ctx->buf.filefunc64);
+    filename = path.c_str();
 #endif
+
+    fill_buffer_filefunc64(&ctx->zFunc, &ctx->buf);
+    ctx->zf = zipOpen2_64(filename, 0, nullptr, &ctx->zFunc);
+    if (!ctx->zf) {
+        free(ctx);
+        return nullptr;
+    }
+
+    return ctx;
 }
 
-int FileUtils::mzCloseInputFile(unzFile uf)
+int FileUtils::mzCloseInputFile(MzUnzCtx *ctx)
 {
-    return unzClose(uf);
+    int ret = unzClose(ctx->uf);
+    free(ctx);
+    return ret;
 }
 
-int FileUtils::mzCloseOutputFile(zipFile zf)
+int FileUtils::mzCloseOutputFile(MzZipCtx *ctx)
 {
-    return zipClose(zf, nullptr);
+    int ret = zipClose(ctx->zf, nullptr);
+    free(ctx);
+    return ret;
 }
 
 ErrorCode FileUtils::mzArchiveStats(const std::string &path,
@@ -394,9 +451,9 @@ ErrorCode FileUtils::mzArchiveStats(const std::string &path,
 {
     assert(stats != nullptr);
 
-    unzFile uf = mzOpenInputFile(path);
+    MzUnzCtx *ctx = mzOpenInputFile(path);
 
-    if (!uf) {
+    if (!ctx) {
         FLOGE("minizip: Failed to open for reading: %s", path.c_str());
         return ErrorCode::ArchiveReadOpenError;
     }
@@ -407,15 +464,15 @@ ErrorCode FileUtils::mzArchiveStats(const std::string &path,
     unz_file_info64 fi;
     memset(&fi, 0, sizeof(fi));
 
-    int ret = unzGoToFirstFile(uf);
+    int ret = unzGoToFirstFile(ctx->uf);
     if (ret != UNZ_OK) {
-        mzCloseInputFile(uf);
+        mzCloseInputFile(ctx);
         return ErrorCode::ArchiveReadHeaderError;
     }
 
     do {
-        if (!mzGetInfo(uf, &fi, &name)) {
-            mzCloseInputFile(uf);
+        if (!mzGetInfo(ctx->uf, &fi, &name)) {
+            mzCloseInputFile(ctx);
             return ErrorCode::ArchiveReadHeaderError;
         }
 
@@ -423,14 +480,14 @@ ErrorCode FileUtils::mzArchiveStats(const std::string &path,
             ++count;
             totalSize += fi.uncompressed_size;
         }
-    } while ((ret = unzGoToNextFile(uf)) == UNZ_OK);
+    } while ((ret = unzGoToNextFile(ctx->uf)) == UNZ_OK);
 
     if (ret != UNZ_END_OF_LIST_OF_FILE) {
-        mzCloseInputFile(uf);
+        mzCloseInputFile(ctx);
         return ErrorCode::ArchiveReadHeaderError;
     }
 
-    mzCloseInputFile(uf);
+    mzCloseInputFile(ctx);
 
     stats->files = count;
     stats->totalSize = totalSize;

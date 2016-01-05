@@ -136,27 +136,27 @@ public class FileUtils {
         return list.size() > 0;
     }
 
-    public static Intent getFileChooserIntent(Context context) {
-        PackageManager pm = context.getPackageManager();
-
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+    @NonNull
+    public static Intent getFileOpenIntent(Context context) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/zip");
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            // Prefer ACTION_GET_CONTENT because Samsung's DocumentsUI isn't implemented correctly:
-            // https://code.google.com/p/android/issues/detail?id=70697
-            if (!canHandleIntent(pm, intent)) {
-                intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
-            }
-            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        }
+        return intent;
+    }
 
-        if (canHandleIntent(pm, intent)) {
-            return intent;
-        } else {
-            return null;
-        }
+    @NonNull
+    public static Intent getFileSaveIntent(String defaultName) {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        intent.putExtra(Intent.EXTRA_TITLE, defaultName);
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
+
+        return intent;
     }
 
     public static void showMissingFileChooserDialog(Context context, FragmentManager fm) {

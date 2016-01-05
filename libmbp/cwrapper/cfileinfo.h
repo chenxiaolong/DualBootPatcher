@@ -28,8 +28,11 @@ extern "C" {
 CFileInfo * mbp_fileinfo_create(void);
 void mbp_fileinfo_destroy(CFileInfo *info);
 
-char * mbp_fileinfo_filename(const CFileInfo *info);
-void mbp_fileinfo_set_filename(CFileInfo *info, const char *path);
+char * mbp_fileinfo_input_path(const CFileInfo *info);
+void mbp_fileinfo_set_input_path(CFileInfo *info, const char *path);
+
+char * mbp_fileinfo_output_path(const CFileInfo *info);
+void mbp_fileinfo_set_output_path(CFileInfo *info, const char *path);
 
 CDevice * mbp_fileinfo_device(const CFileInfo *info);
 void mbp_fileinfo_set_device(CFileInfo *info, CDevice * device);

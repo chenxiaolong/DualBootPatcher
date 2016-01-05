@@ -498,9 +498,6 @@ void MainWindow::startPatching()
     d->state = MainWindowPrivate::Patching;
     updateWidgetsVisibility();
 
-    FileInfoPtr fileInfo = new mbp::FileInfo();
-    fileInfo->setFilename(d->fileName.toUtf8().constData());
-    fileInfo->setDevice(d->device);
     QString romId;
     if (d->instLocSel->currentIndex() == d->instLocs.size()) {
         romId = QStringLiteral("data-slot-%1").arg(d->instLocLe->text());
@@ -509,6 +506,25 @@ void MainWindow::startPatching()
     } else {
         romId = d->instLocs[d->instLocSel->currentIndex()].id;
     }
+
+
+    QFileInfo qFileInfo(d->fileName);
+
+    // Output file name is <parent path>/<base name>_<rom id>.<suffix>
+    QString outputName(qFileInfo.completeBaseName()
+            % QStringLiteral("_")
+            % romId
+            % QStringLiteral(".")
+            % qFileInfo.suffix());
+
+    QString inputPath(QDir::toNativeSeparators(qFileInfo.filePath()));
+    QString outputPath(QDir::toNativeSeparators(
+            qFileInfo.dir().filePath(outputName)));
+
+    FileInfoPtr fileInfo = new mbp::FileInfo();
+    fileInfo->setInputPath(inputPath.toUtf8().constData());
+    fileInfo->setOutputPath(outputPath.toUtf8().constData());
+    fileInfo->setDevice(d->device);
     fileInfo->setRomId(romId.toUtf8().constData());
 
     emit runThread(d->patcher, fileInfo);
@@ -566,10 +582,6 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to close archive");
     case mbp::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case mbp::ErrorCode::OnlyZipSupported:
-        return QObject::tr("Only ZIP files are supported");
-    case mbp::ErrorCode::OnlyBootImageSupported:
-        return QObject::tr("Only boot images are supported");
     case mbp::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
     default:
@@ -614,7 +626,7 @@ void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
                                   &detailsUpdatedCbWrapper,
                                   this);
 
-    QString newFile(QString::fromStdString(patcher->newFilePath()));
+    QString newFile(QString::fromStdString(info->outputPath()));
 
     patcher->setFileInfo(nullptr);
     delete info;

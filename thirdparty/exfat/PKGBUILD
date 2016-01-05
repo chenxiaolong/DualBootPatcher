@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit_fuse=81b1cc26b41b25afd2d8e09dce1bad4969016066
-_commit_exfat=82c66279aea954faa06d224e66bce5f30331b4c0
+_commit_fuse=42f00b6e0c5eb0b3f5e9168c87bf9ff276673a4e
+_commit_exfat=9d909bac629d1f5127966091e3353f0950fad48d
 
 pkgname=exfat
-pkgver=1.0.0
+pkgver=1.2.3
 pkgrel=1
 pkgdesc="FUSE-based exfat driver"
 arch=(armv7 aarch64 x86 x86_64)
@@ -25,17 +25,26 @@ url="https://github.com/relan/exfat"
 license=(GPL)
 source=("fuse::git+https://github.com/CyanogenMod/android_external_fuse.git#commit=${_commit_fuse}"
         "exfat::git+https://github.com/CyanogenMod/android_external_exfat.git#commit=${_commit_exfat}"
+        0001-Manually-call-LFS-functions-since-there-s-no-_FILE_O.patch
+        0002-Create-multicall-binary.patch
+        0001-Escape-commas-and-backslashes-in-source-path.patch
         Android.mk)
 sha512sums=('SKIP'
             'SKIP'
-            'e5741ae88dc8c3f58e6fcfe6791c801e462648296be61020be787b968942cb02232998829ea5583688ce13126d5355163c036aa1bbd568d9a800d43b44581406')
+            'b88696b27cd8f42cd61382ba86e621dfc71219c0721e96f810ee0ace3beca51ed40efcf72e33cd6a1e4b63a357fd09f652f9a4810ca5e73f5401c700f6ba6194'
+            '01ff65464aab18db1052fc243aa933bd6b4606cfe073af5376133d3d5446ddff507aca287837ce0e0db69bc2011a8f153b4f867db410685f11ad262499f34bca'
+            'f4dd76c37175702169f8c942a8b7e232d178e03425f2f7b4578c544f3ee3771de13426d58c80cfa6cb9f66a57d53fbec0039b922ab444828cb3beee3b1a7f3a4'
+            '36bcf7484aca04abf5d7e0315c522fb9c541a6127f118a1da79d1e8e464d70182617d57add9597b916ba98e245036907e309401b5c85b96af04a7c3e17c64ece')
 
 pkgver() {
-    local major minor patch
-    major=$(sed -nr 's/^.*EXFAT_VERSION_MAJOR\s+(.*)$/\1/p' exfat/libexfat/version.h)
-    minor=$(sed -nr 's/^.*EXFAT_VERSION_MINOR\s+(.*)$/\1/p' exfat/libexfat/version.h)
-    patch=$(sed -nr 's/^.*EXFAT_VERSION_PATCH\s+(.*)$/\1/p' exfat/libexfat/version.h)
-    echo "${major}.${minor}.${patch}"
+    sed -nr 's/^.*\sVERSION\s+"(.*)"$/\1/p' exfat/libexfat/android_config.h
+}
+
+prepare() {
+    cd exfat
+    patch -p1 -i ../0001-Manually-call-LFS-functions-since-there-s-no-_FILE_O.patch
+    patch -p1 -i ../0002-Create-multicall-binary.patch
+    patch -p1 -i ../0001-Escape-commas-and-backslashes-in-source-path.patch
 }
 
 build() {

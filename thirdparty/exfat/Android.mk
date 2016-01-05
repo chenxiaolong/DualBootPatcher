@@ -114,7 +114,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := mount.exfat
 LOCAL_SRC_FILES := \
-	exfat/main.c
+	exfat/unified.c
 LOCAL_STATIC_LIBRARIES := \
 	libexfat_mount \
 	libexfat_fsck \
@@ -128,7 +128,7 @@ include $(BUILD_EXECUTABLE)
 include $(CLEAR_VARS)
 LOCAL_MODULE := mount.exfat_static
 LOCAL_SRC_FILES := \
-	exfat/main.c
+	exfat/unified.c
 LOCAL_STATIC_LIBRARIES := \
 	libexfat_mount \
 	libexfat_fsck \

@@ -63,10 +63,6 @@ enum ErrorCode
     ArchiveCloseError,
     ArchiveFreeError,
 
-    // Supported files
-    OnlyZipSupported,
-    OnlyBootImageSupported,
-
     // Cancelled
     PatchingCancelled,
 };

@@ -17,6 +17,11 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.provider.OpenableColumns;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -28,6 +33,9 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -195,16 +203,20 @@ public class PatcherService extends ThreadPoolService {
      * The task does not execute until {@link #startPatching(int)} is called.
      *
      * @param patcherId libmbp patcher ID
-     * @param path Path of file to patch
+     * @param inputUri URI for input file to patch
+     * @param outputUri URI for output file
      * @param device Target device
      * @param romId Target ROM ID
      * @return Task ID for the new task
      */
-    public int addPatchFileTask(String patcherId, String path, Device device, String romId) {
+    public int addPatchFileTask(String patcherId, Uri inputUri, Uri outputUri, String displayName,
+                                Device device, String romId) {
         int taskId = sPatcherNewTaskId.getAndIncrement();
         PatchFileTask task = new PatchFileTask(this, taskId);
         task.mPatcherId = patcherId;
-        task.mPath = path;
+        task.mInputUri = inputUri;
+        task.mOutputUri = outputUri;
+        task.mDisplayName = displayName;
         task.mDevice = device;
         task.mRomId = romId;
         addTask(taskId, task);
@@ -288,15 +300,37 @@ public class PatcherService extends ThreadPoolService {
         return task.mPatcherId;
     }
 
-    public void setPath(int taskId, String path) {
+    public void setInputUri(int taskId, Uri uri) {
         PatchFileTask task = getTask(taskId);
         enforceQueuedState(task);
-        task.mPath = path;
+        task.mInputUri = uri;
     }
 
-    public String getPath(int taskId) {
+    public Uri getInputUri(int taskId) {
         PatchFileTask task = getTask(taskId);
-        return task.mPath;
+        return task.mInputUri;
+    }
+
+    public void setOutputUri(int taskId, Uri uri) {
+        PatchFileTask task = getTask(taskId);
+        enforceQueuedState(task);
+        task.mOutputUri = uri;
+    }
+
+    public Uri getOutputUri(int taskId) {
+        PatchFileTask task = getTask(taskId);
+        return task.mOutputUri;
+    }
+
+    public void setDisplayName(int taskId, String displayName) {
+        PatchFileTask task = getTask(taskId);
+        enforceQueuedState(task);
+        task.mDisplayName = displayName;
+    }
+
+    public String getDisplayName(int taskId) {
+        PatchFileTask task = getTask(taskId);
+        return task.mDisplayName;
     }
 
     public void setDevice(int taskId, Device device) {
@@ -361,11 +395,6 @@ public class PatcherService extends ThreadPoolService {
         return task.mErrorCode.get();
     }
 
-    public String getNewPath(int taskId) {
-        PatchFileTask task = getTask(taskId);
-        return task.mNewPath.get();
-    }
-
     // Patcher event dispatch methods
 
     public interface PatcherEventListener {
@@ -379,8 +408,7 @@ public class PatcherService extends ThreadPoolService {
 
         void onPatcherStarted(int taskId);
 
-        void onPatcherFinished(int taskId, boolean cancelled, boolean ret, int errorCode,
-                               String newPath);
+        void onPatcherFinished(int taskId, boolean cancelled, boolean ret, int errorCode);
     }
 
     private void onPatcherInitialized() {
@@ -430,11 +458,11 @@ public class PatcherService extends ThreadPoolService {
     }
 
     private void onPatcherFinished(final int taskId, final boolean cancelled, final boolean ret,
-                                   final int errorCode, final String newPath) {
+                                   final int errorCode) {
         executeAllCallbacks(new CallbackRunnable() {
             @Override
             public void call(PatcherEventListener callback) {
-                callback.onPatcherFinished(taskId, cancelled, ret, errorCode, newPath);
+                callback.onPatcherFinished(taskId, cancelled, ret, errorCode);
             }
         });
     }
@@ -473,8 +501,12 @@ public class PatcherService extends ThreadPoolService {
 
         /** Patcher ID for creating {@link #mPatcher} */
         String mPatcherId;
-        /** Path to file to patch */
-        String mPath;
+        /** URI of input file */
+        Uri mInputUri;
+        /** URI of output file */
+        Uri mOutputUri;
+        /** Display name */
+        String mDisplayName;
         /** Target {@link Device} */
         Device mDevice;
         /** Target ROM ID */
@@ -503,8 +535,6 @@ public class PatcherService extends ThreadPoolService {
         AtomicBoolean mSuccessful = new AtomicBoolean(false);
         /** Error code if patching failed */
         AtomicInteger mErrorCode = new AtomicInteger(0);
-        /** Path to the newly patched file */
-        AtomicReference<String> mNewPath = new AtomicReference<>();
 
         public PatchFileTask(PatcherService service, int taskId) {
             super(service);
@@ -536,13 +566,21 @@ public class PatcherService extends ThreadPoolService {
             mState.set(PatchFileState.IN_PROGRESS);
             getService().onPatcherStarted(mTaskId);
 
+            ContentResolver cr = getService().getContentResolver();
+
+            String inputName = queryDisplayName(cr, mInputUri);
+            String outputName = queryDisplayName(cr, mOutputUri);
+
             Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
             Log.d(TAG, "libmbp version: " + PatcherUtils.sPC.getVersion());
             Log.d(TAG, "Patching file:");
-            Log.d(TAG, "- Patcher ID: " + mPatcherId);
-            Log.d(TAG, "- Path:       " + mPath);
-            Log.d(TAG, "- Device:     " + mDevice.getId());
-            Log.d(TAG, "- ROM ID:     " + mRomId);
+            Log.d(TAG, "- Patcher ID:  " + mPatcherId);
+            Log.d(TAG, "- Input URI:   " + mInputUri);
+            Log.d(TAG, "- Input name:  " + inputName);
+            Log.d(TAG, "- Output URI:  " + mOutputUri);
+            Log.d(TAG, "- Output name: " + outputName);
+            Log.d(TAG, "- Device:      " + mDevice.getId());
+            Log.d(TAG, "- ROM ID:      " + mRomId);
 
             // Make sure patcher is extracted first
             PatcherUtils.initializePatcher(getService());
@@ -552,9 +590,22 @@ public class PatcherService extends ThreadPoolService {
                 mPatcher = PatcherUtils.sPC.createPatcher(mPatcherId);
             }
             FileInfo fileInfo = new FileInfo();
+            ParcelFileDescriptor pfdIn = null;
+            ParcelFileDescriptor pfdOut = null;
             try {
+                pfdIn = cr.openFileDescriptor(mInputUri, "r");
+                pfdOut = cr.openFileDescriptor(mOutputUri, "w");
+                if (pfdIn == null || pfdOut == null) {
+                    Log.e(TAG, "Failed to open input or output URI");
+                    getService().onPatcherFinished(mTaskId, false, false, -1);
+                    return;
+                }
+                Log.d(TAG, "Input file descriptor is: " + pfdIn.getFd());
+                Log.d(TAG, "Output file descriptor is: " + pfdOut.getFd());
+
                 fileInfo.setDevice(mDevice);
-                fileInfo.setFilename(mPath);
+                fileInfo.setInputPath("/proc/self/fd/" + pfdIn.getFd());
+                fileInfo.setOutputPath("/proc/self/fd/" + pfdOut.getFd());
                 fileInfo.setRomId(mRomId);
 
                 mPatcher.setFileInfo(fileInfo);
@@ -562,12 +613,10 @@ public class PatcherService extends ThreadPoolService {
                 boolean ret = mPatcher.patchFile(this);
                 mSuccessful.set(ret);
                 mErrorCode.set(mPatcher.getError());
-                mNewPath.set(mPatcher.newFilePath());
 
                 boolean cancelled = mCancelled.get();
 
-                getService().onPatcherFinished(mTaskId, cancelled, ret, mPatcher.getError(),
-                        mPatcher.newFilePath());
+                getService().onPatcherFinished(mTaskId, cancelled, ret, mPatcher.getError());
 
                 // Set to complete if the task wasn't cancelled
                 if (cancelled) {
@@ -575,6 +624,9 @@ public class PatcherService extends ThreadPoolService {
                 } else {
                     mState.set(PatchFileState.COMPLETED);
                 }
+            } catch (FileNotFoundException e) {
+                Log.e(TAG, "Failed to open URI", e);
+                getService().onPatcherFinished(mTaskId, false, false, -1);
             } finally {
                 // Ensure we destroy allocated objects on the C++ side
                 synchronized (this) {
@@ -583,8 +635,24 @@ public class PatcherService extends ThreadPoolService {
                 }
                 fileInfo.destroy();
 
+                IOUtils.closeQuietly(pfdIn);
+                IOUtils.closeQuietly(pfdOut);
+
                 // Save log
                 LogUtils.dump("patch-file.log");
+            }
+        }
+
+        private static String queryDisplayName(ContentResolver cr, Uri uri) {
+            Cursor cursor = cr.query(uri, null, null, null, null, null);
+            try {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    return cursor.getString(nameIndex);
+                }
+                return null;
+            } finally {
+                IOUtils.closeQuietly(cursor);
             }
         }
 
