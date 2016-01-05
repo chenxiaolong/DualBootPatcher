@@ -53,13 +53,20 @@ public:
         uint64_t totalSize;
     };
 
-    static unzFile mzOpenInputFile(const std::string &path);
+    struct MzUnzCtx;
+    struct MzZipCtx;
 
-    static zipFile mzOpenOutputFile(const std::string &path);
+    static unzFile mzCtxGetUnzFile(MzUnzCtx *ctx);
 
-    static int mzCloseInputFile(unzFile uf);
+    static zipFile mzCtxGetZipFile(MzZipCtx *ctx);
 
-    static int mzCloseOutputFile(zipFile zf);
+    static MzUnzCtx * mzOpenInputFile(const std::string &path);
+
+    static MzZipCtx * mzOpenOutputFile(const std::string &path);
+
+    static int mzCloseInputFile(MzUnzCtx *ctx);
+
+    static int mzCloseOutputFile(MzZipCtx *ctx);
 
     static ErrorCode mzArchiveStats(const std::string &path,
                                     ArchiveStats *stats,
