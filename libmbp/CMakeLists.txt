@@ -53,6 +53,7 @@ set(MBP_DEVICE_SOURCES
     devices/oneplus.cpp
     devices/samsung.cpp
     devices/sony.cpp
+    devices/xiaomi.cpp
 )
 
 set(MBP_PATCHER_SOURCES
