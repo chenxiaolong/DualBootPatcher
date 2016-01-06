@@ -276,18 +276,38 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices->push_back(device);
 
-    // Samsung Galaxy S 5
+    // Samsung Galaxy S 5 (Qcom)
     device = new Device();
     device->setId("klte");
     device->setCodenames({ "klte", "kltecan", "kltedv", "kltespr", "kltetmo",
                            "klteusc", "kltevzw", "kltexx" });
-    device->setName("Samsung Galaxy S 5");
+    device->setName("Samsung Galaxy S 5 (Qcom)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p15" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+    devices->push_back(device);
+
+    // Samsung Galaxy S 5 (Exynos)
+    device = new Device();
+    device->setId("k3g");
+    device->setCodenames({ "k3g", "k3gxx" });
+    device->setName("Samsung Galaxy S 5 (Exynos)");
+    device->setBlockDevBaseDirs({ DWMMC0_12200000_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_12200000_SYSTEM,
+                                 "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_12200000_CACHE,
+                                "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_12200000_USERDATA,
+                               "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_12200000_BOOT,
+                               "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_12200000_RECOVERY,
+                                   "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_12200000_RADIO,
+                                DWMMC0_12200000_CDMA_RADIO });
     devices->push_back(device);
 
     // Samsung Galaxy S 5 Broadband LTE-A
