@@ -19,6 +19,7 @@
 
 #include "util/socket.h"
 
+#include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <sys/socket.h>
@@ -29,15 +30,23 @@ namespace mb
 namespace util
 {
 
-int64_t socket_read(int fd, void *buf, int64_t size)
+ssize_t socket_read(int fd, void *buf, size_t size)
 {
-    int32_t bytes_read = 0;
-    int n;
+    // read()'s behavior is undefined when size is greater than SSIZE_MAX
+    if (size > SSIZE_MAX) {
+        errno = EINVAL;
+        return -1;
+    }
 
-    while (bytes_read < size) {
+    ssize_t bytes_read = 0;
+    ssize_t n;
+
+    while (bytes_read < (ssize_t) size) {
         n = read(fd, static_cast<char *>(buf) + bytes_read, size - bytes_read);
-        if (n <= 0) {
+        if (n < 0) {
             return n;
+        } else if (n == 0) {
+            break;
         }
 
         bytes_read += n;
@@ -46,16 +55,25 @@ int64_t socket_read(int fd, void *buf, int64_t size)
     return bytes_read;
 }
 
-int64_t socket_write(int fd, const void *buf, int64_t size)
+ssize_t socket_write(int fd, const void *buf, size_t size)
 {
-    int32_t bytes_written = 0;
-    int n;
+    // write()'s behavior is implementation-defined when size is greater than
+    // SSIZE_MAX
+    if (size > SSIZE_MAX) {
+        errno = EINVAL;
+        return -1;
+    }
 
-    while (bytes_written < size) {
+    ssize_t bytes_written = 0;
+    ssize_t n;
+
+    while (bytes_written < (ssize_t) size) {
         n = write(fd, static_cast<const char *>(buf) + bytes_written,
                   size - bytes_written);
-        if (n <= 0) {
+        if (n < 0) {
             return n;
+        } else if (n == 0) {
+            break;
         }
 
         bytes_written += n;
@@ -77,7 +95,7 @@ bool socket_read_bytes(int fd, std::vector<uint8_t> *result)
 
     std::vector<uint8_t> buf(len);
 
-    if (socket_read(fd, buf.data(), len) == (int64_t) len) {
+    if (socket_read(fd, buf.data(), len) == (ssize_t) len) {
         result->swap(buf);
         return true;
     }
@@ -90,84 +108,87 @@ bool socket_write_bytes(int fd, const uint8_t *data, size_t len)
         return false;
     }
 
-    if (socket_write(fd, data, len) == (int64_t) len) {
+    if (socket_write(fd, data, len) == (ssize_t) len) {
         return true;
     }
     return false;
 }
 
-#define read_int_type(TYPE) \
-    TYPE buf; \
-    if (socket_read(fd, &buf, sizeof(TYPE)) == sizeof(TYPE)) { \
-        *result = buf; \
-        return true; \
-    } \
+template<typename TYPE>
+static inline bool read_copyable_type(int fd, TYPE *result)
+{
+    TYPE buf;
+    if (socket_read(fd, &buf, sizeof(TYPE)) == sizeof(TYPE)) {
+        *result = buf;
+        return true;
+    }
     return false;
+}
 
-#define write_int_type(TYPE) \
-    if (socket_write(fd, &n, sizeof(TYPE)) == sizeof(TYPE)) { \
-        return true; \
-    } \
-    return false;
+template<typename TYPE>
+static inline bool write_copyable_type(int fd, TYPE value)
+{
+    return socket_write(fd, &value, sizeof(TYPE)) == sizeof(TYPE);
+}
 
 bool socket_read_uint16(int fd, uint16_t *result)
 {
-    read_int_type(uint16_t);
+    return read_copyable_type(fd, result);
 }
 
 bool socket_write_uint16(int fd, uint16_t n)
 {
-    write_int_type(uint16_t);
+    return write_copyable_type(fd, n);
 }
 
 bool socket_read_uint32(int fd, uint32_t *result)
 {
-    read_int_type(uint32_t);
+    return read_copyable_type(fd, result);
 }
 
 bool socket_write_uint32(int fd, uint32_t n)
 {
-    write_int_type(uint32_t);
+    return write_copyable_type(fd, n);
 }
 
 bool socket_read_uint64(int fd, uint64_t *result)
 {
-    read_int_type(uint64_t);
+    return read_copyable_type(fd, result);
 }
 
 bool socket_write_uint64(int fd, uint64_t n)
 {
-    write_int_type(uint64_t);
+    return write_copyable_type(fd, n);
 }
 
 bool socket_read_int16(int fd, int16_t *result)
 {
-    read_int_type(int16_t);
+    return read_copyable_type(fd, result);
 }
 
 bool socket_write_int16(int fd, int16_t n)
 {
-    write_int_type(int16_t);
+    return write_copyable_type(fd, n);
 }
 
 bool socket_read_int32(int fd, int32_t *result)
 {
-    read_int_type(int32_t);
+    return read_copyable_type(fd, result);
 }
 
 bool socket_write_int32(int fd, int32_t n)
 {
-    write_int_type(int32_t);
+    return write_copyable_type(fd, n);
 }
 
 bool socket_read_int64(int fd, int64_t *result)
 {
-    read_int_type(int64_t);
+    return read_copyable_type(fd, result);
 }
 
 bool socket_write_int64(int fd, int64_t n)
 {
-    write_int_type(int64_t);
+    return write_copyable_type(fd, n);
 }
 
 bool socket_read_string(int fd, std::string *result)
@@ -183,7 +204,7 @@ bool socket_read_string(int fd, std::string *result)
 
     std::vector<char> buf(len);
 
-    if (socket_read(fd, buf.data(), len) == (int64_t) len) {
+    if (socket_read(fd, buf.data(), len) == (ssize_t) len) {
         result->assign(buf.begin(), buf.end());
         return true;
     }
@@ -196,7 +217,7 @@ bool socket_write_string(int fd, const std::string &str)
         return false;
     }
 
-    if (socket_write(fd, str.data(), str.size()) == (int64_t) str.size()) {
+    if (socket_write(fd, str.data(), str.size()) == (ssize_t) str.size()) {
         return true;
     }
     return false;

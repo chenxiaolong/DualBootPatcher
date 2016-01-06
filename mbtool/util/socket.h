@@ -29,8 +29,8 @@ namespace mb
 namespace util
 {
 
-int64_t socket_read(int fd, void *buf, int64_t size);
-int64_t socket_write(int fd, const void *buf, int64_t size);
+ssize_t socket_read(int fd, void *buf, size_t size);
+ssize_t socket_write(int fd, const void *buf, size_t size);
 bool socket_read_bytes(int fd, std::vector<uint8_t> *result);
 bool socket_write_bytes(int fd, const uint8_t *data, size_t len);
 bool socket_read_uint16(int fd, uint16_t *result);
