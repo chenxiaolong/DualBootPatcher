@@ -32,13 +32,17 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.BaseViewHolder;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardViewHolder;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.util.List;
 
-public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
+public class RomCardAdapter extends RecyclerView.Adapter<BaseViewHolder> {
+    private static final int ITEM_TYPE_ROM = 1;
+    private static final int ITEM_TYPE_SPACER = 2;
+
     private final Context mContext;
     private List<RomInformation> mRoms;
     private String mActiveRomId;
@@ -68,54 +72,76 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
     }
 
     @Override
-    public RomCardViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater
-                .from(parent.getContext())
-                .inflate(R.layout.card_v7_rom, parent, false);
-        return new RomCardViewHolder(view, onRomCardClickListener);
+    public int getItemViewType(int position) {
+        if (position == mRoms.size()) {
+            return ITEM_TYPE_SPACER;
+        } else {
+            return ITEM_TYPE_ROM;
+        }
     }
 
     @Override
-    public void onBindViewHolder(RomCardViewHolder holder, int position) {
-        RomInformation rom = mRoms.get(position);
-        holder.vName.setText(rom.getName());
+    public BaseViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        View view;
 
-        String version = rom.getVersion();
-        String build = rom.getBuild();
-
-        if (version == null || version.isEmpty()) {
-            holder.vVersion.setText(R.string.rom_card_unknown_version);
-        } else {
-            holder.vVersion.setText(rom.getVersion());
+        switch (viewType) {
+        case ITEM_TYPE_ROM:
+            view = inflater.inflate(R.layout.card_v7_rom, parent, false);
+            return new RomCardViewHolder(view, onRomCardClickListener);
+        case ITEM_TYPE_SPACER:
+            view = inflater.inflate(R.layout.card_v7_rom_spacer, parent, false);
+            return new SpacerViewHolder(view);
+        default:
+            throw new IllegalStateException("Invalid view type: " + viewType);
         }
-        if (build == null || build.isEmpty()) {
-            holder.vBuild.setText(R.string.rom_card_unknown_build);
-        } else {
-            holder.vBuild.setText(rom.getBuild());
-        }
+    }
 
-        File f = new File(rom.getThumbnailPath());
-        if (f.exists() && f.canRead()) {
-            Picasso.with(mContext)
-                    .load(f)
-                    .error(rom.getImageResId())
-                    .into(holder.vThumbnail);
-        } else {
-            Picasso.with(mContext)
-                    .load(rom.getImageResId())
-                    .into(holder.vThumbnail);
-        }
+    @Override
+    public void onBindViewHolder(BaseViewHolder holder, int position) {
+        if (holder instanceof RomCardViewHolder) {
+            RomCardViewHolder romVh = (RomCardViewHolder) holder;
 
-        if (mActiveRomId != null && mActiveRomId.equals(rom.getId())) {
-            holder.vActive.setVisibility(View.VISIBLE);
-        } else {
-            holder.vActive.setVisibility(View.GONE);
+            RomInformation rom = mRoms.get(position);
+            romVh.vName.setText(rom.getName());
+
+            String version = rom.getVersion();
+            String build = rom.getBuild();
+
+            if (version == null || version.isEmpty()) {
+                romVh.vVersion.setText(R.string.rom_card_unknown_version);
+            } else {
+                romVh.vVersion.setText(rom.getVersion());
+            }
+            if (build == null || build.isEmpty()) {
+                romVh.vBuild.setText(R.string.rom_card_unknown_build);
+            } else {
+                romVh.vBuild.setText(rom.getBuild());
+            }
+
+            File f = new File(rom.getThumbnailPath());
+            if (f.exists() && f.canRead()) {
+                Picasso.with(mContext)
+                        .load(f)
+                        .error(rom.getImageResId())
+                        .into(romVh.vThumbnail);
+            } else {
+                Picasso.with(mContext)
+                        .load(rom.getImageResId())
+                        .into(romVh.vThumbnail);
+            }
+
+            if (mActiveRomId != null && mActiveRomId.equals(rom.getId())) {
+                romVh.vActive.setVisibility(View.VISIBLE);
+            } else {
+                romVh.vActive.setVisibility(View.GONE);
+            }
         }
     }
 
     @Override
     public int getItemCount() {
-        return mRoms.size();
+        return mRoms.size() + 1;
     }
 
     @Nullable
@@ -127,7 +153,19 @@ public class RomCardAdapter extends RecyclerView.Adapter<RomCardViewHolder> {
         mActiveRomId = activeRomId;
     }
 
-    protected static class RomCardViewHolder extends ViewHolder {
+    protected static class BaseViewHolder extends ViewHolder {
+        BaseViewHolder(View itemView) {
+            super(itemView);
+        }
+    }
+
+    protected static class SpacerViewHolder extends BaseViewHolder {
+        public SpacerViewHolder(View v) {
+            super(v);
+        }
+    }
+
+    protected static class RomCardViewHolder extends BaseViewHolder {
         private RomCardClickListener mListener;
 
         protected CardView vCard;
