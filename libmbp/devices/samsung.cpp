@@ -531,16 +531,18 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices->push_back(device);
 
-    // Samsung Galaxy Tab S 8.4/10.5 (Wifi)
+    // Samsung Galaxy Tab S 8.4/10.5
     device = new Device();
-    device->setId("tab_s_wifi");
+    device->setId("tab_s");
     device->setCodenames({
-        // 8.4" variant
+        // 8.4" variant (wifi)
         "klimtwifi", "klimtwifikx",
-        // 10.5" variant
+        // 8.4" variant (LTE)
+        "klimtlte", "klimtltexx",
+        // 10.5" variant (wifi)
         "chagallwifi", "chagallwifixx"
     });
-    device->setName("Samsung Galaxy Tab S 8.4/10.5 (Wifi)");
+    device->setName("Samsung Galaxy Tab S 8.4/10.5");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p18" });
     device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
