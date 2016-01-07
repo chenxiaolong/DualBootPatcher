@@ -43,8 +43,8 @@ elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     include(cmake/ConfigDesktop.cmake)
 endif()
 
-include(cmake/AndroidNDK.cmake)
 include(cmake/LogicalCoreCount.cmake)
+include(cmake/AndroidNDK.cmake)
 
 # Third party binaries
 add_subdirectory(thirdparty)

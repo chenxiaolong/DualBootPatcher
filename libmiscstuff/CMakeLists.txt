@@ -13,7 +13,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
         CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
         BUILD_COMMAND ${NDK_BUILD}
                       -C <SOURCE_DIR>
-                      -j${PROCESSOR_COUNT}
                       NDK_PROJECT_PATH=.
                       NDK_APPLICATION_MK=Application.mk
                       NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out

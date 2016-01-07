@@ -10,10 +10,17 @@ if(NOT NDK_BUILD)
 endif()
 
 # Pass NDK_DEBUG=1 to ndk-build commands
-option(ANDROID_DEBUG "Compile Android targets with debugging symbols" OFF)
+option(MBP_ANDROID_DEBUG "Compile Android targets with debugging symbols" OFF)
 
 set(NDK_ARGS "")
 
-if(ANDROID_DEBUG)
-    set(NDK_ARGS "${NDK_ARGS} NDK_DEBUG=1")
+if(MBP_ANDROID_DEBUG)
+    list(APPEND NDK_ARGS "NDK_DEBUG=1")
 endif()
+
+# -j option to pass to ndk-build
+set(MBP_ANDROID_NDK_PARALLEL_PROCESSES "${PROCESSOR_COUNT}"
+    CACHE STRING "-j<COUNT> parameter to pass to ndk-build")
+
+#set(NDK_ARGS "${NDK_ARGS} -j${MBP_ANDROID_NDK_PARALLEL_PROCESSES}")
+list(APPEND NDK_ARGS "-j${MBP_ANDROID_NDK_PARALLEL_PROCESSES}")
