@@ -1,5 +1,6 @@
 include(ExternalProject)
 
+# Generate version.cpp
 include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
 git_describe(GIT_VERSION --dirty --always --tags)
 
@@ -8,8 +9,14 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     @ONLY
 )
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
+# Generate validcerts.cpp
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
+)
+
+# Generate Android.mk
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
     ${CMAKE_CURRENT_BINARY_DIR}/Android.mk

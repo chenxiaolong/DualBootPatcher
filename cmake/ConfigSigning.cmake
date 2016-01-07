@@ -82,3 +82,28 @@ if(SIGNING_UNDEFINED_VARS)
     endforeach()
     message(FATAL_ERROR "${ERROR_MSG}")
 endif()
+
+# Try to prevent using debug key in release builds
+if(${CMAKE_BUILD_TYPE} STREQUAL release
+        AND "${MBP_SIGN_JAVA_KEY_ALIAS}" STREQUAL "androiddebugkey")
+    message(FATAL_ERROR "Do not use a debug key in a release build")
+endif()
+
+# Export certificate to file
+execute_process(
+    COMMAND
+    ${JAVA_KEYTOOL}
+    -exportcert
+    -keystore "${MBP_SIGN_JAVA_KEYSTORE_PATH}"
+    -storepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
+    -alias "${MBP_SIGN_JAVA_KEY_ALIAS}"
+    -file ${CMAKE_BINARY_DIR}/java_keystore_cert.des
+)
+
+# Read des certificate as hex
+file(
+    READ
+    ${CMAKE_BINARY_DIR}/java_keystore_cert.des
+    MBP_SIGN_JAVA_CERT_HEX
+    HEX
+)

@@ -1,6 +1,0 @@
-# Allow debug certificate?
-# WARNING: Dangerous!
-ALLOW_DEBUG_CERT := true
-
-# Specify the certificate here (see validcerts.cpp for more info)
-DEBUG_CERT := "<your certificate here>"
