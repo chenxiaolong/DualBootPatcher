@@ -83,7 +83,7 @@ set(MBP_SOURCES
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
 
-if(MBP_BUILD_ANDROID)
+if(${MBP_BUILD_TARGET} STREQUAL android)
     # Wordaround semicolon separated list issue
     set(MBP_SOURCES_STR "")
     foreach(_source ${MBP_SOURCES})

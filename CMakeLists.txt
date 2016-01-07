@@ -17,11 +17,29 @@ set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
 
-option(MBP_BUILD_ANDROID "Build for Android" OFF)
+# Build target and type
+set(MBP_BUILD_TARGET "desktop"
+    CACHE STRING "Target platform (desktop or android)")
+set(MBP_BUILD_TYPE "debug"
+    CACHE STRING "Target build type (release, debug, or ci)")
 
-if(MBP_BUILD_ANDROID)
+# Verify build target and type
+if(NOT ${MBP_BUILD_TARGET} STREQUAL desktop
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL android)
+    message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
+endif()
+if(NOT ${MBP_BUILD_TYPE} STREQUAL release
+        AND NOT ${MBP_BUILD_TYPE} STREQUAL debug
+        AND NOT ${MBP_BUILD_TYPE} STREQUAL ci)
+    message(FATAL_ERROR "Invalid build type: ${MBP_BUILD_TYPE}")
+endif()
+
+# Code signing options
+include(cmake/ConfigSigning.cmake)
+
+if(${MBP_BUILD_TARGET} STREQUAL android)
     include(cmake/ConfigAndroid.cmake)
-else()
+elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     include(cmake/ConfigDesktop.cmake)
 endif()
 
@@ -36,15 +54,10 @@ add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
 add_subdirectory(data)
 add_subdirectory(mbtool)
-
-if(MBP_BUILD_ANDROID)
-    add_subdirectory(libmiscstuff)
-    add_subdirectory(Android_GUI)
-else()
-    add_subdirectory(gui)
-    add_subdirectory(bootimgtool)
-endif()
-
+add_subdirectory(libmiscstuff)
+add_subdirectory(Android_GUI)
+add_subdirectory(gui)
+add_subdirectory(bootimgtool)
 add_subdirectory(utilities)
 
 include(CPack)

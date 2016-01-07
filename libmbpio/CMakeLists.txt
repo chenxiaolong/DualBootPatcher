@@ -28,7 +28,7 @@ else()
     )
 endif()
 
-if(NOT MBP_BUILD_ANDROID)
+if(${MBP_BUILD_TARGET} STREQUAL desktop)
     # For desktop machines, we'll build with cmake
 
     add_library(mbpio STATIC ${MBP_IO_SOURCES})
