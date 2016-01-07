@@ -88,7 +88,7 @@
 #define DWMMC0_12200000_SYSTEM     DWMMC0_12200000_BASE_DIR "/SYSTEM"
 #define DWMMC0_12200000_USERDATA   DWMMC0_12200000_BASE_DIR "/USERDATA"
 
-// Block device paths used by the Exynos 5433
+// Block device paths used by the Exynos 5430/5433
 #define DWMMC0_15540000_BASE_DIR   "/dev/block/platform/15540000.dwmmc0/by-name"
 #define DWMMC0_15540000_BOOT       DWMMC0_15540000_BASE_DIR "/BOOT"
 #define DWMMC0_15540000_CACHE      DWMMC0_15540000_BASE_DIR "/CACHE"
