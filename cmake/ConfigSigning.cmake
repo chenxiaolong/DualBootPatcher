@@ -52,7 +52,7 @@ endif()
 
 # User's signing options
 set(MBP_SIGN_JAVA_KEYSTORE_PATH     "${DEFAULT_SIGN_JAVA_KEYSTORE_PATH}"
-    CACHE STRING "Java signing keystore path")
+    CACHE FILEPATH "Java signing keystore path")
 set(MBP_SIGN_JAVA_KEYSTORE_PASSWORD "${DEFAULT_SIGN_JAVA_KEYSTORE_PASSWORD}"
     CACHE STRING "Java signing keystore password")
 set(MBP_SIGN_JAVA_KEY_ALIAS         "${DEFAULT_SIGN_JAVA_KEY_ALIAS}"
