@@ -66,6 +66,7 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     ```sh
     mkdir build && cd build
     cmake .. \
+        -DMBP_BUILD_TARGET=desktop \
         -DMBP_PORTABLE=ON \
         -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-mingw.cmake \
         -DMBP_USE_SYSTEM_LIBRARY_ZLIB=ON \

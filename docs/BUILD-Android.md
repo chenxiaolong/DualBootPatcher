@@ -16,28 +16,34 @@ At this time, the host system must be running Linux (though I have not tried com
    export ANDROID_NDK_HOME=/path/to/android-ndk
    ```
 
-2. Copy `mbtool/Android.certs.mk.sample` to `mbtool/Android.certs.mk` and edit it to include the hexadecimal-representation of the certficate for the key used to sign the Android app. (See mbtool/validcerts.cpp for the commands to do this.) This must be done or else mbtool will refuse socket connections from your build of the app.
+2. Build!
 
-3. Build!
+   See [`CMAKE.md`](CMAKE.md) for a complete listing of CMake options. The following commands provide common commands for building release and debug versions of the app.
 
    For a release build:
 
    ```sh
    mkdir build && cd build
-   cmake .. -DMBP_BUILD_ANDROID=ON
+   cmake .. \
+       -DMBP_BUILD_TARGET=android \
+       -DMBP_BUILD_TYPE=release \
+       -DMBP_SIGN_JAVA_KEYSTORE_PATH=<keystore path> \
+       -DMBP_SIGN_JAVA_KEYSTORE_PASSWORD=<keystore password> \
+       -DMBP_SIGN_JAVA_KEY_ALIAS=<key alias> \
+       -DMBP_SIGN_JAVA_KEY_PASSWORD=<key password>
    make
    rm -rf assets && cpack -G TXZ
-   cd ../Android_GUI
-   ./gradlew assembleRelease
+   make apk
    ```
 
    For a debug build:
 
    ```sh
    mkdir build && cd build
-   cmake .. -DMBP_BUILD_ANDROID=ON -DANDROID_DEBUG=ON
+   cmake .. \
+       -DMBP_BUILD_TARGET=android \
+       -DMBP_BUILD_TYPE=debug
    make
    rm -rf assets && cpack -G TXZ
-   cd ../Android_GUI
-   ./gradlew assembleDebug
+   make apk
    ```

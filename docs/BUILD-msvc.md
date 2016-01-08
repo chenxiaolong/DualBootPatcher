@@ -71,6 +71,7 @@ The following packages need to be downloaded and installed:
    mkdir build
    cd build
    cmake .. ^
+       -DMBP_BUILD_TARGET=desktop ^
        -DMBP_PORTABLE=ON ^
        -DCMAKE_PREFIX_PATH="%QTDIR%\lib\cmake"
    cmake --build . --config Release
