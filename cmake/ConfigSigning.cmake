@@ -84,7 +84,7 @@ if(SIGNING_UNDEFINED_VARS)
 endif()
 
 # Try to prevent using debug key in release builds
-if(${CMAKE_BUILD_TYPE} STREQUAL release
+if(${MBP_BUILD_TYPE} STREQUAL release
         AND "${MBP_SIGN_JAVA_KEY_ALIAS}" STREQUAL "androiddebugkey")
     message(FATAL_ERROR "Do not use a debug key in a release build")
 endif()
