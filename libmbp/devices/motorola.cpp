@@ -55,6 +55,21 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices->push_back(device);
 
+    // Motorola Moto E (2nd gen)
+    device = new Device();
+    device->setId("surnia");
+    device->setCodenames({ "surnia", "surnia_cdma", "surnia_boost", "surnia_verizon",
+                           "surnia_cricket", "surnia_retus", "surnia_tefla", "xt1514",
+                           "xt1521", "xt1523", "xt1524", "xt1526", "xt1527" });
+    device->setName("Motorola Moto E (2nd gen)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p41" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p42" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p43" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p33" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p34" });
+    devices->push_back(device);
+
     // Motorola Moto X (2013)
     device = new Device();
     device->setId("ghost");
