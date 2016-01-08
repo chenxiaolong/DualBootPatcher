@@ -32,7 +32,6 @@
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Espace libre</string>
   <!--Navigation drawer item for changing the ROM settings-->
-  <string name="title_rom_settings">Réglages de la ROM</string>
   <!--Navigation drawer item for changing the app sharing settings-->
   <string name="title_app_sharing">Partage d\'application</string>
   <!--Nagivation drawer item for rebooting the device-->
@@ -87,8 +86,10 @@ Continuer?</string>
   <string name="rom_card_unknown_version">Version inconnue</string>
   <!--Build text shown on ROM card if the build could not be detected-->
   <string name="rom_card_unknown_build">Travail inconnu</string>
+  <!--ROM menu item for updating the ramdisk-->
   <!--ROM menu item for setting kernel-->
   <string name="rom_menu_set_kernel">Réglé le kernel</string>
+  <!--ROM menu item for backing up the ROM-->
   <!--ROM menu item for adding an icon to the home screen-->
   <string name="rom_menu_add_to_home_screen">Ajouter à l\'écran d\'accueil</string>
   <!--ROM menu item for changing the name-->
@@ -115,10 +116,6 @@ Continuer?</string>
   <string name="wipe_target_multiboot_files">Les fichiers Multiboot</string>
   <!--Title of dialog box asking for which targets to wipe-->
   <string name="wipe_rom_dialog_title">Nettoyages ciblés</string>
-  <!--Message shown in the dialog box for ROM wiping indicating that the feature is still very
-         experimental and could unintentionally delete backups or other files on the internal
-         storage.-->
-  <string name="wipe_rom_dialog_warning_message">Le nettoyage In-App de la ROM est actuellement une fonction expérimentale, pouvant avoir des bugs qui pourraient, bien que peu probable, essuyer involontairement vos sauvegardes, le stockage interne et d\'autres données importantes.</string>
   <!--Title of progress dialog shown when wiping targets-->
   <string name="wiping_targets">Nettoyage de la ou des parties ciblées</string>
   <!--Toast message indicating successfully wiped targets-->
@@ -132,6 +129,7 @@ Continuer?</string>
 spécifiées.</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">La ROM en cours d\'exécution ne peut pas être effacée.</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo de la rom</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -183,13 +181,34 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <string name="zip_flashing_change_install_location">Changer l\'emplacement</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Pour flasher un fichier zip en utilisant le flashage in-app, just ajouter le fichier zip patché en tapant le grand icône plus. \n\nL\'ordre de flashage peut être modifié en appuyant et maintenant le fichier et un fichier peut être éliminé en le glissant sur les côtés. \n\nNOTE: Cette fonction est encore expérimentale. Veuillez sauvegarder avant de continuer!</string>
-  <!--Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <!--ROM details item showing the version of the ROM-->
+  <!--ROM details item showing the build name of the ROM-->
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <!--ROM details item showing the path to the system directory or image-->
+  <!--ROM details item showing the path to the cache directory or image-->
+  <!--ROM details item showing the path to the data directory or image-->
+  <!--ROM details item showing the size of the system directory or image-->
+  <!--ROM details item showing the size of the cache directory or image-->
+  <!--ROM details item showing the size of the data directory or image-->
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
   <!--Title of the device selection box in the patcher-->
   <string name="patcher_device_title">Appareil:</string>
   <!--Title of the partition configuration box in the patcher-->
   <string name="patcher_partconfig_title">Configuration de la partition:</string>
   <!--Title of the partition configuration description in the patcher-->
   <string name="patcher_partconfig_desc_title">Description:</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <!--Subtitle shown in patch file card when patching failed-->
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <!--Patcher options dialog title-->
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">MAJ de la ROM primaire</string>
   <!--Description for primary ROM upgrade installation location-->
@@ -212,51 +231,8 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <string name="filemanager_missing_title">Pas de gestionnaire de fichier</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Il n\'y a pas de gestionnaire de fichier approprié installé. S\'il vous plaît, installer un gestionnaire de fichiers pour pouvoir choisir les fichiers à patcher.</string>
-  <!--Title for the file chooser card telling the user to tap to choose a file-->
-  <string name="filechooser_initial_title">Appuyer pour choisir un fichier à patcher</string>
-  <!--Initial message for the file chooser card-->
-  <string name="filechooser_initial_desc">Si un fichier non pris en charge est choisi, des options supplémentaire apparaîtront afin de permettre au processus de patching d\'être personnalisé.</string>
-  <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_ready_title">Taper pour commencer le patchage</string>
-  <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
-  <string name="filechooser_ready_desc">Fichier sélectionné: %s
-Appuyez et maintenez pour choisir un fichier different.</string>
-  <!--Title for the file chooser card indicating that the file was successfully patched-->
-  <string name="filechooser_success_title">Fichier patché avec succès</string>
-  <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_success_desc">Nouveau fichier: %s
-Appuyez ici pour choisir un autre fichier à patcher.</string>
-  <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
-  <string name="filechooser_failure_title">Impossible de patcher le fichier</string>
-  <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_failure_desc">%s
-Appuyez ici pour choisir un autre fichier à patcher.</string>
-  <!--Title for the preset card-->
-  <string name="preset_title">Préréglage</string>
-  <!--Name for the custom preset item-->
-  <string name="preset_custom">Personnalisé</string>
-  <!--Description for the custom preset item indicating that further options can be modified-->
-  <string name="preset_custom_desc">Personnaliser le patcher en utilisant les options ci-dessous</string>
-  <!--Title for the custom options card-->
-  <string name="customopts_title">Options personnalisées</string>
-  <!--Name for the patch file radio button-->
-  <string name="customopts_patchfile">Patcher un fichier</string>
-  <!--Name for the button to select a .patch or .diff file-->
-  <string name="customopts_choosepatch">Choisir un fichier à patcher</string>
-  <!--Name for the option telling the patcher that the file has a boot image-->
-  <string name="customopts_hasbootimage">A une image boot</string>
-  <!--Name for the boot image text box-->
-  <string name="customopts_bootimage">Image boot</string>
-  <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
-  <string name="customopts_bootimage_hint">Laisser vide pour détecter automatiquement</string>
-  <!--Accessibility text for the checkbox in the progress box-->
-  <string name="task_checkbox_image">Achèvement des tâches cochées</string>
-  <!--Title for the details card-->
-  <string name="details_title">Détails:</string>
   <!--Text for the details card indicating that the patching is done-->
   <string name="details_done">Effectué</string>
-  <!--Title for the progress card-->
-  <string name="overall_progress">Progression globale:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">fichiers %1$s/%2$s </string>
   <!--Title for total size of partition-->
@@ -265,9 +241,12 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <string name="free_space_occupied_size">Occupé:</string>
   <!--Title for free space on partition-->
   <string name="free_space_free_size">Libre:</string>
-  <!--Format string for gigabytes-->
-  <!--Format string for megabytes-->
-  <!--Format string for kilobytes-->
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
   <!--Format string for bytes-->
   <!--Title for the individual application sharing section of the ROM settings-->
   <string name="a_s_settings_indiv_app_sharing_section_title">Partage d\'application individuel</string>
@@ -279,6 +258,7 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <string name="a_s_settings_manage_shared_apps_title">Gérer les applications partagées</string>
   <!--Description for the preference to manage shared apps for individual app sharing-->
   <string name="a_s_settings_manage_shared_apps_desc">Choisissez quelles applications devront être partagées pour le partage d\'application individuelle.</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <string name="a_s_settings_version_too_old">mbtool doit être mis à jour pour profiter des fonctionnalités de partage de l\'application. S\'il vous plaît mettre à jour le disque virtuel.</string>
   <!--Title for preference category for boot options-->
@@ -295,6 +275,7 @@ Appuyez ici pour choisir un autre fichier à patcher.</string>
   <string name="update_ramdisk_success_title">Succès de mise à jour du disque virtuel</string>
   <!--Message asking user to reboot when the ramdisk updating succeeds-->
   <string name="update_ramdisk_reboot_desc">Le disque virtuel a été mis à jour avec succès. Voulez vous redémarrer maintenant?</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Impossible de mettre à jour le disque virtuel</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
@@ -351,13 +332,14 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <string name="proceed">Continuer</string>
   <!--Word/phrase for Yes (used in dialog boxes)-->
   <!--Word/phrase for No (used in dialog boxes)-->
+  <!--Word/phrase for try again (used in dialog boxes)-->
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Redémarrer maintenant</string>
   <!--Reboot later (used in dialog boxes)-->
   <string name="reboot_later">Redémarrer plus tard</string>
+  <!--Unknown (used when a value cannot be determined)-->
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
   <string name="do_not_show_again">Ne plus afficher</string>
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Veuillez attendre s\'il vous plait</string>
-  <!--Presets that should always be visible-->
 </resources>

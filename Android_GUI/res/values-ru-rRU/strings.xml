@@ -29,7 +29,6 @@
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Свободное Место</string>
   <!--Navigation drawer item for changing the ROM settings-->
-  <string name="title_rom_settings">Настройки ROM-а</string>
   <!--Navigation drawer item for changing the app sharing settings-->
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Перегрузить</string>
@@ -69,7 +68,9 @@
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
   <!--Version text shown on ROM card if the version could not be detected-->
   <!--Build text shown on ROM card if the build could not be detected-->
+  <!--ROM menu item for updating the ramdisk-->
   <!--ROM menu item for setting kernel-->
+  <!--ROM menu item for backing up the ROM-->
   <!--ROM menu item for adding an icon to the home screen-->
   <!--ROM menu item for changing the name-->
   <!--ROM menu item for changing the image-->
@@ -84,15 +85,13 @@
   <!--Target for wiping ROM's dalvik cache-->
   <!--Target for wiping ROM's multiboot files-->
   <!--Title of dialog box asking for which targets to wipe-->
-  <!--Message shown in the dialog box for ROM wiping indicating that the feature is still very
-         experimental and could unintentionally delete backups or other files on the internal
-         storage.-->
   <!--Title of progress dialog shown when wiping targets-->
   <!--Toast message indicating successfully wiped targets-->
   <!--Toast message indicating targets that failed to wipe-->
   <!--Toast message indicating that the wipe process failed to start-->
   <!--Toast message shown if the user did not select any target to wipe-->
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Эмблема ROM-а</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -123,10 +122,31 @@
   <!--Dialog button for keeping the current installation location-->
   <!--Dialog button for changing the installation location-->
   <!--Message shown in the first-use dialog for zip flashing-->
-  <!--Dialog error message shown if the user denies storage permissions to the app in Android >=6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <!--ROM details item showing the version of the ROM-->
+  <!--ROM details item showing the build name of the ROM-->
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <!--ROM details item showing the path to the system directory or image-->
+  <!--ROM details item showing the path to the cache directory or image-->
+  <!--ROM details item showing the path to the data directory or image-->
+  <!--ROM details item showing the size of the system directory or image-->
+  <!--ROM details item showing the size of the cache directory or image-->
+  <!--ROM details item showing the size of the data directory or image-->
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
   <!--Title of the device selection box in the patcher-->
   <!--Title of the partition configuration box in the patcher-->
   <!--Title of the partition configuration description in the patcher-->
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <!--Subtitle shown in patch file card when patching failed-->
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <!--Patcher options dialog title-->
   <!--Name for primary ROM upgrade installation location-->
   <!--Description for primary ROM upgrade installation location-->
   <!--Description for all other installation locations-->
@@ -141,47 +161,8 @@
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Файловый менеджер не установлен на этом устройстве.
 Пожалуйста установите менеджер для выбора файлов.</string>
-  <!--Title for the file chooser card telling the user to tap to choose a file-->
-  <string name="filechooser_initial_title">Нажмите для выбора файла</string>
-  <!--Initial message for the file chooser card-->
-  <!--Title for the file chooser card that is shown after a supported file has been selected. Tells the user to tap to start patching-->
-  <string name="filechooser_ready_title">Нажмите чтобы начать прошивку</string>
-  <!--Message indicating which file has been chosen and that tapping allows another file to be chosen-->
-  <string name="filechooser_ready_desc">Выбранный файлы: %s\n\nНажмите и удерживайте для выбора другого файла</string>
-  <!--Title for the file chooser card indicating that the file was successfully patched-->
-  <string name="filechooser_success_title">Прошивка завершена успешно</string>
-  <!--Message for the file chooser card showing the newly patched file and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_success_desc">Новый файл: %s\n\nНажмите для выбора другого файла для прошивки</string>
-  <!--Title for the file chooser card indicating that the patcher failed to patch the file-->
-  <string name="filechooser_failure_title">Прошивка не удачна</string>
-  <!--Title for the file chooser card showing the error message and telling the user to tap to choose another file to patch-->
-  <string name="filechooser_failure_desc">%s\n\nНажмите для выбора другого файла для прошивки</string>
-  <!--Title for the preset card-->
-  <string name="preset_title">Предварительные настройки</string>
-  <!--Name for the custom preset item-->
-  <string name="preset_custom">Нестандартные настройки</string>
-  <!--Description for the custom preset item indicating that further options can be modified-->
-  <string name="preset_custom_desc">Настроить прошиватель пользуя следующие опции</string>
-  <!--Title for the custom options card-->
-  <string name="customopts_title">Нестандартные настройки</string>
-  <!--Name for the patch file radio button-->
-  <string name="customopts_patchfile">Прошить файл</string>
-  <!--Name for the button to select a .patch or .diff file-->
-  <string name="customopts_choosepatch">Выбрать файл прошивки</string>
-  <!--Name for the option telling the patcher that the file has a boot image-->
-  <string name="customopts_hasbootimage">Образ загрузочного диска присытствует</string>
-  <!--Name for the boot image text box-->
-  <string name="customopts_bootimage">Образ загрузочного диска</string>
-  <!--Default text for the boot image text box indicating that leaving the box blank will enable autodetection-->
-  <string name="customopts_bootimage_hint">Очистить для авто-обнаружения</string>
-  <!--Accessibility text for the checkbox in the progress box-->
-  <string name="task_checkbox_image">Отметка завершения работы</string>
-  <!--Title for the details card-->
-  <string name="details_title">Элементы:</string>
   <!--Text for the details card indicating that the patching is done-->
   <string name="details_done">Завершено</string>
-  <!--Title for the progress card-->
-  <string name="overall_progress">Общий прогресс:</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s файлов</string>
   <!--Title for total size of partition-->
@@ -190,15 +171,19 @@
   <string name="free_space_occupied_size">Занято:</string>
   <!--Title for free space on partition-->
   <string name="free_space_free_size">Свободно:</string>
-  <!--Format string for gigabytes-->
-  <!--Format string for megabytes-->
-  <!--Format string for kilobytes-->
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
   <!--Format string for bytes-->
   <!--Title for the individual application sharing section of the ROM settings-->
   <!--Title for the preference to share individual applications-->
   <!--Description for the preference to share individual applications-->
   <!--Title for the preference to manage shared apps for individual app sharing-->
   <!--Description for the preference to manage shared apps for individual app sharing-->
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
@@ -211,6 +196,7 @@
   <!--Message asking user to reboot when the ramdisk updating succeeds-->
   <string name="update_ramdisk_reboot_desc">Виртуальный диск был обновлен успешно. Перезапустить устройство
 сейчас?</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Виртуальный диск не обновлен</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
@@ -247,13 +233,14 @@
   <string name="proceed">Продолжить</string>
   <!--Word/phrase for Yes (used in dialog boxes)-->
   <!--Word/phrase for No (used in dialog boxes)-->
+  <!--Word/phrase for try again (used in dialog boxes)-->
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Перегрузить сейчас</string>
   <!--Reboot later (used in dialog boxes)-->
   <string name="reboot_later">Перегрузить позже</string>
+  <!--Unknown (used when a value cannot be determined)-->
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
   <string name="do_not_show_again">Больше не показывать</string>
   <!--Text shown in a progress dialog asking the user to wait-->
   <string name="please_wait">Подождите пожалуйста</string>
-  <!--Presets that should always be visible-->
 </resources>
