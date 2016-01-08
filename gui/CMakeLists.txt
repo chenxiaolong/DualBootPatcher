@@ -75,7 +75,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
 
     # Set rpath for portable build
-    if (${MBP_PORTABLE})
+    if(${MBP_PORTABLE})
         set_target_properties(gui
             PROPERTIES
             BUILD_WITH_INSTALL_RPATH OFF
