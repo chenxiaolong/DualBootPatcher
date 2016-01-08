@@ -6,17 +6,6 @@ set(MBP_VERSION_MINOR 99)
 set(MBP_VERSION_PATCH 12)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
-# Allow version to be overridden in Jenkins
-set(MBP_CI_VERSION "" CACHE STRING "Override version (continuous integration)")
-if(MBP_CI_VERSION)
-    set(MBP_VERSION ${MBP_CI_VERSION})
-endif()
-
-set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
-set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
-
 # Build target and type
 set(MBP_BUILD_TARGET "desktop"
     CACHE STRING "Target platform (desktop or android)")
@@ -32,6 +21,15 @@ if(NOT ${MBP_BUILD_TYPE} STREQUAL release
         AND NOT ${MBP_BUILD_TYPE} STREQUAL debug
         AND NOT ${MBP_BUILD_TYPE} STREQUAL ci)
     message(FATAL_ERROR "Invalid build type: ${MBP_BUILD_TYPE}")
+endif()
+
+# Allow version to be overridden in Jenkins
+set(MBP_CI_VERSION "" CACHE STRING "Override version (continuous integration)")
+if(MBP_CI_VERSION)
+    if(NOT ${MBP_BUILD_TYPE} STREQUAL ci)
+        message(FATAL_ERROR "Cannot override version number for non-CI builds")
+    endif()
+    set(MBP_VERSION ${MBP_CI_VERSION})
 endif()
 
 # Code signing options
@@ -59,5 +57,10 @@ add_subdirectory(Android_GUI)
 add_subdirectory(gui)
 add_subdirectory(bootimgtool)
 add_subdirectory(utilities)
+
+set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
 
 include(CPack)
