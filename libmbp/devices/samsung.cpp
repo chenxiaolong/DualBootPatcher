@@ -596,6 +596,31 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC0_15540000_RADIO,
                                 DWMMC0_15540000_CDMA_RADIO });
     devices->push_back(device);
+
+    // Samsung Galaxy Alpha (Exynos)
+    device = new Device();
+    device->setId("slte");
+    device->setCodenames({
+        // G850F
+        "slte", "sltexx",
+        // G850S/K/L
+        "slteskt", "sltektt", "sltelgu"
+    });
+    device->setName("Samsung Galaxy Alpha (Exynos)");
+    device->setBlockDevBaseDirs({ DWMMC0_15540000_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_15540000_SYSTEM,
+                                 "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_15540000_CACHE,
+                                "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_15540000_USERDATA,
+                               "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_15540000_BOOT,
+                               "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_15540000_RECOVERY,
+                                   "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_15540000_RADIO,
+                                DWMMC0_15540000_CDMA_RADIO });
+    devices->push_back(device);
 }
 
 void addSamsungDevices(std::vector<Device *> *devices)
