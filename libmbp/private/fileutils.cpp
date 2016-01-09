@@ -856,9 +856,10 @@ static bool mzGetFileTime(const std::string &filename,
 #ifdef _WIN32
     FILETIME ftLocal;
     HANDLE hFind;
-    WIN32_FIND_DATAA ff32;
+    WIN32_FIND_DATAW ff32;
 
-    hFind = FindFirstFileA(filename.c_str(), &ff32);
+    std::wstring wFilename = utf8::utf8ToUtf16(filename);
+    hFind = FindFirstFileW(wFilename.c_str(), &ff32);
     if (hFind != INVALID_HANDLE_VALUE)
     {
         FileTimeToLocalFileTime(&ff32.ftLastWriteTime, &ftLocal);
@@ -867,6 +868,9 @@ static bool mzGetFileTime(const std::string &filename,
                               ((LPWORD) dostime) + 0);
         FindClose(hFind);
         return true;
+    } else {
+        FLOGE("%s: FindFirstFileW() failed: %s",
+              filename.c_str(), win32ErrorToString(GetLastError()).c_str());
     }
 #elif defined unix || defined __APPLE__ /* || defined __ANDROID__ */
     struct stat sb;
