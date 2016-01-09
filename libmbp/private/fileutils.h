@@ -53,6 +53,10 @@ public:
         uint64_t totalSize;
     };
 
+    static std::string mzUnzErrorString(int ret);
+
+    static std::string mzZipErrorString(int ret);
+
     struct MzUnzCtx;
     struct MzZipCtx;
 
