@@ -32,6 +32,12 @@ if(MBP_CI_VERSION)
     set(MBP_VERSION ${MBP_CI_VERSION})
 endif()
 
+# CPack versions
+set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
+
 # Code signing options
 include(cmake/ConfigSigning.cmake)
 
@@ -57,10 +63,5 @@ add_subdirectory(Android_GUI)
 add_subdirectory(gui)
 add_subdirectory(bootimgtool)
 add_subdirectory(utilities)
-
-set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
-set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
 
 include(CPack)
