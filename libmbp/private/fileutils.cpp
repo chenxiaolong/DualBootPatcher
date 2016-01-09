@@ -872,21 +872,27 @@ static bool mzGetFileTime(const std::string &filename,
         FLOGE("%s: FindFirstFileW() failed: %s",
               filename.c_str(), win32ErrorToString(GetLastError()).c_str());
     }
-#elif defined unix || defined __APPLE__ /* || defined __ANDROID__ */
+#elif defined unix || defined __APPLE__ || defined __ANDROID__
     struct stat sb;
-    struct tm *t;
+    struct tm t;
 
     if (stat(filename.c_str(), &sb) == 0) {
-        t = localtime(&sb.st_mtime);
+        time_t mtime = sb.st_mtime;
+        if (!localtime_r(&mtime, &t)) {
+            LOGE("localtime() failed");
+            return false;
+        }
 
-        tmzip->tm_sec  = t->tm_sec;
-        tmzip->tm_min  = t->tm_min;
-        tmzip->tm_hour = t->tm_hour;
-        tmzip->tm_mday = t->tm_mday;
-        tmzip->tm_mon  = t->tm_mon ;
-        tmzip->tm_year = t->tm_year;
+        tmzip->tm_sec  = t.tm_sec;
+        tmzip->tm_min  = t.tm_min;
+        tmzip->tm_hour = t.tm_hour;
+        tmzip->tm_mday = t.tm_mday;
+        tmzip->tm_mon  = t.tm_mon ;
+        tmzip->tm_year = t.tm_year;
 
         return true;
+    } else {
+        FLOGE("%s: stat() failed: %s", filename.c_str(), strerror(errno));
     }
 #endif
     return false;
