@@ -17,14 +17,10 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -36,15 +32,6 @@ import java.util.concurrent.TimeUnit;
 public class ThreadPoolService extends Service {
     private static final boolean DEBUG = true;
     private final String TAG = getClass().getSimpleName();
-
-    /** Exit action for intent */
-    private final String ACTION_EXIT = getClass().getCanonicalName() + ".exit";
-    /** Number of milliseconds for delayed exit */
-    private final long EXIT_DELAY = 10 * 1000;
-    /** Pending intent to exit the service */
-    private PendingIntent mExitPendingIntent;
-    /** Alarm manager */
-    private AlarmManager mAlarmManager;
 
     /** Number of cores */
     private static final int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
@@ -86,13 +73,6 @@ public class ThreadPoolService extends Service {
     public void onCreate() {
         super.onCreate();
         log("onCreate()");
-
-        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent exitIntent = new Intent(this, getClass());
-        exitIntent.setAction(ACTION_EXIT);
-        mExitPendingIntent = PendingIntent.getService(this, 0, exitIntent, 0);
-
-        scheduleDelayedExit();
     }
 
     /** {@inheritDoc} */
@@ -120,12 +100,6 @@ public class ThreadPoolService extends Service {
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
         log("onStartCommand(intent=" + intent + ", flags=" + flags + ", startId=" + startId + ")");
-
-        if (intent != null && ACTION_EXIT.equals(intent.getAction())) {
-            attemptToStop();
-            return START_NOT_STICKY;
-        }
-
         return START_STICKY;
     }
 
@@ -191,8 +165,6 @@ public class ThreadPoolService extends Service {
             throw new IllegalArgumentException("Thread pool does not exist: " + id);
         }
 
-        cancelDelayedExit();
-
         synchronized (mLock) {
             mOperations++;
             executor.execute(new Runnable() {
@@ -250,22 +222,5 @@ public class ThreadPoolService extends Service {
             log("Calling stopSelf(): there are no more operations");
             stopSelf();
         }
-    }
-
-    /**
-     * Schedule delayed exit.
-     */
-    private void scheduleDelayedExit() {
-        log("Scheduling delayed exit after " + EXIT_DELAY + "ms");
-        mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + EXIT_DELAY, mExitPendingIntent);
-    }
-
-    /**
-     * Cancel delayed exit
-     */
-    private void cancelDelayedExit() {
-        log("Cancelling delayed exit");
-        mAlarmManager.cancel(mExitPendingIntent);
     }
 }
