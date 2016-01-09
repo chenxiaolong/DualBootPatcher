@@ -381,11 +381,10 @@ zipFile FileUtils::mzCtxGetZipFile(MzZipCtx *ctx)
 
 FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(std::string path)
 {
-    MzUnzCtx *ctx = (MzUnzCtx *) malloc(sizeof(MzUnzCtx));
+    MzUnzCtx *ctx = new(std::nothrow) MzUnzCtx();
     if (!ctx) {
         return nullptr;
     }
-    memset(ctx, 0, sizeof(MzUnzCtx));
 
 #if defined(MINIZIP_WIN32)
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
@@ -410,11 +409,10 @@ FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(std::string path)
 
 FileUtils::MzZipCtx * FileUtils::mzOpenOutputFile(std::string path)
 {
-    MzZipCtx *ctx = (MzZipCtx *) malloc(sizeof(MzZipCtx));
+    MzZipCtx *ctx = new(std::nothrow) MzZipCtx();
     if (!ctx) {
         return nullptr;
     }
-    memset(ctx, 0, sizeof(MzZipCtx));
 
 #if defined(MINIZIP_WIN32)
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
@@ -440,14 +438,14 @@ FileUtils::MzZipCtx * FileUtils::mzOpenOutputFile(std::string path)
 int FileUtils::mzCloseInputFile(MzUnzCtx *ctx)
 {
     int ret = unzClose(ctx->uf);
-    free(ctx);
+    delete ctx;
     return ret;
 }
 
 int FileUtils::mzCloseOutputFile(MzZipCtx *ctx)
 {
     int ret = zipClose(ctx->zf, nullptr);
-    free(ctx);
+    delete ctx;
     return ret;
 }
 
