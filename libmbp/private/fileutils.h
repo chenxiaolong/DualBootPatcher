@@ -60,9 +60,9 @@ public:
 
     static zipFile mzCtxGetZipFile(MzZipCtx *ctx);
 
-    static MzUnzCtx * mzOpenInputFile(const std::string &path);
+    static MzUnzCtx * mzOpenInputFile(std::string path);
 
-    static MzZipCtx * mzOpenOutputFile(const std::string &path);
+    static MzZipCtx * mzOpenOutputFile(std::string path);
 
     static int mzCloseInputFile(MzUnzCtx *ctx);
 

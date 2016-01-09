@@ -350,6 +350,11 @@ struct FileUtils::MzUnzCtx
     unzFile uf;
     zlib_filefunc64_def zFunc;
     ourbuffer_t buf;
+#ifdef MINIZIP_WIN32
+    std::wstring path;
+#else
+    std::string path;
+#endif
 };
 
 struct FileUtils::MzZipCtx
@@ -357,6 +362,11 @@ struct FileUtils::MzZipCtx
     zipFile zf;
     zlib_filefunc64_def zFunc;
     ourbuffer_t buf;
+#ifdef MINIZIP_WIN32
+    std::wstring path;
+#else
+    std::string path;
+#endif
 };
 
 unzFile FileUtils::mzCtxGetUnzFile(MzUnzCtx *ctx)
@@ -369,7 +379,7 @@ zipFile FileUtils::mzCtxGetZipFile(MzZipCtx *ctx)
     return ctx->zf;
 }
 
-FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(const std::string &path)
+FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(std::string path)
 {
     MzUnzCtx *ctx = (MzUnzCtx *) malloc(sizeof(MzUnzCtx));
     if (!ctx) {
@@ -377,21 +387,19 @@ FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(const std::string &path)
     }
     memset(ctx, 0, sizeof(MzUnzCtx));
 
-    const void *filename;
-
 #if defined(MINIZIP_WIN32)
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
-    filename = utf8::utf8ToUtf16(path).c_str();
+    ctx->path = utf8::utf8ToUtf16(path);
 #elif defined(MINIZIP_ANDROID)
     fill_android_filefunc64(&ctx->buf.filefunc64);
-    filename = path.c_str();
+    ctx->path = std::move(path);
 #else
     fill_fopen64_filefunc(&ctx->buf.filefunc64);
-    filename = path.c_str();
+    ctx->path = std::move(path);
 #endif
 
     fill_buffer_filefunc64(&ctx->zFunc, &ctx->buf);
-    ctx->uf = unzOpen2_64(filename, &ctx->zFunc);
+    ctx->uf = unzOpen2_64(ctx->path.c_str(), &ctx->zFunc);
     if (!ctx->uf) {
         free(ctx);
         return nullptr;
@@ -400,7 +408,7 @@ FileUtils::MzUnzCtx * FileUtils::mzOpenInputFile(const std::string &path)
     return ctx;
 }
 
-FileUtils::MzZipCtx * FileUtils::mzOpenOutputFile(const std::string &path)
+FileUtils::MzZipCtx * FileUtils::mzOpenOutputFile(std::string path)
 {
     MzZipCtx *ctx = (MzZipCtx *) malloc(sizeof(MzZipCtx));
     if (!ctx) {
@@ -408,21 +416,19 @@ FileUtils::MzZipCtx * FileUtils::mzOpenOutputFile(const std::string &path)
     }
     memset(ctx, 0, sizeof(MzZipCtx));
 
-    const void *filename;
-
 #if defined(MINIZIP_WIN32)
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
-    filename = utf8::utf8ToUtf16(path).c_str();
+    ctx->path = utf8::utf8ToUtf16(path);
 #elif defined(MINIZIP_ANDROID)
     fill_android_filefunc64(&ctx->buf.filefunc64);
-    filename = path.c_str();
+    ctx->path = std::move(path);
 #else
     fill_fopen64_filefunc(&ctx->buf.filefunc64);
-    filename = path.c_str();
+    ctx->path = std::move(path);
 #endif
 
     fill_buffer_filefunc64(&ctx->zFunc, &ctx->buf);
-    ctx->zf = zipOpen2_64(filename, 0, nullptr, &ctx->zFunc);
+    ctx->zf = zipOpen2_64(ctx->path.c_str(), 0, nullptr, &ctx->zFunc);
     if (!ctx->zf) {
         free(ctx);
         return nullptr;
