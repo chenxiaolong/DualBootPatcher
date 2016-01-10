@@ -53,6 +53,14 @@
 #define QCOM_TZ                 QCOM_BASE_DIR "/tz"
 #define QCOM_USERDATA           QCOM_BASE_DIR "/userdata"
 
+// Block device paths used by the Snapdragon 615
+#define QCOM_7824900_BASE_DIR        "/dev/block/platform/7824900.sdhci/by-name"
+#define QCOM_7824900_BOOT            QCOM_7824900_BASE_DIR "/boot"
+#define QCOM_7824900_CACHE           QCOM_7824900_BASE_DIR "/cache"
+#define QCOM_7824900_RECOVERY        QCOM_7824900_BASE_DIR "/recovery"
+#define QCOM_7824900_SYSTEM          QCOM_7824900_BASE_DIR "/system"
+#define QCOM_7824900_USERDATA        QCOM_7824900_BASE_DIR "/userdata"
+
 // Block device paths used by the Snapdragon 808 and 810 in Android < 6.0
 #define F9824900_BASE_DIR       "/dev/block/platform/f9824900.sdhci/by-name"
 #define F9824900_BOOT           F9824900_BASE_DIR "/boot"
