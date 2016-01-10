@@ -51,6 +51,7 @@ static int device_fd = -1;
 static int pipe_fd[2];
 static volatile bool run_thread = true;
 static pthread_t thread;
+static bool dry_run = false;
 
 struct uevent {
     const char *action;
@@ -110,10 +111,12 @@ static void make_device(const char *path,
     // some device nodes, so the uid has to be set with chown() and is still
     // racy. Fixing the gid race at least fixed the issue with system_server
     // opening dynamic input devices under the AID_INPUT gid.
-    setegid(gid);
-    mknod(path, mode, dev);
-    chown(path, uid, -1);
-    setegid(0);
+    if (!dry_run) {
+        setegid(gid);
+        mknod(path, mode, dev);
+        chown(path, uid, -1);
+        setegid(0);
+    }
 }
 
 static void add_platform_device(const char *path)
@@ -331,7 +334,9 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
 
             links.push_back(mb::util::format(
                     "/dev/usb/%s%.*s", uevent->subsystem, width, parent));
-            mkdir("/dev/usb", 0755);
+            if (!dry_run) {
+                mkdir("/dev/usb", 0755);
+            }
         }
     }
 
@@ -398,7 +403,9 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 
         if (pdev && bootdevice[0] != '\0' && strstr(device, bootdevice)) {
             // Create bootdevice symlink for platform boot stroage device
-            make_link_init(link_path, "/dev/block/bootdevice");
+            if (!dry_run) {
+                make_link_init(link_path, "/dev/block/bootdevice");
+            }
         }
     }
 
@@ -413,16 +420,22 @@ static void handle_device(const char *action, const char *devpath,
         device_map[path] = devpath;
         make_device(devpath, path, block, major, minor, links);
         for (const std::string &link : links) {
-            make_link_init(devpath, link.c_str());
+            if (!dry_run) {
+                make_link_init(devpath, link.c_str());
+            }
         }
     }
 
     if (strcmp(action, "remove") == 0) {
         device_map.erase(path);
         for (const std::string &link : links) {
-            remove_link(devpath, link.c_str());
+            if (!dry_run) {
+                remove_link(devpath, link.c_str());
+            }
         }
-        unlink(devpath);
+        if (!dry_run) {
+            unlink(devpath);
+        }
     }
 }
 
@@ -476,7 +489,9 @@ static void handle_block_device_event(struct uevent *uevent)
     }
 
     snprintf(devpath, sizeof(devpath), "%s%s", base, name);
-    mkdir(base, 0755);
+    if (!dry_run) {
+        mkdir(base, 0755);
+    }
 
     if (strncmp(uevent->path, "/devices/", 9) == 0) {
         links = get_block_device_symlinks(uevent);
@@ -524,7 +539,9 @@ static void handle_generic_device_event(struct uevent *uevent)
                 if (!assemble_devpath(devpath, "/dev", uevent->device_name)) {
                     return;
                 }
-                mb::util::mkdir_parent(devpath, 0755);
+                if (!dry_run) {
+                    mb::util::mkdir_parent(devpath, 0755);
+                }
             } else {
                 // This imitates the file system that would be created
                 // if we were using devfs instead.
@@ -532,13 +549,15 @@ static void handle_generic_device_event(struct uevent *uevent)
                 int bus_id = uevent->minor / 128 + 1;
                 int device_id = uevent->minor % 128 + 1;
                 // Build directories
-                mkdir("/dev/bus", 0755);
-                mkdir("/dev/bus/usb", 0755);
-                snprintf(devpath, sizeof(devpath),
-                         "/dev/bus/usb/%03d", bus_id);
-                mkdir(devpath, 0755);
-                snprintf(devpath, sizeof(devpath),
-                         "/dev/bus/usb/%03d/%03d", bus_id, device_id);
+                if (!dry_run) {
+                    mkdir("/dev/bus", 0755);
+                    mkdir("/dev/bus/usb", 0755);
+                    snprintf(devpath, sizeof(devpath),
+                            "/dev/bus/usb/%03d", bus_id);
+                    mkdir(devpath, 0755);
+                    snprintf(devpath, sizeof(devpath),
+                            "/dev/bus/usb/%03d/%03d", bus_id, device_id);
+                }
             }
         } else {
             // Ignore other USB events
@@ -546,35 +565,53 @@ static void handle_generic_device_event(struct uevent *uevent)
         }
     } else if (strncmp(uevent->subsystem, "graphics", 8) == 0) {
         base = "/dev/graphics/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "drm", 3) == 0) {
         base = "/dev/dri/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "oncrpc", 6) == 0) {
         base = "/dev/oncrpc/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "adsp", 4) == 0) {
         base = "/dev/adsp/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "msm_camera", 10) == 0) {
         base = "/dev/msm_camera/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "input", 5) == 0) {
         base = "/dev/input/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "mtd", 3) == 0) {
         base = "/dev/mtd/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "sound", 5) == 0) {
         base = "/dev/snd/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
     } else if (strncmp(uevent->subsystem, "misc", 4) == 0
             && strncmp(name, "log_", 4) == 0) {
 #if UEVENT_LOGGING
         LOGI("kernel logger is deprecated");
 #endif
         base = "/dev/log/";
-        mkdir(base, 0755);
+        if (!dry_run) {
+            mkdir(base, 0755);
+        }
         name += 4;
     } else {
         base = "/dev/";
@@ -634,7 +671,7 @@ void handle_device_fd()
  * We drain any pending events from the netlink socket every time
  * we poke another uevent file to make sure we don't overrun the
  * socket's buffer.
-*/
+ */
 
 static void do_coldboot(DIR *d)
 {
@@ -708,8 +745,10 @@ void * device_thread(void *)
     return nullptr;
 }
 
-void device_init()
+void device_init(bool dry_run_)
 {
+    dry_run = dry_run_;
+
     bootdevice[0] = '\0';
     std::string value;
     if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", &value)) {

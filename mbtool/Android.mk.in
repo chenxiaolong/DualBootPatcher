@@ -93,6 +93,7 @@ mbtool_src_base := \
 	roms.cpp \
 	sepolpatch.cpp \
 	switcher.cpp \
+	uevent_dump.cpp \
 	wipe.cpp \
 	external/android_reboot.c \
 	external/mntent.c \

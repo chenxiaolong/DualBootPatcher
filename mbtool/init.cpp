@@ -648,7 +648,7 @@ int init_main(int argc, char *argv[])
          get_mbtool_version(), get_git_version());
 
     // Start probing for devices
-    device_init();
+    device_init(false);
 
     std::string fstab = find_fstab();
     if (fstab.empty()) {

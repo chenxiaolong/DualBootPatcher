@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 
 void handle_device_fd();
-void device_init();
+void device_init(bool dry_run);
 void device_close();
 int get_device_fd();
 
