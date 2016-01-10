@@ -22,6 +22,23 @@
 #include <string>
 #include <vector>
 
+#define MF_WAIT             0x1
+#define MF_CHECK            0x2
+#define MF_CRYPT            0x4
+#define MF_NONREMOVABLE     0x8
+#define MF_VOLDMANAGED      0x10
+#define MF_LENGTH           0x20
+#define MF_RECOVERYONLY     0x40
+#define MF_SWAPPRIO         0x80
+#define MF_ZRAMSIZE         0x100
+#define MF_VERIFY           0x200
+#define MF_FORCECRYPT       0x400
+#define MF_NOEMULATEDSD     0x800
+#define MF_NOTRIM           0x1000
+#define MF_FILEENCRYPTION   0x2000
+#define MF_FORMATTABLE      0x4000
+#define MF_SLOTSELECT       0x8000
+
 namespace mb
 {
 namespace util
@@ -34,6 +51,7 @@ struct fstab_rec
     std::string fs_type;
     unsigned long flags;
     std::string fs_options;
+    unsigned long fs_mgr_flags;
     std::string vold_args;
     std::string orig_line;
 };
