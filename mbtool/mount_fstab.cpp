@@ -138,6 +138,11 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
         LOGD("Attempting to mount %s (%s) at %s",
              rec->blk_device.c_str(), rec->fs_type.c_str(), mount_point.c_str());
 
+        if (rec->fs_mgr_flags & MF_WAIT) {
+            LOGD("Waiting up to 20 seconds for %s", rec->blk_device.c_str());
+            util::wait_for_path(rec->blk_device.c_str(), 20 * 1000);
+        }
+
         // Try mounting
         int ret = mount(rec->blk_device.c_str(),
                         mount_point.c_str(),
@@ -176,7 +181,8 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
             .fs_type = "ext4",
             .flags = MS_RDONLY | MS_NOATIME | MS_NODIRATIME,
             .fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         {
@@ -185,7 +191,8 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
             .fs_type = "f2fs",
             .flags = MS_RDONLY | MS_NOATIME | MS_NODIRATIME,
             .fs_options = "background_gc=off,nodiscard",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         }
         // Add more as necessary
@@ -205,7 +212,8 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
             .fs_type = "ext4",
             .flags = MS_NOSUID | MS_NODEV,
             .fs_options = "barrier=1",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         {
@@ -214,7 +222,8 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
             .fs_type = "ext4",
             .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
             .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         {
@@ -223,7 +232,8 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
             .fs_type = "f2fs",
             .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
             .fs_options = "background_gc=on,discard",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         {
@@ -232,7 +242,8 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
             .fs_type = "ext4",
             .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
             .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         {
@@ -241,7 +252,8 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
             .fs_type = "f2fs",
             .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
             .fs_options = "background_gc=on,discard",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         // Add more as necessary...
@@ -261,7 +273,8 @@ static std::vector<util::fstab_rec> generic_fstab_data_entries()
             .fs_type = "ext4",
             .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
             .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         },
         {
@@ -270,7 +283,8 @@ static std::vector<util::fstab_rec> generic_fstab_data_entries()
             .fs_type = "f2fs",
             .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
             .fs_options = "background_gc=on,discard",
-            .vold_args = "wait,check",
+            .fs_mgr_flags = 0,
+            .vold_args = "check",
             .orig_line = std::string()
         }
         // Add more as necessary...
