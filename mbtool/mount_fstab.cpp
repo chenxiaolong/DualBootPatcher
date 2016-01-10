@@ -77,7 +77,7 @@ static std::shared_ptr<Rom> determine_rom()
     if (!util::kernel_cmdline_get_option("romid", &rom_id)
             && !util::file_first_line("/romid", &rom_id)) {
         LOGE("Failed to determine ROM ID");
-        return false;
+        return nullptr;
     }
 
     rom = Roms::create_rom(rom_id);
