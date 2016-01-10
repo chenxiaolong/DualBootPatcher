@@ -38,6 +38,7 @@ std::string path_join(const std::vector<std::string> &components);
 void normalize_path(std::vector<std::string> *components);
 std::string relative_path(const std::string &path,
                           const std::string &start);
+bool wait_for_path(const char *path, unsigned int timeout_ms);
 
 }
 }

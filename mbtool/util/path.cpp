@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "util/logging.h"
+#include "util/time.h"
 
 namespace mb
 {
@@ -275,6 +276,19 @@ std::string relative_path(const std::string &path,
     }
 
     return path_join(result_pieces);
+}
+
+bool wait_for_path(const char *path, unsigned int timeout_ms)
+{
+    uint64_t until = util::current_time_ms() + timeout_ms;
+    struct stat sb;
+    int ret;
+
+    while ((ret = stat(path, &sb)) < 0 && util::current_time_ms() < until) {
+        usleep(10000);
+    }
+
+    return ret == 0;
 }
 
 }
