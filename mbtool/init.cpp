@@ -49,8 +49,7 @@
 #include "util/mount.h"
 #include "util/selinux.h"
 #include "util/string.h"
-
-#define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
+#include "util/vibrate.h"
 
 namespace mb
 {
@@ -559,38 +558,13 @@ static bool dump_kernel_log(const char *file)
     return true;
 }
 
-bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms)
-{
-    int fd = open(VIBRATOR_PATH, O_WRONLY);
-    if (fd < 0) {
-        return false;
-    }
-    auto close_fd = util::finally([&]{
-        close(fd);
-    });
-
-    if (timeout_ms > 2000) {
-        timeout_ms = 2000;
-    }
-
-    char buf[20];
-    int size = snprintf(buf, sizeof(buf), "%u", timeout_ms);
-    if (write(fd, buf, size) < 0) {
-        return false;
-    }
-
-    usleep(1000 * (timeout_ms + additional_wait_ms));
-
-    return true;
-}
-
 static bool emergency_reboot()
 {
-    vibrate(100, 150);
-    vibrate(100, 150);
-    vibrate(100, 150);
-    vibrate(100, 150);
-    vibrate(100, 150);
+    util::vibrate(100, 150);
+    util::vibrate(100, 150);
+    util::vibrate(100, 150);
+    util::vibrate(100, 150);
+    util::vibrate(100, 150);
 
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 
