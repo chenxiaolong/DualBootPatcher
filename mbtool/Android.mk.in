@@ -37,6 +37,8 @@ include $(EXTERNAL_DIR)/minizip/Android.mk
 
 include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
+include miniadbd/Android.mk
+
 
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libmbp-mini
@@ -85,6 +87,7 @@ mbtool_src_base := \
 	daemon_v3.cpp \
 	init.cpp \
 	main.cpp \
+	miniadbd.cpp \
 	mount_fstab.cpp \
 	multiboot.cpp \
 	packages.cpp \
@@ -96,6 +99,7 @@ mbtool_src_base := \
 	uevent_dump.cpp \
 	wipe.cpp \
 	external/android_reboot.c \
+	external/legacy_property_service.cpp \
 	external/mntent.c \
 	initwrapper/cutils/uevent.cpp \
 	initwrapper/devices.cpp \
@@ -111,8 +115,7 @@ mbtool_src_recovery := \
 	rom_installer.cpp \
 	update_binary.cpp \
 	update_binary_tool.cpp \
-	utilities.cpp \
-	external/legacy_property_service.cpp
+	utilities.cpp
 
 mb_common_cflags := \
 	-Wall -Wextra -Werror \
@@ -172,7 +175,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol procps-ng libutils minizip libcrypto
+LOCAL_STATIC_LIBRARIES := libmbutil libjansson libsepol procps-ng libutils minizip libcrypto libminiadbd
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 

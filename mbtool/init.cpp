@@ -51,6 +51,13 @@
 #include "util/string.h"
 #include "util/vibrate.h"
 
+#define BOOT_ADB_INSTEAD_OF_INIT 0
+
+#if BOOT_ADB_INSTEAD_OF_INIT
+#include "miniadbd.h"
+#include "miniadbd/adb_log.h"
+#endif
+
 namespace mb
 {
 
@@ -690,6 +697,22 @@ int init_main(int argc, char *argv[])
     // Kill uevent thread and close uevent socket
     device_close();
 
+    // Remove mbtool init symlink and restore original
+    unlink("/init");
+    rename("/init.orig", "/init");
+
+#if BOOT_ADB_INSTEAD_OF_INIT
+    // Don't spam the kernel log
+    adb_log_mask = ADB_SERV;
+
+    char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
+    int ret = miniadbd_main(1, adb_argv);
+    if (ret != EXIT_SUCCESS) {
+        LOGE("Failed to start miniadbd");
+    }
+    emergency_reboot();
+    return EXIT_FAILURE;
+#else
     // Unmount partitions
     util::selinux_unmount();
     umount("/dev/pts");
@@ -703,14 +726,12 @@ int init_main(int argc, char *argv[])
     //rmdir("/sys");
 
     // Start real init
-    unlink("/init");
-    rename("/init.orig", "/init");
-
     LOGD("Launching real init ...");
     execlp("/init", "/init", nullptr);
     LOGE("Failed to exec real init: %s", strerror(errno));
     emergency_reboot();
     return EXIT_FAILURE;
+#endif
 }
 
 }

@@ -29,6 +29,7 @@ namespace util
 
 __attribute__((format(printf, 1, 2)))
 std::string format(const char *fmt, ...);
+std::string formatv(const char *fmt, va_list ap);
 
 bool starts_with(const std::string &string, const std::string &prefix);
 bool starts_with(const char *string, const char *prefix);

@@ -34,16 +34,35 @@ std::string format(const char *fmt, ...)
     va_list ap;
 
     va_start(ap, fmt);
-    std::size_t size = vsnprintf(nullptr, 0, fmt, ap) + 1;
+    std::string result = formatv(fmt, ap);
     va_end(ap);
 
-    std::unique_ptr<char[]> buf(new char[size]);
+    return result;
+}
 
-    va_start(ap, fmt);
-    vsnprintf(buf.get(), size, fmt, ap);
-    va_end(ap);
+std::string formatv(const char *fmt, va_list ap)
+{
+    va_list copy;
 
-    return std::string(buf.get(), buf.get() + size - 1);
+    va_copy(copy, ap);
+    int chars = vsnprintf(nullptr, 0, fmt, ap);
+    va_end(copy);
+
+    if (chars < 0) {
+        return std::string();
+    }
+
+    std::unique_ptr<char[]> buf(new char[chars + 1]);
+
+    va_copy(copy, ap);
+    chars = vsnprintf(buf.get(), chars + 1, fmt, ap);
+    va_end(copy);
+
+    if (chars < 0) {
+        return std::string();
+    }
+
+    return std::string(buf.get(), buf.get() + chars);
 }
 
 bool starts_with_internal(const char *string, std::size_t len_string,

@@ -30,6 +30,12 @@
 #define LOGD(...) mb::util::log(mb::util::LogLevel::DEBUG, __VA_ARGS__)
 #define LOGV(...) mb::util::log(mb::util::LogLevel::VERBOSE, __VA_ARGS__)
 
+#define VLOGE(...) mb::util::logv(mb::util::LogLevel::ERROR, __VA_ARGS__)
+#define VLOGW(...) mb::util::logv(mb::util::LogLevel::WARNING, __VA_ARGS__)
+#define VLOGI(...) mb::util::logv(mb::util::LogLevel::INFO, __VA_ARGS__)
+#define VLOGD(...) mb::util::logv(mb::util::LogLevel::DEBUG, __VA_ARGS__)
+#define VLOGV(...) mb::util::logv(mb::util::LogLevel::VERBOSE, __VA_ARGS__)
+
 namespace mb
 {
 namespace util

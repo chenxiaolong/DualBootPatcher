@@ -35,6 +35,7 @@
 #include "appsync.h"
 #include "daemon.h"
 #include "init.h"
+#include "miniadbd.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
 #include "uevent_dump.h"
@@ -71,9 +72,11 @@ struct tool tools[] = {
     { "update-binary-tool", mb::update_binary_tool_main },
     { "utilities", mb::utilities_main },
 #else
+    { "adbd", mb::miniadbd_main },
     { "appsync", mb::appsync_main },
     { "daemon", mb::daemon_main },
     { "init", mb::init_main },
+    { "miniadbd", mb::miniadbd_main },
     { "mount_fstab", mb::mount_fstab_main },
     { "sepolpatch", mb::sepolpatch_main },
     { "uevent_dump", mb::uevent_dump_main },
