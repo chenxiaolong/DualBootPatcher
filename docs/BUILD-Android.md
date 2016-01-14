@@ -9,6 +9,23 @@ The following packages are needed for compiling for Android:
 
 At this time, the host system must be running Linux (though I have not tried compiling on Windows or OS X).
 
+0. initialize and update dependencies
+
+While cloning the repository initially with ```git clone```, prefer using the ```--recursive``` flag to automatically fetch all dependencies.
+
+   ```sh
+   # if using https
+   git clone --recursive https://github.com/chenxiaolong/DualBootPatcher.git
+   # or if using ssh
+   git clone --recursive git@github.com:chenxiaolong/DualBootPatcher.git
+   ```
+
+In case you have not cloned this repository using the ```git clone --recursive``` command, you will have to initialize and update the dependencies required for building the apk.
+
+   ```sh
+   git submodule update --init --recursive
+   ```
+
 1. Set the environment variables for the Android SDK and NDK path
 
    ```sh
