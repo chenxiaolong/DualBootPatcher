@@ -32,7 +32,7 @@
 ** both stdout and stderr are used to communicate between the client
 ** and server. Any extra output will cause failures.
 */
-#define DEBUG 0   /* non-0 will break adb server */
+#define FDEVENT_DEBUG 0   /* non-0 will break adb server */
 
 // This socket is used when a subproc shell service exists.
 // It wakes up the fdevent_loop() and cause the correct handling
@@ -52,7 +52,7 @@ static void fatal(const char *fn, const char *fmt, ...)
 
 #define FATAL(x...) fatal(__FUNCTION__, x)
 
-#if DEBUG
+#if FDEVENT_DEBUG
 static void dump_fde(fdevent *fde, const char *info)
 {
     pthread_mutex_lock(&D_lock);
@@ -306,7 +306,7 @@ static int fdevent_fd_check(fd_set *fds)
     return n;
 }
 
-#if !DEBUG
+#if !FDEVENT_DEBUG
 static inline void dump_all_fds(const char* /* extra_msg */) {}
 #else
 static void dump_all_fds(const char *extra_msg)
