@@ -135,8 +135,9 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
 
     // Try mounting each until we find one that works
     for (util::fstab_rec *rec : recs) {
-        LOGD("Attempting to mount %s (%s) at %s",
-             rec->blk_device.c_str(), rec->fs_type.c_str(), mount_point.c_str());
+        LOGD("Attempting to mount(%s, %s, %s, %lu, %s)",
+             rec->blk_device.c_str(), mount_point.c_str(), rec->fs_type.c_str(),
+             rec->flags, rec->fs_options.c_str());
 
         if (rec->fs_mgr_flags & MF_WAIT) {
             LOGD("Waiting up to 20 seconds for %s", rec->blk_device.c_str());
@@ -988,11 +989,13 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
             rec->flags &= ~MS_NOSUID;
         }
     }
-    if (rom->cache_source == Rom::Source::SYSTEM) {
+    // TODO: util::bind_mount() chmod's the source directory. Once that is
+    // removed, we can use read-only system partitions again
+    //if (rom->cache_source == Rom::Source::SYSTEM) {
         for (util::fstab_rec *rec : recs_system) {
             rec->flags &= ~MS_RDONLY;
         }
-    }
+    //}
 
     if (!mount_fstab_entries(recs_system, recs_cache, recs_data)) {
         return false;
