@@ -107,10 +107,6 @@ bool selinux_mount()
     // Load default policy
     struct stat sb;
     if (stat(DEFAULT_SEPOLICY_FILE, &sb) == 0) {
-        if (!selinux_set_enforcing(0)) {
-            LOGW("Failed to set SELinux to permissive mode");
-        }
-
         policydb_t pdb;
 
         if (policydb_init(&pdb) < 0) {
@@ -124,7 +120,13 @@ bool selinux_mount()
             policydb_destroy(&pdb);
             return false;
         }
-        if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
+
+        // Make all types permissive. Otherwise, some more restrictive policies
+        // will prevent the real init from loading /sepolicy because init
+        // (stage 1) runs under the `u:r:kernel:s0` context.
+        util::selinux_make_all_permissive(&pdb);
+
+        if (!selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
             LOGE("Failed to write SELinux policy file: %s",
                  SELINUX_LOAD_FILE);
             policydb_destroy(&pdb);
