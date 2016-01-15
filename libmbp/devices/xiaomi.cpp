@@ -23,23 +23,21 @@
 
 namespace mbp
 {
+    void addXiaomiDevices(std::vector<Device *> *devices)
+    {
+        Device *device;
 
-	void addXiaomiDevices(std::vector<Device *> *devices)
-	{
-		Device *device;
-
-		// Xiaomi Redmi 1s
-		device = new Device();
-		device->setId("armani");
-		device->setCodenames({ "armani" });
-		device->setName("Xiaomi HM 1S");
-		device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-		device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p27" });
-		device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p28" });
-		device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p29" });
-		device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p24" });
-		device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p25" });
-		devices->push_back(device);
-	}
-
+        // Xiaomi Redmi 1s
+        device = new Device();
+        device->setId("armani");
+        device->setCodenames({ "armani" });
+        device->setName("Xiaomi HM 1S");
+        device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+        device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p27" });
+        device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p28" });
+        device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p29" });
+        device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p24" });
+        device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p25" });
+        devices->push_back(device);
+    }
 }
