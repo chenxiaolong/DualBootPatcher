@@ -181,6 +181,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final String EXTRA_STATE_TASK_ID_CREATE_LAUNCHER = "state.create_launcher";
     private static final String EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details";
     private static final String EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_reomve";
+    private static final String EXTRA_STATE_RESULT_INTENT = "state.result_intent";
+    // Result extras
+    public static final String EXTRA_RESULT_WIPED_ROM = "result.wiped_rom";
 
     private CoordinatorLayout mCoordinator;
     private CollapsingToolbarLayout mCollapsing;
@@ -219,6 +222,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     /** Handler for processing events from the service on the UI thread */
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
+    /** Result intent */
+    private Intent mResultIntent;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -238,6 +244,8 @@ public class RomDetailActivity extends AppCompatActivity implements
             mTaskIdCreateLauncher = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_CREATE_LAUNCHER);
             mTaskIdGetRomDetails = savedInstanceState.getInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS);
             mTaskIdsToRemove = savedInstanceState.getIntegerArrayList(EXTRA_STATE_TASK_IDS_TO_REMOVE);
+            mResultIntent = savedInstanceState.getParcelable(EXTRA_STATE_RESULT_INTENT);
+            setResult(RESULT_OK, mResultIntent);
         }
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -277,6 +285,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         outState.putInt(EXTRA_STATE_TASK_ID_CREATE_LAUNCHER, mTaskIdCreateLauncher);
         outState.putInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS, mTaskIdGetRomDetails);
         outState.putIntegerArrayList(EXTRA_STATE_TASK_IDS_TO_REMOVE, mTaskIdsToRemove);
+        outState.putParcelable(EXTRA_STATE_RESULT_INTENT, mResultIntent);
     }
 
     @Override
@@ -901,6 +910,13 @@ public class RomDetailActivity extends AppCompatActivity implements
 
             createSnackbar(sb.toString(), Snackbar.LENGTH_LONG).show();
         }
+
+        // Alert parent activity
+        if (mResultIntent == null) {
+            mResultIntent = new Intent();
+        }
+        mResultIntent.putExtra(EXTRA_RESULT_WIPED_ROM, true);
+        setResult(RESULT_OK, mResultIntent);
     }
 
     private void onCreatedLauncher() {

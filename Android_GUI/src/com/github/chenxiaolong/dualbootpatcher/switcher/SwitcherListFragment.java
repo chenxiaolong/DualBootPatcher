@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
@@ -137,6 +138,7 @@ public class SwitcherListFragment extends Fragment implements
     private ArrayList<Runnable> mExecOnConnect = new ArrayList<>();
 
     private static final int REQUEST_FLASH_ZIP = 2345;
+    private static final int REQUEST_ROM_DETAILS = 3456;
 
     private boolean mPerformingAction;
 
@@ -589,14 +591,23 @@ public class SwitcherListFragment extends Fragment implements
      * {@inheritDoc}
      */
     @Override
-    public void onActivityResult(int request, int result, Intent data) {
-        switch (request) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
         case REQUEST_FLASH_ZIP:
             reloadRomsState();
             break;
+        case REQUEST_ROM_DETAILS:
+            if (data != null && resultCode == Activity.RESULT_OK) {
+                boolean wipedRom = data.getBooleanExtra(
+                        RomDetailActivity.EXTRA_RESULT_WIPED_ROM, false);
+                if (wipedRom) {
+                    reloadRomsState();
+                }
+            }
+            break;
+        default:
+            super.onActivityResult(requestCode, resultCode, data);
         }
-
-        super.onActivityResult(request, result, data);
     }
 
     private void onGotRomsState(RomInformation[] roms, RomInformation currentRom,
@@ -756,7 +767,7 @@ public class SwitcherListFragment extends Fragment implements
         intent.putExtra(RomDetailActivity.EXTRA_ROM_INFO, mSelectedRom);
         intent.putExtra(RomDetailActivity.EXTRA_BOOTED_ROM_INFO, mCurrentRom);
         intent.putExtra(RomDetailActivity.EXTRA_ACTIVE_ROM_ID, mActiveRomId);
-        startActivity(intent);
+        startActivityForResult(intent, REQUEST_ROM_DETAILS);
     }
 
     private void switchRom(String romId, boolean forceChecksumsUpdate) {
