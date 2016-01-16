@@ -55,34 +55,6 @@ __futex_wake(volatile void *ftx, int count)
 }
 
 
-// Copied from libcutils/properties.h because we don't link against or even
-// have libcutils
-
-typedef void (*propfn)(const char *key, const char *value, void *cookie);
-
-struct property_list_callback_data
-{
-    propfn fn;
-    void *cookie;
-};
-
-static void property_list_callback(const prop_info *pi, void *cookie)
-{
-    char name[PROP_NAME_MAX];
-    char value[PROP_VALUE_MAX];
-    property_list_callback_data *data = (property_list_callback_data *) cookie;
-
-    mb::util::libc_system_property_read(pi, name, value);
-    data->fn(name, value, data->cookie);
-}
-
-static int property_list(propfn fn, void *cookie)
-{
-    property_list_callback_data data = { fn, cookie };
-    return mb::util::libc_system_property_foreach(property_list_callback, &data);
-}
-
-
 static int property_area_inited = 0;
 
 typedef struct {
@@ -204,7 +176,7 @@ static const prop_info *__legacy_property_find(const char *name)
     return 0;
 }
 
-static int legacy_property_set(const char *name, const char *value)
+int legacy_property_set(const char *name, const char *value)
 {
     prop_area *pa;
     prop_info *pi;
@@ -242,7 +214,7 @@ static int legacy_property_set(const char *name, const char *value)
         memcpy(pi->value, value, valuelen + 1);
 
         pa->toc[pa->count] =
-                (namelen << 24) | (unsigned) ((uint64_t) pi - (uint64_t) pa);
+                (namelen << 24) | ((unsigned long) pi - (unsigned long) pa);
 
         pa->count++;
         pa->serial++;
@@ -258,14 +230,7 @@ void legacy_get_property_workspace(int *fd, int *sz)
     *sz = pa_workspace.size;
 }
 
-static void copy_property_to_legacy(const char *key, const char *value,
-                                    void *cookie __attribute__((unused)))
-{
-    legacy_property_set(key, value);
-}
-
 void legacy_properties_init()
 {
     init_property_area();
-    property_list(copy_property_to_legacy, 0);
 }

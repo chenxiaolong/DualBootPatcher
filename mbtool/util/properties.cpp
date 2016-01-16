@@ -253,6 +253,26 @@ bool set_property(const std::string &name,
     return ret == 0;
 }
 
+static void _add_property(const prop_info *pi, void *cookie)
+{
+    char name[PROP_NAME_MAX];
+    char value[PROP_VALUE_MAX];
+    std::unordered_map<std::string, std::string> *props =
+            static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+
+    if (libc_system_property_read(pi, name, value) >= 0) {
+        (*props)[name] = value;
+    }
+}
+
+bool get_all_properties(std::unordered_map<std::string, std::string> *map)
+{
+    std::unordered_map<std::string, std::string> props;
+    libc_system_property_foreach(&_add_property, &props);
+    map->swap(props);
+    return true;
+}
+
 bool file_get_property(const std::string &path,
                        const std::string &key,
                        std::string *out,

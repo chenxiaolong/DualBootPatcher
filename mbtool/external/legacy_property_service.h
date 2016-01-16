@@ -22,4 +22,5 @@
 #pragma once
 
 void legacy_get_property_workspace(int *fd, int *sz);
+int legacy_property_set(const char *name, const char *value);
 void legacy_properties_init();

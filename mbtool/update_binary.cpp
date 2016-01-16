@@ -35,6 +35,7 @@
 #include "util/copy.h"
 #include "util/file.h"
 #include "util/logging.h"
+#include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
 
@@ -50,6 +51,7 @@ public:
 
     virtual void display_msg(const std::string& msg) override;
     virtual std::string get_install_type() override;
+    virtual std::unordered_map<std::string, std::string> get_properties() override;
     virtual ProceedState on_initialize() override;
     virtual void on_cleanup(ProceedState ret) override;
 
@@ -162,6 +164,14 @@ std::string RecoveryInstaller::get_install_type()
         display_msg("Installation location not specified");
         return CANCELLED;
     }
+}
+
+std::unordered_map<std::string, std::string> RecoveryInstaller::get_properties()
+{
+    // Copy the recovery's properties
+    std::unordered_map<std::string, std::string> props;
+    util::get_all_properties(&props);
+    return props;
 }
 
 Installer::ProceedState RecoveryInstaller::on_initialize()

@@ -36,6 +36,7 @@
 #include "util/directory.h"
 #include "util/logging.h"
 #include "util/mount.h"
+#include "util/properties.h"
 #include "version.h"
 
 
@@ -106,6 +107,20 @@ static bool initialize_adb()
     char tmp[32];
     int propfd, propsz;
     legacy_properties_init();
+
+    // Load /default.prop
+    std::unordered_map<std::string, std::string> props;
+    util::file_get_all_properties("/default.prop", &props);
+    for (auto const &pair : props) {
+        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    }
+    // Load /system/build.prop
+    props.clear();
+    util::file_get_all_properties("/system/build.prop", &props);
+    for (auto const &pair : props) {
+        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    }
+
     legacy_get_property_workspace(&propfd, &propsz);
     snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
 
@@ -176,13 +191,13 @@ int miniadbd_main(int argc, char *argv[])
 
     umask(0);
 
+    initialize_adb();
+
     atexit(cleanup);
     // No SIGCHLD. Let the service subproc handle its children.
     signal(SIGPIPE, SIG_IGN);
 
     init_transport_registration();
-
-    initialize_adb();
 
     if (access(USB_ADB_PATH, F_OK) == 0 || access(USB_FFS_ADB_EP0, F_OK) == 0) {
         usb_init();

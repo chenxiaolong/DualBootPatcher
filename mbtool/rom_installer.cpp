@@ -41,6 +41,7 @@
 #include "util/file.h"
 #include "util/finally.h"
 #include "util/logging.h"
+#include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
 
@@ -59,6 +60,7 @@ public:
     virtual void updater_print(const std::string &msg) override;
     virtual void command_output(const std::string &line) override;
     virtual std::string get_install_type() override;
+    virtual std::unordered_map<std::string, std::string> get_properties() override;
     virtual ProceedState on_checked_device() override;
     virtual ProceedState on_pre_install() override;
     virtual ProceedState on_unmounted_filesystems() override;
@@ -70,6 +72,8 @@ private:
 
     std::string _ld_library_path;
     std::string _ld_preload;
+
+    std::unordered_map<std::string, std::string> _recovery_props;
 };
 
 
@@ -103,6 +107,11 @@ void RomInstaller::command_output(const std::string &line)
 std::string RomInstaller::get_install_type()
 {
     return _rom_id;
+}
+
+std::unordered_map<std::string, std::string> RomInstaller::get_properties()
+{
+    return _recovery_props;
 }
 
 Installer::ProceedState RomInstaller::on_checked_device()
@@ -162,13 +171,15 @@ Installer::ProceedState RomInstaller::on_checked_device()
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
         std::string path = archive_entry_pathname(entry);
 
-        if (!util::starts_with(path, "sbin/")) {
+        if (path == "default.prop") {
+            path = "default.recovery.prop";
+        } else if (!util::starts_with(path, "sbin/")) {
             continue;
         }
 
         LOGE("Copying from recovery: %s", path.c_str());
 
-        archive_entry_set_pathname(entry, (_chroot + "/" + path).c_str());
+        archive_entry_set_pathname(entry, in_chroot(path).c_str());
 
         if (util::libarchive_copy_header_and_data(
                 in.get(), out.get(), entry) != ARCHIVE_OK) {
@@ -183,6 +194,10 @@ Installer::ProceedState RomInstaller::on_checked_device()
              archive_error_string(in.get()));
         return ProceedState::Fail;
     }
+
+    // Load recovery properties
+    util::file_get_all_properties(
+            in_chroot("/default.recovery.prop"), &_recovery_props);
 
     return ProceedState::Continue;
 }

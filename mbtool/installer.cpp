@@ -586,27 +586,26 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
-            if (!_passthrough) {
-                // If we're not passing through the fd, then we're not running
-                // in recovery, so we'll need to handle the legacy properties
-                // ourselves. We don't need to worry about /dev/__properties__
-                // since that's not present in the chroot. Bionic will
-                // automatically fall back to getting the fd from the
-                // ANDROID_PROPERTY_WORKSPACE environment variable.
-                char tmp[32];
-                int propfd, propsz;
-                legacy_properties_init();
-                legacy_get_property_workspace(&propfd, &propsz);
-                sprintf(tmp, "%d,%d", dup(propfd), propsz);
-
-                char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
-                LOGD("Original properties environment: %s",
-                     orig_prop_env ? orig_prop_env : "null");
-
-                setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
-                LOGD("Switched to legacy properties environment: %s", tmp);
+            // We don't need to worry about /dev/__properties__
+            // since that's not present in the chroot. Bionic will
+            // automatically fall back to getting the fd from the
+            // ANDROID_PROPERTY_WORKSPACE environment variable.
+            char tmp[32];
+            int propfd, propsz;
+            legacy_properties_init();
+            for (auto const &pair : get_properties()) {
+                legacy_property_set(pair.first.c_str(), pair.second.c_str());
             }
+            legacy_get_property_workspace(&propfd, &propsz);
+            sprintf(tmp, "%d,%d", dup(propfd), propsz);
+
+            char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
+            LOGD("Original properties environment: %s",
+                 orig_prop_env ? orig_prop_env : "null");
+
+            setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+            LOGD("Switched to legacy properties environment: %s", tmp);
 
             // Make sure the updater won't run interactively
             close(STDIN_FILENO);
@@ -751,6 +750,11 @@ void Installer::updater_print(const std::string &msg)
 void Installer::command_output(const std::string &line)
 {
     printf("%s\n", line.c_str());
+}
+
+std::unordered_map<std::string, std::string> Installer::get_properties()
+{
+    return std::unordered_map<std::string, std::string>();
 }
 
 Installer::ProceedState Installer::on_initialize()

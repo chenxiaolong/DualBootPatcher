@@ -55,6 +55,7 @@ protected:
     virtual void updater_print(const std::string &msg);
     virtual void command_output(const std::string &line);
     virtual std::string get_install_type() = 0;
+    virtual std::unordered_map<std::string, std::string> get_properties();
     virtual ProceedState on_initialize();
     virtual ProceedState on_created_chroot();
     virtual ProceedState on_checked_device();

@@ -47,6 +47,7 @@ void get_property(const std::string &name,
                   const std::string &default_value);
 bool set_property(const std::string &name,
                   const std::string &value);
+bool get_all_properties(std::unordered_map<std::string, std::string> *map);
 bool file_get_property(const std::string &path,
                        const std::string &key,
                        std::string *out,
