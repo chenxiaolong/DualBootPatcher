@@ -45,7 +45,7 @@ namespace mb
 static bool write_file(const char *path, const char *data, std::size_t size)
 {
     int fd = TEMP_FAILURE_RETRY(
-            open(path, O_WRONLY | O_CREAT, O_NOFOLLOW | O_CLOEXEC, 0600));
+            open(path, O_WRONLY | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0600));
     if (fd < 0) {
         LOGE("%s: Failed to open file: %s", path, strerror(errno));
         return false;
