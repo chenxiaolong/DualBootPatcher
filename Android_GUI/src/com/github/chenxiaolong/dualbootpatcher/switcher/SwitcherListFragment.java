@@ -153,6 +153,8 @@ public class SwitcherListFragment extends Fragment implements
 
     private boolean mShowedSetKernelWarning;
 
+    private boolean mIsInitialStart;
+
     public static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
     }
@@ -208,21 +210,7 @@ public class SwitcherListFragment extends Fragment implements
         initCardList();
         setErrorVisibility(false);
 
-        // Permissions
-        if (PermissionUtils.supportsRuntimePermissions()) {
-            if (savedInstanceState == null) {
-                requestPermissions();
-            } else if (mHavePermissionsResult) {
-                if (PermissionUtils.hasPermissions(
-                        getActivity(), PermissionUtils.STORAGE_PERMISSIONS)) {
-                    onPermissionsGranted();
-                } else {
-                    onPermissionsDenied();
-                }
-            }
-        } else {
-            startWhenServiceConnected();
-        }
+        mIsInitialStart = savedInstanceState == null;
     }
 
     /**
@@ -236,6 +224,22 @@ public class SwitcherListFragment extends Fragment implements
         Intent intent = new Intent(getActivity(), SwitcherService.class);
         getActivity().bindService(intent, this, Context.BIND_AUTO_CREATE);
         getActivity().startService(intent);
+
+        // Permissions
+        if (PermissionUtils.supportsRuntimePermissions()) {
+            if (mIsInitialStart) {
+                requestPermissions();
+            } else if (mHavePermissionsResult) {
+                if (PermissionUtils.hasPermissions(
+                        getActivity(), PermissionUtils.STORAGE_PERMISSIONS)) {
+                    onPermissionsGranted();
+                } else {
+                    onPermissionsDenied();
+                }
+            }
+        } else {
+            startWhenServiceConnected();
+        }
     }
 
     /**
