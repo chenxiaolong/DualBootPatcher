@@ -542,6 +542,13 @@ int rom_installer_main(int argc, char *argv[])
 
     fix_multiboot_permissions();
 
+    // Close stdin
+    int fd = open("/dev/null", O_RDONLY);
+    if (fd >= 0) {
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+    }
+
     // mbtool logging
     util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), false));
 
