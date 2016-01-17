@@ -111,7 +111,33 @@ std::string RomInstaller::get_install_type()
 
 std::unordered_map<std::string, std::string> RomInstaller::get_properties()
 {
-    return _recovery_props;
+    static std::vector<std::string> needed_props{
+        "ro.product.device",
+        "ro.build.product"
+    };
+
+    std::unordered_map<std::string, std::string> props(_recovery_props);
+
+    // Copy required properties from system if they don't exist in the
+    // properties file
+    for (auto const &prop : needed_props) {
+        if (props.find(prop) != props.end() && !props[prop].empty()) {
+            continue;
+        }
+
+        std::string value;
+        util::get_property(prop, &value, "");
+        if (!value.empty()) {
+            props[prop] = value;
+
+            LOGD("Property '%s' does not exist in recovery's default.prop",
+                 prop.c_str());
+            LOGD("- '%s'='%s' will be set in chroot environment",
+                 prop.c_str(), value.c_str());
+        }
+    }
+
+    return props;
 }
 
 Installer::ProceedState RomInstaller::on_checked_device()

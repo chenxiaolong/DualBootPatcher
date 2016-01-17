@@ -562,6 +562,10 @@ bool Installer::run_real_updater()
     }
     argv_c.push_back(nullptr);
 
+    // Keep get_properties() out of the fork since it might need to call
+    // util::get_properties()
+    std::unordered_map<std::string, std::string> props = get_properties();
+
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             if (!_passthrough) {
@@ -593,7 +597,7 @@ bool Installer::run_real_updater()
             char tmp[32];
             int propfd, propsz;
             legacy_properties_init();
-            for (auto const &pair : get_properties()) {
+            for (auto const &pair : props) {
                 legacy_property_set(pair.first.c_str(), pair.second.c_str());
             }
             legacy_get_property_workspace(&propfd, &propsz);
