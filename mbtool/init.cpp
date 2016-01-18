@@ -47,6 +47,8 @@
 #include "util/finally.h"
 #include "util/logging.h"
 #include "util/mount.h"
+#include "util/path.h"
+#include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
 #include "util/vibrate.h"
@@ -507,6 +509,69 @@ static bool fix_arter97()
     return true;
 }
 
+static std::vector<std::string> decode_list(const std::string &encoded)
+{
+    std::vector<std::string> result;
+    std::string buf;
+
+    bool escaped = false;
+    for (char c : encoded) {
+        if (!escaped) {
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            } else if (c == ',') {
+                result.push_back(buf);
+                buf.clear();
+                continue;
+            }
+        }
+
+        buf += c;
+        escaped = false;
+    }
+
+    if (escaped) {
+        // Invalid string
+        return {};
+    }
+
+    result.push_back(buf);
+
+    return result;
+}
+
+static bool symlink_base_dir()
+{
+    std::string encoded;
+    if (!util::file_get_property("/default.prop", "ro.patcher.blockdevs.base",
+                                 &encoded, "")) {
+        return false;
+    }
+
+    struct stat sb;
+    if (stat(UNIVERSAL_BY_NAME_DIR, &sb) == 0) {
+        return true;
+    }
+
+    std::vector<std::string> base_dirs = decode_list(encoded);
+    for (const std::string &base_dir : base_dirs) {
+        if (util::path_compare(base_dir, UNIVERSAL_BY_NAME_DIR) != 0
+                && stat(base_dir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            if (symlink(base_dir.c_str(), UNIVERSAL_BY_NAME_DIR) < 0) {
+                LOGW("Failed to symlink %s to %s",
+                     base_dir.c_str(), UNIVERSAL_BY_NAME_DIR);
+            } else {
+                LOGE("Symlinked %s to %s",
+                     base_dir.c_str(), UNIVERSAL_BY_NAME_DIR);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 #define KLOG_CLOSE         0
 #define KLOG_OPEN          1
 #define KLOG_READ          2
@@ -656,6 +721,9 @@ int init_main(int argc, char *argv[])
 
     // Start probing for devices
     device_init(false);
+
+    // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
+    symlink_base_dir();
 
     std::string fstab = find_fstab();
     if (fstab.empty()) {

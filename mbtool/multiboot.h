@@ -31,6 +31,8 @@
 
 #define ABOOT_PARTITION                 "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
+#define UNIVERSAL_BY_NAME_DIR           "/dev/block/by-name"
+
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
 namespace mb
