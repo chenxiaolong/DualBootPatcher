@@ -355,6 +355,7 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
                        const std::vector<std::string> &cacheDevs,
                        const std::vector<std::string> &dataDevs)
 {
+    bool foundReboot = false;
     bool foundMount = false;
     bool foundUmount = false;
     bool foundFormatSh = false;
@@ -372,6 +373,7 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
         const std::string str = token->string();
         const std::string unescaped = token->unescapedString();
 
+        foundReboot = StringUtils::ends_with(unescaped, "reboot");
         foundMount = StringUtils::ends_with(unescaped, "mount");
         foundUmount = StringUtils::ends_with(unescaped, "umount");
         foundFormatSh = StringUtils::ends_with(unescaped, "/format.sh");
@@ -386,7 +388,10 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
                 || findItemsInString(str, dataDevs);
     }
 
-    if (foundUmount) {
+    if (foundReboot) {
+        return replaceFunction(tokens, funcName, leftParen, rightParen,
+                               "(ui_print(\"Removed reboot command\") == 0)");
+    } else if (foundUmount) {
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
                                    StringUtils::format(UNMOUNT_FMT, "/system"));
