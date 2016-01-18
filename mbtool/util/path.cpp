@@ -237,20 +237,36 @@ void normalize_path(std::vector<std::string> *components)
  * This function will get the relative path of \a path starting from \a start.
  * Both \a path and \a start will be normalized before calculating the relative
  * path. That way, paths containing '..' will be handled correctly. For example,
- * calling relative_path("a/b/c/d", "a/b/../../..") will return "../a/b/c/d" as
- * expected.
+ * calling relative_path("/usr/bin", "/usr/include/glib-2.0/..") will return
+ * "../bin" as expected.
+ *
+ * If, in the directory tree, \a start is at a higher level than the parent
+ * directory of \a path, then the function will return false and set \a errno to
+ * \a EINVAL. This is because there is no way of determining the intermediate
+ * paths to form the relative path between the two directories. For example, if
+ * we want to determine the relative path of "a/b" starting from "..", the
+ * result would be "[some_dir]/a/b", but there is no way to determine what
+ * \a some_dir is.
  *
  * \note This function does not traverse the filesystem at all. It works purely
  *       on the given path strings.
  *
- * \warning The behavior is undefined if \a path is a relative path and \a start
- *          is an absolute path or vice versa. When calling this function, both
- *          \a path and \a start should be relative paths or both should be
- *          absolute paths.
+ * \return True if the relative path was successfully computed. False and errno
+ *         set to \a EINVAL if:
+ *         - \a path is absolute and \a start is relative or vice versa
+ *         - \a path or \a start is empty
+ *         - an intermediate path could not be computed
  */
-std::string relative_path(const std::string &path,
-                          const std::string &start)
+bool relative_path(const std::string &path, const std::string &start,
+                   std::string *out)
 {
+    if (path.empty() || start.empty()
+            || (path[0] == '/' && start[0] != '/')
+            || (path[0] != '/' && start[0] == '/')) {
+        errno = EINVAL;
+        return false;
+    }
+
     std::vector<std::string> path_pieces(path_split(path));
     std::vector<std::string> start_pieces(path_split(start));
     std::vector<std::string> result_pieces;
@@ -267,6 +283,10 @@ std::string relative_path(const std::string &path,
 
     // Add '..' for the remaining path segments in 'start'
     for (size_t i = common; i < start_pieces.size(); ++i) {
+        if (start_pieces[i] == "..") {
+            errno = EINVAL;
+            return false;
+        }
         result_pieces.push_back("..");
     }
 
@@ -275,7 +295,9 @@ std::string relative_path(const std::string &path,
         result_pieces.push_back(path_pieces[i]);
     }
 
-    return path_join(result_pieces);
+    *out = path_join(result_pieces);
+
+    return true;
 }
 
 bool wait_for_path(const char *path, unsigned int timeout_ms)
