@@ -38,6 +38,7 @@
 #include <unistd.h>
 
 #include "autoclose/file.h"
+#include "multiboot.h"
 #include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
@@ -175,29 +176,36 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
  */
 static std::vector<util::fstab_rec> generic_fstab_system_entries()
 {
-    return {
-        {
-            .blk_device = "/dev/block/platform/15570000.ufs/by-name/SYSTEM",
-            .mount_point = "/system",
-            .fs_type = "ext4",
-            .flags = MS_RDONLY | MS_NOATIME | MS_NODIRATIME,
-            .fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        {
-            .blk_device = "/dev/block/platform/15570000.ufs/by-name/SYSTEM",
-            .mount_point = "/system",
-            .fs_type = "f2fs",
-            .flags = MS_RDONLY | MS_NOATIME | MS_NODIRATIME,
-            .fs_options = "background_gc=off,nodiscard",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        }
-        // Add more as necessary
+    static const char *block_devs[] = {
+        UNIVERSAL_BY_NAME_DIR "/SYSTEM",
+        UNIVERSAL_BY_NAME_DIR "/system",
+        nullptr
     };
+
+    std::vector<util::fstab_rec> result;
+
+    for (const char **ptr = block_devs; *ptr; ++ptr) {
+        // ext4 entry
+        result.emplace_back();
+        result.back().blk_device = *ptr;
+        result.back().mount_point = "/system";
+        result.back().fs_type = "ext4";
+        result.back().flags = MS_RDONLY;
+        result.back().fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
+        // f2fs entry
+        result.emplace_back();
+        result.back().blk_device = *ptr;
+        result.back().mount_point = "/system";
+        result.back().fs_type = "f2fs";
+        result.back().flags = MS_RDONLY;
+        result.back().fs_options = "background_gc=off,nodiscard";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
+    }
+
+    return result;
 }
 
 /*!
@@ -206,59 +214,36 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
  */
 static std::vector<util::fstab_rec> generic_fstab_cache_entries()
 {
-    return {
-        {
-            .blk_device = "/dev/block/platform/msm_sdcc.1/by-name/cache",
-            .mount_point = "/cache",
-            .fs_type = "ext4",
-            .flags = MS_NOSUID | MS_NODEV,
-            .fs_options = "barrier=1",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        {
-            .blk_device = "/dev/block/platform/15570000.ufs/by-name/CACHE",
-            .mount_point = "/cache",
-            .fs_type = "ext4",
-            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
-            .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        {
-            .blk_device = "/dev/block/platform/15570000.ufs/by-name/CACHE",
-            .mount_point = "/cache",
-            .fs_type = "f2fs",
-            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
-            .fs_options = "background_gc=on,discard",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        {
-            .blk_device = "/dev/block/bootdevice/by-name/cache",
-            .mount_point = "/cache",
-            .fs_type = "ext4",
-            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
-            .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        {
-            .blk_device = "/dev/block/bootdevice/by-name/cache",
-            .mount_point = "/cache",
-            .fs_type = "f2fs",
-            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
-            .fs_options = "background_gc=on,discard",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        // Add more as necessary...
+    static const char *block_devs[] = {
+        UNIVERSAL_BY_NAME_DIR "/CACHE",
+        UNIVERSAL_BY_NAME_DIR "/cache",
+        nullptr
     };
+
+    std::vector<util::fstab_rec> result;
+
+    for (const char **ptr = block_devs; *ptr; ++ptr) {
+        // ext4 entry
+        result.emplace_back();
+        result.back().blk_device = *ptr;
+        result.back().mount_point = "/cache";
+        result.back().fs_type = "ext4";
+        result.back().flags = MS_NOSUID | MS_NODEV;
+        result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
+        // f2fs entry
+        result.emplace_back();
+        result.back().blk_device = *ptr;
+        result.back().mount_point = "/cache";
+        result.back().fs_type = "f2fs";
+        result.back().flags = MS_NOSUID | MS_NODEV;
+        result.back().fs_options = "background_gc=on,discard";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
+    }
+
+    return result;
 }
 
 /*!
@@ -267,29 +252,36 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
  */
 static std::vector<util::fstab_rec> generic_fstab_data_entries()
 {
-    return {
-        {
-            .blk_device = "/dev/block/platform/15570000.ufs/by-name/USERDATA",
-            .mount_point = "/data",
-            .fs_type = "ext4",
-            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
-            .fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        },
-        {
-            .blk_device = "/dev/block/platform/15570000.ufs/by-name/USERDATA",
-            .mount_point = "/data",
-            .fs_type = "f2fs",
-            .flags = MS_NOATIME | MS_NODIRATIME | MS_NOSUID | MS_NODEV,
-            .fs_options = "background_gc=on,discard",
-            .fs_mgr_flags = 0,
-            .vold_args = "check",
-            .orig_line = std::string()
-        }
-        // Add more as necessary...
+    static const char *block_devs[] = {
+        UNIVERSAL_BY_NAME_DIR "/USERDATA",
+        UNIVERSAL_BY_NAME_DIR "/userdata",
+        nullptr
     };
+
+    std::vector<util::fstab_rec> result;
+
+    for (const char **ptr = block_devs; *ptr; ++ptr) {
+        // ext4 entry
+        result.emplace_back();
+        result.back().blk_device = *ptr;
+        result.back().mount_point = "/data";
+        result.back().fs_type = "ext4";
+        result.back().flags = MS_NOSUID | MS_NODEV;
+        result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
+        // f2fs entry
+        result.emplace_back();
+        result.back().blk_device = *ptr;
+        result.back().mount_point = "/data";
+        result.back().fs_type = "f2fs";
+        result.back().flags = MS_NOSUID | MS_NODEV;
+        result.back().fs_options = "background_gc=on,discard";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
+    }
+
+    return result;
 }
 
 /*!
