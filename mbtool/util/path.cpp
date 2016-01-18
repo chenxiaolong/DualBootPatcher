@@ -300,6 +300,35 @@ bool relative_path(const std::string &path, const std::string &start,
     return true;
 }
 
+/*!
+ * \brief An strcmp() for paths
+ *
+ * This function will normalize \a path1 and \a path2 before they are passed to
+ * std::string::compare(). This way, extra slashes, '.', '..', etc. are handled
+ * before the string comparison is performed.
+ *
+ * \note This function does not traverse the filesystem at all. It works purely
+ *       on the given path strings.
+ *
+ * \return An integer less than, equal to, or greater than zero if \a path1 is
+ *         found, respectively, to be less than, equal to, or greater than
+ *         \a path2 lexicographically.
+ */
+int path_compare(const std::string &path1, const std::string &path2)
+{
+    if (path1.empty() || path2.empty()) {
+        return false;
+    }
+
+    std::vector<std::string> path1_pieces(path_split(path1));
+    std::vector<std::string> path2_pieces(path_split(path2));
+
+    normalize_path(&path1_pieces);
+    normalize_path(&path2_pieces);
+
+    return path_join(path1_pieces).compare(path_join(path2_pieces));
+}
+
 bool wait_for_path(const char *path, unsigned int timeout_ms)
 {
     uint64_t until = util::current_time_ms() + timeout_ms;
