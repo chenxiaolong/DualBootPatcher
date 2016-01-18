@@ -70,7 +70,8 @@
 //
 //     $ adb push mbtool_recovery /tmp/updater
 //     $ adb shell /tmp/updater 3 1 /path/to/file_patched.zip
-#define DEBUG_SHELL 0
+#define DEBUG_PRE_SHELL 0
+#define DEBUG_POST_SHELL 0
 
 // Use an update-binary file not from the zip file
 #define DEBUG_USE_ALTERNATE_UPDATER 0
@@ -1320,13 +1321,21 @@ Installer::ProceedState Installer::install_stage_installation()
     display_msg("Running real update-binary");
     display_msg("Here we go!");
 
+#if DEBUG_PRE_SHELL
+    {
+        LOGD("Pre-installation shell");
+        run_command_chroot(_chroot, { "/sbin/sh", "-i" });
+    }
+#endif
+
     bool updater_ret = run_real_updater();
     if (!updater_ret) {
         display_msg("Failed to run real update-binary");
     }
 
-#if DEBUG_SHELL
+#if DEBUG_POST_SHELL
     {
+        LOGD("Post-installation shell");
         run_command_chroot(_chroot, { "/sbin/sh", "-i" });
     }
 #endif
