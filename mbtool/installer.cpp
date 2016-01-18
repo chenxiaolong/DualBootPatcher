@@ -1041,9 +1041,29 @@ Installer::ProceedState Installer::install_stage_check_device()
                                               | util::COPY_XATTRS
                                               | util::COPY_FOLLOW_SYMLINKS)) {
                 LOGE("Failed to copy %s. Continuing anyway", dev.c_str());
+            } else {
+                LOGD("Copied %s to the chroot", dev.c_str());
+            }
+        }
+
+        // Symlink /mb/system.img to system block devs
+        for (auto const &dev : system_devs) {
+            std::string dev_path(_chroot);
+            dev_path += "/";
+            dev_path += dev;
+
+            if (!util::mkdir_parent(dev_path, 0755)) {
+                LOGE("Failed to create parent directory of %s",
+                     dev_path.c_str());
             }
 
-            LOGD("Copied %s to the chroot", dev.c_str());
+            if (symlink("/mb/system.img", dev_path.c_str()) < 0) {
+                LOGE("Failed to symlink %s to %s: %s. Continuing anyway",
+                     "/mb/system.img", dev_path.c_str(), strerror(errno));
+            } else {
+                LOGD("Symlinked %s to %s in the chroot",
+                     "/mb/system.img", dev_path.c_str());
+            }
         }
 
         break;
