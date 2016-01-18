@@ -26,27 +26,23 @@
 #include <poll.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <sys/system_properties.h>
 #include <unistd.h>
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
 #include "util/cmdline.h"
 #include "util/directory.h"
+#include "util/logging.h"
 #include "util/string.h"
 
 #define UNUSED __attribute__((__unused__))
-
-#define SYSFS_PREFIX "/sys"
 
 #define DEVPATH_LEN 96
 
 #define UEVENT_LOGGING 1
 
-#if UEVENT_LOGGING
-#include "util/logging.h"
-#endif
-
-static char bootdevice[32];
+static char bootdevice[PROP_VALUE_MAX];
 static int device_fd = -1;
 static int pipe_fd[2];
 static volatile bool run_thread = true;
@@ -132,7 +128,7 @@ static void add_platform_device(const char *path)
     }
 
 #if UEVENT_LOGGING
-    LOGI("adding platform device %s (%s)", name, path);
+    LOGI("Adding platform device %s (%s)", name, path);
 #endif
 
     platform_names.emplace_back();
@@ -179,6 +175,39 @@ static void remove_platform_device(const char *path)
             return;
         }
     }
+}
+
+/*
+ * Given a path that may start with an MTD device (/devices/virtual/mtd/mtd8/mtdblock8),
+ * populate the supplied buffer with the MTD partition number and return 0.
+ * If it doesn't start with an MTD device, or there is some error, return -1
+ */
+static int find_mtd_device_prefix(const char *path, char *buf, ssize_t buf_sz)
+{
+    const char *start, *end;
+
+    if (strncmp(path, "/devices/virtual/mtd", 20) != 0) {
+        return -1;
+    }
+
+    // Beginning of the prefix is the initial "mtdXX" after "/devices/virtual/mtd/"
+    start = path + 21;
+
+    // End of the prefix is one path '/' later, capturing the partition number
+    // Example: mtd8
+    end = strchr(start, '/');
+    if (!end) {
+        return -1;
+    }
+
+    // Make sure we have enough room for the string plus null terminator
+    if (end - start + 1 > buf_sz) {
+        return -1;
+    }
+
+    strncpy(buf, start, end - start);
+    buf[end - start] = '\0';
+    return 0;
 }
 
 /*
@@ -345,36 +374,80 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
 
 static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 {
-    const char *device;
+    std::vector<std::string> devices;
     std::vector<struct platform_node *> pdevs;
     char *slash;
     const char *type;
     char buf[256];
     char link_path[256];
     char *p;
+    bool is_bootdevice = false;
+    int mtd_fd = -1;
+    int nr;
+    char mtd_name_path[256];
+    char mtd_name[64];
 
     pdevs = find_platform_devices(uevent->path);
+    if (!pdevs.empty()) {
+        for (auto *pdev : pdevs) {
+            devices.push_back(pdev->name);
+        }
+        type = "platform";
+    } else if (find_pci_device_prefix(uevent->path, buf, sizeof(buf)) == 0) {
+        devices.push_back(buf);
+        type = "pci";
+    } else if (find_mtd_device_prefix(uevent->path, buf, sizeof(buf)) == 0) {
+        devices.push_back(buf);
+        type = "mtd";
+    } else {
+        return {};
+    }
 
     std::vector<std::string> links;
 
-    for (struct platform_node *pdev : pdevs) {
-        if (pdev) {
-            device = pdev->name;
-            type = "platform";
-        } else if (find_pci_device_prefix(
-                uevent->path, buf, sizeof(buf)) == 0) {
-            device = buf;
-            type = "pci";
-        } else {
-            continue;
-        }
-
 #if UEVENT_LOGGING
-        LOGD("Found %s device %s", type, device);
+    for (auto const &device : devices) {
+        LOGD("Found %s device %s", type, device.c_str());
+    }
 #endif
 
+    for (auto const &device : devices) {
         snprintf(link_path, sizeof(link_path),
-                 "/dev/block/%s/%s", type, device);
+                 "/dev/block/%s/%s", type, device.c_str());
+
+        if (strcmp(type, "mtd") == 0) {
+            snprintf(mtd_name_path, sizeof(mtd_name_path),
+                     "/sys/devices/virtual/%s/%s/name", type, device.c_str());
+            mtd_fd = open(mtd_name_path, O_RDONLY);
+            if (mtd_fd < 0) {
+#if UEVENT_LOGGING
+                LOGE("Unable to open %s for reading", mtd_name_path);
+#endif
+                continue;
+            }
+            nr = read(mtd_fd, mtd_name, sizeof(mtd_name) - 1);
+            if (nr <= 0) {
+                continue;
+            }
+            close(mtd_fd);
+            mtd_name[nr - 1] = '\0';
+
+            p = strdup(mtd_name);
+            sanitize(p);
+            links.push_back(mb::util::format(
+                    "/dev/block/%s/by-name/%s", type, p));
+            free(p);
+        }
+
+        if (!pdevs.empty() && bootdevice[0] != '\0'
+                && strstr(device.c_str(), bootdevice)) {
+            if (!dry_run) {
+                make_link_init(link_path, "/dev/block/bootdevice");
+            }
+            is_bootdevice = true;
+        } else {
+            is_bootdevice = false;
+        }
 
         if (uevent->partition_name) {
             p = strdup(uevent->partition_name);
@@ -386,27 +459,24 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 #endif
             }
             links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
-            links.push_back(mb::util::format(
-                    "/dev/block/bootdevice/by-name/%s", p));
+            if (is_bootdevice) {
+                links.push_back(mb::util::format(
+                        "/dev/block/bootdevice/by-name/%s", p));
+            }
             free(p);
         }
 
         if (uevent->partition_num >= 0) {
             links.push_back(mb::util::format(
                     "%s/by-num/p%d", link_path, uevent->partition_num));
-            links.push_back(mb::util::format(
-                    "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
+            if (is_bootdevice) {
+                links.push_back(mb::util::format(
+                        "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
+            }
         }
 
         slash = strrchr(uevent->path, '/');
         links.push_back(mb::util::format("%s/%s", link_path, slash + 1));
-
-        if (pdev && bootdevice[0] != '\0' && strstr(device, bootdevice)) {
-            // Create bootdevice symlink for platform boot stroage device
-            if (!dry_run) {
-                make_link_init(link_path, "/dev/block/bootdevice");
-            }
-        }
     }
 
     return links;

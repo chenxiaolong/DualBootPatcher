@@ -438,7 +438,13 @@ bool libarchive_tar_create(const std::string &filename,
             // the archive path to the relative path starting at base_dir
             const char *curpath = archive_entry_pathname(entry);
             if (curpath && path[0] != '/' && !base_dir.empty()) {
-                std::string relpath = util::relative_path(curpath, base_dir);
+                std::string relpath;
+                if (!util::relative_path(curpath, base_dir, &relpath)) {
+                    LOGE("Failed to compute relative path of %s starting at %s: %s",
+                         curpath, base_dir.c_str(), strerror(errno));
+                    archive_entry_free(entry);
+                    return false;
+                }
                 if (relpath.empty()) {
                     // If the relative path is empty, then the current path is
                     // the root of the directory tree. We don't need that, so
