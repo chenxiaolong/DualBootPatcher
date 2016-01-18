@@ -19,7 +19,10 @@
 
 #include "ramdiskpatchers/core.h"
 
+#include <algorithm>
+
 #include "patcherconfig.h"
+#include "private/stringutils.h"
 
 
 namespace mbp
@@ -66,16 +69,10 @@ std::string CoreRP::id() const
 
 bool CoreRP::patchRamdisk()
 {
-    if (!addMbtool()) {
-        return false;
-    }
-    if (!addExfat()) {
-        return false;
-    }
-    if (!setUpInitWrapper()) {
-        return false;
-    }
-    return true;
+    return addMbtool()
+            && addExfat()
+            && setUpInitWrapper()
+            && addBaseDirProp();
 }
 
 bool CoreRP::addMbtool()
@@ -146,6 +143,67 @@ bool CoreRP::setUpInitWrapper()
         m_impl->error = m_impl->cpio->error();
         return false;
     }
+
+    return true;
+}
+
+static std::string encode_list(const std::vector<std::string> &list)
+{
+    // We processing char-by-char, so avoid unnecessary reallocations
+    std::size_t size = 0;
+    for (const std::string &item : list) {
+        size += item.size();
+        size += std::count(item.begin(), item.end(), ',');
+    }
+    size += list.size() - 1;
+
+    std::string result;
+    result.reserve(size);
+
+    bool first = true;
+    for (const std::string &item : list) {
+        if (!first) {
+            result += ',';
+        } else {
+            first = false;
+        }
+        for (char c : item) {
+            if (c == ',' || c == '\\') {
+                result += '\\';
+            }
+            result += c;
+        }
+    }
+
+    return result;
+}
+
+bool CoreRP::addBaseDirProp()
+{
+    if (!m_impl->info->device()) {
+        return true;
+    }
+
+    std::vector<unsigned char> contents;
+    m_impl->cpio->contents("default.prop", &contents);
+
+    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
+    for (auto it = lines.begin(); it != lines.end();) {
+        if (StringUtils::starts_with(*it, "ro.patcher.blockdevs.")) {
+            it = lines.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    Device *device = m_impl->info->device();
+    std::string encoded("ro.patcher.blockdevs.base=");
+    encoded += encode_list(device->blockDevBaseDirs());
+
+    lines.push_back(encoded);
+
+    contents = StringUtils::joinData(lines, '\n');
+    m_impl->cpio->setContents("default.prop", std::move(contents));
 
     return true;
 }
