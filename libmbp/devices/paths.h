@@ -125,8 +125,12 @@
 #define MTK_BASE_DIR            "/dev/block/platform/mtk-msdc.0/by-name"
 #define MTK_BOOT                MTK_BASE_DIR "/boot"
 #define MTK_CACHE               MTK_BASE_DIR "/cache"
+#define MTK_LOGO                MTK_BASE_DIR "/logo"
+#define MTK_PARA                MTK_BASE_DIR "/para"
 #define MTK_RECOVERY            MTK_BASE_DIR "/recovery"
 #define MTK_SYSTEM              MTK_BASE_DIR "/system"
+#define MTK_TEE1                MTK_BASE_DIR "/tee1"
+#define MTK_UBOOT               MTK_BASE_DIR "/uboot"
 #define MTK_USERDATA            MTK_BASE_DIR "/userdata"
 
 // Block device paths used by devices with Tegra 3 SOCs
