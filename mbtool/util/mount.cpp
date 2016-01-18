@@ -39,10 +39,23 @@
 
 #define MAX_UNMOUNT_TRIES 5
 
+#define DELETED_SUFFIX "\\040(deleted)"
+
 namespace mb
 {
 namespace util
 {
+
+static std::string get_deleted_mount_path(const std::string &dir)
+{
+    struct stat sb;
+    if (lstat(dir.c_str(), &sb) < 0 && errno == ENOENT
+            && util::ends_with(dir, DELETED_SUFFIX)) {
+        return std::string(dir.begin(), dir.end() - strlen(DELETED_SUFFIX));
+    } else {
+        return dir;
+    }
+}
 
 bool is_mounted(const std::string &mountpoint)
 {
@@ -55,9 +68,11 @@ bool is_mounted(const std::string &mountpoint)
     bool found = false;
     struct mntent ent;
     char buf[1024];
+    std::string mnt_dir;
 
     while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-        if (mountpoint == ent.mnt_dir) {
+        mnt_dir = get_deleted_mount_path(ent.mnt_dir);
+        if (mountpoint == mnt_dir) {
             found = true;
             break;
         }
@@ -71,6 +86,7 @@ bool unmount_all(const std::string &dir)
     int failed;
     struct mntent ent;
     char buf[1024];
+    std::string mnt_dir;
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
@@ -82,12 +98,13 @@ bool unmount_all(const std::string &dir)
         }
 
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            if (starts_with(ent.mnt_dir, dir)) {
-                //LOGD("Attempting to unmount %s", ent.mnt_dir);
+            mnt_dir = get_deleted_mount_path(ent.mnt_dir);
+            if (starts_with(mnt_dir, dir)) {
+                //LOGD("Attempting to unmount %s", mnt_dir.c_str());
 
-                if (!util::umount(ent.mnt_dir)) {
+                if (!util::umount(mnt_dir.c_str())) {
                     LOGE("Failed to unmount %s: %s",
-                         ent.mnt_dir, strerror(errno));
+                         mnt_dir.c_str(), strerror(errno));
                     ++failed;
                 }
             }
@@ -234,12 +251,14 @@ bool umount(const char *target)
 {
     struct mntent ent;
     std::string source;
+    std::string mnt_dir;
 
     autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
     if (fp) {
         char buf[1024];
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            if (strcmp(ent.mnt_dir, target) == 0) {
+            mnt_dir = get_deleted_mount_path(ent.mnt_dir);
+            if (mnt_dir == target) {
                 source = ent.mnt_fsname;
             }
         }
