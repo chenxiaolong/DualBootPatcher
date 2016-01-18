@@ -39,7 +39,17 @@ void addOnePlusDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
-    device->setExtraBlockDevs({ QCOM_TZ, "/dev/block/mmcblk0p8" });
+    device->setExtraBlockDevs({
+        QCOM_ABOOT, "/dev/block/mmcblk0p5",
+        QCOM_DBI, "/dev/block/mmcblk0p3",
+        QCOM_LOGO, "/dev/block/mmcblk0p22",
+        QCOM_MODEM, "/dev/block/mmcblk0p1",
+        QCOM_OPPOSTANVBK, "/dev/block/mmcblk0p13",
+        QCOM_RESERVE4, "/dev/block/mmcblk0p27",
+        QCOM_RPM, "/dev/block/mmcblk0p6",
+        QCOM_SBL1, "/dev/block/mmcblk0p2",
+        QCOM_TZ, "/dev/block/mmcblk0p8"
+    });
     devices->push_back(device);
 
     // OnePlus Two
