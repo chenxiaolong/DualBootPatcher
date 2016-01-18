@@ -77,6 +77,11 @@
 #define DEBUG_USE_ALTERNATE_UPDATER 0
 #define DEBUG_ALTERNATE_UPDATER_PATH "/tmp/updater.orig"
 
+// Use a wrapper around the updater
+#define DEBUG_USE_UPDATER_WRAPPER 0
+#define DEBUG_UPDATER_WRAPPER_PATH "/tmp/strace_static"
+//#define DEBUG_UPDATER_WRAPPER_ARGS "-f" // Comma-separated strings
+
 
 namespace mb {
 
@@ -518,6 +523,16 @@ bool Installer::run_real_updater()
         return false;
     }
 
+#if DEBUG_USE_UPDATER_WRAPPER
+    if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
+                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+        LOGE("Failed to copy %s to %s: %s",
+             DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
+             strerror(errno));
+        return false;
+    }
+#endif
+
     if (chmod(chroot_updater.c_str(), 0555) < 0) {
         LOGE("%s: Failed to chmod: %s",
              chroot_updater.c_str(), strerror(errno));
@@ -551,6 +566,12 @@ bool Installer::run_real_updater()
 
     // Run updater in the chroot
     std::vector<std::string> argv{
+#if DEBUG_USE_UPDATER_WRAPPER
+        "/mb/wrapper",
+#ifdef DEBUG_UPDATER_WRAPPER_ARGS
+        DEBUG_UPDATER_WRAPPER_ARGS,
+#endif
+#endif
         "/mb/updater",
         util::format("%d", _interface),
         util::format("%d", _passthrough ? _output_fd : pipe_fds[1]),
