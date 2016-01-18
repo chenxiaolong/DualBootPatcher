@@ -38,8 +38,10 @@ static std::vector<std::string> extsd_mount_points{
     "/external_sd",
     "/external_sdcard",
     "/extSdCard",
+    "/storage/sdcard1",
     "/storage/extSdCard",
-    "/storage/sdcard1"
+    "/storage/external_SD",
+    "/storage/MicroSD"
 };
 
 namespace mb

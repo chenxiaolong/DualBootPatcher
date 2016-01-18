@@ -921,7 +921,8 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
             recs_data.push_back(&rec);
         } else if (rec.vold_args.find("voldmanaged=sdcard1") != std::string::npos
                 || rec.vold_args.find("voldmanaged=extSdCard") != std::string::npos
-                || rec.vold_args.find("voldmanaged=external_SD") != std::string::npos) {
+                || rec.vold_args.find("voldmanaged=external_SD") != std::string::npos
+                || rec.vold_args.find("voldmanaged=MicroSD") != std::string::npos) {
             LOGD("-> External SD entry");
             recs_extsd.push_back(&rec);
             recs_gen.push_back(&rec);
