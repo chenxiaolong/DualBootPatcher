@@ -618,6 +618,9 @@ bool Installer::run_real_updater()
                 _exit(EXIT_FAILURE);
             }
 
+            // HACK: SuperSU only accepts boot partition paths that are symlinks
+            setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
+
             execvpe(argv_c[0], const_cast<char * const *>(argv_c.data()), environ);
             _exit(127);
         } else {
