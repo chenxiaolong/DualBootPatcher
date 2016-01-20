@@ -45,6 +45,7 @@ set(MBP_CORE_SOURCES
 
 set(MBP_DEVICE_SOURCES
     devices/asus.cpp
+    devices/google.cpp
     devices/huawei.cpp
     devices/lenovo.cpp
     devices/lg.cpp

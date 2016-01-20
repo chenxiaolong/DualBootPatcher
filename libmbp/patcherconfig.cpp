@@ -33,6 +33,7 @@
 
 // Devices
 #include "devices/asus.h"
+#include "devices/google.h"
 #include "devices/huawei.h"
 #include "devices/lenovo.h"
 #include "devices/lg.h"
@@ -208,6 +209,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
 {
     addSamsungDevices(&devices);
     addAsusDevices(&devices);
+    addGoogleDevices(&devices);
     addHuaweiDevices(&devices);
     addLenovoDevices(&devices);
     addLgDevices(&devices);
