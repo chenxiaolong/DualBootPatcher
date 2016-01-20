@@ -26,6 +26,6 @@
 namespace mbp
 {
 
-	void addXiaomiDevices(std::vector<Device *> *devices);
+    void addXiaomiDevices(std::vector<Device *> *devices);
 
 }
