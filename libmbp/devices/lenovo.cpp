@@ -40,6 +40,7 @@ void addLenovoDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p19" });
     device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
+    device->setExtraBlockDevs({ MTK_LOGO, MTK_PARA, MTK_TEE1, MTK_UBOOT });
     devices->push_back(device);
 
     // Lenovo ZUK Z1

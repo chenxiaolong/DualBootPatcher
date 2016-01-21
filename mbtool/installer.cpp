@@ -70,11 +70,17 @@
 //
 //     $ adb push mbtool_recovery /tmp/updater
 //     $ adb shell /tmp/updater 3 1 /path/to/file_patched.zip
-#define DEBUG_SHELL 0
+#define DEBUG_PRE_SHELL 0
+#define DEBUG_POST_SHELL 0
 
 // Use an update-binary file not from the zip file
 #define DEBUG_USE_ALTERNATE_UPDATER 0
 #define DEBUG_ALTERNATE_UPDATER_PATH "/tmp/updater.orig"
+
+// Use a wrapper around the updater
+#define DEBUG_USE_UPDATER_WRAPPER 0
+#define DEBUG_UPDATER_WRAPPER_PATH "/tmp/strace_static"
+//#define DEBUG_UPDATER_WRAPPER_ARGS "-f" // Comma-separated strings
 
 
 namespace mb {
@@ -517,6 +523,16 @@ bool Installer::run_real_updater()
         return false;
     }
 
+#if DEBUG_USE_UPDATER_WRAPPER
+    if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
+                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+        LOGE("Failed to copy %s to %s: %s",
+             DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
+             strerror(errno));
+        return false;
+    }
+#endif
+
     if (chmod(chroot_updater.c_str(), 0555) < 0) {
         LOGE("%s: Failed to chmod: %s",
              chroot_updater.c_str(), strerror(errno));
@@ -550,6 +566,12 @@ bool Installer::run_real_updater()
 
     // Run updater in the chroot
     std::vector<std::string> argv{
+#if DEBUG_USE_UPDATER_WRAPPER
+        "/mb/wrapper",
+#ifdef DEBUG_UPDATER_WRAPPER_ARGS
+        DEBUG_UPDATER_WRAPPER_ARGS,
+#endif
+#endif
         "/mb/updater",
         util::format("%d", _interface),
         util::format("%d", _passthrough ? _output_fd : pipe_fds[1]),
@@ -1019,9 +1041,29 @@ Installer::ProceedState Installer::install_stage_check_device()
                                               | util::COPY_XATTRS
                                               | util::COPY_FOLLOW_SYMLINKS)) {
                 LOGE("Failed to copy %s. Continuing anyway", dev.c_str());
+            } else {
+                LOGD("Copied %s to the chroot", dev.c_str());
+            }
+        }
+
+        // Symlink /mb/system.img to system block devs
+        for (auto const &dev : system_devs) {
+            std::string dev_path(_chroot);
+            dev_path += "/";
+            dev_path += dev;
+
+            if (!util::mkdir_parent(dev_path, 0755)) {
+                LOGE("Failed to create parent directory of %s",
+                     dev_path.c_str());
             }
 
-            LOGD("Copied %s to the chroot", dev.c_str());
+            if (symlink("/mb/system.img", dev_path.c_str()) < 0) {
+                LOGE("Failed to symlink %s to %s: %s. Continuing anyway",
+                     "/mb/system.img", dev_path.c_str(), strerror(errno));
+            } else {
+                LOGD("Symlinked %s to %s in the chroot",
+                     "/mb/system.img", dev_path.c_str());
+            }
         }
 
         break;
@@ -1320,13 +1362,21 @@ Installer::ProceedState Installer::install_stage_installation()
     display_msg("Running real update-binary");
     display_msg("Here we go!");
 
+#if DEBUG_PRE_SHELL
+    {
+        LOGD("Pre-installation shell");
+        run_command_chroot(_chroot, { "/sbin/sh", "-i" });
+    }
+#endif
+
     bool updater_ret = run_real_updater();
     if (!updater_ret) {
         display_msg("Failed to run real update-binary");
     }
 
-#if DEBUG_SHELL
+#if DEBUG_POST_SHELL
     {
+        LOGD("Post-installation shell");
         run_command_chroot(_chroot, { "/sbin/sh", "-i" });
     }
 #endif

@@ -111,7 +111,7 @@ public class PatcherUtils {
         File targetFile = getTargetFile(context);
         File targetDir = getTargetDirectory(context);
 
-        if (!targetDir.exists()) {
+        if (BuildConfig.BUILD_TYPE.equals("debug") || !targetDir.exists()) {
             FileUtils.extractAsset(context, sTargetFile, targetFile);
 
             // Remove all previous files
