@@ -33,8 +33,6 @@
 #include "util/logging.h"
 #include "util/selinux.h"
 
-#define APP_DATA_SELINUX_CONTEXT        "u:object_r:app_data_file:s0"
-
 #define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
 
 #define USER_DATA_DIR                   "/data/data"
@@ -134,10 +132,12 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 
 bool AppSyncManager::fix_shared_data_permissions()
 {
-    if (!util::selinux_lset_context_recursive(
-            _as_data_dir, APP_DATA_SELINUX_CONTEXT)) {
+    std::string context("u:object_r:app_data_file:s0");
+    util::selinux_lget_context("/data/data/com.android.systemui", &context);
+
+    if (!util::selinux_lset_context_recursive(_as_data_dir, context)) {
         LOGW("%s: Failed to set context recursively to %s: %s",
-             _as_data_dir.c_str(), APP_DATA_SELINUX_CONTEXT, strerror(errno));
+             _as_data_dir.c_str(), context.c_str(), strerror(errno));
         return false;
     }
 
