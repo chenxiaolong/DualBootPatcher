@@ -205,12 +205,29 @@ namespace v3 {
 struct RebootRequest;
 struct RebootResponse;
 
+enum RebootType {
+  RebootType_FRAMEWORK = 0,
+  RebootType_INIT = 1,
+  RebootType_DIRECT = 2
+};
+
+inline const char **EnumNamesRebootType() {
+  static const char *names[] = { "FRAMEWORK", "INIT", "DIRECT", nullptr };
+  return names;
+}
+
+inline const char *EnumNameRebootType(RebootType e) { return EnumNamesRebootType()[static_cast<int>(e)]; }
+
 struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::String *arg() const { return GetPointer<const flatbuffers::String *>(4); }
+  RebootType type() const { return static_cast<RebootType>(GetField<int16_t>(6, 0)); }
+  uint8_t confirm() const { return GetField<uint8_t>(8, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* arg */) &&
            verifier.Verify(arg()) &&
+           VerifyField<int16_t>(verifier, 6 /* type */) &&
+           VerifyField<uint8_t>(verifier, 8 /* confirm */) &&
            verifier.EndTable();
   }
 };
@@ -219,18 +236,24 @@ struct RebootRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_arg(flatbuffers::Offset<flatbuffers::String> arg) { fbb_.AddOffset(4, arg); }
+  void add_type(RebootType type) { fbb_.AddElement<int16_t>(6, static_cast<int16_t>(type), 0); }
+  void add_confirm(uint8_t confirm) { fbb_.AddElement<uint8_t>(8, confirm, 0); }
   RebootRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RebootRequestBuilder &operator=(const RebootRequestBuilder &);
   flatbuffers::Offset<RebootRequest> Finish() {
-    auto o = flatbuffers::Offset<RebootRequest>(fbb_.EndTable(start_, 1));
+    auto o = flatbuffers::Offset<RebootRequest>(fbb_.EndTable(start_, 3));
     return o;
   }
 };
 
 inline flatbuffers::Offset<RebootRequest> CreateRebootRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> arg = 0) {
+   flatbuffers::Offset<flatbuffers::String> arg = 0,
+   RebootType type = RebootType_FRAMEWORK,
+   uint8_t confirm = 0) {
   RebootRequestBuilder builder_(_fbb);
   builder_.add_arg(arg);
+  builder_.add_type(type);
+  builder_.add_confirm(confirm);
   return builder_.Finish();
 }
 
