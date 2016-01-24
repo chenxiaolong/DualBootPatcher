@@ -19,14 +19,43 @@
 
 #include "reboot.h"
 
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "external/android_reboot.h"
+#include "util/command.h"
 #include "util/logging.h"
 #include "util/properties.h"
 
 namespace mb
 {
+
+static void log_output(const std::string &line, void *data)
+{
+    (void) data;
+    std::string copy;
+    if (!line.empty() && line.back() == '\n') {
+        copy.assign(line.begin(), line.end() - 1);
+    }
+    LOGD("Command output: %s", copy.c_str());
+}
+
+bool reboot_via_framework(bool confirm)
+{
+    std::string confirm_str("false");
+    if (confirm) {
+        confirm_str = "true";
+    }
+
+    int status = util::run_command_cb({
+        "am", "start",
+        //"-W",
+        "--ez", "android.intent.extra.KEY_CONFIRM", confirm_str,
+        "-a", "android.intent.action.REBOOT"
+    }, &log_output, nullptr);
+
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
 
 bool reboot_via_init(const std::string &reboot_arg)
 {
