@@ -988,7 +988,21 @@ static bool v3_reboot(int fd, const v3::Request *msg)
 
     // The client probably won't get the chance to see the success message, but
     // we'll still send it for the sake of symmetry
-    bool success = reboot_via_init(reboot_arg);
+    bool success = false;
+    switch (request->type()) {
+    case v3::RebootType_FRAMEWORK:
+        success = reboot_via_framework(request->confirm());
+        break;
+    case v3::RebootType_INIT:
+        success = reboot_via_init(reboot_arg);
+        break;
+    case v3::RebootType_DIRECT:
+        success = reboot_directly(reboot_arg);
+        break;
+    default:
+        LOGE("Invalid reboot type: %d", request->type());
+        return v3_send_response_invalid(fd);
+    }
 
     // Create response
     auto response = v3::CreateRebootResponse(builder, success);
