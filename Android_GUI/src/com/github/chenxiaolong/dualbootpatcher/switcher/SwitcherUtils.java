@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -260,11 +261,14 @@ public class SwitcherUtils {
     }
 
     public static void reboot(final Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("settings", 0);
+        final boolean confirm = prefs.getBoolean("confirm_reboot", false);
+
         new Thread() {
             @Override
             public void run() {
                 try {
-                    MbtoolSocket.getInstance().restart(context, "");
+                    MbtoolSocket.getInstance().restartViaFramework(context, confirm);
                 } catch (IOException e) {
                     // Ignore
                     Log.e(TAG, "mbtool communication error", e);

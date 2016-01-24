@@ -33,6 +33,11 @@
             android:summary="@string/rom_settings_allow_intents_desc"
             android:title="@string/rom_settings_allow_intents_title" />
         <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="confirm_reboot"
+            android:summary="@string/rom_settings_show_reboot_confirm_desc"
+            android:title="@string/rom_settings_show_reboot_confirm_title" />
+        <CheckBoxPreference
             android:defaultValue="true"
             android:key="show_reboot"
             android:title="@string/rom_settings_show_reboot_title" />

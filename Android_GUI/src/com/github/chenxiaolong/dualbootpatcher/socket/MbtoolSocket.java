@@ -90,6 +90,7 @@ import mbtool.daemon.v3.PathSELinuxSetLabelRequest;
 import mbtool.daemon.v3.PathSELinuxSetLabelResponse;
 import mbtool.daemon.v3.RebootRequest;
 import mbtool.daemon.v3.RebootResponse;
+import mbtool.daemon.v3.RebootType;
 import mbtool.daemon.v3.Request;
 import mbtool.daemon.v3.RequestType;
 import mbtool.daemon.v3.Response;
@@ -817,7 +818,44 @@ public class MbtoolSocket {
     }
 
     /**
-     * Reboots the device.
+     * Reboots the device via the framework.
+     *
+     * mbtool will launch an intent to start Android's ShutdownActivity
+     *
+     * @param context Application context
+     * @param confirm Whether Android's reboot dialog should be shown
+     * @return True if Android's ShutdownActivity was successfully launched. False, otherwise.
+     * @throws IOException When any socket communication error occurs
+     */
+    public synchronized boolean restartViaFramework(Context context, boolean confirm) throws
+            IOException{
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            RebootRequest.startRebootRequest(builder);
+            RebootRequest.addType(builder, RebootType.FRAMEWORK);
+            RebootRequest.addConfirm(builder, confirm);
+            int fbRequest = RebootRequest.endRebootRequest(builder);
+
+            // Send request
+            RebootResponse response = (RebootResponse)
+                    sendRequest(builder, fbRequest, RequestType.RebootRequest,
+                            ResponseType.RebootResponse);
+
+            return response.success();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    /**
+     * Reboots the device via init.
+     *
+     * NOTE: May result in an unclean shutdown as Android's init will simply kill all processes,
+     * attempt to unmount filesystems, and then reboot.
      *
      * @param context Application context
      * @param arg Reboot argument (eg. "recovery", "download", "bootloader"). Pass "" for a regular
@@ -825,7 +863,7 @@ public class MbtoolSocket {
      * @return True if the call to init succeeded and a reboot is pending. False, otherwise.
      * @throws IOException When any socket communication error occurs
      */
-    public synchronized boolean restart(Context context, String arg) throws IOException {
+    public synchronized boolean restartViaInit(Context context, String arg) throws IOException {
         connect(context);
 
         try {
@@ -833,6 +871,43 @@ public class MbtoolSocket {
             FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
             int fbArg = builder.createString(arg != null ? arg : "");
             RebootRequest.startRebootRequest(builder);
+            RebootRequest.addType(builder, RebootType.INIT);
+            RebootRequest.addArg(builder, fbArg);
+            int fbRequest = RebootRequest.endRebootRequest(builder);
+
+            // Send request
+            RebootResponse response = (RebootResponse)
+                    sendRequest(builder, fbRequest, RequestType.RebootRequest,
+                            ResponseType.RebootResponse);
+
+            return response.success();
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
+    /**
+     * Reboots the device via mbtool.
+     *
+     * NOTE: May result in an unclean shutdown as mbtool will simply kill all processes, attempt to
+     * unmount filesystems, and then reboot.
+     *
+     * @param context Application context
+     * @param arg Reboot argument (eg. "recovery", "download", "bootloader"). Pass "" for a regular
+     *            reboot.
+     * @return False if reboot fails. Otherwise, does not return.
+     * @throws IOException When any socket communication error occurs
+     */
+    public synchronized boolean restartViaMbtool(Context context, String arg) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbArg = builder.createString(arg != null ? arg : "");
+            RebootRequest.startRebootRequest(builder);
+            RebootRequest.addType(builder, RebootType.DIRECT);
             RebootRequest.addArg(builder, fbArg);
             int fbRequest = RebootRequest.endRebootRequest(builder);
 
