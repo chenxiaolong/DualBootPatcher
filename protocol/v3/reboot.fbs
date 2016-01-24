@@ -1,8 +1,19 @@
 namespace mbtool.daemon.v3;
 
+enum RebootType : short {
+    FRAMEWORK,
+    INIT,
+    DIRECT
+}
+
 table RebootRequest {
-    // Argument for reboot
+    // Argument for reboot (Only valid for RebootType::INIT and
+    // RebootType::DIRECT)
     arg : string;
+    // Reboot mechanism
+    type : RebootType = FRAMEWORK;
+    // Confirm reboot? (Only valid for RebootType::Framework)
+    confirm : bool;
 }
 
 table RebootResponse {
