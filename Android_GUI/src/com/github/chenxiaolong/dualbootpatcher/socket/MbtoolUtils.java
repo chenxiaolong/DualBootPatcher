@@ -36,12 +36,12 @@ public class MbtoolUtils {
     static {
         if (BuildConfig.BUILD_TYPE.equals("ci")) {
             // Snapshot builds
-            sMinVersionMap.put(Feature.DAEMON, Version.from("8.0.0.r2056"));
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.0.0.r2155"));
             sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.0.0.r1353"));
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r1755"));
         } else {
             // Debug/release builds
-            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.12"));
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.13"));
             sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.99.8"));
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.99.10"));
         }
