@@ -155,6 +155,9 @@ static std::string encode_list(const std::vector<std::string> &list)
         size += item.size();
         size += std::count(item.begin(), item.end(), ',');
     }
+    if (size == 0) {
+        return std::string();
+    }
     size += list.size() - 1;
 
     std::string result;
