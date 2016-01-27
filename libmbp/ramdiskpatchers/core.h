@@ -46,7 +46,7 @@ public:
     bool addMbtool();
     bool addExfat();
     bool setUpInitWrapper();
-    bool addBaseDirProp();
+    bool addBlockDevProps();
 
 private:
     class Impl;

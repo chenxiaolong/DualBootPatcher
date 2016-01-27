@@ -72,7 +72,7 @@ bool CoreRP::patchRamdisk()
     return addMbtool()
             && addExfat()
             && setUpInitWrapper()
-            && addBaseDirProp();
+            && addBlockDevProps();
 }
 
 bool CoreRP::addMbtool()
@@ -181,7 +181,7 @@ static std::string encode_list(const std::vector<std::string> &list)
     return result;
 }
 
-bool CoreRP::addBaseDirProp()
+bool CoreRP::addBlockDevProps()
 {
     if (!m_impl->info->device()) {
         return true;
@@ -200,9 +200,30 @@ bool CoreRP::addBaseDirProp()
     }
 
     Device *device = m_impl->info->device();
-    std::string encoded("ro.patcher.blockdevs.base=");
-    encoded += encode_list(device->blockDevBaseDirs());
+    std::string encoded;
 
+    encoded = "ro.patcher.blockdevs.base=";
+    encoded += encode_list(device->blockDevBaseDirs());
+    lines.push_back(encoded);
+
+    encoded = "ro.patcher.blockdevs.system=";
+    encoded += encode_list(device->systemBlockDevs());
+    lines.push_back(encoded);
+
+    encoded = "ro.patcher.blockdevs.cache=";
+    encoded += encode_list(device->cacheBlockDevs());
+    lines.push_back(encoded);
+
+    encoded = "ro.patcher.blockdevs.data=";
+    encoded += encode_list(device->dataBlockDevs());
+    lines.push_back(encoded);
+
+    encoded = "ro.patcher.blockdevs.recovery=";
+    encoded += encode_list(device->recoveryBlockDevs());
+    lines.push_back(encoded);
+
+    encoded = "ro.patcher.blockdevs.extra=";
+    encoded += encode_list(device->extraBlockDevs());
     lines.push_back(encoded);
 
     contents = StringUtils::joinData(lines, '\n');
