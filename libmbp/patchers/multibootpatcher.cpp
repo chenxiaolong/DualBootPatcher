@@ -31,6 +31,7 @@
 #include "patcherconfig.h"
 #include "private/fileutils.h"
 #include "private/logging.h"
+#include "private/miniziputils.h"
 
 // minizip
 #include "external/minizip/unzip.h"
@@ -63,8 +64,8 @@ public:
     void *userData;
 
     // Patching
-    FileUtils::MzUnzCtx *zInput = nullptr;
-    FileUtils::MzZipCtx *zOutput = nullptr;
+    MinizipUtils::UnzCtx *zInput = nullptr;
+    MinizipUtils::ZipCtx *zOutput = nullptr;
     std::vector<AutoPatcher *> autoPatchers;
 
     bool patchRamdisk(std::vector<unsigned char> *data);
@@ -276,13 +277,13 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    zipFile zf = FileUtils::mzCtxGetZipFile(zOutput);
+    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
     if (cancelled) return false;
 
-    FileUtils::ArchiveStats stats;
-    auto result = FileUtils::mzArchiveStats(info->inputPath(), &stats,
-                                            std::vector<std::string>());
+    MinizipUtils::ArchiveStats stats;
+    auto result = MinizipUtils::archiveStats(info->inputPath(), &stats,
+                                             std::vector<std::string>());
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
@@ -327,7 +328,7 @@ bool MultiBootPatcher::Impl::patchZip()
     updateDetails("META-INF/com/google/android/update-binary");
 
     // Add mbtool_recovery
-    result = FileUtils::mzAddFile(
+    result = MinizipUtils::addFile(
             zf, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
@@ -342,7 +343,7 @@ bool MultiBootPatcher::Impl::patchZip()
     updateDetails("multiboot/bb-wrapper.sh");
 
     // Add bb-wrapper.sh
-    result = FileUtils::mzAddFile(
+    result = MinizipUtils::addFile(
         zf, "multiboot/bb-wrapper.sh",
         pc->dataDirectory() + "/scripts/bb-wrapper.sh");
     if (result != ErrorCode::NoError) {
@@ -356,7 +357,7 @@ bool MultiBootPatcher::Impl::patchZip()
     updateDetails("multiboot/info.prop");
 
     const std::string infoProp = createInfoProp();
-    result = FileUtils::mzAddFile(
+    result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
     if (result != ErrorCode::NoError) {
@@ -381,8 +382,8 @@ bool MultiBootPatcher::Impl::patchZip()
 bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
                                    const std::unordered_set<std::string> &exclude)
 {
-    unzFile uf = FileUtils::mzCtxGetUnzFile(zInput);
-    zipFile zf = FileUtils::mzCtxGetZipFile(zOutput);
+    unzFile uf = MinizipUtils::ctxGetUnzFile(zInput);
+    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
     int ret = unzGoToFirstFile(uf);
     if (ret != UNZ_OK) {
@@ -396,7 +397,7 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
         unz_file_info64 fi;
         std::string curFile;
 
-        if (!FileUtils::mzGetInfo(uf, &fi, &curFile)) {
+        if (!MinizipUtils::getInfo(uf, &fi, &curFile)) {
             error = ErrorCode::ArchiveReadHeaderError;
             return false;
         }
@@ -406,7 +407,7 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
 
         // Skip files that should be patched and added in pass 2
         if (exclude.find(curFile) != exclude.end()) {
-            if (!FileUtils::mzExtractFile(uf, temporaryDir)) {
+            if (!MinizipUtils::extractFile(uf, temporaryDir)) {
                 error = ErrorCode::ArchiveReadDataError;
                 return false;
             }
@@ -426,8 +427,8 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
             // Load the file into memory
             std::vector<unsigned char> data;
 
-            if (!FileUtils::mzReadToMemory(uf, &data,
-                                           &laProgressCb, this)) {
+            if (!MinizipUtils::readToMemory(uf, &data,
+                                            &laProgressCb, this)) {
                 error = ErrorCode::ArchiveReadDataError;
                 return false;
             }
@@ -451,7 +452,7 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
             // Update total size
             maxBytes += (data.size() - fi.uncompressed_size);
 
-            auto ret2 = FileUtils::mzAddFile(zf, curFile, data);
+            auto ret2 = MinizipUtils::addFile(zf, curFile, data);
             if (ret2 != ErrorCode::NoError) {
                 error = ret2;
                 return false;
@@ -466,8 +467,8 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
                 curFile = "META-INF/com/google/android/update-binary.orig";
             }
 
-            if (!FileUtils::mzCopyFileRaw(uf, zf, curFile,
-                                          &laProgressCb, this)) {
+            if (!MinizipUtils::copyFileRaw(uf, zf, curFile,
+                                           &laProgressCb, this)) {
                 FLOGW("minizip: Failed to copy raw data: %s", curFile.c_str());
                 error = ErrorCode::ArchiveWriteDataError;
                 return false;
@@ -498,7 +499,7 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
 bool MultiBootPatcher::Impl::pass2(const std::string &temporaryDir,
                                    const std::unordered_set<std::string> &files)
 {
-    zipFile zf = FileUtils::mzCtxGetZipFile(zOutput);
+    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
     for (auto *ap : autoPatchers) {
         if (cancelled) return false;
@@ -516,12 +517,12 @@ bool MultiBootPatcher::Impl::pass2(const std::string &temporaryDir,
         ErrorCode ret;
 
         if (file == "META-INF/com/google/android/update-binary") {
-            ret = FileUtils::mzAddFile(
+            ret = MinizipUtils::addFile(
                     zf,
                     "META-INF/com/google/android/update-binary.orig",
                     temporaryDir + "/" + file);
         } else {
-            ret = FileUtils::mzAddFile(
+            ret = MinizipUtils::addFile(
                     zf,
                     file,
                     temporaryDir + "/" + file);
@@ -544,7 +545,7 @@ bool MultiBootPatcher::Impl::openInputArchive()
 {
     assert(zInput == nullptr);
 
-    zInput = FileUtils::mzOpenInputFile(info->inputPath());
+    zInput = MinizipUtils::openInputFile(info->inputPath());
 
     if (!zInput) {
         FLOGE("minizip: Failed to open for reading: %s",
@@ -560,7 +561,7 @@ void MultiBootPatcher::Impl::closeInputArchive()
 {
     assert(zInput != nullptr);
 
-    int ret = FileUtils::mzCloseInputFile(zInput);
+    int ret = MinizipUtils::closeInputFile(zInput);
     if (ret != UNZ_OK) {
         FLOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
@@ -572,7 +573,7 @@ bool MultiBootPatcher::Impl::openOutputArchive()
 {
     assert(zOutput == nullptr);
 
-    zOutput = FileUtils::mzOpenOutputFile(info->outputPath());
+    zOutput = MinizipUtils::openOutputFile(info->outputPath());
 
     if (!zOutput) {
         FLOGE("minizip: Failed to open for writing: %s",
@@ -588,7 +589,7 @@ void MultiBootPatcher::Impl::closeOutputArchive()
 {
     assert(zOutput != nullptr);
 
-    int ret = FileUtils::mzCloseOutputFile(zOutput);
+    int ret = MinizipUtils::closeOutputFile(zOutput);
     if (ret != ZIP_OK) {
         FLOGW("minizip: Failed to close archive (error code: %d)", ret);
     }

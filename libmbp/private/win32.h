@@ -20,30 +20,13 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
-#include "errors.h"
+#include <windows.h>
 
 
 namespace mbp
 {
 
-class FileUtils
-{
-public:
-    static ErrorCode readToMemory(const std::string &path,
-                                  std::vector<unsigned char> *contents);
-    static ErrorCode readToString(const std::string &path,
-                                  std::string *contents);
-
-    static ErrorCode writeFromMemory(const std::string &path,
-                                     const std::vector<unsigned char> &contents);
-    static ErrorCode writeFromString(const std::string &path,
-                                     const std::string &contents);
-
-    static std::string systemTemporaryDir();
-
-    static std::string createTemporaryDir(const std::string &directory);
-};
+std::string win32ErrorToString(DWORD win32Error);
 
 }

@@ -25,6 +25,7 @@ set(MBP_CORE_SOURCES
     patcherconfig.cpp
     private/fileutils.cpp
     private/logging.cpp
+    private/miniziputils.cpp
     private/stringutils.cpp
     bootimage/androidformat.cpp
     bootimage/bumpformat.cpp
@@ -80,6 +81,12 @@ set(MBP_SOURCES
     ${MBP_DEVICE_SOURCES}
     ${MBP_PATCHER_SOURCES}
 )
+
+if(WIN32)
+    list(APPEND MBP_SOURCES
+        private/win32.cpp
+    )
+endif()
 
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
