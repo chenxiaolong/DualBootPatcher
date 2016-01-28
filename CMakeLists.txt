@@ -62,6 +62,7 @@ add_subdirectory(libmiscstuff)
 add_subdirectory(Android_GUI)
 add_subdirectory(gui)
 add_subdirectory(bootimgtool)
+add_subdirectory(examples)
 add_subdirectory(utilities)
 
 include(CPack)
