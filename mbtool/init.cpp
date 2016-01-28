@@ -63,14 +63,6 @@
 namespace mb
 {
 
-static const char *data_block_devs[] = {
-    UNIVERSAL_BY_NAME_DIR "/data",
-    UNIVERSAL_BY_NAME_DIR "/UDA",
-    UNIVERSAL_BY_NAME_DIR "/userdata",
-    UNIVERSAL_BY_NAME_DIR "/USERDATA",
-    nullptr
-};
-
 static void init_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -499,42 +491,10 @@ static bool fix_arter97()
     return true;
 }
 
-static std::vector<std::string> decode_list(const std::string &encoded)
-{
-    std::vector<std::string> result;
-    std::string buf;
-
-    bool escaped = false;
-    for (char c : encoded) {
-        if (!escaped) {
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            } else if (c == ',') {
-                result.push_back(buf);
-                buf.clear();
-                continue;
-            }
-        }
-
-        buf += c;
-        escaped = false;
-    }
-
-    if (escaped) {
-        // Invalid string
-        return {};
-    }
-
-    result.push_back(buf);
-
-    return result;
-}
-
 static bool symlink_base_dir()
 {
     std::string encoded;
-    if (!util::file_get_property("/default.prop", "ro.patcher.blockdevs.base",
+    if (!util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_BASE_DIRS,
                                  &encoded, "")) {
         return false;
     }
@@ -639,16 +599,25 @@ static bool emergency_reboot()
 
         // Try mounting /data in case we couldn't get through the fstab mounting
         // steps. (This is an ugly brute force method...)
-        for (const char **ptr = data_block_devs; *ptr; ++ptr) {
-            const char *block_dev = *ptr;
+        std::string encoded;
+        util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_BASE_DIRS,
+                                &encoded, "");
+        std::vector<std::string> data_block_devs = decode_list(encoded);
+        // Some catch-all paths to increase our chances of getting a usable log
+        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/data");
+        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/DATA");
+        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/userdata");
+        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/USERDATA");
+        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/UDA");
 
-            if (stat(block_dev, &sb) < 0) {
+        for (const std::string &block_dev : data_block_devs) {
+            if (stat(block_dev.c_str(), &sb) < 0) {
                 continue;
             }
 
-            if (mount(block_dev, "/data", "ext4", 0, "") == 0
-                    || mount(block_dev, "/data", "f2fs", 0, "") == 0) {
-                LOGW("Mounted %s at /data", block_dev);
+            if (mount(block_dev.c_str(), "/data", "ext4", 0, "") == 0
+                    || mount(block_dev.c_str(), "/data", "f2fs", 0, "") == 0) {
+                LOGW("Mounted %s at /data", block_dev.c_str());
                 break;
             }
         }

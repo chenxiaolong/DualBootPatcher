@@ -176,18 +176,17 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec *> &recs,
  */
 static std::vector<util::fstab_rec> generic_fstab_system_entries()
 {
-    static const char *block_devs[] = {
-        UNIVERSAL_BY_NAME_DIR "/SYSTEM",
-        UNIVERSAL_BY_NAME_DIR "/system",
-        nullptr
-    };
+    std::string encoded;
+    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_SYSTEM_PATHS,
+                            &encoded, "");
+    std::vector<std::string> block_devs = decode_list(encoded);
 
     std::vector<util::fstab_rec> result;
 
-    for (const char **ptr = block_devs; *ptr; ++ptr) {
+    for (const std::string &block_dev : block_devs) {
         // ext4 entry
         result.emplace_back();
-        result.back().blk_device = *ptr;
+        result.back().blk_device = block_dev;
         result.back().mount_point = "/system";
         result.back().fs_type = "ext4";
         result.back().flags = MS_RDONLY;
@@ -196,7 +195,7 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
         result.back().vold_args = "check";
         // f2fs entry
         result.emplace_back();
-        result.back().blk_device = *ptr;
+        result.back().blk_device = block_dev;
         result.back().mount_point = "/system";
         result.back().fs_type = "f2fs";
         result.back().flags = MS_RDONLY;
@@ -214,18 +213,17 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
  */
 static std::vector<util::fstab_rec> generic_fstab_cache_entries()
 {
-    static const char *block_devs[] = {
-        UNIVERSAL_BY_NAME_DIR "/CACHE",
-        UNIVERSAL_BY_NAME_DIR "/cache",
-        nullptr
-    };
+    std::string encoded;
+    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_CACHE_PATHS,
+                            &encoded, "");
+    std::vector<std::string> block_devs = decode_list(encoded);
 
     std::vector<util::fstab_rec> result;
 
-    for (const char **ptr = block_devs; *ptr; ++ptr) {
+    for (const std::string &block_dev : block_devs) {
         // ext4 entry
         result.emplace_back();
-        result.back().blk_device = *ptr;
+        result.back().blk_device = block_dev;
         result.back().mount_point = "/cache";
         result.back().fs_type = "ext4";
         result.back().flags = MS_NOSUID | MS_NODEV;
@@ -234,7 +232,7 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
         result.back().vold_args = "check";
         // f2fs entry
         result.emplace_back();
-        result.back().blk_device = *ptr;
+        result.back().blk_device = block_dev;
         result.back().mount_point = "/cache";
         result.back().fs_type = "f2fs";
         result.back().flags = MS_NOSUID | MS_NODEV;
@@ -252,18 +250,17 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
  */
 static std::vector<util::fstab_rec> generic_fstab_data_entries()
 {
-    static const char *block_devs[] = {
-        UNIVERSAL_BY_NAME_DIR "/USERDATA",
-        UNIVERSAL_BY_NAME_DIR "/userdata",
-        nullptr
-    };
+    std::string encoded;
+    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_DATA_PATHS,
+                            &encoded, "");
+    std::vector<std::string> block_devs = decode_list(encoded);
 
     std::vector<util::fstab_rec> result;
 
-    for (const char **ptr = block_devs; *ptr; ++ptr) {
+    for (const std::string &block_dev : block_devs) {
         // ext4 entry
         result.emplace_back();
-        result.back().blk_device = *ptr;
+        result.back().blk_device = block_dev;
         result.back().mount_point = "/data";
         result.back().fs_type = "ext4";
         result.back().flags = MS_NOSUID | MS_NODEV;
@@ -272,7 +269,7 @@ static std::vector<util::fstab_rec> generic_fstab_data_entries()
         result.back().vold_args = "check";
         // f2fs entry
         result.emplace_back();
-        result.back().blk_device = *ptr;
+        result.back().blk_device = block_dev;
         result.back().mount_point = "/data";
         result.back().fs_type = "f2fs";
         result.back().flags = MS_NOSUID | MS_NODEV;
@@ -1007,7 +1004,7 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom->id)) {
         LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom->id.c_str());
-        autoclose::file fp(autoclose::fopen("/default.prop", "a"));
+        autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "a"));
         if (fp) {
             fprintf(fp.get(), "\nro.multiboot.romid=%s\n", rom->id.c_str());
         }

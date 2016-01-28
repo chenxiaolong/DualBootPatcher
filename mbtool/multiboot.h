@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #define INTERNAL_STORAGE                "/data/media/0"
 #define MULTIBOOT_DIR                   INTERNAL_STORAGE "/MultiBoot"
@@ -35,11 +36,22 @@
 
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
+#define DEFAULT_PROP_PATH               "/default.prop"
+
+#define PROP_BLOCK_DEV_BASE_DIRS        "ro.patcher.blockdevs.base"
+#define PROP_BLOCK_DEV_SYSTEM_PATHS     "ro.patcher.blockdevs.system"
+#define PROP_BLOCK_DEV_CACHE_PATHS      "ro.patcher.blockdevs.cache"
+#define PROP_BLOCK_DEV_DATA_PATHS       "ro.patcher.blockdevs.data"
+#define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
+#define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
+
 namespace mb
 {
 
 bool copy_system(const std::string &source, const std::string &target);
 
 bool fix_multiboot_permissions(void);
+
+std::vector<std::string> decode_list(const std::string &encoded);
 
 }
