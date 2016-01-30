@@ -101,6 +101,8 @@ protected:
 
 
 private:
+    bool _ran;
+
     static void output_cb(const std::string &msg, void *data);
     int run_command(const std::vector<std::string> &argv);
     int run_command_chroot(const std::string &dir,

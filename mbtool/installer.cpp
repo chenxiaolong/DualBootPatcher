@@ -100,7 +100,8 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
     _chroot(std::move(chroot_dir)),
     _temp(std::move(temp_dir)),
     _interface(interface),
-    _output_fd(output_fd)
+    _output_fd(output_fd),
+    _ran(false)
 {
     _passthrough = _output_fd >= 0;
 
@@ -1624,6 +1625,13 @@ void Installer::install_stage_cleanup(Installer::ProceedState ret)
 
 bool Installer::start_installation()
 {
+    if (_ran) {
+        LOGE("Installation already executed");
+        return false;
+    } else {
+        _ran = true;
+    }
+
     ProceedState ret = ProceedState::Fail;
 
     auto when_finished = util::finally([&] {
