@@ -1353,14 +1353,23 @@ Installer::ProceedState Installer::install_stage_installation()
 
 #if DEBUG_PRE_SHELL
     {
+        LOGD("To skip installation, create a file named: /.skip-install");
         LOGD("Pre-installation shell");
         run_command_chroot(_chroot, { "/sbin/sh", "-i" });
     }
 #endif
 
-    bool updater_ret = run_real_updater();
-    if (!updater_ret) {
-        display_msg("Failed to run real update-binary");
+    bool updater_ret = true;
+
+    struct stat sb;
+    if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
+            && errno == ENOENT) {
+        updater_ret = run_real_updater();
+        if (!updater_ret) {
+            display_msg("Failed to run real update-binary");
+        }
+    } else {
+        LOGD("Skipping installation as requested");
     }
 
 #if DEBUG_POST_SHELL
