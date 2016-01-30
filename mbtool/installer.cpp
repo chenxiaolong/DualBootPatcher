@@ -434,10 +434,9 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
         uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
         display_msg(std::string());
-        display_msg(util::format("There is not enough space to create %s",
-                                 path.c_str()));
-        display_msg(util::format("- Needed:    %" PRIu64 " bytes", size));
-        display_msg(util::format("- Available: %" PRIu64 " bytes", avail));
+        display_msg("There is not enough space to create %s", path.c_str());
+        display_msg("- Needed:    %" PRIu64 " bytes", size);
+        display_msg("- Available: %" PRIu64 " bytes", avail);
     }
 
     return result == CreateImageResult::SUCCEEDED;
@@ -1057,10 +1056,9 @@ Installer::ProceedState Installer::install_stage_check_device()
             if (it == codenames.end()) {
                 display_msg("Patched zip is for:");
                 for (const std::string &codename : d->codenames()) {
-                    display_msg(util::format("- %s", codename.c_str()));
+                    display_msg("- %s", codename.c_str());
                 }
-                display_msg(util::format(
-                        "This device is '%s'", _detected_device.c_str()));
+                display_msg("This device is '%s'", _detected_device.c_str());
 
                 return ProceedState::Fail;
             }
@@ -1166,7 +1164,7 @@ Installer::ProceedState Installer::install_stage_get_install_type()
 
     _rom = Roms::create_rom(install_type);
     if (!_rom) {
-        display_msg(util::format("Unknown ROM ID: %s", install_type.c_str()));
+        display_msg("Unknown ROM ID: %s", install_type.c_str());
         return ProceedState::Fail;
     }
 
@@ -1190,12 +1188,12 @@ Installer::ProceedState Installer::install_stage_get_install_type()
     display_msg("- /system: " + _system_path);
     display_msg("- /cache: " + _cache_path);
     display_msg("- /data: " + _data_path);
-    display_msg(util::format("- System is image file: %s",
-                             _rom->system_is_image ? "true" : "false"));
-    display_msg(util::format("- Cache is image file: %s",
-                             _rom->cache_is_image ? "true" : "false"));
-    display_msg(util::format("- Data is image file: %s",
-                             _rom->data_is_image ? "true" : "false"));
+    display_msg("- System is image file: %s",
+                _rom->system_is_image ? "true" : "false");
+    display_msg("- Cache is image file: %s",
+                _rom->cache_is_image ? "true" : "false");
+    display_msg("- Data is image file: %s",
+                _rom->data_is_image ? "true" : "false");
     LOGV("ROM ID: %s", _rom->id.c_str());
 
     return ProceedState::Continue;
@@ -1258,7 +1256,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
     if (log_mkdir(in_chroot("/cache/recovery").c_str(), 0755) < 0
             && errno != EEXIST) {
         LOGE("Failed to create /cache/recovery: %s", strerror(errno));
-        display_msg(util::format("Failed to create /cache/recovery in chroot"));
+        display_msg("Failed to create /cache/recovery in chroot");
         return ProceedState::Fail;
     }
 
@@ -1404,13 +1402,11 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     }
 
     if (_rom->cache_is_image && !util::umount(in_chroot("/cache").c_str())) {
-        display_msg(util::format("Failed to unmount %s",
-                                 in_chroot("/cache").c_str()));
+        display_msg("Failed to unmount %s", in_chroot("/cache").c_str());
     }
 
     if (_rom->data_is_image && !util::umount(in_chroot("/data").c_str())) {
-        display_msg(util::format("Failed to unmount %s",
-                                 in_chroot("/data").c_str()));
+        display_msg("Failed to unmount %s", in_chroot("/data").c_str());
     }
 
     if (_rom->system_is_image) {
@@ -1424,16 +1420,14 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
 
             // Format system directory
             if (!wipe_directory(_system_path, {})) {
-                display_msg(util::format("Failed to wipe %s",
-                                         _system_path.c_str()));
+                display_msg("Failed to wipe %s", _system_path.c_str());
                 return ProceedState::Fail;
             }
 
             // Copy image back to system directory
             if (!system_image_copy(_system_path, _temp_image_path, true)) {
-                display_msg(util::format("Failed to copy %s to %s",
-                                         _temp_image_path.c_str(),
-                                         _system_path.c_str()));
+                display_msg("Failed to copy %s to %s",
+                            _temp_image_path.c_str(), _system_path.c_str());
                 return ProceedState::Fail;
             }
         }
@@ -1533,8 +1527,7 @@ Installer::ProceedState Installer::install_stage_finish()
                                    bootimg.size())) {
             LOGE("Failed to write %s: %s",
                  temp_boot_img.c_str(), strerror(errno));
-            display_msg(util::format("Failed to write %s",
-                                     temp_boot_img.c_str()));
+            display_msg("Failed to write %s", temp_boot_img.c_str());
             return ProceedState::Fail;
         }
 
@@ -1545,7 +1538,7 @@ Installer::ProceedState Installer::install_stage_finish()
         path += _rom->id;
         path += "/boot.img";
         if (!util::mkdir_parent(path, 0775)) {
-            display_msg(util::format("Failed to create %s", path.c_str()));
+            display_msg("Failed to create %s", path.c_str());
             return ProceedState::Fail;
         }
 
