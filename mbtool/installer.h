@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -51,6 +51,8 @@ protected:
         Cancel
     };
 
+    __attribute__((format(printf, 2, 3)))
+    void display_msg(const char *fmt, ...);
     virtual void display_msg(const std::string &msg);
     virtual void updater_print(const std::string &msg);
     virtual void command_output(const std::string &line);
@@ -91,6 +93,8 @@ protected:
     bool _has_block_image;
     bool _is_aroma;
 
+    std::vector<std::string> _associated_loop_devs;
+
     std::string in_chroot(const std::string &path) const;
 
     static bool is_aroma(const std::string &path);
@@ -110,6 +114,11 @@ private:
     bool create_image(const std::string &path, uint64_t size);
     bool system_image_copy(const std::string &source,
                            const std::string &image, bool reverse);
+    bool mount_dir_or_image(const std::string &source,
+                            const std::string &mount_point,
+                            const std::string &loop_target,
+                            bool is_image,
+                            uint64_t image_size);
     bool run_real_updater();
 
     ProceedState install_stage_initialize();

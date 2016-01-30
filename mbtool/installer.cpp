@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -57,6 +57,7 @@
 #include "util/file.h"
 #include "util/finally.h"
 #include "util/logging.h"
+#include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/path.h"
 #include "util/properties.h"
@@ -351,8 +352,6 @@ bool Installer::destroy_chroot() const
     log_umount(in_chroot("/cache").c_str());
     log_umount(in_chroot("/data").c_str());
 
-    log_umount(in_chroot("/mb/system.img").c_str());
-
     log_umount(in_chroot("/dev/pts").c_str());
     log_umount(in_chroot("/dev").c_str());
     log_umount(in_chroot("/proc").c_str());
@@ -433,7 +432,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     auto result = create_ext4_image(path, size);
     if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
         uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
-        display_msg("");
+        display_msg(std::string());
         display_msg(util::format("There is not enough space to create %s",
                                  path.c_str()));
         display_msg(util::format("- Needed:    %" PRIu64 " bytes", size));
@@ -497,6 +496,74 @@ bool Installer::system_image_copy(const std::string &source,
     if (!util::umount(temp_mnt.c_str())) {
         LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
+    }
+
+    return true;
+}
+
+/*!
+ * \brief Bind mount directory or create and mount image
+ *
+ * \param source Source path (directory or image file)
+ * \param mount_point Target mount point
+ * \param loop_target If nonempty, copy loop device to this path (only used
+ *                    when \a is_image is true)
+ * \param is_image Whether \a source is an image file
+ * \param image_size Desired image size (only used if \a is_image is true and
+ *                   \a source doesn't exist)
+ */
+bool Installer::mount_dir_or_image(const std::string &source,
+                                   const std::string &mount_point,
+                                   const std::string &loop_target,
+                                   bool is_image,
+                                   uint64_t image_size)
+{
+    if (is_image) {
+        struct stat sb;
+        if (stat(source.c_str(), &sb) < 0) {
+            double mib = (double) image_size / 1024 / 1024;
+
+            display_msg("Creating image (%.1f MiB) at %s",
+                        mib, source.c_str());
+            display_msg("This may take a while");
+
+            if (!create_image(source, image_size)) {
+                display_msg("Failed to create image at %s", source.c_str());
+                return false;
+            }
+        }
+
+        //if (!util::mount(source.c_str(), mount_point.c_str(), "ext4", 0, "")) {
+        //    display_msg("Failed to mount %s to %s",
+        //                source.c_str(), mount_point.c_str());
+        //    LOGE("Failed to mount %s to %s: %s",
+        //         source.c_str(), mount_point.c_str(), strerror(errno));
+        //    return false;
+        //}
+
+        std::string loopdev = util::loopdev_find_unused();
+        if (loopdev.empty()) {
+            LOGE("Failed to find unused loop device: %s", strerror(errno));
+            return false;
+        }
+        if (!util::loopdev_set_up_device(loopdev, source, 0, false)) {
+            LOGE("Failed to attach %s to %s: %s",
+                 loopdev.c_str(), source.c_str(), strerror(errno));
+            return false;
+        }
+        if (!loop_target.empty() && !util::copy_file(loopdev, loop_target, 0)) {
+            LOGE("Failed to copy %s to %s: %s",
+                 loopdev.c_str(), loop_target.c_str(), strerror(errno));
+            return false;
+        }
+
+        _associated_loop_devs.push_back(loopdev);
+    } else {
+        if (!util::bind_mount(source, 0771, mount_point, 0771)) {
+            display_msg("Failed to bind mount %s to %s",
+                        source.c_str(), mount_point.c_str());
+            return false;
+        }
     }
 
     return true;
@@ -763,6 +830,14 @@ bool Installer::is_aroma(const std::string &path)
 /*
  * Default hooks
  */
+
+void Installer::display_msg(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    display_msg(util::formatv(fmt, ap));
+    va_end(ap);
+}
 
 void Installer::display_msg(const std::string &msg)
 {
@@ -1046,7 +1121,7 @@ Installer::ProceedState Installer::install_stage_check_device()
             }
         }
 
-        // Symlink /mb/system.img to system block devs
+        // Symlink CHROOT_SYSTEM_LOOP_DEV to system block devs
         for (auto const &dev : system_devs) {
             std::string dev_path(_chroot);
             dev_path += "/";
@@ -1057,12 +1132,12 @@ Installer::ProceedState Installer::install_stage_check_device()
                      dev_path.c_str());
             }
 
-            if (symlink("/mb/system.img", dev_path.c_str()) < 0) {
+            if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
                 LOGE("Failed to symlink %s to %s: %s. Continuing anyway",
-                     "/mb/system.img", dev_path.c_str(), strerror(errno));
+                     CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
             } else {
                 LOGD("Symlinked %s to %s in the chroot",
-                     "/mb/system.img", dev_path.c_str());
+                     CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
             }
         }
 
@@ -1171,35 +1246,10 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    struct stat sb;
-
-    // Mount target filesystems
-    if (_rom->cache_is_image) {
-        display_msg(util::format("Creating %" PRIu64 " %s image",
-                                 DEFAULT_IMAGE_SIZE, "cache"));
-
-        if (stat(_cache_path.c_str(), &sb) < 0
-                && !create_image(_cache_path, DEFAULT_IMAGE_SIZE)) {
-            display_msg(util::format("Failed to create image: %s",
-                                     _cache_path.c_str()));
-            return ProceedState::Fail;
-        }
-
-        if (!util::mount(_cache_path.c_str(), in_chroot("/cache").c_str(),
-                         "ext4", 0, "")) {
-            display_msg(util::format("Failed to mount %s to %s",
-                                     _cache_path.c_str(),
-                                     in_chroot("/cache").c_str()));
-            return ProceedState::Fail;
-        }
-    } else {
-        if (!util::bind_mount(_cache_path, 0771,
-                              in_chroot("/cache"), 0771)) {
-            display_msg(util::format("Failed to bind mount %s to %s",
-                                     _cache_path.c_str(),
-                                     in_chroot("/cache").c_str()));
-            return ProceedState::Fail;
-        }
+    if (!mount_dir_or_image(_cache_path, in_chroot("/cache"),
+                            in_chroot(CHROOT_CACHE_LOOP_DEV),
+                            _rom->cache_is_image, DEFAULT_IMAGE_SIZE)) {
+        return ProceedState::Fail;
     }
 
     // Because CM 12.1 requires this and silently dies (ie. completes
@@ -1211,133 +1261,72 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         return ProceedState::Fail;
     }
 
-    if (_rom->data_is_image) {
-        display_msg(util::format("Creating %" PRIu64 " %s image",
-                                 DEFAULT_IMAGE_SIZE, "data"));
-
-        if (stat(_data_path.c_str(), &sb) < 0
-                && !create_image(_data_path, DEFAULT_IMAGE_SIZE)) {
-            display_msg(util::format("Failed to create image: %s",
-                                     _data_path.c_str()));
-            return ProceedState::Fail;
-        }
-
-        if (!util::mount(_data_path.c_str(), in_chroot("/data").c_str(),
-                         "ext4", 0, "")) {
-            display_msg(util::format("Failed to mount %s to %s",
-                                     _data_path.c_str(),
-                                     in_chroot("/data").c_str()));
-            return ProceedState::Fail;
-        }
-    } else {
-        if (!util::bind_mount(_data_path, 0771,
-                              in_chroot("/data"), 0771)) {
-            display_msg(util::format("Failed to bind mount %s to %s",
-                                     _data_path.c_str(),
-                                     in_chroot("/data").c_str()));
-            return ProceedState::Fail;
-        }
+    if (!mount_dir_or_image(_data_path, in_chroot("/data"),
+                            in_chroot(CHROOT_DATA_LOOP_DEV),
+                            _rom->data_is_image, DEFAULT_IMAGE_SIZE)) {
+        return ProceedState::Fail;
     }
 
-    if (_rom->system_is_image) {
-        struct stat sb;
-        if (stat(_system_path.c_str(), &sb) < 0) {
-            uint64_t system_size;
-            if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
-                display_msg("Failed to get size of system partition");
-                display_msg("Image size will be 4 GiB");
-                system_size = DEFAULT_IMAGE_SIZE;
-            }
+    // Get desired system image size
+    uint64_t system_size;
+    if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
+        display_msg("Failed to get size of system partition");
+        display_msg("Image size will be 4 GiB");
+        system_size = DEFAULT_IMAGE_SIZE;
+    }
 
-            display_msg(util::format("Creating initial extsd image (%.1f MiB)",
-                                     (double) system_size / 1024 / 1024));
-            display_msg("This may take a while");
+    bool system_is_image = _rom->system_is_image;
+    std::string system_path = _system_path;
 
-            if (!util::mkdir_parent(_system_path, 0755)) {
-                display_msg(util::format("Failed to create parent directory of %s",
-                                         _system_path.c_str()));
-                return ProceedState::Fail;
-            }
+    // Create temporary system image if needed
+    if (!_rom->system_is_image && (_has_block_image || _rom->id == "primary")) {
+        display_msg("Copying system to temporary image");
 
-            if (!create_image(_system_path, system_size)) {
-                display_msg(util::format("Failed to create image %s",
-                                         _system_path.c_str()));
-                return ProceedState::Fail;
-            }
-        }
+        // Try /data/.system.img.tmp and if /data doesn't have enough space,
+        // then try [External SD]/.system.img.tmp
 
-        // Install to the image
-        util::create_empty_file(in_chroot("/mb/system.img"));
-        if (log_mount(_system_path.c_str(),
-                      in_chroot("/mb/system.img").c_str(),
-                      "", MS_BIND, "") < 0) {
-            return ProceedState::Fail;
-        }
-    } else {
-        // Create a temporary image if the zip file has a system.transfer.list file
-        if (!_has_block_image && _rom->id != "primary") {
-            if (!util::bind_mount(_system_path, 0771,
-                                  in_chroot("/system"), 0771)) {
-                display_msg(util::format("Failed to bind mount %s to %s",
-                                         _system_path.c_str(),
-                                         in_chroot("/system").c_str()));
-                return ProceedState::Fail;
-            }
-        } else {
-            display_msg("Copying system to temporary image");
+        _temp_image_path = Roms::get_data_partition();
+        _temp_image_path += "/.system.img.tmp";
+        remove(_temp_image_path.c_str());
 
-            // Try /data/.system.img.tmp and if /data doesn't have enough space,
-            // then try [External SD]/.system.img.tmp
+        if (!create_image(_temp_image_path, system_size)) {
+            display_msg("Failed to create temporary image %s",
+                        _temp_image_path.c_str());
 
-            uint64_t system_size;
-            if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
-                system_size = DEFAULT_IMAGE_SIZE;
-            }
+            // Try external SD
+            std::string mountpoint(Roms::get_extsd_partition());
+            if (!mountpoint.empty()) {
+                display_msg("Trying to create temporary image on external SD");
+                display_msg("(This will be slow)");
 
-            _temp_image_path = Roms::get_data_partition();
-            _temp_image_path += "/.system.img.tmp";
-            remove(_temp_image_path.c_str());
+                _temp_image_path = std::move(mountpoint);
+                _temp_image_path += "/.system.img.tmp";
+                remove(_temp_image_path.c_str());
 
-            if (!create_image(_temp_image_path, system_size)) {
-                display_msg(util::format("Failed to create temporary image %s",
-                                         _temp_image_path.c_str()));
-
-                // Try external SD
-                std::string mountpoint(Roms::get_extsd_partition());
-                if (!mountpoint.empty()) {
-                    display_msg("Trying to create temporary image on external SD");
-                    display_msg("(This will be slow)");
-
-                    _temp_image_path = std::move(mountpoint);
-                    _temp_image_path += "/.system.img.tmp";
-                    remove(_temp_image_path.c_str());
-
-                    if (!create_image(_temp_image_path, system_size)) {
-                        return ProceedState::Fail;
-                    }
-                } else {
+                if (!create_image(_temp_image_path, system_size)) {
                     return ProceedState::Fail;
                 }
-            }
-
-            // Copy current /system files to the image
-            if (!system_image_copy(_system_path, _temp_image_path, false)) {
-                display_msg(util::format("Failed to copy %s to %s",
-                                         _system_path.c_str(),
-                                         _temp_image_path.c_str()));
-                return ProceedState::Fail;
-            }
-
-            // Install to the image
-            util::create_empty_file(in_chroot("/mb/system.img"));
-            if (log_mount(_temp_image_path.c_str(),
-                          in_chroot("/mb/system.img").c_str(),
-                          "", MS_BIND, "") < 0) {
+            } else {
                 return ProceedState::Fail;
             }
         }
+
+        // Copy current /system files to the image
+        if (!system_image_copy(_system_path, _temp_image_path, false)) {
+            display_msg("Failed to copy %s to %s",
+                        _system_path.c_str(), _temp_image_path.c_str());
+            return ProceedState::Fail;
+        }
+
+        system_is_image = true;
+        system_path = _temp_image_path;
     }
 
+    if (!mount_dir_or_image(system_path, in_chroot("/system"),
+                            in_chroot(CHROOT_SYSTEM_LOOP_DEV),
+                            system_is_image, system_size)) {
+        return ProceedState::Fail;
+    }
 
     // Bind-mount zip file
     util::create_empty_file(in_chroot("/mb/install.zip"));
@@ -1345,7 +1334,6 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
                   "", MS_BIND, "") < 0) {
         return ProceedState::Fail;
     }
-
 
     return on_mounted_filesystems();
 }
@@ -1396,6 +1384,14 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
     run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
     run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
+
+    // Disassociate loop devices
+    for (const std::string &loop_dev : _associated_loop_devs) {
+        if (!util::loopdev_remove_device(loop_dev)) {
+            LOGE("%s: Failed to disassociate loop device: %s",
+                 loop_dev.c_str(), strerror(errno));
+        }
+    }
 
     if (_rom->cache_is_image && !util::umount(in_chroot("/cache").c_str())) {
         display_msg(util::format("Failed to unmount %s",

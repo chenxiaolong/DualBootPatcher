@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -44,6 +44,11 @@
 #define PROP_BLOCK_DEV_DATA_PATHS       "ro.patcher.blockdevs.data"
 #define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
 #define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
+
+// Installer
+#define CHROOT_SYSTEM_LOOP_DEV          "/mb/loop.system"
+#define CHROOT_CACHE_LOOP_DEV           "/mb/loop.cache"
+#define CHROOT_DATA_LOOP_DEV            "/mb/loop.data"
 
 namespace mb
 {

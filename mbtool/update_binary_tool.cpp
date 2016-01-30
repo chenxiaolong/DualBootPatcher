@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,6 +21,8 @@
 
 #include <cerrno>
 #include <cstdlib>
+#include <cstring>
+
 #include <getopt.h>
 #include <sys/mount.h>
 #include <unistd.h>
@@ -28,6 +30,8 @@
 #include "util/file.h"
 #include "util/logging.h"
 #include "util/mount.h"
+
+#include "multiboot.h"
 #include "wipe.h"
 
 
@@ -40,110 +44,153 @@
 
 #define TAG "update-binary-tool: "
 
-#define STAMP_FILE "/.system-mounted"
+#define SYSTEM_STAMP_FILE "/.system-mounted"
+#define CACHE_STAMP_FILE "/.cache-mounted"
+#define DATA_STAMP_FILE "/.data-mounted"
 
 
 namespace mb
 {
 
-static bool do_mount(const std::string &mountpoint)
+static bool get_paths(const char *mountpoint, const char **out_image_loop_dev,
+                      const char **out_stamp_file)
 {
-    if (mountpoint == SYSTEM) {
-        if (access("/mb/system.img", F_OK) < 0) {
-            // Assume we don't need the image if the wrapper didn't create it
-            LOGV(TAG "Ignoring mount command for %s", mountpoint.c_str());
-            return true;
-        }
+    const char *image_loop_dev;
+    const char *stamp_file;
 
-        if (access(STAMP_FILE, F_OK) == 0) {
-            LOGV(TAG "/system already mounted. Skipping");
-            return true;
-        }
-
-        if (!util::mount("/mb/system.img", SYSTEM, "ext4", 0, "")) {
-            LOGE(TAG "Failed to mount %s: %s",
-                 "/mb/system.img", strerror(errno));
-            return false;
-        }
-
-        util::file_write_data(STAMP_FILE, "", 0);
-
-        LOGD(TAG "Mounted %s at %s", "/mb/system.img", SYSTEM);
+    if (strcmp(mountpoint, SYSTEM) == 0) {
+        image_loop_dev = CHROOT_SYSTEM_LOOP_DEV;
+        stamp_file = SYSTEM_STAMP_FILE;
+    } else if (strcmp(mountpoint, CACHE) == 0) {
+        image_loop_dev = CHROOT_CACHE_LOOP_DEV;
+        stamp_file = CACHE_STAMP_FILE;
+    } else if (strcmp(mountpoint, DATA) == 0) {
+        image_loop_dev = CHROOT_DATA_LOOP_DEV;
+        stamp_file = DATA_STAMP_FILE;
     } else {
-        LOGV(TAG "Ignoring mount command for %s", mountpoint.c_str());
+        return false;
     }
+
+    if (out_image_loop_dev) {
+        *out_image_loop_dev = image_loop_dev;
+    }
+    if (out_stamp_file) {
+        *out_stamp_file = stamp_file;
+    }
+    return true;
+}
+
+static bool do_mount(const char *mountpoint)
+{
+    const char *image_loop_dev;
+    const char *stamp_file;
+
+    if (!get_paths(mountpoint, &image_loop_dev, &stamp_file)) {
+        LOGE(TAG "Invalid mountpoint: %s", mountpoint);
+        return false;
+    }
+
+    if (access(image_loop_dev, F_OK) < 0) {
+        // Assume we don't need the image if the wrapper didn't create it
+        LOGV(TAG "Ignoring mount command for %s", mountpoint);
+        return true;
+    }
+
+    if (access(stamp_file, F_OK) == 0) {
+        LOGV(TAG "%s already mounted. Skipping", mountpoint);
+        return true;
+    }
+
+    // NOTE: We don't need the loop mount logic in util::mount()
+    if (mount(image_loop_dev, mountpoint, "ext4", 0, "") < 0) {
+        LOGE(TAG "Failed to mount %s: %s", image_loop_dev, strerror(errno));
+        return false;
+    }
+
+    util::file_write_data(stamp_file, "", 0);
+
+    LOGD(TAG "Mounted %s at %s", image_loop_dev, mountpoint);
 
     return true;
 }
 
-static bool do_unmount(const std::string &mountpoint)
+static bool do_unmount(const char *mountpoint)
 {
-    if (mountpoint == SYSTEM) {
-        if (access("/mb/system.img", F_OK) < 0) {
-            // Assume we don't need the image if the wrapper didn't create it
-            LOGV(TAG "Ignoring unmount command for %s", mountpoint.c_str());
-            return true;
-        }
+    const char *image_loop_dev;
+    const char *stamp_file;
 
-        if (access(STAMP_FILE, F_OK) != 0) {
-            LOGV(TAG "/system not mounted. Skipping");
-            return true;
-        }
-
-        if (!util::umount(SYSTEM)) {
-            LOGE(TAG "Failed to unmount %s: %s", SYSTEM, strerror(errno));
-            return false;
-        }
-
-        remove(STAMP_FILE);
-
-        LOGD(TAG "Unmounted %s", SYSTEM);
-    } else {
-        LOGV(TAG "Ignoring unmount command for %s", mountpoint.c_str());
+    if (!get_paths(mountpoint, &image_loop_dev, &stamp_file)) {
+        LOGE(TAG "Invalid mountpoint: %s", mountpoint);
+        return false;
     }
+
+    if (access(image_loop_dev, F_OK) < 0) {
+        // Assume we don't need the image if the wrapper didn't create it
+        LOGV(TAG "Ignoring unmount command for %s", mountpoint);
+        return true;
+    }
+
+    if (access(stamp_file, F_OK) != 0) {
+        LOGV(TAG "%s not mounted. Skipping", mountpoint);
+        return true;
+    }
+
+    // NOTE: We don't want to use util::umount() because it will disassociate
+    // the loop device
+    if (umount(mountpoint) < 0) {
+        LOGE(TAG "Failed to unmount %s: %s", mountpoint, strerror(errno));
+        return false;
+    }
+
+    remove(stamp_file);
+
+    LOGD(TAG "Unmounted %s", mountpoint);
 
     return true;
 }
 
-static bool do_format(const std::string &mountpoint)
+static bool do_format(const char *mountpoint)
 {
-    if (mountpoint == SYSTEM || mountpoint == CACHE) {
-        // Need to mount the partition if we're using an image file and it
-        // hasn't been mounted
-        int needs_mount = (mountpoint == SYSTEM)
-                && (access("/mb/system.img", F_OK) == 0)
-                && (access(STAMP_FILE, F_OK) != 0);
+    const char *image_loop_dev;
+    const char *stamp_file;
 
-        if (needs_mount && !do_mount(mountpoint)) {
-            LOGE(TAG "Failed to mount %s", mountpoint.c_str());
-            return false;
-        }
-
-        if (!wipe_directory(mountpoint, {})) {
-            LOGE(TAG "Failed to wipe %s", mountpoint.c_str());
-            return false;
-        }
-
-        if (needs_mount && !do_unmount(mountpoint)) {
-            LOGE(TAG "Failed to unmount %s", mountpoint.c_str());
-            return false;
-        }
-    } else if (mountpoint == DATA) {
-        if (!wipe_directory(mountpoint, { "media" })) {
-            LOGE(TAG "Failed to wipe %s", mountpoint.c_str());
-            return false;
-        }
+    if (!get_paths(mountpoint, &image_loop_dev, &stamp_file)) {
+        LOGE(TAG "Invalid mountpoint: %s", mountpoint);
+        return false;
     }
 
-    LOGD(TAG "Formatted %s", mountpoint.c_str());
+    // Need to mount the partition if we're using an image file and it
+    // hasn't been mounted
+    bool needs_mount = access(image_loop_dev, F_OK) == 0
+            && access(stamp_file, F_OK) != 0;
+
+    if (needs_mount && !do_mount(mountpoint)) {
+        LOGE(TAG "Failed to mount %s", mountpoint);
+        return false;
+    }
+
+    std::vector<std::string> exclusions;
+    if (strcmp(mountpoint, DATA) == 0) {
+        exclusions.push_back("media");
+    }
+
+    if (!wipe_directory(mountpoint, exclusions)) {
+        LOGE(TAG "Failed to wipe %s", mountpoint);
+        return false;
+    }
+
+    if (needs_mount && !do_unmount(mountpoint)) {
+        LOGE(TAG "Failed to unmount %s", mountpoint);
+        return false;
+    }
+
+    LOGD(TAG "Formatted %s", mountpoint);
 
     return true;
 }
 
-static void update_binary_tool_usage(int error)
+static void update_binary_tool_usage(FILE *stream)
 {
-    FILE *stream = error ? stderr : stdout;
-
     fprintf(stream,
             "Usage: update-binary-tool [action] [mountpoint]\n\n"
             "Actions:\n"
@@ -176,37 +223,35 @@ int update_binary_tool_main(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
         switch (opt) {
         case 'h':
-            update_binary_tool_usage(0);
+            update_binary_tool_usage(stdout);
             return EXIT_SUCCESS;
 
         default:
-            update_binary_tool_usage(1);
+            update_binary_tool_usage(stderr);
             return EXIT_FAILURE;
         }
     }
 
     if (argc - optind != 2) {
-        update_binary_tool_usage(1);
+        update_binary_tool_usage(stderr);
         return EXIT_FAILURE;
     }
 
     // Log to stderr, so the output is ordered correctly in /tmp/recovery.log
     util::log_set_logger(std::make_shared<util::StdioLogger>(stderr, false));
 
-    std::string action = argv[optind];
-    std::string mountpoint = argv[optind + 1];
+    const char *action = argv[optind];
+    const char *mountpoint = argv[optind + 1];
 
-    if (action != ACTION_MOUNT
-            && action != ACTION_UNMOUNT
-            && action != ACTION_FORMAT) {
-        update_binary_tool_usage(1);
-        return EXIT_FAILURE;
-    }
+    bool is_valid_action = strcmp(action, ACTION_MOUNT) == 0
+            || strcmp(action, ACTION_UNMOUNT) == 0
+            || strcmp(action, ACTION_FORMAT) == 0;
+    bool is_valid_mountpoint = strcmp(mountpoint, SYSTEM) == 0
+            || strcmp(mountpoint, CACHE) == 0
+            || strcmp(mountpoint, DATA) == 0;
 
-    if (mountpoint != SYSTEM
-            && mountpoint != CACHE
-            && mountpoint != DATA) {
-        update_binary_tool_usage(1);
+    if (!is_valid_action || !is_valid_mountpoint) {
+        update_binary_tool_usage(stderr);
         return EXIT_FAILURE;
     }
 
@@ -217,11 +262,11 @@ int update_binary_tool_main(int argc, char *argv[])
 
     bool ret = false;
 
-    if (action == ACTION_MOUNT) {
+    if (strcmp(action, ACTION_MOUNT) == 0) {
         ret = do_mount(mountpoint);
-    } else if (action == ACTION_UNMOUNT) {
+    } else if (strcmp(action, ACTION_UNMOUNT) == 0) {
         ret = do_unmount(mountpoint);
-    } else if (action == ACTION_FORMAT) {
+    } else if (strcmp(action, ACTION_FORMAT) == 0) {
         ret = do_format(mountpoint);
     }
 
