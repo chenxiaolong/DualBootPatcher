@@ -125,6 +125,7 @@ if(MBP_USE_SYSTEM_ZLIB)
     set(MBP_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
 else()
     set(SKIP_INSTALL_ALL ON CACHE INTERNAL "Disable zlib install")
+    set(ZLIB_ENABLE_TESTS OFF CACHE INTERNAL "Disable zlib tests")
     set(MBP_ZLIB_INCLUDES ${CMAKE_SOURCE_DIR}/external/zlib ${CMAKE_BINARY_DIR}/external/zlib)
     set(MBP_ZLIB_LIBRARIES zlibstatic)
     add_subdirectory(external/zlib)
@@ -135,20 +136,16 @@ else()
         POSITION_INDEPENDENT_CODE 1
     )
     # Don't build the shared library or other binaries
-    set(ZLIB_DISABLE zlib example minigzip)
-    if(TARGET example64)
-        list(APPEND ZLIB_DISABLE example64)
-    endif()
-    if (TARGET minigzip64)
-        list(APPEND ZLIB_DISABLE minigzip64)
-    endif()
+    set(ZLIB_DISABLE zlib example example64 minigzip minigzip64)
     foreach(ZLIB_TARGET ${ZLIB_DISABLE})
-        set_target_properties(
-            ${ZLIB_TARGET}
-            PROPERTIES
-            EXCLUDE_FROM_ALL 1
-            EXCLUDE_FROM_DEFAULT_BUILD 1
-        )
+        if(TARGET ${ZLIB_TARGET})
+            set_target_properties(
+                ${ZLIB_TARGET}
+                PROPERTIES
+                EXCLUDE_FROM_ALL 1
+                EXCLUDE_FROM_DEFAULT_BUILD 1
+            )
+        endif()
     endforeach()
 endif()
 
