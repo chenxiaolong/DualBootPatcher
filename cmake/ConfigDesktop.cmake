@@ -45,6 +45,11 @@ find_package(Qt5Core 5.3 REQUIRED)
 # Minizip
 add_subdirectory(external/minizip)
 
+# GTest
+if(MBP_ENABLE_TESTS)
+    find_package(GTest REQUIRED)
+endif()
+
 
 # Same logic as CMakeLists.txt from the CMake source
 set(EXTERNAL_LIBRARIES LIBARCHIVE LIBLZMA LZO LZ4 ZLIB)

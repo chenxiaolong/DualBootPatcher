@@ -32,6 +32,13 @@ if(MBP_CI_VERSION)
     set(MBP_VERSION ${MBP_CI_VERSION})
 endif()
 
+# Tests
+set(MBP_ENABLE_TESTS TRUE CACHE BOOL "Enable building of tests")
+
+if(MBP_ENABLE_TESTS)
+    enable_testing()
+endif()
+
 # CPack versions
 set(CPACK_PACKAGE_VERSION_MAJOR ${MBP_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
