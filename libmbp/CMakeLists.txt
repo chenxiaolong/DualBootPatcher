@@ -27,6 +27,7 @@ set(MBP_CORE_SOURCES
     private/logging.cpp
     private/miniziputils.cpp
     private/stringutils.cpp
+    sparse/sparse.cpp
     bootimage/androidformat.cpp
     bootimage/bumpformat.cpp
     bootimage/bumppatcher.cpp
