@@ -194,6 +194,11 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/Android-mini.mk
     @ONLY
 )
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
+    @ONLY
+)
 
 ExternalProject_Add(
     mbp-mini
