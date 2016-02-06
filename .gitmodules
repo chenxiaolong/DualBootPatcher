@@ -8,7 +8,7 @@
 	branch = mbp
 [submodule "external/zlib"]
 	path = external/zlib
-	url = https://github.com/madler/zlib.git
+	url = https://github.com/chenxiaolong/zlib.git
 	ignore = dirty
 [submodule "external/lz4"]
 	path = external/lz4
