@@ -22,4 +22,25 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
             CXX_STANDARD_REQUIRED 1
         )
     endif()
+
+    # desparse tool
+
+    add_executable(
+        desparse
+        desparse.cpp
+    )
+    target_link_libraries(
+        desparse
+        mbp
+        mbpio
+    )
+
+    if(NOT MSVC)
+        set_target_properties(
+            desparse
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
 endif()
