@@ -35,21 +35,11 @@ EXTERNAL_DIR := $(TOP_DIR)/external
 SKIP_EXAMPLES := true
 include $(EXTERNAL_DIR)/minizip/Android.mk
 
+include @CMAKE_BINARY_DIR@/libmbp/Android.include.mk
+include @CMAKE_BINARY_DIR@/libmbpio/Android.include.mk
 include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
 include miniadbd/Android.mk
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libmbp-mini
-LOCAL_SRC_FILES := $(MBP_MINI_DIR)/$(TARGET_ARCH_ABI)/libmbp-mini.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE    := libmbpio
-LOCAL_SRC_FILES := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libmbpio.a
-include $(PREBUILT_STATIC_LIBRARY)
 
 
 LOCAL_PATH := $(_LOCAL_PATH)
@@ -149,8 +139,6 @@ mb_common_cflags += \
 endif
 
 mb_common_includes := \
-	$(TOP_DIR)/libmbp \
-	$(TOP_DIR) \
 	$(EXTERNAL_DIR) \
 	$(EXTERNAL_DIR)/flatbuffers/include \
 	$(EXTERNAL_DIR)/pugixml/src
