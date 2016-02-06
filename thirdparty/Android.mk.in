@@ -8,6 +8,7 @@ LIBLZO2_DIR := $(THIRD_PARTY)/android/lzo/@LZO_VER@/$(TARGET_ARCH_ABI)
 LIBLZ4_DIR := $(THIRD_PARTY)/android/lz4/@LZ4_VER@/$(TARGET_ARCH_ABI)
 LIBLZMA_DIR := $(THIRD_PARTY)/android/liblzma/@LIBLZMA_VER@/$(TARGET_ARCH_ABI)
 OPENSSL_DIR := $(THIRD_PARTY)/android/openssl/@OPENSSL_VER@/$(TARGET_ARCH_ABI)
+FUSE_DIR := $(THIRD_PARTY)/android/fuse/@FUSE_VER@/$(TARGET_ARCH_ABI)
 PROCPS_NG_DIR := $(THIRD_PARTY)/android/procps-ng
 
 
@@ -78,6 +79,13 @@ include $(CLEAR_VARS)
 LOCAL_MODULE            := liblzma
 LOCAL_SRC_FILES         := $(LIBLZMA_DIR)/lib/liblzma.a
 LOCAL_EXPORT_C_INCLUDES := $(LIBLZMA_DIR)/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := libfuse
+LOCAL_SRC_FILES         := $(FUSE_DIR)/lib/libfuse.a
+LOCAL_EXPORT_C_INCLUDES := $(FUSE_DIR)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 

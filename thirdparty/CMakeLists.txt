@@ -190,6 +190,17 @@ get_prebuilt(openssl ${OPENSSL_VER} x86         SHA512=a9e10a0bd19c6c7f7b0154768
 get_prebuilt(openssl ${OPENSSL_VER} x86_64      SHA512=c2d2362274ff72234e8922383115a6466a7f91281c4a8cada7c12c1f4473864dc76179a2c140cfeed0d22ac21a88a268494fec497af620a19030007c3c026305)
 
 ################################################################################
+# FUSE for Android
+################################################################################
+
+set(FUSE_VER "cm_13.0_r990.42f00b6-1")
+
+get_prebuilt(fuse ${FUSE_VER} armeabi-v7a SHA512=b72ab9a3a553921fb97eba8393fd608ae142f065e752bfe072b4050466b4ae9a52392fbf32890dd56db6743931360fbbd9efed2f0e37580c4c881fa482cd704d)
+get_prebuilt(fuse ${FUSE_VER} arm64-v8a   SHA512=50fb86ed55a258e038dcd6ef2791a9d7570aecc8e49997bbb4c3a67b955cc2473e5800adffa0761405cafd8de6ceb4e758b813a9db88be161d39dd9b162cf6ad)
+get_prebuilt(fuse ${FUSE_VER} x86         SHA512=7506a27e44e510dc2f868b91c9494609fec91f1cf834390b66aa58ae9257beb898f65f9c1b37b886f948d80d65feb0b153197f22bced5dbae199ba00020c7d6e)
+get_prebuilt(fuse ${FUSE_VER} x86_64      SHA512=66912456e71687c8c37d3c193ac6a075248f2245628bc553e94edd1f39b655a7da6b8c6e284c9dee0fcc7a959f3c19ecf38bc42f76713f50d29498e81c15c0c7)
+
+################################################################################
 # procps-ng for Android
 ################################################################################
 
