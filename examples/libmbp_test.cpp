@@ -37,6 +37,12 @@ static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
     }
 }
 
+static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
+{
+    (void) userdata;
+    printf("Current bytes percentage: %.1f\n", 100.0 * bytes / maxBytes);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 6) {
         fprintf(stderr, "Usage: %s <patcher id> <device> <rom id> "
@@ -82,10 +88,10 @@ int main(int argc, char *argv[]) {
     }
 
     patcher->setFileInfo(&fi);
-    bool ret = patcher->patchFile(nullptr, nullptr, nullptr, nullptr);
+    bool ret = patcher->patchFile(&mbp_progress_cb, nullptr, nullptr, nullptr);
 
     if (!ret) {
-        fprintf(stderr, "Error: %d\n", patcher->error());
+        fprintf(stderr, "Error: %d\n", static_cast<int>(patcher->error()));
     }
 
     return ret ? EXIT_SUCCESS : EXIT_FAILURE;
