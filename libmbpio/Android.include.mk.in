@@ -1,0 +1,8 @@
+TOP_DIR := @CMAKE_SOURCE_DIR@
+MBP_IO_DIR := @CMAKE_CURRENT_BINARY_DIR@/mbpio-android-prefix/tmp/local
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := libmbpio
+LOCAL_SRC_FILES         := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libmbpio.a
+LOCAL_EXPORT_C_INCLUDES := $(TOP_DIR)
+include $(PREBUILT_STATIC_LIBRARY)

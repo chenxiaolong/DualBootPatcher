@@ -77,6 +77,10 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
     @ONLY
 )
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
+)
 
 ExternalProject_Add(
     mbpio-android
