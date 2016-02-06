@@ -124,8 +124,10 @@ mb_common_ldflags := \
 mb_common_ldflags += \
 	-fuse-ld=bfd
 
-mb_common_cflags += -DPUGIXML_NO_EXCEPTIONS \
-					-DPUGIXML_NO_STL -DPUGIXML_NO_XPATH
+mb_common_cflags += \
+	-DPUGIXML_NO_EXCEPTIONS \
+	-DPUGIXML_NO_STL \
+	-DPUGIXML_NO_XPATH
 
 ifeq ($(DEBUGGING),true)
 mb_common_cflags += -DDYNAMICALLY_LINKED
