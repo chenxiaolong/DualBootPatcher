@@ -23,14 +23,16 @@
 #include "../libmbp_global.h"
 #include "sparse_header.h"
 
+#ifdef __cplusplus
 #include <cstdio>
+#else
+#include <stdbool.h>
+#include <stdio.h>
+#endif
 
-/*
- * Following a Raw or Fill or CRC32 chunk is data.
- * - For a Raw chunk, it's the data in chunk_sz * blk_sz.
- * - For a Fill chunk, it's 4 bytes of the fill data.
- * - For a CRC32 chunk, it's 4 bytes of CRC32
- */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef bool (*SparseOpenCb)(void *userData);
 typedef bool (*SparseCloseCb)(void *userData);
@@ -41,16 +43,20 @@ typedef bool (*SparseSkipCb)(uint64_t offset, void *userData);
 
 struct SparseCtx;
 
-MBP_EXPORT SparseCtx * sparseCtxNew();
-MBP_EXPORT bool sparseCtxFree(SparseCtx *ctx);
+MBP_EXPORT struct SparseCtx * sparseCtxNew();
+MBP_EXPORT bool sparseCtxFree(struct SparseCtx *ctx);
 
-MBP_EXPORT bool sparseOpen(SparseCtx *ctx, SparseOpenCb openCb,
+MBP_EXPORT bool sparseOpen(struct SparseCtx *ctx, SparseOpenCb openCb,
                            SparseCloseCb closeCb, SparseReadCb readCb,
                            SparseSeekCb seekCb, SparseSkipCb skipCb,
                            void *userData);
-MBP_EXPORT bool sparseClose(SparseCtx *ctx);
-MBP_EXPORT bool sparseRead(SparseCtx *ctx, void *buf, uint64_t size,
+MBP_EXPORT bool sparseClose(struct SparseCtx *ctx);
+MBP_EXPORT bool sparseRead(struct SparseCtx *ctx, void *buf, uint64_t size,
                            uint64_t *bytesRead);
-MBP_EXPORT bool sparseSeek(SparseCtx *ctx, int64_t offset, int whence);
-MBP_EXPORT bool sparseTell(SparseCtx *ctx, uint64_t *offset);
-MBP_EXPORT bool sparseSize(SparseCtx *ctx, uint64_t *size);
+MBP_EXPORT bool sparseSeek(struct SparseCtx *ctx, int64_t offset, int whence);
+MBP_EXPORT bool sparseTell(struct SparseCtx *ctx, uint64_t *offset);
+MBP_EXPORT bool sparseSize(struct SparseCtx *ctx, uint64_t *size);
+
+#ifdef __cplusplus
+}
+#endif

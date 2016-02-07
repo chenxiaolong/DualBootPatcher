@@ -60,6 +60,8 @@
 #define ERROR(...)
 #endif
 
+extern "C" {
+
 /*! \brief Minimum information we need from the chunk headers while reading */
 struct ChunkInfo
 {
@@ -1025,4 +1027,6 @@ bool sparseSize(SparseCtx *ctx, uint64_t *size)
 
     *size = ctx->fileSize;
     return true;
+}
+
 }

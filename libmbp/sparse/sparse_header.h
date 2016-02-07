@@ -18,7 +18,13 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
+#ifdef __cplusplus
 #include <cstdint>
+#else
+#include <stdint.h>
+#endif
 
 #define SPARSE_HEADER_MAGIC     0xed26ff3a
 #define SPARSE_HEADER_MAJOR_VER 1
@@ -50,3 +56,10 @@ struct ChunkHeader
     uint32_t chunk_sz;       // in blocks in output image
     uint32_t total_sz;       // in bytes of chunk input file including chunk header and data
 };
+
+/*
+ * Following a Raw or Fill or CRC32 chunk is data.
+ * - For a Raw chunk, it's the data in chunk_sz * blk_sz.
+ * - For a Fill chunk, it's 4 bytes of the fill data.
+ * - For a CRC32 chunk, it's 4 bytes of CRC32
+ */
