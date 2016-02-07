@@ -213,6 +213,7 @@ bool SparseCtx::skipBytes(uint64_t bytes)
             uint64_t toRead = std::min<uint64_t>(sizeof(dummy), bytes);
             uint64_t bytesRead;
             if (!read(dummy, toRead, &bytesRead) || bytesRead == 0) {
+                DEBUG("Read failed or reached EOF when skipping bytes");
                 return false;
             }
             bytes -= bytesRead;
@@ -565,7 +566,7 @@ bool processSparseHeader(SparseCtx *ctx)
 
     // Skip any extra bytes in the file header
     std::size_t diff = ctx->shdr.file_hdr_sz - sizeof(SparseHeader);
-    if (!ctx->seek(diff, SEEK_CUR)) {
+    if (!ctx->skipBytes(diff)) {
         return false;
     }
 
@@ -879,10 +880,10 @@ bool sparseRead(SparseCtx *ctx, void *buf, uint64_t size, uint64_t *bytesRead)
         switch (ctx->chunks[ctx->chunk].type) {
         case CHUNK_TYPE_RAW: {
             // Figure out how much to seek in the input data
-            uint64_t diff =
-                    ctx->outOffset - ctx->chunks[ctx->chunk].begin;
+            uint64_t diff = ctx->outOffset - ctx->chunks[ctx->chunk].begin;
             OPER("- Raw data is %" PRIu64 " bytes into the raw chunk", diff);
-            if (!ctx->seek(ctx->chunks[ctx->chunk].rawBegin + diff, SEEK_SET)) {
+            if (ctx->cbSeek && !ctx->seek(
+                    ctx->chunks[ctx->chunk].rawBegin + diff, SEEK_SET)) {
                 return false;
             }
             if (!ctx->read(buf, toRead, &nRead)) {
@@ -948,7 +949,7 @@ bool sparseSeek(SparseCtx *ctx, int64_t offset, int whence)
         return false;
     }
 
-    OPER("seek(%p, %" PRId64 ", %d)", ctx, offset, whence);
+    OPER("seek(%" PRId64 ", %d)", offset, whence);
 
     if (!ctx->cbSeek) {
         OPER("- Cannot seek because no seek callback is registered");
