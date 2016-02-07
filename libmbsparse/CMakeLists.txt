@@ -13,6 +13,9 @@ set(MBSPARSE_SOURCES
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
+    # Only needed if building DLL on Windows
+    #add_definitions(-DMB_LIBRARY)
+
     add_library(mbsparse STATIC ${MBSPARSE_SOURCES})
 
     set_target_properties(
