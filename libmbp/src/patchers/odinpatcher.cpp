@@ -43,8 +43,7 @@
 #include "mbp/private/miniziputils.h"
 
 // minizip
-#include "external/minizip/unzip.h"
-#include "external/minizip/zip.h"
+#include "minizip/zip.h"
 
 class ar;
 

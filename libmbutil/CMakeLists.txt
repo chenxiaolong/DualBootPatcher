@@ -1,7 +1,5 @@
 include(ExternalProject)
 
-include_directories(include)
-
 # Generate Android.mk
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in

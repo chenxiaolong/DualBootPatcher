@@ -2,9 +2,6 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
     set(CMAKE_AUTOMOC ON)
 
-    include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
-    include_directories(${CMAKE_SOURCE_DIR}/libmbp/include)
-
     # Needs QtWidgets
     find_package(Qt5Widgets 5.3 REQUIRED)
 
@@ -27,9 +24,6 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         -DQT_NO_CAST_FROM_BYTEARRAY
         -DMB_DYNAMIC_LINK
     )
-
-    # Allow libmbp headers to be found
-    include_directories(${CMAKE_SOURCE_DIR})
 
     set(GUI_SOURCES
         main.cpp

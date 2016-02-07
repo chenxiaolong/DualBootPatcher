@@ -1,9 +1,5 @@
 include(ExternalProject)
 
-include_directories(include)
-include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
-include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
-
 if(MBP_ENABLE_TESTS)
     include_directories(${GTEST_INCLUDE_DIRS})
 endif()

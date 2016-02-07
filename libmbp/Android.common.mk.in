@@ -20,7 +20,7 @@ mbp_includes := \
 	include \
 	@CMAKE_CURRENT_BINARY_DIR@/include \
 	@CMAKE_SOURCE_DIR@/libmbcommon/include \
-	$(TOP_DIR)
+	$(EXTERNAL_DIR)
 
 mbp_cflags := \
 	-Wall -Wextra -Werror -pedantic \

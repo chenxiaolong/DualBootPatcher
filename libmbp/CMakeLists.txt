@@ -2,20 +2,11 @@ include(ExternalProject)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# Allow libmbp headers to be found
-include_directories(${CMAKE_SOURCE_DIR})
-
 include_directories(${MBP_ZLIB_INCLUDES})
 include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
-
-include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
-include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
-include_directories(${CMAKE_SOURCE_DIR}/libmbpio/include)
-
-include_directories(include)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/mbp/version.h.in

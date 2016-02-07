@@ -35,8 +35,8 @@
 #include "mbp/private/stringutils.h"
 
 // minizip
-#include "external/minizip/unzip.h"
-#include "external/minizip/zip.h"
+#include "minizip/unzip.h"
+#include "minizip/zip.h"
 
 
 namespace mbp

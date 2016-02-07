@@ -1,7 +1,5 @@
 include(ExternalProject)
 
-include_directories(include)
-
 set(MBP_IO_SOURCES
     src/delete.cpp
     src/directory.cpp

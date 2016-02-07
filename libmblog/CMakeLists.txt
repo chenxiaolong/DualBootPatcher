@@ -1,7 +1,5 @@
 include(ExternalProject)
 
-include_directories(include)
-
 set(MBLOG_SOURCES
     src/logging.cpp
     src/stdio_logger.cpp

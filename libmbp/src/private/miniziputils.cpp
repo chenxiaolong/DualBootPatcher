@@ -33,14 +33,14 @@
 #include "mbpio/path.h"
 #include "mbpio/private/utf8.h"
 
-#include "external/minizip/ioapi_buf.h"
+#include "minizip/ioapi_buf.h"
 #if defined(_WIN32)
 #  define MINIZIP_WIN32
-#  include "external/minizip/iowin32.h"
+#  include "minizip/iowin32.h"
 #  include <wchar.h>
 #elif defined(__ANDROID__)
 #  define MINIZIP_ANDROID
-#  include "external/minizip/ioandroid.h"
+#  include "minizip/ioandroid.h"
 #endif
 
 #ifdef _WIN32
