@@ -33,10 +33,9 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include <libmbp/bootimage.h>
-#include <libmbp/cpiofile.h>
-
 #include "mblog/logging.h"
+#include "mbp/bootimage.h"
+#include "mbp/cpiofile.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/archive.h"

@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "device.h"
+#include "mbp/device.h"
 
 namespace mbp
 {

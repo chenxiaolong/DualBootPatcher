@@ -33,8 +33,8 @@
 #include <libmbpio/error.h>
 #include <libmbpio/path.h>
 
-#include <libmbp/bootimage.h>
-#include <libmbp/errors.h>
+#include <mbp/bootimage.h>
+#include <mbp/errors.h>
 
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;

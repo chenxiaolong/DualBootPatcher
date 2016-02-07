@@ -27,10 +27,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <libmbp/bootimage.h>
-
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
+#include "mbp/bootimage.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"

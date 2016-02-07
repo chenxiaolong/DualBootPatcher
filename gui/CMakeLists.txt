@@ -3,6 +3,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(CMAKE_AUTOMOC ON)
 
     include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
+    include_directories(${CMAKE_SOURCE_DIR}/libmbp/include)
 
     # Needs QtWidgets
     find_package(Qt5Widgets 5.3 REQUIRED)

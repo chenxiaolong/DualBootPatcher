@@ -22,7 +22,7 @@
 
 #include <cassert>
 
-#include <libmbp/errors.h>
+#include <mbp/errors.h>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>

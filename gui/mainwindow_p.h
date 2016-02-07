@@ -22,8 +22,8 @@
 
 #include "mainwindow.h"
 
-#include <libmbp/patcherconfig.h>
-#include <libmbp/patcherinterface.h>
+#include <mbp/patcherconfig.h>
+#include <mbp/patcherinterface.h>
 
 #include <memory>
 

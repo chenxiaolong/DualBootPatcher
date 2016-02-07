@@ -14,35 +14,57 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
 include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
 
+include_directories(include)
+
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mbp/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/mbp/version.h
     @ONLY
 )
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(MBP_CORE_SOURCES
-    bootimage.cpp
-    cpiofile.cpp
-    device.cpp
-    patcherconfig.cpp
-    private/fileutils.cpp
-    private/miniziputils.cpp
-    private/stringutils.cpp
-    bootimage/androidformat.cpp
-    bootimage/bumpformat.cpp
-    bootimage/bumppatcher.cpp
-    bootimage/fileformat.cpp
-    bootimage/lokiformat.cpp
-    bootimage/lokipatcher.cpp
-    bootimage/mtkformat.cpp
-    bootimage/sonyelfformat.cpp
-    cwrapper/cbootimage.cpp
-    cwrapper/ccommon.cpp
-    cwrapper/ccpiofile.cpp
-    cwrapper/cdevice.cpp
-    cwrapper/cpatcherconfig.cpp
-    cwrapper/private/util.cpp
+    src/bootimage.cpp
+    src/cpiofile.cpp
+    src/device.cpp
+    src/fileinfo.cpp
+    src/patcherconfig.cpp
+    # Boot image parsers
+    src/bootimage/androidformat.cpp
+    src/bootimage/bumpformat.cpp
+    src/bootimage/bumppatcher.cpp
+    src/bootimage/fileformat.cpp
+    src/bootimage/lokiformat.cpp
+    src/bootimage/lokipatcher.cpp
+    src/bootimage/mtkformat.cpp
+    src/bootimage/sonyelfformat.cpp
+    # C wrapper API
+    src/cwrapper/cbootimage.cpp
+    src/cwrapper/ccommon.cpp
+    src/cwrapper/ccpiofile.cpp
+    src/cwrapper/cdevice.cpp
+    src/cwrapper/cfileinfo.cpp
+    src/cwrapper/cpatcherconfig.cpp
+    src/cwrapper/cpatcherinterface.cpp
+    src/cwrapper/private/util.cpp
+    # Edify tokenizer
+    src/edify/tokenizer.cpp
+    # Private classes
+    src/private/fileutils.cpp
+    src/private/miniziputils.cpp
+    src/private/stringutils.cpp
+    # Autopatchers
+    src/autopatchers/standardpatcher.cpp
+    src/autopatchers/xposedpatcher.cpp
+    # Patchers
+    src/patchers/mbtoolupdater.cpp
+    src/patchers/multibootpatcher.cpp
+    src/patchers/odinpatcher.cpp
+    # Ramdisk patchers
+    src/ramdiskpatchers/core.cpp
+    src/ramdiskpatchers/default.cpp
+    src/ramdiskpatchers/pepper.cpp
+    # SHA1 library
     external/sha.cpp
 )
 
@@ -60,29 +82,9 @@ set(MBP_DEVICE_SOURCES
     devices/xiaomi.cpp
 )
 
-set(MBP_PATCHER_SOURCES
-    fileinfo.cpp
-    edify/tokenizer.cpp
-    # C wrapper API
-    cwrapper/cfileinfo.cpp
-    cwrapper/cpatcherinterface.cpp
-    # Autopatchers
-    autopatchers/standardpatcher.cpp
-    autopatchers/xposedpatcher.cpp
-    # Patchers
-    patchers/mbtoolupdater.cpp
-    patchers/multibootpatcher.cpp
-    patchers/odinpatcher.cpp
-    # Ramdisk patchers
-    ramdiskpatchers/core.cpp
-    ramdiskpatchers/default.cpp
-    ramdiskpatchers/pepper.cpp
-)
-
 set(MBP_SOURCES
     ${MBP_CORE_SOURCES}
     ${MBP_DEVICE_SOURCES}
-    ${MBP_PATCHER_SOURCES}
 )
 
 set(MBP_ANDROID_SOURCES
@@ -91,7 +93,7 @@ set(MBP_ANDROID_SOURCES
 
 if(WIN32)
     list(APPEND MBP_SOURCES
-        private/win32.cpp
+        src/private/win32.cpp
     )
 endif()
 

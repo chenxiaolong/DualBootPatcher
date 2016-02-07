@@ -25,13 +25,12 @@
 #include <getopt.h>
 #include <sys/stat.h>
 
-#include <libmbp/patcherconfig.h>
-
 #include "external/minizip/zip.h"
 #include "external/minizip/ioandroid.h"
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
+#include "mbp/patcherconfig.h"
 #include "mbutil/delete.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"

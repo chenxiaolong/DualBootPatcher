@@ -20,8 +20,8 @@
 #include <cassert>
 
 #include <mblog/logging.h>
-#include <libmbp/patcherconfig.h>
-#include <libmbp/patcherinterface.h>
+#include <mbp/patcherconfig.h>
+#include <mbp/patcherinterface.h>
 
 
 class BasicLogger : public mb::log::BaseLogger

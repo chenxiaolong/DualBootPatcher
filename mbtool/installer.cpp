@@ -36,13 +36,13 @@
 // Legacy properties
 #include "external/legacy_property_service.h"
 
-// libmbp
-#include <libmbp/bootimage.h>
-#include <libmbp/cpiofile.h>
-#include <libmbp/patcherconfig.h>
-
 // libmblog
 #include "mblog/logging.h"
+
+// libmbp
+#include "mbp/bootimage.h"
+#include "mbp/cpiofile.h"
+#include "mbp/patcherconfig.h"
 
 // libmbutil
 #include "mbutil/autoclose/file.h"

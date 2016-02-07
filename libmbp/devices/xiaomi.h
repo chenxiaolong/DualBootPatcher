@@ -21,11 +21,11 @@
 
 #include <vector>
 
-#include "device.h"
+#include "mbp/device.h"
 
 namespace mbp
 {
 
-    void addXiaomiDevices(std::vector<Device *> *devices);
+void addXiaomiDevices(std::vector<Device *> *devices);
 
 }
