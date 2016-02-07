@@ -1,0 +1,71 @@
+#_LOCAL_PATH := $(call my-dir)
+_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+
+# If set to true, util/properties.cpp will try to dlopen libc.so to read/write
+# properties
+DYNAMICALLY_LINKED := false
+
+# Whether ccache should be used (highly recommended!)
+USE_CCACHE := true
+
+TOP_DIR := @CMAKE_SOURCE_DIR@
+EXTERNAL_DIR := $(TOP_DIR)/external
+
+include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
+
+LOCAL_PATH := $(_LOCAL_PATH)
+
+mbutil_src := \
+	autoclose/dir.cpp \
+	autoclose/file.cpp \
+	external/mntent.c \
+	util/archive.cpp \
+	util/chmod.cpp \
+	util/chown.cpp \
+	util/cmdline.cpp \
+	util/command.cpp \
+	util/copy.cpp \
+	util/delete.cpp \
+	util/directory.cpp \
+	util/file.cpp \
+	util/fstab.cpp \
+	util/fts.cpp \
+	util/hash.cpp \
+	util/logging.cpp \
+	util/loopdev.cpp \
+	util/mount.cpp \
+	util/path.cpp \
+	util/properties.cpp \
+	util/selinux.cpp \
+	util/socket.cpp \
+	util/string.cpp \
+	util/time.cpp \
+	util/vibrate.cpp
+
+mbutil_cflags := \
+	-Wall -Wextra -Werror \
+	-fno-exceptions -fno-rtti \
+	-ffunction-sections -fdata-sections \
+	-Os
+
+ifeq ($(DYNAMICALLY_LINKED),true)
+mbutil_cflags += -DDYNAMICALLY_LINKED
+endif
+
+mbutil_includes := \
+	$(EXTERNAL_DIR)
+
+
+ifeq ($(USE_CCACHE),true)
+TARGET_CC := ccache $(TARGET_CC)
+TARGET_CXX := ccache $(TARGET_CXX)
+endif
+
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(mbutil_src)
+LOCAL_MODULE := libmbutil
+LOCAL_STATIC_LIBRARIES := libarchive libsepol libcrypto liblz4 liblzma liblzo2
+LOCAL_CFLAGS := $(mbutil_cflags)
+LOCAL_C_INCLUDES := $(mbutil_includes)
+include $(BUILD_STATIC_LIBRARY)

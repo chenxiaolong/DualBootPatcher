@@ -1,30 +1,19 @@
 include(ExternalProject)
 
-# Generate version.cpp
-include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
-git_describe(GIT_VERSION --dirty --always --tags)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
-    @ONLY
-)
-
-# Generate validcerts.cpp
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-)
-
 # Generate Android.mk
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
     ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
     @ONLY
 )
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
+    @ONLY
+)
 
 ExternalProject_Add(
-    mbtool
+    mbutil
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
     BUILD_COMMAND ${NDK_BUILD}
@@ -40,23 +29,10 @@ ExternalProject_Add(
 
 # Always rebuild since files may have changed
 ExternalProject_Add_Step(
-    mbtool
+    mbutil
     forcerebuild
     DEPENDEES update
     DEPENDERS configure
     ALWAYS 1
     COMMAND ""
-)
-
-add_dependencies(
-    mbtool
-    mbp-mini
-    mbpio-android
-    mbutil
-)
-
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out/
-    DESTINATION ${DATA_INSTALL_DIR}/binaries/android
-    COMPONENT Libraries
 )

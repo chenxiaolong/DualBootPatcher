@@ -25,5 +25,6 @@ LOCAL_SRC_FILES := \
 	usb_linux_client.cpp
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/.. \
+	$(LOCAL_PATH)/../../libmbutil \
 	$(LOCAL_PATH)/../external/linux-api-headers
 include $(BUILD_STATIC_LIBRARY)

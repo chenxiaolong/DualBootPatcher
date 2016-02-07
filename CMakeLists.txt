@@ -63,6 +63,7 @@ add_subdirectory(thirdparty)
 # Main patcher
 add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
+add_subdirectory(libmbutil)
 add_subdirectory(data)
 add_subdirectory(mbtool)
 add_subdirectory(libmiscstuff)

@@ -1,0 +1,8 @@
+TOP_DIR := @CMAKE_SOURCE_DIR@
+MBUTIL_DIR := @CMAKE_CURRENT_BINARY_DIR@/mbutil-prefix/tmp/local
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := libmbutil
+LOCAL_SRC_FILES         := $(MBUTIL_DIR)/$(TARGET_ARCH_ABI)/libmbutil.a
+LOCAL_EXPORT_C_INCLUDES := $(TOP_DIR)/libmbutil
+include $(PREBUILT_STATIC_LIBRARY)
