@@ -63,6 +63,7 @@ void StdioLogger::log(LogLevel prio, const char *fmt, va_list ap)
         break;
     }
 
+#ifndef _WIN32
     if (_show_timestamps) {
         struct timespec res;
         struct tm tm;
@@ -73,6 +74,7 @@ void StdioLogger::log(LogLevel prio, const char *fmt, va_list ap)
         strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S %Z", &tm);
         fprintf(_stream, "[%s]", buf);
     }
+#endif
 
     fprintf(_stream, "%s ", stdprio);
     vfprintf(_stream, fmt, ap);
