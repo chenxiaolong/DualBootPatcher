@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "libmbp_global.h"
+#include "mbcommon/common.h"
 
 #include "cpiofile.h"
 #include "device.h"
@@ -36,7 +36,7 @@ class Patcher;
 class AutoPatcher;
 class RamdiskPatcher;
 
-class MBP_EXPORT PatcherConfig
+class MB_EXPORT PatcherConfig
 {
 public:
     PatcherConfig();

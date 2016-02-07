@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "libmbp_global.h"
+#include "mbcommon/common.h"
 
 #include "cpiofile.h"
 #include "fileinfo.h"
@@ -36,7 +36,7 @@ namespace mbp
  * operations are performed here and the current patching progress is reported
  * from this class as well.
  */
-class MBP_EXPORT Patcher
+class MB_EXPORT Patcher
 {
 public:
     typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);

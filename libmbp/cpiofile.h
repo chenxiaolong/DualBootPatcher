@@ -22,14 +22,15 @@
 #include <memory>
 #include <vector>
 
+#include "mbcommon/common.h"
+
 #include "errors.h"
-#include "libmbp_global.h"
 
 
 namespace mbp
 {
 
-class MBP_EXPORT CpioFile
+class MB_EXPORT CpioFile
 {
 public:
     CpioFile();

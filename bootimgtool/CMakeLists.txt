@@ -1,10 +1,15 @@
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
     # Allow libmbp headers to be found
     include_directories(${CMAKE_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
     include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
 
     set(BOOTIMGTOOL_SOURCES
         bootimgtool.cpp
+    )
+
+    add_definitions(
+        -DMB_DYNAMIC_LINK
     )
 
     add_executable(bootimgtool ${BOOTIMGTOOL_SOURCES})

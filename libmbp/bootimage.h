@@ -22,15 +22,16 @@
 #include <memory>
 #include <vector>
 
+#include "mbcommon/common.h"
+
 #include "bootimage-common.h"
 #include "errors.h"
-#include "libmbp_global.h"
 
 
 namespace mbp
 {
 
-class MBP_EXPORT BootImage
+class MB_EXPORT BootImage
 {
 public:
     static const char *AndroidBootMagic;

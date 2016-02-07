@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "libmbp_global.h"
+#include "mbcommon/common.h"
 
 #include "device.h"
 
@@ -29,7 +29,7 @@
 namespace mbp
 {
 
-class MBP_EXPORT FileInfo
+class MB_EXPORT FileInfo
 {
 public:
     explicit FileInfo();

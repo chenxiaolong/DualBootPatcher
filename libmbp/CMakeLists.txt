@@ -11,6 +11,7 @@ include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
 
+include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
 include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
 
 configure_file(
@@ -157,7 +158,8 @@ else()
     # For desktop machines, we'll build with cmake
 
     add_definitions(
-        -DLIBMBP_LIBRARY
+        -DMB_DYNAMIC_LINK
+        -DMB_LIBRARY
         -DSTRICTZIPUNZIP
     )
 

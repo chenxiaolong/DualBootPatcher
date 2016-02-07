@@ -17,7 +17,8 @@ include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 mbp_sources := @MBP_SOURCES_STR@
 
 mbp_includes := \
-	@CMAKE_CURRENT_BINARY_DIR@/include
+	@CMAKE_CURRENT_BINARY_DIR@/include \
+	@CMAKE_SOURCE_DIR@/libmbcommon/include
 
 mbp_cflags := \
 	-Wall -Wextra -Werror -pedantic \

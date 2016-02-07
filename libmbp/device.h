@@ -22,7 +22,7 @@
 #include <memory>
 #include <vector>
 
-#include "libmbp_global.h"
+#include "mbcommon/common.h"
 
 #define ARCH_ARMEABI_V7A        "armeabi-v7a"
 #define ARCH_ARM64_V8A          "arm64-v8a"
@@ -32,7 +32,7 @@
 namespace mbp
 {
 
-class MBP_EXPORT Device
+class MB_EXPORT Device
 {
 public:
     Device();

@@ -114,6 +114,7 @@ mb_common_cflags += \
 endif
 
 mb_common_includes := \
+	@CMAKE_SOURCE_DIR@/libmbcommon/include \
 	$(EXTERNAL_DIR) \
 	$(EXTERNAL_DIR)/flatbuffers/include \
 	$(EXTERNAL_DIR)/pugixml/src
