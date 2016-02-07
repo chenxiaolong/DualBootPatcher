@@ -68,8 +68,6 @@ public:
     MinizipUtils::ZipCtx *zOutput = nullptr;
     std::vector<AutoPatcher *> autoPatchers;
 
-    bool patchRamdisk(std::vector<unsigned char> *data);
-    bool patchBootImage(std::vector<unsigned char> *data);
     bool patchZip();
 
     bool pass1(const std::string &temporaryDir,
@@ -86,9 +84,6 @@ public:
     void updateDetails(const std::string &msg);
 
     static void laProgressCb(uint64_t bytes, void *userData);
-
-    std::string createTable();
-    std::string createInfoProp();
 };
 /*! \endcond */
 
@@ -170,80 +165,6 @@ bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
     }
 
     return ret;
-}
-
-bool MultiBootPatcher::Impl::patchRamdisk(std::vector<unsigned char> *data)
-{
-    // Load the ramdisk cpio
-    CpioFile cpio;
-    if (!cpio.load(*data)) {
-        error = cpio.error();
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    std::string rpId = info->device()->id() + "/default";
-    auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    if (!rp) {
-        rpId = "default";
-        rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    }
-    if (!rp) {
-        error = ErrorCode::RamdiskPatcherCreateError;
-        return false;
-    }
-
-    if (!rp->patchRamdisk()) {
-        error = rp->error();
-        pc->destroyRamdiskPatcher(rp);
-        return false;
-    }
-
-    pc->destroyRamdiskPatcher(rp);
-
-    if (cancelled) return false;
-
-    std::vector<unsigned char> newRamdisk;
-    if (!cpio.createData(&newRamdisk)) {
-        error = cpio.error();
-        return false;
-    }
-
-    data->swap(newRamdisk);
-
-    if (cancelled) return false;
-
-    return true;
-}
-
-bool MultiBootPatcher::Impl::patchBootImage(std::vector<unsigned char> *data)
-{
-    BootImage bi;
-    if (!bi.load(*data)) {
-        error = bi.error();
-        return false;
-    }
-
-    // Release memory since BootImage keeps a copy of the separate components
-    data->clear();
-    data->shrink_to_fit();
-
-    std::vector<unsigned char> ramdiskImage = bi.ramdiskImage();
-    if (!patchRamdisk(&ramdiskImage)) {
-        return false;
-    }
-
-    bi.setRamdiskImage(std::move(ramdiskImage));
-
-    if (!bi.create(data)) {
-        error = bi.error();
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    return true;
 }
 
 bool MultiBootPatcher::Impl::patchZip()
@@ -356,7 +277,8 @@ bool MultiBootPatcher::Impl::patchZip()
     updateFiles(++files, maxFiles);
     updateDetails("multiboot/info.prop");
 
-    const std::string infoProp = createInfoProp();
+    const std::string infoProp =
+            createInfoProp(pc, info->device(), info->romId());
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -419,8 +341,8 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
         bool isExtImg = StringUtils::ends_with(curFile, ".img");
         bool isExtLok = StringUtils::ends_with(curFile, ".lok");
         bool isExtGz = StringUtils::ends_with(curFile, ".gz");
-        // Boot images should be over about 30 MiB. This check is here so the
-        // patcher won't try to read a multi-gigabyte system image into RAM
+        // Boot images should never be over about 30 MiB. This check is here so
+        // the patcher won't try to read a multi-gigabyte system image into RAM
         bool isSizeOK = fi.uncompressed_size <= 30 * 1024 * 1024;
 
         if ((isExtImg || isExtLok || isExtGz) && isSizeOK) {
@@ -436,14 +358,14 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
             if (isExtGz) {
                 // Some zips build the boot image at install time and the zip
                 // just includes the split out parts of the boot image
-                if (!patchRamdisk(&data)) {
+                if (!patchRamdisk(pc, info, &data, &error)) {
                     // Just ignore for now
                 }
             } else {
                 // If the file contains the boot image magic string, then
                 // assume it really is a boot image and patch it
                 if (BootImage::isValid(data.data(), data.size())) {
-                    if (!patchBootImage(&data)) {
+                    if (!patchBootImage(pc, info, &data, &error)) {
                         return false;
                     }
                 }
@@ -624,6 +546,90 @@ void MultiBootPatcher::Impl::laProgressCb(uint64_t bytes, void *userData)
     impl->updateProgress(impl->bytes + bytes, impl->maxBytes);
 }
 
+bool MultiBootPatcher::patchRamdisk(PatcherConfig * const pc,
+                                    const FileInfo * const info,
+                                    std::vector<unsigned char> *data,
+                                    ErrorCode *errorOut)
+{
+    // Load the ramdisk cpio
+    CpioFile cpio;
+    if (!cpio.load(*data)) {
+        if (errorOut) {
+            *errorOut = cpio.error();
+        }
+        return false;
+    }
+
+    std::string rpId = info->device()->id() + "/default";
+    auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
+    if (!rp) {
+        rpId = "default";
+        rp = pc->createRamdiskPatcher(rpId, info, &cpio);
+    }
+    if (!rp) {
+        if (errorOut) {
+            *errorOut = ErrorCode::RamdiskPatcherCreateError;
+        }
+        return false;
+    }
+
+    if (!rp->patchRamdisk()) {
+        if (errorOut) {
+            *errorOut = rp->error();
+        }
+        pc->destroyRamdiskPatcher(rp);
+        return false;
+    }
+
+    pc->destroyRamdiskPatcher(rp);
+
+    std::vector<unsigned char> newRamdisk;
+    if (!cpio.createData(&newRamdisk)) {
+        if (errorOut) {
+            *errorOut = cpio.error();
+        }
+        return false;
+    }
+
+    data->swap(newRamdisk);
+
+    return true;
+}
+
+bool MultiBootPatcher::patchBootImage(PatcherConfig * const pc,
+                                      const FileInfo * const info,
+                                      std::vector<unsigned char> *data,
+                                      ErrorCode *errorOut)
+{
+    BootImage bi;
+    if (!bi.load(*data)) {
+        if (errorOut) {
+            *errorOut = bi.error();
+        }
+        return false;
+    }
+
+    // Release memory since BootImage keeps a copy of the separate components
+    data->clear();
+    data->shrink_to_fit();
+
+    std::vector<unsigned char> ramdiskImage = bi.ramdiskImage();
+    if (!patchRamdisk(pc, info, &ramdiskImage, errorOut)) {
+        return false;
+    }
+
+    bi.setRamdiskImage(std::move(ramdiskImage));
+
+    if (!bi.create(data)) {
+        if (errorOut) {
+            *errorOut = bi.error();
+        }
+        return false;
+    }
+
+    return true;
+}
+
 template<typename SomeType, typename Predicate>
 inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
                                     std::vector<std::string> &list2,
@@ -639,7 +645,7 @@ inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
     return max;
 }
 
-std::string MultiBootPatcher::Impl::createTable()
+std::string MultiBootPatcher::createTable(const PatcherConfig * const pc)
 {
     std::string out;
 
@@ -706,7 +712,9 @@ std::string MultiBootPatcher::Impl::createTable()
     return out;
 }
 
-std::string MultiBootPatcher::Impl::createInfoProp()
+std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
+                                             const Device * const device,
+                                             const std::string &romId)
 {
     std::string out;
 
@@ -745,10 +753,10 @@ std::string MultiBootPatcher::Impl::createInfoProp()
 "# Supported devices:\n"
 "#\n";
 
-    out += createTable();
+    out += createTable(pc);
     out += "#\n";
     out += "mbtool.installer.device=";
-    out += info->device()->id();
+    out += device->id();
     out += "\n";
 
     out +=
@@ -776,7 +784,7 @@ std::string MultiBootPatcher::Impl::createInfoProp()
 "#\n";
 
     out += "mbtool.installer.install-location=";
-    out += info->romId();
+    out += romId;
     out += "\n\n";
 
     return out;

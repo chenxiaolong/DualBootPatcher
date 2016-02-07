@@ -75,6 +75,7 @@ set(MBP_PATCHER_SOURCES
     # Patchers
     patchers/mbtoolupdater.cpp
     patchers/multibootpatcher.cpp
+    patchers/odinpatcher.cpp
     # Ramdisk patchers
     ramdiskpatchers/core.cpp
     ramdiskpatchers/default.cpp

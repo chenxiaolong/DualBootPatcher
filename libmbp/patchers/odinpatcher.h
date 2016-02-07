@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -28,11 +28,11 @@
 namespace mbp
 {
 
-class MultiBootPatcher : public Patcher
+class OdinPatcher : public Patcher
 {
 public:
-    explicit MultiBootPatcher(PatcherConfig * const pc);
-    ~MultiBootPatcher();
+    explicit OdinPatcher(PatcherConfig * const pc);
+    ~OdinPatcher();
 
     static const std::string Id;
 
@@ -50,20 +50,6 @@ public:
                            void *userData) override;
 
     virtual void cancelPatching() override;
-
-    static bool patchRamdisk(PatcherConfig * const pc,
-                             const FileInfo * const info,
-                             std::vector<unsigned char> *data,
-                             ErrorCode *errorOut);
-    static bool patchBootImage(PatcherConfig * const pc,
-                               const FileInfo * const info,
-                               std::vector<unsigned char> *data,
-                               ErrorCode *errorOut);
-
-    static std::string createTable(const PatcherConfig * const pc);
-    static std::string createInfoProp(const PatcherConfig * const pc,
-                                      const Device * const device,
-                                      const std::string &romId);
 
 private:
     class Impl;

@@ -48,6 +48,7 @@
 #ifndef LIBMBP_MINI
 #include "patchers/mbtoolupdater.h"
 #include "patchers/multibootpatcher.h"
+#include "patchers/odinpatcher.h"
 #include "autopatchers/standardpatcher.h"
 #include "autopatchers/xposedpatcher.h"
 #include "ramdiskpatchers/default.h"
@@ -230,8 +231,9 @@ void PatcherConfig::Impl::loadDefaultDevices()
 std::vector<std::string> PatcherConfig::patchers() const
 {
     return {
+        MbtoolUpdater::Id,
         MultiBootPatcher::Id,
-        MbtoolUpdater::Id
+        OdinPatcher::Id
     };
 }
 
@@ -276,6 +278,8 @@ Patcher * PatcherConfig::createPatcher(const std::string &id)
         p = new MbtoolUpdater(this);
     } else if (id == MultiBootPatcher::Id) {
         p = new MultiBootPatcher(this);
+    } else if (id == OdinPatcher::Id) {
+        p = new OdinPatcher(this);
     }
 
     if (p != nullptr) {
