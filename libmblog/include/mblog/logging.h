@@ -26,17 +26,17 @@
 #include "mblog/base_logger.h"
 #include "mblog/log_level.h"
 
-#define LOGE(...) mb::log::log(mb::log::LogLevel::ERROR, __VA_ARGS__)
-#define LOGW(...) mb::log::log(mb::log::LogLevel::WARNING, __VA_ARGS__)
-#define LOGI(...) mb::log::log(mb::log::LogLevel::INFO, __VA_ARGS__)
-#define LOGD(...) mb::log::log(mb::log::LogLevel::DEBUG, __VA_ARGS__)
-#define LOGV(...) mb::log::log(mb::log::LogLevel::VERBOSE, __VA_ARGS__)
+#define LOGE(...) mb::log::log(mb::log::LogLevel::Error, __VA_ARGS__)
+#define LOGW(...) mb::log::log(mb::log::LogLevel::Warning, __VA_ARGS__)
+#define LOGI(...) mb::log::log(mb::log::LogLevel::Info, __VA_ARGS__)
+#define LOGD(...) mb::log::log(mb::log::LogLevel::Debug, __VA_ARGS__)
+#define LOGV(...) mb::log::log(mb::log::LogLevel::Verbose, __VA_ARGS__)
 
-#define VLOGE(...) mb::log::logv(mb::log::LogLevel::ERROR, __VA_ARGS__)
-#define VLOGW(...) mb::log::logv(mb::log::LogLevel::WARNING, __VA_ARGS__)
-#define VLOGI(...) mb::log::logv(mb::log::LogLevel::INFO, __VA_ARGS__)
-#define VLOGD(...) mb::log::logv(mb::log::LogLevel::DEBUG, __VA_ARGS__)
-#define VLOGV(...) mb::log::logv(mb::log::LogLevel::VERBOSE, __VA_ARGS__)
+#define VLOGE(...) mb::log::logv(mb::log::LogLevel::Error, __VA_ARGS__)
+#define VLOGW(...) mb::log::logv(mb::log::LogLevel::Warning, __VA_ARGS__)
+#define VLOGI(...) mb::log::logv(mb::log::LogLevel::Info, __VA_ARGS__)
+#define VLOGD(...) mb::log::logv(mb::log::LogLevel::Debug, __VA_ARGS__)
+#define VLOGV(...) mb::log::logv(mb::log::LogLevel::Verbose, __VA_ARGS__)
 
 namespace mb
 {

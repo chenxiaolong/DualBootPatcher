@@ -25,11 +25,11 @@ namespace log
 {
 
 enum class LogLevel {
-    ERROR,
-    WARNING,
-    INFO,
-    DEBUG,
-    VERBOSE
+    Error,
+    Warning,
+    Info,
+    Debug,
+    Verbose
 };
 
 }

@@ -46,19 +46,19 @@ void StdioLogger::log(LogLevel prio, const char *fmt, va_list ap)
     const char *stdprio = "";
 
     switch (prio) {
-    case LogLevel::ERROR:
+    case LogLevel::Error:
         stdprio = STDLOG_LEVEL_ERROR;
         break;
-    case LogLevel::WARNING:
+    case LogLevel::Warning:
         stdprio = STDLOG_LEVEL_WARNING;
         break;
-    case LogLevel::INFO:
+    case LogLevel::Info:
         stdprio = STDLOG_LEVEL_INFO;
         break;
-    case LogLevel::DEBUG:
+    case LogLevel::Debug:
         stdprio = STDLOG_LEVEL_DEBUG;
         break;
-    case LogLevel::VERBOSE:
+    case LogLevel::Verbose:
         stdprio = STDLOG_LEVEL_VERBOSE;
         break;
     }

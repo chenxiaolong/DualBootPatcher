@@ -78,19 +78,19 @@ void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
     const char *kprio = KMSG_LEVEL_DEFAULT;
 
     switch (prio) {
-    case LogLevel::ERROR:
+    case LogLevel::Error:
         kprio = KMSG_LEVEL_ERROR;
         break;
-    case LogLevel::WARNING:
+    case LogLevel::Warning:
         kprio = KMSG_LEVEL_WARNING;
         break;
-    case LogLevel::INFO:
+    case LogLevel::Info:
         kprio = KMSG_LEVEL_INFO;
         break;
-    case LogLevel::DEBUG:
+    case LogLevel::Debug:
         kprio = KMSG_LEVEL_DEBUG;
         break;
-    case LogLevel::VERBOSE:
+    case LogLevel::Verbose:
         kprio = KMSG_LEVEL_DEFAULT;
         break;
     }

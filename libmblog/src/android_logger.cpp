@@ -33,19 +33,19 @@ void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
     int logcatprio;
 
     switch (prio) {
-    case LogLevel::ERROR:
+    case LogLevel::Error:
         logcatprio = ANDROID_LOG_ERROR;
         break;
-    case LogLevel::WARNING:
+    case LogLevel::Warning:
         logcatprio = ANDROID_LOG_WARN;
         break;
-    case LogLevel::INFO:
+    case LogLevel::Info:
         logcatprio = ANDROID_LOG_INFO;
         break;
-    case LogLevel::DEBUG:
+    case LogLevel::Debug:
         logcatprio = ANDROID_LOG_DEBUG;
         break;
-    case LogLevel::VERBOSE:
+    case LogLevel::Verbose:
         logcatprio = ANDROID_LOG_VERBOSE;
         break;
     default:
