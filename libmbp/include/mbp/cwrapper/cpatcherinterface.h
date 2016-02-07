@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "mbcommon/common.h"
 #include "mbp/cwrapper/ctypes.h"
 
 #ifdef __cplusplus
@@ -33,27 +34,27 @@ typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*DetailsUpdatedCallback) (const char *, void *);
 
-/* enum ErrorCode */ int mbp_patcher_error(const CPatcher *patcher);
-char * mbp_patcher_id(const CPatcher *patcher);
-void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
-bool mbp_patcher_patch_file(CPatcher *patcher,
-                            ProgressUpdatedCallback progressCb,
-                            FilesUpdatedCallback filesCb,
-                            DetailsUpdatedCallback detailsCb,
-                            void *userData);
-void mbp_patcher_cancel_patching(CPatcher *patcher);
+MB_EXPORT /* enum ErrorCode */ int mbp_patcher_error(const CPatcher *patcher);
+MB_EXPORT char * mbp_patcher_id(const CPatcher *patcher);
+MB_EXPORT void mbp_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info);
+MB_EXPORT bool mbp_patcher_patch_file(CPatcher *patcher,
+                                      ProgressUpdatedCallback progressCb,
+                                      FilesUpdatedCallback filesCb,
+                                      DetailsUpdatedCallback detailsCb,
+                                      void *userData);
+MB_EXPORT void mbp_patcher_cancel_patching(CPatcher *patcher);
 
 
-/* enum ErrorCode */ int mbp_autopatcher_error(const CAutoPatcher *patcher);
-char * mbp_autopatcher_id(const CAutoPatcher *patcher);
-char ** mbp_autopatcher_new_files(const CAutoPatcher *patcher);
-char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher);
-bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
+MB_EXPORT /* enum ErrorCode */ int mbp_autopatcher_error(const CAutoPatcher *patcher);
+MB_EXPORT char * mbp_autopatcher_id(const CAutoPatcher *patcher);
+MB_EXPORT char ** mbp_autopatcher_new_files(const CAutoPatcher *patcher);
+MB_EXPORT char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher);
+MB_EXPORT bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
 
-/* enum ErrorCode */ int mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);
-char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher);
-bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
+MB_EXPORT /* enum ErrorCode */ int mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);
+MB_EXPORT char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher);
+MB_EXPORT bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
 
 
 #ifdef __cplusplus

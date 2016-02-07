@@ -22,45 +22,46 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "mbcommon/common.h"
 #include "mbp/cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-CCpioFile * mbp_cpiofile_create(void);
-void mbp_cpiofile_destroy(CCpioFile *cpio);
+MB_EXPORT CCpioFile * mbp_cpiofile_create(void);
+MB_EXPORT void mbp_cpiofile_destroy(CCpioFile *cpio);
 
-/* enum ErrorCode */ int mbp_cpiofile_error(const CCpioFile *cpio);
+MB_EXPORT /* enum ErrorCode */ int mbp_cpiofile_error(const CCpioFile *cpio);
 
-bool mbp_cpiofile_load_data(CCpioFile *cpio,
-                            const unsigned char *data, size_t size);
+MB_EXPORT bool mbp_cpiofile_load_data(CCpioFile *cpio,
+                                      const unsigned char *data, size_t size);
 
-bool mbp_cpiofile_create_data(CCpioFile *cpio,
-                              unsigned char **data, size_t *size);
+MB_EXPORT bool mbp_cpiofile_create_data(CCpioFile *cpio,
+                                        unsigned char **data, size_t *size);
 
-bool mbp_cpiofile_exists(const CCpioFile *cpio,
-                         const char *filename);
-bool mbp_cpiofile_remove(CCpioFile *cpio,
-                         const char *filename);
+MB_EXPORT bool mbp_cpiofile_exists(const CCpioFile *cpio,
+                                   const char *filename);
+MB_EXPORT bool mbp_cpiofile_remove(CCpioFile *cpio,
+                                   const char *filename);
 
-char ** mbp_cpiofile_filenames(const CCpioFile *cpio);
+MB_EXPORT char ** mbp_cpiofile_filenames(const CCpioFile *cpio);
 
-bool mbp_cpiofile_contents(const CCpioFile *cpio,
-                           const char *filename,
-                           const unsigned char **data, size_t *size);
-bool mbp_cpiofile_set_contents(CCpioFile *cpio,
-                               const char *filename,
-                               const unsigned char *data, size_t size);
+MB_EXPORT bool mbp_cpiofile_contents(const CCpioFile *cpio,
+                                     const char *filename,
+                                     const unsigned char **data, size_t *size);
+MB_EXPORT bool mbp_cpiofile_set_contents(CCpioFile *cpio,
+                                         const char *filename,
+                                         const unsigned char *data, size_t size);
 
-bool mbp_cpiofile_add_symlink(CCpioFile *cpio,
-                              const char *source, const char *target);
-bool mbp_cpiofile_add_file(CCpioFile *cpio,
-                           const char *path, const char *name,
-                           unsigned int perms);
-bool mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
-                                     const unsigned char *data, size_t size,
-                                     const char *name, unsigned int perms);
+MB_EXPORT bool mbp_cpiofile_add_symlink(CCpioFile *cpio,
+                                        const char *source, const char *target);
+MB_EXPORT bool mbp_cpiofile_add_file(CCpioFile *cpio,
+                                     const char *path, const char *name,
+                                     unsigned int perms);
+MB_EXPORT bool mbp_cpiofile_add_file_from_data(CCpioFile *cpio,
+                                               const unsigned char *data, size_t size,
+                                               const char *name, unsigned int perms);
 
 #ifdef __cplusplus
 }

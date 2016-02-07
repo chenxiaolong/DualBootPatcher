@@ -19,12 +19,14 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void mbp_free(void *data);
-void mbp_free_array(void **array);
+MB_EXPORT void mbp_free(void *data);
+MB_EXPORT void mbp_free_array(void **array);
 
 #ifdef __cplusplus
 }

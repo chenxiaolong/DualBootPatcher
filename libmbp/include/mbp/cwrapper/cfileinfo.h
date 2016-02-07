@@ -19,26 +19,27 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
 #include "mbp/cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-CFileInfo * mbp_fileinfo_create(void);
-void mbp_fileinfo_destroy(CFileInfo *info);
+MB_EXPORT CFileInfo * mbp_fileinfo_create(void);
+MB_EXPORT void mbp_fileinfo_destroy(CFileInfo *info);
 
-char * mbp_fileinfo_input_path(const CFileInfo *info);
-void mbp_fileinfo_set_input_path(CFileInfo *info, const char *path);
+MB_EXPORT char * mbp_fileinfo_input_path(const CFileInfo *info);
+MB_EXPORT void mbp_fileinfo_set_input_path(CFileInfo *info, const char *path);
 
-char * mbp_fileinfo_output_path(const CFileInfo *info);
-void mbp_fileinfo_set_output_path(CFileInfo *info, const char *path);
+MB_EXPORT char * mbp_fileinfo_output_path(const CFileInfo *info);
+MB_EXPORT void mbp_fileinfo_set_output_path(CFileInfo *info, const char *path);
 
-CDevice * mbp_fileinfo_device(const CFileInfo *info);
-void mbp_fileinfo_set_device(CFileInfo *info, CDevice * device);
+MB_EXPORT CDevice * mbp_fileinfo_device(const CFileInfo *info);
+MB_EXPORT void mbp_fileinfo_set_device(CFileInfo *info, CDevice * device);
 
-char * mbp_fileinfo_rom_id(const CFileInfo *info);
-void mbp_fileinfo_set_rom_id(CFileInfo *info, const char *id);
+MB_EXPORT char * mbp_fileinfo_rom_id(const CFileInfo *info);
+MB_EXPORT void mbp_fileinfo_set_rom_id(CFileInfo *info, const char *id);
 
 #ifdef __cplusplus
 }

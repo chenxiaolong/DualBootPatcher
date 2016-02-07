@@ -19,41 +19,42 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
 #include "mbp/cwrapper/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-CDevice * mbp_device_create(void);
-void mbp_device_destroy(CDevice *device);
+MB_EXPORT CDevice * mbp_device_create(void);
+MB_EXPORT void mbp_device_destroy(CDevice *device);
 
-char * mbp_device_id(const CDevice *device);
-void mbp_device_set_id(CDevice *device, const char *id);
+MB_EXPORT char * mbp_device_id(const CDevice *device);
+MB_EXPORT void mbp_device_set_id(CDevice *device, const char *id);
 
-char ** mbp_device_codenames(const CDevice *device);
-void mbp_device_set_codenames(CDevice *device, const char **names);
+MB_EXPORT char ** mbp_device_codenames(const CDevice *device);
+MB_EXPORT void mbp_device_set_codenames(CDevice *device, const char **names);
 
-char * mbp_device_name(const CDevice *device);
-void mbp_device_set_name(CDevice *device, const char *name);
+MB_EXPORT char * mbp_device_name(const CDevice *device);
+MB_EXPORT void mbp_device_set_name(CDevice *device, const char *name);
 
-char * mbp_device_architecture(const CDevice *device);
-void mbp_device_set_architecture(CDevice *device, const char *arch);
+MB_EXPORT char * mbp_device_architecture(const CDevice *device);
+MB_EXPORT void mbp_device_set_architecture(CDevice *device, const char *arch);
 
-char ** mbp_device_block_dev_base_dirs(const CDevice *device);
-void mbp_device_set_block_dev_base_dirs(CDevice *device, const char **dirs);
-char ** mbp_device_system_block_devs(const CDevice *device);
-void mbp_device_set_system_block_devs(CDevice *device, const char **block_devs);
-char ** mbp_device_cache_block_devs(const CDevice *device);
-void mbp_device_set_cache_block_devs(CDevice *device, const char **block_devs);
-char ** mbp_device_data_block_devs(const CDevice *device);
-void mbp_device_set_data_block_devs(CDevice *device, const char **block_devs);
-char ** mbp_device_boot_block_devs(const CDevice *device);
-void mbp_device_set_boot_block_devs(CDevice *device, const char **block_devs);
-char ** mbp_device_recovery_block_devs(const CDevice *device);
-void mbp_device_set_recovery_block_devs(CDevice *device, const char **block_devs);
-char ** mbp_device_extra_block_devs(const CDevice *device);
-void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs);
+MB_EXPORT char ** mbp_device_block_dev_base_dirs(const CDevice *device);
+MB_EXPORT void mbp_device_set_block_dev_base_dirs(CDevice *device, const char **dirs);
+MB_EXPORT char ** mbp_device_system_block_devs(const CDevice *device);
+MB_EXPORT void mbp_device_set_system_block_devs(CDevice *device, const char **block_devs);
+MB_EXPORT char ** mbp_device_cache_block_devs(const CDevice *device);
+MB_EXPORT void mbp_device_set_cache_block_devs(CDevice *device, const char **block_devs);
+MB_EXPORT char ** mbp_device_data_block_devs(const CDevice *device);
+MB_EXPORT void mbp_device_set_data_block_devs(CDevice *device, const char **block_devs);
+MB_EXPORT char ** mbp_device_boot_block_devs(const CDevice *device);
+MB_EXPORT void mbp_device_set_boot_block_devs(CDevice *device, const char **block_devs);
+MB_EXPORT char ** mbp_device_recovery_block_devs(const CDevice *device);
+MB_EXPORT void mbp_device_set_recovery_block_devs(CDevice *device, const char **block_devs);
+MB_EXPORT char ** mbp_device_extra_block_devs(const CDevice *device);
+MB_EXPORT void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs);
 
 #ifdef __cplusplus
 }
