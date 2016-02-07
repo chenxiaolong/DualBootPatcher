@@ -604,7 +604,7 @@ bool tryMoveToChunkForOffset(SparseCtx *ctx, uint64_t offset)
     for (; ctx->chunk < ctx->shdr.total_chunks; ++ctx->chunk) {
         // If we don't have the chunk yet, then read it
         if (ctx->chunk >= ctx->chunks.size()) {
-            OPER("- Reading next chunk (#%zu)", ctx->chunk);
+            DEBUG("Reading next chunk (#%zu)", ctx->chunk);
 
             // Get starting offset for chunk in source file and starting
             // offset for data in the output file
