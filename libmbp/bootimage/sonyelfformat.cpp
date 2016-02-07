@@ -23,9 +23,11 @@
 #include <cinttypes>
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "bootimage-common.h"
 #include "bootimage/sonyelf.h"
-#include "private/logging.h"
+#include "private/stringutils.h"
 
 namespace mbp
 {
@@ -66,23 +68,23 @@ bool SonyElfFormat::isValid(const unsigned char *data, std::size_t size)
 static void dumpEhdr(const Sony_Elf32_Ehdr *hdr)
 {
     LOGD("ELF32 header:");
-    FLOGD("- e_ident:          %s",
-          StringUtils::toPrintable(hdr->e_ident, SONY_EI_NIDENT).c_str());
-    FLOGD("- e_unused:         %s",
-          StringUtils::toPrintable(hdr->e_unused, SONY_PADDING).c_str());
-    FLOGD("- e_type:           %" PRIu16, hdr->e_type);
-    FLOGD("- e_machine:        %" PRIu16, hdr->e_machine);
-    FLOGD("- e_version:        %" PRIu32, hdr->e_version);
-    FLOGD("- e_entry:          0x%08x",   hdr->e_entry);
-    FLOGD("- e_phoff:          0x%08x",   hdr->e_phoff);
-    FLOGD("- e_shoff:          0x%08x",   hdr->e_shoff);
-    FLOGD("- e_flags:          %" PRIu32, hdr->e_flags);
-    FLOGD("- e_ehsize:         %" PRIu16, hdr->e_ehsize);
-    FLOGD("- e_phentsize:      %" PRIu16, hdr->e_phentsize);
-    FLOGD("- e_phnum:          %" PRIu16, hdr->e_phnum);
-    FLOGD("- e_shentsize:      %" PRIu16, hdr->e_shentsize);
-    FLOGD("- e_shnum:          %" PRIu16, hdr->e_shnum);
-    FLOGD("- e_shstrndx:       %" PRIu16, hdr->e_shstrndx);
+    LOGD("- e_ident:          %s",
+         StringUtils::toPrintable(hdr->e_ident, SONY_EI_NIDENT).c_str());
+    LOGD("- e_unused:         %s",
+         StringUtils::toPrintable(hdr->e_unused, SONY_PADDING).c_str());
+    LOGD("- e_type:           %" PRIu16, hdr->e_type);
+    LOGD("- e_machine:        %" PRIu16, hdr->e_machine);
+    LOGD("- e_version:        %" PRIu32, hdr->e_version);
+    LOGD("- e_entry:          0x%08x",   hdr->e_entry);
+    LOGD("- e_phoff:          0x%08x",   hdr->e_phoff);
+    LOGD("- e_shoff:          0x%08x",   hdr->e_shoff);
+    LOGD("- e_flags:          %" PRIu32, hdr->e_flags);
+    LOGD("- e_ehsize:         %" PRIu16, hdr->e_ehsize);
+    LOGD("- e_phentsize:      %" PRIu16, hdr->e_phentsize);
+    LOGD("- e_phnum:          %" PRIu16, hdr->e_phnum);
+    LOGD("- e_shentsize:      %" PRIu16, hdr->e_shentsize);
+    LOGD("- e_shnum:          %" PRIu16, hdr->e_shnum);
+    LOGD("- e_shstrndx:       %" PRIu16, hdr->e_shstrndx);
 }
 
 static void dumpPhdr(const Sony_Elf32_Phdr *phdr, Elf32_Half n)
@@ -112,22 +114,22 @@ static void dumpPhdr(const Sony_Elf32_Phdr *phdr, Elf32_Half n)
         type = "unknown type";
     }
 
-    FLOGD("ELF32 program segment %u (%s):", n, type);
-    FLOGD("- p_type:           0x%08x",   phdr->p_type);
-    FLOGD("- p_offset:         %" PRIu32, phdr->p_offset);
-    FLOGD("- p_vaddr:          0x%08x",   phdr->p_vaddr);
-    FLOGD("- p_paddr:          0x%08x",   phdr->p_paddr);
-    FLOGD("- p_filesz:         %" PRIu32, phdr->p_filesz);
-    FLOGD("- p_memsz:          %" PRIu32, phdr->p_memsz);
-    FLOGD("- p_flags:          0x%08x",   phdr->p_flags);
-    FLOGD("- p_align:          %" PRIu32, phdr->p_align);
+    LOGD("ELF32 program segment %u (%s):", n, type);
+    LOGD("- p_type:           0x%08x",   phdr->p_type);
+    LOGD("- p_offset:         %" PRIu32, phdr->p_offset);
+    LOGD("- p_vaddr:          0x%08x",   phdr->p_vaddr);
+    LOGD("- p_paddr:          0x%08x",   phdr->p_paddr);
+    LOGD("- p_filesz:         %" PRIu32, phdr->p_filesz);
+    LOGD("- p_memsz:          %" PRIu32, phdr->p_memsz);
+    LOGD("- p_flags:          0x%08x",   phdr->p_flags);
+    LOGD("- p_align:          %" PRIu32, phdr->p_align);
 }
 
 bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
 {
     if (size < sizeof(Sony_Elf32_Ehdr)) {
-        FLOGE("ELF32 header exceeds size by %" PRIzu " bytes",
-              sizeof(Sony_Elf32_Ehdr) - size);
+        LOGE("ELF32 header exceeds size by %" PRIzu " bytes",
+             sizeof(Sony_Elf32_Ehdr) - size);
         return false;
     }
 
@@ -151,8 +153,8 @@ bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
 
     for (Elf32_Half i = 0; i < hdr->e_phnum; ++i) {
         if (offset + sizeof(Sony_Elf32_Phdr) > size) {
-            FLOGE("ELF32 program segment header exceeds size by %" PRIzu " bytes",
-                  offset + sizeof(Sony_Elf32_Phdr) - size);
+            LOGE("ELF32 program segment header exceeds size by %" PRIzu " bytes",
+                 offset + sizeof(Sony_Elf32_Phdr) - size);
             return false;
         }
 
@@ -162,8 +164,8 @@ bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
         offset += sizeof(Sony_Elf32_Phdr);
 
         if (phdr->p_offset + phdr->p_memsz > size) {
-            FLOGE("Program segment data exceeds size by %" PRIzu " bytes",
-                  phdr->p_offset + phdr->p_memsz - size);
+            LOGE("Program segment data exceeds size by %" PRIzu " bytes",
+                 phdr->p_offset + phdr->p_memsz - size);
             return false;
         }
 
@@ -220,7 +222,7 @@ bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
                     mI10e->sonySinHdr.data());
             sinPhdr->p_offset = 0;
         } else {
-            FLOGE("Invalid type and/or flags in ELF32 program segment header %u", i);
+            LOGE("Invalid type and/or flags in ELF32 program segment header %u", i);
             return false;
         }
     }
@@ -396,8 +398,8 @@ bool SonyElfFormat::createImage(std::vector<unsigned char> *dataOut)
     // Write sin header and image
     if (haveSin) {
         if (mI10e->sonySinHdr.size() != sizeof(Sony_Elf32_Phdr)) {
-            FLOGE("The specified sin header is not %" PRIzu " bytes",
-                  sizeof(Sony_Elf32_Phdr));
+            LOGE("The specified sin header is not %" PRIzu " bytes",
+                 sizeof(Sony_Elf32_Phdr));
             return false;
         }
 

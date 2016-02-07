@@ -24,14 +24,15 @@
 
 #include <cassert>
 
+#include "mblog/logging.h"
 #include "libmbpio/delete.h"
 
 #include "bootimage.h"
 #include "cpiofile.h"
 #include "patcherconfig.h"
 #include "private/fileutils.h"
-#include "private/logging.h"
 #include "private/miniziputils.h"
+#include "private/stringutils.h"
 
 // minizip
 #include "external/minizip/unzip.h"
@@ -391,7 +392,7 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
 
             if (!MinizipUtils::copyFileRaw(uf, zf, curFile,
                                            &laProgressCb, this)) {
-                FLOGW("minizip: Failed to copy raw data: %s", curFile.c_str());
+                LOGW("minizip: Failed to copy raw data: %s", curFile.c_str());
                 error = ErrorCode::ArchiveWriteDataError;
                 return false;
             }
@@ -451,7 +452,7 @@ bool MultiBootPatcher::Impl::pass2(const std::string &temporaryDir,
         }
 
         if (ret == ErrorCode::FileOpenError) {
-            FLOGW("File does not exist in temporary directory: %s", file.c_str());
+            LOGW("File does not exist in temporary directory: %s", file.c_str());
         } else if (ret != ErrorCode::NoError) {
             error = ret;
             return false;
@@ -470,8 +471,8 @@ bool MultiBootPatcher::Impl::openInputArchive()
     zInput = MinizipUtils::openInputFile(info->inputPath());
 
     if (!zInput) {
-        FLOGE("minizip: Failed to open for reading: %s",
-              info->inputPath().c_str());
+        LOGE("minizip: Failed to open for reading: %s",
+             info->inputPath().c_str());
         error = ErrorCode::ArchiveReadOpenError;
         return false;
     }
@@ -485,7 +486,7 @@ void MultiBootPatcher::Impl::closeInputArchive()
 
     int ret = MinizipUtils::closeInputFile(zInput);
     if (ret != UNZ_OK) {
-        FLOGW("minizip: Failed to close archive (error code: %d)", ret);
+        LOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
     zInput = nullptr;
@@ -498,8 +499,8 @@ bool MultiBootPatcher::Impl::openOutputArchive()
     zOutput = MinizipUtils::openOutputFile(info->outputPath());
 
     if (!zOutput) {
-        FLOGE("minizip: Failed to open for writing: %s",
-              info->outputPath().c_str());
+        LOGE("minizip: Failed to open for writing: %s",
+             info->outputPath().c_str());
         error = ErrorCode::ArchiveWriteOpenError;
         return false;
     }
@@ -513,7 +514,7 @@ void MultiBootPatcher::Impl::closeOutputArchive()
 
     int ret = MinizipUtils::closeOutputFile(zOutput);
     if (ret != ZIP_OK) {
-        FLOGW("minizip: Failed to close archive (error code: %d)", ret);
+        LOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
     zOutput = nullptr;

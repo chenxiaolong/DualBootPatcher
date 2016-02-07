@@ -23,8 +23,10 @@
 
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "bootimage.h"
-#include "private/logging.h"
+#include "private/stringutils.h"
 
 namespace mbp
 {
@@ -68,7 +70,7 @@ bool LokiFormat::loadImage(const unsigned char *data, std::size_t size)
         return false;
     }
 
-    FLOGD("Found Android boot image header at: %" PRIzu, headerIndex);
+    LOGD("Found Android boot image header at: %" PRIzu, headerIndex);
 
     if (!loadHeader(data, size, headerIndex)) {
         return false;
@@ -76,15 +78,15 @@ bool LokiFormat::loadImage(const unsigned char *data, std::size_t size)
 
     const LokiHeader *loki = reinterpret_cast<const LokiHeader *>(&data[0x400]);
 
-    FLOGD("Found Loki boot image header at 0x%x", 0x400);
-    FLOGD("- magic:             %s", StringUtils::toMaxString(
-          reinterpret_cast<const char *>(loki->magic), 4).c_str());
-    FLOGD("- recovery:          %u", loki->recovery);
-    FLOGD("- build:             %s",
-          StringUtils::toMaxString(loki->build, 128).c_str());
-    FLOGD("- orig_kernel_size:  %u", loki->orig_kernel_size);
-    FLOGD("- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
-    FLOGD("- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
+    LOGD("Found Loki boot image header at 0x%x", 0x400);
+    LOGD("- magic:             %s", StringUtils::toMaxString(
+         reinterpret_cast<const char *>(loki->magic), 4).c_str());
+    LOGD("- recovery:          %u", loki->recovery);
+    LOGD("- build:             %s",
+         StringUtils::toMaxString(loki->build, 128).c_str());
+    LOGD("- orig_kernel_size:  %u", loki->orig_kernel_size);
+    LOGD("- orig_ramdisk_size: %u", loki->orig_ramdisk_size);
+    LOGD("- ramdisk_addr:      0x%08x", loki->ramdisk_addr);
 
     if (loki->orig_kernel_size != 0
             && loki->orig_ramdisk_size != 0
@@ -173,15 +175,15 @@ bool LokiFormat::loadLokiOldImage(const unsigned char *data, std::size_t size,
     // The kernel tags address is invalid in the old loki images
     mI10e->tagsAddr =
             BootImage::AndroidDefaultBase + BootImage::AndroidDefaultTagsOffset;
-    FLOGD("Setting kernel tags address to default: 0x%08x", mI10e->tagsAddr);
+    LOGD("Setting kernel tags address to default: 0x%08x", mI10e->tagsAddr);
 
     uint32_t kernelSize;
     uint32_t ramdiskSize;
     uint32_t ramdiskAddr;
 
     if (size < mI10e->pageSize + 0x2c + sizeof(int32_t)) {
-        FLOGE("Kernel size field offset exceeds boot image size by %" PRIzu "bytes",
-              mI10e->pageSize + 0x2c + sizeof(int32_t) - size);
+        LOGE("Kernel size field offset exceeds boot image size by %" PRIzu "bytes",
+             mI10e->pageSize + 0x2c + sizeof(int32_t) - size);
         return false;
     }
 
@@ -190,7 +192,7 @@ bool LokiFormat::loadLokiOldImage(const unsigned char *data, std::size_t size,
     // The size is stored in the kernel image's header though, so we'll use that.
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
     kernelSize = *(reinterpret_cast<const int32_t *>(data + mI10e->pageSize + 0x2c));
-    FLOGD("Kernel size: %u", kernelSize);
+    LOGD("Kernel size: %u", kernelSize);
 
 
     // The ramdisk always comes after the kernel in boot images, so start the
@@ -268,20 +270,20 @@ uint32_t LokiFormat::lokiOldFindGzipOffset(const unsigned char *data, std::size_
         }
 
         if (data[curOffset + 3] == '\x08') {
-            FLOGD("Found a gzip header (flag 0x08) at 0x%x", curOffset);
+            LOGD("Found a gzip header (flag 0x08) at 0x%x", curOffset);
             offsetsFlag8.push_back(curOffset);
         } else if (data[curOffset + 3] == '\x00') {
-            FLOGD("Found a gzip header (flag 0x00) at 0x%x", curOffset);
+            LOGD("Found a gzip header (flag 0x00) at 0x%x", curOffset);
             offsetsFlag0.push_back(curOffset);
         } else {
-            FLOGW("Unexpected flag 0x%02x found in gzip header at 0x%x",
-                  static_cast<int32_t>(data[curOffset + 3]), curOffset);
+            LOGW("Unexpected flag 0x%02x found in gzip header at 0x%x",
+                 static_cast<int32_t>(data[curOffset + 3]), curOffset);
             continue;
         }
     }
 
-    FLOGD("Found %" PRIzu " total gzip headers",
-          offsetsFlag8.size() + offsetsFlag0.size());
+    LOGD("Found %" PRIzu " total gzip headers",
+         offsetsFlag8.size() + offsetsFlag0.size());
 
     uint32_t gzipOffset = 0;
 
@@ -300,7 +302,7 @@ uint32_t LokiFormat::lokiOldFindGzipOffset(const unsigned char *data, std::size_
         }
     }
 
-    FLOGD("Using offset 0x%x", gzipOffset);
+    LOGD("Using offset 0x%x", gzipOffset);
 
     return gzipOffset;
 }
@@ -338,10 +340,10 @@ uint32_t LokiFormat::lokiOldFindRamdiskSize(const unsigned char *data, std::size
     }
 
     if (!found) {
-        FLOGD("Ramdisk size: %u (may include some padding)", ramdiskSize);
+        LOGD("Ramdisk size: %u (may include some padding)", ramdiskSize);
     } else {
         ramdiskSize = location - ramdiskOffset;
-        FLOGD("Ramdisk size: %u (with padding removed)", ramdiskSize);
+        LOGD("Ramdisk size: %u (with padding removed)", ramdiskSize);
     }
 
     return ramdiskSize;
@@ -368,11 +370,11 @@ uint32_t LokiFormat::lokiFindRamdiskAddress(const unsigned char *data, std::size
             return 0;
         }
 
-        FLOGD("Original ramdisk address: 0x%08x", ramdiskAddr);
+        LOGD("Original ramdisk address: 0x%08x", ramdiskAddr);
     } else {
         // Otherwise, use the default for jflte
         ramdiskAddr = mI10e->kernelAddr - 0x00008000 + 0x02000000;
-        FLOGD("Default ramdisk address: 0x%08x", ramdiskAddr);
+        LOGD("Default ramdisk address: 0x%08x", ramdiskAddr);
     }
 
     return ramdiskAddr;

@@ -21,9 +21,10 @@
 
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "edify/tokenizer.h"
 #include "private/fileutils.h"
-#include "private/logging.h"
 #include "private/stringutils.h"
 
 #define DUMP_DEBUG 0
@@ -201,8 +202,8 @@ replaceFunction(std::vector<EdifyToken *> *tokens,
     bool result = EdifyTokenizer::tokenize(
             replacement.data(), replacement.size(), &replacementTokens);
     if (!result) {
-        FLOGE("Failed to tokenize replacement function string: %s",
-              replacement.c_str());
+        LOGE("Failed to tokenize replacement function string: %s",
+             replacement.c_str());
         return tokens->end();
     }
 

@@ -11,6 +11,8 @@ include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
 
+include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
@@ -24,7 +26,6 @@ set(MBP_CORE_SOURCES
     device.cpp
     patcherconfig.cpp
     private/fileutils.cpp
-    private/logging.cpp
     private/miniziputils.cpp
     private/stringutils.cpp
     bootimage/androidformat.cpp
@@ -173,6 +174,7 @@ else()
 
     target_link_libraries(mbp
         mbpio
+        mblog
         ${MBP_ZLIB_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}
@@ -225,4 +227,5 @@ ExternalProject_Add_Step(
 add_dependencies(
     mbp-static-android
     mbpio-android
+    mblog-android
 )

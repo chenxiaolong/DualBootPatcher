@@ -31,6 +31,8 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "mblog/logging.h"
+
 #include "libmbpio/delete.h"
 
 #include "bootimage.h"
@@ -38,7 +40,6 @@
 #include "patcherconfig.h"
 #include "patchers/multibootpatcher.h"
 #include "private/fileutils.h"
-#include "private/logging.h"
 #include "private/miniziputils.h"
 
 // minizip
@@ -176,20 +177,20 @@ bool OdinPatcher::Impl::patchTar()
     // Get file size for progress information
     io::File file;
     if (!file.open(info->inputPath(), io::File::OpenRead)) {
-        FLOGE("%s: Failed to open: %s", info->inputPath().c_str(),
-              file.errorString().c_str());
+        LOGE("%s: Failed to open: %s", info->inputPath().c_str(),
+             file.errorString().c_str());
         error = ErrorCode::FileOpenError;
         return false;
     }
     if (!file.seek(0, io::File::SeekEnd)) {
-        FLOGE("%s: Failed to seek: %s", info->inputPath().c_str(),
-              file.errorString().c_str());
+        LOGE("%s: Failed to seek: %s", info->inputPath().c_str(),
+             file.errorString().c_str());
         error = ErrorCode::FileReadError;
         return false;
     }
     if (!file.tell(&maxBytes)) {
-        FLOGE("%s: Failed to get position: %s", info->inputPath().c_str(),
-              file.errorString().c_str());
+        LOGE("%s: Failed to get position: %s", info->inputPath().c_str(),
+             file.errorString().c_str());
         error = ErrorCode::FileReadError;
         return false;
     }
@@ -320,14 +321,14 @@ bool OdinPatcher::Impl::processContents()
 
         const char *name = archive_entry_pathname(entry);
         if (strcmp(name, "boot.img") == 0) {
-            FLOGD("Handling boot.img");
+            LOGD("Handling boot.img");
 
             // Boot images should never be over about 30 MiB. This check is here
             // so the patcher won't try to read a multi-gigabyte system image
             // into RAM
             la_int64_t size = archive_entry_size(entry);
             if (size > 30 * 1024 * 1024) {
-                FLOGE("Boot image exceeds 30 MiB: %" PRId64, size);
+                LOGE("Boot image exceeds 30 MiB: %" PRId64, size);
                 error = ErrorCode::BootImageTooLargeError;
                 return false;
             }
@@ -342,8 +343,8 @@ bool OdinPatcher::Impl::processContents()
                 data.insert(data.end(), buf, buf + n);
             }
             if (n != 0) {
-                FLOGE("libarchive: Failed to read data: %s",
-                      archive_error_string(aInput));
+                LOGE("libarchive: Failed to read data: %s",
+                     archive_error_string(aInput));
                 error = ErrorCode::ArchiveReadDataError;
                 return false;
             }
@@ -362,16 +363,16 @@ bool OdinPatcher::Impl::processContents()
         } else if (strcmp(name, "cache.img.ext4") != 0
                 && strcmp(name, "system.img.ext4") != 0) {
             if (archive_read_data_skip(aInput) != ARCHIVE_OK) {
-                FLOGE("libarchive: Failed to skip data: %s",
-                      archive_error_string(aInput));
+                LOGE("libarchive: Failed to skip data: %s",
+                     archive_error_string(aInput));
                 error = ErrorCode::ArchiveReadDataError;
                 return false;
             }
-            FLOGD("Skipping %s", name);
+            LOGD("Skipping %s", name);
             continue;
         }
 
-        FLOGD("Handling %s", name);
+        LOGD("Handling %s", name);
 
         // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
         int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
@@ -395,8 +396,8 @@ bool OdinPatcher::Impl::processContents()
             zip64                  // zip64
         );
         if (mzRet != ZIP_OK) {
-            FLOGE("minizip: Failed to open new file in output zip: %s",
-                  MinizipUtils::zipErrorString(mzRet).c_str());
+            LOGE("minizip: Failed to open new file in output zip: %s",
+                 MinizipUtils::zipErrorString(mzRet).c_str());
             error = ErrorCode::ArchiveWriteHeaderError;
             return false;
         }
@@ -408,16 +409,16 @@ bool OdinPatcher::Impl::processContents()
 
             mzRet = zipWriteInFileInZip(zf, buf, nRead);
             if (mzRet != ZIP_OK) {
-                FLOGE("minizip: Failed to write %s in output zip: %s",
-                      name, MinizipUtils::zipErrorString(mzRet).c_str());
+                LOGE("minizip: Failed to write %s in output zip: %s",
+                     name, MinizipUtils::zipErrorString(mzRet).c_str());
                 error = ErrorCode::ArchiveWriteDataError;
                 zipCloseFileInZip(zf);
                 return false;
             }
         }
         if (nRead != 0) {
-            FLOGE("libarchive: Failed to read %s: %s",
-                  name, archive_error_string(aInput));
+            LOGE("libarchive: Failed to read %s: %s",
+                 name, archive_error_string(aInput));
             error = ErrorCode::ArchiveReadDataError;
             zipCloseFileInZip(zf);
             return false;
@@ -426,16 +427,16 @@ bool OdinPatcher::Impl::processContents()
         // Close file in output zip
         mzRet = zipCloseFileInZip(zf);
         if (mzRet != ZIP_OK) {
-            FLOGE("minizip: Failed to close file in output zip: %s",
-                  MinizipUtils::zipErrorString(mzRet).c_str());
+            LOGE("minizip: Failed to close file in output zip: %s",
+                 MinizipUtils::zipErrorString(mzRet).c_str());
             error = ErrorCode::ArchiveWriteDataError;
             return false;
         }
     }
 
     if (laRet != ARCHIVE_EOF) {
-        FLOGE("libarchive: Failed to read header: %s",
-              archive_error_string(aInput));
+        LOGE("libarchive: Failed to read header: %s",
+             archive_error_string(aInput));
         error = ErrorCode::ArchiveReadHeaderError;
         return false;
     }
@@ -463,8 +464,8 @@ bool OdinPatcher::Impl::openInputArchive()
     int ret = archive_read_open2(aInput, this, &Impl::laOpenCb, &Impl::laReadCb,
                                  &Impl::laSkipCb, &Impl::laCloseCb);
     if (ret != ARCHIVE_OK) {
-        FLOGW("libarchive: Failed to open for reading: %s",
-              archive_error_string(aInput));
+        LOGW("libarchive: Failed to open for reading: %s",
+             archive_error_string(aInput));
         archive_read_free(aInput);
         aInput = nullptr;
         error = ErrorCode::ArchiveReadOpenError;
@@ -481,8 +482,8 @@ bool OdinPatcher::Impl::closeInputArchive()
     bool ret = true;
 
     if (archive_read_close(aInput) != ARCHIVE_OK) {
-        FLOGW("libarchive: Failed to close archive: %s",
-              archive_error_string(aInput));
+        LOGW("libarchive: Failed to close archive: %s",
+             archive_error_string(aInput));
         // Don't clobber previous error
         //error = ErrorCode::ArchiveCloseError;
         ret = false;
@@ -500,8 +501,8 @@ bool OdinPatcher::Impl::openOutputArchive()
     zOutput = MinizipUtils::openOutputFile(info->outputPath());
 
     if (!zOutput) {
-        FLOGE("minizip: Failed to open for writing: %s",
-              info->outputPath().c_str());
+        LOGE("minizip: Failed to open for writing: %s",
+             info->outputPath().c_str());
         error = ErrorCode::ArchiveWriteOpenError;
         return false;
     }
@@ -515,8 +516,8 @@ bool OdinPatcher::Impl::closeOutputArchive()
 
     int ret = MinizipUtils::closeOutputFile(zOutput);
     if (ret != ZIP_OK) {
-        FLOGW("minizip: Failed to close archive: %s",
-              MinizipUtils::zipErrorString(ret).c_str());
+        LOGW("minizip: Failed to close archive: %s",
+             MinizipUtils::zipErrorString(ret).c_str());
         // Don't clobber previous error
         //error = ErrorCode::ArchiveCloseError;
         return false;
@@ -564,8 +565,8 @@ la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,
         impl->bytes += bytesRead;
         impl->updateProgress(impl->bytes, impl->maxBytes);
     } else {
-        FLOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
-              impl->laFile.errorString().c_str());
+        LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
+             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileReadError;
     }
     return ret ? (la_ssize_t) bytesRead : -1;
@@ -581,8 +582,8 @@ la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
         impl->bytes += request;
         impl->updateProgress(impl->bytes, impl->maxBytes);
     } else {
-        FLOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
-              impl->laFile.errorString().c_str());
+        LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
+             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileSeekError;
     }
     return ret ? request : -1;
@@ -594,8 +595,8 @@ int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
     Impl *impl = static_cast<Impl *>(userdata);
     bool ret = impl->laFile.open(impl->info->inputPath(), io::File::OpenRead);
     if (!ret) {
-        FLOGE("%s: Failed to open: %s", impl->info->inputPath().c_str(),
-              impl->laFile.errorString().c_str());
+        LOGE("%s: Failed to open: %s", impl->info->inputPath().c_str(),
+             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileOpenError;
     }
     return ret ? 0 : -1;
@@ -607,8 +608,8 @@ int OdinPatcher::Impl::laCloseCb(archive *a, void *userdata)
     Impl *impl = static_cast<Impl *>(userdata);
     bool ret = impl->laFile.close();
     if (!ret) {
-        FLOGE("%s: Failed to close: %s", impl->info->inputPath().c_str(),
-              impl->laFile.errorString().c_str());
+        LOGE("%s: Failed to close: %s", impl->info->inputPath().c_str(),
+             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileCloseError;
     }
     return ret ? 0 : -1;

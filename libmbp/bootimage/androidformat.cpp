@@ -21,9 +21,11 @@
 
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "bootimage-common.h"
 #include "external/sha.h"
-#include "private/logging.h"
+#include "private/stringutils.h"
 
 namespace mbp
 {
@@ -66,7 +68,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
         return false;
     }
 
-    FLOGD("Found Android boot image header at: %" PRIzu, headerIndex);
+    LOGD("Found Android boot image header at: %" PRIzu, headerIndex);
 
     if (!loadHeader(data, size, headerIndex)) {
         return false;
@@ -79,8 +81,8 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += sizeof(BootImageHeader);
     pos += skipPadding(sizeof(BootImageHeader), mI10e->pageSize);
     if (pos + mI10e->hdrKernelSize > size) {
-        FLOGE("Kernel image exceeds boot image size by %" PRIzu " bytes",
-              pos + mI10e->hdrKernelSize - size);
+        LOGE("Kernel image exceeds boot image size by %" PRIzu " bytes",
+             pos + mI10e->hdrKernelSize - size);
         return false;
     }
 
@@ -90,8 +92,8 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += mI10e->hdrKernelSize;
     pos += skipPadding(mI10e->hdrKernelSize, mI10e->pageSize);
     if (pos + mI10e->hdrRamdiskSize > size) {
-        FLOGE("Ramdisk image exceeds boot image size by %" PRIzu " bytes",
-              pos + mI10e->hdrRamdiskSize - size);
+        LOGE("Ramdisk image exceeds boot image size by %" PRIzu " bytes",
+             pos + mI10e->hdrRamdiskSize - size);
         return false;
     }
 
@@ -101,8 +103,8 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += mI10e->hdrRamdiskSize;
     pos += skipPadding(mI10e->hdrRamdiskSize, mI10e->pageSize);
     if (pos + mI10e->hdrSecondSize > size) {
-        FLOGE("Second bootloader image exceeds boot image size by %" PRIzu " bytes",
-              pos + mI10e->hdrSecondSize - size);
+        LOGE("Second bootloader image exceeds boot image size by %" PRIzu " bytes",
+             pos + mI10e->hdrSecondSize - size);
         return false;
     }
 
@@ -119,11 +121,11 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     if (pos + mI10e->hdrDtSize > size) {
         std::size_t diff = pos + mI10e->hdrDtSize - size;
 
-        FLOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
-        FLOGE("THIS BOOT IMAGE MAY NO LONGER BE BOOTABLE. YOU HAVE BEEN WARNED");
-        FLOGE("Device tree image exceeds boot image size by %" PRIzu
-              " bytes and HAS BEEN TRUNCATED", diff);
-        FLOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+        LOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
+        LOGE("THIS BOOT IMAGE MAY NO LONGER BE BOOTABLE. YOU HAVE BEEN WARNED");
+        LOGE("Device tree image exceeds boot image size by %" PRIzu
+             " bytes and HAS BEEN TRUNCATED", diff);
+        LOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
 
         mI10e->dtImage.assign(data + pos, data + pos + mI10e->hdrDtSize - diff);
     } else {
@@ -175,7 +177,7 @@ static void updateSha1Hash(BootImageHeader *hdr,
     std::string hexDigest = StringUtils::toHex(
             reinterpret_cast<const unsigned char *>(hdr->id), SHA_DIGEST_SIZE);
 
-    FLOGD("Computed new ID hash: %s", hexDigest.c_str());
+    LOGD("Computed new ID hash: %s", hexDigest.c_str());
 }
 
 bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
@@ -216,7 +218,7 @@ bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
     case 131072:
         break;
     default:
-        FLOGE("Invalid page size: %u", mI10e->pageSize);
+        LOGE("Invalid page size: %u", mI10e->pageSize);
         return false;
     }
 
@@ -309,8 +311,8 @@ bool AndroidFormat::loadHeader(const unsigned char *data, std::size_t size,
 {
     // Make sure the file is large enough to contain the header
     if (size < headerIndex + sizeof(BootImageHeader)) {
-        FLOGE("Boot image header exceeds size by %" PRIzu " bytes",
-              headerIndex + sizeof(BootImageHeader) - size);
+        LOGE("Boot image header exceeds size by %" PRIzu " bytes",
+             headerIndex + sizeof(BootImageHeader) - size);
         return false;
     }
 
@@ -328,7 +330,7 @@ bool AndroidFormat::loadHeader(const unsigned char *data, std::size_t size,
     case 131072:
         break;
     default:
-        FLOGE("Invalid page size: %u", hdr->page_size);
+        LOGE("Invalid page size: %u", hdr->page_size);
         return false;
     }
 
@@ -359,24 +361,24 @@ bool AndroidFormat::loadHeader(const unsigned char *data, std::size_t size,
 
 void AndroidFormat::dumpHeader(const BootImageHeader *hdr)
 {
-    FLOGD("- magic:        %s",
-          std::string(hdr->magic, hdr->magic + BOOT_MAGIC_SIZE).c_str());
-    FLOGD("- kernel_size:  %u",     hdr->kernel_size);
-    FLOGD("- kernel_addr:  0x%08x", hdr->kernel_addr);
-    FLOGD("- ramdisk_size: %u",     hdr->ramdisk_size);
-    FLOGD("- ramdisk_addr: 0x%08x", hdr->ramdisk_addr);
-    FLOGD("- second_size:  %u",     hdr->second_size);
-    FLOGD("- second_addr:  0x%08x", hdr->second_addr);
-    FLOGD("- tags_addr:    0x%08x", hdr->tags_addr);
-    FLOGD("- page_size:    %u",     hdr->page_size);
-    FLOGD("- dt_size:      %u",     hdr->dt_size);
-    FLOGD("- unused:       0x%08x", hdr->unused);
-    FLOGD("- name:         %s",     StringUtils::toMaxString(
-          reinterpret_cast<const char *>(hdr->name), BOOT_NAME_SIZE).c_str());
-    FLOGD("- cmdline:      %s",     StringUtils::toMaxString(
-          reinterpret_cast<const char *>(hdr->cmdline), BOOT_ARGS_SIZE).c_str());
-    FLOGD("- id:           %s",     StringUtils::toHex(
-          reinterpret_cast<const unsigned char *>(hdr->id), 32).c_str());
+    LOGD("- magic:        %s",
+         std::string(hdr->magic, hdr->magic + BOOT_MAGIC_SIZE).c_str());
+    LOGD("- kernel_size:  %u",     hdr->kernel_size);
+    LOGD("- kernel_addr:  0x%08x", hdr->kernel_addr);
+    LOGD("- ramdisk_size: %u",     hdr->ramdisk_size);
+    LOGD("- ramdisk_addr: 0x%08x", hdr->ramdisk_addr);
+    LOGD("- second_size:  %u",     hdr->second_size);
+    LOGD("- second_addr:  0x%08x", hdr->second_addr);
+    LOGD("- tags_addr:    0x%08x", hdr->tags_addr);
+    LOGD("- page_size:    %u",     hdr->page_size);
+    LOGD("- dt_size:      %u",     hdr->dt_size);
+    LOGD("- unused:       0x%08x", hdr->unused);
+    LOGD("- name:         %s",     StringUtils::toMaxString(
+         reinterpret_cast<const char *>(hdr->name), BOOT_NAME_SIZE).c_str());
+    LOGD("- cmdline:      %s",     StringUtils::toMaxString(
+         reinterpret_cast<const char *>(hdr->cmdline), BOOT_ARGS_SIZE).c_str());
+    LOGD("- id:           %s",     StringUtils::toHex(
+         reinterpret_cast<const unsigned char *>(hdr->id), 32).c_str());
 }
 
 }

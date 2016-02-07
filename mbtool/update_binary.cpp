@@ -25,8 +25,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <libmbp/logging.h>
-
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 
@@ -210,28 +208,6 @@ void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
     }
 }
 
-
-static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
-{
-    switch (prio) {
-    case mbp::LogLevel::Debug:
-        LOGD("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Error:
-        LOGE("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Info:
-        LOGI("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Verbose:
-        LOGV("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Warning:
-        LOGW("%s", msg.c_str());
-        break;
-    }
-}
-
 static void update_binary_usage(int error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -298,8 +274,6 @@ int update_binary_main(int argc, char *argv[])
 
     // stdout is messed up when it's appended to /tmp/recovery.log
     log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
-
-    mbp::setLogCallback(mbp_log_cb);
 
     RecoveryInstaller ri(zip_file, interface, output_fd);
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;

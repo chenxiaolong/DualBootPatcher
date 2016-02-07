@@ -37,8 +37,10 @@
 
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "bootimage/header.h"
-#include "private/logging.h"
+#include "private/stringutils.h"
 
 struct LokiTarget {
     const char *vendor;
@@ -135,7 +137,7 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
                              std::vector<unsigned char> aboot)
 {
     if (aboot.empty()) {
-        FLOGE("[Loki] Aboot image cannot be empty");
+        LOGE("[Loki] Aboot image cannot be empty");
         return false;
     }
 
@@ -192,8 +194,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
         return false;
     }
 
-    FLOGD("[Loki] Detected target %s %s build %s",
-          tgt->vendor, tgt->device, tgt->build);
+    LOGD("[Loki] Detected target %s %s build %s",
+         tgt->vendor, tgt->device, tgt->build);
 
     BootImageHeader *hdr = reinterpret_cast<BootImageHeader *>(data->data());
     LokiHeader *lokiHdr = reinterpret_cast<LokiHeader *>(data->data() + 0x400);
@@ -209,8 +211,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
     uint32_t origKernelSize = hdr->kernel_size;
     uint32_t origRamdiskSize = hdr->ramdisk_size;
 
-    FLOGD("[Loki] Original kernel address: 0x%08x", hdr->kernel_addr);
-    FLOGD("[Loki] Original ramdisk address: 0x%08x", hdr->ramdisk_addr);
+    LOGD("[Loki] Original kernel address: 0x%08x", hdr->kernel_addr);
+    LOGD("[Loki] Original ramdisk address: 0x%08x", hdr->ramdisk_addr);
 
     // Store the original values in unused fields of the header
     lokiHdr->orig_kernel_size = origKernelSize;
@@ -246,8 +248,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
     std::vector<unsigned char> newImage;
 
     if (pageSize > data->size()) {
-        FLOGE("[Loki] Header exceeds boot image size by %" PRIzu " bytes",
-              pageSize - data->size());
+        LOGE("[Loki] Header exceeds boot image size by %" PRIzu " bytes",
+             pageSize - data->size());
         return false;
     }
 
@@ -259,8 +261,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
     uint32_t pageKernelSize = (origKernelSize + pageMask) & ~pageMask;
 
     if (pageSize + pageKernelSize > data->size()) {
-        FLOGE("[Loki] Kernel exceeds boot image size by %" PRIzu " bytes",
-              pageSize + pageKernelSize - data->size());
+        LOGE("[Loki] Kernel exceeds boot image size by %" PRIzu " bytes",
+             pageSize + pageKernelSize - data->size());
         return false;
     }
 
@@ -272,8 +274,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
     uint32_t pageRamdiskSize = (origRamdiskSize + pageMask) & ~pageMask;
 
     if (pageSize + pageKernelSize + pageRamdiskSize > data->size()) {
-        FLOGE("[Loki] Ramdisk exceeds boot image size by %" PRIzu " bytes",
-              pageSize + pageKernelSize + pageRamdiskSize - data->size());
+        LOGE("[Loki] Ramdisk exceeds boot image size by %" PRIzu " bytes",
+             pageSize + pageKernelSize + pageRamdiskSize - data->size());
         return false;
     }
 
@@ -283,8 +285,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
                     data->data() + pageSize + pageKernelSize + pageRamdiskSize);
 
     if (tgt->check_sigs - abootBase - offset + fakeSize > aboot.size()) {
-        FLOGE("[Loki] Requested aboot segment exceeds aboot size by %" PRIzu " bytes",
-              tgt->check_sigs - abootBase - offset + fakeSize - aboot.size());
+        LOGE("[Loki] Requested aboot segment exceeds aboot size by %" PRIzu " bytes",
+             tgt->check_sigs - abootBase - offset + fakeSize - aboot.size());
         return false;
     }
 
@@ -300,8 +302,8 @@ bool LokiPatcher::patchImage(std::vector<unsigned char> *data,
         LOGD("[Loki] Writing device tree");
 
         if (pageSize + pageKernelSize + pageRamdiskSize + hdr->dt_size > data->size()) {
-            FLOGE("[Loki] Device tree image exceeds boot image size by %" PRIzu " bytes",
-                  pageSize + pageKernelSize + pageRamdiskSize + hdr->dt_size - data->size());
+            LOGE("[Loki] Device tree image exceeds boot image size by %" PRIzu " bytes",
+                 pageSize + pageKernelSize + pageRamdiskSize + hdr->dt_size - data->size());
             return false;
         }
 

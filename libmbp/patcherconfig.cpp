@@ -26,7 +26,6 @@
 #include "device.h"
 #include "patcherinterface.h"
 #include "private/fileutils.h"
-#include "private/logging.h"
 #include "version.h"
 
 // Devices

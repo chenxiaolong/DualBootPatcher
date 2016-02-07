@@ -23,6 +23,8 @@
 
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "libmbpio/file.h"
 
 #include "bootimage/androidformat.h"
@@ -32,7 +34,6 @@
 #include "bootimage/sonyelfformat.h"
 
 #include "private/fileutils.h"
-#include "private/logging.h"
 
 
 namespace mbp
@@ -298,8 +299,8 @@ bool BootImage::createFile(const std::string &path)
 {
     io::File file;
     if (!file.open(path, io::File::OpenWrite)) {
-        FLOGE("%s: Failed to open for writing: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to open for writing: %s",
+             path.c_str(), file.errorString().c_str());
 
         m_impl->error = ErrorCode::FileOpenError;
         return false;
@@ -312,8 +313,8 @@ bool BootImage::createFile(const std::string &path)
 
     uint64_t bytesWritten;
     if (!file.write(data.data(), data.size(), &bytesWritten)) {
-        FLOGE("%s: Failed to write file: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to write file: %s",
+             path.c_str(), file.errorString().c_str());
 
         m_impl->error = ErrorCode::FileWriteError;
         return false;

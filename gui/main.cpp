@@ -25,8 +25,6 @@
 
 #include <iostream>
 
-#include <libmbp/logging.h>
-
 #ifdef PORTABLE
 #  if defined(DATA_DIR)
 #    error DATA_DIR should not be defined for portable builds

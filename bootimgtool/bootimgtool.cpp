@@ -27,13 +27,14 @@
 
 #include <getopt.h>
 
+#include <mblog/logging.h>
+
 #include <libmbpio/directory.h>
 #include <libmbpio/error.h>
 #include <libmbpio/path.h>
 
 #include <libmbp/bootimage.h>
 #include <libmbp/errors.h>
-#include <libmbp/logging.h>
 
 
 typedef std::unique_ptr<std::FILE, int (*)(std::FILE *)> file_ptr;
@@ -254,18 +255,16 @@ static std::string error_to_string(const mbp::ErrorCode &error) {
     return std::string();
 }
 
-static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
+class BasicLogger : public mb::log::BaseLogger
 {
-    switch (prio) {
-    case mbp::LogLevel::Debug:
-    case mbp::LogLevel::Error:
-    case mbp::LogLevel::Info:
-    case mbp::LogLevel::Verbose:
-    case mbp::LogLevel::Warning:
-        printf("%s\n", msg.c_str());
-        break;
+public:
+    virtual void log(mb::log::LogLevel prio, const char *fmt, va_list ap) override
+    {
+        (void) prio;
+        vprintf(fmt, ap);
+        printf("\n");
     }
-}
+};
 
 __attribute__((format(printf, 2, 3)))
 static bool write_file_fmt(const std::string &path, const char *fmt, ...)
@@ -1875,7 +1874,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    mbp::setLogCallback(mbp_log_cb);
+    mb::log::log_set_logger(std::make_shared<BasicLogger>());
 
     std::string command(argv[1]);
     bool ret = false;

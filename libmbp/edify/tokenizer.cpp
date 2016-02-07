@@ -22,7 +22,9 @@
 #include <cassert>
 #include <cstring>
 
-#include "private/logging.h"
+#include "mblog/logging.h"
+
+#include "private/stringutils.h"
 
 namespace mbp
 {
@@ -469,7 +471,7 @@ bool EdifyTokenizer::nextToken(const char *data, std::size_t size,
             p += 1;
         }
         if (!terminated) {
-            FLOGE("Unterminated quote at position %zu", curPos);
+            LOGE("Unterminated quote at position %zu", curPos);
             return false;
         }
         *token = new EdifyTokenString(std::move(buf), EdifyTokenString::AlreadyQuoted);
@@ -565,7 +567,7 @@ void EdifyTokenizer::dump(const std::vector<EdifyToken *> &tokens)
         case EdifyTokenType::Unknown:    tokenName = "Unknown";    break;
         }
 
-        FLOGD("%" PRIzu ": %-20s: %s", i, tokenName, t->generate().c_str());
+        LOGD("%" PRIzu ": %-20s: %s", i, tokenName, t->generate().c_str());
     }
 }
 

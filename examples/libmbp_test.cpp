@@ -19,23 +19,21 @@
 
 #include <cassert>
 
-#include <libmbp/logging.h>
+#include <mblog/logging.h>
 #include <libmbp/patcherconfig.h>
 #include <libmbp/patcherinterface.h>
 
 
-static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
+class BasicLogger : public mb::log::BaseLogger
 {
-    switch (prio) {
-    case mbp::LogLevel::Debug:
-    case mbp::LogLevel::Error:
-    case mbp::LogLevel::Info:
-    case mbp::LogLevel::Verbose:
-    case mbp::LogLevel::Warning:
-        printf("%s\n", msg.c_str());
-        break;
+public:
+    virtual void log(mb::log::LogLevel prio, const char *fmt, va_list ap) override
+    {
+        (void) prio;
+        vprintf(fmt, ap);
+        printf("\n");
     }
-}
+};
 
 static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
 {
@@ -56,7 +54,7 @@ int main(int argc, char *argv[]) {
     const char *input_path = argv[4];
     const char *output_path = argv[5];
 
-    mbp::setLogCallback(mbp_log_cb);
+    mb::log::log_set_logger(std::make_shared<BasicLogger>());
 
     mbp::PatcherConfig pc;
     pc.setDataDirectory("data");

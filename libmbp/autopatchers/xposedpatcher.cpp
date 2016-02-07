@@ -22,7 +22,6 @@
 #include <cstring>
 
 #include "private/fileutils.h"
-#include "private/logging.h"
 #include "private/stringutils.h"
 
 

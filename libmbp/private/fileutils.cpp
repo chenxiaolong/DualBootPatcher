@@ -24,10 +24,10 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "libmbpio/file.h"
 #include "libmbpio/private/utf8.h"
-
-#include "private/logging.h"
 
 #ifdef _WIN32
 #include "private/win32.h"
@@ -53,8 +53,8 @@ ErrorCode FileUtils::readToMemory(const std::string &path,
 {
     io::File file;
     if (!file.open(path, io::File::OpenRead)) {
-        FLOGE("%s: Failed to open for reading: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to open for reading: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileOpenError;
     }
 
@@ -67,8 +67,8 @@ ErrorCode FileUtils::readToMemory(const std::string &path,
 
     uint64_t bytesRead;
     if (!file.read(data.data(), data.size(), &bytesRead) || bytesRead != size) {
-        FLOGE("%s: Failed to read file: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to read file: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileReadError;
     }
 
@@ -90,8 +90,8 @@ ErrorCode FileUtils::readToString(const std::string &path,
 {
     io::File file;
     if (!file.open(path, io::File::OpenRead)) {
-        FLOGE("%s: Failed to open for reading: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to open for reading: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileOpenError;
     }
 
@@ -105,8 +105,8 @@ ErrorCode FileUtils::readToString(const std::string &path,
 
     uint64_t bytesRead;
     if (!file.read(&data[0], size, &bytesRead) || bytesRead != size) {
-        FLOGE("%s: Failed to read file: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to read file: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileReadError;
     }
 
@@ -120,15 +120,15 @@ ErrorCode FileUtils::writeFromMemory(const std::string &path,
 {
     io::File file;
     if (!file.open(path, io::File::OpenWrite)) {
-        FLOGE("%s: Failed to open for writing: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to open for writing: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileOpenError;
     }
 
     uint64_t bytesWritten;
     if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
-        FLOGE("%s: Failed to write file: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to write file: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileWriteError;
     }
 
@@ -140,15 +140,15 @@ ErrorCode FileUtils::writeFromString(const std::string &path,
 {
     io::File file;
     if (!file.open(path, io::File::OpenWrite)) {
-        FLOGE("%s: Failed to open for writing: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to open for writing: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileOpenError;
     }
 
     uint64_t bytesWritten;
     if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
-        FLOGE("%s: Failed to write file: %s",
-              path.c_str(), file.errorString().c_str());
+        LOGE("%s: Failed to write file: %s",
+             path.c_str(), file.errorString().c_str());
         return ErrorCode::FileWriteError;
     }
 
@@ -241,8 +241,8 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
         CRYPT_VERIFYCONTEXT     // dwFlags
     );
     if (!ret) {
-        FLOGE("CryptAcquireContext() failed: %s",
-              win32ErrorToString(GetLastError()).c_str());
+        LOGE("CryptAcquireContext() failed: %s",
+             win32ErrorToString(GetLastError()).c_str());
         return std::string();
     }
 
@@ -262,8 +262,8 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
             (BYTE *) &v // pbBuffer
         );
         if (!ret) {
-            FLOGE("CryptGenRandom() failed: %s",
-                  win32ErrorToString(GetLastError()).c_str());
+            LOGE("CryptGenRandom() failed: %s",
+                 win32ErrorToString(GetLastError()).c_str());
             break;
         }
 
@@ -283,8 +283,8 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
             newPath = buf.data();
             break;
         } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
-            FLOGE("CreateDirectoryW() failed: %s",
-                  win32ErrorToString(GetLastError()).c_str());
+            LOGE("CreateDirectoryW() failed: %s",
+                 win32ErrorToString(GetLastError()).c_str());
             break;
         }
     } while (--tries);

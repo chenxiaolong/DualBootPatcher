@@ -10,6 +10,7 @@ TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
 
 include $(EXTERNAL_DIR)/minizip/Android.mk
+include @CMAKE_BINARY_DIR@/libmblog/Android.include.mk
 include @CMAKE_BINARY_DIR@/libmbpio/Android.include.mk
 include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
@@ -41,4 +42,5 @@ mbp_ldlibs := \
 	-llog
 
 mbp_static_libs := \
-	libmbpio
+	libmbpio \
+	libmblog

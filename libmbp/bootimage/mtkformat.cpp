@@ -21,10 +21,12 @@
 
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "bootimage-common.h"
 #include "bootimage/mtk.h"
 #include "external/sha.h"
-#include "private/logging.h"
+#include "private/stringutils.h"
 
 namespace mbp
 {
@@ -104,15 +106,15 @@ bool MtkFormat::isValid(const unsigned char *data, std::size_t size)
 
 void dumpMtkHeader(const MtkHeader *mtkHdr)
 {
-    FLOGD("MTK header:");
-    FLOGD("- magic:        %s",
-          StringUtils::toPrintable(mtkHdr->magic, MTK_MAGIC_SIZE).c_str());
-    FLOGD("- size:         %u", mtkHdr->size);
-    FLOGD("- type:         %s",
-          StringUtils::toMaxString(mtkHdr->type, MTK_TYPE_SIZE).c_str());
+    LOGD("MTK header:");
+    LOGD("- magic:        %s",
+         StringUtils::toPrintable(mtkHdr->magic, MTK_MAGIC_SIZE).c_str());
+    LOGD("- size:         %u", mtkHdr->size);
+    LOGD("- type:         %s",
+         StringUtils::toMaxString(mtkHdr->type, MTK_TYPE_SIZE).c_str());
     auto unusedUchar = reinterpret_cast<const unsigned char *>(mtkHdr->unused);
-    FLOGD("- unused:       %s",
-          StringUtils::toPrintable(unusedUchar, MTK_UNUSED_SIZE).c_str());
+    LOGD("- unused:       %s",
+         StringUtils::toPrintable(unusedUchar, MTK_UNUSED_SIZE).c_str());
 }
 
 bool MtkFormat::loadImage(const unsigned char *data, std::size_t size)
@@ -134,13 +136,13 @@ bool MtkFormat::loadImage(const unsigned char *data, std::size_t size)
 
             // Check size
             if (actual < expected) {
-                FLOGE("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
-                      expected, actual);
+                LOGE("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
+                     expected, actual);
                 return false;
             } else if (actual != expected) {
-                FLOGW("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
-                      expected, actual);
-                FLOGW("Repacked boot image will not be byte-for-byte identical to original");
+                LOGW("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
+                     expected, actual);
+                LOGW("Repacked boot image will not be byte-for-byte identical to original");
             }
 
             // Move header to mI10e->mtkKernelHdr
@@ -169,8 +171,8 @@ bool MtkFormat::loadImage(const unsigned char *data, std::size_t size)
 
             // Check size
             if (actual != expected) {
-                FLOGE("Expected %" PRIzu " byte ramdisk image, but have %" PRIzu " bytes",
-                      expected, actual);
+                LOGE("Expected %" PRIzu " byte ramdisk image, but have %" PRIzu " bytes",
+                     expected, actual);
                 return false;
             }
 
@@ -235,7 +237,7 @@ static void updateSha1Hash(BootImageHeader *hdr,
     std::string hexDigest = StringUtils::toHex(
             reinterpret_cast<const unsigned char *>(hdr->id), SHA_DIGEST_SIZE);
 
-    FLOGD("Computed new ID hash: %s", hexDigest.c_str());
+    LOGD("Computed new ID hash: %s", hexDigest.c_str());
 }
 
 bool MtkFormat::createImage(std::vector<unsigned char> *dataOut)
@@ -250,13 +252,13 @@ bool MtkFormat::createImage(std::vector<unsigned char> *dataOut)
 
     // Check header sizes
     if (hasKernelHdr && mI10e->mtkKernelHdr.size() != sizeof(MtkHeader)) {
-        FLOGE("Expected %" PRIzu " byte kernel MTK header, but have %" PRIzu " bytes",
-              sizeof(MtkHeader), mI10e->mtkKernelHdr.size());
+        LOGE("Expected %" PRIzu " byte kernel MTK header, but have %" PRIzu " bytes",
+             sizeof(MtkHeader), mI10e->mtkKernelHdr.size());
         return false;
     }
     if (hasRamdiskHdr && mI10e->mtkRamdiskHdr.size() != sizeof(MtkHeader)) {
-        FLOGE("Expected %" PRIzu " byte ramdisk MTK header, but have %" PRIzu " bytes",
-              sizeof(MtkHeader), mI10e->mtkRamdiskHdr.size());
+        LOGE("Expected %" PRIzu " byte ramdisk MTK header, but have %" PRIzu " bytes",
+             sizeof(MtkHeader), mI10e->mtkRamdiskHdr.size());
         return false;
     }
 
@@ -310,7 +312,7 @@ bool MtkFormat::createImage(std::vector<unsigned char> *dataOut)
     case 131072:
         break;
     default:
-        FLOGE("Invalid page size: %u", mI10e->pageSize);
+        LOGE("Invalid page size: %u", mI10e->pageSize);
         return false;
     }
 

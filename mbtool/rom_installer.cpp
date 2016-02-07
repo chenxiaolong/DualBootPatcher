@@ -28,7 +28,6 @@
 #include <unistd.h>
 
 #include <libmbp/bootimage.h>
-#include <libmbp/logging.h>
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
@@ -382,27 +381,6 @@ static bool patch_sepolicy()
     return true;
 }
 
-static void mbp_log_cb(mbp::LogLevel prio, const std::string &msg)
-{
-    switch (prio) {
-    case mbp::LogLevel::Debug:
-        LOGD("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Error:
-        LOGE("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Info:
-        LOGI("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Verbose:
-        LOGV("%s", msg.c_str());
-        break;
-    case mbp::LogLevel::Warning:
-        LOGW("%s", msg.c_str());
-        break;
-    }
-}
-
 static void rom_installer_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -553,9 +531,6 @@ int rom_installer_main(int argc, char *argv[])
 
     // mbtool logging
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
-
-    // libmbp logging
-    mbp::setLogCallback(mbp_log_cb);
 
     // Start installing!
     RomInstaller ri(zip_file, rom_id, fp.get());
