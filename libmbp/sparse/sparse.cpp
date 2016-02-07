@@ -896,11 +896,21 @@ bool sparseRead(SparseCtx *ctx, void *buf, uint64_t size, uint64_t *bytesRead)
             break;
         }
         case CHUNK_TYPE_FILL: {
-            auto fillVal = ctx->chunks[ctx->chunk].fillVal;
+            assert(sizeof(ctx->chunks[ctx->chunk].fillVal) == sizeof(uint32_t));
+            auto shift = (ctx->outOffset - ctx->chunks[ctx->chunk].begin)
+                    % sizeof(uint32_t);
+            uint32_t fillVal = ctx->chunks[ctx->chunk].fillVal;
+            uint32_t shifted = 0;
+            for (size_t i = 0; i < sizeof(uint32_t); ++i) {
+                ((char *) &shifted)[i] =
+                        ((char *) &fillVal)[(i + shift) % sizeof(uint32_t)];
+                //uint32_t amount = 8 * ((i + shift) % sizeof(uint32_t));
+                //shifted |= (fillVal & (0xff << amount)) >> amount << i * 8;
+            }
             char *tempBuf = (char *) buf;
             while (toRead > 0) {
-                size_t toWrite = std::min<size_t>(sizeof(fillVal), toRead);
-                memcpy(tempBuf, &fillVal, toWrite);
+                size_t toWrite = std::min<size_t>(sizeof(shifted), toRead);
+                memcpy(tempBuf, &shifted, toWrite);
                 nRead += toWrite;
                 toRead -= toWrite;
                 tempBuf += toWrite;
