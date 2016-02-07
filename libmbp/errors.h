@@ -35,36 +35,42 @@ enum ErrorCode
     NoError = 0,
 
     // PatcherCreation
-    PatcherCreateError,
-    AutoPatcherCreateError,
-    RamdiskPatcherCreateError,
+    PatcherCreateError = 50,
+    AutoPatcherCreateError = 51,
+    RamdiskPatcherCreateError = 52,
 
     // I/O
-    FileOpenError,
-    FileReadError,
-    FileWriteError,
+    FileOpenError = 100,
+    FileCloseError = 101,
+    FileReadError = 102,
+    FileWriteError = 103,
+    FileSeekError = 104,
+    FileTellError = 105,
 
     // Boot image
-    BootImageParseError,
-    BootImageApplyBumpError,
-    BootImageApplyLokiError,
+    BootImageParseError = 150,
+    BootImageApplyBumpError = 151,
+    BootImageApplyLokiError = 152,
 
     // cpio
-    CpioFileAlreadyExistsError,
-    CpioFileNotExistError,
+    CpioFileAlreadyExistsError = 170,
+    CpioFileNotExistError = 171,
 
     // Archive
-    ArchiveReadOpenError,
-    ArchiveReadDataError,
-    ArchiveReadHeaderError,
-    ArchiveWriteOpenError,
-    ArchiveWriteDataError,
-    ArchiveWriteHeaderError,
-    ArchiveCloseError,
-    ArchiveFreeError,
+    ArchiveReadOpenError = 200,
+    ArchiveReadDataError = 201,
+    ArchiveReadHeaderError = 202,
+    ArchiveWriteOpenError = 210,
+    ArchiveWriteDataError = 211,
+    ArchiveWriteHeaderError = 212,
+    ArchiveCloseError = 220,
+    ArchiveFreeError = 221,
 
     // Cancelled
-    PatchingCancelled,
+    PatchingCancelled = 300,
+
+    // Misc
+    BootImageTooLargeError = 400,
 };
 
 #ifdef __cplusplus
