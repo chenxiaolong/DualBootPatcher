@@ -89,6 +89,12 @@ struct SparseTest : testing::Test
                             this);
     }
 
+    bool sparseOpenNoSeek()
+    {
+        return ::sparseOpen(_ctx, nullptr, nullptr, &cbRead, nullptr, nullptr,
+                            this);
+    }
+
     bool sparseClose()
     {
         return ::sparseClose(_ctx);
@@ -323,6 +329,50 @@ TEST_F(SparseTest, ReadValidSparseFile)
     ASSERT_TRUE(sparseSeek(0, SEEK_END));
     ASSERT_TRUE(sparseTell(&pos));
     ASSERT_EQ(pos, 48);
+
+    ASSERT_TRUE(sparseClose());
+}
+
+TEST_F(SparseTest, ReadValidSparseFileNoSeek)
+{
+    char expected[48] = {
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'a', 'b', 'c', 'd', 'e', 'f',
+        0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12,
+        0x78, 0x56, 0x34, 0x12,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    char buf[1024];
+    char *ptr = buf;
+    size_t remaining = sizeof(buf);
+    uint64_t bytesRead;
+    uint64_t total = 0;
+    bool ret;
+    buildDataCompleteValid();
+
+    // Check that valid sparse header can be opened
+    ASSERT_TRUE(sparseOpenNoSeek());
+
+    // Check that the entire file could be read and that the contents are
+    // correct. Read one byte at a time to test that a read while the sparse
+    // file pointer is in the middle of a raw chunk works (this normally
+    // requires seeking when a seek callback is provided).
+    while (remaining > 0
+            && (ret = sparseRead(ptr, 1, &bytesRead))
+            && bytesRead > 0) {
+        ptr += bytesRead;
+        total += bytesRead;
+        remaining -= bytesRead;
+    }
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(total, 48);
+    ASSERT_EQ(remaining, sizeof(buf) - 48);
+    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(memcmp(buf, expected, 48), 0);
+
+    // Check that seeking fails
+    ASSERT_FALSE(sparseSeek(0, SEEK_SET));
 
     ASSERT_TRUE(sparseClose());
 }
