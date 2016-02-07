@@ -6,3 +6,8 @@ LOCAL_MODULE            := libmbpio
 LOCAL_SRC_FILES         := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libmbpio.a
 LOCAL_EXPORT_C_INCLUDES := $(TOP_DIR)
 include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := libc_compat
+LOCAL_SRC_FILES         := $(MBP_IO_DIR)/$(TARGET_ARCH_ABI)/libc_compat.a
+include $(PREBUILT_STATIC_LIBRARY)

@@ -25,20 +25,16 @@
 
 #include "cpiofile.h"
 #include "device.h"
-#ifndef LIBMBP_MINI
-#include "fileinfo.h"
-#endif
 #include "errors.h"
+#include "fileinfo.h"
 
 
 namespace mbp
 {
 
-#ifndef LIBMBP_MINI
 class Patcher;
 class AutoPatcher;
 class RamdiskPatcher;
-#endif
 
 class MBP_EXPORT PatcherConfig
 {
@@ -56,7 +52,6 @@ public:
 
     std::string version() const;
     std::vector<Device *> devices() const;
-#ifndef LIBMBP_MINI
     std::vector<std::string> patchers() const;
     std::vector<std::string> autoPatchers() const;
     std::vector<std::string> ramdiskPatchers() const;
@@ -71,7 +66,6 @@ public:
     void destroyPatcher(Patcher *patcher);
     void destroyAutoPatcher(AutoPatcher *patcher);
     void destroyRamdiskPatcher(RamdiskPatcher *patcher);
-#endif
 
     PatcherConfig(const PatcherConfig &) = delete;
     PatcherConfig(PatcherConfig &&) = default;

@@ -50,7 +50,7 @@ ExternalProject_Add_Step(
 
 add_dependencies(
     mbtool
-    mbp-mini
+    mbp-static-android
     mbpio-android
     mbutil
 )

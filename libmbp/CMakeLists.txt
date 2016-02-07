@@ -83,46 +83,64 @@ set(MBP_SOURCES
     ${MBP_PATCHER_SOURCES}
 )
 
+set(MBP_ANDROID_SOURCES
+    ${MBP_SOURCES}
+)
+
 if(WIN32)
     list(APPEND MBP_SOURCES
         private/win32.cpp
     )
 endif()
 
+# Wordaround semicolon separated list issue
+set(MBP_SOURCES_STR "")
+foreach(_source ${MBP_ANDROID_SOURCES})
+    set(MBP_SOURCES_STR "${MBP_SOURCES_STR} ${_source}")
+endforeach()
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.common.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.common.mk
+    @ONLY
+)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
+    @ONLY
+)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.shared.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.shared.mk
+    @ONLY
+)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
+    @ONLY
+)
+
 # If we're building for Android, then compile with ndk-build since it can easily
 # handle building for multiple architectures
-
 if(${MBP_BUILD_TARGET} STREQUAL android)
-    # Wordaround semicolon separated list issue
-    set(MBP_SOURCES_STR "")
-    foreach(_source ${MBP_SOURCES})
-        set(MBP_SOURCES_STR "${MBP_SOURCES_STR} ${_source}")
-    endforeach()
-
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-        ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-        @ONLY
-    )
-
     ExternalProject_Add(
-        mbp
+        mbp-shared-android
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out.shared/
         BUILD_COMMAND ${NDK_BUILD}
                       -C <SOURCE_DIR>
                       NDK_PROJECT_PATH=.
-                      NDK_APPLICATION_MK=Application.mk
-                      NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
+                      NDK_APPLICATION_MK=Application.shared.mk
+                      NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out.shared
                       NDK_OUT=<TMP_DIR>
-                      APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+                      APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.shared.mk
                       ${NDK_ARGS}
         INSTALL_COMMAND ""
     )
 
     # Always rebuild since files may have changed
     ExternalProject_Add_Step(
-        mbp
+        mbp-shared-android
         forcerebuild
         DEPENDEES update
         DEPENDERS configure
@@ -131,7 +149,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
     )
 
     add_dependencies(
-        mbp
+        mbp-shared-android
         mbpio-android
     )
 else()
@@ -176,50 +194,27 @@ endif()
 
 
 ################################################################################
-# libmbp-mini for Android
+# libmbp-static for Android
 ################################################################################
 
-set(MBP_MINI_SOURCES
-    ${MBP_CORE_SOURCES}
-    ${MBP_DEVICE_SOURCES}
-)
-
-# Wordaround semicolon separated list issue
-set(MBP_SOURCES_STR "")
-foreach(_source ${MBP_MINI_SOURCES})
-    set(MBP_SOURCES_STR "${MBP_SOURCES_STR} ${_source}")
-endforeach()
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android-mini.mk
-    @ONLY
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
-    @ONLY
-)
-
 ExternalProject_Add(
-    mbp-mini
+    mbp-static-android
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out-mini/
+    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out.static/
     BUILD_COMMAND ${NDK_BUILD}
                   -C <SOURCE_DIR>
                   NDK_PROJECT_PATH=.
-                  NDK_APPLICATION_MK=Application.mk
-                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out-mini
+                  NDK_APPLICATION_MK=Application.static.mk
+                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out.static
                   NDK_OUT=<TMP_DIR>
-                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android-mini.mk
+                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
                   ${NDK_ARGS}
-                  MBP_MINI=true
     INSTALL_COMMAND ""
 )
 
 # Always rebuild since files may have changed
 ExternalProject_Add_Step(
-    mbp-mini
+    mbp-static-android
     forcerebuild
     DEPENDEES update
     DEPENDERS configure
@@ -228,6 +223,6 @@ ExternalProject_Add_Step(
 )
 
 add_dependencies(
-    mbp-mini
+    mbp-static-android
     mbpio-android
 )

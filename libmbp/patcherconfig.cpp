@@ -24,9 +24,7 @@
 #include <cassert>
 
 #include "device.h"
-#ifndef LIBMBP_MINI
 #include "patcherinterface.h"
-#endif
 #include "private/fileutils.h"
 #include "private/logging.h"
 #include "version.h"
@@ -45,7 +43,6 @@
 #include "devices/xiaomi.h"
 
 // Patchers
-#ifndef LIBMBP_MINI
 #include "patchers/mbtoolupdater.h"
 #include "patchers/multibootpatcher.h"
 #include "patchers/odinpatcher.h"
@@ -53,7 +50,6 @@
 #include "autopatchers/xposedpatcher.h"
 #include "ramdiskpatchers/default.h"
 #include "ramdiskpatchers/pepper.h"
-#endif
 
 
 namespace mbp
@@ -73,12 +69,10 @@ public:
     // Errors
     ErrorCode error;
 
-#ifndef LIBMBP_MINI
     // Created patchers
     std::vector<Patcher *> allocPatchers;
     std::vector<AutoPatcher *> allocAutoPatchers;
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
-#endif
 
     void loadDefaultDevices();
 };
@@ -106,7 +100,6 @@ PatcherConfig::~PatcherConfig()
     }
     m_impl->devices.clear();
 
-#ifndef LIBMBP_MINI
     for (Patcher *patcher : m_impl->allocPatchers) {
         destroyPatcher(patcher);
     }
@@ -121,7 +114,6 @@ PatcherConfig::~PatcherConfig()
         destroyRamdiskPatcher(patcher);
     }
     m_impl->allocRamdiskPatchers.clear();
-#endif
 }
 
 /*!
@@ -220,8 +212,6 @@ void PatcherConfig::Impl::loadDefaultDevices()
     addSonyDevices(&devices);
     addXiaomiDevices(&devices);
 }
-
-#ifndef LIBMBP_MINI
 
 /*!
  * \brief Get list of Patcher IDs
@@ -393,7 +383,5 @@ void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
     m_impl->allocRamdiskPatchers.erase(it);
     delete patcher;
 }
-
-#endif
 
 }

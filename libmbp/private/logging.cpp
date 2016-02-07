@@ -24,7 +24,7 @@
 #define LOG_TAG "libmbp"
 
 
-#if defined(__ANDROID__) && !defined(LIBMBP_MINI)
+#if defined(__ANDROID__) && !defined(MBP_NO_LOGCAT)
 #include <android/log.h>
 
 static void logcat(mbp::LogLevel prio, const std::string &msg)

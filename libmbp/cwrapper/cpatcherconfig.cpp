@@ -197,8 +197,6 @@ CDevice ** mbp_config_devices(const CPatcherConfig *pc)
     return cDevices;
 }
 
-#ifndef LIBMBP_MINI
-
 /*!
  * \brief Get list of Patcher IDs
  *
@@ -356,7 +354,5 @@ void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
     mbp::RamdiskPatcher *rp = reinterpret_cast<mbp::RamdiskPatcher *>(patcher);
     config->destroyRamdiskPatcher(rp);
 }
-
-#endif
 
 }

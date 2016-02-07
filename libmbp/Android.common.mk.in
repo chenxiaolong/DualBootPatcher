@@ -1,0 +1,44 @@
+# Whether ccache should be used (highly recommended!)
+USE_CCACHE := true
+
+ifeq ($(USE_CCACHE),true)
+TARGET_CC := ccache $(TARGET_CC)
+TARGET_CXX := ccache $(TARGET_CXX)
+endif
+
+TOP_DIR := @CMAKE_SOURCE_DIR@
+EXTERNAL_DIR := $(TOP_DIR)/external
+
+include $(EXTERNAL_DIR)/minizip/Android.mk
+include @CMAKE_BINARY_DIR@/libmbpio/Android.include.mk
+include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
+
+mbp_sources := @MBP_SOURCES_STR@
+
+mbp_includes := \
+	@CMAKE_CURRENT_BINARY_DIR@/include
+
+mbp_cflags := \
+	-Wall -Wextra -Werror -pedantic \
+	-fno-exceptions -fno-rtti \
+	-ffunction-sections -fdata-sections \
+	-fvisibility=hidden \
+	-O2 \
+	-pie \
+	-Wl,--no-undefined
+# There are some '/*' in doxygen comment blocks
+mbp_cflags += -Wno-error=comment
+# Android API 17 header issues
+mbp_cflags += -Wno-error=variadic-macros
+# minizip type safety
+mbp_cflags += -DSTRICTZIPUNZIP
+
+mbp_ldflags := \
+	-Wl,--gc-sections -O2
+
+mbp_ldlibs := \
+	-lz \
+	-llog
+
+mbp_static_libs := \
+	libmbpio

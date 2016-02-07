@@ -40,7 +40,6 @@ void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path);
 
 char * mbp_config_version(const CPatcherConfig *pc);
 CDevice ** mbp_config_devices(const CPatcherConfig *pc);
-#ifndef LIBMBP_MINI
 char ** mbp_config_patchers(const CPatcherConfig *pc);
 char ** mbp_config_autopatchers(const CPatcherConfig *pc);
 char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc);
@@ -57,7 +56,6 @@ CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
 void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher);
 void mbp_config_destroy_autopatcher(CPatcherConfig *pc, CAutoPatcher *patcher);
 void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc, CRamdiskPatcher *patcher);
-#endif
 
 #ifdef __cplusplus
 }

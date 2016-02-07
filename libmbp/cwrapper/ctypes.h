@@ -38,14 +38,12 @@ typedef struct CFileInfo CFileInfo;
 struct CPatcherConfig;
 typedef struct CPatcherConfig CPatcherConfig;
 
-#ifndef LIBMBP_MINI
 struct CPatcher;
 typedef struct CPatcher CPatcher;
 struct CAutoPatcher;
 typedef struct CAutoPatcher CAutoPatcher;
 struct CRamdiskPatcher;
 typedef struct CRamdiskPatcher CRamdiskPatcher;
-#endif
 
 #ifdef __cplusplus
 }

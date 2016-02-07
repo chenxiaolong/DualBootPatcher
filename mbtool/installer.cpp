@@ -990,7 +990,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("[Installer] Device verification stage");
 
     mbp::PatcherConfig pc;
-    LOGD("libmbp-mini version: %s", pc.version().c_str());
+    LOGD("libmbp version: %s", pc.version().c_str());
 
     std::string prop_product_device;
     std::string prop_build_product;
