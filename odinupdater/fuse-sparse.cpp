@@ -15,8 +15,8 @@
 // fuse
 #include <fuse/fuse.h>
 
-// libmbp
-#include "libmbp/sparse/sparse.h"
+// libmbsparse
+#include "mbsparse/sparse.h"
 
 // libmbpio
 #include "libmbpio/file.h"

@@ -34,8 +34,9 @@ ExternalProject_Add_Step(
 
 add_dependencies(
     odinupdater
-    mbp-mini
+    mblog-android
     mbpio-android
+    mbsparse-android
     mbutil
 )
 

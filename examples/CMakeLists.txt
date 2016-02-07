@@ -1,6 +1,8 @@
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
     # Allow libmbp headers to be found
     include_directories(${CMAKE_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
+    include_directories(${CMAKE_SOURCE_DIR}/libmbsparse/include)
 
     # libmbp tester
 
@@ -31,8 +33,9 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         desparse
-        mbp
         mbpio
+        mbsparse
+        mblog
     )
 
     if(NOT MSVC)

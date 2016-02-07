@@ -61,9 +61,11 @@ include(cmake/AndroidNDK.cmake)
 add_subdirectory(thirdparty)
 
 # Main patcher
+add_subdirectory(libmbcommon)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
+add_subdirectory(libmbsparse)
 add_subdirectory(libmbutil)
 add_subdirectory(data)
 add_subdirectory(mbtool)

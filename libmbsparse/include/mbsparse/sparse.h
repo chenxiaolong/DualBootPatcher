@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "../libmbp_global.h"
-#include "sparse_header.h"
+#include "mbcommon/common.h"
+#include "mbsparse/sparse_header.h"
 
 #ifdef __cplusplus
 #include <cstdio>
@@ -43,19 +43,19 @@ typedef bool (*SparseSkipCb)(uint64_t offset, void *userData);
 
 struct SparseCtx;
 
-MBP_EXPORT struct SparseCtx * sparseCtxNew();
-MBP_EXPORT bool sparseCtxFree(struct SparseCtx *ctx);
+MB_EXPORT struct SparseCtx * sparseCtxNew();
+MB_EXPORT bool sparseCtxFree(struct SparseCtx *ctx);
 
-MBP_EXPORT bool sparseOpen(struct SparseCtx *ctx, SparseOpenCb openCb,
-                           SparseCloseCb closeCb, SparseReadCb readCb,
-                           SparseSeekCb seekCb, SparseSkipCb skipCb,
-                           void *userData);
-MBP_EXPORT bool sparseClose(struct SparseCtx *ctx);
-MBP_EXPORT bool sparseRead(struct SparseCtx *ctx, void *buf, uint64_t size,
-                           uint64_t *bytesRead);
-MBP_EXPORT bool sparseSeek(struct SparseCtx *ctx, int64_t offset, int whence);
-MBP_EXPORT bool sparseTell(struct SparseCtx *ctx, uint64_t *offset);
-MBP_EXPORT bool sparseSize(struct SparseCtx *ctx, uint64_t *size);
+MB_EXPORT bool sparseOpen(struct SparseCtx *ctx, SparseOpenCb openCb,
+                          SparseCloseCb closeCb, SparseReadCb readCb,
+                          SparseSeekCb seekCb, SparseSkipCb skipCb,
+                          void *userData);
+MB_EXPORT bool sparseClose(struct SparseCtx *ctx);
+MB_EXPORT bool sparseRead(struct SparseCtx *ctx, void *buf, uint64_t size,
+                          uint64_t *bytesRead);
+MB_EXPORT bool sparseSeek(struct SparseCtx *ctx, int64_t offset, int whence);
+MB_EXPORT bool sparseTell(struct SparseCtx *ctx, uint64_t *offset);
+MB_EXPORT bool sparseSize(struct SparseCtx *ctx, uint64_t *size);
 
 #ifdef __cplusplus
 }

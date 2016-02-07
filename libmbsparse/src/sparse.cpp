@@ -23,7 +23,7 @@
 #define __STDC_LIMIT_MACROS
 #endif
 
-#include "sparse/sparse.h"
+#include "mbsparse/sparse.h"
 
 // For std::min()
 #include <algorithm>
@@ -33,7 +33,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "private/logging.h"
+#include "mblog/logging.h"
 
 // Enable debug logging of headers, offsets, etc.?
 #define SPARSE_DEBUG 1
@@ -43,19 +43,19 @@
 #define SPARSE_ERROR 1
 
 #if SPARSE_DEBUG
-#define DEBUG(...) FLOGD(__VA_ARGS__)
+#define DEBUG(...) LOGD(__VA_ARGS__)
 #else
 #define DEBUG(...)
 #endif
 
 #if SPARSE_DEBUG_OPER
-#define OPER(...) FLOGD(__VA_ARGS__)
+#define OPER(...) LOGD(__VA_ARGS__)
 #else
 #define OPER(...)
 #endif
 
 #if SPARSE_ERROR
-#define ERROR(...) FLOGE(__VA_ARGS__)
+#define ERROR(...) LOGE(__VA_ARGS__)
 #else
 #define ERROR(...)
 #endif
@@ -550,7 +550,7 @@ bool processSparseHeader(SparseCtx *ctx)
 
     // Check file header size field
     if (ctx->shdr.file_hdr_sz < sizeof(SparseHeader)) {
-        ERROR("Expected file header size to be at least %" PRIzu
+        ERROR("Expected file header size to be at least %zu"
               ", but have %" PRIu32,
               sizeof(ctx->shdr), ctx->shdr.file_hdr_sz);
         return false;
@@ -558,7 +558,7 @@ bool processSparseHeader(SparseCtx *ctx)
 
     // Check chunk header size field
     if (ctx->shdr.chunk_hdr_sz < sizeof(ChunkHeader)) {
-        ERROR("Expected chunk header size to be at least %" PRIzu
+        ERROR("Expected chunk header size to be at least %zu"
               ", but have %" PRIu32,
               sizeof(SparseHeader), ctx->shdr.chunk_hdr_sz);
         return false;

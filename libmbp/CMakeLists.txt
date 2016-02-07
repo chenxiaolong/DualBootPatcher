@@ -9,10 +9,6 @@ include_directories(${MBP_ZLIB_INCLUDES})
 include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
-if(MBP_ENABLE_TESTS)
-    include_directories(${GTEST_INCLUDE_DIRS})
-endif()
-
 include_directories(${CMAKE_SOURCE_DIR}/external)
 
 configure_file(
@@ -31,7 +27,6 @@ set(MBP_CORE_SOURCES
     private/logging.cpp
     private/miniziputils.cpp
     private/stringutils.cpp
-    sparse/sparse.cpp
     bootimage/androidformat.cpp
     bootimage/bumpformat.cpp
     bootimage/bumppatcher.cpp
@@ -177,26 +172,6 @@ else()
         RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
     )
-
-    if(MBP_ENABLE_TESTS)
-        add_executable(test_sparse tests/test_sparse.cpp)
-        target_link_libraries(test_sparse
-            mbp
-            mbpio
-            ${GTEST_BOTH_LIBRARIES}
-        )
-
-        if(NOT MSVC)
-            set_target_properties(test_sparse PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-                C_STANDARD 99
-                C_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        add_test(test_sparse test_sparse)
-    endif()
 endif()
 
 

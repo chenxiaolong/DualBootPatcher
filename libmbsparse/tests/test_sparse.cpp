@@ -19,7 +19,7 @@
 
 #include <gtest/gtest.h>
 
-#include "libmbp/sparse/sparse.h"
+#include "mbsparse/sparse.h"
 
 struct SparseTest : testing::Test
 {

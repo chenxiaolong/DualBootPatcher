@@ -28,8 +28,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-// libmbp
-#include "libmbp/sparse/sparse.h"
+// libmbsparse
+#include "mbsparse/sparse.h"
 
 // libmbutil
 #include "libmbutil/util/command.h"
