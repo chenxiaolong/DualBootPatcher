@@ -17,39 +17,35 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/posix/delete.h"
-
-#include <cerrno>
-#include <cstring>
-
-#include <ftw.h>
-
-#include "libmbpio/error.h"
-#include "libmbpio/private/string.h"
+#include "mbpio/private/filebase.h"
 
 namespace io
 {
-namespace posix
+namespace priv
 {
 
-static int deleteCbNftw(const char *fpath, const struct stat *sb,
-                        int typeflag, struct FTW *ftwbuf)
+FileBase::~FileBase()
 {
-    (void) sb;
-    (void) typeflag;
-    (void) ftwbuf;
-
-    int ret = remove(fpath);
-    if (ret < 0) {
-        setLastError(Error::PlatformError, priv::format(
-                "%s: Failed to remove: %s", fpath, strerror(errno)));
-    }
-    return ret;
 }
 
-bool deleteRecursively(const std::string &path)
+std::string FileBase::errorString()
 {
-    return nftw(path.c_str(), deleteCbNftw, 64, FTW_DEPTH | FTW_PHYS);
+    switch (error()) {
+    case ErrorInvalidFilename:
+        return "Invalid or null filename";
+    case ErrorInvalidOpenMode:
+        return "Invalid open mode";
+    case ErrorInvalidSeekOrigin:
+        return "Invalid seek origin";
+    case ErrorFileIsNotOpen:
+        return "File is not open";
+    case ErrorEndOfFile:
+        return "End of file";
+    case ErrorPlatformError:
+        return platformErrorString();
+    default:
+        return std::string();
+    }
 }
 
 }

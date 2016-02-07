@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/posix/file.h"
+#include "mbpio/posix/file.h"
 
 #include <cerrno>
 #include <cstdio>

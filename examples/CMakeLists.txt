@@ -4,6 +4,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
     include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
     include_directories(${CMAKE_SOURCE_DIR}/libmbp/include)
+    include_directories(${CMAKE_SOURCE_DIR}/libmbpio/include)
     include_directories(${CMAKE_SOURCE_DIR}/libmbsparse/include)
 
     # libmbp tester

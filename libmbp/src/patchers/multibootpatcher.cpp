@@ -25,7 +25,7 @@
 #include <cassert>
 
 #include "mblog/logging.h"
-#include "libmbpio/delete.h"
+#include "mbpio/delete.h"
 
 #include "mbp/bootimage.h"
 #include "mbp/cpiofile.h"

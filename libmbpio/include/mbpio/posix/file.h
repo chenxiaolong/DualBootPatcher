@@ -19,20 +19,20 @@
 
 #pragma once
 
-#include "libmbpio/private/filebase.h"
+#include "mbpio/private/filebase.h"
 
 #include <memory>
 
 namespace io
 {
-namespace android
+namespace posix
 {
 
-class FileAndroid : public priv::FileBase
+class FilePosix : public priv::FileBase
 {
 public:
-    FileAndroid();
-    virtual ~FileAndroid();
+    FilePosix();
+    virtual ~FilePosix();
 
     virtual bool open(const char *filename, int mode) override;
     virtual bool open(const std::string &filename, int mode) override;

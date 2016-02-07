@@ -17,35 +17,32 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/private/filebase.h"
+#include "mbpio/private/string.h"
+
+#include <memory>
+
+#include <cstdarg>
 
 namespace io
 {
 namespace priv
 {
 
-FileBase::~FileBase()
+std::string format(const char *fmt, ...)
 {
-}
+    va_list ap;
 
-std::string FileBase::errorString()
-{
-    switch (error()) {
-    case ErrorInvalidFilename:
-        return "Invalid or null filename";
-    case ErrorInvalidOpenMode:
-        return "Invalid open mode";
-    case ErrorInvalidSeekOrigin:
-        return "Invalid seek origin";
-    case ErrorFileIsNotOpen:
-        return "File is not open";
-    case ErrorEndOfFile:
-        return "End of file";
-    case ErrorPlatformError:
-        return platformErrorString();
-    default:
-        return std::string();
-    }
+    va_start(ap, fmt);
+    std::size_t size = vsnprintf(nullptr, 0, fmt, ap) + 1;
+    va_end(ap);
+
+    std::unique_ptr<char[]> buf(new char[size]);
+
+    va_start(ap, fmt);
+    vsnprintf(buf.get(), size, fmt, ap);
+    va_end(ap);
+
+    return std::string(buf.get(), buf.get() + size - 1);
 }
 
 }

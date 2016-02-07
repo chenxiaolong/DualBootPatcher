@@ -17,19 +17,19 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/directory.h"
+#include "mbpio/directory.h"
 
 #include <vector>
 
 #include <cstring>
 
-#include "libmbpio/error.h"
-#include "libmbpio/private/common.h"
-#include "libmbpio/private/string.h"
-#include "libmbpio/private/utf8.h"
+#include "mbpio/error.h"
+#include "mbpio/private/common.h"
+#include "mbpio/private/string.h"
+#include "mbpio/private/utf8.h"
 
 #if IO_PLATFORM_WINDOWS
-#include "libmbpio/win32/error.h"
+#include "mbpio/win32/error.h"
 #else
 #include <cerrno>
 #include <sys/stat.h>

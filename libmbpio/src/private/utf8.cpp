@@ -19,7 +19,7 @@
 
 // Idea and code from: http://www.nubaria.com/en/blog/?p=289
 
-#include "libmbpio/private/utf8.h"
+#include "mbpio/private/utf8.h"
 
 #include <vector>
 

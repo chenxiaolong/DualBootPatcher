@@ -26,8 +26,8 @@
 
 #include "mblog/logging.h"
 
-#include "libmbpio/file.h"
-#include "libmbpio/private/utf8.h"
+#include "mbpio/file.h"
+#include "mbpio/private/utf8.h"
 
 #ifdef _WIN32
 #include "mbp/private/win32.h"

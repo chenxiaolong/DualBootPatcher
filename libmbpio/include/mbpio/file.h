@@ -17,26 +17,27 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/delete.h"
+#pragma once
 
-#include "libmbpio/private/common.h"
+#include "mbpio/private/common.h"
 
 #if IO_PLATFORM_WINDOWS
-#include "libmbpio/win32/delete.h"
-#else
-#include "libmbpio/posix/delete.h"
+#include "mbpio/win32/file.h"
+#elif IO_PLATFORM_ANDROID
+#include "mbpio/android/file.h"
+#elif IO_PLATFORM_POSIX
+#include "mbpio/posix/file.h"
 #endif
 
 namespace io
 {
 
-bool deleteRecursively(const std::string &path)
-{
 #if IO_PLATFORM_WINDOWS
-    return win32::deleteRecursively(path);
-#else
-    return posix::deleteRecursively(path);
+typedef win32::FileWin32 File;
+#elif IO_PLATFORM_ANDROID
+typedef android::FileAndroid File;
+#elif IO_PLATFORM_POSIX
+typedef posix::FilePosix File;
 #endif
-}
 
 }

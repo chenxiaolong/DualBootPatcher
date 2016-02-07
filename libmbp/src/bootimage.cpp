@@ -25,7 +25,7 @@
 
 #include "mblog/logging.h"
 
-#include "libmbpio/file.h"
+#include "mbpio/file.h"
 
 #include "mbp/bootimage/androidformat.h"
 #include "mbp/bootimage/bumpformat.h"

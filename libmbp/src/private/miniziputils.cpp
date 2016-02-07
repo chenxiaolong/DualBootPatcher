@@ -27,11 +27,11 @@
 
 #include "mblog/logging.h"
 
-#include "libmbpio/directory.h"
-#include "libmbpio/error.h"
-#include "libmbpio/file.h"
-#include "libmbpio/path.h"
-#include "libmbpio/private/utf8.h"
+#include "mbpio/directory.h"
+#include "mbpio/error.h"
+#include "mbpio/file.h"
+#include "mbpio/path.h"
+#include "mbpio/private/utf8.h"
 
 #include "external/minizip/ioapi_buf.h"
 #if defined(_WIN32)

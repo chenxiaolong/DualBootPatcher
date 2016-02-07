@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/android/file.h"
+#include "mbpio/android/file.h"
 
 #include <cerrno>
 #include <cstring>

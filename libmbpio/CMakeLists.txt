@@ -1,30 +1,29 @@
 include(ExternalProject)
 
-# Allow libmbpio headers to be found
-include_directories(${CMAKE_SOURCE_DIR})
+include_directories(include)
 
 set(MBP_IO_SOURCES
-    delete.cpp
-    directory.cpp
-    error.cpp
-    path.cpp
-    private/utf8.cpp
-    private/filebase.cpp
-    private/string.cpp
+    src/delete.cpp
+    src/directory.cpp
+    src/error.cpp
+    src/path.cpp
+    src/private/utf8.cpp
+    src/private/filebase.cpp
+    src/private/string.cpp
 )
 
 if(WIN32)
     set(MBP_IO_SOURCES
         ${MBP_IO_SOURCES}
-        win32/delete.cpp
-        win32/error.cpp
-        win32/file.cpp
+        src/win32/delete.cpp
+        src/win32/error.cpp
+        src/win32/file.cpp
     )
 else()
     set(MBP_IO_SOURCES
         ${MBP_IO_SOURCES}
-        posix/delete.cpp
-        posix/file.cpp
+        src/posix/delete.cpp
+        src/posix/file.cpp
     )
 endif()
 
@@ -55,15 +54,15 @@ endif()
 ################################################################################
 
 set(MBP_IO_ANDROID_SOURCES
-    delete.cpp
-    directory.cpp
-    error.cpp
-    path.cpp
-    android/file.cpp
-    posix/delete.cpp
-    private/utf8.cpp
-    private/filebase.cpp
-    private/string.cpp
+    src/delete.cpp
+    src/directory.cpp
+    src/error.cpp
+    src/path.cpp
+    src/android/file.cpp
+    src/posix/delete.cpp
+    src/private/utf8.cpp
+    src/private/filebase.cpp
+    src/private/string.cpp
 )
 
 # Wordaround semicolon separated list issue

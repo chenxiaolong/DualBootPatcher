@@ -17,14 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/win32/delete.h"
+#include "mbpio/win32/delete.h"
 
 #include <windows.h>
 
-#include "libmbpio/error.h"
-#include "libmbpio/private/string.h"
-#include "libmbpio/private/utf8.h"
-#include "libmbpio/win32/error.h"
+#include "mbpio/error.h"
+#include "mbpio/private/string.h"
+#include "mbpio/private/utf8.h"
+#include "mbpio/win32/error.h"
 
 namespace io
 {

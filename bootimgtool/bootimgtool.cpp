@@ -29,9 +29,9 @@
 
 #include <mblog/logging.h>
 
-#include <libmbpio/directory.h>
-#include <libmbpio/error.h>
-#include <libmbpio/path.h>
+#include <mbpio/directory.h>
+#include <mbpio/error.h>
+#include <mbpio/path.h>
 
 #include <mbp/bootimage.h>
 #include <mbp/errors.h>

@@ -19,7 +19,7 @@
 
 #include "mbp/private/win32.h"
 
-#include "libmbpio/private/utf8.h"
+#include "mbpio/private/utf8.h"
 
 
 namespace mbp

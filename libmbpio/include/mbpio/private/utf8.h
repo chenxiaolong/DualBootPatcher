@@ -19,25 +19,20 @@
 
 #pragma once
 
-#include "libmbpio/private/common.h"
+#include "mbpio/private/common.h"
 
 #if IO_PLATFORM_WINDOWS
-#include "libmbpio/win32/file.h"
-#elif IO_PLATFORM_ANDROID
-#include "libmbpio/android/file.h"
-#elif IO_PLATFORM_POSIX
-#include "libmbpio/posix/file.h"
+#include <string>
 #endif
 
-namespace io
+namespace utf8
 {
 
 #if IO_PLATFORM_WINDOWS
-typedef win32::FileWin32 File;
-#elif IO_PLATFORM_ANDROID
-typedef android::FileAndroid File;
-#elif IO_PLATFORM_POSIX
-typedef posix::FilePosix File;
+std::string utf16ToUtf8(const wchar_t *wstr);
+std::wstring utf8ToUtf16(const char *str);
+std::string utf16ToUtf8(const std::wstring &wstr);
+std::wstring utf8ToUtf16(const std::string &str);
 #endif
 
 }

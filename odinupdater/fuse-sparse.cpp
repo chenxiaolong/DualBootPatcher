@@ -19,7 +19,7 @@
 #include "mbsparse/sparse.h"
 
 // libmbpio
-#include "libmbpio/file.h"
+#include "mbpio/file.h"
 
 #ifdef __ANDROID__
 #define OFF_T loff_t

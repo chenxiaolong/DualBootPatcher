@@ -20,7 +20,7 @@
 #include <cstdio>
 
 #include "mbsparse/sparse.h"
-#include "libmbpio/file.h"
+#include "mbpio/file.h"
 
 struct Context
 {

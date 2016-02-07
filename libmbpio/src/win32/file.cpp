@@ -17,15 +17,15 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmbpio/win32/file.h"
+#include "mbpio/win32/file.h"
 
 #include <stdlib.h>
 #include <tchar.h>
 
 #include <windows.h>
 
-#include "libmbpio/private/utf8.h"
-#include "libmbpio/win32/error.h"
+#include "mbpio/private/utf8.h"
+#include "mbpio/win32/error.h"
 
 namespace io
 {

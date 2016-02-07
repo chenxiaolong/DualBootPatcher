@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "libmbpio/private/filebase.h"
+#include "mbpio/private/filebase.h"
 
 #include <memory>
 

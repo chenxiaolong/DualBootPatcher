@@ -13,6 +13,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 
 include_directories(${CMAKE_SOURCE_DIR}/libmbcommon/include)
 include_directories(${CMAKE_SOURCE_DIR}/libmblog/include)
+include_directories(${CMAKE_SOURCE_DIR}/libmbpio/include)
 
 include_directories(include)
 

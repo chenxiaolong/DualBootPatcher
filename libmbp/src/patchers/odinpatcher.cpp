@@ -33,8 +33,7 @@
 
 #include "mblog/logging.h"
 
-#include "libmbpio/delete.h"
-#include "libmbpio/file.h"
+#include "mbpio/file.h"
 
 #include "mbp/bootimage.h"
 #include "mbp/cpiofile.h"

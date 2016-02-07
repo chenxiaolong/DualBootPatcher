@@ -17,22 +17,40 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "mbpio/posix/delete.h"
 
-#include "libmbpio/private/common.h"
+#include <cerrno>
+#include <cstring>
 
-#if IO_PLATFORM_WINDOWS
-#include <string>
-#endif
+#include <ftw.h>
 
-namespace utf8
+#include "mbpio/error.h"
+#include "mbpio/private/string.h"
+
+namespace io
+{
+namespace posix
 {
 
-#if IO_PLATFORM_WINDOWS
-std::string utf16ToUtf8(const wchar_t *wstr);
-std::wstring utf8ToUtf16(const char *str);
-std::string utf16ToUtf8(const std::wstring &wstr);
-std::wstring utf8ToUtf16(const std::string &str);
-#endif
+static int deleteCbNftw(const char *fpath, const struct stat *sb,
+                        int typeflag, struct FTW *ftwbuf)
+{
+    (void) sb;
+    (void) typeflag;
+    (void) ftwbuf;
 
+    int ret = remove(fpath);
+    if (ret < 0) {
+        setLastError(Error::PlatformError, priv::format(
+                "%s: Failed to remove: %s", fpath, strerror(errno)));
+    }
+    return ret;
+}
+
+bool deleteRecursively(const std::string &path)
+{
+    return nftw(path.c_str(), deleteCbNftw, 64, FTW_DEPTH | FTW_PHYS);
+}
+
+}
 }
