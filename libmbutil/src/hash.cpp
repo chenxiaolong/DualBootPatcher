@@ -17,14 +17,13 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/hash.h"
+#include "mbutil/hash.h"
 
 #include <memory>
 #include <cstdio>
 
 #include "mblog/logging.h"
-
-#include "autoclose/file.h"
+#include "mbutil/autoclose/file.h"
 
 namespace mb
 {

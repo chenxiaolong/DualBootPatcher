@@ -24,14 +24,13 @@
 #include <sys/stat.h>
 
 #include "mblog/logging.h"
-
-#include "util/chmod.h"
-#include "util/chown.h"
-#include "util/copy.h"
-#include "util/file.h"
-#include "util/fts.h"
-#include "util/selinux.h"
-#include "util/string.h"
+#include "mbutil/chmod.h"
+#include "mbutil/chown.h"
+#include "mbutil/copy.h"
+#include "mbutil/file.h"
+#include "mbutil/fts.h"
+#include "mbutil/selinux.h"
+#include "mbutil/string.h"
 
 
 namespace mb

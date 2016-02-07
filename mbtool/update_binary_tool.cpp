@@ -29,9 +29,8 @@
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-
-#include "util/file.h"
-#include "util/mount.h"
+#include "mbutil/file.h"
+#include "mbutil/mount.h"
 
 #include "multiboot.h"
 #include "wipe.h"

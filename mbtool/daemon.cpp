@@ -32,19 +32,19 @@
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/directory.h"
+#include "mbutil/finally.h"
+#include "mbutil/properties.h"
+#include "mbutil/selinux.h"
+#include "mbutil/socket.h"
 
-#include "autoclose/file.h"
 #include "daemon_v3.h"
 #include "multiboot.h"
 #include "packages.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
 #include "version.h"
-#include "util/directory.h"
-#include "util/finally.h"
-#include "util/properties.h"
-#include "util/selinux.h"
-#include "util/socket.h"
 
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied

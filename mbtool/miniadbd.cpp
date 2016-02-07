@@ -34,10 +34,10 @@
 #include "external/legacy_property_service.h"
 
 #include "mblog/logging.h"
+#include "mbutil/directory.h"
+#include "mbutil/mount.h"
+#include "mbutil/properties.h"
 
-#include "util/directory.h"
-#include "util/mount.h"
-#include "util/properties.h"
 #include "version.h"
 
 

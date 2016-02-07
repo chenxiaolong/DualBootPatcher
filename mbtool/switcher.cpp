@@ -27,19 +27,19 @@
 #include <openssl/sha.h>
 
 #include "mblog/logging.h"
+#include "mbutil/chmod.h"
+#include "mbutil/chown.h"
+#include "mbutil/copy.h"
+#include "mbutil/directory.h"
+#include "mbutil/file.h"
+#include "mbutil/finally.h"
+#include "mbutil/path.h"
+#include "mbutil/properties.h"
+#include "mbutil/selinux.h"
+#include "mbutil/string.h"
 
 #include "multiboot.h"
 #include "roms.h"
-#include "util/chmod.h"
-#include "util/chown.h"
-#include "util/copy.h"
-#include "util/directory.h"
-#include "util/file.h"
-#include "util/finally.h"
-#include "util/path.h"
-#include "util/properties.h"
-#include "util/selinux.h"
-#include "util/string.h"
 
 #define CHECKSUMS_PATH "/data/multiboot/checksums.prop"
 

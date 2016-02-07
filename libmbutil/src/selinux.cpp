@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/selinux.h"
+#include "mbutil/selinux.h"
 
 #include <cerrno>
 #include <cstring>
@@ -30,10 +30,9 @@
 #include <sepol/sepol.h>
 
 #include "mblog/logging.h"
-
-#include "util/finally.h"
-#include "util/fts.h"
-#include "util/mount.h"
+#include "mbutil/finally.h"
+#include "mbutil/fts.h"
+#include "mbutil/mount.h"
 
 #define SELINUX_MOUNT_POINT     "/sys/fs/selinux"
 #define SELINUX_FS_TYPE         "selinuxfs"

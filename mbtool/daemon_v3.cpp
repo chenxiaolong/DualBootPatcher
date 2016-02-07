@@ -28,17 +28,17 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
+#include "mbutil/copy.h"
+#include "mbutil/finally.h"
+#include "mbutil/fts.h"
+#include "mbutil/properties.h"
+#include "mbutil/selinux.h"
+#include "mbutil/socket.h"
 
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
 #include "switcher.h"
-#include "util/copy.h"
-#include "util/finally.h"
-#include "util/fts.h"
-#include "util/properties.h"
-#include "util/selinux.h"
-#include "util/socket.h"
 #include "version.h"
 #include "wipe.h"
 

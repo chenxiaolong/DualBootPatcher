@@ -32,6 +32,13 @@
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
+#include "mbutil/delete.h"
+#include "mbutil/file.h"
+#include "mbutil/finally.h"
+#include "mbutil/fts.h"
+#include "mbutil/path.h"
+#include "mbutil/properties.h"
+#include "mbutil/string.h"
 
 #include "multiboot.h"
 #include "romconfig.h"
@@ -39,13 +46,6 @@
 #include "switcher.h"
 #include "version.h"
 #include "wipe.h"
-#include "util/delete.h"
-#include "util/file.h"
-#include "util/finally.h"
-#include "util/fts.h"
-#include "util/path.h"
-#include "util/properties.h"
-#include "util/string.h"
 
 namespace mb
 {

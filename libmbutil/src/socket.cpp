@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/socket.h"
+#include "mbutil/socket.h"
 
 #include <climits>
 #include <cstdlib>

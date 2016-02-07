@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/properties.h"
+#include "mbutil/properties.h"
 
 #include <memory>
 #include <vector>
@@ -31,10 +31,9 @@
 #endif
 
 #include "mblog/logging.h"
-
-#include "autoclose/file.h"
-#include "util/finally.h"
-#include "util/string.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/finally.h"
+#include "mbutil/string.h"
 
 namespace mb
 {

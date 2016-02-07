@@ -28,11 +28,10 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "util/chown.h"
-#include "util/directory.h"
-#include "util/fts.h"
-#include "util/selinux.h"
+#include "mbutil/chown.h"
+#include "mbutil/directory.h"
+#include "mbutil/fts.h"
+#include "mbutil/selinux.h"
 
 #define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
 

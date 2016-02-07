@@ -26,7 +26,7 @@
 #include "adb_io.h"
 #include "adb_log.h"
 
-#include "util/string.h"
+#include "mbutil/string.h"
 
 /* !!! Do not enable DEBUG for the adb that will run as the server:
 ** both stdout and stderr are used to communicate between the client

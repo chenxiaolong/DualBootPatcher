@@ -22,7 +22,7 @@
 #include "adb_log.h"
 #include "adb_utils.h"
 
-#include "util/string.h"
+#include "mbutil/string.h"
 
 bool SendProtocolString(int fd, const std::string& s) {
     int length = s.size();

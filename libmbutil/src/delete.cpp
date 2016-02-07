@@ -17,16 +17,15 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/delete.h"
+#include "mbutil/delete.h"
 
 #include <cerrno>
 #include <cstring>
 #include <sys/stat.h>
 
 #include "mblog/logging.h"
-
-#include "util/fts.h"
-#include "util/string.h"
+#include "mbutil/fts.h"
+#include "mbutil/string.h"
 
 namespace mb
 {

@@ -17,16 +17,15 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/chmod.h"
+#include "mbutil/chmod.h"
 
 #include <cerrno>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "util/fts.h"
-#include "util/string.h"
+#include "mbutil/fts.h"
+#include "mbutil/string.h"
 
 namespace mb
 {

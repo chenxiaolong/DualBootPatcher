@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/vibrate.h"
+#include "mbutil/vibrate.h"
 
 #include <cerrno>
 #include <cstdio>
@@ -27,8 +27,7 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "util/finally.h"
+#include "mbutil/finally.h"
 
 #define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
 

@@ -32,8 +32,8 @@
 #include "mbsparse/sparse.h"
 
 // libmbutil
-#include "libmbutil/util/command.h"
-#include "libmbutil/util/mount.h"
+#include "mbutil/command.h"
+#include "mbutil/mount.h"
 
 // minizip
 #include <archive.h>

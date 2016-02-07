@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/mount.h"
+#include "mbutil/mount.h"
 
 #include <memory>
 #include <vector>
@@ -31,12 +31,11 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "autoclose/file.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/directory.h"
+#include "mbutil/loopdev.h"
+#include "mbutil/string.h"
 #include "external/mntent.h"
-#include "util/directory.h"
-#include "util/loopdev.h"
-#include "util/string.h"
 
 #define MAX_UNMOUNT_TRIES 5
 

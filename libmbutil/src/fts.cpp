@@ -17,12 +17,12 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/fts.h"
+#include "mbutil/fts.h"
 
 #include <cstring>
 #include <sys/stat.h>
 
-#include "util/string.h"
+#include "mbutil/string.h"
 
 
 namespace mb

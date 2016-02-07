@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/loopdev.h"
+#include "mbutil/loopdev.h"
 
 #include <vector>
 #include <cerrno>
@@ -30,8 +30,8 @@
 
 #include <linux/loop.h>
 
-#include "util/finally.h"
-#include "util/string.h"
+#include "mbutil/finally.h"
+#include "mbutil/string.h"
 
 
 // See https://lkml.org/lkml/2011/7/30/110

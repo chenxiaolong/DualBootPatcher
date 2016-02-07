@@ -129,7 +129,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libmbutil libmblog libjansson libsepol procps-ng minizip libcrypto libminiadbd
+LOCAL_STATIC_LIBRARIES := libminiadbd libmbutil libmblog libjansson libsepol procps-ng minizip libcrypto
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 

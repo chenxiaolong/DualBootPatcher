@@ -30,12 +30,12 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
+#include "mbutil/cmdline.h"
+#include "mbutil/directory.h"
+#include "mbutil/string.h"
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
-#include "util/cmdline.h"
-#include "util/directory.h"
-#include "util/string.h"
 
 #define UNUSED __attribute__((__unused__))
 

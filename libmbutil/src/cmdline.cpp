@@ -17,15 +17,14 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/cmdline.h"
+#include "mbutil/cmdline.h"
 
 #include <vector>
 #include <cstring>
 
 #include "mblog/logging.h"
-
-#include "util/file.h"
-#include "util/string.h"
+#include "mbutil/file.h"
+#include "mbutil/string.h"
 
 namespace mb
 {

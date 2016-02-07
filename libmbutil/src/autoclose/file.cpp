@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "autoclose/file.h"
+#include "mbutil/autoclose/file.h"
 
 namespace mb
 {

@@ -25,12 +25,12 @@
 #include <sys/stat.h>
 
 #include "mblog/logging.h"
+#include "mbutil/finally.h"
+#include "mbutil/mount.h"
+#include "mbutil/properties.h"
+#include "mbutil/string.h"
 
 #include "multiboot.h"
-#include "util/finally.h"
-#include "util/mount.h"
-#include "util/properties.h"
-#include "util/string.h"
 
 #define BUILD_PROP "build.prop"
 

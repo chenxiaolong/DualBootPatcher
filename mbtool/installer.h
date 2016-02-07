@@ -24,7 +24,7 @@
 #include <unordered_map>
 
 #include "roms.h"
-#include "util/hash.h"
+#include "mbutil/hash.h"
 
 namespace mb
 {

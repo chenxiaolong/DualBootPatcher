@@ -25,12 +25,12 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
+#include "mbutil/delete.h"
+#include "mbutil/fts.h"
+#include "mbutil/mount.h"
+#include "mbutil/string.h"
 
 #include "multiboot.h"
-#include "util/delete.h"
-#include "util/fts.h"
-#include "util/mount.h"
-#include "util/string.h"
 
 namespace mb
 {

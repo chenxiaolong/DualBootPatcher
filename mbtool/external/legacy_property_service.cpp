@@ -38,7 +38,7 @@
 
 #include "legacy_property_service.h"
 
-#include "util/properties.h"
+#include "mbutil/properties.h"
 
 
 // NDK platform 21 no longer has <sys/atomics.h>

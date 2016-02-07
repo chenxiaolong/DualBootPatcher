@@ -34,9 +34,19 @@
 
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
+#include "mbutil/autoclose/dir.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/cmdline.h"
+#include "mbutil/chown.h"
+#include "mbutil/directory.h"
+#include "mbutil/finally.h"
+#include "mbutil/mount.h"
+#include "mbutil/path.h"
+#include "mbutil/properties.h"
+#include "mbutil/selinux.h"
+#include "mbutil/string.h"
+#include "mbutil/vibrate.h"
 
-#include "autoclose/dir.h"
-#include "autoclose/file.h"
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "mount_fstab.h"
@@ -44,16 +54,6 @@
 #include "reboot.h"
 #include "sepolpatch.h"
 #include "version.h"
-#include "util/cmdline.h"
-#include "util/chown.h"
-#include "util/directory.h"
-#include "util/finally.h"
-#include "util/mount.h"
-#include "util/path.h"
-#include "util/properties.h"
-#include "util/selinux.h"
-#include "util/string.h"
-#include "util/vibrate.h"
 
 #define BOOT_ADB_INSTEAD_OF_INIT 0
 

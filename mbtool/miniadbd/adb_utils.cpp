@@ -18,7 +18,7 @@
 
 #include "adb_log.h"
 
-#include "util/string.h"
+#include "mbutil/string.h"
 
 void dump_hex(const void* data, size_t byte_count) {
     byte_count = std::min(byte_count, size_t(16));

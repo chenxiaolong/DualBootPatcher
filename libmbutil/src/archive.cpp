@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/archive.h"
+#include "mbutil/archive.h"
 
 #include <algorithm>
 #include <memory>
@@ -25,11 +25,10 @@
 #include <cstring>
 
 #include "mblog/logging.h"
-
-#include "autoclose/archive.h"
-#include "util/directory.h"
-#include "util/finally.h"
-#include "util/path.h"
+#include "mbutil/autoclose/archive.h"
+#include "mbutil/directory.h"
+#include "mbutil/finally.h"
+#include "mbutil/path.h"
 
 #define LIBARCHIVE_DISK_WRITER_FLAGS \
     ARCHIVE_EXTRACT_TIME \

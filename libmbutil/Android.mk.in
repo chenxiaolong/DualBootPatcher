@@ -17,30 +17,30 @@ include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 LOCAL_PATH := $(_LOCAL_PATH)
 
 mbutil_src := \
-	autoclose/dir.cpp \
-	autoclose/file.cpp \
-	external/mntent.c \
-	util/archive.cpp \
-	util/chmod.cpp \
-	util/chown.cpp \
-	util/cmdline.cpp \
-	util/command.cpp \
-	util/copy.cpp \
-	util/delete.cpp \
-	util/directory.cpp \
-	util/file.cpp \
-	util/fstab.cpp \
-	util/fts.cpp \
-	util/hash.cpp \
-	util/loopdev.cpp \
-	util/mount.cpp \
-	util/path.cpp \
-	util/properties.cpp \
-	util/selinux.cpp \
-	util/socket.cpp \
-	util/string.cpp \
-	util/time.cpp \
-	util/vibrate.cpp
+	src/autoclose/dir.cpp \
+	src/autoclose/file.cpp \
+	src/archive.cpp \
+	src/chmod.cpp \
+	src/chown.cpp \
+	src/cmdline.cpp \
+	src/command.cpp \
+	src/copy.cpp \
+	src/delete.cpp \
+	src/directory.cpp \
+	src/file.cpp \
+	src/fstab.cpp \
+	src/fts.cpp \
+	src/hash.cpp \
+	src/loopdev.cpp \
+	src/mount.cpp \
+	src/path.cpp \
+	src/properties.cpp \
+	src/selinux.cpp \
+	src/socket.cpp \
+	src/string.cpp \
+	src/time.cpp \
+	src/vibrate.cpp \
+	external/mntent.c
 
 mbutil_cflags := \
 	-Wall -Wextra -Werror \
@@ -53,6 +53,7 @@ mbutil_cflags += -DDYNAMICALLY_LINKED
 endif
 
 mbutil_includes := \
+	include \
 	$(EXTERNAL_DIR)
 
 

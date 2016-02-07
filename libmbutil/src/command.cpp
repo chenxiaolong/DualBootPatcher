@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/command.h"
+#include "mbutil/command.h"
 
 #include <cerrno>
 #include <cstdlib>
@@ -26,9 +26,8 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "autoclose/file.h"
-#include "util/string.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/string.h"
 
 namespace mb
 {

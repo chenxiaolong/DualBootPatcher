@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/directory.h"
+#include "mbutil/directory.h"
 
 #include <vector>
 #include <cerrno>
@@ -25,7 +25,7 @@
 #include <cstring>
 #include <sys/stat.h>
 
-#include "util/path.h"
+#include "mbutil/path.h"
 
 namespace mb
 {

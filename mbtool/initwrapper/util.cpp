@@ -23,9 +23,8 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "util/directory.h"
-#include "util/path.h"
+#include "mbutil/directory.h"
+#include "mbutil/path.h"
 
 /*
  * replaces any unacceptable characters with '_', the

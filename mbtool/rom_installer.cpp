@@ -31,20 +31,20 @@
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
+#include "mbutil/autoclose/archive.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/archive.h"
+#include "mbutil/chown.h"
+#include "mbutil/command.h"
+#include "mbutil/copy.h"
+#include "mbutil/file.h"
+#include "mbutil/finally.h"
+#include "mbutil/properties.h"
+#include "mbutil/selinux.h"
+#include "mbutil/string.h"
 
-#include "autoclose/archive.h"
-#include "autoclose/file.h"
 #include "installer.h"
 #include "multiboot.h"
-#include "util/archive.h"
-#include "util/chown.h"
-#include "util/command.h"
-#include "util/copy.h"
-#include "util/file.h"
-#include "util/finally.h"
-#include "util/properties.h"
-#include "util/selinux.h"
-#include "util/string.h"
 
 
 static const char *sepolicy_bak_path = "/sepolicy.rom-installer";

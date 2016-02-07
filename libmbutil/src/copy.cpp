@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/copy.h"
+#include "mbutil/copy.h"
 
 #include <cerrno>
 #include <cstdlib>
@@ -29,11 +29,10 @@
 #include <unistd.h>
 
 #include "mblog/logging.h"
-
-#include "util/finally.h"
-#include "util/fts.h"
-#include "util/path.h"
-#include "util/string.h"
+#include "mbutil/finally.h"
+#include "mbutil/fts.h"
+#include "mbutil/path.h"
+#include "mbutil/string.h"
 
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries

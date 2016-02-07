@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/file.h"
+#include "mbutil/file.h"
 
 #include <memory>
 #include <cerrno>
@@ -32,8 +32,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "autoclose/file.h"
-#include "util/finally.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/finally.h"
 
 namespace mb
 {

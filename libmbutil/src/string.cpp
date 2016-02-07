@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util/string.h"
+#include "mbutil/string.h"
 
 #include <memory>
 

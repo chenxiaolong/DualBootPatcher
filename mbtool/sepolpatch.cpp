@@ -31,9 +31,8 @@
 #include <sepol/sepol.h>
 
 #include "mblog/logging.h"
-
-#include "autoclose/file.h"
-#include "util/selinux.h"
+#include "mbutil/autoclose/file.h"
+#include "mbutil/selinux.h"
 
 
 namespace mb

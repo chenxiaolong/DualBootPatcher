@@ -26,8 +26,8 @@
 #include "adb_log.h"
 #include "transport.h"
 
-#include "util/properties.h"
-#include "util/string.h"
+#include "mbutil/properties.h"
+#include "mbutil/string.h"
 
 pthread_mutex_t D_lock = PTHREAD_MUTEX_INITIALIZER;
 
