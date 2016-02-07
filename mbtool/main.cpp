@@ -42,7 +42,7 @@
 #endif
 #include "version.h"
 
-#include "util/logging.h"
+#include "mblog/logging.h"
 
 
 const char *main_argv0 = nullptr;

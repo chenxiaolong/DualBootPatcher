@@ -22,8 +22,9 @@
 #include <vector>
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "util/file.h"
-#include "util/logging.h"
 #include "util/string.h"
 
 namespace mb

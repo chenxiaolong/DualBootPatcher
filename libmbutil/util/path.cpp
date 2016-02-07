@@ -27,7 +27,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "util/logging.h"
+#include "mblog/logging.h"
+
 #include "util/time.h"
 
 namespace mb

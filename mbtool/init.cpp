@@ -32,6 +32,9 @@
 #include <sys/poll.h>
 #include <unistd.h>
 
+#include "mblog/kmsg_logger.h"
+#include "mblog/logging.h"
+
 #include "autoclose/dir.h"
 #include "autoclose/file.h"
 #include "initwrapper/devices.h"
@@ -45,7 +48,6 @@
 #include "util/chown.h"
 #include "util/directory.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/path.h"
 #include "util/properties.h"
@@ -670,7 +672,7 @@ int init_main(int argc, char *argv[])
     util::selinux_mount();
 
     open_devnull_stdio();
-    util::log_set_logger(std::make_shared<util::KmsgLogger>());
+    log::log_set_logger(std::make_shared<log::KmsgLogger>());
     if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 8) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }

@@ -30,6 +30,9 @@
 
 #include <proc/readproc.h>
 
+#include "mblog/logging.h"
+#include "mblog/stdio_logger.h"
+
 #include "autoclose/file.h"
 #include "daemon_v3.h"
 #include "multiboot.h"
@@ -39,7 +42,6 @@
 #include "version.h"
 #include "util/directory.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/socket.h"
@@ -427,7 +429,7 @@ int daemon_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // mbtool logging
-    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
+    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
 
     if (fork_flag) {
         run_daemon_fork();

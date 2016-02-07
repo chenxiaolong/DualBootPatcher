@@ -30,9 +30,10 @@
 #include <dlfcn.h>
 #endif
 
+#include "mblog/logging.h"
+
 #include "autoclose/file.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/string.h"
 
 namespace mb

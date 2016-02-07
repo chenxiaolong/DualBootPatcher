@@ -30,8 +30,9 @@
 #include <sepol/policydb/policydb.h>
 #include <sepol/sepol.h>
 
+#include "mblog/logging.h"
+
 #include "autoclose/file.h"
-#include "util/logging.h"
 #include "util/selinux.h"
 
 

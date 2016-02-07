@@ -24,9 +24,10 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "mblog/logging.h"
+
 #include "multiboot.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/properties.h"
 #include "util/string.h"

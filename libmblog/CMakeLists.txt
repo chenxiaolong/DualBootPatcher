@@ -1,5 +1,41 @@
 include(ExternalProject)
 
+include_directories(include)
+
+set(MBLOG_SOURCES
+    src/logging.cpp
+    src/stdio_logger.cpp
+)
+
+set(MBLOG_ANDROID_SOURCES
+    src/android_logger.cpp
+    src/kmsg_logger.cpp
+)
+
+if(${MBP_BUILD_TARGET} STREQUAL desktop)
+    add_library(mblog STATIC ${MBLOG_SOURCES})
+
+    set_target_properties(
+        mblog
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+    )
+
+    if(NOT MSVC)
+        set_target_properties(
+            mblog
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
+endif()
+
+set(MBLOG_SOURCES_STR "")
+foreach(_source ${MBLOG_SOURCES} ${MBLOG_ANDROID_SOURCES})
+    set(MBLOG_SOURCES_STR "${MBLOG_SOURCES_STR} ${_source}")
+endforeach()
+
 # Generate Android.mk
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
@@ -13,7 +49,7 @@ configure_file(
 )
 
 ExternalProject_Add(
-    mbutil
+    mblog-android
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
     BUILD_COMMAND ${NDK_BUILD}
@@ -27,14 +63,9 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 
-add_dependencies(
-    mbutil
-    mblog-android
-)
-
 # Always rebuild since files may have changed
 ExternalProject_Add_Step(
-    mbutil
+    mblog-android
     forcerebuild
     DEPENDEES update
     DEPENDERS configure

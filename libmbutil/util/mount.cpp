@@ -30,10 +30,11 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "autoclose/file.h"
 #include "external/mntent.h"
 #include "util/directory.h"
-#include "util/logging.h"
 #include "util/loopdev.h"
 #include "util/string.h"
 

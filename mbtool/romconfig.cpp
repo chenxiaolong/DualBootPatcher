@@ -21,8 +21,9 @@
 
 #include <jansson.h>
 
+#include "mblog/logging.h"
+
 #include "util/finally.h"
-#include "util/logging.h"
 
 #define CONFIG_KEY_ID                      "id"
 #define CONFIG_KEY_NAME                    "name"

@@ -1,0 +1,8 @@
+TOP_DIR := @CMAKE_SOURCE_DIR@
+MBLOG_DIR := @CMAKE_CURRENT_BINARY_DIR@/mblog-android-prefix/tmp/local
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := libmblog
+LOCAL_SRC_FILES         := $(MBLOG_DIR)/$(TARGET_ARCH_ABI)/libmblog.a
+LOCAL_EXPORT_C_INCLUDES := $(TOP_DIR)/libmblog/include
+include $(PREBUILT_STATIC_LIBRARY)

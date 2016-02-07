@@ -29,9 +29,10 @@
 
 #include <sepol/sepol.h>
 
+#include "mblog/logging.h"
+
 #include "util/finally.h"
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/mount.h"
 
 #define SELINUX_MOUNT_POINT     "/sys/fs/selinux"

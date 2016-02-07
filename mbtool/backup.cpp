@@ -36,6 +36,8 @@
 #include <libmbp/bootimage.h>
 #include <libmbp/cpiofile.h>
 
+#include "mblog/logging.h"
+
 #include "autoclose/archive.h"
 #include "autoclose/dir.h"
 #include "util/archive.h"
@@ -43,7 +45,6 @@
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/path.h"
 #include "util/string.h"

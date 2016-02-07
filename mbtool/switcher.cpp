@@ -26,6 +26,8 @@
 
 #include <openssl/sha.h>
 
+#include "mblog/logging.h"
+
 #include "multiboot.h"
 #include "roms.h"
 #include "util/chmod.h"
@@ -34,7 +36,6 @@
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/path.h"
 #include "util/properties.h"
 #include "util/selinux.h"

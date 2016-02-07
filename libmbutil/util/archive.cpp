@@ -24,10 +24,11 @@
 #include <cerrno>
 #include <cstring>
 
+#include "mblog/logging.h"
+
 #include "autoclose/archive.h"
 #include "util/directory.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/path.h"
 
 #define LIBARCHIVE_DISK_WRITER_FLAGS \

@@ -22,9 +22,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "external/android_reboot.h"
 #include "util/command.h"
-#include "util/logging.h"
 #include "util/properties.h"
 
 namespace mb

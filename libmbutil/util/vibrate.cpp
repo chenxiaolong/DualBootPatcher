@@ -26,8 +26,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "util/finally.h"
-#include "util/logging.h"
 
 #define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
 

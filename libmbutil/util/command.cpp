@@ -25,8 +25,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "autoclose/file.h"
-#include "util/logging.h"
 #include "util/string.h"
 
 namespace mb

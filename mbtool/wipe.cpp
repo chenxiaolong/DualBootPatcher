@@ -24,10 +24,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "multiboot.h"
 #include "util/delete.h"
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/string.h"
 

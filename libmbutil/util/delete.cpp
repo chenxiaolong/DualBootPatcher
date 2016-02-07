@@ -23,8 +23,9 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#include "mblog/logging.h"
+
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/string.h"
 
 namespace mb

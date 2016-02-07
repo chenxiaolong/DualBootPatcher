@@ -11,6 +11,7 @@ USE_CCACHE := true
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
 
+include @CMAKE_BINARY_DIR@/libmblog/Android.include.mk
 include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
 LOCAL_PATH := $(_LOCAL_PATH)
@@ -31,7 +32,6 @@ mbutil_src := \
 	util/fstab.cpp \
 	util/fts.cpp \
 	util/hash.cpp \
-	util/logging.cpp \
 	util/loopdev.cpp \
 	util/mount.cpp \
 	util/path.cpp \
@@ -65,7 +65,14 @@ endif
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbutil_src)
 LOCAL_MODULE := libmbutil
-LOCAL_STATIC_LIBRARIES := libarchive libsepol libcrypto liblz4 liblzma liblzo2
+LOCAL_STATIC_LIBRARIES := \
+	libmblog \
+	libarchive \
+	libsepol \
+	libcrypto \
+	liblz4 \
+	liblzma \
+	liblzo2
 LOCAL_CFLAGS := $(mbutil_cflags)
 LOCAL_C_INCLUDES := $(mbutil_includes)
 include $(BUILD_STATIC_LIBRARY)

@@ -28,9 +28,10 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "util/finally.h"
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/path.h"
 #include "util/string.h"
 

@@ -37,6 +37,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "autoclose/file.h"
 #include "multiboot.h"
 #include "reboot.h"
@@ -50,7 +52,6 @@
 #include "util/file.h"
 #include "util/finally.h"
 #include "util/fstab.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/path.h"
 #include "util/properties.h"

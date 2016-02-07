@@ -22,9 +22,10 @@
 #include <cstdlib>
 #include <getopt.h>
 
+#include "mblog/logging.h"
+
 #include "initwrapper/devices.h"
 #include "version.h"
-#include "util/logging.h"
 
 namespace mb
 {

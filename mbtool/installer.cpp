@@ -41,6 +41,9 @@
 #include <libmbp/cpiofile.h>
 #include <libmbp/patcherconfig.h>
 
+// libmblog
+#include "mblog/logging.h"
+
 // Local
 #include "autoclose/file.h"
 #include "image.h"
@@ -56,7 +59,6 @@
 #include "util/directory.h"
 #include "util/file.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/loopdev.h"
 #include "util/mount.h"
 #include "util/path.h"

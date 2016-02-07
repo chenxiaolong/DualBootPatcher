@@ -23,9 +23,10 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "mblog/logging.h"
+
 #include "util/command.h"
 #include "util/directory.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/path.h"
 #include "util/string.h"

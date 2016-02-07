@@ -22,8 +22,9 @@
 #include <memory>
 #include <cstdio>
 
+#include "mblog/logging.h"
+
 #include "autoclose/file.h"
-#include "util/logging.h"
 
 namespace mb
 {

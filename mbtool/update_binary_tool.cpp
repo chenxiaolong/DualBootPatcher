@@ -27,8 +27,10 @@
 #include <sys/mount.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+#include "mblog/stdio_logger.h"
+
 #include "util/file.h"
-#include "util/logging.h"
 #include "util/mount.h"
 
 #include "multiboot.h"
@@ -238,7 +240,7 @@ int update_binary_tool_main(int argc, char *argv[])
     }
 
     // Log to stderr, so the output is ordered correctly in /tmp/recovery.log
-    util::log_set_logger(std::make_shared<util::StdioLogger>(stderr, false));
+    log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
 
     const char *action = argv[optind];
     const char *mountpoint = argv[optind + 1];

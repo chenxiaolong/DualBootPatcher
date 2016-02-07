@@ -37,6 +37,9 @@
 
 #include <jansson.h>
 
+#include "mblog/logging.h"
+#include "mblog/stdio_logger.h"
+
 #include "appsyncmanager.h"
 #include "autoclose/file.h"
 #include "multiboot.h"
@@ -52,7 +55,6 @@
 #include "util/file.h"
 #include "util/finally.h"
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/socket.h"
@@ -1064,7 +1066,7 @@ int appsync_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // mbtool logging
-    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), true));
+    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
 
     LOGI("=== APPSYNC VERSION %s ===", get_mbtool_version());
 

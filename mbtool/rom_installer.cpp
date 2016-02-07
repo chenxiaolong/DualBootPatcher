@@ -30,6 +30,9 @@
 #include <libmbp/bootimage.h>
 #include <libmbp/logging.h>
 
+#include "mblog/logging.h"
+#include "mblog/stdio_logger.h"
+
 #include "autoclose/archive.h"
 #include "autoclose/file.h"
 #include "installer.h"
@@ -40,7 +43,6 @@
 #include "util/copy.h"
 #include "util/file.h"
 #include "util/finally.h"
-#include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
@@ -550,7 +552,7 @@ int rom_installer_main(int argc, char *argv[])
     }
 
     // mbtool logging
-    util::log_set_logger(std::make_shared<util::StdioLogger>(fp.get(), false));
+    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
 
     // libmbp logging
     mbp::setLogCallback(mbp_log_cb);

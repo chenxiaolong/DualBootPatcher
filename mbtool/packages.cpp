@@ -28,7 +28,7 @@
 
 #include <pugixml.hpp>
 
-#include "util/logging.h"
+#include "mblog/logging.h"
 
 
 namespace mb

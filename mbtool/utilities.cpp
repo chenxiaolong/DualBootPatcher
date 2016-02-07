@@ -30,6 +30,9 @@
 #include "external/minizip/zip.h"
 #include "external/minizip/ioandroid.h"
 
+#include "mblog/logging.h"
+#include "mblog/stdio_logger.h"
+
 #include "multiboot.h"
 #include "romconfig.h"
 #include "roms.h"
@@ -40,7 +43,6 @@
 #include "util/file.h"
 #include "util/finally.h"
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/path.h"
 #include "util/properties.h"
 #include "util/string.h"
@@ -414,7 +416,7 @@ int utilities_main(int argc, char *argv[])
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 
-    util::log_set_logger(std::make_shared<util::StdioLogger>(stdout, false));
+    log::log_set_logger(std::make_shared<log::StdioLogger>(stdout, false));
 
     bool force = false;
 

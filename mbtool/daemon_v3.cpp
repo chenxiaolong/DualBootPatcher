@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
@@ -34,7 +36,6 @@
 #include "util/copy.h"
 #include "util/finally.h"
 #include "util/fts.h"
-#include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/socket.h"

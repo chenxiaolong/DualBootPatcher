@@ -27,6 +27,9 @@
 
 #include <libmbp/logging.h>
 
+#include "mblog/logging.h"
+#include "mblog/stdio_logger.h"
+
 #include "installer.h"
 #include "multiboot.h"
 #include "util/archive.h"
@@ -34,7 +37,6 @@
 #include "util/command.h"
 #include "util/copy.h"
 #include "util/file.h"
-#include "util/logging.h"
 #include "util/properties.h"
 #include "util/selinux.h"
 #include "util/string.h"
@@ -295,7 +297,7 @@ int update_binary_main(int argc, char *argv[])
     zip_file = argv[3];
 
     // stdout is messed up when it's appended to /tmp/recovery.log
-    util::log_set_logger(std::make_shared<util::StdioLogger>(stderr, false));
+    log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
 
     mbp::setLogCallback(mbp_log_cb);
 

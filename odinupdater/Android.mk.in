@@ -6,6 +6,7 @@ USE_CCACHE := true
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
 
+include @CMAKE_BINARY_DIR@/libmblog/Android.include.mk
 include @CMAKE_BINARY_DIR@/libmbp/Android.include.mk
 include @CMAKE_BINARY_DIR@/libmbpio/Android.include.mk
 include @CMAKE_BINARY_DIR@/libmbutil/Android.include.mk
@@ -24,7 +25,8 @@ LOCAL_MODULE := odinupdater
 LOCAL_STATIC_LIBRARIES := \
 	libarchive \
 	libmbp-mini \
-	libmbutil
+	libmbutil \
+	libmblog
 LOCAL_C_INCLUDES := $(TOP_DIR)
 LOCAL_CFLAGS := \
 	-Wall -Wextra -Werror \

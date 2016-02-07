@@ -22,8 +22,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mblog/logging.h"
+
 #include "util/directory.h"
-#include "util/logging.h"
 #include "util/path.h"
 
 /*

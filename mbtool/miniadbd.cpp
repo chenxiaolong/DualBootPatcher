@@ -33,8 +33,9 @@
 
 #include "external/legacy_property_service.h"
 
+#include "mblog/logging.h"
+
 #include "util/directory.h"
-#include "util/logging.h"
 #include "util/mount.h"
 #include "util/properties.h"
 #include "version.h"
