@@ -20,10 +20,14 @@
 #pragma once
 
 #ifdef _WIN32
-#  if defined(LIBMBP_LIBRARY)
-#    define MB_EXPORT __declspec(dllexport)
+#  if defined(MB_DYNAMIC_LINK)
+#    if defined(MB_LIBRARY)
+#      define MB_EXPORT __declspec(dllexport)
+#    else
+#      define MB_EXPORT __declspec(dllimport)
+#    endif
 #  else
-#    define MB_EXPORT __declspec(dllimport)
+#    define MB_EXPORT
 #  endif
 #endif
 
