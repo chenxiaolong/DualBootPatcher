@@ -52,6 +52,7 @@ public class LibMbp {
     static class CWrapper {
         static {
             Native.register(CWrapper.class, "mbp");
+            LibMiscStuff.INSTANCE.mblog_set_logcat();
         }
 
         // BEGIN: ctypes.h

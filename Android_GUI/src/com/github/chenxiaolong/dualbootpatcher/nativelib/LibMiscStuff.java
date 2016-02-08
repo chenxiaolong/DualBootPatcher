@@ -52,6 +52,8 @@ public class LibMiscStuff {
         boolean is_same_file(String path1, String path2);
 
         boolean extract_archive(String filename, String target);
+
+        void mblog_set_logcat();
     }
 
     public static final CLibrary INSTANCE =
