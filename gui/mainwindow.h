@@ -62,14 +62,15 @@ private slots:
                             const QString &errorMessage);
 
 private:
+    virtual void closeEvent(QCloseEvent *event) override;
+
     void updateRomIdDescText(const QString &text);
     void updateProgressText();
 
     void addWidgets();
     void setWidgetActions();
-    void populateWidgets();
-
-    void refreshInstallationLocations();
+    void populateDevices();
+    void populateInstallationLocations();
 
     void chooseFile();
     void startPatching();

@@ -63,9 +63,19 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
 
     addWidgets();
     setWidgetActions();
-    populateWidgets();
-    refreshInstallationLocations();
+    populateDevices();
+    populateInstallationLocations();
     updateWidgetsVisibility();
+
+    QString lastDeviceId = d->settings.value(
+            QStringLiteral("last_device"), QString()).toString();
+    std::vector<mbp::Device *> devices = d->pc->devices();
+    for (size_t i = 0; i < devices.size(); ++i) {
+        if (lastDeviceId.toStdString() == devices[i]->id()) {
+            d->deviceSel->setCurrentIndex(i);
+            break;
+        }
+    }
 
     // Create thread
     d->thread = new QThread(this);
@@ -138,6 +148,17 @@ void MainWindow::onInstallationLocationSelected(int index)
 void MainWindow::onInstallationLocationIdChanged(const QString &text)
 {
     updateRomIdDescText(text);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    Q_D(MainWindow);
+
+    int deviceIndex = d->deviceSel->currentIndex();
+    d->settings.setValue(QStringLiteral("last_device"),
+                         QString::fromStdString(d->pc->devices()[deviceIndex]->id()));
+
+    QWidget::closeEvent(event);
 }
 
 void MainWindow::updateRomIdDescText(const QString &text)
@@ -374,7 +395,7 @@ void MainWindow::setWidgetActions()
             this, &MainWindow::onButtonClicked);
 }
 
-void MainWindow::populateWidgets()
+void MainWindow::populateDevices()
 {
     Q_D(MainWindow);
 
@@ -386,7 +407,7 @@ void MainWindow::populateWidgets()
     }
 }
 
-void MainWindow::refreshInstallationLocations()
+void MainWindow::populateInstallationLocations()
 {
     Q_D(MainWindow);
 
